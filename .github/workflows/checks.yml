@@ -1,0 +1,52 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        # The commands check-<name> of the flake.
+        check:
+          - actionlint
+          - commits
+          - editorconfig
+          - flake
+          - markdownlint
+          - nixfmt
+          - reuse
+          - shellcheck
+          - shfmt
+          - taplo
+          - typos
+          - yamllint
+    runs-on: ubuntu-24.04
+    steps:
+      # The head of the pull request, without its history.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b  # 31.11.3
+      - if: matrix.check != 'commits'
+        name: Run the check
+        run: nix run --quiet ".#check-$CHECK"
+        env:
+          CHECK: ${{ matrix.check }}
+      # The commits of a pull request only, and their parent, the base of the check; main gets them
+      # through a merge commit.
+      - if: matrix.check == 'commits' && github.event_name == 'pull_request'
+        name: Run the check
+        run: |
+          git fetch --quiet --depth="$((COMMITS + 1))" origin "$HEAD"
+          nix run --quiet .#check-commits -- "HEAD~$COMMITS"
+        env:
+          COMMITS: ${{ github.event.pull_request.commits }}
+          HEAD: ${{ github.event.pull_request.head.sha }}

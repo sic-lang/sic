@@ -1,0 +1,5 @@
+# The development shell cached by direnv.
+/.direnv/
+
+# Written by nix run .#setup-vscode, then personal.
+/.vscode/

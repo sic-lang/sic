@@ -1,0 +1,6 @@
+{
+  "config": {
+    // Lines are not wrapped at a fixed length.
+    "MD013": false
+  }
+}

@@ -1,0 +1,12 @@
+# The defaults, except where documented.
+extends: default
+
+rules:
+  # Workflows do not start with "---" by convention.
+  document-start: disable
+  # Room for actions pinned by commit, followed by their version in a comment.
+  line-length:
+    max: 100
+  # "on" is the key of the triggers of a workflow.
+  truthy:
+    check-keys: false

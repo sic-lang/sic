@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown continues ordered list items with 3 spaces; markdownlint checks its indentation.
+[*.md]
+indent_size = unset
+
+# License texts are verbatim copies, with their own indentation.
+[LICENSES/*]
+indent_size = unset
