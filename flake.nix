@@ -3,9 +3,8 @@
 {
   description = "Development environment of Sic";
 
-  # The stable branch: its tools are in the binary cache (reuse cannot be built on
-  # nixpkgs-unstable at the moment); flake.lock pins its commit.
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  # The unstable branch, for a recent release of Lean; flake.lock pins its commit.
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
     { nixpkgs, ... }:
@@ -49,6 +48,17 @@
             flake = {
               tools = [ ];
               command = "nix flake check --quiet";
+            };
+            # Builds the Lean package of the metatheory, whose proofs the kernel of Lean checks, replays
+            # its declarations in the kernel, which catches those added without checking them, and
+            # checks the axioms they depend on; a warning fails it too.
+            lean = {
+              tools = [ pkgs.lean4 ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "lake --dir theory env leanchecker Sic"
+                "lake --dir theory env lean theory/CheckAxioms.lean"
+              ];
             };
             markdownlint = {
               tools = [ pkgs.markdownlint-cli2 ];
@@ -164,6 +174,7 @@
               "editorconfig.editorconfig"
               "github.vscode-github-actions"
               "jnoortheen.nix-ide"
+              "leanprover.lean4"
               "mkhl.direnv"
               "mkhl.shfmt"
               "redhat.vscode-yaml"
@@ -182,6 +193,9 @@
             "nix.enableLanguageServer" = true;
             "nix.serverPath" = "nixd";
             "nix.serverSettings".nixd.formatting.command = [ "nixfmt" ];
+            # Lean comes from the development shell, without its version manager elan, whose absence
+            # the extension would report at every start.
+            "lean4.showSetupWarnings" = false;
           };
           # Writes the recommended configuration to .vscode/, which git ignores, without overwriting a
           # file that differs from it, unless --force is given.
@@ -247,6 +261,11 @@
             packages = lib.unique (lib.concatMap (check: check.tools) (lib.attrValues fileChecks)) ++ [
               pkgs.nixd
             ];
+            # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which git
+            # ignores: written from the Lean of the shell, it always matches flake.lock.
+            shellHook = ''
+              echo "leanprover/lean4:v${pkgs.lean4.version}" >"$(${lib.getExe pkgs.git} rev-parse --show-toplevel)/theory/lean-toolchain"
+            '';
           };
         };
     in
