@@ -29,6 +29,8 @@ jobs:
           - taplo
           - typos
           - yamllint
+    # Named instead of ubuntu-latest, which moves to a new release on its own, so that a change of
+    # image shows in a pull request; ubuntu-26.04 waits until actionlint knows it (#3).
     runs-on: ubuntu-24.04
     steps:
       # The head of the pull request, without its history.
