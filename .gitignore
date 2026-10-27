@@ -3,3 +3,9 @@
 
 # Written by nix run .#setup-vscode, then personal.
 /.vscode/
+
+# The builds of Lake.
+/theory/.lake/
+
+# Written by the development shell from its Lean, for the Lean extension of VS Code.
+/theory/lean-toolchain

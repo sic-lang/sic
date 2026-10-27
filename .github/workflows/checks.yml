@@ -20,6 +20,7 @@ jobs:
           - commits
           - editorconfig
           - flake
+          - lean
           - markdownlint
           - nixfmt
           - reuse
