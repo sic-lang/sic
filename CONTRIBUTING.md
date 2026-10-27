@@ -23,6 +23,14 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 - Sort alphabetically the lists whose order has no meaning.
 - Start the README with one short sentence saying what the repository is, and copy it verbatim as the description of the repository on GitHub.
 
+## Formalization
+
+The Lean package of `theory/` gives each concept two modules: `Sic/<Concept>.lean` for its definitions and the properties the rest of the formalization uses, and `Sic/<Concept>/Validation.lean` for the checks that the definitions mean what the RFCs say.
+A proof only shows what its statement says, so a definition is validated against the examples of its RFC, and against its meaning when one exists.
+The Lean of the repository is the evidence for what Sic claims, and its kernel checks the proofs, so a reader only has to check the definitions and the statements: keep them simple enough that a reader convinces themselves easily that they say what is meant.
+A proof may take any form the kernel accepts, but explain in the file how it works when its tactics do not show it.
+In the definitions and the statements, write the parentheses wherever the associativity or the precedence of an operator decides the meaning, as in the associativity `(p + q) + r = p + (q + r)` and the distributivity `p * (q + r) = (p * q) + (p * r)`.
+
 ## Pull Requests
 
 - Pull requests are merged with a merge commit, and the commits they bring are exactly the ones that were reviewed.

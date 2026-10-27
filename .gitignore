@@ -3,3 +3,6 @@
 
 # Written by nix run .#setup-vscode, then personal.
 /.vscode/
+
+# The builds of Lake.
+/theory/.lake/
