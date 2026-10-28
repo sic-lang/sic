@@ -1,9 +1,13 @@
+module
+
 /-!
 # Usages
 
 The usages of RFC 24, the components of the grades: a usage counts the uses of a variable, as the
 linear modality of ADE, whose laws are proved here.
 -/
+
+@[expose] public section
 
 namespace Sic
 
