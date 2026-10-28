@@ -1,4 +1,6 @@
-import Sic.Usage
+module
+
+public import Sic.Usage
 
 /-!
 # Grades
@@ -7,6 +9,8 @@ The grades of RFC 24: a grade counts the uses of a variable at run time and in t
 being a usage.
 The seven grades form a modality of ADE whose zero is well behaved, proved at the end.
 -/
+
+@[expose] public section
 
 namespace Sic
 

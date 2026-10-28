@@ -26,6 +26,8 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 ## Formalization
 
 The Lean package of `theory/` gives each concept two modules: `Sic/<Concept>.lean` for its definitions and the properties the rest of the formalization uses, and `Sic/<Concept>/Validation.lean` for the checks that the definitions mean what the RFCs say.
+Every file is a module of the [module system of Lean](https://lean-lang.org/doc/reference/latest/Source-Files-and-Modules/), so that a module only passes on the imports it declares public: an import is private, unless the type of a public declaration mentions what it imports (`public import`).
+The definitions of a concept are public and expose their bodies (`@[expose] public section`), so that the other modules compute with them, while its validation is private, and reads another validation with `import all`.
 A proof only shows what its statement says, so a definition is validated against the examples of its RFC, and against its meaning when one exists.
 The Lean of the repository is the evidence for what Sic claims, and its kernel checks the proofs, so a reader only has to check the definitions and the statements: keep them simple enough that a reader convinces themselves easily that they say what is meant.
 A proof may take any form the kernel accepts, but explain in the file how it works when its tactics do not show it.

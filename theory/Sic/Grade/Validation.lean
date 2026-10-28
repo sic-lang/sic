@@ -1,5 +1,7 @@
+module
+
 import Sic.Grade
-import Sic.Usage.Validation
+import all Sic.Usage.Validation
 
 /-!
 # Validation of the Grades
