@@ -1,0 +1,208 @@
+module
+
+public import Sic.Core.Syntax
+
+/-!
+# Substitution
+
+The operations that move a term to another context, as in the formalization of ADE: a weakening adds
+variables to the context, a substitution replaces each variable by a term, and an instantiation of
+the levels replaces each level variable by a level.
+A weakening is a first-order object, `Wk`, so that the logical relation quantifies over the
+extensions of a context only, while a substitution is a function from the variables to terms.
+The laws at the end let the metatheory compose these operations, as the σ-calculus does.
+-/
+
+@[expose] public section
+
+namespace Sic.Core
+
+/--
+A weakening from a context of `n` variables to a context of `m`, which contains them in the same
+order: `id` keeps the context, `step ρ` adds a variable after those of `ρ`, and `lift ρ` extends `ρ`
+under a binder.
+-/
+inductive Wk : Nat → Nat → Type where
+  | id : Wk n n
+  | step (ρ : Wk m n) : Wk (m + 1) n
+  | lift (ρ : Wk m n) : Wk (m + 1) (n + 1)
+
+/-- The index in the larger context of the variable of index `x`. -/
+def Wk.var : Wk m n → Fin n → Fin m
+  | id, x => x
+  | step ρ, x => (ρ.var x).succ
+  | lift _, ⟨0, _⟩ => 0
+  | lift ρ, ⟨x + 1, h⟩ => (ρ.var ⟨x, Nat.lt_of_succ_lt_succ h⟩).succ
+
+/-- A substitution of terms over `m` variables for the `n` variables of a context. -/
+abbrev Subst (k m n : Nat) := Fin n → Term k m
+
+/-- The term `t` moved by the weakening `ρ`, which shifts its variables. -/
+def Term.wk {m n : Nat} (ρ : Wk m n) : Term k n → Term k m
+  | var x => var (ρ.var x)
+  | univ l => univ l
+  | pi p q A B => pi p q (A.wk ρ) (B.wk ρ.lift)
+  | lam p A t => lam p (A.wk ρ) (t.wk ρ.lift)
+  | app p t a => app p (t.wk ρ) (a.wk ρ)
+
+/-- The term `t` moved to a context with one more variable. -/
+abbrev Term.wk1 (t : Term k n) : Term k (n + 1) := t.wk (.step .id)
+
+/-- The substitution `σ` extended by the term `a` for a new innermost variable. -/
+def Subst.cons (σ : Subst k m n) (a : Term k m) : Subst k m (n + 1)
+  | ⟨0, _⟩ => a
+  | ⟨x + 1, h⟩ => σ ⟨x, Nat.lt_of_succ_lt_succ h⟩
+
+/-- The substitution `σ` extended under a binder, which maps its variable to itself. -/
+def Subst.lift (σ : Subst k m n) : Subst k (m + 1) (n + 1) :=
+  Subst.cons (fun x => (σ x).wk1) (.var 0)
+
+/-- Under a binder, the identity substitution stays the identity. -/
+theorem Subst.lift_var : Subst.lift (.var : Subst k n n) = .var :=
+  funext fun | ⟨0, _⟩ => rfl | ⟨_ + 1, _⟩ => rfl
+
+namespace Term
+
+variable {j k l m n : Nat}
+
+/-- The term `t` whose variables are replaced by the terms `σ`. -/
+def subst {m n : Nat} (σ : Subst k m n) : Term k n → Term k m
+  | var x => σ x
+  | univ l => univ l
+  | pi p q A B => pi p q (A.subst σ) (B.subst σ.lift)
+  | lam p A t => lam p (A.subst σ) (t.subst σ.lift)
+  | app p t a => app p (t.subst σ) (a.subst σ)
+
+/-- `t[a/x]`: the term `t` whose innermost variable `x` is replaced by `a`. -/
+def instantiate (t : Term k (n + 1)) (a : Term k n) : Term k n :=
+  t.subst (Subst.cons var a)
+
+/-- The term `t` whose level variables are replaced by the levels `σ`, over `j` other variables. -/
+def substLevels {n : Nat} (σ : Fin k → Level j) : Term k n → Term j n
+  | var x => var x
+  | univ l => univ (l.subst σ)
+  | pi p q A B => pi p q (A.substLevels σ) (B.substLevels σ)
+  | lam p A t => lam p (A.substLevels σ) (t.substLevels σ)
+  | app p t a => app p (t.substLevels σ) (a.substLevels σ)
+
+/-!
+The laws of the operations.
+Each is proved by induction on the term; under a binder, the induction hypothesis applies to the
+operations extended by `lift`, which the first step of each proof shows to agree, variable by
+variable.
+-/
+
+/-- Two weakenings in a row are the weakening that moves each variable as both do. -/
+theorem wk_wk {ρ₁ : Wk m l} {ρ₂ : Wk l n} {ρ : Wk m n} (h : ∀ x, ρ₁.var (ρ₂.var x) = ρ.var x)
+    (t : Term k n) : (t.wk ρ₂).wk ρ₁ = t.wk ρ := by
+  induction t generalizing m l with
+  | var x => exact congrArg var (h x)
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h' : ∀ x, ρ₁.lift.var (ρ₂.lift.var x) = ρ.lift.var x :=
+      fun | ⟨0, _⟩ => rfl | ⟨_ + 1, _⟩ => congrArg Fin.succ (h _)
+    simp only [wk, ihA h, ihB h']
+  | app _ _ _ iht iha => simp only [wk, iht h, iha h]
+
+/-- A weakening is the substitution of the variables it moves to. -/
+theorem wk_eq_subst (ρ : Wk m n) (t : Term k n) : t.wk ρ = t.subst fun x => var (ρ.var x) := by
+  induction t generalizing m with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h : (Subst.lift fun x => (var (ρ.var x) : Term k _)) = fun x => var (ρ.lift.var x) :=
+      funext fun | ⟨0, _⟩ => rfl | ⟨_ + 1, _⟩ => rfl
+    simp only [wk, subst, ihA, ihB, h]
+  | app _ _ _ iht iha => simp only [wk, subst, iht, iha]
+
+/-- A substitution after a weakening substitutes for the variables moved by the weakening. -/
+theorem subst_wk (σ : Subst k m l) (ρ : Wk l n) (t : Term k n) :
+    (t.wk ρ).subst σ = t.subst fun x => σ (ρ.var x) := by
+  induction t generalizing m l with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h : (fun x => σ.lift (ρ.lift.var x)) = Subst.lift fun x => σ (ρ.var x) :=
+      funext fun | ⟨0, _⟩ => rfl | ⟨_ + 1, _⟩ => rfl
+    simp only [wk, subst, ihA, ihB, h]
+  | app _ _ _ iht iha => simp only [wk, subst, iht, iha]
+
+/-- A weakening after a substitution weakens each substituted term. -/
+theorem wk_subst (ρ : Wk m l) (σ : Subst k l n) (t : Term k n) :
+    (t.subst σ).wk ρ = t.subst fun x => (σ x).wk ρ := by
+  induction t generalizing m l with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h : (fun x => (σ.lift x).wk ρ.lift) = Subst.lift fun x => (σ x).wk ρ :=
+      funext fun
+        | ⟨0, _⟩ => rfl
+        | ⟨_ + 1, _⟩ => (wk_wk (ρ := ρ.step) (fun _ => rfl) _).trans (wk_wk (fun _ => rfl) _).symm
+    simp only [wk, subst, ihA, ihB, h]
+  | app _ _ _ iht iha => simp only [wk, subst, iht, iha]
+
+/-- Substituting each variable for itself leaves the term unchanged. -/
+theorem subst_var (t : Term k n) : t.subst var = t := by
+  induction t with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    simp only [subst, Subst.lift_var, ihA, ihB]
+  | app _ _ _ iht iha => simp only [subst, iht, iha]
+
+/-- The weakening `id` leaves the term unchanged. -/
+theorem wk_id (t : Term k n) : t.wk .id = t :=
+  (wk_eq_subst _ t).trans (subst_var t)
+
+/-- Two substitutions in a row are the substitution of the substituted terms. -/
+theorem subst_subst (σ : Subst k l n) (τ : Subst k m l) (t : Term k n) :
+    (t.subst σ).subst τ = t.subst fun x => (σ x).subst τ := by
+  induction t generalizing m l with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h : (fun x => (σ.lift x).subst τ.lift) =
+        Subst.lift fun x => (σ x).subst τ :=
+      funext fun
+        | ⟨0, _⟩ => rfl
+        | ⟨_ + 1, _⟩ => (subst_wk _ _ _).trans (wk_subst _ τ _).symm
+    simp only [subst, ihA, ihB, h]
+  | app _ _ _ iht iha => simp only [subst, iht, iha]
+
+/-- Substituting in `t[a/x]` substitutes in `t`, under the binder of `x`, and in `a`. -/
+theorem subst_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k n) :
+    (t.instantiate a).subst σ = (t.subst σ.lift).instantiate (a.subst σ) := by
+  simp only [instantiate, subst_subst]
+  congr
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨_ + 1, _⟩ => exact ((subst_wk _ _ _).trans (subst_var _)).symm
+
+/-- Instantiating the levels commutes with a weakening. -/
+theorem substLevels_wk (σ : Fin k → Level j) (ρ : Wk m n) (t : Term k n) :
+    (t.wk ρ).substLevels σ = (t.substLevels σ).wk ρ := by
+  induction t generalizing m with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB => simp only [wk, substLevels, ihA, ihB]
+  | app _ _ _ iht iha => simp only [wk, substLevels, iht, iha]
+
+/-- Instantiating the levels after a substitution also instantiates the substituted terms. -/
+theorem substLevels_subst (θ : Fin k → Level j) (σ : Subst k m n) (t : Term k n) :
+    (t.subst σ).substLevels θ = (t.substLevels θ).subst fun x => (σ x).substLevels θ := by
+  induction t generalizing m with
+  | var => rfl
+  | univ => rfl
+  | pi _ _ _ _ ihA ihB | lam _ _ _ ihA ihB =>
+    have h : (fun x => (σ.lift x).substLevels θ) =
+        Subst.lift fun x => (σ x).substLevels θ :=
+      funext fun
+        | ⟨0, _⟩ => rfl
+        | ⟨_ + 1, _⟩ => substLevels_wk θ _ _
+    simp only [subst, substLevels, ihA, ihB, h]
+  | app _ _ _ iht iha => simp only [subst, substLevels, iht, iha]
+
+end Term
+
+end Sic.Core
