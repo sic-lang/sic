@@ -57,7 +57,7 @@
               command = lib.concatStringsSep " && " [
                 "lake --dir theory build --wfail"
                 "lake --dir theory env leanchecker Sic"
-                "lake --dir theory env lean theory/CheckAxioms.lean"
+                "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic"
               ];
             };
             markdownlint = {
