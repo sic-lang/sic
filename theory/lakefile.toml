@@ -3,3 +3,5 @@ defaultTargets = ["Sic"]
 
 [[lean_lib]]
 name = "Sic"
+# Every module of Sic/, so that none of them depends on a root module that imports them all.
+globs = ["Sic.+"]
