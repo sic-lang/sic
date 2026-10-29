@@ -167,12 +167,14 @@
               exit "$status"
             '';
           };
-          # The recommended VS Code configuration: one extension per tool of the checks.
+          # The recommended VS Code configuration: one extension per tool of the checks, and the one
+          # that reviews the pull requests in the editor, where the Lean extension shows the proofs.
           vscodeExtensions = json.generate "extensions.json" {
             recommendations = [
               "davidanson.vscode-markdownlint"
               "editorconfig.editorconfig"
               "github.vscode-github-actions"
+              "github.vscode-pull-request-github"
               "jnoortheen.nix-ide"
               "leanprover.lean4"
               "mkhl.direnv"
