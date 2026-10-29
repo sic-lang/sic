@@ -208,6 +208,20 @@ theorem subst_cons_wk1 (σ : Subst k m n) (a : Term k m) (t : Term k n) :
     t.wk1.subst (σ.cons a) = t.subst σ :=
   subst_wk _ _ t
 
+/--
+Inserting a variable before the innermost one, then replacing the innermost variable by the inserted
+one, leaves the term unchanged.
+-/
+theorem instantiate_wk_lift_step (t : Term k (n + 1)) :
+    (t.wk (Wk.step .id).lift).instantiate (var 0) = t := by
+  rw [instantiate, wk_eq_subst, subst_subst]
+  conv => rhs; rw [← subst_var t]
+  congr 1
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨_ + 1, _⟩ => rfl
+
 /-- Instantiating the levels commutes with a weakening. -/
 theorem substLevels_wk (σ : Fin k → Level j) (ρ : Wk m n) (t : Term k n) :
     (t.wk ρ).substLevels σ = (t.substLevels σ).wk ρ := by

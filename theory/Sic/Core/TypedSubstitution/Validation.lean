@@ -6,8 +6,8 @@ import all Sic.Core.Typing.Validation
 /-!
 # Validation of the Typed Substitution
 
-The weakening and the substitution of `Sic.Core.TypedSubstitution` checked against the formalization
-of ADE, and on the constant function of RFC 24.
+The weakening and the substitutions of `Sic.Core.TypedSubstitution` checked against the
+formalization of ADE, and on the constant function of RFC 24.
 
 | Definition or theorem | Definition or theorem of ADE |
 | --- | --- |
@@ -16,10 +16,14 @@ of ADE, and on the constant function of RFC 24.
 | `HasType.wk`, `TermEq.wk` | `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
 | `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
 | `HasType.subst`, `TermEq.subst` | `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.conv_last` | `stability-⊢∷`, for contexts that only differ by their last type, in `Definition/Typed/Stability/Primitive.agda` |
+| `SubstEq`, with `⊢ Δ` and `Δ ⊢ˢ σ : Γ` | `_⊢ˢʷ_≡_∷_`, which also types `τ`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `SubstEq.lift`, `SubstEq.instantiate` | `⊢ˢʷ≡∷-⇑`, `⊢ˢʷ≡∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.substEq` | `subst-⊢∷→⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
 
-ADE prove both by induction on the size of the derivations, which their judgments, in `Set`, have,
-while those of `Sic.Core.Typing` are propositions: each proof here proves a stronger statement
-instead, which the module explains.
+ADE prove the weakening and the substitutions by induction on the size of the derivations, which
+their judgments, in `Set`, have, while those of `Sic.Core.Typing` are propositions: each proof here
+proves a stronger statement instead, which the module explains.
 -/
 
 namespace Sic.Core.TypedSubstitution.Validation

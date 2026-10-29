@@ -29,6 +29,8 @@ the typing and the equality of a term in a universe.
 Their abstraction does not carry the type of its argument, so that they have no congruence of
 abstraction, and state `η` as the equality of two functions whose applications to a variable are
 equal.
+The inversion `HasType.inv_pi` is the part of `inversion-ΠΣ-U`, in
+`Definition/Typed/Inversion/Primitive.agda`, that types the domain and the codomain.
 -/
 
 namespace Sic.Core.Typing.Validation

@@ -9,6 +9,8 @@ The judgments of `Sic.Core.Typing` moved to another context, as in the formaliza
 judgment holds in every well-formed context that contains its own, by weakening, and with its
 variables replaced by terms of their types, by substitution, which instantiates a binder in
 particular.
+Two equal substitutions give two equal terms, and the type of the last declaration of a context can
+be replaced by an equal type.
 -/
 
 @[expose] public section
@@ -236,5 +238,110 @@ theorem TermEq.subst (h : Γ ⊢ t ≡ u : A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : �
 theorem HasType.instantiate (ht : Γ ∙ A ⊢ t : B) (ha : Γ ⊢ a : A) :
     Γ ⊢ t.instantiate a : B.instantiate a :=
   ht.subst (.instantiate ha) ha.wfCon
+
+/--
+A term keeps its type when the last declaration of its context gets an equal type, through the
+substitution of each variable by itself, which converts the type of the last one.
+-/
+theorem HasType.conv_last (h : Γ ∙ A₁ ⊢ t : B) (hA : Γ ⊢ A₁ ≡ A₂ : Term.univ l)
+    (hA₂ : Γ ⊢ A₂ : Term.univ l') : Γ ∙ A₂ ⊢ t : B := by
+  have hΓ : ⊢ Γ ∙ A₂ := .snoc hA₂
+  have hσ : Γ ∙ A₂ ⊢ˢ Term.var : Γ ∙ A₁
+    | ⟨0, _⟩ => by
+      rw [subst_var]
+      exact .conv (.var hΓ) ((TermEq.symm hA).wk (.step .id) hΓ)
+    | ⟨x + 1, hx⟩ => by
+      rw [subst_var]
+      exact .var (x := ⟨x + 1, hx⟩) hΓ
+  have := h.subst hσ hΓ
+  rwa [subst_var, subst_var] at this
+
+/--
+`Δ ⊢ˢ σ ≡ τ : Γ`: the substitutions `σ` and `τ` replace each variable of the context `Γ` by equal
+terms of `Δ`, at the type of the variable, substituted by `σ`.
+-/
+def SubstEq (Δ : Con k m) (σ τ : Subst k m n) (Γ : Con k n) : Prop :=
+  ∀ x, Δ ⊢ σ x ≡ τ x : (Γ.get x).subst σ
+
+@[inherit_doc] notation:40 Δ:41 " ⊢ˢ " σ:41 " ≡ " τ:41 " : " Γ:41 => SubstEq Δ σ τ Γ
+
+/-- Under a binder, two equal substitutions replace the bound variable by the same variable. -/
+theorem SubstEq.lift (hστ : Δ ⊢ˢ σ ≡ τ : Γ) (hΔ : ⊢ Δ ∙ A.subst σ) :
+    Δ ∙ A.subst σ ⊢ˢ σ.lift ≡ τ.lift : Γ ∙ A
+  | ⟨0, _⟩ => by
+    show _ ⊢ var 0 ≡ var 0 : A.wk1.subst σ.lift
+    rw [subst_lift_wk1]
+    exact .refl (.var hΔ)
+  | ⟨x + 1, hx⟩ => by
+    show _ ⊢ (σ _).wk1 ≡ (τ _).wk1 :
+      (Con.get _ (Fin.succ ⟨x, Nat.lt_of_succ_lt_succ hx⟩)).subst σ.lift
+    rw [Con.get_succ, subst_lift_wk1]
+    exact (hστ _).wk (.step .id) hΔ
+
+/-- The equal terms `a₁` and `a₂` replace the variable of their type, and the others stay. -/
+theorem SubstEq.instantiate (ha : Γ ⊢ a₁ ≡ a₂ : A) :
+    Γ ⊢ˢ Subst.cons var a₁ ≡ Subst.cons var a₂ : Γ ∙ A
+  | ⟨0, _⟩ => by
+    show _ ⊢ a₁ ≡ a₂ : A.wk1.subst _
+    rw [subst_cons_wk1, subst_var]
+    exact ha
+  | ⟨x + 1, hx⟩ => by
+    show _ ⊢ var _ ≡ var _ : (Con.get _ (Fin.succ ⟨x, Nat.lt_of_succ_lt_succ hx⟩)).subst _
+    rw [Con.get_succ, subst_cons_wk1, subst_var]
+    exact .refl (.var ha.wfCon)
+
+/-!
+A term whose variables are replaced by two equal substitutions gives two equal terms, by induction
+on its derivation.
+Under the abstraction `lam p A t`, the conclusion needs the equality of `A` substituted by both
+substitutions, which the rules state nowhere: the induction proves a stronger statement, `EqLast`,
+where each judgment, along with the equality of its substitutions, substitutes the last type of its
+context by both, which a judgment in `Γ ∙ A`, such as the one of `t`, gives for `A`.
+-/
+
+/-- The last type of the context `Γ`, substituted by two equal substitutions, gives equal types. -/
+private def EqLast {k n : Nat} (Γ : Con k n) : Prop :=
+  match n, Γ with
+  | _, .empty => True
+  | _, .snoc Γ A => ∀ {m} {Δ : Con k m} {σ τ}, Δ ⊢ˢ σ : Γ → Δ ⊢ˢ σ ≡ τ : Γ → ⊢ Δ →
+      ∃ l, Δ ⊢ A.subst σ ≡ A.subst τ : univ l
+
+mutual
+
+private theorem WfCon.eqLast {Γ : Con k n} : ⊢ Γ → EqLast Γ
+  | .empty => trivial
+  | .snoc h => fun hσ hστ hΔ => ⟨_, h.substEqStrong.2 hσ hστ hΔ⟩
+
+private theorem HasType.substEqStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t : A →
+    EqLast Γ ∧ ∀ {m} {Δ : Con k m} {σ τ}, Δ ⊢ˢ σ : Γ → Δ ⊢ˢ σ ≡ τ : Γ → ⊢ Δ →
+      Δ ⊢ t.subst σ ≡ t.subst τ : A.subst σ
+  | .var h => ⟨h.eqLast, fun _ hστ _ => hστ _⟩
+  | .conv h hA => ⟨h.substEqStrong.1, fun hσ hστ hΔ =>
+      .conv (h.substEqStrong.2 hσ hστ hΔ) (hA.subst hσ hΔ)⟩
+  | .univ h => ⟨h.eqLast, fun _ _ hΔ => .refl (.univ hΔ)⟩
+  | .pi hA hB => ⟨hA.substEqStrong.1, fun hσ hστ hΔ =>
+      have hΔ' := WfCon.snoc (hA.subst hσ hΔ)
+      .pi (hA.substEqStrong.2 hσ hστ hΔ) (hB.substEqStrong.2 (hσ.lift hΔ') (hστ.lift hΔ') hΔ')⟩
+  | .lam hPi ht => ⟨hPi.substEqStrong.1, fun hσ hστ hΔ =>
+      have hPi' := hPi.subst hσ hΔ
+      have ⟨⟨_, hA'⟩, _⟩ := hPi'.inv_pi
+      have hΔ' := WfCon.snoc hA'
+      have ⟨_, hA⟩ := ht.substEqStrong.1 hσ hστ hΔ
+      .lam hPi' hA (ht.substEqStrong.2 (hσ.lift hΔ') (hστ.lift hΔ') hΔ')⟩
+  | .app ht ha => ⟨ht.substEqStrong.1, fun hσ hστ hΔ => by
+      rw [subst_instantiate]
+      exact .app (ht.substEqStrong.2 hσ hστ hΔ) (ha.substEqStrong.2 hσ hστ hΔ)⟩
+
+end
+
+/-- A term whose variables are replaced by two equal substitutions gives two equal terms. -/
+theorem HasType.substEq (h : Γ ⊢ t : A) (hσ : Δ ⊢ˢ σ : Γ) (hστ : Δ ⊢ˢ σ ≡ τ : Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ t.subst σ ≡ t.subst τ : A.subst σ :=
+  h.substEqStrong.2 hσ hστ hΔ
+
+/-- A term whose bound variable is replaced by two equal terms of its type gives two equal terms. -/
+theorem HasType.instantiateEq (h : Γ ∙ A ⊢ t : B) (ha₁ : Γ ⊢ a₁ : A) (ha : Γ ⊢ a₁ ≡ a₂ : A) :
+    Γ ⊢ t.instantiate a₁ ≡ t.instantiate a₂ : B.instantiate a₁ :=
+  h.substEq (.instantiate ha₁) (.instantiate ha) ha₁.wfCon
 
 end Sic.Core
