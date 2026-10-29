@@ -1,0 +1,42 @@
+module
+
+import Sic.Core.TypedSubstitution
+import all Sic.Core.Typing.Validation
+
+/-!
+# Validation of the Typed Substitution
+
+The weakening and the substitution of `Sic.Core.TypedSubstitution` checked against the formalization
+of ADE, and on the constant function of RFC 24.
+
+| Definition or theorem | Definition or theorem of ADE |
+| --- | --- |
+| `WkCon` | `_∷_⊇_`, in `Definition/Typed/Weakening.agda` |
+| `SubstWf`, with `⊢ Δ` | `_⊢ˢʷ_∷_`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.wk`, `TermEq.wk` | `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
+| `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.subst`, `TermEq.subst` | `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+
+ADE prove both by induction on the size of the derivations, which their judgments, in `Set`, have,
+while those of `Sic.Core.Typing` are propositions: each proof here proves a stronger statement
+instead, which the module explains.
+-/
+
+namespace Sic.Core.TypedSubstitution.Validation
+
+open Syntax.Validation Term Typing.Validation
+
+/--
+The constant function keeps its type after a new declaration `x : A`, where `A` is `var 1`, at the
+end of its context `A : U₀, B : U₀`: each variable of the function and of its type moves past `x`,
+to the next index.
+-/
+example : Γ₂ ∙ var 1 ⊢ constant.wk1 : constantType.wk1 :=
+  hasType_constant.wk (.step .id) (.snoc (.var wfCon_Γ₂))
+
+/-- Each variable replaced by itself is a substitution of every well-formed context to itself. -/
+example (hΓ : ⊢ Γ) : Γ ⊢ˢ var : Γ := fun x => by
+  rw [subst_var]
+  exact .var hΓ
+
+end Sic.Core.TypedSubstitution.Validation

@@ -181,6 +181,33 @@ theorem subst_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k n)
   | ⟨0, _⟩ => rfl
   | ⟨_ + 1, _⟩ => exact ((subst_wk _ _ _).trans (subst_var _)).symm
 
+/-- A weakening followed by a new variable moves the term, then moves it past that variable. -/
+theorem wk_step (ρ : Wk m n) (t : Term k n) : t.wk ρ.step = (t.wk ρ).wk1 :=
+  (wk_wk (ρ := ρ.step) (fun _ => rfl) t).symm
+
+/-- Under a binder, a weakening moves a term moved past the bound variable as it moves the term. -/
+theorem wk_lift_wk1 (ρ : Wk m n) (t : Term k n) : t.wk1.wk ρ.lift = (t.wk ρ).wk1 :=
+  (wk_wk (ρ := ρ.step) (fun _ => rfl) t).trans (wk_step ρ t)
+
+/-- Weakening `t[a/x]` weakens `t`, under the binder of `x`, and `a`. -/
+theorem wk_instantiate (ρ : Wk m n) (t : Term k (n + 1)) (a : Term k n) :
+    (t.instantiate a).wk ρ = (t.wk ρ.lift).instantiate (a.wk ρ) := by
+  simp only [wk_eq_subst, subst_instantiate]
+  congr 2
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨_ + 1, _⟩ => rfl
+
+/-- Under a binder, a substitution moves a term moved past the bound variable as it moves the term. -/
+theorem subst_lift_wk1 (σ : Subst k m n) (t : Term k n) : t.wk1.subst σ.lift = (t.subst σ).wk1 :=
+  (subst_wk _ _ t).trans (wk_subst _ σ t).symm
+
+/-- A substitution extended by a term leaves it unused in a term moved past its variable. -/
+theorem subst_cons_wk1 (σ : Subst k m n) (a : Term k m) (t : Term k n) :
+    t.wk1.subst (σ.cons a) = t.subst σ :=
+  subst_wk _ _ t
+
 /-- Instantiating the levels commutes with a weakening. -/
 theorem substLevels_wk (σ : Fin k → Level j) (ρ : Wk m n) (t : Term k n) :
     (t.wk ρ).substLevels σ = (t.substLevels σ).wk ρ := by

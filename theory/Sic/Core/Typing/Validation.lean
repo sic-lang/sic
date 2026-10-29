@@ -46,7 +46,7 @@ theorem wfCon_Γ₂ : ⊢ Γ₂ := .snoc (.univ (.snoc (.univ .empty)))
 The constant function `λ_𝟙 (x : A). λ_𝟘 (y : B). x` has the type
 `Π^𝟘_𝟙 (x : A). Π^𝟘_𝟘 (y : B). A`.
 -/
-example : Γ₂ ⊢ constant : constantType :=
+theorem hasType_constant : Γ₂ ⊢ constant : constantType :=
   -- `A : U₀` in `Γ₂`, `B : U₀` after `x : A`, and `A : U₀` after `y : B`.
   have hA : Γ₂ ⊢ var 1 : univ .zero := .var wfCon_Γ₂
   have hB : Γ₂ ∙ var 1 ⊢ var 1 : univ .zero := .var (.snoc hA)
@@ -58,7 +58,7 @@ example : Γ₂ ⊢ constant : constantType :=
 The polymorphic identity `λ_𝟘 (A : U_l). λ_𝟙 (x : A). x` has the type
 `Π^{𝟙 + 𝟙}_𝟘 (A : U_l). Π^𝟘_𝟙 (x : A). A` in the empty context, with its level variable `l`.
 -/
-example : .empty ⊢ identity : identityType :=
+theorem hasType_identity : .empty ⊢ identity : identityType :=
   -- `U_l : U_{l + 1}`, then `A : U_l` after `A`, and `A : U_l` after `x : A`.
   have hU : (.empty : Con 1 0) ⊢ univ (.var 0) : univ (.succ (.var 0)) := .univ .empty
   have hA : .empty ∙ univ (.var 0) ⊢ var 0 : univ (.var 0) := .var (.snoc hU)
