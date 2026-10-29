@@ -14,10 +14,13 @@ namespace Sic
 /-- The meet, written as in Mathlib, on which this package does not depend. -/
 infixl:69 " ⊓ " => min
 
-/-- A number of uses: none, exactly one, or any number, none included. -/
+/-- A number of uses. -/
 inductive Usage where
+  /-- `0`: no use. -/
   | zero
+  /-- `1`: exactly one use. -/
   | one
+  /-- `ω`: any number of uses, none included. -/
   | omega
   deriving DecidableEq
 

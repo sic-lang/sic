@@ -18,11 +18,15 @@ infixl:68 " ⊔ " => max
 
 namespace Core
 
-/-- A level over `k` variables: `0`, a successor `l + 1`, the larger of two levels, or a variable. -/
+/-- A level over `k` variables. -/
 inductive Level (k : Nat) where
+  /-- The level `0`. -/
   | zero
+  /-- `l + 1`: the successor of the level `l`. -/
   | succ (l : Level k)
+  /-- `l₁ ⊔ l₂`: the larger of two levels. -/
   | max (l₁ l₂ : Level k)
+  /-- The level variable of index `i`. -/
   | var (i : Fin k)
   deriving DecidableEq
 
