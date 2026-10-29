@@ -126,4 +126,22 @@ theorem TermEq.wfCon : Γ ⊢ t ≡ u : A → ⊢ Γ
 
 end
 
+/-!
+The inversion of the function types: a function type has a type only when its domain and its
+codomain have one.
+The proof generalizes the term of the judgment to any term equal to `pi p q A B`, since an induction
+on a judgment of the mutual types of the judgments cannot fix its term.
+-/
+
+private theorem HasType.inv_pi_aux : Γ ⊢ s : C → s = Term.pi p q A B →
+    (∃ l, Γ ⊢ A : Term.univ l) ∧ ∃ l, Γ ∙ A ⊢ B : Term.univ l
+  | .conv h _, e => h.inv_pi_aux e
+  | .pi hA hB, e => by cases e; exact ⟨⟨_, hA⟩, _, hB⟩
+  | .var _, e | .univ _, e | .lam .., e | .app .., e => by cases e
+
+/-- The domain and the codomain of a function type that has a type are types. -/
+theorem HasType.inv_pi (h : Γ ⊢ Term.pi p q A B : C) :
+    (∃ l, Γ ⊢ A : Term.univ l) ∧ ∃ l, Γ ∙ A ⊢ B : Term.univ l :=
+  h.inv_pi_aux rfl
+
 end Sic.Core

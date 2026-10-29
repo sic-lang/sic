@@ -59,7 +59,10 @@ def subst (σ : Fin k → Level j) : Level k → Level j
   | max l₁ l₂ => max (subst σ l₁) (subst σ l₂)
   | var i => σ i
 
-/-! The equality of levels is an equivalence, which instantiating the variables preserves. -/
+/-!
+The equality of levels is an equivalence, which the successor and instantiating the variables
+preserve.
+-/
 
 section Equiv
 
@@ -68,6 +71,7 @@ variable {l₁ l₂ l₃ : Level k}
 theorem Equiv.refl (l : Level k) : l ≈ l := fun _ => rfl
 theorem Equiv.symm (h : l₁ ≈ l₂) : l₂ ≈ l₁ := fun ρ => (h ρ).symm
 theorem Equiv.trans (h₁ : l₁ ≈ l₂) (h₂ : l₂ ≈ l₃) : l₁ ≈ l₃ := fun ρ => (h₁ ρ).trans (h₂ ρ)
+theorem Equiv.succ (h : l₁ ≈ l₂) : l₁.succ ≈ l₂.succ := fun ρ => congrArg (· + 1) (h ρ)
 
 theorem eval_subst (σ : Fin k → Level j) (ρ : Fin j → Nat) (l : Level k) :
     eval ρ (subst σ l) = eval (fun i => eval ρ (σ i)) l := by
