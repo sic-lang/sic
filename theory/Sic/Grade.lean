@@ -16,14 +16,14 @@ namespace Sic
 
 open Usage
 
-/--
-A grade: the usages of a variable at run time and in total.
-The run-time uses are among all the uses, which excludes two of the nine pairs.
--/
+/-- A grade: the usages of a variable at run time and in total. -/
 @[ext]
 structure Grade where
+  /-- The uses at run time. -/
   run : Usage
+  /-- All the uses, erased or not. -/
   total : Usage
+  /-- The run-time uses are among all the uses, which excludes two of the nine pairs. -/
   run_zero : total = zero → run = zero
   deriving DecidableEq
 

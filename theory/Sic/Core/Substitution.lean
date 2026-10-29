@@ -19,12 +19,14 @@ namespace Sic.Core
 
 /--
 A weakening from a context of `n` variables to a context of `m`, which contains them in the same
-order: `id` keeps the context, `step ρ` adds a variable after those of `ρ`, and `lift ρ` extends `ρ`
-under a binder.
+order.
 -/
 inductive Wk : Nat → Nat → Type where
+  /-- The weakening that keeps the context. -/
   | id : Wk n n
+  /-- The weakening `ρ` followed by a new variable. -/
   | step (ρ : Wk m n) : Wk (m + 1) n
+  /-- The weakening `ρ` extended under a binder, whose variable it keeps. -/
   | lift (ρ : Wk m n) : Wk (m + 1) (n + 1)
 
 /-- The index in the larger context of the variable of index `x`. -/

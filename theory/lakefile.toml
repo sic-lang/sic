@@ -5,3 +5,6 @@ defaultTargets = ["Sic"]
 name = "Sic"
 # Every module of Sic/, so that none of them depends on a root module that imports them all.
 globs = ["Sic.+"]
+# Every public definition, type, constructor and field has a doc string: for modules, Lean checks
+# that `@[inherit_doc]` finds one only in the language server, never in a build.
+leanOptions = { linter.missingDocs = true }
