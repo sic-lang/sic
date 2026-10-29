@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.TypedSubstitution
 
 /-!
 # Reduction
@@ -102,6 +103,12 @@ theorem TermRed.hasType : Γ ⊢ t ⇒ u : A → Γ ⊢ t : A
   | .conv h hA => .conv h.hasType hA
   | .app h ha => .app h.hasType ha
   | .beta hPi ht ha => .app (.lam hPi ht) ha
+
+/-- A term that reduces keeps its type: `(β)` instantiates the body of the abstraction at its type. -/
+theorem TermRed.hasType_reduct : Γ ⊢ t ⇒ u : A → Γ ⊢ u : A
+  | .conv h hA => .conv h.hasType_reduct hA
+  | .app h ha => .app h.hasType_reduct ha
+  | .beta _ ht ha => ht.instantiate ha
 
 /-- A neutral term does not reduce: its head is a variable, which no rule reduces. -/
 theorem Neutral.not_termRed : Neutral t → ¬ Γ ⊢ t ⇒ u : A
