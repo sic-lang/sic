@@ -24,9 +24,12 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
+| `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
+| `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
+| `TypeRedWhnf` | `_⊢_↘_`, in `Definition/Typed.agda` |
 
-ADE also reduce types, with `_⊢_⇒_`, which a reduction of a term in a universe replaces here, as the
-equality of types does in `Sic.Core.Typing`.
+A type reduces as a term of a universe, as in ADE, so that the reduction of a type, as its equality,
+does not depend on the universe of its terms.
 Their `β-red` reduces an abstraction applied with another grade, which their premise `p ≡ p′`
 equates, while `TermRed.beta` writes the same grade on both.
 -/
@@ -113,6 +116,32 @@ def TermRedWhnf (Γ : Con k n) (t u A : Term k n) : Prop :=
 
 @[inherit_doc] notation:40 Γ:41 " ⊢ " t:41 " ↘ " u:41 " : " A:41 => TermRedWhnf Γ t u A
 
+set_option hygiene false in
+/-- `Γ ⊢ A ⇒ B`: in the context `Γ`, the type `A` reduces to `B` in one step. -/
+notation:40 Γ:41 " ⊢ " A:41 " ⇒ " B:41 => TypeRed Γ A B
+
+/-- `Γ ⊢ A ⇒ B`: in the context `Γ`, the type `A` reduces to `B` in one step. -/
+inductive TypeRed {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  /-- A type reduces as a term of a universe. -/
+  | univ : Γ ⊢ A ⇒ B : univ l → Γ ⊢ A ⇒ B
+
+set_option hygiene false in
+/-- `Γ ⊢ A ⇒* B`: in the context `Γ`, the type `A` reduces to `B` in any number of steps. -/
+notation:40 Γ:41 " ⊢ " A:41 " ⇒* " B:41 => TypeRedStar Γ A B
+
+/-- `Γ ⊢ A ⇒* B`: in the context `Γ`, the type `A` reduces to `B` in any number of steps. -/
+inductive TypeRedStar {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  /-- A type reduces to itself in no step. -/
+  | refl : Γ ⊢ A → Γ ⊢ A ⇒* A
+  /-- A step followed by any number of steps. -/
+  | step : Γ ⊢ A₁ ⇒ A₂ → Γ ⊢ A₂ ⇒* A₃ → Γ ⊢ A₁ ⇒* A₃
+
+/-- `Γ ⊢ A ↘ B`: in the context `Γ`, the type `A` reduces to the weak head normal form `B`. -/
+def TypeRedWhnf (Γ : Con k n) (A B : Term k n) : Prop :=
+  (Γ ⊢ A ⇒* B) ∧ Whnf B
+
+@[inherit_doc] notation:40 Γ:41 " ⊢ " A:41 " ↘ " B:41 => TypeRedWhnf Γ A B
+
 /-! The properties of reduction that the decision procedure for equality uses. -/
 
 /-- A reduction is an equality. -/
@@ -125,6 +154,15 @@ theorem TermRed.termEq : Γ ⊢ t ⇒ u : A → Γ ⊢ t ≡ u : A
 theorem TermRedStar.termEq : Γ ⊢ t ⇒* u : A → Γ ⊢ t ≡ u : A
   | .refl h => .refl h
   | .step h hs => .trans h.termEq hs.termEq
+
+/-- A reduction of a type is an equality of types. -/
+theorem TypeRed.typeEq : Γ ⊢ A ⇒ B → Γ ⊢ A ≡ B
+  | .univ h => .univ h.termEq
+
+/-- Any number of reductions of a type is an equality of types. -/
+theorem TypeRedStar.typeEq : Γ ⊢ A ⇒* B → Γ ⊢ A ≡ B
+  | .refl h => .refl h
+  | .step h hs => .trans h.typeEq hs.typeEq
 
 /-- A term that reduces has the type of its reduction. -/
 theorem TermRed.hasType : Γ ⊢ t ⇒ u : A → Γ ⊢ t : A
