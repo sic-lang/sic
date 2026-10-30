@@ -5,7 +5,8 @@ import Sic.Core.Level
 /-!
 # Validation of the Levels
 
-The definitions of `Sic.Core.Level` checked against RFC 24 and against the laws of levels.
+The definitions of `Sic.Core.Level` checked against RFC 24, on the Church numerals, and against the
+laws of levels.
 -/
 
 namespace Sic.Core.Level.Validation
@@ -27,6 +28,16 @@ example (ρ : Fin 2 → Nat) : eval ρ (var 0 ⊔ var 1) = eval ρ (var 0) ↔ �
 /-- Without variables, two levels are equal when they have the same value. -/
 theorem equiv_iff_eval {l₁ l₂ : Level 0} : l₁ ≈ l₂ ↔ eval Fin.elim0 l₁ = eval Fin.elim0 l₂ :=
   ⟨fun h => h _, fun h ρ => by rw [show ρ = Fin.elim0 from funext (·.elim0)]; exact h⟩
+
+/-! The Church numerals of the literature, with one level variable `l`. -/
+
+/--
+The type `Nat_l` of the Church numerals, which `(Π)` puts at the level
+`(l + 1) ⊔ ((l ⊔ l) ⊔ (l ⊔ l))`, lives at the level `l + 1`, above the types its numerals iterate
+over, where the numerals of System F iterate over every type, their own included.
+-/
+example : (succ (var 0) ⊔ ((var 0 ⊔ var 0) ⊔ (var 0 ⊔ var 0)) : Level 1) ≈ succ (var 0) :=
+  fun ρ => by simp only [eval_max, eval]; omega
 
 /-!
 The laws of levels, which every valuation satisfies: `⊔` is associative, commutative and idempotent,

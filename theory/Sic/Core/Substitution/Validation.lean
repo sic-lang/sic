@@ -6,7 +6,8 @@ import all Sic.Core.Syntax.Validation
 /-!
 # Validation of the Substitution
 
-The definitions of `Sic.Core.Substitution` checked against RFC 24 and against their meaning.
+The definitions of `Sic.Core.Substitution` checked against RFC 24, on the examples of the
+literature, and against their meaning.
 -/
 
 namespace Sic.Core.Substitution.Validation
@@ -31,6 +32,45 @@ example (a : Term 0 2) : (lam 𝟘 (var 1) (var 1)).instantiate a = lam 𝟘 (va
 /-- The polymorphic identity, over the level variable `l`, instantiated at the level `0`. -/
 example : identityType.substLevels (fun _ => (.zero : Level 0)) =
     pi 𝟘 (𝟙 + 𝟙) (univ .zero) (pi 𝟙 𝟘 (var 0) (var 1)) := rfl
+
+/-! The examples of the literature. -/
+
+/--
+The type of `K` at the type `Nat_l`: `(Π^𝟙_𝟘 (B : U_l). Π^𝟘_𝟙 (x : A). Π^𝟘_𝟘 (y : B). A)[Nat_l/A]` is
+`Π^𝟙_𝟘 (B : U_l). Π^𝟘_𝟙 (x : Nat_l). Π^𝟘_𝟘 (y : B). Nat_l`, where the closed `Nat_l` moves under the
+binders unchanged.
+-/
+example : (pi 𝟘 𝟙 (univ (.var 0)) (pi 𝟙 𝟘 (var 1) (pi 𝟘 𝟘 (var 1) (var 3))) : Term 1 1).instantiate
+    churchNat = pi 𝟘 𝟙 (univ (.var 0)) (pi 𝟙 𝟘 churchNat (pi 𝟘 𝟘 (var 1) churchNat)) := rfl
+
+/--
+The step `succ ∘_𝟙 1` of the Church numerals replaces `m` by `1` under the binders of `X`, `f` and
+`x`: the body of `succ` becomes `λ_𝟘 (X : U_l). λ_{𝟙 + 𝟙} (f : Π^𝟘_𝟙 (y : X). X). λ_𝟙 (x : X).
+f ∘_𝟙 (1 ∘_𝟘 X ∘_{𝟙 + 𝟙} f ∘_𝟙 x)`.
+-/
+example : (lam 𝟘 (univ (.var 0)) (lam (𝟙 + 𝟙) churchFunType (lam 𝟙 (var 1)
+      (app 𝟙 (var 1) (app 𝟙 (app (𝟙 + 𝟙) (app 𝟘 (var 3) (var 2)) (var 1)) (var 0))))) :
+      Term 1 1).instantiate churchOne =
+    lam 𝟘 (univ (.var 0)) (lam (𝟙 + 𝟙) churchFunType (lam 𝟙 (var 1)
+      (app 𝟙 (var 1) (app 𝟙 (app (𝟙 + 𝟙) (app 𝟘 churchOne (var 2)) (var 1)) (var 0))))) := rfl
+
+/-! The laws that the reductions of the examples use. -/
+
+/--
+Instantiating the variable of a body under a substitution is substituting it with the substitution
+extended by the argument, as `(β)` does when it applies an abstraction that a substitution moved.
+-/
+theorem subst_lift_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k m) :
+    (t.subst σ.lift).instantiate a = t.subst (σ.cons a) := by
+  rw [instantiate, subst_subst]
+  congr 1
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨x + 1, _⟩ =>
+    show (Term.wk1 _).subst _ = _
+    rw [subst_cons_wk1, subst_var]
+    rfl
 
 /-- A term that does not use the variable `x` is unchanged by `t[a/x]`. -/
 theorem instantiate_wk1 (t : Term k n) (a : Term k n) : t.wk1.instantiate a = t :=
