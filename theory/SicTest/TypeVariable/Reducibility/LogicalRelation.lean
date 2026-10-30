@@ -20,9 +20,9 @@ theorem wfCon_ΓA : ⊢ ΓA := .snoc (.univ (.univ .empty))
 
 variable [EqualityRelation]
 
-/-- The interpretation of a neutral type `N` of the universe `U_L`, as `LogRel.ne` writes it. -/
-def neutral (Γ : Con k n) (N : Term k n) (L : Level k) : Interpretation k n where
-  eqType B := ∃ M, (Γ ⊢ B ⇒* M : univ L) ∧ Neutral M ∧ (Γ ⊢ N ≅ M : univ L)
+/-- The interpretation of a neutral type `N`, as `LogRel.ne` writes it. -/
+def neutral (Γ : Con k n) (N : Term k n) : Interpretation k n where
+  eqType B := ∃ M, (Γ ⊢ B ⇒* M) ∧ Neutral M ∧ (Γ ⊢ N ≅ M)
   eqTerm t u := ∃ t' u', (Γ ⊢ t ⇒* t' : N) ∧ (Γ ⊢ u ⇒* u' : N) ∧ Neutral t' ∧ Neutral u' ∧
     (Γ ⊢ t' ~ u' : N)
 
@@ -32,11 +32,12 @@ type: it is neutral, and equal to itself since the equality relation equates eac
 itself.
 -/
 theorem logRel_var {lower : ∀ l' < l, Relation 1} {Γ : Con 1 n} {x : Fin n}
-    (h : Γ ⊢ var x : univ (.var 0)) : LogRel l lower Γ (var x) (neutral Γ (var x) (.var 0)) :=
-  .ne (.refl h) .var (EqualityRelation.ofNeutral (EqualityRelation.var h))
+    (h : Γ ⊢ var x : univ (.var 0)) : LogRel l lower Γ (var x) (neutral Γ (var x)) :=
+  .ne (.refl (.univ h)) .var
+    (EqualityRelation.ofUniv (EqualityRelation.ofNeutral (EqualityRelation.var h)))
 
 /-- The type variable `A` is reducible at every level. -/
-example : ΓA ⊩⟨l⟩ var 0 ▸ neutral ΓA (var 0) (.var 0) :=
+example : ΓA ⊩⟨l⟩ var 0 ▸ neutral ΓA (var 0) :=
   LogicalRelation.unfold ▸ logRel_var (.var wfCon_ΓA)
 
 /--
@@ -50,17 +51,18 @@ example : ∃ P, ΓA ⊩⟨l⟩ pi 𝟙 𝟘 (var 0) (var 1) ▸ P := by
   -- `A`, moved by a weakening `ρ`, is the variable `ρ.var 0`, of the universe `U_l`.
   have hF {m} {ρ : Wk m 1} {Δ : Con 1 m} (hρ : ρ ∷ Δ ⊇ ΓA) (hΔ : ⊢ Δ) :
       Δ ⊢ var (ρ.var 0) : univ (.var 0) := hA.wk hρ hΔ
-  refine ⟨_, LogicalRelation.unfold ▸ LogRel.pi (L := .var 0 ⊔ .var 0) (.refl (.pi hA hA'))
-    (EqualityRelation.pi (EqualityRelation.ofNeutral (EqualityRelation.var hA))
-      (EqualityRelation.ofNeutral (EqualityRelation.var hA')))
-    (fun ρ Δ => neutral Δ (var (ρ.var 0)) (.var 0))
-    (fun ρ Δ _ => neutral Δ (var (ρ.var 0)) (.var 0))
+  refine ⟨_, LogicalRelation.unfold ▸ LogRel.pi (.refl (.univ (.pi hA hA')))
+    (EqualityRelation.ofUniv (EqualityRelation.pi
+      (EqualityRelation.ofNeutral (EqualityRelation.var hA))
+      (EqualityRelation.ofNeutral (EqualityRelation.var hA'))))
+    (fun ρ Δ => neutral Δ (var (ρ.var 0)))
+    (fun ρ Δ _ => neutral Δ (var (ρ.var 0)))
     (fun hρ hΔ => logRel_var (hF hρ hΔ)) (fun hρ hΔ _ => logRel_var (hF hρ hΔ))
-    (fun hρ hΔ _ _ _ => ⟨_, .refl (hF hρ hΔ), .var,
-      EqualityRelation.ofNeutral (EqualityRelation.var (hF hρ hΔ))⟩)⟩
+    (fun hρ hΔ _ _ _ => ⟨_, .refl (.univ (hF hρ hΔ)), .var,
+      EqualityRelation.ofUniv (EqualityRelation.ofNeutral (EqualityRelation.var (hF hρ hΔ)))⟩)⟩
 
 /-- A variable of the type variable `A` is a reducible term of `A`: it is equal to itself. -/
-example : (neutral (ΓA ∙ var 0) (var 1) (.var 0)).eqTerm (var 0) (var 0) :=
+example : (neutral (ΓA ∙ var 0) (var 1)).eqTerm (var 0) (var 0) :=
   have hx : ΓA ∙ var 0 ⊢ var 0 : var 1 := .var (.snoc (.univ (.var wfCon_ΓA)))
   ⟨_, _, .refl hx, .refl hx, .var, .var, EqualityRelation.var hx⟩
 

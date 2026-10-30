@@ -19,6 +19,6 @@ variable [EqualityRelation]
 
 /-- The universe `U₀` is reducible at the level `1`, in the empty context. -/
 example : ∃ P, (.empty : Con 0 0) ⊩⟨1⟩ univ .zero ▸ P :=
-  ⟨_, LogicalRelation.unfold ▸ LogRel.univ (L := .zero) (by decide) (.refl (.univ .empty))⟩
+  ⟨_, LogicalRelation.unfold ▸ LogRel.univ (L := .zero) (by decide) (.refl (.univ (.univ .empty)))⟩
 
 end SicTest.Universe.Reducibility.LogicalRelation
