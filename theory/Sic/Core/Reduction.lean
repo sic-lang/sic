@@ -24,6 +24,7 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
+| `TypeRed.det`, `TypeRedWhnf.det` | `whrDet`, `whrDet*`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
 | `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
 | `TypeRedWhnf` | `_⊢_↘_`, in `Definition/Typed.agda` |
@@ -187,6 +188,10 @@ theorem Whnf.not_termRed : Whnf t → ¬ Γ ⊢ t ⇒ u : A
   | h, .conv hr _ => h.not_termRed hr
   | .ne h, hr => h.not_termRed hr
 
+/-- A type in weak head normal form does not reduce. -/
+theorem Whnf.not_typeRed : Whnf A → ¬ Γ ⊢ A ⇒ B
+  | h, .univ hr => h.not_termRed hr
+
 /-!
 Reduction is deterministic.
 A step is unique up to the conversions of its type, which each proof skips; an application then
@@ -226,6 +231,23 @@ theorem TermRedWhnf.det : Γ ⊢ t ↘ u₁ : A₁ → Γ ⊢ t ↘ u₂ : A₂ 
   | step h₁ _ ih =>
     cases h₂ with
     | refl => exact absurd h₁ hw₂.not_termRed
+    | step h₂ hs₂ => exact ih hw₁ (h₁.det h₂ ▸ hs₂) hw₂
+
+/-- A type reduces in one step to the same type, as a term of any two universes. -/
+theorem TypeRed.det : Γ ⊢ A ⇒ B₁ → Γ ⊢ A ⇒ B₂ → B₁ = B₂
+  | .univ h₁, .univ h₂ => h₁.det h₂
+
+/-- A type reduces to at most one weak head normal form, as a term does. -/
+theorem TypeRedWhnf.det : Γ ⊢ A ↘ B₁ → Γ ⊢ A ↘ B₂ → B₁ = B₂ := by
+  rintro ⟨h₁, hw₁⟩ ⟨h₂, hw₂⟩
+  induction h₁ generalizing B₂ with
+  | refl =>
+    cases h₂ with
+    | refl => rfl
+    | step h => exact absurd h hw₁.not_typeRed
+  | step h₁ _ ih =>
+    cases h₂ with
+    | refl => exact absurd h₁ hw₂.not_typeRed
     | step h₂ hs₂ => exact ih hw₁ (h₁.det h₂ ▸ hs₂) hw₂
 
 end Sic.Core
