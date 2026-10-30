@@ -24,6 +24,7 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
+| `TermRedStar.conv`, `TermRedWhnf.conv` | `conv*`, `conv↘∷`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.det`, `TypeRedWhnf.det` | `whrDet`, `whrDet*`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
 | `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
@@ -164,6 +165,15 @@ theorem TypeRed.typeEq : Γ ⊢ A ⇒ B → Γ ⊢ A ≡ B
 theorem TypeRedStar.typeEq : Γ ⊢ A ⇒* B → Γ ⊢ A ≡ B
   | .refl h => .refl h
   | .step h hs => .trans h.typeEq hs.typeEq
+
+/-- Any number of reductions has any type equal to its own, as `(conv)`. -/
+theorem TermRedStar.conv : Γ ⊢ t ⇒* u : A → Γ ⊢ A ≡ B → Γ ⊢ t ⇒* u : B
+  | .refl h, hA => .refl (.conv h hA)
+  | .step h hs, hA => .step (.conv h hA) (hs.conv hA)
+
+/-- A reduction to a weak head normal form has any type equal to its own. -/
+theorem TermRedWhnf.conv (h : Γ ⊢ t ↘ u : A) (hA : Γ ⊢ A ≡ B) : Γ ⊢ t ↘ u : B :=
+  ⟨h.1.conv hA, h.2⟩
 
 /-- A term that reduces has the type of its reduction. -/
 theorem TermRed.hasType : Γ ⊢ t ⇒ u : A → Γ ⊢ t : A
