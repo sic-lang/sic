@@ -100,7 +100,7 @@ class EqualityRelation where
   -/
   red : Γ ⊢ A ↘ B : Term.univ l → Γ ⊢ t₁ ↘ u₁ : B → Γ ⊢ t₂ ↘ u₂ : B → Γ ⊢ u₁ ≅ u₂ : B →
       Γ ⊢ t₁ ≅ t₂ : A
-  /-- `(univ_≡)`: two universes are equal when their levels are. -/
+  /-- `(U_≡)`: two universes are equal when their levels are. -/
   univ : ⊢ Γ → l₁ ≈ l₂ → Γ ⊢ Term.univ l₁ ≅ Term.univ l₂ : Term.univ l₁.succ
   /-- The congruence of the type of functions. -/
   pi : Γ ⊢ A₁ ≅ A₂ : Term.univ l₁ → Γ ∙ A₁ ⊢ B₁ ≅ B₂ : Term.univ l₂ →
@@ -134,7 +134,7 @@ theorem TermEq.funext (h₁ : Γ ⊢ t₁ : Term.pi p q A B) (h₂ : Γ ⊢ t₂
     Γ ⊢ t₁ ≡ t₂ : Term.pi p q A B :=
   -- Each function is equal to the abstraction of its application, by `(η)`, and both abstractions
   -- are equal by congruence.
-  have ⟨_, hPi⟩ := h₁.wfType
+  have hPi := h₁.wfType
   have ⟨_, hA⟩ := hPi.inv_pi.1
   .trans (.eta h₁) (.trans (.lam hPi (.refl hA) h) (.symm (.eta h₂)))
 
@@ -152,13 +152,13 @@ def EqualityRelation.termEqRelation : EqualityRelation where
   symmNeutral := .symm
   trans := .trans
   transNeutral := .trans
-  conv := .conv
-  convNeutral := .conv
+  conv h hA := .conv h (.univ hA)
+  convNeutral h hA := .conv h (.univ hA)
   wk := TermEq.wk
   wkNeutral := TermEq.wk
   -- Each term is equal to its weak head normal form, at the weak head normal form `B` of the type,
   -- which is equal to the type.
-  red hA h₁ h₂ h := .conv (.trans h₁.1.termEq (.trans h (.symm h₂.1.termEq))) (.symm hA.1.termEq)
+  red hA h₁ h₂ h := .conv (.trans h₁.1.termEq (.trans h (.symm h₂.1.termEq))) (.univ (.symm hA.1.termEq))
   univ := .univ
   pi := .pi
   eta h₁ h₂ _ _ := .funext h₁ h₂

@@ -173,7 +173,7 @@ theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → ∃ L, �
     -- `U_L` and `U_{L'}` are equal at `U_{L + 1}`, as `U_{L' + 1}` and `U_{L + 1}` are.
     have hUU : Γ ⊢ Term.univ _ ≡ Term.univ _ : _ := .univ hΓ hL.succ
     ⟨_, .trans hA.termEq
-      (.trans (.univ hΓ hL) (.conv (.symm hB.termEq) (.symm hUU)))⟩
+      (.trans (.univ hΓ hL) (.conv (.symm hB.termEq) (.univ (.symm hUU))))⟩
   | .ne hA _ _, ⟨_, hB, _, hNM⟩ =>
     ⟨_, .trans hA.termEq (.trans (EqualityRelation.termEq hNM) (.symm hB.termEq))⟩
   | .pi hA .., ⟨_, _, hB, hPi, _⟩ =>
@@ -183,14 +183,14 @@ theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → ∃ L, �
 theorem LogRel.escape_eqTerm : LogRel l lower Γ A P → P.eqTerm t u → Γ ⊢ t ≡ u : A
   | .univ _ hA, ⟨_, _, ht, hu, _, _, hAB, _⟩ =>
     .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hAB) (.symm hu.1.termEq)))
-      (.symm hA.termEq)
+      (.univ (.symm hA.termEq))
   | .ne hA _ _, ⟨_, _, ht, hu, _, _, htu⟩ =>
     .conv (.trans ht.termEq
         (.trans (EqualityRelation.termEq (EqualityRelation.ofNeutral htu)) (.symm hu.termEq)))
-      (.symm hA.termEq)
+      (.univ (.symm hA.termEq))
   | .pi hA .., ⟨_, _, ht, hu, hfg, _⟩ =>
     .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hfg) (.symm hu.1.termEq)))
-      (.symm hA.termEq)
+      (.univ (.symm hA.termEq))
 
 end Escape
 

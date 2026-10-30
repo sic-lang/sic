@@ -80,12 +80,12 @@ notation:40 Γ:41 " ⊢ " t:41 " ⇒ " u:41 " : " A:41 => TermRed Γ t u A
 /-- `Γ ⊢ t ⇒ u : A`: in the context `Γ`, the term `t` of type `A` reduces to `u` in one step. -/
 inductive TermRed {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop where
   /-- A reduction has any type equal to its own, as `(conv)`. -/
-  | conv : Γ ⊢ t ⇒ u : A → Γ ⊢ A ≡ B : univ l → Γ ⊢ t ⇒ u : B
+  | conv : Γ ⊢ t ⇒ u : A → Γ ⊢ A ≡ B → Γ ⊢ t ⇒ u : B
   /-- An application reduces its function, with the premises of `(∘)`. -/
   | app : Γ ⊢ t₁ ⇒ t₂ : pi p q A B → Γ ⊢ a : A →
       Γ ⊢ app p t₁ a ⇒ app p t₂ a : B.instantiate a
   /-- `(β)`: applying an abstraction reduces to its body with the argument substituted. -/
-  | beta : Γ ⊢ pi p q A B : univ l → Γ ∙ A ⊢ t : B → Γ ⊢ a : A →
+  | beta : Γ ⊢ pi p q A B → Γ ∙ A ⊢ t : B → Γ ⊢ a : A →
       Γ ⊢ app p (lam p A t) a ⇒ t.instantiate a : B.instantiate a
 
 set_option hygiene false in

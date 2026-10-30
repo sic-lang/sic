@@ -25,8 +25,9 @@ open Sic.Core Sic.Grade Sic.Core.Term SicTest.Common.Reduction SicTest.Common.Ty
 theorem hasType_combinatorK_4 :
     contextAt combinatorKType 4 ⊢ bodyAt 4 combinatorK : codomainAt 4 combinatorKType :=
   have hA : .empty ∙ univ (.var 0) ∙ univ (.var 0) ⊢ var 1 : univ (.var 0) :=
-    .var (.snoc (.univ (.snoc (.univ .empty))))
-  .var (.snoc (.var (.snoc hA) : .empty ∙ univ (.var 0) ∙ univ (.var 0) ∙ var 1 ⊢ var 1 : _))
+    .var (.snoc (.univ (.univ (.snoc (.univ (.univ .empty))))))
+  .var (.snoc (.univ ((.var (.snoc (.univ hA))) :
+    .empty ∙ univ (.var 0) ∙ univ (.var 0) ∙ var 1 ⊢ var 1 : _)))
 
 theorem hasType_combinatorK_3 :
     contextAt combinatorKType 3 ⊢ bodyAt 3 combinatorK : codomainAt 3 combinatorKType :=
@@ -92,7 +93,7 @@ second argument.
 -/
 theorem skk_body_termRedStar :
     ΓA ∙ var 0 ⊢ app 𝟘 (app 𝟙 skkX.wk1 (var 0)) (app 𝟙 skkY.wk1 (var 0)) ⇒* var 0 : var 1 :=
-  have h : ⊢ ΓA ∙ var 0 := .snoc hasType_ΓA_var
+  have h : ⊢ ΓA ∙ var 0 := .snoc (.univ hasType_ΓA_var)
   have hA : ΓA ∙ var 0 ⊢ var 1 : univ (.var 0) := .var h
   have hB := hasType_skkB.wk (.step .id) h
   have hz : ΓA ∙ var 0 ⊢ var 0 : var 1 := .var h
@@ -116,7 +117,7 @@ its variable, as `S K K X` reduces to `X` in exercise 2.16 of Hindley and Seldin
 -/
 theorem skk_termEq : ΓA ⊢ skk ≡ lam 𝟙 (var 0) (var 0) : pi 𝟙 𝟘 (var 0) (var 1) :=
   .trans skk_termRedStar.termEq
-    (.lam (.pi hasType_ΓA_var (.var (.snoc hasType_ΓA_var))) (.refl hasType_ΓA_var)
+    (.lam (.univ (.pi hasType_ΓA_var (.var (.snoc (.univ hasType_ΓA_var))))) (.refl hasType_ΓA_var)
       skk_body_termRedStar.termEq)
 
 end SicTest.Combinators.Reduction

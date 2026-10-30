@@ -18,9 +18,9 @@ be replaced by an equal type.
 | --- | --- |
 | `WkCon` | `_∷_⊇_`, in `Definition/Typed/Weakening.agda` |
 | `SubstWf`, with `⊢ Δ` | `_⊢ˢʷ_∷_`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `HasType.wk`, `TermEq.wk` | `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
+| `IsType.wk`, `TypeEq.wk`, `HasType.wk`, `TermEq.wk` | `wk`, `wkEq`, `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
 | `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `HasType.subst`, `TermEq.subst` | `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `IsType.subst`, `TypeEq.subst`, `HasType.subst`, `TermEq.subst` | `subst-⊢`, `subst-⊢≡`, `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
 | `HasType.conv_last` | `stability-⊢∷`, for contexts that only differ by their last type, in `Definition/Typed/Stability/Primitive.agda` |
 | `SubstEq`, with `⊢ Δ` and `Δ ⊢ˢ σ : Γ` | `_⊢ˢʷ_≡_∷_`, which also types `τ`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
 | `SubstEq.lift`, `SubstEq.instantiate` | `⊢ˢʷ≡∷-⇑`, `⊢ˢʷ≡∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
@@ -92,13 +92,25 @@ weakens the last type of its context, which a judgment in `Γ ∙ A` gives for `
 private def WkLast {k n : Nat} (Γ : Con k n) : Prop :=
   match n, Γ with
   | _, .empty => True
-  | _, .snoc Γ A => ∀ {m} {Δ : Con k m} {ρ}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → ∃ l, Δ ⊢ A.wk ρ : univ l
+  | _, .snoc Γ A => ∀ {m} {Δ : Con k m} {ρ}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ A.wk ρ
 
 mutual
 
 private theorem WfCon.wkLast {Γ : Con k n} : ⊢ Γ → WkLast Γ
   | .empty => trivial
-  | .snoc h => fun hρ hΔ => ⟨_, (h.wkStrong).2 hρ hΔ⟩
+  | .snoc h => fun hρ hΔ => h.wkStrong.2 hρ hΔ
+
+private theorem IsType.wkStrong {Γ : Con k n} {A : Term k n} : Γ ⊢ A →
+    WkLast Γ ∧ ∀ {m} {Δ : Con k m} {ρ}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ A.wk ρ
+  | .univ h => ⟨h.wkStrong.1, fun hρ hΔ => .univ (h.wkStrong.2 hρ hΔ)⟩
+
+private theorem TypeEq.wkStrong {Γ : Con k n} {A B : Term k n} : Γ ⊢ A ≡ B →
+    WkLast Γ ∧ ∀ {m} {Δ : Con k m} {ρ}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ A.wk ρ ≡ B.wk ρ
+  | .univ h => ⟨h.wkStrong.1, fun hρ hΔ => .univ (h.wkStrong.2 hρ hΔ)⟩
+  | .refl h => ⟨h.wkStrong.1, fun hρ hΔ => .refl (h.wkStrong.2 hρ hΔ)⟩
+  | .symm h => ⟨h.wkStrong.1, fun hρ hΔ => .symm (h.wkStrong.2 hρ hΔ)⟩
+  | .trans h₁ h₂ =>
+    ⟨h₁.wkStrong.1, fun hρ hΔ => .trans (h₁.wkStrong.2 hρ hΔ) (h₂.wkStrong.2 hρ hΔ)⟩
 
 private theorem HasType.wkStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t : A →
     WkLast Γ ∧ ∀ {m} {Δ : Con k m} {ρ}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ t.wk ρ : A.wk ρ
@@ -107,9 +119,9 @@ private theorem HasType.wkStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t : A 
   | .univ h => ⟨h.wkLast, fun _ hΔ => .univ hΔ⟩
   | .pi hA hB => ⟨hA.wkStrong.1, fun hρ hΔ =>
       have hA' := hA.wkStrong.2 hρ hΔ
-      .pi hA' (hB.wkStrong.2 hρ.lift (.snoc hA'))⟩
+      .pi hA' (hB.wkStrong.2 hρ.lift (.snoc (.univ hA')))⟩
   | .lam hPi ht => ⟨hPi.wkStrong.1, fun hρ hΔ =>
-      have ⟨_, hA⟩ := ht.wkStrong.1 hρ hΔ
+      have hA := ht.wkStrong.1 hρ hΔ
       .lam (hPi.wkStrong.2 hρ hΔ) (ht.wkStrong.2 hρ.lift (.snoc hA))⟩
   | .app ht ha => ⟨ht.wkStrong.1, fun hρ hΔ => by
       rw [wk_instantiate]
@@ -124,16 +136,16 @@ private theorem TermEq.wkStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t ≡
   | .conv h hA => ⟨h.wkStrong.1, fun hρ hΔ => .conv (h.wkStrong.2 hρ hΔ) (hA.wkStrong.2 hρ hΔ)⟩
   | .univ h hl => ⟨h.wkLast, fun _ hΔ => .univ hΔ hl⟩
   | .pi hA hB => ⟨hA.wkStrong.1, fun hρ hΔ =>
-      have ⟨_, hA₁⟩ := hB.wkStrong.1 hρ hΔ
+      have hA₁ := hB.wkStrong.1 hρ hΔ
       .pi (hA.wkStrong.2 hρ hΔ) (hB.wkStrong.2 hρ.lift (.snoc hA₁))⟩
   | .lam hPi hA ht => ⟨hPi.wkStrong.1, fun hρ hΔ =>
-      have ⟨_, hA₁⟩ := ht.wkStrong.1 hρ hΔ
+      have hA₁ := ht.wkStrong.1 hρ hΔ
       .lam (hPi.wkStrong.2 hρ hΔ) (hA.wkStrong.2 hρ hΔ) (ht.wkStrong.2 hρ.lift (.snoc hA₁))⟩
   | .app ht ha => ⟨ht.wkStrong.1, fun hρ hΔ => by
       rw [wk_instantiate]
       exact .app (ht.wkStrong.2 hρ hΔ) (ha.wkStrong.2 hρ hΔ)⟩
   | .beta hPi ht ha => ⟨hPi.wkStrong.1, fun hρ hΔ => by
-      have ⟨_, hA⟩ := ht.wkStrong.1 hρ hΔ
+      have hA := ht.wkStrong.1 hρ hΔ
       rw [wk_instantiate, wk_instantiate]
       exact .beta (hPi.wkStrong.2 hρ hΔ) (ht.wkStrong.2 hρ.lift (.snoc hA)) (ha.wkStrong.2 hρ hΔ)⟩
   | .eta h => ⟨h.wkStrong.1, fun hρ hΔ => by
@@ -142,6 +154,14 @@ private theorem TermEq.wkStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t ≡
       exact this⟩
 
 end
+
+/-- A type stays a type in every well-formed context that contains its own. -/
+theorem IsType.wk (h : Γ ⊢ A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ :=
+  h.wkStrong.2 hρ hΔ
+
+/-- Two types stay equal in every well-formed context that contains their own. -/
+theorem TypeEq.wk (h : Γ ⊢ A ≡ B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ ≡ B.wk ρ :=
+  h.wkStrong.2 hρ hΔ
 
 /-- A term keeps its type in every well-formed context that contains its own. -/
 theorem HasType.wk (h : Γ ⊢ t : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ t.wk ρ : A.wk ρ :=
@@ -183,13 +203,25 @@ statement, `SubstLast`, for the same reason as their weakening.
 private def SubstLast {k n : Nat} (Γ : Con k n) : Prop :=
   match n, Γ with
   | _, .empty => True
-  | _, .snoc Γ A => ∀ {m} {Δ : Con k m} {σ}, Δ ⊢ˢ σ : Γ → ⊢ Δ → ∃ l, Δ ⊢ A.subst σ : univ l
+  | _, .snoc Γ A => ∀ {m} {Δ : Con k m} {σ}, Δ ⊢ˢ σ : Γ → ⊢ Δ → Δ ⊢ A.subst σ
 
 mutual
 
 private theorem WfCon.substLast {Γ : Con k n} : ⊢ Γ → SubstLast Γ
   | .empty => trivial
-  | .snoc h => fun hσ hΔ => ⟨_, h.substStrong.2 hσ hΔ⟩
+  | .snoc h => fun hσ hΔ => h.substStrong.2 hσ hΔ
+
+private theorem IsType.substStrong {Γ : Con k n} {A : Term k n} : Γ ⊢ A →
+    SubstLast Γ ∧ ∀ {m} {Δ : Con k m} {σ}, Δ ⊢ˢ σ : Γ → ⊢ Δ → Δ ⊢ A.subst σ
+  | .univ h => ⟨h.substStrong.1, fun hσ hΔ => .univ (h.substStrong.2 hσ hΔ)⟩
+
+private theorem TypeEq.substStrong {Γ : Con k n} {A B : Term k n} : Γ ⊢ A ≡ B →
+    SubstLast Γ ∧ ∀ {m} {Δ : Con k m} {σ}, Δ ⊢ˢ σ : Γ → ⊢ Δ → Δ ⊢ A.subst σ ≡ B.subst σ
+  | .univ h => ⟨h.substStrong.1, fun hσ hΔ => .univ (h.substStrong.2 hσ hΔ)⟩
+  | .refl h => ⟨h.substStrong.1, fun hσ hΔ => .refl (h.substStrong.2 hσ hΔ)⟩
+  | .symm h => ⟨h.substStrong.1, fun hσ hΔ => .symm (h.substStrong.2 hσ hΔ)⟩
+  | .trans h₁ h₂ =>
+    ⟨h₁.substStrong.1, fun hσ hΔ => .trans (h₁.substStrong.2 hσ hΔ) (h₂.substStrong.2 hσ hΔ)⟩
 
 private theorem HasType.substStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t : A →
     SubstLast Γ ∧ ∀ {m} {Δ : Con k m} {σ}, Δ ⊢ˢ σ : Γ → ⊢ Δ → Δ ⊢ t.subst σ : A.subst σ
@@ -198,11 +230,10 @@ private theorem HasType.substStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t :
     ⟨h.substStrong.1, fun hσ hΔ => .conv (h.substStrong.2 hσ hΔ) (hA.substStrong.2 hσ hΔ)⟩
   | .univ h => ⟨h.substLast, fun _ hΔ => .univ hΔ⟩
   | .pi hA hB => ⟨hA.substStrong.1, fun hσ hΔ =>
-      have hΔ' := WfCon.snoc (hA.substStrong.2 hσ hΔ)
+      have hΔ' := WfCon.snoc (.univ (hA.substStrong.2 hσ hΔ))
       .pi (hA.substStrong.2 hσ hΔ) (hB.substStrong.2 (hσ.lift hΔ') hΔ')⟩
   | .lam hPi ht => ⟨hPi.substStrong.1, fun hσ hΔ =>
-      have ⟨_, hA⟩ := ht.substStrong.1 hσ hΔ
-      have hΔ' := WfCon.snoc hA
+      have hΔ' := WfCon.snoc (ht.substStrong.1 hσ hΔ)
       .lam (hPi.substStrong.2 hσ hΔ) (ht.substStrong.2 (hσ.lift hΔ') hΔ')⟩
   | .app ht ha => ⟨ht.substStrong.1, fun hσ hΔ => by
       rw [subst_instantiate]
@@ -219,19 +250,16 @@ private theorem TermEq.substStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t 
     ⟨h.substStrong.1, fun hσ hΔ => .conv (h.substStrong.2 hσ hΔ) (hA.substStrong.2 hσ hΔ)⟩
   | .univ h hl => ⟨h.substLast, fun _ hΔ => .univ hΔ hl⟩
   | .pi hA hB => ⟨hA.substStrong.1, fun hσ hΔ =>
-      have ⟨_, hA₁⟩ := hB.substStrong.1 hσ hΔ
-      have hΔ' := WfCon.snoc hA₁
+      have hΔ' := WfCon.snoc (hB.substStrong.1 hσ hΔ)
       .pi (hA.substStrong.2 hσ hΔ) (hB.substStrong.2 (hσ.lift hΔ') hΔ')⟩
   | .lam hPi hA ht => ⟨hPi.substStrong.1, fun hσ hΔ =>
-      have ⟨_, hA₁⟩ := ht.substStrong.1 hσ hΔ
-      have hΔ' := WfCon.snoc hA₁
+      have hΔ' := WfCon.snoc (ht.substStrong.1 hσ hΔ)
       .lam (hPi.substStrong.2 hσ hΔ) (hA.substStrong.2 hσ hΔ) (ht.substStrong.2 (hσ.lift hΔ') hΔ')⟩
   | .app ht ha => ⟨ht.substStrong.1, fun hσ hΔ => by
       rw [subst_instantiate]
       exact .app (ht.substStrong.2 hσ hΔ) (ha.substStrong.2 hσ hΔ)⟩
   | .beta hPi ht ha => ⟨hPi.substStrong.1, fun hσ hΔ => by
-      have ⟨_, hA⟩ := ht.substStrong.1 hσ hΔ
-      have hΔ' := WfCon.snoc hA
+      have hΔ' := WfCon.snoc (ht.substStrong.1 hσ hΔ)
       rw [subst_instantiate, subst_instantiate]
       exact .beta (hPi.substStrong.2 hσ hΔ) (ht.substStrong.2 (hσ.lift hΔ') hΔ')
         (ha.substStrong.2 hσ hΔ)⟩
@@ -241,6 +269,15 @@ private theorem TermEq.substStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t 
       exact this⟩
 
 end
+
+/-- A type whose variables are replaced by terms of their types stays a type. -/
+theorem IsType.subst (h : Γ ⊢ A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.subst σ :=
+  h.substStrong.2 hσ hΔ
+
+/-- Two equal types whose variables are replaced by terms of their types stay equal. -/
+theorem TypeEq.subst (h : Γ ⊢ A ≡ B) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ A.subst σ ≡ B.subst σ :=
+  h.substStrong.2 hσ hΔ
 
 /-- A term whose variables are replaced by terms of their types has the substituted type. -/
 theorem HasType.subst (h : Γ ⊢ t : A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) :
@@ -261,13 +298,13 @@ theorem HasType.instantiate (ht : Γ ∙ A ⊢ t : B) (ha : Γ ⊢ a : A) :
 A term keeps its type when the last declaration of its context gets an equal type, through the
 substitution of each variable by itself, which converts the type of the last one.
 -/
-theorem HasType.conv_last (h : Γ ∙ A₁ ⊢ t : B) (hA : Γ ⊢ A₁ ≡ A₂ : Term.univ l)
-    (hA₂ : Γ ⊢ A₂ : Term.univ l') : Γ ∙ A₂ ⊢ t : B := by
+theorem HasType.conv_last (h : Γ ∙ A₁ ⊢ t : B) (hA : Γ ⊢ A₁ ≡ A₂) (hA₂ : Γ ⊢ A₂) :
+    Γ ∙ A₂ ⊢ t : B := by
   have hΓ : ⊢ Γ ∙ A₂ := .snoc hA₂
   have hσ : Γ ∙ A₂ ⊢ˢ Term.var : Γ ∙ A₁
     | ⟨0, _⟩ => by
       rw [subst_var]
-      exact .conv (.var hΓ) ((TermEq.symm hA).wk (.step .id) hΓ)
+      exact .conv (.var hΓ) ((TypeEq.symm hA).wk (.step .id) hΓ)
     | ⟨x + 1, hx⟩ => by
       rw [subst_var]
       exact .var (x := ⟨x + 1, hx⟩) hΓ
@@ -328,7 +365,7 @@ mutual
 
 private theorem WfCon.eqLast {Γ : Con k n} : ⊢ Γ → EqLast Γ
   | .empty => trivial
-  | .snoc h => fun hσ hστ hΔ => ⟨_, h.substEqStrong.2 hσ hστ hΔ⟩
+  | .snoc (.univ h) => fun hσ hστ hΔ => ⟨_, h.substEqStrong.2 hσ hστ hΔ⟩
 
 private theorem HasType.substEqStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t : A →
     EqLast Γ ∧ ∀ {m} {Δ : Con k m} {σ τ}, Δ ⊢ˢ σ : Γ → Δ ⊢ˢ σ ≡ τ : Γ → ⊢ Δ →
@@ -338,12 +375,12 @@ private theorem HasType.substEqStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t
       .conv (h.substEqStrong.2 hσ hστ hΔ) (hA.subst hσ hΔ)⟩
   | .univ h => ⟨h.eqLast, fun _ _ hΔ => .refl (.univ hΔ)⟩
   | .pi hA hB => ⟨hA.substEqStrong.1, fun hσ hστ hΔ =>
-      have hΔ' := WfCon.snoc (hA.subst hσ hΔ)
+      have hΔ' := WfCon.snoc (.univ (hA.subst hσ hΔ))
       .pi (hA.substEqStrong.2 hσ hστ hΔ) (hB.substEqStrong.2 (hσ.lift hΔ') (hστ.lift hΔ') hΔ')⟩
-  | .lam hPi ht => ⟨hPi.substEqStrong.1, fun hσ hστ hΔ =>
-      have hPi' := hPi.subst hσ hΔ
+  | .lam (.univ hPi) ht => ⟨hPi.substEqStrong.1, fun hσ hστ hΔ =>
+      have hPi' := (IsType.univ hPi).subst hσ hΔ
       have ⟨⟨_, hA'⟩, _⟩ := hPi'.inv_pi
-      have hΔ' := WfCon.snoc hA'
+      have hΔ' := WfCon.snoc (.univ hA')
       have ⟨_, hA⟩ := ht.substEqStrong.1 hσ hστ hΔ
       .lam hPi' hA (ht.substEqStrong.2 (hσ.lift hΔ') (hστ.lift hΔ') hΔ')⟩
   | .app ht ha => ⟨ht.substEqStrong.1, fun hσ hστ hΔ => by

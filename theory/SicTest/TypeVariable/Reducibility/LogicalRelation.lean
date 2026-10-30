@@ -16,7 +16,7 @@ open Sic.Core Sic.Grade Sic.Core.Term Sic.Core.Reducibility
 /-- The context `A : U_l` of a type variable, over the level variable `l`. -/
 def ΓA : Con 1 1 := .empty ∙ univ (.var 0)
 
-theorem wfCon_ΓA : ⊢ ΓA := .snoc (.univ .empty)
+theorem wfCon_ΓA : ⊢ ΓA := .snoc (.univ (.univ .empty))
 
 variable [EqualityRelation]
 
@@ -46,7 +46,7 @@ at every argument, since it does not use it.
 -/
 example : ∃ P, ΓA ⊩⟨l⟩ pi 𝟙 𝟘 (var 0) (var 1) ▸ P := by
   have hA : ΓA ⊢ var 0 : univ (.var 0) := .var wfCon_ΓA
-  have hA' : ΓA ∙ var 0 ⊢ var 1 : univ (.var 0) := .var (.snoc hA)
+  have hA' : ΓA ∙ var 0 ⊢ var 1 : univ (.var 0) := .var (.snoc (.univ hA))
   -- `A`, moved by a weakening `ρ`, is the variable `ρ.var 0`, of the universe `U_l`.
   have hF {m} {ρ : Wk m 1} {Δ : Con 1 m} (hρ : ρ ∷ Δ ⊇ ΓA) (hΔ : ⊢ Δ) :
       Δ ⊢ var (ρ.var 0) : univ (.var 0) := hA.wk hρ hΔ
@@ -61,7 +61,7 @@ example : ∃ P, ΓA ⊩⟨l⟩ pi 𝟙 𝟘 (var 0) (var 1) ▸ P := by
 
 /-- A variable of the type variable `A` is a reducible term of `A`: it is equal to itself. -/
 example : (neutral (ΓA ∙ var 0) (var 1) (.var 0)).eqTerm (var 0) (var 0) :=
-  have hx : ΓA ∙ var 0 ⊢ var 0 : var 1 := .var (.snoc (.var wfCon_ΓA))
+  have hx : ΓA ∙ var 0 ⊢ var 0 : var 1 := .var (.snoc (.univ (.var wfCon_ΓA)))
   ⟨_, _, .refl hx, .refl hx, .var, .var, EqualityRelation.var hx⟩
 
 end SicTest.TypeVariable.Reducibility.LogicalRelation

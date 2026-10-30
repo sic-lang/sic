@@ -49,7 +49,7 @@ theorem hasType_churchTwo_1 :
 theorem hasType_churchSucc_1 :
     contextAt (pi 𝟙 𝟘 churchNat churchNat) 1 ⊢ bodyAt 1 churchSucc :
       codomainAt 1 (pi 𝟙 𝟘 churchNat churchNat) :=
-  hasType_numeral (.snoc (hasType_churchNat .empty)) (hasType_churchSucc_body .empty)
+  hasType_numeral (.snoc (.univ (hasType_churchNat .empty))) (hasType_churchSucc_body .empty)
 
 /-! The successor of `1` is `2`. -/
 
@@ -96,7 +96,8 @@ theorem churchSucc_one_termEq :
   have ⟨⟨_, hU⟩, _, hNat₂⟩ := hNat.inv_pi
   have ⟨⟨_, hf⟩, _, hNat₃⟩ := hNat₂.inv_pi
   have ⟨⟨_, hx⟩, _⟩ := hNat₃.inv_pi
-  .trans β.termEq (.lam hNat (.refl hU) (.lam hNat₂ (.refl hf) (.lam hNat₃ (.refl hx)
+  .trans β.termEq (.lam (.univ hNat) (.refl hU) (.lam (.univ hNat₂) (.refl hf)
+    (.lam (.univ hNat₃) (.refl hx)
     (.app (.refl (hasType_ΓNat_f .empty)) churchOne_termRedStar.termEq))))
 
 end SicTest.ChurchNumerals.Reduction
