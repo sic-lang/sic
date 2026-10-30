@@ -45,6 +45,18 @@ inductive Whnf : Term k n → Prop where
   /-- A neutral term is a weak head normal form. -/
   | ne : Neutral t → Whnf t
 
+/--
+A type in weak head normal form: a universe, a type of functions, or a neutral term, which a variable
+of a universe makes a type.
+-/
+inductive WhnfType : Term k n → Prop where
+  /-- A universe is a type in weak head normal form. -/
+  | univ : WhnfType (univ l)
+  /-- A type of functions is a type in weak head normal form. -/
+  | pi : WhnfType (pi p q A B)
+  /-- A neutral term is a type in weak head normal form. -/
+  | ne : Neutral t → WhnfType t
+
 set_option hygiene false in
 /-- `Γ ⊢ t ⇒ u : A`: in the context `Γ`, the term `t` of type `A` reduces to `u` in one step. -/
 notation:40 Γ:41 " ⊢ " t:41 " ⇒ " u:41 " : " A:41 => TermRed Γ t u A
