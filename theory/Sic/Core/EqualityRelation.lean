@@ -15,6 +15,38 @@ they show that typed terms reduce to weak head normal forms; for the equality th
 decides, they will show that the algorithm decides the equality of `Sic.Core.Typing`.
 A type is a term of a universe, as in `Sic.Core.Typing`, so that the equality of terms at a universe
 is the equality of types, where ADE have a relation of their own.
+
+## Correspondence with the Formalization of ADE
+
+| Field | Field of ADE's `Equality-relations`, in `Definition/Typed/EqualityRelation.agda` |
+| --- | --- |
+| `eq` | `_⊢_≅_∷_` |
+| `eqNeutral` | `_⊢_~_∷_` |
+| `ofNeutral` | `~-to-≅ₜ` |
+| `termEq` | `≅ₜ-eq` |
+| `symm`, `symmNeutral` | `≅ₜ-sym`, `~-sym` |
+| `trans`, `transNeutral` | `≅ₜ-trans`, `~-trans` |
+| `conv`, `convNeutral` | `≅-conv`, `~-conv` |
+| `wk`, `wkNeutral` | `≅ₜ-wk`, `~-wk` |
+| `red` | `≅ₜ-red` |
+| `univ` | `≅ₜ-U-cong` |
+| `pi` | `≅ₜ-ΠΣ-cong` |
+| `eta` | `≅-η-eq` |
+| `var` | `~-var` |
+| `app` | `~-app` |
+
+| Definition or theorem | Definition or theorem of ADE |
+| --- | --- |
+| `EqualityRelation.termEqRelation` | `eqRelInstance`, in `Definition/Typed/EqRelInstance.agda` |
+
+ADE also have an equality of types `_⊢_≅_`, with the fields that relate it to the equality of terms,
+which the equality of terms at a universe replaces here, as the equality of types does in
+`Sic.Core.Typing`.
+Their `≅ₜ-ΠΣ-cong` relates a domain and a codomain in the same universe, which their `Lift` moves
+types to, while `pi` takes the larger of their levels, as `(Π)` does.
+Their `≅-η-eq` relates functions that are abstractions or neutral terms, `Function⁺`, while `eta`
+relates weak head normal forms, which are the same at a type of functions.
+The fields of their other types, of their levels, and of their option `Var-included` are not here.
 -/
 
 @[expose] public section

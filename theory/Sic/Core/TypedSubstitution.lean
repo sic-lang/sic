@@ -11,6 +11,24 @@ variables replaced by terms of their types, by substitution, which instantiates 
 particular.
 Two equal substitutions give two equal terms, and the type of the last declaration of a context can
 be replaced by an equal type.
+
+## Correspondence with the Formalization of ADE
+
+| Definition or theorem | Definition or theorem of ADE |
+| --- | --- |
+| `WkCon` | `_∷_⊇_`, in `Definition/Typed/Weakening.agda` |
+| `SubstWf`, with `⊢ Δ` | `_⊢ˢʷ_∷_`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.wk`, `TermEq.wk` | `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
+| `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.subst`, `TermEq.subst` | `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.conv_last` | `stability-⊢∷`, for contexts that only differ by their last type, in `Definition/Typed/Stability/Primitive.agda` |
+| `SubstEq`, with `⊢ Δ` and `Δ ⊢ˢ σ : Γ` | `_⊢ˢʷ_≡_∷_`, which also types `τ`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `SubstEq.lift`, `SubstEq.instantiate` | `⊢ˢʷ≡∷-⇑`, `⊢ˢʷ≡∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+| `HasType.substEq` | `subst-⊢∷→⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
+
+ADE prove the weakening and the substitutions by induction on the size of the derivations, which
+their judgments, in `Set`, have, while those of `Sic.Core.Typing` are propositions: each proof here
+proves a stronger statement instead, which the module explains.
 -/
 
 @[expose] public section

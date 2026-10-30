@@ -13,6 +13,22 @@ of `Sic.Core.Typing`, which ties it to the RFC.
 A step only reduces the head of a term: the function of an application, until it is an abstraction
 applied to its argument, which `(β)` reduces.
 A reduction is typed, as in ADE, so that it keeps the type its terms have.
+
+## Correspondence with the Formalization of ADE
+
+| Definition | Definition of ADE |
+| --- | --- |
+| `Neutral` | `Neutral`, in `Definition/Untyped/Neutral.agda` |
+| `Whnf` | `Whnf`, in `Definition/Untyped/Whnf.agda` |
+| `WhnfType` | `Type`, in `Definition/Untyped/Whnf.agda` |
+| `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
+| `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
+| `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
+
+ADE also reduce types, with `_⊢_⇒_`, which a reduction of a term in a universe replaces here, as the
+equality of types does in `Sic.Core.Typing`.
+Their `β-red` reduces an abstraction applied with another grade, which their premise `p ≡ p′`
+equates, while `TermRed.beta` writes the same grade on both.
 -/
 
 @[expose] public section

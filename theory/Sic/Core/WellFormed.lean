@@ -7,6 +7,13 @@ public import Sic.Core.TypedSubstitution
 
 The syntactic validity of the judgments of `Sic.Core.Typing`, as in the formalization of ADE: the
 type of a typed term is a type, a term of a universe, and two equal terms are typed, at a type.
+
+## Correspondence with the Formalization of ADE
+
+| Theorem | Theorem of ADE, in `Definition/Typed/Well-formed.agda` |
+| --- | --- |
+| `HasType.wfType` | `wf-⊢∷` |
+| `TermEq.wf` | `wf-⊢≡∷` |
 -/
 
 @[expose] public section

@@ -1,0 +1,28 @@
+module
+
+import Sic.Core.WellFormed
+
+/-!
+# Common Consequences of the Well-Formedness
+
+The consequences of `Sic.Core.WellFormed` that the reductions of the examples use.
+-/
+
+namespace SicTest.Common.WellFormed
+
+open Sic.Core
+
+/-- The last type of a well-formed context is a type. -/
+theorem wfCon_snoc_inv : ⊢ Γ ∙ A → ∃ l, Γ ⊢ A : Term.univ l
+  | .snoc h => ⟨_, h⟩
+
+/--
+An abstraction has the type of functions whose body has its type, whatever the grade `q` of the
+type: by syntactic validity, the domain and the codomain are types, which `(λ)` needs.
+-/
+theorem hasType_lam (ht : Γ ∙ A ⊢ t : B) : Γ ⊢ Term.lam p A t : Term.pi p q A B :=
+  have ⟨_, hA⟩ := wfCon_snoc_inv ht.wfCon
+  have ⟨_, hB⟩ := ht.wfType
+  .lam (.pi hA hB) ht
+
+end SicTest.Common.WellFormed
