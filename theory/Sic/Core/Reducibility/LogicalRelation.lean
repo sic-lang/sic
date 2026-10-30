@@ -22,6 +22,28 @@ A level `l`, with variables, bounds the universes of a type by the value of `l` 
 take the value `0`: each rule of `Sic.Core.Typing` keeps the order of the values of its levels, so
 that this value is a bound that holds whatever the variables, while the equality of two universes
 still requires their levels to be equal.
+
+## Correspondence with the Formalizations of ADE and of Pujet
+
+| Definition or theorem | Definition or theorem of ADE, in `Definition/LogicalRelation.agda` | Of Pujet, in `Definition/LogicalRelation.agda` |
+| --- | --- | --- |
+| `Interpretation.eqType`, `Interpretation.eqTerm` | `_⊩⟨_⟩_≡_/_`, `_⊩⟨_⟩_≡_∷_/_` | the second and fourth predicates of `_⊩LR_▸_▸_▸_` |
+| `LogRel`, with `lower` | `LogRel`, with `rec` | `_⊩LR_▸_▸_▸_`, with `rec` |
+| `LogRel.univ` | `Uᵣ`, with `_⊩₁U_`, `_⊩₁U≡_/_`, `_⊩₁U_≡_∷U/_` | `LRU` |
+| `LogRel.ne` | `ne`, with `_⊩ne_`, `_⊩ne_≡_/_`, `_⊩neNf_≡_∷_` | `LRne` |
+| `LogRel.pi` | `Bᵣ`, with `_⊩ₗB⟨_⟩_`, `_⊩ₗB⟨_⟩_≡_/_`, `_⊩ₗΠ_≡_∷_/_` | `LRΠ` |
+| `LogicalRelation` | `_⊩⟨_⟩_`, with `kit` | `_⊩⟨_⟩_`, with `kit` |
+| `Level.bound` | `↑ᵘ`, which sends the neutral levels to `0` | none, with a single universe |
+| `LogRel.escape`, `LogRel.escape_eqType`, `LogRel.escape_eqTerm` | `escape`, `escapeEq`, `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda` | the same |
+
+Pujet's relation is a predicate of a type and of its interpretation, as here, where ADE's relation
+computes the interpretation from a proof of reducibility.
+Both have a constructor `emb`, which moves a reducible type to a larger level, while the relation at
+a level here interprets each universe at its own level: a reducible type stays reducible at the
+larger levels, a lemma instead of a constructor, so that each weak head normal form has one
+constructor.
+ADE reduce the types with a reduction of their own, which a reduction of a term in a universe
+replaces here, and their relation also covers their other types, levels and definitions.
 -/
 
 @[expose] public section

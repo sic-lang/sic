@@ -11,6 +11,32 @@ They are defined together, since each uses the others, and each rule has the nam
 A type is a term of a universe, as in the RFC, so that no judgment of its own says that a term is a
 type.
 Grades are part of the terms, but no rule reads them: the usage of a term is a separate judgment.
+
+## Correspondence with the Formalization of ADE
+
+| Rule of RFC 24 | Constructor | Rule of ADE, in `Definition/Typed.agda` |
+| --- | --- | --- |
+| `(ctx_ε)`, `(ctx_,)` | `WfCon.empty`, `WfCon.snoc` | `ε`, `∙_` of `_»⊢_` |
+| `(var)` | `HasType.var` | `var`, with `_∷_∈_` |
+| `(conv)` | `HasType.conv` | `conv` of `_⊢_∷_` |
+| `(univ)` | `HasType.univ` | `Uⱼ` |
+| `(Π)` | `HasType.pi` | `ΠΣⱼ` of `_⊢_∷_` |
+| `(λ)` | `HasType.lam` | `lamⱼ` |
+| `(∘)` | `HasType.app` | `_∘ⱼ_` |
+| `(refl)`, `(sym)`, `(trans)` | `TermEq.refl`, `TermEq.symm`, `TermEq.trans` | `refl`, `sym`, `trans` of `_⊢_≡_∷_` |
+| `(conv_≡)` | `TermEq.conv` | `conv` of `_⊢_≡_∷_` |
+| `(univ_≡)` | `TermEq.univ` | `U-cong` |
+| Congruences | `TermEq.pi`, `TermEq.lam`, `TermEq.app` | `ΠΣ-cong`, none, `app-cong` |
+| `(β)` | `TermEq.beta` | `β-red` |
+| `(η)` | `TermEq.eta` | `η-eq` |
+
+ADE have five judgments, with two for the types, `Γ ⊢ A` and `Γ ⊢ A ≡ B`, which RFC 24 replaces by
+the typing and the equality of a term in a universe.
+Their abstraction does not carry the type of its argument, so that they have no congruence of
+abstraction, and state `η` as the equality of two functions whose applications to a variable are
+equal.
+The inversion `HasType.inv_pi` is the part of `inversion-ΠΣ-U`, in
+`Definition/Typed/Inversion/Primitive.agda`, that types the domain and the codomain.
 -/
 
 @[expose] public section

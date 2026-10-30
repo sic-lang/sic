@@ -1,5 +1,5 @@
 name = "sic"
-defaultTargets = ["Sic"]
+defaultTargets = ["Sic", "SicTest"]
 
 [[lean_lib]]
 name = "Sic"
@@ -8,3 +8,8 @@ globs = ["Sic.+"]
 # Every public definition, type, constructor and field has a doc string: for modules, Lean checks
 # that `@[inherit_doc]` finds one only in the language server, never in a build.
 leanOptions = { linter.missingDocs = true }
+
+[[lean_lib]]
+name = "SicTest"
+# The checks that the definitions of Sic mean what the RFCs say, by theme, as Mathlib's MathlibTest.
+globs = ["SicTest.+"]
