@@ -25,6 +25,6 @@ example (h : ⊢ Γ) : Γ ⊢ combinatorK : combinatorKType :=
 
 /-- `S K K` keeps the type of the identity of `A` after a new declaration `z : A`. -/
 example : ΓA ∙ var 0 ⊢ skk.wk1 : pi 𝟙 𝟘 (var 1) (var 2) :=
-  hasType_skk.wk (.step .id) (.snoc hasType_ΓA_var)
+  hasType_skk.wk (.step .id) (.snoc (.univ hasType_ΓA_var))
 
 end SicTest.Combinators.TypedSubstitution

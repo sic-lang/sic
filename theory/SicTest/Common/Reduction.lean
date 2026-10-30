@@ -28,10 +28,11 @@ theorem termRed_beta_subst (ht : Γ ∙ A ⊢ t : B) (hσ : Δ ⊢ˢ σ : Γ) (h
     (ha : Δ ⊢ a : A.subst σ) :
     Δ ⊢ app p ((lam p A t).subst σ) a ⇒ t.subst (σ.cons a) : B.subst (σ.cons a) := by
   have ⟨_, hA⟩ := wfCon_snoc_inv ht.wfCon
-  have ⟨_, hB⟩ := ht.wfType
+  have ⟨_, hB⟩ := ht.wfType.sort
   have hPi' := (HasType.pi (p := p) (q := 𝟘) hA hB).subst hσ hΔ
   have ⟨_, hA'⟩ := hPi'.inv_pi.1
-  have h := TermRed.beta hPi' (ht.subst (hσ.lift (.snoc hA')) (.snoc hA')) ha
+  have hΔ' : ⊢ Δ ∙ A.subst σ := .snoc (.univ hA')
+  have h := TermRed.beta (.univ hPi') (ht.subst (hσ.lift hΔ') hΔ') ha
   rwa [subst_lift_instantiate, subst_lift_instantiate] at h
 
 /-- The body of an abstraction, or the term itself, moved, for any other term. -/

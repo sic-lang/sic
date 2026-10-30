@@ -42,8 +42,9 @@ Both have a constructor `emb`, which moves a reducible type to a larger level, w
 a level here interprets each universe at its own level: a reducible type stays reducible at the
 larger levels, a lemma instead of a constructor, so that each weak head normal form has one
 constructor.
-ADE reduce the types with a reduction of their own, which a reduction of a term in a universe
-replaces here, and their relation also covers their other types, levels and definitions.
+The interpretation of a type reduces it and compares it as a type, as ADE do, so that it does not
+depend on the universe that a proof of its reducibility chooses for it.
+Their relation also covers their other types, levels and definitions.
 -/
 
 @[expose] public section
@@ -85,9 +86,9 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
   interprets the second as an equal type.
   -/
   | univ {n} {Γ : Con k n} {A : Term k n} {L : Level k} (h : L.bound < l)
-      (hA : Γ ⊢ A ⇒* Term.univ L : Term.univ L.succ) :
+      (hA : Γ ⊢ A ⇒* Term.univ L) :
       LogRel l lower Γ A
-        { eqType := fun B => ∃ L', (Γ ⊢ B ⇒* Term.univ L' : Term.univ L'.succ) ∧ L ≈ L'
+        { eqType := fun B => ∃ L', (Γ ⊢ B ⇒* Term.univ L') ∧ L ≈ L'
           eqTerm := fun t u => ∃ A' B', (Γ ⊢ t ↘ A' : Term.univ L) ∧
             (Γ ⊢ u ↘ B' : Term.univ L) ∧ WhnfType A' ∧ WhnfType B' ∧
             (Γ ⊢ A' ≅ B' : Term.univ L) ∧
@@ -96,11 +97,9 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
   A type that reduces to a neutral type: two types are equal to it when they reduce to equal neutral
   types, and two of its terms are equal when they reduce to equal neutral terms.
   -/
-  | ne {n} {Γ : Con k n} {A N : Term k n} {L : Level k} (hA : Γ ⊢ A ⇒* N : Term.univ L)
-      (hN : Neutral N) (hNN : Γ ⊢ N ≅ N : Term.univ L) :
+  | ne {n} {Γ : Con k n} {A N : Term k n} (hA : Γ ⊢ A ⇒* N) (hN : Neutral N) (hNN : Γ ⊢ N ≅ N) :
       LogRel l lower Γ A
-        { eqType := fun B => ∃ M, (Γ ⊢ B ⇒* M : Term.univ L) ∧ Neutral M ∧
-            (Γ ⊢ N ≅ M : Term.univ L)
+        { eqType := fun B => ∃ M, (Γ ⊢ B ⇒* M) ∧ Neutral M ∧ (Γ ⊢ N ≅ M)
           eqTerm := fun t u => ∃ t' u', (Γ ⊢ t ⇒* t' : N) ∧ (Γ ⊢ u ⇒* u' : N) ∧ Neutral t' ∧
             Neutral u' ∧ (Γ ⊢ t' ~ u' : N) }
   /--
@@ -112,9 +111,8 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
   that are equal by the equality relation, and whose applications to equal arguments are equal, in
   every well-formed context that contains `Γ`.
   -/
-  | pi {n} {Γ : Con k n} {A F : Term k n} {G : Term k (n + 1)} {L : Level k} {p q : Grade}
-      (hA : Γ ⊢ A ⇒* Term.pi p q F G : Term.univ L)
-      (hPi : Γ ⊢ Term.pi p q F G ≅ Term.pi p q F G : Term.univ L)
+  | pi {n} {Γ : Con k n} {A F : Term k n} {G : Term k (n + 1)} {p q : Grade}
+      (hA : Γ ⊢ A ⇒* Term.pi p q F G) (hPi : Γ ⊢ Term.pi p q F G ≅ Term.pi p q F G)
       (PF : ∀ {m}, Wk m n → Con k m → Interpretation k m)
       (PG : ∀ {m}, Wk m n → Con k m → Term k m → Interpretation k m)
       (hF : ∀ {m} {ρ : Wk m n} {Δ : Con k m}, ρ ∷ Δ ⊇ Γ → ⊢ Δ →
@@ -126,8 +124,7 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
         (PG ρ Δ a).eqType ((G.wk ρ.lift).instantiate b)) :
       LogRel l lower Γ A
         { eqType := fun B => ∃ (F' : Term k n) (G' : Term k (n + 1)),
-            (Γ ⊢ B ⇒* Term.pi p q F' G' : Term.univ L) ∧
-            (Γ ⊢ Term.pi p q F G ≅ Term.pi p q F' G' : Term.univ L) ∧
+            (Γ ⊢ B ⇒* Term.pi p q F' G') ∧ (Γ ⊢ Term.pi p q F G ≅ Term.pi p q F' G') ∧
             (∀ {m} {ρ : Wk m n} {Δ : Con k m}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → (PF ρ Δ).eqType (F'.wk ρ)) ∧
             (∀ {m} {ρ : Wk m n} {Δ : Con k m} {a}, ρ ∷ Δ ⊇ Γ → ⊢ Δ → (PF ρ Δ).eqTerm a a →
               (PG ρ Δ a).eqType ((G'.wk ρ.lift).instantiate a))
@@ -163,44 +160,39 @@ section Escape
 variable {l : Nat} {lower : ∀ l' < l, Relation k}
 
 /-- A reducible type is a type. -/
-theorem LogRel.escape : LogRel l lower Γ A P → ∃ L, Γ ⊢ A : Term.univ L
-  | .univ _ hA | .ne hA _ _ | .pi hA .. => ⟨_, hA.termEq.wf.1⟩
+theorem LogRel.escape : LogRel l lower Γ A P → Γ ⊢ A
+  | .univ _ hA | .ne hA _ _ | .pi hA .. => hA.typeEq.wf.1
 
 /-- The types that the interpretation of a reducible type equates to it are equal to it. -/
-theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → ∃ L, Γ ⊢ A ≡ B : Term.univ L
+theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → Γ ⊢ A ≡ B
   | .univ _ hA, ⟨_, hB, hL⟩ =>
-    have hΓ := hA.termEq.wfCon
-    -- `U_L` and `U_{L'}` are equal at `U_{L + 1}`, as `U_{L' + 1}` and `U_{L + 1}` are.
-    have hUU : Γ ⊢ Term.univ _ ≡ Term.univ _ : _ := .univ hΓ hL.succ
-    ⟨_, .trans hA.termEq
-      (.trans (.univ hΓ hL) (.conv (.symm hB.termEq) (.symm hUU)))⟩
+    .trans hA.typeEq (.trans (.univ (.univ hA.typeEq.wfCon hL)) (.symm hB.typeEq))
   | .ne hA _ _, ⟨_, hB, _, hNM⟩ =>
-    ⟨_, .trans hA.termEq (.trans (EqualityRelation.termEq hNM) (.symm hB.termEq))⟩
+    .trans hA.typeEq (.trans (EqualityRelation.typeEq hNM) (.symm hB.typeEq))
   | .pi hA .., ⟨_, _, hB, hPi, _⟩ =>
-    ⟨_, .trans hA.termEq (.trans (EqualityRelation.termEq hPi) (.symm hB.termEq))⟩
+    .trans hA.typeEq (.trans (EqualityRelation.typeEq hPi) (.symm hB.typeEq))
 
 /-- The terms that the interpretation of a reducible type equates are equal at that type. -/
 theorem LogRel.escape_eqTerm : LogRel l lower Γ A P → P.eqTerm t u → Γ ⊢ t ≡ u : A
   | .univ _ hA, ⟨_, _, ht, hu, _, _, hAB, _⟩ =>
     .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hAB) (.symm hu.1.termEq)))
-      (.symm hA.termEq)
+      (.symm hA.typeEq)
   | .ne hA _ _, ⟨_, _, ht, hu, _, _, htu⟩ =>
     .conv (.trans ht.termEq
         (.trans (EqualityRelation.termEq (EqualityRelation.ofNeutral htu)) (.symm hu.termEq)))
-      (.symm hA.termEq)
+      (.symm hA.typeEq)
   | .pi hA .., ⟨_, _, ht, hu, hfg, _⟩ =>
     .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hfg) (.symm hu.1.termEq)))
-      (.symm hA.termEq)
+      (.symm hA.typeEq)
 
 end Escape
 
 /-- A reducible type is a type. -/
-theorem LogicalRelation.escape (h : Γ ⊩⟨l⟩ A ▸ P) : ∃ L, Γ ⊢ A : Term.univ L :=
+theorem LogicalRelation.escape (h : Γ ⊩⟨l⟩ A ▸ P) : Γ ⊢ A :=
   (LogicalRelation.unfold ▸ h).escape
 
 /-- The types that the interpretation of a reducible type equates to it are equal to it. -/
-theorem LogicalRelation.escape_eqType (h : Γ ⊩⟨l⟩ A ▸ P) (hB : P.eqType B) :
-    ∃ L, Γ ⊢ A ≡ B : Term.univ L :=
+theorem LogicalRelation.escape_eqType (h : Γ ⊩⟨l⟩ A ▸ P) (hB : P.eqType B) : Γ ⊢ A ≡ B :=
   (LogicalRelation.unfold ▸ h).escape_eqType hB
 
 /-- The terms that the interpretation of a reducible type equates are equal at that type. -/

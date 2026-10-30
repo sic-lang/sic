@@ -19,27 +19,28 @@ def ΓNat (Γ : Con 1 n) : Con 1 (n + 3) := Γ ∙ univ (.var 0) ∙ churchFunTy
 /-- The type `Π^𝟘_𝟙 (y : X). X` of `f`, at the level `l ⊔ l`. -/
 theorem hasType_churchFunType (h : ⊢ Γ) :
     Γ ∙ univ (.var 0) ⊢ churchFunType : univ (.var 0 ⊔ .var 0) :=
-  have hX : Γ ∙ univ (.var 0) ⊢ var 0 : univ (.var 0) := .var (.snoc (.univ h))
-  .pi hX (.var (.snoc hX))
+  have hX : Γ ∙ univ (.var 0) ⊢ var 0 : univ (.var 0) := .var (.snoc (.univ (.univ h)))
+  .pi hX (.var (.snoc (.univ hX)))
 
 theorem wfCon_ΓNat (h : ⊢ Γ) : ⊢ ΓNat Γ :=
-  .snoc (.var (.snoc (hasType_churchFunType h)) : Γ ∙ univ (.var 0) ∙ churchFunType ⊢ var 1 : _)
+  .snoc (.univ ((.var (.snoc (.univ (hasType_churchFunType h))) :
+    Γ ∙ univ (.var 0) ∙ churchFunType ⊢ var 1 : _)))
 
 /-- `Nat_l` is a type, of the level `(l + 1) ⊔ ((l ⊔ l) ⊔ (l ⊔ l))`, which is `l + 1`. -/
 theorem hasType_churchNat (h : ⊢ Γ) :
     Γ ⊢ churchNat : univ (.succ (.var 0) ⊔ ((.var 0 ⊔ .var 0) ⊔ (.var 0 ⊔ .var 0))) :=
   have hx : Γ ∙ univ (.var 0) ∙ churchFunType ⊢ var 1 : univ (.var 0) :=
-    .var (.snoc (hasType_churchFunType h))
+    .var (.snoc (.univ (hasType_churchFunType h)))
   .pi (.univ h) (.pi (hasType_churchFunType h) (.pi hx (.var (wfCon_ΓNat h))))
 
 /-- A numeral has the type `Nat_l` when its body has the type `X`. -/
 theorem hasType_numeral (h : ⊢ Γ) (hb : ΓNat Γ ⊢ b : var 2) :
     Γ ⊢ lam 𝟘 (univ (.var 0)) (lam (𝟙 + 𝟙) churchFunType (lam 𝟙 (var 1) b)) : churchNat :=
   have hx : Γ ∙ univ (.var 0) ∙ churchFunType ⊢ var 1 : univ (.var 0) :=
-    .var (.snoc (hasType_churchFunType h))
+    .var (.snoc (.univ (hasType_churchFunType h)))
   have hx' := HasType.pi hx (.var (wfCon_ΓNat h) : ΓNat Γ ⊢ var 2 : univ (.var 0))
   have hf := HasType.pi (hasType_churchFunType h) hx'
-  .lam (.pi (.univ h) hf) (.lam hf (.lam hx' hb))
+  .lam (.univ (.pi (.univ h) hf)) (.lam (.univ hf) (.lam (.univ hx') hb))
 
 /-- `f`, in the bodies of the numerals. -/
 theorem hasType_ΓNat_f (h : ⊢ Γ) : ΓNat Γ ⊢ var 1 : pi 𝟙 𝟘 (var 2) (var 3) := .var (wfCon_ΓNat h)
@@ -57,15 +58,15 @@ theorem hasType_churchTwo (h : ⊢ Γ) : Γ ⊢ churchTwo : churchNat :=
 theorem hasType_churchSucc_body (h : ⊢ Γ) :
     ΓNat (Γ ∙ churchNat) ⊢
       app 𝟙 (var 1) (app 𝟙 (app (𝟙 + 𝟙) (app 𝟘 (var 3) (var 2)) (var 1)) (var 0)) : var 2 :=
-  have h' : ⊢ Γ ∙ churchNat := .snoc (hasType_churchNat h)
+  have h' : ⊢ Γ ∙ churchNat := .snoc (.univ (hasType_churchNat h))
   have hm : ΓNat (Γ ∙ churchNat) ⊢ var 3 : churchNat := .var (wfCon_ΓNat h')
   have hX : ΓNat (Γ ∙ churchNat) ⊢ var 2 : univ (.var 0) := .var (wfCon_ΓNat h')
   .app (hasType_ΓNat_f h') (.app (.app (.app hm hX) (hasType_ΓNat_f h')) (hasType_ΓNat_x h'))
 
 /-- `succ` has the type `Π^𝟘_𝟙 (m : Nat_l). Nat_l`. -/
 theorem hasType_churchSucc (h : ⊢ Γ) : Γ ⊢ churchSucc : pi 𝟙 𝟘 churchNat churchNat :=
-  have h' : ⊢ Γ ∙ churchNat := .snoc (hasType_churchNat h)
-  .lam (.pi (hasType_churchNat h) (hasType_churchNat h'))
+  have h' : ⊢ Γ ∙ churchNat := .snoc (.univ (hasType_churchNat h))
+  .lam (.univ (.pi (hasType_churchNat h) (hasType_churchNat h')))
     (hasType_numeral h' (hasType_churchSucc_body h))
 
 end SicTest.ChurchNumerals.Typing

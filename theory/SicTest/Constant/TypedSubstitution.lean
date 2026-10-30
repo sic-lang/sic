@@ -20,6 +20,6 @@ end of its context `A : U₀, B : U₀`: each variable of the function and of it
 to the next index.
 -/
 example : Γ₂ ∙ var 1 ⊢ constant.wk1 : constantType.wk1 :=
-  hasType_constant.wk (.step .id) (.snoc (.var wfCon_Γ₂))
+  hasType_constant.wk (.step .id) (.snoc (.univ (.var wfCon_Γ₂)))
 
 end SicTest.Constant.TypedSubstitution
