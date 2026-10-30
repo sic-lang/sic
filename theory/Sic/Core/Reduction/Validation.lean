@@ -18,6 +18,7 @@ polymorphic identity of RFC 24, and on the examples of the literature, whose equ
 | --- | --- |
 | `Neutral` | `Neutral`, in `Definition/Untyped/Neutral.agda` |
 | `Whnf` | `Whnf`, in `Definition/Untyped/Whnf.agda` |
+| `WhnfType` | `Type`, in `Definition/Untyped/Whnf.agda` |
 | `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
