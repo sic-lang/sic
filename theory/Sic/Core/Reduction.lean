@@ -24,6 +24,7 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.conv`, `TermRedWhnf.conv` | `conv*`, `conv↘∷`, in `Definition/Typed/Properties/Reduction.agda` |
+| `TermRedStar.trans`, `TypeRedStar.trans`, `TermRedStar.univ` | `_⇨∷*_`, `_⇨*_`, `univ*`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.det`, `TypeRedWhnf.det` | `whrDet`, `whrDet*`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
 | `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
@@ -177,6 +178,26 @@ theorem TermRedStar.conv : Γ ⊢ t ⇒* u : A → Γ ⊢ A ≡ B → Γ ⊢ t �
 /-- A reduction to a weak head normal form has any type equal to its own. -/
 theorem TermRedWhnf.conv (h : Γ ⊢ t ↘ u : A) (hA : Γ ⊢ A ≡ B) : Γ ⊢ t ↘ u : B :=
   ⟨h.1.conv hA, h.2⟩
+
+/-- Two reductions in sequence are a reduction. -/
+theorem TermRedStar.trans (h₁ : Γ ⊢ t₁ ⇒* t₂ : A) (h₂ : Γ ⊢ t₂ ⇒* t₃ : A) :
+    Γ ⊢ t₁ ⇒* t₃ : A := by
+  induction h₁ with
+  | refl => exact h₂
+  | step h _ ih => exact .step h (ih h₂)
+
+/-- Two reductions of types in sequence are a reduction of types. -/
+theorem TypeRedStar.trans (h₁ : Γ ⊢ A₁ ⇒* A₂) (h₂ : Γ ⊢ A₂ ⇒* A₃) : Γ ⊢ A₁ ⇒* A₃ := by
+  induction h₁ with
+  | refl => exact h₂
+  | step h _ ih => exact .step h (ih h₂)
+
+/-- Any number of reductions of a term of a universe are reductions of a type. -/
+theorem TermRedStar.univ (h : Γ ⊢ A ⇒* B : Term.univ l) : Γ ⊢ A ⇒* B := by
+  generalize hU : Term.univ l = U at h
+  induction h with
+  | refl h => exact .refl (.univ (hU ▸ h))
+  | step h _ ih => exact .step (.univ (hU ▸ h)) (ih hU)
 
 /-- A term that reduces has the type of its reduction. -/
 theorem TermRed.hasType : Γ ⊢ t ⇒ u : A → Γ ⊢ t : A
