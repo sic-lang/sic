@@ -9,3 +9,9 @@
 
 # Written by the development shell from its Lean, for the Lean extension of VS Code.
 /theory/lean-toolchain
+
+# Written by nix run .#docs, with the builds of its Lake package, and by Lake from the version of
+# Lean that doc-gen4 requires, which is the one of flake.lock.
+/theory/docbuild/.lake/
+/theory/docbuild/SicDocs.lean
+/theory/docbuild/lean-toolchain

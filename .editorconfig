@@ -17,5 +17,5 @@ indent_size = unset
 indent_size = unset
 
 # Written by Lake, with its own indentation.
-[theory/lake-manifest.json]
+[lake-manifest.json]
 indent_size = unset

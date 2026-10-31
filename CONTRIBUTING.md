@@ -56,6 +56,10 @@ For VS Code, `nix run '.#setup-vscode'` writes the recommended extensions and se
 
 `nix run '.#check'` runs every check of the pull requests, and `nix run '.#check-<name>'` one of them, such as `nix run '.#check-reuse'`.
 
+## Documentation
+
+`nix run '.#docs'` generates the documentation of the metatheory with [doc-gen4](https://github.com/leanprover/doc-gen4), as GitHub Pages publishes it at each push to `main`, in `theory/docbuild/.lake/build/doc`, which a web server must serve, as the [README of doc-gen4](https://github.com/leanprover/doc-gen4#usage) explains.
+
 ## Developer Certificate of Origin
 
 By signing off a commit, you certify that you have the right to submit it under the license of the repository, as described by the [Developer Certificate of Origin 1.1](https://developercertificate.org/).

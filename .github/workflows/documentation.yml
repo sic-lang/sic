@@ -1,0 +1,50 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# One deployment at a time: a push during a deployment waits for it, and replaces any older push
+# still waiting, as in the starter workflows of GitHub Pages.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b  # 31.11.3
+      # doc-gen4, its dependencies, and the documentation of the library of Lean, which take most of
+      # the time and only change with their versions, pinned by the manifest and flake.lock.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            theory/.lake/packages
+            theory/docbuild/.lake
+          key: >-
+            documentation-${{ runner.os }}-${{
+            hashFiles('flake.lock', 'theory/docbuild/lake-manifest.json') }}
+      - name: Generate the documentation
+        run: nix run --quiet .#docs
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
+        with:
+          path: theory/docbuild/.lake/build/doc
+
+  deploy:
+    needs: build
+    permissions:
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1
