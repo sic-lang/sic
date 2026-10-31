@@ -1,7 +1,6 @@
 module
 
-public import Sic.Core.Typing
-import Sic.Core.TypedSubstitution
+public import Sic.Core.TypedSubstitution
 
 /-!
 # Reduction
@@ -29,6 +28,10 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
 | `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
 | `TypeRedWhnf` | `_⊢_↘_`, in `Definition/Typed.agda` |
+| `Neutral.wk` | `wkNeutral`, in `Definition/Untyped/Neutral.agda` |
+| `Whnf.wk`, `WhnfType.wk` | `wkWhnf`, `wkType`, in `Definition/Untyped/Whnf.agda` |
+| `TermRed.wk`, `TermRedStar.wk`, `TermRedWhnf.wk` | `wkRedTerm`, `wkRed*Term`, `wkRed↘Term`, in `Definition/Typed/Weakening.agda` |
+| `TypeRed.wk`, `TypeRedStar.wk`, `TypeRedWhnf.wk` | `wkRed`, `wkRed*`, `wkRed↘`, in `Definition/Typed/Weakening.agda` |
 
 A type reduces as a term of a universe, as in ADE, so that the reduction of a type, as its equality,
 does not depend on the universe of its terms.
@@ -259,5 +262,80 @@ theorem TypeRedWhnf.det : Γ ⊢ A ↘ B₁ → Γ ⊢ A ↘ B₂ → B₁ = B�
     cases h₂ with
     | refl => exact absurd h₁ hw₂.not_typeRed
     | step h₂ hs₂ => exact ih hw₁ (h₁.det h₂ ▸ hs₂) hw₂
+
+/-!
+The weakening of the reductions: a weakening only renames the variables, so that it keeps the shape
+of the weak head normal forms and the steps of a reduction, in every well-formed context that
+contains its own.
+-/
+
+/-- A neutral term stays neutral when weakened. -/
+theorem Neutral.wk (ρ : Wk m n) : Neutral t → Neutral (t.wk ρ)
+  | .var => .var
+  | .app h => .app (h.wk ρ)
+
+/-- A weak head normal form stays one when weakened. -/
+theorem Whnf.wk (ρ : Wk m n) : Whnf t → Whnf (t.wk ρ)
+  | .univ => .univ
+  | .pi => .pi
+  | .lam => .lam
+  | .ne h => .ne (h.wk ρ)
+
+/-- A type in weak head normal form stays one when weakened. -/
+theorem WhnfType.wk (ρ : Wk m n) : WhnfType A → WhnfType (A.wk ρ)
+  | .univ => .univ
+  | .pi => .pi
+  | .ne h => .ne (h.wk ρ)
+
+/-- A step of reduction stays one in every well-formed context that contains its own. -/
+theorem TermRed.wk (h : Γ ⊢ t ⇒ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ t.wk ρ ⇒ u.wk ρ : A.wk ρ := by
+  induction h with
+  | conv _ hA ih => exact .conv ih (hA.wk hρ hΔ)
+  | app _ ha ih =>
+    rw [wk_instantiate]
+    exact .app ih (ha.wk hρ hΔ)
+  | beta hPi ht ha =>
+    rw [wk_instantiate, wk_instantiate]
+    exact match ht.wfCon with
+      | .snoc hA => .beta (hPi.wk hρ hΔ) (ht.wk hρ.lift (.snoc (hA.wk hρ hΔ))) (ha.wk hρ hΔ)
+
+/--
+Any number of steps of reduction stay steps in every well-formed context that contains their own.
+-/
+theorem TermRedStar.wk (h : Γ ⊢ t ⇒* u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ t.wk ρ ⇒* u.wk ρ : A.wk ρ := by
+  induction h with
+  | refl ht => exact .refl (ht.wk hρ hΔ)
+  | step h _ ih => exact .step (h.wk hρ hΔ) ih
+
+/--
+A reduction to a weak head normal form stays one in every well-formed context that contains its own.
+-/
+theorem TermRedWhnf.wk (h : Γ ⊢ t ↘ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ t.wk ρ ↘ u.wk ρ : A.wk ρ :=
+  ⟨h.1.wk hρ hΔ, h.2.wk ρ⟩
+
+/-- A step of reduction of a type stays one in every well-formed context that contains its own. -/
+theorem TypeRed.wk (h : Γ ⊢ A ⇒ B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ ⇒ B.wk ρ :=
+  match h with
+  | .univ h => .univ (h.wk hρ hΔ)
+
+/--
+Any number of steps of reduction of a type stay steps in every well-formed context that contains
+their own.
+-/
+theorem TypeRedStar.wk (h : Γ ⊢ A ⇒* B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
+    Δ ⊢ A.wk ρ ⇒* B.wk ρ := by
+  induction h with
+  | refl hA => exact .refl (hA.wk hρ hΔ)
+  | step h _ ih => exact .step (h.wk hρ hΔ) ih
+
+/--
+A reduction of a type to a weak head normal form stays one in every well-formed context that
+contains its own.
+-/
+theorem TypeRedWhnf.wk (h : Γ ⊢ A ↘ B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ ↘ B.wk ρ :=
+  ⟨h.1.wk hρ hΔ, h.2.wk ρ⟩
 
 end Sic.Core

@@ -36,6 +36,24 @@ def Wk.var : Wk m n → Fin n → Fin m
   | lift _, ⟨0, _⟩ => 0
   | lift ρ, ⟨x + 1, h⟩ => (ρ.var ⟨x, Nat.lt_of_succ_lt_succ h⟩).succ
 
+/-- The weakening `ρ₂` followed by `ρ₁`, as ADE's `ρ₁ • ρ₂`. -/
+def Wk.comp : Wk m l → Wk l n → Wk m n
+  | id, ρ₂ => ρ₂
+  | step ρ₁, ρ₂ => step (ρ₁.comp ρ₂)
+  | lift ρ₁, id => lift ρ₁
+  | lift ρ₁, step ρ₂ => step (ρ₁.comp ρ₂)
+  | lift ρ₁, lift ρ₂ => lift (ρ₁.comp ρ₂)
+
+/-- Two weakenings in a row move each variable as their composition does. -/
+theorem Wk.var_comp : ∀ (ρ₁ : Wk m l) (ρ₂ : Wk l n) (x : Fin n),
+    (ρ₁.comp ρ₂).var x = ρ₁.var (ρ₂.var x)
+  | id, _, _ => rfl
+  | step ρ₁, ρ₂, x => congrArg Fin.succ (var_comp ρ₁ ρ₂ x)
+  | lift _, id, _ => rfl
+  | lift ρ₁, step ρ₂, x => congrArg Fin.succ (var_comp ρ₁ ρ₂ x)
+  | lift _, lift _, ⟨0, _⟩ => rfl
+  | lift ρ₁, lift ρ₂, ⟨x + 1, h⟩ => congrArg Fin.succ (var_comp ρ₁ ρ₂ ⟨x, Nat.lt_of_succ_lt_succ h⟩)
+
 /-- A substitution of terms over `m` variables for the `n` variables of a context. -/
 abbrev Subst (k m n : Nat) := Fin n → Term k m
 
@@ -105,6 +123,11 @@ theorem wk_wk {ρ₁ : Wk m l} {ρ₂ : Wk l n} {ρ : Wk m n} (h : ∀ x, ρ₁.
       fun | ⟨0, _⟩ => rfl | ⟨_ + 1, _⟩ => congrArg Fin.succ (h _)
     simp only [wk, ihA h, ihB h']
   | app _ _ _ iht iha => simp only [wk, iht h, iha h]
+
+/-- Two weakenings in a row are their composition. -/
+theorem wk_comp (ρ₁ : Wk m l) (ρ₂ : Wk l n) (t : Term k n) :
+    (t.wk ρ₂).wk ρ₁ = t.wk (ρ₁.comp ρ₂) :=
+  wk_wk (fun x => (Wk.var_comp ρ₁ ρ₂ x).symm) t
 
 /-- A weakening is the substitution of the variables it moves to. -/
 theorem wk_eq_subst (ρ : Wk m n) (t : Term k n) : t.wk ρ = t.subst fun x => var (ρ.var x) := by
