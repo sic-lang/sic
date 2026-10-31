@@ -30,8 +30,7 @@ theorem validTypeEq_univ {Γ : Con 1 n} (hΓ : ⊩ᵛ Γ) :
   exact ⟨_, _, hU, hU, _, .refl (.univ (.univ hΔ)), .refl _⟩
 
 /-- The universes `U_l` and `U_{l + 1}` are not validly equal, at any level. -/
-theorem not_validTypeEq_univ_succ :
-    ¬ (.empty : Con 1 0) ⊩ᵛ⟨l⟩ univ (.var 0) ≡ univ (.succ (.var 0)) := by
+example : ¬ (.empty : Con 1 0) ⊩ᵛ⟨l⟩ univ (.var 0) ≡ univ (.succ (.var 0)) := by
   intro h
   have ⟨_, _, hU, _, hUU⟩ := h.reducible
   have hΓ : ⊢ (.empty : Con 1 0) := .empty
