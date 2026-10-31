@@ -20,13 +20,6 @@ to the variable of a new declaration of the domain.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda` | Of Pujet, in `Definition/LogicalRelation/Substitution/Introductions/` |
-| --- | --- | --- |
-| `ValidTermEq.lam` | `lamᵛ`, `lam-congᵛ` | `lamᵛ`, in `Lambda.agda` |
-| `ValidTermEq.app` | `∘ᵛ`, `∘-congᵛ` | `appᵛ`, `app-congᵛ`, in `Application.agda` |
-| `ValidTermEq.beta` | `β-redᵛ` | none, since `fundamentalTermEq`, in `Definition/LogicalRelation/Fundamental.agda`, proves it in place |
-| `ValidTermEq.eta` | `η-eqᵛ` | `η-eqᵛ`, in `Lambda.agda` |
-
 The abstractions of ADE and of Pujet do not carry the type of their argument, so that their
 congruence of abstraction relates two bodies in the same context.
 Here, the abstractions of two equal types of arguments are equal, which needs the equality of these
@@ -60,8 +53,9 @@ private theorem TermRed.beta_conv (hPi : Γ ⊢ pi p q A₁ B) (hA : Γ ⊢ A₁
 variable [EqualityRelation]
 
 /-!
-The statements of the theorems on `ValidTermEq` write `Term.pi`, `Term.lam` and `Term.app`, since
-`lam` and `app` name theorems in the namespace that Lean opens for them.
+The statements of the theorems on `ValidTermEq` write the types of functions, the abstractions and
+the applications with the namespace `Term`, since `lam` and `app` name theorems in the namespace that
+Lean opens for them.
 -/
 
 /-- A type reducibly equal to another is a type. -/
@@ -170,6 +164,8 @@ private theorem validTypeEq_instantiate (hPi : Γ ⊩ᵛ⟨l⟩ pi p q A B ≡ p
   rw [subst_instantiate, subst_instantiate]
   exact h
 
+-- ADE: `lamᵛ` and `lam-congᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda`.
+-- Pujet: `lamᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Lambda.agda`.
 /--
 Two abstractions are validly equal at a valid type of functions when their types of arguments are
 equal terms of a universe and their bodies are validly equal.
@@ -222,6 +218,9 @@ theorem ValidTermEq.lam (hPi : Γ ⊩ᵛ⟨l⟩ Term.pi p q A₁ B ≡ Term.pi p
   exact h.expand (.step hβ₁ (.refl h.escape_eqTerm.wf.1))
     (.step (.conv hβ₂ hBab.symm) (.refl h.escape_eqTerm.wf.2.1))
 
+-- ADE: `∘ᵛ` and `∘-congᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda`.
+-- Pujet: `appᵛ` and `app-congᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Application.agda`.
 /--
 Two applications are validly equal when their functions are validly equal at a type of functions
 and their arguments are validly equal at its domain.
@@ -249,6 +248,9 @@ theorem ValidTermEq.app (ht : Γ ⊩ᵛ⟨l⟩ t₁ ≡ t₂ : Term.pi p q A B) 
   rw [subst_instantiate]
   exact h.expand (hf₁.1.app ha₁) ((hf₂.1.app ha₂).conv hB.escape_eqType.symm)
 
+-- ADE: `β-redᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda`.
+-- Pujet: none, since `fundamentalTermEq`, in `Definition/LogicalRelation/Fundamental.agda`, proves
+-- it in place.
 /--
 `(β)` is valid: the application of an abstraction to a valid argument is validly equal to its body
 instantiated at the argument.
@@ -281,6 +283,8 @@ theorem ValidTermEq.beta (hPi : Γ ⊩ᵛ⟨l⟩ Term.pi p q A B ≡ Term.pi p q
   rw [subst_instantiate, subst_instantiate]
   exact h.expand (.step hβ (.refl h.escape_eqTerm.wf.1)) (.refl h.escape_eqTerm.wf.2.1)
 
+-- ADE: `η-eqᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda`.
+-- Pujet: `η-eqᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Lambda.agda`.
 /--
 `(η)` is valid: a valid function is validly equal to the abstraction of its application to the
 variable it binds.

@@ -14,14 +14,6 @@ The inversion of the types of functions that the syntactic validity uses, `HasTy
 
 ## Correspondence with the Formalization of ADE
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Inversion.agda` or `Inversion/Primitive.agda` |
-| --- | --- |
-| `HasType.inv_univ` | `inversion-U` |
-| `HasType.inv_pi_univ` | `inversion-ΠΣ-U` |
-| `HasType.inv_var` | `inversion-var` |
-| `HasType.inv_lam` | `inversion-lam` |
-| `HasType.inv_app` | `inversion-app` |
-
 The variables of ADE have their types through a relation `x ∷ B ∈ Γ`, which `HasType.inv_var`
 replaces by the function `Con.get`.
 
@@ -43,6 +35,7 @@ private theorem HasType.inv_univ_aux : Γ ⊢ s : C → s = Term.univ l →
   | .univ h, e => by cases e; exact .refl (.univ (.univ h))
   | .var _, e | .pi .., e | .lam .., e | .app .., e => by cases e
 
+-- ADE: `inversion-U`, in `Definition/Typed/Inversion/Primitive.agda`.
 /-- A universe has only the types equal to the universe just above it. -/
 theorem HasType.inv_univ (h : Γ ⊢ Term.univ l : C) : Γ ⊢ C ≡ Term.univ l.succ :=
   h.inv_univ_aux rfl
@@ -55,6 +48,7 @@ private theorem HasType.inv_pi_univ_aux : Γ ⊢ s : C → s = Term.pi p q A B �
   | .pi hA hB, e => by cases e; exact ⟨_, _, hA, hB, .refl (.univ (.univ hA.wfCon))⟩
   | .var _, e | .univ _, e | .lam .., e | .app .., e => by cases e
 
+-- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Inversion/Primitive.agda`.
 /--
 A type of functions has only the types equal to the universe of the larger level of a universe of
 its domain and of a universe of its codomain.
@@ -68,6 +62,7 @@ private theorem HasType.inv_var_aux : Γ ⊢ s : C → s = Term.var x → Γ ⊢
   | .var h, e => by cases e; exact .refl (h.get _)
   | .univ _, e | .pi .., e | .lam .., e | .app .., e => by cases e
 
+-- ADE: `inversion-var`, in `Definition/Typed/Inversion.agda`.
 /-- A variable has only the types equal to the type of its declaration. -/
 theorem HasType.inv_var (h : Γ ⊢ Term.var x : C) : Γ ⊢ C ≡ Γ.get x :=
   h.inv_var_aux rfl
@@ -80,6 +75,7 @@ private theorem HasType.inv_lam_aux : Γ ⊢ s : C → s = Term.lam p A t →
   | .lam hPi ht, e => by cases e; exact ⟨_, _, hPi, ht, .refl hPi⟩
   | .var _, e | .univ _, e | .pi .., e | .app .., e => by cases e
 
+-- ADE: `inversion-lam`, in `Definition/Typed/Inversion.agda`.
 /--
 An abstraction has a type of functions, with its grade and the type of its argument, whose codomain
 types its body, and only the types equal to it.
@@ -96,6 +92,7 @@ private theorem HasType.inv_app_aux : Γ ⊢ s : C → s = Term.app p t a →
   | .app ht ha, e => by cases e; exact ⟨_, _, _, ht, ha, .refl (HasType.app ht ha).wfType⟩
   | .var _, e | .univ _, e | .pi .., e | .lam .., e => by cases e
 
+-- ADE: `inversion-app`, in `Definition/Typed/Inversion.agda`.
 /--
 The function of an application has a type of functions, with the grade of the application, whose
 domain types the argument, and the application has only the types equal to the codomain at the

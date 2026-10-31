@@ -17,14 +17,6 @@ The proof is one induction on the five judgments, whose rules each follow from a
 
 ## Correspondence with the Formalization of ADE
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Fundamental.agda` or `Fundamental/Reducibility.agda` |
-| --- | --- |
-| `WfCon.valid` | `valid` |
-| `IsType.valid`, `IsType.reducible` | `fundamental-⊩ᵛ`, `reducible-⊩` |
-| `TypeEq.valid`, `TypeEq.reducible` | `fundamental-⊩ᵛ≡`, `reducible-⊩≡` |
-| `HasType.valid`, `HasType.reducible` | `fundamental-⊩ᵛ∷`, `reducible-⊩∷` |
-| `TermEq.valid`, `TermEq.reducible` | `fundamental-⊩ᵛ≡∷`, `reducible-⊩≡∷` |
-
 ADE name each theorem by the lemma, while those here are named by what they conclude, as the other
 properties of the judgments, such as `HasType.wfCon`.
 -/
@@ -47,15 +39,18 @@ The rule `(λ)` gives no equality of the type of the argument as a term of a uni
 
 mutual
 
+-- ADE: `valid`, in `Definition/LogicalRelation/Fundamental.agda`.
 /-- A well-formed context is valid. -/
 theorem WfCon.valid : ⊢ Γ → ⊩ᵛ Γ
   | .empty => ValidCon.unfold_empty ▸ trivial
   | .snoc hA => ValidCon.unfold_snoc ▸ hA.valid
 
+-- ADE: `fundamental-⊩ᵛ`, in `Definition/LogicalRelation/Fundamental.agda`.
 /-- A type is valid, at some level. -/
 theorem IsType.valid : Γ ⊢ A → ∃ l, Γ ⊩ᵛ⟨l⟩ A ≡ A
   | .univ hA => have ⟨_, hA⟩ := hA.valid; ⟨_, hA.toTypeEq⟩
 
+-- ADE: `fundamental-⊩ᵛ≡`, in `Definition/LogicalRelation/Fundamental.agda`.
 /-- Two equal types are validly equal, at some level. -/
 theorem TypeEq.valid : Γ ⊢ A ≡ B → ∃ l, Γ ⊩ᵛ⟨l⟩ A ≡ B
   | .univ hAB => have ⟨_, hAB⟩ := hAB.valid; ⟨_, hAB.toTypeEq⟩
@@ -66,6 +61,7 @@ theorem TypeEq.valid : Γ ⊢ A ≡ B → ∃ l, Γ ⊩ᵛ⟨l⟩ A ≡ B
     have ⟨_, h₂₃⟩ := h₂₃.valid
     ⟨_, (h₁₂.emb (Nat.le_max_left _ _)).trans (h₂₃.emb (Nat.le_max_right _ _))⟩
 
+-- ADE: `fundamental-⊩ᵛ∷`, in `Definition/LogicalRelation/Fundamental.agda`.
 /-- A term of a type is valid, at some level. -/
 theorem HasType.valid : Γ ⊢ t : A → ∃ l, Γ ⊩ᵛ⟨l⟩ t ≡ t : A
   | .var hΓ => ValidTermEq.var hΓ.valid _
@@ -88,6 +84,7 @@ theorem HasType.valid : Γ ⊢ t : A → ∃ l, Γ ⊩ᵛ⟨l⟩ t ≡ t : A
     have ⟨_, ha⟩ := ha.valid
     ⟨_, ValidTermEq.app ht ha⟩
 
+-- ADE: `fundamental-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Fundamental.agda`.
 /-- Two equal terms of a type are validly equal, at some level. -/
 theorem TermEq.valid : Γ ⊢ t ≡ u : A → ∃ l, Γ ⊩ᵛ⟨l⟩ t ≡ u : A
   | .refl ht => ht.valid
@@ -127,18 +124,22 @@ Every judgment holds reducibly in its own context, since it is valid, and a vali
 reducibly under the identity substitution.
 -/
 
+-- ADE: `reducible-⊩`, in `Definition/LogicalRelation/Fundamental/Reducibility.agda`.
 /-- A type is reducible, at some level. -/
 theorem IsType.reducible (h : Γ ⊢ A) : ∃ l, Γ ⊩⟨l⟩ A ≡ A :=
   have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
 
+-- ADE: `reducible-⊩≡`, in `Definition/LogicalRelation/Fundamental/Reducibility.agda`.
 /-- Two equal types are reducibly equal, at some level. -/
 theorem TypeEq.reducible (h : Γ ⊢ A ≡ B) : ∃ l, Γ ⊩⟨l⟩ A ≡ B :=
   have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
 
+-- ADE: `reducible-⊩∷`, in `Definition/LogicalRelation/Fundamental/Reducibility.agda`.
 /-- A term of a type is reducible, at some level. -/
 theorem HasType.reducible (h : Γ ⊢ t : A) : ∃ l, Γ ⊩⟨l⟩ t ≡ t : A :=
   have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
 
+-- ADE: `reducible-⊩≡∷`, in `Definition/LogicalRelation/Fundamental/Reducibility.agda`.
 /-- Two equal terms of a type are reducibly equal, at some level. -/
 theorem TermEq.reducible (h : Γ ⊢ t ≡ u : A) : ∃ l, Γ ⊩⟨l⟩ t ≡ u : A :=
   have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩

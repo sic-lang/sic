@@ -11,12 +11,6 @@ terms that reduce to the ones it equates.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Properties/Reduction.agda` | Of Pujet, in `Definition/LogicalRelation/Properties/Reduction.agda` |
-| --- | --- | --- |
-| `LogicalRelation.expand` | `redSubst*` | the same |
-| `LogicalRelation.expand_eqType` | none | none |
-| `LogicalRelation.expand_eqTerm` | `redSubst*Term` | the same |
-
 The interpretation of a type only mentions its weak head normal form, so that the expanded type
 keeps the interpretation of its reduct, where ADE and Pujet build a new proof of reducibility and
 show that it equates the two types, which `LogicalRelation.refl_eqType` gives here.
@@ -53,10 +47,14 @@ theorem LogRel.expand_eqType (h : LogRel l lower Γ A P) (hB : Γ ⊢ B ⇒* B')
 
 end
 
+-- ADE: `redSubst*`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
+-- Pujet: `redSubst*`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
 /-- A type that reduces to a reducible type is reducible, with the same interpretation. -/
 theorem LogicalRelation.expand (hAB : Γ ⊢ A ⇒* B) (h : Γ ⊩⟨l⟩ B ▸ P) : Γ ⊩⟨l⟩ A ▸ P :=
   unfold.mpr ((unfold.mp h).expand hAB)
 
+-- ADE: none.
+-- Pujet: none.
 /--
 The interpretation of a reducible type equates to it the types that reduce to the types it equates.
 -/
@@ -64,6 +62,8 @@ theorem LogicalRelation.expand_eqType (h : Γ ⊩⟨l⟩ A ▸ P) (hB : Γ ⊢ B
     P.eqType B :=
   (unfold.mp h).expand_eqType hB hP
 
+-- ADE: `redSubst*Term`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
+-- Pujet: `redSubst*Term`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
 /--
 The interpretation of a reducible type equates two terms that reduce to two terms it equates.
 

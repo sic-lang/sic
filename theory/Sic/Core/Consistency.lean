@@ -24,10 +24,6 @@ since an application of `X` would make `U_l` a type of functions.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Consequences/` | Of Pujet, in `Definition/Typed/Consequences/` |
-| --- | --- | --- |
-| `not_hasType_forall` | `¬Empty`, in `Canonicity.agda` | `zero≢one`, in `Consistency.agda` |
-
 ADE state that their empty type has no closed term, and Pujet that zero and one are not equal, while
 the core of RFC 24 has neither an empty type nor the natural numbers.
 Their proofs read the interpretation of the type, while the proof here inverts the typing of the
@@ -68,6 +64,8 @@ private theorem not_hasType_var_zero (h : .empty ∙ univ l ⊢ t : var 0) : Fal
     cases e
   | ne hN => exact not_univ (hN.typeEq_univ hw')
 
+-- ADE: `¬Empty`, in `Definition/Typed/Consequences/Canonicity.agda`.
+-- Pujet: `zero≢one`, in `Definition/Typed/Consequences/Consistency.agda`.
 /-- The type `Π^q_p (X : U_l). X` has no closed term. -/
 theorem not_hasType_forall : ¬ .empty ⊢ t : pi p q (univ l) (var 0) := fun h => by
   have ⟨_, _, ht, _⟩ := h.canonical_pi

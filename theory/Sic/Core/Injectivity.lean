@@ -14,13 +14,6 @@ The constructors of the types are thus injective, and distinct ones never make e
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Consequences/Equality.agda` or `Injectivity.agda` | Of Pujet, in `Definition/Typed/Consequences/Equality.agda` or `Injectivity.agda` |
-| --- | --- | --- |
-| `TypeEq.inv_univ` | `U≡A`, `U-injectivity` | `U≡A` |
-| `TypeEq.inv_pi` | `Π≡A`, `ΠΣ-injectivity` | `Π≡A`, `injectivity` |
-| `TypeEq.inv_ne` | `ne≡A` | `ne≡A` |
-| `TypeEq.pi_inj` | `ΠΣ-injectivity` | `injectivity` |
-
 ADE and Pujet state the head of the other type and the equalities of its components apart, while
 the inversions here state both, from which the injectivity follows, and the inequalities of distinct
 heads follow from the inversions, by the head of the other type.
@@ -45,6 +38,9 @@ The interpretation equates the second type to the first one only when it reduces
 same head, which is the second type itself, in weak head normal form.
 -/
 
+-- ADE: `U≡A`, in `Definition/Typed/Consequences/Equality.agda`, and `U-injectivity`, in
+-- `Definition/Typed/Consequences/Injectivity.agda`.
+-- Pujet: `U≡A`, in `Definition/Typed/Consequences/Equality.agda`.
 /-- A type in weak head normal form equal to a universe is a universe of an equivalent level. -/
 theorem TypeEq.inv_univ (h : Γ ⊢ Term.univ l ≡ C) (hC : Whnf C) :
     ∃ l', C = Term.univ l' ∧ l ≈ l' := by
@@ -62,6 +58,10 @@ theorem TypeEq.inv_univ (h : Γ ⊢ Term.univ l ≡ C) (hC : Whnf C) :
   | ne hN hN' => cases TypeRedWhnf.det ⟨hN, .ne hN'⟩ ⟨.refl hU, .univ⟩; nomatch hN'
   | pi hA => nomatch TypeRedWhnf.det ⟨hA, .pi⟩ ⟨.refl hU, .univ⟩
 
+-- ADE: `Π≡A`, in `Definition/Typed/Consequences/Equality.agda`, and `ΠΣ-injectivity`, in
+-- `Definition/Typed/Consequences/Injectivity.agda`.
+-- Pujet: `Π≡A`, in `Definition/Typed/Consequences/Equality.agda`, and `injectivity`, in
+-- `Definition/Typed/Consequences/Injectivity.agda`.
 /--
 A type in weak head normal form equal to a type of functions is a type of functions with the same
 grades, an equal domain, and an equal codomain in the context extended by the domain.
@@ -92,6 +92,8 @@ theorem TypeEq.inv_pi (h : Γ ⊢ Term.pi p q A B ≡ C) (hC : Whnf C) :
     rw [instantiate_wk_lift_step] at hPB hPB'
     exact ⟨_, _, rfl, hPA.escape_eqType hPA', hPB.escape_eqType hPB'⟩
 
+-- ADE: `ne≡A`, in `Definition/Typed/Consequences/Equality.agda`.
+-- Pujet: `ne≡A`, in `Definition/Typed/Consequences/Equality.agda`.
 /-- A type in weak head normal form equal to a neutral type is neutral. -/
 theorem TypeEq.inv_ne (h : Γ ⊢ K ≡ C) (hK : Neutral K) (hC : Whnf C) : Neutral C := by
   letI := EqualityRelation.termEqRelation
@@ -107,6 +109,8 @@ theorem TypeEq.inv_ne (h : Γ ⊢ K ≡ C) (hK : Neutral K) (hC : Whnf C) : Neut
     exact hM
   | pi hA => cases TypeRedWhnf.det ⟨hA, .pi⟩ ⟨.refl hK', .ne hK⟩; nomatch hK
 
+-- ADE: `ΠΣ-injectivity`, in `Definition/Typed/Consequences/Injectivity.agda`.
+-- Pujet: `injectivity`, in `Definition/Typed/Consequences/Injectivity.agda`.
 /--
 Two equal types of functions have the same grades, equal domains, and equal codomains in the context
 extended by the first domain.

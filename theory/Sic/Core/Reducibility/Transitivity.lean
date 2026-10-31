@@ -12,11 +12,6 @@ and the interpretation of a type equates two terms that it equates to the same t
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Properties/Transitivity.agda` | Of Pujet, in `Definition/LogicalRelation/Properties/Transitivity.agda` |
-| --- | --- | --- |
-| `LogicalRelation.trans_eqType` | `transEq` | the same |
-| `LogicalRelation.trans_eqTerm` | `transEqTerm` | the same |
-
 ADE and Pujet also take a proof that the third type is reducible, which the proof here does not
 use.
 ADE prove both theorems at each level from the theorems at the smaller levels, in their `transKit`,
@@ -30,6 +25,8 @@ namespace Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
+-- ADE: `transEq`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
+-- Pujet: `transEq`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
 /--
 A type `C` that the interpretation of a reducible type `B` equates to `B` is equated to every
 reducible type `A`, at any level, whose interpretation equates it to `B`.
@@ -74,6 +71,8 @@ theorem LogicalRelation.trans_eqType (hA : Γ ⊩⟨l₁⟩ A ▸ P) (hB : Γ �
       have ha' := (conv_eqTerm (unfold.mpr (hF hρ hΔ)) (unfold.mpr (hF' hρ hΔ)) (hFB hρ hΔ)).mp ha
       exact ihG hρ hΔ ha (hG' hρ hΔ ha') (hGB hρ hΔ ha) (hGC hρ hΔ ha')
 
+-- ADE: `transEqTerm`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
+-- Pujet: `transEqTerm`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
 /--
 The interpretation of a reducible type equates two terms that it equates to the same term.
 

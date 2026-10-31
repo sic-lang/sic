@@ -13,11 +13,6 @@ two equal levels stay equal once instantiated, `Level.Equiv.subst`.
 
 ## Correspondence with the Formalization of ADE
 
-| Definition or theorem | Definition or theorem of ADE |
-| --- | --- |
-| `Con.substLevels` | `_[_]` on contexts, in `Definition/Untyped.agda` |
-| `WfCon.substLevels`, `IsType.substLevels`, `TypeEq.substLevels`, `HasType.substLevels`, `TermEq.substLevels` | `subst-⊢`, `subst-⊢≡`, `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-
 The levels of ADE are terms of a type of levels, so that a level variable is a variable of the
 context, instantiated by their substitution of terms.
 The level variables of RFC 24 are not in the context, so that their instantiation is an operation
@@ -30,6 +25,7 @@ namespace Sic.Core
 
 open Term
 
+-- ADE: `_[_]` on contexts, in `Definition/Untyped.agda`.
 /-- The context `Γ` whose level variables are replaced by the levels `σ`, in each of its types. -/
 def Con.substLevels (σ : Fin k → Level j) : Con k n → Con j n
   | empty => empty
@@ -64,19 +60,23 @@ variable (σ : Fin k → Level j)
 
 mutual
 
+-- ADE: `subst-⊢`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 theorem WfCon.substLevels : ⊢ Γ → ⊢ Γ.substLevels σ
   | .empty => .empty
   | .snoc h => .snoc (h.substLevels)
 
+-- ADE: `subst-⊢`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 theorem IsType.substLevels : Γ ⊢ A → Γ.substLevels σ ⊢ A.substLevels σ
   | .univ h => .univ (h.substLevels)
 
+-- ADE: `subst-⊢≡`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 theorem TypeEq.substLevels : Γ ⊢ A ≡ B → Γ.substLevels σ ⊢ A.substLevels σ ≡ B.substLevels σ
   | .univ h => .univ (h.substLevels)
   | .refl h => .refl (h.substLevels)
   | .symm h => .symm (h.substLevels)
   | .trans h₁ h₂ => .trans (h₁.substLevels) (h₂.substLevels)
 
+-- ADE: `subst-⊢∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 theorem HasType.substLevels : Γ ⊢ t : A → Γ.substLevels σ ⊢ t.substLevels σ : A.substLevels σ
   | .var h => by
     rw [Con.substLevels_get]
@@ -89,6 +89,7 @@ theorem HasType.substLevels : Γ ⊢ t : A → Γ.substLevels σ ⊢ t.substLeve
     rw [substLevels_instantiate]
     exact .app (ht.substLevels) (ha.substLevels)
 
+-- ADE: `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 theorem TermEq.substLevels :
     Γ ⊢ t ≡ u : A → Γ.substLevels σ ⊢ t.substLevels σ ≡ u.substLevels σ : A.substLevels σ
   | .refl h => .refl (h.substLevels)

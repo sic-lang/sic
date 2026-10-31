@@ -14,19 +14,6 @@ be replaced by an equal type.
 
 ## Correspondence with the Formalization of ADE
 
-| Definition or theorem | Definition or theorem of ADE |
-| --- | --- |
-| `WkCon` | `_∷_⊇_`, in `Definition/Typed/Weakening.agda` |
-| `WkCon.comp` | `_•ₜ_`, in `Definition/Typed/Weakening.agda` |
-| `SubstWf`, with `⊢ Δ` | `_⊢ˢʷ_∷_`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `IsType.wk`, `TypeEq.wk`, `HasType.wk`, `TermEq.wk` | `wk`, `wkEq`, `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
-| `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `IsType.subst`, `TypeEq.subst`, `HasType.subst`, `TermEq.subst` | `subst-⊢`, `subst-⊢≡`, `subst-⊢∷`, `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `HasType.conv_last` | `stability-⊢∷`, for contexts that only differ by their last type, in `Definition/Typed/Stability/Primitive.agda` |
-| `SubstEq`, with `⊢ Δ` and `Δ ⊢ˢ σ : Γ` | `_⊢ˢʷ_≡_∷_`, which also types `τ`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `SubstEq.lift`, `SubstEq.instantiate` | `⊢ˢʷ≡∷-⇑`, `⊢ˢʷ≡∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-| `HasType.substEq` | `subst-⊢∷→⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
-
 ADE prove the weakening and the substitutions by induction on the size of the derivations, which
 their judgments, in `Set`, have, while those of `Sic.Core.Typing` are propositions: each proof here
 proves a stronger statement instead, which the module explains.
@@ -45,12 +32,13 @@ same order.
 -/
 notation:40 ρ:41 " ∷ " Δ:51 " ⊇ " Γ:51 => WkCon ρ Δ Γ
 
+-- ADE: `_∷_⊇_`, in `Definition/Typed/Weakening.agda`.
 /--
 `ρ ∷ Δ ⊇ Γ`: the weakening `ρ` moves the context `Γ` to `Δ`, which contains its declarations in the
 same order.
 -/
 inductive WkCon {k : Nat} : {m n : Nat} → Wk m n → Con k m → Con k n → Prop where
-  /-- The weakening `id` keeps the context. -/
+  /-- The weakening `Sic.Core.Wk.id` keeps the context. -/
   | id : .id ∷ Γ ⊇ Γ
   /-- A step adds a declaration of any type after the context. -/
   | step : ρ ∷ Δ ⊇ Γ → ρ.step ∷ Δ ∙ A ⊇ Γ
@@ -70,6 +58,7 @@ theorem WkCon.get_var : ρ ∷ Δ ⊇ Γ → ∀ x, Δ.get (ρ.var x) = (Γ.get 
     rw [Con.get_succ, this, ← wk_lift_wk1]
     rfl
 
+-- ADE: `_•ₜ_`, in `Definition/Typed/Weakening.agda`.
 /-- Two weakenings of contexts in a row are the weakening by their composition. -/
 theorem WkCon.comp : ρ₁ ∷ Ε ⊇ Δ → ρ₂ ∷ Δ ⊇ Γ → ρ₁.comp ρ₂ ∷ Ε ⊇ Γ
   | .id, h₂ => h₂
@@ -80,6 +69,7 @@ theorem WkCon.comp : ρ₁ ∷ Ε ⊇ Δ → ρ₂ ∷ Δ ⊇ Γ → ρ₁.comp 
     rw [wk_comp]
     exact .lift (h₁.comp h₂)
 
+-- ADE: `_⊢ˢʷ_∷_`, with `⊢ Δ`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /--
 `Δ ⊢ˢ σ : Γ`: the substitution `σ` replaces each variable of the context `Γ` by a term of `Δ`, whose
 type is the one of the variable, substituted.
@@ -166,23 +156,28 @@ private theorem TermEq.wkStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t ≡
 
 end
 
+-- ADE: `wk`, in `Definition/Typed/Weakening.agda`.
 /-- A type stays a type in every well-formed context that contains its own. -/
 theorem IsType.wk (h : Γ ⊢ A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ :=
   h.wkStrong.2 hρ hΔ
 
+-- ADE: `wkEq`, in `Definition/Typed/Weakening.agda`.
 /-- Two types stay equal in every well-formed context that contains their own. -/
 theorem TypeEq.wk (h : Γ ⊢ A ≡ B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ ≡ B.wk ρ :=
   h.wkStrong.2 hρ hΔ
 
+-- ADE: `wkTerm`, in `Definition/Typed/Weakening.agda`.
 /-- A term keeps its type in every well-formed context that contains its own. -/
 theorem HasType.wk (h : Γ ⊢ t : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ t.wk ρ : A.wk ρ :=
   h.wkStrong.2 hρ hΔ
 
+-- ADE: `wkEqTerm`, in `Definition/Typed/Weakening.agda`.
 /-- Two terms stay equal in every well-formed context that contains their own. -/
 theorem TermEq.wk (h : Γ ⊢ t ≡ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ t.wk ρ ≡ u.wk ρ : A.wk ρ :=
   h.wkStrong.2 hρ hΔ
 
+-- ADE: `⊢ˢʷ∷-⇑`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- Under a binder, a substitution replaces the bound variable by the variable of its new binder. -/
 theorem SubstWf.lift (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ ∙ A.subst σ) : Δ ∙ A.subst σ ⊢ˢ σ.lift : Γ ∙ A
   | ⟨0, _⟩ => by
@@ -194,6 +189,7 @@ theorem SubstWf.lift (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ ∙ A.subst σ) : Δ
     rw [Con.get_succ, subst_lift_wk1]
     exact (hσ _).wk (.step .id) hΔ
 
+-- ADE: `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- The term `a` of the type `A` replaces the variable of that type, and the other variables stay. -/
 theorem SubstWf.instantiate (ha : Γ ⊢ a : A) : Γ ⊢ˢ Subst.cons var a : Γ ∙ A
   | ⟨0, _⟩ => by
@@ -281,20 +277,24 @@ private theorem TermEq.substStrong {Γ : Con k n} {t u A : Term k n} : Γ ⊢ t 
 
 end
 
+-- ADE: `subst-⊢`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- A type whose variables are replaced by terms of their types stays a type. -/
 theorem IsType.subst (h : Γ ⊢ A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.subst σ :=
   h.substStrong.2 hσ hΔ
 
+-- ADE: `subst-⊢≡`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- Two equal types whose variables are replaced by terms of their types stay equal. -/
 theorem TypeEq.subst (h : Γ ⊢ A ≡ B) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ A.subst σ ≡ B.subst σ :=
   h.substStrong.2 hσ hΔ
 
+-- ADE: `subst-⊢∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- A term whose variables are replaced by terms of their types has the substituted type. -/
 theorem HasType.subst (h : Γ ⊢ t : A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ t.subst σ : A.subst σ :=
   h.substStrong.2 hσ hΔ
 
+-- ADE: `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- Two equal terms whose variables are replaced by terms of their types stay equal. -/
 theorem TermEq.subst (h : Γ ⊢ t ≡ u : A) (hσ : Δ ⊢ˢ σ : Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ t.subst σ ≡ u.subst σ : A.subst σ :=
@@ -305,6 +305,8 @@ theorem HasType.instantiate (ht : Γ ∙ A ⊢ t : B) (ha : Γ ⊢ a : A) :
     Γ ⊢ t.instantiate a : B.instantiate a :=
   ht.subst (.instantiate ha) ha.wfCon
 
+-- ADE: `stability-⊢∷`, for contexts that only differ by their last type, in
+-- `Definition/Typed/Stability/Primitive.agda`.
 /--
 A term keeps its type when the last declaration of its context gets an equal type, through the
 substitution of each variable by itself, which converts the type of the last one.
@@ -322,6 +324,8 @@ theorem HasType.conv_last (h : Γ ∙ A₁ ⊢ t : B) (hA : Γ ⊢ A₁ ≡ A₂
   have := h.subst hσ hΓ
   rwa [subst_var, subst_var] at this
 
+-- ADE: `_⊢ˢʷ_≡_∷_`, which also types `τ`, with `⊢ Δ` and `Δ ⊢ˢ σ : Γ`, in
+-- `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /--
 `Δ ⊢ˢ σ ≡ τ : Γ`: the substitutions `σ` and `τ` replace each variable of the context `Γ` by equal
 terms of `Δ`, at the type of the variable, substituted by `σ`.
@@ -331,6 +335,7 @@ def SubstEq (Δ : Con k m) (σ τ : Subst k m n) (Γ : Con k n) : Prop :=
 
 @[inherit_doc] notation:40 Δ:41 " ⊢ˢ " σ:41 " ≡ " τ:41 " : " Γ:41 => SubstEq Δ σ τ Γ
 
+-- ADE: `⊢ˢʷ≡∷-⇑`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- Under a binder, two equal substitutions replace the bound variable by the same variable. -/
 theorem SubstEq.lift (hστ : Δ ⊢ˢ σ ≡ τ : Γ) (hΔ : ⊢ Δ ∙ A.subst σ) :
     Δ ∙ A.subst σ ⊢ˢ σ.lift ≡ τ.lift : Γ ∙ A
@@ -344,6 +349,7 @@ theorem SubstEq.lift (hστ : Δ ⊢ˢ σ ≡ τ : Γ) (hΔ : ⊢ Δ ∙ A.subst
     rw [Con.get_succ, subst_lift_wk1]
     exact (hστ _).wk (.step .id) hΔ
 
+-- ADE: `⊢ˢʷ≡∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- The equal terms `a₁` and `a₂` replace the variable of their type, and the others stay. -/
 theorem SubstEq.instantiate (ha : Γ ⊢ a₁ ≡ a₂ : A) :
     Γ ⊢ˢ Subst.cons var a₁ ≡ Subst.cons var a₂ : Γ ∙ A
@@ -400,6 +406,7 @@ private theorem HasType.substEqStrong {Γ : Con k n} {t A : Term k n} : Γ ⊢ t
 
 end
 
+-- ADE: `subst-⊢∷→⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- A term whose variables are replaced by two equal substitutions gives two equal terms. -/
 theorem HasType.substEq (h : Γ ⊢ t : A) (hσ : Δ ⊢ˢ σ : Γ) (hστ : Δ ⊢ˢ σ ≡ τ : Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ t.subst σ ≡ t.subst τ : A.subst σ :=

@@ -27,10 +27,6 @@ and of its codomain, since these are not subterms of the type.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE | Of Pujet |
-| --- | --- | --- |
-| `HasType.sort_unique`, `TypeEq.sort` | none | none |
-
 The types of ADE are not all terms of a universe, and Pujet's have a single universe.
 -/
 
@@ -80,6 +76,8 @@ private theorem Reducibility.LogRel.sort_unique [EqualityRelation]
       rw [Level.eval_max, Level.eval_max, eF ρ, eG ρ]
     exact hL₁.univ_level.trans (hmax.trans hL₂.univ_level.symm)
 
+-- ADE: none.
+-- Pujet: none.
 /-- A type is a term of a single universe, up to the equality of levels. -/
 theorem HasType.sort_unique (h₁ : Γ ⊢ A : Term.univ L₁) (h₂ : Γ ⊢ A : Term.univ L₂) : L₁ ≈ L₂ := by
   letI := EqualityRelation.termEqRelation
@@ -87,6 +85,8 @@ theorem HasType.sort_unique (h₁ : Γ ⊢ A : Term.univ L₁) (h₂ : Γ ⊢ A 
   rw [LogicalRelation.unfold] at hP
   exact hP.sort_unique h₁ h₂
 
+-- ADE: none.
+-- Pujet: none.
 /--
 Two equal types are equal terms of a universe: the only rule of the equality of types that needs
 more than the rules of the equality of terms is the transitivity, whose two equalities are in the

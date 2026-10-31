@@ -175,7 +175,7 @@ theorem subst_var (t : Term k n) : t.subst var = t := by
     simp only [subst, Subst.lift_var, ihA, ihB]
   | app _ _ _ iht iha => simp only [subst, iht, iha]
 
-/-- The weakening `id` leaves the term unchanged. -/
+/-- The weakening `Wk.id` leaves the term unchanged. -/
 theorem wk_id (t : Term k n) : t.wk .id = t :=
   (wk_eq_subst _ t).trans (subst_var t)
 
@@ -208,7 +208,7 @@ theorem subst_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k n)
 theorem wk_step (ρ : Wk m n) (t : Term k n) : t.wk ρ.step = (t.wk ρ).wk1 :=
   (wk_wk (ρ := ρ.step) (fun _ => rfl) t).symm
 
-/-- The weakening `id`, extended under a binder, leaves the term unchanged. -/
+/-- The weakening `Wk.id`, extended under a binder, leaves the term unchanged. -/
 theorem wk_lift_id (t : Term k (n + 1)) : t.wk Wk.id.lift = t := by
   rw [wk_eq_subst]
   conv => rhs; rw [← subst_var t]

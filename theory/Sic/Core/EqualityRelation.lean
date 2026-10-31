@@ -18,29 +18,6 @@ are in.
 
 ## Correspondence with the Formalization of ADE
 
-| Field | Field of ADE's `Equality-relations`, in `Definition/Typed/EqualityRelation.agda` |
-| --- | --- |
-| `eqType` | `_⊢_≅_` |
-| `eq` | `_⊢_≅_∷_` |
-| `eqNeutral` | `_⊢_~_∷_` |
-| `ofNeutral` | `~-to-≅ₜ` |
-| `typeEq`, `termEq` | `≅-eq`, `≅ₜ-eq` |
-| `ofUniv` | `≅-univ` |
-| `symmType`, `symm`, `symmNeutral` | `≅-sym`, `≅ₜ-sym`, `~-sym` |
-| `transType`, `trans`, `transNeutral` | `≅-trans`, `≅ₜ-trans`, `~-trans` |
-| `conv`, `convNeutral` | `≅-conv`, `~-conv` |
-| `wkType`, `wk`, `wkNeutral` | `≅-wk`, `≅ₜ-wk`, `~-wk` |
-| `redType`, `red` | `≅-red`, `≅ₜ-red` |
-| `univ` | `≅ₜ-U-cong` |
-| `pi` | `≅ₜ-ΠΣ-cong` |
-| `eta` | `≅-η-eq` |
-| `var` | `~-var` |
-| `app` | `~-app` |
-
-| Definition or theorem | Definition or theorem of ADE |
-| --- | --- |
-| `EqualityRelation.termEqRelation` | `eqRelInstance`, in `Definition/Typed/EqRelInstance.agda` |
-
 Their `≅ₜ-ΠΣ-cong` relates a domain and a codomain in the same universe, which their `Lift` moves
 types to, while `pi` takes the larger of their levels, as `(Π)` does.
 Their `≅-η-eq` relates functions that are abstractions or neutral terms, `Function⁺`, while `eta`
@@ -73,54 +50,77 @@ equalities of `Sic.Core.Typing`, with the properties of an equivalence, the rule
 terms under reduction to weak head normal forms.
 -/
 class EqualityRelation where
+  -- ADE: `_⊢_≅_` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- `Γ ⊢ A ≅ B`: in the context `Γ`, the types `A` and `B` are equal. -/
   eqType : {k n : Nat} → Con k n → Term k n → Term k n → Prop
+  -- ADE: `_⊢_≅_∷_` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- `Γ ⊢ t ≅ u : A`: in the context `Γ`, the terms `t` and `u` are equal at the type `A`. -/
   eq : {k n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop
+  -- ADE: `_⊢_~_∷_` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- `Γ ⊢ t ~ u : A`: in the context `Γ`, the neutral terms `t` and `u` are equal at the type `A`. -/
   eqNeutral : {k n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop
+  -- ADE: `~-to-≅ₜ` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two equal neutral terms are equal. -/
   ofNeutral : Γ ⊢ t ~ u : A → Γ ⊢ t ≅ u : A
+  -- ADE: `≅-eq` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two equal types are equal in `Sic.Core.Typing`. -/
   typeEq : Γ ⊢ A ≅ B → Γ ⊢ A ≡ B
+  -- ADE: `≅ₜ-eq` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two equal terms are equal in `Sic.Core.Typing`. -/
   termEq : Γ ⊢ t ≅ u : A → Γ ⊢ t ≡ u : A
+  -- ADE: `≅-univ` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two equal terms of a universe are equal types. -/
   ofUniv : Γ ⊢ A ≅ B : Term.univ l → Γ ⊢ A ≅ B
+  -- ADE: `≅-sym` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality of types is symmetric. -/
   symmType : Γ ⊢ A ≅ B → Γ ⊢ B ≅ A
+  -- ADE: `≅ₜ-sym` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality is symmetric. -/
   symm : Γ ⊢ t ≅ u : A → Γ ⊢ u ≅ t : A
+  -- ADE: `~-sym` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality of neutral terms is symmetric. -/
   symmNeutral : Γ ⊢ t ~ u : A → Γ ⊢ u ~ t : A
+  -- ADE: `≅-trans` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality of types is transitive. -/
   transType : Γ ⊢ A₁ ≅ A₂ → Γ ⊢ A₂ ≅ A₃ → Γ ⊢ A₁ ≅ A₃
+  -- ADE: `≅ₜ-trans` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality is transitive. -/
   trans : Γ ⊢ t₁ ≅ t₂ : A → Γ ⊢ t₂ ≅ t₃ : A → Γ ⊢ t₁ ≅ t₃ : A
+  -- ADE: `~-trans` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The equality of neutral terms is transitive. -/
   transNeutral : Γ ⊢ t₁ ~ t₂ : A → Γ ⊢ t₂ ~ t₃ : A → Γ ⊢ t₁ ~ t₃ : A
+  -- ADE: `≅-conv` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two terms are equal at any type equal to their own. -/
   conv : Γ ⊢ t ≅ u : A → Γ ⊢ A ≡ B → Γ ⊢ t ≅ u : B
+  -- ADE: `~-conv` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two neutral terms are equal at any type equal to their own. -/
   convNeutral : Γ ⊢ t ~ u : A → Γ ⊢ A ≡ B → Γ ⊢ t ~ u : B
+  -- ADE: `≅-wk` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two types stay equal in every well-formed context that contains their own. -/
   wkType : Γ ⊢ A ≅ B → ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ A.wk ρ ≅ B.wk ρ
+  -- ADE: `≅ₜ-wk` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two terms stay equal in every well-formed context that contains their own. -/
   wk : Γ ⊢ t ≅ u : A → ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ t.wk ρ ≅ u.wk ρ : A.wk ρ
+  -- ADE: `~-wk` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two neutral terms stay equal in every well-formed context that contains their own. -/
   wkNeutral : Γ ⊢ t ~ u : A → ρ ∷ Δ ⊇ Γ → ⊢ Δ → Δ ⊢ t.wk ρ ~ u.wk ρ : A.wk ρ
+  -- ADE: `≅-red` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- Two types are equal when their weak head normal forms are. -/
   redType : Γ ⊢ A₁ ↘ B₁ → Γ ⊢ A₂ ↘ B₂ → Γ ⊢ B₁ ≅ B₂ → Γ ⊢ A₁ ≅ A₂
+  -- ADE: `≅ₜ-red` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /--
   Two terms are equal when their weak head normal forms are, at the weak head normal form of their
   type.
   -/
   red : Γ ⊢ A ↘ B → Γ ⊢ t₁ ↘ u₁ : B → Γ ⊢ t₂ ↘ u₂ : B → Γ ⊢ u₁ ≅ u₂ : B → Γ ⊢ t₁ ≅ t₂ : A
+  -- ADE: `≅ₜ-U-cong` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- `(U_≡)`: two universes are equal when their levels are. -/
   univ : ⊢ Γ → l₁ ≈ l₂ → Γ ⊢ Term.univ l₁ ≅ Term.univ l₂ : Term.univ l₁.succ
+  -- ADE: `≅ₜ-ΠΣ-cong` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The congruence of the type of functions. -/
   pi : Γ ⊢ A₁ ≅ A₂ : Term.univ l₁ → Γ ∙ A₁ ⊢ B₁ ≅ B₂ : Term.univ l₂ →
       Γ ⊢ Term.pi p q A₁ B₁ ≅ Term.pi p q A₂ B₂ : Term.univ (l₁ ⊔ l₂)
+  -- ADE: `≅-η-eq` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /--
   `(η)`: two functions in weak head normal form are equal when their applications to the variable
   of a new declaration are.
@@ -128,8 +128,10 @@ class EqualityRelation where
   eta : Γ ⊢ t₁ : Term.pi p q A B → Γ ⊢ t₂ : Term.pi p q A B → Whnf t₁ → Whnf t₂ →
       Γ ∙ A ⊢ Term.app p t₁.wk1 (Term.var 0) ≅ Term.app p t₂.wk1 (Term.var 0) : B →
       Γ ⊢ t₁ ≅ t₂ : Term.pi p q A B
+  -- ADE: `~-var` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- A variable is a neutral term equal to itself. -/
   var : Γ ⊢ Term.var x : A → Γ ⊢ Term.var x ~ Term.var x : A
+  -- ADE: `~-app` of `Equality-relations`, in `Definition/Typed/EqualityRelation.agda`.
   /-- The congruence of the application of a neutral term. -/
   app : Γ ⊢ t₁ ~ t₂ : Term.pi p q A B → Γ ⊢ a₁ ≅ a₂ : A →
       Γ ⊢ Term.app p t₁ a₁ ~ Term.app p t₂ a₂ : B.instantiate a₁
@@ -155,6 +157,7 @@ theorem TermEq.funext (h₁ : Γ ⊢ t₁ : Term.pi p q A B) (h₂ : Γ ⊢ t₂
   have ⟨_, hA⟩ := hPi.inv_pi.1
   .trans (.eta h₁) (.trans (.lam hPi (.refl hA) h) (.symm (.eta h₂)))
 
+-- ADE: `eqRelInstance`, in `Definition/Typed/EqRelInstance.agda`.
 /--
 The equality of `Sic.Core.Typing`, for both kinds of terms, as an equality relation.
 It is not an instance, so that each proof chooses its equality relation.

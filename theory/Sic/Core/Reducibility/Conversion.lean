@@ -10,10 +10,6 @@ the levels of the logical relation that prove their reducibility.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorems of ADE, in `Definition/LogicalRelation/Properties/Conversion.agda` | Of Pujet, in `Definition/LogicalRelation/Properties/Conversion.agda` |
-| --- | --- | --- |
-| `LogicalRelation.conv_eqTerm` | `convEqTerm₁`, `convEqTerm₂` | `convEqTerm₁`, `convEqTerm₂` |
-
 ADE and Pujet prove each direction in its own theorem, by a mutual induction, where an equivalence
 states both.
 -/
@@ -24,6 +20,9 @@ namespace Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
+-- ADE: `convEqTerm₁` and `convEqTerm₂`, in `Definition/LogicalRelation/Properties/Conversion.agda`.
+-- Pujet: `convEqTerm₁` and `convEqTerm₂`, in
+-- `Definition/LogicalRelation/Properties/Conversion.agda`.
 /--
 Two reducible types, at any two levels, that the interpretation of the first equates, have the same
 equal terms.

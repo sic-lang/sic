@@ -11,12 +11,6 @@ ADE prove the same property as the irrelevance of the proofs of reducibility: si
 computes the interpretation from a proof, they show that two proofs give equivalent equalities,
 where a relation that is a predicate of a type and of its interpretation, as here and in the
 formalization of Pujet, is a function.
-
-## Correspondence with the Formalizations of ADE and of Pujet
-
-| Theorem | Theorems of ADE, in `Definition/LogicalRelation/Irrelevance.agda` | Of Pujet, in `Definition/LogicalRelation/Irrelevance.agda` |
-| --- | --- | --- |
-| `LogicalRelation.unique` | `irrelevanceEq`, `irrelevanceTerm`, `irrelevanceEqTerm` | the same |
 -/
 
 @[expose] public section
@@ -25,6 +19,10 @@ namespace Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
+-- ADE: `irrelevanceEq`, `irrelevanceTerm` and `irrelevanceEqTerm`, in
+-- `Definition/LogicalRelation/Irrelevance.agda`.
+-- Pujet: `irrelevanceEq`, `irrelevanceTerm` and `irrelevanceEqTerm`, in
+-- `Definition/LogicalRelation/Irrelevance.agda`.
 /--
 Two proofs that a type is reducible, at any two levels, give the same interpretation.
 

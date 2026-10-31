@@ -13,10 +13,6 @@ types of functions of the neutral term, which are equal, at the argument.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Consequences/NeTypeEq.agda` | Of Pujet, in `Definition/Typed/Consequences/NeTypeEq.agda` |
-| --- | --- | --- |
-| `Neutral.typeEq` | `neTypeEq` | the same |
-
 ADE and Pujet proceed by induction on the neutral term and on the two typings, while the proof here
 inverts the typings, by `Sic.Core.Inversion`.
 -/
@@ -25,6 +21,8 @@ inverts the typings, by `Sic.Core.Inversion`.
 
 namespace Sic.Core
 
+-- ADE: `neTypeEq`, in `Definition/Typed/Consequences/NeTypeEq.agda`.
+-- Pujet: `neTypeEq`, in `Definition/Typed/Consequences/NeTypeEq.agda`.
 /-- A neutral term has only equal types. -/
 theorem Neutral.typeEq (hN : Neutral t) (h₁ : Γ ⊢ t : A) (h₂ : Γ ⊢ t : B) : Γ ⊢ A ≡ B := by
   induction hN generalizing A B with

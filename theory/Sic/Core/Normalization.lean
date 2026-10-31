@@ -12,11 +12,6 @@ type reduces it, and each of its terms, to a weak head normal form.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Consequences/Reduction.agda` | Of Pujet, in `Definition/Typed/Consequences/Reduction.agda` |
-| --- | --- | --- |
-| `IsType.whnf` | `whNorm` | the same |
-| `HasType.whnf` | `whNormTerm` | the same |
-
 The theorems hold for every equality relation, and the proofs use the equality of
 `Sic.Core.Typing`, which is one.
 -/
@@ -27,6 +22,8 @@ namespace Sic.Core
 
 open Reducibility
 
+-- ADE: `whNorm`, in `Definition/Typed/Consequences/Reduction.agda`.
+-- Pujet: `whNorm`, in `Definition/Typed/Consequences/Reduction.agda`.
 /-- A type reduces to a weak head normal form. -/
 theorem IsType.whnf (h : Γ ⊢ A) : ∃ B, Γ ⊢ A ↘ B := by
   letI := EqualityRelation.termEqRelation
@@ -37,6 +34,8 @@ theorem IsType.whnf (h : Γ ⊢ A) : ∃ B, Γ ⊢ A ↘ B := by
   | ne hN hN' => exact ⟨_, hN, .ne hN'⟩
   | pi hA => exact ⟨_, hA, .pi⟩
 
+-- ADE: `whNormTerm`, in `Definition/Typed/Consequences/Reduction.agda`.
+-- Pujet: `whNormTerm`, in `Definition/Typed/Consequences/Reduction.agda`.
 /--
 A term of a type reduces to a weak head normal form.
 

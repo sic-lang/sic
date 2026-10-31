@@ -12,11 +12,6 @@ interpretation of a type equates are equated in the other order.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Properties/Symmetry.agda` | Of Pujet, in `Definition/LogicalRelation/Properties/Symmetry.agda` |
-| --- | --- | --- |
-| `LogicalRelation.symm_eqType` | `symEq` | the same |
-| `LogicalRelation.symm_eqTerm` | `symEqTerm` | the same |
-
 ADE prove both theorems at each level from the theorems at the smaller levels, in their `symKit`,
 while here the symmetry of the types does not use the symmetry of the terms, so that it holds at
 every level before the symmetry of the terms of a universe uses it.
@@ -28,6 +23,8 @@ namespace Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
+-- ADE: `symEq`, in `Definition/LogicalRelation/Properties/Symmetry.agda`.
+-- Pujet: `symEq`, in `Definition/LogicalRelation/Properties/Symmetry.agda`.
 /--
 Two reducible types, at any two levels, that the interpretation of the first equates, are equated
 by the interpretation of the second.
@@ -67,6 +64,8 @@ theorem LogicalRelation.symm_eqType (hA : Γ ⊩⟨l₁⟩ A ▸ P) (hB : Γ ⊩
       have ha' := (conv_eqTerm (unfold.mpr (hF hρ hΔ)) (unfold.mpr (hF' hρ hΔ)) (hFB hρ hΔ)).mpr ha
       exact ihG hρ hΔ ha' (hG' hρ hΔ ha) (hGB hρ hΔ ha')
 
+-- ADE: `symEqTerm`, in `Definition/LogicalRelation/Properties/Symmetry.agda`.
+-- Pujet: `symEqTerm`, in `Definition/LogicalRelation/Properties/Symmetry.agda`.
 /--
 Two terms that the interpretation of a reducible type equates are equated in the other order.
 

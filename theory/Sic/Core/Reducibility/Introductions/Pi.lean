@@ -14,11 +14,6 @@ functions as types.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Substitution/Introductions/Pi-Sigma.agda` | Of Pujet, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda` |
-| --- | --- | --- |
-| `ReducibleTypeEq.inv_pi` | the first direction of `⊩ΠΣ≡ΠΣ⇔` | none |
-| `ValidTermEq.pi` | `ΠΣᵗᵛ`, `ΠΣ-congᵗᵛ` | `Πᵗᵛ`, `Π-congᵗᵛ` |
-
 ADE and Pujet build the interpretations of the domain and of the codomain from the proofs of their
 reducibility, which are data, where they are the canonical interpretations of
 `Sic.Core.Reducibility.Canonical` here.
@@ -33,8 +28,9 @@ open Term
 variable [EqualityRelation]
 
 /-!
-The statements of the theorems on `ValidTermEq` write `Term.pi` and `Term.univ`, since `pi` and
-`univ` name theorems in the namespace that Lean opens for them.
+The statements of the theorems on `ValidTermEq` write the types of functions and the universes with
+the namespace `Term`, since the short names of their constructors would resolve to theorems in the
+namespace that Lean opens for them.
 -/
 
 /--
@@ -99,13 +95,17 @@ private theorem reducibleTypeEq_pi {F₁ F₂ : Term k n} {G₁ G₂ : Term k (n
       (fun hρ hΕ => (hF hρ hΕ).symm.trans (hF hρ hΕ)) hG₂
   exact ⟨_, _, h₁, h₂, h₁₂⟩
 
+-- ADE: the first direction of `⊩ΠΣ≡ΠΣ⇔`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Pi-Sigma.agda`.
+-- Pujet: none.
 /--
 Two reducibly equal types of functions have reducibly equal domains in every well-formed context
 that contains their own, and reducibly equal codomains at reducibly equal arguments, as in the
 first direction of ADE's `⊩ΠΣ≡ΠΣ⇔`.
 
 Both types are their own weak head normal forms, so that their proofs of reducibility end with
-`LogRel.pi`, whose interpretations of the domain and of the codomain are the canonical ones.
+`Sic.Core.Reducibility.LogRel.pi`, whose interpretations of the domain and of the codomain are the
+canonical ones.
 The codomains at two arguments `a` and `b` are equal through the first codomain at `b`.
 -/
 theorem ReducibleTypeEq.inv_pi {F₁ F₂ : Term k n} {G₁ G₂ : Term k (n + 1)}
@@ -149,6 +149,9 @@ theorem ReducibleTypeEq.inv_pi {F₁ F₂ : Term k n} {G₁ G₂ : Term k (n + 1
       exact ReducibleTypeEq.trans ⟨_, _, hGa, hGb, hGext hρ hΕ hPFa hPFb hPFab⟩
         ⟨_, _, hGb, hGb', hG₁₂ hρ hΕ hPFb⟩
 
+-- ADE: `ΠΣᵗᵛ` and `ΠΣ-congᵗᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Pi-Sigma.agda`.
+-- Pujet: `Πᵗᵛ` and `Π-congᵗᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda`.
 /--
 Two types of functions are validly equal terms of the universe of the larger of the levels of their
 domains and of their codomains, when their domains and their codomains are.

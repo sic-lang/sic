@@ -19,12 +19,6 @@ injectivity of the types.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Consequences/Canonicity.agda` | Of Pujet, in `Definition/Typed/Consequences/Canonicity.agda` |
-| --- | --- | --- |
-| `Neutral.not_closed` | `closed-ne`, in `Definition/Untyped/Neutral.agda` | `noNe`, in `Definition/Typed/Properties.agda` |
-| `HasType.canonical_pi` | none | none |
-| `HasType.canonical_univ` | none | none |
-
 The closed neutral terms of ADE have a definition at their head, which `closed-ne` allows, and the
 one of Pujet is typed.
 ADE and Pujet state the canonicity of the natural numbers, `canonicity`: a closed term of `ℕ` is
@@ -39,12 +33,16 @@ namespace Sic.Core
 
 open Term
 
+-- ADE: `closed-ne`, in `Definition/Untyped/Neutral.agda`.
+-- Pujet: `noNe`, in `Definition/Typed/Properties.agda`.
 /-- No closed term is neutral: the variable at its head would be in the empty context. -/
 theorem Neutral.not_closed {t : Term k 0} (h : Neutral t) : False := by
   induction h with
   | var => rename_i x; exact x.elim0
   | app _ ih => exact ih
 
+-- ADE: none.
+-- Pujet: none.
 /-- A closed term of a type of functions reduces to an abstraction with the grade of the type. -/
 theorem HasType.canonical_pi (h : .empty ⊢ t : Term.pi p q A B) :
     ∃ A' u, .empty ⊢ t ↘ Term.lam p A' u : Term.pi p q A B := by
@@ -59,6 +57,8 @@ theorem HasType.canonical_pi (h : .empty ⊢ t : Term.pi p q A B) :
     exact ⟨_, _, hw⟩
   | ne hN => exact hN.not_closed.elim
 
+-- ADE: none.
+-- Pujet: none.
 /-- A closed term of a universe reduces to a universe or to a type of functions. -/
 theorem HasType.canonical_univ (h : .empty ⊢ t : Term.univ l) :
     (∃ l', .empty ⊢ t ↘ Term.univ l' : Term.univ l) ∨
