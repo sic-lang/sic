@@ -34,7 +34,7 @@ still requires their levels to be equal.
 | `LogRel.pi` | `Bᵣ`, with `_⊩ₗB⟨_⟩_`, `_⊩ₗB⟨_⟩_≡_/_`, `_⊩ₗΠ_≡_∷_/_` | `LRΠ` |
 | `LogicalRelation` | `_⊩⟨_⟩_`, with `kit` | `_⊩⟨_⟩_`, with `kit` |
 | `Level.bound` | `↑ᵘ`, which sends the neutral levels to `0` | none, with a single universe |
-| `LogRel.escape`, `LogRel.escape_eqType`, `LogRel.escape_eqTerm` | `escape`, `escapeEq`, `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda` | the same |
+| `LogRel.escape`, `LogRel.escape_eq` | `escape`, `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda` | the same |
 
 Pujet's relation is a predicate of a type and of its interpretation, as here, where ADE's relation
 computes the interpretation from a proof of reducibility.
@@ -45,6 +45,8 @@ constructor.
 The interpretation of a type reduces it and compares it as a type, as ADE do, so that it does not
 depend on the universe that a proof of its reducibility chooses for it.
 Their relation also covers their other types, levels and definitions.
+`LogRel.escape_eqType` and `LogRel.escape_eqTerm` give the equalities of `Sic.Core.Typing`, which
+ADE and Pujet obtain from the equality relation, after their `escapeEq` and `escapeTermEq`.
 -/
 
 @[expose] public section
@@ -150,9 +152,10 @@ theorem LogicalRelation.unfold {Γ : Con k n} {A : Term k n} {P : Interpretation
   rw [LogicalRelation]
 
 /-!
-The escape lemmas, as in ADE: a reducible type is a type, and the types and the terms that its
-interpretation equates are equal by `Sic.Core.Typing`, since the reductions and the equality
-relation are contained in its equality.
+The escape lemmas, as in ADE: a reducible type is a type, the terms that its interpretation equates
+are equal by the equality relation, which is closed under reduction to weak head normal forms, and
+the types and the terms that its interpretation equates are equal by `Sic.Core.Typing`, whose
+equality contains the reductions and the equality relation.
 -/
 
 section Escape
@@ -172,18 +175,18 @@ theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → Γ ⊢ A
   | .pi hA .., ⟨_, _, hB, hPi, _⟩ =>
     .trans hA.typeEq (.trans (EqualityRelation.typeEq hPi) (.symm hB.typeEq))
 
+/--
+The terms that the interpretation of a reducible type equates are equal by the equality relation.
+-/
+theorem LogRel.escape_eq : LogRel l lower Γ A P → P.eqTerm t u → Γ ⊢ t ≅ u : A
+  | .univ _ hA, ⟨_, _, ht, hu, _, _, hAB, _⟩ => EqualityRelation.red ⟨hA, .univ⟩ ht hu hAB
+  | .ne hA hN _, ⟨_, _, ht, hu, ht', hu', htu⟩ =>
+    EqualityRelation.red ⟨hA, .ne hN⟩ ⟨ht, .ne ht'⟩ ⟨hu, .ne hu'⟩ (EqualityRelation.ofNeutral htu)
+  | .pi hA .., ⟨_, _, ht, hu, hfg, _⟩ => EqualityRelation.red ⟨hA, .pi⟩ ht hu hfg
+
 /-- The terms that the interpretation of a reducible type equates are equal at that type. -/
-theorem LogRel.escape_eqTerm : LogRel l lower Γ A P → P.eqTerm t u → Γ ⊢ t ≡ u : A
-  | .univ _ hA, ⟨_, _, ht, hu, _, _, hAB, _⟩ =>
-    .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hAB) (.symm hu.1.termEq)))
-      (.symm hA.typeEq)
-  | .ne hA _ _, ⟨_, _, ht, hu, _, _, htu⟩ =>
-    .conv (.trans ht.termEq
-        (.trans (EqualityRelation.termEq (EqualityRelation.ofNeutral htu)) (.symm hu.termEq)))
-      (.symm hA.typeEq)
-  | .pi hA .., ⟨_, _, ht, hu, hfg, _⟩ =>
-    .conv (.trans ht.1.termEq (.trans (EqualityRelation.termEq hfg) (.symm hu.1.termEq)))
-      (.symm hA.typeEq)
+theorem LogRel.escape_eqTerm (h : LogRel l lower Γ A P) (htu : P.eqTerm t u) : Γ ⊢ t ≡ u : A :=
+  EqualityRelation.termEq (h.escape_eq htu)
 
 end Escape
 
@@ -194,6 +197,12 @@ theorem LogicalRelation.escape (h : Γ ⊩⟨l⟩ A ▸ P) : Γ ⊢ A :=
 /-- The types that the interpretation of a reducible type equates to it are equal to it. -/
 theorem LogicalRelation.escape_eqType (h : Γ ⊩⟨l⟩ A ▸ P) (hB : P.eqType B) : Γ ⊢ A ≡ B :=
   (LogicalRelation.unfold ▸ h).escape_eqType hB
+
+/--
+The terms that the interpretation of a reducible type equates are equal by the equality relation.
+-/
+theorem LogicalRelation.escape_eq (h : Γ ⊩⟨l⟩ A ▸ P) (htu : P.eqTerm t u) : Γ ⊢ t ≅ u : A :=
+  (LogicalRelation.unfold ▸ h).escape_eq htu
 
 /-- The terms that the interpretation of a reducible type equates are equal at that type. -/
 theorem LogicalRelation.escape_eqTerm (h : Γ ⊩⟨l⟩ A ▸ P) (htu : P.eqTerm t u) :
