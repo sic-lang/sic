@@ -5,7 +5,6 @@ import Sic.Core.Reducibility.Introductions.Pi
 import Sic.Core.Reducibility.Introductions.Universe
 import Sic.Core.Reducibility.Introductions.Variable
 import Sic.Core.Reducibility.Uniqueness
-import all SicTest.Common.Reducibility.Validity
 import all SicTest.TypeVariable.Reducibility.LogicalRelation
 import all SicTest.TypeVariable.Reducibility.Validity
 
@@ -20,7 +19,7 @@ equality relation.
 
 namespace SicTest.TypeVariable.Reducibility.Introductions.Function
 
-open Sic.Core Sic.Grade Sic.Core.Term Sic.Core.Reducibility SicTest.Common.Reducibility.Validity
+open Sic.Core Sic.Grade Sic.Core.Term Sic.Core.Reducibility
 open SicTest.TypeVariable.Reducibility.LogicalRelation SicTest.TypeVariable.Reducibility.Validity
 
 variable [EqualityRelation]
@@ -55,9 +54,9 @@ it is, rules out every case.
 -/
 example : ¬ ΓA ⊩ᵛ⟨l⟩ idA p ≡ pi p' q' (var 0) (var 1) := by
   intro h
-  have ⟨_, _, hI, hPi, hIPi⟩ := reducibleTypeEq_of_validTypeEq h
+  have ⟨_, _, hI, hPi, hIPi⟩ := h.reducible
   have ⟨_, _, hI', _, hIA⟩ :=
-    reducibleTypeEq_of_validTypeEq (ValidTermEq.toTypeEq (L := .var 0) (validTermEq_idA (p := p)))
+    (ValidTermEq.toTypeEq (L := .var 0) (validTermEq_idA (p := p))).reducible
   rw [hI'.unique hI] at hIA
   have hA : ΓA ⊢ var 0 := .univ (.var wfCon_ΓA)
   rw [LogicalRelation.unfold] at hI

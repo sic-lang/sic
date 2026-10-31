@@ -10,19 +10,20 @@ import Sic.Core.Reducibility.Introductions.Variable
 # Fundamental Lemma
 
 Every judgment of `Sic.Core.Typing` is valid, as in the formalization of ADE: a well-formed context
-is valid, and each other judgment is a valid equality at some level.
+is valid, and each other judgment is a valid equality at some level, so that it holds reducibly in its
+own context.
 The proof is one induction on the five judgments, whose rules each follow from a theorem of
 `Sic.Core.Reducibility.Validity` or of `Sic.Core.Reducibility.Introductions`.
 
 ## Correspondence with the Formalization of ADE
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Fundamental.agda` |
+| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Fundamental.agda` or `Fundamental/Reducibility.agda` |
 | --- | --- |
 | `WfCon.valid` | `valid` |
-| `IsType.valid` | `fundamental-⊩ᵛ` |
-| `TypeEq.valid` | `fundamental-⊩ᵛ≡` |
-| `HasType.valid` | `fundamental-⊩ᵛ∷` |
-| `TermEq.valid` | `fundamental-⊩ᵛ≡∷` |
+| `IsType.valid`, `IsType.reducible` | `fundamental-⊩ᵛ`, `reducible-⊩` |
+| `TypeEq.valid`, `TypeEq.reducible` | `fundamental-⊩ᵛ≡`, `reducible-⊩≡` |
+| `HasType.valid`, `HasType.reducible` | `fundamental-⊩ᵛ∷`, `reducible-⊩∷` |
+| `TermEq.valid`, `TermEq.reducible` | `fundamental-⊩ᵛ≡∷`, `reducible-⊩≡∷` |
 
 ADE name each theorem by the lemma, while those here are named by what they conclude, as the other
 properties of the judgments, such as `HasType.wfCon`.
@@ -120,5 +121,26 @@ theorem TermEq.valid : Γ ⊢ t ≡ u : A → ∃ l, Γ ⊩ᵛ⟨l⟩ t ≡ u : 
   | .eta ht => have ⟨_, ht⟩ := ht.valid; ⟨_, ValidTermEq.eta ht⟩
 
 end
+
+/-!
+Every judgment holds reducibly in its own context, since it is valid, and a valid judgment holds
+reducibly under the identity substitution.
+-/
+
+/-- A type is reducible, at some level. -/
+theorem IsType.reducible (h : Γ ⊢ A) : ∃ l, Γ ⊩⟨l⟩ A ≡ A :=
+  have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
+
+/-- Two equal types are reducibly equal, at some level. -/
+theorem TypeEq.reducible (h : Γ ⊢ A ≡ B) : ∃ l, Γ ⊩⟨l⟩ A ≡ B :=
+  have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
+
+/-- A term of a type is reducible, at some level. -/
+theorem HasType.reducible (h : Γ ⊢ t : A) : ∃ l, Γ ⊩⟨l⟩ t ≡ t : A :=
+  have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
+
+/-- Two equal terms of a type are reducibly equal, at some level. -/
+theorem TermEq.reducible (h : Γ ⊢ t ≡ u : A) : ∃ l, Γ ⊩⟨l⟩ t ≡ u : A :=
+  have ⟨_, h⟩ := h.valid; ⟨_, h.reducible⟩
 
 end Sic.Core

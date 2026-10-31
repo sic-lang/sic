@@ -1,7 +1,6 @@
 module
 
 import Sic.Core.Reducibility.Validity
-import all SicTest.Common.Reducibility.Validity
 
 /-!
 # The Universes: Validity
@@ -13,7 +12,7 @@ valid type at the value of its own level.
 
 namespace SicTest.Universe.Reducibility.Validity
 
-open Sic.Core Sic.Core.Term Sic.Core.Reducibility SicTest.Common.Reducibility.Validity
+open Sic.Core Sic.Core.Term Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
@@ -33,7 +32,7 @@ theorem validTypeEq_univ {Γ : Con 1 n} (hΓ : ⊩ᵛ Γ) :
 /-- The universes `U_l` and `U_{l + 1}` are not validly equal, at any level. -/
 example : ¬ (.empty : Con 1 0) ⊩ᵛ⟨l⟩ univ (.var 0) ≡ univ (.succ (.var 0)) := by
   intro h
-  have ⟨_, _, hU, _, hUU⟩ := reducibleTypeEq_of_validTypeEq h
+  have ⟨_, _, hU, _, hUU⟩ := h.reducible
   have hΓ : ⊢ (.empty : Con 1 0) := .empty
   rw [LogicalRelation.unfold] at hU
   cases hU with
@@ -52,7 +51,7 @@ The universe `U_l` is not a valid type at the level `0`, the value of `l` when i
 -/
 example : ¬ (.empty : Con 1 0) ⊩ᵛ⟨0⟩ univ (.var 0) ≡ univ (.var 0) := by
   intro h
-  have ⟨_, _, hU, _⟩ := reducibleTypeEq_of_validTypeEq h
+  have ⟨_, _, hU, _⟩ := h.reducible
   have hΓ : ⊢ (.empty : Con 1 0) := .empty
   rw [LogicalRelation.unfold] at hU
   cases hU with

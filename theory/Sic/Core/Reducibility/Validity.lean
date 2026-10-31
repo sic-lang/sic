@@ -40,6 +40,7 @@ The validities are defined together, by recursion on the context.
 | `ValidTermEq.conv` | `conv-⊩ᵛ≡∷` | `convᵛ`, `convEqᵛ` |
 | `ValidTypeEq.emb`, `ValidTermEq.emb` | `emb-⊩ᵛ≡`, `emb-⊩ᵛ≡∷` | none, with a single universe |
 | `ValidTypeEq.wk1`, `ValidTermEq.wk1` | `wk1-⊩ᵛ≡`, `wk1-⊩ᵛ≡∷` | `wk1ᵛ`, `wk1Eqᵛ` for the types |
+| `ValidTypeEq.reducible`, `ValidTermEq.reducible` | `⊩ᵛ≡→⊩≡`, `⊩ᵛ≡∷→⊩≡∷` | none |
 
 Pujet's validities carry the proofs of the validity of the context, of the reducibility of the
 substitutions and of the substituted types, on which the others depend, which needs
@@ -311,5 +312,23 @@ theorem ValidTermEq.wk1 (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (hC : Γ ⊩ᵛ⟨l'�
   rw [ReducibleSubstEq.unfold_snoc] at hσ
   rw [subst_wk, subst_wk, subst_wk]
   exact h.2 hσ.2
+
+/-!
+A valid judgment holds reducibly in its own context, under the identity substitution, which is
+reducible since the context is valid, and leaves every term unchanged.
+-/
+
+/-- Two validly equal types are reducibly equal in their context. -/
+theorem ValidTypeEq.reducible (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩⟨l⟩ A ≡ B := by
+  rw [ValidTypeEq.unfold] at h
+  have h := h.2 (ReducibleSubstEq.var h.1)
+  rwa [subst_var, subst_var] at h
+
+/-- Two validly equal terms are reducibly equal in their context. -/
+theorem ValidTermEq.reducible (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩⟨l⟩ t ≡ u : A := by
+  have hA := h.1
+  rw [ValidTypeEq.unfold] at hA
+  have h := h.2 (ReducibleSubstEq.var hA.1)
+  rwa [subst_var, subst_var, subst_var] at h
 
 end Sic.Core.Reducibility
