@@ -24,15 +24,19 @@ Grades are part of the terms, but no rule reads them: the usage of a term is a s
 | `(var)` | `HasType.var` | `var`, with `_∷_∈_` |
 | `(conv)` | `HasType.conv` | `conv` of `_⊢_∷_` |
 | `(U)` | `HasType.univ` | `Uⱼ` |
-| `(Π)` | `HasType.pi` | `ΠΣⱼ` of `_⊢_∷_` |
+| `(Π)`, where both sorts are universes | `HasType.pi` | `ΠΣⱼ` of `_⊢_∷_` |
 | `(λ)` | `HasType.lam` | `lamⱼ` |
 | `(∘)` | `HasType.app` | `_∘ⱼ_` |
 | `(refl)`, `(sym)`, `(trans)` | `TermEq.refl`, `TermEq.symm`, `TermEq.trans` | `refl`, `sym`, `trans` of `_⊢_≡_∷_` |
 | `(conv_≡)` | `TermEq.conv` | `conv` of `_⊢_≡_∷_` |
 | `(U_≡)` | `TermEq.univ` | `U-cong` of `_⊢_≡_∷_` |
-| Congruences | `TermEq.pi`, `TermEq.lam`, `TermEq.app` | `ΠΣ-cong`, none, `app-cong` |
+| Congruences, where the sorts of `(Π)` are universes | `TermEq.pi`, `TermEq.lam`, `TermEq.app` | `ΠΣ-cong`, none, `app-cong` |
 | `(β)` | `TermEq.beta` | `β-red` |
 | `(η)` | `TermEq.eta` | `η-eq` |
+
+The rules cover the universes and the functions of RFC 24, so far: `(Π)` has the case where its
+domain and its codomain are terms of universes, while its sorts of strict propositions, and its
+condition on the grade of a proof, come with the strict propositions.
 
 ADE have the same five judgments, with more rules that form types, since their type of levels may
 lie in no universe, while every type of RFC 24 is a term of a universe.
