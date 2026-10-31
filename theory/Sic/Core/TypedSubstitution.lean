@@ -17,6 +17,7 @@ be replaced by an equal type.
 | Definition or theorem | Definition or theorem of ADE |
 | --- | --- |
 | `WkCon` | `_∷_⊇_`, in `Definition/Typed/Weakening.agda` |
+| `WkCon.comp` | `_•ₜ_`, in `Definition/Typed/Weakening.agda` |
 | `SubstWf`, with `⊢ Δ` | `_⊢ˢʷ_∷_`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
 | `IsType.wk`, `TypeEq.wk`, `HasType.wk`, `TermEq.wk` | `wk`, `wkEq`, `wkTerm`, `wkEqTerm`, in `Definition/Typed/Weakening.agda` |
 | `SubstWf.lift`, `SubstWf.instantiate` | `⊢ˢʷ∷-⇑`, `⊢ˢʷ∷-sgSubst`, in `Definition/Typed/Substitution/Primitive/Primitive.agda` |
@@ -68,6 +69,16 @@ theorem WkCon.get_var : ρ ∷ Δ ⊇ Γ → ∀ x, Δ.get (ρ.var x) = (Γ.get 
     simp only [Wk.var] at *
     rw [Con.get_succ, this, ← wk_lift_wk1]
     rfl
+
+/-- Two weakenings of contexts in a row are the weakening by their composition. -/
+theorem WkCon.comp : ρ₁ ∷ Ε ⊇ Δ → ρ₂ ∷ Δ ⊇ Γ → ρ₁.comp ρ₂ ∷ Ε ⊇ Γ
+  | .id, h₂ => h₂
+  | .step h₁, h₂ => .step (h₁.comp h₂)
+  | .lift h₁, .id => .lift h₁
+  | .lift h₁, .step h₂ => .step (h₁.comp h₂)
+  | .lift h₁, .lift h₂ => by
+    rw [wk_comp]
+    exact .lift (h₁.comp h₂)
 
 /--
 `Δ ⊢ˢ σ : Γ`: the substitution `σ` replaces each variable of the context `Γ` by a term of `Δ`, whose

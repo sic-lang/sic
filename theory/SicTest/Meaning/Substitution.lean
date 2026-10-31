@@ -87,4 +87,26 @@ theorem exists_wk : ∀ {m n : Nat} (f : Fin n → Fin m), StrictMono f → ∃ 
 theorem strictMono_iff_wk (f : Fin n → Fin m) : StrictMono f ↔ ∃ ρ : Wk m n, ρ.var = f :=
   ⟨exists_wk f, fun ⟨ρ, h⟩ => h ▸ var_strictMono ρ⟩
 
+/-!
+The composition of the weakenings is a composition: `id` is neutral on both sides, and composing is
+associative, as weakenings, not only as the maps they denote.
+-/
+
+theorem id_comp (ρ : Wk m n) : Wk.id.comp ρ = ρ := rfl
+
+theorem comp_id : ∀ ρ : Wk m n, ρ.comp .id = ρ
+  | .id => rfl
+  | .step ρ => congrArg Wk.step (comp_id ρ)
+  | .lift _ => rfl
+
+theorem comp_assoc : ∀ (ρ₁ : Wk m l) (ρ₂ : Wk l j) (ρ₃ : Wk j n),
+    (ρ₁.comp ρ₂).comp ρ₃ = ρ₁.comp (ρ₂.comp ρ₃)
+  | .id, _, _ => rfl
+  | .step ρ₁, ρ₂, ρ₃ => congrArg Wk.step (comp_assoc ρ₁ ρ₂ ρ₃)
+  | .lift _, .id, _ => rfl
+  | .lift ρ₁, .step ρ₂, ρ₃ => congrArg Wk.step (comp_assoc ρ₁ ρ₂ ρ₃)
+  | .lift _, .lift _, .id => rfl
+  | .lift ρ₁, .lift ρ₂, .step ρ₃ => congrArg Wk.step (comp_assoc ρ₁ ρ₂ ρ₃)
+  | .lift ρ₁, .lift ρ₂, .lift ρ₃ => congrArg Wk.lift (comp_assoc ρ₁ ρ₂ ρ₃)
+
 end SicTest.Meaning.Substitution
