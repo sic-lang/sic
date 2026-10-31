@@ -1,6 +1,7 @@
 module
 
 import Sic.Core.Reducibility.Validity
+import all SicTest.Common.Reducibility.Validity
 
 /-!
 # The Universes: Validity
@@ -12,7 +13,7 @@ valid type at the value of its own level.
 
 namespace SicTest.Universe.Reducibility.Validity
 
-open Sic.Core Sic.Core.Term Sic.Core.Reducibility
+open Sic.Core Sic.Core.Term Sic.Core.Reducibility SicTest.Common.Reducibility.Validity
 
 variable [EqualityRelation]
 
@@ -28,15 +29,6 @@ theorem validTypeEq_univ {Γ : Con 1 n} (hΓ : ⊩ᵛ Γ) :
   have hU : Δ ⊩⟨1⟩ univ (.var 0) ▸ _ :=
     LogicalRelation.unfold ▸ LogRel.univ (L := .var 0) (by decide) (.refl (.univ (.univ hΔ)))
   exact ⟨_, _, hU, hU, _, .refl (.univ (.univ hΔ)), .refl _⟩
-
-/--
-A valid equality of two types holds reducibly in their context, under the identity substitution,
-which is reducible since the context is valid.
--/
-private theorem reducibleTypeEq_of_validTypeEq (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩⟨l⟩ A ≡ B := by
-  rw [ValidTypeEq.unfold] at h
-  have h := h.2 (ReducibleSubstEq.var h.1)
-  rwa [subst_var, subst_var] at h
 
 /-- The universes `U_l` and `U_{l + 1}` are not validly equal, at any level. -/
 example : ¬ (.empty : Con 1 0) ⊩ᵛ⟨l⟩ univ (.var 0) ≡ univ (.succ (.var 0)) := by
