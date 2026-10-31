@@ -90,9 +90,14 @@
               ];
               command = "git ls-files -z .envrc '*.sh' | xargs -0 shfmt --diff";
             };
+            # The files git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
+            # with TOML files.
             taplo = {
-              tools = [ pkgs.taplo ];
-              command = "taplo fmt --check";
+              tools = [
+                pkgs.findutils
+                pkgs.taplo
+              ];
+              command = "git ls-files -z --cached --others --exclude-standard '*.toml' | xargs -0 taplo fmt --check";
             };
             typos = {
               tools = [ pkgs.typos ];
