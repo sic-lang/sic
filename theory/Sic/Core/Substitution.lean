@@ -245,6 +245,26 @@ theorem instantiate_wk_lift_step (t : Term k (n + 1)) :
   | ⟨0, _⟩ => rfl
   | ⟨_ + 1, _⟩ => rfl
 
+/-- Instantiating a term substituted under a binder substitutes the instance for its variable. -/
+theorem subst_lift_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k m) :
+    (t.subst σ.lift).instantiate a = t.subst (σ.cons a) := by
+  rw [instantiate, subst_subst]
+  congr 1
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨_ + 1, _⟩ => exact (subst_cons_wk1 _ _ _).trans (subst_var _)
+
+/-- Under a binder, a weakening after a substitution weakens each substituted term. -/
+theorem wk_lift_subst_lift (ρ : Wk m l) (σ : Subst k l n) (t : Term k (n + 1)) :
+    (t.subst σ.lift).wk ρ.lift = t.subst (Subst.lift fun x => (σ x).wk ρ) := by
+  rw [wk_subst]
+  congr 1
+  funext x
+  match x with
+  | ⟨0, _⟩ => rfl
+  | ⟨_ + 1, _⟩ => exact wk_lift_wk1 _ _
+
 /-- Instantiating the levels commutes with a weakening. -/
 theorem substLevels_wk (σ : Fin k → Level j) (ρ : Wk m n) (t : Term k n) :
     (t.wk ρ).substLevels σ = (t.substLevels σ).wk ρ := by

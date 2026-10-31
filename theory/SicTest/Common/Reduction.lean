@@ -2,7 +2,6 @@ module
 
 import Sic.Core.Reduction
 import Sic.Core.WellFormed
-import all SicTest.Common.Substitution
 import all SicTest.Common.WellFormed
 
 /-!
@@ -18,7 +17,7 @@ of the domains of its type, `contextAt`.
 
 namespace SicTest.Common.Reduction
 
-open Sic.Core Sic.Grade Sic.Core.Term SicTest.Common.Substitution SicTest.Common.WellFormed
+open Sic.Core Sic.Grade Sic.Core.Term SicTest.Common.WellFormed
 
 /--
 `(β)` for an abstraction moved by the substitution `σ`, from the typing of its body alone: its
