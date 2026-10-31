@@ -25,6 +25,7 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 | `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
 | `TermRedStar.conv`, `TermRedWhnf.conv` | `conv*`, `conv↘∷`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TermRedStar.trans`, `TypeRedStar.trans`, `TermRedStar.univ` | `_⇨∷*_`, `_⇨*_`, `univ*`, in `Definition/Typed/Properties/Reduction.agda` |
+| `TermRedStar.app` | `app-subst*`, in `Definition/Typed/Properties/Admissible/Pi.agda` |
 | `TypeRed.det`, `TypeRedWhnf.det` | `whrDet`, `whrDet*`, in `Definition/Typed/Properties/Reduction.agda` |
 | `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
 | `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
@@ -198,6 +199,14 @@ theorem TermRedStar.univ (h : Γ ⊢ A ⇒* B : Term.univ l) : Γ ⊢ A ⇒* B :
   induction h with
   | refl h => exact .refl (.univ (hU ▸ h))
   | step h _ ih => exact .step (.univ (hU ▸ h)) (ih hU)
+
+/-- An application reduces its function, in any number of steps, with the premises of `(∘)`. -/
+theorem TermRedStar.app (h : Γ ⊢ t₁ ⇒* t₂ : pi p q A B) (ha : Γ ⊢ a : A) :
+    Γ ⊢ app p t₁ a ⇒* app p t₂ a : B.instantiate a := by
+  generalize hPi : pi p q A B = C at h
+  induction h with
+  | refl h => exact .refl (.app (hPi ▸ h) ha)
+  | step h _ ih => exact .step (.app (hPi ▸ h) ha) (ih hPi)
 
 /-- A term that reduces has the type of its reduction. -/
 theorem TermRed.hasType : Γ ⊢ t ⇒ u : A → Γ ⊢ t : A

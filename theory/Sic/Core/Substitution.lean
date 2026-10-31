@@ -208,6 +208,15 @@ theorem subst_instantiate (σ : Subst k m n) (t : Term k (n + 1)) (a : Term k n)
 theorem wk_step (ρ : Wk m n) (t : Term k n) : t.wk ρ.step = (t.wk ρ).wk1 :=
   (wk_wk (ρ := ρ.step) (fun _ => rfl) t).symm
 
+/-- The weakening `id`, extended under a binder, leaves the term unchanged. -/
+theorem wk_lift_id (t : Term k (n + 1)) : t.wk Wk.id.lift = t := by
+  rw [wk_eq_subst]
+  conv => rhs; rw [← subst_var t]
+  congr 1
+  funext x
+  match x with
+  | ⟨0, _⟩ | ⟨_ + 1, _⟩ => rfl
+
 /-- Under a binder, a weakening moves a term moved past the bound variable as it moves the term. -/
 theorem wk_lift_wk1 (ρ : Wk m n) (t : Term k n) : t.wk1.wk ρ.lift = (t.wk ρ).wk1 :=
   (wk_wk (ρ := ρ.step) (fun _ => rfl) t).trans (wk_step ρ t)
@@ -230,6 +239,10 @@ theorem subst_lift_wk1 (σ : Subst k m n) (t : Term k n) : t.wk1.subst σ.lift =
 theorem subst_cons_wk1 (σ : Subst k m n) (a : Term k m) (t : Term k n) :
     t.wk1.subst (σ.cons a) = t.subst σ :=
   subst_wk _ _ t
+
+/-- Instantiating a term moved past the bound variable leaves the term unchanged. -/
+theorem instantiate_wk1 (t : Term k n) (a : Term k n) : t.wk1.instantiate a = t := by
+  rw [instantiate, subst_cons_wk1, subst_var]
 
 /--
 Inserting a variable before the innermost one, then replacing the innermost variable by the inserted

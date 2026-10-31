@@ -16,6 +16,7 @@ functions as types.
 
 | Theorem | Theorem of ADE, in `Definition/LogicalRelation/Substitution/Introductions/Pi-Sigma.agda` | Of Pujet, in `Definition/LogicalRelation/Substitution/Introductions/Pi.agda` |
 | --- | --- | --- |
+| `ReducibleTypeEq.inv_pi` | the first direction of `⊩ΠΣ≡ΠΣ⇔` | none |
 | `ValidTermEq.pi` | `ΠΣᵗᵛ`, `ΠΣ-congᵗᵛ` | `Πᵗᵛ`, `Π-congᵗᵛ` |
 
 ADE and Pujet build the interpretations of the domain and of the codomain from the proofs of their
@@ -97,6 +98,56 @@ private theorem reducibleTypeEq_pi {F₁ F₂ : Term k n} {G₁ G₂ : Term k (n
     logicalRelation_pi (EqualityRelation.transType (EqualityRelation.symmType hPi) hPi)
       (fun hρ hΕ => (hF hρ hΕ).symm.trans (hF hρ hΕ)) hG₂
   exact ⟨_, _, h₁, h₂, h₁₂⟩
+
+/--
+Two reducibly equal types of functions have reducibly equal domains in every well-formed context
+that contains their own, and reducibly equal codomains at reducibly equal arguments, as in the
+first direction of ADE's `⊩ΠΣ≡ΠΣ⇔`.
+
+Both types are their own weak head normal forms, so that their proofs of reducibility end with
+`LogRel.pi`, whose interpretations of the domain and of the codomain are the canonical ones.
+The codomains at two arguments `a` and `b` are equal through the first codomain at `b`.
+-/
+theorem ReducibleTypeEq.inv_pi {F₁ F₂ : Term k n} {G₁ G₂ : Term k (n + 1)}
+    (h : Δ ⊩⟨l⟩ pi p q F₁ G₁ ≡ pi p q F₂ G₂) :
+    (∀ {m} {ρ : Wk m n} {Ε : Con k m}, ρ ∷ Ε ⊇ Δ → ⊢ Ε → Ε ⊩⟨l⟩ F₁.wk ρ ≡ F₂.wk ρ) ∧
+      ∀ {m} {ρ : Wk m n} {Ε : Con k m} {a b}, ρ ∷ Ε ⊇ Δ → ⊢ Ε → (Ε ⊩⟨l⟩ a ≡ b : F₁.wk ρ) →
+        Ε ⊩⟨l⟩ (G₁.wk ρ.lift).instantiate a ≡ (G₂.wk ρ.lift).instantiate b := by
+  have ⟨_, _, h₁, h₂, h₁₂⟩ := h
+  have hPi₁ := h₁.escape
+  have hPi₂ := h₂.escape
+  rw [LogicalRelation.unfold] at h₁ h₂
+  cases h₁ with
+  | univ _ hU => nomatch TypeRedWhnf.det ⟨hU, .univ⟩ ⟨.refl hPi₁, .pi⟩
+  | ne hN hN' => cases TypeRedWhnf.det ⟨hN, .ne hN'⟩ ⟨.refl hPi₁, .pi⟩; nomatch hN'
+  | pi hA _ PF PG hF hG hGext =>
+    cases TypeRedWhnf.det ⟨hA, .pi⟩ ⟨.refl hPi₁, .pi⟩
+    cases h₂ with
+    | univ _ hU => nomatch TypeRedWhnf.det ⟨hU, .univ⟩ ⟨.refl hPi₂, .pi⟩
+    | ne hN hN' => cases TypeRedWhnf.det ⟨hN, .ne hN'⟩ ⟨.refl hPi₂, .pi⟩; nomatch hN'
+    | pi hA' _ PF' PG' hF' hG' =>
+      cases TypeRedWhnf.det ⟨hA', .pi⟩ ⟨.refl hPi₂, .pi⟩
+      have ⟨_, _, hB, _, hF₁₂, hG₁₂⟩ := h₁₂
+      cases TypeRedWhnf.det ⟨hB, .pi⟩ ⟨.refl hPi₂, .pi⟩
+      have hPF {m} {ρ : Wk m _} {Ε} (hρ : ρ ∷ Ε ⊇ Δ) (hΕ : ⊢ Ε) : Ε ⊩⟨l⟩ F₁.wk ρ ▸ PF ρ Ε :=
+        LogicalRelation.unfold ▸ hF hρ hΕ
+      have hPF' {m} {ρ : Wk m _} {Ε} (hρ : ρ ∷ Ε ⊇ Δ) (hΕ : ⊢ Ε) : Ε ⊩⟨l⟩ F₂.wk ρ ▸ PF' ρ Ε :=
+        LogicalRelation.unfold ▸ hF' hρ hΕ
+      have hF₁₂ {m} {ρ : Wk m _} {Ε} (hρ : ρ ∷ Ε ⊇ Δ) (hΕ : ⊢ Ε) :
+          Ε ⊩⟨l⟩ F₁.wk ρ ≡ F₂.wk ρ :=
+        ⟨_, _, hPF hρ hΕ, hPF' hρ hΕ, hF₁₂ hρ hΕ⟩
+      refine ⟨hF₁₂, fun {_ ρ Ε a b} hρ hΕ hab => ?_⟩
+      have hb := hab.symm.trans hab
+      have hPFab : (PF ρ Ε).eqTerm a b := by rw [(hPF hρ hΕ).eq_canonical]; exact hab
+      have hPFa : (PF ρ Ε).eqTerm a a := by rw [(hPF hρ hΕ).eq_canonical]; exact hab.trans hab.symm
+      have hPFb : (PF ρ Ε).eqTerm b b := by rw [(hPF hρ hΕ).eq_canonical]; exact hb
+      have hPFb' : (PF' ρ Ε).eqTerm b b := by
+        rw [(hPF' hρ hΕ).eq_canonical]; exact hb.conv (hF₁₂ hρ hΕ)
+      have hGa := LogicalRelation.unfold ▸ hG hρ hΕ hPFa
+      have hGb := LogicalRelation.unfold ▸ hG hρ hΕ hPFb
+      have hGb' := LogicalRelation.unfold ▸ hG' hρ hΕ hPFb'
+      exact ReducibleTypeEq.trans ⟨_, _, hGa, hGb, hGext hρ hΕ hPFa hPFb hPFab⟩
+        ⟨_, _, hGb, hGb', hG₁₂ hρ hΕ hPFb⟩
 
 /--
 Two types of functions are validly equal terms of the universe of the larger of the levels of their
