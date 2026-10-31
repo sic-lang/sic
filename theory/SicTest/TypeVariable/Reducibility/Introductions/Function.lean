@@ -52,7 +52,7 @@ of a neutral type, which does not equate it to the type of functions `Π^p'_q' (
 that type reduces to itself, which is not neutral: the interpretation of the application, whatever
 it is, rules out every case.
 -/
-example : ¬ ΓA ⊩ᵛ⟨l⟩ idA p ≡ pi p' q' (var 0) (var 1) := by
+theorem not_validTypeEq_idA_pi : ¬ ΓA ⊩ᵛ⟨l⟩ idA p ≡ pi p' q' (var 0) (var 1) := by
   intro h
   have ⟨_, _, hI, hPi, hIPi⟩ := h.reducible
   have ⟨_, _, hI', _, hIA⟩ :=
