@@ -11,12 +11,6 @@ Every type is a term of a universe, since `(U_type)` is the only rule that makes
 
 ## Correspondence with the Formalization of ADE
 
-| Theorem | Theorem of ADE, in `Definition/Typed/Well-formed.agda` |
-| --- | --- |
-| `HasType.wfType` | `wf-⊢∷` |
-| `TypeEq.wf` | `wf-⊢≡` |
-| `TermEq.wf` | `wf-⊢≡∷` |
-
 ADE have no counterpart of `IsType.sort`, since their type of levels may lie in no universe.
 -/
 
@@ -45,6 +39,7 @@ terms are typed since their types are valid, to convert the type of the right on
 
 mutual
 
+-- ADE: `wf-⊢≡`, in `Definition/Typed/Well-formed.agda`.
 /-- Two equal types are types. -/
 theorem TypeEq.wf : Γ ⊢ A ≡ B → (Γ ⊢ A) ∧ (Γ ⊢ B)
   | .univ h => ⟨.univ h.wf.1, .univ h.wf.2.1⟩
@@ -52,6 +47,7 @@ theorem TypeEq.wf : Γ ⊢ A ≡ B → (Γ ⊢ A) ∧ (Γ ⊢ B)
   | .symm h => ⟨h.wf.2, h.wf.1⟩
   | .trans h₁ h₂ => ⟨h₁.wf.1, h₂.wf.2⟩
 
+-- ADE: `wf-⊢∷`, in `Definition/Typed/Well-formed.agda`.
 /-- The type of a typed term is a type. -/
 theorem HasType.wfType : Γ ⊢ t : A → Γ ⊢ A
   | .var h => h.get _
@@ -63,6 +59,7 @@ theorem HasType.wfType : Γ ⊢ t : A → Γ ⊢ A
     have ⟨_, _, hB⟩ := ht.wfType.inv_pi
     .univ (hB.instantiate ha)
 
+-- ADE: `wf-⊢≡∷`, in `Definition/Typed/Well-formed.agda`.
 /-- Two equal terms are terms of their type, which is a type. -/
 theorem TermEq.wf : Γ ⊢ t ≡ u : A → (Γ ⊢ t : A) ∧ (Γ ⊢ u : A) ∧ (Γ ⊢ A)
   | .refl h => ⟨h, h, h.wfType⟩

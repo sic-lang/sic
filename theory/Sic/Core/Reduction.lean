@@ -15,26 +15,6 @@ A reduction is typed, as in ADE, so that it keeps the type its terms have.
 
 ## Correspondence with the Formalization of ADE
 
-| Definition | Definition of ADE |
-| --- | --- |
-| `Neutral` | `Neutral`, in `Definition/Untyped/Neutral.agda` |
-| `Whnf` | `Whnf`, in `Definition/Untyped/Whnf.agda` |
-| `WhnfType` | `Type`, in `Definition/Untyped/Whnf.agda` |
-| `TermRed.conv`, `TermRed.app`, `TermRed.beta` | `conv`, `app-subst`, `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda` |
-| `TermRedStar.refl`, `TermRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda` |
-| `TermRedWhnf` | `_⊢_↘_∷_`, in `Definition/Typed.agda` |
-| `TermRedStar.conv`, `TermRedWhnf.conv` | `conv*`, `conv↘∷`, in `Definition/Typed/Properties/Reduction.agda` |
-| `TermRedStar.trans`, `TypeRedStar.trans`, `TermRedStar.univ` | `_⇨∷*_`, `_⇨*_`, `univ*`, in `Definition/Typed/Properties/Reduction.agda` |
-| `TermRedStar.app` | `app-subst*`, in `Definition/Typed/Properties/Admissible/Pi.agda` |
-| `TypeRed.det`, `TypeRedWhnf.det` | `whrDet`, `whrDet*`, in `Definition/Typed/Properties/Reduction.agda` |
-| `TypeRed.univ` | `univ` of `_⊢_⇒_`, in `Definition/Typed.agda` |
-| `TypeRedStar.refl`, `TypeRedStar.step` | `id`, `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda` |
-| `TypeRedWhnf` | `_⊢_↘_`, in `Definition/Typed.agda` |
-| `Neutral.wk` | `wkNeutral`, in `Definition/Untyped/Neutral.agda` |
-| `Whnf.wk`, `WhnfType.wk` | `wkWhnf`, `wkType`, in `Definition/Untyped/Whnf.agda` |
-| `TermRed.wk`, `TermRedStar.wk`, `TermRedWhnf.wk` | `wkRedTerm`, `wkRed*Term`, `wkRed↘Term`, in `Definition/Typed/Weakening.agda` |
-| `TypeRed.wk`, `TypeRedStar.wk`, `TypeRedWhnf.wk` | `wkRed`, `wkRed*`, `wkRed↘`, in `Definition/Typed/Weakening.agda` |
-
 A type reduces as a term of a universe, as in ADE, so that the reduction of a type, as its equality,
 does not depend on the universe of its terms.
 Their `β-red` reduces an abstraction applied with another grade, which their premise `p ≡ p′`
@@ -47,6 +27,7 @@ namespace Sic.Core
 
 open Term
 
+-- ADE: `Neutral`, in `Definition/Untyped/Neutral.agda`.
 /--
 A neutral term: a variable, applied to any number of arguments, so that no reduction of its head
 can apply until the variable is substituted.
@@ -57,6 +38,7 @@ inductive Neutral : Term k n → Prop where
   /-- The application of a neutral term is neutral. -/
   | app : Neutral t → Neutral (app p t a)
 
+-- ADE: `Whnf`, in `Definition/Untyped/Whnf.agda`.
 /--
 A weak head normal form: a term whose head does not reduce, either a type, an abstraction or a
 neutral term.
@@ -71,6 +53,7 @@ inductive Whnf : Term k n → Prop where
   /-- A neutral term is a weak head normal form. -/
   | ne : Neutral t → Whnf t
 
+-- ADE: `Type`, in `Definition/Untyped/Whnf.agda`.
 /--
 A type in weak head normal form: a universe, a type of functions, or a neutral term, which a variable
 of a universe makes a type.
@@ -89,11 +72,14 @@ notation:40 Γ:41 " ⊢ " t:41 " ⇒ " u:41 " : " A:41 => TermRed Γ t u A
 
 /-- `Γ ⊢ t ⇒ u : A`: in the context `Γ`, the term `t` of type `A` reduces to `u` in one step. -/
 inductive TermRed {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop where
+  -- ADE: `conv` of `_⊢_⇒_∷_`, in `Definition/Typed.agda`.
   /-- A reduction has any type equal to its own, as `(conv)`. -/
   | conv : Γ ⊢ t ⇒ u : A → Γ ⊢ A ≡ B → Γ ⊢ t ⇒ u : B
+  -- ADE: `app-subst` of `_⊢_⇒_∷_`, in `Definition/Typed.agda`.
   /-- An application reduces its function, with the premises of `(∘)`. -/
   | app : Γ ⊢ t₁ ⇒ t₂ : pi p q A B → Γ ⊢ a : A →
       Γ ⊢ app p t₁ a ⇒ app p t₂ a : B.instantiate a
+  -- ADE: `β-red` of `_⊢_⇒_∷_`, in `Definition/Typed.agda`.
   /-- `(β)`: applying an abstraction reduces to its body with the argument substituted. -/
   | beta : Γ ⊢ pi p q A B → Γ ∙ A ⊢ t : B → Γ ⊢ a : A →
       Γ ⊢ app p (lam p A t) a ⇒ t.instantiate a : B.instantiate a
@@ -109,11 +95,14 @@ notation:40 Γ:41 " ⊢ " t:41 " ⇒* " u:41 " : " A:41 => TermRedStar Γ t u A
 -/
 inductive TermRedStar {k : Nat} :
     {n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop where
+  -- ADE: `id` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda`.
   /-- A term of a type reduces to itself in no step. -/
   | refl : Γ ⊢ t : A → Γ ⊢ t ⇒* t : A
+  -- ADE: `_⇨_` of `_⊢_⇒*_∷_`, in `Definition/Typed.agda`.
   /-- A step followed by any number of steps. -/
   | step : Γ ⊢ t₁ ⇒ t₂ : A → Γ ⊢ t₂ ⇒* t₃ : A → Γ ⊢ t₁ ⇒* t₃ : A
 
+-- ADE: `_⊢_↘_∷_`, in `Definition/Typed.agda`.
 /--
 `Γ ⊢ t ↘ u : A`: in the context `Γ`, the term `t` of type `A` reduces to the weak head normal form
 `u`.
@@ -129,6 +118,7 @@ notation:40 Γ:41 " ⊢ " A:41 " ⇒ " B:41 => TypeRed Γ A B
 
 /-- `Γ ⊢ A ⇒ B`: in the context `Γ`, the type `A` reduces to `B` in one step. -/
 inductive TypeRed {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  -- ADE: `univ` of `_⊢_⇒_`, in `Definition/Typed.agda`.
   /-- A type reduces as a term of a universe. -/
   | univ : Γ ⊢ A ⇒ B : univ l → Γ ⊢ A ⇒ B
 
@@ -138,11 +128,14 @@ notation:40 Γ:41 " ⊢ " A:41 " ⇒* " B:41 => TypeRedStar Γ A B
 
 /-- `Γ ⊢ A ⇒* B`: in the context `Γ`, the type `A` reduces to `B` in any number of steps. -/
 inductive TypeRedStar {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  -- ADE: `id` of `_⊢_⇒*_`, in `Definition/Typed.agda`.
   /-- A type reduces to itself in no step. -/
   | refl : Γ ⊢ A → Γ ⊢ A ⇒* A
+  -- ADE: `_⇨_` of `_⊢_⇒*_`, in `Definition/Typed.agda`.
   /-- A step followed by any number of steps. -/
   | step : Γ ⊢ A₁ ⇒ A₂ → Γ ⊢ A₂ ⇒* A₃ → Γ ⊢ A₁ ⇒* A₃
 
+-- ADE: `_⊢_↘_`, in `Definition/Typed.agda`.
 /-- `Γ ⊢ A ↘ B`: in the context `Γ`, the type `A` reduces to the weak head normal form `B`. -/
 def TypeRedWhnf (Γ : Con k n) (A B : Term k n) : Prop :=
   (Γ ⊢ A ⇒* B) ∧ Whnf B
@@ -171,15 +164,18 @@ theorem TypeRedStar.typeEq : Γ ⊢ A ⇒* B → Γ ⊢ A ≡ B
   | .refl h => .refl h
   | .step h hs => .trans h.typeEq hs.typeEq
 
+-- ADE: `conv*`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Any number of reductions has any type equal to its own, as `(conv)`. -/
 theorem TermRedStar.conv : Γ ⊢ t ⇒* u : A → Γ ⊢ A ≡ B → Γ ⊢ t ⇒* u : B
   | .refl h, hA => .refl (.conv h hA)
   | .step h hs, hA => .step (.conv h hA) (hs.conv hA)
 
+-- ADE: `conv↘∷`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A reduction to a weak head normal form has any type equal to its own. -/
 theorem TermRedWhnf.conv (h : Γ ⊢ t ↘ u : A) (hA : Γ ⊢ A ≡ B) : Γ ⊢ t ↘ u : B :=
   ⟨h.1.conv hA, h.2⟩
 
+-- ADE: `_⇨∷*_`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Two reductions in sequence are a reduction. -/
 theorem TermRedStar.trans (h₁ : Γ ⊢ t₁ ⇒* t₂ : A) (h₂ : Γ ⊢ t₂ ⇒* t₃ : A) :
     Γ ⊢ t₁ ⇒* t₃ : A := by
@@ -187,12 +183,14 @@ theorem TermRedStar.trans (h₁ : Γ ⊢ t₁ ⇒* t₂ : A) (h₂ : Γ ⊢ t₂
   | refl => exact h₂
   | step h _ ih => exact .step h (ih h₂)
 
+-- ADE: `_⇨*_`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Two reductions of types in sequence are a reduction of types. -/
 theorem TypeRedStar.trans (h₁ : Γ ⊢ A₁ ⇒* A₂) (h₂ : Γ ⊢ A₂ ⇒* A₃) : Γ ⊢ A₁ ⇒* A₃ := by
   induction h₁ with
   | refl => exact h₂
   | step h _ ih => exact .step h (ih h₂)
 
+-- ADE: `univ*`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Any number of reductions of a term of a universe are reductions of a type. -/
 theorem TermRedStar.univ (h : Γ ⊢ A ⇒* B : Term.univ l) : Γ ⊢ A ⇒* B := by
   generalize hU : Term.univ l = U at h
@@ -200,6 +198,7 @@ theorem TermRedStar.univ (h : Γ ⊢ A ⇒* B : Term.univ l) : Γ ⊢ A ⇒* B :
   | refl h => exact .refl (.univ (hU ▸ h))
   | step h _ ih => exact .step (.univ (hU ▸ h)) (ih hU)
 
+-- ADE: `app-subst*`, in `Definition/Typed/Properties/Admissible/Pi.agda`.
 /-- An application reduces its function, in any number of steps, with the premises of `(∘)`. -/
 theorem TermRedStar.app (h : Γ ⊢ t₁ ⇒* t₂ : pi p q A B) (ha : Γ ⊢ a : A) :
     Γ ⊢ app p t₁ a ⇒* app p t₂ a : B.instantiate a := by
@@ -276,10 +275,12 @@ theorem TermRedWhnf.det : Γ ⊢ t ↘ u₁ : A₁ → Γ ⊢ t ↘ u₂ : A₂ 
     | refl => exact absurd h₁ hw₂.not_termRed
     | step h₂ hs₂ => exact ih hw₁ (h₁.det h₂ ▸ hs₂) hw₂
 
+-- ADE: `whrDet`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A type reduces in one step to the same type, as a term of any two universes. -/
 theorem TypeRed.det : Γ ⊢ A ⇒ B₁ → Γ ⊢ A ⇒ B₂ → B₁ = B₂
   | .univ h₁, .univ h₂ => h₁.det h₂
 
+-- ADE: `whrDet*`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A type reduces to at most one weak head normal form, as a term does. -/
 theorem TypeRedWhnf.det : Γ ⊢ A ↘ B₁ → Γ ⊢ A ↘ B₂ → B₁ = B₂ := by
   rintro ⟨h₁, hw₁⟩ ⟨h₂, hw₂⟩
@@ -299,11 +300,13 @@ of the weak head normal forms and the steps of a reduction, in every well-formed
 contains its own.
 -/
 
+-- ADE: `wkNeutral`, in `Definition/Untyped/Neutral.agda`.
 /-- A neutral term stays neutral when weakened. -/
 theorem Neutral.wk (ρ : Wk m n) : Neutral t → Neutral (t.wk ρ)
   | .var => .var
   | .app h => .app (h.wk ρ)
 
+-- ADE: `wkWhnf`, in `Definition/Untyped/Whnf.agda`.
 /-- A weak head normal form stays one when weakened. -/
 theorem Whnf.wk (ρ : Wk m n) : Whnf t → Whnf (t.wk ρ)
   | .univ => .univ
@@ -311,12 +314,14 @@ theorem Whnf.wk (ρ : Wk m n) : Whnf t → Whnf (t.wk ρ)
   | .lam => .lam
   | .ne h => .ne (h.wk ρ)
 
+-- ADE: `wkType`, in `Definition/Untyped/Whnf.agda`.
 /-- A type in weak head normal form stays one when weakened. -/
 theorem WhnfType.wk (ρ : Wk m n) : WhnfType A → WhnfType (A.wk ρ)
   | .univ => .univ
   | .pi => .pi
   | .ne h => .ne (h.wk ρ)
 
+-- ADE: `wkRedTerm`, in `Definition/Typed/Weakening.agda`.
 /-- A step of reduction stays one in every well-formed context that contains its own. -/
 theorem TermRed.wk (h : Γ ⊢ t ⇒ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) :
     Δ ⊢ t.wk ρ ⇒ u.wk ρ : A.wk ρ := by
@@ -330,6 +335,7 @@ theorem TermRed.wk (h : Γ ⊢ t ⇒ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ 
     exact match ht.wfCon with
       | .snoc hA => .beta (hPi.wk hρ hΔ) (ht.wk hρ.lift (.snoc (hA.wk hρ hΔ))) (ha.wk hρ hΔ)
 
+-- ADE: `wkRed*Term`, in `Definition/Typed/Weakening.agda`.
 /--
 Any number of steps of reduction stay steps in every well-formed context that contains their own.
 -/
@@ -339,6 +345,7 @@ theorem TermRedStar.wk (h : Γ ⊢ t ⇒* u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ :
   | refl ht => exact .refl (ht.wk hρ hΔ)
   | step h _ ih => exact .step (h.wk hρ hΔ) ih
 
+-- ADE: `wkRed↘Term`, in `Definition/Typed/Weakening.agda`.
 /--
 A reduction to a weak head normal form stays one in every well-formed context that contains its own.
 -/
@@ -346,11 +353,13 @@ theorem TermRedWhnf.wk (h : Γ ⊢ t ↘ u : A) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : 
     Δ ⊢ t.wk ρ ↘ u.wk ρ : A.wk ρ :=
   ⟨h.1.wk hρ hΔ, h.2.wk ρ⟩
 
+-- ADE: `wkRed`, in `Definition/Typed/Weakening.agda`.
 /-- A step of reduction of a type stays one in every well-formed context that contains its own. -/
 theorem TypeRed.wk (h : Γ ⊢ A ⇒ B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢ Δ) : Δ ⊢ A.wk ρ ⇒ B.wk ρ :=
   match h with
   | .univ h => .univ (h.wk hρ hΔ)
 
+-- ADE: `wkRed*`, in `Definition/Typed/Weakening.agda`.
 /--
 Any number of steps of reduction of a type stay steps in every well-formed context that contains
 their own.
@@ -361,6 +370,7 @@ theorem TypeRedStar.wk (h : Γ ⊢ A ⇒* B) (hρ : ρ ∷ Δ ⊇ Γ) (hΔ : ⊢
   | refl hA => exact .refl (hA.wk hρ hΔ)
   | step h _ ih => exact .step (h.wk hρ hΔ) ih
 
+-- ADE: `wkRed↘`, in `Definition/Typed/Weakening.agda`.
 /--
 A reduction of a type to a weak head normal form stays one in every well-formed context that
 contains its own.

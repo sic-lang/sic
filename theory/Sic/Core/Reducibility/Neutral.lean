@@ -11,10 +11,6 @@ equates at that type, so that a neutral term equal to itself, such as a variable
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Properties/Neutral.agda` | Of Pujet, in `Definition/LogicalRelation/Properties/Neutral.agda` |
-| --- | --- | --- |
-| `LogicalRelation.neutral_eqTerm` | `neuTerm`, `neuEqTerm` | the same |
-
 A reducible term is a term that the interpretation equates to itself, so that the theorem also
 covers their `neuTerm`.
 Their `neu` and `neuEq`, which make the neutral types reducible, are not here, since no proof uses
@@ -29,6 +25,8 @@ open EqualityRelation
 
 variable [EqualityRelation]
 
+-- ADE: `neuTerm` and `neuEqTerm`, in `Definition/LogicalRelation/Properties/Neutral.agda`.
+-- Pujet: `neuTerm` and `neuEqTerm`, in `Definition/LogicalRelation/Properties/Neutral.agda`.
 /--
 The interpretation of a reducible type equates two neutral terms that the equality of neutral terms
 equates at that type.

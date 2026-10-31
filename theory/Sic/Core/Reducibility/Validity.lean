@@ -19,29 +19,6 @@ The validities are defined together, by recursion on the context.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Definition or theorem | Definition or theorem of ADE, in `Definition/LogicalRelation/Substitution.agda` | Of Pujet, in `Definition/LogicalRelation/Substitution.agda` or `Substitution/Properties.agda` |
-| --- | --- | --- |
-| `ValidCon` | `_»⊩ᵛ_` | `⊩ᵛ_` |
-| `ValidTypeEq` | `_⊩ᵛ⟨_⟩_≡_`, and `_⊩ᵛ⟨_⟩_` for a type equal to itself | `_⊩ᵛ⟨_⟩_≡_/_/_`, `_⊩ᵛ⟨_⟩_/_` |
-| `ValidTermEq` | `_⊩ᵛ⟨_⟩_≡_∷_`, and `_⊩ᵛ⟨_⟩_∷_` for a term equal to itself | `_⊩ᵛ⟨_⟩_≡_∷_/_/_`, `_⊩ᵛ⟨_⟩_∷_/_/_` |
-| `ReducibleSubstEq` | `_⊩ˢ_≡_∷_`, and `_⊩ˢ_∷_` for a substitution equal to itself | `_⊩ˢ_≡_∷_/_/_/_`, `_⊩ˢ_∷_/_/_` |
-| `ValidCon.unfold_empty`, `ValidCon.unfold_snoc`, `ValidTypeEq.unfold`, `ReducibleSubstEq.unfold_empty`, `ReducibleSubstEq.unfold_snoc` | the characterization lemmas `⊩ᵛε⇔`, `⊩ᵛ∙⇔`, `⊩ᵛ≡⇔`, `⊩ˢ≡∷ε⇔`, `⊩ˢ≡∷∙⇔` | none |
-| `ReducibleSubstEq.wfCon` | the first part of `escape-⊩ˢ≡∷` | none, since `⊢ Δ` is an argument of each validity |
-| `ReducibleSubstEq.substEq`, `ReducibleSubstEq.substWf` | the second part of `escape-⊩ˢ≡∷`, and `escape-⊩ˢ∷` | `wellformedSubstEq`, `wellformedSubst` |
-| `ReducibleSubstEq.cons` | `⊩ˢ≡∷∙⇔`, which characterizes the substitutions of a longer context | `consSubstSEq` |
-| `ReducibleSubstEq.wk` | `⊩ˢ≡∷-•ₛ` | `wkSubstSEq` |
-| `ReducibleTermEq.var` | `⊩var`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`, for the last variable | none |
-| `ReducibleSubstEq.lift` | `⊩ˢ≡∷-liftSubst` | `liftSubstSEq` |
-| `ReducibleSubstEq.var` | `⊩ˢ∷-idSubst` | `idSubstS` |
-| `ReducibleSubstEq.symm` | `sym-⊩ˢ≡∷` | `symS` |
-| `ReducibleSubstEq.left` | `refl-⊩ˢ≡∷` | none, since the equality of two substitutions carries the proofs of their reducibility |
-| `ValidTypeEq.symm`, `ValidTermEq.symm` | `sym-⊩ᵛ≡`, `sym-⊩ᵛ≡∷` | none |
-| `ValidTypeEq.trans`, `ValidTermEq.trans` | `trans-⊩ᵛ≡`, `trans-⊩ᵛ≡∷` | none |
-| `ValidTermEq.conv` | `conv-⊩ᵛ≡∷` | `convᵛ`, `convEqᵛ` |
-| `ValidTypeEq.emb`, `ValidTermEq.emb` | `emb-⊩ᵛ≡`, `emb-⊩ᵛ≡∷` | none, with a single universe |
-| `ValidTypeEq.wk1`, `ValidTermEq.wk1` | `wk1-⊩ᵛ≡`, `wk1-⊩ᵛ≡∷` | `wk1ᵛ`, `wk1Eqᵛ` for the types |
-| `ValidTypeEq.reducible`, `ValidTermEq.reducible` | `⊩ᵛ≡→⊩≡`, `⊩ᵛ≡∷→⊩≡∷` | none |
-
 Pujet's validities carry the proofs of the validity of the context, of the reducibility of the
 substitutions and of the substituted types, on which the others depend, which needs
 induction-recursion, while those here, as ADE's, are equalities that depend on no proof.
@@ -64,12 +41,17 @@ of a type to the validity of the context and to the reducible substitutions.
 
 mutual
 
+-- ADE: `_»⊩ᵛ_`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `⊩ᵛ`, in `Definition/LogicalRelation/Substitution.agda`.
 /-- `⊩ᵛ Γ`: each type of the context `Γ` is valid, at some level, in the rest of the context. -/
 def ValidCon : Con k n → Prop
   | .empty => True
   | .snoc Γ A => ∃ l, ValidTypeEq Γ l A A
 termination_by (n, 0)
 
+-- ADE: `_⊩ᵛ⟨_⟩_≡_`, and `_⊩ᵛ⟨_⟩_` for a type equal to itself, in
+-- `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `_⊩ᵛ⟨_⟩_≡_/_/_` and `_⊩ᵛ⟨_⟩_/_`, in `Definition/LogicalRelation/Substitution.agda`.
 /--
 `Γ ⊩ᵛ⟨l⟩ A ≡ B`: the context `Γ` is valid, and every two reducibly equal substitutions of `Γ`
 replace the variables of the types `A` and `B` by terms that make them reducibly equal at the level
@@ -80,6 +62,9 @@ def ValidTypeEq (Γ : Con k n) (l : Nat) (A B : Term k n) : Prop :=
     Δ ⊩⟨l⟩ A.subst σ₁ ≡ B.subst σ₂
 termination_by (n, 1)
 
+-- ADE: `_⊩ˢ_≡_∷_`, and `_⊩ˢ_∷_` for a substitution equal to itself, in
+-- `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `_⊩ˢ_≡_∷_/_/_/_` and `_⊩ˢ_∷_/_/_`, in `Definition/LogicalRelation/Substitution.agda`.
 /--
 `Δ ⊩ˢ σ₁ ≡ σ₂ : Γ`: the context `Δ` is well formed, and the substitutions `σ₁` and `σ₂` replace each
 variable of the context `Γ` by two terms of `Δ` reducibly equal at its type, substituted by `σ₁`,
@@ -100,6 +85,9 @@ end
 
 @[inherit_doc] notation:40 Δ:41 " ⊩ˢ " σ₁:41 " ≡ " σ₂:41 " : " Γ:41 => ReducibleSubstEq Δ σ₁ σ₂ Γ
 
+-- ADE: `_⊩ᵛ⟨_⟩_≡_∷_`, and `_⊩ᵛ⟨_⟩_∷_` for a term equal to itself, in
+-- `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `_⊩ᵛ⟨_⟩_≡_∷_/_/_` and `_⊩ᵛ⟨_⟩_∷_/_/_`, in `Definition/LogicalRelation/Substitution.agda`.
 /--
 `Γ ⊩ᵛ⟨l⟩ t ≡ u : A`: the type `A` is valid at the level `l`, and every two reducibly equal
 substitutions of the context `Γ` replace the variables of the terms `t` and `u` by terms that make
@@ -112,26 +100,36 @@ def ValidTermEq (Γ : Con k n) (l : Nat) (t u A : Term k n) : Prop :=
 @[inherit_doc]
 notation:40 Γ:41 " ⊩ᵛ⟨" l "⟩ " t:41 " ≡ " u:41 " : " A:41 => ValidTermEq Γ l t u A
 
+-- ADE: the characterization lemma `⊩ᵛε⇔`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- The empty context is valid. -/
 theorem ValidCon.unfold_empty : (⊩ᵛ (.empty : Con k 0)) = True := by
   rw [ValidCon]
 
+-- ADE: the characterization lemma `⊩ᵛ∙⇔`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- A longer context is valid when its last type is valid, at some level, in the rest of it. -/
 theorem ValidCon.unfold_snoc {Γ : Con k n} {A : Term k n} :
     (⊩ᵛ (Γ ∙ A)) = ∃ l, Γ ⊩ᵛ⟨l⟩ A ≡ A := by
   rw [ValidCon]
 
+-- ADE: the characterization lemma `⊩ᵛ≡⇔`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- The validity of the equality of two types, as `ValidTypeEq` defines it. -/
 theorem ValidTypeEq.unfold {Γ : Con k n} {A B : Term k n} :
     (Γ ⊩ᵛ⟨l⟩ A ≡ B) = ((⊩ᵛ Γ) ∧ ∀ {m} {Δ : Con k m} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
       Δ ⊩⟨l⟩ A.subst σ₁ ≡ B.subst σ₂) := by
   rw [ValidTypeEq]
 
+-- ADE: the characterization lemma `⊩ˢ≡∷ε⇔`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two substitutions of the empty context are reducibly equal when their context is well formed. -/
 theorem ReducibleSubstEq.unfold_empty {Δ : Con k m} {σ₁ σ₂ : Subst k m 0} :
     (Δ ⊩ˢ σ₁ ≡ σ₂ : .empty) = (⊢ Δ) := by
   rw [ReducibleSubstEq]
 
+-- ADE: the characterization lemma `⊩ˢ≡∷∙⇔`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /--
 Two substitutions of a longer context are reducibly equal when they replace its last variable by two
 terms reducibly equal at its valid type, substituted, and the other variables as two reducibly
@@ -143,17 +141,24 @@ theorem ReducibleSubstEq.unfold_snoc {Δ : Con k m} {Γ : Con k n} {A : Term k n
       Δ ⊩ˢ (σ₁ ·.succ) ≡ (σ₂ ·.succ) : Γ) := by
   rw [ReducibleSubstEq]
 
+-- ADE: the first part of `escape-⊩ˢ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none, since `⊢ Δ` is an argument of each validity.
 /-- The context of two reducibly equal substitutions is well formed. -/
 theorem ReducibleSubstEq.wfCon : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) → ⊢ Δ
   | .empty, _, _, hσ => ReducibleSubstEq.unfold_empty ▸ hσ
   | .snoc _ _, _, _, hσ => (ReducibleSubstEq.unfold_snoc ▸ hσ).2.wfCon
 
+-- ADE: `⊩ˢ≡∷∙⇔`, which characterizes the substitutions of a longer context, in
+-- `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `consSubstSEq`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /-- Two substitutions extended by two terms reducibly equal at a valid type are reducibly equal. -/
 theorem ReducibleSubstEq.cons (hσ : Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) (hA : Γ ⊩ᵛ⟨l⟩ A ≡ A)
     (ha : Δ ⊩⟨l⟩ a₁ ≡ a₂ : A.subst σ₁) : Δ ⊩ˢ σ₁.cons a₁ ≡ σ₂.cons a₂ : Γ ∙ A := by
   rw [ReducibleSubstEq.unfold_snoc]
   exact ⟨⟨l, hA, ha⟩, hσ⟩
 
+-- ADE: `⊩ˢ≡∷-•ₛ`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `wkSubstSEq`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /--
 Two reducibly equal substitutions stay reducibly equal when their terms move to a well-formed
 context that contains their own.
@@ -167,6 +172,8 @@ theorem ReducibleSubstEq.wk {Δ : Con k m} {Ε : Con k m'} {ρ : Wk m' m} (hρ :
     have ⟨⟨l, hA, ha⟩, hσ⟩ := hσ
     exact ⟨⟨l, hA, wk_subst ρ _ A ▸ ha.wk hρ hΕ⟩, ReducibleSubstEq.wk hρ hΕ hσ⟩
 
+-- ADE: the second part of `escape-⊩ˢ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `wellformedSubstEq`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /--
 Two reducibly equal substitutions are equal substitutions of `Sic.Core.Typing`, since their terms
 are equal at the types they substitute.
@@ -187,10 +194,15 @@ theorem ReducibleSubstEq.substEq : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n
       rw [Con.get_succ, subst_wk]
       exact hσ.substEq ⟨x, Nat.lt_of_succ_lt_succ hx⟩
 
+-- ADE: `escape-⊩ˢ∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `wellformedSubst`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /-- The first of two reducibly equal substitutions is a substitution of `Sic.Core.Typing`. -/
 theorem ReducibleSubstEq.substWf (hσ : Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) : Δ ⊢ˢ σ₁ : Γ :=
   fun x => (hσ.substEq x).wf.1
 
+-- ADE: `⊩var`, for the last variable, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+-- Pujet: none.
 /--
 The variable of a declaration of a type reducible in a well-formed context is a reducible term of
 that type, weakened.
@@ -200,6 +212,8 @@ theorem ReducibleTermEq.var (hA : Γ ⊩⟨l⟩ A ▸ P) (hΓA : ⊢ Γ ∙ A) :
   let ⟨_, hA'⟩ := hA.wk (.step .id) hΓA
   ⟨_, hA', hA'.neutral_eqTerm .var .var (EqualityRelation.var (.var hΓA))⟩
 
+-- ADE: `⊩ˢ≡∷-liftSubst`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `liftSubstSEq`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /--
 Two reducibly equal substitutions, extended under a binder of a valid type, are reducibly equal in
 the context extended by that type, substituted, which is well formed since the type is reducible.
@@ -213,6 +227,8 @@ theorem ReducibleSubstEq.lift (hσ : Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) (hA : Γ ⊩
   rw [← wk_subst]
   exact ReducibleTermEq.var hA₁ hΔA
 
+-- ADE: `⊩ˢ∷-idSubst`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `idSubstS`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /-- The identity substitution of a valid context is reducible. -/
 theorem ReducibleSubstEq.var : ∀ {Γ : Con k n}, (⊩ᵛ Γ) → Γ ⊩ˢ .var ≡ .var : Γ
   | .empty, _ => ReducibleSubstEq.unfold_empty ▸ .empty
@@ -231,6 +247,8 @@ to the types it substitutes, and the other properties hold under each pair of su
 the first substitution is reducibly equal to itself.
 -/
 
+-- ADE: `sym-⊩ˢ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `symS`, in `Definition/LogicalRelation/Substitution/Properties.agda`.
 /-- Two reducibly equal substitutions are reducibly equal in the other order. -/
 theorem ReducibleSubstEq.symm : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
     Δ ⊩ˢ σ₂ ≡ σ₁ : Γ
@@ -241,6 +259,8 @@ theorem ReducibleSubstEq.symm : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, 
     rw [ValidTypeEq.unfold] at hA
     exact ⟨⟨l, ValidTypeEq.unfold ▸ hA, ha.symm.conv (hA.2 hσ)⟩, hσ.symm⟩
 
+-- ADE: `refl-⊩ˢ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none, since the equality of two substitutions carries the proofs of their reducibility.
 /-- The first of two reducibly equal substitutions is reducibly equal to itself. -/
 theorem ReducibleSubstEq.left : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
     Δ ⊩ˢ σ₁ ≡ σ₁ : Γ
@@ -250,21 +270,29 @@ theorem ReducibleSubstEq.left : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, 
     have ⟨⟨l, hA, ha⟩, hσ⟩ := hσ
     exact ⟨⟨l, hA, ha.trans ha.symm⟩, hσ.left⟩
 
+-- ADE: `sym-⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two validly equal types are validly equal in the other order. -/
 theorem ValidTypeEq.symm (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩ᵛ⟨l⟩ B ≡ A := by
   rw [ValidTypeEq.unfold] at h ⊢
   exact ⟨h.1, fun hσ => (h.2 hσ.symm).symm⟩
 
+-- ADE: `trans-⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two types validly equal to the same type are validly equal. -/
 theorem ValidTypeEq.trans (hAB : Γ ⊩ᵛ⟨l⟩ A ≡ B) (hBC : Γ ⊩ᵛ⟨l⟩ B ≡ C) : Γ ⊩ᵛ⟨l⟩ A ≡ C := by
   rw [ValidTypeEq.unfold] at hAB hBC ⊢
   exact ⟨hAB.1, fun hσ => (hAB.2 hσ.left).trans (hBC.2 hσ)⟩
 
+-- ADE: `emb-⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none, with a single universe.
 /-- Two types validly equal at a level are validly equal at every larger level. -/
 theorem ValidTypeEq.emb (hl : l ≤ l') (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩ᵛ⟨l'⟩ A ≡ B := by
   rw [ValidTypeEq.unfold] at h ⊢
   exact ⟨h.1, fun hσ => (h.2 hσ).emb hl⟩
 
+-- ADE: `wk1-⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `wk1ᵛ` and `wk1Eqᵛ`, in `Definition/LogicalRelation/Substitution/Weakening.agda`.
 /--
 Two validly equal types stay validly equal, moved past a new variable, in the context extended by a
 valid type.
@@ -277,17 +305,23 @@ theorem ValidTypeEq.wk1 (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) (hC : Γ ⊩ᵛ⟨l'⟩ C
   rw [subst_wk, subst_wk]
   exact h.2 hσ.2
 
+-- ADE: `sym-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two validly equal terms are validly equal in the other order. -/
 theorem ValidTermEq.symm (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩ᵛ⟨l⟩ u ≡ t : A := by
   have hA := h.1
   rw [ValidTypeEq.unfold] at hA
   exact ⟨h.1, fun hσ => (h.2 hσ.symm).symm.conv (hA.2 hσ.symm)⟩
 
+-- ADE: `trans-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two terms validly equal to the same term are validly equal. -/
 theorem ValidTermEq.trans (htu : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (huv : Γ ⊩ᵛ⟨l⟩ u ≡ v : A) :
     Γ ⊩ᵛ⟨l⟩ t ≡ v : A :=
   ⟨htu.1, fun hσ => (htu.2 hσ.left).trans (huv.2 hσ)⟩
 
+-- ADE: `conv-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: `convᵛ` and `convEqᵛ`, in `Definition/LogicalRelation/Substitution/Conversion.agda`.
 /--
 Two terms validly equal at a type are validly equal at every type validly equal to it, at the level
 of that equality.
@@ -298,10 +332,14 @@ theorem ValidTermEq.conv (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (hAB : Γ ⊩ᵛ⟨l
   rw [ValidTypeEq.unfold] at hAB
   exact (h.2 hσ).conv (hAB.2 hσ.left)
 
+-- ADE: `emb-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none, with a single universe.
 /-- Two terms validly equal at a level are validly equal at every larger level. -/
 theorem ValidTermEq.emb (hl : l ≤ l') (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩ᵛ⟨l'⟩ t ≡ u : A :=
   ⟨h.1.emb hl, fun hσ => (h.2 hσ).emb hl⟩
 
+-- ADE: `wk1-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none, `wk1ᵛ` and `wk1Eqᵛ` only weaken types.
 /--
 Two validly equal terms stay validly equal, moved past a new variable, in the context extended by a
 valid type.
@@ -318,12 +356,16 @@ A valid judgment holds reducibly in its own context, under the identity substitu
 reducible since the context is valid, and leaves every term unchanged.
 -/
 
+-- ADE: `⊩ᵛ≡→⊩≡`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two validly equal types are reducibly equal in their context. -/
 theorem ValidTypeEq.reducible (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩⟨l⟩ A ≡ B := by
   rw [ValidTypeEq.unfold] at h
   have h := h.2 (ReducibleSubstEq.var h.1)
   rwa [subst_var, subst_var] at h
 
+-- ADE: `⊩ᵛ≡∷→⊩≡∷`, in `Definition/LogicalRelation/Substitution.agda`.
+-- Pujet: none.
 /-- Two validly equal terms are reducibly equal in their context. -/
 theorem ValidTermEq.reducible (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩⟨l⟩ t ≡ u : A := by
   have hA := h.1

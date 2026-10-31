@@ -13,30 +13,11 @@ A type is a term of a universe, which `(U_type)` makes a type, and two equal ter
 equal types, by `(U_type≡)`.
 Grades are part of the terms, but no rule reads them: the usage of a term is a separate judgment.
 
-## Correspondence with the Formalization of ADE
-
-| Rule of RFC 24 | Constructor | Rule of ADE, in `Definition/Typed.agda` |
-| --- | --- | --- |
-| `(ctx_ε)`, `(ctx_,)` | `WfCon.empty`, `WfCon.snoc` | `ε`, `∙_` of `_»⊢_` |
-| `(U_type)` | `IsType.univ` | `univ` of `_⊢_` |
-| `(U_type≡)` | `TypeEq.univ` | `univ` of `_⊢_≡_` |
-| `(refl_type)`, `(sym_type)`, `(trans_type)` | `TypeEq.refl`, `TypeEq.symm`, `TypeEq.trans` | `refl`, `sym`, `trans` of `_⊢_≡_` |
-| `(var)` | `HasType.var` | `var`, with `_∷_∈_` |
-| `(conv)` | `HasType.conv` | `conv` of `_⊢_∷_` |
-| `(U)` | `HasType.univ` | `Uⱼ` |
-| `(Π)`, where both sorts are universes | `HasType.pi` | `ΠΣⱼ` of `_⊢_∷_` |
-| `(λ)` | `HasType.lam` | `lamⱼ` |
-| `(∘)` | `HasType.app` | `_∘ⱼ_` |
-| `(refl)`, `(sym)`, `(trans)` | `TermEq.refl`, `TermEq.symm`, `TermEq.trans` | `refl`, `sym`, `trans` of `_⊢_≡_∷_` |
-| `(conv_≡)` | `TermEq.conv` | `conv` of `_⊢_≡_∷_` |
-| `(U_≡)` | `TermEq.univ` | `U-cong` of `_⊢_≡_∷_` |
-| Congruences, where the sorts of `(Π)` are universes | `TermEq.pi`, `TermEq.lam`, `TermEq.app` | `ΠΣ-cong`, none, `app-cong` |
-| `(β)` | `TermEq.beta` | `β-red` |
-| `(η)` | `TermEq.eta` | `η-eq` |
-
 The rules cover the universes and the functions of RFC 24, so far: `(Π)` has the case where its
 domain and its codomain are terms of universes, while its sorts of strict propositions, and its
 condition on the grade of a proof, come with the strict propositions.
+
+## Correspondence with the Formalization of ADE
 
 ADE have the same five judgments, with more rules that form types, since their type of levels may
 lie in no universe, while every type of RFC 24 is a term of a universe.
@@ -103,66 +84,89 @@ mutual
 
 /-- `⊢ Γ`: the context `Γ` is well formed. -/
 inductive WfCon {k : Nat} : {n : Nat} → Con k n → Prop where
+  -- ADE: `ε` of `_»⊢_`, in `Definition/Typed.agda`.
   /-- `(ctx_ε)`: the empty context is well formed. -/
   | empty : ⊢ .empty
+  -- ADE: `∙_` of `_»⊢_`, in `Definition/Typed.agda`.
   /-- `(ctx_,)`: a context extended by a type is well formed. -/
   | snoc : Γ ⊢ A → ⊢ Γ ∙ A
 
 /-- `Γ ⊢ A`: in the context `Γ`, the term `A` is a type. -/
 inductive IsType {k : Nat} : {n : Nat} → Con k n → Term k n → Prop where
+  -- ADE: `univ` of `_⊢_`, in `Definition/Typed.agda`.
   /-- `(U_type)`: a term of a universe is a type. -/
   | univ : Γ ⊢ A : univ l → Γ ⊢ A
 
 /-- `Γ ⊢ A ≡ B`: in the context `Γ`, the types `A` and `B` are equal. -/
 inductive TypeEq {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  -- ADE: `univ` of `_⊢_≡_`, in `Definition/Typed.agda`.
   /-- `(U_type≡)`: two equal terms of a universe are equal types. -/
   | univ : Γ ⊢ A ≡ B : univ l → Γ ⊢ A ≡ B
+  -- ADE: `refl` of `_⊢_≡_`, in `Definition/Typed.agda`.
   /-- `(refl_type)` -/
   | refl : Γ ⊢ A → Γ ⊢ A ≡ A
+  -- ADE: `sym` of `_⊢_≡_`, in `Definition/Typed.agda`.
   /-- `(sym_type)` -/
   | symm : Γ ⊢ A ≡ B → Γ ⊢ B ≡ A
+  -- ADE: `trans` of `_⊢_≡_`, in `Definition/Typed.agda`.
   /-- `(trans_type)` -/
   | trans : Γ ⊢ A₁ ≡ A₂ → Γ ⊢ A₂ ≡ A₃ → Γ ⊢ A₁ ≡ A₃
 
 /-- `Γ ⊢ t : A`: in the context `Γ`, the term `t` has the type `A`. -/
 inductive HasType {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Prop where
+  -- ADE: `var` of `_⊢_∷_`, with `_∷_∈_`, in `Definition/Typed.agda`.
   /-- `(var)`: a variable has the type of its declaration. -/
   | var : ⊢ Γ → Γ ⊢ var x : Γ.get x
+  -- ADE: `conv` of `_⊢_∷_`, in `Definition/Typed.agda`.
   /-- `(conv)`: a term has any type equal to its own. -/
   | conv : Γ ⊢ t : A → Γ ⊢ A ≡ B → Γ ⊢ t : B
+  -- ADE: `Uⱼ` of `_⊢_∷_`, in `Definition/Typed.agda`.
   /-- `(U)`: a universe is a type of the universe just above it. -/
   | univ : ⊢ Γ → Γ ⊢ univ l : univ l.succ
+  -- ADE: `ΠΣⱼ` of `_⊢_∷_`, in `Definition/Typed.agda`.
   /-- `(Π)`: the type of functions lives at the larger level of its domain and its codomain. -/
   | pi : Γ ⊢ A : univ l₁ → Γ ∙ A ⊢ B : univ l₂ → Γ ⊢ pi p q A B : univ (l₁ ⊔ l₂)
+  -- ADE: `lamⱼ` of `_⊢_∷_`, in `Definition/Typed.agda`.
   /-- `(λ)`: an abstraction has the type of functions whose body has its type. -/
   | lam : Γ ⊢ pi p q A B → Γ ∙ A ⊢ t : B → Γ ⊢ lam p A t : pi p q A B
+  -- ADE: `_∘ⱼ_` of `_⊢_∷_`, in `Definition/Typed.agda`.
   /-- `(∘)`: an application has the codomain of the function, at the argument. -/
   | app : Γ ⊢ t : pi p q A B → Γ ⊢ a : A → Γ ⊢ app p t a : B.instantiate a
 
 /-- `Γ ⊢ t ≡ u : A`: in the context `Γ`, the terms `t` and `u` are equal at the type `A`. -/
 inductive TermEq {k : Nat} : {n : Nat} → Con k n → Term k n → Term k n → Term k n → Prop where
+  -- ADE: `refl` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(refl)` -/
   | refl : Γ ⊢ t : A → Γ ⊢ t ≡ t : A
+  -- ADE: `sym` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(sym)` -/
   | symm : Γ ⊢ t ≡ u : A → Γ ⊢ u ≡ t : A
+  -- ADE: `trans` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(trans)` -/
   | trans : Γ ⊢ t₁ ≡ t₂ : A → Γ ⊢ t₂ ≡ t₃ : A → Γ ⊢ t₁ ≡ t₃ : A
+  -- ADE: `conv` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(conv_≡)`: two terms are equal at any type equal to their own. -/
   | conv : Γ ⊢ t ≡ u : A → Γ ⊢ A ≡ B → Γ ⊢ t ≡ u : B
+  -- ADE: `U-cong` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(U_≡)`: two universes are equal when their levels are. -/
   | univ : ⊢ Γ → l₁ ≈ l₂ → Γ ⊢ univ l₁ ≡ univ l₂ : univ l₁.succ
+  -- ADE: `ΠΣ-cong` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- The congruence of the type of functions, with the premises of `(Π)`. -/
   | pi : Γ ⊢ A₁ ≡ A₂ : univ l₁ → Γ ∙ A₁ ⊢ B₁ ≡ B₂ : univ l₂ →
       Γ ⊢ pi p q A₁ B₁ ≡ pi p q A₂ B₂ : univ (l₁ ⊔ l₂)
+  -- ADE: none, since the abstractions of ADE do not carry the type of their argument.
   /-- The congruence of abstraction, with the premises of `(λ)`. -/
   | lam : Γ ⊢ pi p q A₁ B → Γ ⊢ A₁ ≡ A₂ : univ l₁ → Γ ∙ A₁ ⊢ t₁ ≡ t₂ : B →
       Γ ⊢ lam p A₁ t₁ ≡ lam p A₂ t₂ : pi p q A₁ B
+  -- ADE: `app-cong` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- The congruence of application, with the premises of `(∘)`. -/
   | app : Γ ⊢ t₁ ≡ t₂ : pi p q A B → Γ ⊢ a₁ ≡ a₂ : A →
       Γ ⊢ app p t₁ a₁ ≡ app p t₂ a₂ : B.instantiate a₁
+  -- ADE: `β-red` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(β)`: applying an abstraction substitutes the argument in its body. -/
   | beta : Γ ⊢ pi p q A B → Γ ∙ A ⊢ t : B → Γ ⊢ a : A →
       Γ ⊢ app p (lam p A t) a ≡ t.instantiate a : B.instantiate a
+  -- ADE: `η-eq` of `_⊢_≡_∷_`, in `Definition/Typed.agda`.
   /-- `(η)`: a function is the abstraction of its application to the variable it binds. -/
   | eta : Γ ⊢ t : pi p q A B → Γ ⊢ t ≡ lam p A (app p t.wk1 (var 0)) : pi p q A B
 

@@ -1,6 +1,9 @@
 # The defaults, except where documented.
 extends: default
 
+# The files git ignores, such as the packages Lake fetches.
+ignore-from-file: .gitignore
+
 rules:
   # Workflows do not start with "---" by convention.
   document-start: disable

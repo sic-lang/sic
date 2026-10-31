@@ -20,7 +20,7 @@ theorem instantiate_wk1 (t : Term k n) (a : Term k n) : t.wk1.instantiate a = t 
 The meaning of the weakenings: a weakening keeps the variables of the smaller context in the same
 order, so it denotes a strictly increasing map between the indices, and every such map is the
 meaning of a weakening.
-Several weakenings may denote the same map, as `id` and `lift id` do.
+Several weakenings may denote the same map, as `Sic.Core.Wk.id` and `Wk.id.lift` do.
 -/
 
 /-- The map `f` between indices is strictly increasing. -/
@@ -88,8 +88,8 @@ theorem strictMono_iff_wk (f : Fin n → Fin m) : StrictMono f ↔ ∃ ρ : Wk m
   ⟨exists_wk f, fun ⟨ρ, h⟩ => h ▸ var_strictMono ρ⟩
 
 /-!
-The composition of the weakenings is a composition: `id` is neutral on both sides, and composing is
-associative, as weakenings, not only as the maps they denote.
+The composition of the weakenings is a composition: `Sic.Core.Wk.id` is neutral on both sides, and
+composing is associative, as weakenings, not only as the maps they denote.
 -/
 
 theorem id_comp (ρ : Wk m n) : Wk.id.comp ρ = ρ := rfl

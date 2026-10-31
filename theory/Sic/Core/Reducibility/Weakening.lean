@@ -12,14 +12,8 @@ of the weakened type, whatever the proof of its reducibility.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Weakening.agda` | Of Pujet, in `Definition/LogicalRelation/Weakening.agda` |
-| --- | --- | --- |
-| `LogicalRelation.wk` | `wk` | the same |
-| `LogicalRelation.wk_eqType` | `wkEq` | the same |
-| `LogicalRelation.wk_eqTerm` | `wkTerm`, `wkEqTerm` | the same |
-
-ADE and Pujet state the transports for the proof of reducibility that their `wk` builds, while the
-transports here hold for every proof of the reducibility of the weakened type, at any level, by
+ADE and Pujet state the transports for the proof of reducibility that their weakening builds, while
+the transports here hold for every proof of the reducibility of the weakened type, at any level, by
 the uniqueness of its interpretation.
 A reducible term is a term that the interpretation equates to itself, so that the transport of the
 equal terms also covers their `wkTerm`.
@@ -79,6 +73,8 @@ private theorem LogicalRelation.wkStrong (h : Γ ⊩⟨l⟩ A ▸ P) (hρ : ρ �
           rw [wk_comp, wk_comp]; exact happ (hρ'.comp hρ) hΔ' ha hb hab⟩
 termination_by l
 
+-- ADE: `wk`, in `Definition/LogicalRelation/Weakening.agda`.
+-- Pujet: `wk`, in `Definition/LogicalRelation/Weakening.agda`.
 /--
 A reducible type stays reducible, at the same level, in every well-formed context that contains its
 own.
@@ -88,6 +84,8 @@ theorem LogicalRelation.wk (h : Γ ⊩⟨l⟩ A ▸ P) (hρ : ρ ∷ Δ ⊇ Γ) 
   let ⟨Q, hQ, _⟩ := h.wkStrong hρ hΔ
   ⟨Q, hQ⟩
 
+-- ADE: `wkEq`, in `Definition/LogicalRelation/Weakening.agda`.
+-- Pujet: `wkEq`, in `Definition/LogicalRelation/Weakening.agda`.
 /--
 A type that the interpretation of a reducible type equates to it, weakened, is equated to the
 weakened type by its interpretation, whatever the proof of its reducibility.
@@ -97,6 +95,8 @@ theorem LogicalRelation.wk_eqType (h : Γ ⊩⟨l⟩ A ▸ P) (h' : Δ ⊩⟨l'�
   let ⟨_, hQ, hT, _⟩ := h.wkStrong hρ hΔ
   h'.unique hQ ▸ hT hB
 
+-- ADE: `wkTerm` and `wkEqTerm`, in `Definition/LogicalRelation/Weakening.agda`.
+-- Pujet: `wkTerm` and `wkEqTerm`, in `Definition/LogicalRelation/Weakening.agda`.
 /--
 Two terms that the interpretation of a reducible type equates, weakened, are equated by the
 interpretation of the weakened type, whatever the proof of its reducibility.

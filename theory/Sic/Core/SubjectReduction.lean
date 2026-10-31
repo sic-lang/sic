@@ -13,10 +13,6 @@ result of its type of functions, so that a reduction at one of them says nothing
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE | Of Pujet |
-| --- | --- | --- |
-| `HasType.termRed`, `HasType.typeRedStar` | none | none |
-
 The reductions of ADE and of Pujet, as those of `Sic.Core.Reduction`, are derived at a type, which
 their proofs only use at that type.
 -/
@@ -25,6 +21,8 @@ their proofs only use at that type.
 
 namespace Sic.Core
 
+-- ADE: none.
+-- Pujet: none.
 /--
 A term that reduces at a type reduces to a term of each of its types.
 
@@ -44,6 +42,8 @@ theorem HasType.termRed (hB : Γ ⊢ t : B) : Γ ⊢ t ⇒ u : A → Γ ⊢ u : 
     have ha' := HasType.conv ha hA.symm
     .conv (ht.instantiate ha') ((hBody.subst (.instantiate ha') ha.wfCon).trans hC.symm)
 
+-- ADE: none.
+-- Pujet: none.
 /-- A type that reduces is reduced to a term of each type of the type. -/
 theorem HasType.typeRedStar (hC : Γ ⊢ A : C) : Γ ⊢ A ⇒* B → Γ ⊢ B : C
   | .refl _ => hC

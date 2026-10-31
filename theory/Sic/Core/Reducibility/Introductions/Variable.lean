@@ -7,12 +7,6 @@ public import Sic.Core.Reducibility.Validity
 
 The variables of a valid context are valid terms of their types, so that the fundamental lemma
 covers the rule `(var)` of `Sic.Core.Typing`.
-
-## Correspondence with the Formalizations of ADE and of Pujet
-
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda` | Of Pujet, in `Definition/LogicalRelation/Fundamental.agda` |
-| --- | --- | --- |
-| `ValidTermEq.var` | `varᵛ` | `fundamentalVar` |
 -/
 
 @[expose] public section
@@ -23,6 +17,8 @@ open Term
 
 variable [EqualityRelation]
 
+-- ADE: `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+-- Pujet: `fundamentalVar`, in `Definition/LogicalRelation/Fundamental.agda`.
 /--
 Each variable of a valid context is a valid term of its type, at some level.
 

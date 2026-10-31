@@ -1,4 +1,6 @@
 {
+  // The files git ignores, such as the packages Lake fetches.
+  "gitignore": true,
   "config": {
     // Lines are not wrapped at a fixed length.
     "MD013": false

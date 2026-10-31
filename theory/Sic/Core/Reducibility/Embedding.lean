@@ -10,10 +10,6 @@ with the same interpretation.
 
 ## Correspondence with the Formalization of ADE
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Properties/Embedding.agda` |
-| --- | --- |
-| `LogicalRelation.emb` | `emb-≤-⊩` |
-
 The interpretation of a universe reads the relation at the level of the universe, whatever the
 level of the relation that interprets it, so that the embedded type keeps its interpretation, where
 ADE build a new proof of reducibility and transport the equalities to it, in their `emb-≤-⊩≡` and
@@ -27,6 +23,7 @@ namespace Sic.Core.Reducibility
 
 variable [EqualityRelation]
 
+-- ADE: `emb-≤-⊩`, in `Definition/LogicalRelation/Properties/Embedding.agda`.
 /--
 A type reducible at a level is reducible at every larger level, with the same interpretation.
 

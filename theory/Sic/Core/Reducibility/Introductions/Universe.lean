@@ -12,12 +12,6 @@ the terms of a universe its types.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Theorem | Theorem of ADE, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda` | Of Pujet, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda` |
-| --- | --- | --- |
-| `ValidTypeEq.univ` | `⊩ᵛU` | `Uᵛ` |
-| `ValidTermEq.univ` | `⊩ᵛU≡U∷U` | none, with a single universe, which is not a term |
-| `ValidTermEq.toTypeEq` | `⊩ᵛ≡∷U→⊩ᵛ≡` | `univᵛ`, `univEqᵛ` |
-
 ADE's `⊩ᵛU≡U∷U` equates two universes of equal levels, which may be terms, where the levels here
 are those of `Sic.Core.Level`, whose equality `≈` the rule `(U_≡)` reads.
 -/
@@ -31,8 +25,9 @@ open Term
 variable [EqualityRelation]
 
 /-!
-The statements of the theorems on `ValidTermEq` write `Term.univ`, since `univ` names
-`ValidTermEq.univ` in the namespace that Lean opens for them.
+The statements of the theorems on `ValidTermEq` write the universes with the namespace `Term`,
+since the short name of their constructor would resolve to `ValidTermEq.univ` in the namespace that
+Lean opens for them.
 -/
 
 /--
@@ -48,6 +43,8 @@ private theorem reducibleTypeEq_univ (hΔ : ⊢ Δ) (hL : L₁ ≈ L₂) (hl : L
     LogicalRelation.unfold ▸ LogRel.univ (L := L₂) (hb ▸ hl) (.refl (.univ (.univ hΔ)))
   exact ⟨_, _, hU₁, hU₂, _, .refl (.univ (.univ hΔ)), hL⟩
 
+-- ADE: `⊩ᵛU`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+-- Pujet: `Uᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /--
 The universe of a level `L` is a valid type at the level that follows the value of `L`, in every
 valid context, since every substitution keeps it.
@@ -56,6 +53,8 @@ theorem ValidTypeEq.univ (hΓ : ⊩ᵛ Γ) : Γ ⊩ᵛ⟨L.bound + 1⟩ univ L �
   rw [ValidTypeEq.unfold]
   exact ⟨hΓ, fun hσ => reducibleTypeEq_univ hσ.wfCon (.refl L) (Nat.lt_succ_self _)⟩
 
+-- ADE: `⊩ᵛU≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+-- Pujet: none, with a single universe, which is not a term.
 /--
 Two universes of equal levels `L₁` and `L₂` are validly equal terms of the universe of the level
 `L₁ + 1`, in every valid context, since every substitution keeps them, and each is a type reducible
@@ -72,6 +71,9 @@ theorem ValidTermEq.univ (hΓ : ⊩ᵛ Γ) (hL : L₁ ≈ L₂) :
   exact ⟨_, hU, _, _, ⟨.refl (.univ hΔ), .univ⟩, ⟨.refl (.conv (.univ hΔ) hU₂U₁), .univ⟩, .univ,
     .univ, EqualityRelation.univ hΔ hL, _, hU₁, ⟨_, hU₂⟩, hU₁₂⟩
 
+-- ADE: `⊩ᵛ≡∷U→⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+-- Pujet: `univᵛ` and `univEqᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /--
 Two terms validly equal at the universe of a level `L` are validly equal types at the value of `L`,
 since the interpretation of the universe equates them as two types reducible at that level.

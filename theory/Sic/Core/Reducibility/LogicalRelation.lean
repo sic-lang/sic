@@ -25,17 +25,6 @@ still requires their levels to be equal.
 
 ## Correspondence with the Formalizations of ADE and of Pujet
 
-| Definition or theorem | Definition or theorem of ADE, in `Definition/LogicalRelation.agda` | Of Pujet, in `Definition/LogicalRelation.agda` |
-| --- | --- | --- |
-| `Interpretation.eqType`, `Interpretation.eqTerm` | `_⊩⟨_⟩_≡_/_`, `_⊩⟨_⟩_≡_∷_/_` | the second and fourth predicates of `_⊩LR_▸_▸_▸_` |
-| `LogRel`, with `lower` | `LogRel`, with `rec` | `_⊩LR_▸_▸_▸_`, with `rec` |
-| `LogRel.univ` | `Uᵣ`, with `_⊩₁U_`, `_⊩₁U≡_/_`, `_⊩₁U_≡_∷U/_` | `LRU` |
-| `LogRel.ne` | `ne`, with `_⊩ne_`, `_⊩ne_≡_/_`, `_⊩neNf_≡_∷_` | `LRne` |
-| `LogRel.pi` | `Bᵣ`, with `_⊩ₗB⟨_⟩_`, `_⊩ₗB⟨_⟩_≡_/_`, `_⊩ₗΠ_≡_∷_/_` | `LRΠ` |
-| `LogicalRelation` | `_⊩⟨_⟩_`, with `kit` | `_⊩⟨_⟩_`, with `kit` |
-| `Level.bound` | `↑ᵘ`, which sends the neutral levels to `0` | none, with a single universe |
-| `LogRel.escape`, `LogRel.escape_eq` | `escape`, `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda` | the same |
-
 Pujet's relation is a predicate of a type and of its interpretation, as here, where ADE's relation
 computes the interpretation from a proof of reducibility.
 Both have a constructor `emb`, which moves a reducible type to a larger level, while the relation at
@@ -53,6 +42,8 @@ ADE and Pujet obtain from the equality relation, after their `escapeEq` and `esc
 
 namespace Sic.Core
 
+-- ADE: `↑ᵘ`, which sends the neutral levels to `0`, in `Definition/LogicalRelation.agda`.
+-- Pujet: none, with a single universe.
 /--
 The level of the logical relation that interprets the universe of level `l`: the value of `l` when
 its variables take the value `0`.
@@ -63,8 +54,12 @@ namespace Reducibility
 
 /-- The interpretation of a reducible type `A`: the types equal to `A`, and its equal terms. -/
 structure Interpretation (k n : Nat) where
+  -- ADE: `_⊩⟨_⟩_≡_/_`, in `Definition/LogicalRelation.agda`.
+  -- Pujet: the second predicate of `_⊩LR_▸_▸_▸_`, in `Definition/LogicalRelation.agda`.
   /-- The types equal to `A`. -/
   eqType : Term k n → Prop
+  -- ADE: `_⊩⟨_⟩_≡_∷_/_`, in `Definition/LogicalRelation.agda`.
+  -- Pujet: the fourth predicate of `_⊩LR_▸_▸_▸_`, in `Definition/LogicalRelation.agda`.
   /-- The pairs of equal terms of `A`, of which a reducible term of `A` is equal to itself. -/
   eqTerm : Term k n → Term k n → Prop
 
@@ -73,6 +68,8 @@ abbrev Relation (k : Nat) := ∀ {n : Nat}, Con k n → Term k n → Interpretat
 
 variable [EqualityRelation]
 
+-- ADE: the module `LogRel`, with `rec` for `lower`, in `Definition/LogicalRelation.agda`.
+-- Pujet: `_⊩LR_▸_▸_▸_`, with `rec` for `lower`, in `Definition/LogicalRelation.agda`.
 /--
 The logical relation at the level `l`, from the relations `lower` at the smaller levels, which
 interpret the elements of the universes: `LogRel l lower Γ A P` says that the type `A` is reducible,
@@ -81,6 +78,8 @@ Each constructor is a weak head normal form of types, and its interpretation is 
 conclusion.
 -/
 inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
+  -- ADE: `Uᵣ`, with `_⊩₁U_`, `_⊩₁U≡_/_` and `_⊩₁U_≡_∷U/_`, in `Definition/LogicalRelation.agda`.
+  -- Pujet: `LRU`, in `Definition/LogicalRelation.agda`.
   /--
   A type that reduces to a universe of a smaller level: two types are equal to it when they reduce
   to a universe of an equal level, and two of its terms are equal when they reduce to types that are
@@ -95,6 +94,8 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
             (Γ ⊢ u ↘ B' : Term.univ L) ∧ WhnfType A' ∧ WhnfType B' ∧
             (Γ ⊢ A' ≅ B' : Term.univ L) ∧
             ∃ P, lower _ h Γ t P ∧ (∃ Q, lower _ h Γ u Q) ∧ P.eqType u }
+  -- ADE: `ne`, with `_⊩ne_`, `_⊩ne_≡_/_` and `_⊩neNf_≡_∷_`, in `Definition/LogicalRelation.agda`.
+  -- Pujet: `LRne`, in `Definition/LogicalRelation.agda`.
   /--
   A type that reduces to a neutral type: two types are equal to it when they reduce to equal neutral
   types, and two of its terms are equal when they reduce to equal neutral terms.
@@ -104,6 +105,9 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
         { eqType := fun B => ∃ M, (Γ ⊢ B ⇒* M) ∧ Neutral M ∧ (Γ ⊢ N ≅ M)
           eqTerm := fun t u => ∃ t' u', (Γ ⊢ t ⇒* t' : N) ∧ (Γ ⊢ u ⇒* u' : N) ∧ Neutral t' ∧
             Neutral u' ∧ (Γ ⊢ t' ~ u' : N) }
+  -- ADE: `Bᵣ`, with `_⊩ₗB⟨_⟩_`, `_⊩ₗB⟨_⟩_≡_/_` and `_⊩ₗΠ_≡_∷_/_`, in
+  -- `Definition/LogicalRelation.agda`.
+  -- Pujet: `LRΠ`, in `Definition/LogicalRelation.agda`.
   /--
   A type that reduces to a type of functions, whose domain `F` is reducible, with the
   interpretation `PF`, in every well-formed context that contains `Γ`, and whose codomain `G` is
@@ -136,6 +140,8 @@ inductive LogRel (l : Nat) (lower : ∀ l' < l, Relation k) : Relation k where
               (PF ρ Δ).eqTerm a a → (PF ρ Δ).eqTerm b b → (PF ρ Δ).eqTerm a b →
               (PG ρ Δ a).eqTerm (Term.app p (f.wk ρ) a) (Term.app p (g.wk ρ) b) }
 
+-- ADE: `_⊩⟨_⟩_`, with `kit`, in `Definition/LogicalRelation.agda`.
+-- Pujet: `_⊩⟨_⟩_`, with `kit`, in `Definition/LogicalRelation.agda`.
 /--
 `Γ ⊩⟨l⟩ A ▸ P`: in the context `Γ`, the type `A` is reducible at the level `l`, with the
 interpretation `P`, each universe being interpreted by the relation at its own level.
@@ -162,6 +168,8 @@ section Escape
 
 variable {l : Nat} {lower : ∀ l' < l, Relation k}
 
+-- ADE: `escape`, in `Definition/LogicalRelation/Properties/Escape.agda`.
+-- Pujet: `escape`, in `Definition/LogicalRelation/Properties/Escape.agda`.
 /-- A reducible type is a type. -/
 theorem LogRel.escape : LogRel l lower Γ A P → Γ ⊢ A
   | .univ _ hA | .ne hA _ _ | .pi hA .. => hA.typeEq.wf.1
@@ -175,6 +183,8 @@ theorem LogRel.escape_eqType : LogRel l lower Γ A P → P.eqType B → Γ ⊢ A
   | .pi hA .., ⟨_, _, hB, hPi, _⟩ =>
     .trans hA.typeEq (.trans (EqualityRelation.typeEq hPi) (.symm hB.typeEq))
 
+-- ADE: `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda`.
+-- Pujet: `escapeTermEq`, in `Definition/LogicalRelation/Properties/Escape.agda`.
 /--
 The terms that the interpretation of a reducible type equates are equal by the equality relation.
 -/

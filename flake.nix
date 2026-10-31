@@ -90,9 +90,14 @@
               ];
               command = "git ls-files -z .envrc '*.sh' | xargs -0 shfmt --diff";
             };
+            # The files git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
+            # with TOML files.
             taplo = {
-              tools = [ pkgs.taplo ];
-              command = "taplo fmt --check";
+              tools = [
+                pkgs.findutils
+                pkgs.taplo
+              ];
+              command = "git ls-files -z --cached --others --exclude-standard '*.toml' | xargs -0 taplo fmt --check";
             };
             typos = {
               tools = [ pkgs.typos ];
@@ -240,6 +245,34 @@
               exit "$status"
             '';
           };
+          # Generates the documentation of the metatheory with doc-gen4, in
+          # theory/docbuild/.lake/build/doc: Lake fetches doc-gen4, whose libraries need a C compiler, and
+          # the facet docs of the module SicDocs documents every module it imports.
+          docs = command {
+            name = "docs";
+            runtimeInputs = [
+              pkgs.coreutils
+              pkgs.findutils
+              pkgs.git
+              pkgs.gnused
+              pkgs.lean4
+              pkgs.stdenv.cc
+            ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)/theory"
+              {
+                find Sic SicTest -name "*.lean" | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
+                echo
+                echo "/-! The modules of the metatheory, imported so that doc-gen4 documents them all. -/"
+              } >docbuild/SicDocs.lean
+              # doc-gen4 v4.34.1 does not write the pages again when the modules change, since its empty
+              # markers hide the changes upstream of them (leanprover/doc-gen4#389, fixed in v4.35.0):
+              # without the marker, it writes them again at each run, until Lean 4.35 (#41).
+              rm -f docbuild/.lake/build/doc-data/SicDocs--library.docs_built*
+              lake --dir docbuild build SicDocs:docs
+              echo "The documentation is in $PWD/docbuild/.lake/build/doc."
+            '';
+          };
         in
         {
           apps =
@@ -248,6 +281,7 @@
             ) checkCommands
             // {
               check = app checkAll "Run every check";
+              docs = app docs "Generate the documentation of the metatheory";
               setup-vscode = app setupVscode "Write the recommended VS Code configuration to .vscode/";
             };
 
@@ -256,6 +290,7 @@
             lib.mapAttrs' (name: command: lib.nameValuePair "check-${name}" command.checked) checkCommands
             // {
               check = checkAll.checked;
+              docs = docs.checked;
               setup-vscode = setupVscode.checked;
             };
 
