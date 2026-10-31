@@ -2,7 +2,6 @@ module
 
 import Sic.Core.Reducibility.Introductions.Pi
 import Sic.Core.Reducibility.Introductions.Variable
-import all SicTest.Common.Reducibility.Validity
 import all SicTest.TypeVariable.Reducibility.LogicalRelation
 import all SicTest.TypeVariable.Reducibility.Validity
 import all SicTest.TypeVariable.Reducibility.Introductions.Variable
@@ -17,7 +16,7 @@ nor to `Π^𝟘_q (x : A). A` when `p` is `𝟙`, for every equality relation.
 
 namespace SicTest.TypeVariable.Reducibility.Introductions.Pi
 
-open Sic.Core Sic.Grade Sic.Core.Term Sic.Core.Reducibility SicTest.Common.Reducibility.Validity
+open Sic.Core Sic.Grade Sic.Core.Term Sic.Core.Reducibility
 open SicTest.TypeVariable.Reducibility.LogicalRelation SicTest.TypeVariable.Reducibility.Validity
 open SicTest.TypeVariable.Reducibility.Introductions.Variable
 
@@ -43,10 +42,10 @@ an equal type must reduce to, so that the validity does not equate them.
 -/
 example : ¬ ΓA ⊩ᵛ⟨l⟩ pi p q (var 0) (var 1) ≡ var 0 := by
   intro h
-  have ⟨_, _, hPi, _, hPiA⟩ := reducibleTypeEq_of_validTypeEq h
+  have ⟨_, _, hPi, _, hPiA⟩ := h.reducible
   have hA : ΓA ⊢ var 0 := .univ (.var wfCon_ΓA)
   have hPi' := validTermEq_piAA (p := p) (q := q) |>.toTypeEq
-  have ⟨_, _, hPi'', _⟩ := reducibleTypeEq_of_validTypeEq hPi'
+  have ⟨_, _, hPi'', _⟩ := hPi'.reducible
   rw [LogicalRelation.unfold] at hPi hPi''
   cases hPi with
   | pi =>
@@ -62,11 +61,9 @@ them.
 -/
 example : ¬ ΓA ⊩ᵛ⟨l⟩ pi 𝟙 q (var 0) (var 1) ≡ pi 𝟘 q (var 0) (var 1) := by
   intro h
-  have ⟨_, _, hPi₁, _, hPi₁₂⟩ := reducibleTypeEq_of_validTypeEq h
-  have ⟨_, _, hPi₁', hPi₂, _⟩ :=
-    reducibleTypeEq_of_validTypeEq (validTermEq_piAA (p := 𝟙) (q := q)).toTypeEq
-  have ⟨_, _, hPi₂', _⟩ :=
-    reducibleTypeEq_of_validTypeEq (validTermEq_piAA (p := 𝟘) (q := q)).toTypeEq
+  have ⟨_, _, hPi₁, _, hPi₁₂⟩ := h.reducible
+  have ⟨_, _, hPi₁', hPi₂, _⟩ := (validTermEq_piAA (p := 𝟙) (q := q)).toTypeEq.reducible
+  have ⟨_, _, hPi₂', _⟩ := (validTermEq_piAA (p := 𝟘) (q := q)).toTypeEq.reducible
   rw [LogicalRelation.unfold] at hPi₁ hPi₁' hPi₂'
   cases hPi₁ with
   | pi hA =>
