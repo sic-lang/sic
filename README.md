@@ -1,6 +1,6 @@
 # Sic
 
-The Sic programming language: its metatheory and its compilers.
+Metatheory and compilers for the Sic programming language.
 Its design is decided by the RFCs of [`sic-lang/rfcs`](https://github.com/sic-lang/rfcs).
 
 ## License
