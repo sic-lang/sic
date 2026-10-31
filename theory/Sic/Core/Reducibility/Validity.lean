@@ -30,6 +30,13 @@ The validities are defined together, by recursion on the context.
 | `ReducibleSubstEq.wk` | `⊩ˢ≡∷-•ₛ` | `wkSubstSEq` |
 | `ReducibleSubstEq.lift` | `⊩ˢ≡∷-liftSubst` | `liftSubstSEq` |
 | `ReducibleSubstEq.var` | `⊩ˢ∷-idSubst` | `idSubstS` |
+| `ReducibleSubstEq.symm` | `sym-⊩ˢ≡∷` | `symS` |
+| `ReducibleSubstEq.left` | `refl-⊩ˢ≡∷` | none, since the equality of two substitutions carries the proofs of their reducibility |
+| `ValidTypeEq.symm`, `ValidTermEq.symm` | `sym-⊩ᵛ≡`, `sym-⊩ᵛ≡∷` | none |
+| `ValidTypeEq.trans`, `ValidTermEq.trans` | `trans-⊩ᵛ≡`, `trans-⊩ᵛ≡∷` | none |
+| `ValidTermEq.conv` | `conv-⊩ᵛ≡∷` | `convᵛ`, `convEqᵛ` |
+| `ValidTypeEq.emb`, `ValidTermEq.emb` | `emb-⊩ᵛ≡`, `emb-⊩ᵛ≡∷` | none, with a single universe |
+| `ValidTypeEq.wk1`, `ValidTermEq.wk1` | `wk1-⊩ᵛ≡`, `wk1-⊩ᵛ≡∷` | `wk1ᵛ`, `wk1Eqᵛ` for the types |
 
 Pujet's validities carry the proofs of the validity of the context, of the reducibility of the
 substitutions and of the substituted types, on which the others depend, which needs
@@ -188,5 +195,94 @@ theorem ReducibleSubstEq.var : ∀ {Γ : Con k n}, (⊩ᵛ Γ) → Γ ⊩ˢ .var
     have h := (ReducibleSubstEq.var hΓ).lift hA
     rw [Subst.lift_var, subst_var] at h
     exact h
+
+/-!
+The validities are partial equivalences, as the reducible equalities, and each of them holds at
+every level larger than its own: the symmetry of two substitutions converts the terms of the second
+to the types it substitutes, and the other properties hold under each pair of substitutions, where
+the first substitution is reducibly equal to itself.
+-/
+
+/-- Two reducibly equal substitutions are reducibly equal in the other order. -/
+theorem ReducibleSubstEq.symm : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
+    Δ ⊩ˢ σ₂ ≡ σ₁ : Γ
+  | .empty, _, _, hσ => ReducibleSubstEq.unfold_empty ▸ ReducibleSubstEq.unfold_empty ▸ hσ
+  | .snoc _ _, _, _, hσ => by
+    rw [ReducibleSubstEq.unfold_snoc] at hσ ⊢
+    have ⟨⟨l, hA, ha⟩, hσ⟩ := hσ
+    rw [ValidTypeEq.unfold] at hA
+    exact ⟨⟨l, ValidTypeEq.unfold ▸ hA, ha.symm.conv (hA.2 hσ)⟩, hσ.symm⟩
+
+/-- The first of two reducibly equal substitutions is reducibly equal to itself. -/
+theorem ReducibleSubstEq.left : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
+    Δ ⊩ˢ σ₁ ≡ σ₁ : Γ
+  | .empty, _, _, hσ => ReducibleSubstEq.unfold_empty ▸ ReducibleSubstEq.unfold_empty ▸ hσ
+  | .snoc _ _, _, _, hσ => by
+    rw [ReducibleSubstEq.unfold_snoc] at hσ ⊢
+    have ⟨⟨l, hA, ha⟩, hσ⟩ := hσ
+    exact ⟨⟨l, hA, ha.trans ha.symm⟩, hσ.left⟩
+
+/-- Two validly equal types are validly equal in the other order. -/
+theorem ValidTypeEq.symm (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩ᵛ⟨l⟩ B ≡ A := by
+  rw [ValidTypeEq.unfold] at h ⊢
+  exact ⟨h.1, fun hσ => (h.2 hσ.symm).symm⟩
+
+/-- Two types validly equal to the same type are validly equal. -/
+theorem ValidTypeEq.trans (hAB : Γ ⊩ᵛ⟨l⟩ A ≡ B) (hBC : Γ ⊩ᵛ⟨l⟩ B ≡ C) : Γ ⊩ᵛ⟨l⟩ A ≡ C := by
+  rw [ValidTypeEq.unfold] at hAB hBC ⊢
+  exact ⟨hAB.1, fun hσ => (hAB.2 hσ.left).trans (hBC.2 hσ)⟩
+
+/-- Two types validly equal at a level are validly equal at every larger level. -/
+theorem ValidTypeEq.emb (hl : l ≤ l') (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) : Γ ⊩ᵛ⟨l'⟩ A ≡ B := by
+  rw [ValidTypeEq.unfold] at h ⊢
+  exact ⟨h.1, fun hσ => (h.2 hσ).emb hl⟩
+
+/--
+Two validly equal types stay validly equal, moved past a new variable, in the context extended by a
+valid type.
+-/
+theorem ValidTypeEq.wk1 (h : Γ ⊩ᵛ⟨l⟩ A ≡ B) (hC : Γ ⊩ᵛ⟨l'⟩ C ≡ C) :
+    Γ ∙ C ⊩ᵛ⟨l⟩ A.wk1 ≡ B.wk1 := by
+  rw [ValidTypeEq.unfold] at h ⊢
+  refine ⟨ValidCon.unfold_snoc ▸ ⟨l', hC⟩, fun hσ => ?_⟩
+  rw [ReducibleSubstEq.unfold_snoc] at hσ
+  rw [subst_wk, subst_wk]
+  exact h.2 hσ.2
+
+/-- Two validly equal terms are validly equal in the other order. -/
+theorem ValidTermEq.symm (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩ᵛ⟨l⟩ u ≡ t : A := by
+  have hA := h.1
+  rw [ValidTypeEq.unfold] at hA
+  exact ⟨h.1, fun hσ => (h.2 hσ.symm).symm.conv (hA.2 hσ.symm)⟩
+
+/-- Two terms validly equal to the same term are validly equal. -/
+theorem ValidTermEq.trans (htu : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (huv : Γ ⊩ᵛ⟨l⟩ u ≡ v : A) :
+    Γ ⊩ᵛ⟨l⟩ t ≡ v : A :=
+  ⟨htu.1, fun hσ => (htu.2 hσ.left).trans (huv.2 hσ)⟩
+
+/--
+Two terms validly equal at a type are validly equal at every type validly equal to it, at the level
+of that equality.
+-/
+theorem ValidTermEq.conv (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (hAB : Γ ⊩ᵛ⟨l'⟩ A ≡ B) :
+    Γ ⊩ᵛ⟨l'⟩ t ≡ u : B := by
+  refine ⟨hAB.symm.trans hAB, fun hσ => ?_⟩
+  rw [ValidTypeEq.unfold] at hAB
+  exact (h.2 hσ).conv (hAB.2 hσ.left)
+
+/-- Two terms validly equal at a level are validly equal at every larger level. -/
+theorem ValidTermEq.emb (hl : l ≤ l') (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) : Γ ⊩ᵛ⟨l'⟩ t ≡ u : A :=
+  ⟨h.1.emb hl, fun hσ => (h.2 hσ).emb hl⟩
+
+/--
+Two validly equal terms stay validly equal, moved past a new variable, in the context extended by a
+valid type.
+-/
+theorem ValidTermEq.wk1 (h : Γ ⊩ᵛ⟨l⟩ t ≡ u : A) (hC : Γ ⊩ᵛ⟨l'⟩ C ≡ C) :
+    Γ ∙ C ⊩ᵛ⟨l⟩ t.wk1 ≡ u.wk1 : A.wk1 := by
+  refine ⟨h.1.wk1 hC, fun hσ => ?_⟩
+  rw [ReducibleSubstEq.unfold_snoc] at hσ
+  rw [subst_wk, subst_wk, subst_wk]
+  exact h.2 hσ.2
 
 end Sic.Core.Reducibility
