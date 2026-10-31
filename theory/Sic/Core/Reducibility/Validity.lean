@@ -3,6 +3,7 @@ module
 public import Sic.Core.Reducibility.Hidden
 import Sic.Core.Reducibility.Neutral
 import Sic.Core.Reducibility.Weakening
+import Sic.Core.WellFormed
 
 /-!
 # Validity
@@ -26,8 +27,10 @@ The validities are defined together, by recursion on the context.
 | `ReducibleSubstEq` | `_⊩ˢ_≡_∷_`, and `_⊩ˢ_∷_` for a substitution equal to itself | `_⊩ˢ_≡_∷_/_/_/_`, `_⊩ˢ_∷_/_/_` |
 | `ValidCon.unfold_empty`, `ValidCon.unfold_snoc`, `ValidTypeEq.unfold`, `ReducibleSubstEq.unfold_empty`, `ReducibleSubstEq.unfold_snoc` | the characterization lemmas `⊩ᵛε⇔`, `⊩ᵛ∙⇔`, `⊩ᵛ≡⇔`, `⊩ˢ≡∷ε⇔`, `⊩ˢ≡∷∙⇔` | none |
 | `ReducibleSubstEq.wfCon` | the first part of `escape-⊩ˢ≡∷` | none, since `⊢ Δ` is an argument of each validity |
+| `ReducibleSubstEq.substEq`, `ReducibleSubstEq.substWf` | the second part of `escape-⊩ˢ≡∷`, and `escape-⊩ˢ∷` | `wellformedSubstEq`, `wellformedSubst` |
 | `ReducibleSubstEq.cons` | `⊩ˢ≡∷∙⇔`, which characterizes the substitutions of a longer context | `consSubstSEq` |
 | `ReducibleSubstEq.wk` | `⊩ˢ≡∷-•ₛ` | `wkSubstSEq` |
+| `ReducibleTermEq.var` | `⊩var`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`, for the last variable | none |
 | `ReducibleSubstEq.lift` | `⊩ˢ≡∷-liftSubst` | `liftSubstSEq` |
 | `ReducibleSubstEq.var` | `⊩ˢ∷-idSubst` | `idSubstS` |
 | `ReducibleSubstEq.symm` | `sym-⊩ˢ≡∷` | `symS` |
@@ -164,10 +167,34 @@ theorem ReducibleSubstEq.wk {Δ : Con k m} {Ε : Con k m'} {ρ : Wk m' m} (hρ :
     exact ⟨⟨l, hA, wk_subst ρ _ A ▸ ha.wk hρ hΕ⟩, ReducibleSubstEq.wk hρ hΕ hσ⟩
 
 /--
+Two reducibly equal substitutions are equal substitutions of `Sic.Core.Typing`, since their terms
+are equal at the types they substitute.
+-/
+theorem ReducibleSubstEq.substEq : ∀ {Γ : Con k n} {σ₁ σ₂ : Subst k m n}, (Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) →
+    Δ ⊢ˢ σ₁ ≡ σ₂ : Γ
+  | .empty, _, _, _ => fun x => x.elim0
+  | .snoc _ _, _, _, hσ => by
+    rw [ReducibleSubstEq.unfold_snoc] at hσ
+    have ⟨⟨_, _, _, hA, ha⟩, hσ⟩ := hσ
+    intro
+    | ⟨0, _⟩ =>
+      show _ ⊢ _ ≡ _ : (Con.get _ 0).subst _
+      rw [Con.get_zero, subst_wk]
+      exact hA.escape_eqTerm ha
+    | ⟨x + 1, hx⟩ =>
+      show _ ⊢ _ ≡ _ : (Con.get _ (Fin.succ ⟨x, Nat.lt_of_succ_lt_succ hx⟩)).subst _
+      rw [Con.get_succ, subst_wk]
+      exact hσ.substEq ⟨x, Nat.lt_of_succ_lt_succ hx⟩
+
+/-- The first of two reducibly equal substitutions is a substitution of `Sic.Core.Typing`. -/
+theorem ReducibleSubstEq.substWf (hσ : Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) : Δ ⊢ˢ σ₁ : Γ :=
+  fun x => (hσ.substEq x).wf.1
+
+/--
 The variable of a declaration of a type reducible in a well-formed context is a reducible term of
 that type, weakened.
 -/
-private theorem reducibleTermEq_var (hA : Γ ⊩⟨l⟩ A ▸ P) (hΓA : ⊢ Γ ∙ A) :
+theorem ReducibleTermEq.var (hA : Γ ⊩⟨l⟩ A ▸ P) (hΓA : ⊢ Γ ∙ A) :
     Γ ∙ A ⊩⟨l⟩ var 0 ≡ var 0 : A.wk1 :=
   let ⟨_, hA'⟩ := hA.wk (.step .id) hΓA
   ⟨_, hA', hA'.neutral_eqTerm .var .var (EqualityRelation.var (.var hΓA))⟩
@@ -183,7 +210,7 @@ theorem ReducibleSubstEq.lift (hσ : Δ ⊩ˢ σ₁ ≡ σ₂ : Γ) (hA : Γ ⊩
   have hΔA : ⊢ Δ ∙ A.subst σ₁ := .snoc hA₁.escape
   refine ReducibleSubstEq.cons (hσ.wk (.step .id) hΔA) hA ?_
   rw [← wk_subst]
-  exact reducibleTermEq_var hA₁ hΔA
+  exact ReducibleTermEq.var hA₁ hΔA
 
 /-- The identity substitution of a valid context is reducible. -/
 theorem ReducibleSubstEq.var : ∀ {Γ : Con k n}, (⊩ᵛ Γ) → Γ ⊩ˢ .var ≡ .var : Γ
