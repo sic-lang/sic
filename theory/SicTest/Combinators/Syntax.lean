@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Syntax
+public import Sic.Core.Syntax
 
 /-!
 # The Combinators K and S
@@ -11,6 +11,8 @@ Both are closed, over the level variable `l`, which is `var 0`, and are terms ov
 variables, so that they can be used in any context.
 `𝟙 + 𝟙` is the grade of any number of uses.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.Syntax
 
@@ -46,11 +48,13 @@ The indices of its variables:
 - in the body, `x`, `y` and `z` are `var 2`, `var 1` and `var 0`.
 -/
 
+/-- `S`, with the grades and the indices above. -/
 def combinatorS : Term 1 n :=
   lam 𝟘 (univ (.var 0)) (lam 𝟘 (univ (.var 0)) (lam 𝟘 (univ (.var 0))
     (lam 𝟙 (pi 𝟙 𝟘 (var 2) (pi 𝟘 𝟘 (var 2) (var 2))) (lam 𝟘 (pi 𝟙 𝟘 (var 3) (var 3))
       (lam 𝟙 (var 4) (app 𝟘 (app 𝟙 (var 2) (var 0)) (app 𝟙 (var 1) (var 0))))))))
 
+/-- The type of `S` above. -/
 def combinatorSType : Term 1 n :=
   pi 𝟘 (𝟙 + 𝟙) (univ (.var 0)) (pi 𝟘 (𝟙 + 𝟙) (univ (.var 0)) (pi 𝟘 (𝟙 + 𝟙) (univ (.var 0))
     (pi 𝟙 𝟘 (pi 𝟙 𝟘 (var 2) (pi 𝟘 𝟘 (var 2) (var 2))) (pi 𝟘 𝟘 (pi 𝟙 𝟘 (var 3) (var 3))

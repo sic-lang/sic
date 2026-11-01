@@ -1,12 +1,14 @@
 module
 
-import Sic.Mode
+public import Sic.Mode
 
 /-!
 # Modes
 
 The definitions of `Sic.Mode` checked against RFC 24, entry by entry, and against their meaning.
 -/
+
+@[expose] public section
 
 namespace SicTest.Mode
 
@@ -72,8 +74,11 @@ mode `m`, counts as `⌜m⌝ * p`, which keeps the uses at run time of `p` only 
 uses everywhere but in `𝟘𝟘ᵐ`.
 -/
 
-example : ∀ p : Grade, (⌜𝟘𝟘ᵐ⌝ * p).run = .zero ∧ (⌜𝟘𝟘ᵐ⌝ * p).total = .zero := by decide
-example : ∀ p : Grade, (⌜𝟘𝟙ᵐ⌝ * p).run = .zero ∧ (⌜𝟘𝟙ᵐ⌝ * p).total = p.total := by decide
-example : ∀ p : Grade, (⌜𝟙𝟙ᵐ⌝ * p).run = p.run ∧ (⌜𝟙𝟙ᵐ⌝ * p).total = p.total := by decide
+/-- `𝟘𝟘ᵐ` counts no use. -/
+theorem counts_zeroZero : ∀ p : Grade, (⌜𝟘𝟘ᵐ⌝ * p).run = .zero ∧ (⌜𝟘𝟘ᵐ⌝ * p).total = .zero := by decide
+/-- `𝟘𝟙ᵐ` counts all the uses, none at run time. -/
+theorem counts_zeroOne : ∀ p : Grade, (⌜𝟘𝟙ᵐ⌝ * p).run = .zero ∧ (⌜𝟘𝟙ᵐ⌝ * p).total = p.total := by decide
+/-- `𝟙𝟙ᵐ` counts all the uses, and the uses at run time. -/
+theorem counts_oneOne : ∀ p : Grade, (⌜𝟙𝟙ᵐ⌝ * p).run = p.run ∧ (⌜𝟙𝟙ᵐ⌝ * p).total = p.total := by decide
 
 end SicTest.Mode

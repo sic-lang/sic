@@ -1,14 +1,16 @@
 module
 
 import Sic.Core.TypedSubstitution
-import all SicTest.Constant.Syntax
-import all SicTest.Constant.Typing
+import SicTest.Constant.Syntax
+import SicTest.Constant.Typing
 
 /-!
 # The Constant Function: Typed Substitution
 
 The constant function moved to a larger context.
 -/
+
+@[expose] public section
 
 namespace SicTest.Constant.TypedSubstitution
 

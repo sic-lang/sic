@@ -1,12 +1,12 @@
 module
 
+public import SicTest.TypeVariable.Reducibility.Validity
 import Sic.Core.Reducibility.Introductions.Function
 import Sic.Core.Reducibility.Introductions.Pi
 import Sic.Core.Reducibility.Introductions.Universe
 import Sic.Core.Reducibility.Introductions.Variable
 import Sic.Core.Reducibility.Uniqueness
-import all SicTest.TypeVariable.Reducibility.LogicalRelation
-import all SicTest.TypeVariable.Reducibility.Validity
+import SicTest.TypeVariable.Reducibility.LogicalRelation
 
 /-!
 # A Type Variable: Validity of the Functions
@@ -16,6 +16,8 @@ context `A : U_l`, is validly equal to `A`, by `(β)`, so that the validity equa
 `(λ_p (X : U_l). X) ∘_p A` to `A` and not to the type of functions `Π^p'_q' (x : A). A`, for every
 equality relation.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reducibility.Introductions.Function
 

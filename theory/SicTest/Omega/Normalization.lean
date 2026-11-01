@@ -1,7 +1,7 @@
 module
 
+public import SicTest.Omega.Reduction
 import Sic.Core.Normalization
-import all SicTest.Omega.Reduction
 
 /-!
 # The Divergent Term Ω: Normalization
@@ -10,6 +10,8 @@ import all SicTest.Omega.Reduction
 the simply typed lambda calculus of section 12.1 of [Pierce](https://www.cis.upenn.edu/~bcpierce/tapl/):
 a term of a type reduces to a weak head normal form, while `Ω` reduces only to itself.
 -/
+
+@[expose] public section
 
 namespace SicTest.Omega.Normalization
 

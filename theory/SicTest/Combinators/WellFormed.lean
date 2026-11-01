@@ -1,14 +1,16 @@
 module
 
 import Sic.Core.WellFormed
-import all SicTest.Combinators.Syntax
-import all SicTest.Combinators.Typing
+import SicTest.Combinators.Syntax
+import SicTest.Combinators.Typing
 
 /-!
 # The Combinators K and S: Well-Formedness
 
 The type of `S` is a type.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.WellFormed
 

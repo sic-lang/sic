@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Reducibility.Validity
+public import Sic.Core.Reducibility.Validity
 
 /-!
 # The Universes: Validity
@@ -9,6 +9,8 @@ The universes are valid types at the levels above theirs, since no substitution 
 only there: the validity does not equate two universes of different levels, and a universe is not a
 valid type at the value of its own level.
 -/
+
+@[expose] public section
 
 namespace SicTest.Universe.Reducibility.Validity
 

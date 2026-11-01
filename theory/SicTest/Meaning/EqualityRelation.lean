@@ -8,6 +8,8 @@ import Sic.Core.EqualityRelation
 The equality relation of `Sic.Core.Typing` is its equality, for types and for terms.
 -/
 
+@[expose] public section
+
 namespace SicTest.Meaning.EqualityRelation
 
 open Sic.Core

@@ -1,8 +1,8 @@
 module
 
+public import SicTest.ChurchNumerals.Typing
 import Sic.Core.TypeSort
-import all SicTest.ChurchNumerals.Syntax
-import all SicTest.ChurchNumerals.Typing
+import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: The Sort of a Type
@@ -11,6 +11,8 @@ The universe of a type is unique only up to the equality of levels: the type
 `Π^𝟘_𝟙 (y : X). X` of the function that a numeral iterates is a term of `U_{l ⊔ l}`, by `(Π)`, and of
 `U_l`, by `(conv)`, whose levels are equal, but not the same level.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.TypeSort
 

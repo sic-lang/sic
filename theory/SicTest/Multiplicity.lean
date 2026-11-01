@@ -1,6 +1,6 @@
 module
 
-import Sic.Multiplicity
+public import Sic.Multiplicity
 
 /-!
 # Multiplicities
@@ -8,6 +8,8 @@ import Sic.Multiplicity
 The definitions of `Sic.Multiplicity` checked against RFC 24, entry by entry, and against their
 meaning.
 -/
+
+@[expose] public section
 
 namespace SicTest.Multiplicity
 

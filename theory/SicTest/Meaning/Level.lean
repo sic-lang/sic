@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Level
+public import Sic.Core.Level
 
 /-!
 # Meaning of the Levels
 
 The equality of levels against its meaning, and the laws of levels.
 -/
+
+@[expose] public section
 
 namespace SicTest.Meaning.Level
 

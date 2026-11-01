@@ -8,6 +8,8 @@ import Sic.Core.TypedSubstitution
 The identity substitution is a substitution of every well-formed context to itself.
 -/
 
+@[expose] public section
+
 namespace SicTest.Meaning.TypedSubstitution
 
 open Sic.Core Sic.Grade Sic.Core.Term

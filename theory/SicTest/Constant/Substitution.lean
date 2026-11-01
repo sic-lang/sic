@@ -8,6 +8,8 @@ import Sic.Core.Substitution
 The substitution that `(β)` performs when it applies the constant function.
 -/
 
+@[expose] public section
+
 namespace SicTest.Constant.Substitution
 
 open Sic.Core Sic.Grade Sic.Core.Term

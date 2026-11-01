@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Reducibility.LogicalRelation
+public import Sic.Core.Reducibility.LogicalRelation
 import Sic.Core.WellFormed
 
 /-!
@@ -8,6 +8,8 @@ import Sic.Core.WellFormed
 
 The types of the context `A : U_l` of a type variable are reducible, for every equality relation.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reducibility.LogicalRelation
 

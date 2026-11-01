@@ -1,9 +1,9 @@
 module
 
-import Sic.Core.Reducibility.Validity
-import all SicTest.Universe.Reducibility.Validity
-import all SicTest.TypeVariable.Reducibility.LogicalRelation
+public import SicTest.TypeVariable.Reducibility.LogicalRelation
+public import SicTest.Universe.Reducibility.Validity
 import Sic.Core.Reducibility.Uniqueness
+import Sic.Core.Reducibility.Validity
 
 /-!
 # A Type Variable: Validity
@@ -11,6 +11,8 @@ import Sic.Core.Reducibility.Uniqueness
 The context `A : U_l` of a type variable is valid, and so is the type variable `A`, for every
 equality relation.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reducibility.Validity
 

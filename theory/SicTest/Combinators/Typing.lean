@@ -1,13 +1,15 @@
 module
 
-import Sic.Core.Typing
-import all SicTest.Combinators.Syntax
+public import Sic.Core.Typing
+public import SicTest.Combinators.Syntax
 
 /-!
 # The Combinators K and S: Typing
 
 The types of `K` and `S`, as derivations, and the type of the identity for `S K K`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.Typing
 

@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Syntax
+public import Sic.Core.Syntax
 
 /-!
 # The Church Numerals
@@ -12,6 +12,8 @@ They are closed, over the level variable `l`, which is `var 0`, and are terms ov
 variables, so that they can be used in any context.
 `𝟙 + 𝟙` is the grade of any number of uses.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Syntax
 

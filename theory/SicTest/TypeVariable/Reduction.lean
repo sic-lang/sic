@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Reduction
+public import Sic.Core.Reduction
 
 /-!
 # A Type Variable: Reduction
 
 A type that reduces as a term of its universe reduces as a type.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reduction
 

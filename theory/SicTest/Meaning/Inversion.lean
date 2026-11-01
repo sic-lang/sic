@@ -10,6 +10,8 @@ the rule of the term and `(conv)`, so that it states exactly the premises of the
 of the term, no more and no less.
 -/
 
+@[expose] public section
+
 namespace SicTest.Meaning.Inversion
 
 open Sic.Core Sic.Core.Term

@@ -1,7 +1,7 @@
 module
 
-import Sic.Core.Typing
-import all SicTest.Permission.Syntax
+public import Sic.Core.Typing
+public import SicTest.Permission.Syntax
 
 /-!
 # A Permission Used Once: Typing
@@ -9,6 +9,8 @@ import all SicTest.Permission.Syntax
 The three functions that receive a permission are well typed, as derivations: typing does not count
 the uses of the permission, which only the usage rejects.
 -/
+
+@[expose] public section
 
 namespace SicTest.Permission.Typing
 

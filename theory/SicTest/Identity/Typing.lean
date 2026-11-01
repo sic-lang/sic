@@ -1,13 +1,15 @@
 module
 
-import Sic.Core.Typing
-import all SicTest.Identity.Syntax
+public import Sic.Core.Typing
+public import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Typing
 
 The type of the polymorphic identity of RFC 24, as a derivation.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.Typing
 

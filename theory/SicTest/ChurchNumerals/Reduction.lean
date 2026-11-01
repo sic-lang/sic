@@ -1,18 +1,20 @@
 module
 
+public import SicTest.ChurchNumerals.Typing
+public import SicTest.Common.Reduction
 import Sic.Core.Reduction
 import Sic.Core.WellFormed
-import all SicTest.Common.Reduction
-import all SicTest.Common.TypedSubstitution
-import all SicTest.Common.WellFormed
-import all SicTest.ChurchNumerals.Syntax
-import all SicTest.ChurchNumerals.Typing
+import SicTest.ChurchNumerals.Syntax
+import SicTest.Common.TypedSubstitution
+import SicTest.Common.WellFormed
 
 /-!
 # The Church Numerals: Reduction
 
 The numerals reduce as Girard, Lafont and Taylor say, which proves that `succ ∘_𝟙 1` is `2`.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Reduction
 

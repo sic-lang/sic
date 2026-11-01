@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Substitution
+public import Sic.Core.Substitution
 
 /-!
 # Meaning of the Substitution
 
 The weakenings and the instantiation against their meaning.
 -/
+
+@[expose] public section
 
 namespace SicTest.Meaning.Substitution
 

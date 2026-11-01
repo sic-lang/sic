@@ -8,6 +8,8 @@ import Sic.Core.Injectivity
 The claims of RFC 24 on the equality of types.
 -/
 
+@[expose] public section
+
 namespace SicTest.Rfc24.Injectivity
 
 open Sic.Core Sic.Grade Sic.Core.Term

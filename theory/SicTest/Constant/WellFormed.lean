@@ -1,14 +1,16 @@
 module
 
 import Sic.Core.WellFormed
-import all SicTest.Constant.Syntax
-import all SicTest.Constant.Typing
+import SicTest.Constant.Syntax
+import SicTest.Constant.Typing
 
 /-!
 # The Constant Function: Well-Formedness
 
 The type of the constant function is a type.
 -/
+
+@[expose] public section
 
 namespace SicTest.Constant.WellFormed
 

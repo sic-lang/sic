@@ -1,9 +1,9 @@
 module
 
+public import SicTest.TypeVariable.Reducibility.Validity
 import Sic.Core.Reducibility.Introductions.Universe
 import Sic.Core.Reducibility.Introductions.Variable
-import all SicTest.TypeVariable.Reducibility.LogicalRelation
-import all SicTest.TypeVariable.Reducibility.Validity
+import SicTest.TypeVariable.Reducibility.LogicalRelation
 
 /-!
 # A Type Variable: Validity of the Variables
@@ -12,6 +12,8 @@ The validity of the variables gives the type variable `A` of the context `A : U_
 at the level `0` that `SicTest.TypeVariable.Reducibility.Validity` finds by hand, and the variables
 of the context `A : U_l, x : A, y : A` as valid terms of `A`, for every equality relation.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reducibility.Introductions.Variable
 

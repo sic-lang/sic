@@ -1,8 +1,8 @@
 module
 
+public import SicTest.Identity.Typing
 import Sic.Core.Injectivity
-import all SicTest.Identity.Syntax
-import all SicTest.Identity.Typing
+import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Neutral Types
@@ -11,6 +11,8 @@ import all SicTest.Identity.Typing
 types that are not equal, since `Sic.Core.Typing` does not read the grade of the result of a type of
 functions.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.NeutralType
 

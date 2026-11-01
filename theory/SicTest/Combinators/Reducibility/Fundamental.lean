@@ -1,9 +1,9 @@
 module
 
-import Sic.Core.Reducibility.Fundamental
-import all SicTest.Combinators.Reduction
-import all SicTest.Combinators.Syntax
-import all SicTest.Combinators.Typing
+public import Sic.Core.Reducibility.Fundamental
+import SicTest.Combinators.Reduction
+import SicTest.Combinators.Syntax
+import SicTest.Combinators.Typing
 
 /-!
 # The Combinators K and S: Fundamental Lemma
@@ -11,6 +11,8 @@ import all SicTest.Combinators.Typing
 The equality of `S K K` and of the identity `λ_𝟙 (z : A). z` of `Sic.Core.Typing` is valid, and so
 holds reducibly, for every equality relation, as the fundamental lemma says of every judgment.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.Reducibility.Fundamental
 

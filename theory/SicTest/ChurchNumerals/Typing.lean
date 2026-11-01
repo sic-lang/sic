@@ -1,13 +1,15 @@
 module
 
-import Sic.Core.Typing
-import all SicTest.ChurchNumerals.Syntax
+public import Sic.Core.Typing
+public import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: Typing
 
 The types of `Nat_l`, `1`, `2` and `succ`, as derivations.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Typing
 

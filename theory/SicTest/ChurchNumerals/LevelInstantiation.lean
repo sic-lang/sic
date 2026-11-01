@@ -1,8 +1,8 @@
 module
 
+public import SicTest.ChurchNumerals.Typing
 import Sic.Core.LevelInstantiation
-import all SicTest.ChurchNumerals.Syntax
-import all SicTest.ChurchNumerals.Typing
+import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: Level Instantiation
@@ -10,6 +10,8 @@ import all SicTest.ChurchNumerals.Typing
 The numerals of level `l + 1`, which iterate over the types of `U_{l + 1}`, `Nat_l` among them, are
 those of level `l` instantiated: their derivations are those of level `l`, instantiated.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.LevelInstantiation
 

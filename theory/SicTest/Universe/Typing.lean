@@ -8,6 +8,8 @@ import Sic.Core.Typing
 The universes are types, and two universes whose levels are equal are equal types.
 -/
 
+@[expose] public section
+
 namespace SicTest.Universe.Typing
 
 open Sic.Core Sic.Core.Term

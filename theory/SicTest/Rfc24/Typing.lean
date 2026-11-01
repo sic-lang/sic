@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Typing
+public import Sic.Core.Typing
 
 /-!
 # RFC 24: Typing
 
 The claims of RFC 24 on its judgments.
 -/
+
+@[expose] public section
 
 namespace SicTest.Rfc24.Typing
 

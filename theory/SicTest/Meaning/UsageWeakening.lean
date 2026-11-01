@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.UsageWeakening
+public import Sic.Core.UsageWeakening
 
 /-!
 # Meaning of the Usage Weakening
@@ -9,6 +9,8 @@ The weakening of the vectors against its meaning: the vector moved by a weakenin
 variable of the smaller context its grade, at the index to which the weakening moves it, and the
 grade `𝟘` to the variables that the weakening adds.
 -/
+
+@[expose] public section
 
 namespace SicTest.Meaning.UsageWeakening
 

@@ -8,6 +8,8 @@ import Sic.Core.Substitution
 The claims of RFC 24 on its substitution.
 -/
 
+@[expose] public section
+
 namespace SicTest.Rfc24.Substitution
 
 open Sic.Core Sic.Grade Sic.Core.Term

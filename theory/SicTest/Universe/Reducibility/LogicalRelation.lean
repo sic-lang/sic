@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Reducibility.LogicalRelation
+public import Sic.Core.Reducibility.LogicalRelation
 
 /-!
 # The Universes: Logical Relation
 
 The universes are reducible at the levels above theirs.
 -/
+
+@[expose] public section
 
 namespace SicTest.Universe.Reducibility.LogicalRelation
 

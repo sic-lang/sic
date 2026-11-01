@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Syntax
+public import Sic.Core.Syntax
 
 /-!
 # The Constant Function
 
 The constant function of RFC 24, written as a term of `Sic.Core.Syntax`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Constant.Syntax
 
@@ -24,8 +26,10 @@ those of the context included:
 - `A`, the type of the body, is `var 3`, since `B`, `x` and `y` are declared after it.
 -/
 
+/-- `λ_𝟙 (x : A). λ_𝟘 (y : B). x`, the constant function. -/
 def constant : Term 0 2 := lam 𝟙 (var 1) (lam 𝟘 (var 1) (var 1))
 
+/-- `Π^𝟘_𝟙 (x : A). Π^𝟘_𝟘 (y : B). A`, the type of the constant function. -/
 def constantType : Term 0 2 := pi 𝟙 𝟘 (var 1) (pi 𝟘 𝟘 (var 1) (var 3))
 
 end SicTest.Constant.Syntax

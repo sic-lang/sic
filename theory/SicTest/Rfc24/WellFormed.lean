@@ -8,6 +8,8 @@ import Sic.Core.WellFormed
 The claims of RFC 24 on the well-formedness of its judgments.
 -/
 
+@[expose] public section
+
 namespace SicTest.Rfc24.WellFormed
 
 open Sic.Core
