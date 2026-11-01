@@ -1,7 +1,7 @@
 module
 
-import Sic.Core.Reduction
-import all SicTest.Omega.Syntax
+public import Sic.Core.Reduction
+public import SicTest.Omega.Syntax
 
 /-!
 # The Divergent Term Ω: Reduction
@@ -9,6 +9,8 @@ import all SicTest.Omega.Syntax
 `Ω` reduces only to itself, by `(β)`, and is not a weak head normal form, so that no sequence of
 reductions from it ends at one.
 -/
+
+@[expose] public section
 
 namespace SicTest.Omega.Reduction
 

@@ -1,7 +1,7 @@
 module
 
+public import SicTest.Common.Usage
 import Sic.Core.UsageInference
-import all SicTest.Common.Usage
 
 /-!
 # Usage
@@ -10,6 +10,8 @@ The claims of RFC 24 on the usage of the terms: the meaning of the multiplicitie
 gives the grades; the permission used once of its examples has its own theme,
 `SicTest/Permission/`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Rfc24.Usage
 
@@ -28,10 +30,13 @@ The vectors give `f` the grade `𝟙`, and `x` the grade under check, whose two 
 the same, last, since `x` is the innermost variable.
 -/
 
+/-- `f`, which never uses `x`. -/
 def never : Term 0 2 := var 1
 
+/-- `f ∘_𝟙 x`, which uses `x` once. -/
 def once : Term 0 2 := app 𝟙 (var 1) (var 0)
 
+/-- `(f ∘_𝟙 x) ∘_𝟙 x`, which uses `x` twice. -/
 def twice : Term 0 2 := app 𝟙 (app 𝟙 (var 1) (var 0)) (var 0)
 
 /-!

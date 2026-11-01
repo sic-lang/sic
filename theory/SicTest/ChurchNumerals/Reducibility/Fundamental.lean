@@ -1,8 +1,8 @@
 module
 
-import Sic.Core.Reducibility.Fundamental
-import all SicTest.ChurchNumerals.Reduction
-import all SicTest.ChurchNumerals.Syntax
+public import Sic.Core.Reducibility.Fundamental
+import SicTest.ChurchNumerals.Reduction
+import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: Fundamental Lemma
@@ -10,6 +10,8 @@ import all SicTest.ChurchNumerals.Syntax
 The equality `succ ∘_𝟙 1 ≡ 2 : Nat_l` of `Sic.Core.Typing` is valid, and so holds reducibly, for
 every equality relation, as the fundamental lemma says of every judgment.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Reducibility.Fundamental
 

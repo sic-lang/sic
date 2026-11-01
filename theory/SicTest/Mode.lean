@@ -8,6 +8,8 @@ import Sic.Mode
 The definitions of `Sic.Mode` checked against RFC 24, entry by entry, and against their meaning.
 -/
 
+@[expose] public section
+
 namespace SicTest.Mode
 
 open Sic Sic.Grade Sic.Mode

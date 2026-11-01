@@ -1,8 +1,8 @@
 module
 
-import Sic.Core.Reduction
+public import Sic.Core.Reduction
 import Sic.Core.WellFormed
-import all SicTest.Common.WellFormed
+import SicTest.Common.WellFormed
 
 /-!
 # Common Reductions
@@ -14,6 +14,8 @@ which `termRed_beta_subst` reduces from the typing of the body of the abstractio
 substitution: the bodies of a closed term, one under each of its binders, are typed in the context
 of the domains of its type, `contextAt`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Common.Reduction
 

@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.Syntax
+public import Sic.Core.Syntax
 
 /-!
 # A Permission Used Once
 
 The example of RFC 24 of a permission used once, written as terms of `Sic.Core.Syntax`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Permission.Syntax
 

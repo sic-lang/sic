@@ -1,13 +1,15 @@
 module
 
 import Sic.Core.Substitution
-import all SicTest.ChurchNumerals.Syntax
+import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: Substitution
 
 The closed `Nat_l` moved under binders, and the step of the successor.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Substitution
 

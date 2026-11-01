@@ -1,15 +1,17 @@
 module
 
 import Sic.Core.TypedSubstitution
-import all SicTest.Combinators.Syntax
-import all SicTest.Combinators.Typing
-import all SicTest.Common.TypedSubstitution
+import SicTest.Combinators.Syntax
+import SicTest.Combinators.Typing
+import SicTest.Common.TypedSubstitution
 
 /-!
 # The Combinators K and S: Typed Substitution
 
 The combinators moved to other contexts.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.TypedSubstitution
 

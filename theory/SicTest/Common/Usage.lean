@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.UsageInference
+public import Sic.Core.UsageInference
 
 /-!
 # Common Usage
 
 The exact usage of a term, which the checks of the themes prove by decision.
 -/
+
+@[expose] public section
 
 namespace SicTest.Common.Usage
 

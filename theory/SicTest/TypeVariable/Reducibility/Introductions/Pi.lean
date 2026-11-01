@@ -1,10 +1,11 @@
 module
 
+public import SicTest.TypeVariable.Reducibility.Introductions.Variable
 import Sic.Core.Reducibility.Introductions.Pi
+import Sic.Core.Reducibility.Introductions.Universe
 import Sic.Core.Reducibility.Introductions.Variable
-import all SicTest.TypeVariable.Reducibility.LogicalRelation
-import all SicTest.TypeVariable.Reducibility.Validity
-import all SicTest.TypeVariable.Reducibility.Introductions.Variable
+import SicTest.TypeVariable.Reducibility.LogicalRelation
+import SicTest.TypeVariable.Reducibility.Validity
 
 /-!
 # A Type Variable: Validity of the Types of Functions
@@ -13,6 +14,8 @@ The type of functions `Π^p_q (x : A). A` of the context `A : U_l` is a valid te
 and only equal to the types of functions of the same grades: the validity equates it neither to `A`
 nor to `Π^𝟘_q (x : A). A` when `p` is `𝟙`, for every equality relation.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Reducibility.Introductions.Pi
 

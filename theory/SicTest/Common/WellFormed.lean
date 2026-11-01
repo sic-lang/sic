@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.WellFormed
+public import Sic.Core.WellFormed
 
 /-!
 # Common Consequences of the Well-Formedness
 
 The consequences of `Sic.Core.WellFormed` that the reductions of the examples use.
 -/
+
+@[expose] public section
 
 namespace SicTest.Common.WellFormed
 

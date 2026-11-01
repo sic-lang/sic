@@ -1,14 +1,16 @@
 module
 
 import Sic.Core.WellFormed
-import all SicTest.ChurchNumerals.Syntax
-import all SicTest.ChurchNumerals.Typing
+import SicTest.ChurchNumerals.Syntax
+import SicTest.ChurchNumerals.Typing
 
 /-!
 # The Church Numerals: Well-Formedness
 
 The type of `succ` is a type.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.WellFormed
 

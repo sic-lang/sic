@@ -1,12 +1,14 @@
 module
 
-import Sic.Core.TypedSubstitution
+public import Sic.Core.TypedSubstitution
 
 /-!
 # Common Substitutions
 
 The substitutions of `Sic.Core.TypedSubstitution` that the reductions of the examples build.
 -/
+
+@[expose] public section
 
 namespace SicTest.Common.TypedSubstitution
 

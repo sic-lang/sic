@@ -1,8 +1,8 @@
 module
 
+public import SicTest.Common.Usage
+public import SicTest.Constant.Syntax
 import Sic.Core.UsageInference
-import all SicTest.Common.Usage
-import all SicTest.Constant.Syntax
 
 /-!
 # The Constant Function: Usage
@@ -12,6 +12,8 @@ usage decides.
 The vectors are over the context `A : U₀, B : U₀`, the grade of `B` last, since it is the innermost
 variable.
 -/
+
+@[expose] public section
 
 namespace SicTest.Constant.Usage
 

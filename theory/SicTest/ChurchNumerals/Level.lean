@@ -8,6 +8,8 @@ import Sic.Core.Level
 The level of the type of the Church numerals.
 -/
 
+@[expose] public section
+
 namespace SicTest.ChurchNumerals.Level
 
 open Sic.Core Sic.Core.Level

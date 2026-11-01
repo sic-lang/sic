@@ -1,9 +1,9 @@
 module
 
+public import Sic.Core.Reducibility.Introductions.Variable
 import Sic.Core.Reducibility.Introductions.Pi
 import Sic.Core.Reducibility.Introductions.Universe
-import Sic.Core.Reducibility.Introductions.Variable
-import all SicTest.ChurchNumerals.Syntax
+import SicTest.ChurchNumerals.Syntax
 
 /-!
 # The Church Numerals: Validity of the Types of Functions
@@ -13,6 +13,8 @@ gives it, `(l + 1) ⊔ ((l ⊔ l) ⊔ (l ⊔ l))`, at the level `2`, which follo
 level when `l` is `0`, for every equality relation: each of its three types of functions is valid
 in the context of the domains before it.
 -/
+
+@[expose] public section
 
 namespace SicTest.ChurchNumerals.Reducibility.Introductions.Pi
 

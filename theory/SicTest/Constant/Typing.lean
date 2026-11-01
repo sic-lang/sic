@@ -1,13 +1,15 @@
 module
 
-import Sic.Core.Typing
-import all SicTest.Constant.Syntax
+public import Sic.Core.Typing
+public import SicTest.Constant.Syntax
 
 /-!
 # The Constant Function: Typing
 
 The type of the constant function of RFC 24, as a derivation.
 -/
+
+@[expose] public section
 
 namespace SicTest.Constant.Typing
 

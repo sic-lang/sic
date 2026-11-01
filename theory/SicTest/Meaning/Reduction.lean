@@ -8,6 +8,8 @@ import Sic.Core.Reduction
 A neutral term does not reduce.
 -/
 
+@[expose] public section
+
 namespace SicTest.Meaning.Reduction
 
 open Sic.Core Sic.Grade Sic.Core.Term

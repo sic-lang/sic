@@ -8,6 +8,8 @@ import Sic.Core.TypeSort
 The claim of the Rationale of RFC 24 on the equality of types.
 -/
 
+@[expose] public section
+
 namespace SicTest.Rfc24.TypeSort
 
 open Sic.Core

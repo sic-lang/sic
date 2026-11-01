@@ -1,7 +1,7 @@
 module
 
+public import Sic.Core.LevelInstantiation
 import Sic.Core.Injectivity
-import Sic.Core.LevelInstantiation
 
 /-!
 # The Universes: Level Instantiation
@@ -12,6 +12,8 @@ one checked at a given level.
 With two level variables `l₁` and `l₂`, `U_{l₁ ⊔ l₂}` equals `U_{l₁}` once `l₂` is `0`, but not
 before.
 -/
+
+@[expose] public section
 
 namespace SicTest.Universe.LevelInstantiation
 

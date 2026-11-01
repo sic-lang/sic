@@ -1,8 +1,8 @@
 module
 
 import Sic.Core.Consistency
-import all SicTest.Identity.Syntax
-import all SicTest.Identity.Typing
+import SicTest.Identity.Syntax
+import SicTest.Identity.Typing
 
 /-!
 # The Empty Type: Consistency
@@ -12,6 +12,8 @@ variable `X` itself, since the type `Π^{𝟙 + 𝟙}_𝟘 (A : U_l). Π^𝟘_�
 identity, whose codomain is a type of functions, has a closed term, and its term must be closed,
 since a variable of the type is a term of it.
 -/
+
+@[expose] public section
 
 namespace SicTest.Empty.Consistency
 

@@ -1,6 +1,6 @@
 module
 
-import Sic.GradeMatrix
+public import Sic.GradeMatrix
 
 /-!
 # Grade Matrices
@@ -8,6 +8,8 @@ import Sic.GradeMatrix
 The definitions of `Sic.GradeMatrix` checked against their meaning, the product of a row vector by
 a matrix, and on examples.
 -/
+
+@[expose] public section
 
 namespace SicTest.GradeMatrix
 

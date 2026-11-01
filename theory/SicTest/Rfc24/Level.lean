@@ -8,6 +8,8 @@ import Sic.Core.Level
 The claims of RFC 24 on its levels.
 -/
 
+@[expose] public section
+
 namespace SicTest.Rfc24.Level
 
 open Sic.Core Sic.Core.Level

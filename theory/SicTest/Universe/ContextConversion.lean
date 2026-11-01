@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.ContextConversion
+public import Sic.Core.ContextConversion
 import Sic.Core.Injectivity
 
 /-!
@@ -11,6 +11,8 @@ A declaration that is not the last one gets an equal type: in the context
 `U_l`, an equal universe.
 The declarations must get equal types: `X : U_l` and `X : U_{l + 1}` are not equal contexts.
 -/
+
+@[expose] public section
 
 namespace SicTest.Universe.ContextConversion
 

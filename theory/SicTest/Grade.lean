@@ -1,13 +1,15 @@
 module
 
-import Sic.Grade
-import all SicTest.Multiplicity
+public import Sic.Grade
+public import SicTest.Multiplicity
 
 /-!
 # Grades
 
 The definitions of `Sic.Grade` checked against RFC 24 and against their meaning.
 -/
+
+@[expose] public section
 
 namespace SicTest.Grade
 

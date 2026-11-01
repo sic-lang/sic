@@ -1,18 +1,20 @@
 module
 
+public import SicTest.Combinators.Typing
+public import SicTest.Common.Reduction
 import Sic.Core.Reduction
 import Sic.Core.WellFormed
-import all SicTest.Common.Reduction
-import all SicTest.Common.TypedSubstitution
-import all SicTest.Common.WellFormed
-import all SicTest.Combinators.Syntax
-import all SicTest.Combinators.Typing
+import SicTest.Combinators.Syntax
+import SicTest.Common.TypedSubstitution
+import SicTest.Common.WellFormed
 
 /-!
 # The Combinators K and S: Reduction
 
 `S K K` reduces as the identity, which proves that it is equal to the identity.
 -/
+
+@[expose] public section
 
 namespace SicTest.Combinators.Reduction
 

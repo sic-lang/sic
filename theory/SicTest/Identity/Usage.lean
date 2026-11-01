@@ -1,7 +1,7 @@
 module
 
-import Sic.Core.UsageInference
-import all SicTest.Identity.Syntax
+public import Sic.Core.UsageInference
+public import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Usage
@@ -10,6 +10,8 @@ The usage of the polymorphic identity of RFC 24 and of its type, in every mode, 
 usage decides: the type uses its type argument twice, which its grade `𝟙 + 𝟙` allows and the grade
 `𝟙` does not.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.Usage
 

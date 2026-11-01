@@ -1,12 +1,14 @@
 module
 
-import Sic.GradeVector
+public import Sic.GradeVector
 
 /-!
 # Grade Vectors
 
 The definitions of `Sic.GradeVector` checked against RFC 24 and against their meaning.
 -/
+
+@[expose] public section
 
 namespace SicTest.GradeVector
 

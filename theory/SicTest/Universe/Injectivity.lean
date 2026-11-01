@@ -10,6 +10,8 @@ import Sic.Core.Injectivity
 only conclude the equivalence of the levels, not their equality.
 -/
 
+@[expose] public section
+
 namespace SicTest.Universe.Injectivity
 
 open Sic.Core Sic.Core.Term

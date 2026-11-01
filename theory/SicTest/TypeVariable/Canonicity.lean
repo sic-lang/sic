@@ -1,7 +1,7 @@
 module
 
+public import SicTest.TypeVariable.Reduction
 import Sic.Core.Canonicity
-import all SicTest.TypeVariable.Reduction
 
 /-!
 # A Type Variable: Canonicity
@@ -11,6 +11,8 @@ a type variable `A : U_l`, the variable `A` reduces neither to a universe nor to
 and a variable `f : Π^𝟘_𝟙 (x : A). A` does not reduce to an abstraction, since a variable is a weak
 head normal form, which reduces only to itself.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Canonicity
 

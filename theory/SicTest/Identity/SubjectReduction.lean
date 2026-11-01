@@ -1,7 +1,7 @@
 module
 
+public import Sic.Core.SubjectReduction
 import Sic.Core.Injectivity
-import Sic.Core.SubjectReduction
 
 /-!
 # The Polymorphic Identity: Subject Reduction
@@ -12,6 +12,8 @@ identity also has a type whose result of the inner type of functions has another
 typing does not read.
 In the context `A : U_l`, where `A` is `var 0`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.SubjectReduction
 

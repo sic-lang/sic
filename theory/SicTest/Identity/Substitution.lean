@@ -1,13 +1,15 @@
 module
 
 import Sic.Core.Substitution
-import all SicTest.Identity.Syntax
+import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Substitution
 
 The polymorphic identity instantiated at a level.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.Substitution
 

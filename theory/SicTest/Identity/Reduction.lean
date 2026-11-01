@@ -1,13 +1,15 @@
 module
 
-import Sic.Core.Reduction
-import all SicTest.Identity.Syntax
+public import Sic.Core.Reduction
+import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Reduction
 
 The polymorphic identity applied to a type reduces to the identity of that type.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.Reduction
 

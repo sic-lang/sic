@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Syntax
+public import Sic.Core.Syntax
 
 /-!
 # The Divergent Term Ω
@@ -9,6 +9,8 @@ The term `Ω = (λx. x x) (λx. x x)` of the untyped lambda calculus, which redu
 it has no normal form, `omega` of section 5.2 of [Pierce](https://www.cis.upenn.edu/~bcpierce/tapl/).
 Its abstractions declare their variable of any type `A`, and their applications have any grade `p`.
 -/
+
+@[expose] public section
 
 namespace SicTest.Omega.Syntax
 

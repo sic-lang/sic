@@ -1,8 +1,8 @@
 module
 
+public import SicTest.Rfc24.Usage
 import Sic.Core.UsageSubstitution
-import all SicTest.Common.Usage
-import all SicTest.Rfc24.Usage
+import SicTest.Common.Usage
 
 /-!
 # Usage Substitution
@@ -12,6 +12,8 @@ reduct of an application of an abstraction counts the argument as many times as 
 does, and the vector that `Sic.Core.Usage.instantiate` gives it is its greatest usage, so the
 instantiation loses no precision.
 -/
+
+@[expose] public section
 
 namespace SicTest.Rfc24.UsageSubstitution
 
@@ -28,6 +30,7 @@ In the context `f, x`, the body `(f ∘_𝟙 y) ∘_𝟙 y` of an abstraction ov
 instantiating `y` by `x` gives the term `twice` of RFC 24.
 -/
 
+/-- `(f ∘_𝟙 y) ∘_𝟙 y`, in the context `f, x, y`. -/
 def twiceBody : Term 0 3 := app 𝟙 (app 𝟙 (var 2) (var 0)) (var 0)
 
 example : twiceBody.instantiate (var 0) = twice := rfl
@@ -48,8 +51,10 @@ In the context `f, x`, the body `f ∘_⟨0, 1⟩ y` of an abstraction over `y` 
 and instantiating `y` by `x` gives the second term of `usage_affine`.
 -/
 
+/-- `f ∘_⟨0, 1⟩ y`, in the context `f, x, y`. -/
 def erasedBody : Term 0 3 := app ⟪.zero, .one⟫ (var 2) (var 0)
 
+/-- `f ∘_⟨0, 1⟩ x`, in the context `f, x`. -/
 def erased : Term 0 2 := app ⟪.zero, .one⟫ (var 1) (var 0)
 
 example : erasedBody.instantiate (var 0) = erased := rfl

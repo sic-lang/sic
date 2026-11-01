@@ -1,7 +1,7 @@
 module
 
+public import SicTest.TypeVariable.Reducibility.Introductions.Function
 import Sic.Core.Injectivity
-import all SicTest.TypeVariable.Reducibility.Introductions.Function
 
 /-!
 # A Type Variable: Injectivity
@@ -9,6 +9,8 @@ import all SicTest.TypeVariable.Reducibility.Introductions.Function
 `Sic.Core.Typing` does not equate the type `(λ_p (X : U_l). X) ∘_p A`, which is equal to the neutral
 type `A`, to a type of functions, and does not equate two types of functions whose grades differ.
 -/
+
+@[expose] public section
 
 namespace SicTest.TypeVariable.Injectivity
 

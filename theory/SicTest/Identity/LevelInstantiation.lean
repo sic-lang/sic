@@ -1,8 +1,8 @@
 module
 
+public import SicTest.Identity.Typing
 import Sic.Core.LevelInstantiation
-import all SicTest.Identity.Syntax
-import all SicTest.Identity.Typing
+import SicTest.Identity.Syntax
 
 /-!
 # The Polymorphic Identity: Level Instantiation
@@ -10,6 +10,8 @@ import all SicTest.Identity.Typing
 The polymorphic identity, checked once over its level variable `l`, is the identity of the types of
 every level: its derivation instantiated gives the identity of `U_0`, with no derivation of its own.
 -/
+
+@[expose] public section
 
 namespace SicTest.Identity.LevelInstantiation
 

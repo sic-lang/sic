@@ -1,8 +1,8 @@
 module
 
+public import SicTest.Common.Usage
+public import SicTest.Permission.Syntax
 import Sic.Core.UsageInference
-import all SicTest.Common.Usage
-import all SicTest.Permission.Syntax
 
 /-!
 # A Permission Used Once: Usage
@@ -12,6 +12,8 @@ passes the permission on once, whatever grades the variables of the context get,
 usage decides: the vectors are over `Perm`, `B`, `b`, `close` and `commit`, the grade of `commit`
 last.
 -/
+
+@[expose] public section
 
 namespace SicTest.Permission.Usage
 

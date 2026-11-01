@@ -13,3 +13,5 @@ leanOptions = { linter.missingDocs = true }
 name = "SicTest"
 # The checks that the definitions of Sic mean what the RFCs say, by theme, as Mathlib's MathlibTest.
 globs = ["SicTest.+"]
+# As in Sic/, every public definition has a doc string, since the documentation shows the checks.
+leanOptions = { linter.missingDocs = true }

@@ -1,6 +1,6 @@
 module
 
-import Sic.Core.Reducibility.Canonical
+public import Sic.Core.Reducibility.Canonical
 
 /-!
 # The Universes: Canonical Interpretation
@@ -8,6 +8,8 @@ import Sic.Core.Reducibility.Canonical
 The canonical interpretation of a universe equates it to itself at the levels where it is reducible,
 and equates nothing at the others, where no interpretation describes it.
 -/
+
+@[expose] public section
 
 namespace SicTest.Universe.Reducibility.Canonical
 
