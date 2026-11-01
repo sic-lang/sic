@@ -150,6 +150,23 @@ theorem update_succ_zero (x : Fin n) (p : Grade) : (𝟘ᶜ, x.succ ≔ p) = (�
       · rw [ite_eq_left (congrArg Fin.succ h), ite_eq_left h]
       · rw [ite_eq_right fun e => h (Fin.succ_inj.1 e), ite_eq_right h]
 
+-- ADE: `update-lookup`, in `Graded/Context/Properties/Lookup.agda`.
+theorem update_self (γ : GradeVector n) (x : Fin n) (p : Grade) : (γ, x ≔ p) x = p := ite_eq_left rfl
+
+-- ADE: none.
+/-- The product of a grade and an extended vector multiplies the grade of the new variable too. -/
+theorem smul_cons (r : Grade) (γ : GradeVector n) (p : Grade) : r • (γ ∙ p) = (r • γ) ∙ (r * p) :=
+  funext fun | ⟨0, _⟩ | ⟨_ + 1, _⟩ => rfl
+
+-- ADE: `update-distrib-·ᶜ`, in `Graded/Context/Properties/Update.agda`.
+theorem smul_update_zero (p : Grade) (x : Fin n) (q : Grade) :
+    p • (𝟘ᶜ, x ≔ q) = (𝟘ᶜ, x ≔ p * q) := by
+  funext y
+  show p * (if y = x then q else 𝟘) = if y = x then p * q else 𝟘
+  by_cases h : y = x
+  · rw [ite_eq_left h, ite_eq_left h]
+  · rw [ite_eq_right h, ite_eq_right h, Grade.mul_zero]
+
 /-!
 The operations are monotone, which the inference of the usage uses to bound every usage by the one
 that it infers.
