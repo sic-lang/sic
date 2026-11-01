@@ -97,6 +97,77 @@ theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η
   fun x => Grade.le_trans (h₁ x) (h₂ x)
 
 /-!
+The vectors inherit the laws of the grades, component by component, which the multiplication of the
+vectors by the matrices of `Sic.GradeMatrix` uses to distribute over their operations.
+-/
+
+-- ADE: `+ᶜ-assoc`, in `Graded/Context/Properties/Addition.agda`.
+theorem add_assoc (γ δ η : GradeVector n) : (γ + δ) + η = γ + (δ + η) :=
+  funext fun _ => Grade.add_assoc ..
+-- ADE: `+ᶜ-comm`, in `Graded/Context/Properties/Addition.agda`.
+theorem add_comm (γ δ : GradeVector n) : γ + δ = δ + γ := funext fun _ => Grade.add_comm ..
+-- ADE: `+ᶜ-identityˡ`, in `Graded/Context/Properties/Addition.agda`.
+theorem zero_add (γ : GradeVector n) : 𝟘ᶜ + γ = γ := funext fun _ => Grade.zero_add ..
+-- ADE: `+ᶜ-identityʳ`, in `Graded/Context/Properties/Addition.agda`.
+theorem add_zero (γ : GradeVector n) : γ + 𝟘ᶜ = γ := funext fun _ => Grade.add_zero ..
+
+-- ADE: `·ᶜ-assoc`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem mul_smul (p q : Grade) (γ : GradeVector n) : (p * q) • γ = p • (q • γ) :=
+  funext fun _ => Grade.mul_assoc ..
+-- ADE: `·ᶜ-zeroˡ`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem zero_smul (γ : GradeVector n) : 𝟘 • γ = 𝟘ᶜ := funext fun _ => Grade.zero_mul ..
+-- ADE: `·ᶜ-zeroʳ`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem smul_zero (p : Grade) : p • (𝟘ᶜ : GradeVector n) = 𝟘ᶜ := funext fun _ => Grade.mul_zero ..
+-- ADE: `·ᶜ-distribˡ-+ᶜ`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem smul_add (p : Grade) (γ δ : GradeVector n) : p • (γ + δ) = (p • γ) + (p • δ) :=
+  funext fun _ => Grade.mul_add ..
+-- ADE: `·ᶜ-distribʳ-+ᶜ`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem add_smul (p q : Grade) (γ : GradeVector n) : (p + q) • γ = (p • γ) + (q • γ) :=
+  funext fun _ => Grade.add_mul ..
+
+/-!
+The replacement and the extension of the grades, which the weakening and the substitution of the
+usage use to follow the variables under a binder: the zero vector with the grade of one variable
+replaced, as the rule of the variables gives it, extends a smaller one.
+-/
+
+-- ADE: none.
+/-- The zero vector whose innermost variable has the grade `p` extends the zero vector by `p`. -/
+theorem update_zero_zero (p : Grade) : (𝟘ᶜ, (0 : Fin (n + 1)) ≔ p) = 𝟘ᶜ ∙ p :=
+  funext fun
+    | ⟨0, _⟩ => ite_eq_left rfl
+    | ⟨y + 1, _⟩ => ite_eq_right (Fin.succ_ne_zero ⟨y, by omega⟩)
+
+-- ADE: none.
+/-- The zero vector whose outer variable `x.succ` has the grade `p` extends one with `x` by `𝟘`. -/
+theorem update_succ_zero (x : Fin n) (p : Grade) : (𝟘ᶜ, x.succ ≔ p) = (𝟘ᶜ, x ≔ p) ∙ 𝟘 :=
+  funext fun
+    | ⟨0, _⟩ => ite_eq_right (Fin.succ_ne_zero x).symm
+    | ⟨y + 1, hy⟩ => by
+      show (if Fin.succ ⟨y, Nat.lt_of_succ_lt_succ hy⟩ = x.succ then p else 𝟘) =
+        if ⟨y, Nat.lt_of_succ_lt_succ hy⟩ = x then p else 𝟘
+      by_cases h : (⟨y, Nat.lt_of_succ_lt_succ hy⟩ : Fin n) = x
+      · rw [ite_eq_left (congrArg Fin.succ h), ite_eq_left h]
+      · rw [ite_eq_right fun e => h (Fin.succ_inj.1 e), ite_eq_right h]
+
+-- ADE: `update-lookup`, in `Graded/Context/Properties/Lookup.agda`.
+theorem update_self (γ : GradeVector n) (x : Fin n) (p : Grade) : (γ, x ≔ p) x = p := ite_eq_left rfl
+
+-- ADE: none.
+/-- The product of a grade and an extended vector multiplies the grade of the new variable too. -/
+theorem smul_cons (r : Grade) (γ : GradeVector n) (p : Grade) : r • (γ ∙ p) = (r • γ) ∙ (r * p) :=
+  funext fun | ⟨0, _⟩ | ⟨_ + 1, _⟩ => rfl
+
+-- ADE: `update-distrib-·ᶜ`, in `Graded/Context/Properties/Update.agda`.
+theorem smul_update_zero (p : Grade) (x : Fin n) (q : Grade) :
+    p • (𝟘ᶜ, x ≔ q) = (𝟘ᶜ, x ≔ p * q) := by
+  funext y
+  show p * (if y = x then q else 𝟘) = if y = x then p * q else 𝟘
+  by_cases h : y = x
+  · rw [ite_eq_left h, ite_eq_left h]
+  · rw [ite_eq_right h, ite_eq_right h, Grade.mul_zero]
+
+/-!
 The operations are monotone, which the inference of the usage uses to bound every usage by the one
 that it infers.
 -/

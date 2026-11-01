@@ -119,6 +119,21 @@ theorem mode_add_left : ∀ p q : Grade, ⌞p⌟ = ⌞p⌟ * ⌞p + q⌟ := by d
 -- ADE: `⌞∧⌟-decreasingˡ`, in `Graded/Mode.agda`.
 theorem mode_min_left : ∀ p q : Grade, ⌞p⌟ = ⌞p⌟ * ⌞p ⊓ q⌟ := by decide
 
+/-! The laws that the substitution of the usage uses to move a usage from a mode to another. -/
+
+-- ADE: `·-idem-⌜⌝`, in `Graded/Mode.agda`.
+theorem grade_mul_self : ∀ m : Mode, ⌜m⌝ * ⌜m⌝ = ⌜m⌝ := by decide
+-- ADE: `⌜⌝-·-comm`, in `Graded/Mode.agda`.
+theorem grade_mul_comm : ∀ (m : Mode) (p : Grade), ⌜m⌝ * p = p * ⌜m⌝ := by decide
+-- ADE: `·⌜ᵐ·⌝`, in `Graded/Mode.agda`.
+theorem mul_grade_scale : ∀ (m : Mode) (p : Grade), p * ⌜m ⊙ p⌝ = p * ⌜m⌝ := by decide
+-- ADE: `⌞⌜⌝·⌟`, in `Graded/Mode.agda`.
+theorem mode_grade_mul : ∀ (m : Mode) (p : Grade), ⌞⌜m⌝ * p⌟ = m ⊙ p := by decide
+-- ADE: `⌞⌟-monotone`, in `Graded/Mode.agda`.
+theorem mode_le : ∀ p q : Grade, p ≤ q → ⌞q⌟ = ⌞q⌟ * ⌞p⌟ := by decide
+-- ADE: `⌞+⌟-decreasingʳ`, in `Graded/Mode.agda`.
+theorem mode_add_right : ∀ p q : Grade, ⌞q⌟ = ⌞q⌟ * ⌞p + q⌟ := by decide
+
 end Mode
 
 end Sic

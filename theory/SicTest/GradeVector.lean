@@ -54,17 +54,7 @@ section Laws
 
 variable (γ δ η : GradeVector n) (p q : Grade)
 
-example : (γ + δ) + η = γ + (δ + η) := funext fun _ => add_assoc ..
-example : γ + δ = δ + γ := funext fun _ => add_comm ..
-example : 𝟘ᶜ + γ = γ := funext fun _ => zero_add _
-example : γ + 𝟘ᶜ = γ := funext fun _ => add_zero _
-
-example : (p * q) • γ = p • (q • γ) := funext fun _ => mul_assoc ..
 example : 𝟙 • γ = γ := funext fun _ => one_mul _
-example : 𝟘 • γ = 𝟘ᶜ := funext fun _ => zero_mul _
-example : p • (𝟘ᶜ : GradeVector n) = 𝟘ᶜ := funext fun _ => mul_zero _
-example : p • (γ + δ) = (p • γ) + (p • δ) := funext fun _ => mul_add ..
-example : (p + q) • γ = (p • γ) + (q • γ) := funext fun _ => add_mul ..
 
 example : (γ ⊓ δ) ⊓ η = γ ⊓ (δ ⊓ η) := funext fun _ => min_assoc ..
 example : γ ⊓ δ = δ ⊓ γ := funext fun _ => min_comm ..
