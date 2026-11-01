@@ -11,7 +11,7 @@ No compiler exists yet.
 The [documentation of the metatheory](https://sic-lang.github.io/sic/) presents each module, and reads in this order:
 
 1. [the terms](https://sic-lang.github.io/sic/Sic/Core/Syntax.html), with their [levels](https://sic-lang.github.io/sic/Sic/Core/Level.html) and their [grades](https://sic-lang.github.io/sic/Sic/Grade.html);
-2. [the typing](https://sic-lang.github.io/sic/Sic/Core/Typing.html), the judgments of RFC 24;
+2. [the typing](https://sic-lang.github.io/sic/Sic/Core/Typing.html) and [the usage](https://sic-lang.github.io/sic/Sic/Core/Usage.html), the judgments of RFC 24, with the [modes](https://sic-lang.github.io/sic/Sic/Mode.html) and the [grade vectors](https://sic-lang.github.io/sic/Sic/GradeVector.html) of the usage;
 3. [the reduction](https://sic-lang.github.io/sic/Sic/Core/Reduction.html), which the proofs use to compare terms;
 4. [the logical relation](https://sic-lang.github.io/sic/Sic/Core/Reducibility/LogicalRelation.html), from which [the fundamental lemma](https://sic-lang.github.io/sic/Sic/Core/Reducibility/Fundamental.html) proves [the normalization](https://sic-lang.github.io/sic/Sic/Core/Normalization.html);
 5. its consequences: [the injectivity of the types](https://sic-lang.github.io/sic/Sic/Core/Injectivity.html), [the canonicity](https://sic-lang.github.io/sic/Sic/Core/Canonicity.html) and [the consistency](https://sic-lang.github.io/sic/Sic/Core/Consistency.html).

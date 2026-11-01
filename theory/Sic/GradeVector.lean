@@ -22,55 +22,71 @@ namespace Sic
 
 open Grade
 
-/-- A vector of grades, one grade for each of the `n` variables of a context. -/
 -- ADE: `Conₘ`, in `Graded/Context.agda`.
+/-- A vector of grades, one grade for each of the `n` variables of a context. -/
 def GradeVector (n : Nat) := Fin n → Grade
 
 namespace GradeVector
 
-/-- `𝟘ᶜ`: the vector whose components are all the grade `𝟘`. -/
 -- ADE: `𝟘ᶜ`, in `Graded/Context.agda`.
+/-- `𝟘ᶜ`: the vector whose components are all the grade `𝟘`. -/
 def zero : GradeVector n := fun _ => 𝟘
 
 @[inherit_doc] scoped notation "𝟘ᶜ" => GradeVector.zero
 
-/-- The sum of two vectors, component by component. -/
 -- ADE: `_+ᶜ_`, in `Graded/Context.agda`.
+/-- The sum of two vectors, component by component. -/
 instance : Add (GradeVector n) where
   add γ δ := fun x => γ x + δ x
 
-/-- The product of a grade and a vector, which multiplies each component by the grade. -/
 -- ADE: `_·ᶜ_`, in `Graded/Context.agda`.
+/-- The product of a grade and a vector, which multiplies each component by the grade. -/
 instance : HSMul Grade (GradeVector n) (GradeVector n) where
   hSMul p γ := fun x => p * γ x
 
-/-- The meet of two vectors, component by component. -/
 -- ADE: `_∧ᶜ_`, in `Graded/Context.agda`.
+/-- The meet of two vectors, component by component. -/
 instance : Min (GradeVector n) where
   min γ δ := fun x => γ x ⊓ δ x
 
+-- ADE: `_≤ᶜ_`, in `Graded/Context.agda`.
 /--
 The order of the vectors, component by component: a vector `γ` may be used where the vector `δ` is
 expected.
 -/
--- ADE: `_≤ᶜ_`, in `Graded/Context.agda`.
 instance : LE (GradeVector n) where
   le γ δ := ∀ x, γ x ≤ δ x
 
-/-- `γ ∙ p`: the vector `γ` extended by the grade `p` for a new innermost variable. -/
+-- ADE: `≤ᶜ-decidable`, in `Graded/Context/Properties/PartialOrder.agda`.
+/--
+The order of two vectors is decided on each component, with the components given explicitly, since
+the search of instances does not unfold `GradeVector` to see the functions that it holds.
+-/
+instance (γ δ : GradeVector n) : Decidable (γ ≤ δ) :=
+  @Nat.decidableForallFin n (fun x => γ x ≤ δ x) fun _ => inferInstance
+
 -- ADE: `_∙_`, in `Graded/Context.agda`.
+/-- `γ ∙ p`: the vector `γ` extended by the grade `p` for a new innermost variable. -/
 def cons (γ : GradeVector n) (p : Grade) : GradeVector (n + 1)
   | ⟨0, _⟩ => p
   | ⟨x + 1, h⟩ => γ ⟨x, Nat.lt_of_succ_lt_succ h⟩
 
 @[inherit_doc] scoped infixl:60 " ∙ " => GradeVector.cons
 
-/-- `(γ, x ≔ p)`: the vector `γ` in which the grade of the variable `x` is replaced by `p`. -/
 -- ADE: `_,_≔_`, in `Graded/Context.agda`.
+/-- `(γ, x ≔ p)`: the vector `γ` in which the grade of the variable `x` is replaced by `p`. -/
 def update (γ : GradeVector n) (x : Fin n) (p : Grade) : GradeVector n :=
   fun y => if y = x then p else γ y
 
 @[inherit_doc] scoped notation:max "(" γ ", " x " ≔ " p ")" => GradeVector.update γ x p
+
+/-! The order is a preorder, which the inversions of the usage use to compose its bounds. -/
+
+-- ADE: `≤ᶜ-refl`, in `Graded/Context/Properties/PartialOrder.agda`.
+theorem le_refl (γ : GradeVector n) : γ ≤ γ := fun _ => Grade.le_refl _
+-- ADE: `≤ᶜ-trans`, in `Graded/Context/Properties/PartialOrder.agda`.
+theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η) : γ ≤ η :=
+  fun x => Grade.le_trans (h₁ x) (h₂ x)
 
 end GradeVector
 

@@ -18,8 +18,8 @@ for its natural numbers are absent, since the core has none.
 
 namespace Sic
 
-/-- A mode, named after its grade. -/
 -- ADE: `Mode`, in `Graded/Mode.agda`.
+/-- A mode, named after its grade. -/
 inductive Mode where
   /-- `𝟘𝟘ᵐ`: no use is counted. -/
   | zeroZero
@@ -35,8 +35,8 @@ namespace Mode
 @[inherit_doc] scoped notation "𝟘𝟙ᵐ" => Mode.zeroOne
 @[inherit_doc] scoped notation "𝟙𝟙ᵐ" => Mode.oneOne
 
-/-- `⌜m⌝`: the grade with which a variable checked in the mode `m` uses itself. -/
 -- ADE: `⌜_⌝`, in `Graded/Mode.agda`.
+/-- `⌜m⌝`: the grade with which a variable checked in the mode `m` uses itself. -/
 def grade : Mode → Grade
   | zeroZero => .zero
   | zeroOne => ⟨.zero, .one, fun h => nomatch h⟩
@@ -48,11 +48,11 @@ end Mode
 
 open Grade Mode
 
+-- ADE: `⌞_⌟`, in `Graded/Mode.agda`.
 /--
 `⌞p⌟`: the mode in which a term used with the grade `p` is checked: `𝟘𝟘ᵐ` for `𝟘`, `𝟘𝟙ᵐ` for the
 other grades without use at run time, and `𝟙𝟙ᵐ` for the grades used at run time.
 -/
--- ADE: `⌞_⌟`, in `Graded/Mode.agda`.
 def Grade.mode (p : Grade) : Mode :=
   if p = 𝟘 then 𝟘𝟘ᵐ else if p.run = .zero then 𝟘𝟙ᵐ else 𝟙𝟙ᵐ
 
@@ -60,16 +60,16 @@ namespace Mode
 
 @[inherit_doc] scoped notation "⌞" p "⌟" => Grade.mode p
 
-/-- The product of two modes, the mode of the product of their grades: the more erased of the two. -/
 -- ADE: `_·ᵐ_`, in `Graded/Mode.agda`.
+/-- The product of two modes, the mode of the product of their grades: the more erased of the two. -/
 instance : Mul Mode where
   mul m₁ m₂ := ⌞⌜m₁⌝ * ⌜m₂⌝⌟
 
+-- ADE: `_ᵐ·_`, in `Graded/Mode.agda`.
 /--
 `m ⊙ p`: the mode in which a subterm used with the grade `p` is checked, inside a term checked in
 the mode `m`, written as in the paper of ADE.
 -/
--- ADE: `_ᵐ·_`, in `Graded/Mode.agda`.
 def scale (m : Mode) (p : Grade) : Mode := m * ⌞p⌟
 
 @[inherit_doc] scoped infixl:70 " ⊙ " => Mode.scale
