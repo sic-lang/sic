@@ -90,22 +90,9 @@ example {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') 
 end Laws
 
 /-!
-The monotonicity of the sum and of the product by a grade, and the tail of a vector, which the
-checks of the usage read with `import all` to compose the bounds that the inversions give, until a
-module of `Sic` needs them.
+The extension of a vector by a grade is undone by its tail, which the checks of the usage read with
+`import all` to compose the bounds that the inversions give.
 -/
-
-theorem add_mono {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') : γ + δ ≤ γ' + δ' :=
-  fun x => add_le_add (h₁ x) (h₂ x)
-
-theorem smul_mono {p p' : Grade} {γ γ' : GradeVector n} (h₁ : p ≤ p') (h₂ : γ ≤ γ') :
-    p • γ ≤ p' • γ' :=
-  fun x => mul_le_mul h₁ (h₂ x)
-
-/-- The vector `δ` without the grade of its innermost variable, which undoes `δ ∙ p`. -/
-def tail (δ : GradeVector (n + 1)) : GradeVector n := fun x => δ x.succ
-
-theorem tail_mono {γ δ : GradeVector (n + 1)} (h : γ ≤ δ) : tail γ ≤ tail δ := fun x => h x.succ
 
 theorem le_tail {γ : GradeVector n} {δ : GradeVector (n + 1)} (h : γ ∙ p ≤ δ) : γ ≤ tail δ :=
   fun x => h x.succ

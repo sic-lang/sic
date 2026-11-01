@@ -80,6 +80,14 @@ def update (γ : GradeVector n) (x : Fin n) (p : Grade) : GradeVector n :=
 
 @[inherit_doc] scoped notation:max "(" γ ", " x " ≔ " p ")" => GradeVector.update γ x p
 
+-- ADE: `headₘ`, in `Graded/Context.agda`.
+/-- The grade of the innermost variable of `δ`, which `δ ∙ p` gives. -/
+def head (δ : GradeVector (n + 1)) : Grade := δ 0
+
+-- ADE: `tailₘ`, in `Graded/Context.agda`.
+/-- The vector `δ` without the grade of its innermost variable, which undoes `δ ∙ p`. -/
+def tail (δ : GradeVector (n + 1)) : GradeVector n := fun x => δ x.succ
+
 /-! The order is a preorder, which the inversions of the usage use to compose its bounds. -/
 
 -- ADE: `≤ᶜ-refl`, in `Graded/Context/Properties/PartialOrder.agda`.
@@ -87,6 +95,32 @@ theorem le_refl (γ : GradeVector n) : γ ≤ γ := fun _ => Grade.le_refl _
 -- ADE: `≤ᶜ-trans`, in `Graded/Context/Properties/PartialOrder.agda`.
 theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η) : γ ≤ η :=
   fun x => Grade.le_trans (h₁ x) (h₂ x)
+
+/-!
+The operations are monotone, which the inference of the usage uses to bound every usage by the one
+that it infers.
+-/
+
+-- ADE: `+ᶜ-monotone`, in `Graded/Context/Properties/Addition.agda`.
+theorem add_mono {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') : γ + δ ≤ γ' + δ' :=
+  fun x => add_le_add (h₁ x) (h₂ x)
+
+-- ADE: `·ᶜ-monotone`, in `Graded/Context/Properties/Multiplication.agda`.
+theorem smul_mono {p p' : Grade} {γ γ' : GradeVector n} (h₁ : p ≤ p') (h₂ : γ ≤ γ') :
+    p • γ ≤ p' • γ' :=
+  fun x => mul_le_mul h₁ (h₂ x)
+
+-- ADE: `tailₘ-monotone`, in `Graded/Context/Properties.agda`.
+theorem tail_mono {γ δ : GradeVector (n + 1)} (h : γ ≤ δ) : tail γ ≤ tail δ := fun x => h x.succ
+
+-- ADE: none.
+/--
+A vector is above its tail extended by a grade below its head, which `(sub)` uses to give a binder
+a grade lower than the uses of its variable.
+-/
+theorem cons_tail_le {δ : GradeVector (n + 1)} (h : p ≤ head δ) : tail δ ∙ p ≤ δ
+  | ⟨0, _⟩ => h
+  | ⟨_ + 1, _⟩ => Grade.le_refl _
 
 end GradeVector
 
