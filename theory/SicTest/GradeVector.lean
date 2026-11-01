@@ -78,21 +78,36 @@ example : (γ ⊓ δ) + η = (γ + η) ⊓ (δ + η) := funext fun _ => min_add 
 example : γ ≤ δ ↔ γ = γ ⊓ δ :=
   ⟨fun h => funext h, fun h x => congrFun h x⟩
 
-example : γ ≤ γ := fun _ => le_refl _
-example {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η) : γ ≤ η := fun x => le_trans (h₁ x) (h₂ x)
 example {γ δ : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ γ) : γ = δ :=
   funext fun x => le_antisymm (h₁ x) (h₂ x)
 example : γ ⊓ δ ≤ γ := fun _ => min_le_left ..
 example : γ ⊓ δ ≤ δ := fun _ => min_le_right ..
 example {γ δ η : GradeVector n} (h₁ : η ≤ γ) (h₂ : η ≤ δ) : η ≤ γ ⊓ δ :=
   fun x => le_min (h₁ x) (h₂ x)
-example {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') : γ + δ ≤ γ' + δ' :=
-  fun x => add_le_add (h₁ x) (h₂ x)
-example {p p' : Grade} {γ γ' : GradeVector n} (h₁ : p ≤ p') (h₂ : γ ≤ γ') : p • γ ≤ p' • γ' :=
-  fun x => mul_le_mul h₁ (h₂ x)
 example {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') : γ ⊓ δ ≤ γ' ⊓ δ' :=
   fun x => min_le_min (h₁ x) (h₂ x)
 
 end Laws
+
+/-!
+The monotonicity of the sum and of the product by a grade, and the tail of a vector, which the
+checks of the usage read with `import all` to compose the bounds that the inversions give, until a
+module of `Sic` needs them.
+-/
+
+theorem add_mono {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') : γ + δ ≤ γ' + δ' :=
+  fun x => add_le_add (h₁ x) (h₂ x)
+
+theorem smul_mono {p p' : Grade} {γ γ' : GradeVector n} (h₁ : p ≤ p') (h₂ : γ ≤ γ') :
+    p • γ ≤ p' • γ' :=
+  fun x => mul_le_mul h₁ (h₂ x)
+
+/-- The vector `δ` without the grade of its innermost variable, which undoes `δ ∙ p`. -/
+def tail (δ : GradeVector (n + 1)) : GradeVector n := fun x => δ x.succ
+
+theorem tail_mono {γ δ : GradeVector (n + 1)} (h : γ ≤ δ) : tail γ ≤ tail δ := fun x => h x.succ
+
+theorem le_tail {γ : GradeVector n} {δ : GradeVector (n + 1)} (h : γ ∙ p ≤ δ) : γ ≤ tail δ :=
+  fun x => h x.succ
 
 end SicTest.GradeVector

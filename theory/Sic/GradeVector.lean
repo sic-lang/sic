@@ -57,6 +57,14 @@ expected.
 instance : LE (GradeVector n) where
   le γ δ := ∀ x, γ x ≤ δ x
 
+-- ADE: `≤ᶜ-decidable`, in `Graded/Context/Properties/PartialOrder.agda`.
+/--
+The order of two vectors is decided on each component, with the components given explicitly, since
+the search of instances does not unfold `GradeVector` to see the functions that it holds.
+-/
+instance (γ δ : GradeVector n) : Decidable (γ ≤ δ) :=
+  @Nat.decidableForallFin n (fun x => γ x ≤ δ x) fun _ => inferInstance
+
 -- ADE: `_∙_`, in `Graded/Context.agda`.
 /-- `γ ∙ p`: the vector `γ` extended by the grade `p` for a new innermost variable. -/
 def cons (γ : GradeVector n) (p : Grade) : GradeVector (n + 1)
@@ -71,6 +79,14 @@ def update (γ : GradeVector n) (x : Fin n) (p : Grade) : GradeVector n :=
   fun y => if y = x then p else γ y
 
 @[inherit_doc] scoped notation:max "(" γ ", " x " ≔ " p ")" => GradeVector.update γ x p
+
+/-! The order is a preorder, which the inversions of the usage use to compose its bounds. -/
+
+-- ADE: `≤ᶜ-refl`, in `Graded/Context/Properties/PartialOrder.agda`.
+theorem le_refl (γ : GradeVector n) : γ ≤ γ := fun _ => Grade.le_refl _
+-- ADE: `≤ᶜ-trans`, in `Graded/Context/Properties/PartialOrder.agda`.
+theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η) : γ ≤ η :=
+  fun x => Grade.le_trans (h₁ x) (h₂ x)
 
 end GradeVector
 
