@@ -60,6 +60,13 @@ instance : Min Grade where
 instance : LE Grade where
   le p q := p = p ⊓ q
 
+instance (p q : Grade) : Decidable (p ≤ q) := inferInstanceAs (Decidable (p = p ⊓ q))
+
+/-- Decides a statement on every grade by checking each one, so that `decide` proves the laws. -/
+instance {P : Grade → Prop} [DecidablePred P] : Decidable (∀ p, P p) :=
+  decidable_of_iff (∀ r t : Multiplicity, ∀ h : t = .zero → r = .zero, P ⟨r, t, h⟩)
+    ⟨fun h ⟨r, t, hp⟩ => h r t hp, fun h _ _ _ => h _⟩
+
 /-! The modality of ADE: a semiring with a meet semilattice over which the operations distribute. -/
 
 section Modality
