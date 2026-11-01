@@ -1,7 +1,7 @@
 module
 
-import Sic.Core.Usage
-import all SicTest.GradeVector
+import Sic.Core.UsageInference
+import all SicTest.Common.Usage
 
 /-!
 # Usage
@@ -13,7 +13,7 @@ gives the grades; the permission used once of its examples has its own theme,
 
 namespace SicTest.Rfc24.Usage
 
-open Sic Sic.Core Sic.Grade Sic.GradeVector Sic.Mode Sic.Core.Term SicTest.GradeVector
+open Sic Sic.Core Sic.Grade Sic.GradeVector Sic.Mode Sic.Core.Term SicTest.Common.Usage
 
 /-- The grade of the multiplicities `r` at run time and `t` in total, written as in RFC 24. -/
 local notation "⟪" r ", " t "⟫" => (Grade.mk r t (by decide) : Grade)
@@ -36,31 +36,17 @@ def twice : Term 0 2 := app 𝟙 (app 𝟙 (var 1) (var 0)) (var 0)
 
 /-!
 Each term is well used exactly with the vectors below the uses that it counts, `x` included,
-whatever the uses of `(sub)`: the inversions bound the vectors, and the rules reach the bounds.
+whatever the uses of `(sub)`: the bounds are the usages that the terms infer.
 -/
 
 theorem usage_never_iff : γ ▶[𝟙𝟙ᵐ] never ↔ γ ≤ 𝟘ᶜ ∙ 𝟙 ∙ 𝟘 :=
-  ⟨fun h => GradeVector.le_trans h.inv_var (by decide),
-    fun h => .sub .var (GradeVector.le_trans h (by decide))⟩
+  usage_iff_le (by decide)
 
 theorem usage_once_iff : γ ▶[𝟙𝟙ᵐ] once ↔ γ ≤ 𝟘ᶜ ∙ 𝟙 ∙ 𝟙 :=
-  ⟨fun h =>
-    have ⟨_, _, hf, hx, hγ⟩ := h.inv_app
-    GradeVector.le_trans hγ <|
-      GradeVector.le_trans (add_mono hf.inv_var (smul_mono (Grade.le_refl _) hx.inv_var))
-        (by decide),
-    fun h => .sub (.app .var .var) (GradeVector.le_trans h (by decide))⟩
+  usage_iff_le (by decide)
 
 theorem usage_twice_iff : γ ▶[𝟙𝟙ᵐ] twice ↔ γ ≤ 𝟘ᶜ ∙ 𝟙 ∙ (𝟙 + 𝟙) :=
-  ⟨fun h =>
-    have ⟨_, _, ht, hx, hγ⟩ := h.inv_app
-    have ⟨_, _, hf, hx', hδ⟩ := ht.inv_app
-    GradeVector.le_trans hγ <| GradeVector.le_trans
-      (add_mono
-        (GradeVector.le_trans hδ (add_mono hf.inv_var (smul_mono (Grade.le_refl _) hx'.inv_var)))
-        (smul_mono (Grade.le_refl _) hx.inv_var))
-      (by decide),
-    fun h => .sub (.app (.app .var .var) .var) (GradeVector.le_trans h (by decide))⟩
+  usage_iff_le (by decide)
 
 /-- A variable of multiplicity `ω` may be used any number of times, none included. -/
 theorem usage_omega :
@@ -92,7 +78,7 @@ parameter, of grade `⟨0, 1⟩`, which checks it in the mode `𝟘𝟙ᵐ`.
 
 theorem usage_affine :
     (𝟘ᶜ ∙ ⟪.omega, .one⟫ ▶[𝟙𝟙ᵐ] (var 0 : Term 0 1)) ∧
-      (𝟘ᶜ ∙ 𝟙 ∙ ⟪.omega, .one⟫ ▶[𝟙𝟙ᵐ] (app ⟪.zero, .one⟫ (var 1) (var 0) : Term 0 2)) :=
-  ⟨.sub .var (by decide), .sub (.app .var .var) (by decide)⟩
+      (𝟘ᶜ ∙ 𝟙 ∙ ⟪.omega, .one⟫ ▶[𝟙𝟙ᵐ] (app ⟪.zero, .one⟫ (var 1) (var 0) : Term 0 2)) := by
+  decide
 
 end SicTest.Rfc24.Usage

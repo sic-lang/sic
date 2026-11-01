@@ -89,12 +89,4 @@ example {γ γ' δ δ' : GradeVector n} (h₁ : γ ≤ γ') (h₂ : δ ≤ δ') 
 
 end Laws
 
-/-!
-The extension of a vector by a grade is undone by its tail, which the checks of the usage read with
-`import all` to compose the bounds that the inversions give.
--/
-
-theorem le_tail {γ : GradeVector n} {δ : GradeVector (n + 1)} (h : γ ∙ p ≤ δ) : γ ≤ tail δ :=
-  fun x => h x.succ
-
 end SicTest.GradeVector
