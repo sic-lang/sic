@@ -97,6 +97,31 @@ theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ δ) (h₂ : δ ≤ η
   fun x => Grade.le_trans (h₁ x) (h₂ x)
 
 /-!
+The replacement and the extension of the grades, which the weakening and the substitution of the
+usage use to follow the variables under a binder: the zero vector with the grade of one variable
+replaced, as the rule of the variables gives it, extends a smaller one.
+-/
+
+-- ADE: none.
+/-- The zero vector whose innermost variable has the grade `p` extends the zero vector by `p`. -/
+theorem update_zero_zero (p : Grade) : (𝟘ᶜ, (0 : Fin (n + 1)) ≔ p) = 𝟘ᶜ ∙ p :=
+  funext fun
+    | ⟨0, _⟩ => ite_eq_left rfl
+    | ⟨y + 1, _⟩ => ite_eq_right (Fin.succ_ne_zero ⟨y, by omega⟩)
+
+-- ADE: none.
+/-- The zero vector whose outer variable `x.succ` has the grade `p` extends one with `x` by `𝟘`. -/
+theorem update_succ_zero (x : Fin n) (p : Grade) : (𝟘ᶜ, x.succ ≔ p) = (𝟘ᶜ, x ≔ p) ∙ 𝟘 :=
+  funext fun
+    | ⟨0, _⟩ => ite_eq_right (Fin.succ_ne_zero x).symm
+    | ⟨y + 1, hy⟩ => by
+      show (if Fin.succ ⟨y, Nat.lt_of_succ_lt_succ hy⟩ = x.succ then p else 𝟘) =
+        if ⟨y, Nat.lt_of_succ_lt_succ hy⟩ = x then p else 𝟘
+      by_cases h : (⟨y, Nat.lt_of_succ_lt_succ hy⟩ : Fin n) = x
+      · rw [ite_eq_left (congrArg Fin.succ h), ite_eq_left h]
+      · rw [ite_eq_right fun e => h (Fin.succ_inj.1 e), ite_eq_right h]
+
+/-!
 The operations are monotone, which the inference of the usage uses to bound every usage by the one
 that it infers.
 -/
