@@ -71,7 +71,7 @@ def cons (γ : GradeVector n) (p : Grade) : GradeVector (n + 1)
   | ⟨0, _⟩ => p
   | ⟨x + 1, h⟩ => γ ⟨x, Nat.lt_of_succ_lt_succ h⟩
 
-@[inherit_doc] scoped infixl:60 " ∙ " => GradeVector.cons
+@[inherit_doc] scoped infixl:67 " ∙ " => GradeVector.cons
 
 -- ADE: `_,_≔_`, in `Graded/Context.agda`.
 /-- `(γ, x ≔ p)`: the vector `γ` in which the grade of the variable `x` is replaced by `p`. -/
