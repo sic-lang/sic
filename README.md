@@ -9,374 +9,374 @@ The metatheory, in [`theory/`](theory), formalizes in Lean the core of Sic, as t
 The formalization of the previous version of the core, [RFC 24](https://github.com/sic-lang/rfcs/pull/24) before its rewrite, is being rebuilt on these RFCs, and the checks of the Lean library are those of that version where a row links to them.
 No compiler exists yet.
 
-Each row names a rule, a formula or a definition as the RFC writes it, linking to its section, and links to its formalization in Lean, or is not formalized yet.
+Each row names a rule, a formula or a definition as the RFC writes it, with a link to its section, and links to its formalization in Lean, or is not formalized yet.
 
 ### [RFC 33](https://github.com/sic-lang/rfcs/pull/33): Grades
 
 #### [Proposal](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#proposal)
 
-| Name | Status |
-| --- | --- |
-| [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Defined: [`Sic.Multiplicity`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity), with its sum, product, meet and order |
-| [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`Sic.Grade`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade), with its sum, product, meet and order |
-| [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Defined: [`Sic.Mode`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode) |
+| Name | Section | Status |
+| --- | --- | --- |
+| Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Defined: [`Sic.Multiplicity`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity), with its sum, product, meet and order |
+| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`Sic.Grade`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade), with its sum, product, meet and order |
+| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Defined: [`Sic.Mode`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode) |
 
 #### [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{run}_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`run`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run) |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`run`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run) |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{uses}_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.Allows) |
-| [$`(\mathsf{best}_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.IsBest) |
-| [$`(+_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.add_best) |
-| [$`(\cdot_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.mul_best) |
-| [$`(\wedge_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.min_best) |
-| [$`(\le_u)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.le_iff) |
-| [$`(\mathsf{uses}_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.Allows) |
-| [$`(\mathsf{best}_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.IsBest) |
-| [$`(+_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.add_best) |
-| [$`(\cdot_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.mul_best) |
-| [$`(\wedge_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.min_best) |
-| [$`(\le_p)`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.le_iff) |
-| [$`(\mathsf{sound}_{\mathsf{run}})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{uses}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.Allows) |
+| $`(\mathsf{best}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.IsBest) |
+| $`(+_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.add_best) |
+| $`(\cdot_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.mul_best) |
+| $`(\wedge_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.min_best) |
+| $`(\le_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.le_iff) |
+| $`(\mathsf{uses}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.Allows) |
+| $`(\mathsf{best}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.IsBest) |
+| $`(+_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.add_best) |
+| $`(\cdot_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.mul_best) |
+| $`(\wedge_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.min_best) |
+| $`(\le_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.le_iff) |
+| $`(\mathsf{sound}_{\mathsf{run}})`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#properties)
 
-| Name | Status |
-| --- | --- |
-| [$`(\cdot_{+})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_add), [`add_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_mul) |
-| [$`(\cdot_{\wedge})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_min), [`min_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_mul) |
-| [$`(+_{\le})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`add_le_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_le_add) |
-| [$`(\wedge_{\le})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`le_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.le_min), [`min_le_left`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_left), [`min_le_right`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_right) |
-| [$`(\mathbb{0}_{p})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`zero_ne_one`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.zero_ne_one), [`add_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_eq_zero), [`min_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_eq_zero), [`mul_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_eq_zero) |
-| [$`(\bigwedge_{p})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| [$`(\bigwedge_{+})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| [$`(\bigwedge_{\cdot})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| [$`(\mathsf{run}_{\mathsf{op}})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| [$`(\mathsf{run}_{\le})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| [$`(\mathsf{run}_{m})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| [$`(\mathsf{run}_{\odot})`$](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\cdot_{+})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_add), [`add_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_mul) |
+| $`(\cdot_{\wedge})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_min), [`min_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_mul) |
+| $`(+_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`add_le_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_le_add) |
+| $`(\wedge_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`le_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.le_min), [`min_le_left`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_left), [`min_le_right`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_right) |
+| $`(\mathbb{0}_{p})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`zero_ne_one`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.zero_ne_one), [`add_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_eq_zero), [`min_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_eq_zero), [`mul_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_eq_zero) |
+| $`(\bigwedge_{p})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
+| $`(\bigwedge_{+})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
+| $`(\bigwedge_{\cdot})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
+| $`(\mathsf{run}_{\mathsf{op}})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
+| $`(\mathsf{run}_{\le})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
+| $`(\mathsf{run}_{m})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
+| $`(\mathsf{run}_{\odot})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
 
 ### [RFC 24](https://github.com/sic-lang/rfcs/pull/24): Graded Dependent Core
 
 #### [Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#levels)
 
-| Name | Status |
-| --- | --- |
-| [$`(\rho_0)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| [$`(\rho_+)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| [$`(\rho_\sqcup)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| [$`(=_l)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| [$`(\le_l)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\rho_0)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(\rho_+)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(\rho_\sqcup)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(=_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(\le_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
 
 #### [Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#judgments)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{ctx}_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
-| [$`(\mathsf{ctx}_x)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
-| [$`(\mathsf{sig}_\varnothing)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| [$`(\mathsf{sig}_{\mathcal{D}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| [$`(\mathsf{sig}_{≔})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| [$`(\mathsf{sig}_c)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| [$`(\sqcup_s)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | Not yet |
-| [$`(\mathsf{ctx}_X)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{var}_X)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{tel}_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{tel}_{,})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{tel}_{\equiv\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{tel}_{\equiv,})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{var}_{X\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{var}_{X\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| [$`(\mathsf{tel}_{\kappa\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
-| [$`(\mathsf{tel}_{\kappa,})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
-| [$`(\mathsf{arg}_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{arg}_x)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{arg}_X)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{arg}_{\equiv\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{arg}_{\equiv x})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{arg}_{\equiv X})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(D)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(D_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| [$`(\mathsf{def})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| [$`(c)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| [$`(c_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| [$`(\delta)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| [$`(\mathsf{const})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#constants) | Not yet |
-| [$`(\mathsf{var})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
-| [$`(\mathsf{var}_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
-| [$`(\mathsf{refl}_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{sym}_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{trans}_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{refl})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{sym})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{trans})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| [$`(\mathsf{conv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
-| [$`(\mathsf{conv}_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
-| [$`(\mathsf{sub})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#usage) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{ctx}_\varepsilon)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
+| $`(\mathsf{ctx}_x)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
+| $`(\mathsf{sig}_\varnothing)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
+| $`(\mathsf{sig}_{\mathcal{D}})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
+| $`(\mathsf{sig}_{≔})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
+| $`(\mathsf{sig}_c)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
+| $`(\sqcup_s)`$ | [Declarations](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | Not yet |
+| $`(\mathsf{ctx}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{var}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{tel}_\varepsilon)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{tel}_{,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{tel}_{\equiv\varepsilon})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{tel}_{\equiv,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{var}_{X\equiv})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{var}_{X\mathsf{m}})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
+| $`(\mathsf{tel}_{\kappa\varepsilon})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
+| $`(\mathsf{tel}_{\kappa,})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
+| $`(\mathsf{arg}_\varepsilon)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{arg}_x)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{arg}_X)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{arg}_{\equiv\varepsilon})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{arg}_{\equiv x})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{arg}_{\equiv X})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(D)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(D_\equiv)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
+| $`(\mathsf{def})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
+| $`(c)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
+| $`(c_{\mathsf{m}})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
+| $`(\delta)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
+| $`(\mathsf{const})`$ | [Constants](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#constants) | Not yet |
+| $`(\mathsf{var})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
+| $`(\mathsf{var}_{\mathsf{m}})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
+| $`(\mathsf{refl}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{sym}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{trans}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{refl})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{sym})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{trans})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
+| $`(\mathsf{conv})`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
+| $`(\mathsf{conv}_\equiv)`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
+| $`(\mathsf{sub})`$ | [Usage](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#usage) | Not yet |
 
 #### [Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#universes)
 
-| Name | Status |
-| --- | --- |
-| [$`(U)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| [$`(U_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| [$`(U_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| [$`(U_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
-| [$`(U_{\mathsf{type}\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(U)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
+| $`(U_\equiv)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
+| $`(U_{\mathsf{m}})`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
+| $`(U_{\mathsf{type}})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
+| $`(U_{\mathsf{type}\equiv})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
 
 #### [Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#strict-propositions)
 
-| Name | Status |
-| --- | --- |
-| [$`(\Omega)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| [$`(\Omega_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| [$`(\Omega_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| [$`(\Omega_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
-| [$`(\Omega_{\mathsf{type}\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
-| [$`(\mathsf{irr})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#proof-irrelevance) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\Omega)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
+| $`(\Omega_\equiv)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
+| $`(\Omega_{\mathsf{m}})`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
+| $`(\Omega_{\mathsf{type}})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
+| $`(\Omega_{\mathsf{type}\equiv})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
+| $`(\mathsf{irr})`$ | [Proof Irrelevance](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#proof-irrelevance) | Not yet |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning)
 
-| Name | Status |
-| --- | --- |
-| [$`(\vDash_{\mathsf{type}\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\vDash_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\vDash_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\vDash)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\mathsf{eq}_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\mathsf{eq}_x)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\mathsf{eq}_X)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\Gamma_{\mathsf{type}\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\Gamma_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\Gamma_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\Gamma)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\mathsf{tel}_{\kappa\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\mathsf{tel}_{\kappa,})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\mathsf{ctx}_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\mathsf{ctx}_x)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`({\vDash}\mathsf{ctx}_X)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| [$`(\vDash_\rho)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-levels) | Not yet |
-| [$`({\vDash}\mathsf{sig}_\varnothing)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| [$`({\vDash}\mathsf{sig}_{\mathcal{D}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| [$`({\vDash}\mathsf{sig}_{≔})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| [$`({\vDash}\mathsf{sig}_c)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| [$`(\mathsf{eq}_U)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-universes) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{true}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{false}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| [$`(\vDash_{\equiv\Omega})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| [$`(\mathsf{eq}_\Omega)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| [$`(\mathsf{exact}_\Omega)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| [$`(\mathsf{sound}_{\mathsf{sig}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
-| [$`(\mathsf{sound}_{\mathsf{ctx}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
-| [$`(\mathsf{sound}_{\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
-| [$`(\mathsf{sound}_{\mathsf{type}\equiv})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
-| [$`(\mathsf{sound})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
-| [$`(\mathsf{sound}_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\vDash_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\vDash_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\vDash_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\vDash)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\mathsf{eq}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\mathsf{eq}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\mathsf{eq}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\Gamma_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\Gamma_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\Gamma_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\Gamma)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\mathsf{tel}_{\kappa\varepsilon})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\mathsf{tel}_{\kappa,})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\mathsf{ctx}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\mathsf{ctx}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`({\vDash}\mathsf{ctx}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
+| $`(\vDash_\rho)`$ | [Meaning of the Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-levels) | Not yet |
+| $`({\vDash}\mathsf{sig}_\varnothing)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
+| $`({\vDash}\mathsf{sig}_{\mathcal{D}})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
+| $`({\vDash}\mathsf{sig}_{≔})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
+| $`({\vDash}\mathsf{sig}_c)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
+| $`(\mathsf{eq}_U)`$ | [Meaning of the Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-universes) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{true}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{false}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\vDash_{\equiv\Omega})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\mathsf{eq}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\mathsf{exact}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\mathsf{sound}_{\mathsf{sig}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| $`(\mathsf{sound}_{\mathsf{ctx}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| $`(\mathsf{sound}_{\mathsf{type}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| $`(\mathsf{sound}_{\mathsf{type}\equiv})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| $`(\mathsf{sound})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
+| $`(\mathsf{sound}_\equiv)`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#properties)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{subject})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#preservation) | Not yet |
-| [$`(\mathsf{usage}_\beta)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#preservation) | Not yet |
-| [$`(\mathsf{normal})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
-| [$`(\mathsf{decidable}_\equiv)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
-| [$`(\mathsf{decidable}_\vdash)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
-| [$`(\mathsf{hyp}_\iota)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
-| [$`(\mathsf{consistent})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
-| [$`(\mathsf{canonical})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
-| [$`(\mathsf{hyp}_\bullet)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| [$`(\mathsf{sound}_\bullet)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| [$`(\mathsf{absent}_\bullet)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| [$`(\mathsf{absent}_\circ)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| [$`(\bullet_\circ)`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| [$`(\mathsf{project})`$](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#projection-lemma) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{subject})`$ | [Preservation](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#preservation) | Not yet |
+| $`(\mathsf{usage}_\beta)`$ | [Preservation](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#preservation) | Not yet |
+| $`(\mathsf{normal})`$ | [Normalization and Decidability](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
+| $`(\mathsf{decidable}_\equiv)`$ | [Normalization and Decidability](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
+| $`(\mathsf{decidable}_\vdash)`$ | [Normalization and Decidability](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#normalization-and-decidability) | Not yet |
+| $`(\mathsf{hyp}_\iota)`$ | [Consistency and Canonicity](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
+| $`(\mathsf{consistent})`$ | [Consistency and Canonicity](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
+| $`(\mathsf{canonical})`$ | [Consistency and Canonicity](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#consistency-and-canonicity) | Not yet |
+| $`(\mathsf{hyp}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\mathsf{sound}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\mathsf{absent}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\mathsf{absent}_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\bullet_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\mathsf{project})`$ | [Projection Lemma](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#projection-lemma) | Not yet |
 
 ### [RFC 34](https://github.com/sic-lang/rfcs/pull/34): Data and Codata Types
 
 #### [Declarations](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#declarations)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{data})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#formation) | Not yet |
-| [$`(\mathsf{codata})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#formation) | Not yet |
-| [$`(\langle \Theta \rangle_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
-| [$`(\langle \Theta \rangle_{,})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
-| [$`(\langle \bar t \rangle_\varepsilon)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
-| [$`(\langle \bar t \rangle_{,})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
-| [$`(\mathsf{lift}_D)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{lift}_{D'})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{lift}^{+})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{lift}^{-})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{map}_D)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{map}_{D'})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{map}^{+})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\mathsf{map}^{-})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\Pi_D)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\Pi_{D'})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
-| [$`(\Pi_X)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{data})`$ | [Formation](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#formation) | Not yet |
+| $`(\mathsf{codata})`$ | [Formation](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#formation) | Not yet |
+| $`(\langle \Theta \rangle_\varepsilon)`$ | [Prelude](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
+| $`(\langle \Theta \rangle_{,})`$ | [Prelude](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
+| $`(\langle \bar t \rangle_\varepsilon)`$ | [Prelude](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
+| $`(\langle \bar t \rangle_{,})`$ | [Prelude](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#prelude) | Not yet |
+| $`(\mathsf{lift}_D)`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{lift}_{D'})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{lift}^{+})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{lift}^{-})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{map}_D)`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{map}_{D'})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{map}^{+})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\mathsf{map}^{-})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\Pi_D)`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\Pi_{D'})`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
+| $`(\Pi_X)`$ | [Liftings](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#liftings) | Not yet |
 
 #### [Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#data-types)
 
-| Name | Status |
-| --- | --- |
-| [$`(\zeta^{+})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-data-types) | Not yet |
-| [$`(D^{+}_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-data-types) | Not yet |
-| [$`(D^{+}_{\mathsf{i}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#constructors) | Not yet |
-| [$`(D^{+}_{\mathsf{i}\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#constructors) | Not yet |
-| [$`(D^{+}_{\mathsf{rec}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
-| [$`(D^{+}_{\mathsf{rec}\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
-| [$`(D^{+}_{\mathsf{rec}\beta})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
-| [$`(D^{+}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#extensionality-of-data) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\zeta^{+})`$ | [Usage of Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-data-types) | Not yet |
+| $`(D^{+}_{\mathsf{m}})`$ | [Usage of Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-data-types) | Not yet |
+| $`(D^{+}_{\mathsf{i}})`$ | [Constructors](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#constructors) | Not yet |
+| $`(D^{+}_{\mathsf{i}\mathsf{m}})`$ | [Constructors](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#constructors) | Not yet |
+| $`(D^{+}_{\mathsf{rec}})`$ | [Recursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
+| $`(D^{+}_{\mathsf{rec}\mathsf{m}})`$ | [Recursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
+| $`(D^{+}_{\mathsf{rec}\beta})`$ | [Recursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#recursor) | Not yet |
+| $`(D^{+}_\eta)`$ | [Extensionality of Data](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#extensionality-of-data) | Not yet |
 
 #### [Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#codata-types)
 
-| Name | Status |
-| --- | --- |
-| [$`(\zeta^{-})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-codata-types) | Not yet |
-| [$`(D^{-}_\pi)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#destructors) | Not yet |
-| [$`(D^{-}_{\pi\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#destructors) | Not yet |
-| [$`(\oplus_D)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
-| [$`(\oplus_{D'})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
-| [$`(D^{-}_{\mathsf{i}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
-| [$`(D^{-}_{\mathsf{i}\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
-| [$`(D^{-}_{\pi\beta})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
-| [$`(D^{-}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#extensionality-of-codata) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\zeta^{-})`$ | [Usage of Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-codata-types) | Not yet |
+| $`(D^{-}_\pi)`$ | [Destructors](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#destructors) | Not yet |
+| $`(D^{-}_{\pi\mathsf{m}})`$ | [Destructors](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#destructors) | Not yet |
+| $`(\oplus_D)`$ | [Corecursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
+| $`(\oplus_{D'})`$ | [Corecursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
+| $`(D^{-}_{\mathsf{i}})`$ | [Corecursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
+| $`(D^{-}_{\mathsf{i}\mathsf{m}})`$ | [Corecursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
+| $`(D^{-}_{\pi\beta})`$ | [Corecursor](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#corecursor) | Not yet |
+| $`(D^{-}_\eta)`$ | [Extensionality of Codata](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#extensionality-of-codata) | Not yet |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning)
 
-| Name | Status |
-| --- | --- |
-| [$`({\vDash}_{\mathsf{data}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
-| [$`({\vDash}_{\mathsf{codata}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
-| [$`({\vDash}\mathsf{dtor}_{\kappa\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
-| [$`({\vDash}\mathsf{dtor}_{\kappa,})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{con}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
-| [$`(\mathsf{true}_{\mathsf{data}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
-| [$`(\mathsf{eq}_\mu)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{data}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{corec}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
-| [$`(\mathsf{true}_{\mathsf{codata}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
-| [$`(\mathsf{eq}_\nu)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{codata}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
-| [$`(\mathsf{incomplete}_{\mathsf{typ}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{undecidable}_\vDash)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{incomplete}^{+}_{D\equiv})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{incomplete}^{-}_{D\equiv})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{valid}^{+}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{valid}^{-}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{incomplete}^{+}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
-| [$`(\mathsf{incomplete}^{-}_\eta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`({\vDash}_{\mathsf{data}})`$ | [Meaning of the Declarations](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
+| $`({\vDash}_{\mathsf{codata}})`$ | [Meaning of the Declarations](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
+| $`({\vDash}\mathsf{dtor}_{\kappa\varepsilon})`$ | [Meaning of the Declarations](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
+| $`({\vDash}\mathsf{dtor}_{\kappa,})`$ | [Meaning of the Declarations](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-declarations) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{con}})`$ | [Meaning of the Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
+| $`(\mathsf{true}_{\mathsf{data}})`$ | [Meaning of the Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
+| $`(\mathsf{eq}_\mu)`$ | [Meaning of the Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{data}})`$ | [Meaning of the Data Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-data-types) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{corec}})`$ | [Meaning of the Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
+| $`(\mathsf{true}_{\mathsf{codata}})`$ | [Meaning of the Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
+| $`(\mathsf{eq}_\nu)`$ | [Meaning of the Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{codata}})`$ | [Meaning of the Codata Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#meaning-of-the-codata-types) | Not yet |
+| $`(\mathsf{incomplete}_{\mathsf{typ}})`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{undecidable}_\vDash)`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{incomplete}^{+}_{D\equiv})`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{incomplete}^{-}_{D\equiv})`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{valid}^{+}_\eta)`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{valid}^{-}_\eta)`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{incomplete}^{+}_\eta)`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
+| $`(\mathsf{incomplete}^{-}_\eta)`$ | [Fidelity](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#fidelity) | Not yet |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#properties)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{sound}_{\mathsf{data}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
-| [$`(\mathsf{sound}_{\mathsf{codata}})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
-| [$`(\mathsf{usage}^{\pm}_\beta)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
-| [$`(\mathsf{project}^{\pm})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
-| [$`(\mathsf{rec}_{\bigwedge})`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-recursion) | Not yet |
-| [$`(\top)`$](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#absorbing-types) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{sound}_{\mathsf{data}})`$ | [Obligations of the Contract](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
+| $`(\mathsf{sound}_{\mathsf{codata}})`$ | [Obligations of the Contract](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
+| $`(\mathsf{usage}^{\pm}_\beta)`$ | [Obligations of the Contract](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
+| $`(\mathsf{project}^{\pm})`$ | [Obligations of the Contract](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#obligations-of-the-contract) | Not yet |
+| $`(\mathsf{rec}_{\bigwedge})`$ | [Usage of Recursion](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#usage-of-recursion) | Not yet |
+| $`(\top)`$ | [Absorbing Types](https://github.com/sic-lang/rfcs/blob/data-and-codata-types/text/0034-data-and-codata-types.md#absorbing-types) | Not yet |
 
 ### [RFC 35](https://github.com/sic-lang/rfcs/pull/35): Observational Equality
 
 #### [Equality](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality)
 
-| Name | Status |
-| --- | --- |
-| [$`(\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
-| [$`(\sim_{\mathsf{irr}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
-| [$`(\sim_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
-| [$`(\mathsf{refl})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#reflexivity) | Not yet |
-| [$`(\mathsf{refl}_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#reflexivity) | Not yet |
-| [$`(\mathsf{transp})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
-| [$`(\mathsf{transp}_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
-| [$`(\mathsf{ap}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
-| [$`(\mathsf{cast})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
-| [$`(\mathsf{cast}_{\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
-| [$`(\mathsf{cast}_{\mathsf{refl}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\sim)`$ | [Formation of Equalities](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
+| $`(\sim_{\mathsf{irr}})`$ | [Formation of Equalities](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
+| $`(\sim_{\mathsf{m}})`$ | [Formation of Equalities](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-equalities) | Not yet |
+| $`(\mathsf{refl})`$ | [Reflexivity](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#reflexivity) | Not yet |
+| $`(\mathsf{refl}_{\mathsf{m}})`$ | [Reflexivity](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#reflexivity) | Not yet |
+| $`(\mathsf{transp})`$ | [Transport](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
+| $`(\mathsf{transp}_{\mathsf{m}})`$ | [Transport](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
+| $`(\mathsf{ap}_\sim)`$ | [Transport](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#transport) | Not yet |
+| $`(\mathsf{cast})`$ | [Cast](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
+| $`(\mathsf{cast}_{\mathsf{m}})`$ | [Cast](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
+| $`(\mathsf{cast}_{\mathsf{refl}})`$ | [Cast](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast) | Not yet |
 
 #### [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types)
 
-| Name | Status |
-| --- | --- |
-| [$`(\sim_U)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_\Omega)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\mathsf{prop}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\ne})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim^{+}_D)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim^{-}_D)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{D\ne})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\mathsf{tel}\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\mathsf{tel},})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\mathsf{dtor}\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
-| [$`(\sim_{\mathsf{dtor},})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\sim_U)`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_\Omega)`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\mathsf{prop}})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\ne})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim^{+}_D)`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim^{-}_D)`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{D\ne})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\mathsf{tel}\varepsilon})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\mathsf{tel},})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\mathsf{dtor}\varepsilon})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
+| $`(\sim_{\mathsf{dtor},})`$ | [Equality of Types](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-types) | Not yet |
 
 #### [Equality of Terms](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-terms)
 
-| Name | Status |
-| --- | --- |
-| [$`(\sim^{+})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
-| [$`(\sim^{+}_{\ne})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
-| [$`(\sim_{\mathsf{fields}\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
-| [$`(\sim_{\mathsf{fields},})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
-| [$`(\sim^{-}_{\mathsf{decl}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-codata) | Not yet |
-| [$`(\sim^{-})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-codata) | Not yet |
-| [$`(\mathsf{cast}_{\mathsf{tel}\varepsilon})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-and-cast-of-the-telescopes) | Not yet |
-| [$`(\mathsf{cast}_{\mathsf{tel},})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-and-cast-of-the-telescopes) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\sim^{+})`$ | [Equality of Data](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
+| $`(\sim^{+}_{\ne})`$ | [Equality of Data](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
+| $`(\sim_{\mathsf{fields}\varepsilon})`$ | [Equality of Data](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
+| $`(\sim_{\mathsf{fields},})`$ | [Equality of Data](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-data) | Not yet |
+| $`(\sim^{-}_{\mathsf{decl}})`$ | [Equality of Codata](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-codata) | Not yet |
+| $`(\sim^{-})`$ | [Equality of Codata](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-of-codata) | Not yet |
+| $`(\mathsf{cast}_{\mathsf{tel}\varepsilon})`$ | [Equality and Cast of the Telescopes](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-and-cast-of-the-telescopes) | Not yet |
+| $`(\mathsf{cast}_{\mathsf{tel},})`$ | [Equality and Cast of the Telescopes](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#equality-and-cast-of-the-telescopes) | Not yet |
 
 #### [Cast of Terms](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast-of-terms)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{cast}^{+})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast-of-data) | Not yet |
-| [$`(\mathsf{cast}^{-})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast-of-codata) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{cast}^{+})`$ | [Cast of Data](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast-of-data) | Not yet |
+| $`(\mathsf{cast}^{-})`$ | [Cast of Codata](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#cast-of-codata) | Not yet |
 
 #### [Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#quotients)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{quotient})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-quotients) | Not yet |
-| [$`(D^{/}_{\mathsf{i}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(D^{/}_{\mathsf{i}\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(D^{/}_{\mathsf{rec}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(D^{/}_{\mathsf{rec}\mathsf{m}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(D^{/}_{\mathsf{rec}\beta})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(\sim^{/})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(\sim^{/}_{D})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
-| [$`(\mathsf{cast}^{/})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{quotient})`$ | [Formation of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#formation-of-quotients) | Not yet |
+| $`(D^{/}_{\mathsf{i}})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(D^{/}_{\mathsf{i}\mathsf{m}})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(D^{/}_{\mathsf{rec}})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(D^{/}_{\mathsf{rec}\mathsf{m}})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(D^{/}_{\mathsf{rec}\beta})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(\sim^{/})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(\sim^{/}_{D})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
+| $`(\mathsf{cast}^{/})`$ | [Construction and Elimination of Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#construction-and-elimination-of-quotients) | Not yet |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{true}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-equality) | Not yet |
-| [$`(\mathsf{true}_{\sim\mathsf{type}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-equality) | Not yet |
-| [$`(\mathsf{valid}_{\mathsf{cast}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-cast) | Not yet |
-| [$`({\vDash}_{\mathsf{quotient}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
-| [$`(\mathsf{eq}^{/})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
-| [$`(\mathsf{eq}_{\mathsf{quotient}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{true}_\sim)`$ | [Meaning of the Equality](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-equality) | Not yet |
+| $`(\mathsf{true}_{\sim\mathsf{type}})`$ | [Meaning of the Equality](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-equality) | Not yet |
+| $`(\mathsf{valid}_{\mathsf{cast}})`$ | [Meaning of the Cast](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-cast) | Not yet |
+| $`({\vDash}_{\mathsf{quotient}})`$ | [Meaning of the Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
+| $`(\mathsf{eq}^{/})`$ | [Meaning of the Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
+| $`(\mathsf{eq}_{\mathsf{quotient}})`$ | [Meaning of the Quotients](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#meaning-of-the-quotients) | Not yet |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties)
 
-| Name | Status |
-| --- | --- |
-| [$`(\mathsf{sym}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{trans}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(J_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(J_{\sim\beta})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{sound}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{usage}_{\mathsf{cast}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{decidable}_{\mathsf{cast}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{consistent}_\sim)`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
-| [$`(\mathsf{sound}_{\bullet\mathsf{cast}})`$](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| Name | Section | Status |
+| --- | --- | --- |
+| $`(\mathsf{sym}_\sim)`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{trans}_\sim)`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(J_\sim)`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(J_{\sim\beta})`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{sound}_\sim)`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{usage}_{\mathsf{cast}})`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{decidable}_{\mathsf{cast}})`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{consistent}_\sim)`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
+| $`(\mathsf{sound}_{\bullet\mathsf{cast}})`$ | [Properties](https://github.com/sic-lang/rfcs/blob/observational-equality/text/0035-observational-equality.md#properties) | Not yet |
 
 ### Formalizations Followed
 
