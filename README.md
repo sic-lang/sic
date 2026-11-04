@@ -13,19 +13,24 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 ### [RFC 33](https://github.com/sic-lang/rfcs/pull/33): Grades
 
-#### [Proposal](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#proposal)
+#### [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities)
 
 | Name | Section | Status |
 | --- | --- | --- |
 | Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Not yet |
-| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
-| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Not yet |
 
 #### [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades)
 
 | Name | Section | Status |
 | --- | --- | --- |
+| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
 | $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
+
+#### [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes)
+
+| Name | Section | Status |
+| --- | --- | --- |
+| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Not yet |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning)
 
