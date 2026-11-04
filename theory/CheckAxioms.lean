@@ -8,7 +8,7 @@ of Lean that the proofs need, so that what is proved holds without hidden hypoth
 trust in the compiler, as `native_decide` asks, and no `Classical.choice`, so that the proofs stay
 constructive, as the metatheory of a type system, whose proofs compute, should be.
 
-Run with the directories of the libraries as arguments, `Sic/` and `SicTest/`, it imports every module
+Run with the directory of the library as argument, `Sic/`, it imports every module
 found there, as Lake builds them.
 -/
 
