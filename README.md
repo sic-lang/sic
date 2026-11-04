@@ -6,10 +6,10 @@ Its design is decided by the RFCs of [`sic-lang/rfcs`](https://github.com/sic-la
 ## Status
 
 The metatheory, in [`theory/`](theory), formalizes in Lean the core of Sic, as the following RFCs, still under review, specify it, and the [documentation of the metatheory](https://sic-lang.github.io/sic/) presents each of its modules.
-The previous version of the core, [RFC 24](https://github.com/sic-lang/rfcs/pull/24) before its rewrite, is being rebuilt on these RFCs: a row links to the Lean only where a definition or a proof of that version already states it.
+The previous version of the formalization is dropped: it follows the previous version of [RFC 24](https://github.com/sic-lang/rfcs/pull/24), and the formalization starts again from the grades.
 No compiler exists yet.
 
-Each row names a rule, a formula or a definition as the RFC writes it, with a link to its section, and links to its formalization in Lean, or is not formalized yet.
+Each row names a rule, a formula or a definition as the RFC writes it, with a link to its section, and links to its formalization in Lean once it exists.
 
 ### [RFC 33](https://github.com/sic-lang/rfcs/pull/33): Grades
 
@@ -17,15 +17,15 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Defined: [`Sic.Multiplicity`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity), with its sum, product, meet and order |
-| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`Sic.Grade`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade), with its sum, product, meet and order |
-| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Defined: [`Sic.Mode`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode) |
+| Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Not yet |
+| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
+| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Not yet |
 
 #### [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Defined: [`run`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run) |
+| $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning)
 
@@ -49,11 +49,11 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\cdot_{+})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_add), [`add_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_mul) |
-| $`(\cdot_{\wedge})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`mul_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_min), [`min_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_mul) |
-| $`(+_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`add_le_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_le_add) |
-| $`(\wedge_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`le_min`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.le_min), [`min_le_left`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_left), [`min_le_right`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_le_right) |
-| $`(\mathbb{0}_{p})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Proved: [`zero_ne_one`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.zero_ne_one), [`add_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_eq_zero), [`min_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.min_eq_zero), [`mul_eq_zero`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_eq_zero) |
+| $`(\cdot_{+})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
+| $`(\cdot_{\wedge})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
+| $`(+_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
+| $`(\wedge_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
+| $`(\mathbb{0}_{p})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
 | $`(\bigwedge_{p})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
 | $`(\bigwedge_{+})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
 | $`(\bigwedge_{\cdot})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
