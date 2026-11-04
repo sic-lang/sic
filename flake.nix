@@ -57,8 +57,7 @@
               command = lib.concatStringsSep " && " [
                 "lake --dir theory build --wfail"
                 "lake --dir theory env leanchecker Sic"
-                "lake --dir theory env leanchecker SicTest"
-                "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic theory/SicTest"
+                "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic"
               ];
             };
             markdownlint = {
@@ -261,7 +260,7 @@
             text = ''
               cd "$(git rev-parse --show-toplevel)/theory"
               {
-                find Sic SicTest -name "*.lean" | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
+                find Sic -name "*.lean" | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
                 echo
                 echo "/-! The modules of the metatheory, imported so that doc-gen4 documents them all. -/"
               } >docbuild/SicDocs.lean

@@ -6,7 +6,7 @@ Its design is decided by the RFCs of [`sic-lang/rfcs`](https://github.com/sic-la
 ## Status
 
 The metatheory, in [`theory/`](theory), formalizes in Lean the core of Sic, as the following RFCs, still under review, specify it, and the [documentation of the metatheory](https://sic-lang.github.io/sic/) presents each of its modules.
-The formalization of the previous version of the core, [RFC 24](https://github.com/sic-lang/rfcs/pull/24) before its rewrite, is being rebuilt on these RFCs, and the checks of the Lean library are those of that version where a row links to them.
+The previous version of the core, [RFC 24](https://github.com/sic-lang/rfcs/pull/24) before its rewrite, is being rebuilt on these RFCs: a row links to the Lean only where a definition or a proof of that version already states it.
 No compiler exists yet.
 
 Each row names a rule, a formula or a definition as the RFC writes it, with a link to its section, and links to its formalization in Lean, or is not formalized yet.
@@ -31,18 +31,18 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\mathsf{uses}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.Allows) |
-| $`(\mathsf{best}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.IsBest) |
-| $`(+_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.add_best) |
-| $`(\cdot_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.mul_best) |
-| $`(\wedge_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.min_best) |
-| $`(\le_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Multiplicity.html#SicTest.Multiplicity.le_iff) |
-| $`(\mathsf{uses}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`Allows`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.Allows) |
-| $`(\mathsf{best}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Formalized: [`IsBest`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.IsBest) |
-| $`(+_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`add_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.add_best) |
-| $`(\cdot_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`mul_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.mul_best) |
-| $`(\wedge_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`min_best`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.min_best) |
-| $`(\le_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Proved: [`le_iff`](https://sic-lang.github.io/sic/SicTest/Grade.html#SicTest.Grade.le_iff) |
+| $`(\mathsf{uses}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(\mathsf{best}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(+_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(\cdot_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(\wedge_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(\le_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
+| $`(\mathsf{uses}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(\mathsf{best}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(+_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(\cdot_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(\wedge_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(\le_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
 | $`(\mathsf{sound}_{\mathsf{run}})`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#properties)
