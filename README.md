@@ -201,7 +201,7 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 | $`(\mathsf{sound}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
 | $`(\mathsf{absent}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
 | $`(\mathsf{absent}_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| $`(\bullet_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\bullet_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | [`Term.extract_ghost`](https://sic-lang.github.io/sic/Sic/Core/Erasure.html#Sic.Core.Term.extract_ghost) |
 | $`(\mathsf{project})`$ | [Projection Lemma](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#projection-lemma) | Not yet |
 
 ### [RFC 34](https://github.com/sic-lang/rfcs/pull/34): Data and Codata Types

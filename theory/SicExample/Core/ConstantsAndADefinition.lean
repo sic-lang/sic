@@ -1,6 +1,7 @@
 module
 
-public import Sic.Core.Typing
+public import Sic.Core.Erasure
+public import Sic.Core.Reduction
 
 /-!
 # Constants and a Definition
@@ -9,7 +10,8 @@ The annex `constants-and-a-definition` of RFC 24: since the core names no type, 
 core alone declares types and values as constants, a foreign type `Int` and its value `zero`, a
 ghost value `bound`, a foreign proposition `Sorted` and its axiom `sorted`, and a definition
 `origin`, which unfolds to `zero`.
-The formulas `(ex_sig)` and `(ex_use)` are derived from the rules of the core.
+The formulas `(ex_sig)` and `(ex_use)` are derived from the rules of the core, and the program
+`origin.{}` computes to `zero.{}` and is extracted to `origin`, as the annex says in prose.
 -/
 
 @[expose] public section
@@ -146,5 +148,23 @@ theorem not_usage_bound : ∀ {γ : GradeVector 0} {m : Mode} {t : Term 0 []},
 theorem bound_not_in_programs (γ : GradeVector 0) :
     ¬ Usage sigEx (Γ := []) γ .oneOne (bound : Term 0 []) :=
   fun h => not_usage_bound h rfl rfl
+
+/-- The definition `origin` reduces to `zero` by the rule `(δ_⟶)`. -/
+theorem origin_red : Red sigEx (origin : Term 0 []) zero :=
+  .delta (d := originEntry) (qs := []) (ls := []) (ps := []) (by simp [sigEx]) rfl rfl rfl
+
+/-- `zero` is a constant, a neutral term, which is a head normal form. -/
+theorem zero_whnf : Whnf sigEx (zero : Term 0 []) :=
+  .ne (.const (c := zeroEntry) (qs := []) (ls := []) (ps := []) (by simp [sigEx]))
+
+/-- The program `origin.{}` computes to `zero.{}`. -/
+theorem origin_computes : Computes sigEx origin zero :=
+  ⟨.step origin_red (.refl _), zero_whnf⟩
+
+/-- The empty scope declares variables only. -/
+theorem firstOrder_empty : Scope.FirstOrder [] := fun _ h => nomatch h
+
+/-- The extraction of the program `origin.{}` is `origin`, which stands for `zero`. -/
+theorem origin_extract : (origin : Term 0 []).extract firstOrder_empty = .const "origin" [] := rfl
 
 end SicExample.Core
