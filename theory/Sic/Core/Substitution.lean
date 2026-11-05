@@ -1209,6 +1209,68 @@ theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {σ : Subst k Δ Ξ} {
 
 end
 
+/-! ### Identity and Telescopes -/
+
+theorem Subst.lift_id_of {Γ : Scope} {b : List Grade} {σ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) :
+    ∀ {a} (x : Var (b :: Γ) a), Subst.lift σ x = Var.eta x
+  | _, .zero => rfl
+  | _, .succ x => by
+    show (σ x).rename (Ren.liftN _ Ren.weaken) = _
+    rw [h x, Var.eta_rename]
+    rfl
+
+theorem Subst.liftN_id_of {Γ : Scope} :
+    ∀ (n : Nat) {σ : Subst k Γ Γ}, (∀ {a} (x : Var Γ a), σ x = Var.eta x) →
+      ∀ {a} (x : Var (Γ.extend n) a), Subst.liftN n σ x = Var.eta x
+  | 0, _, h => h
+  | n + 1, _, h => Subst.liftN_id_of (Γ := [] :: Γ) n (Subst.lift_id_of h)
+
+mutual
+
+-- ADE: `subst-id`, in `Definition/Untyped/Properties.agda`, for the first order.
+/-- A substitution of the second order that gives each variable `x̄. x[x̄]` changes nothing. -/
+theorem Term.subst_id_of {Γ : Scope} {σ : Subst k Γ Γ} (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) :
+    (t : Term k Γ) → t.subst σ = t
+  | .var x ts => by rw [Term.subst, h x, Args.subst_id_of h ts, Var.eta_instantiate]
+  | .sort _ => rfl
+  | .const .. => rfl
+  | .inst D qs ls ps as => by rw [Term.subst, InstanceArgs.subst_id_of h as]
+
+theorem Args.subst_id_of {Γ : Scope} {a : List Grade} {σ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) : (ts : Args k Γ a) → ts.subst σ = ts
+  | .nil => rfl
+  | .cons t ts => by rw [Args.subst, Term.subst_id_of h t, Args.subst_id_of h ts]
+
+theorem InstanceArgs.subst_id_of {Γ Ξ : Scope} {σ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) : (as : InstanceArgs k Γ Ξ) → as.subst σ = as
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.subst, InstanceArgs.subst_id_of h as,
+      Term.subst_id_of (Subst.liftN_id_of _ h) B]
+
+end
+
+/-- Renaming a telescope by `ρ` then substituting it by `σ` is substituting it by their composition
+`σ'`. -/
+theorem Telescope.subst_rename_of {Γ Δ Ξ : Scope} {ps : List Grade} :
+    {σ : Subst k Γ Δ} → {ρ : Ren Δ Ξ} → {σ' : Subst k Γ Ξ} → (∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) →
+      (Θ : Telescope k Ξ ps) → (Θ.rename ρ).subst σ = Θ.subst σ'
+  | _, _, _, _, .nil => rfl
+  | _, _, _, h, .cons q p A Θ => by
+    rw [Telescope.rename, Telescope.subst, Telescope.subst, Term.subst_rename_of h A,
+      Telescope.subst_rename_of (Subst.lift_rename_of h) Θ]
+
+/-- Substituting a telescope by `σ` then by `τ` is substituting it by their composition `σ'`. -/
+theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Grade} :
+    {σ : Subst k Δ Ξ} → {τ : Subst k Γ Δ} → {σ' : Subst k Γ Ξ} →
+      (∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) →
+      (Θ : Telescope k Ξ ps) → (Θ.subst σ).subst τ = Θ.subst σ'
+  | _, _, _, _, .nil => rfl
+  | _, _, _, h, .cons q p A Θ => by
+    rw [Telescope.subst, Telescope.subst, Telescope.subst, Term.subst_subst_of h A,
+      Telescope.subst_subst_of (Subst.lift_subst_of h) Θ]
+
 /-! ## Levels
 
 The instantiation of the level variables replaces levels only, so that it commutes with the
