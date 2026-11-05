@@ -254,6 +254,48 @@ def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k'
 
 end
 
+/-! ## Telescopes and Contexts -/
+
+/-- The telescope `Θ` renamed by `ρ`. -/
+def Telescope.rename {Γ Δ : Scope} {ps : List Grade} (ρ : Ren Γ Δ) :
+    Telescope k Δ ps → Telescope k Γ ps
+  | .nil => .nil
+  | .cons q p A Θ => .cons q p (A.rename ρ) (Θ.rename (Ren.lift ρ))
+
+/-- `Θ[t / x]`: the telescope `Θ` substituted by `σ`. -/
+def Telescope.subst₀ {Γ Δ : Scope} {ps : List Grade} (σ : Subst₀ k Γ Δ) :
+    Telescope k Δ ps → Telescope k Γ ps
+  | .nil => .nil
+  | .cons q p A Θ => .cons q p (A.subst₀ σ) (Θ.subst₀ (Subst₀.lift σ))
+
+/-- `Θ[ā / Δ]`: the telescope `Θ` substituted by `σ`. -/
+def Telescope.subst {Γ Δ : Scope} {ps : List Grade} (σ : Subst k Γ Δ) :
+    Telescope k Δ ps → Telescope k Γ ps
+  | .nil => .nil
+  | .cons q p A Θ => .cons q p (A.subst σ) (Θ.subst (Subst.lift σ))
+
+/-- The telescope `Θ` in which the levels `σ` replace the level variables. -/
+def Telescope.substLevels {k' : Nat} {Γ : Scope} {ps : List Grade} (σ : Fin k → Level k') :
+    Telescope k Γ ps → Telescope k' Γ ps
+  | .nil => .nil
+  | .cons q p A Θ => .cons q p (A.substLevels σ) (Θ.substLevels σ)
+
+/-- The context `Γ` in which the levels `σ` replace the level variables. -/
+def Context.substLevels {k' : Nat} {Γ : Scope} (σ : Fin k → Level k') :
+    Context k Γ → Context k' Γ
+  | .empty => .empty
+  | .var ctx A => .var (ctx.substLevels σ) (A.substLevels σ)
+  | .secondOrder ctx Θ A => .secondOrder (ctx.substLevels σ) (Θ.substLevels σ) (A.substLevels σ)
+
+/-- `Γ, Θ`: the context `Γ` extended by the entries of the telescope `Θ`, whose grades it ignores. -/
+def Context.append : {Γ : Scope} → {ps : List Grade} → Context k Γ → Telescope k Γ ps →
+    Context k (Γ.extend ps.length)
+  | _, [], ctx, .nil => ctx
+  | _, _ :: _, ctx, .cons _ _ A Θ => Context.append (Γ := [] :: _) (ctx.var A) Θ
+
+/-- A closed term in the scope `Γ`, which it does not use. -/
+def Term.weakenClosed {Γ : Scope} (t : Term k []) : Term k Γ := t.rename fun x => by cases x
+
 /-! ## Properties
 
 The renamings and the substitutions of the first order that give each variable itself change

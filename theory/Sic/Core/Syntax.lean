@@ -201,8 +201,43 @@ inductive Entry where
   /-- A constant. -/
   | constant (c : Constant)
 
+/-- The names that an entry introduces. -/
+def Entry.names : Entry → List Name
+  | .declaration decl => decl.names
+  | .definition d => [d.name]
+  | .constant c => [c.name]
+
 -- ADE: `DCon`, in `Definition/Untyped/NotParametrised.agda`, which holds definitions only.
 /-- A signature, its entries in order, the last entry first. -/
 abbrev Signature : Type := List Entry
+
+/--
+`c.{s̄; l̄; p̄} :_m A ∈ Σ`: the signature has a definition or a constant named `c`, with `j` sort,
+`k` level and `g` grade variables, the mode `m` and the type `A`, which the rules of the definitions
+and of the constants share.
+-/
+inductive Signature.HasEntry (sig : Signature) :
+    Name → (j k g : Nat) → Mode → (Instance j g → Term k []) → Prop where
+  /-- A definition. -/
+  | definition {d : Definition} (h : .definition d ∈ sig) :
+      HasEntry sig d.name d.sorts d.levels d.grades d.mode d.type
+  /-- A constant. -/
+  | constant {c : Constant} (h : .constant c ∈ sig) :
+      HasEntry sig c.name c.sorts c.levels c.grades c.mode c.type
+
+/-- The `n` elements of a list of length `n`, numbered. -/
+def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
+  fun i => l.get (i.cast h.symm)
+
+/-- The instance that gives the sort variables the sorts `qs` and the grade variables the grades
+`ps`. -/
+def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.length = j)
+    (hp : ps.length = g) : Instance j g :=
+  ⟨qs.getFin hq, ps.getFin hp⟩
+
+/-- The position of a variable in its scope, the last entry being `0`. -/
+def Var.toFin {Γ : Scope} {ps : List Grade} : Var Γ ps → Fin Γ.length
+  | .zero => ⟨0, Nat.zero_lt_succ _⟩
+  | .succ x => x.toFin.succ
 
 end Sic.Core

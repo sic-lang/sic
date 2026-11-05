@@ -56,8 +56,8 @@
               tools = [ pkgs.lean4 ];
               command = lib.concatStringsSep " && " [
                 "lake --dir theory build --wfail"
-                "lake --dir theory env leanchecker Sic"
-                "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic"
+                "lake --dir theory env leanchecker Sic SicExample"
+                "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic theory/SicExample"
               ];
             };
             markdownlint = {
@@ -260,7 +260,7 @@
             text = ''
               cd "$(git rev-parse --show-toplevel)/theory"
               {
-                find Sic -name "*.lean" | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
+                find Sic SicExample -name "*.lean" | LC_ALL=C sort | sed 's|\.lean$||; s|/|.|g; s|^|import |'
                 echo
                 echo "/-! The modules of the metatheory, imported so that doc-gen4 documents them all. -/"
               } >docbuild/SicDocs.lean
