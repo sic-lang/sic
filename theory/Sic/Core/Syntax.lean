@@ -225,6 +225,26 @@ inductive Signature.HasEntry (sig : Signature) :
   | constant {c : Constant} (h : .constant c ∈ sig) :
       HasEntry sig c.name c.sorts c.levels c.grades c.mode c.type
 
+/-- The names of a signature are distinct: each entry introduces names that no entry before it
+does. -/
+def Signature.Distinct : Signature → Prop
+  | [] => True
+  | e :: sig => Signature.Distinct sig ∧ ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
+
+/-- In a signature whose names are distinct, a name is introduced by one entry at most. -/
+theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct → {e₁ e₂ : Entry} →
+    {n : Name} → e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂
+  | _ :: _, ⟨h, hfresh⟩, _, _, n, h₁, h₂, hn₁, hn₂ => by
+    cases h₁ with
+    | head =>
+      cases h₂ with
+      | head => rfl
+      | tail _ h₂ => exact absurd hn₂ (hfresh _ h₂ n hn₁)
+    | tail _ h₁ =>
+      cases h₂ with
+      | head => exact absurd hn₁ (hfresh _ h₁ n hn₂)
+      | tail _ h₂ => exact h.entry_unique h₁ h₂ hn₁ hn₂
+
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
   fun i => l.get (i.cast h.symm)

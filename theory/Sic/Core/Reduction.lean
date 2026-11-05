@@ -87,8 +87,8 @@ theorem Red.inv {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ} :
 
 -- ADE: `whnfRedTerm`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A head normal form does not reduce. -/
-theorem Whnf.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ} (hsig : WfSig sig)
-    (hw : Whnf sig t) (h : Red sig t u) : False := by
+theorem Whnf.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ}
+    (hsig : sig.Distinct) (hw : Whnf sig t) (h : Red sig t u) : False := by
   obtain ⟨d, qs, ls, ps, _, _, _, hd, ht, -⟩ := h.inv
   cases hw with
   | sort => cases ht
@@ -103,8 +103,8 @@ theorem Whnf.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ} 
 
 -- ADE: `whrDetTerm`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- The reduction is deterministic. -/
-theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k Γ} (hsig : WfSig sig)
-    (h₁ : Red sig t u₁) (h₂ : Red sig t u₂) : u₁ = u₂ := by
+theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k Γ}
+    (hsig : sig.Distinct) (h₁ : Red sig t u₁) (h₂ : Red sig t u₂) : u₁ = u₂ := by
   obtain ⟨d₁, qs₁, ls₁, ps₁, _, _, _, hd₁, rfl, rfl⟩ := h₁.inv
   obtain ⟨d₂, qs₂, ls₂, ps₂, _, _, _, hd₂, ht, rfl⟩ := h₂.inv
   injection ht with _ hn hq hl hp
@@ -117,7 +117,7 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
 -- ADE: `whrDet*Term`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Two reductions to head normal forms end on the same term. -/
 theorem RedStar.det {sig : Signature} {k : Nat} {Γ : Scope} {t v₁ v₂ : Term k Γ}
-    (hsig : WfSig sig) : RedStar sig t v₁ → Whnf sig v₁ → RedStar sig t v₂ → Whnf sig v₂ →
+    (hsig : sig.Distinct) : RedStar sig t v₁ → Whnf sig v₁ → RedStar sig t v₂ → Whnf sig v₂ →
     v₁ = v₂
   | .refl _, _, .refl _, _ => rfl
   | .refl _, hw₁, .step h _, _ => (hw₁.not_red hsig h).elim
@@ -127,7 +127,7 @@ theorem RedStar.det {sig : Signature} {k : Nat} {Γ : Scope} {t v₁ v₂ : Term
     exact hs₁.det hsig hw₁ hs₂ hw₂
 
 /-- A closed term computes to one canonical term at most. -/
-theorem Computes.det {sig : Signature} {t v₁ v₂ : Term 0 []} (hsig : WfSig sig)
+theorem Computes.det {sig : Signature} {t v₁ v₂ : Term 0 []} (hsig : sig.Distinct)
     (h₁ : Computes sig t v₁) (h₂ : Computes sig t v₂) : v₁ = v₂ :=
   h₁.1.det hsig h₁.2 h₂.1 h₂.2
 

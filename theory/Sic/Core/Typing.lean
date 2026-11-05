@@ -475,18 +475,9 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
     exact hn ▸ h e' he'
 
 -- ADE: none.
-/-- In a well-formed signature, a name is introduced by one entry at most. -/
-theorem WfSig.entry_unique : {sig : Signature} → WfSig sig → {e₁ e₂ : Entry} → {n : Name} →
-    e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂
-  | e :: sig, h, e₁, e₂, n, h₁, h₂, hn₁, hn₂ => by
-    cases h₁ with
-    | head =>
-      cases h₂ with
-      | head => rfl
-      | tail _ h₂ => exact absurd hn₂ (h.fresh _ h₂ n hn₁)
-    | tail _ h₁ =>
-      cases h₂ with
-      | head => exact absurd hn₁ (h.fresh _ h₁ n hn₂)
-      | tail _ h₂ => exact h.tail.entry_unique h₁ h₂ hn₁ hn₂
+/-- The names of a well-formed signature are distinct. -/
+theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
+  | [], _ => trivial
+  | _ :: _, h => ⟨h.tail.distinct, h.fresh⟩
 
 end Sic.Core
