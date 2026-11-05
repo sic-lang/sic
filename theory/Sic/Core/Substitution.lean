@@ -1310,6 +1310,44 @@ def Args.toSubst : {ps : List Grade} → Args k [] ps → Subst k [] (Scope.exte
   | [], .nil => fun x => nomatch x
   | _ :: _, .cons t ts => Subst.append (Subst.closedSingle t) ts.toSubst
 
+-- ADE: none.
+/-- Substituting a closed term `t` for a variable is the same with the substitution `[t / x]` of the
+first order as with the closed substitution `[t / x]` of the second order. -/
+theorem Subst₀.Swaps.closedSingle (t : Term k []) :
+    Subst₀.Swaps (Subst₀.single t) (fun x => nomatch x : Subst k [] []) (Subst.closedSingle t)
+      Subst₀.id := by
+  refine ⟨fun x y e => ?_, fun x u e => ?_⟩
+  · cases x with
+    | zero => cases e
+    | succ x => cases x
+  · cases x with
+    | zero =>
+      cases e
+      exact (Term.subst₀_id t).trans (Term.subst_id_of (fun x => by cases x) t).symm
+    | succ x => cases x
+
+/-- `B[t / x]`, for a closed term `t`, is the same under `n` new variables with both
+substitutions. -/
+theorem Term.subst₀_liftN_single_closed (n : Nat) (t : Term k [])
+    (B : Term k (Scope.extend [[]] n)) :
+    B.subst₀ (Subst₀.liftN n (Subst₀.single t)) = B.subst (Subst.liftN n (Subst.closedSingle t)) :=
+  (Term.subst_id_of (Subst.liftN_id_of n fun x => by cases x) _).symm.trans
+    ((Term.subst_subst₀_of (Subst₀.Swaps.liftN n (Subst₀.Swaps.closedSingle t)) B).trans
+      (Term.subst₀_id_of (Subst₀.liftN_id_of n fun _ => rfl) _))
+
+-- ADE: none.
+/-- `B[t̄ / Θ]`, for closed arguments `t̄`, is `B` substituted by the closed substitution `[t̄ / x̄]` of
+these arguments. -/
+theorem Term.instantiate_eq_subst :
+    {ps : List Grade} → (B : Term k (Scope.extend [] ps.length)) → (ts : Args k [] ps) →
+      B.instantiate ts = B.subst ts.toSubst
+  | [], B, .nil => (Term.subst_id_of (fun x => by cases x) B).symm
+  | _ :: ps, B, .cons t ts =>
+    (Term.instantiate_eq_subst (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).trans
+      ((congrArg (fun u => Term.subst ts.toSubst u)
+        (Term.subst₀_liftN_single_closed ps.length t B)).trans
+        (Term.subst_subst_of (fun _ => rfl) B))
+
 /-! ## Levels
 
 The instantiation of the level variables replaces levels only, so that it commutes with the
