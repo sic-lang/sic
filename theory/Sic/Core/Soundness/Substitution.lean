@@ -373,6 +373,65 @@ theorem EqSubst.right {Γ : Scope} {ctx : Context 0 Γ} {σ₁ σ₂ : Subst 0 [
     (hctx : ValidCtx₀ sig ι ctx) (h : EqSubst sig ι ctx σ₁ σ₂) : EqSubst sig ι ctx σ₂ σ₂ :=
   (h.symm hctx).trans hctx h
 
+/-! ## Entries of a Context under Equal Substitutions -/
+
+/-- `A[↑][σ] = A[σ without its last entry]`: a type weakened past the last entry of a context, at a
+substitution of that context. -/
+theorem Term.subst_weaken {Γ : Scope} {ps : List Grade} (σ : Subst k [] (ps :: Γ)) (A : Term k Γ) :
+    (A.rename Ren.weaken).subst σ = A.subst (Subst.tail σ) :=
+  Term.subst_rename_of (fun _ => rfl) A
+
+/-- `A[↑⇑][σ⇑] = A[(σ without its last entry)⇑]`: a type in the scope of a telescope weakened past
+the last entry of a context, at a substitution of that context. -/
+theorem Term.subst_liftN_weaken {Γ : Scope} {ps : List Grade} (n : Nat) (σ : Subst k [] (ps :: Γ))
+    (A : Term k (Γ.extend n)) :
+    (A.rename (Ren.liftN n Ren.weaken)).subst (Subst.liftN n σ) =
+      A.subst (Subst.liftN n (Subst.tail σ)) :=
+  Term.subst_rename_of (Subst.liftN_rename_of n fun _ => rfl) A
+
+/-- `Θ[↑][σ] = Θ[σ without its last entry]`: a telescope weakened past the last entry of a context,
+at a substitution of that context. -/
+theorem Telescope.subst_weaken {Γ : Scope} {ps qs : List Grade} (σ : Subst k [] (ps :: Γ))
+    (Θ : Telescope k Γ qs) : (Θ.rename Ren.weaken).subst σ = Θ.subst (Subst.tail σ) :=
+  Telescope.subst_rename_of (fun _ => rfl) Θ
+
+-- ADE: the substitutions in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the variable `x : A ∈ Γ` equal closed terms of the type `A[σ₁]`. -/
+theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ []} {A : Term 0 Γ}
+    (hx : ctx.VarIn x A) {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
+    ValidEqTerm₀ sig ι (σ₁ x) (σ₂ x) (A.subst σ₁) := by
+  induction hx with
+  | @zero _ ctx A =>
+    rw [Term.subst_weaken]
+    exact ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).2
+  | @succVar _ ctx _ A B _ ih =>
+    rw [Term.subst_weaken]
+    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ ctx _ A Θ B _ ih =>
+    rw [Term.subst_weaken]
+    exact ih ((EqSubst.secondOrder_iff ctx Θ B σ₁ σ₂).1 h).1
+
+-- ADE: none.
+/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
+instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
+arguments. -/
+theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {X : Var Γ ps}
+    {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
+    {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
+    ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
+      ValidEqTerm₀ sig ι ((σ₁ X).subst τ₁) ((σ₂ X).subst τ₂)
+        ((A.subst (Subst.liftN _ σ₁)).subst τ₁) := by
+  induction hX with
+  | @zero _ _ ctx Θ A =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ((EqSubst.secondOrder_iff ctx Θ A σ₁ σ₂).1 h).2
+  | @succVar _ _ ctx _ Θ A B _ ih =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ _ ctx _ Θ A Θ' B _ ih =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ih ((EqSubst.secondOrder_iff ctx Θ' B σ₁ σ₂).1 h).1
+
 end
 
 end Sic.Core
