@@ -1209,7 +1209,10 @@ theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {σ : Subst k Δ Ξ} {
 
 end
 
-/-! ## Levels -/
+/-! ## Levels
+
+The instantiation of the level variables replaces levels only, so that it commutes with the
+renamings and the substitutions, and the instantiations compose. -/
 
 /-- The value of a level whose variables are replaced is its value under the values of the levels
 that replace them. -/
@@ -1220,6 +1223,185 @@ theorem Level.value_subst {k k' : Nat} (σ : Fin k → Level k') (ρ : Fin k' �
   | .max l₁ l₂ => by
     simp only [Level.subst, Level.value, Level.value_subst σ ρ l₁, Level.value_subst σ ρ l₂]
   | .var _ => rfl
+
+/-- The value `v` in which the levels `σ` replace the level variables. -/
+def Val.substLevels {k' : Nat} {Γ : Scope} {a : List Grade} (σ : Fin k → Level k') :
+    Val k Γ a → Val k' Γ a
+  | .var x => .var x
+  | .term t => .term (t.substLevels σ)
+
+/-- Replacing the level variables by `σ` then by `τ` is replacing them by their composition. -/
+theorem Level.subst_subst {k' k'' : Nat} (σ : Fin k → Level k') (τ : Fin k' → Level k'') :
+    ∀ l : Level k, (l.subst σ).subst τ = l.subst fun i => (σ i).subst τ
+  | .zero => rfl
+  | .succ l => congrArg Level.succ (Level.subst_subst σ τ l)
+  | .max l₁ l₂ => by rw [Level.subst, Level.subst, Level.subst, Level.subst_subst σ τ l₁,
+      Level.subst_subst σ τ l₂]
+  | .var _ => rfl
+
+mutual
+
+/-- The instantiation of the level variables commutes with the renamings. -/
+theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k') (ρ : Ren Γ Δ) :
+    (t : Term k Δ) → (t.rename ρ).substLevels σ = (t.substLevels σ).rename ρ
+  | .var x ts => by
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename, Args.substLevels_rename σ ρ ts]
+  | .sort _ => rfl
+  | .const .. => rfl
+  | .inst D qs ls ps as => by
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
+      InstanceArgs.substLevels_rename σ ρ as]
+
+theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (σ : Fin k → Level k')
+    (ρ : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename ρ).substLevels σ = (ts.substLevels σ).rename ρ
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Args.rename, Args.substLevels, Args.substLevels, Args.rename,
+      Term.substLevels_rename σ ρ t, Args.substLevels_rename σ ρ ts]
+
+theorem InstanceArgs.substLevels_rename {k' : Nat} {Γ Δ Ξ : Scope} (σ : Fin k → Level k')
+    (ρ : Ren Γ Δ) :
+    (as : InstanceArgs k Δ Ξ) → (as.rename ρ).substLevels σ = (as.substLevels σ).rename ρ
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.rename, InstanceArgs.substLevels, InstanceArgs.substLevels,
+      InstanceArgs.rename, InstanceArgs.substLevels_rename σ ρ as, Term.substLevels_rename]
+
+end
+
+/-- The instantiation of the level variables of a value commutes with the renamings. -/
+theorem Val.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (σ : Fin k → Level k')
+    (ρ : Ren Γ Δ) : (v : Val k Δ a) → (v.rename ρ).substLevels σ = (v.substLevels σ).rename ρ
+  | .var _ => rfl
+  | .term t => congrArg Val.term (Term.substLevels_rename σ ρ t)
+
+theorem Subst₀.lift_substLevels_of {k' : Nat} {Γ Δ : Scope} {b : List Grade}
+    {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
+    ∀ {a} (x : Var (b :: Δ) a), (Subst₀.lift τ x).substLevels σ = Subst₀.lift τ' x
+  | _, .zero => rfl
+  | _, .succ x => (Val.substLevels_rename σ _ (τ x)).trans (congrArg _ (h x))
+
+theorem Subst₀.liftN_substLevels_of {k' : Nat} {Γ Δ : Scope} :
+    ∀ (n : Nat) {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ},
+      (∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) →
+      ∀ {a} (x : Var (Δ.extend n) a), (Subst₀.liftN n τ x).substLevels σ = Subst₀.liftN n τ' x
+  | 0, _, _, _, h => h
+  | n + 1, _, _, _, h => Subst₀.liftN_substLevels_of (Γ := [] :: Γ) (Δ := [] :: Δ) n
+      (Subst₀.lift_substLevels_of h)
+
+mutual
+
+/-- The instantiation of the level variables commutes with the substitutions of the first order,
+whose terms it instantiates. -/
+theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {σ : Fin k → Level k'}
+    {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ} (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
+    (t : Term k Δ) → (t.subst₀ τ).substLevels σ = (t.substLevels σ).subst₀ τ'
+  | .var x ts => by
+    rw [Term.subst₀_var, Term.substLevels, Term.subst₀_var, ← h x,
+      ← Args.substLevels_subst₀_of h ts]
+    cases τ x <;> rfl
+  | .sort _ => rfl
+  | .const .. => rfl
+  | .inst D qs ls ps as => by
+    rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
+      InstanceArgs.substLevels_subst₀_of h as]
+
+theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Grade}
+    {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
+    (ts : Args k Δ a) → (ts.subst₀ τ).substLevels σ = (ts.substLevels σ).subst₀ τ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Args.subst₀, Args.substLevels, Args.substLevels, Args.subst₀,
+      Term.substLevels_subst₀_of h t, Args.substLevels_subst₀_of h ts]
+
+theorem InstanceArgs.substLevels_subst₀_of {k' : Nat} {Γ Δ Ξ : Scope} {σ : Fin k → Level k'}
+    {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ} (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
+    (as : InstanceArgs k Δ Ξ) → (as.subst₀ τ).substLevels σ = (as.substLevels σ).subst₀ τ'
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.subst₀, InstanceArgs.substLevels, InstanceArgs.substLevels,
+      InstanceArgs.subst₀, InstanceArgs.substLevels_subst₀_of h as,
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) B]
+
+end
+
+/-- `B[t̄ / Θ][l̄' / l̄] = B[l̄' / l̄][t̄[l̄' / l̄] / Θ]`. -/
+theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (σ : Fin k → Level k') :
+    {ps : List Grade} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
+      (B.instantiate ts).substLevels σ = (B.substLevels σ).instantiate (ts.substLevels σ)
+  | [], _, .nil => rfl
+  | _ :: ps, B, .cons t ts => by
+    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).substLevels σ =
+      Term.instantiate ((B.substLevels σ).subst₀
+        (Subst₀.liftN ps.length (Subst₀.single (t.substLevels σ)))) (ts.substLevels σ)
+    rw [Term.substLevels_instantiate σ]
+    congr 1
+    exact Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of ps.length (σ := σ)
+      (τ := Subst₀.single t) (τ' := Subst₀.single (t.substLevels σ)) fun x => by cases x <;> rfl) B
+
+mutual
+
+/-- Instantiating the level variables by `σ` then by `τ` is instantiating them by their composition. -/
+theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (σ : Fin k → Level k')
+    (τ : Fin k' → Level k'') :
+    (t : Term k Γ) → (t.substLevels σ).substLevels τ = t.substLevels fun i => (σ i).subst τ
+  | .var x ts => by
+    rw [Term.substLevels, Term.substLevels, Term.substLevels, Args.substLevels_substLevels σ τ ts]
+  | .sort κ => by
+    simp only [Term.substLevels, Universe.substLevels, Level.subst_subst]
+  | .const c qs ls ps => by
+    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst]
+  | .inst D qs ls ps as => by
+    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
+      InstanceArgs.substLevels_substLevels σ τ as]
+
+theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Grade}
+    (σ : Fin k → Level k') (τ : Fin k' → Level k'') :
+    (ts : Args k Γ a) → (ts.substLevels σ).substLevels τ = ts.substLevels fun i => (σ i).subst τ
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Args.substLevels, Args.substLevels, Args.substLevels, Term.substLevels_substLevels σ τ t,
+      Args.substLevels_substLevels σ τ ts]
+
+theorem InstanceArgs.substLevels_substLevels {k' k'' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k')
+    (τ : Fin k' → Level k'') :
+    (as : InstanceArgs k Γ Δ) →
+      (as.substLevels σ).substLevels τ = as.substLevels fun i => (σ i).subst τ
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.substLevels, InstanceArgs.substLevels, InstanceArgs.substLevels,
+      InstanceArgs.substLevels_substLevels σ τ as, Term.substLevels_substLevels σ τ B]
+
+end
+
+/-- The instantiation of the level variables of a telescope commutes with the renamings. -/
+theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Grade}
+    (σ : Fin k → Level k') :
+    (ρ : Ren Γ Δ) → (Θ : Telescope k Δ ps) → (Θ.rename ρ).substLevels σ = (Θ.substLevels σ).rename ρ
+  | _, .nil => rfl
+  | ρ, .cons q p A Θ => by
+    rw [Telescope.rename, Telescope.substLevels, Telescope.substLevels, Telescope.rename,
+      Term.substLevels_rename, Telescope.substLevels_rename σ (Ren.lift ρ) Θ]
+
+/-- The instantiation of the level variables of a telescope commutes with the substitutions of the
+first order. -/
+theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List Grade}
+    {σ : Fin k → Level k'} :
+    {τ : Subst₀ k Γ Δ} → {τ' : Subst₀ k' Γ Δ} → (∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) →
+      (Θ : Telescope k Δ ps) → (Θ.subst₀ τ).substLevels σ = (Θ.substLevels σ).subst₀ τ'
+  | _, _, _, .nil => rfl
+  | _, _, h, .cons q p A Θ => by
+    rw [Telescope.subst₀, Telescope.substLevels, Telescope.substLevels, Telescope.subst₀,
+      Term.substLevels_subst₀_of h, Telescope.substLevels_subst₀_of (Subst₀.lift_substLevels_of h) Θ]
+
+/-- `(Γ, Θ)[l̄' / l̄] = Γ[l̄' / l̄], Θ[l̄' / l̄]`. -/
+theorem Context.substLevels_append {k' : Nat} (σ : Fin k → Level k') :
+    {Γ : Scope} → {ps : List Grade} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
+      (ctx.append Θ).substLevels σ = (ctx.substLevels σ).append (Θ.substLevels σ)
+  | _, [], _, .nil => rfl
+  | _, _ :: _, ctx, .cons _ _ A Θ => Context.substLevels_append σ (ctx.var A) Θ
 
 /-! ## Examples
 
