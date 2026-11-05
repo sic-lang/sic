@@ -540,10 +540,16 @@ theorem HasEq.prop_isProp {l : Level 0} {R : TermRel} {v w : Term 0 []}
         exact ⟨m, b, (levelRel_isPer m).prop_trans hb ((levelRel_isPer m).prop_symm hb)⟩
   | prop _ _ h _ => rw [levelRel_prop] at h; exact nomatch h
 
-/-- A universe of propositions is not a proposition. -/
-theorem not_isProp_sort {l : Level 0} : ¬ IsProp (.sort ⟨.prop, l⟩) := fun ⟨k, _, h⟩ => by
+/-- A sort is not a proposition. -/
+theorem not_isProp_sort {κ : Universe 0} : ¬ IsProp (.sort κ) := fun ⟨k, _, h⟩ => by
   rw [levelRel_prop] at h
   exact nomatch h
+
+/-- A sort does not compute to a proposition. -/
+theorem not_computesToProp_sort {sig : Signature} {ι : Interpretation} {κ : Universe 0} :
+    ¬ ComputesToProp sig ι (.sort κ) := fun ⟨_, hc, hp⟩ => by
+  cases hc.sort_inv
+  exact not_isProp_sort hp
 
 /-- `(exact_Ω)`: two closed terms are equal proofs of a proposition exactly when each of them is a
 proof of it. -/
@@ -551,10 +557,7 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
     (hA : ValidTerm₀ sig ι A (.sort ⟨.prop, l⟩)) :
     ValidEqTerm₀ sig ι t u A ↔ ValidTerm₀ sig ι t A ∧ ValidTerm₀ sig ι u A := by
   obtain ⟨⟨hsig, -⟩, hcl, -⟩ := hA
-  have hΩ : ¬ ComputesToProp sig ι (.sort ⟨.prop, l⟩) := fun ⟨A₀, hc, hp⟩ => by
-    cases hc.sort_inv
-    exact not_isProp_sort hp
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl hΩ
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   have hvp := hR.prop_isProp hvw
   have hP : ComputesToProp sig ι A := ⟨v, hv, hvp⟩

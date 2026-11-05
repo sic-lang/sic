@@ -8,7 +8,8 @@ public import Sic.Core.Meaning
 The properties of the closed judgments of the meaning that the soundness of the rules uses: they are
 partial equivalence relations, as the rules `(sym)` and `(trans)` say, the equality of terms holds
 at every type equal to its own, as `(conv_≡)` says, and a step of reduction of a term or of a type
-changes no judgment, as `(δ)` needs.
+changes no judgment, as `(δ)` needs; equal terms of a sort are also equal types, as `(U_type≡)` and
+`(Ω_type≡)` say.
 
 The equality `eq(A₀)` of a closed canonical type that is not a proposition relates canonical terms,
 as the meaning of the judgments says, while the equality of the proofs of a proposition relates all
@@ -301,5 +302,49 @@ theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u
     exact ⟨⟨hs, ((EqTypeClause.red_iff hsig h).1 hc.symm).symm⟩, h'⟩
   · rintro ⟨⟨hs, hc⟩, h'⟩
     exact ⟨⟨hs, ((EqTypeClause.red_iff hsig h).2 hc.symm).symm⟩, h'⟩
+
+
+/-! ## Sorts -/
+
+-- ADE: `⊩≡∷U→⊩≡`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+/-- `(U_type≡)`, closed: equal terms of a universe are equal types. -/
+theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
+    {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.type, l⟩)) : ValidEqType₀ sig ι A B := by
+  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := h
+  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  cases hR with
+  | univ n hn =>
+    cases n with
+    | zero => cases hn with | univ h₁ => exact absurd h₁ (Nat.succ_ne_zero _)
+    | succ m =>
+      cases hn with
+      | univ =>
+        obtain ⟨R', h'⟩ := hvw
+        have hper := levelRel_isPer m
+        exact ⟨hsig, v, w, R', hv, hw, .univ m (hper.univ_trans h' (hper.univ_symm h')),
+          .univ m (hper.univ_trans (hper.univ_symm h') h')⟩
+  | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+
+-- ADE: none.
+/-- `(Ω_type≡)`, closed: equal propositions are equal types. -/
+theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
+    {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.prop, l⟩)) : ValidEqType₀ sig ι A B := by
+  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := h
+  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  cases hR with
+  | univ n hn =>
+    cases n with
+    | zero => cases hn with | prop h₁ => exact absurd h₁ (Nat.succ_ne_zero _)
+    | succ m =>
+      cases hn with
+      | prop =>
+        obtain ⟨b, h'⟩ := hvw
+        have hper := levelRel_isPer m
+        exact ⟨hsig, v, w, fun _ _ => b, hv, hw,
+          .prop m b (hper.prop_trans h' (hper.prop_symm h')) fun _ _ => .rfl,
+          .prop m b (hper.prop_trans (hper.prop_symm h') h') fun _ _ => .rfl⟩
+  | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 end Sic.Core
