@@ -344,4 +344,149 @@ inductive WfTelescope (sig : Signature) {k : Nat} :
       (hp : κ₁.quality = .prop → p.mode ≠ .oneOne) :
       WfTelescope sig ctx (.cons q p A Θ) κ₂
 
+/-! ## Presuppositions
+
+Every judgment implies that its signature is well formed, the first of the presuppositions of the
+admissible properties of RFC 24: each rule has a premise that is a judgment in the same signature,
+down to the rule `(ctx_ε)`, whose premise is `⊢ Σ`.
+The proofs are by structural recursion on the derivations, through such a premise.
+-/
+
+-- ADE: none.
+/-- An instance of `j` sort variables and `g` grade variables, which exists whatever `j` and `g`. -/
+def Instance.default (j g : Nat) : Instance j g := ⟨fun _ => .type, fun _ => Grade.zero⟩
+
+mutual
+
+-- ADE: `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- A well-formed context is in a well-formed signature. -/
+theorem WfCtx.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} :
+    WfCtx sig ctx → WfSig sig
+  | .empty h => h
+  | .var h => h.wfSig
+  | .secondOrder h => h.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- A type is in a well-formed signature. -/
+theorem WfType.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
+    WfType sig ctx A → WfSig sig
+  | .univType h => h.wfSig
+  | .propType h => h.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- An equality of types is in a well-formed signature. -/
+theorem EqType.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
+    {A B : Term k Γ} : EqType sig ctx A B → WfSig sig
+  | .refl h => h.wfSig
+  | .symm h => h.wfSig
+  | .trans h _ => h.wfSig
+  | .univType h => h.wfSig
+  | .propType h => h.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- A typing is in a well-formed signature. -/
+theorem HasType.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
+    {t A : Term k Γ} : HasType sig ctx t A → WfSig sig
+  | .var hctx _ => hctx.wfSig
+  | .secondOrder _ hts => hts.wfSig
+  | .const hctx _ _ _ _ => hctx.wfSig
+  | .univ hctx => hctx.wfSig
+  | .prop hctx => hctx.wfSig
+  | .inst _ _ _ _ _ has => has.wfSig
+  | .conv ht _ => ht.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- An equality of terms is in a well-formed signature. -/
+theorem EqTerm.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
+    {t u A : Term k Γ} : EqTerm sig ctx t u A → WfSig sig
+  | .refl h => h.wfSig
+  | .symm h => h.wfSig
+  | .trans h _ => h.wfSig
+  | .conv h _ => h.wfSig
+  | .irr ht _ _ => ht.wfSig
+  | .secondOrder _ hts => hts.wfSig
+  | .delta hctx _ _ _ _ => hctx.wfSig
+  | .const hctx .. => hctx.wfSig
+  | .univ hctx _ => hctx.wfSig
+  | .prop hctx _ => hctx.wfSig
+  | .inst _ _ _ _ _ _ has _ => has.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- Arguments of a telescope are in a well-formed signature. -/
+theorem HasArgs.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Grade}
+    {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps} :
+    HasArgs sig ctx ts Θ → WfSig sig
+  | .nil hctx => hctx.wfSig
+  | .cons ht _ => ht.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- Equal arguments of a telescope are in a well-formed signature. -/
+theorem EqArgs.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Grade}
+    {ctx : Context k Γ} {ts us : Args k Γ ps} {Θ : Telescope k Γ ps} :
+    EqArgs sig ctx ts us Θ → WfSig sig
+  | .nil hctx => hctx.wfSig
+  | .cons ht _ => ht.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- Arguments of an instance are in a well-formed signature. -/
+theorem HasInstanceArgs.wfSig {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+    {as : InstanceArgs k Γ Δ} {params : Context k Δ} :
+    HasInstanceArgs sig ctx as params → WfSig sig
+  | .nil hctx => hctx.wfSig
+  | .var has _ => has.wfSig
+  | .secondOrder has _ => has.wfSig
+
+-- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- Equal arguments of instances are in a well-formed signature. -/
+theorem EqInstanceArgs.wfSig {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+    {as bs : InstanceArgs k Γ Δ} {params : Context k Δ} :
+    EqInstanceArgs sig ctx as bs params → WfSig sig
+  | .nil hctx => hctx.wfSig
+  | .var has _ => has.wfSig
+  | .secondOrder has _ => has.wfSig
+
+end
+
+-- ADE: none.
+/-- A well-formed definition is in a well-formed signature. -/
+theorem WfDefinition.wfSig {sig : Signature} {d : Definition} : WfDefinition sig d → WfSig sig
+  | .intro _ hA _ _ => (hA (.default _ _)).wfSig
+
+-- ADE: none.
+/-- A well-formed constant is in a well-formed signature. -/
+theorem WfConstant.wfSig {sig : Signature} {c : Constant} : WfConstant sig c → WfSig sig
+  | .intro _ hA => (hA (.default _ _)).wfSig
+
+-- ADE: none.
+/-- The signature before the last entry of a well-formed signature is well formed. -/
+theorem WfSig.tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
+  | .definition h _ => h.wfSig
+  | .constant h _ => h.wfSig
+
+-- ADE: none.
+/-- The last entry of a well-formed signature introduces names that no entry before it does. -/
+theorem WfSig.fresh {e : Entry} {sig : Signature} :
+    WfSig (e :: sig) → ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
+  | .definition _ h, e', he', n, hn => by
+    simp only [Entry.names, List.mem_singleton] at hn
+    exact hn ▸ h e' he'
+  | .constant _ h, e', he', n, hn => by
+    simp only [Entry.names, List.mem_singleton] at hn
+    exact hn ▸ h e' he'
+
+-- ADE: none.
+/-- In a well-formed signature, a name is introduced by one entry at most. -/
+theorem WfSig.entry_unique : {sig : Signature} → WfSig sig → {e₁ e₂ : Entry} → {n : Name} →
+    e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂
+  | e :: sig, h, e₁, e₂, n, h₁, h₂, hn₁, hn₂ => by
+    cases h₁ with
+    | head =>
+      cases h₂ with
+      | head => rfl
+      | tail _ h₂ => exact absurd hn₂ (h.fresh _ h₂ n hn₁)
+    | tail _ h₁ =>
+      cases h₂ with
+      | head => exact absurd hn₁ (h.fresh _ h₁ n hn₂)
+      | tail _ h₂ => exact h.tail.entry_unique h₁ h₂ hn₁ hn₂
+
 end Sic.Core
