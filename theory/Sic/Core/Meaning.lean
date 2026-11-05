@@ -148,20 +148,22 @@ def EqTermClause (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : P
   (ComputesToProp sig ι A → ∃ A₀ R, Computesι sig ι A A₀ ∧ HasEq A₀ R ∧ R t u)
 
 -- ADE: none.
-/-- `⊨ Σ`: each entry of the signature is meaningful in the signature before it, for each instance
-of its variables. -/
+/-- `⊨ Σ`: each entry of the signature has a fresh name and is meaningful in the signature before
+it, for each instance of its variables. -/
 def ValidSig (ι : Interpretation) : Signature → Prop
   /- `(⊨sig_∅)`. -/
   | [] => True
   /- `(⊨sig_D)`: the kinds of declarations give the meaning of their declarations. -/
   | .declaration _ :: _ => False
-  /- `(⊨sig_≔)`: the body is a term of the type. -/
-  | .definition d :: sig => ValidSig ι sig ∧ ∀ inst (ρ : Fin d.levels → Nat),
+  /- `(⊨sig_≔)`: the name is fresh and the body is a term of the type. -/
+  | .definition d :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, d.name ∉ e.names) ∧
+      ∀ inst (ρ : Fin d.levels → Nat),
       EqTypeClause sig ι ((d.type inst).atLevels ρ) ((d.type inst).atLevels ρ) ∧
         EqTermClause sig ι ((d.body inst).atLevels ρ) ((d.body inst).atLevels ρ)
           ((d.type inst).atLevels ρ)
-  /- `(⊨sig_c)`: the interpretation is a term of the type. -/
-  | .constant c :: sig => ValidSig ι sig ∧ ∀ inst (ρ : Fin c.levels → Nat),
+  /- `(⊨sig_c)`: the name is fresh and the interpretation is a term of the type. -/
+  | .constant c :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, c.name ∉ e.names) ∧
+      ∀ inst (ρ : Fin c.levels → Nat),
       EqTypeClause sig ι ((c.type inst).atLevels ρ) ((c.type inst).atLevels ρ) ∧
         EqTermClause sig ι ((ι c inst).atLevels ρ) ((ι c inst).atLevels ρ)
           ((c.type inst).atLevels ρ)
@@ -321,7 +323,158 @@ def ValidTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ct
     (t A : Term k Γ) : Prop :=
   ∀ ρ, ValidTermΓ sig ι (ctx.atLevels ρ) (t.atLevels ρ) (A.atLevels ρ)
 
-/-! ## Properties of the Core -/
+/-! ## Partial Equivalence Relations
+
+The equality `eq(A₀)` of the terms of a type is a partial equivalence relation, and it is unique.
+These properties are proved level by level: those of the relations of a level, `LevelRel.IsPer`,
+follow from those of the level below it, by cases on the clauses that relate two types, so that each
+kind of declaration adds the cases of its clauses. -/
+
+/-- `R` is a partial equivalence relation: symmetric and transitive. -/
+structure TermRel.IsPer (R : TermRel) : Prop where
+  /-- `R` is symmetric. -/
+  symm {t u : Term 0 []} : R t u → R u t
+  /-- `R` is transitive. -/
+  trans {t u w : Term 0 []} : R t u → R u w → R t w
+
+/-- The relations of the sorts of a level are partial equivalence relations, which give each type
+they relate a unique equality of its terms, itself a partial equivalence relation. -/
+structure LevelRel.IsPer (L : LevelRel) : Prop where
+  /-- `eq(U_n)` is symmetric, with the same equality of terms. -/
+  univ_symm {A B : Term 0 []} {R : TermRel} : L.univ A B R → L.univ B A R
+  /-- `eq(U_n)` is transitive, with the equality of terms of the first type. -/
+  univ_trans {A B C : Term 0 []} {R R' : TermRel} : L.univ A B R → L.univ B C R' → L.univ A C R
+  /-- `eq(U_n)` gives a type a unique equality of its terms. -/
+  univ_unique {A B C : Term 0 []} {R R' : TermRel} :
+    L.univ A B R → L.univ A C R' → ∀ t u, R t u ↔ R' t u
+  /-- The equality of the terms of a type of `U_n` is a partial equivalence relation. -/
+  univ_isPer {A B : Term 0 []} {R : TermRel} : L.univ A B R → R.IsPer
+  /-- `eq(Ω_n)` is symmetric, with the same truth. -/
+  prop_symm {P Q : Term 0 []} {b : Prop} : L.prop P Q b → L.prop Q P b
+  /-- `eq(Ω_n)` is transitive, with the truth of the first proposition. -/
+  prop_trans {P Q S : Term 0 []} {b b' : Prop} : L.prop P Q b → L.prop Q S b' → L.prop P S b
+  /-- `eq(Ω_n)` gives a proposition a unique truth. -/
+  prop_unique {P Q S : Term 0 []} {b b' : Prop} : L.prop P Q b → L.prop P S b' → (b ↔ b')
+
+/-- No sort is below the level `0`. -/
+theorem LevelRel.empty_isPer : LevelRel.empty.IsPer where
+  univ_symm h := h.elim
+  univ_trans h := h.elim
+  univ_unique h := h.elim
+  univ_isPer h := h.elim
+  prop_symm h := h.elim
+  prop_trans h := h.elim
+  prop_unique h := h.elim
+
+/-- `eq(Ω_n)` is symmetric: it has no clause in the core. -/
+theorem PropRel.symm {P Q : Term 0 []} {b : Prop} (h : PropRel P Q b) : PropRel Q P b := nomatch h
+
+/-- `eq(Ω_n)` is transitive: it has no clause in the core. -/
+theorem PropRel.trans {P Q S : Term 0 []} {b b' : Prop} (h : PropRel P Q b) (_h' : PropRel Q S b') :
+    PropRel P S b := nomatch h
+
+/-- `eq(Ω_n)` gives a proposition a unique truth: it has no clause in the core. -/
+theorem PropRel.unique {P Q S : Term 0 []} {b b' : Prop} (h : PropRel P Q b)
+    (_h' : PropRel P S b') : b ↔ b' := nomatch h
+
+/-- The equality of the terms of the universe `U_k` relates the types that `eq(U_k)` relates. -/
+theorem UnivRel.univ_isPer {below : LevelRel} (hb : below.IsPer) :
+    TermRel.IsPer fun A B => ∃ R, below.univ A B R where
+  symm := fun ⟨R, h⟩ => ⟨R, hb.univ_symm h⟩
+  trans := fun ⟨R, h⟩ ⟨_, h'⟩ => ⟨R, hb.univ_trans h h'⟩
+
+/-- The equality of the terms of the universe `Ω_k` relates the propositions that `eq(Ω_k)` relates.
+-/
+theorem UnivRel.prop_isPer {below : LevelRel} (hb : below.IsPer) :
+    TermRel.IsPer fun P Q => ∃ b, below.prop P Q b where
+  symm := fun ⟨b, h⟩ => ⟨b, hb.prop_symm h⟩
+  trans := fun ⟨b, h⟩ ⟨_, h'⟩ => ⟨b, hb.prop_trans h h'⟩
+
+/-- The relations of the level `n` are partial equivalence relations, if those of the level below it
+are. -/
+theorem UnivRel.isPer {n : Nat} {below : LevelRel} (hb : below.IsPer) :
+    LevelRel.IsPer ⟨UnivRel n below, PropRel⟩ where
+  univ_symm
+    | .univ h₁ h₂ => .univ h₂ h₁
+    | .prop h₁ h₂ => .prop h₂ h₁
+  univ_trans
+    | .univ h₁ _, .univ _ h₃ => .univ h₁ h₃
+    | .prop h₁ _, .prop _ h₃ => .prop h₁ h₃
+  univ_unique
+    | .univ _ _, .univ _ _ => fun _ _ => .rfl
+    | .prop _ _, .prop _ _ => fun _ _ => .rfl
+  univ_isPer
+    | .univ _ _ => UnivRel.univ_isPer hb
+    | .prop _ _ => UnivRel.prop_isPer hb
+  prop_symm := PropRel.symm
+  prop_trans := PropRel.trans
+  prop_unique := PropRel.unique
+
+/-- The relations of every level are partial equivalence relations. -/
+theorem levelRel_isPer : (n : Nat) → (levelRel n).IsPer
+  | 0 => UnivRel.isPer LevelRel.empty_isPer
+  | n + 1 => UnivRel.isPer (levelRel_isPer n)
+
+/-- `eq(Ω_n)` has the same clauses at every level. -/
+theorem levelRel_prop (n : Nat) : (levelRel n).prop = PropRel := by
+  cases n <;> rfl
+
+/-- `eq(A₀)` is a partial equivalence relation, symmetric and transitive. -/
+theorem HasEq.isPer {A₀ : Term 0 []} {R : TermRel} : HasEq A₀ R → R.IsPer
+  | .univ n h => (levelRel_isPer n).univ_isPer h
+  | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
+
+/-- A type of a universe is not a proposition. -/
+theorem HasEq.univ_not_prop {A₀ : Term 0 []} {n k : Nat} {R : TermRel} {b : Prop}
+    (_h : (levelRel n).univ A₀ A₀ R) (h' : (levelRel k).prop A₀ A₀ b) : False := by
+  rw [levelRel_prop] at h'
+  exact nomatch h'
+
+/-- The level of a type of a universe is unique. -/
+theorem HasEq.univ_level {A₀ : Term 0 []} {n n' : Nat} {R R' : TermRel}
+    (h : (levelRel n).univ A₀ A₀ R) (h' : (levelRel n').univ A₀ A₀ R') : n = n' := by
+  cases n <;> cases n' <;> cases h <;> cases h' <;> omega
+
+/-- `eq(A₀)` is unique: two equalities of the terms of a type relate the same terms. -/
+theorem HasEq.unique {A₀ : Term 0 []} {R R' : TermRel} :
+    HasEq A₀ R → HasEq A₀ R' → ∀ t u, R t u ↔ R' t u
+  | .univ n h, .univ n' h' => by
+    cases HasEq.univ_level h h'
+    exact (levelRel_isPer n).univ_unique h h'
+  | .univ _ h, .prop _ _ h' _ => (HasEq.univ_not_prop h h').elim
+  | .prop _ _ h _, .univ _ h' => (HasEq.univ_not_prop h' h).elim
+  | .prop k _ h hR, .prop k' _ h' hR' => by
+    rw [levelRel_prop] at h h'
+    exact fun t u => (hR t u).trans ((PropRel.unique h h').trans (hR' t u).symm)
+
+/-! ## Exactness of the Proofs -/
+
+/-- The names of a signature stay distinct when its constants are interpreted. -/
+theorem Signature.Distinct.interpret {ι : Interpretation} :
+    {sig : Signature} → sig.Distinct → (sig.interpret ι).Distinct
+  | [], _ => trivial
+  | e :: _, ⟨h, hfresh⟩ => by
+    have hnames : ∀ e : Entry, (e.interpret ι).names = e.names := by
+      intro e; cases e <;> rfl
+    refine ⟨h.interpret, fun e' he' n hn => ?_⟩
+    obtain ⟨e'', he'', rfl⟩ := List.mem_map.1 he'
+    rw [hnames] at hn ⊢
+    exact hfresh e'' he'' n hn
+
+/-- The names of a meaningful signature are distinct. -/
+theorem ValidSig.distinct {ι : Interpretation} : {sig : Signature} → ValidSig ι sig → sig.Distinct
+  | [], _ => trivial
+  | .definition _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
+      simp only [Entry.names, List.mem_singleton] at hn
+      exact hn ▸ hfresh e he⟩
+  | .constant _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
+      simp only [Entry.names, List.mem_singleton] at hn
+      exact hn ▸ hfresh e he⟩
+
+/-- In a meaningful signature, a closed term computes to one canonical term at most. -/
+theorem Computesι.det {sig : Signature} {ι : Interpretation} {t v₁ v₂ : Term 0 []}
+    (hsig : ValidSig ι sig) (h₁ : Computesι sig ι t v₁) (h₂ : Computesι sig ι t v₂) : v₁ = v₂ :=
+  Computes.det hsig.distinct.interpret h₁ h₂
 
 /-- A sort computes to itself. -/
 theorem Computes.sort (sig : Signature) (κ : Universe 0) : Computes sig (.sort κ) (.sort κ) :=
@@ -334,6 +487,54 @@ theorem Computes.sort_inv {sig : Signature} {κ : Universe 0} {v : Term 0 []} :
   | ⟨.step h _, _⟩ => by
     obtain ⟨_, _, _, _, _, _, _, _, ht, _⟩ := h.inv
     cases ht
+
+/-- The terms that the universe of propositions `Ω_l` relates are propositions. -/
+theorem HasEq.prop_isProp {l : Level 0} {R : TermRel} {v w : Term 0 []}
+    (hR : HasEq (.sort ⟨.prop, l⟩) R) (hvw : R v w) : IsProp v := by
+  cases hR with
+  | univ n h =>
+    cases n with
+    | zero => cases h with | prop h₁ => exact absurd h₁ (Nat.succ_ne_zero _)
+    | succ m =>
+      cases h with
+      | prop =>
+        obtain ⟨b, hb⟩ := hvw
+        exact ⟨m, b, (levelRel_isPer m).prop_trans hb ((levelRel_isPer m).prop_symm hb)⟩
+  | prop _ _ h _ => rw [levelRel_prop] at h; exact nomatch h
+
+/-- A universe of propositions is not a proposition. -/
+theorem not_isProp_sort {l : Level 0} : ¬ IsProp (.sort ⟨.prop, l⟩) := fun ⟨k, _, h⟩ => by
+  rw [levelRel_prop] at h
+  exact nomatch h
+
+/-- `(exact_Ω)`: two closed terms are equal proofs of a proposition exactly when each of them is a
+proof of it. -/
+theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {l : Level 0}
+    (hA : ValidTerm₀ sig ι A (.sort ⟨.prop, l⟩)) :
+    ValidEqTerm₀ sig ι t u A ↔ ValidTerm₀ sig ι t A ∧ ValidTerm₀ sig ι u A := by
+  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := hA
+  have hΩ : ¬ ComputesToProp sig ι (.sort ⟨.prop, l⟩) := fun ⟨A₀, hc, hp⟩ => by
+    cases hc.sort_inv
+    exact not_isProp_sort hp
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl hΩ
+  cases hc.sort_inv
+  have hvp := hR.prop_isProp hvw
+  have hP : ComputesToProp sig ι A := ⟨v, hv, hvp⟩
+  constructor
+  · rintro ⟨hTA, -, hcl'⟩
+    obtain ⟨A₁, R₁, hA₁, hR₁, htu⟩ := hcl' hP
+    have hper := hR₁.isPer
+    exact ⟨⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans htu (hper.symm htu)⟩⟩,
+      ⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans (hper.symm htu) htu⟩⟩⟩
+  · rintro ⟨⟨hTA, -, hclt⟩, -⟩
+    refine ⟨hTA, fun h => absurd hP h, fun _ => ?_⟩
+    obtain ⟨A₁, R₁, hA₁, hR₁, htt⟩ := hclt hP
+    cases Computesι.det hsig hA₁ hv
+    obtain ⟨k, b, hb⟩ := hvp
+    have hRb : ∀ t u, R₁ t u ↔ b := fun t u => hR₁.unique (.prop k b hb fun _ _ => .rfl) t u
+    exact ⟨v, R₁, hA₁, hR₁, (hRb t u).2 ((hRb t t).1 htt)⟩
+
+/-! ## Properties of the Core -/
 
 /-- In the core, no type is a proposition, since only the kinds of declarations build propositions. -/
 theorem not_isProp (A₀ : Term 0 []) : ¬ IsProp A₀ := fun ⟨k, _, h⟩ => by
@@ -402,7 +603,7 @@ theorem computes_typeConst (ι : Interpretation) :
 
 /-- `⊨ T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`: the definition is meaningful, whatever the interpretation. -/
 theorem validSig_typeEntry (ι : Interpretation) : ValidSig ι [.definition typeEntry] :=
-  ⟨trivial, fun _ _ => ⟨(valid_univ_zero ι).1.2, (valid_univ_zero ι).2⟩⟩
+  ⟨trivial, fun _ h => (nomatch h), fun _ _ => ⟨(valid_univ_zero ι).1.2, (valid_univ_zero ι).2⟩⟩
 
 /-- `Σ ⊨ T.{} ≡ U_0`: the definition is equal to its body. -/
 theorem valid_typeConst (ι : Interpretation) :
