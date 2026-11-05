@@ -25,7 +25,8 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 
 ## Formalization
 
-The Lean package of `theory/` has one library, `Sic/`, where each concept has a module `Sic/<Concept>.lean` for its definitions, its properties and its meaning, as the RFCs state them.
+The Lean package of `theory/` has two libraries: `Sic/`, where each concept has a module `Sic/<Concept>.lean` for its definitions, its properties and its meaning, as the RFCs state them, and `SicExample/`, for the examples.
+An example of an annex of an RFC or of the literature has a module named after it in the directory of the concept it illustrates, such as `SicExample/Core/ConstantsAndADefinition.lean`.
 A declaration of `Sic/` names its counterparts in the formalizations that `Sic/` follows, with their files, or `none`, in comments above its doc string, such as ``-- ADE: `wkEq`, in `Definition/Typed/Weakening.agda`.``, which the [README](README.md) relates to the commits of these formalizations, while the header of its module says how the module differs from them.
 These comments are not doc strings, since the documentation would make links of the names of these formalizations whenever a declaration of Sic has the same name.
 Every file is a module of the [module system of Lean](https://lean-lang.org/doc/reference/latest/Source-Files-and-Modules/), so that a module only passes on the imports it declares public: an import is private, unless the type of a public declaration mentions what it imports (`public import`).

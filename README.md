@@ -74,110 +74,112 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\rho_0)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\rho_+)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\rho_\sqcup)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(=_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\le_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(\rho_0)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(\rho_+)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(\rho_\sqcup)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(=_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.Equal`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.Equal) |
+| $`(\le_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.Le`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.Le) |
 
 #### [Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#judgments)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\mathsf{ctx}_\varepsilon)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
-| $`(\mathsf{ctx}_x)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | Not yet |
-| $`(\mathsf{sig}_\varnothing)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
+| $`(\mathsf{ctx}_\varepsilon)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | [`WfCtx.empty`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfCtx.empty) |
+| $`(\mathsf{ctx}_x)`$ | [Contexts](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#contexts) | [`WfCtx.var`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfCtx.var) |
+| $`(\mathsf{sig}_\varnothing)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | [`WfSig.empty`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfSig.empty) |
 | $`(\mathsf{sig}_{\mathcal{D}})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| $`(\mathsf{sig}_{≔})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| $`(\mathsf{sig}_c)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| $`(\sqcup_s)`$ | [Declarations](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | Not yet |
-| $`(\mathsf{ctx}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{var}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{tel}_\varepsilon)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{tel}_{,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{tel}_{\equiv\varepsilon})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{tel}_{\equiv,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{var}_{X\equiv})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{var}_{X\mathsf{m}})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
-| $`(\mathsf{tel}_{\kappa\varepsilon})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
-| $`(\mathsf{tel}_{\kappa,})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | Not yet |
-| $`(\mathsf{arg}_\varepsilon)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{arg}_x)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{arg}_X)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{arg}_{\equiv\varepsilon})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{arg}_{\equiv x})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{arg}_{\equiv X})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(D)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(D_\equiv)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | Not yet |
-| $`(\mathsf{def})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| $`(c)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| $`(c_{\mathsf{m}})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| $`(\delta)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | Not yet |
-| $`(\mathsf{const})`$ | [Constants](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#constants) | Not yet |
-| $`(\mathsf{var})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
-| $`(\mathsf{var}_{\mathsf{m}})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | Not yet |
-| $`(\mathsf{refl}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{sym}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{trans}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{refl})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{sym})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{trans})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | Not yet |
-| $`(\mathsf{conv})`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
-| $`(\mathsf{conv}_\equiv)`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | Not yet |
-| $`(\mathsf{sub})`$ | [Usage](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#usage) | Not yet |
+| $`(\mathsf{sig}_{≔})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | [`WfSig.definition`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfSig.definition) |
+| $`(\mathsf{sig}_c)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | [`WfSig.constant`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfSig.constant) |
+| $`(\sqcup_s)`$ | [Declarations](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | [`Quality.join`](https://sic-lang.github.io/sic/Sic/Core/Universe.html#Sic.Core.Quality.join) |
+| $`(\mathsf{ctx}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`WfCtx.secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfCtx.secondOrder) |
+| $`(\mathsf{var}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`HasType.secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.secondOrder) |
+| $`(\mathsf{tel}_\varepsilon)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`HasArgs.nil`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasArgs.nil) |
+| $`(\mathsf{tel}_{,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`HasArgs.cons`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasArgs.cons) |
+| $`(\mathsf{tel}_{\equiv\varepsilon})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`EqArgs.nil`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqArgs.nil) |
+| $`(\mathsf{tel}_{\equiv,})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`EqArgs.cons`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqArgs.cons) |
+| $`(\mathsf{var}_{X\equiv})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`EqTerm.secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.secondOrder) |
+| $`(\mathsf{var}_{X\mathsf{m}})`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | [`Usage.var`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.var) |
+| $`(\mathsf{tel}_{\kappa\varepsilon})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | [`WfTelescope.nil`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfTelescope.nil) |
+| $`(\mathsf{tel}_{\kappa,})`$ | [Telescopes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#telescopes) | [`WfTelescope.cons`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfTelescope.cons) |
+| $`(\mathsf{arg}_\varepsilon)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`HasInstanceArgs.nil`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasInstanceArgs.nil) |
+| $`(\mathsf{arg}_x)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`HasInstanceArgs.var`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasInstanceArgs.var) |
+| $`(\mathsf{arg}_X)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`HasInstanceArgs.secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasInstanceArgs.secondOrder) |
+| $`(\mathsf{arg}_{\equiv\varepsilon})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`EqInstanceArgs.nil`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqInstanceArgs.nil) |
+| $`(\mathsf{arg}_{\equiv x})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`EqInstanceArgs.var`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqInstanceArgs.var) |
+| $`(\mathsf{arg}_{\equiv X})`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`EqInstanceArgs.secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqInstanceArgs.secondOrder) |
+| $`(D)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`HasType.inst`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.inst) |
+| $`(D_\equiv)`$ | [Instances](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#instances) | [`EqTerm.inst`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.inst) |
+| $`(\mathsf{def})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | [`WfDefinition`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfDefinition) |
+| $`(c)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | [`HasType.const`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.const) |
+| $`(c_{\mathsf{m}})`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | [`Usage.const`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.const) |
+| $`(\delta)`$ | [Definitions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#definitions) | [`EqTerm.delta`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.delta) |
+| $`(\mathsf{const})`$ | [Constants](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#constants) | [`WfConstant`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfConstant) |
+| $`(\mathsf{var})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | [`HasType.var`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.var) |
+| $`(\mathsf{var}_{\mathsf{m}})`$ | [Variables](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#variables) | [`Usage.var`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.var) |
+| $`(\mathsf{refl}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqType.refl`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqType.refl) |
+| $`(\mathsf{sym}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqType.symm`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqType.symm) |
+| $`(\mathsf{trans}_{\mathsf{type}})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqType.trans`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqType.trans) |
+| $`(\mathsf{refl})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqTerm.refl`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.refl) |
+| $`(\mathsf{sym})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqTerm.symm`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.symm) |
+| $`(\mathsf{trans})`$ | [Equality](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality) | [`EqTerm.trans`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.trans) |
+| $`(\mathsf{conv})`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | [`HasType.conv`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.conv) |
+| $`(\mathsf{conv}_\equiv)`$ | [Type Conversion](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#type-conversion) | [`EqTerm.conv`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.conv) |
+| $`(\mathsf{sub})`$ | [Usage](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#usage) | [`Usage.sub`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.sub) |
 
 #### [Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#universes)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(U)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| $`(U_\equiv)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| $`(U_{\mathsf{m}})`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | Not yet |
-| $`(U_{\mathsf{type}})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
-| $`(U_{\mathsf{type}\equiv})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | Not yet |
+| $`(U)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | [`HasType.univ`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.univ) |
+| $`(U_\equiv)`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | [`EqTerm.univ`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.univ) |
+| $`(U_{\mathsf{m}})`$ | [Formation of Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-universes) | [`Usage.sort`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.sort) |
+| $`(U_{\mathsf{type}})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | [`WfType.univType`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfType.univType) |
+| $`(U_{\mathsf{type}\equiv})`$ | [Elements of Universes as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-universes-as-types) | [`EqType.univType`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqType.univType) |
 
 #### [Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#strict-propositions)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\Omega)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| $`(\Omega_\equiv)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| $`(\Omega_{\mathsf{m}})`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | Not yet |
-| $`(\Omega_{\mathsf{type}})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
-| $`(\Omega_{\mathsf{type}\equiv})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | Not yet |
-| $`(\mathsf{irr})`$ | [Proof Irrelevance](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#proof-irrelevance) | Not yet |
+| $`(\Omega)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | [`HasType.prop`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.HasType.prop) |
+| $`(\Omega_\equiv)`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | [`EqTerm.prop`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.prop) |
+| $`(\Omega_{\mathsf{m}})`$ | [Formation of Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#formation-of-propositions) | [`Usage.sort`](https://sic-lang.github.io/sic/Sic/Core/Usage.html#Sic.Core.Usage.sort) |
+| $`(\Omega_{\mathsf{type}})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | [`WfType.propType`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.WfType.propType) |
+| $`(\Omega_{\mathsf{type}\equiv})`$ | [Elements of Propositions as Types](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#elements-of-propositions-as-types) | [`EqType.propType`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqType.propType) |
+| $`(\mathsf{irr})`$ | [Proof Irrelevance](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#proof-irrelevance) | [`EqTerm.irr`](https://sic-lang.github.io/sic/Sic/Core/Typing.html#Sic.Core.EqTerm.irr) |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\vDash_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\vDash_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\vDash_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\vDash)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\mathsf{eq}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\mathsf{eq}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\mathsf{eq}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\Gamma_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\Gamma_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\Gamma_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\Gamma)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\mathsf{tel}_{\kappa\varepsilon})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\mathsf{tel}_{\kappa,})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\mathsf{ctx}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\mathsf{ctx}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`({\vDash}\mathsf{ctx}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | Not yet |
-| $`(\vDash_\rho)`$ | [Meaning of the Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-levels) | Not yet |
-| $`({\vDash}\mathsf{sig}_\varnothing)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| $`({\vDash}\mathsf{sig}_{\mathcal{D}})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| $`({\vDash}\mathsf{sig}_{≔})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| $`({\vDash}\mathsf{sig}_c)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | Not yet |
-| $`(\mathsf{eq}_U)`$ | [Meaning of the Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-universes) | Not yet |
-| $`(\mathsf{eq}_{\mathsf{true}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| $`(\mathsf{eq}_{\mathsf{false}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| $`(\vDash_{\equiv\Omega})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| $`(\mathsf{eq}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
-| $`(\mathsf{exact}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | Not yet |
+| $`(\mathsf{prop})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`IsProp`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.IsProp) |
+| $`(\mathsf{prop}_\Downarrow)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ComputesToProp`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ComputesToProp) |
+| $`(\vDash_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqType₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqType₀) |
+| $`(\vDash_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidType₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidType₀) |
+| $`(\vDash_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqTerm₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTerm₀) |
+| $`(\vDash)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidTerm₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidTerm₀) |
+| $`(\mathsf{eq}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`EqSubst`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.EqSubst) |
+| $`(\mathsf{eq}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`EqSubst`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.EqSubst) |
+| $`(\mathsf{eq}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`EqSubst`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.EqSubst) |
+| $`({\vDash}\Gamma_{\mathsf{type}\equiv})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqTypeΓ`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTypeΓ) |
+| $`({\vDash}\Gamma_{\mathsf{type}})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidTypeΓ`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidTypeΓ) |
+| $`({\vDash}\Gamma_\equiv)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqTermΓ`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTermΓ) |
+| $`({\vDash}\Gamma)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidTermΓ`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidTermΓ) |
+| $`({\vDash}\mathsf{tel}_{\kappa\varepsilon})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqTelescope₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTelescope₀) |
+| $`({\vDash}\mathsf{tel}_{\kappa,})`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidEqTelescope₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTelescope₀) |
+| $`({\vDash}\mathsf{ctx}_\varepsilon)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`ValidCtx₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidCtx₀) |
+| $`({\vDash}\mathsf{ctx}_x)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`validCtx₀_var`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.validCtx₀_var) |
+| $`({\vDash}\mathsf{ctx}_X)`$ | [Meaning of the Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-judgments) | [`validCtx₀_secondOrder`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.validCtx₀_secondOrder) |
+| $`(\vDash_\rho)`$ | [Meaning of the Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-levels) | [`ValidEqType`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqType) |
+| $`({\vDash}\mathsf{sig}_\varnothing)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | [`ValidSig`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidSig) |
+| $`({\vDash}\mathsf{sig}_{\mathcal{D}})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | [`ValidSig`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidSig) |
+| $`({\vDash}\mathsf{sig}_{≔})`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | [`ValidSig`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidSig) |
+| $`({\vDash}\mathsf{sig}_c)`$ | [Meaning of the Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-signatures) | [`ValidSig`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidSig) |
+| $`(\mathsf{eq}_U)`$ | [Meaning of the Universes](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-universes) | [`UnivRel.univ`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.UnivRel.univ) |
+| $`(\mathsf{eq}_{\mathsf{true}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | [`HasEq.prop`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.HasEq.prop) |
+| $`(\mathsf{eq}_{\mathsf{false}})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | [`HasEq.prop`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.HasEq.prop) |
+| $`(\vDash_{\equiv\Omega})`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | [`ValidEqTerm₀`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.ValidEqTerm₀) |
+| $`(\mathsf{eq}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | [`UnivRel.prop`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.UnivRel.prop) |
+| $`(\mathsf{exact}_\Omega)`$ | [Meaning of the Strict Propositions](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#meaning-of-the-strict-propositions) | [`exact_prop`](https://sic-lang.github.io/sic/Sic/Core/Meaning.html#Sic.Core.exact_prop) |
 | $`(\mathsf{sound}_{\mathsf{sig}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
 | $`(\mathsf{sound}_{\mathsf{ctx}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
 | $`(\mathsf{sound}_{\mathsf{type}})`$ | [Soundness](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#soundness) | Not yet |
@@ -201,7 +203,7 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 | $`(\mathsf{sound}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
 | $`(\mathsf{absent}_\bullet)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
 | $`(\mathsf{absent}_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
-| $`(\bullet_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | Not yet |
+| $`(\bullet_\circ)`$ | [Erasure Properties](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#erasure-properties) | [`Term.extract_ghost`](https://sic-lang.github.io/sic/Sic/Core/Erasure.html#Sic.Core.Term.extract_ghost) |
 | $`(\mathsf{project})`$ | [Projection Lemma](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#projection-lemma) | Not yet |
 
 ### [RFC 34](https://github.com/sic-lang/rfcs/pull/34): Data and Codata Types
