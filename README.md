@@ -17,55 +17,56 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | Not yet |
+| Multiplicities | [Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#multiplicities) | [`Multiplicity`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity) |
 
 #### [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
-| $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | Not yet |
+| Grades | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | [`Grade`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade) |
+| $`(\mathsf{run}_p)`$ | [Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#grades) | [`Grade.run_mk`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run_mk) |
 
 #### [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | Not yet |
+| Modes | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | [`Mode`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode) |
+| Modes of ADE | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | [`Multiplicity.Mode`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Multiplicity.Mode) |
+| $`(\mathsf{run}_m)`$ | [Modes](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modes) | [`Mode.run`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode.run) |
 
 #### [Meaning](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\mathsf{uses}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(\mathsf{best}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(+_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(\cdot_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(\wedge_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(\le_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | Not yet |
-| $`(\mathsf{uses}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(\mathsf{best}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(+_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(\cdot_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(\wedge_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(\le_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
-| $`(\mathsf{sound}_{\mathsf{run}})`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | Not yet |
+| $`(\mathsf{uses}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.uses`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.uses) |
+| $`(\mathsf{best}_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.IsBest`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.IsBest) |
+| $`(+_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.add_isBest`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.add_isBest) |
+| $`(\cdot_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.mul_isBest`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.mul_isBest) |
+| $`(\wedge_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.meet_isBest`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.meet_isBest) |
+| $`(\le_u)`$ | [Meaning of the Multiplicities](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-multiplicities) | [`Multiplicity.le_iff_uses`](https://sic-lang.github.io/sic/Sic/Multiplicity.html#Sic.Multiplicity.le_iff_uses) |
+| $`(\mathsf{uses}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.uses`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.uses) |
+| $`(\mathsf{best}_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.IsBest`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.IsBest) |
+| $`(+_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.add_isBest`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_isBest) |
+| $`(\cdot_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.mul_isBest`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_isBest) |
+| $`(\wedge_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.meet_isBest`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.meet_isBest) |
+| $`(\le_p)`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.le_iff_uses`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.le_iff_uses) |
+| $`(\mathsf{sound}_{\mathsf{run}})`$ | [Meaning of the Grades](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#meaning-of-the-grades) | [`Grade.sound_run`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.sound_run) |
 
 #### [Properties](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#properties)
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\cdot_{+})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
-| $`(\cdot_{\wedge})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
-| $`(+_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
-| $`(\wedge_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
-| $`(\mathbb{0}_{p})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | Not yet |
-| $`(\bigwedge_{p})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| $`(\bigwedge_{+})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| $`(\bigwedge_{\cdot})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | Not yet |
-| $`(\mathsf{run}_{\mathsf{op}})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| $`(\mathsf{run}_{\le})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| $`(\mathsf{run}_{m})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
-| $`(\mathsf{run}_{\odot})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | Not yet |
+| $`(\cdot_{+})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | [`Grade.mul_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_add) |
+| $`(\cdot_{\wedge})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | [`Grade.mul_meet`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.mul_meet) |
+| $`(+_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | [`Grade.add_le_add_right`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.add_le_add_right) |
+| $`(\wedge_{\le})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | [`Grade.le_meet_iff`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.le_meet_iff) |
+| $`(\mathbb{0}_{p})`$ | [Modality](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#modality) | [`Grade.zero_well_behaved`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.zero_well_behaved) |
+| $`(\bigwedge_{p})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | [`Grade.IsGLB`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.IsGLB) |
+| $`(\bigwedge_{+})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | [`Grade.glb_add`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.glb_add) |
+| $`(\bigwedge_{\cdot})`$ | [Greatest Lower Bounds](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#greatest-lower-bounds) | [`Grade.glb_mul`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.glb_mul) |
+| $`(\mathsf{run}_{\mathsf{op}})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | [`Grade.run_op`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run_op) |
+| $`(\mathsf{run}_{\le})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | [`Grade.run_le`](https://sic-lang.github.io/sic/Sic/Grade.html#Sic.Grade.run_le) |
+| $`(\mathsf{run}_{\odot})`$ | [Projection](https://github.com/sic-lang/rfcs/blob/grades/text/0033-grades.md#projection) | [`Mode.run_odot`](https://sic-lang.github.io/sic/Sic/Mode.html#Sic.Mode.run_odot) |
 
 ### [RFC 24](https://github.com/sic-lang/rfcs/pull/24): Graded Dependent Core
 
