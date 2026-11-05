@@ -74,11 +74,11 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 
 | Name | Section | Status |
 | --- | --- | --- |
-| $`(\rho_0)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\rho_+)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\rho_\sqcup)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(=_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
-| $`(\le_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | Not yet |
+| $`(\rho_0)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(\rho_+)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(\rho_\sqcup)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.value`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.value) |
+| $`(=_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.Equal`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.Equal) |
+| $`(\le_l)`$ | [Equality and Order of Levels](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#equality-and-order-of-levels) | [`Level.Le`](https://sic-lang.github.io/sic/Sic/Core/Level.html#Sic.Core.Level.Le) |
 
 #### [Judgments](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#judgments)
 
@@ -90,7 +90,7 @@ Each row names a rule, a formula or a definition as the RFC writes it, with a li
 | $`(\mathsf{sig}_{\mathcal{D}})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
 | $`(\mathsf{sig}_{≔})`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
 | $`(\mathsf{sig}_c)`$ | [Signatures](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#signatures) | Not yet |
-| $`(\sqcup_s)`$ | [Declarations](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | Not yet |
+| $`(\sqcup_s)`$ | [Declarations](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#declarations) | [`Quality.join`](https://sic-lang.github.io/sic/Sic/Core/Universe.html#Sic.Core.Quality.join) |
 | $`(\mathsf{ctx}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
 | $`(\mathsf{var}_X)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
 | $`(\mathsf{tel}_\varepsilon)`$ | [Parameters](https://github.com/sic-lang/rfcs/blob/dependent-core/text/0024-graded-dependent-core.md#parameters) | Not yet |
