@@ -72,6 +72,16 @@ def Term.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (t : Term k Γ) : 
 def Context.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (ctx : Context k Γ) : Context 0 Γ :=
   ctx.substLevels fun i => .ofNat (ρ i)
 
+/-- `t̄[ρ]`: the arguments `t̄` in which each level variable `i` has the value `ρ i`. -/
+def Args.atLevels {k : Nat} {Γ : Scope} {ps : List Grade} (ρ : Fin k → Nat) (ts : Args k Γ ps) :
+    Args 0 Γ ps :=
+  ts.substLevels fun i => .ofNat (ρ i)
+
+/-- `Θ[ρ]`: the telescope `Θ` in which each level variable `i` has the value `ρ i`. -/
+def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Grade} (ρ : Fin k → Nat)
+    (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
+  Θ.substLevels fun i => .ofNat (ρ i)
+
 /-! ## The Sorts -/
 
 /-- A relation between closed terms. -/
@@ -271,6 +281,24 @@ def ValidTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Cont
     (t A : Term 0 Γ) : Prop :=
   ValidEqTermΓ sig ι ctx t t A
 
+-- ADE: none.
+/-- `(⊨Γ_tel≡)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, at levels without variables: the arguments substituted by two
+equal closed substitutions `σ₁` and `σ₂` of the context are equal substitutions of the context that
+the telescope `Θ[σ₁]` forms.
+RFC 24 gives no meaning to the judgment of the arguments, which its soundness needs for the rule of
+`X[t̄]`. -/
+def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Grade}
+    (ctx : Context 0 Γ) (ts us : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) (ts.subst σ₁).toSubst
+        (us.subst σ₂).toSubst
+
+/-- `(⊨Γ_tel)`: `Σ; Γ ⊨ t̄ : Θ`, at levels without variables. -/
+def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Grade}
+    (ctx : Context 0 Γ) (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
+  ValidEqArgsΓ sig ι ctx ts ts Θ
+
 /-- `(⊨ctx_x)`, as the RFC states it. -/
 theorem validCtx₀_var {sig : Signature} {ι : Interpretation} {Γ : Scope} (ctx : Context 0 Γ)
     (A : Term 0 Γ) : ValidCtx₀ sig ι (ctx.var A) ↔ ValidTypeΓ sig ι ctx A := by
@@ -322,6 +350,16 @@ def ValidEqTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (
 def ValidTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
     (t A : Term k Γ) : Prop :=
   ∀ ρ, ValidTermΓ sig ι (ctx.atLevels ρ) (t.atLevels ρ) (A.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, for every value of the level variables. -/
+def ValidEqArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Grade}
+    (ctx : Context k Γ) (ts us : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
+  ∀ ρ, ValidEqArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (us.atLevels ρ) (Θ.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ : Θ`, for every value of the level variables. -/
+def ValidArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Grade}
+    (ctx : Context k Γ) (ts : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
+  ∀ ρ, ValidArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (Θ.atLevels ρ)
 
 /-! ## Partial Equivalence Relations
 

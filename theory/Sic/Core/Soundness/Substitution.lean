@@ -54,12 +54,6 @@ def Subst.topN {Ξ Γ : Scope} (n : Nat) (σ : Subst k Ξ (Γ.extend n)) :
     Subst k Ξ (Scope.extend [] n) :=
   fun x => σ (Ren.liftN n Ren.empty x)
 
-/-- `(σ, τ)`: the closed substitution `σ` of the scope `Γ` followed by the closed substitution `τ`
-of `n` new variables. -/
-def Subst.append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ) (τ : Subst k [] (Scope.extend [] n)) :
-    Subst k [] (Γ.extend n) :=
-  fun x => (Subst.liftN n σ x).subst (Subst.liftN _ τ)
-
 /-- Substitutions that agree on every variable are equal. -/
 theorem Subst.ext {Ξ Γ : Scope} {σ σ' : Subst k Ξ Γ} (h : ∀ {a} (x : Var Γ a), σ x = σ' x) :
     @Eq (Subst k Ξ Γ) σ σ' := by
@@ -372,6 +366,63 @@ theorem EqSubst.left {Γ : Scope} {ctx : Context 0 Γ} {σ₁ σ₂ : Subst 0 []
 theorem EqSubst.right {Γ : Scope} {ctx : Context 0 Γ} {σ₁ σ₂ : Subst 0 [] Γ}
     (hctx : ValidCtx₀ sig ι ctx) (h : EqSubst sig ι ctx σ₁ σ₂) : EqSubst sig ι ctx σ₂ σ₂ :=
   (h.symm hctx).trans hctx h
+
+/-! ## Arguments of a Telescope
+
+The arguments `t̄` of a telescope `Θ` in a context `Γ` mean, at two equal closed substitutions `σ₁`
+and `σ₂` of `Γ`, equal substitutions `[t̄[σ₁] / x̄]` and `[ū[σ₂] / x̄]` of the context that `Θ[σ₁]`
+forms, as `(⊨Γ_tel≡)` says; the rules `(tel_≡ε)` and `(tel_≡,)` keep this meaning, since the
+substitution of the first argument `t` then of `σ₁` is the substitution of `σ₁` followed by `t[σ₁]`.
+-/
+
+/-- `Θ[t / x][σ] = Θ[σ, t[σ]]`, where `(σ, τ)` gives `x` the closed term `t[σ]`. -/
+theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Grade} (Θ : Telescope 0 ([] :: Γ) ps)
+    (t : Term 0 Γ) (σ : Subst 0 [] Γ) (τ : Subst 0 [] (Scope.extend [[]] ps.length))
+    (ht : Subst.dropN ps.length τ .zero = t.subst σ) :
+    Θ.subst (Subst.dropN (Γ := [] :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ)) =
+      (Θ.subst₀ (Subst₀.single t)).subst σ := by
+  refine Eq.symm ((Telescope.subst_subst₀_of (σ₀' := Subst₀.id) ⟨fun x y e => ?_, fun x u e => ?_⟩
+    Θ).trans (Telescope.subst₀_id_of (fun _ => rfl) _))
+  · cases x with
+    | zero => cases e
+    | succ x =>
+      cases e
+      exact (Term.subst₀_id_of (Subst₀.liftN_id_of _ fun _ => rfl) _).trans
+        ((Subst.dropN_append_succ σ τ y.succ).symm.trans
+          ((Term.subst_rename_of (Subst.liftN_rename_of _
+            (σ' := fun y => Subst.dropN ps.length τ y.succ) fun _ => rfl) (σ y)).trans
+            (Term.subst_liftN_empty _ _)))
+  · cases x with
+    | zero =>
+      cases e
+      exact (Term.subst₀_id _).trans ((Subst.dropN_append_zero σ τ).trans ht)
+    | succ x => cases e
+
+/-- `(tel_≡ε)` keeps the meaning: no arguments are equal substitutions of the empty telescope. -/
+theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
+    ValidEqArgsΓ sig ι ctx .nil .nil .nil :=
+  ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
+
+/-- `(tel_≡,)` keeps the meaning: equal first arguments of `A`, and equal arguments of `Θ[t / x]`,
+are equal arguments of `x : A, Θ`. -/
+theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {q p : Grade}
+    {t u A : Term 0 Γ} {ts us : Args 0 Γ ps} {Θ : Telescope 0 ([] :: Γ) ps}
+    (ht : ValidEqTermΓ sig ι ctx t u A)
+    (hts : ValidEqArgsΓ sig ι ctx ts us (Θ.subst₀ (Subst₀.single t))) :
+    ValidEqArgsΓ sig ι ctx (.cons t ts) (.cons u us) (.cons q p A Θ) := by
+  refine ⟨hts.1, fun σ₁ σ₂ h => ?_⟩
+  have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (t.subst σ₁))
+      (ts.subst σ₁).toSubst) .zero = t.subst σ₁ := Subst.dropN_append _ _ .zero
+  have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (u.subst σ₂))
+      (us.subst σ₂).toSubst) .zero = u.subst σ₂ := Subst.dropN_append _ _ .zero
+  refine (EqSubst.telescope_cons_iff q p A Θ σ₁
+    (Subst.append (Subst.closedSingle (t.subst σ₁)) (ts.subst σ₁).toSubst)
+    (Subst.append (Subst.closedSingle (u.subst σ₂)) (us.subst σ₂).toSubst)).2 ⟨?_, ?_⟩
+  · rw [d₁, d₂]
+    exact ht.2 σ₁ σ₂ h
+  · rw [Telescope.subst₀_single_subst Θ t σ₁ _ d₁,
+      EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
+    exact hts.2 σ₁ σ₂ h
 
 /-! ## Entries of a Context under Equal Substitutions -/
 

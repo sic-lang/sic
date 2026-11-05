@@ -1271,6 +1271,45 @@ theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Grade} :
     rw [Telescope.subst, Telescope.subst, Telescope.subst, Term.subst_subst_of h A,
       Telescope.subst_subst_of (Subst.lift_subst_of h) Θ]
 
+/-- A substitution of the first order that renames each variable to itself changes no telescope. -/
+theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Grade} :
+    {σ : Subst₀ k Γ Γ} → (∀ {a} (x : Var Γ a), σ x = .var x) →
+      (Θ : Telescope k Γ ps) → Θ.subst₀ σ = Θ
+  | _, _, .nil => rfl
+  | _, h, .cons q p A Θ => by
+    rw [Telescope.subst₀, Term.subst₀_id_of h A, Telescope.subst₀_id_of (Subst₀.lift_id_of h) Θ]
+
+/-- A substitution of the first order then one of the second order swap on a telescope, as
+`Subst₀.Swaps` says. -/
+theorem Telescope.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {ps : List Grade} :
+    {σ₀ : Subst₀ k Δ Ξ} → {σ : Subst k Γ Δ} → {σ' : Subst k Ψ Ξ} → {σ₀' : Subst₀ k Γ Ψ} →
+      Subst₀.Swaps σ₀ σ σ' σ₀' →
+      (Θ : Telescope k Ξ ps) → (Θ.subst₀ σ₀).subst σ = (Θ.subst σ').subst₀ σ₀'
+  | _, _, _, _, _, .nil => rfl
+  | _, _, _, _, h, .cons q p A Θ => by
+    rw [Telescope.subst₀, Telescope.subst, Telescope.subst, Telescope.subst₀,
+      Term.subst_subst₀_of h A, Telescope.subst_subst₀_of h.lift Θ]
+
+/-! ## Closed Substitutions -/
+
+/-- `(σ, τ)`: the closed substitution `σ` of the scope `Γ` followed by the closed substitution `τ`
+of `n` new variables. -/
+def Subst.append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ) (τ : Subst k [] (Scope.extend [] n)) :
+    Subst k [] (Γ.extend n) :=
+  fun x => (Subst.liftN n σ x).subst (Subst.liftN _ τ)
+
+/-- `[t / x]`: the closed substitution of one variable by the closed term `t`. -/
+def Subst.closedSingle (t : Term k []) : Subst k [] [[]] := fun x =>
+  match x with
+  | .zero => t
+  | .succ x => nomatch x
+
+/-- `[t̄ / x̄]`: the closed substitution that gives the variables of a telescope the closed arguments
+`t̄`, the first one first. -/
+def Args.toSubst : {ps : List Grade} → Args k [] ps → Subst k [] (Scope.extend [] ps.length)
+  | [], .nil => fun x => nomatch x
+  | _ :: _, .cons t ts => Subst.append (Subst.closedSingle t) ts.toSubst
+
 /-! ## Levels
 
 The instantiation of the level variables replaces levels only, so that it commutes with the
