@@ -1,19 +1,23 @@
 import Lean.CoreM
+import Lean.DeclarationRange
+import Lean.Parser.Command
 import Lean.Util.Path
 import Rfc
 
 /-!
 Writes the pages of the correspondence between the RFCs and the formalization: for each file of the
-RFCs that names definitions, formulas or rules, a page that lists each name, with a link to its
-section in the RFC and links to the declarations whose attribute `rfc` gives it, and fails if such an
-attribute gives a name that no RFC has, so that renaming a formula in an RFC cannot leave the pages
-behind.
+RFCs that names definitions, formulas or rules, a page that gives each name with its formula, as the
+RFC writes it, and the source of the declarations whose attribute `rfc` gives it, as their files
+write it, so that a reader compares them on one page; it fails if such an attribute gives a name that
+no RFC has, so that renaming a formula in an RFC cannot leave the pages behind.
 
 Run with the directory of the RFCs, the URL of their files, the directory of the pages and the
 directories of the libraries, `Sic/`, whose modules it imports, as Lake builds them; it prints the
 entries of the pages for the summary of the book.
 A name ends its line, which may break the formula after it: in the last column of a formula,
 `&&(…)`, or after the fraction of a rule, `\;(…)`, as the check `names` of the RFCs requires.
+The formula of a name is the part of its block of math between the separators `\\[1em]` that holds
+the line of the name, inside the environment of the block.
 -/
 
 open Lean
@@ -28,6 +32,8 @@ structure RfcName where
   anchor : String
   /-- The heading of the section. -/
   section_ : String
+  /-- The formula or the rule of the name, as LaTeX for a block of math. -/
+  formula : String
   deriving Inhabited
 
 /-- The name that ends the line, after `&&(` or `\;(` and before `)`, if there is one. -/
@@ -51,22 +57,62 @@ def anchorOf (heading : String) : String :=
   String.map (fun c => if c == ' ' then '-' else c)
     (String.ofList (heading.toLower.toList.filter fun c => c.isAlphanum || c == ' ' || c == '-' || c == '_'))
 
+/-- The names of a block of math, each with its formula: the part of the block between the
+separators `\\[1em]` that holds the line of the name, inside the environment of the block, such as
+`\begin{aligned}`, if it has one; it fails if a part holds several names. -/
+def namesOfMath (block : Array String) : Except String (Array (String × String)) := do
+  let (start, body, stop) :=
+    if block.size ≥ 2 && block[0]!.trimAsciiStart.startsWith "\\begin{" then
+      (#[block[0]!], block.extract 1 (block.size - 1), #[block.back!])
+    else (#[], block, #[])
+  let separator := "\\\\[1em]"
+  let mut parts : Array (Array String) := #[]
+  let mut part := #[]
+  for line in body do
+    let line := line.trimAsciiEnd.toString
+    if line.endsWith separator then
+      parts := parts.push (part.push (line.dropEnd separator.length).trimAsciiEnd.toString)
+      part := #[]
+    else
+      part := part.push line
+  unless part.isEmpty do parts := parts.push part
+  let mut names := #[]
+  for lines in parts do
+    match lines.filterMap nameOfLine with
+    | #[name] => names := names.push (name, "\n".intercalate (start ++ lines ++ stop).toList)
+    | #[] => pure ()
+    | several => throw s!"one formula has several names: {", ".intercalate several.toList}"
+  return names
+
 /-- The title and the names of the file `file` of the directory `dir`. -/
 def readNames (dir : System.FilePath) (file : String) : IO (String × Array RfcName) := do
   let mut title := file
   let mut heading := ""
-  let mut inCode := false
+  -- The lines of the current block of code, and whether it is a block of math.
+  let mut block : Option (Array String) := none
+  let mut isMath := false
   let mut names := #[]
   for line in (← IO.FS.lines (dir / file)) do
     if line.startsWith "```" then
-      inCode := !inCode
-    else if !inCode && line.startsWith "#" then
+      match block with
+      | some lines =>
+        if isMath then
+          match namesOfMath lines with
+          | .ok found =>
+            for (name, formula) in found do
+              names := names.push
+                { name, file, anchor := anchorOf heading, section_ := heading, formula }
+          | .error message => throw <| IO.userError s!"{file}, {heading}: {message}"
+        block := none
+      | none =>
+        block := some #[]
+        isMath := line == "```math"
+    else if let some lines := block then
+      block := some (lines.push line)
+    else if line.startsWith "#" then
       let text := (line.dropWhile (· == '#')).trimAsciiStart.toString
       if line.startsWith "# " then title := text
       heading := text
-    else if inCode then
-      if let some name := nameOfLine line then
-        names := names.push { name, file, anchor := anchorOf heading, section_ := heading }
   return (title, names)
 
 /-- The Markdown files of the RFCs, `text/*.md` and `text/*/*.md`, in the order of their paths. -/
@@ -78,48 +124,86 @@ def rfcFiles (dir : System.FilePath) : IO (Array String) := do
     else none
   return files.qsort (· < ·)
 
-/-- The declarations of the libraries `roots` that formalize each name, with their modules. -/
-def declarationsOf (roots : List Name) : CoreM (Std.HashMap String (Array (Name × Name))) := do
+/-- A declaration that formalizes names of the RFCs, with its source. -/
+structure Formalization where
+  /-- The name of the declaration. -/
+  name : Name
+  /-- The module of the declaration. -/
+  module : Name
+  /-- The source of the declaration, as its file writes it. -/
+  source : String
+
+/-- The source of the declaration `decl` in the file `file`, as the file writes it: the lines of its
+range, and for a theorem only the statement, which ends with the signature that the parser of Lean
+reads in these lines, so that the page shows no proof. -/
+def sourceOf (decl : Name) (file : System.FilePath) : CoreM String := do
+  let some ranges ← findDeclarationRanges? decl
+    | throwError "{decl} has no position in {file}"
+  let lines ← IO.FS.lines file
+  let text := "\n".intercalate
+    (lines.extract (ranges.range.pos.line - 1) ranges.range.endPos.line).toList
+  unless (← getConstInfo decl).isTheorem do return text
+  let stx ← match Parser.runParserCategory (← getEnv) `command text file.toString with
+    | .ok stx => pure stx
+    | .error message => throwError "the statement of {decl} does not parse: {message}"
+  let some signature := stx.find? (·.isOfKind ``Parser.Command.declSig)
+    | throwError "{decl} has no signature"
+  let some stop := signature.getTailPos?
+    | throwError "the signature of {decl} has no position"
+  return (String.Pos.Raw.extract text 0 stop).trimAsciiEnd.toString
+
+/-- The declarations of the libraries in `dirs`, from their roots, that formalize each name. -/
+def declarationsOf (dirs : List (Name × System.FilePath)) :
+    CoreM (Std.HashMap String (Array Formalization)) := do
   let env ← getEnv
   let mut result := {}
   for (decl, _) in env.constants.map₁.toList do
     let some idx := env.getModuleIdxFor? decl | continue
     let module := env.header.moduleNames[idx.toNat]!
-    unless roots.any (·.isPrefixOf module) do continue
+    let some (root, dir) := dirs.find? (·.1.isPrefixOf module) | continue
     let some names := Rfc.rfcAttr.getParam? env decl | continue
+    let path := (module.components.drop root.components.length).map (·.toString)
+    let file := (path.foldl (· / ·) dir).addExtension "lean"
+    let declaration := { name := decl, module, source := ← sourceOf decl file }
     for name in names do
-      result := result.insert name ((result.getD name #[]).push (decl, module))
+      result := result.insert name ((result.getD name #[]).push declaration)
   return result
 
 /-- The link to the documentation of a declaration, from a page one directory below the book. -/
-def declarationLink (decl module : Name) : String :=
-  let path := "/".intercalate (module.components.map (·.toString))
-  s!"[`{decl}`](../theory/{path}.html#{decl})"
+def declarationLink (decl : Formalization) : String :=
+  let path := "/".intercalate (decl.module.components.map (·.toString))
+  s!"[`{decl.name}`](../theory/{path}.html#{decl.name})"
 
-/-- The page of the names of one file of an RFC. -/
+/-- The page of the names of one file of an RFC: for each name, its formula, then the source of
+each declaration that formalizes it. -/
 def page (url title : String) (names : Array RfcName)
-    (decls : Std.HashMap String (Array (Name × Name))) : String := Id.run do
+    (decls : Std.HashMap String (Array Formalization)) : String := Id.run do
   let mut out := s!"# {title}\n\n"
-  out := out ++ s!"Each name of [{title}]({url}/{names[0]!.file}) is formalized by the declarations of its row.\n\n"
-  out := out ++ "| Name | Section | Formalization |\n| --- | --- | --- |\n"
+  out := out ++ s!"Each name of [{title}]({url}/{names[0]!.file}) is given with its formula, then with the source of the declarations that formalize it.\n"
   for n in names do
-    let formalization := match decls.get? n.name with
-      | some ds => ", ".intercalate (ds.toList.map fun (d, m) => declarationLink d m)
-      | none => "Not yet"
-    out := out ++ s!"| $({n.name})$ | [{n.section_}]({url}/{n.file}#{n.anchor}) | {formalization} |\n"
+    out := out ++ s!"\n## $({n.name})$\n\n"
+    out := out ++ s!"In [{n.section_}]({url}/{n.file}#{n.anchor}):\n\n$$\n{n.formula}\n$$\n"
+    match decls.get? n.name with
+      | some ds =>
+        for d in ds do
+          out := out ++ s!"\n{declarationLink d}:\n\n```lean\n{d.source}\n```\n"
+      | none => out := out ++ "\nNot yet formalized.\n"
   return out
 
-def main : List String → IO UInt32
+/-- Unsafe, since the parser of the statements needs the syntax of the attribute `rfc`, which only the
+initializers of the imported modules register, and running them is unsafe. -/
+unsafe def main : List String → IO UInt32
   | rfcs :: url :: out :: dirs@(_ :: _) => do
     initSearchPath (← findSysroot)
+    enableInitializersExecution
     let modules ← IO.mkRef #[`Rfc]
     -- The root of the modules of a directory is its name, as `Sic` for `theory/Sic`.
     let roots := dirs.map fun dir => Name.mkSimple (System.FilePath.mk dir).fileName.get!
     for (dir, root) in dirs.zip roots do
       forEachModuleInDir dir fun module => modules.modify (·.push (root ++ module))
-    let env ← importModules ((← modules.get).map ({ module := · })) {}
+    let env ← importModules ((← modules.get).map ({ module := · })) {} (loadExts := true)
     let (decls, _) ←
-      (declarationsOf roots).toIO { fileName := "<Correspondence>", fileMap := default } { env }
+      (declarationsOf (roots.zip (dirs.map System.FilePath.mk))).toIO { fileName := "<Correspondence>", fileMap := default } { env }
     let mut known : Std.HashSet String := {}
     IO.FS.createDirAll out
     for file in ← rfcFiles rfcs do
@@ -132,8 +216,8 @@ def main : List String → IO UInt32
       IO.println s!"- [{title}]({(file.drop "text/".length).toString})"
     let unknown := decls.toList.filter (!known.contains ·.1)
     for (name, ds) in unknown do
-      for (d, _) in ds do
-        IO.eprintln s!"{d} formalizes {name}, which no RFC names"
+      for d in ds do
+        IO.eprintln s!"{d.name} formalizes {name}, which no RFC names"
     return if unknown.isEmpty then 0 else 1
   | _ => do
     IO.eprintln "usage: lean --run Correspondence.lean <RFCs> <URL of their files> <pages> <directory of a library>…"
