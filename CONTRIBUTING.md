@@ -20,6 +20,7 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 - Write in US English: documentation, comments, commit messages, issues and pull requests.
 - In Markdown files, write one sentence per line, without wrapping lines at a fixed length, so that editing a sentence only changes its own line.
   A sentence too long to read on one line is probably too long.
+- Give every section of a Markdown file, whatever its level, at least one sentence of its own before its first subsection, which tells what the section holds.
 - Sort alphabetically the lists whose order has no meaning.
 - Start the README with one short sentence saying what the repository is, and copy it verbatim as the description of the repository on GitHub.
 
