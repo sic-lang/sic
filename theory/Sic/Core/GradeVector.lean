@@ -83,13 +83,13 @@ The operations satisfy at each component the laws of the grades, as the module o
 modality does. -/
 
 theorem add_assoc (γ δ η : GradeVector n) : (γ +ᶜ δ) +ᶜ η = γ +ᶜ (δ +ᶜ η) :=
-  ext fun x => Grade.add_assoc (γ x) (δ x) (η x)
+  ext fun x => (Grade.semiring (γ x) (δ x) (η x)).1
 
 theorem add_comm (γ δ : GradeVector n) : γ +ᶜ δ = δ +ᶜ γ :=
-  ext fun x => Grade.add_comm (γ x) (δ x)
+  ext fun x => (Grade.semiring (γ x) (δ x) (γ x)).2.1
 
 theorem zero_add (γ : GradeVector n) : 𝟘ᶜ +ᶜ γ = γ :=
-  ext fun x => Grade.zero_add (γ x)
+  ext fun x => (Grade.semiring (γ x) (γ x) (γ x)).2.2.1
 
 theorem smul_add (p : Grade) (γ δ : GradeVector n) : p ·ᶜ (γ +ᶜ δ) = (p ·ᶜ γ) +ᶜ (p ·ᶜ δ) :=
   ext fun x => (Grade.mul_add p (γ x) (δ x)).1
@@ -98,19 +98,19 @@ theorem add_smul (p q : Grade) (γ : GradeVector n) : (p + q) ·ᶜ γ = (p ·�
   ext fun x => (Grade.mul_add (γ x) p q).2
 
 theorem mul_smul (p q : Grade) (γ : GradeVector n) : (p * q) ·ᶜ γ = p ·ᶜ (q ·ᶜ γ) :=
-  ext fun x => Grade.mul_assoc p q (γ x)
+  ext fun x => (Grade.semiring p q (γ x)).2.2.2.1
 
 theorem one_smul (γ : GradeVector n) : Grade.one ·ᶜ γ = γ :=
-  ext fun x => Grade.one_mul (γ x)
+  ext fun x => (Grade.semiring (γ x) (γ x) (γ x)).2.2.2.2.1.1
 
 theorem zero_smul (γ : GradeVector n) : Grade.zero ·ᶜ γ = 𝟘ᶜ :=
-  ext fun x => Grade.zero_mul (γ x)
+  ext fun x => (Grade.semiring (γ x) (γ x) (γ x)).2.2.2.2.2.1
 
 theorem smul_zero (p : Grade) : p ·ᶜ (𝟘ᶜ : GradeVector n) = 𝟘ᶜ :=
-  ext fun _ => Grade.mul_zero p
+  ext fun _ => (Grade.semiring p p p).2.2.2.2.2.2
 
 theorem meet_comm (γ δ : GradeVector n) : γ ⊓ᶜ δ = δ ⊓ᶜ γ :=
-  ext fun x => Grade.meet_comm (γ x) (δ x)
+  ext fun x => (Grade.meet_semilattice (γ x) (δ x) (γ x)).2.1
 
 theorem le_refl (γ : GradeVector n) : γ ≤ᶜ γ := fun x => Grade.le_refl (γ x)
 

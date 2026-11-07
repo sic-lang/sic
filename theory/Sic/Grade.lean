@@ -5,7 +5,7 @@ public import Sic.Multiplicity
 /-!
 # Grades
 
-The grades of RFC 33: a grade counts the uses of a variable along two axes, its uses at run time and
+The grades of RFC 36: a grade counts the uses of a variable along two axes, its uses at run time and
 all its uses, as a pair of multiplicities.
 ADE have no such modality, and prove the laws of a modality for each of their instances; the grades
 are proved here to satisfy them, for the multiplications and the greatest lower bounds that the RFC
@@ -22,6 +22,7 @@ A grade, a pair of multiplicities whose first counts the uses at run time and wh
 all the uses.
 The uses at run time are among all the uses, so a pair whose second multiplicity is `0` has `0` as
 its first multiplicity too: of the nine pairs, the seven others are the grades.
+RFC: `\mathsf{syntax}_p`
 -/
 structure Grade where
   /-- The multiplicity of the uses at run time. -/
@@ -38,39 +39,39 @@ namespace Grade
 `unrestricted` for `0`, `1` and `ω`, except a run-time multiplicity `ω` under a total multiplicity
 `1`, named `affine` since it counts at most one use. -/
 
-/-- `none / none`, the grade `𝟘`. -/
+/-- `none / none`, the grade `00ᵖ`. -/
 def noneNone : Grade := ⟨.zero, .zero, by decide⟩
 
-/-- `none / linear`, the grade `⟨0, 1⟩`. -/
+/-- `none / linear`, the grade `01ᵖ`. -/
 def noneLinear : Grade := ⟨.zero, .one, by decide⟩
 
-/-- `none / unrestricted`, the grade `⟨0, ω⟩`. -/
+/-- `none / unrestricted`, the grade `0ωᵖ`. -/
 def noneUnrestricted : Grade := ⟨.zero, .omega, by decide⟩
 
-/-- `linear / linear`, the grade `𝟙`. -/
+/-- `linear / linear`, the grade `11ᵖ`. -/
 def linearLinear : Grade := ⟨.one, .one, by decide⟩
 
-/-- `linear / unrestricted`, the grade `⟨1, ω⟩`. -/
+/-- `linear / unrestricted`, the grade `1ωᵖ`. -/
 def linearUnrestricted : Grade := ⟨.one, .omega, by decide⟩
 
-/-- `affine / linear`, the grade `⟨ω, 1⟩`. -/
+/-- `affine / linear`, the grade `ω1ᵖ`. -/
 def affineLinear : Grade := ⟨.omega, .one, by decide⟩
 
-/-- `unrestricted / unrestricted`, the grade `⟨ω, ω⟩`. -/
+/-- `unrestricted / unrestricted`, the grade `ωωᵖ`. -/
 def unrestrictedUnrestricted : Grade := ⟨.omega, .omega, by decide⟩
 
-/-- The grade `𝟘`, which `none / none` names. -/
+/-- The grade `00ᵖ`, which `none / none` names. -/
 abbrev zero : Grade := noneNone
 
-/-- The grade `𝟙`, which `linear / linear` names. -/
+/-- The grade `11ᵖ`, which `linear / linear` names. -/
 abbrev one : Grade := linearLinear
 
 /-- Every grade is one of the seven. -/
 theorem cases (p : Grade) :
     p = noneNone ∨ p = noneLinear ∨ p = noneUnrestricted ∨ p = linearLinear ∨
       p = linearUnrestricted ∨ p = affineLinear ∨ p = unrestrictedUnrestricted := by
-  obtain ⟨u, v, h⟩ := p
-  cases u <;> cases v <;> simp_all [noneNone, noneLinear, noneUnrestricted, linearLinear,
+  obtain ⟨π₁, π₂, h⟩ := p
+  cases π₁ <;> cases π₂ <;> simp_all [noneNone, noneLinear, noneUnrestricted, linearLinear,
     linearUnrestricted, affineLinear, unrestrictedUnrestricted]
 
 /-- Decides a statement on all the grades by checking each of the seven. -/
@@ -97,7 +98,8 @@ theorem ext {p q : Grade} (hr : p.run = q.run) (ht : p.total = q.total) : p = q 
 
 The operations act on each multiplicity, and the seven grades are closed under them. -/
 
-/-- The addition of the grades, `⟨u₁, v₁⟩ + ⟨u₂, v₂⟩ = ⟨u₁ + u₂, v₁ + v₂⟩`. -/
+/-- The addition of the grades, `⟨π₁, π₂⟩ + ⟨π₃, π₄⟩ = ⟨π₁ + π₃, π₂ + π₄⟩`.
+RFC: `\mathsf{op}_p` -/
 def add (p q : Grade) : Grade where
   run := p.run + q.run
   total := p.total + q.total
@@ -105,7 +107,8 @@ def add (p q : Grade) : Grade where
     rw [Multiplicity.add_eq_zero] at h ⊢
     exact ⟨p.run_zero h.1, q.run_zero h.2⟩
 
-/-- The multiplication of the grades, `⟨u₁, v₁⟩ · ⟨u₂, v₂⟩ = ⟨u₁ · u₂, v₁ · v₂⟩`. -/
+/-- The multiplication of the grades, `⟨π₁, π₂⟩ · ⟨π₃, π₄⟩ = ⟨π₁ · π₃, π₂ · π₄⟩`.
+RFC: `\mathsf{op}_p` -/
 def mul (p q : Grade) : Grade where
   run := p.run * q.run
   total := p.total * q.total
@@ -113,7 +116,8 @@ def mul (p q : Grade) : Grade where
     rw [Multiplicity.mul_eq_zero] at h ⊢
     exact h.imp p.run_zero q.run_zero
 
-/-- The meet of the grades, `⟨u₁, v₁⟩ ∧ ⟨u₂, v₂⟩ = ⟨u₁ ∧ u₂, v₁ ∧ v₂⟩`. -/
+/-- The meet of the grades, `⟨π₁, π₂⟩ ∧ ⟨π₃, π₄⟩ = ⟨π₁ ∧ π₃, π₂ ∧ π₄⟩`.
+RFC: `\mathsf{op}_p` -/
 def meet (p q : Grade) : Grade where
   run := p.run ⊓ q.run
   total := p.total ⊓ q.total
@@ -133,13 +137,15 @@ theorem mul_def (p q : Grade) : p * q = mul p q := rfl
 
 theorem meet_def (p q : Grade) : p ⊓ q = meet p q := rfl
 
-/-- The order of the grades, `p ≤ q` when `p = p ∧ q`, as in ADE. -/
+/-- The order of the grades, `p ≤ q` when `p = p ∧ q`, as in ADE.
+RFC: `\mathsf{order}_p` -/
 instance : LE Grade where
   le p q := p = p ⊓ q
 
 instance (p q : Grade) : Decidable (p ≤ q) := inferInstanceAs (Decidable (p = p ⊓ q))
 
-/-- The order of the grades is the order of the multiplicities on each component. -/
+/-- The order of the grades is the order of the multiplicities on each component.
+RFC: `\mathsf{componentwise}_p` -/
 theorem le_iff (p q : Grade) : p ≤ q ↔ p.run ≤ q.run ∧ p.total ≤ q.total := by
   constructor
   · intro h
@@ -147,7 +153,7 @@ theorem le_iff (p q : Grade) : p ≤ q ↔ p.run ≤ q.run ∧ p.total ≤ q.tot
   · intro ⟨hr, ht⟩
     exact ext hr ht
 
-/-! The tables of RFC 33 follow from those of the multiplicities, and the names of the grades
+/-! The tables of the RFC follow from those of the multiplicities, and the names of the grades
 match their components. -/
 
 theorem names :
@@ -157,24 +163,24 @@ theorem names :
       (.omega, .omega)] := rfl
 
 /-- Passing a permission of grade `none / linear` to a parameter of the same grade uses it once, and
-never at run time: `⟨0, 1⟩ · 𝟙 = ⟨0, 1⟩`. -/
+never at run time: `01ᵖ · 11ᵖ = 01ᵖ`. -/
 example : noneLinear * one = noneLinear := by decide
 
 /-- A variable used once in total, erased in one branch and at run time in another, is used once in
-total and at most once at run time: `⟨0, 1⟩ ∧ 𝟙 = ⟨ω, 1⟩`. -/
+total and at most once at run time: `01ᵖ ∧ 11ᵖ = ω1ᵖ`. -/
 example : noneLinear ⊓ one = affineLinear := by decide
 
-/-- Without `⟨ω, 1⟩`, the meet of `⟨0, 1⟩` and `𝟙` would be `⟨ω, ω⟩`, and the multiplication would
-not distribute over the meet: `⟨0, 1⟩ · ⟨ω, ω⟩` is `⟨0, ω⟩`, while `⟨0, 1⟩ · ⟨0, 1⟩ ∧ ⟨0, 1⟩ · 𝟙` is
-`⟨0, 1⟩`. -/
+/-- Without `ω1ᵖ`, the meet of `01ᵖ` and `11ᵖ` would be `ωωᵖ`, and the multiplication would not
+distribute over the meet: `01ᵖ · ωωᵖ` is `0ωᵖ`, while `01ᵖ · 01ᵖ ∧ 01ᵖ · 11ᵖ` is `01ᵖ`. -/
 example :
     (noneLinear.run * Multiplicity.omega, noneLinear.total * Multiplicity.omega) =
       (.zero, .omega) ∧
     (noneLinear * noneLinear ⊓ noneLinear * one) = noneLinear := by
   decide
 
-/-- On the seven grades, the grades that allow discarding, `p ≤ 𝟘`, are exactly those that allow
-duplicating, `p ≤ p + p`: `𝟘`, `⟨0, ω⟩` and `⟨ω, ω⟩`. -/
+/-- The grades that allow discarding a variable, `p ≤ 00ᵖ`, are exactly those that allow duplicating
+it, `p ≤ p + p`: `00ᵖ`, `0ωᵖ` and `ωωᵖ`.
+RFC: `\mathsf{discard}_p` -/
 theorem discard_iff_duplicate :
     ∀ p : Grade, (p ≤ zero ↔ p ≤ p + p) ∧
       (p ≤ zero ↔ p = zero ∨ p = noneUnrestricted ∨ p = unrestrictedUnrestricted) := by
@@ -182,55 +188,58 @@ theorem discard_iff_duplicate :
 
 /-! ## Properties
 
-The seven grades form a modality of ADE, a semiring ordered by its meet, whose zero is well
-behaved. -/
+The seven grades form a modality of ADE: a semiring whose addition and multiplication distribute
+over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-theorem add_assoc : ∀ p q r : Grade, (p + q) + r = p + (q + r) := by decide
-
-theorem add_comm : ∀ p q : Grade, p + q = q + p := by decide
-
-theorem zero_add : ∀ p : Grade, zero + p = p := by decide
-
-theorem mul_assoc : ∀ p q r : Grade, (p * q) * r = p * (q * r) := by decide
-
-theorem one_mul : ∀ p : Grade, one * p = p := by decide
-
-theorem mul_one : ∀ p : Grade, p * one = p := by decide
-
-theorem zero_mul : ∀ p : Grade, zero * p = zero := by decide
-
-theorem mul_zero : ∀ p : Grade, p * zero = zero := by decide
-
-theorem meet_assoc : ∀ p q r : Grade, (p ⊓ q) ⊓ r = p ⊓ (q ⊓ r) := by decide
-
-theorem meet_comm : ∀ p q : Grade, p ⊓ q = q ⊓ p := by decide
-
-theorem meet_idem : ∀ p : Grade, p ⊓ p = p := by decide
-
-theorem add_meet : ∀ p q r : Grade,
-    p + (q ⊓ r) = (p + q) ⊓ (p + r) ∧ (q ⊓ r) + p = (q + p) ⊓ (r + p) := by
+/-- The addition and the multiplication form a semiring.
+RFC: `\mathsf{semiring}_p` -/
+theorem semiring : ∀ p q r : Grade,
+    (p + q) + r = p + (q + r) ∧
+      p + q = q + p ∧
+      zero + p = p ∧
+      (p * q) * r = p * (q * r) ∧
+      (one * p = p ∧ p * one = p) ∧
+      (zero * p = zero ∧ p * zero = zero) := by
   decide
 
-/-- `(·₊)`: the multiplication distributes over the addition. -/
+/-- The meet is associative, commutative and idempotent.
+RFC: `\mathsf{meet}_p` -/
+theorem meet_semilattice : ∀ p q r : Grade,
+    (p ⊓ q) ⊓ r = p ⊓ (q ⊓ r) ∧ p ⊓ q = q ⊓ p ∧ p ⊓ p = p := by
+  decide
+
+/-- The multiplication distributes over the addition.
+RFC: `{\cdot}{+}_p` -/
 theorem mul_add : ∀ p q r : Grade,
     p * (q + r) = (p * q) + (p * r) ∧ (q + r) * p = (q * p) + (r * p) := by
   decide
 
-/-- `(·∧)`: the multiplication distributes over the meet. -/
+/-- The multiplication distributes over the meet.
+RFC: `{\cdot}{\wedge}_p` -/
 theorem mul_meet : ∀ p q r : Grade,
     p * (q ⊓ r) = (p * q) ⊓ (p * r) ∧ (q ⊓ r) * p = (q * p) ⊓ (r * p) := by
   decide
 
-/-- `(+≤)`: the addition is monotone. -/
+/-- The addition distributes over the meet.
+RFC: `{+}{\wedge}_p` -/
+theorem add_meet : ∀ p q r : Grade,
+    p + (q ⊓ r) = (p + q) ⊓ (p + r) ∧ (q ⊓ r) + p = (q + p) ⊓ (r + p) := by
+  decide
+
+/-- The addition is monotone.
+RFC: `{+}{\le}_p` -/
 theorem add_le_add_right : ∀ p q r : Grade, p ≤ q → p + r ≤ q + r := by decide
 
-/-- `(∧≤)`: the meet is the greatest lower bound of two grades. -/
+/-- The meet is the greatest lower bound of two grades.
+RFC: `{\wedge}{\le}_p` -/
 theorem le_meet_iff : ∀ p q r : Grade, r ≤ p ∧ r ≤ q ↔ r ≤ p ⊓ q := by decide
 
-/-- `(𝟘ₚ)`: the zero is well behaved. -/
+/-- The zero is well behaved.
+RFC: `0_p` -/
 theorem zero_well_behaved :
-    zero ≠ one ∧ (∀ p q : Grade, p + q = zero → p = zero ∧ q = zero) ∧
+    zero ≠ one ∧
+      (∀ p q : Grade, p + q = zero → p = zero ∧ q = zero) ∧
       (∀ p q : Grade, p ⊓ q = zero → p = zero ∧ q = zero) ∧
       ∀ p q : Grade, p * q = zero → p = zero ∨ q = zero := by
   decide
@@ -239,12 +248,13 @@ theorem zero_well_behaved :
 
 A grade stands for the pairs of numbers of uses it allows, at run time and in total. -/
 
-/-- The pairs of numbers of uses that the pair of multiplicities `⟨u, v⟩` allows, the uses at run
-time being among all the uses, as `(uses_p)` writes it for a grade. -/
-def usesPair (u v : Multiplicity) : Set (Nat × Nat) :=
-  { x | x.1 ∈ Multiplicity.uses u ∧ x.2 ∈ Multiplicity.uses v ∧ x.1 ≤ x.2 }
+/-- The pairs of numbers of uses that the pair of multiplicities `⟨π₁, π₂⟩` allows, the uses at run
+time being among all the uses.
+RFC: `\mathsf{uses}_p` -/
+def usesPair (π₁ π₂ : Multiplicity) : Set (Nat × Nat) :=
+  { x | x.1 ∈ Multiplicity.uses π₁ ∧ x.2 ∈ Multiplicity.uses π₂ ∧ x.1 ≤ x.2 }
 
-/-- The pairs of numbers of uses that a grade allows, `(uses_p)`. -/
+/-- The pairs of numbers of uses that a grade allows, those of its pair of multiplicities. -/
 def uses (p : Grade) : Set (Nat × Nat) :=
   usesPair p.run p.total
 
@@ -257,8 +267,9 @@ instance (x : Nat × Nat) (p : Grade) : Decidable (x ∈ uses p) :=
 
 /--
 `IsBest S p` says that `p` is the best grade for the set `S` of pairs of numbers of uses,
-`best(S) = p` in RFC 33: it allows all the pairs of `S`, and allows the fewest among the grades that
-do.
+`best(S) = p` in the RFC: it allows all the pairs of `S`, and allows the fewest among the grades
+that do.
+RFC: `\mathsf{best}_p`
 -/
 def IsBest (S : Set (Nat × Nat)) (p : Grade) : Prop :=
   S ⊆ uses p ∧ ∀ q, S ⊆ uses q → uses p ⊆ uses q
@@ -267,7 +278,8 @@ def IsBest (S : Set (Nat × Nat)) (p : Grade) : Prop :=
 def grid : List (Nat × Nat) :=
   [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)]
 
-/-- `(≤_p)`, where a grade is below another when it allows more pairs. -/
+/-- A grade is below another when it allows more pairs.
+RFC: `\le_p` -/
 theorem le_iff_uses (p q : Grade) : p ≤ q ↔ uses q ⊆ uses p := by
   constructor
   · intro h x hx
@@ -280,19 +292,21 @@ theorem le_iff_uses (p q : Grade) : p ≤ q ↔ uses q ⊆ uses p := by
 
 theorem le_antisymm : ∀ p q : Grade, p ≤ q → q ≤ p → p = q := by decide
 
-/-- The best grade is unique, so that `best(S)` is well defined. -/
+/-- The best grade is unique, so that `best(S)` is well defined.
+RFC: `\mathsf{unique}_p` -/
 theorem IsBest.unique {S : Set (Nat × Nat)} {p q : Grade} (hp : IsBest S p) (hq : IsBest S q) :
     p = q :=
   le_antisymm p q ((le_iff_uses p q).2 (hq.2 p hp.1)) ((le_iff_uses q p).2 (hp.2 q hq.1))
 
-/-- The addition is the best abstraction of the addition of pairs of numbers, `(+_p)`. -/
+/-- The addition is the best abstraction of the addition of pairs of numbers.
+RFC: `+_p` -/
 theorem add_isBest (p q : Grade) :
-    IsBest { x | ∃ a₁ b₁ a₂ b₂, (a₁, b₁) ∈ uses p ∧ (a₂, b₂) ∈ uses q ∧
-      x = (a₁ + a₂, b₁ + b₂) } (p + q) := by
+    IsBest { x | ∃ n₁ n₂ n₃ n₄, (n₁, n₂) ∈ uses p ∧ (n₃, n₄) ∈ uses q ∧
+      x = (n₁ + n₃, n₂ + n₄) } (p + q) := by
   refine ⟨?_, ?_⟩
-  · rintro x ⟨a₁, b₁, a₂, b₂, ⟨h₁, h₂, h₃⟩, ⟨h₄, h₅, h₆⟩, rfl⟩
-    refine ⟨(Multiplicity.add_isBest p.run q.run).1 _ ⟨a₁, a₂, h₁, h₄, rfl⟩,
-      (Multiplicity.add_isBest p.total q.total).1 _ ⟨b₁, b₂, h₂, h₅, rfl⟩, ?_⟩
+  · rintro x ⟨n₁, n₂, n₃, n₄, ⟨h₁, h₂, h₃⟩, ⟨h₄, h₅, h₆⟩, rfl⟩
+    refine ⟨(Multiplicity.add_isBest p.run q.run).1 _ ⟨n₁, n₃, h₁, h₄, rfl⟩,
+      (Multiplicity.add_isBest p.total q.total).1 _ ⟨n₂, n₄, h₂, h₅, rfl⟩, ?_⟩
     exact Nat.add_le_add h₃ h₆
   · intro w H
     have key : ∀ p q w : Grade, (∀ y ∈ grid, ∀ z ∈ grid, y ∈ uses p → z ∈ uses q →
@@ -301,14 +315,15 @@ theorem add_isBest (p q : Grade) :
     exact (le_iff_uses w (p + q)).1 (key p q w fun y _ z _ hy hz =>
       H _ ⟨y.1, y.2, z.1, z.2, hy, hz, rfl⟩)
 
-/-- The multiplication is the best abstraction of the multiplication of pairs of numbers, `(·_p)`. -/
+/-- The multiplication is the best abstraction of the multiplication of pairs of numbers.
+RFC: `\cdot_p` -/
 theorem mul_isBest (p q : Grade) :
-    IsBest { x | ∃ a₁ b₁ a₂ b₂, (a₁, b₁) ∈ uses p ∧ (a₂, b₂) ∈ uses q ∧
-      x = (a₁ * a₂, b₁ * b₂) } (p * q) := by
+    IsBest { x | ∃ n₁ n₂ n₃ n₄, (n₁, n₂) ∈ uses p ∧ (n₃, n₄) ∈ uses q ∧
+      x = (n₁ * n₃, n₂ * n₄) } (p * q) := by
   refine ⟨?_, ?_⟩
-  · rintro x ⟨a₁, b₁, a₂, b₂, ⟨h₁, h₂, h₃⟩, ⟨h₄, h₅, h₆⟩, rfl⟩
-    refine ⟨(Multiplicity.mul_isBest p.run q.run).1 _ ⟨a₁, a₂, h₁, h₄, rfl⟩,
-      (Multiplicity.mul_isBest p.total q.total).1 _ ⟨b₁, b₂, h₂, h₅, rfl⟩, ?_⟩
+  · rintro x ⟨n₁, n₂, n₃, n₄, ⟨h₁, h₂, h₃⟩, ⟨h₄, h₅, h₆⟩, rfl⟩
+    refine ⟨(Multiplicity.mul_isBest p.run q.run).1 _ ⟨n₁, n₃, h₁, h₄, rfl⟩,
+      (Multiplicity.mul_isBest p.total q.total).1 _ ⟨n₂, n₄, h₂, h₅, rfl⟩, ?_⟩
     exact Nat.mul_le_mul h₃ h₆
   · intro w H
     have key : ∀ p q w : Grade, (∀ y ∈ grid, ∀ z ∈ grid, y ∈ uses p → z ∈ uses q →
@@ -317,7 +332,8 @@ theorem mul_isBest (p q : Grade) :
     exact (le_iff_uses w (p * q)).1 (key p q w fun y _ z _ hy hz =>
       H _ ⟨y.1, y.2, z.1, z.2, hy, hz, rfl⟩)
 
-/-- The meet is the best abstraction of the union, `(∧_p)`. -/
+/-- The meet is the best abstraction of the union.
+RFC: `\wedge_p` -/
 theorem meet_isBest (p q : Grade) : IsBest (uses p ∪ uses q) (p ⊓ q) := by
   refine ⟨?_, ?_⟩
   · intro x hx
@@ -331,17 +347,22 @@ theorem meet_isBest (p q : Grade) : IsBest (uses p ∪ uses q) (p ⊓ q) := by
       decide +kernel
     exact (le_iff_uses w (p ⊓ q)).1 (key p q w fun y _ hy => H y hy)
 
-/-- The pair `⟨1, 0⟩` allows no pair of numbers of uses, since a use at run time is a use. -/
-theorem usesPair_one_zero : ∀ x, x ∉ usesPair .one .zero := by
-  rintro ⟨a, b⟩ ⟨h₁, h₂, h₃⟩
-  simp at h₁ h₂
-  omega
+/-- The pair `⟨1, 0⟩` allows no pair of numbers of uses, since a use at run time is a use, and the
+pair `⟨ω, 0⟩` allows only `(0, 0)`, as `00ᵖ` does.
+RFC: `\mathsf{excluded}_p` -/
+theorem excluded :
+    (∀ x, x ∉ usesPair .one .zero) ∧
+      (usesPair .omega .zero ⊆ uses zero ∧ uses zero ⊆ usesPair .omega .zero) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rintro ⟨n₁, n₂⟩ ⟨h₁, h₂, h₃⟩
+    simp at h₁ h₂
+    omega
+  all_goals
+    rintro ⟨n₁, n₂⟩ ⟨h₁, h₂, h₃⟩
+    simp_all [zero, noneNone, uses, usesPair] <;> omega
 
-/-- The pair `⟨ω, 0⟩` allows only `(0, 0)`, as `𝟘` does. -/
-theorem usesPair_omega_zero : usesPair .omega .zero ⊆ uses zero ∧ uses zero ⊆ usesPair .omega .zero := by
-  refine ⟨?_, ?_⟩ <;> rintro ⟨a, b⟩ ⟨h₁, h₂, h₃⟩ <;> simp_all [zero, noneNone, uses, usesPair] <;> omega
-
-/-- The seven grades allow non-empty sets of pairs, all different. -/
+/-- The seven grades allow non-empty sets of pairs, all different.
+RFC: `\mathsf{distinct}_p` -/
 theorem uses_nonempty_injective :
     (∀ p : Grade, ∃ x, x ∈ uses p) ∧ ∀ p q : Grade, uses p ⊆ uses q → uses q ⊆ uses p → p = q := by
   refine ⟨?_, fun p q h₁ h₂ => le_antisymm p q ((le_iff_uses p q).2 h₂) ((le_iff_uses q p).2 h₁)⟩
@@ -350,18 +371,21 @@ theorem uses_nonempty_injective :
   obtain ⟨x, _, hx⟩ := key p
   exact ⟨x, hx⟩
 
-/-- The projection on the run-time multiplicity is sound for the first components of the pairs, but
-not exact: `⟨ω, 1⟩` allows `0` and `1` uses at run time, which only `ω` allows among the
-multiplicities, `(sound_run)`. -/
+/-- The projection on the run-time multiplicity is sound for the first components of the pairs.
+RFC: `\mathsf{sound}_{\mathsf{run}}` -/
 theorem sound_run (p : Grade) :
-    { a | ∃ b, (a, b) ∈ uses p } ⊆ Multiplicity.uses p.run := by
-  rintro a ⟨b, h, _, _⟩
+    { n₁ | ∃ n₂, (n₁, n₂) ∈ uses p } ⊆ Multiplicity.uses p.run := by
+  rintro n₁ ⟨n₂, h, _, _⟩
   exact h
 
-/-- The projection is not exact: `2` uses at run time are allowed by `ω`, not by `⟨ω, 1⟩`. -/
-example : 2 ∈ Multiplicity.uses affineLinear.run ∧ ¬ 2 ∈ { a | ∃ b, (a, b) ∈ uses affineLinear } := by
+/-- The projection is not exact: `ω1ᵖ` allows `0` and `1` uses at run time, which only `ω` allows
+among the multiplicities, and `ω` allows `2`.
+RFC: `\mathsf{inexact}_{\mathsf{run}}` -/
+theorem inexact_run :
+    2 ∈ Multiplicity.uses affineLinear.run ∧
+      2 ∉ { n₁ | ∃ n₂, (n₁, n₂) ∈ uses affineLinear } := by
   refine ⟨trivial, ?_⟩
-  rintro ⟨b, _, h, h'⟩
+  rintro ⟨n₂, _, h, h'⟩
   simp [affineLinear] at h h'
   omega
 
@@ -371,7 +395,8 @@ Every non-empty set of grades has a greatest lower bound, its meet, which the us
 of the data and codata types takes over all the shapes of a term. -/
 
 -- ADE: `Greatest-lower-bound`, in `Graded/Modality.agda`.
-/-- `(⋀_p)`: `g` is the greatest lower bound of the set `S` of grades, written `⋀ S`. -/
+/-- `g` is the greatest lower bound of the set `S` of grades, written `⋀ S`.
+RFC: `\textstyle\bigwedge_p` -/
 def IsGLB (S : Set Grade) (g : Grade) : Prop :=
   (∀ p, p ∈ S → g ≤ p) ∧ ∀ r, (∀ p, p ∈ S → r ≤ p) → r ≤ g
 
@@ -420,7 +445,8 @@ theorem isGLB_foldl (L : List Grade) : ∀ g : Grade,
         exact (le_meet_iff g x r).1 ⟨h g (Or.inl rfl), h x (Or.inr List.mem_cons_self)⟩
       · exact h p (Or.inr (List.mem_cons_of_mem _ hp))
 
-/-- Every non-empty set of grades has a greatest lower bound, `(⋀_p)`.
+/-- Every non-empty set of grades has a greatest lower bound.
+RFC: `\textstyle\bigwedge_p`
 The set is decidable, which the proof needs to compute the bound without the axiom of choice; the
 sets of grades that a rule computes are. -/
 theorem exists_isGLB (S : Set Grade) [DecidablePred (· ∈ S)] (h : ∃ p, p ∈ S) :
@@ -450,14 +476,16 @@ theorem add_le_add : ∀ p q r s : Grade, p ≤ q → r ≤ s → p + r ≤ q + 
 
 theorem mul_le_mul_left : ∀ r p q : Grade, p ≤ q → r * p ≤ r * q := by decide
 
-/-- `(⋀₊)`: the meet of a family is superadditive, for every family `(pᵢ)` and `(qᵢ)`. -/
+/-- The greatest lower bound of a family is superadditive, for every family `(pᵢ)` and `(qᵢ)`.
+RFC: `\textstyle\bigwedge{+}_p` -/
 theorem glb_add {I : Type} (p q : I → Grade) {g h k : Grade} (hg : IsGLB (range p) g)
     (hh : IsGLB (range q) h) (hk : IsGLB (range fun i => p i + q i) k) : g + h ≤ k :=
   hk.2 (g + h) fun _ ⟨i, hi⟩ => hi ▸ add_le_add _ _ _ _ (hg.1 (p i) ⟨i, rfl⟩) (hh.1 (q i) ⟨i, rfl⟩)
 
 -- ADE: `·-GLBˡ` of `Has-well-behaved-GLBs`, in `Graded/Modality.agda`.
-/-- `(⋀·)`: the multiplication by a grade commutes with the meet of a family indexed by a non-empty
-set.
+/-- The multiplication by a grade commutes with the greatest lower bound of a family indexed by a
+non-empty set.
+RFC: `\textstyle\bigwedge{\cdot}_p`
 The proof is the finiteness of the grades: the grades `p` such that `l ≤ r · p` form a filter, which
 has a least element. -/
 theorem glb_mul {I : Type} (p : I → Grade) (i₀ : I) (r : Grade) {g : Grade}
@@ -472,15 +500,16 @@ theorem glb_mul {I : Type} (p : I → Grade) (i₀ : I) (r : Grade) {g : Grade}
 
 The projection on the run-time multiplicity is a homomorphism of modalities. -/
 
-/-- `(run_p)`: the run-time multiplicity of a grade is its projection. -/
-theorem run_mk (u v : Multiplicity) (h : v = .zero → u = .zero) : run ⟨u, v, h⟩ = u := rfl
+/-- The run-time multiplicity of a grade is its projection.
+RFC: `\mathsf{run}_p` -/
+theorem run_mk (π₁ π₂ : Multiplicity) (h : π₂ = .zero → π₁ = .zero) : run ⟨π₁, π₂, h⟩ = π₁ := rfl
 
-/-- `(run_op)`: the projection preserves the operations and the units. -/
+/-- The projection preserves the operations and the units. -/
 theorem run_op : ∀ p q : Grade, (p + q).run = p.run + q.run ∧ (p * q).run = p.run * q.run ∧
     (p ⊓ q).run = p.run ⊓ q.run ∧ zero.run = .zero ∧ one.run = .one :=
   fun _ _ => ⟨rfl, rfl, rfl, rfl, rfl⟩
 
-/-- `(run_≤)`: the projection preserves the order. -/
+/-- The projection preserves the order. -/
 theorem run_le {p q : Grade} (h : p ≤ q) : p.run ≤ q.run :=
   ((le_iff p q).1 h).1
 
