@@ -5,9 +5,15 @@
 
   # The unstable branch, for a recent release of Lean; flake.lock pins its commit.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  # The RFCs that the metatheory formalizes, whose names the pages of the correspondence list:
+  # flake.lock pins the commit of the branch of RFC 36 until it is merged.
+  inputs.rfcs = {
+    url = "github:sic-lang/rfcs/type-system";
+    flake = false;
+  };
 
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, rfcs, ... }:
     let
       # The popular systems whose tools are all in the binary cache of nixpkgs: Linux on x86_64 and
       # aarch64, and macOS on Apple silicon.
@@ -33,6 +39,8 @@
             program = lib.getExe program.run;
             meta = { inherit description; };
           };
+          # The files of the RFCs at the pinned commit, to which the pages of the correspondence link.
+          rfcsUrl = "https://github.com/sic-lang/rfcs/blob/${rfcs.rev}";
           # The checks of the files: their tools, also provided by the development shell, and their
           # command, run from the root of the repository.
           fileChecks = {
@@ -58,6 +66,18 @@
                 "lake --dir theory build --wfail"
                 "lake --dir theory env leanchecker Sic"
                 "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic"
+              ];
+            };
+            # Relates the declarations of the metatheory to the names of the RFCs, which fails if one of
+            # them gives a name that no RFC has.
+            correspondence = {
+              tools = [
+                pkgs.coreutils
+                pkgs.lean4
+              ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic >/dev/null"
               ];
             };
             markdownlint = {
