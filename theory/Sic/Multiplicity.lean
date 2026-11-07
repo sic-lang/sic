@@ -5,8 +5,8 @@ public import Sic.Set
 /-!
 # Multiplicities
 
-The multiplicities of RFC 33: a multiplicity counts the uses of a variable, and is `0`, `1` or `ω`.
-They are the linear modality of ADE, whose laws are proved here, with the tables of the RFC as the
+The multiplicities of RFC 36: a multiplicity counts the uses of a variable, and is `0`, `1` or `ω`.
+They are the linear modality of ADE, whose laws are proved here, with the cases of the RFC as the
 definitions of the operations and the meaning of the RFC as theorems about them.
 The meet is written `⊓`, since `∧` is the conjunction of Lean.
 -/
@@ -16,7 +16,8 @@ The meet is written `⊓`, since `∧` is the conjunction of Lean.
 namespace Sic
 
 -- ADE: `Linearity`, in `Graded/Modality/Instances/Linearity.agda`.
-/-- A multiplicity, which counts the uses of a variable. -/
+/-- A multiplicity, which counts the uses of a variable.
+RFC: `\mathsf{syntax}_\pi` -/
 inductive Multiplicity where
   /-- `0`: no use. -/
   | zero
@@ -28,26 +29,29 @@ inductive Multiplicity where
 
 namespace Multiplicity
 
-/-- The addition of the multiplicities, by the first table of RFC 33. -/
+/-- The addition of the multiplicities.
+RFC: `\mathsf{op}_\pi` -/
 def add : Multiplicity → Multiplicity → Multiplicity
-  | zero, u | u, zero => u
+  | zero, π | π, zero => π
   | _, _ => omega
 
-/-- The multiplication of the multiplicities, by the second table of RFC 33. -/
+/-- The multiplication of the multiplicities.
+RFC: `\mathsf{op}_\pi` -/
 def mul : Multiplicity → Multiplicity → Multiplicity
   | zero, _ | _, zero => zero
-  | one, u | u, one => u
+  | one, π | π, one => π
   | omega, omega => omega
 
 instance : Add Multiplicity := ⟨add⟩
 
 instance : Mul Multiplicity := ⟨mul⟩
 
-theorem add_def (u v : Multiplicity) : u + v = add u v := rfl
+theorem add_def (π₁ π₂ : Multiplicity) : π₁ + π₂ = add π₁ π₂ := rfl
 
-theorem mul_def (u v : Multiplicity) : u * v = mul u v := rfl
+theorem mul_def (π₁ π₂ : Multiplicity) : π₁ * π₂ = mul π₁ π₂ := rfl
 
-/-- The meet of two multiplicities, by the third table of RFC 33. -/
+/-- The meet of two multiplicities.
+RFC: `\mathsf{op}_\pi` -/
 def meet : Multiplicity → Multiplicity → Multiplicity
   | zero, zero => zero
   | one, one => one
@@ -58,26 +62,28 @@ instance : Min Multiplicity := ⟨meet⟩
 /-- The meet, written as in Mathlib, on which this package does not depend. -/
 infixl:69 " ⊓ " => min
 
-theorem meet_def (u v : Multiplicity) : u ⊓ v = meet u v := rfl
+theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π₂ := rfl
 
-/-- The order of the multiplicities, `u ≤ v` when `u = u ⊓ v`, as in ADE. -/
+/-- The order of the multiplicities, `π₁ ≤ π₂` when `π₁ = π₁ ⊓ π₂`, as in ADE.
+RFC: `\mathsf{order}_\pi` -/
 instance : LE Multiplicity where
-  le u v := u = u ⊓ v
+  le π₁ π₂ := π₁ = π₁ ⊓ π₂
 
-instance (u v : Multiplicity) : Decidable (u ≤ v) := inferInstanceAs (Decidable (u = u ⊓ v))
+instance (π₁ π₂ : Multiplicity) : Decidable (π₁ ≤ π₂) :=
+  inferInstanceAs (Decidable (π₁ = π₁ ⊓ π₂))
 
 /-- Decides a statement on all the multiplicities by checking each of the three. -/
-instance {P : Multiplicity → Prop} [DecidablePred P] : Decidable (∀ u, P u) :=
+instance {P : Multiplicity → Prop} [DecidablePred P] : Decidable (∀ π, P π) :=
   decidable_of_iff (P zero ∧ P one ∧ P omega)
-    ⟨fun ⟨h₀, h₁, h₂⟩ u => by cases u <;> assumption, fun h => ⟨h _, h _, h _⟩⟩
+    ⟨fun ⟨h₀, h₁, h₂⟩ π => by cases π <;> assumption, fun h => ⟨h _, h _, h _⟩⟩
 
 /-- Decides a statement on some multiplicity by checking each of the three. -/
-instance {P : Multiplicity → Prop} [DecidablePred P] : Decidable (∃ u, P u) :=
+instance {P : Multiplicity → Prop} [DecidablePred P] : Decidable (∃ π, P π) :=
   decidable_of_iff (P zero ∨ P one ∨ P omega)
     ⟨fun h => by rcases h with h | h | h <;> exact ⟨_, h⟩,
-      fun ⟨u, h⟩ => by cases u <;> simp_all⟩
+      fun ⟨π, h⟩ => by cases π <;> simp_all⟩
 
-/-! The tables of RFC 33, row by row, in the order `0`, `1`, `ω`. -/
+/-! The tables of the RFC, row by row, in the order `0`, `1`, `ω`. -/
 
 theorem add_table :
     [[zero + zero, zero + one, zero + omega],
@@ -100,7 +106,8 @@ theorem meet_table :
     [[zero, omega, omega], [omega, one, omega], [omega, omega, omega]] := by
   decide
 
-/-- `ω` is below `0` and below `1`, while `0` and `1` are not comparable. -/
+/-- `ω` is below `0` and below `1`, while `0` and `1` are not comparable.
+RFC: `\mathsf{compare}_\pi` -/
 theorem order_table :
     omega ≤ zero ∧ omega ≤ one ∧ ¬ zero ≤ one ∧ ¬ one ≤ zero := by
   decide
@@ -108,66 +115,72 @@ theorem order_table :
 
 /-! ## Meaning -/
 
-/-- The numbers of uses that a multiplicity allows, `(uses_u)`. -/
+/-- The numbers of uses that a multiplicity allows.
+RFC: `\mathsf{uses}_\pi` -/
 def uses : Multiplicity → Set Nat
-  | zero => { a | a = 0 }
-  | one => { a | a = 1 }
-  | omega => { _a | True }
+  | zero => { n | n = 0 }
+  | one => { n | n = 1 }
+  | omega => { _n | True }
 
-@[simp] theorem mem_uses_zero {a : Nat} : a ∈ uses zero ↔ a = 0 := Iff.rfl
-@[simp] theorem mem_uses_one {a : Nat} : a ∈ uses one ↔ a = 1 := Iff.rfl
-@[simp] theorem mem_uses_omega {a : Nat} : a ∈ uses omega ↔ True := by simp only [uses, Set.mem_ofPred]
+@[simp] theorem mem_uses_zero {n : Nat} : n ∈ uses zero ↔ n = 0 := Iff.rfl
+@[simp] theorem mem_uses_one {n : Nat} : n ∈ uses one ↔ n = 1 := Iff.rfl
+@[simp] theorem mem_uses_omega {n : Nat} : n ∈ uses omega ↔ True := by simp only [uses, Set.mem_ofPred]
 
-instance (a : Nat) (u : Multiplicity) : Decidable (a ∈ uses u) :=
-  match u with
-  | zero => inferInstanceAs (Decidable (a = 0))
-  | one => inferInstanceAs (Decidable (a = 1))
+instance (n : Nat) (π : Multiplicity) : Decidable (n ∈ uses π) :=
+  match π with
+  | zero => inferInstanceAs (Decidable (n = 0))
+  | one => inferInstanceAs (Decidable (n = 1))
   | omega => isTrue trivial
 
 /--
-`IsBest S u` says that `u` is the best multiplicity for the set `S` of numbers of uses, `best(S) = u`
-in RFC 33: it allows all the numbers of `S`, and allows the fewest among the multiplicities that do.
+`IsBest S π₁` says that `π₁` is the best multiplicity for the set `S` of numbers of uses,
+`best(S) = π₁` in the RFC: it allows all the numbers of `S`, and allows the fewest among the
+multiplicities that do.
+RFC: `\mathsf{best}_\pi`
 -/
-def IsBest (S : Set Nat) (u : Multiplicity) : Prop :=
-  S ⊆ uses u ∧ ∀ w, S ⊆ uses w → uses u ⊆ uses w
+def IsBest (S : Set Nat) (π₁ : Multiplicity) : Prop :=
+  S ⊆ uses π₁ ∧ ∀ π₂, S ⊆ uses π₂ → uses π₁ ⊆ uses π₂
 
-theorem le_antisymm : ∀ u v : Multiplicity, u ≤ v → v ≤ u → u = v := by decide
+theorem le_antisymm : ∀ π₁ π₂ : Multiplicity, π₁ ≤ π₂ → π₂ ≤ π₁ → π₁ = π₂ := by decide
 
-/-- The order of the multiplicities is the reverse inclusion of the numbers of uses they allow,
-`(≤_u)`: a lower multiplicity allows more numbers of uses. -/
-theorem le_iff_uses (u v : Multiplicity) : u ≤ v ↔ uses v ⊆ uses u := by
+/-- The order of the multiplicities is the reverse inclusion of the numbers of uses they allow: a
+lower multiplicity allows more numbers of uses.
+RFC: `\le_\pi` -/
+theorem le_iff_uses (π₁ π₂ : Multiplicity) : π₁ ≤ π₂ ↔ uses π₂ ⊆ uses π₁ := by
   constructor
   · intro h
-    cases u <;> cases v <;>
+    cases π₁ <;> cases π₂ <;>
       first
         | exact absurd h (by decide)
         | exact fun a ha => ha
         | exact fun a _ => trivial
   · intro h
-    cases u <;> cases v <;>
+    cases π₁ <;> cases π₂ <;>
       first
         | decide
         | exact absurd (h 1 (by decide)) (by decide)
         | exact absurd (h 0 (by decide)) (by decide)
 
-/-- The best multiplicity is unique, so that `best(S)` is well defined. -/
-theorem IsBest.unique {S : Set Nat} {u v : Multiplicity} (hu : IsBest S u) (hv : IsBest S v) :
-    u = v := by
-  have h₁ := hu.2 v hv.1
-  have h₂ := hv.2 u hu.1
-  rw [← le_iff_uses] at h₁ h₂
-  exact le_antisymm u v h₂ h₁
+/-- The best multiplicity is unique, so that `best(S)` is well defined.
+RFC: `\mathsf{unique}_\pi` -/
+theorem IsBest.unique {S : Set Nat} {π₁ π₂ : Multiplicity} (h₁ : IsBest S π₁)
+    (h₂ : IsBest S π₂) : π₁ = π₂ := by
+  have h₁₂ := h₁.2 π₂ h₂.1
+  have h₂₁ := h₂.2 π₁ h₁.1
+  rw [← le_iff_uses] at h₁₂ h₂₁
+  exact le_antisymm π₁ π₂ h₂₁ h₁₂
 
-/-- The addition is the best abstraction of the addition of numbers, `(+_u)`. -/
-theorem add_isBest (u v : Multiplicity) :
-    IsBest { c | ∃ a b, a ∈ uses u ∧ b ∈ uses v ∧ c = a + b } (u + v) := by
+/-- The addition is the best abstraction of the addition of numbers.
+RFC: `+_\pi` -/
+theorem add_isBest (π₁ π₂ : Multiplicity) :
+    IsBest { n | ∃ n₁ n₂, n₁ ∈ uses π₁ ∧ n₂ ∈ uses π₂ ∧ n = n₁ + n₂ } (π₁ + π₂) := by
   refine ⟨?_, ?_⟩
   · intro c ⟨a, b, ha, hb, hc⟩
-    cases u <;> cases v <;> simp_all [add_def, add]
-  · intro w H
-    have H' : ∀ a b, a ∈ uses u → b ∈ uses v → a + b ∈ uses w :=
+    cases π₁ <;> cases π₂ <;> simp_all [add_def, add]
+  · intro π₃ H
+    have H' : ∀ a b, a ∈ uses π₁ → b ∈ uses π₂ → a + b ∈ uses π₃ :=
       fun a b ha hb => H (a + b) ⟨a, b, ha, hb, rfl⟩
-    cases u <;> cases v <;> cases w <;>
+    cases π₁ <;> cases π₂ <;> cases π₃ <;>
       simp only [Set.subset_def, mem_uses_zero, mem_uses_one, mem_uses_omega, true_implies,
         add_def, add] at H' ⊢ <;>
     first
@@ -185,16 +198,17 @@ theorem add_isBest (u v : Multiplicity) :
         have h22 := H' 2 2
         simp at h00 h01 h10 h11 h02 h20 h12 h21 h22
 
-/-- The multiplication is the best abstraction of the multiplication of numbers, `(·_u)`. -/
-theorem mul_isBest (u v : Multiplicity) :
-    IsBest { c | ∃ a b, a ∈ uses u ∧ b ∈ uses v ∧ c = a * b } (u * v) := by
+/-- The multiplication is the best abstraction of the multiplication of numbers.
+RFC: `\cdot_\pi` -/
+theorem mul_isBest (π₁ π₂ : Multiplicity) :
+    IsBest { n | ∃ n₁ n₂, n₁ ∈ uses π₁ ∧ n₂ ∈ uses π₂ ∧ n = n₁ * n₂ } (π₁ * π₂) := by
   refine ⟨?_, ?_⟩
   · intro c ⟨a, b, ha, hb, hc⟩
-    cases u <;> cases v <;> simp_all [mul_def, mul]
-  · intro w H
-    have H' : ∀ a b, a ∈ uses u → b ∈ uses v → a * b ∈ uses w :=
+    cases π₁ <;> cases π₂ <;> simp_all [mul_def, mul]
+  · intro π₃ H
+    have H' : ∀ a b, a ∈ uses π₁ → b ∈ uses π₂ → a * b ∈ uses π₃ :=
       fun a b ha hb => H (a * b) ⟨a, b, ha, hb, rfl⟩
-    cases u <;> cases v <;> cases w <;>
+    cases π₁ <;> cases π₂ <;> cases π₃ <;>
       simp only [Set.subset_def, mem_uses_zero, mem_uses_one, mem_uses_omega, true_implies,
         mul_def, mul] at H' ⊢ <;>
     first
@@ -212,14 +226,15 @@ theorem mul_isBest (u v : Multiplicity) :
         have h22 := H' 2 2
         simp at h00 h01 h10 h11 h02 h20 h12 h21 h22
 
-/-- The meet is the best abstraction of the union, `(∧_u)`. -/
-theorem meet_isBest (u v : Multiplicity) : IsBest (uses u ∪ uses v) (u ⊓ v) := by
+/-- The meet is the best abstraction of the union.
+RFC: `\wedge_\pi` -/
+theorem meet_isBest (π₁ π₂ : Multiplicity) : IsBest (uses π₁ ∪ uses π₂) (π₁ ⊓ π₂) := by
   refine ⟨?_, ?_⟩
   · intro c hc
-    cases u <;> cases v <;> simp_all [meet_def, meet]
-  · intro w H
-    have H' : ∀ a, a ∈ uses u ∨ a ∈ uses v → a ∈ uses w := fun a ha => H a ha
-    cases u <;> cases v <;> cases w <;>
+    cases π₁ <;> cases π₂ <;> simp_all [meet_def, meet]
+  · intro π₃ H
+    have H' : ∀ a, a ∈ uses π₁ ∨ a ∈ uses π₂ → a ∈ uses π₃ := fun a ha => H a ha
+    cases π₁ <;> cases π₂ <;> cases π₃ <;>
       simp only [Set.subset_def, mem_uses_zero, mem_uses_one, mem_uses_omega,
         true_implies, meet_def, meet] at H' ⊢ <;>
     first
@@ -233,64 +248,68 @@ theorem meet_isBest (u v : Multiplicity) : IsBest (uses u ∪ uses v) (u ⊓ v) 
 
 /-! ## Properties
 
-The multiplicities satisfy the properties that RFC 33 states for the grades, from which they are
-those of a modality of ADE: a semiring ordered by its meet, whose zero is well behaved. -/
+The multiplicities form a modality of ADE: a semiring whose addition and multiplication distribute
+over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-theorem add_assoc : ∀ u v w : Multiplicity, (u + v) + w = u + (v + w) := by decide
-
-theorem add_comm : ∀ u v : Multiplicity, u + v = v + u := by decide
-
-theorem zero_add : ∀ u : Multiplicity, zero + u = u := by decide
-
-theorem mul_assoc : ∀ u v w : Multiplicity, (u * v) * w = u * (v * w) := by decide
-
-theorem one_mul : ∀ u : Multiplicity, one * u = u := by decide
-
-theorem mul_one : ∀ u : Multiplicity, u * one = u := by decide
-
-theorem zero_mul : ∀ u : Multiplicity, zero * u = zero := by decide
-
-theorem mul_zero : ∀ u : Multiplicity, u * zero = zero := by decide
-
-theorem meet_assoc : ∀ u v w : Multiplicity, (u ⊓ v) ⊓ w = u ⊓ (v ⊓ w) := by decide
-
-theorem meet_comm : ∀ u v : Multiplicity, u ⊓ v = v ⊓ u := by decide
-
-theorem meet_idem : ∀ u : Multiplicity, u ⊓ u = u := by decide
-
-/-- `(·₊)`: the multiplication distributes over the addition. -/
-theorem mul_add : ∀ u v w : Multiplicity,
-    u * (v + w) = (u * v) + (u * w) ∧ (v + w) * u = (v * u) + (w * u) := by
+/-- The addition and the multiplication form a semiring.
+RFC: `\mathsf{semiring}_\pi` -/
+theorem semiring : ∀ π π₁ π₂ π₃ : Multiplicity,
+    (π₁ + π₂) + π₃ = π₁ + (π₂ + π₃) ∧
+      π₁ + π₂ = π₂ + π₁ ∧
+      zero + π = π ∧
+      (π₁ * π₂) * π₃ = π₁ * (π₂ * π₃) ∧
+      (one * π = π ∧ π * one = π) ∧
+      (zero * π = zero ∧ π * zero = zero) := by
   decide
 
-/-- `(·∧)`: the multiplication distributes over the meet. -/
-theorem mul_meet : ∀ u v w : Multiplicity,
-    u * (v ⊓ w) = (u * v) ⊓ (u * w) ∧ (v ⊓ w) * u = (v * u) ⊓ (w * u) := by
+/-- The meet is associative, commutative and idempotent.
+RFC: `\mathsf{meet}_\pi` -/
+theorem meet_semilattice : ∀ π π₁ π₂ π₃ : Multiplicity,
+    (π₁ ⊓ π₂) ⊓ π₃ = π₁ ⊓ (π₂ ⊓ π₃) ∧ π₁ ⊓ π₂ = π₂ ⊓ π₁ ∧ π ⊓ π = π := by
   decide
 
-theorem add_meet : ∀ u v w : Multiplicity,
-    u + (v ⊓ w) = (u + v) ⊓ (u + w) ∧ (v ⊓ w) + u = (v + u) ⊓ (w + u) := by
+/-- The multiplication distributes over the addition.
+RFC: `{\cdot}{+}_\pi` -/
+theorem mul_add : ∀ π₁ π₂ π₃ : Multiplicity,
+    π₁ * (π₂ + π₃) = (π₁ * π₂) + (π₁ * π₃) ∧ (π₂ + π₃) * π₁ = (π₂ * π₁) + (π₃ * π₁) := by
   decide
 
-/-- `(+≤)`: the addition is monotone. -/
-theorem add_le_add_right : ∀ u v w : Multiplicity, u ≤ v → u + w ≤ v + w := by decide
+/-- The multiplication distributes over the meet.
+RFC: `{\cdot}{\wedge}_\pi` -/
+theorem mul_meet : ∀ π₁ π₂ π₃ : Multiplicity,
+    π₁ * (π₂ ⊓ π₃) = (π₁ * π₂) ⊓ (π₁ * π₃) ∧ (π₂ ⊓ π₃) * π₁ = (π₂ * π₁) ⊓ (π₃ * π₁) := by
+  decide
 
-/-- `(∧≤)`: the meet is the greatest lower bound of two multiplicities. -/
-theorem le_meet_iff : ∀ u v w : Multiplicity, w ≤ u ∧ w ≤ v ↔ w ≤ u ⊓ v := by decide
+/-- The addition distributes over the meet.
+RFC: `{+}{\wedge}_\pi` -/
+theorem add_meet : ∀ π₁ π₂ π₃ : Multiplicity,
+    π₁ + (π₂ ⊓ π₃) = (π₁ + π₂) ⊓ (π₁ + π₃) ∧ (π₂ ⊓ π₃) + π₁ = (π₂ + π₁) ⊓ (π₃ + π₁) := by
+  decide
 
-/-- `(𝟘ₚ)`: the zero is well behaved. -/
+/-- The addition is monotone.
+RFC: `{+}{\le}_\pi` -/
+theorem add_le_add_right : ∀ π₁ π₂ π₃ : Multiplicity, π₁ ≤ π₂ → π₁ + π₃ ≤ π₂ + π₃ := by decide
+
+/-- The meet is the greatest lower bound of two multiplicities.
+RFC: `{\wedge}{\le}_\pi` -/
+theorem le_meet_iff : ∀ π₁ π₂ π₃ : Multiplicity, π₃ ≤ π₁ ∧ π₃ ≤ π₂ ↔ π₃ ≤ π₁ ⊓ π₂ := by decide
+
+/-- The zero is well behaved.
+RFC: `0_\pi` -/
 theorem zero_well_behaved :
-    zero ≠ one ∧ (∀ u v : Multiplicity, u + v = zero → u = zero ∧ v = zero) ∧
-      (∀ u v : Multiplicity, u ⊓ v = zero → u = zero ∧ v = zero) ∧
-      ∀ u v : Multiplicity, u * v = zero → u = zero ∨ v = zero := by
+    zero ≠ one ∧
+      (∀ π₁ π₂ : Multiplicity, π₁ + π₂ = zero → π₁ = zero ∧ π₂ = zero) ∧
+      (∀ π₁ π₂ : Multiplicity, π₁ ⊓ π₂ = zero → π₁ = zero ∧ π₂ = zero) ∧
+      ∀ π₁ π₂ : Multiplicity, π₁ * π₂ = zero → π₁ = zero ∨ π₂ = zero := by
   decide
 
-theorem add_eq_zero : ∀ u v : Multiplicity, u + v = zero ↔ u = zero ∧ v = zero := by decide
+theorem add_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ + π₂ = zero ↔ π₁ = zero ∧ π₂ = zero := by decide
 
-theorem meet_eq_zero : ∀ u v : Multiplicity, u ⊓ v = zero ↔ u = zero ∧ v = zero := by decide
+theorem meet_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ ⊓ π₂ = zero ↔ π₁ = zero ∧ π₂ = zero := by
+  decide
 
-theorem mul_eq_zero : ∀ u v : Multiplicity, u * v = zero ↔ u = zero ∨ v = zero := by decide
+theorem mul_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ * π₂ = zero ↔ π₁ = zero ∨ π₂ = zero := by decide
 
 end Multiplicity
 
