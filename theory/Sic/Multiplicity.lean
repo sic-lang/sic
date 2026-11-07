@@ -1,5 +1,6 @@
 module
 
+public import Sic.Modality
 public import Sic.Set
 
 /-!
@@ -58,9 +59,6 @@ def meet : Multiplicity → Multiplicity → Multiplicity
   | _, _ => omega
 
 instance : Min Multiplicity := ⟨meet⟩
-
-/-- The meet, written as in Mathlib, on which this package does not depend. -/
-infixl:69 " ⊓ " => min
 
 theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π₂ := rfl
 
@@ -254,20 +252,22 @@ over its meet, ordered by its meet, with a well-behaved zero. -/
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- The addition and the multiplication form a semiring.
 RFC: `\mathsf{semiring}_\pi` -/
-theorem semiring : ∀ π π₁ π₂ π₃ : Multiplicity,
-    (π₁ + π₂) + π₃ = π₁ + (π₂ + π₃) ∧
-      π₁ + π₂ = π₂ + π₁ ∧
-      zero + π = π ∧
-      (π₁ * π₂) * π₃ = π₁ * (π₂ * π₃) ∧
-      (one * π = π ∧ π * one = π) ∧
-      (zero * π = zero ∧ π * zero = zero) := by
-  decide
+theorem semiring : IsSemiring Multiplicity zero one where
+  add_assoc := by decide
+  add_comm := by decide
+  zero_add := by decide
+  mul_assoc := by decide
+  one_mul := by decide
+  mul_one := by decide
+  zero_mul := by decide
+  mul_zero := by decide
 
 /-- The meet is associative, commutative and idempotent.
 RFC: `\mathsf{meet}_\pi` -/
-theorem meet_semilattice : ∀ π π₁ π₂ π₃ : Multiplicity,
-    (π₁ ⊓ π₂) ⊓ π₃ = π₁ ⊓ (π₂ ⊓ π₃) ∧ π₁ ⊓ π₂ = π₂ ⊓ π₁ ∧ π ⊓ π = π := by
-  decide
+theorem meet_semilattice : IsMeetSemilattice Multiplicity where
+  meet_assoc := by decide
+  meet_comm := by decide
+  meet_idem := by decide
 
 /-- The multiplication distributes over the addition.
 RFC: `{\cdot}{+}_\pi` -/
@@ -297,19 +297,11 @@ theorem le_meet_iff : ∀ π₁ π₂ π₃ : Multiplicity, π₃ ≤ π₁ ∧ 
 
 /-- The zero is well behaved.
 RFC: `0_\pi` -/
-theorem zero_well_behaved :
-    zero ≠ one ∧
-      (∀ π₁ π₂ : Multiplicity, π₁ + π₂ = zero → π₁ = zero ∧ π₂ = zero) ∧
-      (∀ π₁ π₂ : Multiplicity, π₁ ⊓ π₂ = zero → π₁ = zero ∧ π₂ = zero) ∧
-      ∀ π₁ π₂ : Multiplicity, π₁ * π₂ = zero → π₁ = zero ∨ π₂ = zero := by
-  decide
-
-theorem add_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ + π₂ = zero ↔ π₁ = zero ∧ π₂ = zero := by decide
-
-theorem meet_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ ⊓ π₂ = zero ↔ π₁ = zero ∧ π₂ = zero := by
-  decide
-
-theorem mul_eq_zero : ∀ π₁ π₂ : Multiplicity, π₁ * π₂ = zero ↔ π₁ = zero ∨ π₂ = zero := by decide
+theorem zero_well_behaved : HasWellBehavedZero Multiplicity zero one where
+  zero_ne_one := by decide
+  add_eq_zero := by decide
+  meet_eq_zero := by decide
+  mul_eq_zero := by decide
 
 end Multiplicity
 

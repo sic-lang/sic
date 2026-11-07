@@ -1,0 +1,65 @@
+module
+
+/-!
+# Modalities
+
+The laws that the multiplicities and the grades satisfy alike, as records whose fields are the laws,
+so that each law is stated once and named, and each kind of objects proves that it satisfies them.
+ADE state them as the fields of their record `Modality`, in `Graded/Modality.agda`.
+-/
+
+@[expose] public section
+
+namespace Sic
+
+/-- The meet, written as in Mathlib, on which this package does not depend. -/
+infixl:69 " ⊓ " => min
+
+-- ADE: the field `+-·-Semiring` of `Modality`, in `Graded/Modality.agda`.
+/-- The addition and the multiplication of `α` form a semiring, whose zero is `zero` and whose unit
+is `one`.
+RFC: `\mathsf{semiring}_\pi`, `\mathsf{semiring}_p` -/
+structure IsSemiring (α : Type) [Add α] [Mul α] (zero one : α) : Prop where
+  /-- The addition is associative. -/
+  add_assoc : ∀ a b c : α, (a + b) + c = a + (b + c)
+  /-- The addition is commutative. -/
+  add_comm : ∀ a b : α, a + b = b + a
+  /-- The zero is neutral for the addition. -/
+  zero_add : ∀ a : α, zero + a = a
+  /-- The multiplication is associative. -/
+  mul_assoc : ∀ a b c : α, (a * b) * c = a * (b * c)
+  /-- The unit is neutral on the left of the multiplication. -/
+  one_mul : ∀ a : α, one * a = a
+  /-- The unit is neutral on the right of the multiplication. -/
+  mul_one : ∀ a : α, a * one = a
+  /-- The zero is absorbing on the left of the multiplication. -/
+  zero_mul : ∀ a : α, zero * a = zero
+  /-- The zero is absorbing on the right of the multiplication. -/
+  mul_zero : ∀ a : α, a * zero = zero
+
+-- ADE: the field `∧-Semilattice` of `Modality`, in `Graded/Modality.agda`.
+/-- The meet of `α` is associative, commutative and idempotent.
+RFC: `\mathsf{meet}_\pi`, `\mathsf{meet}_p` -/
+structure IsMeetSemilattice (α : Type) [Min α] : Prop where
+  /-- The meet is associative. -/
+  meet_assoc : ∀ a b c : α, (a ⊓ b) ⊓ c = a ⊓ (b ⊓ c)
+  /-- The meet is commutative. -/
+  meet_comm : ∀ a b : α, a ⊓ b = b ⊓ a
+  /-- The meet is idempotent. -/
+  meet_idem : ∀ a : α, a ⊓ a = a
+
+-- ADE: `Has-well-behaved-zero`, in `Graded/Modality.agda`.
+/-- The zero of `α` is well behaved: it differs from the unit `one`, and a sum, a meet or a product
+is zero only when its operands are.
+RFC: `0_\pi`, `0_p` -/
+structure HasWellBehavedZero (α : Type) [Add α] [Mul α] [Min α] (zero one : α) : Prop where
+  /-- The zero is not the unit. -/
+  zero_ne_one : zero ≠ one
+  /-- A sum is zero only when its operands are. -/
+  add_eq_zero : ∀ a b : α, a + b = zero → a = zero ∧ b = zero
+  /-- A meet is zero only when its operands are. -/
+  meet_eq_zero : ∀ a b : α, a ⊓ b = zero → a = zero ∧ b = zero
+  /-- A product is zero only when one of its operands is. -/
+  mul_eq_zero : ∀ a b : α, a * b = zero → a = zero ∨ b = zero
+
+end Sic

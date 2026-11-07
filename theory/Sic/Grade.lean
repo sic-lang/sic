@@ -104,8 +104,9 @@ def add (p q : Grade) : Grade where
   run := p.run + q.run
   total := p.total + q.total
   run_zero h := by
-    rw [Multiplicity.add_eq_zero] at h ⊢
-    exact ⟨p.run_zero h.1, q.run_zero h.2⟩
+    obtain ⟨hp, hq⟩ := Multiplicity.zero_well_behaved.add_eq_zero _ _ h
+    rw [p.run_zero hp, q.run_zero hq]
+    rfl
 
 /-- The multiplication of the grades, `⟨π₁, π₂⟩ · ⟨π₃, π₄⟩ = ⟨π₁ · π₃, π₂ · π₄⟩`.
 RFC: `\mathsf{op}_p` -/
@@ -113,8 +114,10 @@ def mul (p q : Grade) : Grade where
   run := p.run * q.run
   total := p.total * q.total
   run_zero h := by
-    rw [Multiplicity.mul_eq_zero] at h ⊢
-    exact h.imp p.run_zero q.run_zero
+    rcases Multiplicity.zero_well_behaved.mul_eq_zero _ _ h with hp | hq
+    · rw [p.run_zero hp]
+      rfl
+    · rw [q.run_zero hq, (Multiplicity.semiring).mul_zero]
 
 /-- The meet of the grades, `⟨π₁, π₂⟩ ∧ ⟨π₃, π₄⟩ = ⟨π₁ ∧ π₃, π₂ ∧ π₄⟩`.
 RFC: `\mathsf{op}_p` -/
@@ -122,8 +125,9 @@ def meet (p q : Grade) : Grade where
   run := p.run ⊓ q.run
   total := p.total ⊓ q.total
   run_zero h := by
-    rw [Multiplicity.meet_eq_zero] at h ⊢
-    exact ⟨p.run_zero h.1, q.run_zero h.2⟩
+    obtain ⟨hp, hq⟩ := Multiplicity.zero_well_behaved.meet_eq_zero _ _ h
+    rw [p.run_zero hp, q.run_zero hq]
+    rfl
 
 instance : Add Grade := ⟨add⟩
 
@@ -194,20 +198,22 @@ over its meet, ordered by its meet, with a well-behaved zero. -/
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- The addition and the multiplication form a semiring.
 RFC: `\mathsf{semiring}_p` -/
-theorem semiring : ∀ p q r : Grade,
-    (p + q) + r = p + (q + r) ∧
-      p + q = q + p ∧
-      zero + p = p ∧
-      (p * q) * r = p * (q * r) ∧
-      (one * p = p ∧ p * one = p) ∧
-      (zero * p = zero ∧ p * zero = zero) := by
-  decide
+theorem semiring : IsSemiring Grade zero one where
+  add_assoc := by decide
+  add_comm := by decide
+  zero_add := by decide
+  mul_assoc := by decide
+  one_mul := by decide
+  mul_one := by decide
+  zero_mul := by decide
+  mul_zero := by decide
 
 /-- The meet is associative, commutative and idempotent.
 RFC: `\mathsf{meet}_p` -/
-theorem meet_semilattice : ∀ p q r : Grade,
-    (p ⊓ q) ⊓ r = p ⊓ (q ⊓ r) ∧ p ⊓ q = q ⊓ p ∧ p ⊓ p = p := by
-  decide
+theorem meet_semilattice : IsMeetSemilattice Grade where
+  meet_assoc := by decide
+  meet_comm := by decide
+  meet_idem := by decide
 
 /-- The multiplication distributes over the addition.
 RFC: `{\cdot}{+}_p` -/
@@ -237,12 +243,11 @@ theorem le_meet_iff : ∀ p q r : Grade, r ≤ p ∧ r ≤ q ↔ r ≤ p ⊓ q :
 
 /-- The zero is well behaved.
 RFC: `0_p` -/
-theorem zero_well_behaved :
-    zero ≠ one ∧
-      (∀ p q : Grade, p + q = zero → p = zero ∧ q = zero) ∧
-      (∀ p q : Grade, p ⊓ q = zero → p = zero ∧ q = zero) ∧
-      ∀ p q : Grade, p * q = zero → p = zero ∨ q = zero := by
-  decide
+theorem zero_well_behaved : HasWellBehavedZero Grade zero one where
+  zero_ne_one := by decide
+  add_eq_zero := by decide
+  meet_eq_zero := by decide
+  mul_eq_zero := by decide
 
 /-! ## Meaning
 
