@@ -297,6 +297,34 @@
               echo "The documentation is in $PWD/docbuild/.lake/build/doc."
             '';
           };
+          # Builds into book/ the site that GitHub Pages serves: the book of the correspondence, whose
+          # introduction is the README and whose pages Correspondence.lean writes into site/, and the
+          # documentation of the metatheory in book/theory/.
+          buildSite = command {
+            name = "build-site";
+            runtimeInputs = [
+              pkgs.coreutils
+              pkgs.git
+              pkgs.lean4
+              pkgs.mdbook
+              pkgs.mdbook-katex
+            ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)"
+              rm -rf site book
+              mkdir site
+              ln -s ../README.md site/introduction.md
+              ln -s ../LICENSES site/LICENSES
+              lake --dir theory build --wfail
+              {
+                printf '[Introduction](introduction.md)\n\n# Correspondence\n\n'
+                lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic
+              } >site/SUMMARY.md
+              mdbook build
+              ${lib.getExe docs.run}
+              cp -r theory/docbuild/.lake/build/doc book/theory
+            '';
+          };
         in
         {
           apps =
@@ -305,6 +333,7 @@
             ) checkCommands
             // {
               check = app checkAll "Run every check";
+              build-site = app buildSite "Build the site that GitHub Pages serves into book/";
               docs = app docs "Generate the documentation of the metatheory";
               setup-vscode = app setupVscode "Write the recommended VS Code configuration to .vscode/";
             };
@@ -313,6 +342,7 @@
           checks =
             lib.mapAttrs' (name: command: lib.nameValuePair "check-${name}" command.checked) checkCommands
             // {
+              build-site = buildSite.checked;
               check = checkAll.checked;
               docs = docs.checked;
               setup-vscode = setupVscode.checked;
