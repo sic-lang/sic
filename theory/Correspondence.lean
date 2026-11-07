@@ -1,15 +1,15 @@
 import Lean.CoreM
 import Lean.DeclarationRange
+import Lean.DocString
 import Lean.Parser.Command
 import Lean.Util.Path
-import Rfc
 
 /-!
 Writes the pages of the correspondence between the RFCs and the formalization: for each file of the
 RFCs that names definitions, formulas or rules, a page that gives each name with its formula, as the
-RFC writes it, and the source of the declarations whose attribute `rfc` gives it, as their files
-write it, so that a reader compares them on one page; it fails if such an attribute gives a name that
-no RFC has, so that renaming a formula in an RFC cannot leave the pages behind.
+RFC writes it, and the source of the declarations whose doc strings give it, as their files write
+it, so that a reader compares them on one page; it fails if a doc string gives a name that no RFC
+has, so that renaming a formula in an RFC cannot leave the pages behind.
 
 Run with the directory of the RFCs, the URL of their files, the directory of the pages and the
 directories of the libraries, `Sic/`, whose modules it imports, as Lake builds them; it prints the
@@ -18,6 +18,8 @@ A name ends its line, which may break the formula after it: in the last column o
 `&&(…)`, or after the fraction of a rule, `\;(…)`, as the check `names` of the RFCs requires.
 The formula of a name is the part of its block of math between the separators `\\[1em]` that holds
 the line of the name, inside the environment of the block.
+A doc string gives the names on a line that starts with `RFC:`, each in a code span, written exactly
+as the RFC writes it inside its parentheses, such as ``RFC: `\mathsf{op}_p`, `\mathsf{order}_p` ``.
 -/
 
 open Lean
@@ -152,6 +154,19 @@ def sourceOf (decl : Name) (file : System.FilePath) : CoreM String := do
     | throwError "the signature of {decl} has no position"
   return (String.Pos.Raw.extract text 0 stop).trimAsciiEnd.toString
 
+/-- The names of the RFCs that a doc string gives: the code spans of its lines that start with
+`RFC:`. -/
+def namesOfDoc (doc : String) : Array String := Id.run do
+  let mut names := #[]
+  for line in doc.splitOn "\n" do
+    let line := line.trimAscii.toString
+    unless line.startsWith "RFC:" do continue
+    -- The parts between backticks are the odd ones.
+    let parts := line.splitOn "`"
+    for i in [0:parts.length] do
+      if i % 2 == 1 then names := names.push parts[i]!
+  return names
+
 /-- The declarations of the libraries in `dirs`, from their roots, that formalize each name. -/
 def declarationsOf (dirs : List (Name × System.FilePath)) :
     CoreM (Std.HashMap String (Array Formalization)) := do
@@ -161,7 +176,9 @@ def declarationsOf (dirs : List (Name × System.FilePath)) :
     let some idx := env.getModuleIdxFor? decl | continue
     let module := env.header.moduleNames[idx.toNat]!
     let some (root, dir) := dirs.find? (·.1.isPrefixOf module) | continue
-    let some names := Rfc.rfcAttr.getParam? env decl | continue
+    let some doc ← findDocString? env decl | continue
+    let names := namesOfDoc doc
+    if names.isEmpty then continue
     let path := (module.components.drop root.components.length).map (·.toString)
     let file := (path.foldl (· / ·) dir).addExtension "lean"
     let declaration := { name := decl, module, source := ← sourceOf decl file }
@@ -190,13 +207,13 @@ def page (url title : String) (names : Array RfcName)
       | none => out := out ++ "\nNot yet formalized.\n"
   return out
 
-/-- Unsafe, since the parser of the statements needs the syntax of the attribute `rfc`, which only the
-initializers of the imported modules register, and running them is unsafe. -/
+/-- Unsafe, since the parser of the statements needs the notations of the imported modules, which
+only their environment extensions hold, and loading these runs the initializers of the modules. -/
 unsafe def main : List String → IO UInt32
   | rfcs :: url :: out :: dirs@(_ :: _) => do
     initSearchPath (← findSysroot)
     enableInitializersExecution
-    let modules ← IO.mkRef #[`Rfc]
+    let modules ← IO.mkRef #[]
     -- The root of the modules of a directory is its name, as `Sic` for `theory/Sic`.
     let roots := dirs.map fun dir => Name.mkSimple (System.FilePath.mk dir).fileName.get!
     for (dir, root) in dirs.zip roots do
