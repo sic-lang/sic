@@ -65,7 +65,7 @@ instance (s₁ s₂ : Quality) : Decidable (s₁ ≤ s₂) :=
 RFC: `{\sqcup}{\le}_s` -/
 theorem join_isLeast : ∀ s₁ s₂ : Quality, IsLeastUpperBound (· ≤ ·) s₁ s₂ (s₁ ⊔ s₂) := by
   intro s₁ s₂
-  exact ⟨by revert s₁ s₂; decide, by revert s₁ s₂; decide, by revert s₁ s₂; decide⟩
+  cases s₁ <;> cases s₂ <;> exact ⟨by decide, by decide, by decide⟩
 
 end Quality
 
