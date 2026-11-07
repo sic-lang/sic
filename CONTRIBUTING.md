@@ -63,6 +63,7 @@ The steps outside the repositories are free, and those inside them are constrain
 - Implement, Record and Integrate happen in the repositories, through pull requests that follow this guide and pass the checks.
   Every pull request is opened as a draft and stays one until Integrate.
   - Implement changes one or more repositories, with one pull request per repository, but no RFC.
+    When it reveals a gap in an RFC, such as a missing case or a definition the implementation needs and the RFC lacks, raise it at once in the pull request, rather than working around it or changing the RFC silently to fit the implementation.
   - Record writes in an RFC of the [rfcs](https://github.com/sic-lang/rfcs) repository what the implementation of the iteration confirmed, and only that iteration.
     Except to fix an RFC, implement first.
     An iteration may have nothing to record, which is fine: the point is to ask whether it has.
@@ -75,6 +76,7 @@ Only an integrator decides to integrate a pull request, never an AI or a tool, w
 ## Formalization
 
 The Lean package of `theory/` has one library, `Sic/`, where each concept has a module `Sic/<Concept>.lean` for its definitions, its properties and its meaning, as the RFCs state them.
+Every definition of an RFC has a definition of `Sic/` with the same structure and the same cases, and every named formula a theorem, so that a reader compares them side by side; the Lean only adds what its representation of variables needs, such as de Bruijn indices and their renamings, and says so in a comment.
 A declaration of `Sic/` names its counterparts in the formalizations that `Sic/` follows, with their files, or `none`, in comments above its doc string, such as ``-- ADE: `wkEq`, in `Definition/Typed/Weakening.agda`.``, which the [README](README.md) relates to the commits of these formalizations, while the header of its module says how the module differs from them.
 These comments are not doc strings, since the documentation would make links of the names of these formalizations whenever a declaration of Sic has the same name.
 Every file is a module of the [module system of Lean](https://lean-lang.org/doc/reference/latest/Source-Files-and-Modules/), so that a module only passes on the imports it declares public: an import is private, unless the type of a public declaration mentions what it imports (`public import`).
