@@ -5,6 +5,8 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 
 ## Principles
 
+These principles guide every contribution:
+
 - Keep every decision auditable: record its rationale once, where it belongs (the RFC for a design decision, the commit message for a change), and link to it elsewhere.
 - Before adopting a new approach, check how established projects solve the same problem.
 - Cite the source of every claim about other work (papers, documentation, languages, projects) with a link on its name in the text, so that it can be checked.
@@ -17,10 +19,13 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 
 ## Style
 
+Every text of the repository follows this style:
+
 - Write in US English: documentation, comments, commit messages, issues and pull requests.
 - In Markdown files, write one sentence per line, without wrapping lines at a fixed length, so that editing a sentence only changes its own line.
   A sentence too long to read on one line is probably too long.
 - Give every section of a Markdown file, whatever its level, at least one sentence of its own before its first subsection, which tells what the section holds.
+- Introduce every list, table and figure with a sentence before it.
 - Sort alphabetically the lists whose order has no meaning.
 - Start the README with one short sentence saying what the repository is, and copy it verbatim as the description of the repository on GitHub.
 
@@ -81,6 +86,8 @@ A proof may take any form the kernel accepts, but explain in the file how it wor
 In the definitions and the statements, write the parentheses wherever the associativity or the precedence of an operator decides the meaning, as in the associativity `(p + q) + r = p + (q + r)` and the distributivity `p * (q + r) = (p * q) + (p * r)`.
 
 ## Pull Requests
+
+Pull requests follow these rules:
 
 - The merge queue merges a pull request with a merge commit once its merge with `main` passes the checks, and the commits it brings are exactly the ones that were reviewed.
 - Never rewrite the history of a pull request once pushed: make every change, including those asked by the review, a new commit, meaningful on its own, so that the review stays readable.
