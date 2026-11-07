@@ -11,7 +11,7 @@ Follow [`CONTRIBUTING.md`](CONTRIBUTING.md) like every contributor; the rules be
 
 ## Pull Requests
 
-- Merge a pull request only when the human you are working for explicitly asks you to, never on your own initiative.
+- Never decide to integrate a pull request: merge it only when an integrator has decided it and explicitly asks you to, never on your own initiative.
 
 ## Commits
 
