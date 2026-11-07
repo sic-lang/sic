@@ -108,10 +108,11 @@
             };
           };
           # Checks the commits after a base, origin/main by default: each one is signed off by its
-          # author (CONTRIBUTING.md), and none is a merge commit, as pull requests are rebased.
+          # author (CONTRIBUTING.md), and a merge commit only merges the base, to resolve a conflict.
           checkCommits = command {
             name = "check-commits";
             runtimeInputs = [
+              pkgs.coreutils
               pkgs.git
               pkgs.gnugrep
             ];
@@ -119,10 +120,14 @@
               base=''${1:-origin/main}
               status=0
               for commit in $(git rev-list --merges "$base..HEAD"); do
-                echo "$(git log -1 --format='%h %s' "$commit"): merge commit, rebase instead" >&2
-                status=1
+                for parent in $(git log -1 --format='%P' "$commit" | cut -d ' ' -f 2-); do
+                  if ! git merge-base --is-ancestor "$parent" "$base"; then
+                    echo "$(git log -1 --format='%h %s' "$commit"): merges another branch than $base" >&2
+                    status=1
+                  fi
+                done
               done
-              for commit in $(git rev-list --no-merges "$base..HEAD"); do
+              for commit in $(git rev-list "$base..HEAD"); do
                 author=$(git log -1 --format='%an <%ae>' "$commit")
                 if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$commit" |
                   grep -qxF "$author"; then

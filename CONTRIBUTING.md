@@ -39,9 +39,10 @@ In the definitions and the statements, write the parentheses wherever the associ
 
 ## Pull Requests
 
-- Pull requests are merged with a merge commit, and the commits they bring are exactly the ones that were reviewed.
-  Make every commit meaningful on its own: fold the changes made during review into the relevant commits (`git commit --fixup=<commit>`, then `git rebase --autosquash`) and force-push.
-- Update a pull request by rebasing it on `main`.
+- The merge queue merges a pull request with a merge commit once its merge with `main` passes the checks, and the commits it brings are exactly the ones that were reviewed.
+- Never rewrite the history of a pull request once pushed: make every change, including those asked by the review, a new commit, meaningful on its own, so that the review stays readable.
+- A pull request needs no update from `main`, since the merge queue checks its merge with `main`.
+  When it conflicts with `main`, merge `main` into it (`git merge --signoff origin/main`) and resolve the conflict in that merge commit.
 
 ## Development Environment
 
