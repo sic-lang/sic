@@ -55,3 +55,17 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+
+  # The only check that the ruleset of main requires, which passes when every job of the matrix
+  # passed, so that a new check is only added to the matrix: it runs even when one of them fails,
+  # since a skipped job would count as passed.
+  checks:
+    needs: check
+    if: always()
+    # ubuntu-26.04 waits until actionlint knows it (#3).
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every check
+        run: test "$RESULT" = success
+        env:
+          RESULT: ${{ needs.check.result }}
