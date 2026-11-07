@@ -99,11 +99,6 @@ def odot (m : Mode) (p : Grade) : Mode :=
 theorem grades :
     [zeroZero, zeroOne, oneOne].map grade = [Grade.zero, Grade.noneLinear, Grade.one] := rfl
 
-/-- The grades of the three modes are closed under multiplication, so that the grade of a product is
-the product of the grades.
-RFC: `\mathsf{closed}_m` -/
-theorem grade_mul : ∀ m₁ m₂ : Mode, (m₁ ·ᵐ m₂).grade = m₁.grade * m₂.grade := by decide
-
 /-- The product of two modes is the more erased of the two.
 RFC: `\mathsf{erased}_m` -/
 theorem mul_more_erased : ∀ m₁ m₂ : Mode,
@@ -183,22 +178,61 @@ def run : Mode → Multiplicity.Mode
 
 The three modes form a mode structure of ADE over the grades. -/
 
+end Mode
+
 -- ADE: `IsMode`, in `Graded/Mode.agda`.
+/-- The laws of a mode structure of ADE, which the modes satisfy over the grades.
+RFC: `\mathsf{structure}_m` -/
+structure IsModeStructure : Prop where
+  /-- The product of modes is associative. -/
+  mul_assoc : ∀ m₁ m₂ m₃ : Mode, (m₁ ·ᵐ m₂) ·ᵐ m₃ = m₁ ·ᵐ (m₂ ·ᵐ m₃)
+  /-- The product of modes is commutative. -/
+  mul_comm : ∀ m₁ m₂ : Mode, m₁ ·ᵐ m₂ = m₂ ·ᵐ m₁
+  /-- The product of modes is idempotent. -/
+  mul_idem : ∀ m : Mode, m ·ᵐ m = m
+  /-- The mode `11ᵐ` is neutral for the product. -/
+  oneOne_mul : ∀ m : Mode, .oneOne ·ᵐ m = m
+  /-- The mode `00ᵐ` is absorbing for the product. -/
+  zeroZero_mul : ∀ m : Mode, .zeroZero ·ᵐ m = .zeroZero
+  /-- The grade of `00ᵐ` is `00ᵖ`. -/
+  grade_zeroZero : Mode.zeroZero.grade = Grade.zero
+  /-- The mode of the grade of a mode is this mode. -/
+  mode_grade : ∀ m : Mode, m.grade.mode = m
+  /-- The grade of a product of modes is the product of their grades. -/
+  grade_mul : ∀ m₁ m₂ : Mode, (m₁ ·ᵐ m₂).grade = m₁.grade * m₂.grade
+  /-- The product of the modes of two grades is the mode of their product. -/
+  mode_mul : ∀ p q : Grade, p.mode ·ᵐ q.mode = (p * q).mode
+  /-- A grade times the grade of its mode is this grade. -/
+  mul_grade_mode : ∀ p : Grade, p * p.mode.grade = p
+  /-- The grade of the mode of a grade, times this grade, is this grade. -/
+  grade_mode_mul : ∀ p : Grade, p.mode.grade * p = p
+  /-- If `p ≤ q` and `q ≤ ⌜m⌝ · q`, then `p ≤ ⌜m⌝ · p`. -/
+  le_grade_mul : ∀ (m : Mode) (p q : Grade), p ≤ q → q ≤ m.grade * q → p ≤ m.grade * p
+  /-- The mode of a sum of grades is no more erased than the mode of its first operand. -/
+  mode_add : ∀ p q : Grade, p.mode ·ᵐ (p + q).mode = p.mode
+  /-- The mode of a meet of grades is no more erased than the mode of its first operand. -/
+  mode_meet : ∀ p q : Grade, p.mode ·ᵐ (p ⊓ q).mode = p.mode
+
+namespace Mode
+
+-- ADE: `Zero-one-isMode`, in `Graded/Mode/Instances/Zero-one.agda`.
 /-- The modes form a mode structure over the grades.
 RFC: `\mathsf{structure}_m` -/
-theorem isMode : ∀ (m m₁ m₂ m₃ : Mode) (p q : Grade),
-    (m₁ ·ᵐ m₂) ·ᵐ m₃ = m₁ ·ᵐ (m₂ ·ᵐ m₃) ∧
-      m₁ ·ᵐ m₂ = m₂ ·ᵐ m₁ ∧
-      m ·ᵐ m = m ∧
-      oneOne ·ᵐ m = m ∧
-      zeroZero ·ᵐ m = zeroZero ∧
-      zeroZero.grade = Grade.zero ∧
-      m.grade.mode = m ∧
-      p.mode ·ᵐ q.mode = (p * q).mode ∧
-      (p * p.mode.grade = p ∧ p.mode.grade * p = p) ∧
-      (p ≤ q → q ≤ m.grade * q → p ≤ m.grade * p) := by
-  intro m m₁ m₂ m₃
-  cases m <;> cases m₁ <;> cases m₂ <;> cases m₃ <;> decide
+theorem modeStructure : IsModeStructure where
+  mul_assoc := by decide
+  mul_comm := by decide
+  mul_idem := by decide
+  oneOne_mul := by decide
+  zeroZero_mul := by decide
+  grade_zeroZero := by decide
+  mode_grade := by decide
+  grade_mul := by decide
+  mode_mul := by decide
+  mul_grade_mode := by decide
+  grade_mode_mul := by decide
+  le_grade_mul := by decide
+  mode_add := by decide
+  mode_meet := by decide
 
 /-- The projection commutes with the mode of a grade, with the grade of a mode and with the
 product of a mode by a grade. -/
