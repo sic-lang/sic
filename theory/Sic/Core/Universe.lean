@@ -1,11 +1,12 @@
 module
 
 public import Sic.Core.Level
+public import Sic.Order
 
 /-!
 # Universes
 
-The sorts of RFC 24: the universes `U_l`, whose elements are types, and the universes of strict
+The sorts of annex 06 of RFC 36: the universes `U_l`, whose elements are types, and the universes of
 propositions `Ω_l`, whose elements are propositions, both indexed by a level.
 A sort is named a universe here, since `Sort` is a keyword of Lean, and the RFC calls both kinds of
 sorts universes.
@@ -21,56 +22,56 @@ ADE have the universes `U_l` only, and no universes of propositions.
 namespace Sic.Core
 
 -- ADE: none.
-/-- The quality of a sort, as the sort qualities of Rocq: a universe or a universe of propositions. -/
+/-- The quality of a sort, as the sort qualities of Rocq: a universe or a universe of propositions.
+RFC: `\mathsf{syntax}_s` -/
 inductive Quality where
   /-- `U`, the quality of the universes. -/
   | type
-  /-- `Ω`, the quality of the universes of strict propositions. -/
+  /-- `Ω`, the quality of the universes of propositions. -/
   | prop
   deriving DecidableEq
 
 namespace Quality
 
 /-- Decides a statement on all the qualities by checking both. -/
-instance {P : Quality → Prop} [DecidablePred P] : Decidable (∀ q, P q) :=
+instance {P : Quality → Prop} [DecidablePred P] : Decidable (∀ s, P s) :=
   decidable_of_iff (P type ∧ P prop)
-    ⟨fun ⟨h₁, h₂⟩ q => by cases q <;> assumption, fun h => ⟨h _, h _⟩⟩
+    ⟨fun ⟨h₁, h₂⟩ s => by cases s <;> assumption, fun h => ⟨h _, h _⟩⟩
 
 -- ADE: none.
-/-- `(⊔_s)`: the join of two qualities, `Ω` when both are, and `U` otherwise. -/
+/-- The join of two qualities, `Ω` when both are, and `U` otherwise.
+RFC: `\sqcup_s` -/
 def join : Quality → Quality → Quality
   | prop, prop => prop
-  | _, _ => type
+  | type, _ => type
+  | _, type => type
 
 instance : Max Quality := ⟨join⟩
 
-/-- A quality is below another when it is `Ω` whenever the other is. -/
-def Le (q₁ q₂ : Quality) : Prop := q₂ = prop → q₁ = prop
+-- ADE: none.
+/-- A quality is below another when it is `Ω` whenever the other is.
+RFC: `\le_s` -/
+def Le (s₁ s₂ : Quality) : Prop := s₂ = prop → s₁ = prop
 
 instance : LE Quality := ⟨Le⟩
 
-instance (q₁ q₂ : Quality) : Decidable (q₁ ≤ q₂) :=
-  inferInstanceAs (Decidable (q₂ = prop → q₁ = prop))
+instance (s₁ s₂ : Quality) : Decidable (s₁ ≤ s₂) :=
+  inferInstanceAs (Decidable (s₂ = prop → s₁ = prop))
 
-/-! The table of `(⊔_s)`. -/
+/-! ## Properties -/
 
-example : prop ⊔ prop = prop := rfl
-
-example : type ⊔ prop = type := rfl
-
-example : prop ⊔ type = type := rfl
-
-example : type ⊔ type = type := rfl
-
-/-- The join is the least quality above both, as the RFC says. -/
-theorem join_isLeast : ∀ q₁ q₂ : Quality,
-    q₁ ≤ q₁ ⊔ q₂ ∧ q₂ ≤ q₁ ⊔ q₂ ∧ ∀ q, q₁ ≤ q → q₂ ≤ q → q₁ ⊔ q₂ ≤ q := by
-  decide
+-- ADE: none.
+/-- The join of two qualities is the least quality above both.
+RFC: `{\sqcup}{\le}_s` -/
+theorem join_isLeast : ∀ s₁ s₂ : Quality, IsLeastUpperBound (· ≤ ·) s₁ s₂ (s₁ ⊔ s₂) := by
+  intro s₁ s₂
+  exact ⟨by revert s₁ s₂; decide, by revert s₁ s₂; decide, by revert s₁ s₂; decide⟩
 
 end Quality
 
 -- ADE: `U`, in `Definition/Untyped.agda`, for the universes `U_l` only.
-/-- A sort `κ` over `k` level variables: `U_l` or `Ω_l`. -/
+/-- A sort `κ` over `k` level variables, `s_l`: `U_l` or `Ω_l`.
+RFC: `\mathsf{syntax}_\kappa` -/
 structure Universe (k : Nat) where
   /-- `U` or `Ω`. -/
   quality : Quality
@@ -84,28 +85,34 @@ variable {k : Nat}
 
 -- ADE: none.
 /--
-`κ₁ ≼ κ₂`: the sort `κ₂` bounds the sort `κ₁`, when the level of `κ₁` is below the level of `κ₂`,
-and `κ₁` is a universe of propositions when `κ₂` is.
+`κ₁ ≼ κ₂`: the sort `κ₂` bounds the sort `κ₁`, when the quality of `κ₁` is below the quality of
+`κ₂`, so that `κ₁` is a universe of propositions when `κ₂` is, and the level of `κ₁` below the level
+of `κ₂`.
+RFC: `\preceq_\kappa`
 -/
-def Bounded (κ₁ κ₂ : Universe k) : Prop := κ₁.level ≤ κ₂.level ∧ κ₁.quality ≤ κ₂.quality
+def Bounded (κ₁ κ₂ : Universe k) : Prop := κ₁.quality ≤ κ₂.quality ∧ κ₁.level ≤ κ₂.level
 
 @[inherit_doc] infix:50 " ≼ " => Bounded
 
 instance (κ₁ κ₂ : Universe k) : Decidable (κ₁ ≼ κ₂) := inferInstanceAs (Decidable (_ ∧ _))
 
-theorem bounded_refl (κ : Universe k) : κ ≼ κ := ⟨Level.le_refl _, fun h => h⟩
+/-! ## Properties -/
 
-theorem bounded_trans {κ₁ κ₂ κ₃ : Universe k} (h₁ : κ₁ ≼ κ₂) (h₂ : κ₂ ≼ κ₃) : κ₁ ≼ κ₃ :=
-  ⟨Level.le_trans h₁.1 h₂.1, fun h => h₁.2 (h₂.2 h)⟩
+-- ADE: none.
+/-- The relation `≼` is a preorder.
+RFC: `\mathsf{preorder}_\kappa` -/
+theorem preorder : IsPreorder (α := Universe k) (· ≼ ·) where
+  refl _ := ⟨fun h => h, Level.preorder.refl _⟩
+  trans h₁ h₂ := ⟨fun h => h₁.1 (h₂.1 h), Level.preorder.trans h₁.2 h₂.2⟩
 
-/-- The join of the qualities of two sorts at a level is the least sort at this level that bounds
-both, as the RFC says of the join of sorts. -/
-theorem join_isLeast (q₁ q₂ : Quality) (l : Level k) :
-    ⟨q₁, l⟩ ≼ ⟨q₁ ⊔ q₂, l⟩ ∧ ⟨q₂, l⟩ ≼ ⟨q₁ ⊔ q₂, l⟩ ∧
-      ∀ κ : Universe k, ⟨q₁, l⟩ ≼ κ → ⟨q₂, l⟩ ≼ κ → ⟨q₁ ⊔ q₂, l⟩ ≼ κ := by
-  obtain ⟨h₁, h₂, h⟩ := Quality.join_isLeast q₁ q₂
-  exact ⟨⟨Level.le_refl _, h₁⟩, ⟨Level.le_refl _, h₂⟩,
-    fun κ hκ₁ hκ₂ => ⟨hκ₁.1, h κ.quality hκ₁.2 hκ₂.2⟩⟩
+-- ADE: none.
+/-- The join of the qualities of two sorts at the same level is the least sort that bounds both.
+RFC: `{\sqcup}{\preceq}_\kappa` -/
+theorem join_isLeast (s₁ s₂ : Quality) (l : Level k) :
+    IsLeastUpperBound (· ≼ ·) (⟨s₁, l⟩ : Universe k) ⟨s₂, l⟩ ⟨s₁ ⊔ s₂, l⟩ :=
+  have h := Quality.join_isLeast s₁ s₂
+  ⟨⟨h.le_left, Level.preorder.refl _⟩, ⟨h.le_right, Level.preorder.refl _⟩,
+    fun κ hκ₁ hκ₂ => ⟨h.least κ.quality hκ₁.1 hκ₂.1, hκ₁.2⟩⟩
 
 end Universe
 
