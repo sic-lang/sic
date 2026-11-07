@@ -1,0 +1,16 @@
+# The site that GitHub Pages serves: nix run .#build-site writes the book of the correspondence in
+# site/ and builds it into book/, with the documentation of the metatheory in book/theory/.
+[book]
+title = "Sic"
+src = "site"
+
+[output.html]
+git-repository-url = "https://github.com/sic-lang/sic"
+# The pages are those of the files of the RFCs, whose numbers the chapter numbers would contradict.
+no-section-label = true
+# GitHub Pages serves the site under /sic/, and its 404 page at any missing path, from which the
+# files of the page are only found through this URL.
+site-url = "/sic/"
+
+[preprocessor.katex]
+command = "mdbook-katex"

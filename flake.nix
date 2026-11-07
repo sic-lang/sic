@@ -5,9 +5,15 @@
 
   # The unstable branch, for a recent release of Lean; flake.lock pins its commit.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  # The RFCs that the metatheory formalizes, whose names the pages of the correspondence list:
+  # flake.lock pins the commit of the branch of RFC 36 until it is merged.
+  inputs.rfcs = {
+    url = "github:sic-lang/rfcs/type-system";
+    flake = false;
+  };
 
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, rfcs, ... }:
     let
       # The popular systems whose tools are all in the binary cache of nixpkgs: Linux on x86_64 and
       # aarch64, and macOS on Apple silicon.
@@ -33,6 +39,8 @@
             program = lib.getExe program.run;
             meta = { inherit description; };
           };
+          # The files of the RFCs at the pinned commit, to which the pages of the correspondence link.
+          rfcsUrl = "https://github.com/sic-lang/rfcs/blob/${rfcs.rev}";
           # The checks of the files: their tools, also provided by the development shell, and their
           # command, run from the root of the repository.
           fileChecks = {
@@ -58,6 +66,18 @@
                 "lake --dir theory build --wfail"
                 "lake --dir theory env leanchecker Sic"
                 "lake --dir theory env lean --run theory/CheckAxioms.lean theory/Sic"
+              ];
+            };
+            # Relates the declarations of the metatheory to the names of the RFCs, which fails if one of
+            # them gives a name that no RFC has.
+            correspondence = {
+              tools = [
+                pkgs.coreutils
+                pkgs.lean4
+              ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic >/dev/null"
               ];
             };
             markdownlint = {
@@ -277,6 +297,34 @@
               echo "The documentation is in $PWD/docbuild/.lake/build/doc."
             '';
           };
+          # Builds into book/ the site that GitHub Pages serves: the book of the correspondence, whose
+          # introduction is the README and whose pages Correspondence.lean writes into site/, and the
+          # documentation of the metatheory in book/theory/.
+          buildSite = command {
+            name = "build-site";
+            runtimeInputs = [
+              pkgs.coreutils
+              pkgs.git
+              pkgs.lean4
+              pkgs.mdbook
+              pkgs.mdbook-katex
+            ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)"
+              rm -rf site book
+              mkdir site
+              ln -s ../README.md site/introduction.md
+              ln -s ../LICENSES site/LICENSES
+              lake --dir theory build --wfail
+              {
+                printf '[Introduction](introduction.md)\n\n# Correspondence\n\n'
+                lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic
+              } >site/SUMMARY.md
+              mdbook build
+              ${lib.getExe docs.run}
+              cp -r theory/docbuild/.lake/build/doc book/theory
+            '';
+          };
         in
         {
           apps =
@@ -285,6 +333,7 @@
             ) checkCommands
             // {
               check = app checkAll "Run every check";
+              build-site = app buildSite "Build the site that GitHub Pages serves into book/";
               docs = app docs "Generate the documentation of the metatheory";
               setup-vscode = app setupVscode "Write the recommended VS Code configuration to .vscode/";
             };
@@ -293,6 +342,7 @@
           checks =
             lib.mapAttrs' (name: command: lib.nameValuePair "check-${name}" command.checked) checkCommands
             // {
+              build-site = buildSite.checked;
               check = checkAll.checked;
               docs = docs.checked;
               setup-vscode = setupVscode.checked;
