@@ -5,6 +5,8 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 
 ## Principles
 
+These principles guide every contribution:
+
 - Keep every decision auditable: record its rationale once, where it belongs (the RFC for a design decision, the commit message for a change), and link to it elsewhere.
 - Before adopting a new approach, check how established projects solve the same problem.
 - Cite the source of every claim about other work (papers, documentation, languages, projects) with a link on its name in the text, so that it can be checked.
@@ -17,16 +19,66 @@ AI agents also follow [`AGENTS.md`](AGENTS.md).
 
 ## Style
 
+Every text of the repository follows this style:
+
 - Write in US English: documentation, comments, commit messages, issues and pull requests.
 - In Markdown files, write one sentence per line, without wrapping lines at a fixed length, so that editing a sentence only changes its own line.
   A sentence too long to read on one line is probably too long.
+- Give every section of a Markdown file, whatever its level, at least one sentence of its own before its first subsection, which tells what the section holds.
+- Introduce every list, table and figure with a sentence before it.
 - Sort alphabetically the lists whose order has no meaning.
 - Start the README with one short sentence saying what the repository is, and copy it verbatim as the description of the repository on GitHub.
+
+## Workflow
+
+Work on a subject starts with Plan, then goes through iterations that each design, implement, record and adjust a part of it, and Integrate takes what an iteration records.
+
+```mermaid
+block-beta
+  columns 3
+  space Plan space
+  space:3
+  space Design space
+  space:3
+  Adjust space Implement
+  space:3
+  space Record space
+  space:3
+  space Integrate space
+  Plan --> Design
+  Design --> Implement
+  Implement --> Record
+  Record --> Adjust
+  Adjust --> Design
+  Record --> Integrate
+```
+
+The steps outside the repositories are free, and those inside them are constrained:
+
+- Plan, Design and Adjust happen outside the repositories, in whatever way suits the contributors, alone or in a group, with or without tools.
+  - Plan is a good time to get an overall view of the subject: its scope, its risks and their countermeasures, its decisive problems and their possible solutions.
+    The academic literature, the practice of other projects, experiments and prototypes can help, and writing them down helps more than keeping them in mind.
+  - Design can do the same for one iteration, sized to be easy to review, with the aim of deciding rather than exploring what is possible.
+  - Adjust is the moment to revise the plan, from the results, the problems and the solutions of the iteration, and to rethink it when the iterations do not fit together.
+- Implement, Record and Integrate happen in the repositories, through pull requests that follow this guide and pass the checks.
+  Every pull request is opened as a draft and stays one until Integrate.
+  - Implement changes one or more repositories, with one pull request per repository, but no RFC.
+    When it reveals a gap in an RFC, such as a missing case or a definition the implementation needs and the RFC lacks, raise it at once in the pull request, rather than working around it or changing the RFC silently to fit the implementation.
+  - Record writes in an RFC of the [rfcs](https://github.com/sic-lang/rfcs) repository what the implementation of the iteration confirmed, and only that iteration.
+    Except to fix an RFC, implement first.
+    An iteration may have nothing to record, which is fine: the point is to ask whether it has.
+  - Integrate starts when the submitter judges a pull request ready, and only then: they mark it ready for review and ask an integrator to review and merge it.
+    When the integrator asks for changes, the submitter adds them to the pull request; when the integrator judges it not relevant to the project, it is closed.
+
+Contributors may use AI or any other tool to prepare their pull requests, and bear full responsibility for what they submit, whatever tools they used.
+Only an integrator decides to integrate a pull request, never an AI or a tool, which may assist them and perform the merge they decided; the integrator bears full responsibility for accepting or rejecting it.
 
 ## Formalization
 
 The Lean package of `theory/` has two libraries: `Sic/`, where each concept has a module `Sic/<Concept>.lean` for its definitions, its properties and its meaning, as the RFCs state them, and `SicExample/`, for the examples.
 An example of an annex of an RFC or of the literature has a module named after it in the directory of the concept it illustrates, such as `SicExample/Core/ConstantsAndADefinition.lean`.
+Every definition of an RFC has a definition of `Sic/` with the same structure and the same cases, and every named formula a theorem, so that a reader compares them side by side; the Lean only adds what its representation of variables needs, such as de Bruijn indices and their renamings, and says so in a comment.
+A declaration of `Sic/` that formalizes definitions, formulas or rules of the RFCs gives their names on a line of its doc string that starts with `RFC:`, each in a code span, written exactly as in the RFC, inside its parentheses, such as ``RFC: `\mathsf{op}_p` ``; a formula that the representation of variables makes needless, such as a freshness condition with de Bruijn indices, is given to the declaration of this representation, whose doc string says why.
 A declaration of `Sic/` names its counterparts in the formalizations that `Sic/` follows, with their files, or `none`, in comments above its doc string, such as ``-- ADE: `wkEq`, in `Definition/Typed/Weakening.agda`.``, which the [README](README.md) relates to the commits of these formalizations, while the header of its module says how the module differs from them.
 These comments are not doc strings, since the documentation would make links of the names of these formalizations whenever a declaration of Sic has the same name.
 Every file is a module of the [module system of Lean](https://lean-lang.org/doc/reference/latest/Source-Files-and-Modules/), so that a module only passes on the imports it declares public: an import is private, unless the type of a public declaration mentions what it imports (`public import`).
@@ -40,9 +92,12 @@ In the definitions and the statements, write the parentheses wherever the associ
 
 ## Pull Requests
 
-- Pull requests are merged with a merge commit, and the commits they bring are exactly the ones that were reviewed.
-  Make every commit meaningful on its own: fold the changes made during review into the relevant commits (`git commit --fixup=<commit>`, then `git rebase --autosquash`) and force-push.
-- Update a pull request by rebasing it on `main`.
+Pull requests follow these rules:
+
+- The merge queue merges a pull request with a merge commit once its merge with `main` passes the checks, and the commits it brings are exactly the ones that were reviewed.
+- Never rewrite the history of a pull request once pushed: make every change, including those asked by the review, a new commit, meaningful on its own, so that the review stays readable.
+- A pull request needs no update from `main`, since the merge queue checks its merge with `main`.
+  When it conflicts with `main`, merge `main` into it (`git merge --signoff origin/main`) and resolve the conflict in that merge commit.
 
 ## Development Environment
 
@@ -56,9 +111,10 @@ For VS Code, `nix run '.#setup-vscode'` writes the recommended extensions and se
 
 `nix run '.#check'` runs every check of the pull requests, and `nix run '.#check-<name>'` one of them, such as `nix run '.#check-reuse'`.
 
-## Documentation
+## Site
 
-`nix run '.#docs'` generates the documentation of the metatheory with [doc-gen4](https://github.com/leanprover/doc-gen4), as GitHub Pages publishes it at each push to `main`, in `theory/docbuild/.lake/build/doc`, which a web server must serve, as the [README of doc-gen4](https://github.com/leanprover/doc-gen4#usage) explains.
+`nix run '.#build-site'` builds into `book/` the site that GitHub Pages publishes at each push to `main`, to read it as it will be published, from `book/index.html`: the book of the correspondence between the RFCs and the formalization, whose pages `theory/Correspondence.lean` writes, with each formula of the RFCs and the source of the declarations that formalize it, and the documentation of the metatheory, which `nix run '.#docs'` generates with [doc-gen4](https://github.com/leanprover/doc-gen4), in `book/theory/`.
+The flake pins the commit of the RFCs whose names the pages list: `nix flake update rfcs` follows their changes.
 
 ## Developer Certificate of Origin
 

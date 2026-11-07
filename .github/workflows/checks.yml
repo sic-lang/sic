@@ -1,6 +1,8 @@
 name: Checks
 
 on:
+  # The merge queue checks the merge of each pull request with main before merging it.
+  merge_group:
   pull_request:
   push:
     branches:
@@ -18,6 +20,7 @@ jobs:
         check:
           - actionlint
           - commits
+          - correspondence
           - editorconfig
           - flake
           - lean
@@ -32,7 +35,7 @@ jobs:
     # ubuntu-26.04 waits until actionlint knows it (#3).
     runs-on: ubuntu-24.04
     steps:
-      # The head of the pull request, without its history.
+      # The head of the pull request, or the merge of the merge queue, without its history.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -42,13 +45,27 @@ jobs:
         run: nix run --quiet ".#check-$CHECK"
         env:
           CHECK: ${{ matrix.check }}
-      # The commits of a pull request only, and their parent, the base of the check; main gets them
-      # through a merge commit.
+      # The commits of a pull request only, after its base, with the history of both; main and the
+      # merge queue get them through a merge commit.
       - if: matrix.check == 'commits' && github.event_name == 'pull_request'
         name: Run the check
         run: |
-          git fetch --quiet --depth="$((COMMITS + 1))" origin "$HEAD"
-          nix run --quiet .#check-commits -- "HEAD~$COMMITS"
+          git fetch --quiet --unshallow origin "$HEAD" "$BASE"
+          nix run --quiet .#check-commits -- "$BASE"
         env:
-          COMMITS: ${{ github.event.pull_request.commits }}
+          BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+
+  # The only check that the ruleset of main requires, which passes when every job of the matrix
+  # passed, so that a new check is only added to the matrix: it runs even when one of them fails,
+  # since a skipped job would count as passed.
+  checks:
+    needs: check
+    if: always()
+    # ubuntu-26.04 waits until actionlint knows it (#3).
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every check
+        run: test "$RESULT" = success
+        env:
+          RESULT: ${{ needs.check.result }}

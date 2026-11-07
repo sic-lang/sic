@@ -1,4 +1,4 @@
-name: Documentation
+name: Pages
 
 on:
   push:
@@ -30,11 +30,11 @@ jobs:
           key: >-
             documentation-${{ runner.os }}-${{
             hashFiles('flake.lock', 'theory/docbuild/lake-manifest.json') }}
-      - name: Generate the documentation
-        run: nix run --quiet .#docs
+      - name: Build the site
+        run: nix run --quiet .#build-site
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
-          path: theory/docbuild/.lake/build/doc
+          path: book
 
   deploy:
     needs: build
