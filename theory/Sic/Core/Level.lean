@@ -1,10 +1,12 @@
 module
 
+public import Sic.Order
+
 /-!
 # Levels
 
-The levels of RFC 24, which index the universes `U_l` and the universes of strict propositions
-`Ω_l`: `0`, a successor `l + 1`, the larger `l₁ ⊔ l₂` of two levels, or a level variable.
+The levels of annex 05 of RFC 36, which index the sorts, the universes `U_l` and the universes of
+propositions `Ω_l`: `0`, a successor `l + 1`, the larger `l₁ ⊔ l₂` of two levels, or a level variable.
 Two levels are equal, or ordered, when their values are whatever natural numbers their variables
 take, so that the values are the meaning of the levels, exact by construction.
 The equality and the order are decided by a normal form: the value of a level is the larger of a
@@ -25,6 +27,7 @@ infixl:68 " ⊔ " => Max.max
 /--
 A level over `k` level variables, the prenex level variables of an entry of the signature.
 The variables are numbered, since no construct binds them.
+RFC: `\mathsf{syntax}_l`
 -/
 inductive Level (k : Nat) : Type where
   /-- `0`. -/
@@ -44,7 +47,9 @@ variable {k : Nat}
 instance : Max (Level k) := ⟨max⟩
 
 -- ADE: none.
-/-- The value `ρ(l)` of the level `l` under the assignment `ρ`, by `(ρ₀)`, `(ρ₊)` and `(ρ_⊔)`. -/
+/-- The value `⟦l⟧_ρ` of the level `l` under the assignment `ρ`, which gives a natural number to
+each level variable.
+RFC: `\mathsf{value}_l` -/
 def value (ρ : Fin k → Nat) : Level k → Nat
   | zero => 0
   | succ l => value ρ l + 1
@@ -52,14 +57,17 @@ def value (ρ : Fin k → Nat) : Level k → Nat
   | var i => ρ i
 
 -- ADE: none.
-/-- `(=_l)`: two levels are equal when their values are equal under every assignment. -/
+/-- Two levels are equal when their values are equal under every assignment.
+RFC: `=_l` -/
 def Equal (l₁ l₂ : Level k) : Prop := ∀ ρ : Fin k → Nat, value ρ l₁ = value ρ l₂
 
-/-- `l₁ ≈ l₂`, the equality of levels, which is not the equality of their syntax. -/
+/-- `l₁ ≈ l₂`, the equality of levels, written `l₁ = l₂` in the RFC, which is not the equality
+`=` of their syntax in Lean. -/
 instance : HasEquiv (Level k) := ⟨Equal⟩
 
 -- ADE: none.
-/-- `(≤_l)`: a level is below another when its value is below under every assignment. -/
+/-- A level is below another when its value is below under every assignment.
+RFC: `\le_l` -/
 def Le (l₁ l₂ : Level k) : Prop := ∀ ρ : Fin k → Nat, value ρ l₁ ≤ value ρ l₂
 
 instance : LE (Level k) := ⟨Le⟩
@@ -70,26 +78,33 @@ theorem le_def (l₁ l₂ : Level k) : l₁ ≤ l₂ ↔ ∀ ρ, value ρ l₁ �
 
 /-! ## Properties
 
-The equality is an equivalence and the order a preorder, whose equivalence is the equality, as the
-RFC uses them. -/
+The equality is an equivalence and the order a preorder, whose equivalence is the equality. -/
 
-theorem equal_refl (l : Level k) : l ≈ l := fun _ => rfl
+-- ADE: none.
+/-- The equality is an equivalence.
+RFC: `\mathsf{equiv}_l` -/
+theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
+  refl _ _ := rfl
+  symm h ρ := (h ρ).symm
+  trans h₁ h₂ ρ := (h₁ ρ).trans (h₂ ρ)
 
-theorem equal_symm {l₁ l₂ : Level k} (h : l₁ ≈ l₂) : l₂ ≈ l₁ := fun ρ => (h ρ).symm
+-- ADE: none.
+/-- The order is a preorder.
+RFC: `\mathsf{preorder}_l` -/
+theorem preorder : IsPreorder (α := Level k) (· ≤ ·) where
+  refl _ _ := Nat.le_refl _
+  trans h₁ h₂ ρ := Nat.le_trans (h₁ ρ) (h₂ ρ)
 
-theorem equal_trans {l₁ l₂ l₃ : Level k} (h₁ : l₁ ≈ l₂) (h₂ : l₂ ≈ l₃) : l₁ ≈ l₃ :=
-  fun ρ => (h₁ ρ).trans (h₂ ρ)
-
-theorem le_refl (l : Level k) : l ≤ l := fun _ => Nat.le_refl _
-
-theorem le_trans {l₁ l₂ l₃ : Level k} (h₁ : l₁ ≤ l₂) (h₂ : l₂ ≤ l₃) : l₁ ≤ l₃ :=
-  fun ρ => Nat.le_trans (h₁ ρ) (h₂ ρ)
-
+-- ADE: none.
+/-- The equivalence of the order is the equality.
+RFC: `\mathsf{antisymmetry}_l` -/
 theorem equal_iff_le_le (l₁ l₂ : Level k) : l₁ ≈ l₂ ↔ l₁ ≤ l₂ ∧ l₂ ≤ l₁ :=
   ⟨fun h => ⟨fun ρ => Nat.le_of_eq (h ρ), fun ρ => Nat.le_of_eq (h ρ).symm⟩,
     fun ⟨h₁, h₂⟩ ρ => Nat.le_antisymm (h₁ ρ) (h₂ ρ)⟩
 
-/-- The order is the one of the larger of two levels, as the RFC says. -/
+-- ADE: none.
+/-- The order is the one of the larger of two levels.
+RFC: `{\le}{\sqcup}_l` -/
 theorem le_iff_max_equal (l₁ l₂ : Level k) : l₁ ≤ l₂ ↔ l₁ ⊔ l₂ ≈ l₂ := by
   constructor
   · intro h ρ
@@ -319,18 +334,24 @@ theorem Normal.le_iff (n₁ n₂ : Normal k) : n₁.Le n₂ ↔ ∀ ρ, n₁.val
         show a ≤ b
         omega
 
+-- ADE: none.
+/-- The order of two levels is decidable, by their normal forms.
+RFC: `\mathsf{decidable}_l` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≤ l₂) :=
   decidable_of_iff ((normalize l₁).Le (normalize l₂)) (by
     rw [Normal.le_iff, le_def]
     simp only [value_normalize])
 
+-- ADE: none.
+/-- The equality of two levels is decidable, as the order is.
+RFC: `\mathsf{decidable}_l` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≈ l₂) :=
   decidable_of_iff (l₁ ≤ l₂ ∧ l₂ ≤ l₁) (equal_iff_le_le l₁ l₂).symm
 
 /-! ## Examples
 
-The examples of the RFC: for level variables `l₁` and `l₂`, `l₁ ⊔ l₁` equals `l₁`, but `l₁ ⊔ l₂`
-does not equal `l₁`, since they agree only when `l₂ ≤ l₁`. -/
+The equality and the order compare the values, not the syntax: for level variables `l₁` and `l₂`,
+`l₁ ⊔ l₁` equals `l₁`, but `l₁ ⊔ l₂` does not equal `l₁`, since they agree only when `l₂ ≤ l₁`. -/
 
 example : (var 0 ⊔ var 0 : Level 2) ≈ var 0 := by decide
 
