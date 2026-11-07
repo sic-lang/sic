@@ -55,6 +55,7 @@ The steps outside the repositories are free, and those inside them are constrain
   - Design can do the same for one iteration, sized to be easy to review, with the aim of deciding rather than exploring what is possible.
   - Adjust is the moment to revise the plan, from the results, the problems and the solutions of the iteration, and to rethink it when the iterations do not fit together.
 - Implement, Record and Integrate happen in the repositories, through pull requests that follow this guide and pass the checks.
+  Every pull request is opened as a draft and stays one until Integrate.
   - Implement changes one or more repositories, with one pull request per repository, but no RFC.
   - Record writes in an RFC of the [rfcs](https://github.com/sic-lang/rfcs) repository what the implementation of the iteration confirmed, and only that iteration.
     Except to fix an RFC, implement first.
