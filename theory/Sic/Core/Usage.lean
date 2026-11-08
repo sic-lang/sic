@@ -32,7 +32,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   The application `x[t̄]` uses `x` with the grade of the mode, and each argument `tⱼ` with the
   grade `pⱼ` of its entry, checked in the mode `m ⊙ pⱼ`; a variable with an empty telescope uses
   itself only.
-  RFC: `\mathsf{var}_{X\mathsf{m}}`
+  RFC: `\mathsf{var}_{X▶}`
   -/
   | var {k : Nat} {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {ts : Args k Γ e.params} {m : Mode}
       {δ : GradeVector Γ.length} (hts : UsageArgs sig δ m ts) :
@@ -40,18 +40,18 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   -- ADE: `defn`, in `Graded/Usage.agda`, for the definitions.
   /-- A constant, defined or declared, uses no variable, in a mode `m₁` that the mode `m₂` of its
   entry allows.
-  RFC: `f_{\mathsf{m}}` -/
+  RFC: `f_{▶}` -/
   | const {k : Nat} {Γ : Scope} {f : Name} {j k' g : Nat} {m₁ m₂ : Mode} {p : Grade}
       {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       (h : sig.HasConstant f j k' g m₂ p A) (hm : m₁ ·ᵐ m₂ = m₁) :
       Usage sig 𝟘ᶜ m₁ (.const f qs ls ps : Term k Γ)
   -- ADE: `Uₘ`, in `Graded/Usage.agda`.
   /-- A sort uses no variable.
-  RFC: `\kappa_{\mathsf{m}}` -/
+  RFC: `\kappa_{▶}` -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
-  RFC: `\mathsf{sub}` -/
+  RFC: `\mathsf{sub}_{▶}` -/
   | sub {k : Nat} {Γ : Scope} {γ δ : GradeVector Γ.length} {m : Mode} {t : Term k Γ}
       (h : Usage sig γ m t) (hle : δ ≤ᶜ γ) : Usage sig δ m t
 
@@ -61,10 +61,10 @@ the grades `p̄` use the variables of their scope as `γ` allows. -/
 inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
     GradeVector Γ.length → Mode → Args k Γ ps → Prop where
   /-- No argument uses no variable.
-  RFC: `\mathsf{tel}_{\varepsilon\mathsf{m}}` -/
+  RFC: `\mathsf{tel}_{\varepsilon▶}` -/
   | nil {k : Nat} {Γ : Scope} {m : Mode} : UsageArgs sig 𝟘ᶜ m (.nil : Args k Γ [])
   /-- The first argument, of grade `p.usage`, checked in the mode `m ⊙ p.usage`, and the others.
-  RFC: `\mathsf{tel}_{,\mathsf{m}}` -/
+  RFC: `\mathsf{tel}_{,▶}` -/
   | cons {k : Nat} {Γ : Scope} {p : Parameter} {ps : List Parameter} {t : Term k Γ}
       {ts : Args k Γ ps} {m : Mode} {γ δ : GradeVector Γ.length} (ht : Usage sig γ (m ⊙ p.usage) t)
       (hts : UsageArgs sig δ m ts) :
