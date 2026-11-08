@@ -18,9 +18,11 @@ The translation is defined on the terms in a scope of variables only, which the 
 `Γ.FirstOrder` states: the programs are closed, and the binders of the kinds of declarations
 declare variables, while a second-order variable only appears in the contexts in which the
 declarations are checked.
-A variable thus has no arguments, and the target language has no second-order variables.
+A variable thus has no arguments, and the target language has no second-order variables: the
+clause of a second-order variable discharges it by `Γ.FirstOrder`, so that the clauses are those of
+the RFC.
 The core has no position of its own: the terms that it gives are types, variables and constants,
-so that its clauses use neither `S` nor `Γ.FirstOrder`, which the kinds of declarations use.
+so that its clauses do not use `S`, which the kinds of declarations use.
 
 ADE extract the terms of their type theory, in which the definitions are names, and replace each
 erased part by `↯` or by a term that does not terminate, as its strictness requires; they erase the
@@ -56,6 +58,12 @@ namespace Sic.Core
 
 /-- The scope `Γ` declares variables only, and no second-order variable. -/
 def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
+
+-- ADE: none.
+/-- The entry of a variable is an entry of its scope. -/
+theorem Var.mem {Γ : Scope} {e : Scope.Entry} : Var Γ e → e ∈ Γ
+  | .zero => List.mem_cons_self
+  | .succ x => List.mem_cons_of_mem _ x.mem
 
 -- ADE: `Term`, in `Graded/Erasure/Target.agda`.
 /-- A term `M` of the target language over `n` variables.
@@ -94,12 +102,14 @@ inductive Target.LessDefined {n : Nat} : Target n → Target n → Prop where
 /--
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, and a constant
-`f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`.
+`f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`; a second-order variable has no erasure, since the scope
+has none.
 RFC: `\mathsf{erase}_t`
 -/
-def Term.erase (_S : Set Grade) {k : Nat} {Γ : Scope} (_hΓ : Γ.FirstOrder) :
+def Term.erase (_S : Set Grade) {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
     Term k Γ → Target Γ.length
-  | .var x _ => .var x.toFin
+  | .var (e := .var) x _ => .var x.toFin
+  | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
   | .sort _ => .erased
   | .const f _ _ ps => .const f ps
   | .inst .. => .erased
@@ -138,7 +148,9 @@ RFC: `\mathsf{absent}_S`
 theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector Γ.length}
     {m : Mode} {t : Term k Γ} {S : Set Grade} (hS : ErasesUncounted m S) (hΓ : Γ.FirstOrder)
     {x : Fin Γ.length} : Usage sig γ m t → γ x ∈ S → ¬ (t.erase S hΓ).Occurs x
-  | .var (x := y) (δ := δ) _, hx, ho => by
+  | .var (e := .secondOrder ..) (x := y) _, _, _ => nomatch hΓ _ y.mem
+  | .var (e := .var) (x := y) (δ := δ) _, hx, ho => by
+    simp only [Term.erase] at ho
     cases ho
     have h : m.grade + δ y.toFin ∈ S := by
       simpa [GradeVector.add, GradeVector.update] using hx
@@ -149,9 +161,13 @@ theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector 
 
 -- ADE: none.
 /-- The erasure by a larger set of grades is less defined.
+The core has no position whose grade decides what is erased, so that its proof does not use
+`S₁ ⊆ S₂`, which the positions of the kinds of declarations use.
 RFC: `\sqsubseteq_S` -/
 theorem Term.erase_lessDefined {S₁ S₂ : Set Grade} (_h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) (t : Term k Γ) : t.erase S₂ hΓ ⊑ t.erase S₁ hΓ := by
-  cases t <;> constructor
+    (hΓ : Γ.FirstOrder) : (t : Term k Γ) → t.erase S₂ hΓ ⊑ t.erase S₁ hΓ
+  | .var (e := .var) .. => by simp only [Term.erase]; constructor
+  | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
+  | .sort _ | .const .. | .inst .. => by constructor
 
 end Sic.Core
