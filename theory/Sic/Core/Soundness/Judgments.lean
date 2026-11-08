@@ -27,8 +27,9 @@ levels, whose definitions have bodies, so that they need no interpretation.
 namespace Sic.Core
 
 -- ADE: none.
-/-- `(hyp_ι)`: the interpretation `ι` gives each constant declaration of the signature a term of its
-type, whenever the signature before it is meaningful. -/
+/-- The interpretation `ι` gives each constant declaration of the signature a term of its type,
+whenever the signature before it is meaningful.
+RFC: `\mathsf{hyp}_\iota` -/
 def ValidInterpretation (ι : Interpretation) : Signature → Prop
   | [] => True
   | .typeDeclaration _ :: sig => ValidInterpretation ι sig
@@ -41,64 +42,77 @@ def ValidInterpretation (ι : Interpretation) : Signature → Prop
 gives terms of their types. -/
 structure Soundness : Prop where
   -- ADE: `defn-valid`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- A well-formed signature is meaningful. -/
+  /-- A well-formed signature is meaningful.
+  RFC: `\mathsf{sound}.\Sigma` -/
   wfSig : ∀ {ι : Interpretation} {sig : Signature}, ValidInterpretation ι sig →
     WfSig sig → ValidSig ι sig
   -- ADE: none.
-  /-- A well-formed constant definition is meaningful. -/
+  /-- A well-formed constant definition is meaningful.
+  RFC: `\mathsf{sound}.\mathsf{def}` -/
   wfConstantDefinition : ∀ {ι : Interpretation} {sig : Signature} {d : ConstantDefinition},
     ValidInterpretation ι sig → WfConstantDefinition sig d → ValidConstantDefinition sig ι d
   -- ADE: none.
   /-- A well-formed constant declaration is meaningful, when the interpretation gives it a term of
-  its type. -/
+  its type.
+  RFC: `\mathsf{sound}.\mathsf{decl}` -/
   wfConstantDeclaration : ∀ {ι : Interpretation} {sig : Signature} {c : ConstantDeclaration},
     ValidInterpretation ι (.constantDeclaration c :: sig) → WfConstantDeclaration sig c →
       ValidConstantDeclaration sig ι c
   -- ADE: `valid`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- A well-formed context is meaningful. -/
+  /-- A well-formed context is meaningful.
+  RFC: `\mathsf{sound}.\Gamma` -/
   wfCtx : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ},
     ValidInterpretation ι sig → WfCtx sig ctx → ValidCtx sig ι ctx
   -- ADE: `fundamental-⊩ᵛ`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- A type is meaningful. -/
+  /-- A type is meaningful.
+  RFC: `\mathsf{sound}.A` -/
   wfType : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     {A : Term k Γ}, ValidInterpretation ι sig → WfType sig ctx A → ValidType sig ι ctx A
   -- ADE: `fundamental-⊩ᵛ≡`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- An equality of types is meaningful. -/
+  /-- An equality of types is meaningful.
+  RFC: `\mathsf{sound}.A_\equiv` -/
   eqType : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     {A B : Term k Γ}, ValidInterpretation ι sig → EqType sig ctx A B → ValidEqType sig ι ctx A B
   -- ADE: `fundamental-⊩ᵛ∷`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- A typing is meaningful. -/
+  /-- A typing is meaningful.
+  RFC: `\mathsf{sound}.t` -/
   hasType : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     {t A : Term k Γ}, ValidInterpretation ι sig → HasType sig ctx t A → ValidTerm sig ι ctx t A
   -- ADE: `fundamental-⊩ᵛ≡∷`, in `Definition/LogicalRelation/Fundamental.agda`.
-  /-- An equality of terms is meaningful. -/
+  /-- An equality of terms is meaningful.
+  RFC: `\mathsf{sound}.t_\equiv` -/
   eqTerm : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     {t u A : Term k Γ}, ValidInterpretation ι sig → EqTerm sig ctx t u A →
       ValidEqTerm sig ι ctx t u A
   -- ADE: none.
-  /-- Arguments of a telescope are meaningful. -/
+  /-- Arguments of a telescope are meaningful.
+  RFC: `\mathsf{sound}.\bar t` -/
   hasArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}, ValidInterpretation ι sig →
       HasArgs sig ctx ts Θ → ValidArgs sig ι ctx ts Θ
   -- ADE: none.
-  /-- Equal arguments of a telescope are meaningful. -/
+  /-- Equal arguments of a telescope are meaningful.
+  RFC: `\mathsf{sound}.\bar t_\equiv` -/
   eqArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {ctx : Context k Γ} {ts us : Args k Γ ps} {Θ : Telescope k Γ ps}, ValidInterpretation ι sig →
       EqArgs sig ctx ts us Θ → ValidEqArgs sig ι ctx ts us Θ
   -- ADE: none.
-  /-- Arguments of an instance are meaningful. -/
+  /-- Arguments of an instance are meaningful.
+  RFC: `\mathsf{sound}.\bar a` -/
   hasInstanceArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as : InstanceArgs k Γ Δ} {params : Context k Δ},
       ValidInterpretation ι sig → HasInstanceArgs sig ctx as params →
         ValidInstanceArgs sig ι ctx as params
   -- ADE: none.
-  /-- Equal arguments of instances are meaningful. -/
+  /-- Equal arguments of instances are meaningful.
+  RFC: `\mathsf{sound}.\bar a_\equiv` -/
   eqInstanceArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
       ValidInterpretation ι sig → EqInstanceArgs sig ctx as₁ as₂ params →
         ValidEqInstanceArgs sig ι ctx as₁ as₂ params
   -- ADE: none.
-  /-- A telescope in a sort is meaningful. -/
+  /-- A telescope in a sort is meaningful.
+  RFC: `\mathsf{sound}.\Theta` -/
   wfTelescope : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → WfTelescope sig ctx Θ κ → ValidTelescope sig ι ctx Θ κ

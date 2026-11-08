@@ -1666,7 +1666,7 @@ mutual
 
 /-- The instantiation of the level variables commutes with the substitutions of the first order,
 whose terms it instantiates.
-RFC: `\mathsf{comm}_l.t` -/
+RFC: `\mathsf{comm}_{l\sigma}.t` -/
 theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
     {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
@@ -1771,7 +1771,7 @@ theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Param
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
 first order.
-RFC: `\mathsf{comm}_l.\Theta` -/
+RFC: `\mathsf{comm}_{l\sigma}.\Theta` -/
 theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {ls' : Fin k → Level k'} :
     {σ : Subst₀ k Γ Δ} → {σ' : Subst₀ k' Γ Δ}
@@ -1837,7 +1837,8 @@ theorem Subst.liftN_substLevels_of {k' : Nat} {Γ Δ : Scope} :
 mutual
 
 /-- The instantiation of the level variables commutes with the substitutions of the second order,
-whose abstractions it instantiates. -/
+whose abstractions it instantiates.
+RFC: `\mathsf{comm}_{l\theta}.t` -/
 theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
     {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
@@ -1873,7 +1874,8 @@ theorem InstanceArgs.substLevels_subst_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' : F
 end
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
-second order. -/
+second order.
+RFC: `\mathsf{comm}_{l\theta}.\Theta` -/
 theorem Telescope.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {ls' : Fin k → Level k'} :
     {θ : Subst k Γ Δ} → {θ' : Subst k' Γ Δ}
