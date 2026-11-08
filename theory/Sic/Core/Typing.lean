@@ -82,20 +82,21 @@ inductive WfSig : Signature → Prop where
   /-- `(sig_∅)`. -/
   | empty : WfSig []
   /-- `(sig_≔)`: a definition, whose name is fresh. -/
-  | definition {sig : Signature} {d : Definition} (h : WfDefinition sig d)
-      (fresh : ∀ e ∈ sig, d.name ∉ e.names) : WfSig (.definition d :: sig)
+  | constantDefinition {sig : Signature} {d : ConstantDefinition} (h : WfDefinition sig d)
+      (fresh : ∀ e ∈ sig, d.name ∉ e.names) : WfSig (.constantDefinition d :: sig)
   /-- `(sig_c)`: a constant, whose name is fresh. -/
-  | constant {sig : Signature} {c : Constant} (h : WfConstant sig c)
-      (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constant c :: sig)
+  | constantDeclaration {sig : Signature} {c : ConstantDeclaration} (h : WfConstant sig c)
+      (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
 
 /--
 `(def)`: `Σ ⊢ c.{s̄; l̄; p̄} :_m A ≔ t`, for each instance of the sort and grade variables, the type
 `A` is a type of some sort and the body `t` a term of it, both in the empty context, and the body
 uses no variable in the mode `m`.
 -/
-inductive WfDefinition : Signature → Definition → Prop where
+inductive WfDefinition : Signature → ConstantDefinition → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`. -/
-  | intro {sig : Signature} {d : Definition} (κ : Instance d.sorts d.grades → Universe d.levels)
+  | intro {sig : Signature} {d : ConstantDefinition}
+      (κ : Instance d.sorts d.grades → Universe d.levels)
       (hA : ∀ ι, HasType sig .empty (d.type ι) (.sort (κ ι)))
       (ht : ∀ ι, HasType sig .empty (d.body ι) (d.type ι))
       (hu : ∀ ι, Usage sig 𝟘ᶜ d.mode (d.body ι)) :
@@ -103,9 +104,10 @@ inductive WfDefinition : Signature → Definition → Prop where
 
 /-- `(const)`: `Σ ⊢ c.{s̄; l̄; p̄} :_m A`, for each instance of the sort and grade variables, the type
 `A` is a type of some sort in the empty context. -/
-inductive WfConstant : Signature → Constant → Prop where
+inductive WfConstant : Signature → ConstantDeclaration → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`. -/
-  | intro {sig : Signature} {c : Constant} (κ : Instance c.sorts c.grades → Universe c.levels)
+  | intro {sig : Signature} {c : ConstantDeclaration}
+      (κ : Instance c.sorts c.grades → Universe c.levels)
       (hA : ∀ ι, HasType sig .empty (c.type ι) (.sort (κ ι))) :
       WfConstant sig c
 
@@ -184,7 +186,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   | prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       (hctx : WfCtx sig ctx) : HasType sig ctx (.sort ⟨.prop, l⟩) (.sort ⟨.type, .succ l⟩)
   /-- `(D)`: an instance of a declared type is a type in the sort of its declaration. -/
-  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : Declaration}
+  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -224,9 +226,9 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       EqTerm sig ctx (.var X ts) (.var X us) (A.instantiate ts)
   -- ADE: `δ-red`, in `Definition/Typed.agda`.
   /-- `(δ)`: a definition unfolds to its body, at an instance of its variables. -/
-  | delta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {d : Definition}
+  | delta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {d : ConstantDefinition}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx)
-      (h : .definition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
+      (h : .constantDefinition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
       (hp : ps.length = d.grades) :
       EqTerm sig ctx (.const d.name qs ls ps)
         (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
@@ -249,7 +251,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hctx : WfCtx sig ctx) (hl : l₁ ≈ l₂) :
       EqTerm sig ctx (.sort ⟨.prop, l₁⟩) (.sort ⟨.prop, l₂⟩) (.sort ⟨.type, .succ l₁⟩)
   /-- `(D_≡)`: instances with equal arguments at equal levels are equal. -/
-  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : Declaration}
+  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
       {as bs : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
@@ -449,28 +451,29 @@ end
 
 -- ADE: none.
 /-- A well-formed definition is in a well-formed signature. -/
-theorem WfDefinition.wfSig {sig : Signature} {d : Definition} : WfDefinition sig d → WfSig sig
+theorem WfDefinition.wfSig {sig : Signature} {d : ConstantDefinition} :
+    WfDefinition sig d → WfSig sig
   | .intro _ hA _ _ => (hA (.default _ _)).wfSig
 
 -- ADE: none.
 /-- A well-formed constant is in a well-formed signature. -/
-theorem WfConstant.wfSig {sig : Signature} {c : Constant} : WfConstant sig c → WfSig sig
+theorem WfConstant.wfSig {sig : Signature} {c : ConstantDeclaration} : WfConstant sig c → WfSig sig
   | .intro _ hA => (hA (.default _ _)).wfSig
 
 -- ADE: none.
 /-- The signature before the last entry of a well-formed signature is well formed. -/
 theorem WfSig.tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
-  | .definition h _ => h.wfSig
-  | .constant h _ => h.wfSig
+  | .constantDefinition h _ => h.wfSig
+  | .constantDeclaration h _ => h.wfSig
 
 -- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
 theorem WfSig.fresh {e : Entry} {sig : Signature} :
     WfSig (e :: sig) → ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
-  | .definition _ h, e', he', n, hn => by
+  | .constantDefinition _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
-  | .constant _ h, e', he', n, hn => by
+  | .constantDeclaration _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
 

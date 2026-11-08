@@ -147,7 +147,7 @@ structure Instance (j g : Nat) where
 
 -- ADE: none.
 /-- `f.{s̄; l̄; p̄} :_m A ≔ t`, a constant definition, which defines the constant `f`. -/
-structure Definition where
+structure ConstantDefinition where
   /-- The name `f`. -/
   name : Name
   /-- The number of sort variables. -/
@@ -164,8 +164,9 @@ structure Definition where
   body : Instance sorts grades → Term levels []
 
 -- ADE: none.
-/-- `f.{s̄; l̄; p̄} :_m A`, a constant declaration, which declares the constant `f`, without body. -/
-structure Constant where
+/-- `f.{s̄; l̄; p̄} :_m A`, a constant declaration, which declares the constant `f`, without
+body. -/
+structure ConstantDeclaration where
   /-- The name `f`. -/
   name : Name
   /-- The number of sort variables. -/
@@ -185,7 +186,7 @@ The header of a type declaration, `𝒦.{s̄; l̄; p̄} Δ : κ where D₁ ≔ �
 the system knows of it: the names of the declared types, the parameters `Δ` and the sort `κ`; the
 kind `𝒦` gives the bodies.
 -/
-structure Declaration where
+structure TypeDeclaration where
   /-- The names `D₁, …, Dₙ` of the declared types. -/
   names : List Name
   /-- The number of sort variables. -/
@@ -205,18 +206,18 @@ structure Declaration where
 RFC: `\mathsf{syntax}_e` -/
 inductive Entry where
   /-- A constant definition. -/
-  | definition (d : Definition)
+  | constantDefinition (d : ConstantDefinition)
   /-- A constant declaration. -/
-  | constant (c : Constant)
+  | constantDeclaration (c : ConstantDeclaration)
   /-- A type declaration. -/
-  | declaration (decl : Declaration)
+  | typeDeclaration (decl : TypeDeclaration)
 
 /-- The names that an entry introduces.
 RFC: `\mathsf{names}_e` -/
 def Entry.names : Entry → List Name
-  | .definition d => [d.name]
-  | .constant c => [c.name]
-  | .declaration decl => decl.names
+  | .constantDefinition d => [d.name]
+  | .constantDeclaration c => [c.name]
+  | .typeDeclaration decl => decl.names
 
 -- ADE: `DCon`, in `Definition/Untyped/NotParametrised.agda`, which holds definitions only.
 /-- A signature, its entries in order, the last entry first, so that `Σ, e` is `e :: Σ`.
@@ -233,10 +234,10 @@ RFC: `\in_f`
 inductive Signature.HasConstant (sig : Signature) :
     Name → (j k g : Nat) → Mode → (Instance j g → Term k []) → Prop where
   /-- A constant definition. -/
-  | definition {d : Definition} (h : .definition d ∈ sig) :
+  | constantDefinition {d : ConstantDefinition} (h : .constantDefinition d ∈ sig) :
       HasConstant sig d.name d.sorts d.levels d.grades d.mode d.type
   /-- A constant declaration. -/
-  | constant {c : Constant} (h : .constant c ∈ sig) :
+  | constantDeclaration {c : ConstantDeclaration} (h : .constantDeclaration c ∈ sig) :
       HasConstant sig c.name c.sorts c.levels c.grades c.mode c.type
 
 -- ADE: none.
@@ -245,8 +246,8 @@ inductive Signature.HasConstant (sig : Signature) :
 whose variables, parameters and sort are those of `D`, which the rules of the declared types share.
 RFC: `\in_D`
 -/
-def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : Declaration) : Prop :=
-  .declaration decl ∈ sig ∧ D ∈ decl.names
+def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclaration) : Prop :=
+  .typeDeclaration decl ∈ sig ∧ D ∈ decl.names
 
 /-- The names of a signature are distinct: each entry introduces names that no entry before it
 does.

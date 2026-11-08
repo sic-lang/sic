@@ -34,8 +34,8 @@ inductive Neutral (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop 
   | var {ps : List Grade} (x : Var Γ ps) (ts : Args k Γ ps) : Neutral sig (.var x ts)
   -- ADE: `Neutral.defn`, in `Definition/Untyped/Neutral.agda`, for the opaque definitions.
   /-- `c.{s̄; l̄; p̄}`: a constant, an entry without body. -/
-  | const {c : Constant} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : .constant c ∈ sig) : Neutral sig (.const c.name qs ls ps)
+  | const {c : ConstantDeclaration} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      (h : .constantDeclaration c ∈ sig) : Neutral sig (.const c.name qs ls ps)
 
 -- ADE: `Whnf`, in `Definition/Untyped/Whnf.agda`.
 /-- `t` is a head normal form of the core. -/
@@ -56,8 +56,8 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
 inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ → Prop where
   -- ADE: `δ-red`, in `Definition/Typed.agda`.
   /-- `(δ_⟶)`: a definition unfolds to its body, at an instance of its variables. -/
-  | delta {d : Definition} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : .definition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
+  | delta {d : ConstantDefinition} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      (h : .constantDefinition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
       (hp : ps.length = d.grades) :
       Red sig (.const d.name qs ls ps)
         (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
@@ -79,9 +79,10 @@ def Computes (sig : Signature) (t v : Term 0 []) : Prop :=
 
 /-- A step of reduction unfolds a definition of the signature. -/
 theorem Red.inv {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ} :
-    Red sig t u → ∃ (d : Definition) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    Red sig t u →
+    ∃ (d : ConstantDefinition) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
       (hq : qs.length = d.sorts) (hl : ls.length = d.levels) (hp : ps.length = d.grades),
-      .definition d ∈ sig ∧ t = .const d.name qs ls ps ∧
+      .constantDefinition d ∈ sig ∧ t = .const d.name qs ls ps ∧
         u = Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl)
   | .delta h hq hl hp => ⟨_, _, _, _, hq, hl, hp, h, rfl, rfl⟩
 

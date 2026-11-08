@@ -37,11 +37,13 @@ namespace Sic.Core
 -- ADE: none.
 /-- `ι`: an interpretation, which gives each constant a body, for each instance of its sort and grade
 variables. -/
-abbrev Interpretation : Type := (c : Constant) → Instance c.sorts c.grades → Term c.levels []
+abbrev Interpretation : Type :=
+  (c : ConstantDeclaration) → Instance c.sorts c.grades → Term c.levels []
 
 /-- The entry `e` in which a constant becomes the definition whose body is its interpretation. -/
 def Entry.interpret (ι : Interpretation) : Entry → Entry
-  | .constant c => .definition ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.type, ι c⟩
+  | .constantDeclaration c =>
+    .constantDefinition ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.type, ι c⟩
   | e => e
 
 /-- The signature `Σ` in which each constant becomes the definition whose body is its
@@ -164,15 +166,15 @@ def ValidSig (ι : Interpretation) : Signature → Prop
   /- `(⊨sig_∅)`. -/
   | [] => True
   /- `(⊨sig_D)`: the kinds of declarations give the meaning of their declarations. -/
-  | .declaration _ :: _ => False
+  | .typeDeclaration _ :: _ => False
   /- `(⊨sig_≔)`: the name is fresh and the body is a term of the type. -/
-  | .definition d :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, d.name ∉ e.names) ∧
+  | .constantDefinition d :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, d.name ∉ e.names) ∧
       ∀ inst (ρ : Fin d.levels → Nat),
       EqTypeClause sig ι ((d.type inst).atLevels ρ) ((d.type inst).atLevels ρ) ∧
         EqTermClause sig ι ((d.body inst).atLevels ρ) ((d.body inst).atLevels ρ)
           ((d.type inst).atLevels ρ)
   /- `(⊨sig_c)`: the name is fresh and the interpretation is a term of the type. -/
-  | .constant c :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, c.name ∉ e.names) ∧
+  | .constantDeclaration c :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, c.name ∉ e.names) ∧
       ∀ inst (ρ : Fin c.levels → Nat),
       EqTypeClause sig ι ((c.type inst).atLevels ρ) ((c.type inst).atLevels ρ) ∧
         EqTermClause sig ι ((ι c inst).atLevels ρ) ((ι c inst).atLevels ρ)
@@ -502,10 +504,10 @@ theorem Signature.Distinct.interpret {ι : Interpretation} :
 /-- The names of a meaningful signature are distinct. -/
 theorem ValidSig.distinct {ι : Interpretation} : {sig : Signature} → ValidSig ι sig → sig.Distinct
   | [], _ => trivial
-  | .definition _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
+  | .constantDefinition _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
       simp only [Entry.names, List.mem_singleton] at hn
       exact hn ▸ hfresh e he⟩
-  | .constant _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
+  | .constantDeclaration _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
       simp only [Entry.names, List.mem_singleton] at hn
       exact hn ▸ hfresh e he⟩
 
@@ -631,24 +633,25 @@ theorem valid_univ_max (ι : Interpretation) :
     .univ 1 (.univ rfl rfl)⟩
 
 /-- `T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`, a definition of a type. -/
-def typeEntry : Definition := ⟨"T", 0, 0, 0, .oneOne, fun _ => univ (.succ .zero), fun _ => univ .zero⟩
+def typeEntry : ConstantDefinition :=
+  ⟨"T", 0, 0, 0, .oneOne, fun _ => univ (.succ .zero), fun _ => univ .zero⟩
 
 /-- `T.{}`. -/
 abbrev typeConst : Term 0 [] := .const "T" [] [] []
 
 /-- `T.{}` computes to `U_0`, its body. -/
 theorem computes_typeConst (ι : Interpretation) :
-    Computesι [.definition typeEntry] ι typeConst (univ .zero) :=
+    Computesι [.constantDefinition typeEntry] ι typeConst (univ .zero) :=
   ⟨.step (.delta (d := typeEntry) (qs := []) (ls := []) (ps := []) (List.mem_singleton_self _) rfl rfl
     rfl) (.refl _), .sort _⟩
 
 /-- `⊨ T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`: the definition is meaningful, whatever the interpretation. -/
-theorem validSig_typeEntry (ι : Interpretation) : ValidSig ι [.definition typeEntry] :=
+theorem validSig_typeEntry (ι : Interpretation) : ValidSig ι [.constantDefinition typeEntry] :=
   ⟨trivial, fun _ h => (nomatch h), fun _ _ => ⟨(valid_univ_zero ι).1.2, (valid_univ_zero ι).2⟩⟩
 
 /-- `Σ ⊨ T.{} ≡ U_0`: the definition is equal to its body. -/
 theorem valid_typeConst (ι : Interpretation) :
-    ValidEqType₀ [.definition typeEntry] ι typeConst (univ .zero) :=
+    ValidEqType₀ [.constantDefinition typeEntry] ι typeConst (univ .zero) :=
   ⟨validSig_typeEntry ι, _, _, eqUniv 0, computes_typeConst ι, Computes.sort _ _,
     .univ 1 (.univ rfl rfl), .univ 1 (.univ rfl rfl)⟩
 

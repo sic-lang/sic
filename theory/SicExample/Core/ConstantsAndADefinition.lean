@@ -4,7 +4,7 @@ public import Sic.Core.Erasure
 public import Sic.Core.Reduction
 
 /-!
-# Constants and a Definition
+# Constants and a ConstantDefinition
 
 The annex `constants-and-a-definition` of RFC 24: since the core names no type, a signature of the
 core alone declares types and values as constants, a foreign type `Int` and its value `zero`, a
@@ -36,71 +36,77 @@ def sorted {k : Nat} {Γ : Scope} : Term k Γ := .const "Sorted" [] [] []
 def origin {k : Nat} {Γ : Scope} : Term k Γ := .const "origin" [] [] []
 
 /-- `Int.{} :_{𝟙𝟙ᵐ} U_0`. -/
-def intEntry : Constant := ⟨"Int", 0, 0, 0, .oneOne, fun _ => .sort ⟨.type, .zero⟩⟩
+def intEntry : ConstantDeclaration := ⟨"Int", 0, 0, 0, .oneOne, fun _ => .sort ⟨.type, .zero⟩⟩
 
 /-- `zero.{} :_{𝟙𝟙ᵐ} Int.{}`. -/
-def zeroEntry : Constant := ⟨"zero", 0, 0, 0, .oneOne, fun _ => int⟩
+def zeroEntry : ConstantDeclaration := ⟨"zero", 0, 0, 0, .oneOne, fun _ => int⟩
 
 /-- `bound.{} :_{𝟘𝟙ᵐ} Int.{}`. -/
-def boundEntry : Constant := ⟨"bound", 0, 0, 0, .zeroOne, fun _ => int⟩
+def boundEntry : ConstantDeclaration := ⟨"bound", 0, 0, 0, .zeroOne, fun _ => int⟩
 
 /-- `Sorted.{} :_{𝟙𝟙ᵐ} Ω_0`. -/
-def sortedEntry : Constant := ⟨"Sorted", 0, 0, 0, .oneOne, fun _ => .sort ⟨.prop, .zero⟩⟩
+def sortedEntry : ConstantDeclaration := ⟨"Sorted", 0, 0, 0, .oneOne, fun _ => .sort ⟨.prop, .zero⟩⟩
 
 /-- `sorted.{} :_{𝟘𝟙ᵐ} Sorted.{}`. -/
-def sortedProofEntry : Constant := ⟨"sorted", 0, 0, 0, .zeroOne, fun _ => sorted⟩
+def sortedProofEntry : ConstantDeclaration := ⟨"sorted", 0, 0, 0, .zeroOne, fun _ => sorted⟩
 
 /-- `origin.{} :_{𝟙𝟙ᵐ} Int.{} ≔ zero.{}`. -/
-def originEntry : Definition := ⟨"origin", 0, 0, 0, .oneOne, fun _ => int, fun _ => zero⟩
+def originEntry : ConstantDefinition := ⟨"origin", 0, 0, 0, .oneOne, fun _ => int, fun _ => zero⟩
 
 /-- `(ex_sig)`: the signature `Σ_ex`, the last entry first. -/
 def sigEx : Signature :=
-  [.definition originEntry, .constant sortedProofEntry, .constant sortedEntry,
-    .constant boundEntry, .constant zeroEntry, .constant intEntry]
+  [.constantDefinition originEntry, .constantDeclaration sortedProofEntry,
+    .constantDeclaration sortedEntry, .constantDeclaration boundEntry,
+    .constantDeclaration zeroEntry, .constantDeclaration intEntry]
 
 /-- The signatures before each entry of `Σ_ex`. -/
-def sig₁ : Signature := [.constant intEntry]
+def sig₁ : Signature := [.constantDeclaration intEntry]
 /-- `Int, zero`. -/
-def sig₂ : Signature := .constant zeroEntry :: sig₁
+def sig₂ : Signature := .constantDeclaration zeroEntry :: sig₁
 /-- `Int, zero, bound`. -/
-def sig₃ : Signature := .constant boundEntry :: sig₂
+def sig₃ : Signature := .constantDeclaration boundEntry :: sig₂
 /-- `Int, zero, bound, Sorted`. -/
-def sig₄ : Signature := .constant sortedEntry :: sig₃
+def sig₄ : Signature := .constantDeclaration sortedEntry :: sig₃
 /-- `Int, zero, bound, Sorted, sorted`. -/
-def sig₅ : Signature := .constant sortedProofEntry :: sig₄
+def sig₅ : Signature := .constantDeclaration sortedProofEntry :: sig₄
 
 theorem wf₁ : WfSig sig₁ :=
-  .constant (.intro (fun _ => ⟨.type, .succ .zero⟩) fun _ => .univ (.empty .empty)) (by decide)
-
-/-- `Int.{}` is a type of `U_0` in every signature that extends `sig₁`. -/
-theorem int_type {sig : Signature} (hsig : WfSig sig) (hmem : .constant intEntry ∈ sig) :
-    HasType sig (.empty : Context 0 []) int (.sort ⟨.type, .zero⟩) :=
-  .const (qs := []) (ls := []) (ps := []) (.empty hsig) (.constant (c := intEntry) hmem) rfl rfl rfl
-
-theorem wf₂ : WfSig sig₂ :=
-  .constant (.intro (fun _ => ⟨.type, .zero⟩) fun _ => int_type wf₁ (by simp [sig₁])) (by decide)
-
-theorem wf₃ : WfSig sig₃ :=
-  .constant (.intro (fun _ => ⟨.type, .zero⟩) fun _ => int_type wf₂ (by simp [sig₂, sig₁]))
+  .constantDeclaration (.intro (fun _ => ⟨.type, .succ .zero⟩) fun _ => .univ (.empty .empty))
     (by decide)
 
+/-- `Int.{}` is a type of `U_0` in every signature that extends `sig₁`. -/
+theorem int_type {sig : Signature} (hsig : WfSig sig)
+    (hmem : .constantDeclaration intEntry ∈ sig) :
+    HasType sig (.empty : Context 0 []) int (.sort ⟨.type, .zero⟩) :=
+  .const (qs := []) (ls := []) (ps := []) (.empty hsig) (.constantDeclaration (c := intEntry) hmem)
+    rfl rfl rfl
+
+theorem wf₂ : WfSig sig₂ :=
+  .constantDeclaration (.intro (fun _ => ⟨.type, .zero⟩) fun _ => int_type wf₁ (by simp [sig₁]))
+    (by decide)
+
+theorem wf₃ : WfSig sig₃ :=
+  .constantDeclaration
+    (.intro (fun _ => ⟨.type, .zero⟩) fun _ => int_type wf₂ (by simp [sig₂, sig₁])) (by decide)
+
 theorem wf₄ : WfSig sig₄ :=
-  .constant (.intro (fun _ => ⟨.type, .succ .zero⟩) fun _ => .prop (.empty wf₃)) (by decide)
+  .constantDeclaration (.intro (fun _ => ⟨.type, .succ .zero⟩) fun _ => .prop (.empty wf₃))
+    (by decide)
 
 theorem wf₅ : WfSig sig₅ :=
-  .constant (.intro (fun _ => ⟨.prop, .zero⟩) fun _ =>
+  .constantDeclaration (.intro (fun _ => ⟨.prop, .zero⟩) fun _ =>
     .const (qs := []) (ls := []) (ps := []) (.empty wf₄)
-      (.constant (c := sortedEntry) (by simp [sig₄])) rfl rfl rfl) (by decide)
+      (.constantDeclaration (c := sortedEntry) (by simp [sig₄])) rfl rfl rfl) (by decide)
 
 /-- `(ex_sig)`: the signature `Σ_ex` is well formed. -/
 theorem wf_sigEx : WfSig sigEx :=
-  .definition (sig := sig₅) (d := originEntry)
+  .constantDefinition (sig := sig₅) (d := originEntry)
     (.intro (fun _ => ⟨.type, .zero⟩)
       (fun _ => int_type wf₅ (by simp [sig₅, sig₄, sig₃, sig₂, sig₁]))
       (fun _ => .const (qs := []) (ls := []) (ps := []) (.empty wf₅)
-        (.constant (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl rfl rfl)
+        (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl rfl rfl)
       (fun _ => .const (qs := []) (ls := []) (ps := [])
-        (.constant (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl))
+        (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl))
     (by decide)
 
 /-- `(ex_use)`: the definition `origin` unfolds to `zero`. -/
@@ -110,20 +116,21 @@ theorem origin_eq_zero : EqTerm sigEx (.empty : Context 0 []) origin zero int :=
 
 /-- `(ex_use)`: a proof may use the ghost value `bound`. -/
 theorem bound_in_proofs : Usage sigEx (Γ := []) 𝟘ᶜ .zeroOne (bound : Term 0 []) :=
-  .const (qs := []) (ls := []) (ps := []) (.constant (c := boundEntry) (by simp [sigEx])) rfl
+  .const (qs := []) (ls := []) (ps := [])
+    (.constantDeclaration (c := boundEntry) (by simp [sigEx])) rfl
 
 /-- The only entry of `Σ_ex` named `bound` is the ghost value, of mode `𝟘𝟙ᵐ`. -/
 theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {A : Instance j g → Term k []}
     (h : sigEx.HasConstant c j k g m A) (hc : c = "bound") : m = .zeroOne := by
   cases h with
-  | definition hmem =>
-    simp only [sigEx, List.mem_cons, Entry.definition.injEq, reduceCtorEq, List.not_mem_nil,
-      or_false] at hmem
+  | constantDefinition hmem =>
+    simp only [sigEx, List.mem_cons, Entry.constantDefinition.injEq, reduceCtorEq,
+      List.not_mem_nil, or_false] at hmem
     subst hmem
     exact absurd hc (by decide)
-  | constant hmem =>
-    simp only [sigEx, List.mem_cons, Entry.constant.injEq, reduceCtorEq, List.not_mem_nil,
-      or_false, false_or] at hmem
+  | constantDeclaration hmem =>
+    simp only [sigEx, List.mem_cons, Entry.constantDeclaration.injEq, reduceCtorEq,
+      List.not_mem_nil, or_false, false_or] at hmem
     rcases hmem with rfl | rfl | rfl | rfl | rfl
     · exact absurd hc (by decide)
     · exact absurd hc (by decide)
