@@ -5,9 +5,14 @@ public import Sic.Core.Reduction
 /-!
 # Meaning
 
-The meaning of the judgments of RFC 24, after the meaning explanations of Martin-Löf: a closed
-judgment is true when its terms compute as it says, and a judgment in a context when it holds under
-every pair of equal closed substitutions of the context.
+The meaning of the judgments of annex 15 of RFC 36, after the meaning explanations of Martin-Löf: a
+closed judgment is true when its terms compute as it says, and a judgment in a context when it holds
+under every pair of equal closed substitutions of the context.
+Each judgment of the typing has a meaning, with the same objects: the signatures and their entries,
+the contexts, the types, the terms, the arguments of the telescopes and of the instances, and the
+telescopes in a sort.
+The meaning ignores the grades, the modes and the ownerships, as the typing does outside the
+judgments of usage and of ownership that the rule of the constant definitions reads.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
 relation `eq(A₀)`, which the sorts give in the core: the universe `U_n` relates the sorts of the level
 below it, and the universe of propositions `Ω_n` relates nothing, since only the kinds of
@@ -78,6 +83,16 @@ def Context.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (ctx : Context 
 def Args.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat) (ts : Args k Γ ps) :
     Args 0 Γ ps :=
   ts.substLevels fun i => .ofNat (ρ i)
+
+/-- `ā[ρ]`: the arguments `ā` of an instance in which each level variable `i` has the value
+`ρ i`. -/
+def InstanceArgs.atLevels {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (as : InstanceArgs k Γ Δ) :
+    InstanceArgs 0 Γ Δ :=
+  as.substLevels fun i => .ofNat (ρ i)
+
+/-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`. -/
+def Universe.atLevels {k : Nat} (ρ : Fin k → Nat) (κ : Universe k) : Universe 0 :=
+  κ.substLevels fun i => .ofNat (ρ i)
 
 /-- `Θ[ρ]`: the telescope `Θ` in which each level variable `i` has the value `ρ i`. -/
 def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat)
@@ -159,26 +174,68 @@ def EqTermClause (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : P
     Computesι sig ι u w ∧ HasEq A₀ R ∧ R v w) ∧
   (ComputesToProp sig ι A → ∃ A₀ R, Computesι sig ι A A₀ ∧ HasEq A₀ R ∧ R t u)
 
+/-- The clause of `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: at each instance of the sort and grade
+variables and each value of the level variables, the body is a term of the type; the meaning ignores
+the mode and the ownership. -/
+def ConstantDefinition.Clause (sig : Signature) (ι : Interpretation) (d : ConstantDefinition) :
+    Prop :=
+  ∀ inst (ρ : Fin d.levels → Nat),
+    EqTypeClause sig ι ((d.type inst).atLevels ρ) ((d.type inst).atLevels ρ) ∧
+      EqTermClause sig ι ((d.body inst).atLevels ρ) ((d.body inst).atLevels ρ)
+        ((d.type inst).atLevels ρ)
+
+/-- The clause of `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p`: at each instance of the sort and grade variables
+and each value of the level variables, the interpretation of the constant is a term of its type; the
+meaning ignores the mode and the ownership. -/
+def ConstantDeclaration.Clause (sig : Signature) (ι : Interpretation) (c : ConstantDeclaration) :
+    Prop :=
+  ∀ inst (ρ : Fin c.levels → Nat),
+    EqTypeClause sig ι ((c.type inst).atLevels ρ) ((c.type inst).atLevels ρ) ∧
+      EqTermClause sig ι ((ι c inst).atLevels ρ) ((ι c inst).atLevels ρ)
+        ((c.type inst).atLevels ρ)
+
 -- ADE: none.
 /-- `⊨ Σ`: each entry of the signature has a fresh name and is meaningful in the signature before
-it, for each instance of its variables. -/
+it. -/
 def ValidSig (ι : Interpretation) : Signature → Prop
   /- `(⊨sig_∅)`. -/
   | [] => True
-  /- `(⊨sig_D)`: the kinds of declarations give the meaning of their declarations. -/
+  /- The kinds of declarations give the meaning of their declarations, as the rules of their
+  signatures; the core has none. -/
   | .typeDeclaration _ :: _ => False
-  /- `(⊨sig_≔)`: the name is fresh and the body is a term of the type. -/
+  /- `(⊨sig_def)`, which `ValidSig.constantDefinition_iff` states as the RFC does. -/
   | .constantDefinition d :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, d.name ∉ e.names) ∧
-      ∀ inst (ρ : Fin d.levels → Nat),
-      EqTypeClause sig ι ((d.type inst).atLevels ρ) ((d.type inst).atLevels ρ) ∧
-        EqTermClause sig ι ((d.body inst).atLevels ρ) ((d.body inst).atLevels ρ)
-          ((d.type inst).atLevels ρ)
-  /- `(⊨sig_c)`: the name is fresh and the interpretation is a term of the type. -/
+      d.Clause sig ι
+  /- `(⊨sig_decl)`, which `ValidSig.constantDeclaration_iff` states as the RFC does. -/
   | .constantDeclaration c :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, c.name ∉ e.names) ∧
-      ∀ inst (ρ : Fin c.levels → Nat),
-      EqTypeClause sig ι ((c.type inst).atLevels ρ) ((c.type inst).atLevels ρ) ∧
-        EqTermClause sig ι ((ι c inst).atLevels ρ) ((ι c inst).atLevels ρ)
-          ((c.type inst).atLevels ρ)
+      c.Clause sig ι
+
+-- ADE: none.
+/-- `(⊨def)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, in a meaningful signature. -/
+def ValidConstantDefinition (sig : Signature) (ι : Interpretation) (d : ConstantDefinition) : Prop :=
+  ValidSig ι sig ∧ d.Clause sig ι
+
+-- ADE: none.
+/-- `(⊨decl)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, in a meaningful signature. -/
+def ValidConstantDeclaration (sig : Signature) (ι : Interpretation) (c : ConstantDeclaration) :
+    Prop :=
+  ValidSig ι sig ∧ c.Clause sig ι
+
+/-- `(⊨sig_def)`, as the RFC states it: the entry is meaningful and its name is fresh. -/
+theorem ValidSig.constantDefinition_iff {ι : Interpretation} {sig : Signature}
+    {d : ConstantDefinition} :
+    ValidSig ι (.constantDefinition d :: sig) ↔
+      ValidConstantDefinition sig ι d ∧ ∀ e ∈ sig, d.name ∉ e.names := by
+  simp only [ValidSig, ValidConstantDefinition]
+  exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
+
+/-- `(⊨sig_decl)`, as the RFC states it: the entry is meaningful and its name is fresh. -/
+theorem ValidSig.constantDeclaration_iff {ι : Interpretation} {sig : Signature}
+    {c : ConstantDeclaration} :
+    ValidSig ι (.constantDeclaration c :: sig) ↔
+      ValidConstantDeclaration sig ι c ∧ ∀ e ∈ sig, c.name ∉ e.names := by
+  simp only [ValidSig, ValidConstantDeclaration]
+  exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
 
 /-- `(⊨_type≡)`: `Σ ⊨ A ≡ B`. -/
 def ValidEqType₀ (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
@@ -286,9 +343,7 @@ def ValidTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Cont
 -- ADE: none.
 /-- `(⊨Γ_tel≡)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, at levels without variables: the arguments substituted by two
 equal closed substitutions `σ₁` and `σ₂` of the context are equal substitutions of the context that
-the telescope `Θ[σ₁]` forms.
-RFC 24 gives no meaning to the judgment of the arguments, which its soundness needs for the rule of
-`X[t̄]`. -/
+the telescope `Θ[σ₁]` forms. -/
 def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts us : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidCtx₀ sig ι ctx ∧
@@ -300,6 +355,20 @@ def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : Lis
 def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidEqArgsΓ sig ι ctx ts ts Θ
+
+-- ADE: none.
+/-- `(⊨Γ_arg≡)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, at levels without variables: the arguments substituted by
+two equal closed substitutions of the context are equal substitutions of the parameters `Δ`. -/
+def ValidEqInstanceArgsΓ (sig : Signature) (ι : Interpretation) {Γ Δ : Scope} (ctx : Context 0 Γ)
+    (as₁ as₂ : InstanceArgs 0 Γ Δ) (params : Context 0 Δ) : Prop :=
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      EqSubst sig ι params (as₁.subst σ₁).toSubst (as₂.subst σ₂).toSubst
+
+/-- `(⊨Γ_arg)`: `Σ; Γ ⊨ ā : Δ`, at levels without variables. -/
+def ValidInstanceArgsΓ (sig : Signature) (ι : Interpretation) {Γ Δ : Scope} (ctx : Context 0 Γ)
+    (as : InstanceArgs 0 Γ Δ) (params : Context 0 Δ) : Prop :=
+  ValidEqInstanceArgsΓ sig ι ctx as as params
 
 /-- `(⊨ctx_x)`, as the RFC states it. -/
 theorem validCtx₀_var {sig : Signature} {ι : Interpretation} {Γ : Scope} (ctx : Context 0 Γ)
@@ -315,7 +384,9 @@ theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Sc
 /-! ## Telescopes -/
 
 -- ADE: none.
-/-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their grades ignored. -/
+/-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their first types being
+equal types of a sort that `κ` bounds, and the rest of them equal for every pair of equal terms of
+these types; the meaning ignores their grades. -/
 def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
     {ps : List Parameter} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨tel_κε)`. -/
@@ -325,6 +396,14 @@ def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0
     (∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
       ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ A₁ →
         ValidEqTelescope₀ sig ι κ (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
+
+-- ADE: none.
+/-- `(⊨Γ_tel_κ)`: `Σ; Γ ⊨ Θ : κ`, at levels without variables: the telescope substituted by two
+equal closed substitutions of the context gives equal closed telescopes in the sort `κ`. -/
+def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
+    (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (κ : Universe 0) : Prop :=
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqTelescope₀ sig ι κ (Θ.subst σ₁) (Θ.subst σ₂)
 
 /-! ## Level Variables -/
 
@@ -362,6 +441,22 @@ def ValidEqArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {
 def ValidArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
     (ctx : Context k Γ) (ts : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
   ∀ ρ, ValidArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (Θ.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, for every value of the level variables. -/
+def ValidEqInstanceArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ Δ : Scope}
+    (ctx : Context k Γ) (as₁ as₂ : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
+  ∀ ρ, ValidEqInstanceArgsΓ sig ι (ctx.atLevels ρ) (as₁.atLevels ρ) (as₂.atLevels ρ)
+    (params.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā : Δ`, for every value of the level variables. -/
+def ValidInstanceArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ Δ : Scope}
+    (ctx : Context k Γ) (as : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
+  ∀ ρ, ValidInstanceArgsΓ sig ι (ctx.atLevels ρ) (as.atLevels ρ) (params.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ`, for every value of the level variables. -/
+def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
+    {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
+  ∀ ρ, ValidTelescopeΓ sig ι (ctx.atLevels ρ) (Θ.atLevels ρ) (κ.atLevels ρ)
 
 /-! ## Partial Equivalence Relations
 
