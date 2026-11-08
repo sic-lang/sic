@@ -316,8 +316,8 @@ def Context.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Context k Γ → Context k' Γ
   | .empty => .empty
   | .var ctx A => .var (ctx.substLevels ls') (A.substLevels ls')
-  | .secondOrder ctx Θ A c₀ => .secondOrder (ctx.substLevels ls')
-      (Θ.substLevels ls') (A.substLevels ls') c₀
+  | .secondOrder ctx Θ A χ₀ => .secondOrder (ctx.substLevels ls')
+      (Θ.substLevels ls') (A.substLevels ls') χ₀
 
 /-- `Γ, Θ`: the context `Γ` extended by the entries of the telescope `Θ`, whose grades and parameters
 it ignores.

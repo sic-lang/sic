@@ -41,9 +41,9 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- A constant, defined or declared, uses no variable, in a mode `m₁` that the mode `m₂` of its
   entry allows.
   RFC: `f_{\mathsf{m}}` -/
-  | const {k : Nat} {Γ : Scope} {f : Name} {j k' g : Nat} {m₁ m₂ : Mode} {c₀ : Grade}
+  | const {k : Nat} {Γ : Scope} {f : Name} {j k' g : Nat} {m₁ m₂ : Mode} {p : Grade}
       {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : sig.HasConstant f j k' g m₂ c₀ A) (hm : m₁ ·ᵐ m₂ = m₁) :
+      (h : sig.HasConstant f j k' g m₂ p A) (hm : m₁ ·ᵐ m₂ = m₁) :
       Usage sig 𝟘ᶜ m₁ (.const f qs ls ps : Term k Γ)
   -- ADE: `Uₘ`, in `Graded/Usage.agda`.
   /-- A sort uses no variable.

@@ -49,36 +49,36 @@ inductive Context.VarIn {k : Nat} : {Γ : Scope} → Context k Γ → Var Γ .va
       VarIn (ctx.var B) x.succ (A.rename Ren.weaken)
   /-- An entry before a second-order variable.
   RFC: `\in_\Gamma.x,Y` -/
-  | succSecondOrder {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade} {ctx : Context k Γ}
+  | succSecondOrder {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade} {ctx : Context k Γ}
       {x : Var Γ .var} {A : Term k Γ} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
-      (h : VarIn ctx x A) : VarIn (ctx.secondOrder Θ B c₀) x.succ (A.rename Ren.weaken)
+      (h : VarIn ctx x A) : VarIn (ctx.secondOrder Θ B χ₀) x.succ (A.rename Ren.weaken)
 
 /-- `X : (Θ ⊢ A) ∈ Γ`: the second-order variable `X` is declared with the telescope `Θ` and the
 type `A` in the context, by the cases of the last entry; the empty context, which has no
 second-order variable, has no constructor, and the telescope and the type are weakened to the scope
 of the context. -/
 inductive Context.SecondOrderIn {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
-    {c₀ : Option Grade} → Context k Γ → Var Γ (.secondOrder ps c₀) → Telescope k Γ ps →
+    {χ₀ : Option Grade} → Context k Γ → Var Γ (.secondOrder ps χ₀) → Telescope k Γ ps →
     Term k (Γ.extend ps.length) → Prop where
   /-- The last entry.
   RFC: `\in_\Gamma.X` -/
-  | zero {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade} {ctx : Context k Γ}
+  | zero {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade} {ctx : Context k Γ}
       {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} :
-      SecondOrderIn (ctx.secondOrder Θ A c₀) .zero (Θ.rename Ren.weaken)
+      SecondOrderIn (ctx.secondOrder Θ A χ₀) .zero (Θ.rename Ren.weaken)
         (A.rename (Ren.liftN _ Ren.weaken))
   /-- An entry before a variable.
   RFC: `\in_\Gamma.X,y` -/
-  | succVar {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade} {ctx : Context k Γ}
-      {X : Var Γ (.secondOrder ps c₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
+  | succVar {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade} {ctx : Context k Γ}
+      {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       {B : Term k Γ} (h : SecondOrderIn ctx X Θ A) :
       SecondOrderIn (ctx.var B) X.succ (Θ.rename Ren.weaken) (A.rename (Ren.liftN _ Ren.weaken))
   /-- An entry before a second-order variable.
   RFC: `\in_\Gamma.X,Y` -/
-  | succSecondOrder {Γ : Scope} {ps qs : List Parameter} {c₀ c₀' : Option Grade}
-      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps c₀)} {Θ : Telescope k Γ ps}
+  | succSecondOrder {Γ : Scope} {ps qs : List Parameter} {χ₀ χ₀' : Option Grade}
+      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope k Γ ps}
       {A : Term k (Γ.extend ps.length)} {Θ' : Telescope k Γ qs} {B : Term k (Γ.extend qs.length)}
       (h : SecondOrderIn ctx X Θ A) :
-      SecondOrderIn (ctx.secondOrder Θ' B c₀') X.succ (Θ.rename Ren.weaken)
+      SecondOrderIn (ctx.secondOrder Θ' B χ₀') X.succ (Θ.rename Ren.weaken)
         (A.rename (Ren.liftN _ Ren.weaken))
 
 /-- `A[s̄' / s̄, l̄' / l̄, p̄' / p̄]`: the type or the body `A` of an entry of the signature at the
@@ -111,7 +111,7 @@ inductive WfSig : Signature → Prop where
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
 type of some sort and the body `t` a term of it, both in the empty context, and the body uses no
-variable in the mode `m`, where its value has the ownership `c₀` of the definition.
+variable in the mode `m`, where its value has the ownership `p` of the definition.
 -/
 inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.
@@ -145,12 +145,12 @@ inductive WfCtx : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → 
   | var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       (h : WfType sig ctx A) : WfCtx sig (ctx.var A)
   /-- A second-order variable, whose type is a type in the context extended by its telescope, and
-  the ownership of whose result has a term: the constant `c₀` or the coefficient of a parameter.
+  the ownership of whose result has a term: the constant `χ₀` or the coefficient of a parameter.
   RFC: `\mathsf{ctx}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
       {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
-      (h : WfType sig (ctx.append Θ) A) (hc : c₀.isSome ∨ ∃ p ∈ ps, p.coefficient.isSome) :
-      WfCtx sig (ctx.secondOrder Θ A c₀)
+      (h : WfType sig (ctx.append Θ) A) (hc : χ₀.isSome ∨ ∃ p ∈ ps, p.coefficient.isSome) :
+      WfCtx sig (ctx.secondOrder Θ A χ₀)
 
 -- ADE: `_⊢_`, in `Definition/Typed.agda`.
 /-- `Σ; Γ ⊢ A`: `A` is a type. -/
@@ -203,8 +203,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   /-- An application of a second-order variable to arguments of its telescope has its type, in
   which the arguments are substituted for the variables of the telescope.
   RFC: `\mathsf{var}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade}
-      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps c₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} {ts : Args k Γ ps}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} {ts : Args k Γ ps}
       (hX : ctx.SecondOrderIn X Θ A) (hts : HasArgs sig ctx ts Θ) :
       HasType sig ctx (.var X ts) (A.instantiate ts)
   -- ADE: `defn`, in `Definition/Typed.agda`, for the definitions.
@@ -212,8 +212,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   instance.
   RFC: `f` -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
-      {m : Mode} {c₀ : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
-      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m c₀ A)
+      {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
+      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
       (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
       HasType sig ctx (.const f qs ls ps)
         (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl))
@@ -270,8 +270,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hA : HasType sig ctx A (.sort ⟨.prop, l⟩)) : EqTerm sig ctx t u A
   /-- Equal arguments give equal applications of a second-order variable.
   RFC: `\mathsf{var}_{X\equiv}` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {c₀ : Option Grade}
-      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps c₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       {ts us : Args k Γ ps} (hX : ctx.SecondOrderIn X Θ A) (hts : EqArgs sig ctx ts us Θ) :
       EqTerm sig ctx (.var X ts) (.var X us) (A.instantiate ts)
   -- ADE: `δ-red`, in `Definition/Typed.agda`.
@@ -288,7 +288,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   RFC: `f_\equiv` -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
       {m : Mode} {A : Instance j g → Term k' []} {qs : List Quality} {ls₁ ls₂ : List (Level k)}
-      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m c₀ A)
+      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
       (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k') (hp : ps.length = g)
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)
@@ -366,15 +366,15 @@ inductive HasInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Cont
   /-- The arguments of the parameters before a second-order variable, and the abstraction for it, a
   term of its type under the variables of its telescope, which they instantiate.
   RFC: `\mathsf{arg}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {c₀ : Option Grade}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
       {ctx : Context k Γ}
       {as : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B : Term k (Γ.extend ps.length)}
       (has : HasInstanceArgs sig ctx as params)
       (hB : HasType sig (ctx.append (Θ.subst as.toSubst)) B
         (A.subst (Subst.liftN _ as.toSubst))) :
-      HasInstanceArgs sig ctx (.snoc (e := .secondOrder ps c₀) as B)
-        (params.secondOrder Θ A c₀)
+      HasInstanceArgs sig ctx (.snoc (e := .secondOrder ps χ₀) as B)
+        (params.secondOrder Θ A χ₀)
 
 /-- `Σ; Γ ⊢ ā₁ ≡ ā₂ : Δ`: the arguments of two instances are equal, typed by the parameters. -/
 inductive EqInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Context k Γ →
@@ -394,15 +394,15 @@ inductive EqInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Conte
   /-- Equal arguments of the parameters before a second-order variable, and equal abstractions for
   it, under the variables of its telescope, which the first ones instantiate.
   RFC: `\mathsf{arg}_{X\equiv}` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {c₀ : Option Grade}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
       {ctx : Context k Γ}
       {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B₁ B₂ : Term k (Γ.extend ps.length)}
       (has : EqInstanceArgs sig ctx as₁ as₂ params)
       (hB : EqTerm sig (ctx.append (Θ.subst as₁.toSubst)) B₁ B₂
         (A.subst (Subst.liftN _ as₁.toSubst))) :
-      EqInstanceArgs sig ctx (.snoc (e := .secondOrder ps c₀) as₁ B₁)
-        (.snoc (e := .secondOrder ps c₀) as₂ B₂) (params.secondOrder Θ A c₀)
+      EqInstanceArgs sig ctx (.snoc (e := .secondOrder ps χ₀) as₁ B₁)
+        (.snoc (e := .secondOrder ps χ₀) as₂ B₂) (params.secondOrder Θ A χ₀)
 
 end
 

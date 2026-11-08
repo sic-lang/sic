@@ -123,9 +123,9 @@ theorem EqSubst.var_iff {Γ : Scope} (ctx : Context 0 Γ) (A : Term 0 Γ)
 
 /-- `(eq_X)`. -/
 theorem EqSubst.secondOrder_iff {Γ : Scope} {ps : List Parameter} (ctx : Context 0 Γ)
-    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (c₀ : Option Grade)
-    (σ₁ σ₂ : Subst 0 [] (.secondOrder ps c₀ :: Γ)) :
-    EqSubst sig ι (ctx.secondOrder Θ A c₀) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
+    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (χ₀ : Option Grade)
+    (σ₁ σ₂ : Subst 0 [] (.secondOrder ps χ₀ :: Γ)) :
+    EqSubst sig ι (ctx.secondOrder Θ A χ₀) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst (Subst.tail σ₁))) τ₁ τ₂ →
         ValidEqTerm₀ sig ι ((σ₁ .zero).subst τ₁) ((σ₂ .zero).subst τ₂)
           ((A.subst (Subst.liftN _ (Subst.tail σ₁))).subst τ₁) := by
@@ -279,8 +279,8 @@ theorem EqSubst.isPer : {Γ : Scope} → (ctx : Context 0 Γ) → ValidCtx₀ si
       obtain ⟨hσ₂₃, hv₂₃⟩ := (EqSubst.var_iff ctx A σ₂ σ₃).1 h₂₃
       exact (EqSubst.var_iff ctx A σ₁ σ₃).2
         ⟨transΓ _ _ _ hσ₁₂ hσ₂₃, hv₁₂.trans (hv₂₃.conv (hA _ _ hσ₁₂).symm)⟩
-  | _, .secondOrder (ps := ps) ctx Θ A c₀, hV => by
-    obtain ⟨hΘ, hA⟩ := (validCtx₀_secondOrder ctx Θ A c₀).1 hV
+  | _, .secondOrder (ps := ps) ctx Θ A χ₀, hV => by
+    obtain ⟨hΘ, hA⟩ := (validCtx₀_secondOrder ctx Θ A χ₀).1 hV
     obtain ⟨symmΓ, transΓ⟩ := EqSubst.isPer ctx (ValidCtx₀.append_left hΘ)
     obtain ⟨symmΓΘ, transΓΘ⟩ := EqSubst.isPer (ctx.append Θ) hΘ
     have app := fun {σ₁ σ₂ τ₁ τ₂} h hτ =>
@@ -445,8 +445,8 @@ theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : T
 /-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
 instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
 arguments. -/
-theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {c₀ : Option Grade}
-    {X : Var Γ (.secondOrder ps c₀)}
+theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {χ₀ : Option Grade}
+    {X : Var Γ (.secondOrder ps χ₀)}
     {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
     {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
     ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →

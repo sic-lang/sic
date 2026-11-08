@@ -122,8 +122,8 @@ theorem bound_in_proofs : Usage sigEx (Γ := []) 𝟘ᶜ .zeroOne (bound : Term 
     (.constantDeclaration (c := boundEntry) (by simp [sigEx])) rfl
 
 /-- The only entry of `Σ_ex` named `bound` is the ghost value, of mode `01ᵐ`. -/
-theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {c₀ : Grade} {A : Instance j g → Term k []}
-    (h : sigEx.HasConstant c j k g m c₀ A) (hc : c = "bound") : m = .zeroOne := by
+theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k []}
+    (h : sigEx.HasConstant c j k g m p A) (hc : c = "bound") : m = .zeroOne := by
   cases h with
   | constantDefinition hmem =>
     simp only [sigEx, List.mem_cons, Entry.constantDefinition.injEq, reduceCtorEq,

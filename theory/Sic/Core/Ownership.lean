@@ -33,14 +33,14 @@ The rules are formalized before RFC 36 states them, so that they name no formula
 namespace Sic.Core
 
 -- ADE: none.
-/-- `c₀ ∧ ⋀ⱼ oⱼ · cⱼ`: the ownership of the result of a second-order variable whose telescope has
-the parameters `ps` and whose result has the constant `c₀`, applied to arguments of the ownerships
-`os`: the meet of `c₀` and of the ownership `oⱼ` of each argument scaled by the coefficient `cⱼ` of
+/-- `χ₀ ∧ ⋀ⱼ oⱼ · χⱼ`: the ownership of the result of a second-order variable whose telescope has
+the parameters `ps` and whose result has the constant `χ₀`, applied to arguments of the ownerships
+`os`: the meet of `χ₀` and of the ownership `oⱼ` of each argument scaled by the coefficient `χⱼ` of
 its parameter, over the terms present, and none if no term is. -/
-def Parameter.result (c₀ : Option Grade) : List Parameter → List Grade → Option Grade
+def Parameter.result (χ₀ : Option Grade) : List Parameter → List Grade → Option Grade
   | p :: ps, o :: os =>
-    Option.merge (· ⊓ ·) (p.coefficient.map (o * ·)) (Parameter.result c₀ ps os)
-  | _, _ => c₀
+    Option.merge (· ⊓ ·) (p.coefficient.map (o * ·)) (Parameter.result χ₀ ps os)
+  | _, _ => χ₀
 
 mutual
 
@@ -55,14 +55,14 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   /-- The application `X[t̄]` of a second-order variable has the ownership that the signature of
   `X` gives from the ownerships `os` of its arguments, when it gives one. -/
   | secondOrder {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {ps : List Parameter}
-      {c₀ : Option Grade} {X : Var Γ (.secondOrder ps c₀)} {ts : Args k Γ ps} {os : List Grade}
-      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : Parameter.result c₀ ps os = some p) :
+      {χ₀ : Option Grade} {X : Var Γ (.secondOrder ps χ₀)} {ts : Args k Γ ps} {os : List Grade}
+      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : Parameter.result χ₀ ps os = some p) :
       Ownership sig φ m p (.var X ts)
-  /-- A constant, defined or declared, has the ownership `c₀` of its entry. -/
+  /-- A constant, defined or declared, has the ownership `p` of its entry. -/
   | const {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m₁ m₂ : Mode} {f : Name} {j k' g : Nat}
-      {c₀ : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
-      {ps : List Grade} (h : sig.HasConstant f j k' g m₂ c₀ A) :
-      Ownership sig φ m₁ c₀ (.const f qs ls ps : Term k Γ)
+      {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
+      {ps : List Grade} (h : sig.HasConstant f j k' g m₂ p A) :
+      Ownership sig φ m₁ p (.const f qs ls ps : Term k Γ)
   /-- A sort has the least ownership, `ωωᵖ`. -/
   | sort {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {κ : Universe k} :
       Ownership sig φ m .unrestrictedUnrestricted (.sort κ : Term k Γ)
