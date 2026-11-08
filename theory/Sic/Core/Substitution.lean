@@ -7,9 +7,10 @@ public import Sic.Core.Syntax
 
 The substitutions of annex 08 of RFC 36: the substitutions of the first order, among them the
 substitution `B[t̄ / Θ]` of the arguments of a telescope for its variables, the substitutions of the
-second order, which replace each application `X[t̄]` by `B[t̄ / x̄]` where `x̄. B` is the abstraction
-given to `X`, among them the substitution `[ā / Δ]` of the arguments of an instance for its
-parameters, the closed substitutions, and the instantiation `[l̄' / l̄]` of the level variables.
+second order, which replace each application `X[t̄]` by `B[t̄ / x̄]` where `x̄. B` is the
+abstraction given to `X`, among them the substitution `[ā / Δ]` of the arguments of an instance for
+its parameters, the closed substitutions, and the instantiation `[l̄' / l̄]` of the level
+variables.
 
 A substitution of the second order replaces a second-order variable by an abstraction, so that it
 substitutes the arguments of each application in the abstraction, which is not a subterm of the
@@ -39,16 +40,16 @@ abbrev Ren (Γ Δ : Scope) : Type := ∀ {ps : List Grade}, Var Δ ps → Var Γ
 
 namespace Ren
 
-/-- The renaming `ρ` under a new entry. -/
-def lift {Γ Δ : Scope} {qs : List Grade} (ρ : Ren Γ Δ) : Ren (qs :: Γ) (qs :: Δ) := fun x =>
+/-- The renaming `ξ` under a new entry. -/
+def lift {Γ Δ : Scope} {qs : List Grade} (ξ : Ren Γ Δ) : Ren (qs :: Γ) (qs :: Δ) := fun x =>
   match x with
   | .zero => .zero
-  | .succ x => .succ (ρ x)
+  | .succ x => .succ (ξ x)
 
-/-- The renaming `ρ` under `n` new variables. -/
+/-- The renaming `ξ` under `n` new variables. -/
 def liftN {Γ Δ : Scope} : (n : Nat) → Ren Γ Δ → Ren (Γ.extend n) (Δ.extend n)
-  | 0, ρ => ρ
-  | n + 1, ρ => liftN n (lift ρ)
+  | 0, ξ => ξ
+  | n + 1, ξ => liftN n (lift ξ)
 
 /-- The renaming that skips a new entry. -/
 def weaken {Γ : Scope} {qs : List Grade} : Ren (qs :: Γ) Γ := fun x => .succ x
@@ -63,22 +64,22 @@ def Var.weakenN {Γ : Scope} {ps : List Grade} : (n : Nat) → Var Γ ps → Var
 mutual
 
 -- ADE: `wk`, in `Definition/Untyped.agda`.
-/-- The term `t` renamed by `ρ`. -/
-def Term.rename {Γ Δ : Scope} (ρ : Ren Γ Δ) : Term k Δ → Term k Γ
-  | .var x ts => .var (ρ x) (ts.rename ρ)
+/-- The term `t` renamed by `ξ`. -/
+def Term.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Term k Δ → Term k Γ
+  | .var x ts => .var (ξ x) (ts.rename ξ)
   | .sort κ => .sort κ
   | .const c qs ls ps => .const c qs ls ps
-  | .inst D qs ls ps as => .inst D qs ls ps (as.rename ρ)
+  | .inst D qs ls ps as => .inst D qs ls ps (as.rename ξ)
 
-/-- The arguments `t̄` renamed by `ρ`. -/
-def Args.rename {Γ Δ : Scope} {a : List Grade} (ρ : Ren Γ Δ) : Args k Δ a → Args k Γ a
+/-- The arguments `t̄` renamed by `ξ`. -/
+def Args.rename {Γ Δ : Scope} {a : List Grade} (ξ : Ren Γ Δ) : Args k Δ a → Args k Γ a
   | .nil => .nil
-  | .cons t ts => .cons (t.rename ρ) (ts.rename ρ)
+  | .cons t ts => .cons (t.rename ξ) (ts.rename ξ)
 
-/-- The arguments `ā` renamed by `ρ`, under the variables of each abstraction. -/
-def InstanceArgs.rename {Γ Δ Ξ : Scope} (ρ : Ren Γ Δ) : InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
+/-- The arguments `ā` renamed by `ξ`, under the variables of each abstraction. -/
+def InstanceArgs.rename {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ) : InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
-  | .snoc as B => .snoc (as.rename ρ) (B.rename (Ren.liftN _ ρ))
+  | .snoc as B => .snoc (as.rename ξ) (B.rename (Ren.liftN _ ξ))
 
 end
 
@@ -104,10 +105,10 @@ inductive Val (k : Nat) (Γ : Scope) : List Grade → Type where
   /-- A term, for a variable without telescope. -/
   | term (t : Term k Γ) : Val k Γ []
 
-/-- The value `v` renamed by `ρ`. -/
-def Val.rename {Γ Δ : Scope} {a : List Grade} (ρ : Ren Γ Δ) : Val k Δ a → Val k Γ a
-  | .var x => .var (ρ x)
-  | .term t => .term (t.rename ρ)
+/-- The value `v` renamed by `ξ`. -/
+def Val.rename {Γ Δ : Scope} {a : List Grade} (ξ : Ren Γ Δ) : Val k Δ a → Val k Γ a
+  | .var x => .var (ξ x)
+  | .term t => .term (t.rename ξ)
 
 -- ADE: `Subst`, in `Definition/Untyped.agda`.
 /-- A substitution of the first order of the scope `Δ` in the scope `Γ`. -/
@@ -132,7 +133,8 @@ def liftN {Γ Δ : Scope} : (n : Nat) → Subst₀ k Γ Δ → Subst₀ k (Γ.ex
   | n + 1, σ => liftN n (lift σ)
 
 -- ADE: `sgSubst`, in `Definition/Untyped.agda`.
-/-- `[t / x]`: the substitution of `t` for the last variable, which gives each other variable itself.
+/-- `[t / x]`: the substitution of `t` for the last variable, which gives each other variable
+itself.
 RFC: `\mathsf{single}_\sigma` -/
 def single {Γ : Scope} (t : Term k Γ) : Subst₀ k Γ ([] :: Γ) := fun x =>
   match x with
@@ -193,42 +195,42 @@ abbrev Subst (k : Nat) (Γ Δ : Scope) : Type :=
 
 namespace Subst
 
-/-- The substitution `σ` under a new entry. -/
-def lift {Γ Δ : Scope} {qs : List Grade} (σ : Subst k Γ Δ) : Subst k (qs :: Γ) (qs :: Δ) := fun x =>
+/-- The substitution `θ` under a new entry. -/
+def lift {Γ Δ : Scope} {qs : List Grade} (θ : Subst k Γ Δ) : Subst k (qs :: Γ) (qs :: Δ) := fun x =>
   match x with
   | .zero => Var.eta .zero
-  | .succ x => (σ x).rename (Ren.liftN _ Ren.weaken)
+  | .succ x => (θ x).rename (Ren.liftN _ Ren.weaken)
 
-/-- The substitution `σ` under `n` new variables. -/
+/-- The substitution `θ` under `n` new variables. -/
 def liftN {Γ Δ : Scope} : (n : Nat) → Subst k Γ Δ → Subst k (Γ.extend n) (Δ.extend n)
-  | 0, σ => σ
-  | n + 1, σ => liftN n (lift σ)
+  | 0, θ => θ
+  | n + 1, θ => liftN n (lift θ)
 
 end Subst
 
 mutual
 
-/-- The term `t` substituted by `σ`: an application `x[t̄]` becomes `B[t̄' / x̄]`, where `x̄. B` is what
-`σ` gives `x`, and `t̄'` are the arguments substituted.
+/-- The term `t` substituted by `θ`: an application `x[t̄]` becomes `B[t̄' / x̄]`, where `x̄. B` is what
+`θ` gives `x`, and `t̄'` are the arguments substituted.
 RFC: `\mathsf{subst}_\theta` -/
-def Term.subst {Γ Δ : Scope} (σ : Subst k Γ Δ) : Term k Δ → Term k Γ
-  | .var x ts => (σ x).instantiate (ts.subst σ)
+def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
+  | .var x ts => (θ x).instantiate (ts.subst θ)
   | .sort κ => .sort κ
   | .const c qs ls ps => .const c qs ls ps
-  | .inst D qs ls ps as => .inst D qs ls ps (as.subst σ)
+  | .inst D qs ls ps as => .inst D qs ls ps (as.subst θ)
 
-/-- The arguments `t̄` substituted by `σ`.
+/-- The arguments `t̄` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta` -/
-def Args.subst {Γ Δ : Scope} {a : List Grade} (σ : Subst k Γ Δ) : Args k Δ a → Args k Γ a
+def Args.subst {Γ Δ : Scope} {a : List Grade} (θ : Subst k Γ Δ) : Args k Δ a → Args k Γ a
   | .nil => .nil
-  | .cons t ts => .cons (t.subst σ) (ts.subst σ)
+  | .cons t ts => .cons (t.subst θ) (ts.subst θ)
 
-/-- The arguments `ā` substituted by `σ`, under the variables of each abstraction.
+/-- The arguments `ā` substituted by `θ`, under the variables of each abstraction.
 RFC: `\mathsf{subst}_\theta` -/
-def InstanceArgs.subst {Γ Δ Ξ : Scope} (σ : Subst k Γ Δ) :
+def InstanceArgs.subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) :
     InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
-  | .snoc as B => .snoc (as.subst σ) (B.subst (Subst.liftN _ σ))
+  | .snoc as B => .snoc (as.subst θ) (B.subst (Subst.liftN _ θ))
 
 end
 
@@ -240,52 +242,52 @@ def InstanceArgs.toSubst {Γ : Scope} : {Δ : Scope} → InstanceArgs k Γ Δ �
 
 /-! ## Instantiation of the Level Variables -/
 
-/-- `l[l̄' / l̄]`: the level `l` in which the level `σ i` replaces the variable `i`.
+/-- `l[l̄' / l̄]`: the level `l` in which the level `ls' i` replaces the variable `i`.
 RFC: `\mathsf{subst}_l` -/
-def Level.subst {k k' : Nat} (σ : Fin k → Level k') : Level k → Level k'
+def Level.subst {k k' : Nat} (ls' : Fin k → Level k') : Level k → Level k'
   | .zero => .zero
-  | .succ l => .succ (l.subst σ)
-  | .max l₁ l₂ => .max (l₁.subst σ) (l₂.subst σ)
-  | .var i => σ i
+  | .succ l => .succ (l.subst ls')
+  | .max l₁ l₂ => .max (l₁.subst ls') (l₂.subst ls')
+  | .var i => ls' i
 
-/-- The sort `κ` in which the levels `σ` replace the level variables.
+/-- The sort `κ` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def Universe.substLevels {k k' : Nat} (σ : Fin k → Level k') (κ : Universe k) : Universe k' :=
-  ⟨κ.quality, κ.level.subst σ⟩
+def Universe.substLevels {k k' : Nat} (ls' : Fin k → Level k') (κ : Universe k) : Universe k' :=
+  ⟨κ.quality, κ.level.subst ls'⟩
 
 mutual
 
-/-- `t[l̄' / l̄]`: the term `t` in which the levels `σ` replace the level variables.
+/-- `t[l̄' / l̄]`: the term `t` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def Term.substLevels {k' : Nat} {Γ : Scope} (σ : Fin k → Level k') : Term k Γ → Term k' Γ
-  | .var x ts => .var x (ts.substLevels σ)
-  | .sort κ => .sort (κ.substLevels σ)
-  | .const c qs ls ps => .const c qs (ls.map (Level.subst σ)) ps
-  | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst σ)) ps (as.substLevels σ)
+def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k Γ → Term k' Γ
+  | .var x ts => .var x (ts.substLevels ls')
+  | .sort κ => .sort (κ.substLevels ls')
+  | .const c qs ls ps => .const c qs (ls.map (Level.subst ls')) ps
+  | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
 
-/-- The arguments `t̄` in which the levels `σ` replace the level variables.
+/-- The arguments `t̄` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def Args.substLevels {k' : Nat} {Γ : Scope} {a : List Grade} (σ : Fin k → Level k') :
+def Args.substLevels {k' : Nat} {Γ : Scope} {a : List Grade} (ls' : Fin k → Level k') :
     Args k Γ a → Args k' Γ a
   | .nil => .nil
-  | .cons t ts => .cons (t.substLevels σ) (ts.substLevels σ)
+  | .cons t ts => .cons (t.substLevels ls') (ts.substLevels ls')
 
-/-- The arguments `ā` in which the levels `σ` replace the level variables.
+/-- The arguments `ā` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k') :
+def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') :
     InstanceArgs k Γ Δ → InstanceArgs k' Γ Δ
   | .nil => .nil
-  | .snoc as B => .snoc (as.substLevels σ) (B.substLevels σ)
+  | .snoc as B => .snoc (as.substLevels ls') (B.substLevels ls')
 
 end
 
 /-! ## Telescopes and Contexts -/
 
-/-- The telescope `Θ` renamed by `ρ`. -/
-def Telescope.rename {Γ Δ : Scope} {ps : List Grade} (ρ : Ren Γ Δ) :
+/-- The telescope `Θ` renamed by `ξ`. -/
+def Telescope.rename {Γ Δ : Scope} {ps : List Grade} (ξ : Ren Γ Δ) :
     Telescope k Δ ps → Telescope k Γ ps
   | .nil => .nil
-  | .cons q p A Θ => .cons q p (A.rename ρ) (Θ.rename (Ren.lift ρ))
+  | .cons q p A Θ => .cons q p (A.rename ξ) (Θ.rename (Ren.lift ξ))
 
 /-- `Θ[σ]`: the telescope `Θ` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma` -/
@@ -294,27 +296,28 @@ def Telescope.subst₀ {Γ Δ : Scope} {ps : List Grade} (σ : Subst₀ k Γ Δ)
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.subst₀ σ) (Θ.subst₀ (Subst₀.lift σ))
 
-/-- `Θ[θ]`: the telescope `Θ` substituted by `σ`.
+/-- `Θ[θ]`: the telescope `Θ` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta` -/
-def Telescope.subst {Γ Δ : Scope} {ps : List Grade} (σ : Subst k Γ Δ) :
+def Telescope.subst {Γ Δ : Scope} {ps : List Grade} (θ : Subst k Γ Δ) :
     Telescope k Δ ps → Telescope k Γ ps
   | .nil => .nil
-  | .cons q p A Θ => .cons q p (A.subst σ) (Θ.subst (Subst.lift σ))
+  | .cons q p A Θ => .cons q p (A.subst θ) (Θ.subst (Subst.lift θ))
 
-/-- The telescope `Θ` in which the levels `σ` replace the level variables.
+/-- The telescope `Θ` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def Telescope.substLevels {k' : Nat} {Γ : Scope} {ps : List Grade} (σ : Fin k → Level k') :
+def Telescope.substLevels {k' : Nat} {Γ : Scope} {ps : List Grade} (ls' : Fin k → Level k') :
     Telescope k Γ ps → Telescope k' Γ ps
   | .nil => .nil
-  | .cons q p A Θ => .cons q p (A.substLevels σ) (Θ.substLevels σ)
+  | .cons q p A Θ => .cons q p (A.substLevels ls') (Θ.substLevels ls')
 
-/-- The context `Γ` in which the levels `σ` replace the level variables.
+/-- The context `Γ` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l` -/
-def Context.substLevels {k' : Nat} {Γ : Scope} (σ : Fin k → Level k') :
+def Context.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Context k Γ → Context k' Γ
   | .empty => .empty
-  | .var ctx A => .var (ctx.substLevels σ) (A.substLevels σ)
-  | .secondOrder ctx Θ A => .secondOrder (ctx.substLevels σ) (Θ.substLevels σ) (A.substLevels σ)
+  | .var ctx A => .var (ctx.substLevels ls') (A.substLevels ls')
+  | .secondOrder ctx Θ A => .secondOrder (ctx.substLevels ls')
+      (Θ.substLevels ls') (A.substLevels ls')
 
 /-- `Γ, Θ`: the context `Γ` extended by the entries of the telescope `Θ`, whose grades it ignores.
 RFC: `\mathsf{append}_\Gamma` -/
@@ -331,33 +334,33 @@ def Term.weakenClosed {Γ : Scope} (t : Term k []) : Term k Γ := t.rename fun x
 The renamings and the substitutions of the first order that give each variable itself change
 nothing, under the new variables of every abstraction. -/
 
-theorem Ren.lift_id_of {Γ : Scope} {b : List Grade} {ρ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ρ x = x) :
-    ∀ {a} (x : Var (b :: Γ) a), Ren.lift ρ x = x
+theorem Ren.lift_id_of {Γ : Scope} {b : List Grade} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    ∀ {a} (x : Var (b :: Γ) a), Ren.lift ξ x = x
   | _, .zero => rfl
   | _, .succ x => congrArg Var.succ (h x)
 
 theorem Ren.liftN_id_of {Γ : Scope} :
-    ∀ (n : Nat) {ρ : Ren Γ Γ}, (∀ {a} (x : Var Γ a), ρ x = x) →
-      ∀ {a} (x : Var (Γ.extend n) a), Ren.liftN n ρ x = x
+    ∀ (n : Nat) {ξ : Ren Γ Γ}, (∀ {a} (x : Var Γ a), ξ x = x) →
+      ∀ {a} (x : Var (Γ.extend n) a), Ren.liftN n ξ x = x
   | 0, _, h => h
   | n + 1, _, h => Ren.liftN_id_of (Γ := [] :: Γ) n (Ren.lift_id_of h)
 
 mutual
 
-theorem Term.rename_id_of {Γ : Scope} {ρ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ρ x = x) :
-    (t : Term k Γ) → t.rename ρ = t
+theorem Term.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (t : Term k Γ) → t.rename ξ = t
   | .var x ts => by rw [Term.rename, h x, Args.rename_id_of h ts]
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by rw [Term.rename, InstanceArgs.rename_id_of h as]
 
-theorem Args.rename_id_of {Γ : Scope} {a : List Grade} {ρ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ρ x = x) :
-    (ts : Args k Γ a) → ts.rename ρ = ts
+theorem Args.rename_id_of {Γ : Scope} {a : List Grade} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (ts : Args k Γ a) → ts.rename ξ = ts
   | .nil => rfl
   | .cons t ts => by rw [Args.rename, Term.rename_id_of h t, Args.rename_id_of h ts]
 
-theorem InstanceArgs.rename_id_of {Γ Ξ : Scope} {ρ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ρ x = x) :
-    (as : InstanceArgs k Γ Ξ) → as.rename ρ = as
+theorem InstanceArgs.rename_id_of {Γ Ξ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (as : InstanceArgs k Γ Ξ) → as.rename ξ = as
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.rename_id_of h as,
@@ -447,16 +450,16 @@ abstraction that it gives each applied variable.
 
 /-! ### Renamings after Renamings -/
 
-theorem Ren.lift_comp_of {Γ Δ Ξ : Scope} {b : List Grade} {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ}
-    {ρ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) :
-    ∀ {a} (x : Var (b :: Ξ) a), Ren.lift ρ₁ (Ren.lift ρ₂ x) = Ren.lift ρ₃ x
+theorem Ren.lift_comp_of {Γ Δ Ξ : Scope} {b : List Grade} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    ∀ {a} (x : Var (b :: Ξ) a), Ren.lift ξ₁ (Ren.lift ξ₂ x) = Ren.lift ξ₃ x
   | _, .zero => rfl
   | _, .succ x => congrArg Var.succ (h x)
 
 theorem Ren.liftN_comp_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ} {ρ₃ : Ren Γ Ξ},
-      (∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) →
-      ∀ {a} (x : Var (Ξ.extend n) a), Ren.liftN n ρ₁ (Ren.liftN n ρ₂ x) = Ren.liftN n ρ₃ x
+    ∀ (n : Nat) {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ} {ξ₃ : Ren Γ Ξ},
+      (∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) →
+      ∀ {a} (x : Var (Ξ.extend n) a), Ren.liftN n ξ₁ (Ren.liftN n ξ₂ x) = Ren.liftN n ξ₃ x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Ren.liftN_comp_of (Γ := [] :: Γ) (Δ := [] :: Δ) (Ξ := [] :: Ξ) n
       (Ren.lift_comp_of h)
@@ -464,26 +467,26 @@ theorem Ren.liftN_comp_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `wk-comp`, in `Definition/Untyped/Properties.agda`.
-/-- Renaming by `ρ₂` then by `ρ₁` is renaming by their composition `ρ₃`. -/
-theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ} {ρ₃ : Ren Γ Ξ}
-    (h : ∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) :
-    (t : Term k Ξ) → (t.rename ρ₂).rename ρ₁ = t.rename ρ₃
+/-- Renaming by `ξ₂` then by `ξ₁` is renaming by their composition `ξ₃`. -/
+theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ} {ξ₃ : Ren Γ Ξ}
+    (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (t : Term k Ξ) → (t.rename ξ₂).rename ξ₁ = t.rename ξ₃
   | .var x ts => by rw [Term.rename, Term.rename, Term.rename, h x, Args.rename_rename_of h ts]
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as]
 
-theorem Args.rename_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ}
-    {ρ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) :
-    (ts : Args k Ξ a) → (ts.rename ρ₂).rename ρ₁ = ts.rename ρ₃
+theorem Args.rename_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (ts : Args k Ξ a) → (ts.rename ξ₂).rename ξ₁ = ts.rename ξ₃
   | .nil => rfl
   | .cons t ts => by
     rw [Args.rename, Args.rename, Args.rename, Term.rename_rename_of h t, Args.rename_rename_of h ts]
 
-theorem InstanceArgs.rename_rename_of {Γ Δ Ξ Ψ : Scope} {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ}
-    {ρ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.rename ρ₂).rename ρ₁ = as.rename ρ₃
+theorem InstanceArgs.rename_rename_of {Γ Δ Ξ Ψ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.rename ξ₂).rename ξ₁ = as.rename ξ₃
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.rename, InstanceArgs.rename,
@@ -491,31 +494,31 @@ theorem InstanceArgs.rename_rename_of {Γ Δ Ξ Ψ : Scope} {ρ₁ : Ren Γ Δ} 
 
 end
 
-/-- Renaming a value by `ρ₂` then by `ρ₁` is renaming it by their composition `ρ₃`. -/
-theorem Val.rename_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {ρ₁ : Ren Γ Δ} {ρ₂ : Ren Δ Ξ}
-    {ρ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ρ₁ (ρ₂ x) = ρ₃ x) :
-    (v : Val k Ξ a) → (v.rename ρ₂).rename ρ₁ = v.rename ρ₃
+/-- Renaming a value by `ξ₂` then by `ξ₁` is renaming it by their composition `ξ₃`. -/
+theorem Val.rename_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (v : Val k Ξ a) → (v.rename ξ₂).rename ξ₁ = v.rename ξ₃
   | .var x => congrArg Val.var (h x)
   | .term t => congrArg Val.term (Term.rename_rename_of h t)
 
 /-- Renaming each variable to itself changes no value. -/
-theorem Val.rename_id_of {Γ : Scope} {a : List Grade} {ρ : Ren Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), ρ x = x) : (v : Val k Γ a) → v.rename ρ = v
+theorem Val.rename_id_of {Γ : Scope} {a : List Grade} {ξ : Ren Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), ξ x = x) : (v : Val k Γ a) → v.rename ξ = v
   | .var x => congrArg Val.var (h x)
   | .term t => congrArg Val.term (Term.rename_id_of h t)
 
 /-! ### Substitutions after Renamings -/
 
-theorem Subst₀.lift_rename_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    ∀ {a} (x : Var (b :: Ξ) a), Subst₀.lift σ (Ren.lift ρ x) = Subst₀.lift σ' x
+theorem Subst₀.lift_rename_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    ∀ {a} (x : Var (b :: Ξ) a), Subst₀.lift σ (Ren.lift ξ x) = Subst₀.lift σ' x
   | _, .zero => rfl
   | _, .succ x => congrArg (Val.rename Ren.weaken) (h x)
 
 theorem Subst₀.liftN_rename_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ} {σ' : Subst₀ k Γ Ξ},
-      (∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) →
-      ∀ {a} (x : Var (Ξ.extend n) a), Subst₀.liftN n σ (Ren.liftN n ρ x) = Subst₀.liftN n σ' x
+    ∀ (n : Nat) {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ} {σ' : Subst₀ k Γ Ξ},
+      (∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) →
+      ∀ {a} (x : Var (Ξ.extend n) a), Subst₀.liftN n σ (Ren.liftN n ξ x) = Subst₀.liftN n σ' x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst₀.liftN_rename_of (Γ := [] :: Γ) (Δ := [] :: Δ) (Ξ := [] :: Ξ) n
       (Subst₀.lift_rename_of h)
@@ -523,10 +526,10 @@ theorem Subst₀.liftN_rename_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `subst-wk`, in `Definition/Untyped/Properties.agda`.
-/-- Renaming by `ρ` then substituting by `σ` is substituting by their composition `σ'`. -/
-theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (t : Term k Ξ) → (t.rename ρ).subst₀ σ = t.subst₀ σ'
+/-- Renaming by `ξ` then substituting by `σ` is substituting by their composition `σ'`. -/
+theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (t : Term k Ξ) → (t.rename ξ).subst₀ σ = t.subst₀ σ'
   | .var x ts => by
     rw [Term.rename, Term.subst₀_var, Term.subst₀_var, h x, Args.subst₀_rename_of h ts]
   | .sort _ => rfl
@@ -534,17 +537,17 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ρ :
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as]
 
-theorem Args.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (ts : Args k Ξ a) → (ts.rename ρ).subst₀ σ = ts.subst₀ σ'
+theorem Args.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (ts : Args k Ξ a) → (ts.rename ξ).subst₀ σ = ts.subst₀ σ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.rename, Args.subst₀, Args.subst₀, Term.subst₀_rename_of h t,
       Args.subst₀_rename_of h ts]
 
-theorem InstanceArgs.subst₀_rename_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.rename ρ).subst₀ σ = as.subst₀ σ'
+theorem InstanceArgs.subst₀_rename_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.rename ξ).subst₀ σ = as.subst₀ σ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.subst₀, InstanceArgs.subst₀,
@@ -552,31 +555,31 @@ theorem InstanceArgs.subst₀_rename_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k �
 
 end
 
-/-- Renaming a value by `ρ` then substituting it by `σ` is substituting it by their composition
+/-- Renaming a value by `ξ` then substituting it by `σ` is substituting it by their composition
 `σ'`. -/
-theorem Val.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (v : Val k Ξ a) → (v.rename ρ).subst₀ σ = v.subst₀ σ'
+theorem Val.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (v : Val k Ξ a) → (v.rename ξ).subst₀ σ = v.subst₀ σ'
   | .var x => h x
   | .term t => congrArg Val.term (Term.subst₀_rename_of h t)
 
 /-! ### Renamings after Substitutions -/
 
 theorem Subst₀.lift_rename_after_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst₀ k Δ Ξ}
-    {ρ : Ren Γ Δ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) :
-    ∀ {a} (x : Var (b :: Ξ) a), (Subst₀.lift σ x).rename (Ren.lift ρ) = Subst₀.lift σ' x
+    {ξ : Ren Γ Δ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    ∀ {a} (x : Var (b :: Ξ) a), (Subst₀.lift σ x).rename (Ren.lift ξ) = Subst₀.lift σ' x
   | _, .zero => rfl
   | _, .succ x => by
-    show ((σ x).rename Ren.weaken).rename (Ren.lift ρ) = (σ' x).rename Ren.weaken
-    rw [← h x, Val.rename_rename_of (ρ₁ := Ren.lift ρ) (ρ₂ := Ren.weaken) (fun _ => rfl),
-      Val.rename_rename_of (ρ₁ := Ren.weaken) (ρ₂ := ρ) (fun _ => rfl)]
+    show ((σ x).rename Ren.weaken).rename (Ren.lift ξ) = (σ' x).rename Ren.weaken
+    rw [← h x, Val.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken) (fun _ => rfl),
+      Val.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl)]
     rfl
 
 theorem Subst₀.liftN_rename_after_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {σ : Subst₀ k Δ Ξ} {ρ : Ren Γ Δ} {σ' : Subst₀ k Γ Ξ},
-      (∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) →
+    ∀ (n : Nat) {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ} {σ' : Subst₀ k Γ Ξ},
+      (∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) →
       ∀ {a} (x : Var (Ξ.extend n) a),
-        (Subst₀.liftN n σ x).rename (Ren.liftN n ρ) = Subst₀.liftN n σ' x
+        (Subst₀.liftN n σ x).rename (Ren.liftN n ξ) = Subst₀.liftN n σ' x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst₀.liftN_rename_after_of (Γ := [] :: Γ) (Δ := [] :: Δ)
       (Ξ := [] :: Ξ) n (Subst₀.lift_rename_after_of h)
@@ -584,10 +587,10 @@ theorem Subst₀.liftN_rename_after_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `wk-subst`, in `Definition/Untyped/Properties.agda`.
-/-- Substituting by `σ` then renaming by `ρ` is substituting by their composition `σ'`. -/
-theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) :
-    (t : Term k Ξ) → (t.subst₀ σ).rename ρ = t.subst₀ σ'
+/-- Substituting by `σ` then renaming by `ξ` is substituting by their composition `σ'`. -/
+theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (t : Term k Ξ) → (t.subst₀ σ).rename ξ = t.subst₀ σ'
   | .var x ts => by
     rw [Term.subst₀_var, Term.subst₀_var, ← h x, ← Args.rename_subst₀_of h ts]
     cases σ x <;> rfl
@@ -596,17 +599,17 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ρ :
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as]
 
-theorem Args.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) :
-    (ts : Args k Ξ a) → (ts.subst₀ σ).rename ρ = ts.subst₀ σ'
+theorem Args.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (ts : Args k Ξ a) → (ts.subst₀ σ).rename ξ = ts.subst₀ σ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.subst₀, Args.rename, Args.subst₀, Term.rename_subst₀_of h t,
       Args.rename_subst₀_of h ts]
 
-theorem InstanceArgs.rename_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.subst₀ σ).rename ρ = as.subst₀ σ'
+theorem InstanceArgs.rename_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.subst₀ σ).rename ξ = as.subst₀ σ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.rename, InstanceArgs.subst₀,
@@ -615,11 +618,11 @@ theorem InstanceArgs.rename_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k �
 
 end
 
-/-- Substituting a value by `σ` then renaming it by `ρ` is substituting it by their composition
+/-- Substituting a value by `σ` then renaming it by `ξ` is substituting it by their composition
 `σ'`. -/
-theorem Val.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ρ = σ' x) :
-    (v : Val k Ξ a) → (v.subst₀ σ).rename ρ = v.subst₀ σ'
+theorem Val.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (v : Val k Ξ a) → (v.subst₀ σ).rename ξ = v.subst₀ σ'
   | .var x => h x
   | .term t => congrArg Val.term (Term.rename_subst₀_of h t)
 
@@ -686,9 +689,9 @@ end
 
 /-- A renaming under new variables renames an old variable as it does without them. -/
 theorem Ren.liftN_weakenN {Γ Δ : Scope} {a : List Grade} :
-    ∀ (n : Nat) (ρ : Ren Γ Δ) (x : Var Δ a), Ren.liftN n ρ (x.weakenN n) = (ρ x).weakenN n
+    ∀ (n : Nat) (ξ : Ren Γ Δ) (x : Var Δ a), Ren.liftN n ξ (x.weakenN n) = (ξ x).weakenN n
   | 0, _, _ => rfl
-  | n + 1, ρ, x => Ren.liftN_weakenN (Γ := [] :: Γ) (Δ := [] :: Δ) n (Ren.lift ρ) x.succ
+  | n + 1, ξ, x => Ren.liftN_weakenN (Γ := [] :: Γ) (Δ := [] :: Δ) n (Ren.lift ξ) x.succ
 
 /-- A substitution under new variables gives an old variable what it gives it without them,
 under them. -/
@@ -702,14 +705,14 @@ theorem Subst₀.liftN_weakenN {Γ Δ : Scope} {a : List Grade} :
 
 /-- A renaming under the new variables keeps them. -/
 theorem Args.bound_rename {Γ Δ : Scope} :
-    ∀ (ps : List Grade) (ρ : Ren Γ Δ),
-      (Args.bound (k := k) (Γ := Δ) ps).rename (Ren.liftN ps.length ρ) = Args.bound ps
+    ∀ (ps : List Grade) (ξ : Ren Γ Δ),
+      (Args.bound (k := k) (Γ := Δ) ps).rename (Ren.liftN ps.length ξ) = Args.bound ps
   | [], _ => rfl
-  | _ :: ps, ρ => by
-    show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).rename (Ren.liftN ps.length (Ren.lift ρ)))
-        ((Args.bound (Γ := [] :: Δ) ps).rename (Ren.liftN ps.length (Ren.lift ρ))) =
+  | _ :: ps, ξ => by
+    show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).rename (Ren.liftN ps.length (Ren.lift ξ)))
+        ((Args.bound (Γ := [] :: Δ) ps).rename (Ren.liftN ps.length (Ren.lift ξ))) =
       Args.cons (Term.var₀ (Var.weakenN ps.length .zero)) (Args.bound (Γ := [] :: Γ) ps)
-    rw [Args.bound_rename ps (Ren.lift ρ), Term.rename, Ren.liftN_weakenN]
+    rw [Args.bound_rename ps (Ren.lift ξ), Term.rename, Ren.liftN_weakenN]
     rfl
 
 /-- A substitution of the first order under the new variables keeps them. -/
@@ -735,7 +738,7 @@ theorem Val.subst₀_id_of {Γ : Scope} {a : List Grade} {σ : Subst₀ k Γ Γ}
 /-- Substitutions of the first order that agree on every variable agree on every term. -/
 theorem Term.subst₀_congr {Γ Δ : Scope} {σ σ' : Subst₀ k Γ Δ}
     (h : ∀ {a} (x : Var Δ a), σ x = σ' x) (t : Term k Δ) : t.subst₀ σ = t.subst₀ σ' :=
-  by rw [← Term.subst₀_rename_of (ρ := fun x => x) h t, Term.rename_id]
+  by rw [← Term.subst₀_rename_of (ξ := fun x => x) h t, Term.rename_id]
 
 /-! ### Instantiation -/
 
@@ -777,7 +780,7 @@ theorem Args.bound_toSubst₀ {Γ : Scope} :
         (Subst₀.liftN ps.length (Subst₀.single t) (Var.weakenN ps.length .zero))).apply _) ts = _
     rw [Subst₀.liftN_weakenN]
     show Args.cons ((t.rename (Ren.weakenN ps.length)).subst₀ ts.toSubst₀) ts = _
-    rw [Term.subst₀_rename_of (ρ := Ren.weakenN ps.length) (σ' := Subst₀.id)
+    rw [Term.subst₀_rename_of (ξ := Ren.weakenN ps.length) (σ' := Subst₀.id)
       (Args.toSubst₀_weakenN ts), Term.subst₀_id]
 
 /-- `(x̄. x[x̄])[t̄ / x̄] = x[t̄]`. -/
@@ -824,7 +827,7 @@ theorem Subst₀.single_comm {Γ Δ : Scope} (t : Term k Δ) (σ : Subst₀ k Γ
   | _, .zero => rfl
   | _, .succ x => by
     show σ x = ((σ x).rename Ren.weaken).subst₀ _
-    rw [Val.subst₀_rename_of (σ := Subst₀.single (t.subst₀ σ)) (ρ := Ren.weaken) (σ' := Subst₀.id)
+    rw [Val.subst₀_rename_of (σ := Subst₀.single (t.subst₀ σ)) (ξ := Ren.weaken) (σ' := Subst₀.id)
       (fun _ => rfl), Val.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl)]
 
 -- ADE: `singleSubstLift`, in `Definition/Untyped/Properties.agda`.
@@ -843,54 +846,54 @@ theorem Term.instantiate_subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) :
     exact Term.subst₀_comm_of (Subst₀.liftN_comm_of ps.length (Subst₀.single_comm t σ)) B
 
 theorem Subst₀.lift_rename_comm_of {Γ Δ Ξ Ψ : Scope} {b : List Grade} {σ₁ : Subst₀ k Δ Ξ}
-    {ρ₁ : Ren Γ Δ} {σ₂ : Subst₀ k Γ Ψ} {ρ₂ : Ren Ψ Ξ}
-    (h : ∀ {a} (x : Var Ξ a), (σ₁ x).rename ρ₁ = σ₂ (ρ₂ x)) :
+    {ξ₁ : Ren Γ Δ} {σ₂ : Subst₀ k Γ Ψ} {ξ₂ : Ren Ψ Ξ}
+    (h : ∀ {a} (x : Var Ξ a), (σ₁ x).rename ξ₁ = σ₂ (ξ₂ x)) :
     ∀ {a} (x : Var (b :: Ξ) a),
-      (Subst₀.lift σ₁ x).rename (Ren.lift ρ₁) = Subst₀.lift σ₂ (Ren.lift ρ₂ x)
+      (Subst₀.lift σ₁ x).rename (Ren.lift ξ₁) = Subst₀.lift σ₂ (Ren.lift ξ₂ x)
   | _, .zero => rfl
   | _, .succ x => by
-    show ((σ₁ x).rename Ren.weaken).rename (Ren.lift ρ₁) = (σ₂ (ρ₂ x)).rename Ren.weaken
-    rw [← h x, Val.rename_rename_of (ρ₁ := Ren.lift ρ₁) (ρ₂ := Ren.weaken) (fun _ => rfl),
-      Val.rename_rename_of (ρ₁ := Ren.weaken) (ρ₂ := ρ₁) (fun _ => rfl)]
+    show ((σ₁ x).rename Ren.weaken).rename (Ren.lift ξ₁) = (σ₂ (ξ₂ x)).rename Ren.weaken
+    rw [← h x, Val.rename_rename_of (ξ₁ := Ren.lift ξ₁) (ξ₂ := Ren.weaken) (fun _ => rfl),
+      Val.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ₁) (fun _ => rfl)]
     rfl
 
 theorem Subst₀.liftN_rename_comm_of {Γ Δ Ξ Ψ : Scope} :
-    ∀ (n : Nat) {σ₁ : Subst₀ k Δ Ξ} {ρ₁ : Ren Γ Δ} {σ₂ : Subst₀ k Γ Ψ} {ρ₂ : Ren Ψ Ξ},
-      (∀ {a} (x : Var Ξ a), (σ₁ x).rename ρ₁ = σ₂ (ρ₂ x)) →
+    ∀ (n : Nat) {σ₁ : Subst₀ k Δ Ξ} {ξ₁ : Ren Γ Δ} {σ₂ : Subst₀ k Γ Ψ} {ξ₂ : Ren Ψ Ξ},
+      (∀ {a} (x : Var Ξ a), (σ₁ x).rename ξ₁ = σ₂ (ξ₂ x)) →
       ∀ {a} (x : Var (Ξ.extend n) a),
-        (Subst₀.liftN n σ₁ x).rename (Ren.liftN n ρ₁) = Subst₀.liftN n σ₂ (Ren.liftN n ρ₂ x)
+        (Subst₀.liftN n σ₁ x).rename (Ren.liftN n ξ₁) = Subst₀.liftN n σ₂ (Ren.liftN n ξ₂ x)
   | 0, _, _, _, _, h => h
   | n + 1, _, _, _, _, h => Subst₀.liftN_rename_comm_of (Γ := [] :: Γ) (Δ := [] :: Δ)
       (Ξ := [] :: Ξ) (Ψ := [] :: Ψ) n (Subst₀.lift_rename_comm_of h)
 
 -- ADE: `wk-β`, in `Definition/Untyped/Properties.agda`.
-/-- `B[t̄ / x̄][ρ] = B[ρ⇑][t̄[ρ] / x̄]`. -/
-theorem Term.instantiate_rename {Γ Δ : Scope} (ρ : Ren Γ Δ) :
+/-- `B[t̄ / x̄][ξ] = B[ξ⇑][t̄[ξ] / x̄]`. -/
+theorem Term.instantiate_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
     {ps : List Grade} → (B : Term k (Δ.extend ps.length)) → (ts : Args k Δ ps) →
-      (B.instantiate ts).rename ρ = (B.rename (Ren.liftN ps.length ρ)).instantiate (ts.rename ρ)
+      (B.instantiate ts).rename ξ = (B.rename (Ren.liftN ps.length ξ)).instantiate (ts.rename ξ)
   | [], _, .nil => rfl
   | _ :: ps, B, .cons t ts => by
-    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).rename ρ =
-      Term.instantiate ((B.rename (Ren.liftN ps.length (Ren.lift ρ))).subst₀
-        (Subst₀.liftN ps.length (Subst₀.single (t.rename ρ)))) (ts.rename ρ)
-    rw [Term.instantiate_rename ρ]
+    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).rename ξ =
+      Term.instantiate ((B.rename (Ren.liftN ps.length (Ren.lift ξ))).subst₀
+        (Subst₀.liftN ps.length (Subst₀.single (t.rename ξ)))) (ts.rename ξ)
+    rw [Term.instantiate_rename ξ]
     congr 1
     exact (Term.rename_subst₀_of (fun _ => rfl) B).trans ((Term.subst₀_congr
-      (Subst₀.liftN_rename_comm_of ps.length (σ₂ := Subst₀.single (t.rename ρ)) (ρ₂ := Ren.lift ρ)
+      (Subst₀.liftN_rename_comm_of ps.length (σ₂ := Subst₀.single (t.rename ξ)) (ξ₂ := Ren.lift ξ)
         fun x => by cases x <;> rfl) B).trans (Term.subst₀_rename_of (fun _ => rfl) B).symm)
 
 /-! ### Substitutions of the Second Order after Renamings -/
 
-theorem Subst.lift_rename_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    ∀ {a} (x : Var (b :: Ξ) a), Subst.lift σ (Ren.lift ρ x) = Subst.lift σ' x
+theorem Subst.lift_rename_of {Γ Δ Ξ : Scope} {b : List Grade} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    ∀ {a} (x : Var (b :: Ξ) a), Subst.lift θ (Ren.lift ξ x) = Subst.lift θ' x
   | _, .zero => rfl
   | _, .succ x => congrArg (fun t => Term.rename (Ren.liftN _ Ren.weaken) t) (h x)
 
 theorem Subst.liftN_rename_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {σ : Subst k Γ Δ} {ρ : Ren Δ Ξ} {σ' : Subst k Γ Ξ},
-      (∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) →
-      ∀ {a} (x : Var (Ξ.extend n) a), Subst.liftN n σ (Ren.liftN n ρ x) = Subst.liftN n σ' x
+    ∀ (n : Nat) {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ} {θ' : Subst k Γ Ξ},
+      (∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) →
+      ∀ {a} (x : Var (Ξ.extend n) a), Subst.liftN n θ (Ren.liftN n ξ x) = Subst.liftN n θ' x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst.liftN_rename_of (Γ := [] :: Γ) (Δ := [] :: Δ) (Ξ := [] :: Ξ) n
       (Subst.lift_rename_of h)
@@ -898,26 +901,26 @@ theorem Subst.liftN_rename_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `subst-wk`, in `Definition/Untyped/Properties.agda`, for the first order.
-/-- Renaming by `ρ` then substituting by `σ` is substituting by their composition `σ'`. -/
-theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {σ : Subst k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (t : Term k Ξ) → (t.rename ρ).subst σ = t.subst σ'
+/-- Renaming by `ξ` then substituting by `θ` is substituting by their composition `θ'`. -/
+theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (t : Term k Ξ) → (t.rename ξ).subst θ = t.subst θ'
   | .var x ts => by rw [Term.rename, Term.subst, Term.subst, h x, Args.subst_rename_of h ts]
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as]
 
-theorem Args.subst_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (ts : Args k Ξ a) → (ts.rename ρ).subst σ = ts.subst σ'
+theorem Args.subst_rename_of {Γ Δ Ξ : Scope} {a : List Grade} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (ts : Args k Ξ a) → (ts.rename ξ).subst θ = ts.subst θ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.rename, Args.subst, Args.subst, Term.subst_rename_of h t, Args.subst_rename_of h ts]
 
-theorem InstanceArgs.subst_rename_of {Γ Δ Ξ Ψ : Scope} {σ : Subst k Γ Δ} {ρ : Ren Δ Ξ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.rename ρ).subst σ = as.subst σ'
+theorem InstanceArgs.subst_rename_of {Γ Δ Ξ Ψ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.rename ξ).subst θ = as.subst θ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.subst, InstanceArgs.subst,
@@ -927,31 +930,31 @@ end
 
 /-! ### Renamings after Substitutions of the Second Order -/
 
-/-- `(x̄. x[x̄])[ρ] = x̄. ρ(x)[x̄]`. -/
-theorem Var.eta_rename {Γ Δ : Scope} {ps : List Grade} (ρ : Ren Γ Δ) (x : Var Δ ps) :
-    (Var.eta (k := k) x).rename (Ren.liftN ps.length ρ) = Var.eta (ρ x) := by
+/-- `(x̄. x[x̄])[ξ] = x̄. ξ(x)[x̄]`. -/
+theorem Var.eta_rename {Γ Δ : Scope} {ps : List Grade} (ξ : Ren Γ Δ) (x : Var Δ ps) :
+    (Var.eta (k := k) x).rename (Ren.liftN ps.length ξ) = Var.eta (ξ x) := by
   rw [Var.eta, Term.rename, Ren.liftN_weakenN, Args.bound_rename]
   rfl
 
-theorem Subst.lift_rename_after_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst k Δ Ξ}
-    {ρ : Ren Γ Δ} {σ' : Subst k Γ Ξ}
-    (h : ∀ {a} (x : Var Ξ a), (σ x).rename (Ren.liftN a.length ρ) = σ' x) :
+theorem Subst.lift_rename_after_of {Γ Δ Ξ : Scope} {b : List Grade} {θ : Subst k Δ Ξ}
+    {ξ : Ren Γ Δ} {θ' : Subst k Γ Ξ}
+    (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.length ξ) = θ' x) :
     ∀ {a} (x : Var (b :: Ξ) a),
-      (Subst.lift σ x).rename (Ren.liftN a.length (Ren.lift ρ)) = Subst.lift σ' x
+      (Subst.lift θ x).rename (Ren.liftN a.length (Ren.lift ξ)) = Subst.lift θ' x
   | _, .zero => Var.eta_rename _ _
   | a, .succ x => by
-    show ((σ x).rename (Ren.liftN a.length Ren.weaken)).rename (Ren.liftN a.length (Ren.lift ρ)) =
-      (σ' x).rename (Ren.liftN a.length Ren.weaken)
-    rw [← h x, Term.rename_rename_of (Ren.liftN_comp_of _ (ρ₁ := Ren.lift ρ) (ρ₂ := Ren.weaken)
-        (ρ₃ := fun y => (ρ y).succ) fun _ => rfl),
-      Term.rename_rename_of (Ren.liftN_comp_of _ (ρ₁ := Ren.weaken) (ρ₂ := ρ)
-        (ρ₃ := fun y => (ρ y).succ) fun _ => rfl)]
+    show ((θ x).rename (Ren.liftN a.length Ren.weaken)).rename (Ren.liftN a.length (Ren.lift ξ)) =
+      (θ' x).rename (Ren.liftN a.length Ren.weaken)
+    rw [← h x, Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+        (ξ₃ := fun y => (ξ y).succ) fun _ => rfl),
+      Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.weaken) (ξ₂ := ξ)
+        (ξ₃ := fun y => (ξ y).succ) fun _ => rfl)]
 
 theorem Subst.liftN_rename_after_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {σ : Subst k Δ Ξ} {ρ : Ren Γ Δ} {σ' : Subst k Γ Ξ},
-      (∀ {a} (x : Var Ξ a), (σ x).rename (Ren.liftN a.length ρ) = σ' x) →
+    ∀ (n : Nat) {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ} {θ' : Subst k Γ Ξ},
+      (∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.length ξ) = θ' x) →
       ∀ {a} (x : Var (Ξ.extend n) a),
-        (Subst.liftN n σ x).rename (Ren.liftN a.length (Ren.liftN n ρ)) = Subst.liftN n σ' x
+        (Subst.liftN n θ x).rename (Ren.liftN a.length (Ren.liftN n ξ)) = Subst.liftN n θ' x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst.liftN_rename_after_of (Γ := [] :: Γ) (Δ := [] :: Δ)
       (Ξ := [] :: Ξ) n (Subst.lift_rename_after_of h)
@@ -959,11 +962,11 @@ theorem Subst.liftN_rename_after_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `wk-subst`, in `Definition/Untyped/Properties.agda`, for the first order.
-/-- Substituting by `σ` then renaming by `ρ` is substituting by their composition `σ'`, which renames
+/-- Substituting by `θ` then renaming by `ξ` is substituting by their composition `θ'`, which renames
 each abstraction under its variables. -/
-theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {σ : Subst k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename (Ren.liftN a.length ρ) = σ' x) :
-    (t : Term k Ξ) → (t.subst σ).rename ρ = t.subst σ'
+theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.length ξ) = θ' x) :
+    (t : Term k Ξ) → (t.subst θ).rename ξ = t.subst θ'
   | .var x ts => by
     rw [Term.subst, Term.subst, Term.instantiate_rename, h x, Args.rename_subst_of h ts]
   | .sort _ => rfl
@@ -971,16 +974,16 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {σ : Subst k Δ Ξ} {ρ : Ren �
   | .inst D qs ls ps as => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as]
 
-theorem Args.rename_subst_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename (Ren.liftN a.length ρ) = σ' x) :
-    (ts : Args k Ξ a) → (ts.subst σ).rename ρ = ts.subst σ'
+theorem Args.rename_subst_of {Γ Δ Ξ : Scope} {a : List Grade} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.length ξ) = θ' x) :
+    (ts : Args k Ξ a) → (ts.subst θ).rename ξ = ts.subst θ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.subst, Args.rename, Args.subst, Term.rename_subst_of h t, Args.rename_subst_of h ts]
 
-theorem InstanceArgs.rename_subst_of {Γ Δ Ξ Ψ : Scope} {σ : Subst k Δ Ξ} {ρ : Ren Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename (Ren.liftN a.length ρ) = σ' x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.subst σ).rename ρ = as.subst σ'
+theorem InstanceArgs.rename_subst_of {Γ Δ Ξ Ψ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.length ξ) = θ' x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.subst θ).rename ξ = as.subst θ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.rename, InstanceArgs.subst,
@@ -990,14 +993,14 @@ end
 
 /-! ### Substitutions of the Second Order after Substitutions of the First Order -/
 
-/-- Substituting by `σ₀` then by `σ` is substituting by `σ'` then by `σ₀'`, variable by variable:
-a variable that `σ₀` renames to `y` becomes `σ y` either way, and a variable that `σ₀` replaces by
-`u` becomes `u[σ]`. -/
-def Subst₀.Swaps {Γ Δ Ξ Ψ : Scope} (σ₀ : Subst₀ k Δ Ξ) (σ : Subst k Γ Δ) (σ' : Subst k Ψ Ξ)
-    (σ₀' : Subst₀ k Γ Ψ) : Prop :=
-  (∀ {a} (x : Var Ξ a) (y : Var Δ a), σ₀ x = .var y →
-    (σ' x).subst₀ (Subst₀.liftN a.length σ₀') = σ y) ∧
-  ∀ (x : Var Ξ []) (u : Term k Δ), σ₀ x = .term u → (σ' x).subst₀ σ₀' = u.subst σ
+/-- Substituting by `σ` then by `θ₁` is substituting by `θ₂` then by `σ'`, variable by variable:
+a variable that `σ` renames to `y` becomes `θ₁ y` either way, and a variable that `σ` replaces by
+`u` becomes `u[θ₁]`. -/
+def Subst₀.Swaps {Γ Δ Ξ Ψ : Scope} (σ : Subst₀ k Δ Ξ) (θ₁ : Subst k Γ Δ) (θ₂ : Subst k Ψ Ξ)
+    (σ' : Subst₀ k Γ Ψ) : Prop :=
+  (∀ {a} (x : Var Ξ a) (y : Var Δ a), σ x = .var y →
+    (θ₂ x).subst₀ (Subst₀.liftN a.length σ') = θ₁ y) ∧
+  ∀ (x : Var Ξ []) (u : Term k Δ), σ x = .term u → (θ₂ x).subst₀ σ' = u.subst θ₁
 
 /-- `(x̄. x[x̄])[σ⇑] = x̄. y[x̄]`, when `σ` renames `x` to `y`. -/
 theorem Var.eta_subst₀_of {Γ Δ : Scope} {ps : List Grade} {σ : Subst₀ k Γ Δ} {x : Var Δ ps}
@@ -1012,23 +1015,23 @@ theorem Term.rename_weaken_subst₀_lift {Γ Δ : Scope} {b : List Grade} (σ : 
     (t.rename Ren.weaken).subst₀ (Subst₀.lift (qs := b) σ) = (t.subst₀ σ).rename Ren.weaken :=
   (Term.subst₀_rename_of (fun _ => rfl) t).trans (Term.rename_subst₀_of (fun _ => rfl) t).symm
 
-theorem Subst₀.Swaps.lift {Γ Δ Ξ Ψ : Scope} {b : List Grade} {σ₀ : Subst₀ k Δ Ξ}
-    {σ : Subst k Γ Δ} {σ' : Subst k Ψ Ξ} {σ₀' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ₀ σ σ' σ₀') :
-    Subst₀.Swaps (Subst₀.lift (qs := b) σ₀) (Subst.lift σ) (Subst.lift σ') (Subst₀.lift σ₀') := by
+theorem Subst₀.Swaps.lift {Γ Δ Ξ Ψ : Scope} {b : List Grade} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    Subst₀.Swaps (Subst₀.lift (qs := b) σ) (Subst.lift θ₁) (Subst.lift θ₂) (Subst₀.lift σ') := by
   refine ⟨fun x y e => ?_, fun x u e => ?_⟩
   · cases x with
     | zero =>
       cases e
       exact Var.eta_subst₀_of rfl
     | succ x =>
-      change (σ₀ x).rename Ren.weaken = _ at e
-      generalize e₀ : σ₀ x = v at e
+      change (σ x).rename Ren.weaken = _ at e
+      generalize e₀ : σ x = v at e
       cases v with
       | term => cases e
       | var y' =>
         cases e
-        show ((σ' x).rename (Ren.liftN _ Ren.weaken)).subst₀ _ =
-          (σ y').rename (Ren.liftN _ Ren.weaken)
+        show ((θ₂ x).rename (Ren.liftN _ Ren.weaken)).subst₀ _ =
+          (θ₁ y').rename (Ren.liftN _ Ren.weaken)
         refine Eq.trans ?_ (congrArg (Term.rename (Ren.liftN _ Ren.weaken)) (h.1 x y' e₀))
         exact (Term.subst₀_rename_of (fun _ => rfl) _).trans ((Term.subst₀_congr
           (fun z => (Subst₀.liftN_rename_comm_of _ (fun _ => rfl) z).symm) _).trans
@@ -1036,22 +1039,22 @@ theorem Subst₀.Swaps.lift {Γ Δ Ξ Ψ : Scope} {b : List Grade} {σ₀ : Subs
   · cases x with
     | zero => cases e
     | succ x =>
-      change (σ₀ x).rename Ren.weaken = _ at e
-      generalize e₀ : σ₀ x = v at e
+      change (σ x).rename Ren.weaken = _ at e
+      generalize e₀ : σ x = v at e
       cases v with
       | var => cases e
       | term u' =>
         cases e
-        show ((σ' x).rename Ren.weaken).subst₀ (Subst₀.lift σ₀') = (u'.rename Ren.weaken).subst _
-        exact (Term.rename_weaken_subst₀_lift σ₀' (σ' x)).trans
+        show ((θ₂ x).rename Ren.weaken).subst₀ (Subst₀.lift σ') = (u'.rename Ren.weaken).subst _
+        exact (Term.rename_weaken_subst₀_lift σ' (θ₂ x)).trans
           ((congrArg (Term.rename Ren.weaken) (h.2 x u' e₀)).trans
-            ((Term.rename_subst_of (fun _ => rfl) u').trans (Term.subst_rename_of (σ := Subst.lift (qs := b) σ) (ρ := Ren.weaken)
-              (σ' := fun x => (σ x).rename (Ren.liftN _ Ren.weaken)) (fun _ => rfl) u').symm))
+            ((Term.rename_subst_of (fun _ => rfl) u').trans (Term.subst_rename_of (θ := Subst.lift (qs := b) θ₁) (ξ := Ren.weaken)
+              (θ' := fun x => (θ₁ x).rename (Ren.liftN _ Ren.weaken)) (fun _ => rfl) u').symm))
 
 theorem Subst₀.Swaps.liftN {Γ Δ Ξ Ψ : Scope} :
-    ∀ (n : Nat) {σ₀ : Subst₀ k Δ Ξ} {σ : Subst k Γ Δ} {σ' : Subst k Ψ Ξ} {σ₀' : Subst₀ k Γ Ψ},
-      Subst₀.Swaps σ₀ σ σ' σ₀' →
-      Subst₀.Swaps (Subst₀.liftN n σ₀) (Subst.liftN n σ) (Subst.liftN n σ') (Subst₀.liftN n σ₀')
+    ∀ (n : Nat) {σ : Subst₀ k Δ Ξ} {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ},
+      Subst₀.Swaps σ θ₁ θ₂ σ' →
+      Subst₀.Swaps (Subst₀.liftN n σ) (Subst.liftN n θ₁) (Subst.liftN n θ₂) (Subst₀.liftN n σ')
   | 0, _, _, _, _, h => h
   | n + 1, _, _, _, _, h => Subst₀.Swaps.liftN (Γ := [] :: Γ) (Δ := [] :: Δ) (Ξ := [] :: Ξ)
       (Ψ := [] :: Ψ) n h.lift
@@ -1059,12 +1062,12 @@ theorem Subst₀.Swaps.liftN {Γ Δ Ξ Ψ : Scope} :
 mutual
 
 /-- A substitution of the first order then one of the second order swap, as `Subst₀.Swaps` says. -/
-theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ₀ : Subst₀ k Δ Ξ} {σ : Subst k Γ Δ}
-    {σ' : Subst k Ψ Ξ} {σ₀' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ₀ σ σ' σ₀') :
-    (t : Term k Ξ) → (t.subst₀ σ₀).subst σ = (t.subst σ').subst₀ σ₀'
+theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ₁ : Subst k Γ Δ}
+    {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (t : Term k Ξ) → (t.subst₀ σ).subst θ₁ = (t.subst θ₂).subst₀ σ'
   | .var x ts => by
     rw [Term.subst₀_var, Term.subst, Term.instantiate_subst₀, ← Args.subst_subst₀_of h ts]
-    generalize e : σ₀ x = v
+    generalize e : σ x = v
     cases v with
     | var y => rw [h.1 x y e]; rfl
     | term u => cases ts; exact (h.2 x u e).symm
@@ -1073,17 +1076,17 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ₀ : Subst₀ k Δ Ξ} 
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as]
 
-theorem Args.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {a : List Grade} {σ₀ : Subst₀ k Δ Ξ}
-    {σ : Subst k Γ Δ} {σ' : Subst k Ψ Ξ} {σ₀' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ₀ σ σ' σ₀') :
-    (ts : Args k Ξ a) → (ts.subst₀ σ₀).subst σ = (ts.subst σ').subst₀ σ₀'
+theorem Args.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {a : List Grade} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (ts : Args k Ξ a) → (ts.subst₀ σ).subst θ₁ = (ts.subst θ₂).subst₀ σ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.subst₀, Args.subst, Args.subst, Args.subst₀, Term.subst_subst₀_of h t,
       Args.subst_subst₀_of h ts]
 
-theorem InstanceArgs.subst_subst₀_of {Γ Δ Ξ Ψ Φ : Scope} {σ₀ : Subst₀ k Δ Ξ}
-    {σ : Subst k Γ Δ} {σ' : Subst k Ψ Ξ} {σ₀' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ₀ σ σ' σ₀') :
-    (as : InstanceArgs k Ξ Φ) → (as.subst₀ σ₀).subst σ = (as.subst σ').subst₀ σ₀'
+theorem InstanceArgs.subst_subst₀_of {Γ Δ Ξ Ψ Φ : Scope} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (as : InstanceArgs k Ξ Φ) → (as.subst₀ σ).subst θ₁ = (as.subst θ₂).subst₀ σ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.subst, InstanceArgs.subst, InstanceArgs.subst₀,
@@ -1092,15 +1095,15 @@ theorem InstanceArgs.subst_subst₀_of {Γ Δ Ξ Ψ Φ : Scope} {σ₀ : Subst�
 end
 
 /-- The substitution of an argument swaps with a substitution of the second order. -/
-theorem Subst₀.Swaps.single {Γ Δ : Scope} (t : Term k Δ) (σ : Subst k Γ Δ) :
-    Subst₀.Swaps (Subst₀.single t) σ (Subst.lift σ) (Subst₀.single (t.subst σ)) := by
+theorem Subst₀.Swaps.single {Γ Δ : Scope} (t : Term k Δ) (θ : Subst k Γ Δ) :
+    Subst₀.Swaps (Subst₀.single t) θ (Subst.lift θ) (Subst₀.single (t.subst θ)) := by
   refine ⟨fun x y e => ?_, fun x u e => ?_⟩
   · cases x with
     | zero => cases e
     | succ x =>
       cases e
-      exact (Term.subst₀_rename_of (σ := Subst₀.liftN _ (Subst₀.single (t.subst σ)))
-        (ρ := Ren.liftN _ Ren.weaken) (σ' := Subst₀.liftN _ Subst₀.id)
+      exact (Term.subst₀_rename_of (σ := Subst₀.liftN _ (Subst₀.single (t.subst θ)))
+        (ξ := Ren.liftN _ Ren.weaken) (σ' := Subst₀.liftN _ Subst₀.id)
         (Subst₀.liftN_rename_of _ fun _ => rfl) _).trans
         (Term.subst₀_id_of (Subst₀.liftN_id_of _ fun _ => rfl) _)
   · cases x with
@@ -1108,103 +1111,103 @@ theorem Subst₀.Swaps.single {Γ Δ : Scope} (t : Term k Δ) (σ : Subst k Γ �
     | succ x => cases e
 
 -- ADE: `singleSubstLift`, in `Definition/Untyped/Properties.agda`, for the first order.
-/-- `B[t̄ / x̄][σ] = B[σ⇑][t̄[σ] / x̄]`, for a substitution of the second order.
+/-- `B[t̄ / x̄][θ] = B[θ⇑][t̄[θ] / x̄]`, for a substitution of the second order.
 RFC: `\mathsf{inst}_\theta` -/
-theorem Term.instantiate_subst {Γ Δ : Scope} (σ : Subst k Γ Δ) :
+theorem Term.instantiate_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
     {ps : List Grade} → (B : Term k (Δ.extend ps.length)) → (ts : Args k Δ ps) →
-      (B.instantiate ts).subst σ = (B.subst (Subst.liftN ps.length σ)).instantiate (ts.subst σ)
+      (B.instantiate ts).subst θ = (B.subst (Subst.liftN ps.length θ)).instantiate (ts.subst θ)
   | [], _, .nil => rfl
   | _ :: ps, B, .cons t ts => by
-    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).subst σ =
-      Term.instantiate ((B.subst (Subst.liftN ps.length (Subst.lift σ))).subst₀
-        (Subst₀.liftN ps.length (Subst₀.single (t.subst σ)))) (ts.subst σ)
-    rw [Term.instantiate_subst σ]
+    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).subst θ =
+      Term.instantiate ((B.subst (Subst.liftN ps.length (Subst.lift θ))).subst₀
+        (Subst₀.liftN ps.length (Subst₀.single (t.subst θ)))) (ts.subst θ)
+    rw [Term.instantiate_subst θ]
     congr 1
-    exact Term.subst_subst₀_of (Subst₀.Swaps.liftN _ (Subst₀.Swaps.single t σ)) B
+    exact Term.subst_subst₀_of (Subst₀.Swaps.liftN _ (Subst₀.Swaps.single t θ)) B
 
 /-! ### Substitutions of the Second Order after Substitutions of the Second Order -/
 
 -- ADE: `substVar-to-subst`, in `Definition/Untyped/Properties.agda`, for the first order.
 /-- Substitutions of the second order that agree on every variable agree on every term. -/
-theorem Term.subst_congr {Γ Δ : Scope} {σ σ' : Subst k Γ Δ}
-    (h : ∀ {a} (x : Var Δ a), σ x = σ' x) (t : Term k Δ) : t.subst σ = t.subst σ' := by
-  rw [← Term.subst_rename_of (ρ := fun x => x) h t, Term.rename_id]
+theorem Term.subst_congr {Γ Δ : Scope} {θ θ' : Subst k Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), θ x = θ' x) (t : Term k Δ) : t.subst θ = t.subst θ' := by
+  rw [← Term.subst_rename_of (ξ := fun x => x) h t, Term.rename_id]
 
 /-- A substitution of the second order under new variables gives an old variable what it gives it
 without them, under them. -/
 theorem Subst.liftN_weakenN {Γ Δ : Scope} {a : List Grade} :
-    ∀ (n : Nat) (σ : Subst k Γ Δ) (x : Var Δ a),
-      Subst.liftN n σ (x.weakenN n) = (σ x).rename (Ren.liftN a.length (Ren.weakenN n))
-  | 0, σ, x => (Term.rename_id_of (Ren.liftN_id_of _ fun _ => rfl) (σ x)).symm
-  | n + 1, σ, x => by
-    show Subst.liftN n (Subst.lift σ) (x.succ.weakenN n) = _
+    ∀ (n : Nat) (θ : Subst k Γ Δ) (x : Var Δ a),
+      Subst.liftN n θ (x.weakenN n) = (θ x).rename (Ren.liftN a.length (Ren.weakenN n))
+  | 0, θ, x => (Term.rename_id_of (Ren.liftN_id_of _ fun _ => rfl) (θ x)).symm
+  | n + 1, θ, x => by
+    show Subst.liftN n (Subst.lift θ) (x.succ.weakenN n) = _
     rw [Subst.liftN_weakenN (Γ := [] :: Γ) (Δ := [] :: Δ) n]
-    exact Term.rename_rename_of (Ren.liftN_comp_of _ fun _ => rfl) (σ x)
+    exact Term.rename_rename_of (Ren.liftN_comp_of _ fun _ => rfl) (θ x)
 
 /-- A substitution of the second order under the new variables keeps them. -/
 theorem Args.bound_subst {Γ Δ : Scope} :
-    ∀ (ps : List Grade) (σ : Subst k Γ Δ),
-      (Args.bound (Γ := Δ) ps).subst (Subst.liftN ps.length σ) = Args.bound ps
+    ∀ (ps : List Grade) (θ : Subst k Γ Δ),
+      (Args.bound (Γ := Δ) ps).subst (Subst.liftN ps.length θ) = Args.bound ps
   | [], _ => rfl
-  | _ :: ps, σ => by
+  | _ :: ps, θ => by
     show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).subst
-          (Subst.liftN ps.length (Subst.lift σ)))
-        ((Args.bound (Γ := [] :: Δ) ps).subst (Subst.liftN ps.length (Subst.lift σ))) =
+          (Subst.liftN ps.length (Subst.lift θ)))
+        ((Args.bound (Γ := [] :: Δ) ps).subst (Subst.liftN ps.length (Subst.lift θ))) =
       Args.cons (Term.var₀ (Var.weakenN ps.length .zero)) (Args.bound (Γ := [] :: Γ) ps)
-    rw [Args.bound_subst ps (Subst.lift σ), Term.subst, Subst.liftN_weakenN]
+    rw [Args.bound_subst ps (Subst.lift θ), Term.subst, Subst.liftN_weakenN]
     rfl
 
-/-- `(x̄. X[x̄])[σ⇑⇑]`, for the last variable `X`, is itself. -/
-theorem Var.eta_subst_lift {Γ Δ : Scope} {ps : List Grade} (σ : Subst k Γ Δ) :
-    (Var.eta (k := k) (.zero : Var (ps :: Δ) ps)).subst (Subst.liftN ps.length (Subst.lift σ)) =
+/-- `(x̄. X[x̄])[θ⇑⇑]`, for the last variable `X`, is itself. -/
+theorem Var.eta_subst_lift {Γ Δ : Scope} {ps : List Grade} (θ : Subst k Γ Δ) :
+    (Var.eta (k := k) (.zero : Var (ps :: Δ) ps)).subst (Subst.liftN ps.length (Subst.lift θ)) =
       Var.eta .zero := by
   rw [Var.eta, Term.subst, Subst.liftN_weakenN, Args.bound_subst]
   show ((Var.eta .zero).rename (Ren.liftN ps.length (Ren.weakenN ps.length))).instantiate _ = _
   rw [Var.eta_rename, Var.eta_instantiate]
   rfl
 
-theorem Subst.lift_rename_comm_of {Γ Δ Ξ Ψ : Scope} {b : List Grade} {σ₁ : Subst k Γ Δ}
-    {ρ₁ : Ren Δ Ξ} {σ₂ : Subst k Ψ Ξ} {ρ₂ : Ren Γ Ψ}
-    (h : ∀ {a} (x : Var Ξ a), σ₁ (ρ₁ x) = (σ₂ x).rename (Ren.liftN a.length ρ₂)) :
+theorem Subst.lift_rename_comm_of {Γ Δ Ξ Ψ : Scope} {b : List Grade} {θ₁ : Subst k Γ Δ}
+    {ξ₁ : Ren Δ Ξ} {θ₂ : Subst k Ψ Ξ} {ξ₂ : Ren Γ Ψ}
+    (h : ∀ {a} (x : Var Ξ a), θ₁ (ξ₁ x) = (θ₂ x).rename (Ren.liftN a.length ξ₂)) :
     ∀ {a} (x : Var (b :: Ξ) a),
-      Subst.lift σ₁ (Ren.lift ρ₁ x) = (Subst.lift σ₂ x).rename (Ren.liftN a.length (Ren.lift ρ₂))
-  | _, .zero => (Var.eta_rename (Ren.lift ρ₂) .zero).symm
+      Subst.lift θ₁ (Ren.lift ξ₁ x) = (Subst.lift θ₂ x).rename (Ren.liftN a.length (Ren.lift ξ₂))
+  | _, .zero => (Var.eta_rename (Ren.lift ξ₂) .zero).symm
   | a, .succ x => by
-    show (σ₁ (ρ₁ x)).rename (Ren.liftN a.length Ren.weaken) =
-      ((σ₂ x).rename (Ren.liftN a.length Ren.weaken)).rename (Ren.liftN a.length (Ren.lift ρ₂))
-    rw [h x, Term.rename_rename_of (Ren.liftN_comp_of _ (ρ₁ := Ren.weaken) (ρ₂ := ρ₂)
-        (ρ₃ := fun y => (ρ₂ y).succ) fun _ => rfl),
-      Term.rename_rename_of (Ren.liftN_comp_of _ (ρ₁ := Ren.lift ρ₂) (ρ₂ := Ren.weaken)
-        (ρ₃ := fun y => (ρ₂ y).succ) fun _ => rfl)]
+    show (θ₁ (ξ₁ x)).rename (Ren.liftN a.length Ren.weaken) =
+      ((θ₂ x).rename (Ren.liftN a.length Ren.weaken)).rename (Ren.liftN a.length (Ren.lift ξ₂))
+    rw [h x, Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.weaken) (ξ₂ := ξ₂)
+        (ξ₃ := fun y => (ξ₂ y).succ) fun _ => rfl),
+      Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.lift ξ₂) (ξ₂ := Ren.weaken)
+        (ξ₃ := fun y => (ξ₂ y).succ) fun _ => rfl)]
 
 theorem Subst.liftN_rename_comm_of {Γ Δ Ξ Ψ : Scope} :
-    ∀ (n : Nat) {σ₁ : Subst k Γ Δ} {ρ₁ : Ren Δ Ξ} {σ₂ : Subst k Ψ Ξ} {ρ₂ : Ren Γ Ψ},
-      (∀ {a} (x : Var Ξ a), σ₁ (ρ₁ x) = (σ₂ x).rename (Ren.liftN a.length ρ₂)) →
+    ∀ (n : Nat) {θ₁ : Subst k Γ Δ} {ξ₁ : Ren Δ Ξ} {θ₂ : Subst k Ψ Ξ} {ξ₂ : Ren Γ Ψ},
+      (∀ {a} (x : Var Ξ a), θ₁ (ξ₁ x) = (θ₂ x).rename (Ren.liftN a.length ξ₂)) →
       ∀ {a} (x : Var (Ξ.extend n) a),
-        Subst.liftN n σ₁ (Ren.liftN n ρ₁ x) =
-          (Subst.liftN n σ₂ x).rename (Ren.liftN a.length (Ren.liftN n ρ₂))
+        Subst.liftN n θ₁ (Ren.liftN n ξ₁ x) =
+          (Subst.liftN n θ₂ x).rename (Ren.liftN a.length (Ren.liftN n ξ₂))
   | 0, _, _, _, _, h => h
   | n + 1, _, _, _, _, h => Subst.liftN_rename_comm_of (Γ := [] :: Γ) (Δ := [] :: Δ)
       (Ξ := [] :: Ξ) (Ψ := [] :: Ψ) n (Subst.lift_rename_comm_of h)
 
-theorem Subst.lift_subst_of {Γ Δ Ξ : Scope} {b : List Grade} {σ : Subst k Δ Ξ} {τ : Subst k Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) :
+theorem Subst.lift_subst_of {Γ Δ Ξ : Scope} {b : List Grade} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) :
     ∀ {a} (x : Var (b :: Ξ) a),
-      (Subst.lift σ x).subst (Subst.liftN a.length (Subst.lift τ)) = Subst.lift σ' x
-  | _, .zero => Var.eta_subst_lift τ
+      (Subst.lift θ₁ x).subst (Subst.liftN a.length (Subst.lift θ₂)) = Subst.lift θ₃ x
+  | _, .zero => Var.eta_subst_lift θ₂
   | a, .succ x => by
-    show ((σ x).rename (Ren.liftN a.length Ren.weaken)).subst _ =
-      (σ' x).rename (Ren.liftN a.length Ren.weaken)
+    show ((θ₁ x).rename (Ren.liftN a.length Ren.weaken)).subst _ =
+      (θ₃ x).rename (Ren.liftN a.length Ren.weaken)
     rw [← h x]
     exact (Term.subst_rename_of (fun _ => rfl) _).trans ((Term.subst_congr
-      (Subst.liftN_rename_comm_of _ (σ₂ := τ) (ρ₂ := Ren.weaken) fun _ => rfl) _).trans
+      (Subst.liftN_rename_comm_of _ (θ₂ := θ₂) (ξ₂ := Ren.weaken) fun _ => rfl) _).trans
       (Term.rename_subst_of (fun _ => rfl) _).symm)
 
 theorem Subst.liftN_subst_of {Γ Δ Ξ : Scope} :
-    ∀ (n : Nat) {σ : Subst k Δ Ξ} {τ : Subst k Γ Δ} {σ' : Subst k Γ Ξ},
-      (∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) →
+    ∀ (n : Nat) {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ},
+      (∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) →
       ∀ {a} (x : Var (Ξ.extend n) a),
-        (Subst.liftN n σ x).subst (Subst.liftN a.length (Subst.liftN n τ)) = Subst.liftN n σ' x
+        (Subst.liftN n θ₁ x).subst (Subst.liftN a.length (Subst.liftN n θ₂)) = Subst.liftN n θ₃ x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst.liftN_subst_of (Γ := [] :: Γ) (Δ := [] :: Δ) (Ξ := [] :: Ξ) n
       (Subst.lift_subst_of h)
@@ -1212,12 +1215,12 @@ theorem Subst.liftN_subst_of {Γ Δ Ξ : Scope} :
 mutual
 
 -- ADE: `substCompEq`, in `Definition/Untyped/Properties.agda`, for the first order.
-/-- Substituting by `σ` then by `τ` is substituting by their composition `σ'`, which substitutes
+/-- Substituting by `θ₁` then by `θ₂` is substituting by their composition `θ₃`, which substitutes
 each abstraction under its variables.
 RFC: `\mathsf{comp}_\theta` -/
-theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {σ : Subst k Δ Ξ} {τ : Subst k Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) :
-    (t : Term k Ξ) → (t.subst σ).subst τ = t.subst σ'
+theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) :
+    (t : Term k Ξ) → (t.subst θ₁).subst θ₂ = t.subst θ₃
   | .var x ts => by
     rw [Term.subst, Term.subst, Term.instantiate_subst, h x, Args.subst_subst_of h ts]
   | .sort _ => rfl
@@ -1225,17 +1228,17 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {σ : Subst k Δ Ξ} {τ : Subst 
   | .inst D qs ls ps as => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as]
 
-theorem Args.subst_subst_of {Γ Δ Ξ : Scope} {a : List Grade} {σ : Subst k Δ Ξ}
-    {τ : Subst k Γ Δ} {σ' : Subst k Γ Ξ}
-    (h : ∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) :
-    (ts : Args k Ξ a) → (ts.subst σ).subst τ = ts.subst σ'
+theorem Args.subst_subst_of {Γ Δ Ξ : Scope} {a : List Grade} {θ₁ : Subst k Δ Ξ}
+    {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ}
+    (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) :
+    (ts : Args k Ξ a) → (ts.subst θ₁).subst θ₂ = ts.subst θ₃
   | .nil => rfl
   | .cons t ts => by
     rw [Args.subst, Args.subst, Args.subst, Term.subst_subst_of h t, Args.subst_subst_of h ts]
 
-theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {σ : Subst k Δ Ξ} {τ : Subst k Γ Δ}
-    {σ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) :
-    (as : InstanceArgs k Ξ Ψ) → (as.subst σ).subst τ = as.subst σ'
+theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) :
+    (as : InstanceArgs k Ξ Ψ) → (as.subst θ₁).subst θ₂ = as.subst θ₃
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.subst, InstanceArgs.subst,
@@ -1245,18 +1248,18 @@ end
 
 /-! ### Identity and Telescopes -/
 
-theorem Subst.lift_id_of {Γ : Scope} {b : List Grade} {σ : Subst k Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) :
-    ∀ {a} (x : Var (b :: Γ) a), Subst.lift σ x = Var.eta x
+theorem Subst.lift_id_of {Γ : Scope} {b : List Grade} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) :
+    ∀ {a} (x : Var (b :: Γ) a), Subst.lift θ x = Var.eta x
   | _, .zero => rfl
   | _, .succ x => by
-    show (σ x).rename (Ren.liftN _ Ren.weaken) = _
+    show (θ x).rename (Ren.liftN _ Ren.weaken) = _
     rw [h x, Var.eta_rename]
     rfl
 
 theorem Subst.liftN_id_of {Γ : Scope} :
-    ∀ (n : Nat) {σ : Subst k Γ Γ}, (∀ {a} (x : Var Γ a), σ x = Var.eta x) →
-      ∀ {a} (x : Var (Γ.extend n) a), Subst.liftN n σ x = Var.eta x
+    ∀ (n : Nat) {θ : Subst k Γ Γ}, (∀ {a} (x : Var Γ a), θ x = Var.eta x) →
+      ∀ {a} (x : Var (Γ.extend n) a), Subst.liftN n θ x = Var.eta x
   | 0, _, h => h
   | n + 1, _, h => Subst.liftN_id_of (Γ := [] :: Γ) n (Subst.lift_id_of h)
 
@@ -1265,20 +1268,20 @@ mutual
 -- ADE: `subst-id`, in `Definition/Untyped/Properties.agda`, for the first order.
 /-- A substitution of the second order that gives each variable `x̄. x[x̄]` changes nothing.
 RFC: `\mathsf{id}_\theta` -/
-theorem Term.subst_id_of {Γ : Scope} {σ : Subst k Γ Γ} (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) :
-    (t : Term k Γ) → t.subst σ = t
+theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) :
+    (t : Term k Γ) → t.subst θ = t
   | .var x ts => by rw [Term.subst, h x, Args.subst_id_of h ts, Var.eta_instantiate]
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by rw [Term.subst, InstanceArgs.subst_id_of h as]
 
-theorem Args.subst_id_of {Γ : Scope} {a : List Grade} {σ : Subst k Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) : (ts : Args k Γ a) → ts.subst σ = ts
+theorem Args.subst_id_of {Γ : Scope} {a : List Grade} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (ts : Args k Γ a) → ts.subst θ = ts
   | .nil => rfl
   | .cons t ts => by rw [Args.subst, Term.subst_id_of h t, Args.subst_id_of h ts]
 
-theorem InstanceArgs.subst_id_of {Γ Ξ : Scope} {σ : Subst k Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), σ x = Var.eta x) : (as : InstanceArgs k Γ Ξ) → as.subst σ = as
+theorem InstanceArgs.subst_id_of {Γ Ξ : Scope} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (as : InstanceArgs k Γ Ξ) → as.subst θ = as
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.subst_id_of h as,
@@ -1286,22 +1289,22 @@ theorem InstanceArgs.subst_id_of {Γ Ξ : Scope} {σ : Subst k Γ Γ}
 
 end
 
-/-- Renaming a telescope by `ρ` then substituting it by `σ` is substituting it by their composition
-`σ'`. -/
+/-- Renaming a telescope by `ξ` then substituting it by `θ` is substituting it by their composition
+`θ'`. -/
 theorem Telescope.subst_rename_of {Γ Δ Ξ : Scope} {ps : List Grade} :
-    {σ : Subst k Γ Δ} → {ρ : Ren Δ Ξ} → {σ' : Subst k Γ Ξ} → (∀ {a} (x : Var Ξ a), σ (ρ x) = σ' x) →
-      (Θ : Telescope k Ξ ps) → (Θ.rename ρ).subst σ = Θ.subst σ'
+    {θ : Subst k Γ Δ} → {ξ : Ren Δ Ξ} → {θ' : Subst k Γ Ξ} → (∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) →
+      (Θ : Telescope k Ξ ps) → (Θ.rename ξ).subst θ = Θ.subst θ'
   | _, _, _, _, .nil => rfl
   | _, _, _, h, .cons q p A Θ => by
     rw [Telescope.rename, Telescope.subst, Telescope.subst, Term.subst_rename_of h A,
       Telescope.subst_rename_of (Subst.lift_rename_of h) Θ]
 
-/-- Substituting a telescope by `σ` then by `τ` is substituting it by their composition `σ'`.
+/-- Substituting a telescope by `θ₁` then by `θ₂` is substituting it by their composition `θ₃`.
 RFC: `\mathsf{comp}_\theta` -/
 theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Grade} :
-    {σ : Subst k Δ Ξ} → {τ : Subst k Γ Δ} → {σ' : Subst k Γ Ξ} →
-      (∀ {a} (x : Var Ξ a), (σ x).subst (Subst.liftN a.length τ) = σ' x) →
-      (Θ : Telescope k Ξ ps) → (Θ.subst σ).subst τ = Θ.subst σ'
+    {θ₁ : Subst k Δ Ξ} → {θ₂ : Subst k Γ Δ} → {θ₃ : Subst k Γ Ξ} →
+      (∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.length θ₂) = θ₃ x) →
+      (Θ : Telescope k Ξ ps) → (Θ.subst θ₁).subst θ₂ = Θ.subst θ₃
   | _, _, _, _, .nil => rfl
   | _, _, _, h, .cons q p A Θ => by
     rw [Telescope.subst, Telescope.subst, Telescope.subst, Term.subst_subst_of h A,
@@ -1319,9 +1322,9 @@ theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Grade} :
 /-- A substitution of the first order then one of the second order swap on a telescope, as
 `Subst₀.Swaps` says. -/
 theorem Telescope.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {ps : List Grade} :
-    {σ₀ : Subst₀ k Δ Ξ} → {σ : Subst k Γ Δ} → {σ' : Subst k Ψ Ξ} → {σ₀' : Subst₀ k Γ Ψ} →
-      Subst₀.Swaps σ₀ σ σ' σ₀' →
-      (Θ : Telescope k Ξ ps) → (Θ.subst₀ σ₀).subst σ = (Θ.subst σ').subst₀ σ₀'
+    {σ : Subst₀ k Δ Ξ} → {θ₁ : Subst k Γ Δ} → {θ₂ : Subst k Ψ Ξ} → {σ' : Subst₀ k Γ Ψ} →
+      Subst₀.Swaps σ θ₁ θ₂ σ' →
+      (Θ : Telescope k Ξ ps) → (Θ.subst₀ σ).subst θ₁ = (Θ.subst θ₂).subst₀ σ'
   | _, _, _, _, _, .nil => rfl
   | _, _, _, _, h, .cons q p A Θ => by
     rw [Telescope.subst₀, Telescope.subst, Telescope.subst, Telescope.subst₀,
@@ -1337,7 +1340,7 @@ theorem Term.subst_subst₀ {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {θ₁ : 
     {θ₂ : Subst k Γ Ξ} (hterm : ∀ (x : Var Ξ []) (u : Term k Δ), σ x = .term u → θ₂ x = u.subst θ₁)
     (hvar : ∀ {a} (x : Var Ξ a) (y : Var Δ a), σ x = .var y → θ₂ x = θ₁ y) (t : Term k Ξ) :
     (t.subst₀ σ).subst θ₁ = t.subst θ₂ :=
-  (Term.subst_subst₀_of (σ₀' := Subst₀.id) (swaps_id hterm hvar) t).trans (Term.subst₀_id _)
+  (Term.subst_subst₀_of (σ' := Subst₀.id) (swaps_id hterm hvar) t).trans (Term.subst₀_id _)
 where
   /-- The hypotheses make `σ`, `θ₁`, `θ₂` and the identity swap. -/
   swaps_id {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Γ Ξ}
@@ -1376,15 +1379,15 @@ def Var.split {Γ : Scope} {ps : List Grade} :
     | .inl (.succ y) => .inl y
     | .inr z => .inr (Ren.liftN n Ren.empty z)
 
-/-- `(σ, τ)`: the closed substitution `σ` of the scope `Γ` followed by the closed substitution `τ`
-of `n` new variables, which gives each variable of `Γ` what `σ` gives it, and each new variable
-what `τ` gives it.
+/-- `(θ₁, θ₂)`: the closed substitution `θ₁` of the scope `Γ` followed by the closed substitution
+`θ₂` of `n` new variables, which gives each variable of `Γ` what `θ₁` gives it, and each new
+variable what `θ₂` gives it.
 RFC: `\mathsf{pair}_\theta` -/
-def Subst.append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ) (τ : Subst k [] (Scope.extend [] n)) :
+def Subst.append {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ) (θ₂ : Subst k [] (Scope.extend [] n)) :
     Subst k [] (Γ.extend n) := fun x =>
   match x.split n with
-  | .inl y => σ y
-  | .inr y => τ y
+  | .inl y => θ₁ y
+  | .inr y => θ₂ y
 
 /-- A variable of the scope `Γ` extended by `n` variables is a variable of `Γ` or a new one. -/
 theorem Var.cases_extend {Γ : Scope} {ps : List Grade} :
@@ -1400,7 +1403,7 @@ theorem Var.cases_extend {Γ : Scope} {ps : List Grade} :
         exact (Ren.liftN_weakenN n (Ren.lift Ren.empty) .zero).symm
       | succ y => exact .inl ⟨y, rfl⟩
     · refine .inr ⟨Ren.liftN n Ren.empty z, ?_⟩
-      exact (Ren.liftN_comp_of n (ρ₃ := Ren.empty) (fun y => nomatch y) z).symm
+      exact (Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z).symm
 
 /-- A variable of `Γ` comes from `Γ`. -/
 theorem Var.split_weakenN {Γ : Scope} {ps : List Grade} :
@@ -1430,19 +1433,19 @@ theorem Var.split_liftN_empty {Γ : Scope} {ps : List Grade} :
     · rw [Var.split]
       rw [show Ren.liftN (n + 1) (Ren.empty (Γ := Γ)) (Ren.liftN n Ren.empty z) =
           Ren.liftN n (Ren.lift Ren.empty) (Ren.liftN n Ren.empty z) from rfl,
-        Ren.liftN_comp_of n (ρ₃ := Ren.empty) (fun y => nomatch y) z,
+        Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z,
         Var.split_liftN_empty (Γ := [] :: Γ) n z]
 
-/-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
-theorem Subst.append_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (y : Var Γ a) :
-    Subst.append σ τ (y.weakenN n) = σ y := by
+/-- `(θ₁, θ₂)` gives the variables of `Γ` what `θ₁` gives them. -/
+theorem Subst.append_weakenN {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
+    (θ₂ : Subst k [] (Scope.extend [] n)) {a : List Grade} (y : Var Γ a) :
+    Subst.append θ₁ θ₂ (y.weakenN n) = θ₁ y := by
   simp only [Subst.append, Var.split_weakenN]
 
-/-- `(σ, τ)` gives the new variables what `τ` gives them. -/
-theorem Subst.append_liftN_empty {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (z : Var (Scope.extend [] n) a) :
-    Subst.append σ τ (Ren.liftN n Ren.empty z) = τ z := by
+/-- `(θ₁, θ₂)` gives the new variables what `θ₂` gives them. -/
+theorem Subst.append_liftN_empty {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
+    (θ₂ : Subst k [] (Scope.extend [] n)) {a : List Grade} (z : Var (Scope.extend [] n) a) :
+    Subst.append θ₁ θ₂ (Ren.liftN n Ren.empty z) = θ₂ z := by
   simp only [Subst.append, Var.split_liftN_empty]
 
 /-- `[t / x]`: the closed substitution of one variable by the closed term `t`. -/
@@ -1468,22 +1471,23 @@ theorem Var.extend_grades {Γ : Scope} (hΓ : ∀ {b}, Var Γ b → b = []) :
         | .succ y => hΓ y) n x
 
 /-- A substitution of the empty scope changes no term, under new variables. -/
-theorem Term.subst_liftN_empty {a : Nat} (σ : Subst k [] []) (t : Term k (Scope.extend [] a)) :
-    t.subst (Subst.liftN a σ) = t :=
+theorem Term.subst_liftN_empty {a : Nat} (θ : Subst k [] []) (t : Term k (Scope.extend [] a)) :
+    t.subst (Subst.liftN a θ) = t :=
   Term.subst_id_of (Subst.liftN_id_of a fun x => by cases x) t
 
-/-- `(σ, τ)` gives each variable what `σ` under the new variables gives it, substituted by `τ`. -/
-theorem Subst.append_eq_liftN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var (Γ.extend n) a) :
-    Subst.append σ τ x = (Subst.liftN n σ x).subst (Subst.liftN a.length τ) := by
+/-- `(θ₁, θ₂)` gives each variable what `θ₁` under the new variables gives it, substituted by
+`θ₂`. -/
+theorem Subst.append_eq_liftN {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
+    (θ₂ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var (Γ.extend n) a) :
+    Subst.append θ₁ θ₂ x = (Subst.liftN n θ₁ x).subst (Subst.liftN a.length θ₂) := by
   rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
   · rw [Subst.append_weakenN, Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of
-      a.length (ρ := Ren.weakenN n) (σ' := fun y => τ (y.weakenN n)) fun _ => rfl)]
+      a.length (ξ := Ren.weakenN n) (θ' := fun y => θ₂ (y.weakenN n)) fun _ => rfl)]
     exact (Term.subst_liftN_empty _ _).symm
   · obtain rfl := Var.extend_grades (fun y => by cases y) n z
     rw [Subst.append_liftN_empty]
-    show _ = (Subst.liftN n σ (Ren.liftN n Ren.empty z)).subst (Subst.liftN 0 τ)
-    rw [Subst.liftN_rename_of n (σ' := fun y => σ (Ren.empty y)) (fun _ => rfl),
+    show _ = (Subst.liftN n θ₁ (Ren.liftN n Ren.empty z)).subst (Subst.liftN 0 θ₂)
+    rw [Subst.liftN_rename_of n (θ' := fun y => θ₁ (Ren.empty y)) (fun _ => rfl),
       Subst.liftN_id_of n (fun y => by cases y)]
     rfl
 
@@ -1535,77 +1539,79 @@ renamings and the substitutions, and the instantiations compose. -/
 /-- The value of a level whose variables are replaced is its value under the values of the levels
 that replace them.
 RFC: `\mathsf{instance}_l` -/
-theorem Level.value_subst {k k' : Nat} (σ : Fin k → Level k') (ρ : Fin k' → Nat) :
-    ∀ l : Level k, (l.subst σ).value ρ = l.value fun i => (σ i).value ρ
+theorem Level.value_subst {k k' : Nat} (ls' : Fin k → Level k') (ρ : Fin k' → Nat) :
+    ∀ l : Level k, (l.subst ls').value ρ = l.value fun i => (ls' i).value ρ
   | .zero => rfl
-  | .succ l => congrArg (· + 1) (Level.value_subst σ ρ l)
+  | .succ l => congrArg (· + 1) (Level.value_subst ls' ρ l)
   | .max l₁ l₂ => by
-    simp only [Level.subst, Level.value, Level.value_subst σ ρ l₁, Level.value_subst σ ρ l₂]
+    simp only [Level.subst, Level.value, Level.value_subst ls' ρ l₁, Level.value_subst ls' ρ l₂]
   | .var _ => rfl
 
-/-- The value `v` in which the levels `σ` replace the level variables. -/
-def Val.substLevels {k' : Nat} {Γ : Scope} {a : List Grade} (σ : Fin k → Level k') :
+/-- The value `v` in which the levels `ls'` replace the level variables. -/
+def Val.substLevels {k' : Nat} {Γ : Scope} {a : List Grade} (ls' : Fin k → Level k') :
     Val k Γ a → Val k' Γ a
   | .var x => .var x
-  | .term t => .term (t.substLevels σ)
+  | .term t => .term (t.substLevels ls')
 
-/-- Replacing the level variables by `σ` then by `τ` is replacing them by their composition.
+/-- Replacing the level variables by `ls₁` then by `ls₂` is replacing them by their composition.
 RFC: `\mathsf{comp}_l` -/
-theorem Level.subst_subst {k' k'' : Nat} (σ : Fin k → Level k') (τ : Fin k' → Level k'') :
-    ∀ l : Level k, (l.subst σ).subst τ = l.subst fun i => (σ i).subst τ
+theorem Level.subst_subst {k' k'' : Nat} (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
+    ∀ l : Level k, (l.subst ls₁).subst ls₂ = l.subst fun i => (ls₁ i).subst ls₂
   | .zero => rfl
-  | .succ l => congrArg Level.succ (Level.subst_subst σ τ l)
-  | .max l₁ l₂ => by rw [Level.subst, Level.subst, Level.subst, Level.subst_subst σ τ l₁,
-      Level.subst_subst σ τ l₂]
+  | .succ l => congrArg Level.succ (Level.subst_subst ls₁ ls₂ l)
+  | .max l₁ l₂ => by rw [Level.subst, Level.subst, Level.subst, Level.subst_subst ls₁ ls₂ l₁,
+      Level.subst_subst ls₁ ls₂ l₂]
   | .var _ => rfl
 
 mutual
 
 /-- The instantiation of the level variables commutes with the renamings. -/
-theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k') (ρ : Ren Γ Δ) :
-    (t : Term k Δ) → (t.rename ρ).substLevels σ = (t.substLevels σ).rename ρ
+theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') (ξ : Ren Γ Δ) :
+    (t : Term k Δ) → (t.rename ξ).substLevels ls' = (t.substLevels ls').rename ξ
   | .var x ts => by
-    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename, Args.substLevels_rename σ ρ ts]
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
+      Args.substLevels_rename ls' ξ ts]
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
-      InstanceArgs.substLevels_rename σ ρ as]
+      InstanceArgs.substLevels_rename ls' ξ as]
 
-theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (σ : Fin k → Level k')
-    (ρ : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename ρ).substLevels σ = (ts.substLevels σ).rename ρ
+theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename ξ).substLevels ls'
+      = (ts.substLevels ls').rename ξ
   | .nil => rfl
   | .cons t ts => by
     rw [Args.rename, Args.substLevels, Args.substLevels, Args.rename,
-      Term.substLevels_rename σ ρ t, Args.substLevels_rename σ ρ ts]
+      Term.substLevels_rename ls' ξ t, Args.substLevels_rename ls' ξ ts]
 
-theorem InstanceArgs.substLevels_rename {k' : Nat} {Γ Δ Ξ : Scope} (σ : Fin k → Level k')
-    (ρ : Ren Γ Δ) :
-    (as : InstanceArgs k Δ Ξ) → (as.rename ρ).substLevels σ = (as.substLevels σ).rename ρ
+theorem InstanceArgs.substLevels_rename {k' : Nat} {Γ Δ Ξ : Scope} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) :
+    (as : InstanceArgs k Δ Ξ) → (as.rename ξ).substLevels ls' = (as.substLevels ls').rename ξ
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.substLevels, InstanceArgs.substLevels,
-      InstanceArgs.rename, InstanceArgs.substLevels_rename σ ρ as, Term.substLevels_rename]
+      InstanceArgs.rename, InstanceArgs.substLevels_rename ls' ξ as, Term.substLevels_rename]
 
 end
 
 /-- The instantiation of the level variables of a value commutes with the renamings. -/
-theorem Val.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (σ : Fin k → Level k')
-    (ρ : Ren Γ Δ) : (v : Val k Δ a) → (v.rename ρ).substLevels σ = (v.substLevels σ).rename ρ
+theorem Val.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Grade} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) : (v : Val k Δ a) → (v.rename ξ).substLevels ls' = (v.substLevels ls').rename ξ
   | .var _ => rfl
-  | .term t => congrArg Val.term (Term.substLevels_rename σ ρ t)
+  | .term t => congrArg Val.term (Term.substLevels_rename ls' ξ t)
 
 theorem Subst₀.lift_substLevels_of {k' : Nat} {Γ Δ : Scope} {b : List Grade}
-    {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ}
-    (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
-    ∀ {a} (x : Var (b :: Δ) a), (Subst₀.lift τ x).substLevels σ = Subst₀.lift τ' x
+    {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    ∀ {a} (x : Var (b :: Δ) a), (Subst₀.lift σ x).substLevels ls' = Subst₀.lift σ' x
   | _, .zero => rfl
-  | _, .succ x => (Val.substLevels_rename σ _ (τ x)).trans (congrArg _ (h x))
+  | _, .succ x => (Val.substLevels_rename ls' _ (σ x)).trans (congrArg _ (h x))
 
 theorem Subst₀.liftN_substLevels_of {k' : Nat} {Γ Δ : Scope} :
-    ∀ (n : Nat) {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ},
-      (∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) →
-      ∀ {a} (x : Var (Δ.extend n) a), (Subst₀.liftN n τ x).substLevels σ = Subst₀.liftN n τ' x
+    ∀ (n : Nat) {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ},
+      (∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) →
+      ∀ {a} (x : Var (Δ.extend n) a), (Subst₀.liftN n σ x).substLevels ls' = Subst₀.liftN n σ' x
   | 0, _, _, _, h => h
   | n + 1, _, _, _, h => Subst₀.liftN_substLevels_of (Γ := [] :: Γ) (Δ := [] :: Δ) n
       (Subst₀.lift_substLevels_of h)
@@ -1615,13 +1621,14 @@ mutual
 /-- The instantiation of the level variables commutes with the substitutions of the first order,
 whose terms it instantiates.
 RFC: `\mathsf{comm}_l` -/
-theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {σ : Fin k → Level k'}
-    {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ} (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
-    (t : Term k Δ) → (t.subst₀ τ).substLevels σ = (t.substLevels σ).subst₀ τ'
+theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (t : Term k Δ) → (t.subst₀ σ).substLevels ls' = (t.substLevels ls').subst₀ σ'
   | .var x ts => by
     rw [Term.subst₀_var, Term.substLevels, Term.subst₀_var, ← h x,
       ← Args.substLevels_subst₀_of h ts]
-    cases τ x <;> rfl
+    cases σ x <;> rfl
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by
@@ -1629,17 +1636,18 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {σ : Fin k → 
       InstanceArgs.substLevels_subst₀_of h as]
 
 theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Grade}
-    {σ : Fin k → Level k'} {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ}
-    (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
-    (ts : Args k Δ a) → (ts.subst₀ τ).substLevels σ = (ts.substLevels σ).subst₀ τ'
+    {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (ts : Args k Δ a) → (ts.subst₀ σ).substLevels ls' = (ts.substLevels ls').subst₀ σ'
   | .nil => rfl
   | .cons t ts => by
     rw [Args.subst₀, Args.substLevels, Args.substLevels, Args.subst₀,
       Term.substLevels_subst₀_of h t, Args.substLevels_subst₀_of h ts]
 
-theorem InstanceArgs.substLevels_subst₀_of {k' : Nat} {Γ Δ Ξ : Scope} {σ : Fin k → Level k'}
-    {τ : Subst₀ k Γ Δ} {τ' : Subst₀ k' Γ Δ} (h : ∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) :
-    (as : InstanceArgs k Δ Ξ) → (as.subst₀ τ).substLevels σ = (as.substLevels σ).subst₀ τ'
+theorem InstanceArgs.substLevels_subst₀_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' : Fin k → Level k'}
+    {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (as : InstanceArgs k Δ Ξ) → (as.subst₀ σ).substLevels ls' = (as.substLevels ls').subst₀ σ'
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.substLevels, InstanceArgs.substLevels,
@@ -1650,71 +1658,79 @@ end
 
 /-- `B[t̄ / Θ][l̄' / l̄] = B[l̄' / l̄][t̄[l̄' / l̄] / Θ]`.
 RFC: `\mathsf{comm}_l` -/
-theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (σ : Fin k → Level k') :
+theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     {ps : List Grade} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
-      (B.instantiate ts).substLevels σ = (B.substLevels σ).instantiate (ts.substLevels σ)
+      (B.instantiate ts).substLevels ls' = (B.substLevels ls').instantiate (ts.substLevels ls')
   | [], _, .nil => rfl
   | _ :: ps, B, .cons t ts => by
-    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).substLevels σ =
-      Term.instantiate ((B.substLevels σ).subst₀
-        (Subst₀.liftN ps.length (Subst₀.single (t.substLevels σ)))) (ts.substLevels σ)
-    rw [Term.substLevels_instantiate σ]
+    show (Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t)))
+        ts).substLevels ls' =
+      Term.instantiate ((B.substLevels ls').subst₀
+        (Subst₀.liftN ps.length (Subst₀.single (t.substLevels ls')))) (ts.substLevels ls')
+    rw [Term.substLevels_instantiate ls']
     congr 1
-    exact Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of ps.length (σ := σ)
-      (τ := Subst₀.single t) (τ' := Subst₀.single (t.substLevels σ)) fun x => by cases x <;> rfl) B
+    exact Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of ps.length (ls' := ls')
+      (σ := Subst₀.single t) (σ' := Subst₀.single (t.substLevels ls'))
+      fun x => by cases x <;> rfl) B
 
 mutual
 
-/-- Instantiating the level variables by `σ` then by `τ` is instantiating them by their composition.
+/-- Instantiating the level variables by `ls₁` then by `ls₂` is instantiating them by their
+composition.
 RFC: `\mathsf{comp}_l` -/
-theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (σ : Fin k → Level k')
-    (τ : Fin k' → Level k'') :
-    (t : Term k Γ) → (t.substLevels σ).substLevels τ = t.substLevels fun i => (σ i).subst τ
+theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') :
+    (t : Term k Γ) → (t.substLevels ls₁).substLevels ls₂ = t.substLevels fun i => (ls₁ i).subst ls₂
   | .var x ts => by
-    rw [Term.substLevels, Term.substLevels, Term.substLevels, Args.substLevels_substLevels σ τ ts]
+    rw [Term.substLevels, Term.substLevels, Term.substLevels,
+      Args.substLevels_substLevels ls₁ ls₂ ts]
   | .sort κ => by
     simp only [Term.substLevels, Universe.substLevels, Level.subst_subst]
   | .const c qs ls ps => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst]
   | .inst D qs ls ps as => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
-      InstanceArgs.substLevels_substLevels σ τ as]
+      InstanceArgs.substLevels_substLevels ls₁ ls₂ as]
 
 theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Grade}
-    (σ : Fin k → Level k') (τ : Fin k' → Level k'') :
-    (ts : Args k Γ a) → (ts.substLevels σ).substLevels τ = ts.substLevels fun i => (σ i).subst τ
+    (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
+    (ts : Args k Γ a) → (ts.substLevels ls₁).substLevels ls₂
+      = ts.substLevels fun i => (ls₁ i).subst ls₂
   | .nil => rfl
   | .cons t ts => by
-    rw [Args.substLevels, Args.substLevels, Args.substLevels, Term.substLevels_substLevels σ τ t,
-      Args.substLevels_substLevels σ τ ts]
+    rw [Args.substLevels, Args.substLevels, Args.substLevels,
+      Term.substLevels_substLevels ls₁ ls₂ t,
+      Args.substLevels_substLevels ls₁ ls₂ ts]
 
-theorem InstanceArgs.substLevels_substLevels {k' k'' : Nat} {Γ Δ : Scope} (σ : Fin k → Level k')
-    (τ : Fin k' → Level k'') :
+theorem InstanceArgs.substLevels_substLevels {k' k'' : Nat} {Γ Δ : Scope} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') :
     (as : InstanceArgs k Γ Δ) →
-      (as.substLevels σ).substLevels τ = as.substLevels fun i => (σ i).subst τ
+      (as.substLevels ls₁).substLevels ls₂ = as.substLevels fun i => (ls₁ i).subst ls₂
   | .nil => rfl
   | .snoc as B => by
     rw [InstanceArgs.substLevels, InstanceArgs.substLevels, InstanceArgs.substLevels,
-      InstanceArgs.substLevels_substLevels σ τ as, Term.substLevels_substLevels σ τ B]
+      InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Term.substLevels_substLevels ls₁ ls₂ B]
 
 end
 
 /-- The instantiation of the level variables of a telescope commutes with the renamings. -/
 theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Grade}
-    (σ : Fin k → Level k') :
-    (ρ : Ren Γ Δ) → (Θ : Telescope k Δ ps) → (Θ.rename ρ).substLevels σ = (Θ.substLevels σ).rename ρ
+    (ls' : Fin k → Level k') :
+    (ξ : Ren Γ Δ) → (Θ : Telescope k Δ ps)
+      → (Θ.rename ξ).substLevels ls' = (Θ.substLevels ls').rename ξ
   | _, .nil => rfl
-  | ρ, .cons q p A Θ => by
+  | ξ, .cons q p A Θ => by
     rw [Telescope.rename, Telescope.substLevels, Telescope.substLevels, Telescope.rename,
-      Term.substLevels_rename, Telescope.substLevels_rename σ (Ren.lift ρ) Θ]
+      Term.substLevels_rename, Telescope.substLevels_rename ls' (Ren.lift ξ) Θ]
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
 first order.
 RFC: `\mathsf{comm}_l` -/
 theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List Grade}
-    {σ : Fin k → Level k'} :
-    {τ : Subst₀ k Γ Δ} → {τ' : Subst₀ k' Γ Δ} → (∀ {a} (x : Var Δ a), (τ x).substLevels σ = τ' x) →
-      (Θ : Telescope k Δ ps) → (Θ.subst₀ τ).substLevels σ = (Θ.substLevels σ).subst₀ τ'
+    {ls' : Fin k → Level k'} :
+    {σ : Subst₀ k Γ Δ} → {σ' : Subst₀ k' Γ Δ}
+      → (∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) →
+      (Θ : Telescope k Δ ps) → (Θ.subst₀ σ).substLevels ls' = (Θ.substLevels ls').subst₀ σ'
   | _, _, _, .nil => rfl
   | _, _, h, .cons q p A Θ => by
     rw [Telescope.subst₀, Telescope.substLevels, Telescope.substLevels, Telescope.subst₀,
@@ -1722,11 +1738,11 @@ theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List 
 
 /-- `(Γ, Θ)[l̄' / l̄] = Γ[l̄' / l̄], Θ[l̄' / l̄]`.
 RFC: `\mathsf{comm}_l` -/
-theorem Context.substLevels_append {k' : Nat} (σ : Fin k → Level k') :
+theorem Context.substLevels_append {k' : Nat} (ls' : Fin k → Level k') :
     {Γ : Scope} → {ps : List Grade} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
-      (ctx.append Θ).substLevels σ = (ctx.substLevels σ).append (Θ.substLevels σ)
+      (ctx.append Θ).substLevels ls' = (ctx.substLevels ls').append (Θ.substLevels ls')
   | _, [], _, .nil => rfl
-  | _, _ :: _, ctx, .cons _ _ A Θ => Context.substLevels_append σ (ctx.var A) Θ
+  | _, _ :: _, ctx, .cons _ _ A Θ => Context.substLevels_append ls' (ctx.var A) Θ
 
 /-! ## Examples
 

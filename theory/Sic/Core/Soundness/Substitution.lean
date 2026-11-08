@@ -80,7 +80,7 @@ theorem Subst.dropN_append_succ {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := [] :: Γ) n x)).symm
   show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.length τ)
   rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.length
-    (ρ := Ren.weakenN n) (σ' := Subst.dropN n τ) fun _ => rfl)]
+    (ξ := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
 
 /-- `(σ, τ)` gives the first new variable what `τ` gives it. -/
 theorem Subst.dropN_append_zero {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
@@ -101,7 +101,7 @@ theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend ([
     @Eq (Subst k [] (Scope.extend [] n)) (Subst.topN n (Subst.topN (Γ := Γ) (n + 1) σ))
       (Subst.topN n σ) :=
   Subst.ext fun x => congrArg (fun y => σ y)
-    (Ren.liftN_comp_of n (ρ₃ := Ren.empty) (fun y => by cases y) x)
+    (Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => by cases y) x)
 
 /-! ## Equal Substitutions -/
 
@@ -160,8 +160,8 @@ theorem EqSubst.append_iff :
       | zero => exact Subst.dropN_topN_zero σ₁
       | succ y =>
         show ((Subst.dropN (ps.length + 1) σ₁ y).rename (Ren.liftN _ Ren.weaken)).subst _ = _
-        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (ρ := Ren.weaken)
-          (σ' := Subst.tail (Subst.dropN ps.length (Subst.topN (Γ := Γ) (ps.length + 1) σ₁)))
+        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (ξ := Ren.weaken)
+          (θ' := Subst.tail (Subst.dropN ps.length (Subst.topN (Γ := Γ) (ps.length + 1) σ₁)))
           fun _ => rfl)]
         exact Term.subst_liftN_empty _ _
     show EqSubst sig ι ((ctx.var A).append Θ) σ₁ σ₂ ↔
@@ -359,7 +359,7 @@ theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Grade} (Θ : Tel
     (ht : Subst.dropN ps.length τ .zero = t.subst σ) :
     Θ.subst (Subst.dropN (Γ := [] :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ)) =
       (Θ.subst₀ (Subst₀.single t)).subst σ := by
-  refine Eq.symm ((Telescope.subst_subst₀_of (σ₀' := Subst₀.id) ⟨fun x y e => ?_, fun x u e => ?_⟩
+  refine Eq.symm ((Telescope.subst_subst₀_of (σ' := Subst₀.id) ⟨fun x y e => ?_, fun x u e => ?_⟩
     Θ).trans (Telescope.subst₀_id_of (fun _ => rfl) _))
   · cases x with
     | zero => cases e
@@ -368,7 +368,7 @@ theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Grade} (Θ : Tel
       exact (Term.subst₀_id_of (Subst₀.liftN_id_of _ fun _ => rfl) _).trans
         ((Subst.dropN_append_succ σ τ y.succ).symm.trans
           ((Term.subst_rename_of (Subst.liftN_rename_of _
-            (σ' := fun y => Subst.dropN ps.length τ y.succ) fun _ => rfl) (σ y)).trans
+            (θ' := fun y => Subst.dropN ps.length τ y.succ) fun _ => rfl) (σ y)).trans
             (Term.subst_liftN_empty _ _)))
   · cases x with
     | zero =>
