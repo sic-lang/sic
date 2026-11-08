@@ -6,8 +6,8 @@ public import Sic.Core.Syntax
 /-!
 # Usage
 
-The judgment of usage of RFC 24, `Σ; γ ▶_m t`: checked in the mode `m`, the term `t` uses each
-variable of its scope as the grade that `γ` gives it allows.
+The judgment of usage of annex 10 of RFC 36, `Σ; γ ▶^m t`: checked in the mode `m`, the term `t`
+uses each variable of its scope as the grade that `γ` gives it allows.
 Usage is defined on the term and the signature alone, whose binders and entries carry the grades:
 a second-order variable uses its arguments with the grades of its telescope, which its scope gives.
 
@@ -23,36 +23,47 @@ namespace Sic.Core
 mutual
 
 -- ADE: `_▸[_]_`, in `Graded/Usage.agda`.
-/-- `Σ; γ ▶_m t`: checked in the mode `m`, the term `t` uses its variables as `γ` allows. -/
+/-- `Σ; γ ▶^m t`: checked in the mode `m`, the term `t` uses its variables as `γ` allows. -/
 inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector Γ.length → Mode →
     Term k Γ → Prop where
+  -- ADE: `var` and `_∘ₘ_`, in `Graded/Usage.agda`, for a variable and for an application.
   /--
-  `(var_Xm)`: the application `X[t̄]` uses `X` with the grade of the mode, and each argument `tⱼ`
-  with the grade `pⱼ` of its entry, checked in the mode of this grade; a variable `x` is the case
-  without arguments, the rule `(var_m)`.
+  The application `x[t̄]` uses `x` with the grade of the mode, and each argument `tⱼ` with the
+  grade `pⱼ` of its entry, checked in the mode `m ⊙ pⱼ`; a variable with an empty telescope uses
+  itself only.
+  RFC: `\mathsf{var}_{X\mathsf{m}}`
   -/
   | var {k : Nat} {Γ : Scope} {ps : List Grade} {x : Var Γ ps} {ts : Args k Γ ps} {m : Mode}
       {δ : GradeVector Γ.length} (hts : UsageArgs sig δ m ts) :
       Usage sig ((GradeVector.update 𝟘ᶜ x.toFin m.grade) +ᶜ δ) m (.var x ts)
   -- ADE: `defn`, in `Graded/Usage.agda`, for the definitions.
-  /-- `(c_m)`: a definition or a constant uses no variable, in a mode that its mode allows. -/
-  | const {k : Nat} {Γ : Scope} {c : Name} {j k' g : Nat} {m m' : Mode}
+  /-- A constant, defined or declared, uses no variable, in a mode `m₁` that the mode `m₂` of its
+  entry allows.
+  RFC: `f_{\mathsf{m}}` -/
+  | const {k : Nat} {Γ : Scope} {f : Name} {j k' g : Nat} {m₁ m₂ : Mode}
       {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : sig.HasConstant c j k' g m' A) (hm : m ·ᵐ m' = m) :
-      Usage sig 𝟘ᶜ m (.const c qs ls ps : Term k Γ)
-  /-- `(U_m)` and `(Ω_m)`: a sort uses no variable. -/
+      (h : sig.HasConstant f j k' g m₂ A) (hm : m₁ ·ᵐ m₂ = m₁) :
+      Usage sig 𝟘ᶜ m₁ (.const f qs ls ps : Term k Γ)
+  -- ADE: `Uₘ`, in `Graded/Usage.agda`.
+  /-- A sort uses no variable.
+  RFC: `\kappa_{\mathsf{m}}` -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)
-  /-- `(sub)`: a term may be given grades lower than its uses. -/
+  -- ADE: `sub`, in `Graded/Usage.agda`.
+  /-- A term may be given grades lower than its uses.
+  RFC: `\mathsf{sub}` -/
   | sub {k : Nat} {Γ : Scope} {γ δ : GradeVector Γ.length} {m : Mode} {t : Term k Γ}
       (h : Usage sig γ m t) (hle : δ ≤ᶜ γ) : Usage sig δ m t
 
-/-- The usage `p₁ ·ᶜ δ₁ +ᶜ … +ᶜ pₐ ·ᶜ δₐ` of the arguments `t̄` of a telescope whose entries have the
-grades `p₁, …, pₐ`, each argument `tⱼ` being checked in the mode `m ⊙ pⱼ`. -/
+-- ADE: none.
+/-- `Σ; γ ▶^m_p̄ t̄`: checked in the mode `m`, the arguments `t̄` of a telescope whose grades are
+`p̄` use the variables of their scope as `γ` allows. -/
 inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Grade} →
     GradeVector Γ.length → Mode → Args k Γ ps → Prop where
-  /-- No argument uses no variable. -/
+  /-- No argument uses no variable.
+  RFC: `\mathsf{tel}_{\varepsilon\mathsf{m}}` -/
   | nil {k : Nat} {Γ : Scope} {m : Mode} : UsageArgs sig 𝟘ᶜ m (.nil : Args k Γ [])
-  /-- The first argument, of grade `p`, and the others. -/
+  /-- The first argument, of grade `p`, checked in the mode `m ⊙ p`, and the others.
+  RFC: `\mathsf{tel}_{,\mathsf{m}}` -/
   | cons {k : Nat} {Γ : Scope} {p : Grade} {ps : List Grade} {t : Term k Γ} {ts : Args k Γ ps}
       {m : Mode} {γ δ : GradeVector Γ.length} (ht : Usage sig γ (m ⊙ p) t)
       (hts : UsageArgs sig δ m ts) :
