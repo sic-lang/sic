@@ -179,7 +179,7 @@ structure Instance (j g : Nat) where
   grades : Fin g → Grade
 
 -- ADE: none.
-/-- `f.{s̄; l̄; p̄} :_m A ≔ t`, a constant definition, which defines the constant `f`. -/
+/-- `f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, a constant definition, which defines the constant `f`. -/
 structure ConstantDefinition where
   /-- The name `f`. -/
   name : Name
@@ -199,7 +199,7 @@ structure ConstantDefinition where
   body : Instance sorts grades → Term levels []
 
 -- ADE: none.
-/-- `f.{s̄; l̄; p̄} :_m A`, a constant declaration, which declares the constant `f`, without
+/-- `f.{s̄; l̄; p̄} : A ▶ m ◀ p`, a constant declaration, which declares the constant `f`, without
 body. -/
 structure ConstantDeclaration where
   /-- The name `f`. -/
@@ -263,7 +263,7 @@ RFC: `\mathsf{syntax}_\Sigma`, `\in_\Sigma.e`, `\in_\Sigma.e,e` -/
 abbrev Signature : Type := List Entry
 
 /--
-`f.{s̄; l̄; p̄} :_m A ∈ Σ`: the signature has a constant `f`, with `j` sort, `k` level and `g` grade
+`f.{s̄; l̄; p̄} : A ▶ m ◀ p ∈ Σ`: the signature has a constant `f`, with `j` sort, `k` level and `g` grade
 variables, the mode `m`, the ownership `c₀` and the type `A`, which the rules of the defined and of
 the declared constants share.
 RFC: `\in_f`

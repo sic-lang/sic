@@ -6,7 +6,7 @@ public import Sic.Core.Syntax
 /-!
 # Usage
 
-The judgment of usage of annex 10 of RFC 36, `Σ; γ ▶^m t`: checked in the mode `m`, the term `t`
+The judgment of usage of annex 10 of RFC 36, `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t`
 uses each variable of its scope as the grade that `γ` gives it allows.
 Usage is defined on the term and the signature alone, whose binders and entries carry the grades:
 a second-order variable uses its arguments with the grades of the parameters of its telescope, which
@@ -24,7 +24,7 @@ namespace Sic.Core
 mutual
 
 -- ADE: `_▸[_]_`, in `Graded/Usage.agda`.
-/-- `Σ; γ ▶^m t`: checked in the mode `m`, the term `t` uses its variables as `γ` allows. -/
+/-- `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t` uses its variables as `γ` allows. -/
 inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector Γ.length → Mode →
     Term k Γ → Prop where
   -- ADE: `var` and `_∘ₘ_`, in `Graded/Usage.agda`, for a variable and for an application.
@@ -56,7 +56,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (h : Usage sig γ m t) (hle : δ ≤ᶜ γ) : Usage sig δ m t
 
 -- ADE: none.
-/-- `Σ; γ ▶^m_p̄ t̄`: checked in the mode `m`, the arguments `t̄` of a telescope whose parameters have
+/-- `Σ; γ ⊢ t̄ ▶ p̄; m`: checked in the mode `m`, the arguments `t̄` of a telescope whose parameters have
 the grades `p̄` use the variables of their scope as `γ` allows. -/
 inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
     GradeVector Γ.length → Mode → Args k Γ ps → Prop where

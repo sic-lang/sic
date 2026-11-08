@@ -35,22 +35,22 @@ def sorted {k : Nat} {Γ : Scope} : Term k Γ := .const "Sorted" [] [] []
 /-- `origin.{}`. -/
 def origin {k : Nat} {Γ : Scope} : Term k Γ := .const "origin" [] [] []
 
-/-- `Int.{} :_{𝟙𝟙ᵐ} U_0`. -/
+/-- `Int.{} : U_0 ▶ 11ᵐ ◀ ωωᵖ`. -/
 def intEntry : ConstantDeclaration := ⟨"Int", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => .sort ⟨.type, .zero⟩⟩
 
-/-- `zero.{} :_{𝟙𝟙ᵐ} Int.{}`. -/
+/-- `zero.{} : Int.{} ▶ 11ᵐ ◀ ωωᵖ`. -/
 def zeroEntry : ConstantDeclaration := ⟨"zero", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => int⟩
 
-/-- `bound.{} :_{𝟘𝟙ᵐ} Int.{}`. -/
+/-- `bound.{} : Int.{} ▶ 01ᵐ ◀ ωωᵖ`. -/
 def boundEntry : ConstantDeclaration := ⟨"bound", 0, 0, 0, .zeroOne, .unrestrictedUnrestricted, fun _ => int⟩
 
-/-- `Sorted.{} :_{𝟙𝟙ᵐ} Ω_0`. -/
+/-- `Sorted.{} : Ω_0 ▶ 11ᵐ ◀ ωωᵖ`. -/
 def sortedEntry : ConstantDeclaration := ⟨"Sorted", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => .sort ⟨.prop, .zero⟩⟩
 
-/-- `sorted.{} :_{𝟘𝟙ᵐ} Sorted.{}`. -/
+/-- `sorted.{} : Sorted.{} ▶ 01ᵐ ◀ ωωᵖ`. -/
 def sortedProofEntry : ConstantDeclaration := ⟨"sorted", 0, 0, 0, .zeroOne, .unrestrictedUnrestricted, fun _ => sorted⟩
 
-/-- `origin.{} :_{𝟙𝟙ᵐ} Int.{} ≔ zero.{}`. -/
+/-- `origin.{} : Int.{} ▶ 11ᵐ ◀ ωωᵖ ≔ zero.{}`. -/
 def originEntry : ConstantDefinition := ⟨"origin", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => int, fun _ => zero⟩
 
 /-- `(ex_sig)`: the signature `Σ_ex`, the last entry first. -/
@@ -121,7 +121,7 @@ theorem bound_in_proofs : Usage sigEx (Γ := []) 𝟘ᶜ .zeroOne (bound : Term 
   .const (qs := []) (ls := []) (ps := [])
     (.constantDeclaration (c := boundEntry) (by simp [sigEx])) rfl
 
-/-- The only entry of `Σ_ex` named `bound` is the ghost value, of mode `𝟘𝟙ᵐ`. -/
+/-- The only entry of `Σ_ex` named `bound` is the ghost value, of mode `01ᵐ`. -/
 theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {c₀ : Grade} {A : Instance j g → Term k []}
     (h : sigEx.HasConstant c j k g m c₀ A) (hc : c = "bound") : m = .zeroOne := by
   cases h with
@@ -140,7 +140,7 @@ theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {c₀ : Grade} {A : In
     · exact absurd hc (by decide)
     · exact absurd hc (by decide)
 
-/-- A derivation of the usage of `bound` in the mode `𝟙𝟙ᵐ` ends with the rule `(c_m)`, after
+/-- A derivation of the usage of `bound` in the mode `11ᵐ` ends with the rule `(f_m)`, after
 uses of the rule `(sub)`, whose mode condition fails. -/
 theorem not_usage_bound : ∀ {γ : GradeVector 0} {m : Mode} {t : Term 0 []},
     Usage sigEx (Γ := []) γ m t → t = bound → m = .oneOne → False

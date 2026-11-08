@@ -14,7 +14,7 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
 * `Σ; Γ ⊢ t̄ : Θ` and `Σ; Γ ⊢ t̄ ≡ ū : Θ`, the arguments of a telescope;
 * `Σ; Γ ⊢ ā : Δ` and `Σ; Γ ⊢ ā ≡ b̄ : Δ`, the arguments of an instance;
 * `Σ; Γ ⊢ Θ : κ`, a telescope in a sort;
-* `Σ ⊢ f.{s̄; l̄; p̄} :_m A ≔ t` and `Σ ⊢ f.{s̄; l̄; p̄} :_m A`, the entries of the signature.
+* `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t` and `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, the entries of the signature.
 
 Typing and equality carry no grade; the definitions are checked for their usage.
 An entry of the signature is checked for each instance of its sort and grade variables, once with
@@ -109,7 +109,7 @@ inductive WfSig : Signature → Prop where
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
 
 /--
-`Σ ⊢ f.{s̄; l̄; p̄} :_m A ≔ t`: for each instance of the sort and grade variables, the type `A` is a
+`Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
 type of some sort and the body `t` a term of it, both in the empty context, and the body uses no
 variable in the mode `m`, where its value has the ownership `c₀` of the definition.
 -/
@@ -124,7 +124,7 @@ inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
       (ho : ∀ ι, Ownership sig (fun x : Var [] .var => nomatch x) d.mode d.ownership (d.body ι)) :
       WfConstantDefinition sig d
 
-/-- `Σ ⊢ f.{s̄; l̄; p̄} :_m A`: for each instance of the sort and grade variables, the type `A` is a
+/-- `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`: for each instance of the sort and grade variables, the type `A` is a
 type of some sort in the empty context. -/
 inductive WfConstantDeclaration : Signature → ConstantDeclaration → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.

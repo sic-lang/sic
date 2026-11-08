@@ -9,12 +9,12 @@ Examples of the ownership of the core, which RFC 36 will state with its examples
 variable `a`, the value of which has a given ownership, and three second-order variables, whose
 signatures give the ownership of their results:
 
-* `Id : (x :_{11ᵖ} A ⊢ A)`, whose result is its argument, has the coefficient `11ᵖ` and no
+* `Id : (x : A ▶ 11ᵖ; 00ᵖ ◀ ωωᵖ ⊢ A ◀ x)`, whose result is its argument, has the coefficient `11ᵖ` and no
   constant, so that `Id[a]` has the ownership of `a`;
-* `Choose : (x :_{11ᵖ} A ⊢ A)`, whose result is its argument or a fresh value, has the coefficient
+* `Choose : (x : A ▶ 11ᵖ; 00ᵖ ◀ ωωᵖ ⊢ A ◀ x ∧ 11ᵖ)`, whose result is its argument or a fresh value, has the coefficient
   `11ᵖ` and the constant `11ᵖ`, so that `Choose[a]` has the meet of the ownership of `a` and of
   `11ᵖ`;
-* `Write : (x :_{11ᵖ} A ⊢ A)`, which updates its argument in place and returns it as a fresh value,
+* `Write : (x : A ▶ 11ᵖ; 00ᵖ ◀ 1ωᵖ ⊢ A ◀ 11ᵖ)`, which updates its argument in place and returns it as a fresh value,
   requires `1ωᵖ`, one path at run time and any number of paths in the proofs, has no coefficient
   and the constant `11ᵖ`, so that `Write[a]` is accepted at run time when `a` has no other path at
   run time, and refused when it may have several, while an erased occurrence, which is no path,

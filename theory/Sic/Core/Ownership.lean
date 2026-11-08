@@ -5,7 +5,7 @@ public import Sic.Core.Syntax
 /-!
 # Ownership
 
-The judgment of ownership `Σ; φ ◀^m_p t`, which RFC 36 states beside the typing and the usage:
+The judgment of ownership `Σ; φ ⊢ t ◀ p; m`, which RFC 36 states beside the typing and the usage:
 checked in the mode `m`, the value of the term `t` has the ownership `p`, a grade that counts the
 paths to this value, at run time and in total, given the ownership `φ` of each variable of its scope.
 The usage counts the uses of each variable in the future, and the ownership counts the paths to a
@@ -45,7 +45,7 @@ def Parameter.result (c₀ : Option Grade) : List Parameter → List Grade → O
 mutual
 
 -- ADE: none.
-/-- `Σ; φ ◀^m_p t`: checked in the mode `m`, the value of the term `t` has the ownership `p`, given
+/-- `Σ; φ ⊢ t ◀ p; m`: checked in the mode `m`, the value of the term `t` has the ownership `p`, given
 the ownership `φ` of each variable of its scope. -/
 inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .var → Grade) → Mode →
     Grade → Term k Γ → Prop where
@@ -71,7 +71,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (h : Ownership sig φ m p t) (hle : q ≤ p) : Ownership sig φ m q t
 
 -- ADE: none.
-/-- `Σ; φ ◀^m_p̄ t̄ : ō`: checked in the mode `m`, the arguments `t̄` of a telescope whose entries
+/-- `Σ; φ ⊢ t̄ ◀ ō; Θ; m`: checked in the mode `m`, the arguments `t̄` of a telescope whose entries
 have the parameters `ps` have the ownerships `os`, each satisfying the requirement of its
 parameter. -/
 inductive OwnershipArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →

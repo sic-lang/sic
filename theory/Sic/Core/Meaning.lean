@@ -632,7 +632,7 @@ theorem valid_univ_max (ι : Interpretation) :
   ⟨trivial, _, _, eqUniv 0, Computes.sort _ _, Computes.sort _ _, .univ 1 (.univ rfl rfl),
     .univ 1 (.univ rfl rfl)⟩
 
-/-- `T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`, a definition of a type. -/
+/-- `T.{} : U_1 ▶ 11ᵐ ◀ ωωᵖ ≔ U_0`, a definition of a type. -/
 def typeEntry : ConstantDefinition :=
   ⟨"T", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => univ (.succ .zero), fun _ => univ .zero⟩
 
@@ -645,7 +645,7 @@ theorem computes_typeConst (ι : Interpretation) :
   ⟨.step (.delta (d := typeEntry) (qs := []) (ls := []) (ps := []) (List.mem_singleton_self _) rfl rfl
     rfl) (.refl _), .sort _⟩
 
-/-- `⊨ T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`: the definition is meaningful, whatever the interpretation. -/
+/-- `⊨ T.{} : U_1 ▶ 11ᵐ ◀ ωωᵖ ≔ U_0`: the definition is meaningful, whatever the interpretation. -/
 theorem validSig_typeEntry (ι : Interpretation) : ValidSig ι [.constantDefinition typeEntry] :=
   ⟨trivial, fun _ h => (nomatch h), fun _ _ => ⟨(valid_univ_zero ι).1.2, (valid_univ_zero ι).2⟩⟩
 
