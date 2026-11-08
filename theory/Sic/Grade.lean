@@ -397,8 +397,8 @@ theorem inexact_run :
 
 /-! ### Greatest lower bounds
 
-Every non-empty set of grades has a greatest lower bound, its meet, which the usage of the recursion
-of the data and codata types takes over all the shapes of a term. -/
+Every non-empty decidable set of grades has a greatest lower bound, its meet, which the usage of the
+recursion of the data and codata types takes over all the shapes of a term. -/
 
 -- ADE: `Greatest-lower-bound`, in `Graded/Modality.agda`.
 /-- `g` is the greatest lower bound of the set `S` of grades, written `⋀ S`.
@@ -451,7 +451,7 @@ theorem isGLB_foldl (L : List Grade) : ∀ g : Grade,
         exact (le_meet_iff g x r).1 ⟨h g (Or.inl rfl), h x (Or.inr List.mem_cons_self)⟩
       · exact h p (Or.inr (List.mem_cons_of_mem _ hp))
 
-/-- Every non-empty set of grades has a greatest lower bound.
+/-- Every non-empty decidable set of grades has a greatest lower bound.
 RFC: `\textstyle\bigwedge_p`
 The set is decidable, which the proof needs to compute the bound without the axiom of choice; the
 sets of grades that a rule computes are. -/
