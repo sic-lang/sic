@@ -160,6 +160,9 @@ theorem le_iff (p q : Grade) : p ≤ q ↔ p.run ≤ q.run ∧ p.total ≤ q.tot
 /-! The tables of the RFC follow from those of the multiplicities, and the names of the grades
 match their components. -/
 
+/-- The names of the grades, in the order of their multiplicities: each grade is named after its two
+components, as `noneLinear` is `none / linear`, `01ᵖ`.
+RFC: `\mathsf{names}_p` -/
 theorem names :
     [noneNone, noneLinear, noneUnrestricted, linearLinear, linearUnrestricted, affineLinear,
       unrestrictedUnrestricted].map (fun p => (p.run, p.total)) =

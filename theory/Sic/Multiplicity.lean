@@ -84,6 +84,8 @@ instance {P : Multiplicity → Prop} [DecidablePred P] : Decidable (∃ π, P π
 
 /-! The tables of the RFC, row by row, in the order `0`, `1`, `ω`. -/
 
+/-- The table of the addition, whose rows give the left operand.
+RFC: `\mathsf{table}_\pi.{+}` -/
 theorem add_table :
     [[zero + zero, zero + one, zero + omega],
     [one + zero, one + one, one + omega],
@@ -91,6 +93,8 @@ theorem add_table :
     [[zero, one, omega], [one, omega, omega], [omega, omega, omega]] := by
   decide
 
+/-- The table of the multiplication, whose rows give the left operand.
+RFC: `\mathsf{table}_\pi.{\cdot}` -/
 theorem mul_table :
     [[zero * zero, zero * one, zero * omega],
     [one * zero, one * one, one * omega],
@@ -98,6 +102,8 @@ theorem mul_table :
     [[zero, zero, zero], [zero, one, omega], [zero, omega, omega]] := by
   decide
 
+/-- The table of the meet, whose rows give the left operand.
+RFC: `\mathsf{table}_\pi.{\wedge}` -/
 theorem meet_table :
     [[zero ⊓ zero, zero ⊓ one, zero ⊓ omega],
     [one ⊓ zero, one ⊓ one, one ⊓ omega],
