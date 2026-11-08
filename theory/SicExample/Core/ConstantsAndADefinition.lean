@@ -114,7 +114,7 @@ theorem bound_in_proofs : Usage sigEx (Γ := []) 𝟘ᶜ .zeroOne (bound : Term 
 
 /-- The only entry of `Σ_ex` named `bound` is the ghost value, of mode `𝟘𝟙ᵐ`. -/
 theorem mode_of_bound {c : Name} {j k g : Nat} {m : Mode} {A : Instance j g → Term k []}
-    (h : sigEx.HasEntry c j k g m A) (hc : c = "bound") : m = .zeroOne := by
+    (h : sigEx.HasConstant c j k g m A) (hc : c = "bound") : m = .zeroOne := by
   cases h with
   | definition hmem =>
     simp only [sigEx, List.mem_cons, Entry.definition.injEq, reduceCtorEq, List.not_mem_nil,

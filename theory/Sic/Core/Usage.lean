@@ -38,7 +38,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- `(c_m)`: a definition or a constant uses no variable, in a mode that its mode allows. -/
   | const {k : Nat} {Γ : Scope} {c : Name} {j k' g : Nat} {m m' : Mode}
       {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : sig.HasEntry c j k' g m' A) (hm : m ·ᵐ m' = m) :
+      (h : sig.HasConstant c j k' g m' A) (hm : m ·ᵐ m' = m) :
       Usage sig 𝟘ᶜ m (.const c qs ls ps : Term k Γ)
   /-- `(U_m)` and `(Ω_m)`: a sort uses no variable. -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)

@@ -7,7 +7,8 @@ public import Sic.Mode
 /-!
 # Syntax
 
-The terms of the core of RFC 24, its telescopes, its contexts and the entries of its signatures.
+The syntax of annex 07 of RFC 36: the terms, their arguments, the telescopes, the contexts and the
+entries of the signatures.
 A variable is a de Bruijn index, as in the formalization of ADE: the number of entries between the
 variable and its declaration, the last entry being `0`.
 A variable `x : A` and a second-order variable `X : (Θ ⊢ A)` are both used applied to a term for
@@ -21,8 +22,9 @@ The context tells which entries are variables and which are second-order variabl
 rules `(var)` and `(var_X)` stay apart.
 
 The sort and grade variables of an entry of the signature are not part of the syntax: since an entry
-is checked for each instance of them, its type and its body are given for each instance, as a
-function of the sorts and of the grades, so that the terms only carry sorts and grades.
+is checked for each instance of them, its type, its body, its parameters and its sort are given for
+each instance, as a function of the qualities and of the grades, so that the terms only carry
+qualities and grades.
 The level variables are part of the syntax, since an entry is checked once with them: a term over
 `k` level variables uses levels over `k` variables.
 
@@ -46,7 +48,9 @@ def Scope.extend (Γ : Scope) : Nat → Scope
   | a + 1 => Scope.extend ([] :: Γ) a
 
 -- ADE: `Fin`, the de Bruijn indices of `Definition/Untyped.agda`, without telescopes.
-/-- A variable of the scope `Γ` whose telescope has the grades `ps`, by its de Bruijn index. -/
+/-- A variable of the scope `Γ` whose telescope has the grades `ps`, by its de Bruijn index.
+The RFC names the variables, and an object is the same whatever names its bound variables take;
+the indices make this convention needless. -/
 inductive Var : Scope → List Grade → Type where
   /-- The last entry of the scope. -/
   | zero {Γ : Scope} {ps : List Grade} : Var (ps :: Γ) ps
@@ -58,7 +62,8 @@ mutual
 -- ADE: `Term`, in `Definition/Untyped.agda`.
 /--
 A term over `k` level variables in the scope `Γ`.
-The core names no type: the declared types come from the declarations of the signature.
+The core names no type: the declared types come from the type declarations of the signature.
+RFC: `\mathsf{syntax}_t`
 -/
 inductive Term (k : Nat) : Scope → Type where
   /-- `x[t̄]`: the variable `x` applied to arguments for the entries of its telescope, `x` alone
@@ -66,7 +71,7 @@ inductive Term (k : Nat) : Scope → Type where
   | var {Γ : Scope} {ps : List Grade} (x : Var Γ ps) (ts : Args k Γ ps) : Term k Γ
   /-- The sort `κ`, `U_l` or `Ω_l`. -/
   | sort {Γ : Scope} (κ : Universe k) : Term k Γ
-  /-- `c.{s̄; l̄; p̄}`: the definition or constant `c` at an instance of its variables. -/
+  /-- `f.{s̄; l̄; p̄}`: the constant `f`, defined or declared, at an instance of its variables. -/
   | const {Γ : Scope} (c : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) :
       Term k Γ
   /-- `D.{s̄; l̄; p̄} ā`: an instance of the declared type `D`. -/
@@ -74,7 +79,8 @@ inductive Term (k : Nat) : Scope → Type where
       (ps : List Grade) (as : InstanceArgs k Γ Δ) : Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the grades `ps`, the first one
-first. -/
+first.
+RFC: `\mathsf{syntax}_{\bar t}` -/
 inductive Args (k : Nat) : Scope → List Grade → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Args k Γ []
@@ -86,6 +92,7 @@ inductive Args (k : Nat) : Scope → List Grade → Type where
 `ā`: the arguments of an instance, one for each parameter of the scope `Δ`, the last one first: a
 term for a variable, and an abstraction `x̄. B` for a second-order variable, a term over a new
 variable for each entry of its telescope.
+RFC: `\mathsf{syntax}_{\bar a}`
 -/
 inductive InstanceArgs (k : Nat) : Scope → Scope → Type where
   /-- `()`. -/
@@ -105,6 +112,7 @@ abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ []) : Term k Γ := .var x 
 the grades `ps = (p₁, …, pₐ)`, each
 type in the scope of the entries before it; the entry `x :^q_p A` is used with the grade `p`, and its
 variable with the grade `q` by the types after it.
+RFC: `\mathsf{syntax}_\Theta`
 -/
 inductive Telescope (k : Nat) : Scope → List Grade → Type where
   /-- `ε`. -/
@@ -114,7 +122,8 @@ inductive Telescope (k : Nat) : Scope → List Grade → Type where
       Telescope k Γ (p :: ps)
 
 -- ADE: `Con`, in `Definition/Untyped.agda`.
-/-- A context whose scope is `Γ`, the last entry first. -/
+/-- A context whose scope is `Γ`, the last entry first.
+RFC: `\mathsf{syntax}_\Gamma` -/
 inductive Context (k : Nat) : Scope → Type where
   /-- `ε`. -/
   | empty : Context k []
@@ -126,20 +135,20 @@ inductive Context (k : Nat) : Scope → Type where
 
 /-! ## Signatures
 
-An entry of the signature has sort, level and grade variables, the sorts and the grades of an
-instance being given to its type and its body. -/
+An entry of the signature has sort, level and grade variables, the qualities and the grades of an
+instance being given to its type, its body, its parameters and its sort. -/
 
 /-- An instance of `j` sort variables and `g` grade variables. -/
 structure Instance (j g : Nat) where
-  /-- The sort of each sort variable. -/
+  /-- The quality of each sort variable. -/
   sorts : Fin j → Quality
   /-- The grade of each grade variable. -/
   grades : Fin g → Grade
 
 -- ADE: none.
-/-- `c.{s̄; l̄; p̄} :_m A ≔ t`, a definition. -/
+/-- `f.{s̄; l̄; p̄} :_m A ≔ t`, a constant definition, which defines the constant `f`. -/
 structure Definition where
-  /-- The name `c`. -/
+  /-- The name `f`. -/
   name : Name
   /-- The number of sort variables. -/
   sorts : Nat
@@ -155,9 +164,9 @@ structure Definition where
   body : Instance sorts grades → Term levels []
 
 -- ADE: none.
-/-- `c.{s̄; l̄; p̄} :_m A`, a constant, an entry without body. -/
+/-- `f.{s̄; l̄; p̄} :_m A`, a constant declaration, which declares the constant `f`, without body. -/
 structure Constant where
-  /-- The name `c`. -/
+  /-- The name `f`. -/
   name : Name
   /-- The number of sort variables. -/
   sorts : Nat
@@ -172,9 +181,9 @@ structure Constant where
 
 -- ADE: none.
 /--
-The header of a declaration, `kind.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, which is all that the
-core knows of it: the names of the declared types, the parameters `Δ` and the sort `κ`; the kinds of
-declarations give the bodies.
+The header of a type declaration, `𝒦.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, which is all that
+the system knows of it: the names of the declared types, the parameters `Δ` and the sort `κ`; the
+kind `𝒦` gives the bodies.
 -/
 structure Declaration where
   /-- The names `D₁, …, Dₙ` of the declared types. -/
@@ -192,46 +201,62 @@ structure Declaration where
   /-- The sort `κ` of the declared types, for each instance. -/
   sort : Instance sorts grades → Universe levels
 
-/-- An entry of the signature. -/
+/-- An entry of the signature.
+RFC: `\mathsf{syntax}_e` -/
 inductive Entry where
-  /-- A declaration `𝒟`. -/
-  | declaration (decl : Declaration)
-  /-- A definition. -/
+  /-- A constant definition. -/
   | definition (d : Definition)
-  /-- A constant. -/
+  /-- A constant declaration. -/
   | constant (c : Constant)
+  /-- A type declaration. -/
+  | declaration (decl : Declaration)
 
-/-- The names that an entry introduces. -/
+/-- The names that an entry introduces.
+RFC: `\mathsf{names}_e` -/
 def Entry.names : Entry → List Name
-  | .declaration decl => decl.names
   | .definition d => [d.name]
   | .constant c => [c.name]
+  | .declaration decl => decl.names
 
 -- ADE: `DCon`, in `Definition/Untyped/NotParametrised.agda`, which holds definitions only.
-/-- A signature, its entries in order, the last entry first. -/
+/-- A signature, its entries in order, the last entry first, so that `Σ, e` is `e :: Σ`.
+The membership of the lists, `e ∈ Σ`, is the one of the signatures.
+RFC: `\mathsf{syntax}_\Sigma`, `\in_\Sigma` -/
 abbrev Signature : Type := List Entry
 
 /--
-`c.{s̄; l̄; p̄} :_m A ∈ Σ`: the signature has a definition or a constant named `c`, with `j` sort,
-`k` level and `g` grade variables, the mode `m` and the type `A`, which the rules of the definitions
-and of the constants share.
+`f.{s̄; l̄; p̄} :_m A ∈ Σ`: the signature has a constant `f`, with `j` sort, `k` level and `g` grade
+variables, the mode `m` and the type `A`, which the rules of the defined and of the declared
+constants share.
+RFC: `\in_f`
 -/
-inductive Signature.HasEntry (sig : Signature) :
+inductive Signature.HasConstant (sig : Signature) :
     Name → (j k g : Nat) → Mode → (Instance j g → Term k []) → Prop where
-  /-- A definition. -/
+  /-- A constant definition. -/
   | definition {d : Definition} (h : .definition d ∈ sig) :
-      HasEntry sig d.name d.sorts d.levels d.grades d.mode d.type
-  /-- A constant. -/
+      HasConstant sig d.name d.sorts d.levels d.grades d.mode d.type
+  /-- A constant declaration. -/
   | constant {c : Constant} (h : .constant c ∈ sig) :
-      HasEntry sig c.name c.sorts c.levels c.grades c.mode c.type
+      HasConstant sig c.name c.sorts c.levels c.grades c.mode c.type
+
+-- ADE: none.
+/--
+`D.{s̄; l̄; p̄} Δ : κ ∈ Σ`: the signature has the declared type `D`, of the type declaration `decl`,
+whose variables, parameters and sort are those of `D`, which the rules of the declared types share.
+RFC: `\in_D`
+-/
+def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : Declaration) : Prop :=
+  .declaration decl ∈ sig ∧ D ∈ decl.names
 
 /-- The names of a signature are distinct: each entry introduces names that no entry before it
-does. -/
+does.
+RFC: `\mathsf{names}_\Sigma` -/
 def Signature.Distinct : Signature → Prop
   | [] => True
   | e :: sig => Signature.Distinct sig ∧ ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
 
-/-- In a signature whose names are distinct, a name is introduced by one entry at most. -/
+/-- In a signature whose names are distinct, a name is introduced by one entry at most.
+RFC: `\mathsf{unique}_\Sigma` -/
 theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct → {e₁ e₂ : Entry} →
     {n : Name} → e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂
   | _ :: _, ⟨h, hfresh⟩, _, _, n, h₁, h₂, hn₁, hn₂ => by

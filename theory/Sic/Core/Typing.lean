@@ -172,7 +172,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   instance. -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {c : Name} {j k' g : Nat}
       {m : Mode} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
-      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasEntry c j k' g m A)
+      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant c j k' g m A)
       (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
       HasType sig ctx (.const c qs ls ps)
         (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl))
@@ -186,7 +186,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   /-- `(D)`: an instance of a declared type is a type in the sort of its declaration. -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : Declaration}
       {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      {as : InstanceArgs k Γ decl.scope} (h : .declaration decl ∈ sig) (hD : D ∈ decl.names)
+      {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
@@ -234,7 +234,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- `(c_≡)`: two instances of an entry at equal levels are equal. -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {c : Name} {j k' g : Nat}
       {m : Mode} {A : Instance j g → Term k' []} {qs : List Quality} {ls₁ ls₂ : List (Level k)}
-      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasEntry c j k' g m A)
+      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant c j k' g m A)
       (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k') (hp : ps.length = g)
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.const c qs ls₁ ps) (.const c qs ls₂ ps)
@@ -251,7 +251,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- `(D_≡)`: instances with equal arguments at equal levels are equal. -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : Declaration}
       {D : Name} {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
-      {as bs : InstanceArgs k Γ decl.scope} (h : .declaration decl ∈ sig) (hD : D ∈ decl.names)
+      {as bs : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (has : EqInstanceArgs sig ctx as bs
@@ -392,7 +392,7 @@ theorem HasType.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k 
   | .const hctx _ _ _ _ => hctx.wfSig
   | .univ hctx => hctx.wfSig
   | .prop hctx => hctx.wfSig
-  | .inst _ _ _ _ _ has => has.wfSig
+  | .inst _ _ _ _ has => has.wfSig
   | .conv ht _ => ht.wfSig
 
 -- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
@@ -409,7 +409,7 @@ theorem EqTerm.wfSig {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k �
   | .const hctx .. => hctx.wfSig
   | .univ hctx _ => hctx.wfSig
   | .prop hctx _ => hctx.wfSig
-  | .inst _ _ _ _ _ _ has _ => has.wfSig
+  | .inst _ _ _ _ _ has _ => has.wfSig
 
 -- ADE: `wf`, then `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- Arguments of a telescope are in a well-formed signature. -/
