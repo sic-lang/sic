@@ -33,7 +33,8 @@ namespace Sic.Mode
 
 -- ADE: none.
 /-- `S^m`: the grades of the positions that a term checked in the mode `m` checks in a more erased
-mode, `m ⊙ p ≠ m`, and which it does not count. -/
+mode, `m ⊙ p ≠ m`, and which it does not count.
+RFC: `\mathsf{uncounted}_m` -/
 def erased (m : Mode) : Set Grade := { p | m ⊙ p ≠ m }
 
 instance (m : Mode) : DecidablePred (· ∈ m.erased) :=
@@ -41,7 +42,8 @@ instance (m : Mode) : DecidablePred (· ∈ m.erased) :=
 
 -- ADE: none.
 /-- The three sets `S^m`: the mode `11ᵐ` of run time does not count the grades without use at run
-time, the mode `01ᵐ` the grade `00ᵖ`, and the mode `00ᵐ`, which counts no use, erases nothing. -/
+time, the mode `01ᵐ` the grade `00ᵖ`, and the mode `00ᵐ`, which counts no use, erases nothing.
+RFC: `\mathsf{values}_m` -/
 theorem erased_values :
     (∀ p, p ∈ oneOne.erased ↔ p.run = .zero) ∧
     (∀ p, p ∈ zeroOne.erased ↔ p = Grade.zero) ∧
@@ -56,7 +58,8 @@ namespace Sic.Core
 def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
 
 -- ADE: `Term`, in `Graded/Erasure/Target.agda`.
-/-- A term `M` of the target language over `n` variables. -/
+/-- A term `M` of the target language over `n` variables.
+RFC: `\mathsf{syntax}_M` -/
 inductive Target (n : Nat) : Type where
   /-- A variable. -/
   | var (x : Fin n)
@@ -68,17 +71,21 @@ inductive Target (n : Nat) : Type where
 -- ADE: `HasX`, in `Graded/Erasure/Target.agda`.
 /-- The variable `x` occurs in the term of the target language. -/
 inductive Target.Occurs {n : Nat} (x : Fin n) : Target n → Prop where
-  /-- The variable `x` itself. -/
+  /-- The variable `x` itself.
+  RFC: `\mathsf{occurs}_M` -/
   | var : Occurs x (.var x)
 
 -- ADE: none.
 /-- `M ⊑ N`: the term `M` of the target language is `N` with some subterms replaced by `↯`. -/
 inductive Target.LessDefined {n : Nat} : Target n → Target n → Prop where
-  /-- `↯` is less defined than every term. -/
+  /-- `↯` is less defined than every term.
+  RFC: `{\sqsubseteq}.\text{↯}` -/
   | erased {N : Target n} : LessDefined .erased N
-  /-- A variable is less defined than itself. -/
+  /-- A variable is less defined than itself.
+  RFC: `{\sqsubseteq}.x` -/
   | var {x : Fin n} : LessDefined (.var x) (.var x)
-  /-- A constant is less defined than itself. -/
+  /-- A constant is less defined than itself.
+  RFC: `{\sqsubseteq}.f` -/
   | const {f : Name} {ps : List Grade} : LessDefined (.const f ps) (.const f ps)
 
 @[inherit_doc] infix:50 " ⊑ " => Target.LessDefined
@@ -88,6 +95,7 @@ inductive Target.LessDefined {n : Nat} : Target n → Target n → Prop where
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, and a constant
 `f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`.
+RFC: `\mathsf{erase}_t`
 -/
 def Term.erase (_S : Set Grade) {k : Nat} {Γ : Scope} (_hΓ : Γ.FirstOrder) :
     Term k Γ → Target Γ.length
@@ -103,15 +111,19 @@ def Term.erase (_S : Set Grade) {k : Nat} {Γ : Scope} (_hΓ : Γ.FirstOrder) :
 follows the rules of usage: a variable checked in the mode `m` uses itself with a grade outside
 `S`, and a grade above a grade of `S`, or a part of a sum in `S`, is in `S`. -/
 structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
-  /-- The grade `⌜m⌝` is not erased. -/
+  /-- The grade `⌜m⌝` is not erased.
+  RFC: `\mathsf{uncounted}_S.\mathsf{grade}` -/
   grade : m.grade ∉ S
-  /-- A grade above a grade of `S` is in `S`. -/
+  /-- A grade above a grade of `S` is in `S`.
+  RFC: `\mathsf{uncounted}_S.{\le}` -/
   le : ∀ p q : Grade, p ≤ q → p ∈ S → q ∈ S
-  /-- The first part of a sum in `S` is in `S`. -/
+  /-- The first part of a sum in `S` is in `S`.
+  RFC: `\mathsf{uncounted}_S.{+}` -/
   add : ∀ p q : Grade, p + q ∈ S → p ∈ S
 
 -- ADE: none.
-/-- The set `S^m` erases only what a term checked in the mode `m` does not count. -/
+/-- The set `S^m` erases only what a term checked in the mode `m` does not count.
+RFC: `\mathsf{erases}_m` -/
 theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   grade := by revert m; decide
   le := by revert m; decide
@@ -121,6 +133,7 @@ theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
 /--
 A variable whose grade is in `S` does not occur in the erasure by `S` of a term checked in a mode
 `m` whose uses `S` does not erase.
+RFC: `\mathsf{absent}_S`
 -/
 theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector Γ.length}
     {m : Mode} {t : Term k Γ} {S : Set Grade} (hS : ErasesUncounted m S) (hΓ : Γ.FirstOrder)
@@ -135,7 +148,8 @@ theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector 
   | .sub h hle, hx, ho => h.absent hS hΓ (hS.le _ _ (hle x) hx) ho
 
 -- ADE: none.
-/-- The erasure by a larger set of grades is less defined. -/
+/-- The erasure by a larger set of grades is less defined.
+RFC: `\sqsubseteq_S` -/
 theorem Term.erase_lessDefined {S₁ S₂ : Set Grade} (_h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) (t : Term k Γ) : t.erase S₂ hΓ ⊑ t.erase S₁ hΓ := by
   cases t <;> constructor
