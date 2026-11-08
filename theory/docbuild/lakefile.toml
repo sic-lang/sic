@@ -15,7 +15,7 @@ rev = "v4.34.1"
 name = "sic"
 path = "../"
 
-# A module that imports every module of Sic/ and SicTest/, written by nix run .#docs, which git
+# A module that imports every module of Sic/ and SicExample/, written by nix run .#docs, which git
 # ignores: its documentation is that of every module it imports, while the libraries of the
 # metatheory list their modules by globs, which the facet docs of a library does not read.
 [[lean_lib]]

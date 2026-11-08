@@ -19,11 +19,11 @@
     "rfcs": {
       "flake": false,
       "locked": {
-        "lastModified": 1794082647,
-        "narHash": "sha256-8hHSP1MACd38gfrPP2d0zpjRKnP6Qzy7Geag7eINdJU=",
+        "lastModified": 1794179867,
+        "narHash": "sha256-9lY0IFoo/lbGRQXiSsoEVHoSaZ5Wri2ogzzKMTVeNu0=",
         "owner": "sic-lang",
         "repo": "rfcs",
-        "rev": "c6684ed3ce9fd4f55e7202490401862ffc532714",
+        "rev": "1e724ab1abe2eac9c0e7c8c50bc1d74db8544f13",
         "type": "github"
       },
       "original": {
