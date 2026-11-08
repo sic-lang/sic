@@ -91,13 +91,20 @@ modality does. -/
 
 -- ADE: `Conₘ-semimodule`, in `Graded/Context/Properties.agda`.
 /-- The addition and the multiplication by a grade make the vectors a module over the grades.
-RFC: `\mathsf{module}_\gamma` -/
+RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{+}`, `\mathsf{module}_\gamma.\mathsf{comm}_{+}`
+RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{+}`
+RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+^{\gamma}}`
+RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+}`
+RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{\cdot}`
+RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{\cdot}`
+RFC: `\mathsf{module}_\gamma.\mathsf{lzero}_{\cdot}`
+RFC: `\mathsf{module}_\gamma.\mathsf{rzero}_{\cdot}` -/
 theorem module : IsModule Grade (GradeVector n) Grade.zero Grade.one 𝟘ᶜ add smul where
   add_assoc γ₁ γ₂ γ₃ := funext fun x => Grade.semiring.add_assoc (γ₁ x) (γ₂ x) (γ₃ x)
   add_comm γ₁ γ₂ := funext fun x => Grade.semiring.add_comm (γ₁ x) (γ₂ x)
   zero_add γ := funext fun x => Grade.semiring.zero_add (γ x)
-  smul_add p γ₁ γ₂ := funext fun x => (Grade.mul_add p (γ₁ x) (γ₂ x)).1
-  add_smul p q γ := funext fun x => (Grade.mul_add (γ x) p q).2
+  smul_add p γ₁ γ₂ := funext fun x => Grade.mul_add.left p (γ₁ x) (γ₂ x)
+  add_smul p q γ := funext fun x => Grade.mul_add.right (γ x) p q
   mul_smul p q γ := funext fun x => Grade.semiring.mul_assoc p q (γ x)
   one_smul γ := funext fun x => Grade.semiring.one_mul (γ x)
   zero_smul γ := funext fun x => Grade.semiring.zero_mul (γ x)
@@ -111,7 +118,7 @@ theorem meet_comm (γ₁ γ₂ : GradeVector n) : γ₁ ⊓ᶜ γ₂ = γ₂ ⊓
 
 -- ADE: `≤ᶜ-preorder`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order is a preorder.
-RFC: `\mathsf{preorder}_\gamma` -/
+RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}`, `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
 theorem preorder : IsPreorder (α := GradeVector n) (· ≤ᶜ ·) where
   refl γ x := Grade.le_refl (γ x)
   trans h₁ h₂ x := Grade.le_trans _ _ _ (h₁ x) (h₂ x)
@@ -147,18 +154,22 @@ theorem le_meet_iff (γ₁ γ₂ γ₃ : GradeVector n) : γ₃ ≤ᶜ γ₁ ∧
 -- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations. -/
 structure ExtendCommutes : Prop where
-  /-- The extension of the zero vector by the zero grade is the zero vector. -/
+  /-- The extension of the zero vector by the zero grade is the zero vector.
+  RFC: `\mathsf{op}{\bullet}_\gamma.{00}` -/
   zero_extend : ∀ n, (𝟘ᶜ : GradeVector n) ∙ Grade.zero = 𝟘ᶜ
-  /-- The sum of two extensions is the extension of the sums. -/
+  /-- The sum of two extensions is the extension of the sums.
+  RFC: `\mathsf{op}{\bullet}_\gamma.{+}` -/
   add_extend : ∀ {n} (γ₁ γ₂ : GradeVector n) (p q : Grade),
     (γ₁ ∙ p) +ᶜ (γ₂ ∙ q) = (γ₁ +ᶜ γ₂) ∙ (p + q)
-  /-- The multiplication of an extension is the extension of the multiplications. -/
+  /-- The multiplication of an extension is the extension of the multiplications.
+  RFC: `\mathsf{op}{\bullet}_\gamma.{\cdot}` -/
   smul_extend : ∀ {n} (r : Grade) (γ : GradeVector n) (p : Grade),
     r ·ᶜ (γ ∙ p) = (r ·ᶜ γ) ∙ (r * p)
 
 -- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations.
-RFC: `\mathsf{op}{\bullet}_\gamma` -/
+RFC: `\mathsf{op}{\bullet}_\gamma.{00}`, `\mathsf{op}{\bullet}_\gamma.{+}`
+RFC: `\mathsf{op}{\bullet}_\gamma.{\cdot}` -/
 theorem extend_commutes : ExtendCommutes where
   zero_extend _ := funext fun x => by cases x using Fin.cases <;> rfl
   add_extend _ _ _ _ := funext fun x => by cases x using Fin.cases <;> rfl

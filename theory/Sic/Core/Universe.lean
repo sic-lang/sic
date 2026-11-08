@@ -62,7 +62,8 @@ instance (s₁ s₂ : Quality) : Decidable (s₁ ≤ s₂) :=
 
 -- ADE: none.
 /-- The join of two qualities is the least quality above both.
-RFC: `{\sqcup}{\le}_s` -/
+RFC: `{\sqcup}{\le}_s.\mathsf{left}`, `{\sqcup}{\le}_s.\mathsf{right}`
+RFC: `{\sqcup}{\le}_s.\mathsf{least}` -/
 theorem join_isLeast : ∀ s₁ s₂ : Quality, IsLeastUpperBound (· ≤ ·) s₁ s₂ (s₁ ⊔ s₂) := by
   intro s₁ s₂
   cases s₁ <;> cases s₂ <;> exact ⟨by decide, by decide, by decide⟩
@@ -100,14 +101,15 @@ instance (κ₁ κ₂ : Universe k) : Decidable (κ₁ ≼ κ₂) := inferInstan
 
 -- ADE: none.
 /-- The relation `≼` is a preorder.
-RFC: `\mathsf{preorder}_\kappa` -/
+RFC: `\mathsf{preorder}_\kappa.\mathsf{refl}`, `\mathsf{preorder}_\kappa.\mathsf{trans}` -/
 theorem preorder : IsPreorder (α := Universe k) (· ≼ ·) where
   refl _ := ⟨fun h => h, Level.preorder.refl _⟩
   trans h₁ h₂ := ⟨fun h => h₁.1 (h₂.1 h), Level.preorder.trans h₁.2 h₂.2⟩
 
 -- ADE: none.
 /-- The join of the qualities of two sorts at the same level is the least sort that bounds both.
-RFC: `{\sqcup}{\preceq}_\kappa` -/
+RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{left}`, `{\sqcup}{\preceq}_\kappa.\mathsf{right}`
+RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{least}` -/
 theorem join_isLeast (s₁ s₂ : Quality) (l : Level k) :
     IsLeastUpperBound (· ≼ ·) (⟨s₁, l⟩ : Universe k) ⟨s₂, l⟩ ⟨s₁ ⊔ s₂, l⟩ :=
   have h := Quality.join_isLeast s₁ s₂

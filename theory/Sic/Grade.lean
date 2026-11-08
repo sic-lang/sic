@@ -197,7 +197,10 @@ over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- The addition and the multiplication form a semiring.
-RFC: `\mathsf{semiring}_p` -/
+RFC: `\mathsf{semiring}_p.\mathsf{assoc}_{+}`, `\mathsf{semiring}_p.\mathsf{comm}_{+}`
+RFC: `\mathsf{semiring}_p.\mathsf{unit}_{+}`, `\mathsf{semiring}_p.\mathsf{assoc}_{\cdot}`
+RFC: `\mathsf{semiring}_p.\mathsf{lunit}_{\cdot}`, `\mathsf{semiring}_p.\mathsf{runit}_{\cdot}`
+RFC: `\mathsf{semiring}_p.\mathsf{lzero}_{\cdot}`, `\mathsf{semiring}_p.\mathsf{rzero}_{\cdot}` -/
 theorem semiring : IsSemiring Grade zero one where
   add_assoc := by decide
   add_comm := by decide
@@ -209,29 +212,30 @@ theorem semiring : IsSemiring Grade zero one where
   mul_zero := by decide
 
 /-- The meet is associative, commutative and idempotent.
-RFC: `\mathsf{meet}_p` -/
+RFC: `\mathsf{meet}_p.\mathsf{assoc}`, `\mathsf{meet}_p.\mathsf{comm}`
+RFC: `\mathsf{meet}_p.\mathsf{idem}` -/
 theorem meet_semilattice : IsMeetSemilattice Grade where
   meet_assoc := by decide
   meet_comm := by decide
   meet_idem := by decide
 
 /-- The multiplication distributes over the addition.
-RFC: `{\cdot}{+}_p` -/
-theorem mul_add : ∀ p q r : Grade,
-    p * (q + r) = (p * q) + (p * r) ∧ (q + r) * p = (q * p) + (r * p) := by
-  decide
+RFC: `{\cdot}{+}_p.\mathsf{left}`, `{\cdot}{+}_p.\mathsf{right}` -/
+theorem mul_add : DistributesOver (α := Grade) (· * ·) (· + ·) where
+  left := by decide
+  right := by decide
 
 /-- The multiplication distributes over the meet.
-RFC: `{\cdot}{\wedge}_p` -/
-theorem mul_meet : ∀ p q r : Grade,
-    p * (q ⊓ r) = (p * q) ⊓ (p * r) ∧ (q ⊓ r) * p = (q * p) ⊓ (r * p) := by
-  decide
+RFC: `{\cdot}{\wedge}_p.\mathsf{left}`, `{\cdot}{\wedge}_p.\mathsf{right}` -/
+theorem mul_meet : DistributesOver (α := Grade) (· * ·) (· ⊓ ·) where
+  left := by decide
+  right := by decide
 
 /-- The addition distributes over the meet.
-RFC: `{+}{\wedge}_p` -/
-theorem add_meet : ∀ p q r : Grade,
-    p + (q ⊓ r) = (p + q) ⊓ (p + r) ∧ (q ⊓ r) + p = (q + p) ⊓ (r + p) := by
-  decide
+RFC: `{+}{\wedge}_p.\mathsf{left}`, `{+}{\wedge}_p.\mathsf{right}` -/
+theorem add_meet : DistributesOver (α := Grade) (· + ·) (· ⊓ ·) where
+  left := by decide
+  right := by decide
 
 /-- The addition is monotone.
 RFC: `{+}{\le}_p` -/
@@ -242,7 +246,7 @@ RFC: `{\wedge}{\le}_p` -/
 theorem le_meet_iff : ∀ p q r : Grade, r ≤ p ∧ r ≤ q ↔ r ≤ p ⊓ q := by decide
 
 /-- The zero is well behaved.
-RFC: `0_p` -/
+RFC: `0_p.1`, `0_p.{+}`, `0_p.{\wedge}`, `0_p.{\cdot}` -/
 theorem zero_well_behaved : HasWellBehavedZero Grade zero one where
   zero_ne_one := by decide
   add_eq_zero := by decide

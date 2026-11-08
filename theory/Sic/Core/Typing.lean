@@ -428,51 +428,67 @@ def Instance.default (j g : Nat) : Instance j g := ⟨fun _ => .type, fun _ => G
 -- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
 -- the judgments in a context of definitions.
 /-- Every judgment holds in a well-formed signature, and the signature that a well-formed signature
-extends is well formed.
-RFC: `\mathsf{presup}_\Sigma` -/
+extends is well formed. -/
 structure Presuppositions : Prop where
-  /-- A well-formed constant definition is in a well-formed signature. -/
+  /-- A well-formed constant definition is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{def}` -/
   wfConstantDefinition : ∀ {sig : Signature} {d : ConstantDefinition},
     WfConstantDefinition sig d → WfSig sig
-  /-- A well-formed constant declaration is in a well-formed signature. -/
+  /-- A well-formed constant declaration is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{decl}` -/
   wfConstantDeclaration : ∀ {sig : Signature} {c : ConstantDeclaration},
     WfConstantDeclaration sig c → WfSig sig
-  /-- A well-formed context is in a well-formed signature. -/
+  /-- A well-formed context is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\Gamma` -/
   wfCtx : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ},
     WfCtx sig ctx → WfSig sig
-  /-- A type is in a well-formed signature. -/
+  /-- A type is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.A` -/
   wfType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ},
     WfType sig ctx A → WfSig sig
-  /-- An equality of types is in a well-formed signature. -/
+  /-- An equality of types is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.A_\equiv` -/
   eqType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ},
     EqType sig ctx A B → WfSig sig
-  /-- A typing is in a well-formed signature. -/
+  /-- A typing is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.t` -/
   hasType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ},
     HasType sig ctx t A → WfSig sig
-  /-- An equality of terms is in a well-formed signature. -/
+  /-- An equality of terms is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.t_\equiv` -/
   eqTerm : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ},
     EqTerm sig ctx t u A → WfSig sig
-  /-- Arguments of a telescope are in a well-formed signature. -/
+  /-- Arguments of a telescope are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\bar t` -/
   hasArgs : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Grade} {ctx : Context k Γ}
     {ts : Args k Γ ps} {Θ : Telescope k Γ ps}, HasArgs sig ctx ts Θ → WfSig sig
-  /-- Equal arguments of a telescope are in a well-formed signature. -/
+  /-- Equal arguments of a telescope are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv` -/
   eqArgs : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Grade} {ctx : Context k Γ}
     {ts us : Args k Γ ps} {Θ : Telescope k Γ ps}, EqArgs sig ctx ts us Θ → WfSig sig
-  /-- Arguments of an instance are in a well-formed signature. -/
+  /-- Arguments of an instance are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\bar a` -/
   hasInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
     {as : InstanceArgs k Γ Δ} {params : Context k Δ},
     HasInstanceArgs sig ctx as params → WfSig sig
-  /-- Equal arguments of instances are in a well-formed signature. -/
+  /-- Equal arguments of instances are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv` -/
   eqInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
     {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
     EqInstanceArgs sig ctx as₁ as₂ params → WfSig sig
-  /-- The signature that a well-formed signature extends is well formed. -/
+  /-- The signature that a well-formed signature extends is well formed.
+  RFC: `\mathsf{presup}_\Sigma.e` -/
   tail : ∀ {e : Entry} {sig : Signature}, WfSig (e :: sig) → WfSig sig
 
 -- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
 -- the judgments in a context of definitions.
 /-- The judgments hold in well-formed signatures.
-RFC: `\mathsf{presup}_\Sigma` -/
+RFC: `\mathsf{presup}_\Sigma.\mathsf{def}`, `\mathsf{presup}_\Sigma.\mathsf{decl}`
+RFC: `\mathsf{presup}_\Sigma.\Gamma`, `\mathsf{presup}_\Sigma.A`
+RFC: `\mathsf{presup}_\Sigma.A_\equiv`, `\mathsf{presup}_\Sigma.t`
+RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
+RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
+RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
     eqArgs, hasInstanceArgs, eqInstanceArgs, tail⟩

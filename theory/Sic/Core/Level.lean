@@ -90,7 +90,7 @@ theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
 
 -- ADE: none.
 /-- The order is a preorder.
-RFC: `\mathsf{preorder}_l` -/
+RFC: `\mathsf{preorder}_l.\mathsf{refl}`, `\mathsf{preorder}_l.\mathsf{trans}` -/
 theorem preorder : IsPreorder (α := Level k) (· ≤ ·) where
   refl _ _ := Nat.le_refl _
   trans h₁ h₂ ρ := Nat.le_trans (h₁ ρ) (h₂ ρ)
