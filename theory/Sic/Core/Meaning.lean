@@ -14,7 +14,7 @@ telescopes in a sort.
 The meaning ignores the grades, the modes and the ownerships, as the typing does outside the
 judgments of usage and of ownership that the rule of the constant definitions reads.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
-relation `eq(A₀)`, which the sorts give in the core: the universe `U_n` relates the sorts of the level
+relation `eq(v)`, which the sorts give in the core: the universe `U_n` relates the sorts of the level
 below it, and the universe of propositions `Ω_n` relates nothing, since only the kinds of
 declarations, which the core does not have, build propositions.
 
@@ -114,9 +114,9 @@ abbrev TermRel : Type := Term 0 [] → Term 0 [] → Prop
 
 /-- The relations of the sorts of one level `n`, given by their graphs. -/
 structure LevelRel where
-  /-- `(A₀, B₀) ∈ eq(U_n)`, where `R` is the equality `eq(A₀)` of the terms of `A₀`. -/
+  /-- `(v, w) ∈ eq(U_n)`, where `R` is the equality `eq(v)` of the terms of `v`. -/
   univ : Term 0 [] → Term 0 [] → TermRel → Prop
-  /-- `(A₀, B₀) ∈ eq(Ω_n)`, two propositions whose truth is `b`. -/
+  /-- `(v, w) ∈ eq(Ω_n)`, two propositions whose truth is `b`. -/
   prop : Term 0 [] → Term 0 [] → Prop → Prop
 
 /-- The relations of no sort, below the level `0`. -/
@@ -152,24 +152,24 @@ def levelRel : Nat → LevelRel
   | n + 1 => ⟨UnivRel (n + 1) (levelRel n), PropRel⟩
 
 -- ADE: none.
-/-- `eq(A₀) = R`: the closed canonical type `A₀` is a type of a sort, whose terms are equal by `R`. -/
-inductive HasEq (A₀ : Term 0 []) (R : TermRel) : Prop where
+/-- `eq(v) = R`: the closed canonical type `v` is a type of a sort, whose terms are equal by `R`. -/
+inductive HasEq (v : Term 0 []) (R : TermRel) : Prop where
   /-- A type of the universe `U_n`.
   RFC: `\mathsf{eq}_{\mathsf{type}}` -/
-  | univ (n : Nat) (h : (levelRel n).univ A₀ A₀ R)
+  | univ (n : Nat) (h : (levelRel n).univ v v R)
   /-- `(eq_true)` and `(eq_false)`: a proposition of `Ω_n` whose truth is `b`, whose closed terms are
   all equal proofs when it is true, and none when it is false.
   RFC: `\mathsf{eq}_{\mathsf{true}}`, `\mathsf{eq}_{\mathsf{false}}` -/
-  | prop (n : Nat) (b : Prop) (h : (levelRel n).prop A₀ A₀ b) (hR : ∀ t u, R t u ↔ b)
+  | prop (n : Nat) (b : Prop) (h : (levelRel n).prop v v b) (hR : ∀ t u, R t u ↔ b)
 
-/-- `(prop)`: `A₀` is a proposition, a term of a universe of propositions.
+/-- `(prop_v)`: `v` is a proposition, a term of a universe of propositions.
 RFC: `\mathsf{prop}_v` -/
-def IsProp (A₀ : Term 0 []) : Prop := ∃ k b, (levelRel k).prop A₀ A₀ b
+def IsProp (v : Term 0 []) : Prop := ∃ k b, (levelRel k).prop v v b
 
 /-- `(prop_⇓)`: the closed type `A` computes to a proposition.
 RFC: `\mathsf{prop}_\Downarrow` -/
 def ComputesToProp (sig : Signature) (ι : Interpretation) (A : Term 0 []) : Prop :=
-  ∃ A₀, Computesι sig ι A A₀ ∧ IsProp A₀
+  ∃ v, Computesι sig ι A v ∧ IsProp v
 
 /-! ## Closed Judgments
 
@@ -179,14 +179,14 @@ they require, so that the meaning of the signatures is defined from them. -/
 /-- The clause of `(⊨_type≡)`: `A` and `B` compute to canonical types whose terms have the same
 equality. -/
 def EqTypeClause (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
-  ∃ A₀ B₀ R, Computesι sig ι A A₀ ∧ Computesι sig ι B B₀ ∧ HasEq A₀ R ∧ HasEq B₀ R
+  ∃ v w R, Computesι sig ι A v ∧ Computesι sig ι B w ∧ HasEq v R ∧ HasEq w R
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` for the terms: `t` and `u` compute to equal canonical terms
 of the canonical form of `A`, or are equal proofs of it when it is a proposition. -/
 def EqTermClause (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : Prop :=
-  (¬ ComputesToProp sig ι A → ∃ A₀ v w R, Computesι sig ι A A₀ ∧ Computesι sig ι t v ∧
-    Computesι sig ι u w ∧ HasEq A₀ R ∧ R v w) ∧
-  (ComputesToProp sig ι A → ∃ A₀ R, Computesι sig ι A A₀ ∧ HasEq A₀ R ∧ R t u)
+  (¬ ComputesToProp sig ι A → ∃ v w₁ w₂ R, Computesι sig ι A v ∧ Computesι sig ι t w₁ ∧
+    Computesι sig ι u w₂ ∧ HasEq v R ∧ R w₁ w₂) ∧
+  (ComputesToProp sig ι A → ∃ v R, Computesι sig ι A v ∧ HasEq v R ∧ R t u)
 
 /-- The clause of `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: at each instance of the sort and grade
 variables and each value of the level variables, the body is a term of the type; the meaning ignores
@@ -529,7 +529,7 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
 
 /-! ## Partial Equivalence Relations
 
-The equality `eq(A₀)` of the terms of a type is a partial equivalence relation, and it is unique.
+The equality `eq(v)` of the terms of a type is a partial equivalence relation, and it is unique.
 These properties are proved level by level: those of the relations of a level, `LevelRel.IsPer`,
 follow from those of the level below it, by cases on the clauses that relate two types, so that each
 kind of declaration adds the cases of its clauses. -/
@@ -623,27 +623,27 @@ theorem levelRel_isPer : (n : Nat) → (levelRel n).IsPer
 theorem levelRel_prop (n : Nat) : (levelRel n).prop = PropRel := by
   cases n <;> rfl
 
-/-- `eq(A₀)` is a partial equivalence relation, symmetric and transitive.
+/-- `eq(v)` is a partial equivalence relation, symmetric and transitive.
 RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`, `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
-theorem HasEq.isPer {A₀ : Term 0 []} {R : TermRel} : HasEq A₀ R → R.IsPer
+theorem HasEq.isPer {v : Term 0 []} {R : TermRel} : HasEq v R → R.IsPer
   | .univ n h => (levelRel_isPer n).univ_isPer h
   | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
 
 /-- A type of a universe is not a proposition. -/
-theorem HasEq.univ_not_prop {A₀ : Term 0 []} {n k : Nat} {R : TermRel} {b : Prop}
-    (_h : (levelRel n).univ A₀ A₀ R) (h' : (levelRel k).prop A₀ A₀ b) : False := by
+theorem HasEq.univ_not_prop {v : Term 0 []} {n k : Nat} {R : TermRel} {b : Prop}
+    (_h : (levelRel n).univ v v R) (h' : (levelRel k).prop v v b) : False := by
   rw [levelRel_prop] at h'
   exact nomatch h'
 
 /-- The level of a type of a universe is unique. -/
-theorem HasEq.univ_level {A₀ : Term 0 []} {n n' : Nat} {R R' : TermRel}
-    (h : (levelRel n).univ A₀ A₀ R) (h' : (levelRel n').univ A₀ A₀ R') : n = n' := by
+theorem HasEq.univ_level {v : Term 0 []} {n n' : Nat} {R R' : TermRel}
+    (h : (levelRel n).univ v v R) (h' : (levelRel n').univ v v R') : n = n' := by
   cases n <;> cases n' <;> cases h <;> cases h' <;> omega
 
-/-- `eq(A₀)` is unique: two equalities of the terms of a type relate the same terms.
+/-- `eq(v)` is unique: two equalities of the terms of a type relate the same terms.
 RFC: `\mathsf{unique}_{\mathsf{eq}}` -/
-theorem HasEq.unique {A₀ : Term 0 []} {R R' : TermRel} :
-    HasEq A₀ R → HasEq A₀ R' → ∀ t u, R t u ↔ R' t u
+theorem HasEq.unique {v : Term 0 []} {R R' : TermRel} :
+    HasEq v R → HasEq v R' → ∀ t u, R t u ↔ R' t u
   | .univ n h, .univ n' h' => by
     cases HasEq.univ_level h h'
     exact (levelRel_isPer n).univ_unique h h'
@@ -748,7 +748,7 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
 /-! ## Properties of the Core -/
 
 /-- In the core, no type is a proposition, since only the kinds of declarations build propositions. -/
-theorem not_isProp (A₀ : Term 0 []) : ¬ IsProp A₀ := fun ⟨k, _, h⟩ => by
+theorem not_isProp (v : Term 0 []) : ¬ IsProp v := fun ⟨k, _, h⟩ => by
   cases k <;> cases h
 
 /-- In the core, no type computes to a proposition. -/

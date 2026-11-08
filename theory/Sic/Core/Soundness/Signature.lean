@@ -77,8 +77,8 @@ theorem Computesι.weaken {sig : Signature} {ι : Interpretation} {t v : Term 0 
 -- ADE: none.
 /-- A closed type that computes in `Σ` computes to a proposition in `Σ' ++ Σ` exactly when it does
 in `Σ`, when the names of `Σ' ++ Σ` are distinct. -/
-theorem ComputesToProp.weaken_iff {pre sig : Signature} {ι : Interpretation} {A A₀ : Term 0 []}
-    (hd : (pre ++ sig).Distinct) (hA : Computesι sig ι A A₀) :
+theorem ComputesToProp.weaken_iff {pre sig : Signature} {ι : Interpretation} {A v : Term 0 []}
+    (hd : (pre ++ sig).Distinct) (hA : Computesι sig ι A v) :
     ComputesToProp (pre ++ sig) ι A ↔ ComputesToProp sig ι A := by
   constructor
   · rintro ⟨A₁, h₁, hp⟩
@@ -98,8 +98,8 @@ theorem EqTypeClause.weaken {sig : Signature} {ι : Interpretation} {A B : Term 
 -- ADE: none.
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` in `Σ` hold in `Σ' ++ Σ`, for a type that computes in `Σ`,
 when the names of `Σ' ++ Σ` are distinct. -/
-theorem EqTermClause.weaken {pre sig : Signature} {ι : Interpretation} {t u A A₀ : Term 0 []}
-    (hd : (pre ++ sig).Distinct) (hA : Computesι sig ι A A₀) (h : EqTermClause sig ι t u A) :
+theorem EqTermClause.weaken {pre sig : Signature} {ι : Interpretation} {t u A v : Term 0 []}
+    (hd : (pre ++ sig).Distinct) (hA : Computesι sig ι A v) (h : EqTermClause sig ι t u A) :
     EqTermClause (pre ++ sig) ι t u A := by
   refine ⟨fun hn => ?_, fun hp => ?_⟩
   · obtain ⟨A₁, v, w, R, h₁, ht, hu, hR, hvw⟩ :=

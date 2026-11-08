@@ -10,11 +10,11 @@ they are written: an instance `f.{0 ⊔ 0}` of a definition unfolds to its body 
 not the body at the value `0` that the meaning of the signature makes meaningful, and the rule
 `(f_≡)` relates two instances of a constant whose levels are written differently.
 Two terms that differ only by levels of the same values compute alike, to canonical terms that differ
-in the same way, and the equality `eq(A₀)` relates the sorts by the values of their levels, so that
+in the same way, and the equality `eq(v)` relates the sorts by the values of their levels, so that
 no closed judgment tells them apart.
 
 The core reduces by `(δ_⟶)` alone, which copies the levels of the constant into its body, and its
-equality `eq(A₀)` relates sorts only; the kinds of declarations add the cases of their reductions
+equality `eq(v)` relates sorts only; the kinds of declarations add the cases of their reductions
 and of their clauses.
 
 ADE have levels as terms, which their rules of equality and their logical relation compare as terms;
@@ -349,24 +349,24 @@ theorem levelRel_levelInvariant : (n : Nat) → (levelRel n).LevelInvariant
   | n + 1 => UnivRel.levelInvariant (levelRel_levelInvariant n)
 
 /-- A canonical type whose levels change for equal ones has the same equality of its terms. -/
-theorem HasEq.levelEquiv {A₀ A₀' : Term 0 []} {R : TermRel} (hA : HasEq A₀ R)
-    (h : Term.LevelEquiv A₀ A₀') : HasEq A₀' R :=
+theorem HasEq.levelEquiv {v v' : Term 0 []} {R : TermRel} (hA : HasEq v R)
+    (h : Term.LevelEquiv v v') : HasEq v' R :=
   match hA with
   | .univ n hn => .univ n ((levelRel_levelInvariant n).univ hn h h)
   | .prop n b hn hR => .prop n b ((levelRel_levelInvariant n).prop hn h h) hR
 
 /-- The equality of the terms of a canonical type relates the terms whose levels change for equal
 ones. -/
-theorem HasEq.rel_levelEquiv {A₀ : Term 0 []} {R : TermRel} {t u t' u' : Term 0 []}
-    (hA : HasEq A₀ R) (htu : R t u) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u') :
+theorem HasEq.rel_levelEquiv {v : Term 0 []} {R : TermRel} {t u t' u' : Term 0 []}
+    (hA : HasEq v R) (htu : R t u) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u') :
     R t' u' :=
   match hA with
   | .univ n hn => (levelRel_levelInvariant n).univ_rel hn htu ht hu
   | .prop _ _ _ hR => (hR t' u').2 ((hR t u).1 htu)
 
 /-- A proposition whose levels change for equal ones stays a proposition. -/
-theorem IsProp.levelEquiv {A₀ A₀' : Term 0 []} (hA : IsProp A₀) (h : Term.LevelEquiv A₀ A₀') :
-    IsProp A₀' :=
+theorem IsProp.levelEquiv {v v' : Term 0 []} (hA : IsProp v) (h : Term.LevelEquiv v v') :
+    IsProp v' :=
   let ⟨n, b, hn⟩ := hA
   ⟨n, b, (levelRel_levelInvariant n).prop hn h h⟩
 

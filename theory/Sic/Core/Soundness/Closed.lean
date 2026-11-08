@@ -12,7 +12,7 @@ changes no judgment, as `(δ)` needs; equal terms of a sort are also equal types
 `(Ω_type≡)` say, and two sorts at levels of the same value are equal terms of the universe above
 them, as `(U_≡)` and `(Ω_≡)` say.
 
-The equality `eq(A₀)` of a closed canonical type that is not a proposition relates canonical terms,
+The equality `eq(v)` of a closed canonical type that is not a proposition relates canonical terms,
 as the meaning of the judgments says, while the equality of the proofs of a proposition relates all
 the closed terms when it is true; a type that has the equality of a proposition, and relates some
 terms, is then a proposition too, which the conversion needs, since the clauses of the equality of
@@ -49,9 +49,9 @@ theorem LevelRel.univ_canonical {n : Nat} {A B : Term 0 []} {R : TermRel} (sig :
   obtain ⟨⟨_, rfl⟩, _, rfl⟩ := hs
   exact ⟨.sort _, .sort _⟩
 
-/-- `eq(A₀)` relates closed canonical terms, when `A₀` is not a proposition. -/
-theorem HasEq.canonical {A₀ v w : Term 0 []} {R : TermRel} (sig : Signature) :
-    HasEq A₀ R → ¬ IsProp A₀ → R v w → Whnf sig v ∧ Whnf sig w
+/-- `eq(v)` relates closed canonical terms, when `v` is not a proposition. -/
+theorem HasEq.canonical {v w₁ w₂ : Term 0 []} {R : TermRel} (sig : Signature) :
+    HasEq v R → ¬ IsProp v → R w₁ w₂ → Whnf sig w₁ ∧ Whnf sig w₂
   | .univ 0 h, _, _ => by
     cases h with
     | univ h₁ => exact absurd h₁ (Nat.succ_ne_zero _)
@@ -85,35 +85,35 @@ theorem Term.unknown_not_whnf : ¬ Whnf [] Term.unknown := by
   exact fun h => this h rfl
 
 /-- The equality of the proofs of a proposition relates all the closed terms, or none. -/
-theorem HasEq.prop_any {A₀ t u t' u' : Term 0 []} {R : TermRel} (hA : HasEq A₀ R)
-    (hp : IsProp A₀) (htu : R t u) : R t' u' := by
+theorem HasEq.prop_any {v t u t' u' : Term 0 []} {R : TermRel} (hA : HasEq v R)
+    (hp : IsProp v) (htu : R t u) : R t' u' := by
   obtain ⟨k, b, hk⟩ := hp
   have hR : ∀ t u, R t u ↔ b := hA.unique (.prop k b hk fun _ _ => .rfl)
   exact (hR _ _).2 ((hR t u).1 htu)
 
 /-- The canonical form of a type that computes to a proposition is a proposition, in a meaningful
 signature. -/
-theorem ComputesToProp.isProp {sig : Signature} {ι : Interpretation} {A A₀ : Term 0 []}
-    (hp : ComputesToProp sig ι A) (hsig : ValidSig ι sig) (hA : Computesι sig ι A A₀) :
-    IsProp A₀ := by
+theorem ComputesToProp.isProp {sig : Signature} {ι : Interpretation} {A v : Term 0 []}
+    (hp : ComputesToProp sig ι A) (hsig : ValidSig ι sig) (hA : Computesι sig ι A v) :
+    IsProp v := by
   obtain ⟨A₁, hA₁, hp⟩ := hp
   cases Computesι.det hsig hA hA₁
   exact hp
 
 /-- A type of a sort is a proposition or not, as its equality says. -/
-theorem HasEq.isProp_or {A₀ : Term 0 []} {R : TermRel} : HasEq A₀ R → IsProp A₀ ∨ ¬ IsProp A₀
+theorem HasEq.isProp_or {v : Term 0 []} {R : TermRel} : HasEq v R → IsProp v ∨ ¬ IsProp v
   | .univ _ h => .inr fun ⟨_, _, h'⟩ => HasEq.univ_not_prop h h'
   | .prop k b h _ => .inl ⟨k, b, h⟩
 
 /-- A type whose equality is that of a proposition, and relates two terms, is a proposition. -/
-theorem HasEq.isProp_of_prop {A₀ B₀ t u : Term 0 []} {R : TermRel} (hA : HasEq A₀ R)
-    (hB : HasEq B₀ R) (hp : IsProp A₀) (htu : R t u) : IsProp B₀ :=
+theorem HasEq.isProp_of_prop {v w t u : Term 0 []} {R : TermRel} (hA : HasEq v R)
+    (hB : HasEq w R) (hp : IsProp v) (htu : R t u) : IsProp w :=
   hB.isProp_or.elim id fun hn =>
     (Term.unknown_not_whnf (hB.canonical [] hn (hA.prop_any hp htu (u' := Term.unknown))).1).elim
 
 /-- Two types with the same equality, which relates two terms, are both propositions or neither. -/
-theorem HasEq.isProp_iff {A₀ B₀ t u : Term 0 []} {R : TermRel} (hA : HasEq A₀ R)
-    (hB : HasEq B₀ R) (htu : R t u) : IsProp A₀ ↔ IsProp B₀ :=
+theorem HasEq.isProp_iff {v w t u : Term 0 []} {R : TermRel} (hA : HasEq v R)
+    (hB : HasEq w R) (htu : R t u) : IsProp v ↔ IsProp w :=
   ⟨fun hp => hA.isProp_of_prop hB hp htu, fun hp => hB.isProp_of_prop hA hp htu⟩
 
 /-! ## Partial Equivalence Relations -/
