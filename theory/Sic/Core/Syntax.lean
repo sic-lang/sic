@@ -50,7 +50,9 @@ def Scope.extend (Γ : Scope) : Nat → Scope
 -- ADE: `Fin`, the de Bruijn indices of `Definition/Untyped.agda`, without telescopes.
 /-- A variable of the scope `Γ` whose telescope has the grades `ps`, by its de Bruijn index.
 The RFC names the variables, and an object is the same whatever names its bound variables take;
-the indices make this convention needless. -/
+the indices make this convention needless, and so the condition that the variable that extends a
+context is fresh in it, since the new variable is `0` and the others are shifted.
+RFC: `\notin_\Gamma` -/
 inductive Var : Scope → List Grade → Type where
   /-- The last entry of the scope. -/
   | zero {Γ : Scope} {ps : List Grade} : Var (ps :: Γ) ps
@@ -72,7 +74,7 @@ inductive Term (k : Nat) : Scope → Type where
   /-- The sort `κ`, `U_l` or `Ω_l`. -/
   | sort {Γ : Scope} (κ : Universe k) : Term k Γ
   /-- `f.{s̄; l̄; p̄}`: the constant `f`, defined or declared, at an instance of its variables. -/
-  | const {Γ : Scope} (c : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) :
+  | const {Γ : Scope} (f : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) :
       Term k Γ
   /-- `D.{s̄; l̄; p̄} ā`: an instance of the declared type `D`. -/
   | inst {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
