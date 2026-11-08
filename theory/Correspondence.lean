@@ -137,7 +137,7 @@ structure Formalization where
 
 /-- The source of the declaration `decl` in the file `file`, as the file writes it: the lines of its
 range, and for a theorem only the statement, which ends with the signature that the parser of Lean
-reads in these lines, so that the page shows no proof. -/
+reads in these lines, so that the page shows no proof; a field of a record has no proof. -/
 def sourceOf (decl : Name) (file : System.FilePath) : CoreM String := do
   let some ranges ← findDeclarationRanges? decl
     | throwError "{decl} has no position in {file}"
@@ -145,6 +145,8 @@ def sourceOf (decl : Name) (file : System.FilePath) : CoreM String := do
   let text := "\n".intercalate
     (lines.extract (ranges.range.pos.line - 1) ranges.range.endPos.line).toList
   unless (← getConstInfo decl).isTheorem do return text
+  -- A field of a record is a statement without proof, which no command parses alone.
+  if (← getEnv).isProjectionFn decl then return text
   let stx ← match Parser.runParserCategory (← getEnv) `command text file.toString with
     | .ok stx => pure stx
     | .error message => throwError "the statement of {decl} does not parse: {message}"
