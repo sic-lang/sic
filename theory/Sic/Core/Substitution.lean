@@ -5,7 +5,7 @@ public import Sic.Core.Syntax
 /-!
 # Substitution
 
-The substitutions of annex 08 of RFC 36: the substitutions of the first order, among them the
+The substitutions of annex 09 of RFC 36: the substitutions of the first order, among them the
 substitution `B[t̄ / Θ]` of the arguments of a telescope for its variables, the substitutions of the
 second order, which replace each application `X[t̄]` by `B[t̄ / x̄]` where `x̄. B` is the
 abstraction given to `X`, among them the substitution `[ā / Δ]` of the arguments of an instance for

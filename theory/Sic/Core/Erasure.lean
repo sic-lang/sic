@@ -6,7 +6,7 @@ public import Sic.Set
 /-!
 # Erasure
 
-The erasure of annex 14 of RFC 36, which compiles a term to an untyped target language: `⌊t⌋_S`
+The erasure of annex 15 of RFC 36, which compiles a term to an untyped target language: `⌊t⌋_S`
 replaces by `↯` the positions of `t` whose grade is in the set `S`, and the set `S^m` of the
 grades that a term checked in the mode `m` does not count gives the extraction, `⌊t⌋_{S^{11ᵐ}}`, and
 the program that the proofs see, `⌊t⌋_{S^{01ᵐ}}`.

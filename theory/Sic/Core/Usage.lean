@@ -6,7 +6,7 @@ public import Sic.Core.Syntax
 /-!
 # Usage
 
-The judgment of usage of annex 10 of RFC 36, `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t`
+The judgment of usage of annex 11 of RFC 36, `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t`
 uses each variable of its scope as the grade that `γ` gives it allows.
 Usage is defined on the term and the signature alone, whose binders and entries carry the grades:
 a second-order variable uses its arguments with the grades of the parameters of its telescope, which

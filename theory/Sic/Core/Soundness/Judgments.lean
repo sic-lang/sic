@@ -5,7 +5,7 @@ public import Sic.Core.Soundness.Rules
 /-!
 # Soundness of the Judgments
 
-Every judgment of annex 12 of RFC 36 is meaningful, as annex 15 defines it, at every value of its
+Every judgment of annex 13 of RFC 36 is meaningful, as annex 16 defines it, at every value of its
 level variables, in a signature whose constant declarations the interpretation gives terms of their
 types, `(hyp_ι)`.
 

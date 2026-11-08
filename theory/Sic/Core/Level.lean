@@ -5,7 +5,7 @@ public import Sic.Order
 /-!
 # Levels
 
-The levels of annex 05 of RFC 36, which index the sorts, the universes `U_l` and the universes of
+The levels of annex 06 of RFC 36, which index the sorts, the universes `U_l` and the universes of
 propositions `Ω_l`: `0`, a successor `l + 1`, the larger `l₁ ⊔ l₂` of two levels, or a level variable.
 Two levels are equal, or ordered, when their values are whatever natural numbers their variables
 take, so that the values are the meaning of the levels, exact by construction.

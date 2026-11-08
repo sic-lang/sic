@@ -5,7 +5,7 @@ public import Sic.Multiplicity
 /-!
 # Grades
 
-The grades of annex 03 of RFC 36: a grade counts the uses of a variable along two axes, its uses at
+The grades of annex 04 of RFC 36: a grade counts the uses of a variable along two axes, its uses at
 run time and all its uses, as a pair of multiplicities.
 ADE have no such modality, and prove the laws of a modality for each of their instances; the grades
 are proved here to satisfy them, for the multiplications and the greatest lower bounds that the RFC
@@ -141,8 +141,7 @@ theorem mul_def (p q : Grade) : p * q = mul p q := rfl
 
 theorem meet_def (p q : Grade) : p ⊓ q = meet p q := rfl
 
-/-- The order of the grades, `p ≤ q` when `p = p ∧ q`, as in ADE.
-RFC: `\mathsf{order}_p` -/
+/-- The order of the grades, `p ≤ q` when `p = p ∧ q`, as in ADE. -/
 instance : LE Grade where
   le := order
 
@@ -193,7 +192,8 @@ The seven grades form a modality of ADE: a semiring whose addition and multiplic
 over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-/-- The grades form a modality. -/
+/-- The grades form a modality.
+RFC: `\mathsf{modality}_p` -/
 theorem modality : IsModality Grade zero one where
   semiring := {
     add_assoc := by decide

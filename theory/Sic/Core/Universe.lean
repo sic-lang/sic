@@ -6,7 +6,7 @@ public import Sic.Order
 /-!
 # Universes
 
-The sorts of annex 06 of RFC 36: the universes `U_l`, whose elements are types, and the universes of
+The sorts of annex 07 of RFC 36: the universes `U_l`, whose elements are types, and the universes of
 propositions `Ω_l`, whose elements are propositions, both indexed by a level.
 A sort is named a universe here, since `Sort` is a keyword of Lean, and the RFC calls both kinds of
 sorts universes.

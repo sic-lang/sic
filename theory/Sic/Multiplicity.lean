@@ -6,7 +6,7 @@ public import Sic.Set
 /-!
 # Multiplicities
 
-The multiplicities of annex 02 of RFC 36: a multiplicity counts the uses of a variable, and is `0`,
+The multiplicities of annex 03 of RFC 36: a multiplicity counts the uses of a variable, and is `0`,
 `1` or `ω`.
 They are the linear modality of ADE, whose laws are proved here, with the cases of the RFC as the
 definitions of the operations and the meaning of the RFC as theorems about them.
@@ -63,8 +63,7 @@ instance : Min Multiplicity := ⟨meet⟩
 
 theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π₂ := rfl
 
-/-- The order of the multiplicities, `π₁ ≤ π₂` when `π₁ = π₁ ⊓ π₂`, as in ADE.
-RFC: `\mathsf{order}_\pi` -/
+/-- The order of the multiplicities, `π₁ ≤ π₂` when `π₁ = π₁ ⊓ π₂`, as in ADE. -/
 instance : LE Multiplicity where
   le := order
 
@@ -257,7 +256,8 @@ The multiplicities form a modality of ADE: a semiring whose addition and multipl
 over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-/-- The multiplicities form a modality. -/
+/-- The multiplicities form a modality.
+RFC: `\mathsf{modality}_\pi` -/
 theorem modality : IsModality Multiplicity zero one where
   semiring := {
     add_assoc := by decide

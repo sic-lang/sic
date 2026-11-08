@@ -7,7 +7,7 @@ public import Sic.Core.Soundness.Substitution
 /-!
 # Soundness of the Rules
 
-Each rule of annex 12 of RFC 36 keeps the meaning of annex 15: when its premises are meaningful, in
+Each rule of annex 13 of RFC 36 keeps the meaning of annex 16: when its premises are meaningful, in
 the context of the rule at levels without variables, so is its conclusion.
 The proofs take the premises at two equal closed substitutions `σ₁` and `σ₂` of the context, and
 draw the conclusion from the closed judgments, whose properties `Closed` gives; the symmetry and the

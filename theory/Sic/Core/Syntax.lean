@@ -7,7 +7,7 @@ public import Sic.Mode
 /-!
 # Syntax
 
-The syntax of annex 07 of RFC 36: the terms, their arguments, the telescopes, the contexts and the
+The syntax of annex 08 of RFC 36: the terms, their arguments, the telescopes, the contexts and the
 entries of the signatures.
 A variable is a de Bruijn index, as in the formalization of ADE: the number of entries between the
 variable and its declaration, the last entry being `0`.
