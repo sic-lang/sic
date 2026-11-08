@@ -81,6 +81,47 @@ theorem ValidEqTermΓ.conv {Γ : Scope} {ctx : Context 0 Γ} {t u A B : Term 0 �
     ValidEqTermΓ sig ι ctx t u B :=
   ⟨hA.right, fun _ _ hσ => (h.2 _ _ hσ).conv (hA.2 _ _ (hσ.left h.1.1))⟩
 
+/-! ## Sorts -/
+
+/-- A meaningful context is in a meaningful signature, as `(ctx_ε)` says for the empty context. -/
+theorem ValidCtx₀.validSig : {Γ : Scope} → {ctx : Context 0 Γ} → ValidCtx₀ sig ι ctx → ValidSig ι sig
+  | _, .empty, h => by rw [ValidCtx₀] at h; exact h
+  | _, .var ctx A, h => ValidCtx₀.validSig ((validCtx₀_var ctx A).1 h).1
+  | _, .secondOrder ctx Θ A χ₀, h =>
+    ValidCtx₀.validSig (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ A χ₀).1 h).1)
+
+-- ADE: `⊩ᵛU≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+/-- `(U_≡)` and `(Ω_≡)` keep the meaning, and `(U)` and `(Ω)` with them, at the equal levels `l` and
+`l`. -/
+theorem ValidEqTermΓ.sort {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
+    {q : Quality} {l₁ l₂ : Level 0} (hl : l₁ ≈ l₂) :
+    ValidEqTermΓ sig ι ctx (.sort ⟨q, l₁⟩) (.sort ⟨q, l₂⟩) (.sort ⟨.type, .succ l₁⟩) :=
+  ⟨⟨hctx, fun _ _ _ => (ValidEqTerm₀.sort hctx.validSig (q := q) (Level.equivalence.refl l₁)).1⟩,
+    fun _ _ _ => ValidEqTerm₀.sort hctx.validSig hl⟩
+
+-- ADE: `⊩ᵛ≡∷U→⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+/-- `(U_type≡)` keeps the meaning, and `(U_type)` with it. -/
+theorem ValidEqTermΓ.univType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 Γ} {l : Level 0}
+    (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.type, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
+  ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).univType⟩
+
+-- ADE: none.
+/-- `(Ω_type≡)` keeps the meaning, and `(Ω_type)` with it. -/
+theorem ValidEqTermΓ.propType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 Γ} {l : Level 0}
+    (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.prop, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
+  ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).propType⟩
+
+-- ADE: none.
+/-- `(irr)` keeps the meaning: at two equal substitutions, the first term is a proof of the
+proposition at the first, and so is the second term, by conversion, so that `(exact_Ω)` makes them
+equal proofs. -/
+theorem ValidEqTermΓ.irr {Γ : Scope} {ctx : Context 0 Γ} {t u A : Term 0 Γ} {l : Level 0}
+    (ht : ValidTermΓ sig ι ctx t A) (hu : ValidTermΓ sig ι ctx u A)
+    (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩)) : ValidEqTermΓ sig ι ctx t u A :=
+  ⟨ht.1, fun _ _ hσ => (exact_prop (hA.2 _ _ (hσ.left ht.1.1))).2
+    ⟨ht.2 _ _ (hσ.left ht.1.1),
+      (hu.2 _ _ (hσ.right ht.1.1)).conv (ht.1.2 _ _ (hσ.symm ht.1.1))⟩⟩
+
 end
 
 end Sic.Core

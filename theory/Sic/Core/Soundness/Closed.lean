@@ -9,7 +9,8 @@ The properties of the closed judgments of the meaning that the soundness of the 
 partial equivalence relations, as the rules `(sym)` and `(trans)` say, the equality of terms holds
 at every type equal to its own, as `(conv_≡)` says, and a step of reduction of a term or of a type
 changes no judgment, as `(δ)` needs; equal terms of a sort are also equal types, as `(U_type≡)` and
-`(Ω_type≡)` say.
+`(Ω_type≡)` say, and two sorts at levels of the same value are equal terms of the universe above
+them, as `(U_≡)` and `(Ω_≡)` say.
 
 The equality `eq(A₀)` of a closed canonical type that is not a proposition relates canonical terms,
 as the meaning of the judgments says, while the equality of the proofs of a proposition relates all
@@ -346,5 +347,22 @@ theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : T
           .prop m b (hper.prop_trans h' (hper.prop_symm h')) fun _ _ => .rfl,
           .prop m b (hper.prop_trans (hper.prop_symm h') h') fun _ _ => .rfl⟩
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+
+-- ADE: `⊩U≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
+/-- `(U_≡)` and `(Ω_≡)`, closed: two sorts of the same quality at levels of the same value are equal
+terms of the universe above the level of the first, in a meaningful signature. -/
+theorem ValidEqTerm₀.sort {sig : Signature} {ι : Interpretation} (hsig : ValidSig ι sig)
+    {q : Quality} {l₁ l₂ : Level 0} (hl : l₁ ≈ l₂) :
+    ValidEqTerm₀ sig ι (.sort ⟨q, l₁⟩) (.sort ⟨q, l₂⟩) (.sort ⟨.type, .succ l₁⟩) := by
+  have hU : HasEq (.sort ⟨.type, .succ l₁⟩)
+      (fun A B => ∃ R, (levelRel (l₁.closedValue + 1)).univ A B R) :=
+    .univ (l₁.closedValue + 2) (.univ rfl rfl)
+  have h₂ : l₂.closedValue + 1 = l₁.closedValue + 1 := congrArg (· + 1) (hl Fin.elim0).symm
+  refine ⟨⟨hsig, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
+    fun _ => ⟨_, _, _, _, Computes.sort _ _, Computes.sort _ _, Computes.sort _ _, hU, ?_⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+  cases q
+  · exact ⟨_, .univ rfl h₂⟩
+  · exact ⟨_, .prop rfl h₂⟩
 
 end Sic.Core
