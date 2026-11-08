@@ -218,7 +218,8 @@ theorem HasType.not_u₀ : ¬ HasType [] (.empty : Context 0 []) Term.u₀ Term.
 
 -- ADE: none.
 /-- `X[x, x]` is a term of `U₀`, and its value is shared, while its uses of `x` are two, which the
-grade `11ᵖ` of `x` does not allow. -/
+grade `11ᵖ` of `x` does not allow.
+RFC: `\mathsf{independent}.{▶}` -/
 theorem independent_usage :
     HasType [] (Context.xX Telescope.twice) Term.appTwice Term.u₀ ∧
       Ownership [] Ownership.alone .oneOne .unrestrictedUnrestricted Term.appTwice ∧
@@ -229,7 +230,8 @@ theorem independent_usage :
 
 -- ADE: none.
 /-- `X[x]` is a term of `U₀`, and it uses `x` once, while it passes the shared `x` to an entry that
-requires its argument to be owned alone. -/
+requires its argument to be owned alone.
+RFC: `\mathsf{independent}.{◀}` -/
 theorem independent_ownership :
     HasType [] (Context.xX Telescope.once) Term.appOnce Term.u₀ ∧
       Usage [] GradeVector.ones .oneOne Term.appOnce ∧
@@ -245,7 +247,8 @@ theorem independent_ownership :
       exact key _ (hr (by decide)) (Ownership.var₀_le ht rfl)
 
 -- ADE: none.
-/-- `U₀` uses no variable, and has the ownership `ωωᵖ`, while it is not a term of `U₀`. -/
+/-- `U₀` uses no variable, and has the ownership `ωωᵖ`, while it is not a term of `U₀`.
+RFC: `\mathsf{independent}.{:}` -/
 theorem independent_typing :
     Usage [] 𝟘ᶜ .oneOne (Term.u₀ : Term 0 []) ∧
       Ownership [] (fun x : Var [] .var => nomatch x) .oneOne .unrestrictedUnrestricted
