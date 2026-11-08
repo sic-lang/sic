@@ -5,7 +5,7 @@ public import Sic.Core.Meaning
 /-!
 # Extension of the Signature
 
-The soundness of the rules `(δ)`, `(c)` and `(const)` reads an entry of the signature, which the
+The soundness of the rules `(f)`, `(δ)` and `(f_≡)` reads an entry of the signature, which the
 meaning of the signature makes meaningful in the signature before it, the prefix, while the judgment
 that uses it is in the whole signature `Σ' ++ Σ`, whose newer entries come first.
 A computation of the prefix is a computation of the whole signature, and it is its only one when the
@@ -134,5 +134,60 @@ theorem ValidEqTerm₀.weaken {pre sig : Signature} {ι : Interpretation} {t u A
 theorem ValidTerm₀.weaken {pre sig : Signature} {ι : Interpretation} {t A : Term 0 []}
     (hsig : ValidSig ι (pre ++ sig)) (h : ValidTerm₀ sig ι t A) : ValidTerm₀ (pre ++ sig) ι t A :=
   ValidEqTerm₀.weaken hsig h
+
+
+/-! ## Constants of a Meaningful Signature -/
+
+-- ADE: none.
+/-- The signature that a meaningful signature extends is meaningful. -/
+theorem ValidSig.drop {ι : Interpretation} :
+    (pre : Signature) → {sig : Signature} → ValidSig ι (pre ++ sig) → ValidSig ι sig
+  | [], _, h => h
+  | .typeDeclaration _ :: _, _, h => by simp only [List.cons_append, ValidSig] at h
+  | .constantDefinition _ :: pre, _, h => ValidSig.drop pre h.1
+  | .constantDeclaration _ :: pre, _, h => ValidSig.drop pre h.1
+
+-- ADE: none.
+/-- A constant of a meaningful signature unfolds, once the constants are interpreted, to a body that
+is a term of its type at each instance of its sort and grade variables and each value of its level
+variables: the body of a definition, or the interpretation of a declaration. -/
+theorem ValidSig.hasConstant {ι : Interpretation} {sig : Signature} (hsig : ValidSig ι sig)
+    {f : Name} {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []} :
+    sig.HasConstant f j k' g m p A →
+      ∃ b : Instance j g → Term k' [],
+        (∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = j)
+            (hl : ls.length = k') (hp : ps.length = g),
+          Red (sig.interpret ι) (Term.const (Γ := []) f qs ls ps)
+            (Signature.instanceType b (.ofLists qs ps hq hp) (ls.getFin hl))) ∧
+        ∀ inst ρ, ValidTerm₀ sig ι ((b inst).atLevels ρ) ((A inst).atLevels ρ)
+  | .constantDefinition (d := d) hd => by
+    obtain ⟨pre, post, rfl⟩ := List.append_of_mem hd
+    have hpre : pre ++ .constantDefinition d :: post = (pre ++ [.constantDefinition d]) ++ post :=
+      by simp
+    refine ⟨d.body, fun _ _ _ hq hl hp =>
+      .delta (List.mem_map_of_mem (f := Entry.interpret ι) hd) hq hl hp, fun inst ρ => ?_⟩
+    rw [hpre] at hsig ⊢
+    exact ValidTerm₀.weaken hsig (ValidConstantDefinition.iff.1
+      (ValidSig.constantDefinition_iff.1 (ValidSig.drop pre (by simpa using hsig))).1 inst ρ)
+  | .constantDeclaration (c := c) hc => by
+    obtain ⟨pre, post, rfl⟩ := List.append_of_mem hc
+    have hpre : pre ++ .constantDeclaration c :: post = (pre ++ [.constantDeclaration c]) ++ post :=
+      by simp
+    refine ⟨ι c, fun _ _ _ hq hl hp =>
+      .delta (d := ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.ownership, c.type, ι c⟩)
+        (List.mem_map_of_mem (f := Entry.interpret ι) hc) hq hl hp, fun inst ρ => ?_⟩
+    rw [hpre] at hsig ⊢
+    exact ValidTerm₀.weaken hsig (ValidConstantDeclaration.iff.1
+      (ValidSig.constantDeclaration_iff.1 (ValidSig.drop pre (by simpa using hsig))).1 inst ρ)
+
+
+-- ADE: none.
+/-- A meaningful signature of the core has no declared type, since the kinds of declarations give the
+meaning of their type declarations. -/
+theorem ValidSig.not_hasDeclaredType {ι : Interpretation} {sig : Signature} (hsig : ValidSig ι sig)
+    {D : Name} {decl : TypeDeclaration} : ¬ sig.HasDeclaredType D decl := fun ⟨hd, _⟩ => by
+  obtain ⟨pre, post, rfl⟩ := List.append_of_mem hd
+  have h := ValidSig.drop pre hsig
+  simp only [ValidSig] at h
 
 end Sic.Core

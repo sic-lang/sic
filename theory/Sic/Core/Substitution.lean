@@ -1532,6 +1532,18 @@ theorem Term.instantiate_eq_subst :
         (Term.subst_subst_of (fun x =>
           (Subst.append_eq_liftN (Subst.closedSingle t) ts.toSubst x).symm) B))
 
+-- ADE: none.
+/-- A closed term weakened to the empty scope is itself. -/
+theorem Term.weakenClosed_nil (t : Term k []) : (t.weakenClosed : Term k []) = t :=
+  Term.rename_id_of (fun x => by cases x) t
+
+-- ADE: none.
+/-- A closed term weakened to a scope, then substituted by a closed substitution, is itself. -/
+theorem Term.subst_weakenClosed {Γ : Scope} (σ : Subst k [] Γ) (t : Term k []) :
+    (t.weakenClosed : Term k Γ).subst σ = t :=
+  (Term.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) t).trans
+    (Term.subst_id_of (fun _ => rfl) t)
+
 /-! ## Levels
 
 The instantiation of the level variables replaces levels only, so that it commutes with the

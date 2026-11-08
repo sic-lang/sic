@@ -227,7 +227,12 @@ theorem ValidEqTerm₀.conv {sig : Signature} {ι : Interpretation} {t u A B : T
     (h : ValidEqTerm₀ sig ι t u A) (hAB : ValidEqType₀ sig ι A B) : ValidEqTerm₀ sig ι t u B :=
   ⟨hAB.right, h.2.conv hAB.1 hAB.2⟩
 
-/-! ## Reduction -/
+/-! ## Reduction
+
+The steps of reduction are those of the signature whose constants are interpreted, where the meaning
+computes, so that a declared constant steps to its interpretation; `Red.interpret` gives the steps
+of the signature itself.
+-/
 
 /-- A step of reduction of `Σ` is a step of reduction once its constants are interpreted. -/
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
@@ -236,9 +241,9 @@ theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Sc
 
 /-- A term computes to the canonical terms of the term it reduces to, in a meaningful signature. -/
 theorem Computesι.red_iff {sig : Signature} {ι : Interpretation} {t t' v : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig t t') : Computesι sig ι t v ↔ Computesι sig ι t' v := by
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
+    Computesι sig ι t v ↔ Computesι sig ι t' v := by
   have hd := hsig.distinct.interpret (ι := ι)
-  have h := h.interpret (ι := ι)
   constructor
   · rintro ⟨hs, hw⟩
     cases hs with
@@ -250,28 +255,28 @@ theorem Computesι.red_iff {sig : Signature} {ι : Interpretation} {t t' v : Ter
 /-- A type computes to a proposition exactly when the type it reduces to does, in a meaningful
 signature. -/
 theorem ComputesToProp.red_iff {sig : Signature} {ι : Interpretation} {A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig A A') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
     ComputesToProp sig ι A ↔ ComputesToProp sig ι A' := by
   simp only [ComputesToProp, Computesι.red_iff hsig h]
 
 /-- The clause of `(⊨_type≡)` holds of a type exactly when it holds of the type it reduces to, in a
 meaningful signature. -/
 theorem EqTypeClause.red_iff {sig : Signature} {ι : Interpretation} {A A' B : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig A A') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
     EqTypeClause sig ι A B ↔ EqTypeClause sig ι A' B := by
   simp only [EqTypeClause, Computesι.red_iff hsig h]
 
 -- ADE: `redSubst*`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
-/-- `Σ ⊨ A ≡ B` holds exactly when `Σ ⊨ A' ≡ B` does, for `Σ ⊢ A ⟶ A'`. -/
+/-- `Σ ⊨ A ≡ B` holds exactly when `Σ ⊨ A' ≡ B` does, for a step `A ⟶ A'`. -/
 theorem ValidEqType₀.red_iff {sig : Signature} {ι : Interpretation} {A A' B : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig A A') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
     ValidEqType₀ sig ι A B ↔ ValidEqType₀ sig ι A' B := by
   simp only [ValidEqType₀, EqTypeClause.red_iff hsig h]
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` hold of a term exactly when they hold of the term it reduces
 to, in a meaningful signature. -/
 theorem EqTermClause.red_iff {sig : Signature} {ι : Interpretation} {t t' u A : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig t t') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
     EqTermClause sig ι t u A ↔ EqTermClause sig ι t' u A := by
   refine and_congr (by simp only [Computesι.red_iff hsig h]) ⟨fun h' hp => ?_, fun h' hp => ?_⟩
   · obtain ⟨A₀, R, hA, hR, htu⟩ := h' hp
@@ -282,20 +287,20 @@ theorem EqTermClause.red_iff {sig : Signature} {ι : Interpretation} {t t' u A :
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` hold at a type exactly when they hold at the type it reduces
 to, in a meaningful signature. -/
 theorem EqTermClause.red_type_iff {sig : Signature} {ι : Interpretation} {t u A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig A A') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
     EqTermClause sig ι t u A ↔ EqTermClause sig ι t u A' := by
   simp only [EqTermClause, ComputesToProp.red_iff hsig h, Computesι.red_iff hsig h]
 
 -- ADE: `redSubst*Term`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
-/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t' ≡ u : A` does, for `Σ ⊢ t ⟶ t'`. -/
+/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t' ≡ u : A` does, for a step `t ⟶ t'`. -/
 theorem ValidEqTerm₀.red_iff {sig : Signature} {ι : Interpretation} {t t' u A : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig t t') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
     ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t' u A := by
   simp only [ValidEqTerm₀, EqTermClause.red_iff hsig h]
 
-/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t ≡ u : A'` does, for `Σ ⊢ A ⟶ A'`. -/
+/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t ≡ u : A'` does, for a step `A ⟶ A'`. -/
 theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red sig A A') :
+    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
     ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t u A' := by
   simp only [ValidEqTerm₀, ValidType₀, ValidEqType₀.red_iff hsig h, EqTermClause.red_type_iff hsig h]
   constructor

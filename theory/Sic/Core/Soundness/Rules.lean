@@ -184,6 +184,81 @@ theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 �
       EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
     exact hts.2 σ₁ σ₂ h
 
+
+/-! ## Constants
+
+A constant of a meaningful signature unfolds, once the constants are interpreted, to a body that is a
+term of its type at the values of its levels, and so at levels of these values, which the meaning
+does not tell apart: the constant is then a term of its type, as `(f)` says, which gives `(δ)` by a
+step of reduction and `(f_≡)` at levels of the same values.
+
+The rules `(D)` and `(D_≡)` need no proof of their own: a meaningful signature of the core has no
+declared type, `ValidSig.not_hasDeclaredType`.
+-/
+
+-- ADE: none.
+/-- `(f)`, closed: a constant of a meaningful signature at closed levels is a term of its type at
+these levels. -/
+theorem ValidTerm₀.const (hsig : ValidSig ι sig) {f : Name} {j k' g : Nat} {m : Mode} {p : Grade}
+    {A : Instance j g → Term k' []} (h : sig.HasConstant f j k' g m p A) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k')
+    (hp : ps.length = g) :
+    ValidTerm₀ sig ι (.const f qs ls ps) ((A (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
+  obtain ⟨b, hred, hb⟩ := hsig.hasConstant h
+  have hb' := (hb (.ofLists qs ps hq hp) fun i => (ls.getFin hl i).closedValue).levelEquiv
+    (Term.substLevels_levelEquiv_atLevels _ _).symm (Term.substLevels_levelEquiv_atLevels _ _).symm
+    (Term.substLevels_levelEquiv_atLevels _ _).symm
+  have hr := hred qs ls ps hq hl hp
+  rw [Signature.instanceType, Term.weakenClosed_nil] at hr
+  exact (ValidEqTerm₀.red_iff hsig hr).2 ((ValidEqTerm₀.red_iff hsig hr).2 hb').symm
+
+-- ADE: `defnᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Definition.agda`.
+/-- `(f)` keeps the meaning. -/
+theorem ValidTermΓ.const {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) {f : Name}
+    {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
+    (h : sig.HasConstant f j k' g m p A) {qs : List Quality} {ls : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
+    ValidTermΓ sig ι ctx (.const f qs ls ps)
+      (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.validSig h hq hl hp
+  refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
+  · simp only [Signature.instanceType, Term.subst_weakenClosed]
+    exact hc.1
+  · simp only [Signature.instanceType, Term.subst_weakenClosed]
+    exact hc
+
+-- ADE: `δ-redᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Definition.agda`.
+/-- `(δ)` keeps the meaning: the constant is a term of its type, and steps to its body. -/
+theorem ValidEqTermΓ.delta {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
+    {d : ConstantDefinition} (h : .constantDefinition d ∈ sig) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
+    (hp : ps.length = d.grades) :
+    ValidEqTermΓ sig ι ctx (.const d.name qs ls ps)
+      (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
+      (Signature.instanceType d.type (.ofLists qs ps hq hp) (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.validSig (.constantDefinition h) hq hl hp
+  have hr := (Red.delta (Γ := []) h hq hl hp).interpret (ι := ι)
+  rw [Signature.instanceType, Term.weakenClosed_nil] at hr
+  refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
+  · simp only [Signature.instanceType, Term.subst_weakenClosed]
+    exact hc.1
+  · simp only [Signature.instanceType, Term.subst_weakenClosed]
+    exact ((ValidEqTerm₀.red_iff hctx.validSig hr).1 hc).symm
+
+-- ADE: none.
+/-- `(f_≡)` keeps the meaning: the instances of the constant at levels of the same values are the same
+term up to its levels. -/
+theorem ValidEqTermΓ.const {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) {f : Name}
+    {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
+    (h : sig.HasConstant f j k' g m p A) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k')
+    (hp : ps.length = g) (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
+    ValidEqTermΓ sig ι ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)
+      (Signature.instanceType A (.ofLists qs ps hq hp) (ls₁.getFin hl₁)) :=
+  have hc := ValidTermΓ.const hctx h hq hl₁ hp
+  ⟨hc.1, fun _ _ h => (hc.2 _ _ h).levelEquiv (Term.LevelEquiv.refl _)
+    (.const f qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls)) (Term.LevelEquiv.refl _)⟩
+
 end
 
 end Sic.Core
