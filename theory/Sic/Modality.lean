@@ -3,9 +3,11 @@ module
 /-!
 # Modalities
 
-The laws that the multiplicities and the grades satisfy alike, as records whose fields are the laws,
-so that each law is stated once and named, and each kind of objects proves that it satisfies them.
-ADE state them as the fields of their record `Modality`, in `Graded/Modality.agda`.
+The laws that the multiplicities and the grades satisfy alike, and those of the modules over them,
+which the vectors of grades satisfy, as records whose fields are the laws, so that each law is
+stated once and named, and each kind of objects proves that it satisfies them.
+ADE state the laws of the modalities as the fields of their record `Modality`, in
+`Graded/Modality.agda`.
 -/
 
 @[expose] public section
@@ -47,6 +49,33 @@ structure IsMeetSemilattice (α : Type) [Min α] : Prop where
   meet_comm : ∀ a b : α, a ⊓ b = b ⊓ a
   /-- The meet is idempotent. -/
   meet_idem : ∀ a : α, a ⊓ a = a
+
+-- ADE: `IsLeftSemimodule`, of the standard library of Agda, in `Tools/Algebra.agda`.
+/-- The addition `addV` and the multiplication `smulV` by the elements of `R` make `V` a module over
+the semiring `R`, whose zero is `zero` and whose unit is `one`, the zero of `V` being `zeroV`.
+The operations of `V` are parameters, as the relation of `IsPreorder`, so that the record applies to
+operations that are not the instances of `V`.
+RFC: `\mathsf{module}_\gamma` -/
+structure IsModule (R V : Type) [Add R] [Mul R] (zero one : R)
+    (zeroV : V) (addV : V → V → V) (smulV : R → V → V) : Prop where
+  /-- The addition is associative. -/
+  add_assoc : ∀ a b c : V, addV (addV a b) c = addV a (addV b c)
+  /-- The addition is commutative. -/
+  add_comm : ∀ a b : V, addV a b = addV b a
+  /-- The zero is neutral for the addition. -/
+  zero_add : ∀ a : V, addV zeroV a = a
+  /-- The multiplication distributes over the addition of `V`. -/
+  smul_add : ∀ (p : R) (a b : V), smulV p (addV a b) = addV (smulV p a) (smulV p b)
+  /-- The multiplication distributes over the addition of `R`. -/
+  add_smul : ∀ (p q : R) (a : V), smulV (p + q) a = addV (smulV p a) (smulV q a)
+  /-- The multiplication by a product is the multiplication by each of its factors. -/
+  mul_smul : ∀ (p q : R) (a : V), smulV (p * q) a = smulV p (smulV q a)
+  /-- The unit of `R` is neutral for the multiplication. -/
+  one_smul : ∀ a : V, smulV one a = a
+  /-- The zero of `R` multiplies every element into the zero of `V`. -/
+  zero_smul : ∀ a : V, smulV zero a = zeroV
+  /-- Every element of `R` multiplies the zero of `V` into itself. -/
+  smul_zero : ∀ p : R, smulV p zeroV = zeroV
 
 -- ADE: `Has-well-behaved-zero`, in `Graded/Modality.agda`.
 /-- The zero of `α` is well behaved: it differs from the unit `one`, and a sum, a meet or a product

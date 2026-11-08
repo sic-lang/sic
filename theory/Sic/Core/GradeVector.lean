@@ -1,11 +1,12 @@
 module
 
 public import Sic.Grade
+public import Sic.Order
 
 /-!
 # Vectors of Grades
 
-The vectors of grades of RFC 24, one grade for each entry of a context, on which the operations of
+The vectors of grades of RFC 36, one grade for each entry of a context, on which the operations of
 the grades act component by component.
 The entries are numbered by de Bruijn indices, the last entry of the context being `0`.
 
@@ -26,54 +27,60 @@ namespace GradeVector
 
 variable {n : Nat}
 
-theorem ext {γ δ : GradeVector n} (h : ∀ x, γ x = δ x) : γ = δ := funext h
-
-instance : DecidableEq (GradeVector n) := fun γ δ =>
-  decidable_of_iff (∀ x, γ x = δ x) ⟨ext, fun h _ => h ▸ rfl⟩
+-- ADE: `_≈ᶜ_`, in `Graded/Context.agda`.
+/-- Two vectors are equal when they give each entry the same grade.
+RFC: `\mathsf{equal}_\gamma` -/
+theorem eq_iff {γ₁ γ₂ : GradeVector n} : γ₁ = γ₂ ↔ ∀ x, γ₁ x = γ₂ x :=
+  ⟨fun h _ => h ▸ rfl, funext⟩
 
 -- ADE: `𝟘ᶜ`, in `Graded/Context.agda`.
-/-- `𝟘ᶜ`, the zero vector, whose components are all the grade `𝟘`. -/
+/-- `𝟘ᶜ`, the zero vector, whose components are all the grade `𝟘`.
+RFC: `\mathsf{op}_\gamma` -/
 def zero : GradeVector n := fun _ => Grade.zero
 
 @[inherit_doc] notation "𝟘ᶜ" => zero
 
 -- ADE: `_+ᶜ_`, in `Graded/Context.agda`.
-/-- `γ +ᶜ δ`, the addition of each component. -/
-def add (γ δ : GradeVector n) : GradeVector n := fun x => γ x + δ x
+/-- `γ₁ +ᶜ γ₂`, the addition of each component.
+RFC: `\mathsf{op}_\gamma` -/
+def add (γ₁ γ₂ : GradeVector n) : GradeVector n := fun x => γ₁ x + γ₂ x
 
 @[inherit_doc] infixl:65 " +ᶜ " => add
 
 -- ADE: `_·ᶜ_`, in `Graded/Context.agda`.
-/-- `p ·ᶜ γ`, the multiplication of each component by the grade `p`. -/
+/-- `p ·ᶜ γ`, the multiplication of each component by the grade `p`.
+RFC: `\mathsf{op}_\gamma` -/
 def smul (p : Grade) (γ : GradeVector n) : GradeVector n := fun x => p * γ x
 
 @[inherit_doc] infixr:70 " ·ᶜ " => smul
 
 -- ADE: `_∧ᶜ_`, in `Graded/Context.agda`.
-/-- `γ ∧ᶜ δ`, the meet of each component, written `⊓ᶜ` since `∧` is the conjunction of Lean. -/
-def meet (γ δ : GradeVector n) : GradeVector n := fun x => γ x ⊓ δ x
+/-- `γ₁ ∧ᶜ γ₂`, the meet of each component, written `⊓ᶜ` since `∧` is the conjunction of Lean.
+RFC: `\mathsf{op}_\gamma` -/
+def meet (γ₁ γ₂ : GradeVector n) : GradeVector n := fun x => γ₁ x ⊓ γ₂ x
 
 @[inherit_doc] infixl:69 " ⊓ᶜ " => meet
 
 -- ADE: `_≤ᶜ_`, in `Graded/Context.agda`.
-/-- `δ ≤ᶜ γ`, the order of each component. -/
-def Le (δ γ : GradeVector n) : Prop := ∀ x, δ x ≤ γ x
+/-- `γ₁ ≤ᶜ γ₂`, the order of each component.
+RFC: `\mathsf{order}_\gamma` -/
+def Le (γ₁ γ₂ : GradeVector n) : Prop := ∀ x, γ₁ x ≤ γ₂ x
 
 @[inherit_doc] infix:50 " ≤ᶜ " => Le
-
-instance (δ γ : GradeVector n) : Decidable (δ ≤ᶜ γ) := inferInstanceAs (Decidable (∀ _, _))
 
 -- ADE: `_∙_`, in `Graded/Context.agda`.
 /--
 `γ ∙ p`, the vector `γ` extended by the grade `p` of a new entry, the last of the context, whose
 de Bruijn index is `0`; the RFC writes it `γ • p`, which is the scalar multiplication of Lean.
+RFC: `\bullet_\gamma`
 -/
 def extend (γ : GradeVector n) (p : Grade) : GradeVector (n + 1) := Fin.cases p γ
 
 @[inherit_doc] infixl:75 " ∙ " => extend
 
 -- ADE: `_,_≔_`, in `Graded/Context.agda`.
-/-- `(γ, x ≔ p)`, the vector `γ` in which the grade of the entry `x` is replaced by `p`. -/
+/-- `(γ, x ≔ p)`, the vector `γ` in which the grade of the entry `x` is replaced by `p`.
+RFC: `\mathsf{update}_\gamma` -/
 def update (γ : GradeVector n) (x : Fin n) (p : Grade) : GradeVector n :=
   fun y => if y = x then p else γ y
 
@@ -82,77 +89,90 @@ def update (γ : GradeVector n) (x : Fin n) (p : Grade) : GradeVector n :=
 The operations satisfy at each component the laws of the grades, as the module of ADE over their
 modality does. -/
 
-theorem add_assoc (γ δ η : GradeVector n) : (γ +ᶜ δ) +ᶜ η = γ +ᶜ (δ +ᶜ η) :=
-  ext fun x => Grade.semiring.add_assoc (γ x) (δ x) (η x)
+-- ADE: `Conₘ-semimodule`, in `Graded/Context/Properties.agda`.
+/-- The addition and the multiplication by a grade make the vectors a module over the grades.
+RFC: `\mathsf{module}_\gamma` -/
+theorem module : IsModule Grade (GradeVector n) Grade.zero Grade.one 𝟘ᶜ add smul where
+  add_assoc γ₁ γ₂ γ₃ := funext fun x => Grade.semiring.add_assoc (γ₁ x) (γ₂ x) (γ₃ x)
+  add_comm γ₁ γ₂ := funext fun x => Grade.semiring.add_comm (γ₁ x) (γ₂ x)
+  zero_add γ := funext fun x => Grade.semiring.zero_add (γ x)
+  smul_add p γ₁ γ₂ := funext fun x => (Grade.mul_add p (γ₁ x) (γ₂ x)).1
+  add_smul p q γ := funext fun x => (Grade.mul_add (γ x) p q).2
+  mul_smul p q γ := funext fun x => Grade.semiring.mul_assoc p q (γ x)
+  one_smul γ := funext fun x => Grade.semiring.one_mul (γ x)
+  zero_smul γ := funext fun x => Grade.semiring.zero_mul (γ x)
+  smul_zero p := funext fun _ => Grade.semiring.mul_zero p
 
-theorem add_comm (γ δ : GradeVector n) : γ +ᶜ δ = δ +ᶜ γ :=
-  ext fun x => Grade.semiring.add_comm (γ x) (δ x)
+-- ADE: `∧ᶜ-comm`, in `Graded/Context/Properties/Meet.agda`.
+/-- The meet is commutative.
+RFC: `\mathsf{meet}_\gamma` -/
+theorem meet_comm (γ₁ γ₂ : GradeVector n) : γ₁ ⊓ᶜ γ₂ = γ₂ ⊓ᶜ γ₁ :=
+  funext fun x => Grade.meet_semilattice.meet_comm (γ₁ x) (γ₂ x)
 
-theorem zero_add (γ : GradeVector n) : 𝟘ᶜ +ᶜ γ = γ :=
-  ext fun x => Grade.semiring.zero_add (γ x)
+-- ADE: `≤ᶜ-preorder`, in `Graded/Context/Properties/PartialOrder.agda`.
+/-- The order is a preorder.
+RFC: `\mathsf{preorder}_\gamma` -/
+theorem preorder : IsPreorder (α := GradeVector n) (· ≤ᶜ ·) where
+  refl γ x := Grade.le_refl (γ x)
+  trans h₁ h₂ x := Grade.le_trans _ _ _ (h₁ x) (h₂ x)
 
-theorem smul_add (p : Grade) (γ δ : GradeVector n) : p ·ᶜ (γ +ᶜ δ) = (p ·ᶜ γ) +ᶜ (p ·ᶜ δ) :=
-  ext fun x => (Grade.mul_add p (γ x) (δ x)).1
+-- ADE: `≤ᶜ-antisym`, in `Graded/Context/Properties/PartialOrder.agda`.
+/-- The order is antisymmetric.
+RFC: `\mathsf{antisymmetry}_\gamma` -/
+theorem le_antisymm {γ₁ γ₂ : GradeVector n} (h₁ : γ₁ ≤ᶜ γ₂) (h₂ : γ₂ ≤ᶜ γ₁) : γ₁ = γ₂ :=
+  funext fun x => Grade.le_antisymm _ _ (h₁ x) (h₂ x)
 
-theorem add_smul (p q : Grade) (γ : GradeVector n) : (p + q) ·ᶜ γ = (p ·ᶜ γ) +ᶜ (q ·ᶜ γ) :=
-  ext fun x => (Grade.mul_add (γ x) p q).2
-
-theorem mul_smul (p q : Grade) (γ : GradeVector n) : (p * q) ·ᶜ γ = p ·ᶜ (q ·ᶜ γ) :=
-  ext fun x => Grade.semiring.mul_assoc p q (γ x)
-
-theorem one_smul (γ : GradeVector n) : Grade.one ·ᶜ γ = γ :=
-  ext fun x => Grade.semiring.one_mul (γ x)
-
-theorem zero_smul (γ : GradeVector n) : Grade.zero ·ᶜ γ = 𝟘ᶜ :=
-  ext fun x => Grade.semiring.zero_mul (γ x)
-
-theorem smul_zero (p : Grade) : p ·ᶜ (𝟘ᶜ : GradeVector n) = 𝟘ᶜ :=
-  ext fun _ => Grade.semiring.mul_zero p
-
-theorem meet_comm (γ δ : GradeVector n) : γ ⊓ᶜ δ = δ ⊓ᶜ γ :=
-  ext fun x => Grade.meet_semilattice.meet_comm (γ x) (δ x)
-
-theorem le_refl (γ : GradeVector n) : γ ≤ᶜ γ := fun x => Grade.le_refl (γ x)
-
-theorem le_trans {γ δ η : GradeVector n} (h₁ : γ ≤ᶜ δ) (h₂ : δ ≤ᶜ η) : γ ≤ᶜ η :=
-  fun x => Grade.le_trans _ _ _ (h₁ x) (h₂ x)
-
-theorem le_antisymm {γ δ : GradeVector n} (h₁ : γ ≤ᶜ δ) (h₂ : δ ≤ᶜ γ) : γ = δ :=
-  ext fun x => Grade.le_antisymm _ _ (h₁ x) (h₂ x)
-
+-- ADE: `+ᶜ-monotone`, in `Graded/Context/Properties/Addition.agda`.
+/-- The addition is monotone.
+RFC: `{+}{\le}_\gamma` -/
 theorem add_le_add {γ₁ γ₂ δ₁ δ₂ : GradeVector n} (hγ : γ₁ ≤ᶜ γ₂) (hδ : δ₁ ≤ᶜ δ₂) :
     γ₁ +ᶜ δ₁ ≤ᶜ γ₂ +ᶜ δ₂ :=
   fun x => Grade.add_le_add _ _ _ _ (hγ x) (hδ x)
 
-theorem smul_le_smul {γ δ : GradeVector n} (p : Grade) (h : γ ≤ᶜ δ) : p ·ᶜ γ ≤ᶜ p ·ᶜ δ :=
+-- ADE: `·ᶜ-monotoneʳ`, in `Graded/Context/Properties/Multiplication.agda`.
+/-- The multiplication by a grade is monotone.
+RFC: `{\cdot}{\le}_\gamma` -/
+theorem smul_le_smul {γ₁ γ₂ : GradeVector n} (p : Grade) (h : γ₁ ≤ᶜ γ₂) : p ·ᶜ γ₁ ≤ᶜ p ·ᶜ γ₂ :=
   fun x => Grade.mul_le_mul_left p _ _ (h x)
 
-theorem le_meet_iff (γ δ η : GradeVector n) : η ≤ᶜ γ ∧ η ≤ᶜ δ ↔ η ≤ᶜ γ ⊓ᶜ δ :=
+-- ADE: `∧ᶜ-greatest-lower-bound`, `∧ᶜ-decreasingˡ` and `∧ᶜ-decreasingʳ`, in
+-- `Graded/Context/Properties/Meet.agda`.
+/-- The meet is the greatest lower bound of two vectors.
+RFC: `{\wedge}{\le}_\gamma` -/
+theorem le_meet_iff (γ₁ γ₂ γ₃ : GradeVector n) : γ₃ ≤ᶜ γ₁ ∧ γ₃ ≤ᶜ γ₂ ↔ γ₃ ≤ᶜ γ₁ ⊓ᶜ γ₂ :=
   ⟨fun ⟨h₁, h₂⟩ x => (Grade.le_meet_iff _ _ _).mp ⟨h₁ x, h₂ x⟩,
     fun h => ⟨fun x => ((Grade.le_meet_iff _ _ _).mpr (h x)).1,
       fun x => ((Grade.le_meet_iff _ _ _).mpr (h x)).2⟩⟩
 
-/-! The extension and the update give the grade of each entry. -/
+-- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
+/-- The extension commutes with the operations. -/
+structure ExtendCommutes : Prop where
+  /-- The extension of the zero vector by the zero grade is the zero vector. -/
+  zero_extend : ∀ n, (𝟘ᶜ : GradeVector n) ∙ Grade.zero = 𝟘ᶜ
+  /-- The sum of two extensions is the extension of the sums. -/
+  add_extend : ∀ {n} (γ₁ γ₂ : GradeVector n) (p q : Grade),
+    (γ₁ ∙ p) +ᶜ (γ₂ ∙ q) = (γ₁ +ᶜ γ₂) ∙ (p + q)
+  /-- The multiplication of an extension is the extension of the multiplications. -/
+  smul_extend : ∀ {n} (r : Grade) (γ : GradeVector n) (p : Grade),
+    r ·ᶜ (γ ∙ p) = (r ·ᶜ γ) ∙ (r * p)
 
-theorem extend_zero (γ : GradeVector n) (p : Grade) : (γ ∙ p) 0 = p := rfl
+-- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
+/-- The extension commutes with the operations.
+RFC: `\mathsf{op}{\bullet}_\gamma` -/
+theorem extend_commutes : ExtendCommutes where
+  zero_extend _ := funext fun x => by cases x using Fin.cases <;> rfl
+  add_extend _ _ _ _ := funext fun x => by cases x using Fin.cases <;> rfl
+  smul_extend _ _ _ := funext fun x => by cases x using Fin.cases <;> rfl
 
-theorem extend_succ (γ : GradeVector n) (p : Grade) (x : Fin n) : (γ ∙ p) x.succ = γ x := rfl
+-- ADE: `≈ᶜ-decidable`, in `Graded/Context/Properties/Equivalence.agda`.
+/-- The equality of two vectors is decidable.
+RFC: `\mathsf{decidable}_\gamma` -/
+instance : DecidableEq (GradeVector n) := fun _ _ => decidable_of_iff _ eq_iff.symm
 
-theorem update_self (γ : GradeVector n) (x : Fin n) (p : Grade) : update γ x p x = p := by
-  simp [update]
-
-theorem update_other (γ : GradeVector n) {x y : Fin n} (p : Grade) (h : y ≠ x) :
-    update γ x p y = γ y := by
-  simp [update, h]
-
-theorem zero_extend : (𝟘ᶜ : GradeVector n) ∙ Grade.zero = 𝟘ᶜ :=
-  ext fun x => by cases x using Fin.cases <;> rfl
-
-theorem add_extend (γ δ : GradeVector n) (p q : Grade) : (γ ∙ p) +ᶜ (δ ∙ q) = (γ +ᶜ δ) ∙ (p + q) :=
-  ext fun x => by cases x using Fin.cases <;> rfl
-
-theorem smul_extend (r : Grade) (γ : GradeVector n) (p : Grade) : r ·ᶜ (γ ∙ p) = (r ·ᶜ γ) ∙ (r * p) :=
-  ext fun x => by cases x using Fin.cases <;> rfl
+-- ADE: `≤ᶜ-decidable`, in `Graded/Context/Properties/PartialOrder.agda`.
+/-- The order of two vectors is decidable.
+RFC: `\mathsf{decidable}_\gamma` -/
+instance (γ₁ γ₂ : GradeVector n) : Decidable (γ₁ ≤ᶜ γ₂) := inferInstanceAs (Decidable (∀ _, _))
 
 /-! ## Examples
 

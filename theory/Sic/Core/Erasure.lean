@@ -129,7 +129,7 @@ theorem Usage.absent_extract {sig : Signature} {k : Nat} {Γ : Scope} {γ : Grad
     cases ho
     subst hm
     have h := Grade.run_zero_of_add _ (δ y.toFin) (by
-      simpa [GradeVector.add, GradeVector.update_self] using hx)
+      simpa [GradeVector.add, GradeVector.update] using hx)
     exact absurd h (by decide)
   | .const .., _, _, ho => nomatch ho
   | .sort, _, _, ho => nomatch ho
@@ -146,7 +146,7 @@ theorem Usage.absent_ghost {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeV
   | .var (x := y) (δ := δ) _, hm, hx, ho => by
     cases ho
     have h := Grade.eq_zero_of_add _ (δ y.toFin) (by
-      simpa [GradeVector.add, GradeVector.update_self] using hx)
+      simpa [GradeVector.add, GradeVector.update] using hx)
     cases m <;> first | exact hm rfl | exact absurd h (by decide)
   | .const .., _, _, ho => nomatch ho
   | .sort, _, _, ho => nomatch ho
