@@ -35,10 +35,9 @@ jobs:
     # ubuntu-26.04 waits until actionlint knows it (#3).
     runs-on: ubuntu-24.04
     steps:
-      # The head of the pull request, or the merge of the merge queue, without its history.
+      # The merge of the pull request with main, or the merge of the merge queue, without its
+      # history, so that the matrix and the flake come from the same commit.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b  # 31.11.3
       - if: matrix.check != 'commits'
         name: Run the check
@@ -51,7 +50,7 @@ jobs:
         name: Run the check
         run: |
           git fetch --quiet --unshallow origin "$HEAD" "$BASE"
-          nix run --quiet .#check-commits -- "$BASE"
+          nix run --quiet .#check-commits -- "$BASE" "$HEAD"
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
