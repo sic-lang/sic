@@ -1247,6 +1247,15 @@ theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {θ₁ : Subst k Δ Ξ
 
 end
 
+-- ADE: none.
+/-- `[ā / Δ][θ] = [ā[θ] / Δ]`: the substitution of the arguments of an instance, then by `θ`, is the
+substitution of the arguments substituted by `θ`, each under the variables of its abstraction. -/
+theorem InstanceArgs.toSubst_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {Ψ : Scope} → (as : InstanceArgs k Δ Ψ) → ∀ {a} (x : Var Ψ a),
+      (as.toSubst x).subst (Subst.liftN a.params.length θ) = (as.subst θ).toSubst x
+  | _, .snoc _ _, _, .zero => rfl
+  | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_subst θ as x
+
 /-! ### Identity and Telescopes -/
 
 theorem Subst.lift_id_of {Γ : Scope} {b : Scope.Entry} {θ : Subst k Γ Γ}
@@ -1319,6 +1328,16 @@ theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Parameter} :
   | _, _, .nil => rfl
   | _, h, .cons q p A Θ => by
     rw [Telescope.subst₀, Term.subst₀_id_of h A, Telescope.subst₀_id_of (Subst₀.lift_id_of h) Θ]
+
+-- ADE: none.
+/-- A substitution of the second order that gives each variable its own eta-expansion changes no
+telescope. -/
+theorem Telescope.subst_id_of {Γ : Scope} {ps : List Parameter} :
+    {θ : Subst k Γ Γ} → (∀ {a} (x : Var Γ a), θ x = Var.eta x) →
+      (Θ : Telescope k Γ ps) → Θ.subst θ = Θ
+  | _, _, .nil => rfl
+  | _, h, .cons q p A Θ => by
+    rw [Telescope.subst, Term.subst_id_of h A, Telescope.subst_id_of (Subst.lift_id_of h) Θ]
 
 /-- A substitution of the first order then one of the second order swap on a telescope, as
 `Subst₀.Swaps` says. -/
@@ -1543,6 +1562,20 @@ theorem Term.subst_weakenClosed {Γ : Scope} (σ : Subst k [] Γ) (t : Term k []
     (t.weakenClosed : Term k Γ).subst σ = t :=
   (Term.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) t).trans
     (Term.subst_id_of (fun _ => rfl) t)
+
+-- ADE: none.
+/-- `Θ[σ⇑][v / x] = Θ[σ, v]`: a telescope under a new variable, substituted by a closed
+substitution `σ` of the context, then by a closed term `v` for this variable, is substituted by `σ`
+followed by `v`. -/
+theorem Telescope.subst_lift_single {Γ : Scope} {ps : List Parameter} (σ : Subst k [] Γ)
+    (v : Term k []) (Θ : Telescope k (.var :: Γ) ps) :
+    (Θ.subst (Subst.lift σ)).subst₀ (Subst₀.single v) =
+      Θ.subst (Subst.append (n := 1) σ (Subst.closedSingle v)) :=
+  (Telescope.subst_id_of (fun x => by cases x) _).symm.trans
+    ((Telescope.subst_subst₀_of (Subst₀.Swaps.closedSingle v) _).trans
+      ((Telescope.subst₀_id_of (fun _ => rfl) _).trans
+        (Telescope.subst_subst_of
+          (fun x => (Subst.append_eq_liftN (n := 1) σ (Subst.closedSingle v) x).symm) Θ)))
 
 /-! ## Levels
 
