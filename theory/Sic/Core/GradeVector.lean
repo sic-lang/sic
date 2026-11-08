@@ -6,8 +6,8 @@ public import Sic.Order
 /-!
 # Vectors of Grades
 
-The vectors of grades of RFC 36, one grade for each entry of a context, on which the operations of
-the grades act component by component.
+The vectors of grades of annex 09 of RFC 36, one grade for each entry of a context, on which the
+operations of the grades act component by component.
 The entries are numbered by de Bruijn indices, the last entry of the context being `0`.
 
 ADE define their vectors as sequences, extended one grade at a time; here a vector is the function

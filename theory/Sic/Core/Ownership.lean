@@ -5,9 +5,9 @@ public import Sic.Core.Syntax
 /-!
 # Ownership
 
-The judgment of ownership `Σ; φ ⊢ t ◀ p; m` of RFC 36: checked in the mode `m`, the value of the
-term `t` has the ownership `p`, given the ownership `φ` of each variable of its scope whose
-telescope is empty.
+The judgment of ownership `Σ; φ ⊢ t ◀ p; m` of annex 11 of RFC 36: checked in the mode `m`, the
+value of the term `t` has the ownership `p`, given the ownership `φ` of each variable of its scope
+whose telescope is empty.
 
 Ownership is defined on the term and the signature alone, without a context, as usage is: the scope
 gives each second-order variable its telescope and the ownership of its result, and the signature

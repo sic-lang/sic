@@ -5,8 +5,8 @@ public import Sic.Multiplicity
 /-!
 # Grades
 
-The grades of RFC 36: a grade counts the uses of a variable along two axes, its uses at run time and
-all its uses, as a pair of multiplicities.
+The grades of annex 03 of RFC 36: a grade counts the uses of a variable along two axes, its uses at
+run time and all its uses, as a pair of multiplicities.
 ADE have no such modality, and prove the laws of a modality for each of their instances; the grades
 are proved here to satisfy them, for the multiplications and the greatest lower bounds that the RFC
 states.

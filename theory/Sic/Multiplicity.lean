@@ -6,7 +6,8 @@ public import Sic.Set
 /-!
 # Multiplicities
 
-The multiplicities of RFC 36: a multiplicity counts the uses of a variable, and is `0`, `1` or `ω`.
+The multiplicities of annex 02 of RFC 36: a multiplicity counts the uses of a variable, and is `0`,
+`1` or `ω`.
 They are the linear modality of ADE, whose laws are proved here, with the cases of the RFC as the
 definitions of the operations and the meaning of the RFC as theorems about them.
 The meet is written `⊓`, since `∧` is the conjunction of Lean.

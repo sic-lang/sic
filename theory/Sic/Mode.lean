@@ -5,8 +5,8 @@ public import Sic.Grade
 /-!
 # Modes
 
-The modes of RFC 36: a mode is the setting in which the usage of a term is checked, named after the
-grade with which a variable checked in this mode uses itself.
+The modes of annex 04 of RFC 36: a mode is the setting in which the usage of a term is checked,
+named after the grade with which a variable checked in this mode uses itself.
 ADE have the two modes `𝟘ᵐ` and `𝟙ᵐ`, which are `00ᵐ` and `11ᵐ` here: the mode `01ᵐ` is added so that
 an erased term still counts all its uses.
 -/
