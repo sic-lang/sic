@@ -157,17 +157,27 @@ theorem le_iff (p q : Grade) : p ≤ q ↔ p.run ≤ q.run ∧ p.total ≤ q.tot
   · intro ⟨hr, ht⟩
     exact ext hr ht
 
-/-! The tables of the RFC follow from those of the multiplicities, and the names of the grades
-match their components. -/
+/-! The table of the RFC, row by row, in the order of the multiplicities. -/
 
-/-- The names of the grades, in the order of their multiplicities: each grade is named after its two
-components, as `noneLinear` is `none / linear`, `01ᵖ`.
+/-- The table of the names of the grades, whose rows give a grade, named after its two
+multiplicities, as `noneLinear` is `none / linear`, with its components.
 RFC: `\mathsf{names}_p` -/
-theorem names :
-    [noneNone, noneLinear, noneUnrestricted, linearLinear, linearUnrestricted, affineLinear,
-      unrestrictedUnrestricted].map (fun p => (p.run, p.total)) =
-    [(.zero, .zero), (.zero, .one), (.zero, .omega), (.one, .one), (.one, .omega), (.omega, .one),
-      (.omega, .omega)] := rfl
+theorem names_table :
+    [(noneNone.run, noneNone.total),
+    (noneLinear.run, noneLinear.total),
+    (noneUnrestricted.run, noneUnrestricted.total),
+    (linearLinear.run, linearLinear.total),
+    (linearUnrestricted.run, linearUnrestricted.total),
+    (affineLinear.run, affineLinear.total),
+    (unrestrictedUnrestricted.run, unrestrictedUnrestricted.total)] =
+    [(.zero, .zero),
+    (.zero, .one),
+    (.zero, .omega),
+    (.one, .one),
+    (.one, .omega),
+    (.omega, .one),
+    (.omega, .omega)] := by
+  decide
 
 /-- Passing a permission of grade `none / linear` to a parameter of the same grade uses it once, and
 never at run time: `01ᵖ · 11ᵖ = 01ᵖ`. -/
