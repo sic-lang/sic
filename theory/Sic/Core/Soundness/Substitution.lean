@@ -33,18 +33,6 @@ variable {k : Nat}
 
 /-! ## Substitutions of a Context Extended by a Telescope -/
 
-/-- The renaming of the empty scope, which has no variable. -/
-def Ren.empty {Γ : Scope} : Ren Γ [] := fun x => nomatch x
-
-/-- A variable of a scope whose entries have no telescope has none either, under new variables. -/
-theorem Var.extend_grades {Γ : Scope} (hΓ : ∀ {b}, Var Γ b → b = []) :
-    (n : Nat) → {b : List Grade} → Var (Γ.extend n) b → b = []
-  | 0, _, x => hΓ x
-  | n + 1, _, x => Var.extend_grades (Γ := [] :: Γ)
-      (fun y => match y with
-        | .zero => rfl
-        | .succ y => hΓ y) n x
-
 /-- The substitution `σ` of the scope `Γ` extended by `n` variables, on the variables of `Γ`. -/
 def Subst.dropN {Ξ Γ : Scope} (n : Nat) (σ : Subst k Ξ (Γ.extend n)) : Subst k Ξ Γ :=
   fun x => σ (x.weakenN n)
@@ -60,11 +48,6 @@ theorem Subst.ext {Ξ Γ : Scope} {σ σ' : Subst k Ξ Γ} (h : ∀ {a} (x : Var
   funext a x
   exact h x
 
-/-- A substitution of the empty scope changes no term, under new variables. -/
-theorem Term.subst_liftN_empty {a : Nat} (σ : Subst k [] []) (t : Term k (Scope.extend [] a)) :
-    t.subst (Subst.liftN a σ) = t :=
-  Term.subst_id_of (Subst.liftN_id_of a fun x => by cases x) t
-
 /-- A substitution of the empty scope changes no closed term. -/
 theorem Term.subst_empty (σ : Subst k [] []) (t : Term k []) : t.subst σ = t :=
   Term.subst_liftN_empty (a := 0) σ t
@@ -73,26 +56,19 @@ theorem Term.subst_empty (σ : Subst k [] []) (t : Term k []) : t.subst σ = t :
 theorem Term.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [] n)) (t : Term k (Γ.extend n)) :
     (t.subst (Subst.liftN n σ)).subst τ = t.subst (Subst.append σ τ) :=
-  Term.subst_subst_of (fun _ => rfl) t
+  Term.subst_subst_of (fun x => (Subst.append_eq_liftN σ τ x).symm) t
 
 /-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
 theorem Subst.dropN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var Γ a) :
-    Subst.dropN n (Subst.append σ τ) x = σ x := by
-  show (Subst.liftN n σ (x.weakenN n)).subst (Subst.liftN a.length τ) = σ x
-  rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.length
-    (ρ := Ren.weakenN n) (σ' := fun y => τ (y.weakenN n)) fun _ => rfl)]
-  exact Term.subst_liftN_empty _ _
+    Subst.dropN n (Subst.append σ τ) x = σ x :=
+  Subst.append_weakenN σ τ x
 
 /-- `(σ, τ)` gives the new variables what `τ` gives them. -/
 theorem Subst.topN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var (Scope.extend [] n) a) :
-    Subst.topN n (Subst.append σ τ) x = τ x := by
-  obtain rfl := Var.extend_grades (fun y => by cases y) n x
-  show (Subst.liftN n σ (Ren.liftN n Ren.empty x)).subst (Subst.liftN 0 τ) = τ x
-  rw [Subst.liftN_rename_of n (σ' := fun y => σ (Ren.empty y)) (fun _ => rfl),
-    Subst.liftN_id_of n (fun y => by cases y)]
-  rfl
+    Subst.topN n (Subst.append σ τ) x = τ x :=
+  Subst.append_liftN_empty σ τ x
 
 /-- `(σ, τ)` without its last `n` entries is `σ⇑` substituted by `τ` without its last `n` entries:
 both give the variables of `Γ` what `σ` gives them, and `x` what `τ` gives it. -/
@@ -100,6 +76,8 @@ theorem Subst.dropN_append_succ {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [[]] n)) {a : List Grade} (x : Var ([] :: Γ) a) :
     (Subst.lift σ x).subst (Subst.liftN a.length (Subst.dropN n τ)) =
       Subst.dropN n (Subst.append (n := n + 1) σ τ) x := by
+  refine Eq.trans ?_
+    (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := [] :: Γ) n x)).symm
   show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.length τ)
   rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.length
     (ρ := Ren.weakenN n) (σ' := Subst.dropN n τ) fun _ => rfl)]

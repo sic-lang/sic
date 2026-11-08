@@ -1361,11 +1361,89 @@ theorem Telescope.subst_subst₀ {Γ Δ Ξ : Scope} {ps : List Grade} {σ : Subs
 
 /-! ## Closed Substitutions -/
 
+/-- The renaming of the empty scope, which has no variable. -/
+def Ren.empty {Γ : Scope} : Ren Γ [] := fun x => nomatch x
+
+/-- Where a variable of the scope `Γ` extended by `n` variables comes from: a variable `y` of `Γ`,
+which is `y.weakenN n`, or one of the new variables, a variable of the empty scope extended by
+them. -/
+def Var.split {Γ : Scope} {ps : List Grade} :
+    (n : Nat) → Var (Γ.extend n) ps → Var Γ ps ⊕ Var (Scope.extend [] n) ps
+  | 0, x => .inl x
+  | n + 1, x =>
+    match Var.split (Γ := [] :: Γ) n x with
+    | .inl .zero => .inr (Var.weakenN n .zero)
+    | .inl (.succ y) => .inl y
+    | .inr z => .inr (Ren.liftN n Ren.empty z)
+
 /-- `(σ, τ)`: the closed substitution `σ` of the scope `Γ` followed by the closed substitution `τ`
-of `n` new variables. -/
+of `n` new variables, which gives each variable of `Γ` what `σ` gives it, and each new variable
+what `τ` gives it.
+RFC: `\mathsf{pair}_\theta` -/
 def Subst.append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ) (τ : Subst k [] (Scope.extend [] n)) :
-    Subst k [] (Γ.extend n) :=
-  fun x => (Subst.liftN n σ x).subst (Subst.liftN _ τ)
+    Subst k [] (Γ.extend n) := fun x =>
+  match x.split n with
+  | .inl y => σ y
+  | .inr y => τ y
+
+/-- A variable of the scope `Γ` extended by `n` variables is a variable of `Γ` or a new one. -/
+theorem Var.cases_extend {Γ : Scope} {ps : List Grade} :
+    (n : Nat) → (x : Var (Γ.extend n) ps) →
+      (∃ y : Var Γ ps, x = y.weakenN n) ∨
+        ∃ z : Var (Scope.extend [] n) ps, x = Ren.liftN n Ren.empty z
+  | 0, x => .inl ⟨x, rfl⟩
+  | n + 1, x => by
+    rcases Var.cases_extend (Γ := [] :: Γ) n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+    · cases y with
+      | zero =>
+        refine .inr ⟨Var.weakenN n .zero, ?_⟩
+        exact (Ren.liftN_weakenN n (Ren.lift Ren.empty) .zero).symm
+      | succ y => exact .inl ⟨y, rfl⟩
+    · refine .inr ⟨Ren.liftN n Ren.empty z, ?_⟩
+      exact (Ren.liftN_comp_of n (ρ₃ := Ren.empty) (fun y => nomatch y) z).symm
+
+/-- A variable of `Γ` comes from `Γ`. -/
+theorem Var.split_weakenN {Γ : Scope} {ps : List Grade} :
+    (n : Nat) → (y : Var Γ ps) → (y.weakenN n).split n = .inl y
+  | 0, _ => rfl
+  | n + 1, y => by
+    rw [Var.split]
+    rw [show Var.weakenN (n + 1) y = Var.weakenN n y.succ from rfl,
+      Var.split_weakenN (Γ := [] :: Γ) n y.succ]
+    rfl
+
+/-- A new variable is a new variable. -/
+theorem Var.split_liftN_empty {Γ : Scope} {ps : List Grade} :
+    (n : Nat) → (z : Var (Scope.extend [] n) ps) →
+      (Ren.liftN n (Ren.empty (Γ := Γ)) z).split n = .inr z
+  | 0, z => nomatch z
+  | n + 1, z => by
+    rcases Var.cases_extend (Γ := [[]]) n z with ⟨y, rfl⟩ | ⟨z, rfl⟩
+    · cases y with
+      | zero =>
+        rw [Var.split]
+        rw [show Ren.liftN (n + 1) (Ren.empty (Γ := Γ)) (Var.weakenN n .zero) =
+          Ren.liftN n (Ren.lift Ren.empty) (Var.weakenN n .zero) from rfl,
+          Ren.liftN_weakenN, Var.split_weakenN]
+        rfl
+      | succ y => nomatch y
+    · rw [Var.split]
+      rw [show Ren.liftN (n + 1) (Ren.empty (Γ := Γ)) (Ren.liftN n Ren.empty z) =
+          Ren.liftN n (Ren.lift Ren.empty) (Ren.liftN n Ren.empty z) from rfl,
+        Ren.liftN_comp_of n (ρ₃ := Ren.empty) (fun y => nomatch y) z,
+        Var.split_liftN_empty (Γ := [] :: Γ) n z]
+
+/-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
+theorem Subst.append_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (y : Var Γ a) :
+    Subst.append σ τ (y.weakenN n) = σ y := by
+  simp only [Subst.append, Var.split_weakenN]
+
+/-- `(σ, τ)` gives the new variables what `τ` gives them. -/
+theorem Subst.append_liftN_empty {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (z : Var (Scope.extend [] n) a) :
+    Subst.append σ τ (Ren.liftN n Ren.empty z) = τ z := by
+  simp only [Subst.append, Var.split_liftN_empty]
 
 /-- `[t / x]`: the closed substitution of one variable by the closed term `t`. -/
 def Subst.closedSingle (t : Term k []) : Subst k [] [[]] := fun x =>
@@ -1379,6 +1457,35 @@ RFC: `\mathsf{args}_\theta` -/
 def Args.toSubst : {ps : List Grade} → Args k [] ps → Subst k [] (Scope.extend [] ps.length)
   | [], .nil => fun x => nomatch x
   | _ :: _, .cons t ts => Subst.append (Subst.closedSingle t) ts.toSubst
+
+/-- A variable of a scope whose entries have no telescope has none either, under new variables. -/
+theorem Var.extend_grades {Γ : Scope} (hΓ : ∀ {b}, Var Γ b → b = []) :
+    (n : Nat) → {b : List Grade} → Var (Γ.extend n) b → b = []
+  | 0, _, x => hΓ x
+  | n + 1, _, x => Var.extend_grades (Γ := [] :: Γ)
+      (fun y => match y with
+        | .zero => rfl
+        | .succ y => hΓ y) n x
+
+/-- A substitution of the empty scope changes no term, under new variables. -/
+theorem Term.subst_liftN_empty {a : Nat} (σ : Subst k [] []) (t : Term k (Scope.extend [] a)) :
+    t.subst (Subst.liftN a σ) = t :=
+  Term.subst_id_of (Subst.liftN_id_of a fun x => by cases x) t
+
+/-- `(σ, τ)` gives each variable what `σ` under the new variables gives it, substituted by `τ`. -/
+theorem Subst.append_eq_liftN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var (Γ.extend n) a) :
+    Subst.append σ τ x = (Subst.liftN n σ x).subst (Subst.liftN a.length τ) := by
+  rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+  · rw [Subst.append_weakenN, Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of
+      a.length (ρ := Ren.weakenN n) (σ' := fun y => τ (y.weakenN n)) fun _ => rfl)]
+    exact (Term.subst_liftN_empty _ _).symm
+  · obtain rfl := Var.extend_grades (fun y => by cases y) n z
+    rw [Subst.append_liftN_empty]
+    show _ = (Subst.liftN n σ (Ren.liftN n Ren.empty z)).subst (Subst.liftN 0 τ)
+    rw [Subst.liftN_rename_of n (σ' := fun y => σ (Ren.empty y)) (fun _ => rfl),
+      Subst.liftN_id_of n (fun y => by cases y)]
+    rfl
 
 -- ADE: none.
 /-- Substituting a closed term `t` for a variable is the same with the substitution `[t / x]` of the
@@ -1417,7 +1524,8 @@ theorem Term.instantiate_eq_subst :
     (Term.instantiate_eq_subst (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts).trans
       ((congrArg (fun u => Term.subst ts.toSubst u)
         (Term.subst₀_liftN_single_closed ps.length t B)).trans
-        (Term.subst_subst_of (fun _ => rfl) B))
+        (Term.subst_subst_of (fun x =>
+          (Subst.append_eq_liftN (Subst.closedSingle t) ts.toSubst x).symm) B))
 
 /-! ## Levels
 
