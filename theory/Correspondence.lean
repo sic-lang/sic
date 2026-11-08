@@ -177,6 +177,9 @@ def declarationsOf (dirs : List (Name × System.FilePath)) :
   let env ← getEnv
   let mut result := {}
   for (decl, _) in env.constants.map₁.toList do
+    -- The declarations that Lean generates, such as the unary function of a definition by well-founded
+    -- recursion, have the doc string of their definition but no position of their own.
+    if decl.isInternal then continue
     let some idx := env.getModuleIdxFor? decl | continue
     let module := env.header.moduleNames[idx.toNat]!
     let some (root, dir) := dirs.find? (·.1.isPrefixOf module) | continue

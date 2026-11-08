@@ -52,7 +52,8 @@ def Entry.interpret (ι : Interpretation) : Entry → Entry
   | e => e
 
 /-- The signature `Σ` in which each constant becomes the definition whose body is its
-interpretation. -/
+interpretation.
+RFC: `\mathsf{interpret}_\Sigma` -/
 def Signature.interpret (ι : Interpretation) (sig : Signature) : Signature :=
   sig.map (Entry.interpret ι)
 
@@ -63,7 +64,8 @@ def Computesι (sig : Signature) (ι : Interpretation) (t v : Term 0 []) : Prop 
 
 /-! ## Levels Without Variables -/
 
-/-- The level without variables whose value is `n`, written as this number. -/
+/-- The level without variables whose value is `n`, written as this number.
+RFC: `\mathsf{numeral}_l` -/
 def Level.ofNat {k : Nat} : Nat → Level k
   | 0 => .zero
   | n + 1 => .succ (Level.ofNat n)
@@ -71,30 +73,36 @@ def Level.ofNat {k : Nat} : Nat → Level k
 /-- The value of a level without variables. -/
 def Level.closedValue (l : Level 0) : Nat := l.value Fin.elim0
 
-/-- `t[ρ]`: the term `t` in which each level variable `i` has the value `ρ i`. -/
+/-- `t[ρ]`: the term `t` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def Term.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (t : Term k Γ) : Term 0 Γ :=
   t.substLevels fun i => .ofNat (ρ i)
 
-/-- `Γ[ρ]`: the context `Γ` in which each level variable `i` has the value `ρ i`. -/
+/-- `Γ[ρ]`: the context `Γ` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def Context.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (ctx : Context k Γ) : Context 0 Γ :=
   ctx.substLevels fun i => .ofNat (ρ i)
 
-/-- `t̄[ρ]`: the arguments `t̄` in which each level variable `i` has the value `ρ i`. -/
+/-- `t̄[ρ]`: the arguments `t̄` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def Args.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat) (ts : Args k Γ ps) :
     Args 0 Γ ps :=
   ts.substLevels fun i => .ofNat (ρ i)
 
 /-- `ā[ρ]`: the arguments `ā` of an instance in which each level variable `i` has the value
-`ρ i`. -/
+`ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def InstanceArgs.atLevels {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (as : InstanceArgs k Γ Δ) :
     InstanceArgs 0 Γ Δ :=
   as.substLevels fun i => .ofNat (ρ i)
 
-/-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`. -/
+/-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def Universe.atLevels {k : Nat} (ρ : Fin k → Nat) (κ : Universe k) : Universe 0 :=
   κ.substLevels fun i => .ofNat (ρ i)
 
-/-- `Θ[ρ]`: the telescope `Θ` in which each level variable `i` has the value `ρ i`. -/
+/-- `Θ[ρ]`: the telescope `Θ` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
 def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat)
     (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
   Θ.substLevels fun i => .ofNat (ρ i)
@@ -121,11 +129,13 @@ level `n - 1`; the kinds of declarations add their clauses.
 -/
 inductive UnivRel (n : Nat) (below : LevelRel) : Term 0 [] → Term 0 [] → TermRel → Prop where
   /-- `(eq_U)`: the universe `U_k`, if `k + 1 = n`, whose terms are equal when they are equal in
-  `eq(U_k)`. -/
+  `eq(U_k)`.
+  RFC: `\mathsf{eq}_U` -/
   | univ {l₁ l₂ : Level 0} (h₁ : l₁.closedValue + 1 = n) (h₂ : l₂.closedValue + 1 = n) :
       UnivRel n below (.sort ⟨.type, l₁⟩) (.sort ⟨.type, l₂⟩) fun A B => ∃ R, below.univ A B R
   /-- `(eq_Ω)`: the universe of propositions `Ω_k`, if `k + 1 = n`, whose terms are equal when they
-  are equal in `eq(Ω_k)`. -/
+  are equal in `eq(Ω_k)`.
+  RFC: `\mathsf{eq}_\Omega` -/
   | prop {l₁ l₂ : Level 0} (h₁ : l₁.closedValue + 1 = n) (h₂ : l₂.closedValue + 1 = n) :
       UnivRel n below (.sort ⟨.prop, l₁⟩) (.sort ⟨.prop, l₂⟩) fun P Q => ∃ b, below.prop P Q b
 
@@ -144,16 +154,20 @@ def levelRel : Nat → LevelRel
 -- ADE: none.
 /-- `eq(A₀) = R`: the closed canonical type `A₀` is a type of a sort, whose terms are equal by `R`. -/
 inductive HasEq (A₀ : Term 0 []) (R : TermRel) : Prop where
-  /-- A type of the universe `U_n`. -/
+  /-- A type of the universe `U_n`.
+  RFC: `\mathsf{eq}_{\mathsf{type}}` -/
   | univ (n : Nat) (h : (levelRel n).univ A₀ A₀ R)
   /-- `(eq_true)` and `(eq_false)`: a proposition of `Ω_n` whose truth is `b`, whose closed terms are
-  all equal proofs when it is true, and none when it is false. -/
+  all equal proofs when it is true, and none when it is false.
+  RFC: `\mathsf{eq}_{\mathsf{true}}`, `\mathsf{eq}_{\mathsf{false}}` -/
   | prop (n : Nat) (b : Prop) (h : (levelRel n).prop A₀ A₀ b) (hR : ∀ t u, R t u ↔ b)
 
-/-- `(prop)`: `A₀` is a proposition, a term of a universe of propositions. -/
+/-- `(prop)`: `A₀` is a proposition, a term of a universe of propositions.
+RFC: `\mathsf{prop}_v` -/
 def IsProp (A₀ : Term 0 []) : Prop := ∃ k b, (levelRel k).prop A₀ A₀ b
 
-/-- `(prop_⇓)`: the closed type `A` computes to a proposition. -/
+/-- `(prop_⇓)`: the closed type `A` computes to a proposition.
+RFC: `\mathsf{prop}_\Downarrow` -/
 def ComputesToProp (sig : Signature) (ι : Interpretation) (A : Term 0 []) : Prop :=
   ∃ A₀, Computesι sig ι A A₀ ∧ IsProp A₀
 
@@ -196,7 +210,8 @@ def ConstantDeclaration.Clause (sig : Signature) (ι : Interpretation) (c : Cons
 
 -- ADE: none.
 /-- `⊨ Σ`: each entry of the signature has a fresh name and is meaningful in the signature before
-it. -/
+it.
+RFC: `{\vDash}\mathsf{sig}_\varnothing` -/
 def ValidSig (ι : Interpretation) : Signature → Prop
   /- `(⊨sig_∅)`. -/
   | [] => True
@@ -221,7 +236,8 @@ def ValidConstantDeclaration (sig : Signature) (ι : Interpretation) (c : Consta
     Prop :=
   ValidSig ι sig ∧ c.Clause sig ι
 
-/-- `(⊨sig_def)`, as the RFC states it: the entry is meaningful and its name is fresh. -/
+/-- `(⊨sig_def)`, as the RFC states it: the entry is meaningful and its name is fresh.
+RFC: `{\vDash}\mathsf{sig}_{\mathsf{def}}` -/
 theorem ValidSig.constantDefinition_iff {ι : Interpretation} {sig : Signature}
     {d : ConstantDefinition} :
     ValidSig ι (.constantDefinition d :: sig) ↔
@@ -229,7 +245,8 @@ theorem ValidSig.constantDefinition_iff {ι : Interpretation} {sig : Signature}
   simp only [ValidSig, ValidConstantDefinition]
   exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
 
-/-- `(⊨sig_decl)`, as the RFC states it: the entry is meaningful and its name is fresh. -/
+/-- `(⊨sig_decl)`, as the RFC states it: the entry is meaningful and its name is fresh.
+RFC: `{\vDash}\mathsf{sig}_{\mathsf{decl}}` -/
 theorem ValidSig.constantDeclaration_iff {ι : Interpretation} {sig : Signature}
     {c : ConstantDeclaration} :
     ValidSig ι (.constantDeclaration c :: sig) ↔
@@ -237,21 +254,49 @@ theorem ValidSig.constantDeclaration_iff {ι : Interpretation} {sig : Signature}
   simp only [ValidSig, ValidConstantDeclaration]
   exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
 
-/-- `(⊨_type≡)`: `Σ ⊨ A ≡ B`. -/
+/-- `(⊨_type≡)`: `Σ ⊨ A ≡ B`.
+RFC: `\vDash_{\mathsf{type}\equiv}` -/
 def ValidEqType₀ (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
   ValidSig ι sig ∧ EqTypeClause sig ι A B
 
-/-- `(⊨_type)`: `Σ ⊨ A`. -/
+/-- `(⊨_type)`: `Σ ⊨ A`.
+RFC: `\vDash_{\mathsf{type}}` -/
 def ValidType₀ (sig : Signature) (ι : Interpretation) (A : Term 0 []) : Prop :=
   ValidEqType₀ sig ι A A
 
-/-- `(⊨_≡)` and `(⊨_≡Ω)`: `Σ ⊨ t ≡ u : A`. -/
+/-- `(⊨_≡)` and `(⊨_≡Ω)`: `Σ ⊨ t ≡ u : A`.
+RFC: `\vDash_\equiv`, `\vDash_{\equiv\Omega}` -/
 def ValidEqTerm₀ (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : Prop :=
   ValidType₀ sig ι A ∧ EqTermClause sig ι t u A
 
-/-- `(⊨)`: `Σ ⊨ t : A`. -/
+/-- `(⊨)`: `Σ ⊨ t : A`.
+RFC: `\vDash` -/
 def ValidTerm₀ (sig : Signature) (ι : Interpretation) (t A : Term 0 []) : Prop :=
   ValidEqTerm₀ sig ι t t A
+
+/-- `(⊨def)`, as the RFC states it: at each instance of the sort and grade variables and each value
+of the level variables, the body is a term of the type; the signature is then meaningful, since an
+instance exists whatever the numbers of the variables.
+RFC: `{\vDash}\mathsf{def}` -/
+theorem ValidConstantDefinition.iff {sig : Signature} {ι : Interpretation} {d : ConstantDefinition} :
+    ValidConstantDefinition sig ι d ↔
+      ∀ inst (ρ : Fin d.levels → Nat),
+        ValidTerm₀ sig ι ((d.body inst).atLevels ρ) ((d.type inst).atLevels ρ) :=
+  ⟨fun ⟨hsig, hc⟩ inst ρ => ⟨⟨hsig, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
+    fun h => ⟨(h ⟨fun _ => .type, fun _ => .zero⟩ fun _ => 0).1.1,
+      fun inst ρ => ⟨(h inst ρ).1.2, (h inst ρ).2⟩⟩⟩
+
+/-- `(⊨decl)`, as the RFC states it: at each instance of the sort and grade variables and each value
+of the level variables, the interpretation of the constant is a term of its type.
+RFC: `{\vDash}\mathsf{decl}` -/
+theorem ValidConstantDeclaration.iff {sig : Signature} {ι : Interpretation}
+    {c : ConstantDeclaration} :
+    ValidConstantDeclaration sig ι c ↔
+      ∀ inst (ρ : Fin c.levels → Nat),
+        ValidTerm₀ sig ι ((ι c inst).atLevels ρ) ((c.type inst).atLevels ρ) :=
+  ⟨fun ⟨hsig, hc⟩ inst ρ => ⟨⟨hsig, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
+    fun h => ⟨(h ⟨fun _ => .type, fun _ => .zero⟩ fun _ => 0).1.1,
+      fun inst ρ => ⟨(h inst ρ).1.2, (h inst ρ).2⟩⟩⟩
 
 /-! ## Hypothetical Judgments -/
 
@@ -280,6 +325,7 @@ theorem Context.size_append {k : Nat} :
 terms of its type, and each second-order variable abstractions whose instances by equal arguments are
 equal terms of its type; the arguments of a telescope are the equal substitutions of the context it
 forms.
+RFC: `\mathsf{eq}_\varepsilon`, `\mathsf{eq}_x`, `\mathsf{eq}_X`
 -/
 def EqSubst (sig : Signature) (ι : Interpretation) :
     {Γ : Scope} → Context 0 Γ → Subst 0 [] Γ → Subst 0 [] Γ → Prop
@@ -301,7 +347,8 @@ decreasing_by
 
 -- ADE: none.
 /-- `Σ ⊨ Γ`, at levels without variables: the last type of the context is a type in the context
-before it. -/
+before it.
+RFC: `{\vDash}\mathsf{ctx}_\varepsilon` -/
 def ValidCtx₀ (sig : Signature) (ι : Interpretation) : {Γ : Scope} → Context 0 Γ → Prop
   /- `(⊨ctx_ε)`. -/
   | _, .empty => ValidSig ι sig
@@ -317,25 +364,29 @@ decreasing_by
     | (simp only [Context.size]; omega)
     | (rw [Context.size_append]; simp only [Context.size]; omega)
 
-/-- `(⊨Γ_type≡)`: `Σ; Γ ⊨ A ≡ B`, at levels without variables. -/
+/-- `(⊨Γ_type≡)`: `Σ; Γ ⊨ A ≡ B`, at levels without variables.
+RFC: `{\vDash}\Gamma_{\mathsf{type}\equiv}` -/
 def ValidEqTypeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (A B : Term 0 Γ) : Prop :=
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqType₀ sig ι (A.subst σ₁) (B.subst σ₂)
 
-/-- `(⊨Γ_type)`: `Σ; Γ ⊨ A`, at levels without variables. -/
+/-- `(⊨Γ_type)`: `Σ; Γ ⊨ A`, at levels without variables.
+RFC: `{\vDash}\Gamma_{\mathsf{type}}` -/
 def ValidTypeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (A : Term 0 Γ) : Prop :=
   ValidEqTypeΓ sig ι ctx A A
 
-/-- `(⊨Γ_≡)`: `Σ; Γ ⊨ t ≡ u : A`, at levels without variables. -/
+/-- `(⊨Γ_≡)`: `Σ; Γ ⊨ t ≡ u : A`, at levels without variables.
+RFC: `{\vDash}\Gamma_\equiv` -/
 def ValidEqTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (t u A : Term 0 Γ) : Prop :=
   ValidTypeΓ sig ι ctx A ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
       ValidEqTerm₀ sig ι (t.subst σ₁) (u.subst σ₂) (A.subst σ₁)
 
-/-- `(⊨Γ)`: `Σ; Γ ⊨ t : A`, at levels without variables. -/
+/-- `(⊨Γ)`: `Σ; Γ ⊨ t : A`, at levels without variables.
+RFC: `{\vDash}\Gamma` -/
 def ValidTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (t A : Term 0 Γ) : Prop :=
   ValidEqTermΓ sig ι ctx t t A
@@ -343,7 +394,8 @@ def ValidTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Cont
 -- ADE: none.
 /-- `(⊨Γ_tel≡)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, at levels without variables: the arguments substituted by two
 equal closed substitutions `σ₁` and `σ₂` of the context are equal substitutions of the context that
-the telescope `Θ[σ₁]` forms. -/
+the telescope `Θ[σ₁]` forms.
+RFC: `{\vDash}\Gamma_{\mathsf{tel}\equiv}` -/
 def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts us : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidCtx₀ sig ι ctx ∧
@@ -351,31 +403,36 @@ def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : Lis
       EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) (ts.subst σ₁).toSubst
         (us.subst σ₂).toSubst
 
-/-- `(⊨Γ_tel)`: `Σ; Γ ⊨ t̄ : Θ`, at levels without variables. -/
+/-- `(⊨Γ_tel)`: `Σ; Γ ⊨ t̄ : Θ`, at levels without variables.
+RFC: `{\vDash}\Gamma_{\mathsf{tel}}` -/
 def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidEqArgsΓ sig ι ctx ts ts Θ
 
 -- ADE: none.
 /-- `(⊨Γ_arg≡)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, at levels without variables: the arguments substituted by
-two equal closed substitutions of the context are equal substitutions of the parameters `Δ`. -/
+two equal closed substitutions of the context are equal substitutions of the parameters `Δ`.
+RFC: `{\vDash}\Gamma_{\mathsf{arg}\equiv}` -/
 def ValidEqInstanceArgsΓ (sig : Signature) (ι : Interpretation) {Γ Δ : Scope} (ctx : Context 0 Γ)
     (as₁ as₂ : InstanceArgs 0 Γ Δ) (params : Context 0 Δ) : Prop :=
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
       EqSubst sig ι params (as₁.subst σ₁).toSubst (as₂.subst σ₂).toSubst
 
-/-- `(⊨Γ_arg)`: `Σ; Γ ⊨ ā : Δ`, at levels without variables. -/
+/-- `(⊨Γ_arg)`: `Σ; Γ ⊨ ā : Δ`, at levels without variables.
+RFC: `{\vDash}\Gamma_{\mathsf{arg}}` -/
 def ValidInstanceArgsΓ (sig : Signature) (ι : Interpretation) {Γ Δ : Scope} (ctx : Context 0 Γ)
     (as : InstanceArgs 0 Γ Δ) (params : Context 0 Δ) : Prop :=
   ValidEqInstanceArgsΓ sig ι ctx as as params
 
-/-- `(⊨ctx_x)`, as the RFC states it. -/
+/-- `(⊨ctx_x)`, as the RFC states it.
+RFC: `{\vDash}\mathsf{ctx}_x` -/
 theorem validCtx₀_var {sig : Signature} {ι : Interpretation} {Γ : Scope} (ctx : Context 0 Γ)
     (A : Term 0 Γ) : ValidCtx₀ sig ι (ctx.var A) ↔ ValidTypeΓ sig ι ctx A := by
   rw [ValidCtx₀]; rfl
 
-/-- `(⊨ctx_X)`, as the RFC states it. -/
+/-- `(⊨ctx_X)`, as the RFC states it.
+RFC: `{\vDash}\mathsf{ctx}_X` -/
 theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Scope}
     {ps : List Parameter} (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length))
     (χ₀ : Option Grade) : ValidCtx₀ sig ι (ctx.secondOrder Θ A χ₀) ↔ ValidTypeΓ sig ι (ctx.append Θ) A := by
@@ -386,7 +443,8 @@ theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Sc
 -- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their first types being
 equal types of a sort that `κ` bounds, and the rest of them equal for every pair of equal terms of
-these types; the meaning ignores their grades. -/
+these types; the meaning ignores their grades.
+RFC: `{\vDash}\mathsf{tel}_{\kappa\varepsilon}`, `{\vDash}\mathsf{tel}_{\kappa,}` -/
 def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
     {ps : List Parameter} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨tel_κε)`. -/
@@ -399,7 +457,8 @@ def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0
 
 -- ADE: none.
 /-- `(⊨Γ_tel_κ)`: `Σ; Γ ⊨ Θ : κ`, at levels without variables: the telescope substituted by two
-equal closed substitutions of the context gives equal closed telescopes in the sort `κ`. -/
+equal closed substitutions of the context gives equal closed telescopes in the sort `κ`.
+RFC: `{\vDash}\Gamma_{\mathsf{tel}\kappa}` -/
 def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (κ : Universe 0) : Prop :=
   ValidCtx₀ sig ι ctx ∧
@@ -407,53 +466,63 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
 
 /-! ## Level Variables -/
 
-/-- `(⊨_ρ)`: `Σ ⊨ Γ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ ⊨ Γ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidCtx (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ) :
     Prop :=
   ∀ ρ, ValidCtx₀ sig ι (ctx.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ A ≡ B`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ A ≡ B`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidEqType (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
     (A B : Term k Γ) : Prop :=
   ∀ ρ, ValidEqTypeΓ sig ι (ctx.atLevels ρ) (A.atLevels ρ) (B.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ A`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ A`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidType (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
     (A : Term k Γ) : Prop :=
   ∀ ρ, ValidTypeΓ sig ι (ctx.atLevels ρ) (A.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ t ≡ u : A`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t ≡ u : A`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidEqTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
     (t u A : Term k Γ) : Prop :=
   ∀ ρ, ValidEqTermΓ sig ι (ctx.atLevels ρ) (t.atLevels ρ) (u.atLevels ρ) (A.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ t : A`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t : A`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
     (t A : Term k Γ) : Prop :=
   ∀ ρ, ValidTermΓ sig ι (ctx.atLevels ρ) (t.atLevels ρ) (A.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidEqArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
     (ctx : Context k Γ) (ts us : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
   ∀ ρ, ValidEqArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (us.atLevels ρ) (Θ.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ : Θ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ : Θ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
     (ctx : Context k Γ) (ts : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
   ∀ ρ, ValidArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (Θ.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidEqInstanceArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ Δ : Scope}
     (ctx : Context k Γ) (as₁ as₂ : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
   ∀ ρ, ValidEqInstanceArgsΓ sig ι (ctx.atLevels ρ) (as₁.atLevels ρ) (as₂.atLevels ρ)
     (params.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā : Δ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ ā : Δ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidInstanceArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ Δ : Scope}
     (ctx : Context k Γ) (as : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
   ∀ ρ, ValidInstanceArgsΓ sig ι (ctx.atLevels ρ) (as.atLevels ρ) (params.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ`, for every value of the level variables. -/
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
 def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
     {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
   ∀ ρ, ValidTelescopeΓ sig ι (ctx.atLevels ρ) (Θ.atLevels ρ) (κ.atLevels ρ)
@@ -554,7 +623,8 @@ theorem levelRel_isPer : (n : Nat) → (levelRel n).IsPer
 theorem levelRel_prop (n : Nat) : (levelRel n).prop = PropRel := by
   cases n <;> rfl
 
-/-- `eq(A₀)` is a partial equivalence relation, symmetric and transitive. -/
+/-- `eq(A₀)` is a partial equivalence relation, symmetric and transitive.
+RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`, `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
 theorem HasEq.isPer {A₀ : Term 0 []} {R : TermRel} : HasEq A₀ R → R.IsPer
   | .univ n h => (levelRel_isPer n).univ_isPer h
   | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
@@ -570,7 +640,8 @@ theorem HasEq.univ_level {A₀ : Term 0 []} {n n' : Nat} {R R' : TermRel}
     (h : (levelRel n).univ A₀ A₀ R) (h' : (levelRel n').univ A₀ A₀ R') : n = n' := by
   cases n <;> cases n' <;> cases h <;> cases h' <;> omega
 
-/-- `eq(A₀)` is unique: two equalities of the terms of a type relate the same terms. -/
+/-- `eq(A₀)` is unique: two equalities of the terms of a type relate the same terms.
+RFC: `\mathsf{unique}_{\mathsf{eq}}` -/
 theorem HasEq.unique {A₀ : Term 0 []} {R R' : TermRel} :
     HasEq A₀ R → HasEq A₀ R' → ∀ t u, R t u ↔ R' t u
   | .univ n h, .univ n' h' => by
@@ -596,7 +667,8 @@ theorem Signature.Distinct.interpret {ι : Interpretation} :
     rw [hnames] at hn ⊢
     exact hfresh e'' he'' n hn
 
-/-- The names of a meaningful signature are distinct. -/
+/-- The names of a meaningful signature are distinct.
+RFC: `\mathsf{distinct}_{\vDash\Sigma}` -/
 theorem ValidSig.distinct {ι : Interpretation} : {sig : Signature} → ValidSig ι sig → sig.Distinct
   | [], _ => trivial
   | .constantDefinition _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
@@ -649,7 +721,8 @@ theorem not_computesToProp_sort {sig : Signature} {ι : Interpretation} {κ : Un
   exact not_isProp_sort hp
 
 /-- `(exact_Ω)`: two closed terms are equal proofs of a proposition exactly when each of them is a
-proof of it. -/
+proof of it.
+RFC: `\mathsf{exact}_\Omega` -/
 theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {l : Level 0}
     (hA : ValidTerm₀ sig ι A (.sort ⟨.prop, l⟩)) :
     ValidEqTerm₀ sig ι t u A ↔ ValidTerm₀ sig ι t A ∧ ValidTerm₀ sig ι u A := by
