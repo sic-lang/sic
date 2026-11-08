@@ -82,7 +82,7 @@ The equality is an equivalence and the order a preorder, whose equivalence is th
 
 -- ADE: none.
 /-- The equality is an equivalence.
-RFC: `\mathsf{equiv}_l` -/
+RFC: `\mathsf{equiv}_l.\mathsf{refl}`, `\mathsf{equiv}_l.\mathsf{symm}`, `\mathsf{equiv}_l.\mathsf{trans}` -/
 theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
   refl _ _ := rfl
   symm h ρ := (h ρ).symm
@@ -336,7 +336,7 @@ theorem Normal.le_iff (n₁ n₂ : Normal k) : n₁.Le n₂ ↔ ∀ ρ, n₁.val
 
 -- ADE: none.
 /-- The order of two levels is decidable, by their normal forms.
-RFC: `\mathsf{decidable}_l` -/
+RFC: `\mathsf{decidable}_l.{\le}` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≤ l₂) :=
   decidable_of_iff ((normalize l₁).Le (normalize l₂)) (by
     rw [Normal.le_iff, le_def]
@@ -344,7 +344,7 @@ instance (l₁ l₂ : Level k) : Decidable (l₁ ≤ l₂) :=
 
 -- ADE: none.
 /-- The equality of two levels is decidable, as the order is.
-RFC: `\mathsf{decidable}_l` -/
+RFC: `\mathsf{decidable}_l.{=}` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≈ l₂) :=
   decidable_of_iff (l₁ ≤ l₂ ∧ l₂ ≤ l₁) (equal_iff_le_le l₁ l₂).symm
 

@@ -19,7 +19,7 @@ A name ends its line, which may break the formula after it: in the last column o
 The formula of a name is the part of its block of math between the separators `\\[1em]` that holds
 the line of the name, inside the environment of the block.
 A doc string gives the names on a line that starts with `RFC:`, each in a code span, written exactly
-as the RFC writes it inside its parentheses, such as ``RFC: `\mathsf{op}_p`, `\mathsf{order}_p` ``.
+as the RFC writes it inside its parentheses, such as ``RFC: `\mathsf{op}_p.{+}`, `\mathsf{order}_p` ``.
 -/
 
 open Lean

@@ -35,28 +35,28 @@ theorem eq_iff {γ₁ γ₂ : GradeVector n} : γ₁ = γ₂ ↔ ∀ x, γ₁ x 
 
 -- ADE: `𝟘ᶜ`, in `Graded/Context.agda`.
 /-- `𝟘ᶜ`, the zero vector, whose components are all the grade `𝟘`.
-RFC: `\mathsf{op}_\gamma` -/
+RFC: `\mathsf{op}_\gamma.{00}` -/
 def zero : GradeVector n := fun _ => Grade.zero
 
 @[inherit_doc] notation "𝟘ᶜ" => zero
 
 -- ADE: `_+ᶜ_`, in `Graded/Context.agda`.
 /-- `γ₁ +ᶜ γ₂`, the addition of each component.
-RFC: `\mathsf{op}_\gamma` -/
+RFC: `\mathsf{op}_\gamma.{+}` -/
 def add (γ₁ γ₂ : GradeVector n) : GradeVector n := fun x => γ₁ x + γ₂ x
 
 @[inherit_doc] infixl:65 " +ᶜ " => add
 
 -- ADE: `_·ᶜ_`, in `Graded/Context.agda`.
 /-- `p ·ᶜ γ`, the multiplication of each component by the grade `p`.
-RFC: `\mathsf{op}_\gamma` -/
+RFC: `\mathsf{op}_\gamma.{\cdot}` -/
 def smul (p : Grade) (γ : GradeVector n) : GradeVector n := fun x => p * γ x
 
 @[inherit_doc] infixr:70 " ·ᶜ " => smul
 
 -- ADE: `_∧ᶜ_`, in `Graded/Context.agda`.
 /-- `γ₁ ∧ᶜ γ₂`, the meet of each component, written `⊓ᶜ` since `∧` is the conjunction of Lean.
-RFC: `\mathsf{op}_\gamma` -/
+RFC: `\mathsf{op}_\gamma.{\wedge}` -/
 def meet (γ₁ γ₂ : GradeVector n) : GradeVector n := fun x => γ₁ x ⊓ γ₂ x
 
 @[inherit_doc] infixl:69 " ⊓ᶜ " => meet
@@ -177,12 +177,12 @@ theorem extend_commutes : ExtendCommutes where
 
 -- ADE: `≈ᶜ-decidable`, in `Graded/Context/Properties/Equivalence.agda`.
 /-- The equality of two vectors is decidable.
-RFC: `\mathsf{decidable}_\gamma` -/
+RFC: `\mathsf{decidable}_\gamma.{=}` -/
 instance : DecidableEq (GradeVector n) := fun _ _ => decidable_of_iff _ eq_iff.symm
 
 -- ADE: `≤ᶜ-decidable`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order of two vectors is decidable.
-RFC: `\mathsf{decidable}_\gamma` -/
+RFC: `\mathsf{decidable}_\gamma.{\le}` -/
 instance (γ₁ γ₂ : GradeVector n) : Decidable (γ₁ ≤ᶜ γ₂) := inferInstanceAs (Decidable (∀ _, _))
 
 /-! ## Examples

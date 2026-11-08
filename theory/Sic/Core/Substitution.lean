@@ -147,7 +147,7 @@ mutual
 
 -- ADE: `_[_]`, in `Definition/Untyped.agda`.
 /-- The term `t` substituted by `σ`.
-RFC: `\mathsf{subst}_\sigma` -/
+RFC: `\mathsf{subst}_\sigma.t` -/
 def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k Γ
   | .var x ts =>
     match σ x, ts.subst₀ σ with
@@ -158,13 +158,13 @@ def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst₀ σ)
 
 /-- The arguments `t̄` substituted by `σ`.
-RFC: `\mathsf{subst}_\sigma` -/
+RFC: `\mathsf{subst}_\sigma.\bar t` -/
 def Args.subst₀ {Γ Δ : Scope} {a : List Parameter} (σ : Subst₀ k Γ Δ) : Args k Δ a → Args k Γ a
   | .nil => .nil
   | .cons t ts => .cons (t.subst₀ σ) (ts.subst₀ σ)
 
 /-- The arguments `ā` substituted by `σ`, under the variables of each abstraction.
-RFC: `\mathsf{subst}_\sigma` -/
+RFC: `\mathsf{subst}_\sigma.\bar a` -/
 def InstanceArgs.subst₀ {Γ Δ Ξ : Scope} (σ : Subst₀ k Γ Δ) :
     InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
@@ -212,7 +212,7 @@ mutual
 
 /-- The term `t` substituted by `θ`: an application `x[t̄]` becomes `B[t̄' / x̄]`, where `x̄. B` is what
 `θ` gives `x`, and `t̄'` are the arguments substituted.
-RFC: `\mathsf{subst}_\theta` -/
+RFC: `\mathsf{subst}_\theta.t` -/
 def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .var x ts => (θ x).instantiate (ts.subst θ)
   | .sort κ => .sort κ
@@ -220,13 +220,13 @@ def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst θ)
 
 /-- The arguments `t̄` substituted by `θ`.
-RFC: `\mathsf{subst}_\theta` -/
+RFC: `\mathsf{subst}_\theta.\bar t` -/
 def Args.subst {Γ Δ : Scope} {a : List Parameter} (θ : Subst k Γ Δ) : Args k Δ a → Args k Γ a
   | .nil => .nil
   | .cons t ts => .cons (t.subst θ) (ts.subst θ)
 
 /-- The arguments `ā` substituted by `θ`, under the variables of each abstraction.
-RFC: `\mathsf{subst}_\theta` -/
+RFC: `\mathsf{subst}_\theta.\bar a` -/
 def InstanceArgs.subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) :
     InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
@@ -251,14 +251,14 @@ def Level.subst {k k' : Nat} (ls' : Fin k → Level k') : Level k → Level k'
   | .var i => ls' i
 
 /-- The sort `κ` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.\kappa` -/
 def Universe.substLevels {k k' : Nat} (ls' : Fin k → Level k') (κ : Universe k) : Universe k' :=
   ⟨κ.quality, κ.level.subst ls'⟩
 
 mutual
 
 /-- `t[l̄' / l̄]`: the term `t` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.t` -/
 def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k Γ → Term k' Γ
   | .var x ts => .var x (ts.substLevels ls')
   | .sort κ => .sort (κ.substLevels ls')
@@ -266,14 +266,14 @@ def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k
   | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
 
 /-- The arguments `t̄` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.\bar t` -/
 def Args.substLevels {k' : Nat} {Γ : Scope} {a : List Parameter} (ls' : Fin k → Level k') :
     Args k Γ a → Args k' Γ a
   | .nil => .nil
   | .cons t ts => .cons (t.substLevels ls') (ts.substLevels ls')
 
 /-- The arguments `ā` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.\bar a` -/
 def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') :
     InstanceArgs k Γ Δ → InstanceArgs k' Γ Δ
   | .nil => .nil
@@ -290,28 +290,28 @@ def Telescope.rename {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) :
   | .cons q p A Θ => .cons q p (A.rename ξ) (Θ.rename (Ren.lift ξ))
 
 /-- `Θ[σ]`: the telescope `Θ` substituted by `σ`.
-RFC: `\mathsf{subst}_\sigma` -/
+RFC: `\mathsf{subst}_\sigma.\Theta` -/
 def Telescope.subst₀ {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ Δ) :
     Telescope k Δ ps → Telescope k Γ ps
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.subst₀ σ) (Θ.subst₀ (Subst₀.lift σ))
 
 /-- `Θ[θ]`: the telescope `Θ` substituted by `θ`.
-RFC: `\mathsf{subst}_\theta` -/
+RFC: `\mathsf{subst}_\theta.\Theta` -/
 def Telescope.subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k Γ Δ) :
     Telescope k Δ ps → Telescope k Γ ps
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.subst θ) (Θ.subst (Subst.lift θ))
 
 /-- The telescope `Θ` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.\Theta` -/
 def Telescope.substLevels {k' : Nat} {Γ : Scope} {ps : List Parameter} (ls' : Fin k → Level k') :
     Telescope k Γ ps → Telescope k' Γ ps
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.substLevels ls') (Θ.substLevels ls')
 
 /-- The context `Γ` in which the levels `ls'` replace the level variables.
-RFC: `\mathsf{inst}_l` -/
+RFC: `\mathsf{inst}_l.\Gamma` -/
 def Context.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Context k Γ → Context k' Γ
   | .empty => .empty
@@ -388,7 +388,7 @@ theorem Subst₀.liftN_id_of {Γ : Scope} :
 mutual
 
 /-- A substitution of the first order that renames each variable to itself changes no term.
-RFC: `\mathsf{id}_\sigma` -/
+RFC: `\mathsf{id}_\sigma.t` -/
 theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x : Var Γ a), σ x = .var x) :
     (t : Term k Γ) → t.subst₀ σ = t
   | .var x ts => by unfold Term.subst₀; simp only [h x, Args.subst₀_id_of h ts]
@@ -1218,7 +1218,7 @@ mutual
 -- ADE: `substCompEq`, in `Definition/Untyped/Properties.agda`, for the first order.
 /-- Substituting by `θ₁` then by `θ₂` is substituting by their composition `θ₃`, which substitutes
 each abstraction under its variables.
-RFC: `\mathsf{comp}_\theta` -/
+RFC: `\mathsf{comp}_\theta.t` -/
 theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
     {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
     (t : Term k Ξ) → (t.subst θ₁).subst θ₂ = t.subst θ₃
@@ -1301,7 +1301,7 @@ theorem Telescope.subst_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter} :
       Telescope.subst_rename_of (Subst.lift_rename_of h) Θ]
 
 /-- Substituting a telescope by `θ₁` then by `θ₂` is substituting it by their composition `θ₃`.
-RFC: `\mathsf{comp}_\theta` -/
+RFC: `\mathsf{comp}_\theta.\Theta` -/
 theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Parameter} :
     {θ₁ : Subst k Δ Ξ} → {θ₂ : Subst k Γ Δ} → {θ₃ : Subst k Γ Ξ} →
       (∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) →
@@ -1312,7 +1312,7 @@ theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Parameter} :
       Telescope.subst_subst_of (Subst.lift_subst_of h) Θ]
 
 /-- A substitution of the first order that renames each variable to itself changes no telescope.
-RFC: `\mathsf{id}_\sigma` -/
+RFC: `\mathsf{id}_\sigma.\Theta` -/
 theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Parameter} :
     {σ : Subst₀ k Γ Γ} → (∀ {a} (x : Var Γ a), σ x = .var x) →
       (Θ : Telescope k Γ ps) → Θ.subst₀ σ = Θ
@@ -1336,7 +1336,7 @@ theorem Telescope.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter} 
 `θ₂` of the second order that gives each variable what `σ` gives it, substituted by `θ₁`: `u[θ₁]`
 when `σ` gives it a term `u`, and `θ₁(y)` when `σ` renames it to `y`, which the RFC, whose variables
 are named, writes `θ₁(x)`.
-RFC: `\mathsf{comp}_{\sigma\theta}` -/
+RFC: `\mathsf{comp}_{\sigma\theta}.t` -/
 theorem Term.subst_subst₀ {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {θ₁ : Subst k Γ Δ}
     {θ₂ : Subst k Γ Ξ} (hterm : ∀ (x : Var Ξ .var) (u : Term k Δ), σ x = .term u → θ₂ x = u.subst θ₁)
     (hvar : ∀ {a} (x : Var Ξ a) (y : Var Δ a), σ x = .var y → θ₂ x = θ₁ y) (t : Term k Ξ) :
@@ -1354,7 +1354,7 @@ where
 -- ADE: none.
 /-- A substitution of the first order then one of the second order are one substitution of the
 second order on a telescope, as `Term.subst_subst₀` states on a term.
-RFC: `\mathsf{comp}_{\sigma\theta}` -/
+RFC: `\mathsf{comp}_{\sigma\theta}.\Theta` -/
 theorem Telescope.subst_subst₀ {Γ Δ Ξ : Scope} {ps : List Parameter} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Γ Ξ}
     (hterm : ∀ (x : Var Ξ .var) (u : Term k Δ), σ x = .term u → θ₂ x = u.subst θ₁)
@@ -1555,7 +1555,7 @@ def Val.substLevels {k' : Nat} {Γ : Scope} {a : Scope.Entry} (ls' : Fin k → L
   | .term t => .term (t.substLevels ls')
 
 /-- Replacing the level variables by `ls₁` then by `ls₂` is replacing them by their composition.
-RFC: `\mathsf{comp}_l` -/
+RFC: `\mathsf{comp}_l.l` -/
 theorem Level.subst_subst {k' k'' : Nat} (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
     ∀ l : Level k, (l.subst ls₁).subst ls₂ = l.subst fun i => (ls₁ i).subst ls₂
   | .zero => rfl
@@ -1621,7 +1621,7 @@ mutual
 
 /-- The instantiation of the level variables commutes with the substitutions of the first order,
 whose terms it instantiates.
-RFC: `\mathsf{comm}_l` -/
+RFC: `\mathsf{comm}_l.t` -/
 theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
     {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
@@ -1658,7 +1658,7 @@ theorem InstanceArgs.substLevels_subst₀_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' 
 end
 
 /-- `B[t̄ / Θ][l̄' / l̄] = B[l̄' / l̄][t̄[l̄' / l̄] / Θ]`.
-RFC: `\mathsf{comm}_l` -/
+RFC: `\mathsf{comm}_l.\bar t` -/
 theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     {ps : List Parameter} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
       (B.instantiate ts).substLevels ls' = (B.substLevels ls').instantiate (ts.substLevels ls')
@@ -1678,7 +1678,7 @@ mutual
 
 /-- Instantiating the level variables by `ls₁` then by `ls₂` is instantiating them by their
 composition.
-RFC: `\mathsf{comp}_l` -/
+RFC: `\mathsf{comp}_l.t` -/
 theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
     (ls₂ : Fin k' → Level k'') :
     (t : Term k Γ) → (t.substLevels ls₁).substLevels ls₂ = t.substLevels fun i => (ls₁ i).subst ls₂
@@ -1726,7 +1726,7 @@ theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Param
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
 first order.
-RFC: `\mathsf{comm}_l` -/
+RFC: `\mathsf{comm}_l.\Theta` -/
 theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {ls' : Fin k → Level k'} :
     {σ : Subst₀ k Γ Δ} → {σ' : Subst₀ k' Γ Δ}
@@ -1738,7 +1738,7 @@ theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List 
       Term.substLevels_subst₀_of h, Telescope.substLevels_subst₀_of (Subst₀.lift_substLevels_of h) Θ]
 
 /-- `(Γ, Θ)[l̄' / l̄] = Γ[l̄' / l̄], Θ[l̄' / l̄]`.
-RFC: `\mathsf{comm}_l` -/
+RFC: `\mathsf{comm}_l.\Gamma` -/
 theorem Context.substLevels_append {k' : Nat} (ls' : Fin k → Level k') :
     {Γ : Scope} → {ps : List Parameter} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
       (ctx.append Θ).substLevels ls' = (ctx.substLevels ls').append (Θ.substLevels ls')

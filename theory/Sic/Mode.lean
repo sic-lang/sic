@@ -79,7 +79,7 @@ namespace Mode
 
 -- ADE: `_·ᵐ_`, in `Graded/Mode.agda`.
 /-- The product of two modes, `m₁ ·ᵐ m₂`, the mode of the product of their grades.
-RFC: `\mathsf{product}_m` -/
+RFC: `\mathsf{product}_m.{\cdot}` -/
 def mul (m₁ m₂ : Mode) : Mode :=
   (m₁.grade * m₂.grade).mode
 
@@ -88,7 +88,7 @@ def mul (m₁ m₂ : Mode) : Mode :=
 -- ADE: `_ᵐ·_`, in `Graded/Mode.agda`.
 /-- The mode `m ⊙ p`, in which a subterm used with the grade `p` is checked inside a term checked in
 the mode `m`, so that a subterm, once erased, stays erased.
-RFC: `\mathsf{product}_m` -/
+RFC: `\mathsf{product}_m.{\odot}` -/
 def odot (m : Mode) (p : Grade) : Mode :=
   m ·ᵐ p.mode
 

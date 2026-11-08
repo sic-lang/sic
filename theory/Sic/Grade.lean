@@ -99,7 +99,7 @@ theorem ext {p q : Grade} (hr : p.run = q.run) (ht : p.total = q.total) : p = q 
 The operations act on each multiplicity, and the seven grades are closed under them. -/
 
 /-- The addition of the grades, `⟨π₁, π₂⟩ + ⟨π₃, π₄⟩ = ⟨π₁ + π₃, π₂ + π₄⟩`.
-RFC: `\mathsf{op}_p` -/
+RFC: `\mathsf{op}_p.{+}` -/
 def add (p q : Grade) : Grade where
   run := p.run + q.run
   total := p.total + q.total
@@ -109,7 +109,7 @@ def add (p q : Grade) : Grade where
     rfl
 
 /-- The multiplication of the grades, `⟨π₁, π₂⟩ · ⟨π₃, π₄⟩ = ⟨π₁ · π₃, π₂ · π₄⟩`.
-RFC: `\mathsf{op}_p` -/
+RFC: `\mathsf{op}_p.{\cdot}` -/
 def mul (p q : Grade) : Grade where
   run := p.run * q.run
   total := p.total * q.total
@@ -120,7 +120,7 @@ def mul (p q : Grade) : Grade where
     · rw [q.run_zero hq, (Multiplicity.semiring).mul_zero]
 
 /-- The meet of the grades, `⟨π₁, π₂⟩ ∧ ⟨π₃, π₄⟩ = ⟨π₁ ∧ π₃, π₂ ∧ π₄⟩`.
-RFC: `\mathsf{op}_p` -/
+RFC: `\mathsf{op}_p.{\wedge}` -/
 def meet (p q : Grade) : Grade where
   run := p.run ⊓ q.run
   total := p.total ⊓ q.total

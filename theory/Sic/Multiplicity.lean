@@ -31,13 +31,13 @@ inductive Multiplicity where
 namespace Multiplicity
 
 /-- The addition of the multiplicities.
-RFC: `\mathsf{op}_\pi` -/
+RFC: `\mathsf{op}_\pi.{+}` -/
 def add : Multiplicity → Multiplicity → Multiplicity
   | zero, π | π, zero => π
   | _, _ => omega
 
 /-- The multiplication of the multiplicities.
-RFC: `\mathsf{op}_\pi` -/
+RFC: `\mathsf{op}_\pi.{\cdot}` -/
 def mul : Multiplicity → Multiplicity → Multiplicity
   | zero, _ | _, zero => zero
   | one, π | π, one => π
@@ -52,7 +52,7 @@ theorem add_def (π₁ π₂ : Multiplicity) : π₁ + π₂ = add π₁ π₂ :
 theorem mul_def (π₁ π₂ : Multiplicity) : π₁ * π₂ = mul π₁ π₂ := rfl
 
 /-- The meet of two multiplicities.
-RFC: `\mathsf{op}_\pi` -/
+RFC: `\mathsf{op}_\pi.{\wedge}` -/
 def meet : Multiplicity → Multiplicity → Multiplicity
   | zero, zero => zero
   | one, one => one
