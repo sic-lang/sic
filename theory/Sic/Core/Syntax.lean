@@ -14,10 +14,11 @@ variable and its declaration, the last entry being `0`.
 A variable `x : A` and a second-order variable `X : (Θ ⊢ A)` are both used applied to a term for
 each entry of their telescope, `x[]` and `X[t̄]`.
 A scope tells which of its entries are variables and which are second-order variables, and gives
-each second-order variable the grades `p` of the entries of its telescope, with which it uses its
-arguments, so that the usage of `X[t̄]` reads them in the scope, from the binder of `X`, as the
-usage of the other terms reads its grades from their binders; a term only uses the variables of its
-scope, each applied to an argument for each of these grades.
+each second-order variable its signature: for each entry of its telescope, the grade `p` with which
+it uses its argument and the ownership signature of this argument, and the constant `c₀` of the
+ownership of its result; the usage and the ownership of `X[t̄]` read them in the scope, from the
+binder of `X`, as the usage of the other terms reads its grades from their binders; a term only uses
+the variables of its scope, each applied to an argument for each entry of its telescope.
 A variable `x : A` and a second-order variable `X : (ε ⊢ A)` both have an empty telescope, and only
 their entries tell them apart, in the scope as in the context.
 
@@ -39,18 +40,34 @@ namespace Sic.Core
 /-- The name of an entry of the signature, or of a type that a declaration declares. -/
 abbrev Name : Type := String
 
-/-- An entry of a scope: a variable, or a second-order variable with the grades `p` of the entries of
-its telescope. -/
+-- ADE: none.
+/--
+What the terms see of an entry of a telescope: the grade `p` with which the entry is used, and the
+ownership signature of its argument, the requirement `r` on the ownership of the argument and, if
+the result can be an alias of the argument, the coefficient `c` by which the ownership of the
+argument counts in the ownership of the result.
+-/
+structure Parameter where
+  /-- The grade `p` with which the entry is used. -/
+  usage : Grade
+  /-- The requirement `r` on the ownership of the argument. -/
+  requirement : Grade
+  /-- The coefficient `c` of the ownership of the argument in the ownership of the result, if any. -/
+  coefficient : Option Grade
+
+/-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
+its telescope and the constant `c₀` of the ownership of its result. -/
 inductive Scope.Entry where
   /-- A variable `x : A`. -/
   | var
-  /-- A second-order variable `X : (Θ ⊢ A)`, whose telescope has the grades `ps`. -/
-  | secondOrder (ps : List Grade)
+  /-- A second-order variable `X : (Θ ⊢ A)`, whose telescope has the parameters `ps`, and the result
+  the constant `c₀` of its ownership, if any. -/
+  | secondOrder (ps : List Parameter) (c₀ : Option Grade)
 
-/-- The grades of the telescope of an entry, none for a variable. -/
-@[reducible] def Scope.Entry.grades : Scope.Entry → List Grade
+/-- The parameters of the telescope of an entry, none for a variable. -/
+@[reducible] def Scope.Entry.params : Scope.Entry → List Parameter
   | .var => []
-  | .secondOrder ps => ps
+  | .secondOrder ps _ => ps
 
 /-- A scope, the entries of a context, the last entry first. -/
 abbrev Scope : Type := List Scope.Entry
@@ -83,7 +100,7 @@ RFC: `\mathsf{syntax}_t`
 inductive Term (k : Nat) : Scope → Type where
   /-- `x[t̄]`: the variable `x` applied to arguments for the entries of its telescope, `x` alone
   when it is a variable. -/
-  | var {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) (ts : Args k Γ e.grades) : Term k Γ
+  | var {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) (ts : Args k Γ e.params) : Term k Γ
   /-- The sort `κ`, `U_l` or `Ω_l`. -/
   | sort {Γ : Scope} (κ : Universe k) : Term k Γ
   /-- `f.{s̄; l̄; p̄}`: the constant `f`, defined or declared, at an instance of its variables. -/
@@ -93,14 +110,14 @@ inductive Term (k : Nat) : Scope → Type where
   | inst {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) : Term k Γ
 
-/-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the grades `ps`, the first one
-first.
+/-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
+one first.
 RFC: `\mathsf{syntax}_{\bar t}` -/
-inductive Args (k : Nat) : Scope → List Grade → Type where
+inductive Args (k : Nat) : Scope → List Parameter → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Args k Γ []
-  /-- `(t, t̄)`, the argument `t` of an entry of grade `p`. -/
-  | cons {Γ : Scope} {p : Grade} {ps : List Grade} (t : Term k Γ) (ts : Args k Γ ps) :
+  /-- `(t, t̄)`, the argument `t` of an entry of parameter `p`. -/
+  | cons {Γ : Scope} {p : Parameter} {ps : List Parameter} (t : Term k Γ) (ts : Args k Γ ps) :
       Args k Γ (p :: ps)
 
 /--
@@ -114,7 +131,7 @@ inductive InstanceArgs (k : Nat) : Scope → Scope → Type where
   | nil {Γ : Scope} : InstanceArgs k Γ []
   /-- `(ā, x̄. B)`, the argument `B` for a parameter whose entry is `e`. -/
   | snoc {Γ Δ : Scope} {e : Scope.Entry} (as : InstanceArgs k Γ Δ)
-      (B : Term k (Γ.extend e.grades.length)) : InstanceArgs k Γ (e :: Δ)
+      (B : Term k (Γ.extend e.params.length)) : InstanceArgs k Γ (e :: Δ)
 
 end
 
@@ -124,17 +141,17 @@ abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var 
 -- ADE: none.
 /--
 `Θ = (x₁ :^{q₁}_{p₁} A₁, …, xₐ :^{qₐ}_{pₐ} Aₐ)`: a telescope in the scope `Γ`, whose entries have
-the grades `ps = (p₁, …, pₐ)`, each
-type in the scope of the entries before it; the entry `x :^q_p A` is used with the grade `p`, and its
-variable with the grade `q` by the types after it.
+the parameters `ps = (p₁, …, pₐ)`, each type in the scope of the entries before it; the entry
+`x :^q_p A` is used with the grade of `p`, which also gives the ownership signature of its argument,
+and its variable with the grade `q` by the types after it.
 RFC: `\mathsf{syntax}_\Theta`
 -/
-inductive Telescope (k : Nat) : Scope → List Grade → Type where
+inductive Telescope (k : Nat) : Scope → List Parameter → Type where
   /-- `ε`. -/
   | nil {Γ : Scope} : Telescope k Γ []
   /-- `(x :^q_p A, Θ)`. -/
-  | cons {Γ : Scope} {ps : List Grade} (q p : Grade) (A : Term k Γ) (Θ : Telescope k (.var :: Γ) ps) :
-      Telescope k Γ (p :: ps)
+  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) (A : Term k Γ)
+      (Θ : Telescope k (.var :: Γ) ps) : Telescope k Γ (p :: ps)
 
 -- ADE: `Con`, in `Definition/Untyped.agda`.
 /-- A context whose scope is `Γ`, the last entry first.
@@ -144,9 +161,10 @@ inductive Context (k : Nat) : Scope → Type where
   | empty : Context k []
   /-- `Γ, x : A`. -/
   | var {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ) : Context k (.var :: Γ)
-  /-- `Γ, X : (Θ ⊢ A)`, a second-order variable, whose telescope has the grades `ps`. -/
-  | secondOrder {Γ : Scope} {ps : List Grade} (ctx : Context k Γ) (Θ : Telescope k Γ ps)
-      (A : Term k (Γ.extend ps.length)) : Context k (.secondOrder ps :: Γ)
+  /-- `Γ, X : (Θ ⊢ A)`, a second-order variable, whose telescope has the parameters `ps`, and whose
+  result has the constant `c₀` of its ownership, if any. -/
+  | secondOrder {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps)
+      (A : Term k (Γ.extend ps.length)) (c₀ : Option Grade) : Context k (.secondOrder ps c₀ :: Γ)
 
 /-! ## Signatures
 
@@ -173,6 +191,8 @@ structure ConstantDefinition where
   grades : Nat
   /-- The mode `m` in which the body is checked. -/
   mode : Mode
+  /-- The ownership `c₀` of its value, which the body provides. -/
+  ownership : Grade
   /-- The type `A`, for each instance. -/
   type : Instance sorts grades → Term levels []
   /-- The body `t`, for each instance. -/
@@ -192,6 +212,8 @@ structure ConstantDeclaration where
   grades : Nat
   /-- The mode `m` of its uses. -/
   mode : Mode
+  /-- The ownership `c₀` of its value, which the declaration states. -/
+  ownership : Grade
   /-- The type `A`, for each instance. -/
   type : Instance sorts grades → Term levels []
 
@@ -242,18 +264,18 @@ abbrev Signature : Type := List Entry
 
 /--
 `f.{s̄; l̄; p̄} :_m A ∈ Σ`: the signature has a constant `f`, with `j` sort, `k` level and `g` grade
-variables, the mode `m` and the type `A`, which the rules of the defined and of the declared
-constants share.
+variables, the mode `m`, the ownership `c₀` and the type `A`, which the rules of the defined and of
+the declared constants share.
 RFC: `\in_f`
 -/
 inductive Signature.HasConstant (sig : Signature) :
-    Name → (j k g : Nat) → Mode → (Instance j g → Term k []) → Prop where
+    Name → (j k g : Nat) → Mode → Grade → (Instance j g → Term k []) → Prop where
   /-- A constant definition. -/
   | constantDefinition {d : ConstantDefinition} (h : .constantDefinition d ∈ sig) :
-      HasConstant sig d.name d.sorts d.levels d.grades d.mode d.type
+      HasConstant sig d.name d.sorts d.levels d.grades d.mode d.ownership d.type
   /-- A constant declaration. -/
   | constantDeclaration {c : ConstantDeclaration} (h : .constantDeclaration c ∈ sig) :
-      HasConstant sig c.name c.sorts c.levels c.grades c.mode c.type
+      HasConstant sig c.name c.sorts c.levels c.grades c.mode c.ownership c.type
 
 -- ADE: none.
 /--
@@ -274,17 +296,18 @@ def Signature.Distinct : Signature → Prop
 /-- In a signature whose names are distinct, a name is introduced by one entry at most.
 RFC: `\mathsf{unique}_\Sigma` -/
 theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct → {e₁ e₂ : Entry} →
-    {n : Name} → e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂
-  | _ :: _, ⟨h, hfresh⟩, _, _, n, h₁, h₂, hn₁, hn₂ => by
-    cases h₁ with
-    | head =>
-      cases h₂ with
-      | head => rfl
-      | tail _ h₂ => exact absurd hn₂ (hfresh _ h₂ n hn₁)
-    | tail _ h₁ =>
-      cases h₂ with
-      | head => exact absurd hn₁ (hfresh _ h₁ n hn₂)
-      | tail _ h₂ => exact h.entry_unique h₁ h₂ hn₁ hn₂
+    {n : Name} → e₁ ∈ sig → e₂ ∈ sig → n ∈ e₁.names → n ∈ e₂.names → e₁ = e₂ := by
+  intro sig
+  induction sig with
+  | nil => intro _ _ _ _ h₁; cases h₁
+  | cons e sig ih =>
+    intro hd e₁ e₂ n h₁ h₂ hn₁ hn₂
+    obtain ⟨h, hfresh⟩ := hd
+    rcases List.mem_cons.mp h₁ with rfl | h₁' <;> rcases List.mem_cons.mp h₂ with rfl | h₂'
+    · rfl
+    · exact absurd hn₂ (hfresh _ h₂' n hn₁)
+    · exact absurd hn₁ (hfresh _ h₁' n hn₂)
+    · exact ih h h₁' h₂' hn₁ hn₂
 
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=

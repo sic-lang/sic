@@ -43,7 +43,7 @@ abbrev Interpretation : Type :=
 /-- The entry `e` in which a constant becomes the definition whose body is its interpretation. -/
 def Entry.interpret (ι : Interpretation) : Entry → Entry
   | .constantDeclaration c =>
-    .constantDefinition ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.type, ι c⟩
+    .constantDefinition ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.ownership, c.type, ι c⟩
   | e => e
 
 /-- The signature `Σ` in which each constant becomes the definition whose body is its
@@ -75,12 +75,12 @@ def Context.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (ctx : Context 
   ctx.substLevels fun i => .ofNat (ρ i)
 
 /-- `t̄[ρ]`: the arguments `t̄` in which each level variable `i` has the value `ρ i`. -/
-def Args.atLevels {k : Nat} {Γ : Scope} {ps : List Grade} (ρ : Fin k → Nat) (ts : Args k Γ ps) :
+def Args.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat) (ts : Args k Γ ps) :
     Args 0 Γ ps :=
   ts.substLevels fun i => .ofNat (ρ i)
 
 /-- `Θ[ρ]`: the telescope `Θ` in which each level variable `i` has the value `ρ i`. -/
-def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Grade} (ρ : Fin k → Nat)
+def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat)
     (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
   Θ.substLevels fun i => .ofNat (ρ i)
 
@@ -207,11 +207,11 @@ included. -/
 def Context.size {k : Nat} : {Γ : Scope} → Context k Γ → Nat
   | _, .empty => 0
   | _, .var ctx _ => ctx.size + 1
-  | _, .secondOrder (ps := ps) ctx _ _ => ctx.size + ps.length + 1
+  | _, .secondOrder (ps := ps) ctx _ _ _ => ctx.size + ps.length + 1
 
 /-- The entries of `Γ, Θ` are those of `Γ` and of `Θ`. -/
 theorem Context.size_append {k : Nat} :
-    {Γ : Scope} → {ps : List Grade} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
+    {Γ : Scope} → {ps : List Parameter} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
       (ctx.append Θ).size = ctx.size + ps.length
   | _, [], _, .nil => rfl
   | _, _ :: _, ctx, .cons _ _ A Θ =>
@@ -232,7 +232,7 @@ def EqSubst (sig : Signature) (ι : Interpretation) :
   | _, .var ctx A, σ₁, σ₂ => EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ValidEqTerm₀ sig ι (σ₁ .zero) (σ₂ .zero) (A.subst (Subst.tail σ₁))
   /- `(eq_X)`. -/
-  | _, .secondOrder ctx Θ A, σ₁, σ₂ => EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
+  | _, .secondOrder ctx Θ A _, σ₁, σ₂ => EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst (Subst.tail σ₁))) τ₁ τ₂ →
         ValidEqTerm₀ sig ι ((σ₁ .zero).subst τ₁) ((σ₂ .zero).subst τ₂)
           ((A.subst (Subst.liftN _ (Subst.tail σ₁))).subst τ₁)
@@ -252,7 +252,7 @@ def ValidCtx₀ (sig : Signature) (ι : Interpretation) : {Γ : Scope} → Conte
   | _, .var ctx A => ValidCtx₀ sig ι ctx ∧
       ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqType₀ sig ι (A.subst σ₁) (A.subst σ₂)
   /- `(⊨ctx_X)`: `Σ; Γ, Θ ⊨ A`. -/
-  | _, .secondOrder ctx Θ A => ValidCtx₀ sig ι (ctx.append Θ) ∧
+  | _, .secondOrder ctx Θ A _ => ValidCtx₀ sig ι (ctx.append Θ) ∧
       ∀ σ₁ σ₂, EqSubst sig ι (ctx.append Θ) σ₁ σ₂ → ValidEqType₀ sig ι (A.subst σ₁) (A.subst σ₂)
 termination_by _ ctx => ctx.size
 decreasing_by
@@ -289,7 +289,7 @@ equal closed substitutions `σ₁` and `σ₂` of the context are equal substitu
 the telescope `Θ[σ₁]` forms.
 RFC 24 gives no meaning to the judgment of the arguments, which its soundness needs for the rule of
 `X[t̄]`. -/
-def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Grade}
+def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts us : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
@@ -297,7 +297,7 @@ def ValidEqArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : Lis
         (us.subst σ₂).toSubst
 
 /-- `(⊨Γ_tel)`: `Σ; Γ ⊨ t̄ : Θ`, at levels without variables. -/
-def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Grade}
+def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidEqArgsΓ sig ι ctx ts ts Θ
 
@@ -308,8 +308,8 @@ theorem validCtx₀_var {sig : Signature} {ι : Interpretation} {Γ : Scope} (ct
 
 /-- `(⊨ctx_X)`, as the RFC states it. -/
 theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Scope}
-    {ps : List Grade} (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) :
-    ValidCtx₀ sig ι (ctx.secondOrder Θ A) ↔ ValidTypeΓ sig ι (ctx.append Θ) A := by
+    {ps : List Parameter} (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length))
+    (c₀ : Option Grade) : ValidCtx₀ sig ι (ctx.secondOrder Θ A c₀) ↔ ValidTypeΓ sig ι (ctx.append Θ) A := by
   rw [ValidCtx₀]; rfl
 
 /-! ## Telescopes -/
@@ -317,7 +317,7 @@ theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Sc
 -- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their grades ignored. -/
 def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
-    {ps : List Grade} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
+    {ps : List Parameter} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨tel_κε)`. -/
   | [], .nil, .nil => ValidSig ι sig
   /- `(⊨tel_κ,)`. -/
@@ -354,12 +354,12 @@ def ValidTerm (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} (ct
   ∀ ρ, ValidTermΓ sig ι (ctx.atLevels ρ) (t.atLevels ρ) (A.atLevels ρ)
 
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, for every value of the level variables. -/
-def ValidEqArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Grade}
+def ValidEqArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
     (ctx : Context k Γ) (ts us : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
   ∀ ρ, ValidEqArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (us.atLevels ρ) (Θ.atLevels ρ)
 
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ t̄ : Θ`, for every value of the level variables. -/
-def ValidArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Grade}
+def ValidArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
     (ctx : Context k Γ) (ts : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
   ∀ ρ, ValidArgsΓ sig ι (ctx.atLevels ρ) (ts.atLevels ρ) (Θ.atLevels ρ)
 
@@ -634,7 +634,7 @@ theorem valid_univ_max (ι : Interpretation) :
 
 /-- `T.{} :_{𝟙𝟙ᵐ} U_1 ≔ U_0`, a definition of a type. -/
 def typeEntry : ConstantDefinition :=
-  ⟨"T", 0, 0, 0, .oneOne, fun _ => univ (.succ .zero), fun _ => univ .zero⟩
+  ⟨"T", 0, 0, 0, .oneOne, .unrestrictedUnrestricted, fun _ => univ (.succ .zero), fun _ => univ .zero⟩
 
 /-- `T.{}`. -/
 abbrev typeConst : Term 0 [] := .const "T" [] [] []
