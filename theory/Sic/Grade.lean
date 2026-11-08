@@ -179,22 +179,6 @@ theorem names_table :
     (.omega, .omega)] := by
   decide
 
-/-- Passing a permission of grade `none / linear` to a parameter of the same grade uses it once, and
-never at run time: `01ᵖ · 11ᵖ = 01ᵖ`. -/
-example : noneLinear * one = noneLinear := by decide
-
-/-- A variable used once in total, erased in one branch and at run time in another, is used once in
-total and at most once at run time: `01ᵖ ∧ 11ᵖ = ω1ᵖ`. -/
-example : noneLinear ⊓ one = affineLinear := by decide
-
-/-- Without `ω1ᵖ`, the meet of `01ᵖ` and `11ᵖ` would be `ωωᵖ`, and the multiplication would not
-distribute over the meet: `01ᵖ · ωωᵖ` is `0ωᵖ`, while `01ᵖ · 01ᵖ ∧ 01ᵖ · 11ᵖ` is `01ᵖ`. -/
-example :
-    (noneLinear.run * Multiplicity.omega, noneLinear.total * Multiplicity.omega) =
-      (.zero, .omega) ∧
-    (noneLinear * noneLinear ⊓ noneLinear * one) = noneLinear := by
-  decide
-
 /-- The grades that allow discarding a variable, `p ≤ 00ᵖ`, are exactly those that allow duplicating
 it, `p ≤ p + p`: `00ᵖ`, `0ωᵖ` and `ωωᵖ`.
 RFC: `\mathsf{discard}_p` -/

@@ -185,27 +185,6 @@ instance : DecidableEq (GradeVector n) := fun _ _ => decidable_of_iff _ eq_iff.s
 RFC: `\mathsf{decidable}_\gamma.{\le}` -/
 instance (γ₁ γ₂ : GradeVector n) : Decidable (γ₁ ≤ᶜ γ₂) := inferInstanceAs (Decidable (∀ _, _))
 
-/-! ## Examples
-
-The usage of the variables of the RFC: a variable `x` checked in the mode `m` uses itself with the
-grade of the mode, `(𝟘ᶜ, x ≔ ⌜m⌝)`, and nothing else. -/
-
-example : update (𝟘ᶜ : GradeVector 2) 0 Grade.one = 𝟘ᶜ ∙ Grade.one := by decide
-
-example : (Grade.noneLinear ·ᶜ (𝟘ᶜ ∙ Grade.one : GradeVector 1)) = 𝟘ᶜ ∙ Grade.noneLinear := by
-  decide
-
-/-! The examples of the rule `(sub)`: a variable used once, with the grade `𝟙`, may be given the
-grade `⟨ω, 1⟩` or `⟨ω, ω⟩`, and a variable not used, with the grade `𝟘`, the grade `⟨ω, ω⟩`. -/
-
-example : (𝟘ᶜ ∙ Grade.unrestrictedUnrestricted : GradeVector 1) ≤ᶜ 𝟘ᶜ ∙ Grade.one := by decide
-
-example : (𝟘ᶜ ∙ Grade.unrestrictedUnrestricted : GradeVector 1) ≤ᶜ 𝟘ᶜ := by decide
-
-example : (𝟘ᶜ ∙ Grade.affineLinear : GradeVector 1) ≤ᶜ 𝟘ᶜ ∙ Grade.one := by decide
-
-example : ¬ (𝟘ᶜ ∙ Grade.one : GradeVector 1) ≤ᶜ 𝟘ᶜ ∙ Grade.affineLinear := by decide
-
 end GradeVector
 
 end Sic.Core

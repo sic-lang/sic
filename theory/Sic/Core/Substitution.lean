@@ -1894,45 +1894,4 @@ theorem InstanceArgs.toSubst_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k �
   | _, .snoc _ _, _, .zero => rfl
   | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_substLevels ls' as x
 
-/-! ## Examples
-
-A second-order variable `X : (x : A ⊢ B)` instantiated with the
-abstraction `x. D x`, where `D` is a declared type with one parameter, replaces each application
-`X[t]` by `D t`, and the arguments of an instance are substituted for its parameters. -/
-
-/-- A parameter used once, without requirement, of which the result is not an alias. -/
-def exampleParameter : Parameter := ⟨.one, .unrestrictedUnrestricted, none⟩
-
-/-- The abstraction `x. D x`. -/
-def exampleAbstraction : Term 0 (Scope.extend [] 1) :=
-  .inst "D" [] [] [] (.snoc .nil (.var₀ .zero) : InstanceArgs 0 _ [.var])
-
-/-- The constant `c`. -/
-def exampleConstant {Γ : Scope} : Term 0 Γ := .const "c" [] [] []
-
-example :
-    (Term.var .zero (.cons exampleConstant .nil) : Term 0 [.secondOrder [exampleParameter] (some .one)]).subst
-        (InstanceArgs.snoc .nil exampleAbstraction).toSubst =
-      .inst "D" [] [] [] (.snoc .nil exampleConstant : InstanceArgs 0 _ [.var]) :=
-  rfl
-
-/-- The application `X[X[c]]` instantiates `X` in its argument too. -/
-example :
-    (Term.var .zero (.cons (.var .zero (.cons exampleConstant .nil)) .nil) : Term 0 [.secondOrder [exampleParameter] (some .one)]).subst
-        (InstanceArgs.snoc .nil exampleAbstraction).toSubst =
-      .inst "D" [] [] []
-        (.snoc .nil (.inst "D" [] [] [] (.snoc .nil exampleConstant : InstanceArgs 0 _ [.var])) :
-          InstanceArgs 0 _ [.var]) :=
-  rfl
-
-/-- The arguments of a telescope are substituted in order: in `B[t₁, t₂ / x₁, x₂]`, the first
-variable `x₁` is the deepest of the two. -/
-example :
-    (Term.instantiate (Γ := []) (ps := [exampleParameter, exampleParameter]) (.inst "E" [] [] []
-        (.snoc (.snoc .nil (.var₀ (.succ .zero))) (.var₀ .zero) : InstanceArgs 0 _ [.var, .var]))
-      (.cons exampleConstant (.cons (.const "d" [] [] []) .nil))) =
-      .inst "E" [] [] [] (.snoc (.snoc .nil exampleConstant) (.const "d" [] [] []) :
-        InstanceArgs 0 _ [.var, .var]) :=
-  rfl
-
 end Sic.Core

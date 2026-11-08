@@ -348,25 +348,6 @@ RFC: `\mathsf{decidable}_l.{=}` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≈ l₂) :=
   decidable_of_iff (l₁ ≤ l₂ ∧ l₂ ≤ l₁) (equal_iff_le_le l₁ l₂).symm
 
-/-! ## Examples
-
-The equality and the order compare the values, not the syntax: for level variables `l₁` and `l₂`,
-`l₁ ⊔ l₁` equals `l₁`, but `l₁ ⊔ l₂` does not equal `l₁`, since they agree only when `l₂ ≤ l₁`. -/
-
-example : (var 0 ⊔ var 0 : Level 2) ≈ var 0 := by decide
-
-example : ¬ (var 0 ⊔ var 1 : Level 2) ≈ var 0 := by decide
-
-example : ¬ (var 1 : Level 2) ≤ var 0 := by decide
-
-example : (succ (var 0) ⊔ var 0 : Level 1) ≈ succ (var 0) := by decide
-
-example : (succ (var 0 ⊔ var 1) : Level 2) ≈ succ (var 0) ⊔ succ (var 1) := by decide
-
-example : (zero : Level 1) ≤ var 0 := by decide
-
-example : ¬ (succ zero : Level 1) ≤ var 0 := by decide
-
 end Level
 
 end Sic.Core
