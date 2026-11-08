@@ -350,8 +350,8 @@ theorem EqSubst.right {Γ : Scope} {ctx : Context 0 Γ} {σ₁ σ₂ : Subst 0 [
 
 The arguments `t̄` of a telescope `Θ` in a context `Γ` mean, at two equal closed substitutions `σ₁`
 and `σ₂` of `Γ`, equal substitutions `[t̄[σ₁] / x̄]` and `[ū[σ₂] / x̄]` of the context that `Θ[σ₁]`
-forms, as `(⊨Γ_tel≡)` says; the rules `(tel_≡ε)` and `(tel_≡,)` keep this meaning, since the
-substitution of the first argument `t` then of `σ₁` is the substitution of `σ₁` followed by `t[σ₁]`.
+forms, as `(⊨Γ_tel≡)` says; the substitution of the first argument `t` then of `σ₁` is the
+substitution of `σ₁` followed by `t[σ₁]`, as the rule `(tel_,≡)` needs.
 -/
 
 /-- `Θ[t / x][σ] = Θ[σ, t[σ]]`, where `(σ, τ)` gives `x` the closed term `t[σ]`. -/
@@ -376,32 +376,6 @@ theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Parameter} (Θ :
       cases e
       exact (Term.subst₀_id _).trans ((Subst.dropN_append_zero σ τ).trans ht)
     | succ x => cases e
-
-/-- `(tel_≡ε)` keeps the meaning: no arguments are equal substitutions of the empty telescope. -/
-theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
-    ValidEqArgsΓ sig ι ctx .nil .nil .nil :=
-  ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
-
-/-- `(tel_≡,)` keeps the meaning: equal first arguments of `A`, and equal arguments of `Θ[t / x]`,
-are equal arguments of `x : A, Θ`. -/
-theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade} {p : Parameter}
-    {t u A : Term 0 Γ} {ts us : Args 0 Γ ps} {Θ : Telescope 0 (.var :: Γ) ps}
-    (ht : ValidEqTermΓ sig ι ctx t u A)
-    (hts : ValidEqArgsΓ sig ι ctx ts us (Θ.subst₀ (Subst₀.single t))) :
-    ValidEqArgsΓ sig ι ctx (.cons t ts) (.cons u us) (.cons q p A Θ) := by
-  refine ⟨hts.1, fun σ₁ σ₂ h => ?_⟩
-  have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (t.subst σ₁))
-      (ts.subst σ₁).toSubst) .zero = t.subst σ₁ := Subst.dropN_append _ _ .zero
-  have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (u.subst σ₂))
-      (us.subst σ₂).toSubst) .zero = u.subst σ₂ := Subst.dropN_append _ _ .zero
-  refine (EqSubst.telescope_cons_iff q p A Θ σ₁
-    (Subst.append (Subst.closedSingle (t.subst σ₁)) (ts.subst σ₁).toSubst)
-    (Subst.append (Subst.closedSingle (u.subst σ₂)) (us.subst σ₂).toSubst)).2 ⟨?_, ?_⟩
-  · rw [d₁, d₂]
-    exact ht.2 σ₁ σ₂ h
-  · rw [Telescope.subst₀_single_subst Θ t σ₁ _ d₁,
-      EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
-    exact hts.2 σ₁ σ₂ h
 
 /-! ## Entries of a Context under Equal Substitutions -/
 
@@ -462,6 +436,60 @@ theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 
   | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
     rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
     exact ih ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1
+
+
+-- ADE: the type in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+/-- The type of the variable `x : A ∈ Γ` is a type in the context, when `Σ ⊨ Γ`. -/
+theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
+    (hx : ctx.VarIn x A) : ValidCtx₀ sig ι ctx → ValidTypeΓ sig ι ctx A := by
+  induction hx with
+  | @zero _ ctx A =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact ((validCtx₀_var ctx A).1 hctx).2 _ _ ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).1
+  | @succVar _ ctx _ A B _ ih =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact (ih ((validCtx₀_var ctx B).1 hctx).1).2 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact (ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ B _).1 hctx).1)).2 _ _
+      ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
+
+-- ADE: none.
+/-- The type of the second-order variable `X : (Θ ⊢ A) ∈ Γ` is a type in the context extended by its
+telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
+substitutions of `Θ[σ₁]`, it gives equal closed types. -/
+theorem Context.SecondOrderIn.validEqType {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
+    {χ₀ : Option Grade} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope 0 Γ ps}
+    {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A) :
+    ValidCtx₀ sig ι ctx → ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
+        ValidEqType₀ sig ι ((A.subst (Subst.liftN _ σ₁)).subst τ₁)
+          ((A.subst (Subst.liftN _ σ₂)).subst τ₂) := by
+  induction hX with
+  | @zero _ _ _ ctx Θ A =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken, Term.subst_append, Term.subst_append]
+    exact ((validCtx₀_secondOrder ctx Θ A _).1 hctx).2 _ _
+      ((EqSubst.append_append_iff ctx Θ _ _ τ₁ τ₂).2
+        ⟨((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).1, hτ⟩)
+  | @succVar _ _ _ ctx _ Θ A B _ ih =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
+    exact ih ((validCtx₀_var ctx B).1 hctx).1 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
+  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
+    exact ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ' B _).1 hctx).1) _ _
+      ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
 
 end
 

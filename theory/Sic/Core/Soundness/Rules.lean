@@ -122,6 +122,68 @@ theorem ValidEqTermΓ.irr {Γ : Scope} {ctx : Context 0 Γ} {t u A : Term 0 Γ} 
     ⟨ht.2 _ _ (hσ.left ht.1.1),
       (hu.2 _ _ (hσ.right ht.1.1)).conv (ht.1.2 _ _ (hσ.symm ht.1.1))⟩⟩
 
+
+/-! ## Variables and Arguments of Telescopes -/
+
+-- ADE: `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+/-- `(var)` keeps the meaning: equal substitutions give the variable equal terms of its type. -/
+theorem ValidTermΓ.var {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
+    (hctx : ValidCtx₀ sig ι ctx) (hx : ctx.VarIn x A) : ValidTermΓ sig ι ctx (.var₀ x) A :=
+  ⟨hx.validTypeΓ hctx, fun _ _ h => EqSubst.varIn hx h⟩
+
+-- ADE: none.
+/-- `(var_X≡)` keeps the meaning, and `(var_X)` with it: equal substitutions give the second-order
+variable equal abstractions, whose instances by the equal substitutions that the arguments give its
+telescope are equal terms of its type.
+The type at the arguments `t̄` substituted by `σ₁` and by `σ₂` is the type at `t̄[σ₁]` and at
+`ū[σ₂]`, then at `ū[σ₂]` and at `t̄[σ₂]`, both equal by the meaning of the entry. -/
+theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+    {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope 0 Γ ps}
+    {A : Term 0 (Γ.extend ps.length)} {ts us : Args 0 Γ ps} (hctx : ValidCtx₀ sig ι ctx)
+    (hX : ctx.SecondOrderIn X Θ A) (hts : ValidEqArgsΓ sig ι ctx ts us Θ) :
+    ValidEqTermΓ sig ι ctx (.var X ts) (.var X us) (A.instantiate ts) := by
+  have hA : ∀ σ : Subst 0 [] Γ,
+      (A.instantiate ts).subst σ = (A.subst (Subst.liftN _ σ)).subst (ts.subst σ).toSubst :=
+    fun σ => (Term.instantiate_subst σ A ts).trans (Term.instantiate_eq_subst _ _)
+  have hX' : ∀ (σ : Subst 0 [] Γ) (vs : Args 0 Γ ps),
+      (Term.var X vs).subst σ = (σ X).subst (vs.subst σ).toSubst :=
+    fun _ _ => Term.instantiate_eq_subst _ _
+  refine ⟨⟨hctx, fun σ₁ σ₂ h => ?_⟩, fun σ₁ σ₂ h => ?_⟩
+  · rw [hA, hA]
+    exact (hX.validEqType hctx _ _ h _ _ (hts.2 _ _ h)).trans
+      (hX.validEqType hctx _ _ (h.right hctx) _ _ (hts.2 _ _ (h.right hctx))).symm
+  · rw [hA, hX', hX']
+    exact EqSubst.secondOrderIn hX h _ _ (hts.2 _ _ h)
+
+-- ADE: none.
+/-- `(tel_ε≡)` keeps the meaning, and `(tel_ε)` with it: no arguments are equal substitutions of the
+empty telescope. -/
+theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
+    ValidEqArgsΓ sig ι ctx .nil .nil .nil :=
+  ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
+
+-- ADE: none.
+/-- `(tel_,≡)` keeps the meaning, and `(tel_,)` with it: equal first arguments of `A`, and equal
+arguments of `Θ[t / x]`, are equal arguments of `x : A, Θ`. -/
+theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade} {p : Parameter}
+    {t u A : Term 0 Γ} {ts us : Args 0 Γ ps} {Θ : Telescope 0 (.var :: Γ) ps}
+    (ht : ValidEqTermΓ sig ι ctx t u A)
+    (hts : ValidEqArgsΓ sig ι ctx ts us (Θ.subst₀ (Subst₀.single t))) :
+    ValidEqArgsΓ sig ι ctx (.cons t ts) (.cons u us) (.cons q p A Θ) := by
+  refine ⟨hts.1, fun σ₁ σ₂ h => ?_⟩
+  have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (t.subst σ₁))
+      (ts.subst σ₁).toSubst) .zero = t.subst σ₁ := Subst.dropN_append _ _ .zero
+  have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle (u.subst σ₂))
+      (us.subst σ₂).toSubst) .zero = u.subst σ₂ := Subst.dropN_append _ _ .zero
+  refine (EqSubst.telescope_cons_iff q p A Θ σ₁
+    (Subst.append (Subst.closedSingle (t.subst σ₁)) (ts.subst σ₁).toSubst)
+    (Subst.append (Subst.closedSingle (u.subst σ₂)) (us.subst σ₂).toSubst)).2 ⟨?_, ?_⟩
+  · rw [d₁, d₂]
+    exact ht.2 σ₁ σ₂ h
+  · rw [Telescope.subst₀_single_subst Θ t σ₁ _ d₁,
+      EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
+    exact hts.2 σ₁ σ₂ h
+
 end
 
 end Sic.Core
