@@ -10,10 +10,12 @@ RFCs that names definitions, formulas or rules, a page that gives each name with
 RFC writes it, and the source of the declarations whose doc strings give it, as their files write
 it, so that a reader compares them on one page; it fails if a doc string gives a name that no RFC
 has, so that renaming a formula in an RFC cannot leave the pages behind.
+A page of the progress, `correspondence.md`, gives for each of these files how many of its names
+are formalized, as the parent chapter of their pages.
 
 Run with the directory of the RFCs, the URL of their files, the directory of the pages and the
 directories of the libraries, `Sic/`, whose modules it imports, as Lake builds them; it prints the
-entries of the pages for the summary of the book.
+entries of the page of the progress and of the pages for the summary of the book.
 A name ends its line, which may break the formula after it: in the last column of a formula,
 `&&(…)`, or after the fraction of a rule, `\;(…)`, as the check `names` of the RFCs requires.
 The formula of a name is the part of its block of math between the separators `\\[1em]` that holds
@@ -209,6 +211,33 @@ def page (url title : String) (names : Array RfcName)
       | none => out := out ++ "\nNot yet formalized.\n"
   return out
 
+/-- The progress of one file of an RFC: its title, the path of its page, how many names it has and
+how many of them are formalized. -/
+structure Progress where
+  /-- The title of the file. -/
+  title : String
+  /-- The path of its page, from the directory of the pages. -/
+  path : String
+  /-- The number of its names. -/
+  names : Nat
+  /-- The number of its names that a declaration formalizes. -/
+  formalized : Nat
+
+/-- The page of the progress: for each file of an RFC, the number of its names that are formalized,
+out of all its names, and their percentage, rounded down so that 100% means all of them. -/
+def progressPage (files : Array Progress) : String := Id.run do
+  let percentage (formalized names : Nat) := s!"{formalized * 100 / names}%"
+  let mut out := "# Correspondence\n\n"
+  out := out ++ "Each file of the RFCs that names definitions, formulas or rules has a page, which gives each name with its formula and the declarations that formalize it.\n"
+  out := out ++ "The table gives, for each of these pages, how many of its names are formalized, out of all its names.\n\n"
+  out := out ++ "| Page | Formalized | Percentage |\n|---|--:|--:|\n"
+  for f in files do
+    out := out ++ s!"| [{f.title}]({f.path}) | {f.formalized} / {f.names} | {percentage f.formalized f.names} |\n"
+  let names := files.foldl (· + ·.names) 0
+  let formalized := files.foldl (· + ·.formalized) 0
+  out := out ++ s!"| Total | {formalized} / {names} | {percentage formalized names} |\n"
+  return out
+
 /-- Unsafe, since the parser of the statements needs the notations of the imported modules, which
 only their environment extensions hold, and loading these runs the initializers of the modules. -/
 unsafe def main : List String → IO UInt32
@@ -224,15 +253,21 @@ unsafe def main : List String → IO UInt32
     let (decls, _) ←
       (declarationsOf (roots.zip (dirs.map System.FilePath.mk))).toIO { fileName := "<Correspondence>", fileMap := default } { env }
     let mut known : Std.HashSet String := {}
+    let mut progress := #[]
     IO.FS.createDirAll out
+    IO.println "- [Correspondence](correspondence.md)"
     for file in ← rfcFiles rfcs do
       let (title, names) ← readNames rfcs file
       if names.isEmpty then continue
       known := names.foldl (·.insert ·.name) known
-      let target := System.FilePath.mk out / (file.drop "text/".length).toString
+      let path := (file.drop "text/".length).toString
+      let target := System.FilePath.mk out / path
       if let some parent := target.parent then IO.FS.createDirAll parent
       IO.FS.writeFile target (page url title names decls)
-      IO.println s!"- [{title}]({(file.drop "text/".length).toString})"
+      IO.println s!"  - [{title}]({path})"
+      let formalized := (names.filter (decls.contains ·.name)).size
+      progress := progress.push { title, path, names := names.size, formalized }
+    IO.FS.writeFile (System.FilePath.mk out / "correspondence.md") (progressPage progress)
     let unknown := decls.toList.filter (!known.contains ·.1)
     for (name, ds) in unknown do
       for d in ds do
