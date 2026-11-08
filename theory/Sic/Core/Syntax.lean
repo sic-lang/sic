@@ -316,6 +316,13 @@ theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct →
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
   fun i => l.get (i.cast h.symm)
 
+/-- The elements of a list mapped by `f` are the elements of the list mapped by `f`. -/
+theorem _root_.List.getFin_map {α β : Type} (f : α → β) (l : List α) {n : Nat}
+    (h : (l.map f).length = n) :
+    (l.map f).getFin h = fun i => f (l.getFin ((List.length_map f).symm.trans h) i) := by
+  funext i
+  simp [List.getFin]
+
 /-- The instance that gives the sort variables the sorts `qs` and the grade variables the grades
 `ps`. -/
 def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.length = j)

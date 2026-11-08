@@ -1790,6 +1790,108 @@ theorem Context.substLevels_append {k' : Nat} (ls' : Fin k → Level k') :
   | _, [], _, .nil => rfl
   | _, _ :: _, ctx, .cons _ _ A Θ => Context.substLevels_append ls' (ctx.var A) Θ
 
+/-- Equal levels are equal once the same levels replace their variables. -/
+theorem Level.subst_equal {k' : Nat} (ls' : Fin k → Level k') {l₁ l₂ : Level k} (h : l₁ ≈ l₂) :
+    l₁.subst ls' ≈ l₂.subst ls' := fun ρ => by
+  rw [Level.value_subst, Level.value_subst]
+  exact h _
+
+/-- A level below an other is below it once the same levels replace their variables. -/
+theorem Level.subst_le {k' : Nat} (ls' : Fin k → Level k') {l₁ l₂ : Level k} (h : l₁ ≤ l₂) :
+    l₁.subst ls' ≤ l₂.subst ls' := fun ρ => by
+  rw [Level.value_subst, Level.value_subst]
+  exact h _
+
+/-- A sort that bounds an other bounds it once the same levels replace their level variables. -/
+theorem Universe.substLevels_bounded {k' : Nat} (ls' : Fin k → Level k') {κ₁ κ₂ : Universe k}
+    (h : κ₁ ≼ κ₂) : κ₁.substLevels ls' ≼ κ₂.substLevels ls' :=
+  ⟨h.1, Level.subst_le ls' h.2⟩
+
+/-- The new variables of a scope have no level to instantiate. -/
+theorem Args.substLevels_bound {k' : Nat} (ls' : Fin k → Level k') :
+    {Γ : Scope} → (ps : List Parameter) →
+      (Args.bound (Γ := Γ) ps : Args k _ ps).substLevels ls' = Args.bound ps
+  | _, [] => rfl
+  | _, _ :: ps => congrArg (Args.cons _) (Args.substLevels_bound ls' (Γ := .var :: _) ps)
+
+/-- A variable as an abstraction has no level to instantiate. -/
+theorem Var.eta_substLevels {k' : Nat} {Γ : Scope} {e : Scope.Entry} (ls' : Fin k → Level k')
+    (x : Var Γ e) : (Var.eta x : Term k _).substLevels ls' = Var.eta x := by
+  rw [Var.eta, Term.substLevels, Args.substLevels_bound, Var.eta]
+
+theorem Subst.lift_substLevels_of {k' : Nat} {Γ Δ : Scope} {b : Scope.Entry}
+    {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    ∀ {a} (x : Var (b :: Δ) a), (Subst.lift θ x).substLevels ls' = Subst.lift θ' x
+  | _, .zero => Var.eta_substLevels ls' _
+  | _, .succ x => (Term.substLevels_rename ls' _ (θ x)).trans (congrArg _ (h x))
+
+theorem Subst.liftN_substLevels_of {k' : Nat} {Γ Δ : Scope} :
+    ∀ (n : Nat) {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ},
+      (∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) →
+      ∀ {a} (x : Var (Δ.extend n) a), (Subst.liftN n θ x).substLevels ls' = Subst.liftN n θ' x
+  | 0, _, _, _, h => h
+  | n + 1, _, _, _, h => Subst.liftN_substLevels_of (Γ := .var :: Γ) (Δ := .var :: Δ) n
+      (Subst.lift_substLevels_of h)
+
+mutual
+
+/-- The instantiation of the level variables commutes with the substitutions of the second order,
+whose abstractions it instantiates. -/
+theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (t : Term k Δ) → (t.subst θ).substLevels ls' = (t.substLevels ls').subst θ'
+  | .var x ts => by
+    rw [Term.subst, Term.substLevels_instantiate, h x, Args.substLevels_subst_of h ts,
+      Term.substLevels, Term.subst]
+  | .sort _ => rfl
+  | .const .. => rfl
+  | .inst D qs ls ps as => by
+    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
+      InstanceArgs.substLevels_subst_of h as]
+
+theorem Args.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
+    {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (ts : Args k Δ a) → (ts.subst θ).substLevels ls' = (ts.substLevels ls').subst θ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Args.subst, Args.substLevels, Args.substLevels, Args.subst,
+      Term.substLevels_subst_of h t, Args.substLevels_subst_of h ts]
+
+theorem InstanceArgs.substLevels_subst_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' : Fin k → Level k'}
+    {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (as : InstanceArgs k Δ Ξ) → (as.subst θ).substLevels ls' = (as.substLevels ls').subst θ'
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.subst, InstanceArgs.substLevels, InstanceArgs.substLevels,
+      InstanceArgs.subst, InstanceArgs.substLevels_subst_of h as,
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) B]
+
+end
+
+/-- The instantiation of the level variables of a telescope commutes with the substitutions of the
+second order. -/
+theorem Telescope.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {ls' : Fin k → Level k'} :
+    {θ : Subst k Γ Δ} → {θ' : Subst k' Γ Δ}
+      → (∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) →
+      (Θ : Telescope k Δ ps) → (Θ.subst θ).substLevels ls' = (Θ.substLevels ls').subst θ'
+  | _, _, _, .nil => rfl
+  | _, _, h, .cons q p A Θ => by
+    rw [Telescope.subst, Telescope.substLevels, Telescope.substLevels, Telescope.subst,
+      Term.substLevels_subst_of h, Telescope.substLevels_subst_of (Subst.lift_substLevels_of h) Θ]
+
+/-- The substitution of the arguments of an instance for its parameters, with their levels
+instantiated, gives each parameter its argument instantiated. -/
+theorem InstanceArgs.toSubst_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    {Δ : Scope} → (as : InstanceArgs k Γ Δ) → ∀ {a} (x : Var Δ a),
+      (as.toSubst x).substLevels ls' = (as.substLevels ls').toSubst x
+  | _, .snoc _ _, _, .zero => rfl
+  | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_substLevels ls' as x
+
 /-! ## Examples
 
 A second-order variable `X : (x : A ⊢ B)` instantiated with the
