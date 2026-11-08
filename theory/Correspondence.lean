@@ -14,7 +14,7 @@ A page of the progress, `correspondence.md`, gives for each of these files how m
 are formalized, as the parent chapter of their pages.
 
 Run with the directory of the RFCs, the URL of their files, the directory of the pages and the
-directories of the libraries, `Sic/`, whose modules it imports, as Lake builds them; it prints the
+directories of the libraries, `Sic/` and `SicExample/`, whose modules it imports, as Lake builds them; it prints the
 entries of the page of the progress and of the pages for the summary of the book.
 A name ends its line, which may break the formula after it: in the last column of a formula,
 `&&(…)`, or after the fraction of a rule, `\;(…)`, as the check `names` of the RFCs requires.
@@ -119,7 +119,7 @@ def readNames (dir : System.FilePath) (file : String) : IO (String × Array RfcN
       heading := text
   return (title, names)
 
-/-- The Markdown files of the RFCs, `text/*.md` and `text/*/*.md`, in the order of their paths. -/
+/-- The Markdown files of the RFCs, in `text/` and its subdirectories, in the order of their paths. -/
 def rfcFiles (dir : System.FilePath) : IO (Array String) := do
   let files ← (dir / "text").walkDir
   let files := files.filterMap fun path =>
@@ -193,14 +193,15 @@ def declarationsOf (dirs : List (Name × System.FilePath)) :
       result := result.insert name ((result.getD name #[]).push declaration)
   return result
 
-/-- The link to the documentation of a declaration, from a page one directory below the book. -/
-def declarationLink (decl : Formalization) : String :=
+/-- The link to the documentation of a declaration, from the page at `page` in the book. -/
+def declarationLink (page : String) (decl : Formalization) : String :=
+  let up := String.join (List.replicate ((page.splitOn "/").length - 1) "../")
   let path := "/".intercalate (decl.module.components.map (·.toString))
-  s!"[`{decl.name}`](../theory/{path}.html#{decl.name})"
+  s!"[`{decl.name}`]({up}theory/{path}.html#{decl.name})"
 
-/-- The page of the names of one file of an RFC: for each name, its formula, then the source of
-each declaration that formalizes it. -/
-def page (url title : String) (names : Array RfcName)
+/-- The page at `path` in the book of the names of one file of an RFC: for each name, its formula,
+then the source of each declaration that formalizes it. -/
+def page (url path title : String) (names : Array RfcName)
     (decls : Std.HashMap String (Array Formalization)) : String := Id.run do
   let mut out := s!"# {title}\n\n"
   out := out ++ s!"Each name of [{title}]({url}/{names[0]!.file}) is given with its formula, then with the source of the declarations that formalize it.\n"
@@ -210,7 +211,7 @@ def page (url title : String) (names : Array RfcName)
     match decls.get? n.name with
       | some ds =>
         for d in ds do
-          out := out ++ s!"\n{declarationLink d}:\n\n```lean\n{d.source}\n```\n"
+          out := out ++ s!"\n{declarationLink path d}:\n\n```lean\n{d.source}\n```\n"
       | none => out := out ++ "\nNot yet formalized.\n"
   return out
 
@@ -266,7 +267,7 @@ unsafe def main : List String → IO UInt32
       let path := (file.drop "text/".length).toString
       let target := System.FilePath.mk out / path
       if let some parent := target.parent then IO.FS.createDirAll parent
-      IO.FS.writeFile target (page url title names decls)
+      IO.FS.writeFile target (page url path title names decls)
       IO.println s!"  - [{title}]({path})"
       let formalized := (names.filter (decls.contains ·.name)).size
       progress := progress.push { title, path, names := names.size, formalized }

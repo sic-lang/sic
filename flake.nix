@@ -77,7 +77,7 @@
               ];
               command = lib.concatStringsSep " && " [
                 "lake --dir theory build --wfail"
-                "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic >/dev/null"
+                "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic theory/SicExample >/dev/null"
               ];
             };
             markdownlint = {
@@ -320,7 +320,7 @@
               lake --dir theory build --wfail
               {
                 printf '[Introduction](introduction.md)\n\n'
-                lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic
+                lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic theory/SicExample
               } >site/SUMMARY.md
               mdbook build
               ${lib.getExe docs.run}
