@@ -127,8 +127,9 @@
               command = "yamllint --strict .";
             };
           };
-          # Checks the commits after a base, origin/main by default: each one is signed off by its
-          # author (CONTRIBUTING.md), and a merge commit only merges the base, to resolve a conflict.
+          # Checks the commits after a base, origin/main by default, up to a head, HEAD by default: each
+          # one is signed off by its author (CONTRIBUTING.md), and a merge commit only merges the base,
+          # to resolve a conflict.
           checkCommits = command {
             name = "check-commits";
             runtimeInputs = [
@@ -138,8 +139,9 @@
             ];
             text = ''
               base=''${1:-origin/main}
+              head=''${2:-HEAD}
               status=0
-              for commit in $(git rev-list --merges "$base..HEAD"); do
+              for commit in $(git rev-list --merges "$base..$head"); do
                 for parent in $(git log -1 --format='%P' "$commit" | cut -d ' ' -f 2-); do
                   if ! git merge-base --is-ancestor "$parent" "$base"; then
                     echo "$(git log -1 --format='%h %s' "$commit"): merges another branch than $base" >&2
@@ -147,7 +149,7 @@
                   fi
                 done
               done
-              for commit in $(git rev-list "$base..HEAD"); do
+              for commit in $(git rev-list "$base..$head"); do
                 author=$(git log -1 --format='%an <%ae>' "$commit")
                 if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$commit" |
                   grep -qxF "$author"; then
