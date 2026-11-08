@@ -106,7 +106,9 @@ theorem wf_sigEx : WfSig sigEx :=
       (fun _ => .const (qs := []) (ls := []) (ps := []) (.empty wf₅)
         (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl rfl rfl)
       (fun _ => .const (qs := []) (ls := []) (ps := [])
-        (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl))
+        (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂])) rfl)
+      (fun _ => .const (qs := []) (ls := []) (ps := [])
+        (.constantDeclaration (c := zeroEntry) (by simp [sig₅, sig₄, sig₃, sig₂]))))
     (by decide)
 
 /-- `(ex_use)`: the definition `origin` unfolds to `zero`. -/

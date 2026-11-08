@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Ownership
 public import Sic.Core.Substitution
 public import Sic.Core.Usage
 
@@ -106,7 +107,7 @@ inductive WfSig : Signature → Prop where
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} :_m A ≔ t`: for each instance of the sort and grade variables, the type `A` is a
 type of some sort and the body `t` a term of it, both in the empty context, and the body uses no
-variable in the mode `m`.
+variable in the mode `m`, where its value has the ownership `c₀` of the definition.
 -/
 inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.
@@ -115,7 +116,8 @@ inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
       (κ : Instance d.sorts d.grades → Universe d.levels)
       (hA : ∀ ι, HasType sig .empty (d.type ι) (.sort (κ ι)))
       (ht : ∀ ι, HasType sig .empty (d.body ι) (d.type ι))
-      (hu : ∀ ι, Usage sig 𝟘ᶜ d.mode (d.body ι)) :
+      (hu : ∀ ι, Usage sig 𝟘ᶜ d.mode (d.body ι))
+      (ho : ∀ ι, Ownership sig (fun x : Var [] .var => nomatch x) d.mode d.ownership (d.body ι)) :
       WfConstantDefinition sig d
 
 /-- `Σ ⊢ f.{s̄; l̄; p̄} :_m A`: for each instance of the sort and grade variables, the type `A` is a
@@ -503,7 +505,7 @@ theorem presuppositions : Presuppositions :=
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
-    | .intro _ hA _ _ => hasType (hA (.default _ _))
+    | .intro _ hA _ _ _ => hasType (hA (.default _ _))
   wfConstantDeclaration {sig : Signature} {c : ConstantDeclaration} :
       WfConstantDeclaration sig c → WfSig sig
     | .intro _ hA => hasType (hA (.default _ _))
