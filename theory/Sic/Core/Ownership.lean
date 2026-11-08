@@ -25,7 +25,7 @@ namespace Sic.Core
 /-- `ψ[ō / x̄]`: the value of the ownership of the result of a second-order variable whose telescope
 has the parameters `ps` and whose result has the constant `χ₀`, given the ownerships `os` of its
 arguments: the meet of `χ₀` and of the ownership `oⱼ` of each argument scaled by the coefficient
-`χⱼ` of its parameter, over the terms present, and none if no term is.
+`χⱼ` of its parameter, over the factors present, and none if no factor is.
 RFC: `\mathsf{value}_\psi` -/
 def Parameter.result (χ₀ : Option Grade) : List Parameter → List Grade → Option Grade
   | p :: ps, o :: os =>

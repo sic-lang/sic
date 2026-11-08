@@ -145,7 +145,7 @@ inductive WfCtx : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → 
   | var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       (h : WfType sig ctx A) : WfCtx sig (ctx.var A)
   /-- A second-order variable, whose type is a type in the context extended by its telescope, and
-  the ownership of whose result has a term: the constant `χ₀` or the coefficient of a parameter.
+  the ownership of whose result has a constant `χ₀` or a factor, given by the coefficient of a parameter.
   RFC: `\mathsf{ctx}_X` -/
   | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
       {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
