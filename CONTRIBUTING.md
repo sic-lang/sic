@@ -112,7 +112,7 @@ For VS Code, `nix run '.#setup-vscode'` writes the recommended extensions and se
 
 ## Site
 
-`nix run '.#build-site'` builds into `book/` the site that GitHub Pages publishes at each push to `main`, to read it as it will be published, from `book/index.html`: the book of the correspondence between the RFCs and the formalization, whose pages `theory/Correspondence.lean` writes, with each formula of the RFCs and the source of the declarations that formalize it, and the documentation of the metatheory, which `nix run '.#docs'` generates with [doc-gen4](https://github.com/leanprover/doc-gen4), in `book/theory/`.
+`nix run '.#build-site'` builds into `book/` the site that GitHub Pages publishes at each push to `main`, to read it as it will be published, from `book/index.html`: the book of the correspondence between the RFCs and the formalization, whose pages `theory/Correspondence.lean` writes, with each formula of the RFCs and the source of the declarations that formalize it, after a page of how many of the names of each page are formalized, and the documentation of the metatheory, which `nix run '.#docs'` generates with [doc-gen4](https://github.com/leanprover/doc-gen4), in `book/theory/`.
 The flake pins the commit of the RFCs whose names the pages list: `nix flake update rfcs` follows their changes.
 
 ## Developer Certificate of Origin

@@ -317,7 +317,7 @@
               ln -s ../LICENSES site/LICENSES
               lake --dir theory build --wfail
               {
-                printf '[Introduction](introduction.md)\n\n# Correspondence\n\n'
+                printf '[Introduction](introduction.md)\n\n'
                 lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic
               } >site/SUMMARY.md
               mdbook build
