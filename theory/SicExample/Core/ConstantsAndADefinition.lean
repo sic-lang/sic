@@ -173,7 +173,9 @@ theorem origin_computes : Computes sigEx origin zero :=
 /-- The empty scope declares variables only. -/
 theorem firstOrder_empty : Scope.FirstOrder [] := fun _ h => nomatch h
 
-/-- The extraction of the program `origin.{}` is `origin`, which stands for `zero`. -/
-theorem origin_extract : (origin : Term 0 []).extract firstOrder_empty = .const "origin" [] := rfl
+/-- The extraction of the program `origin.{}`, its erasure by `S^{11ᵐ}`, is `origin`, which stands
+for `zero`. -/
+theorem origin_extract :
+    (origin : Term 0 []).erase Mode.oneOne.erased firstOrder_empty = .const "origin" [] := rfl
 
 end SicExample.Core
