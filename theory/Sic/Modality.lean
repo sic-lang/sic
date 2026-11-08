@@ -3,9 +3,10 @@ module
 /-!
 # Modalities
 
-The laws that the multiplicities and the grades satisfy alike, and those of the modules over them,
-which the vectors of grades satisfy, as records whose fields are the laws, so that each law is
-stated once and named, and each kind of objects proves that it satisfies them.
+The laws of a modality, which the multiplicities and the grades satisfy alike, and those of the
+modules over them, which the vectors of grades satisfy, as records whose fields are the laws, so
+that each law is stated once and named, and each kind of objects proves that it satisfies them; the
+laws that follow from those of a modality are theorems on its record, which every modality gets.
 ADE state the laws of the modalities as the fields of their record `Modality`, in
 `Graded/Modality.agda`.
 -/
@@ -21,62 +22,40 @@ infixl:69 " ⊓ " => min
 /-- The addition and the multiplication of `α` form a semiring, whose zero is `zero` and whose unit
 is `one`. -/
 structure IsSemiring (α : Type) [Add α] [Mul α] (zero one : α) : Prop where
-  /-- The addition is associative.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{assoc}_{+}`, `\mathsf{semiring}_p.\mathsf{assoc}_{+}` -/
+  /-- The addition is associative. -/
   add_assoc : ∀ a b c : α, (a + b) + c = a + (b + c)
-  /-- The addition is commutative.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{comm}_{+}`, `\mathsf{semiring}_p.\mathsf{comm}_{+}` -/
+  /-- The addition is commutative. -/
   add_comm : ∀ a b : α, a + b = b + a
-  /-- The zero is neutral for the addition.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{unit}_{+}`, `\mathsf{semiring}_p.\mathsf{unit}_{+}` -/
+  /-- The zero is neutral for the addition. -/
   zero_add : ∀ a : α, zero + a = a
-  /-- The multiplication is associative.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{assoc}_{\cdot}`
-  RFC: `\mathsf{semiring}_p.\mathsf{assoc}_{\cdot}` -/
+  /-- The multiplication is associative. -/
   mul_assoc : ∀ a b c : α, (a * b) * c = a * (b * c)
-  /-- The unit is neutral on the left of the multiplication.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{lunit}_{\cdot}`
-  RFC: `\mathsf{semiring}_p.\mathsf{lunit}_{\cdot}` -/
+  /-- The unit is neutral on the left of the multiplication. -/
   one_mul : ∀ a : α, one * a = a
-  /-- The unit is neutral on the right of the multiplication.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{runit}_{\cdot}`
-  RFC: `\mathsf{semiring}_p.\mathsf{runit}_{\cdot}` -/
+  /-- The unit is neutral on the right of the multiplication. -/
   mul_one : ∀ a : α, a * one = a
-  /-- The zero is absorbing on the left of the multiplication.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{lzero}_{\cdot}`
-  RFC: `\mathsf{semiring}_p.\mathsf{lzero}_{\cdot}` -/
+  /-- The zero is absorbing on the left of the multiplication. -/
   zero_mul : ∀ a : α, zero * a = zero
-  /-- The zero is absorbing on the right of the multiplication.
-  RFC: `\mathsf{semiring}_\pi.\mathsf{rzero}_{\cdot}`
-  RFC: `\mathsf{semiring}_p.\mathsf{rzero}_{\cdot}` -/
+  /-- The zero is absorbing on the right of the multiplication. -/
   mul_zero : ∀ a : α, a * zero = zero
 
 -- ADE: the field `∧-Semilattice` of `Modality`, in `Graded/Modality.agda`.
 /-- The meet of `α` is associative, commutative and idempotent. -/
 structure IsMeetSemilattice (α : Type) [Min α] : Prop where
-  /-- The meet is associative.
-  RFC: `\mathsf{meet}_\pi.\mathsf{assoc}`, `\mathsf{meet}_p.\mathsf{assoc}` -/
+  /-- The meet is associative. -/
   meet_assoc : ∀ a b c : α, (a ⊓ b) ⊓ c = a ⊓ (b ⊓ c)
-  /-- The meet is commutative.
-  RFC: `\mathsf{meet}_\pi.\mathsf{comm}`, `\mathsf{meet}_p.\mathsf{comm}` -/
+  /-- The meet is commutative. -/
   meet_comm : ∀ a b : α, a ⊓ b = b ⊓ a
-  /-- The meet is idempotent.
-  RFC: `\mathsf{meet}_\pi.\mathsf{idem}`, `\mathsf{meet}_p.\mathsf{idem}` -/
+  /-- The meet is idempotent. -/
   meet_idem : ∀ a : α, a ⊓ a = a
 
 -- ADE: `_DistributesOver_`, of the standard library of Agda, in `Tools/Algebra.agda`, which the
 -- fields `·-distrib-∧` and `+-distrib-∧` of `Modality` use, in `Graded/Modality.agda`.
 /-- The operation `mul` of `α` distributes over its operation `add`, on both sides. -/
 structure DistributesOver {α : Type} (mul add : α → α → α) : Prop where
-  /-- `mul` distributes on the left.
-  RFC: `{\cdot}{+}_\pi.\mathsf{left}`, `{\cdot}{\wedge}_\pi.\mathsf{left}`
-  RFC: `{+}{\wedge}_\pi.\mathsf{left}`, `{\cdot}{+}_p.\mathsf{left}`
-  RFC: `{\cdot}{\wedge}_p.\mathsf{left}`, `{+}{\wedge}_p.\mathsf{left}` -/
+  /-- `mul` distributes on the left. -/
   left : ∀ a b c : α, mul a (add b c) = add (mul a b) (mul a c)
-  /-- `mul` distributes on the right.
-  RFC: `{\cdot}{+}_\pi.\mathsf{right}`, `{\cdot}{\wedge}_\pi.\mathsf{right}`
-  RFC: `{+}{\wedge}_\pi.\mathsf{right}`, `{\cdot}{+}_p.\mathsf{right}`
-  RFC: `{\cdot}{\wedge}_p.\mathsf{right}`, `{+}{\wedge}_p.\mathsf{right}` -/
+  /-- `mul` distributes on the right. -/
   right : ∀ a b c : α, mul (add b c) a = add (mul b a) (mul c a)
 
 -- ADE: `IsLeftSemimodule`, of the standard library of Agda, in `Tools/Algebra.agda`.
@@ -118,17 +97,59 @@ structure IsModule (R V : Type) [Add R] [Mul R] (zero one : R)
 /-- The zero of `α` is well behaved: it differs from the unit `one`, and a sum, a meet or a product
 is zero only when its operands are. -/
 structure HasWellBehavedZero (α : Type) [Add α] [Mul α] [Min α] (zero one : α) : Prop where
-  /-- The zero is not the unit.
-  RFC: `0_\pi.1`, `0_p.1` -/
+  /-- The zero is not the unit. -/
   zero_ne_one : zero ≠ one
-  /-- A sum is zero only when its operands are.
-  RFC: `0_\pi.{+}`, `0_p.{+}` -/
+  /-- A sum is zero only when its operands are. -/
   add_eq_zero : ∀ a b : α, a + b = zero → a = zero ∧ b = zero
-  /-- A meet is zero only when its operands are.
-  RFC: `0_\pi.{\wedge}`, `0_p.{\wedge}` -/
+  /-- A meet is zero only when its operands are. -/
   meet_eq_zero : ∀ a b : α, a ⊓ b = zero → a = zero ∧ b = zero
-  /-- A product is zero only when one of its operands is.
-  RFC: `0_\pi.{\cdot}`, `0_p.{\cdot}` -/
+  /-- A product is zero only when one of its operands is. -/
   mul_eq_zero : ∀ a b : α, a * b = zero → a = zero ∨ b = zero
+
+/-- The order of a meet, `a ≤ b` when `a = a ⊓ b`, as in ADE, which the multiplicities and the grades
+take as their order. -/
+def order {α : Type} [Min α] (a b : α) : Prop :=
+  a = a ⊓ b
+
+-- ADE: `Modality`, in `Graded/Modality.agda`.
+/-- `α` is a modality, whose zero is `zero` and whose unit is `one`: a semiring whose addition and
+multiplication distribute over its meet, with a well-behaved zero. -/
+structure IsModality (α : Type) [Add α] [Mul α] [Min α] (zero one : α) : Prop where
+  /-- The addition and the multiplication form a semiring. -/
+  semiring : IsSemiring α zero one
+  /-- The meet is associative, commutative and idempotent. -/
+  meet : IsMeetSemilattice α
+  /-- The multiplication distributes over the addition. -/
+  mul_add : DistributesOver (α := α) (· * ·) (· + ·)
+  /-- The multiplication distributes over the meet. -/
+  mul_meet : DistributesOver (α := α) (· * ·) (· ⊓ ·)
+  /-- The addition distributes over the meet. -/
+  add_meet : DistributesOver (α := α) (· + ·) (· ⊓ ·)
+  /-- The zero is well behaved. -/
+  zero : HasWellBehavedZero α zero one
+
+namespace IsModality
+
+variable {α : Type} [Add α] [Mul α] [Min α] {zero one : α}
+
+/-- The addition is monotone. -/
+theorem add_le (h : IsModality α zero one) (a b c : α) (hab : order a b) :
+    order (a + c) (b + c) := by
+  unfold order at *
+  rw [← h.add_meet.right c a b, ← hab]
+
+/-- The meet is the greatest lower bound of two elements. -/
+theorem le_meet_iff (h : IsModality α zero one) (a b c : α) :
+    order c a ∧ order c b ↔ order c (a ⊓ b) := by
+  unfold order
+  constructor
+  · intro ⟨ha, hb⟩
+    rw [← h.meet.meet_assoc, ← ha, ← hb]
+  · intro hab
+    constructor
+    · rw [hab, h.meet.meet_assoc, h.meet.meet_comm a b, h.meet.meet_assoc, h.meet.meet_idem]
+    · rw [hab, h.meet.meet_assoc, h.meet.meet_assoc, h.meet.meet_idem]
+
+end IsModality
 
 end Sic

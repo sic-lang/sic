@@ -66,7 +66,7 @@ theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π�
 /-- The order of the multiplicities, `π₁ ≤ π₂` when `π₁ = π₁ ⊓ π₂`, as in ADE.
 RFC: `\mathsf{order}_\pi` -/
 instance : LE Multiplicity where
-  le π₁ π₂ := π₁ = π₁ ⊓ π₂
+  le := order
 
 instance (π₁ π₂ : Multiplicity) : Decidable (π₁ ≤ π₂) :=
   inferInstanceAs (Decidable (π₁ = π₁ ⊓ π₂))
@@ -257,64 +257,29 @@ The multiplicities form a modality of ADE: a semiring whose addition and multipl
 over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-/-- The addition and the multiplication form a semiring.
-RFC: `\mathsf{semiring}_\pi.\mathsf{assoc}_{+}`, `\mathsf{semiring}_\pi.\mathsf{comm}_{+}`
-RFC: `\mathsf{semiring}_\pi.\mathsf{unit}_{+}`, `\mathsf{semiring}_\pi.\mathsf{assoc}_{\cdot}`
-RFC: `\mathsf{semiring}_\pi.\mathsf{lunit}_{\cdot}`
-RFC: `\mathsf{semiring}_\pi.\mathsf{runit}_{\cdot}`
-RFC: `\mathsf{semiring}_\pi.\mathsf{lzero}_{\cdot}`
-RFC: `\mathsf{semiring}_\pi.\mathsf{rzero}_{\cdot}` -/
-theorem semiring : IsSemiring Multiplicity zero one where
-  add_assoc := by decide
-  add_comm := by decide
-  zero_add := by decide
-  mul_assoc := by decide
-  one_mul := by decide
-  mul_one := by decide
-  zero_mul := by decide
-  mul_zero := by decide
-
-/-- The meet is associative, commutative and idempotent.
-RFC: `\mathsf{meet}_\pi.\mathsf{assoc}`, `\mathsf{meet}_\pi.\mathsf{comm}`
-RFC: `\mathsf{meet}_\pi.\mathsf{idem}` -/
-theorem meet_semilattice : IsMeetSemilattice Multiplicity where
-  meet_assoc := by decide
-  meet_comm := by decide
-  meet_idem := by decide
-
-/-- The multiplication distributes over the addition.
-RFC: `{\cdot}{+}_\pi.\mathsf{left}`, `{\cdot}{+}_\pi.\mathsf{right}` -/
-theorem mul_add : DistributesOver (α := Multiplicity) (· * ·) (· + ·) where
-  left := by decide
-  right := by decide
-
-/-- The multiplication distributes over the meet.
-RFC: `{\cdot}{\wedge}_\pi.\mathsf{left}`, `{\cdot}{\wedge}_\pi.\mathsf{right}` -/
-theorem mul_meet : DistributesOver (α := Multiplicity) (· * ·) (· ⊓ ·) where
-  left := by decide
-  right := by decide
-
-/-- The addition distributes over the meet.
-RFC: `{+}{\wedge}_\pi.\mathsf{left}`, `{+}{\wedge}_\pi.\mathsf{right}` -/
-theorem add_meet : DistributesOver (α := Multiplicity) (· + ·) (· ⊓ ·) where
-  left := by decide
-  right := by decide
-
-/-- The addition is monotone.
-RFC: `{+}{\le}_\pi` -/
-theorem add_le_add_right : ∀ π₁ π₂ π₃ : Multiplicity, π₁ ≤ π₂ → π₁ + π₃ ≤ π₂ + π₃ := by decide
-
-/-- The meet is the greatest lower bound of two multiplicities.
-RFC: `{\wedge}{\le}_\pi` -/
-theorem le_meet_iff : ∀ π₁ π₂ π₃ : Multiplicity, π₃ ≤ π₁ ∧ π₃ ≤ π₂ ↔ π₃ ≤ π₁ ⊓ π₂ := by decide
-
-/-- The zero is well behaved.
-RFC: `0_\pi.1`, `0_\pi.{+}`, `0_\pi.{\wedge}`, `0_\pi.{\cdot}` -/
-theorem zero_well_behaved : HasWellBehavedZero Multiplicity zero one where
-  zero_ne_one := by decide
-  add_eq_zero := by decide
-  meet_eq_zero := by decide
-  mul_eq_zero := by decide
+/-- The multiplicities form a modality. -/
+theorem modality : IsModality Multiplicity zero one where
+  semiring := {
+    add_assoc := by decide
+    add_comm := by decide
+    zero_add := by decide
+    mul_assoc := by decide
+    one_mul := by decide
+    mul_one := by decide
+    zero_mul := by decide
+    mul_zero := by decide }
+  meet := {
+    meet_assoc := by decide
+    meet_comm := by decide
+    meet_idem := by decide }
+  mul_add := { left := by decide, right := by decide }
+  mul_meet := { left := by decide, right := by decide }
+  add_meet := { left := by decide, right := by decide }
+  zero := {
+    zero_ne_one := by decide
+    add_eq_zero := by decide
+    meet_eq_zero := by decide
+    mul_eq_zero := by decide }
 
 end Multiplicity
 

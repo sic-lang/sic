@@ -100,21 +100,21 @@ RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{\cdot}`
 RFC: `\mathsf{module}_\gamma.\mathsf{lzero}_{\cdot}`
 RFC: `\mathsf{module}_\gamma.\mathsf{rzero}_{\cdot}` -/
 theorem module : IsModule Grade (GradeVector n) Grade.zero Grade.one 𝟘ᶜ add smul where
-  add_assoc γ₁ γ₂ γ₃ := funext fun x => Grade.semiring.add_assoc (γ₁ x) (γ₂ x) (γ₃ x)
-  add_comm γ₁ γ₂ := funext fun x => Grade.semiring.add_comm (γ₁ x) (γ₂ x)
-  zero_add γ := funext fun x => Grade.semiring.zero_add (γ x)
-  smul_add p γ₁ γ₂ := funext fun x => Grade.mul_add.left p (γ₁ x) (γ₂ x)
-  add_smul p q γ := funext fun x => Grade.mul_add.right (γ x) p q
-  mul_smul p q γ := funext fun x => Grade.semiring.mul_assoc p q (γ x)
-  one_smul γ := funext fun x => Grade.semiring.one_mul (γ x)
-  zero_smul γ := funext fun x => Grade.semiring.zero_mul (γ x)
-  smul_zero p := funext fun _ => Grade.semiring.mul_zero p
+  add_assoc γ₁ γ₂ γ₃ := funext fun x => Grade.modality.semiring.add_assoc (γ₁ x) (γ₂ x) (γ₃ x)
+  add_comm γ₁ γ₂ := funext fun x => Grade.modality.semiring.add_comm (γ₁ x) (γ₂ x)
+  zero_add γ := funext fun x => Grade.modality.semiring.zero_add (γ x)
+  smul_add p γ₁ γ₂ := funext fun x => Grade.modality.mul_add.left p (γ₁ x) (γ₂ x)
+  add_smul p q γ := funext fun x => Grade.modality.mul_add.right (γ x) p q
+  mul_smul p q γ := funext fun x => Grade.modality.semiring.mul_assoc p q (γ x)
+  one_smul γ := funext fun x => Grade.modality.semiring.one_mul (γ x)
+  zero_smul γ := funext fun x => Grade.modality.semiring.zero_mul (γ x)
+  smul_zero p := funext fun _ => Grade.modality.semiring.mul_zero p
 
 -- ADE: `∧ᶜ-comm`, in `Graded/Context/Properties/Meet.agda`.
 /-- The meet is commutative.
 RFC: `\mathsf{meet}_\gamma` -/
 theorem meet_comm (γ₁ γ₂ : GradeVector n) : γ₁ ⊓ᶜ γ₂ = γ₂ ⊓ᶜ γ₁ :=
-  funext fun x => Grade.meet_semilattice.meet_comm (γ₁ x) (γ₂ x)
+  funext fun x => Grade.modality.meet.meet_comm (γ₁ x) (γ₂ x)
 
 -- ADE: `≤ᶜ-preorder`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order is a preorder.
@@ -147,9 +147,9 @@ theorem smul_le_smul {γ₁ γ₂ : GradeVector n} (p : Grade) (h : γ₁ ≤ᶜ
 /-- The meet is the greatest lower bound of two vectors.
 RFC: `{\wedge}{\le}_\gamma` -/
 theorem le_meet_iff (γ₁ γ₂ γ₃ : GradeVector n) : γ₃ ≤ᶜ γ₁ ∧ γ₃ ≤ᶜ γ₂ ↔ γ₃ ≤ᶜ γ₁ ⊓ᶜ γ₂ :=
-  ⟨fun ⟨h₁, h₂⟩ x => (Grade.le_meet_iff _ _ _).mp ⟨h₁ x, h₂ x⟩,
-    fun h => ⟨fun x => ((Grade.le_meet_iff _ _ _).mpr (h x)).1,
-      fun x => ((Grade.le_meet_iff _ _ _).mpr (h x)).2⟩⟩
+  ⟨fun ⟨h₁, h₂⟩ x => (Grade.modality.le_meet_iff _ _ _).mp ⟨h₁ x, h₂ x⟩,
+    fun h => ⟨fun x => ((Grade.modality.le_meet_iff _ _ _).mpr (h x)).1,
+      fun x => ((Grade.modality.le_meet_iff _ _ _).mpr (h x)).2⟩⟩
 
 -- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations. -/

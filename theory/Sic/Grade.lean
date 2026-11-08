@@ -104,7 +104,7 @@ def add (p q : Grade) : Grade where
   run := p.run + q.run
   total := p.total + q.total
   run_zero h := by
-    obtain ⟨hp, hq⟩ := Multiplicity.zero_well_behaved.add_eq_zero _ _ h
+    obtain ⟨hp, hq⟩ := Multiplicity.modality.zero.add_eq_zero _ _ h
     rw [p.run_zero hp, q.run_zero hq]
     rfl
 
@@ -114,10 +114,10 @@ def mul (p q : Grade) : Grade where
   run := p.run * q.run
   total := p.total * q.total
   run_zero h := by
-    rcases Multiplicity.zero_well_behaved.mul_eq_zero _ _ h with hp | hq
+    rcases Multiplicity.modality.zero.mul_eq_zero _ _ h with hp | hq
     · rw [p.run_zero hp]
       rfl
-    · rw [q.run_zero hq, (Multiplicity.semiring).mul_zero]
+    · rw [q.run_zero hq, Multiplicity.modality.semiring.mul_zero]
 
 /-- The meet of the grades, `⟨π₁, π₂⟩ ∧ ⟨π₃, π₄⟩ = ⟨π₁ ∧ π₃, π₂ ∧ π₄⟩`.
 RFC: `\mathsf{op}_p.{\wedge}` -/
@@ -125,7 +125,7 @@ def meet (p q : Grade) : Grade where
   run := p.run ⊓ q.run
   total := p.total ⊓ q.total
   run_zero h := by
-    obtain ⟨hp, hq⟩ := Multiplicity.zero_well_behaved.meet_eq_zero _ _ h
+    obtain ⟨hp, hq⟩ := Multiplicity.modality.zero.meet_eq_zero _ _ h
     rw [p.run_zero hp, q.run_zero hq]
     rfl
 
@@ -144,7 +144,7 @@ theorem meet_def (p q : Grade) : p ⊓ q = meet p q := rfl
 /-- The order of the grades, `p ≤ q` when `p = p ∧ q`, as in ADE.
 RFC: `\mathsf{order}_p` -/
 instance : LE Grade where
-  le p q := p = p ⊓ q
+  le := order
 
 instance (p q : Grade) : Decidable (p ≤ q) := inferInstanceAs (Decidable (p = p ⊓ q))
 
@@ -193,62 +193,29 @@ The seven grades form a modality of ADE: a semiring whose addition and multiplic
 over its meet, ordered by its meet, with a well-behaved zero. -/
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
-/-- The addition and the multiplication form a semiring.
-RFC: `\mathsf{semiring}_p.\mathsf{assoc}_{+}`, `\mathsf{semiring}_p.\mathsf{comm}_{+}`
-RFC: `\mathsf{semiring}_p.\mathsf{unit}_{+}`, `\mathsf{semiring}_p.\mathsf{assoc}_{\cdot}`
-RFC: `\mathsf{semiring}_p.\mathsf{lunit}_{\cdot}`, `\mathsf{semiring}_p.\mathsf{runit}_{\cdot}`
-RFC: `\mathsf{semiring}_p.\mathsf{lzero}_{\cdot}`, `\mathsf{semiring}_p.\mathsf{rzero}_{\cdot}` -/
-theorem semiring : IsSemiring Grade zero one where
-  add_assoc := by decide
-  add_comm := by decide
-  zero_add := by decide
-  mul_assoc := by decide
-  one_mul := by decide
-  mul_one := by decide
-  zero_mul := by decide
-  mul_zero := by decide
-
-/-- The meet is associative, commutative and idempotent.
-RFC: `\mathsf{meet}_p.\mathsf{assoc}`, `\mathsf{meet}_p.\mathsf{comm}`
-RFC: `\mathsf{meet}_p.\mathsf{idem}` -/
-theorem meet_semilattice : IsMeetSemilattice Grade where
-  meet_assoc := by decide
-  meet_comm := by decide
-  meet_idem := by decide
-
-/-- The multiplication distributes over the addition.
-RFC: `{\cdot}{+}_p.\mathsf{left}`, `{\cdot}{+}_p.\mathsf{right}` -/
-theorem mul_add : DistributesOver (α := Grade) (· * ·) (· + ·) where
-  left := by decide
-  right := by decide
-
-/-- The multiplication distributes over the meet.
-RFC: `{\cdot}{\wedge}_p.\mathsf{left}`, `{\cdot}{\wedge}_p.\mathsf{right}` -/
-theorem mul_meet : DistributesOver (α := Grade) (· * ·) (· ⊓ ·) where
-  left := by decide
-  right := by decide
-
-/-- The addition distributes over the meet.
-RFC: `{+}{\wedge}_p.\mathsf{left}`, `{+}{\wedge}_p.\mathsf{right}` -/
-theorem add_meet : DistributesOver (α := Grade) (· + ·) (· ⊓ ·) where
-  left := by decide
-  right := by decide
-
-/-- The addition is monotone.
-RFC: `{+}{\le}_p` -/
-theorem add_le_add_right : ∀ p q r : Grade, p ≤ q → p + r ≤ q + r := by decide
-
-/-- The meet is the greatest lower bound of two grades.
-RFC: `{\wedge}{\le}_p` -/
-theorem le_meet_iff : ∀ p q r : Grade, r ≤ p ∧ r ≤ q ↔ r ≤ p ⊓ q := by decide
-
-/-- The zero is well behaved.
-RFC: `0_p.1`, `0_p.{+}`, `0_p.{\wedge}`, `0_p.{\cdot}` -/
-theorem zero_well_behaved : HasWellBehavedZero Grade zero one where
-  zero_ne_one := by decide
-  add_eq_zero := by decide
-  meet_eq_zero := by decide
-  mul_eq_zero := by decide
+/-- The grades form a modality. -/
+theorem modality : IsModality Grade zero one where
+  semiring := {
+    add_assoc := by decide
+    add_comm := by decide
+    zero_add := by decide
+    mul_assoc := by decide
+    one_mul := by decide
+    mul_one := by decide
+    zero_mul := by decide
+    mul_zero := by decide }
+  meet := {
+    meet_assoc := by decide
+    meet_comm := by decide
+    meet_idem := by decide }
+  mul_add := { left := by decide, right := by decide }
+  mul_meet := { left := by decide, right := by decide }
+  add_meet := { left := by decide, right := by decide }
+  zero := {
+    zero_ne_one := by decide
+    add_eq_zero := by decide
+    meet_eq_zero := by decide
+    mul_eq_zero := by decide }
 
 /-! ## Meaning
 
@@ -448,7 +415,7 @@ theorem isGLB_foldl (L : List Grade) : ∀ g : Grade,
       intro p hp
       rcases hp with hp | hp
       · rw [hp]
-        exact (le_meet_iff g x r).1 ⟨h g (Or.inl rfl), h x (Or.inr List.mem_cons_self)⟩
+        exact (modality.le_meet_iff g x r).1 ⟨h g (Or.inl rfl), h x (Or.inr List.mem_cons_self)⟩
       · exact h p (Or.inr (List.mem_cons_of_mem _ hp))
 
 /-- Every non-empty decidable set of grades has a greatest lower bound.
