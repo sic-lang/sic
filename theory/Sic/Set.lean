@@ -3,8 +3,9 @@ module
 /-!
 # Sets
 
-The sets of numbers of uses, or of pairs of numbers of uses, by which RFC 33 gives a meaning to the
-multiplicities and to the grades.
+The sets of numbers of uses, or of pairs of numbers of uses, by which annexes 02 and 03 of RFC 36
+give a meaning to the multiplicities and to the grades, and the sets of grades whose positions the
+erasure of annex 14 replaces.
 Lean does not provide sets, and this package depends on no library that does, so a set is the
 predicate that tells which elements belong to it.
 -/
