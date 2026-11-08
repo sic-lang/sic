@@ -52,7 +52,8 @@ structure Parameter where
   usage : Grade
   /-- The requirement `r` on the ownership of the argument. -/
   requirement : Grade
-  /-- The coefficient `c` of the ownership of the argument in the ownership of the result, if any. -/
+  /-- The coefficient `χ` of the ownership of the argument in the ownership of the result, if any.
+  RFC: `\mathsf{syntax}_\psi` -/
   coefficient : Option Grade
 
 /-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
@@ -60,8 +61,9 @@ its telescope and the constant `χ₀` of the ownership of its result. -/
 inductive Scope.Entry where
   /-- A variable `x : A`. -/
   | var
-  /-- A second-order variable `X : (Θ ⊢ A)`, whose telescope has the parameters `ps`, and the result
-  the constant `χ₀` of its ownership, if any. -/
+  /-- A second-order variable `X : (Θ ⊢ A ◀ ψ)`, whose telescope has the parameters `ps`, and the
+  ownership `ψ` of whose result the constant `χ₀`, if any.
+  RFC: `\mathsf{syntax}_\psi` -/
   | secondOrder (ps : List Parameter) (χ₀ : Option Grade)
 
 /-- The parameters of the telescope of an entry, none for a variable. -/
