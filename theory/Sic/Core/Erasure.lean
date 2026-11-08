@@ -28,16 +28,16 @@ erased part by `↯` or by a term that does not terminate, as its strictness req
 
 namespace Sic.Core
 
-/-- The scope `Γ` declares variables only, whose telescopes are empty. -/
-def Scope.FirstOrder (Γ : Scope) : Prop := ∀ ps ∈ Γ, ps = []
+/-- The scope `Γ` declares variables only, and no second-order variable. -/
+def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
 
 -- ADE: none.
 /-- A scope of variables extended by a variable is a scope of variables. -/
-theorem Scope.FirstOrder.cons {Γ : Scope} (hΓ : Γ.FirstOrder) : Scope.FirstOrder ([] :: Γ) := by
-  intro ps hps
-  cases hps with
+theorem Scope.FirstOrder.cons {Γ : Scope} (hΓ : Γ.FirstOrder) : Scope.FirstOrder (.var :: Γ) := by
+  intro e he
+  cases he with
   | head => rfl
-  | tail _ h => exact hΓ ps h
+  | tail _ h => exact hΓ e h
 
 -- ADE: `Term`, in `Graded/Erasure/Target.agda`.
 /-- A term of the target language over `n` variables. -/

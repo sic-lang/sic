@@ -31,7 +31,7 @@ namespace Sic.Core
 inductive Neutral (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop where
   -- ADE: `Neutral.var`, in `Definition/Untyped/Neutral.agda`.
   /-- `x[t̄]`: a variable, or a second-order variable applied to arguments. -/
-  | var {ps : List Grade} (x : Var Γ ps) (ts : Args k Γ ps) : Neutral sig (.var x ts)
+  | var {e : Scope.Entry} (x : Var Γ e) (ts : Args k Γ e.grades) : Neutral sig (.var x ts)
   -- ADE: `Neutral.defn`, in `Definition/Untyped/Neutral.agda`, for the opaque definitions.
   /-- `c.{s̄; l̄; p̄}`: a constant, an entry without body. -/
   | const {c : ConstantDeclaration} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}

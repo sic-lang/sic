@@ -199,7 +199,7 @@ def ValidTerm₀ (sig : Signature) (ι : Interpretation) (t A : Term 0 []) : Pro
 /-! ## Hypothetical Judgments -/
 
 /-- The substitution `σ` without its last entry. -/
-def Subst.tail {k : Nat} {Γ Δ : Scope} {ps : List Grade} (σ : Subst k Γ (ps :: Δ)) : Subst k Γ Δ :=
+def Subst.tail {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} (σ : Subst k Γ (e :: Δ)) : Subst k Γ Δ :=
   fun x => σ x.succ
 
 /-- The number of the entries of a context, those of the telescope of a second-order variable

@@ -60,44 +60,44 @@ theorem Term.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
 
 /-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
 theorem Subst.dropN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var Γ a) :
+    (τ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var Γ a) :
     Subst.dropN n (Subst.append σ τ) x = σ x :=
   Subst.append_weakenN σ τ x
 
 /-- `(σ, τ)` gives the new variables what `τ` gives them. -/
 theorem Subst.topN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [] n)) {a : List Grade} (x : Var (Scope.extend [] n) a) :
+    (τ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var (Scope.extend [] n) a) :
     Subst.topN n (Subst.append σ τ) x = τ x :=
   Subst.append_liftN_empty σ τ x
 
 /-- `(σ, τ)` without its last `n` entries is `σ⇑` substituted by `τ` without its last `n` entries:
 both give the variables of `Γ` what `σ` gives them, and `x` what `τ` gives it. -/
 theorem Subst.dropN_append_succ {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [[]] n)) {a : List Grade} (x : Var ([] :: Γ) a) :
-    (Subst.lift σ x).subst (Subst.liftN a.length (Subst.dropN n τ)) =
+    (τ : Subst k [] (Scope.extend [.var] n)) {a : Scope.Entry} (x : Var (.var :: Γ) a) :
+    (Subst.lift σ x).subst (Subst.liftN a.grades.length (Subst.dropN n τ)) =
       Subst.dropN n (Subst.append (n := n + 1) σ τ) x := by
   refine Eq.trans ?_
-    (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := [] :: Γ) n x)).symm
-  show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.length τ)
-  rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.length
+    (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := .var :: Γ) n x)).symm
+  show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.grades.length τ)
+  rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.grades.length
     (ξ := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
 
 /-- `(σ, τ)` gives the first new variable what `τ` gives it. -/
 theorem Subst.dropN_append_zero {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
-    (τ : Subst k [] (Scope.extend [[]] n)) :
+    (τ : Subst k [] (Scope.extend [.var] n)) :
     Subst.dropN n (Subst.append (n := n + 1) σ τ) .zero = Subst.dropN n τ .zero :=
   (Subst.dropN_append_succ σ τ .zero).symm
 
 /-- The substitution `σ` without its last `n + 1` entries, on its first new variable, is `σ` without
 its last `n` entries. -/
-theorem Subst.dropN_topN_zero {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend ([] :: Γ) n)) :
+theorem Subst.dropN_topN_zero {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend (.var :: Γ) n)) :
     Subst.dropN n (Subst.topN (Γ := Γ) (n + 1) σ) .zero = Subst.dropN n σ .zero := by
   show σ (Ren.liftN n (Ren.lift Ren.empty) (Var.weakenN n .zero)) = σ (Var.weakenN n .zero)
   rw [Ren.liftN_weakenN]
   rfl
 
 /-- The last `n` variables of the last `n + 1` variables are the last `n` variables. -/
-theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend ([] :: Γ) n)) :
+theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend (.var :: Γ) n)) :
     @Eq (Subst k [] (Scope.extend [] n)) (Subst.topN n (Subst.topN (Γ := Γ) (n + 1) σ))
       (Subst.topN n σ) :=
   Subst.ext fun x => congrArg (fun y => σ y)
@@ -116,14 +116,14 @@ theorem EqSubst.empty_iff (σ₁ σ₂ : Subst 0 [] []) : EqSubst sig ι .empty 
 -- ADE: `⊩ˢ≡∷∙⇔`, in `Definition/LogicalRelation/Substitution.agda`.
 /-- `(eq_x)`. -/
 theorem EqSubst.var_iff {Γ : Scope} (ctx : Context 0 Γ) (A : Term 0 Γ)
-    (σ₁ σ₂ : Subst 0 [] ([] :: Γ)) :
+    (σ₁ σ₂ : Subst 0 [] (.var :: Γ)) :
     EqSubst sig ι (ctx.var A) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ValidEqTerm₀ sig ι (σ₁ .zero) (σ₂ .zero) (A.subst (Subst.tail σ₁)) := by
   rw [EqSubst]
 
 /-- `(eq_X)`. -/
 theorem EqSubst.secondOrder_iff {Γ : Scope} {ps : List Grade} (ctx : Context 0 Γ)
-    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (σ₁ σ₂ : Subst 0 [] (ps :: Γ)) :
+    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (σ₁ σ₂ : Subst 0 [] (.secondOrder ps :: Γ)) :
     EqSubst sig ι (ctx.secondOrder Θ A) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst (Subst.tail σ₁))) τ₁ τ₂ →
         ValidEqTerm₀ sig ι ((σ₁ .zero).subst τ₁) ((σ₂ .zero).subst τ₂)
@@ -203,15 +203,15 @@ theorem EqSubst.append_append_iff {Γ : Scope} {ps : List Grade} (ctx : Context 
 /-- The substitutions of the variables of `x : A, Θ`, at a substitution `σ` of the context `Γ` of
 the telescope: equal terms of `A[σ]`, followed by equal substitutions of `Θ[σ, v₁]`. -/
 theorem EqSubst.telescope_cons_iff {Γ : Scope} {ps : List Grade} (q p : Grade) (A : Term 0 Γ)
-    (Θ : Telescope 0 ([] :: Γ) ps) (σ : Subst 0 [] Γ)
-    (τ₁ τ₂ : Subst 0 [] (Scope.extend [[]] ps.length)) :
+    (Θ : Telescope 0 (.var :: Γ) ps) (σ : Subst 0 [] Γ)
+    (τ₁ τ₂ : Subst 0 [] (Scope.extend [.var] ps.length)) :
     EqSubst sig ι (Context.empty.append ((Telescope.cons q p A Θ).subst σ)) τ₁ τ₂ ↔
       ValidEqTerm₀ sig ι (Subst.dropN _ τ₁ .zero) (Subst.dropN _ τ₂ .zero) (A.subst σ) ∧
         EqSubst sig ι
-          (Context.empty.append (Θ.subst (Subst.dropN (Γ := [] :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ₁))))
+          (Context.empty.append (Θ.subst (Subst.dropN (Γ := .var :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ₁))))
           (Subst.topN _ τ₁) (Subst.topN _ τ₂) := by
   have hΘ : (Θ.subst (Subst.lift σ)).subst (Subst.dropN ps.length τ₁) =
-      Θ.subst (Subst.dropN (Γ := [] :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ₁)) :=
+      Θ.subst (Subst.dropN (Γ := .var :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ₁)) :=
     Telescope.subst_subst_of (Subst.dropN_append_succ σ τ₁) Θ
   have hA : (A.subst σ).subst (Subst.tail (Subst.dropN ps.length τ₁)) = A.subst σ :=
     Term.subst_empty _ _
@@ -239,11 +239,11 @@ theorem EqSubst.telescope_iff :
     have hv : ValidEqTerm₀ sig ι (Subst.dropN ps.length τ₁ .zero) (Subst.dropN ps.length τ₁ .zero)
           (A.subst σ₁) →
         (EqSubst sig ι (Context.empty.append (Θ.subst
-            (Subst.dropN (Γ := [] :: _) ps.length (Subst.append (n := ps.length + 1) σ₁ τ₁))))
-            (Subst.topN (Γ := [[]]) ps.length τ₁) (Subst.topN (Γ := [[]]) ps.length τ₂) ↔
+            (Subst.dropN (Γ := .var :: _) ps.length (Subst.append (n := ps.length + 1) σ₁ τ₁))))
+            (Subst.topN (Γ := [.var]) ps.length τ₁) (Subst.topN (Γ := [.var]) ps.length τ₂) ↔
           EqSubst sig ι (Context.empty.append (Θ.subst
-            (Subst.dropN (Γ := [] :: _) ps.length (Subst.append (n := ps.length + 1) σ₂ τ₁))))
-            (Subst.topN (Γ := [[]]) ps.length τ₁) (Subst.topN (Γ := [[]]) ps.length τ₂)) := by
+            (Subst.dropN (Γ := .var :: _) ps.length (Subst.append (n := ps.length + 1) σ₂ τ₁))))
+            (Subst.topN (Γ := [.var]) ps.length τ₁) (Subst.topN (Γ := [.var]) ps.length τ₂)) := by
       intro hv
       refine EqSubst.telescope_iff (ctx := ctx.var A) (Θ := Θ) hV ((EqSubst.var_iff ctx A _ _).2 ⟨?_, ?_⟩) _ _
       · exact (EqSubst.congr (Subst.ext (Subst.dropN_append σ₁ τ₁)).symm
@@ -354,10 +354,10 @@ substitution of the first argument `t` then of `σ₁` is the substitution of `�
 -/
 
 /-- `Θ[t / x][σ] = Θ[σ, t[σ]]`, where `(σ, τ)` gives `x` the closed term `t[σ]`. -/
-theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Grade} (Θ : Telescope 0 ([] :: Γ) ps)
-    (t : Term 0 Γ) (σ : Subst 0 [] Γ) (τ : Subst 0 [] (Scope.extend [[]] ps.length))
+theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Grade} (Θ : Telescope 0 (.var :: Γ) ps)
+    (t : Term 0 Γ) (σ : Subst 0 [] Γ) (τ : Subst 0 [] (Scope.extend [.var] ps.length))
     (ht : Subst.dropN ps.length τ .zero = t.subst σ) :
-    Θ.subst (Subst.dropN (Γ := [] :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ)) =
+    Θ.subst (Subst.dropN (Γ := .var :: Γ) ps.length (Subst.append (n := ps.length + 1) σ τ)) =
       (Θ.subst₀ (Subst₀.single t)).subst σ := by
   refine Eq.symm ((Telescope.subst_subst₀_of (σ' := Subst₀.id) ⟨fun x y e => ?_, fun x u e => ?_⟩
     Θ).trans (Telescope.subst₀_id_of (fun _ => rfl) _))
@@ -384,7 +384,7 @@ theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ 
 /-- `(tel_≡,)` keeps the meaning: equal first arguments of `A`, and equal arguments of `Θ[t / x]`,
 are equal arguments of `x : A, Θ`. -/
 theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {q p : Grade}
-    {t u A : Term 0 Γ} {ts us : Args 0 Γ ps} {Θ : Telescope 0 ([] :: Γ) ps}
+    {t u A : Term 0 Γ} {ts us : Args 0 Γ ps} {Θ : Telescope 0 (.var :: Γ) ps}
     (ht : ValidEqTermΓ sig ι ctx t u A)
     (hts : ValidEqArgsΓ sig ι ctx ts us (Θ.subst₀ (Subst₀.single t))) :
     ValidEqArgsΓ sig ι ctx (.cons t ts) (.cons u us) (.cons q p A Θ) := by
@@ -406,13 +406,13 @@ theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {
 
 /-- `A[↑][σ] = A[σ without its last entry]`: a type weakened past the last entry of a context, at a
 substitution of that context. -/
-theorem Term.subst_weaken {Γ : Scope} {ps : List Grade} (σ : Subst k [] (ps :: Γ)) (A : Term k Γ) :
+theorem Term.subst_weaken {Γ : Scope} {e : Scope.Entry} (σ : Subst k [] (e :: Γ)) (A : Term k Γ) :
     (A.rename Ren.weaken).subst σ = A.subst (Subst.tail σ) :=
   Term.subst_rename_of (fun _ => rfl) A
 
 /-- `A[↑⇑][σ⇑] = A[(σ without its last entry)⇑]`: a type in the scope of a telescope weakened past
 the last entry of a context, at a substitution of that context. -/
-theorem Term.subst_liftN_weaken {Γ : Scope} {ps : List Grade} (n : Nat) (σ : Subst k [] (ps :: Γ))
+theorem Term.subst_liftN_weaken {Γ : Scope} {e : Scope.Entry} (n : Nat) (σ : Subst k [] (e :: Γ))
     (A : Term k (Γ.extend n)) :
     (A.rename (Ren.liftN n Ren.weaken)).subst (Subst.liftN n σ) =
       A.subst (Subst.liftN n (Subst.tail σ)) :=
@@ -420,13 +420,13 @@ theorem Term.subst_liftN_weaken {Γ : Scope} {ps : List Grade} (n : Nat) (σ : S
 
 /-- `Θ[↑][σ] = Θ[σ without its last entry]`: a telescope weakened past the last entry of a context,
 at a substitution of that context. -/
-theorem Telescope.subst_weaken {Γ : Scope} {ps qs : List Grade} (σ : Subst k [] (ps :: Γ))
+theorem Telescope.subst_weaken {Γ : Scope} {e : Scope.Entry} {qs : List Grade} (σ : Subst k [] (e :: Γ))
     (Θ : Telescope k Γ qs) : (Θ.rename Ren.weaken).subst σ = Θ.subst (Subst.tail σ) :=
   Telescope.subst_rename_of (fun _ => rfl) Θ
 
 -- ADE: the substitutions in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
 /-- `(σ₁, σ₂) ∈ eq(Γ)` gives the variable `x : A ∈ Γ` equal closed terms of the type `A[σ₁]`. -/
-theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ []} {A : Term 0 Γ}
+theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
     (hx : ctx.VarIn x A) {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
     ValidEqTerm₀ sig ι (σ₁ x) (σ₂ x) (A.subst σ₁) := by
   induction hx with
@@ -444,7 +444,7 @@ theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ []} {A : Ter
 /-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
 instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
 arguments. -/
-theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {X : Var Γ ps}
+theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Grade} {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps)}
     {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
     {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
     ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →

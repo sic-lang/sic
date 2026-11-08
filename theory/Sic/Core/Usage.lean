@@ -33,7 +33,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   itself only.
   RFC: `\mathsf{var}_{X\mathsf{m}}`
   -/
-  | var {k : Nat} {Γ : Scope} {ps : List Grade} {x : Var Γ ps} {ts : Args k Γ ps} {m : Mode}
+  | var {k : Nat} {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {ts : Args k Γ e.grades} {m : Mode}
       {δ : GradeVector Γ.length} (hts : UsageArgs sig δ m ts) :
       Usage sig ((GradeVector.update 𝟘ᶜ x.toFin m.grade) +ᶜ δ) m (.var x ts)
   -- ADE: `defn`, in `Graded/Usage.agda`, for the definitions.

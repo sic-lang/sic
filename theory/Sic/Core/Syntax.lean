@@ -13,13 +13,13 @@ A variable is a de Bruijn index, as in the formalization of ADE: the number of e
 variable and its declaration, the last entry being `0`.
 A variable `x : A` and a second-order variable `X : (Θ ⊢ A)` are both used applied to a term for
 each entry of their telescope, `x[]` and `X[t̄]`.
-A scope gives each of its entries the grades `p` of the entries of its telescope, none for a
-variable, with which a second-order variable uses its arguments, so that the usage of `X[t̄]` reads
-them in the scope, from the binder of `X`, as the usage of the other terms reads its grades from
-their binders; a term only uses the variables of its scope, each applied to an argument for each of
-these grades.
-The context tells which entries are variables and which are second-order variables, so that the
-rules `(var)` and `(var_X)` stay apart.
+A scope tells which of its entries are variables and which are second-order variables, and gives
+each second-order variable the grades `p` of the entries of its telescope, with which it uses its
+arguments, so that the usage of `X[t̄]` reads them in the scope, from the binder of `X`, as the
+usage of the other terms reads its grades from their binders; a term only uses the variables of its
+scope, each applied to an argument for each of these grades.
+A variable `x : A` and a second-order variable `X : (ε ⊢ A)` both have an empty telescope, and only
+their entries tell them apart, in the scope as in the context.
 
 The sort and grade variables of an entry of the signature are not part of the syntax: since an entry
 is checked for each instance of them, its type, its body, its parameters and its sort are given for
@@ -39,25 +39,38 @@ namespace Sic.Core
 /-- The name of an entry of the signature, or of a type that a declaration declares. -/
 abbrev Name : Type := String
 
-/-- A scope, the grades `p` of the telescope of each entry of a context, the last entry first. -/
-abbrev Scope : Type := List (List Grade)
+/-- An entry of a scope: a variable, or a second-order variable with the grades `p` of the entries of
+its telescope. -/
+inductive Scope.Entry where
+  /-- A variable `x : A`. -/
+  | var
+  /-- A second-order variable `X : (Θ ⊢ A)`, whose telescope has the grades `ps`. -/
+  | secondOrder (ps : List Grade)
+
+/-- The grades of the telescope of an entry, none for a variable. -/
+@[reducible] def Scope.Entry.grades : Scope.Entry → List Grade
+  | .var => []
+  | .secondOrder ps => ps
+
+/-- A scope, the entries of a context, the last entry first. -/
+abbrev Scope : Type := List Scope.Entry
 
 /-- The scope `Γ` extended by `a` variables, the variables of a telescope, the first of them first. -/
 def Scope.extend (Γ : Scope) : Nat → Scope
   | 0 => Γ
-  | a + 1 => Scope.extend ([] :: Γ) a
+  | a + 1 => Scope.extend (.var :: Γ) a
 
 -- ADE: `Fin`, the de Bruijn indices of `Definition/Untyped.agda`, without telescopes.
-/-- A variable of the scope `Γ` whose telescope has the grades `ps`, by its de Bruijn index.
+/-- A variable of the scope `Γ` whose entry is `e`, by its de Bruijn index.
 The RFC names the variables, and an object is the same whatever names its bound variables take;
 the indices make this convention needless, and so the condition that the variable that extends a
 context is fresh in it, since the new variable is `0` and the others are shifted.
 RFC: `\notin_\Gamma` -/
-inductive Var : Scope → List Grade → Type where
+inductive Var : Scope → Scope.Entry → Type where
   /-- The last entry of the scope. -/
-  | zero {Γ : Scope} {ps : List Grade} : Var (ps :: Γ) ps
+  | zero {Γ : Scope} {e : Scope.Entry} : Var (e :: Γ) e
   /-- An entry before the last one. -/
-  | succ {Γ : Scope} {ps qs : List Grade} (x : Var Γ ps) : Var (qs :: Γ) ps
+  | succ {Γ : Scope} {e e' : Scope.Entry} (x : Var Γ e) : Var (e' :: Γ) e
 
 mutual
 
@@ -70,7 +83,7 @@ RFC: `\mathsf{syntax}_t`
 inductive Term (k : Nat) : Scope → Type where
   /-- `x[t̄]`: the variable `x` applied to arguments for the entries of its telescope, `x` alone
   when it is a variable. -/
-  | var {Γ : Scope} {ps : List Grade} (x : Var Γ ps) (ts : Args k Γ ps) : Term k Γ
+  | var {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) (ts : Args k Γ e.grades) : Term k Γ
   /-- The sort `κ`, `U_l` or `Ω_l`. -/
   | sort {Γ : Scope} (κ : Universe k) : Term k Γ
   /-- `f.{s̄; l̄; p̄}`: the constant `f`, defined or declared, at an instance of its variables. -/
@@ -99,14 +112,14 @@ RFC: `\mathsf{syntax}_{\bar a}`
 inductive InstanceArgs (k : Nat) : Scope → Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : InstanceArgs k Γ []
-  /-- `(ā, x̄. B)`, the argument `B` for a parameter whose telescope has the grades `ps`. -/
-  | snoc {Γ Δ : Scope} {ps : List Grade} (as : InstanceArgs k Γ Δ)
-      (B : Term k (Γ.extend ps.length)) : InstanceArgs k Γ (ps :: Δ)
+  /-- `(ā, x̄. B)`, the argument `B` for a parameter whose entry is `e`. -/
+  | snoc {Γ Δ : Scope} {e : Scope.Entry} (as : InstanceArgs k Γ Δ)
+      (B : Term k (Γ.extend e.grades.length)) : InstanceArgs k Γ (e :: Δ)
 
 end
 
 /-- The variable `x`, applied to no argument. -/
-abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ []) : Term k Γ := .var x .nil
+abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var x .nil
 
 -- ADE: none.
 /--
@@ -120,7 +133,7 @@ inductive Telescope (k : Nat) : Scope → List Grade → Type where
   /-- `ε`. -/
   | nil {Γ : Scope} : Telescope k Γ []
   /-- `(x :^q_p A, Θ)`. -/
-  | cons {Γ : Scope} {ps : List Grade} (q p : Grade) (A : Term k Γ) (Θ : Telescope k ([] :: Γ) ps) :
+  | cons {Γ : Scope} {ps : List Grade} (q p : Grade) (A : Term k Γ) (Θ : Telescope k (.var :: Γ) ps) :
       Telescope k Γ (p :: ps)
 
 -- ADE: `Con`, in `Definition/Untyped.agda`.
@@ -130,10 +143,10 @@ inductive Context (k : Nat) : Scope → Type where
   /-- `ε`. -/
   | empty : Context k []
   /-- `Γ, x : A`. -/
-  | var {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ) : Context k ([] :: Γ)
-  /-- `Γ, X : (Θ ⊢ A)`, a second-order variable whose telescope has the grades `ps`. -/
+  | var {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ) : Context k (.var :: Γ)
+  /-- `Γ, X : (Θ ⊢ A)`, a second-order variable, whose telescope has the grades `ps`. -/
   | secondOrder {Γ : Scope} {ps : List Grade} (ctx : Context k Γ) (Θ : Telescope k Γ ps)
-      (A : Term k (Γ.extend ps.length)) : Context k (ps :: Γ)
+      (A : Term k (Γ.extend ps.length)) : Context k (.secondOrder ps :: Γ)
 
 /-! ## Signatures
 
@@ -284,7 +297,7 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
   ⟨qs.getFin hq, ps.getFin hp⟩
 
 /-- The position of a variable in its scope, the last entry being `0`. -/
-def Var.toFin {Γ : Scope} {ps : List Grade} : Var Γ ps → Fin Γ.length
+def Var.toFin {Γ : Scope} {e : Scope.Entry} : Var Γ e → Fin Γ.length
   | .zero => ⟨0, Nat.zero_lt_succ _⟩
   | .succ x => x.toFin.succ
 
