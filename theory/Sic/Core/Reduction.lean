@@ -124,9 +124,10 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)} {ps ps' : List Grade}
       {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ Δ'} {ss : Terms k Γ} {Ss : States k Γ}
       {gs : CorecBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
-      {g : Term k (Γ.extend (0 + m + a))} {v : Term k Γ} (h : .typeDeclaration decl ∈ sig)
-      (hi : decl.codataCases[i]? = some (j, T, d)) (hD : T.name = D)
-      (hg : gs.get i = some ⟨0, m, a, g⟩) (hv : g.instantiateTerms (ss.append bs) = some v) :
+      {g : Term k (((Γ.extend 0).extend m).extend a)} {v : Term k Γ}
+      (h : .typeDeclaration decl ∈ sig) (hi : decl.codataCases[i]? = some (j, T, d))
+      (hD : T.name = D) (hg : gs.get i = some ⟨0, m, a, g⟩)
+      (hv : g.instantiateTerms₂ ss bs = some v) :
       Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs) v
   -- ADE: `app-subst`, `fst-subst` and `snd-subst`, in `Definition/Typed.agda`.
   /-- An observation reduces the term it observes.

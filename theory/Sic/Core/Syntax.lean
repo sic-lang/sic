@@ -244,7 +244,8 @@ inductive CorecBranches (k : Nat) : Scope → Type where
   | nil {Γ : Scope} : CorecBranches k Γ
   /-- `((x̄; ȳ; z̄). g, ḡ)`, with `n` non-uniform parameters, `m` entries of the state and
   `a` arguments. -/
-  | cons {Γ : Scope} (n m a : Nat) (v : Term k (Γ.extend (n + m + a))) (vs : CorecBranches k Γ) :
+  | cons {Γ : Scope} (n m a : Nat) (v : Term k (((Γ.extend n).extend m).extend a))
+      (vs : CorecBranches k Γ) :
       CorecBranches k Γ
 
 end
@@ -297,22 +298,17 @@ theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Na
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
-/-- `(t̄, ū)`: the terms `t̄` followed by the terms `ū`. -/
-def Terms.append {k : Nat} {Γ : Scope} : Terms k Γ → Terms k Γ → Terms k Γ
-  | .nil, us => us
-  | .cons t ts, us => .cons t (ts.append us)
-
 /-- The branch at the position `i` of the branches `ḡ` of a corecursor, the first one at `0`, with
 its numbers of non-uniform parameters, of entries of the state and of arguments. -/
 def CorecBranches.get {k : Nat} {Γ : Scope} :
-    CorecBranches k Γ → Nat → Option (Σ n m a, Term k (Γ.extend (n + m + a)))
+    CorecBranches k Γ → Nat → Option (Σ n m a, Term k (((Γ.extend n).extend m).extend a))
   | .nil, _ => none
   | .cons n m a v _, 0 => some ⟨n, m, a, v⟩
   | .cons _ _ _ _ vs, i + 1 => vs.get i
 
 /-- The branch at a position of the branches of a corecursor is one term. -/
 theorem CorecBranches.get_inj {k : Nat} {Γ : Scope} {vs : CorecBranches k Γ} {i n m a : Nat}
-    {v₁ v₂ : Term k (Γ.extend (n + m + a))} (h₁ : vs.get i = some ⟨n, m, a, v₁⟩)
+    {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)} (h₁ : vs.get i = some ⟨n, m, a, v₁⟩)
     (h₂ : vs.get i = some ⟨n, m, a, v₂⟩) : v₁ = v₂ := by
   have h := Option.some.inj (h₁.symm.trans h₂)
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
@@ -1122,6 +1118,13 @@ theorem Signature.Distinct.argumentGrades : {sig : Signature} → sig.Distinct �
 theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a
   | 0 => rfl
   | a + 1 => (Scope.length_extend (.var :: Γ) a).trans (Nat.succ_add _ _)
+
+/-- The length of the scope `Γ` extended by `a`, then `b`, then `c` variables, as the scope of a
+branch of a corecursor is. -/
+theorem Scope.length_extend_extend_extend (Γ : Scope) (a b c : Nat) :
+    (((Γ.extend a).extend b).extend c).length = Γ.length + (a + b + c) := by
+  rw [Scope.length_extend, Scope.length_extend, Scope.length_extend]
+  omega
 
 /-- The position of a variable in its scope, the last entry being `0`. -/
 def Var.toFin {Γ : Scope} {e : Scope.Entry} : Var Γ e → Fin Γ.length

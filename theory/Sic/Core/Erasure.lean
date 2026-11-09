@@ -23,7 +23,9 @@ A variable thus has no arguments, and the target language has no second-order va
 clause of a second-order variable discharges it by `Γ.FirstOrder`, so that the clauses are those of
 the RFC.
 The new variables of a branch extend the scope, whose length the target language counts, so that
-the erasure of a branch casts its number of variables by `Scope.length_extend`.
+the erasure of a branch casts its number of variables by `Scope.length_extend`, and that of a
+branch of a corecursor, whose scope is extended three times, by
+`Scope.length_extend_extend_extend`.
 
 ADE extract the terms of their type theory, in which the definitions are names, and replace each
 erased part by `↯` or by a term that does not terminate, as its strictness requires; they erase the
@@ -349,7 +351,8 @@ def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈
     {Γ : Scope} (hΓ : Γ.FirstOrder) : CorecBranches k Γ → TargetCorecBranches Γ.length
   | .nil => .nil
   | .cons a b c v vs =>
-    .cons a b c (Scope.length_extend Γ (a + b + c) ▸ v.erase sig S (hΓ.extend (a + b + c)))
+    .cons a b c (Scope.length_extend_extend_extend Γ a b c ▸
+      v.erase sig S (((hΓ.extend a).extend b).extend c))
       (vs.erase sig S hΓ)
 
 end
@@ -586,7 +589,7 @@ theorem CorecBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade
       TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ) (vs.erase sig S₁ hΓ)
   | .nil => .nil
   | .cons a b c v vs => .cons (Target.LessDefined.cast _
-      (Term.erase_lessDefined sig h (hΓ.extend (a + b + c)) v))
+      (Term.erase_lessDefined sig h (((hΓ.extend a).extend b).extend c) v))
       (CorecBranches.erase_lessDefined sig h hΓ vs)
 
 end

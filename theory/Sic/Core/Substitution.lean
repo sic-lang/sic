@@ -120,7 +120,8 @@ def States.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : States k Δ → States k Γ
 /-- The branches `ḡ` of a corecursor renamed by `ξ`, under the variables of each branch. -/
 def CorecBranches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
-  | .cons n m a v vs => .cons n m a (v.rename (Ren.liftN _ ξ)) (vs.rename ξ)
+  | .cons n m a v vs =>
+    .cons n m a (v.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n ξ)))) (vs.rename ξ)
 
 end
 
@@ -252,7 +253,8 @@ def States.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : States k Δ → St
 RFC: `\mathsf{subst}_\sigma.\bar g` -/
 def CorecBranches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
-  | .cons n m a v vs => .cons n m a (v.subst₀ (Subst₀.liftN _ σ)) (vs.subst₀ σ)
+  | .cons n m a v vs =>
+    .cons n m a (v.subst₀ (Subst₀.liftN a (Subst₀.liftN m (Subst₀.liftN n σ)))) (vs.subst₀ σ)
 
 end
 
@@ -276,6 +278,14 @@ def Term.instantiateTerms {Γ : Scope} :
   | n + 1, B, .cons t ts =>
     Term.instantiateTerms (B.subst₀ (Subst₀.liftN n (Subst₀.single t))) ts
   | _, _, _ => none
+
+/-- `g[t̄ / ȳ, ū / z̄]`, for the branch `g` of a corecursor, over the new variables `ȳ` of a state
+and then `z̄` of the arguments of a destructor: the terms `t̄` are substituted for `ȳ` and `ū` for
+`z̄`, when there are as many terms as variables, the variables `z̄` first, at the terms `ū` in the
+scope of `ȳ`. -/
+def Term.instantiateTerms₂ {Γ : Scope} {m a : Nat} (g : Term k ((Γ.extend m).extend a))
+    (ts us : Terms k Γ) : Option (Term k Γ) :=
+  (g.instantiateTerms (us.rename (Ren.weakenN m))).bind (·.instantiateTerms ts)
 
 /-! ## Substitutions of the Second Order -/
 
@@ -367,7 +377,8 @@ def States.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : States k Δ → States k
 RFC: `\mathsf{subst}_\theta.\bar g` -/
 def CorecBranches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
-  | .cons n m a v vs => .cons n m a (v.subst (Subst.liftN _ θ)) (vs.subst θ)
+  | .cons n m a v vs =>
+    .cons n m a (v.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))) (vs.subst θ)
 
 end
 
@@ -625,7 +636,7 @@ theorem CorecBranches.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.rename, CorecBranches.rename_id_of h vs,
-      Term.rename_id_of (Ren.liftN_id_of _ h) v]
+      Term.rename_id_of (Ren.liftN_id_of _ (Ren.liftN_id_of _ (Ren.liftN_id_of _ h))) v]
 
 end
 
@@ -717,7 +728,7 @@ theorem CorecBranches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst₀, CorecBranches.subst₀_id_of h vs,
-      Term.subst₀_id_of (Subst₀.liftN_id_of _ h) v]
+      Term.subst₀_id_of (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ h))) v]
 
 end
 
@@ -861,7 +872,9 @@ theorem CorecBranches.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {�
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.rename, CorecBranches.rename, CorecBranches.rename,
-      CorecBranches.rename_rename_of h vs, Term.rename_rename_of (Ren.liftN_comp_of _ h) v]
+      CorecBranches.rename_rename_of h vs,
+      Term.rename_rename_of
+        (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ h))) v]
 
 end
 
@@ -984,7 +997,9 @@ theorem CorecBranches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ 
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.rename, CorecBranches.subst₀, CorecBranches.subst₀,
-      CorecBranches.subst₀_rename_of h vs, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) v]
+      CorecBranches.subst₀_rename_of h vs,
+      Term.subst₀_rename_of
+        (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ h))) v]
 
 end
 
@@ -1116,7 +1131,9 @@ theorem CorecBranches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ 
   | .cons n m a v vs => by
     rw [CorecBranches.subst₀, CorecBranches.rename, CorecBranches.subst₀,
       CorecBranches.rename_subst₀_of h vs,
-      Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) v]
+      Term.rename_subst₀_of
+        (Subst₀.liftN_rename_after_of _ (Subst₀.liftN_rename_after_of _
+          (Subst₀.liftN_rename_after_of _ h))) v]
 
 end
 
@@ -1246,7 +1263,8 @@ theorem CorecBranches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k �
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst₀, CorecBranches.subst₀, CorecBranches.subst₀,
-      CorecBranches.subst₀_subst₀_of h vs, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) v]
+      CorecBranches.subst₀_subst₀_of h vs, Term.subst₀_subst₀_of
+        (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ h))) v]
 
 end
 
@@ -1550,7 +1568,9 @@ theorem CorecBranches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {�
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.rename, CorecBranches.subst, CorecBranches.subst,
-      CorecBranches.subst_rename_of h vs, Term.subst_rename_of (Subst.liftN_rename_of _ h) v]
+      CorecBranches.subst_rename_of h vs,
+      Term.subst_rename_of
+        (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ h))) v]
 
 end
 
@@ -1675,7 +1695,10 @@ theorem CorecBranches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {�
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst, CorecBranches.rename, CorecBranches.subst,
-      CorecBranches.rename_subst_of h vs, Term.rename_subst_of (Subst.liftN_rename_after_of _ h) v]
+      CorecBranches.rename_subst_of h vs,
+      Term.rename_subst_of
+        (Subst.liftN_rename_after_of _ (Subst.liftN_rename_after_of _
+          (Subst.liftN_rename_after_of _ h))) v]
 
 end
 
@@ -1840,7 +1863,9 @@ theorem CorecBranches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k �
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst₀, CorecBranches.subst, CorecBranches.subst, CorecBranches.subst₀,
-      CorecBranches.subst_subst₀_of h vs, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) v]
+      CorecBranches.subst_subst₀_of h vs,
+      Term.subst_subst₀_of
+        (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ h))) v]
 
 end
 
@@ -2055,7 +2080,9 @@ theorem CorecBranches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} 
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst, CorecBranches.subst, CorecBranches.subst,
-      CorecBranches.subst_subst_of h vs, Term.subst_subst_of (Subst.liftN_subst_of _ h) v]
+      CorecBranches.subst_subst_of h vs,
+      Term.subst_subst_of
+        (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ h))) v]
 
 end
 
@@ -2156,7 +2183,7 @@ theorem CorecBranches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
   | .nil => rfl
   | .cons n m a v vs => by
     rw [CorecBranches.subst, CorecBranches.subst_id_of h vs,
-      Term.subst_id_of (Subst.liftN_id_of _ h) v]
+      Term.subst_id_of (Subst.liftN_id_of _ (Subst.liftN_id_of _ (Subst.liftN_id_of _ h))) v]
 
 end
 
@@ -2665,7 +2692,9 @@ theorem CorecBranches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : 
   | .cons n m a v vs => by
     rw [CorecBranches.subst₀, CorecBranches.substLevels, CorecBranches.substLevels,
       CorecBranches.subst₀, CorecBranches.substLevels_subst₀_of h vs,
-      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) v]
+      Term.substLevels_subst₀_of
+        (Subst₀.liftN_substLevels_of _ (Subst₀.liftN_substLevels_of _
+          (Subst₀.liftN_substLevels_of _ h))) v]
 
 end
 
@@ -2985,7 +3014,9 @@ theorem CorecBranches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin
   | .cons n m a v vs => by
     rw [CorecBranches.subst, CorecBranches.substLevels, CorecBranches.substLevels,
       CorecBranches.subst, CorecBranches.substLevels_subst_of h vs,
-      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) v]
+      Term.substLevels_subst_of
+        (Subst.liftN_substLevels_of _ (Subst.liftN_substLevels_of _
+          (Subst.liftN_substLevels_of _ h))) v]
 
 end
 

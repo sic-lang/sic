@@ -159,7 +159,7 @@ inductive CorecBranches.LevelEquiv {k : Nat} :
   /-- No branch. -/
   | nil {Γ : Scope} : CorecBranches.LevelEquiv (Γ := Γ) .nil .nil
   /-- Two branches equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n m a : Nat} {v₁ v₂ : Term k (Γ.extend (n + m + a))}
+  | cons {Γ : Scope} {n m a : Nat} {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)}
       {vs₁ vs₂ : CorecBranches k Γ} (h : Term.LevelEquiv v₁ v₂)
       (hs : CorecBranches.LevelEquiv vs₁ vs₂) :
       CorecBranches.LevelEquiv (.cons n m a v₁ vs₁) (.cons n m a v₂ vs₂)
@@ -370,7 +370,8 @@ theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ �
     {vs₁ vs₂ : CorecBranches k Δ} :
     CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.rename ξ) (vs₂.rename ξ)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+  | .cons (n := n) (m := m) (a := a) h hs =>
+    .cons (h.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n ξ)))) (hs.rename ξ)
 
 end
 
@@ -654,7 +655,8 @@ theorem CorecBranches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂
     (hσ : Subst₀.LevelEquiv σ₁ σ₂) {vs₁ vs₂ : CorecBranches k Δ} :
     CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst₀ σ₁) (vs₂.subst₀ σ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ (Subst₀.LevelEquiv.liftN _
+      (Subst₀.LevelEquiv.liftN _ hσ)))) (hs.subst₀ hσ)
 
 end
 
@@ -794,7 +796,8 @@ theorem CorecBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : 
     (hθ : Subst.LevelEquiv θ₁ θ₂) {vs₁ vs₂ : CorecBranches k Δ} :
     CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst θ₁) (vs₂.subst θ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ (Subst.LevelEquiv.liftN _
+      (Subst.LevelEquiv.liftN _ hθ)))) (hs.subst hθ)
 
 end
 
@@ -834,19 +837,28 @@ theorem Term.LevelEquiv.instantiateTerms {k : Nat} {Γ : Scope} :
   | 0, _, _, _, _, _, .cons .., _, hv => nomatch hv
   | _ + 1, _, _, _, _, _, .nil, _, hv => nomatch hv
 
-/-- Terms equal up to their levels, followed by terms equal up to their levels, are equal up to
-their levels. -/
-theorem Terms.LevelEquiv.append {k : Nat} {Γ : Scope} :
-    {ts₁ ts₂ : Terms k Γ} → Terms.LevelEquiv ts₁ ts₂ → {us₁ us₂ : Terms k Γ} →
-      Terms.LevelEquiv us₁ us₂ → Terms.LevelEquiv (ts₁.append us₁) (ts₂.append us₂)
-  | _, _, .nil, _, _, hu => hu
-  | _, _, .cons h hs, _, _, hu => .cons h (hs.append hu)
+/-- A branch of a corecursor and one equal up to its levels, instantiated by states and arguments
+equal up to their levels, are equal up to their levels. -/
+theorem Term.LevelEquiv.instantiateTerms₂ {k : Nat} {Γ : Scope} {m a : Nat}
+    {g₁ g₂ : Term k ((Γ.extend m).extend a)} (h : Term.LevelEquiv g₁ g₂)
+    {ts₁ ts₂ us₁ us₂ : Terms k Γ}
+    (hts : Terms.LevelEquiv ts₁ ts₂) (hus : Terms.LevelEquiv us₁ us₂) {v₁ : Term k Γ}
+    (hv : g₁.instantiateTerms₂ ts₁ us₁ = some v₁) :
+    ∃ v₂, g₂.instantiateTerms₂ ts₂ us₂ = some v₂ ∧ Term.LevelEquiv v₁ v₂ := by
+  unfold Term.instantiateTerms₂ at hv ⊢
+  cases hg₁ : g₁.instantiateTerms (us₁.rename (Ren.weakenN m)) with
+  | none => rw [hg₁] at hv; cases hv
+  | some w₁ =>
+    rw [hg₁] at hv
+    obtain ⟨w₂, hg₂, hw⟩ := h.instantiateTerms (hus.rename _) hg₁
+    obtain ⟨v₂, hv₂, hvv⟩ := hw.instantiateTerms hts hv
+    exact ⟨v₂, by rw [hg₂]; exact hv₂, hvv⟩
 
 /-- The branches of corecursors equal up to their levels have, at a position, branches equal up to
 their levels. -/
 theorem CorecBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :
     {vs₁ vs₂ : CorecBranches k Γ} → CorecBranches.LevelEquiv vs₁ vs₂ → {i n m a : Nat} →
-      {v₁ : Term k (Γ.extend (n + m + a))} → vs₁.get i = some ⟨n, m, a, v₁⟩ →
+      {v₁ : Term k (((Γ.extend n).extend m).extend a)} → vs₁.get i = some ⟨n, m, a, v₁⟩ →
         ∃ v₂, vs₂.get i = some ⟨n, m, a, v₂⟩ ∧ Term.LevelEquiv v₁ v₂
   | _, _, .nil, _, _, _, _, _, he => nomatch he
   | _, _, .cons h _, 0, _, _, _, _, he => by
@@ -907,7 +919,7 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
       cases ht with
       | corec _ _ _ _ _ _ hss _ hgs =>
         obtain ⟨g', hg', hgg⟩ := hgs.get hg
-        obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms (hss.append hbs) hv
+        obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms₂ hss hbs hv
         exact ⟨v', .beta hdecl hi hD hg' hv', hvv⟩
   | obs _ ih =>
     cases h with
