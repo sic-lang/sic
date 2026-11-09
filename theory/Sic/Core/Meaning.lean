@@ -647,6 +647,7 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
 variables, the fields of each constructor are a telescope in the sort `κ`, in the context of the
 parameters, at each value of the level variables; the meaning ignores the grades, and the names of
 the constructors, distinct, are those of the signature.
+A block of codata types has no data type, and its meaning has no condition yet.
 RFC: `{\vDash}\mathsf{data}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
   ∀ I, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,

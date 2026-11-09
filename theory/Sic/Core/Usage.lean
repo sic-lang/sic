@@ -13,7 +13,7 @@ a second-order variable uses its arguments with the grades of the parameters of 
 its scope gives.
 
 The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
-parameters, which the declaration gives and its formation checks against the usage of the telescopes
+of its constructors or of its destructors, defined here.
 of its constructors, defined here.
 ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/
@@ -29,6 +29,15 @@ def GradeVector.extendParams {Γ : Scope} (γ : GradeVector Γ.length) (r : Grad
     (ps : List Parameter) → GradeVector (Γ.extend ps.length).length
   | [] => γ
   | p :: ps => GradeVector.extendParams (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps
+
+-- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
+/-- `γ • (r · q₁) • … • (r · qₐ)`: the vector `γ` extended by a grade for each variable of the
+telescope `Θ`, the grade `qᵢ` with which the types after its entry use it multiplied by `r`, the
+first variable first. -/
+def GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+    {ps : List Parameter} → Telescope k Γ ps → GradeVector (Γ.extend ps.length).length
+  | [], .nil => γ
+  | _ :: _, .cons q _ _ Θ => GradeVector.extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
 
 mutual
 
@@ -193,5 +202,32 @@ inductive UsageConstructors (sig : Signature) {j g k : Nat} {Δ : Scope} (ι : I
   | cons {c : Constructor j g k Δ} {cs : List (Constructor j g k Δ)} {m : Mode}
       {γ δ : GradeVector Δ.length} (hΘ : UsageTelescope sig γ m (c.fields ι))
       (hcs : UsageConstructors sig ι δ m cs) : UsageConstructors sig ι (γ +ᶜ δ) m (c :: cs)
+
+-- ADE: `ΠΣₘ`, in `Graded/Usage.agda`, once for each destructor.
+/-- `Σ; γ ⊢ d̄ ▶ m`: checked in the mode `m`, the destructors `d̄` of a codata type use the
+variables of their scope as `γ` allows, each destructor `d : (Θ ⊢ B ◀ ψ) ▶ p; q` counting the uses
+of its arguments and of its result `p` times, its result using each argument as the types after the
+argument do, and the destructors after it using `d` as `q` allows. -/
+inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : List Name} →
+    GradeVector Γ.length → Mode → Destructors k Γ ns → Prop where
+  /-- No destructor uses no variable.
+  RFC: `\bar d_{\varepsilon▶}` -/
+  | nil {Γ : Scope} {m : Mode} : UsageDestructors sig 𝟘ᶜ m (.nil : Destructors k Γ [])
+  /-- The arguments and the result of the first destructor, checked in the mode `m' = m ⊙ p`, the
+  result using each argument `xᵢ` as `⌜m'⌝ · qᵢ` allows, and the destructors after it, which use it
+  as `⌜m⌝ · q` allows.
+  RFC: `\bar d_{,▶}` -/
+  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+      {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} {m : Mode} {γ δ η : GradeVector Γ.length}
+      (hΘ : UsageTelescope sig γ (m ⊙ p) Θ)
+      (hB : Usage sig (δ.extendTelescope (m ⊙ p).grade Θ) (m ⊙ p) B)
+      (hds : UsageDestructors sig (Γ := .secondOrder ps ψ :: Γ) (η ∙ (m.grade * q)) m ds) :
+      UsageDestructors sig ((p ·ᶜ (γ +ᶜ δ)) +ᶜ η) m (.cons (d := d) p q Θ B ψ ds)
+  /-- Destructors may be given grades lower than their uses.
+  RFC: `\mathsf{sub}_{\bar d▶}` -/
+  | sub {Γ : Scope} {ns : List Name} {ds : Destructors k Γ ns} {m : Mode}
+      {γ δ : GradeVector Γ.length} (h : UsageDestructors sig γ m ds) (hle : δ ≤ᶜ γ) :
+      UsageDestructors sig δ m ds
 
 end Sic.Core

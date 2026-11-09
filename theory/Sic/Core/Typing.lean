@@ -13,9 +13,10 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
 * `⊢ Σ`, `Σ ⊢ Γ`, `Σ; Γ ⊢ A`, `Σ; Γ ⊢ A ≡ B`, `Σ; Γ ⊢ t : A` and `Σ; Γ ⊢ t ≡ u : A`;
 * `Σ; Γ ⊢ t̄ : Θ` and `Σ; Γ ⊢ t̄ ≡ ū : Θ`, the arguments of a telescope;
 * `Σ; Γ ⊢ ā : Δ` and `Σ; Γ ⊢ ā ≡ b̄ : Δ`, the arguments of an instance;
-* `Σ; Γ ⊢ Θ : κ`, a telescope in a sort;
-* `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p` and
-  `Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where …`, the entries of the signature.
+* `Σ; Γ ⊢ Θ : κ`, a telescope in a sort, and `Σ; Γ ⊢ d̄ : κ`, destructors in a sort;
+* `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`,
+  `Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where …` and `Σ ⊢ codata.{s̄; l̄; p̄} Δ : κ where …`, the entries of
+  the signature.
 
 Typing and equality carry no grade; the definitions are checked for their usage.
 An entry of the signature is checked for each instance of its sort and grade variables, once with
@@ -598,17 +599,45 @@ inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
 
 -- ADE: none.
 /--
-`Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: for each instance of the sort and grade variables,
-the parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
-constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow; the constructors of each
-type have distinct names.
-The fields are checked in the signature `Σ`, which the block does not extend, so that no type of the
-block occurs in them: the block is not recursive.
+`Σ; Γ ⊢ d̄ : κ`: the destructors live in the sort `κ = s_l`, the arguments of each in the universe
+`U_l` and its result in a sort that `κ` bounds, a result that is a proposition having a grade
+without use at run time; each destructor is a second-order variable of the context of the
+destructors after it.
+-/
+inductive WfDestructors : Signature → {k : Nat} → {Γ : Scope} → {ns : List Name} → Context k Γ →
+    Destructors k Γ ns → Universe k → Prop where
+  /-- No destructor lives in every sort.
+  RFC: `\bar d_{\kappa\varepsilon}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
+      (hctx : WfCtx sig ctx) : WfDestructors sig ctx .nil κ
+  /-- The first destructor, whose arguments live in the universe of the level of `κ` and whose
+  result lives in a sort that `κ` bounds, with a grade without use at run time if it is a
+  proposition, and the others, in the context extended by it.
+  RFC: `\bar d_{\kappa,}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+      {ctx : Context k Γ} {p q : Grade} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
+      {ψ : ResultOwnership ps.length} {ds : Destructors k (.secondOrder ps ψ :: Γ) ns}
+      {κ₁ κ : Universe k} (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig (ctx.secondOrder Θ B ψ) ds κ) :
+      WfDestructors sig ctx (.cons (d := d) p q Θ B ψ ds) κ
+
+-- ADE: none.
+/--
+`Σ ⊢ 𝒟`: the type declaration is well formed.
+A block of data types is well formed when, for each instance of the sort and grade variables, the
+parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
+constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow; the constructors of
+each type have distinct names.
+A block of codata types likewise, with the destructors of each type in place of its constructors.
+The fields and the destructors are checked in the signature `Σ`, which the block does not extend, so
+that no type of the block occurs in them: the block is not recursive.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
-  /-- The rule, with the uses `γ` of the constructors of each type at each instance.
+  /-- A block of data types, with the uses `γ` of the constructors of each type at each instance.
   RFC: `\mathsf{data}` -/
-  | intro {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
+  | data {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
       decl.levels decl.scope)} (hb : decl.body = .data Ts)
       (hΔ : ∀ ι, WfCtx sig (decl.params ι))
       (hΘ : ∀ ι, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
@@ -616,6 +645,16 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       (hu : ∀ ι, ∀ T ∈ decl.dataTypes, ∃ γ, UsageConstructors sig ι γ .oneOne T.constructors ∧
         T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
+      WfTypeDeclaration sig decl
+  /-- A block of codata types, with the uses `γ` of the destructors of each type at each instance.
+  RFC: `\mathsf{codata}` -/
+  | codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
+      decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
+      (hΔ : ∀ ι, WfCtx sig (decl.params ι))
+      (hd : ∀ ι, ∀ T ∈ decl.codataTypes, WfDestructors sig (decl.params ι) (T.body ι) (decl.sort ι))
+      (hu : ∀ ι, ∀ T ∈ decl.codataTypes, ∃ γ, UsageDestructors sig γ .oneOne (T.body ι) ∧
+        T.usage ι ≤ᶜ γ)
+      (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
       WfTypeDeclaration sig decl
 
 end
@@ -688,8 +727,12 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.\Theta` -/
   wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
     {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfSig sig
+  /-- Destructors in a sort are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\bar d` -/
+  wfDestructors : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
+    {ds : Destructors k Γ ns} {κ : Universe k}, WfDestructors sig ctx ds κ → WfSig sig
   /-- A well-formed type declaration is in a well-formed signature.
-  RFC: `\mathsf{presup}_\Sigma.\mathsf{data}` -/
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}` -/
   wfTypeDeclaration : ∀ {sig : Signature} {decl : TypeDeclaration},
     WfTypeDeclaration sig decl → WfSig sig
   /-- The signature that a well-formed signature extends is well formed.
@@ -705,10 +748,11 @@ RFC: `\mathsf{presup}_\Sigma.A_\equiv`, `\mathsf{presup}_\Sigma.t`
 RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
 RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
 RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.\Theta`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.e` -/
+RFC: `\mathsf{presup}_\Sigma.\bar d`, `\mathsf{presup}_\Sigma.\mathsf{data}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`, `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfTypeDeclaration, tail⟩
+    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfDestructors, wfTypeDeclaration, tail⟩
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
@@ -782,9 +826,14 @@ where
       {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfSig sig
     | .nil hctx => wfCtx hctx
     | .cons hA _ _ _ => hasType hA
+  wfDestructors {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
+      {ds : Destructors k Γ ns} {κ : Universe k} : WfDestructors sig ctx ds κ → WfSig sig
+    | .nil hctx => wfCtx hctx
+    | .cons hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .intro _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
+    | .data _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
+    | .codata _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
@@ -813,9 +862,13 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
         | typeDeclaration hdecl _ _ => cases hdecl with
-          | intro hb _ _ _ hc =>
+          | data hb _ _ _ hc =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
+            nomatch hT
+          | codata hb _ _ _ hc =>
+            refine ⟨fun T hT => ?_, hc⟩
+            simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT
         | _ => trivial⟩
 
