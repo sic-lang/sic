@@ -82,7 +82,8 @@ inductive Target : Nat → Type where
   | recursor {n : Nat} (M : Target n) (Ns : TargetBranches n) : Target n
 
 -- ADE: none.
-/-- `M̄ = (M₁, …, Mₐ)`: terms of the target language, the first one first. -/
+/-- `M̄ = (M₁, …, Mₐ)`: terms of the target language, the first one first.
+RFC: `\mathsf{syntax}_{\bar M}` -/
 inductive Targets : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : Targets n
@@ -91,7 +92,8 @@ inductive Targets : Nat → Type where
 
 -- ADE: none.
 /-- `N̄`: the branches of a recursor of the target language, in order; the branch `c(x̄; ȳ) ⇒ N` is
-a term over a new variable for each of the `a` fields and of the `b` recursive results. -/
+a term over a new variable for each of the `a` fields and of the `b` recursive results.
+RFC: `\mathsf{syntax}_{\bar N}` -/
 inductive TargetBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetBranches n
@@ -107,35 +109,42 @@ mutual
 /-- The variable `x` occurs in the term of the target language. -/
 inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   /-- The variable `x` itself.
-  RFC: `\mathsf{occurs}_M` -/
+  RFC: `\mathsf{occurs}_M.x` -/
   | var {n : Nat} {x : Fin n} : Target.Occurs x (.var x)
-  /-- In a field of a constructor. -/
+  /-- In a field of a constructor.
+  RFC: `\mathsf{occurs}_M.c` -/
   | ctor {n : Nat} {x : Fin n} {c : Name} {Ms : Targets n} (h : Targets.Occurs x Ms) :
       Target.Occurs x (.ctor c Ms)
-  /-- In the term of a recursor. -/
+  /-- In the term of a recursor.
+  RFC: `\mathsf{occurs}_M.\mathsf{rec}` -/
   | recursor {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n} (h : Target.Occurs x M) :
       Target.Occurs x (.recursor M Ns)
-  /-- In a branch of a recursor. -/
+  /-- In a branch of a recursor.
+  RFC: `\mathsf{occurs}_M.\mathsf{with}` -/
   | branch {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n}
       (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor M Ns)
 
 -- ADE: none.
 /-- The variable `x` occurs in one of the terms. -/
 inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
-  /-- In the first term. -/
+  /-- In the first term.
+  RFC: `\mathsf{occurs}_{\bar M}.M` -/
   | head {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Target.Occurs x M) :
       Targets.Occurs x (.cons M Ms)
-  /-- In the others. -/
+  /-- In the others.
+  RFC: `\mathsf{occurs}_{\bar M}.\bar M` -/
   | tail {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Targets.Occurs x Ms) :
       Targets.Occurs x (.cons M Ms)
 
 -- ADE: none.
 /-- The variable `x` occurs in one of the branches, under their new variables, which shift it. -/
 inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → Prop where
-  /-- In the first branch. -/
+  /-- In the first branch.
+  RFC: `\mathsf{occurs}_{\bar N}.N` -/
   | head {n : Nat} {x : Fin n} {a b : Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
       (h : Target.Occurs (x.addNat (a + b)) N) : TargetBranches.Occurs x (.cons a b N Ns)
-  /-- In the others. -/
+  /-- In the others.
+  RFC: `\mathsf{occurs}_{\bar N}.\bar N` -/
   | tail {n : Nat} {x : Fin n} {a b : Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
       (h : TargetBranches.Occurs x Ns) : TargetBranches.Occurs x (.cons a b N Ns)
 
@@ -156,28 +165,34 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   RFC: `{\sqsubseteq}.f` -/
   | const {n : Nat} {f : Name} {ps : List Grade} :
       Target.LessDefined (n := n) (.const f ps) (.const f ps)
-  /-- A constructor is less defined than the same constructor of more defined fields. -/
+  /-- A constructor is less defined than the same constructor of more defined fields.
+  RFC: `{\sqsubseteq}.c` -/
   | ctor {n : Nat} {c : Name} {Ms Ns : Targets n} (h : Targets.LessDefined Ms Ns) :
       Target.LessDefined (.ctor c Ms) (.ctor c Ns)
-  /-- A recursor is less defined than a recursor of a more defined term and branches. -/
+  /-- A recursor is less defined than a recursor of a more defined term and branches.
+  RFC: `{\sqsubseteq}.\mathsf{rec}` -/
   | recursor {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.LessDefined M N)
       (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
 
 -- ADE: none.
 /-- The terms are less defined, one by one. -/
 inductive Targets.LessDefined : {n : Nat} → Targets n → Targets n → Prop where
-  /-- `()`. -/
+  /-- `()`.
+  RFC: `{\sqsubseteq}_{\bar M}.\varepsilon` -/
   | nil {n : Nat} : Targets.LessDefined (n := n) .nil .nil
-  /-- `(M, M̄) ⊑ (N, N̄)`. -/
+  /-- `(M, M̄) ⊑ (N, N̄)`.
+  RFC: `{\sqsubseteq}_{\bar M}.{,}` -/
   | cons {n : Nat} {M N : Target n} {Ms Ns : Targets n} (h : Target.LessDefined M N)
       (hs : Targets.LessDefined Ms Ns) : Targets.LessDefined (.cons M Ms) (.cons N Ns)
 
 -- ADE: none.
 /-- The branches are less defined, one by one. -/
 inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → TargetBranches n → Prop where
-  /-- `()`. -/
+  /-- `()`.
+  RFC: `{\sqsubseteq}_{\bar N}.\varepsilon` -/
   | nil {n : Nat} : TargetBranches.LessDefined (n := n) .nil .nil
-  /-- `(c(x̄; ȳ) ⇒ M, M̄) ⊑ (c(x̄; ȳ) ⇒ N, N̄)`. -/
+  /-- `(c(x̄; ȳ) ⇒ M, M̄) ⊑ (c(x̄; ȳ) ⇒ N, N̄)`.
+  RFC: `{\sqsubseteq}_{\bar N}.{,}` -/
   | cons {n a b : Nat} {M N : Target (n + (a + b))} {Ms Ns : TargetBranches n}
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
       TargetBranches.LessDefined (.cons a b M Ms) (.cons a b N Ns)
@@ -224,7 +239,9 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     .recursor (if r ∈ S then .erased else t.erase sig S hΓ) (us.erase sig S hΓ)
 
 -- ADE: none.
-/-- `⌊t̄⌋_S`: the erasure of the fields of a constructor, each at the grade of its field in `ps`. -/
+/-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, each at the grade of its field in
+`ps`, a field without grade being erased.
+RFC: `\mathsf{erase}_{\bar t}` -/
 def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : Terms k Γ → List Grade → Targets Γ.length
   | .nil, _ => .nil
@@ -233,7 +250,8 @@ def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k 
     .cons (if p ∈ S then .erased else t.erase sig S hΓ) (ts.erase sig S hΓ ps)
 
 -- ADE: none.
-/-- `⌊ū⌋_S`: the erasure of the branches of a recursor, under their new variables. -/
+/-- `⌊ū⌋_S`: the erasure of the branches of a recursor, under their new variables.
+RFC: `\mathsf{erase}_{\bar u}` -/
 def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : Branches k Γ → TargetBranches Γ.length
   | .nil => .nil

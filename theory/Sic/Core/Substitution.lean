@@ -189,17 +189,20 @@ def InstanceArgs.subst₀ {Γ Δ Ξ : Scope} (σ : Subst₀ k Γ Δ) :
   | .nil => .nil
   | .snoc as B => .snoc (as.subst₀ σ) (B.subst₀ (Subst₀.liftN _ σ))
 
-/-- The terms `t̄` substituted by `σ`. -/
+/-- The terms `t̄` substituted by `σ`.
+RFC: `\mathsf{subst}_\sigma.\bar t` -/
 def Terms.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Terms k Δ → Terms k Γ
   | .nil => .nil
   | .cons t ts => .cons (t.subst₀ σ) (ts.subst₀ σ)
 
-/-- The motives `C̄` substituted by `σ`, under the variables of each motive. -/
+/-- The motives `C̄` substituted by `σ`, under the variables of each motive.
+RFC: `\mathsf{subst}_\sigma.\bar C` -/
 def Motives.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Motives k Δ → Motives k Γ
   | .nil => .nil
   | .cons n C Cs => .cons n (C.subst₀ (Subst₀.liftN _ σ)) (Cs.subst₀ σ)
 
-/-- The branches `ū` substituted by `σ`, under the variables of each branch. -/
+/-- The branches `ū` substituted by `σ`, under the variables of each branch.
+RFC: `\mathsf{subst}_\sigma.\bar u` -/
 def Branches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
   | .cons n m u us => .cons n m (u.subst₀ (Subst₀.liftN _ σ)) (us.subst₀ σ)
@@ -268,17 +271,20 @@ def InstanceArgs.subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) :
   | .nil => .nil
   | .snoc as B => .snoc (as.subst θ) (B.subst (Subst.liftN _ θ))
 
-/-- The terms `t̄` substituted by `θ`. -/
+/-- The terms `t̄` substituted by `θ`.
+RFC: `\mathsf{subst}_\theta.\bar t` -/
 def Terms.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Terms k Δ → Terms k Γ
   | .nil => .nil
   | .cons t ts => .cons (t.subst θ) (ts.subst θ)
 
-/-- The motives `C̄` substituted by `θ`, under the variables of each motive. -/
+/-- The motives `C̄` substituted by `θ`, under the variables of each motive.
+RFC: `\mathsf{subst}_\theta.\bar C` -/
 def Motives.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Motives k Δ → Motives k Γ
   | .nil => .nil
   | .cons n C Cs => .cons n (C.subst (Subst.liftN _ θ)) (Cs.subst θ)
 
-/-- The branches `ū` substituted by `θ`, under the variables of each branch. -/
+/-- The branches `ū` substituted by `θ`, under the variables of each branch.
+RFC: `\mathsf{subst}_\theta.\bar u` -/
 def Branches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
   | .cons n m u us => .cons n m (u.subst (Subst.liftN _ θ)) (us.subst θ)
@@ -334,18 +340,21 @@ def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k
   | .nil => .nil
   | .snoc as B => .snoc (as.substLevels ls') (B.substLevels ls')
 
-/-- The terms `t̄` in which the levels `ls'` replace the level variables. -/
+/-- The terms `t̄` in which the levels `ls'` replace the level variables.
+RFC: `\mathsf{inst}_l.\bar t` -/
 def Terms.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Terms k Γ → Terms k' Γ
   | .nil => .nil
   | .cons t ts => .cons (t.substLevels ls') (ts.substLevels ls')
 
-/-- The motives `C̄` in which the levels `ls'` replace the level variables. -/
+/-- The motives `C̄` in which the levels `ls'` replace the level variables.
+RFC: `\mathsf{inst}_l.\bar C` -/
 def Motives.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Motives k Γ → Motives k' Γ
   | .nil => .nil
   | .cons n C Cs => .cons n (C.substLevels ls') (Cs.substLevels ls')
 
-/-- The branches `ū` in which the levels `ls'` replace the level variables. -/
+/-- The branches `ū` in which the levels `ls'` replace the level variables.
+RFC: `\mathsf{inst}_l.\bar u` -/
 def Branches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Branches k Γ → Branches k' Γ
   | .nil => .nil

@@ -149,8 +149,9 @@ inductive InstanceArgs (k : Nat) : Scope → Scope → Type where
   | snoc {Γ Δ : Scope} {e : Scope.Entry} (as : InstanceArgs k Γ Δ)
       (B : Term k (Γ.extend e.params.length)) : InstanceArgs k Γ (e :: Δ)
 
-/-- `t̄ = (t₁, …, tₐ)`: the terms of the fields of a constructor, the first one first, whose grades
-the declaration gives. -/
+/-- `t̄ = (t₁, …, tₐ)`: the terms of the fields of a constructor, the first one first, the arguments
+of the telescope of its fields, whose parameters the declaration gives rather than the term.
+RFC: `\mathsf{syntax}_{\bar t}` -/
 inductive Terms (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Terms k Γ
@@ -159,7 +160,8 @@ inductive Terms (k : Nat) : Scope → Type where
 
 /-- `C̄`: the motives of a recursor, one for each type of the block, in order; the motive
 `(x̄_nu, z). C` is a term over a new variable for each non-uniform parameter and one for the
-eliminated term, of which the indices only keep the number `n` of non-uniform parameters. -/
+eliminated term, of which the indices only keep the number `n` of non-uniform parameters.
+RFC: `\mathsf{syntax}_{\bar C}` -/
 inductive Motives (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Motives k Γ
@@ -169,7 +171,8 @@ inductive Motives (k : Nat) : Scope → Type where
 /-- `ū`: the branches of a recursor, one for each constructor of each type of the block, in the
 order of the declaration; the branch `c(x̄; ȳ) ⇒ u` is a term over a new variable for each field and
 one for each recursive result, of which the indices only keep the numbers `n` of fields and `m` of
-recursive results. -/
+recursive results.
+RFC: `\mathsf{syntax}_{\bar u}` -/
 inductive Branches (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Branches k Γ
@@ -397,7 +400,8 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
 -- ADE: none.
 /-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
 the qualities `qs` and of the grades `ps`, when the signature declares them, which the erasure of a
-constructor reads. -/
+constructor reads.
+RFC: `\mathsf{grades}_c` -/
 def Signature.fieldGrades (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
     Option (List Grade) :=
   sig.findSome? fun
