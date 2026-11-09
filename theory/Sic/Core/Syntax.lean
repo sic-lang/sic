@@ -137,6 +137,20 @@ inductive Term (k : Nat) : Scope → Type where
   | recursor {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ)
       (Cs : Motives k Γ) (us : Branches k Γ) : Term k Γ
+  /-- `t.(T.d)(b̄)`: the observation of the term `t` of the instance `T = D.{s̄; l̄; p̄} ā` by its
+  destructor `d`, applied to a term for each of its arguments; the observation carries the instance
+  of its term, so that its usage and its ownership read the grades and the requirements of the
+  destructor at this instance. -/
+  | obs {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
+      (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ) (d : Name) (bs : Terms k Γ) :
+      Term k Γ
+  /-- `corec_r T from s̄ return S̄ with v̄`: the corecursor, which builds a term of the instance
+  `T = D.{s̄; l̄; p̄} ā` from the state `s̄`, used with the grade `r`, with a state `S_j` for each
+  type of the block and a branch `v_ji` for each destructor of each type, in the order of the
+  declaration; the corecursor carries its instance, so that the term determines its type. -/
+  | corec {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
+      (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ)
+      (Ss : States k Γ) (vs : CorecBranches k Γ) : Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
 one first.
@@ -192,6 +206,47 @@ inductive Branches (k : Nat) : Scope → Type where
   | cons {Γ : Scope} (n m : Nat) (u : Term k (Γ.extend (n + m))) (us : Branches k Γ) :
       Branches k Γ
 
+-- ADE: none.
+/--
+`Θ = (x₁ : A₁ ▶ p₁; q₁ ◀ r₁, …, xₐ : Aₐ ▶ pₐ; qₐ ◀ rₐ)`: a telescope in the scope `Γ`, whose
+entries have the parameters `ps`, each type in the scope of the entries before it; the entry
+`x : A ▶ p; q ◀ r` is used with the grade `p`, requires the ownership `r` of its argument, and its
+variable is used with the grade `q` by the types after it.
+RFC: `\mathsf{syntax}_\Theta`
+-/
+inductive Telescope (k : Nat) : Scope → List Parameter → Type where
+  /-- `ε`. -/
+  | nil {Γ : Scope} : Telescope k Γ []
+  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
+  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) (A : Term k Γ)
+      (Θ : Telescope k (.var :: Γ) ps) : Telescope k Γ (p :: ps)
+
+/-- `S̄`: the states of a corecursor, one for each type of the block, in order; the state
+`(x̄_nu). S` is a telescope over a new variable for each non-uniform parameter, of which the indices
+only keep the number `n` of non-uniform parameters.
+RFC: `\mathsf{syntax}_{\bar S}` -/
+inductive States (k : Nat) : Scope → Type where
+  /-- `()`. -/
+  | nil {Γ : Scope} : States k Γ
+  /-- `((x̄_nu). S, S̄)`, with `n` non-uniform parameters and a telescope `S` whose entries have the
+  parameters `ps`. -/
+  | cons {Γ : Scope} (n : Nat) {ps : List Parameter} (S : Telescope k (Γ.extend n) ps)
+      (Ss : States k Γ) : States k Γ
+
+/-- `v̄`: the branches of a corecursor, one for each destructor of each type of the block, in the
+order of the declaration; the branch `d(x̄_nu; w̄; x̄) ⇒ v` is a term over a new variable for each
+non-uniform parameter, for each entry of the state and for each argument of the destructor, of which
+the indices only keep the numbers `n` of non-uniform parameters, `m` of entries of the state and
+`a` of arguments.
+RFC: `\mathsf{syntax}_{\bar v}` -/
+inductive CorecBranches (k : Nat) : Scope → Type where
+  /-- `()`. -/
+  | nil {Γ : Scope} : CorecBranches k Γ
+  /-- `(d(x̄_nu; w̄; x̄) ⇒ v, v̄)`, with `n` non-uniform parameters, `m` entries of the state and
+  `a` arguments. -/
+  | cons {Γ : Scope} (n m a : Nat) (v : Term k (Γ.extend (n + m + a))) (vs : CorecBranches k Γ) :
+      CorecBranches k Γ
+
 end
 
 /-- The terms `t̄` of the arguments of a telescope, without the parameters of its entries, which the
@@ -233,23 +288,16 @@ theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Na
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
+/-- The state at a position of states, with its number of non-uniform parameters and the
+parameters of its entries. -/
+def States.get {k : Nat} {Γ : Scope} :
+    States k Γ → Nat → Option (Σ n, Σ ps : List Parameter, Telescope k (Γ.extend n) ps)
+  | .nil, _ => none
+  | .cons n S _, 0 => some ⟨n, _, S⟩
+  | .cons _ _ Ss, j + 1 => Ss.get j
+
 /-- The variable `x`, applied to no argument. -/
 abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var x .nil
-
--- ADE: none.
-/--
-`Θ = (x₁ : A₁ ▶ p₁; q₁ ◀ r₁, …, xₐ : Aₐ ▶ pₐ; qₐ ◀ rₐ)`: a telescope in the scope `Γ`, whose
-entries have the parameters `ps`, each type in the scope of the entries before it; the entry
-`x : A ▶ p; q ◀ r` is used with the grade `p`, requires the ownership `r` of its argument, and its
-variable is used with the grade `q` by the types after it.
-RFC: `\mathsf{syntax}_\Theta`
--/
-inductive Telescope (k : Nat) : Scope → List Parameter → Type where
-  /-- `ε`. -/
-  | nil {Γ : Scope} : Telescope k Γ []
-  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
-  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) (A : Term k Γ)
-      (Θ : Telescope k (.var :: Γ) ps) : Telescope k Γ (p :: ps)
 
 -- ADE: `Con`, in `Definition/Untyped.agda`.
 /-- A context whose scope is `Γ`, the last entry first.
@@ -714,6 +762,48 @@ RFC: `\mathsf{grades}_c` -/
 def Signature.fieldGrades (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
     Option (List Grade) :=
   sig.findSome? (Entry.fieldGrades D c qs ps)
+
+/-- The parameters of the arguments of the destructor `d`, when the destructors have one. -/
+def Destructors.arguments {k : Nat} : {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Name →
+    Option (List Parameter)
+  | _, [], .nil, _ => none
+  | _, d' :: _, .cons (ps := ps) _ _ _ _ _ ds, d => if d' = d then some ps else ds.arguments d
+
+-- ADE: none.
+/-- The grades `p` of the arguments of the destructor `d` of the declared type `D` at the instance
+of the qualities `qs` and of the grades `ps`, when the entry declares them. -/
+def Entry.argumentGrades (D d : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List Grade)
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.codataTypes.find? (·.name == D)).bind fun T =>
+          ((T.body (.ofLists qs ps hq hp)).arguments d).map fun ps' => ps'.map (·.usage)
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The grades `p` of the arguments of the destructor `d` of the declared type `D` at the instance
+of the qualities `qs` and of the grades `ps`, in the last entry of the signature that declares
+them, which the erasure of an observation reads.
+RFC: `\mathsf{grades}_d` -/
+def Signature.argumentGrades (sig : Signature) (D d : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List Grade) :=
+  sig.findSome? (Entry.argumentGrades D d qs ps)
+
+-- ADE: none.
+/-- The position of the declared type `D` in the block of the entry, when the entry declares it. -/
+def Entry.position (D : Name) : Entry → Option Nat
+  | .typeDeclaration decl => decl.names.idxOf? D
+  | _ => none
+
+-- ADE: none.
+/-- The position of the declared type `D` in its block, in the last entry of the signature that
+declares it, which the erasure of a corecursor reads to find the state of `D`.
+RFC: `\mathsf{position}_D` -/
+def Signature.position (sig : Signature) (D : Name) : Option Nat :=
+  sig.findSome? (Entry.position D)
 
 /-- An element of a list whose images by `f` are distinct is the first one with its image. -/
 theorem _root_.List.find?_of_nodup_map {α : Type} {f : α → Name} :

@@ -72,6 +72,21 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       (hCs : Motives.LevelEquiv Cs₁ Cs₂) (hus : Branches.LevelEquiv us₁ us₂) :
       Term.LevelEquiv (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
         (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂)
+  /-- An observation of a term of an instance at equal levels, with arguments of the instance, a
+  term and arguments of the destructor equal up to their levels. -/
+  | obs {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
+      {as₁ as₂ : InstanceArgs k Γ Δ} {t₁ t₂ : Term k Γ} (d : Name) {bs₁ bs₂ : Terms k Γ}
+      (hl : Level.ListEquiv ls₁ ls₂) (has : InstanceArgs.LevelEquiv as₁ as₂)
+      (h : Term.LevelEquiv t₁ t₂) (hbs : Terms.LevelEquiv bs₁ bs₂) :
+      Term.LevelEquiv (.obs D qs ls₁ ps as₁ t₁ d bs₁) (.obs D qs ls₂ ps as₂ t₂ d bs₂)
+  /-- A corecursor of an instance at equal levels, with arguments, a state, states and branches
+  equal up to their levels. -/
+  | corec {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
+      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {ss₁ ss₂ : Terms k Γ}
+      {Ss₁ Ss₂ : States k Γ} {vs₁ vs₂ : CorecBranches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
+      (has : InstanceArgs.LevelEquiv as₁ as₂) (hss : Terms.LevelEquiv ss₁ ss₂)
+      (hSs : States.LevelEquiv Ss₁ Ss₂) (hvs : CorecBranches.LevelEquiv vs₁ vs₂) :
+      Term.LevelEquiv (.corec r D qs ls₁ ps as₁ ss₁ Ss₁ vs₁) (.corec r D qs ls₂ ps as₂ ss₂ Ss₂ vs₂)
 
 /-- The arguments of a telescope, equal up to their levels one by one. -/
 inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
@@ -119,6 +134,36 @@ inductive Branches.LevelEquiv {k : Nat} : {Γ : Scope} → Branches k Γ → Bra
       (h : Term.LevelEquiv u₁ u₂) (hs : Branches.LevelEquiv us₁ us₂) :
       Branches.LevelEquiv (.cons n m u₁ us₁) (.cons n m u₂ us₂)
 
+/-- Two telescopes whose types are equal up to their levels. -/
+inductive Telescope.LevelEquiv {k : Nat} :
+    {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → Telescope k Γ ps → Prop where
+  /-- `ε`. -/
+  | nil {Γ : Scope} : Telescope.LevelEquiv (Γ := Γ) .nil .nil
+  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
+  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) {A₁ A₂ : Term k Γ}
+      {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps} (h : Term.LevelEquiv A₁ A₂)
+      (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) : Telescope.LevelEquiv (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂)
+
+/-- The states of a corecursor, equal up to their levels one by one. -/
+inductive States.LevelEquiv {k : Nat} : {Γ : Scope} → States k Γ → States k Γ → Prop where
+  /-- No state. -/
+  | nil {Γ : Scope} : States.LevelEquiv (Γ := Γ) .nil .nil
+  /-- Two states equal up to their levels, then the others. -/
+  | cons {Γ : Scope} {n : Nat} {ps : List Parameter} {S₁ S₂ : Telescope k (Γ.extend n) ps}
+      {Ss₁ Ss₂ : States k Γ} (h : Telescope.LevelEquiv S₁ S₂) (hs : States.LevelEquiv Ss₁ Ss₂) :
+      States.LevelEquiv (.cons n S₁ Ss₁) (.cons n S₂ Ss₂)
+
+/-- The branches of a corecursor, equal up to their levels one by one. -/
+inductive CorecBranches.LevelEquiv {k : Nat} :
+    {Γ : Scope} → CorecBranches k Γ → CorecBranches k Γ → Prop where
+  /-- No branch. -/
+  | nil {Γ : Scope} : CorecBranches.LevelEquiv (Γ := Γ) .nil .nil
+  /-- Two branches equal up to their levels, then the others. -/
+  | cons {Γ : Scope} {n m a : Nat} {v₁ v₂ : Term k (Γ.extend (n + m + a))}
+      {vs₁ vs₂ : CorecBranches k Γ} (h : Term.LevelEquiv v₁ v₂)
+      (hs : CorecBranches.LevelEquiv vs₁ vs₂) :
+      CorecBranches.LevelEquiv (.cons n m a v₁ vs₁) (.cons n m a v₂ vs₂)
+
 end
 
 /-! ## Equivalence -/
@@ -144,6 +189,11 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
   | .recursor r D qs ls ps as t Cs us => .recursor r D qs ps (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
       (Branches.LevelEquiv.refl us)
+  | .obs D qs ls ps as t d bs => .obs D qs ps d (Level.ListEquiv.refl ls)
+      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl bs)
+  | .corec r D qs ls ps as ss Ss vs => .corec r D qs ps (Level.ListEquiv.refl ls)
+      (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ss) (States.LevelEquiv.refl Ss)
+      (CorecBranches.LevelEquiv.refl vs)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (ts : Args k Γ ps) → Args.LevelEquiv ts ts
@@ -169,6 +219,22 @@ theorem Branches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
   | .nil => .nil
   | .cons _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
 
+
+theorem Telescope.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
+    (Θ : Telescope k Γ ps) → Telescope.LevelEquiv Θ Θ
+  | .nil => .nil
+  | .cons q p A Θ => .cons q p (Term.LevelEquiv.refl A) (Telescope.LevelEquiv.refl Θ)
+
+theorem States.LevelEquiv.refl {k : Nat} {Γ : Scope} :
+    (Ss : States k Γ) → States.LevelEquiv Ss Ss
+  | .nil => .nil
+  | .cons _ S Ss => .cons (Telescope.LevelEquiv.refl S) (States.LevelEquiv.refl Ss)
+
+theorem CorecBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
+    (vs : CorecBranches k Γ) → CorecBranches.LevelEquiv vs vs
+  | .nil => .nil
+  | .cons _ _ _ v vs => .cons (Term.LevelEquiv.refl v) (CorecBranches.LevelEquiv.refl vs)
+
 end
 
 mutual
@@ -182,6 +248,9 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .ctor D qs ps c h has hts => .ctor D qs ps c h.symm has.symm hts.symm
   | .recursor r D qs ps hl has h hCs hus =>
     .recursor r D qs ps hl.symm has.symm h.symm hCs.symm hus.symm
+  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl.symm has.symm h.symm hbs.symm
+  | .corec r D qs ps hl has hss hSs hvs =>
+    .corec r D qs ps hl.symm has.symm hss.symm hSs.symm hvs.symm
 
 theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
     Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
@@ -208,6 +277,23 @@ theorem Branches.LevelEquiv.symm {k : Nat} {Γ : Scope} {us₁ us₂ : Branches 
   | .nil => .nil
   | .cons h hs => .cons h.symm hs.symm
 
+
+/-- Two telescopes equal up to their levels in the other order. -/
+theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {Θ₁ Θ₂ : Telescope k Γ ps} : Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv Θ₂ Θ₁
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p h.symm hΘ.symm
+
+theorem States.LevelEquiv.symm {k : Nat} {Γ : Scope} {Ss₁ Ss₂ : States k Γ} :
+    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv Ss₂ Ss₁
+  | .nil => .nil
+  | .cons h hs => .cons h.symm hs.symm
+
+theorem CorecBranches.LevelEquiv.symm {k : Nat} {Γ : Scope} {vs₁ vs₂ : CorecBranches k Γ} :
+    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv vs₂ vs₁
+  | .nil => .nil
+  | .cons h hs => .cons h.symm hs.symm
+
 end
 
 /-! ## Renaming and Instantiation of the Level Variables -/
@@ -224,6 +310,9 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {t₁ 
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename ξ) (hts.rename ξ)
   | .recursor r D qs ps hl has h hCs hus =>
     .recursor r D qs ps hl (has.rename ξ) (h.rename ξ) (hCs.rename ξ) (hus.rename ξ)
+  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.rename ξ) (h.rename ξ) (hbs.rename ξ)
+  | .corec r D qs ps hl has hss hSs hvs =>
+    .corec r D qs ps hl (has.rename ξ) (hss.rename ξ) (hSs.rename ξ) (hvs.rename ξ)
 
 theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
     {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
@@ -248,6 +337,24 @@ theorem Motives.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Cs
 
 theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {us₁ us₂ : Branches k Δ} :
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.rename ξ) (us₂.rename ξ)
+  | .nil => .nil
+  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+
+
+theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
+    {Θ₁ Θ₂ : Telescope k Δ ps} :
+    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.rename ξ) (Θ₂.rename ξ)
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p (h.rename ξ) (hΘ.rename (Ren.lift ξ))
+
+theorem States.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Ss₁ Ss₂ : States k Δ} :
+    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.rename ξ) (Ss₂.rename ξ)
+  | .nil => .nil
+  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+
+theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ)
+    {vs₁ vs₂ : CorecBranches k Δ} :
+    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.rename ξ) (vs₂.rename ξ)
   | .nil => .nil
   | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
 
@@ -283,6 +390,13 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
     .recursor r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
       (Term.substLevels_levelEquiv h t) (Motives.substLevels_levelEquiv h Cs)
       (Branches.substLevels_levelEquiv h us)
+  | .obs D qs ls ps as t d bs =>
+    .obs D qs ps d (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+      (Term.substLevels_levelEquiv h t) (Terms.substLevels_levelEquiv h bs)
+  | .corec r D qs ls ps as ss Ss vs =>
+    .corec r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+      (Terms.substLevels_levelEquiv h ss) (States.substLevels_levelEquiv h Ss)
+      (CorecBranches.substLevels_levelEquiv h vs)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Args k Γ ps) →
@@ -314,6 +428,29 @@ theorem Branches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ :
     Branches.LevelEquiv (us.substLevels ls₁) (us.substLevels ls₂)
   | .nil => .nil
   | .cons _ _ u us => .cons (Term.substLevels_levelEquiv h u) (Branches.substLevels_levelEquiv h us)
+
+
+/-- Equal levels that replace the level variables give telescopes equal up to their levels. -/
+theorem Telescope.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) →
+      Telescope.LevelEquiv (Θ.substLevels ls₁) (Θ.substLevels ls₂)
+  | _, _, .nil => .nil
+  | _, _, .cons q p A Θ =>
+    .cons q p (Term.substLevels_levelEquiv h A) (Telescope.substLevels_levelEquiv h Θ)
+
+theorem States.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : (Ss : States k Γ) →
+    States.LevelEquiv (Ss.substLevels ls₁) (Ss.substLevels ls₂)
+  | .nil => .nil
+  | .cons _ S Ss =>
+    .cons (Telescope.substLevels_levelEquiv h S) (States.substLevels_levelEquiv h Ss)
+
+theorem CorecBranches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope}
+    {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (vs : CorecBranches k Γ) →
+    CorecBranches.LevelEquiv (vs.substLevels ls₁) (vs.substLevels ls₂)
+  | .nil => .nil
+  | .cons _ _ _ v vs =>
+    .cons (Term.substLevels_levelEquiv h v) (CorecBranches.substLevels_levelEquiv h vs)
 
 end
 
@@ -441,6 +578,9 @@ theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst�
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst₀ hσ) (hts.subst₀ hσ)
   | .recursor r D qs ps hl has h hCs hus =>
     .recursor r D qs ps hl (has.subst₀ hσ) (h.subst₀ hσ) (hCs.subst₀ hσ) (hus.subst₀ hσ)
+  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst₀ hσ) (h.subst₀ hσ) (hbs.subst₀ hσ)
+  | .corec r D qs ps hl has hss hSs hvs =>
+    .corec r D qs ps hl (has.subst₀ hσ) (hss.subst₀ hσ) (hSs.subst₀ hσ) (hvs.subst₀ hσ)
 
 theorem Args.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Args k Δ ps} :
@@ -469,6 +609,27 @@ theorem Motives.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Sub
 theorem Branches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
     (hσ : Subst₀.LevelEquiv σ₁ σ₂) {us₁ us₂ : Branches k Δ} :
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.subst₀ σ₁) (us₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+
+
+/-- A substitution of the first order equal up to the levels keeps two telescopes equal up to their
+levels. -/
+theorem Telescope.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Θ₁ Θ₂ : Telescope k Δ ps} :
+    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.subst₀ σ₁) (Θ₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p (h.subst₀ hσ) (hΘ.subst₀ (Subst₀.LevelEquiv.lift hσ))
+
+theorem States.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Ss₁ Ss₂ : States k Δ} :
+    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.subst₀ σ₁) (Ss₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+
+theorem CorecBranches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {vs₁ vs₂ : CorecBranches k Δ} :
+    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst₀ σ₁) (vs₂.subst₀ σ₂)
   | .nil => .nil
   | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
 
@@ -529,6 +690,9 @@ theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k �
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst hθ) (hts.subst hθ)
   | .recursor r D qs ps hl has h hCs hus =>
     .recursor r D qs ps hl (has.subst hθ) (h.subst hθ) (hCs.subst hθ) (hus.subst hθ)
+  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst hθ) (h.subst hθ) (hbs.subst hθ)
+  | .corec r D qs ps hl has hss hSs hvs =>
+    .corec r D qs ps hl (has.subst hθ) (hss.subst hθ) (hSs.subst hθ) (hvs.subst hθ)
 
 theorem Args.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {θ₁ θ₂ : Subst k Γ Δ}
     (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Args k Δ ps} :
@@ -560,33 +724,6 @@ theorem Branches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst
   | .nil => .nil
   | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
 
-end
-
-/-- Two telescopes whose types are equal up to their levels. -/
-inductive Telescope.LevelEquiv {k : Nat} :
-    {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → Telescope k Γ ps → Prop where
-  /-- `ε`. -/
-  | nil {Γ : Scope} : Telescope.LevelEquiv (Γ := Γ) .nil .nil
-  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
-  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) {A₁ A₂ : Term k Γ}
-      {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps} (h : Term.LevelEquiv A₁ A₂)
-      (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) : Telescope.LevelEquiv (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂)
-
-/-- Equal levels that replace the level variables give telescopes equal up to their levels. -/
-theorem Telescope.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
-    (h : ∀ i, ls₁ i ≈ ls₂ i) : {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) →
-      Telescope.LevelEquiv (Θ.substLevels ls₁) (Θ.substLevels ls₂)
-  | _, _, .nil => .nil
-  | _, _, .cons q p A Θ =>
-    .cons q p (Term.substLevels_levelEquiv h A) (Telescope.substLevels_levelEquiv h Θ)
-
-/-- A substitution of the first order equal up to the levels keeps two telescopes equal up to their
-levels. -/
-theorem Telescope.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
-    {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Θ₁ Θ₂ : Telescope k Δ ps} :
-    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.subst₀ σ₁) (Θ₂.subst₀ σ₂)
-  | .nil => .nil
-  | .cons q p h hΘ => .cons q p (h.subst₀ hσ) (hΘ.subst₀ (Subst₀.LevelEquiv.lift hσ))
 
 /-- A substitution of the second order equal up to the levels keeps two telescopes equal up to their
 levels. -/
@@ -595,6 +732,20 @@ theorem Telescope.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Paramete
     Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.subst θ₁) (Θ₂.subst θ₂)
   | .nil => .nil
   | .cons q p h hΘ => .cons q p (h.subst hθ) (hΘ.subst (Subst.LevelEquiv.lift hθ))
+
+theorem States.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {Ss₁ Ss₂ : States k Δ} :
+    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.subst θ₁) (Ss₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+
+theorem CorecBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {vs₁ vs₂ : CorecBranches k Δ} :
+    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst θ₁) (vs₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+
+end
 
 /-- The fields of a constructor at levels of the same values and at arguments equal up to their
 levels are equal up to their levels. -/
@@ -949,12 +1100,6 @@ parameters at the values of its levels, while an instance gives them at its own 
 substitutions of a context are equal substitutions of the context at levels of the same values, and
 two closed telescopes equal in a sort stay so when their levels and that of the sort change for
 equal ones. -/
-
-/-- Two telescopes equal up to their levels in the other order. -/
-theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}
-    {Θ₁ Θ₂ : Telescope k Γ ps} : Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv Θ₂ Θ₁
-  | .nil => .nil
-  | .cons q p h hΘ => .cons q p h.symm hΘ.symm
 
 /-- A substitution is equal to itself up to its levels. -/
 theorem Subst.LevelEquiv.refl {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) : Subst.LevelEquiv θ θ :=
