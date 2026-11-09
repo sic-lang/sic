@@ -27,26 +27,29 @@ namespace Sic.Core
 abbrev Term.u₀ {k : Nat} {Γ : Scope} : Term k Γ := .sort ⟨.type, .zero⟩
 
 /-- An entry used once, which requires nothing of its argument. -/
-def Parameter.linear : Parameter := ⟨Grade.one, .unrestrictedUnrestricted, none⟩
+def Parameter.linear : Parameter := ⟨Grade.one, .unrestrictedUnrestricted⟩
 
 /-- An entry used once, which requires its argument to be owned alone. -/
-def Parameter.unique : Parameter := ⟨Grade.one, Grade.one, none⟩
+def Parameter.unique : Parameter := ⟨Grade.one, Grade.one⟩
+
+/-- The ownership `ωωᵖ` of a shared result, which no argument gives. -/
+def ResultOwnership.shared (n : Nat) : ResultOwnership n := ⟨some .unrestrictedUnrestricted, fun _ => none⟩
 
 /-- The scope of a variable `x` and of a second-order variable `X` whose telescope has the
 parameters `ps`, and whose result is shared. -/
 abbrev Scope.xX (ps : List Parameter) : Scope :=
-  [.secondOrder ps (some .unrestrictedUnrestricted), .var]
+  [.secondOrder ps (.shared _), .var]
 
 /-- The context `x : U₀, X : (Θ ⊢ U₀ ◀ ωωᵖ)`. -/
 def Context.xX {ps : List Parameter} (Θ : Telescope 0 [.var] ps) : Context 0 (Scope.xX ps) :=
-  (Context.empty.var Term.u₀).secondOrder Θ Term.u₀ (some .unrestrictedUnrestricted)
+  (Context.empty.var Term.u₀).secondOrder Θ Term.u₀ (.shared _)
 
 /-- The variable `x`. -/
 abbrev Var.x {ps : List Parameter} : Var (Scope.xX ps) .var := .succ .zero
 
 /-- The second-order variable `X`. -/
 abbrev Var.X {ps : List Parameter} :
-    Var (Scope.xX ps) (.secondOrder ps (some .unrestrictedUnrestricted)) :=
+    Var (Scope.xX ps) (.secondOrder ps (.shared _)) :=
   .zero
 
 /-- The telescope `(y : U₀ ▶ 11ᵖ; 00ᵖ ◀ ωωᵖ, z : U₀ ▶ 11ᵖ; 00ᵖ ◀ ωωᵖ)`, of two entries used once. -/
@@ -174,8 +177,8 @@ theorem Ownership.var₀_le {sig : Signature} {k : Nat} {Γ : Scope} {φ : Var �
 /-- The ownership of an application `X[t̄]` of a second-order variable gives ownerships to its
 arguments, which satisfy the requirements of their entries. -/
 theorem Ownership.secondOrder_inv {sig : Signature} {k : Nat} {Γ : Scope}
-    {φ : Var Γ .var → Grade} {m : Mode} {ps : List Parameter} {χ₀ : Option Grade}
-    {X : Var Γ (.secondOrder ps χ₀)} {ts : Args k Γ ps} :
+    {φ : Var Γ .var → Grade} {m : Mode} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+    {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps} :
     ∀ {p : Grade} {t : Term k Γ}, Ownership sig φ m p t → t = .var X ts →
       ∃ os, OwnershipArgs sig φ m ts os
   | _, _, .var, he => by cases he

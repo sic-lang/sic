@@ -92,8 +92,8 @@ empty context. -/
 theorem ValidCtx₀.distinct : {Γ : Scope} → {ctx : Context 0 Γ} → ValidCtx₀ sig ι ctx → sig.Distinct
   | _, .empty, h => by rw [ValidCtx₀] at h; exact h
   | _, .var ctx A, h => ValidCtx₀.distinct ((validCtx₀_var ctx A).1 h).1
-  | _, .secondOrder ctx Θ A χ₀, h =>
-    ValidCtx₀.distinct (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ A χ₀).1 h).1)
+  | _, .secondOrder ctx Θ A ψ, h =>
+    ValidCtx₀.distinct (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ A ψ).1 h).1)
 
 -- ADE: `⊩ᵛU≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /-- `(U_≡)` and `(Ω_≡)` keep the meaning, and `(U)` and `(Ω)` with them, at the equal levels `l` and
@@ -142,8 +142,8 @@ variable equal abstractions, whose instances by the equal substitutions that the
 telescope are equal terms of its type.
 The type at the arguments `t̄` substituted by `σ₁` and by `σ₂` is the type at `t̄[σ₁]` and at
 `ū[σ₂]`, then at `ū[σ₂]` and at `t̄[σ₂]`, both equal by the meaning of the entry. -/
-theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
-    {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope 0 Γ ps}
+theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+    {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
     {A : Term 0 (Γ.extend ps.length)} {ts us : Args 0 Γ ps} (hctx : ValidCtx₀ sig ι ctx)
     (hX : ctx.SecondOrderIn X Θ A) (hts : ValidEqArgsΓ sig ι ctx ts us Θ) :
     ValidEqTermΓ sig ι ctx (.var X ts) (.var X us) (A.instantiate ts) := by
@@ -521,16 +521,16 @@ second-order variable, and equal abstractions for it, under the variables of its
 the first ones instantiate, are equal substitutions of the parameters; the abstractions at equal
 substitutions of the telescope are the abstractions at equal substitutions of the context extended
 by it. -/
-theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
     {ctx : Context 0 Γ} {as₁ as₂ : InstanceArgs 0 Γ Δ} {params : Context 0 Δ}
     {Θ : Telescope 0 Δ ps} {A : Term 0 (Δ.extend ps.length)} {B₁ B₂ : Term 0 (Γ.extend ps.length)}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂ params)
     (hB : ValidEqTermΓ sig ι (ctx.append (Θ.subst as₁.toSubst)) B₁ B₂
       (A.subst (Subst.liftN _ as₁.toSubst))) :
-    ValidEqInstanceArgsΓ sig ι ctx (.snoc (e := .secondOrder ps χ₀) as₁ B₁)
-      (.snoc (e := .secondOrder ps χ₀) as₂ B₂) (params.secondOrder Θ A χ₀) := by
+    ValidEqInstanceArgsΓ sig ι ctx (.snoc (e := .secondOrder ps ψ) as₁ B₁)
+      (.snoc (e := .secondOrder ps ψ) as₂ B₂) (params.secondOrder Θ A ψ) := by
   refine ⟨has.1, fun σ₁ σ₂ h =>
-    (EqSubst.secondOrder_iff params Θ A χ₀ _ _).2 ⟨has.2 σ₁ σ₂ h, fun τ₁ τ₂ hτ => ?_⟩⟩
+    (EqSubst.secondOrder_iff params Θ A ψ _ _).2 ⟨has.2 σ₁ σ₂ h, fun τ₁ τ₂ hτ => ?_⟩⟩
   have hc : ∀ {a} (x : Var Δ a), (as₁.toSubst x).subst (Subst.liftN a.params.length σ₁) =
       (as₁.subst σ₁).toSubst x := InstanceArgs.toSubst_subst σ₁ as₁
   change EqSubst sig ι (Context.empty.append (Θ.subst (as₁.subst σ₁).toSubst)) τ₁ τ₂ at hτ

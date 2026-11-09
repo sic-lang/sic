@@ -22,15 +22,20 @@ The kinds of declarations will give the ownership of their terms.
 namespace Sic.Core
 
 -- ADE: none.
-/-- `ψ[ō / x̄]`: the value of the ownership of the result of a second-order variable whose telescope
-has the parameters `ps` and whose result has the constant `χ₀`, given the ownerships `os` of its
-arguments: the meet of `χ₀` and of the ownership `oⱼ` of each argument scaled by the coefficient
-`χⱼ` of its parameter, over the factors present, and none if no factor is.
+/-- `ψ'`: the ownership `ψ` of the result of a second-order variable without the factor of the first
+variable of its telescope, over the variables after it. -/
+def ResultOwnership.tail {n : Nat} (ψ : ResultOwnership (n + 1)) : ResultOwnership n :=
+  ⟨ψ.constant, fun i => ψ.coefficient i.succ⟩
+
+-- ADE: none.
+/-- `ψ[ō / x̄]`: the value of the ownership `ψ` of the result of a second-order variable, given the
+ownerships `os` of its arguments: the meet of its constant `ψ` and of the ownership `oⱼ` of each
+argument scaled by the coefficient `χⱼ` of its variable, over the factors present, and none if no
+factor is.
 RFC: `\mathsf{value}_\psi` -/
-def Parameter.result (χ₀ : Option Grade) : List Parameter → List Grade → Option Grade
-  | p :: ps, o :: os =>
-    Option.merge (· ⊓ ·) (p.coefficient.map (o * ·)) (Parameter.result χ₀ ps os)
-  | _, _ => χ₀
+def ResultOwnership.value : {n : Nat} → ResultOwnership n → List Grade → Option Grade
+  | _ + 1, ψ, o :: os => Option.merge (· ⊓ ·) ((ψ.coefficient 0).map (o * ·)) (ψ.tail.value os)
+  | _, ψ, _ => ψ.constant
 
 mutual
 
@@ -47,8 +52,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   result, when it is defined, given the ownerships `os` of its arguments.
   RFC: `\mathsf{var}_{X◀}` -/
   | secondOrder {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {ps : List Parameter}
-      {χ₀ : Option Grade} {X : Var Γ (.secondOrder ps χ₀)} {ts : Args k Γ ps} {os : List Grade}
-      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : Parameter.result χ₀ ps os = some p) :
+      {ψ : ResultOwnership ps.length} {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps} {os : List Grade}
+      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : ψ.value os = some p) :
       Ownership sig φ m p (.var X ts)
   /-- A constant, defined or declared, has the ownership `p` of its entry, in every mode.
   RFC: `f_{◀}` -/

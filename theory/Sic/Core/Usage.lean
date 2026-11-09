@@ -111,13 +111,13 @@ inductive UsageInstanceArgs (sig : Signature) : {k : Nat} → {Γ Δ : Scope} �
   of the grade `p` of the variable, whose term, checked in the mode `m' = m ⊙ p`, uses each
   variable of the telescope as its grade `pᵢ` allows, as `⌜m'⌝ · pᵢ`.
   RFC: `\mathsf{arg}_{X▶}` -/
-  | secondOrder {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+  | secondOrder {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
       {as : InstanceArgs k Γ Δ} {B : Term k (Γ.extend ps.length)} {m : Mode}
       {ζ : GradeVector Δ.length} {p : Grade} {γ δ : GradeVector Γ.length}
       (has : UsageInstanceArgs sig γ m ζ as)
       (hB : Usage sig (δ.extendParams (m ⊙ p).grade ps) (m ⊙ p) B) :
-      UsageInstanceArgs sig (Δ := Scope.Entry.secondOrder ps χ₀ :: Δ) (γ +ᶜ (p ·ᶜ δ)) m (ζ ∙ p)
-        (.snoc (e := .secondOrder ps χ₀) as B)
+      UsageInstanceArgs sig (Δ := Scope.Entry.secondOrder ps ψ :: Δ) (γ +ᶜ (p ·ᶜ δ)) m (ζ ∙ p)
+        (.snoc (e := .secondOrder ps ψ) as B)
 
 end
 

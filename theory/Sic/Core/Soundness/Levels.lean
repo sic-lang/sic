@@ -913,10 +913,10 @@ inductive Context.LevelEquiv {k : Nat} : {Γ : Scope} → Context k Γ → Conte
       (hA : Term.LevelEquiv A₁ A₂) : Context.LevelEquiv (ctx₁.var A₁) (ctx₂.var A₂)
   /-- `Γ, X : (Θ ⊢ A ◀ ψ)`. -/
   | secondOrder {Γ : Scope} {ps : List Parameter} {ctx₁ ctx₂ : Context k Γ}
-      {Θ₁ Θ₂ : Telescope k Γ ps} {A₁ A₂ : Term k (Γ.extend ps.length)} (χ₀ : Option Grade)
+      {Θ₁ Θ₂ : Telescope k Γ ps} {A₁ A₂ : Term k (Γ.extend ps.length)} (ψ : ResultOwnership ps.length)
       (h : Context.LevelEquiv ctx₁ ctx₂) (hΘ : Telescope.LevelEquiv Θ₁ Θ₂)
       (hA : Term.LevelEquiv A₁ A₂) :
-      Context.LevelEquiv (ctx₁.secondOrder Θ₁ A₁ χ₀) (ctx₂.secondOrder Θ₂ A₂ χ₀)
+      Context.LevelEquiv (ctx₁.secondOrder Θ₁ A₁ ψ) (ctx₂.secondOrder Θ₂ A₂ ψ)
 
 /-- Equal levels that replace the level variables give contexts equal up to their levels. -/
 theorem Context.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
@@ -924,7 +924,7 @@ theorem Context.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Lev
       Context.LevelEquiv (ctx.substLevels ls₁) (ctx.substLevels ls₂)
   | _, .empty => .empty
   | _, .var ctx A => .var (Context.substLevels_levelEquiv h ctx) (Term.substLevels_levelEquiv h A)
-  | _, .secondOrder ctx Θ A χ₀ => .secondOrder χ₀ (Context.substLevels_levelEquiv h ctx)
+  | _, .secondOrder ctx Θ A ψ => .secondOrder ψ (Context.substLevels_levelEquiv h ctx)
       (Telescope.substLevels_levelEquiv h Θ) (Term.substLevels_levelEquiv h A)
 
 /-- Two contexts equal up to their levels in the other order. -/
@@ -932,7 +932,7 @@ theorem Context.LevelEquiv.symm {k : Nat} {Γ : Scope} {ctx₁ ctx₂ : Context 
     Context.LevelEquiv ctx₁ ctx₂ → Context.LevelEquiv ctx₂ ctx₁
   | .empty => .empty
   | .var h hA => .var h.symm hA.symm
-  | .secondOrder χ₀ h hΘ hA => .secondOrder χ₀ h.symm hΘ.symm hA.symm
+  | .secondOrder ψ h hΘ hA => .secondOrder ψ h.symm hΘ.symm hA.symm
 
 /-- Contexts and telescopes equal up to their levels give appended contexts equal up to their
 levels. -/
@@ -954,7 +954,7 @@ theorem EqSubst.levelEquiv {sig : Signature} {ι : Interpretation} : {Γ : Scope
     exact (EqSubst.var_iff _ _ _ _).2 ⟨EqSubst.levelEquiv h hσ,
       ht.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
         (hA.subst (Subst.LevelEquiv.refl _))⟩
-  | _, _, _, .secondOrder χ₀ h hΘ hA, _, _, hσ => by
+  | _, _, _, .secondOrder ψ h hΘ hA, _, _, hσ => by
     obtain ⟨hσ, ht⟩ := (EqSubst.secondOrder_iff _ _ _ _ _ _).1 hσ
     refine (EqSubst.secondOrder_iff _ _ _ _ _ _).2 ⟨EqSubst.levelEquiv h hσ, fun τ₁ τ₂ hτ => ?_⟩
     have hτ' := EqSubst.levelEquiv

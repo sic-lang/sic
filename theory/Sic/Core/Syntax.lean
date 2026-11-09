@@ -16,8 +16,8 @@ A variable `x : A` and a second-order variable `X : (Θ ⊢ A)` are both used ap
 each entry of their telescope, `x[]` and `X[t̄]`.
 A scope tells which of its entries are variables and which are second-order variables, and gives
 each second-order variable its signature: for each entry of its telescope, the grade `p` with which
-it uses its argument and the ownership signature of this argument, and the constant `χ₀` of the
-ownership of its result; the usage and the ownership of `X[t̄]` read them in the scope, from the
+it uses its argument and the requirement on the ownership of this argument, and the ownership `ψ` of
+its result; the usage and the ownership of `X[t̄]` read them in the scope, from the
 binder of `X`, as the usage of the other terms reads its grades from their binders; a term only uses
 the variables of its scope, each applied to an argument for each entry of its telescope.
 A variable `x : A` and a second-order variable `X : (ε ⊢ A)` both have an empty telescope, and only
@@ -48,28 +48,36 @@ abbrev Name : Type := String
 -- ADE: none.
 /--
 What the terms see of an entry of a telescope: the grade `p` with which the entry is used, and the
-ownership signature of its argument, the requirement `r` on the ownership of the argument and, if
-the result can be an alias of the argument, the coefficient `χ` by which the ownership of the
-argument counts in the ownership of the result.
+requirement `r` on the ownership of its argument.
 -/
 structure Parameter where
   /-- The grade `p` with which the entry is used. -/
   usage : Grade
   /-- The requirement `r` on the ownership of the argument. -/
   requirement : Grade
-  /-- The coefficient `χ` of the ownership of the argument in the ownership of the result, if any.
-  RFC: `\mathsf{syntax}_\psi` -/
-  coefficient : Option Grade
+
+-- ADE: none.
+/--
+`ψ = χ₀ ∧ x_{j₁} · χ_{j₁} ∧ … ∧ x_{jₙ} · χ_{jₙ}`: the ownership of the result of a second-order
+variable whose telescope has `n` entries, the meet of its constant `χ₀` and of a factor `xⱼ · χⱼ`
+for some variables `xⱼ` of the telescope, the constant and each factor being optional.
+A function from the variables of the telescope gives each one factor at most, in their order.
+RFC: `\mathsf{syntax}_\psi`
+-/
+structure ResultOwnership (n : Nat) where
+  /-- The constant `χ₀`, if any. -/
+  constant : Option Grade
+  /-- The coefficient `χⱼ` of the variable `xⱼ`, if it has a factor. -/
+  coefficient : Fin n → Option Grade
 
 /-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
-its telescope and the constant `χ₀` of the ownership of its result. -/
+its telescope and the ownership of its result. -/
 inductive Scope.Entry where
   /-- A variable `x : A`. -/
   | var
   /-- A second-order variable `X : (Θ ⊢ A ◀ ψ)`, whose telescope has the parameters `ps`, and the
-  ownership `ψ` of whose result the constant `χ₀`, if any.
-  RFC: `\mathsf{syntax}_\psi` -/
-  | secondOrder (ps : List Parameter) (χ₀ : Option Grade)
+  ownership `ψ` of its result. -/
+  | secondOrder (ps : List Parameter) (ψ : ResultOwnership ps.length)
 
 /-- The parameters of the telescope of an entry, none for a variable. -/
 @[reducible] def Scope.Entry.params : Scope.Entry → List Parameter
@@ -191,8 +199,7 @@ abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var 
 `Θ = (x₁ : A₁ ▶ p₁; q₁ ◀ r₁, …, xₐ : Aₐ ▶ pₐ; qₐ ◀ rₐ)`: a telescope in the scope `Γ`, whose
 entries have the parameters `ps`, each type in the scope of the entries before it; the entry
 `x : A ▶ p; q ◀ r` is used with the grade `p`, requires the ownership `r` of its argument, and its
-variable is used with the grade `q` by the types after it; its parameter also holds the coefficient
-`χ` of `x` in the ownership `ψ` of the result of the second-order variable whose telescope it is.
+variable is used with the grade `q` by the types after it.
 RFC: `\mathsf{syntax}_\Theta`
 -/
 inductive Telescope (k : Nat) : Scope → List Parameter → Type where
@@ -211,9 +218,10 @@ inductive Context (k : Nat) : Scope → Type where
   /-- `Γ, x : A`. -/
   | var {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ) : Context k (.var :: Γ)
   /-- `Γ, X : (Θ ⊢ A ◀ ψ)`, a second-order variable, whose telescope has the parameters `ps`, and the
-  ownership `ψ` of whose result has the constant `χ₀`, if any, and the coefficients of `ps`. -/
+  ownership of whose result is `ψ`. -/
   | secondOrder {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps)
-      (A : Term k (Γ.extend ps.length)) (χ₀ : Option Grade) : Context k (.secondOrder ps χ₀ :: Γ)
+      (A : Term k (Γ.extend ps.length)) (ψ : ResultOwnership ps.length) :
+      Context k (.secondOrder ps ψ :: Γ)
 
 /-! ## Signatures
 
