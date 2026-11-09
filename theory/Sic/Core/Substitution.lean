@@ -108,12 +108,12 @@ def Telescope.rename {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) :
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.rename ξ) (Θ.rename (Ren.lift ξ))
 
-/-- The states `S̄` renamed by `ξ`, under the variables of each state. -/
+/-- The states `Θ̄` renamed by `ξ`, under the variables of each state. -/
 def States.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
   | .cons n S Ss => .cons n (S.rename (Ren.liftN _ ξ)) (Ss.rename ξ)
 
-/-- The branches `v̄` of a corecursor renamed by `ξ`, under the variables of each branch. -/
+/-- The branches `ḡ` of a corecursor renamed by `ξ`, under the variables of each branch. -/
 def CorecBranches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
   | .cons n m a v vs => .cons n m a (v.rename (Ren.liftN _ ξ)) (vs.rename ξ)
@@ -238,14 +238,14 @@ def Telescope.subst₀ {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.subst₀ σ) (Θ.subst₀ (Subst₀.lift σ))
 
-/-- The states `S̄` substituted by `σ`, under the variables of each state.
-RFC: `\mathsf{subst}_\sigma.\bar S` -/
+/-- The states `Θ̄` substituted by `σ`, under the variables of each state.
+RFC: `\mathsf{subst}_\sigma.\bar\Theta` -/
 def States.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
   | .cons n S Ss => .cons n (S.subst₀ (Subst₀.liftN _ σ)) (Ss.subst₀ σ)
 
-/-- The branches `v̄` of a corecursor substituted by `σ`, under the variables of each branch.
-RFC: `\mathsf{subst}_\sigma.\bar v` -/
+/-- The branches `ḡ` of a corecursor substituted by `σ`, under the variables of each branch.
+RFC: `\mathsf{subst}_\sigma.\bar g` -/
 def CorecBranches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
   | .cons n m a v vs => .cons n m a (v.subst₀ (Subst₀.liftN _ σ)) (vs.subst₀ σ)
@@ -353,14 +353,14 @@ def Telescope.subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k Γ Δ) :
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.subst θ) (Θ.subst (Subst.lift θ))
 
-/-- The states `S̄` substituted by `θ`, under the variables of each state.
-RFC: `\mathsf{subst}_\theta.\bar S` -/
+/-- The states `Θ̄` substituted by `θ`, under the variables of each state.
+RFC: `\mathsf{subst}_\theta.\bar\Theta` -/
 def States.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
   | .cons n S Ss => .cons n (S.subst (Subst.liftN _ θ)) (Ss.subst θ)
 
-/-- The branches `v̄` of a corecursor substituted by `θ`, under the variables of each branch.
-RFC: `\mathsf{subst}_\theta.\bar v` -/
+/-- The branches `ḡ` of a corecursor substituted by `θ`, under the variables of each branch.
+RFC: `\mathsf{subst}_\theta.\bar g` -/
 def CorecBranches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
   | .nil => .nil
   | .cons n m a v vs => .cons n m a (v.subst (Subst.liftN _ θ)) (vs.subst θ)
@@ -450,16 +450,16 @@ def Telescope.substLevels {k' : Nat} {Γ : Scope} {ps : List Parameter} (ls' : F
   | .nil => .nil
   | .cons q p A Θ => .cons q p (A.substLevels ls') (Θ.substLevels ls')
 
-/-- The states `S̄` in which the levels `ls'` replace the level variables, under the variables of
+/-- The states `Θ̄` in which the levels `ls'` replace the level variables, under the variables of
 each state.
-RFC: `\mathsf{inst}_l.\bar S` -/
+RFC: `\mathsf{inst}_l.\bar\Theta` -/
 def States.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : States k Γ → States k' Γ
   | .nil => .nil
   | .cons n S Ss => .cons n (S.substLevels ls') (Ss.substLevels ls')
 
-/-- The branches `v̄` of a corecursor in which the levels `ls'` replace the level variables, under
+/-- The branches `ḡ` of a corecursor in which the levels `ls'` replace the level variables, under
 the variables of each branch.
-RFC: `\mathsf{inst}_l.\bar v` -/
+RFC: `\mathsf{inst}_l.\bar g` -/
 def CorecBranches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     CorecBranches k Γ → CorecBranches k' Γ
   | .nil => .nil

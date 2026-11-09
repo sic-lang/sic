@@ -137,16 +137,16 @@ inductive Term (k : Nat) : Scope → Type where
   | recursor {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ)
       (Cs : Motives k Γ) (us : Branches k Γ) : Term k Γ
-  /-- `t.(T.d)(b̄)`: the observation of the term `t` of the instance `T = D.{s̄; l̄; p̄} ā` by its
+  /-- `t.(T.d)(t̄)`: the observation of the term `t` of the instance `T = D.{s̄; l̄; p̄} ā` by its
   destructor `d`, applied to a term for each of its arguments; the observation carries the instance
   of its term, so that its usage and its ownership read the grades and the requirements of the
   destructor at this instance. -/
   | obs {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ) (d : Name) (bs : Terms k Γ) :
       Term k Γ
-  /-- `corec_r T from s̄ return S̄ with v̄`: the corecursor, which builds a term of the instance
-  `T = D.{s̄; l̄; p̄} ā` from the state `s̄`, used with the grade `r`, with a state `S_j` for each
-  type of the block and a branch `v_ji` for each destructor of each type, in the order of the
+  /-- `corec_r T from t̄ return Θ̄ with ḡ`: the corecursor, which builds a term of the instance
+  `T = D.{s̄; l̄; p̄} ā` from the state `t̄`, used with the grade `r`, with a state `Θ_j` for each
+  type of the block and a branch `g_ji` for each destructor of each type, in the order of the
   declaration; the corecursor carries its instance, so that the term determines its type. -/
   | corec {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ)
@@ -221,28 +221,28 @@ inductive Telescope (k : Nat) : Scope → List Parameter → Type where
   | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) (A : Term k Γ)
       (Θ : Telescope k (.var :: Γ) ps) : Telescope k Γ (p :: ps)
 
-/-- `S̄`: the states of a corecursor, one for each type of the block, in order; the state
-`(x̄_nu). S` is a telescope over a new variable for each non-uniform parameter, of which the indices
+/-- `Θ̄`: the states of a corecursor, one for each type of the block, in order; the state
+`x̄. Θ` is a telescope over a new variable for each non-uniform parameter, of which the indices
 only keep the number `n` of non-uniform parameters.
-RFC: `\mathsf{syntax}_{\bar S}` -/
+RFC: `\mathsf{syntax}_{\bar\Theta}` -/
 inductive States (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : States k Γ
-  /-- `((x̄_nu). S, S̄)`, with `n` non-uniform parameters and a telescope `S` whose entries have the
+  /-- `(x̄. Θ, Θ̄)`, with `n` non-uniform parameters and a telescope `Θ` whose entries have the
   parameters `ps`. -/
   | cons {Γ : Scope} (n : Nat) {ps : List Parameter} (S : Telescope k (Γ.extend n) ps)
       (Ss : States k Γ) : States k Γ
 
-/-- `v̄`: the branches of a corecursor, one for each destructor of each type of the block, in the
-order of the declaration; the branch `d(x̄_nu; w̄; x̄) ⇒ v` is a term over a new variable for each
+/-- `ḡ`: the branches of a corecursor, one for each destructor of each type of the block, in the
+order of the declaration; the branch `D.d(x̄; ȳ; z̄) ⇒ g` is a term over a new variable for each
 non-uniform parameter, for each entry of the state and for each argument of the destructor, of which
 the indices only keep the numbers `n` of non-uniform parameters, `m` of entries of the state and
 `a` of arguments.
-RFC: `\mathsf{syntax}_{\bar v}` -/
+RFC: `\mathsf{syntax}_{\bar g}` -/
 inductive CorecBranches (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : CorecBranches k Γ
-  /-- `(d(x̄_nu; w̄; x̄) ⇒ v, v̄)`, with `n` non-uniform parameters, `m` entries of the state and
+  /-- `((x̄; ȳ; z̄). g, ḡ)`, with `n` non-uniform parameters, `m` entries of the state and
   `a` arguments. -/
   | cons {Γ : Scope} (n m a : Nat) (v : Term k (Γ.extend (n + m + a))) (vs : CorecBranches k Γ) :
       CorecBranches k Γ
@@ -420,7 +420,8 @@ structure CodataType (j g k : Nat) (Δ : Scope) where
 
 -- ADE: none.
 /-- The types of a type declaration: a block of data types, or a block of codata types, so that a
-block is homogeneous. -/
+block is homogeneous.
+RFC: `\mathsf{syntax}_{\mathcal{D}}` -/
 inductive TypeDeclaration.Body (j g k : Nat) (Δ : Scope) where
   /-- The data types `D₁ ≔ …; …; Dₙ ≔ …` of a block of data types. -/
   | data (types : List (DataType j g k Δ))
@@ -800,7 +801,8 @@ def Entry.position (D : Name) : Entry → Option Nat
 
 -- ADE: none.
 /-- The position of the declared type `D` in its block, in the last entry of the signature that
-declares it, which the erasure of a corecursor reads to find the state of `D`.
+declares it, which the erasure of a corecursor reads to find the state of `D`; the positions are
+counted from `0`, as the indices of the lists, while the RFC counts them from `1`.
 RFC: `\mathsf{position}_D` -/
 def Signature.position (sig : Signature) (D : Name) : Option Nat :=
   sig.findSome? (Entry.position D)

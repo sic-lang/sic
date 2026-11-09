@@ -111,13 +111,13 @@ inductive TargetBranches : Nat → Type where
 
 -- ADE: none.
 /-- `P̄`: the branches of a corecursor of the target language, in order; the branch
-`d(x̄_nu; w̄; x̄) ⇒ P` is a term over a new variable for each of the `a` non-uniform parameters, of
+`(x̄; ȳ; z̄). P` is a term over a new variable for each of the `a` non-uniform parameters, of
 the `b` entries of the state and of the `c` arguments.
 RFC: `\mathsf{syntax}_{\bar P}` -/
 inductive TargetCorecBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetCorecBranches n
-  /-- `(d(x̄_nu; w̄; x̄) ⇒ P, P̄)`. -/
+  /-- `((x̄; ȳ; z̄). P, P̄)`. -/
   | cons {n : Nat} (a b c : Nat) (N : Target (n + (a + b + c))) (Ns : TargetCorecBranches n) :
       TargetCorecBranches n
 
@@ -144,19 +144,19 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   | branch {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n}
       (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor M Ns)
   /-- In the term of an observation.
-  RFC: `\mathsf{occurs}_M.\pi` -/
+  RFC: `\mathsf{occurs}_M.\mathsf{obs}` -/
   | obs {n : Nat} {x : Fin n} {M : Target n} {d : Name} {Ms : Targets n} (h : Target.Occurs x M) :
       Target.Occurs x (.obs M d Ms)
   /-- In an argument of an observation.
-  RFC: `\mathsf{occurs}_M.\pi.\bar M` -/
+  RFC: `\mathsf{occurs}_M.\mathsf{args}` -/
   | arg {n : Nat} {x : Fin n} {M : Target n} {d : Name} {Ms : Targets n}
       (h : Targets.Occurs x Ms) : Target.Occurs x (.obs M d Ms)
   /-- In the state of a corecursor.
-  RFC: `\mathsf{occurs}_M.\mathsf{corec}` -/
+  RFC: `\mathsf{occurs}_M.\mathsf{from}` -/
   | corec {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
       (h : Targets.Occurs x Ms) : Target.Occurs x (.corec Ms Ns)
   /-- In a branch of a corecursor.
-  RFC: `\mathsf{occurs}_M.\mathsf{corec}.\mathsf{with}` -/
+  RFC: `\mathsf{occurs}_M.\mathsf{with}_{\bar P}` -/
   | cobranch {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
       (h : TargetCorecBranches.Occurs x Ns) : Target.Occurs x (.corec Ms Ns)
 
@@ -226,7 +226,7 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
       (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
   /-- An observation is less defined than the same observation of a more defined term and
   arguments.
-  RFC: `{\sqsubseteq}.\pi` -/
+  RFC: `{\sqsubseteq}.d` -/
   | obs {n : Nat} {M N : Target n} {d : Name} {Ms Ns : Targets n} (h : Target.LessDefined M N)
       (hs : Targets.LessDefined Ms Ns) : Target.LessDefined (.obs M d Ms) (.obs N d Ns)
   /-- A corecursor is less defined than a corecursor of a more defined state and branches.
@@ -265,7 +265,7 @@ inductive TargetCorecBranches.LessDefined :
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar P}.\varepsilon` -/
   | nil {n : Nat} : TargetCorecBranches.LessDefined (n := n) .nil .nil
-  /-- `(d(x̄_nu; w̄; x̄) ⇒ P₁, P̄₁) ⊑ (d(x̄_nu; w̄; x̄) ⇒ P₂, P̄₂)`.
+  /-- `((x̄; ȳ; z̄). P₁, P̄₁) ⊑ ((x̄; ȳ; z̄). P₂, P̄₂)`.
   RFC: `{\sqsubseteq}_{\bar P}.{,}` -/
   | cons {n a b c : Nat} {M N : Target (n + (a + b + c))} {Ms Ns : TargetCorecBranches n}
       (h : Target.LessDefined M N) (hs : TargetCorecBranches.LessDefined Ms Ns) :
@@ -343,8 +343,8 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
       (us.erase sig S hΓ)
 
 -- ADE: none.
-/-- `⌊v̄⌋_S`: the erasure of the branches of a corecursor, under their new variables.
-RFC: `\mathsf{erase}_{\bar v}` -/
+/-- `⌊ḡ⌋_S`: the erasure of the branches of a corecursor, under their new variables.
+RFC: `\mathsf{erase}_{\bar g}` -/
 def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) : CorecBranches k Γ → TargetCorecBranches Γ.length
   | .nil => .nil
