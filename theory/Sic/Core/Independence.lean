@@ -203,16 +203,14 @@ theorem HasType.not_u₀ : ¬ HasType [] (.empty : Context 0 []) Term.u₀ Term.
   have h₀ : Level.closedValue (.zero : Level 0) = 0 := rfl
   cases hR with
   | univ n h =>
-    cases n with
-    | zero => cases h with | univ h₁ _ => omega
-    | succ m =>
-      cases h with
-      | univ h₁ _ =>
-        obtain ⟨R', hR'⟩ := hw
-        cases m with
-        | zero => cases hR' with | univ h₁ _ => omega
-        | succ => omega
-  | prop _ _ h _ => rw [levelRel_prop] at h; exact nomatch h
+    cases levelRel_univ_iff.1 h with
+    | univ hl _ =>
+      obtain ⟨R', hR', -⟩ := hw
+      cases levelRel_univ_iff.1 hR' with
+      | univ hl' hk' => omega
+      | data _ _ _ _ hv => cases hv
+    | data _ _ _ _ hv => cases hv
+  | prop _ _ h _ => cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
 
 /-! ## Independence -/
 

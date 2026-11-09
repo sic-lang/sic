@@ -10,8 +10,8 @@ the conversion reduces the terms to their weak head normal forms to compare them
 computes the closed terms, `Σ ⊢ t ⇓ v`, and the erasure is sound for this computation.
 The core reduces by the rule `(δ_⟶)` alone, which unfolds a definition; the kinds of declarations
 add their computations, and say which of their terms are head normal forms.
-A head normal form is a sort, an instance of a declared type, or a neutral term, stuck on a variable
-or on a constant, which no rule unfolds.
+A head normal form is a sort, an instance of a declared type, a constructor applied to the terms of
+its fields, or a neutral term, stuck on a variable or on a constant, which no rule unfolds.
 
 The reduction is untyped and defined on open terms, since the meaning defines the judgments from it
 and the algorithm of the conversion reduces terms of a context.
@@ -49,6 +49,12 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   /-- `T = D.{s̄; l̄; p̄} ā`, an instance of a declared type. -/
   | inst {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
       (as : InstanceArgs k Γ Δ) : Whnf sig (.inst D qs ls ps as)
+  -- ADE: `Whnf.zeroₙ`, `Whnf.sucₙ`, `Whnf.prodₙ` and `Whnf.starₙ`, in
+  -- `Definition/Untyped/Whnf.agda`, for their constructors.
+  /-- `T.c(t̄)`, a constructor applied to the terms of its fields, which it does not compute. -/
+  | ctor {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+      (as : InstanceArgs k Γ Δ) (c : Name) (ts : Terms k Γ) :
+      Whnf sig (.ctor D qs ls ps as c ts)
   -- ADE: `Whnf.ne`, in `Definition/Untyped/Whnf.agda`.
   /-- A neutral term. -/
   | ne {t : Term k Γ} (h : Neutral sig t) : Whnf sig t
@@ -101,6 +107,7 @@ theorem Whnf.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k Γ}
   cases hw with
   | sort => cases ht
   | inst => cases ht
+  | ctor => cases ht
   | ne hn =>
     cases hn with
     | var => cases ht

@@ -386,6 +386,45 @@ theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct →
     · exact absurd hn₁ (hfresh _ h₁' n hn₂)
     · exact ih h h₁' h₂' hn₁ hn₂
 
+/-- The names that an entry of a signature whose names are distinct introduces are distinct. -/
+theorem Signature.Distinct.nodup : {sig : Signature} → sig.Distinct → {e : Entry} → e ∈ sig →
+    e.names.Nodup
+  | [], _, _, h => nomatch h
+  | _ :: _, ⟨h, hn, _⟩, _, he => by
+    rcases List.mem_cons.1 he with rfl | he
+    · exact hn
+    · exact h.nodup he
+
+/-- Two elements of a list whose images by `f` are distinct, which have the same image, are equal. -/
+theorem _root_.List.eq_of_nodup_map {α β : Type} {f : α → β} :
+    {l : List α} → (l.map f).Nodup → {a b : α} → a ∈ l → b ∈ l → f a = f b → a = b
+  | [], _, _, _, ha, _, _ => nomatch ha
+  | _ :: _, h, _, _, ha, hb, hab => by
+    rw [List.map_cons, List.nodup_cons] at h
+    rcases List.mem_cons.1 ha with rfl | ha' <;> rcases List.mem_cons.1 hb with rfl | hb'
+    · rfl
+    · exact absurd (by rw [hab]; exact List.mem_map_of_mem hb') h.1
+    · exact absurd (by rw [← hab]; exact List.mem_map_of_mem ha') h.1
+    · exact List.eq_of_nodup_map h.2 ha' hb' hab
+
+/-- In a signature whose names are distinct, a declared type is one data type of one type
+declaration. -/
+theorem Signature.Distinct.hasDeclaredType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
+    {decl₁ decl₂ : TypeDeclaration} {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasDeclaredType D decl₁ T₁) (h₂ : sig.HasDeclaredType D decl₂ T₂) :
+    decl₁ = decl₂ ∧ HEq T₁ T₂ := by
+  obtain ⟨hm₁, hT₁, hn₁⟩ := h₁
+  obtain ⟨hm₂, hT₂, hn₂⟩ := h₂
+  have he := hd.entry_unique hm₁ hm₂ (n := D)
+    (by simp only [Entry.names, TypeDeclaration.names]; exact hn₁ ▸ List.mem_map_of_mem hT₁)
+    (by simp only [Entry.names, TypeDeclaration.names]; exact hn₂ ▸ List.mem_map_of_mem hT₂)
+  injection he with he
+  subst he
+  have hnodup := hd.nodup hm₁
+  simp only [Entry.names, TypeDeclaration.names] at hnodup
+  exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map hnodup hT₁ hT₂ (hn₁.trans hn₂.symm))⟩
+
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
   fun i => l.get (i.cast h.symm)

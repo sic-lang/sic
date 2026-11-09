@@ -14,20 +14,32 @@ telescopes in a sort.
 The meaning ignores the grades, the modes and the ownerships, as the typing does outside the
 judgments of usage and of ownership that the rule of the constant definitions reads.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
-relation `eq(v)`, which the sorts give in the core: the universe `U_n` relates the sorts of the level
-below it, and the universe of propositions `Ω_n` relates nothing, since only the kinds of
-declarations, which the core does not have, build propositions.
+relation `eq(v)`, which the sorts and the data types give: the universe `U_n` has the types of the
+level below it as terms, equal when they have the same equality of terms, the universe of
+propositions `Ω_n` has the propositions of the level below it, equal when they have the same truth,
+and an instance of a data type has its constructors, equal when they are the same constructor with
+equal fields; a proposition declared as a data type is true when one of its constructors has terms
+for its fields.
 
 The universes are defined one level after the other, and at each level by a least relation, which
-gives the equality of the terms of each type it relates: this induction-recursion is encoded by its
-graph, an inductive relation between two types and the equality of their terms, as the
+gives each type of the level together with the equality of its terms: this induction-recursion is
+encoded by its graph, an inductive relation between a type and the equality of its terms, as the
 formalization of Adjedj, Lennon-Bertrand, Maillard, Pédrot and Pujet does, in Coq, for its universes.
+The graph gives one type at a time, rather than two equal types, and two types are equal when they
+have the same equality of terms, so that the fields of a constructor, whose types depend on the
+fields before them, need only the condition that equal fields before them give the same equality of
+terms, as the partial equivalence relations of the types of functions do.
+The fields of an instance in `U_n` have types of `U_n` or of a sort below it, so that the graph of a
+level is given by the relations of all the levels below it, defined before it.
 The levels of a closed term need not be numerals, since an instance of a definition may give `l ⊔ 0`
-to its body, so that the sorts are related by the values of their levels.
+to its body, so that the sorts and the instances are related by the values of their levels.
 
 The meaning computes each constant to its interpretation `ι(c)`: it computes in the signature whose
 constants become definitions with these bodies, so that it has a single reduction, that of the
 conversion.
+Each entry is meaningful in the whole signature, and a closed judgment requires the names of its
+signature to be distinct, rather than its meaning, so that the soundness proves each entry
+meaningful in the whole signature from its typing in the signature before it.
 
 ADE give no meaning to the judgments: their logical relation is defined on the typed reduction, for
 the decidability of the conversion, and it is not a model of the type theory in the computations.
@@ -107,69 +119,215 @@ def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k 
     (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
   Θ.substLevels fun i => .ofNat (ρ i)
 
-/-! ## The Sorts -/
+/-! ## Equality of the Canonical Terms -/
 
 /-- A relation between closed terms. -/
 abbrev TermRel : Type := Term 0 [] → Term 0 [] → Prop
 
+/-- A relation between the terms of the fields of two constructors. -/
+abbrev FieldsRel : Type := Terms 0 [] → Terms 0 [] → Prop
+
 /-- The relations of the sorts of one level `n`, given by their graphs. -/
 structure LevelRel where
-  /-- `(v, w) ∈ eq(U_n)`, where `R` is the equality `eq(v)` of the terms of `v`. -/
-  univ : Term 0 [] → Term 0 [] → TermRel → Prop
-  /-- `(v, w) ∈ eq(Ω_n)`, two propositions whose truth is `b`. -/
-  prop : Term 0 [] → Term 0 [] → Prop → Prop
+  /-- `(v, R) ∈ ty(U_n)`: `v` is a type of `U_n`, whose canonical terms are equal by `R`. -/
+  univ : Term 0 [] → TermRel → Prop
+  /-- `(v, b) ∈ ty(Ω_n)`: `v` is a proposition of `Ω_n`, whose truth is `b`. -/
+  prop : Term 0 [] → Prop → Prop
 
-/-- The relations of no sort, below the level `0`. -/
-def LevelRel.empty : LevelRel := ⟨fun _ _ _ => False, fun _ _ _ => False⟩
+/-- The relations of the sorts of the levels below `n`. -/
+abbrev LevelRel.Below (n : Nat) : Type := (m : Nat) → m < n → LevelRel
+
+/-- `eq⇓(R)`: two closed terms that compute to canonical terms that `R` relates, the equality of the
+terms of a type that is not a proposition, whose canonical terms are equal by `R`.
+RFC: `\mathsf{eq}_\Downarrow` -/
+def TermRel.computed (sig : Signature) (ι : Interpretation) (R : TermRel) : TermRel :=
+  fun t u => ∃ v w, Computesι sig ι t v ∧ Computesι sig ι u w ∧ R v w
+
+/-- The equality of the terms of the fields of the empty telescope, which relates the empty terms. -/
+def FieldsRel.nil : FieldsRel
+  | .nil, .nil => True
+  | _, _ => False
+
+/-- The equality of the terms of the fields of a telescope `x : A, Θ`, where `F` is the equality of the
+terms of `A`, and `G a` that of the terms of `Θ[a / x]`, which the first terms instantiate. -/
+def FieldsRel.cons (F : TermRel) (G : Term 0 [] → FieldsRel) : FieldsRel
+  | .cons t ts, .cons u us => F t u ∧ G t ts us
+  | _, _ => False
+
+/-- `Θ_c[T]`: the fields of the constructor `c` at the instance `I` of the sort and grade variables,
+the closed levels `ls` and the closed arguments `ā` of the parameters.
+RFC: `\mathsf{inst}_T` -/
+def Constructor.fieldsAt {j g k : Nat} {Δ : Scope} (c : Constructor j g k Δ) (I : Instance j g)
+    (ls : Fin k → Level 0) (as : InstanceArgs 0 [] Δ) : Telescope 0 [] (c.params I) :=
+  ((c.fields I).substLevels ls).subst as.toSubst
+
+/-- `v = T.c(t̄)`: the closed term `v` is the constructor named `c` of the declared type `D`, at some
+instance, applied to the terms `t̄`. -/
+def Term.IsCtor (D c : Name) (ts : Terms 0 []) (v : Term 0 []) : Prop :=
+  ∃ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (Δ : Scope)
+    (as : InstanceArgs 0 [] Δ), v = .ctor D qs ls ps as c ts
+
+/-- `(eq_c)`: the equality of the canonical terms of an instance of the data type `T`, named `D`, which
+relates two constructors of the same name, at any instances of `D`, whose fields are equal by the
+equality `S c` of the terms of the fields of the constructor `c`.
+RFC: `\mathsf{eq}_c` -/
+def DataType.ctorRel {j g k : Nat} {Δ : Scope} (D : Name) (T : DataType j g k Δ)
+    (S : Constructor j g k Δ → FieldsRel) : TermRel :=
+  fun v w => ∃ c ∈ T.constructors, ∃ ts us, v.IsCtor D c.name ts ∧ w.IsCtor D c.name us ∧ S c ts us
+
+/-- `(true_D)`: the truth of a proposition declared as the data type `T`, true when one of its
+constructors has terms for its fields, which `S c` relates.
+RFC: `\mathsf{true}_D` -/
+def DataType.truth {j g k : Nat} {Δ : Scope} (T : DataType j g k Δ)
+    (S : Constructor j g k Δ → FieldsRel) : Prop :=
+  ∃ c ∈ T.constructors, ∃ ts, S c ts ts
+
+mutual
 
 -- ADE: none.
 /--
-`eq(U_n)`, the least relation of the clauses of the universes, given the relations `below` of the
-level `n - 1`; the kinds of declarations add their clauses.
+`ty(U_n)`: the least relation of the clauses of the universes and of the instances of the data
+types in `U_n`, given the relations `below` of the levels below `n`.
 -/
-inductive UnivRel (n : Nat) (below : LevelRel) : Term 0 [] → Term 0 [] → TermRel → Prop where
-  /-- `(eq_U)`: the universe `U_k`, if `k + 1 = n`, whose terms are equal when they are equal in
-  `eq(U_k)`.
-  RFC: `\mathsf{eq}_U` -/
-  | univ {l₁ l₂ : Level 0} (h₁ : l₁.closedValue + 1 = n) (h₂ : l₂.closedValue + 1 = n) :
-      UnivRel n below (.sort ⟨.type, l₁⟩) (.sort ⟨.type, l₂⟩) fun A B => ∃ R, below.univ A B R
-  /-- `(eq_Ω)`: the universe of propositions `Ω_k`, if `k + 1 = n`, whose terms are equal when they
-  are equal in `eq(Ω_k)`.
-  RFC: `\mathsf{eq}_\Omega` -/
-  | prop {l₁ l₂ : Level 0} (h₁ : l₁.closedValue + 1 = n) (h₂ : l₂.closedValue + 1 = n) :
-      UnivRel n below (.sort ⟨.prop, l₁⟩) (.sort ⟨.prop, l₂⟩) fun P Q => ∃ b, below.prop P Q b
+inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Term 0 [] → TermRel → Prop where
+  /-- `(ty_U)`: the universe `U_k`, if `k + 1 = n`, whose terms are equal when they are types of `U_k`
+  with the same equality.
+  RFC: `\mathsf{ty}_U` -/
+  | univ {l : Level 0} {k : Nat} (hl : l.closedValue = k) (hk : k + 1 = n) :
+      UnivRel sig ι n below (.sort ⟨.type, l⟩) fun A B =>
+        ∃ R, (below k (hk ▸ Nat.lt_succ_self k)).univ A R ∧
+          (below k (hk ▸ Nat.lt_succ_self k)).univ B R
+  /-- `(ty_Ω)`: the universe of propositions `Ω_k`, if `k + 1 = n`, whose terms are equal when they
+  are propositions of `Ω_k` with the same truth.
+  RFC: `\mathsf{ty}_\Omega` -/
+  | prop {l : Level 0} {k : Nat} (hl : l.closedValue = k) (hk : k + 1 = n) :
+      UnivRel sig ι n below (.sort ⟨.prop, l⟩) fun P Q =>
+        ∃ b₁ b₂, (below k (hk ▸ Nat.lt_succ_self k)).prop P b₁ ∧
+          (below k (hk ▸ Nat.lt_succ_self k)).prop Q b₂ ∧ (b₁ ↔ b₂)
+  /-- `(ty_D)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `U_n`, whose
+  constructors have distinct names and fields that are telescopes in `U_n`, and whose canonical
+  terms are equal by `(eq_c)`.
+  RFC: `\mathsf{ty}_D` -/
+  | data {decl : TypeDeclaration} {D : Name}
+      {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
+      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hc : (T.constructors.map (·.name)).Nodup)
+      (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
+      (hS : ∀ c ∈ T.constructors,
+        TelRel sig ι n below .type (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
+      UnivRel sig ι n below v (T.ctorRel D S)
 
 -- ADE: none.
 /--
-`eq(Ω_n)`, the least relation of the clauses of the kinds of declarations for their instances in
-`Ω_n`, which relate two propositions when they have the same truth: it has no clause in the core.
+`ty(Ω_n)`: the least relation of the clauses of the instances of the data types in `Ω_n`, given the
+relations `below` of the levels below `n`, which gives each proposition its truth.
 -/
-inductive PropRel : Term 0 [] → Term 0 [] → Prop → Prop where
-
-/-- The relations of the sorts of the level `n`, defined after those of the level below it. -/
-def levelRel : Nat → LevelRel
-  | 0 => ⟨UnivRel 0 .empty, PropRel⟩
-  | n + 1 => ⟨UnivRel (n + 1) (levelRel n), PropRel⟩
+inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Term 0 [] → Prop → Prop where
+  /-- `(ty_DΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `Ω_n`, whose
+  constructors have distinct names and fields that are telescopes in `Ω_n`, and whose truth is
+  `(true_D)`.
+  RFC: `\mathsf{ty}_{D\Omega}` -/
+  | data {decl : TypeDeclaration} {D : Name}
+      {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
+      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hc : (T.constructors.map (·.name)).Nodup)
+      (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
+      (hS : ∀ c ∈ T.constructors,
+        TelRel sig ι n below .prop (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
+      PropRel sig ι n below v (T.truth S)
 
 -- ADE: none.
-/-- `eq(v) = R`: the closed canonical type `v` is a type of a sort, whose terms are equal by `R`. -/
-inductive HasEq (v : Term 0 []) (R : TermRel) : Prop where
+/--
+`ty(s_n)` for the telescopes: `Θ` is a closed telescope in the sort of the quality `s` at the level
+`n`, the terms of whose entries are equal by `S`; the equality of the terms of the rest of the
+telescope, which the first term instantiates, is the same for equal first terms.
+-/
+inductive TelRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Quality → {ps : List Parameter} → Telescope 0 [] ps → FieldsRel → Prop where
+  /-- `(ty_Θε)`: the empty telescope.
+  RFC: `\mathsf{ty}_{\Theta\varepsilon}` -/
+  | nil {s : Quality} : TelRel sig ι n below s .nil FieldsRel.nil
+  /-- `(ty_Θ,)`: a first type that computes to a type of a sort that `s_n` bounds, whose terms are
+  equal by `F`, and a rest that is a telescope for each term of it.
+  RFC: `\mathsf{ty}_{\Theta,}` -/
+  | cons {s : Quality} {q : Grade} {p : Parameter} {ps : List Parameter} {A v : Term 0 []}
+      {Θ : Telescope 0 [.var] ps} {F : TermRel} (hA : Computesι sig ι A v)
+      (hF : FieldRel sig ι n below s v F) (G : Term 0 [] → FieldsRel)
+      (hG : ∀ a, F a a → TelRel sig ι n below s (Θ.subst₀ (Subst₀.single a)) (G a))
+      (hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us) :
+      TelRel sig ι n below s (.cons q p A Θ) (FieldsRel.cons F G)
+
+-- ADE: none.
+/--
+The canonical type `v` of a field is a type of a sort `κ₁` that the sort of the quality `s` at the
+level `n` bounds, whose closed terms are equal by `F`: a type of `U_n` or of a universe below it,
+if `s` is not the quality of the propositions, or a proposition of `Ω_n` or of a universe below it.
+RFC: `\mathsf{ty}_\Downarrow`
+-/
+inductive FieldRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Quality → Term 0 [] → TermRel → Prop where
+  /-- A type of `U_n`. -/
+  | univ {s : Quality} {v : Term 0 []} {R : TermRel} (hs : s = .type) (h : UnivRel sig ι n below v R) :
+      FieldRel sig ι n below s v (R.computed sig ι)
+  /-- A type of `U_m`, for `m < n`. -/
+  | univBelow {s : Quality} {v : Term 0 []} {R : TermRel} (hs : s = .type) (m : Nat) (hm : m < n)
+      (h : (below m hm).univ v R) : FieldRel sig ι n below s v (R.computed sig ι)
+  /-- A proposition of `Ω_n`. -/
+  | prop {s : Quality} {v : Term 0 []} {b : Prop} (h : PropRel sig ι n below v b) :
+      FieldRel sig ι n below s v fun _ _ => b
+  /-- A proposition of `Ω_m`, for `m < n`. -/
+  | propBelow {s : Quality} {v : Term 0 []} {b : Prop} (m : Nat) (hm : m < n) (h : (below m hm).prop v b) :
+      FieldRel sig ι n below s v fun _ _ => b
+
+end
+
+/-- The relations of the sorts of the level `n`, defined after those of the levels below it. -/
+def levelRel (sig : Signature) (ι : Interpretation) (n : Nat) : LevelRel :=
+  ⟨UnivRel sig ι n fun m _ => levelRel sig ι m, PropRel sig ι n fun m _ => levelRel sig ι m⟩
+termination_by n
+decreasing_by all_goals assumption
+
+/-- `ty(U_n)` at the level `n`. -/
+theorem levelRel_univ (sig : Signature) (ι : Interpretation) (n : Nat) :
+    (levelRel sig ι n).univ = UnivRel sig ι n fun m _ => levelRel sig ι m := by
+  rw [levelRel]
+
+/-- `ty(Ω_n)` at the level `n`. -/
+theorem levelRel_prop (sig : Signature) (ι : Interpretation) (n : Nat) :
+    (levelRel sig ι n).prop = PropRel sig ι n fun m _ => levelRel sig ι m := by
+  rw [levelRel]
+
+-- ADE: none.
+/-- `eq(v) = R`: the closed canonical type `v` is a type of a sort, whose canonical terms are equal by
+`R`, or a proposition, whose closed terms are equal by `R`. -/
+inductive HasEq (sig : Signature) (ι : Interpretation) (v : Term 0 []) (R : TermRel) : Prop where
   /-- A type of the universe `U_n`.
   RFC: `\mathsf{eq}_{\mathsf{type}}` -/
-  | univ (n : Nat) (h : (levelRel n).univ v v R)
+  | univ (n : Nat) (h : (levelRel sig ι n).univ v R)
   /-- `(eq_true)` and `(eq_false)`: a proposition of `Ω_n` whose truth is `b`, whose closed terms are
   all equal proofs when it is true, and none when it is false.
   RFC: `\mathsf{eq}_{\mathsf{true}}`, `\mathsf{eq}_{\mathsf{false}}` -/
-  | prop (n : Nat) (b : Prop) (h : (levelRel n).prop v v b) (hR : ∀ t u, R t u ↔ b)
+  | prop (n : Nat) (b : Prop) (h : (levelRel sig ι n).prop v b) (hR : ∀ t u, R t u ↔ b)
 
 /-- `(prop_v)`: `v` is a proposition, a term of a universe of propositions.
 RFC: `\mathsf{prop}_v` -/
-def IsProp (v : Term 0 []) : Prop := ∃ k b, (levelRel k).prop v v b
+def IsProp (sig : Signature) (ι : Interpretation) (v : Term 0 []) : Prop :=
+  ∃ k b, (levelRel sig ι k).prop v b
 
 /-- `(prop_⇓)`: the closed type `A` computes to a proposition.
 RFC: `\mathsf{prop}_\Downarrow` -/
 def ComputesToProp (sig : Signature) (ι : Interpretation) (A : Term 0 []) : Prop :=
-  ∃ v, Computesι sig ι A v ∧ IsProp v
+  ∃ v, Computesι sig ι A v ∧ IsProp sig ι v
 
 /-! ## Closed Judgments
 
@@ -179,14 +337,14 @@ they require, so that the meaning of the signatures is defined from them. -/
 /-- The clause of `(⊨_type≡)`: `A` and `B` compute to canonical types whose terms have the same
 equality. -/
 def EqTypeClause (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
-  ∃ v w R, Computesι sig ι A v ∧ Computesι sig ι B w ∧ HasEq v R ∧ HasEq w R
+  ∃ v w R, Computesι sig ι A v ∧ Computesι sig ι B w ∧ HasEq sig ι v R ∧ HasEq sig ι w R
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` for the terms: `t` and `u` compute to equal canonical terms
 of the canonical form of `A`, or are equal proofs of it when it is a proposition. -/
 def EqTermClause (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : Prop :=
   (¬ ComputesToProp sig ι A → ∃ v w₁ w₂ R, Computesι sig ι A v ∧ Computesι sig ι t w₁ ∧
-    Computesι sig ι u w₂ ∧ HasEq v R ∧ R w₁ w₂) ∧
-  (ComputesToProp sig ι A → ∃ v R, Computesι sig ι A v ∧ HasEq v R ∧ R t u)
+    Computesι sig ι u w₂ ∧ HasEq sig ι v R ∧ R w₁ w₂) ∧
+  (ComputesToProp sig ι A → ∃ v R, Computesι sig ι A v ∧ HasEq sig ι v R ∧ R t u)
 
 /-- The clause of `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: at each instance of the sort and grade
 variables and each value of the level variables, the body is a term of the type; the meaning ignores
@@ -509,131 +667,15 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
 
 /-! ## Partial Equivalence Relations
 
-The equality `eq(v)` of the terms of a type is a partial equivalence relation, and it is unique.
+The equality `eq(v)` of the terms of a type is a partial equivalence relation, and it is unique, in a
+signature whose names are distinct, so that a closed term computes to one canonical term at most and
+a declared type is the data type of one declaration.
 These properties are proved level by level: those of the relations of a level, `LevelRel.IsPer`,
-follow from those of the level below it, by cases on the clauses that relate two types, so that each
-kind of declaration adds the cases of its clauses. -/
-
-/-- `R` is a partial equivalence relation: symmetric and transitive. -/
-structure TermRel.IsPer (R : TermRel) : Prop where
-  /-- `R` is symmetric. -/
-  symm {t u : Term 0 []} : R t u → R u t
-  /-- `R` is transitive. -/
-  trans {t u w : Term 0 []} : R t u → R u w → R t w
-
-/-- The relations of the sorts of a level are partial equivalence relations, which give each type
-they relate a unique equality of its terms, itself a partial equivalence relation. -/
-structure LevelRel.IsPer (L : LevelRel) : Prop where
-  /-- `eq(U_n)` is symmetric, with the same equality of terms. -/
-  univ_symm {A B : Term 0 []} {R : TermRel} : L.univ A B R → L.univ B A R
-  /-- `eq(U_n)` is transitive, with the equality of terms of the first type. -/
-  univ_trans {A B C : Term 0 []} {R R' : TermRel} : L.univ A B R → L.univ B C R' → L.univ A C R
-  /-- `eq(U_n)` gives a type a unique equality of its terms. -/
-  univ_unique {A B C : Term 0 []} {R R' : TermRel} :
-    L.univ A B R → L.univ A C R' → ∀ t u, R t u ↔ R' t u
-  /-- The equality of the terms of a type of `U_n` is a partial equivalence relation. -/
-  univ_isPer {A B : Term 0 []} {R : TermRel} : L.univ A B R → R.IsPer
-  /-- `eq(Ω_n)` is symmetric, with the same truth. -/
-  prop_symm {P Q : Term 0 []} {b : Prop} : L.prop P Q b → L.prop Q P b
-  /-- `eq(Ω_n)` is transitive, with the truth of the first proposition. -/
-  prop_trans {P Q S : Term 0 []} {b b' : Prop} : L.prop P Q b → L.prop Q S b' → L.prop P S b
-  /-- `eq(Ω_n)` gives a proposition a unique truth. -/
-  prop_unique {P Q S : Term 0 []} {b b' : Prop} : L.prop P Q b → L.prop P S b' → (b ↔ b')
-
-/-- No sort is below the level `0`. -/
-theorem LevelRel.empty_isPer : LevelRel.empty.IsPer where
-  univ_symm h := h.elim
-  univ_trans h := h.elim
-  univ_unique h := h.elim
-  univ_isPer h := h.elim
-  prop_symm h := h.elim
-  prop_trans h := h.elim
-  prop_unique h := h.elim
-
-/-- `eq(Ω_n)` is symmetric: it has no clause in the core. -/
-theorem PropRel.symm {P Q : Term 0 []} {b : Prop} (h : PropRel P Q b) : PropRel Q P b := nomatch h
-
-/-- `eq(Ω_n)` is transitive: it has no clause in the core. -/
-theorem PropRel.trans {P Q S : Term 0 []} {b b' : Prop} (h : PropRel P Q b) (_h' : PropRel Q S b') :
-    PropRel P S b := nomatch h
-
-/-- `eq(Ω_n)` gives a proposition a unique truth: it has no clause in the core. -/
-theorem PropRel.unique {P Q S : Term 0 []} {b b' : Prop} (h : PropRel P Q b)
-    (_h' : PropRel P S b') : b ↔ b' := nomatch h
-
-/-- The equality of the terms of the universe `U_k` relates the types that `eq(U_k)` relates. -/
-theorem UnivRel.univ_isPer {below : LevelRel} (hb : below.IsPer) :
-    TermRel.IsPer fun A B => ∃ R, below.univ A B R where
-  symm := fun ⟨R, h⟩ => ⟨R, hb.univ_symm h⟩
-  trans := fun ⟨R, h⟩ ⟨_, h'⟩ => ⟨R, hb.univ_trans h h'⟩
-
-/-- The equality of the terms of the universe `Ω_k` relates the propositions that `eq(Ω_k)` relates.
--/
-theorem UnivRel.prop_isPer {below : LevelRel} (hb : below.IsPer) :
-    TermRel.IsPer fun P Q => ∃ b, below.prop P Q b where
-  symm := fun ⟨b, h⟩ => ⟨b, hb.prop_symm h⟩
-  trans := fun ⟨b, h⟩ ⟨_, h'⟩ => ⟨b, hb.prop_trans h h'⟩
-
-/-- The relations of the level `n` are partial equivalence relations, if those of the level below it
-are. -/
-theorem UnivRel.isPer {n : Nat} {below : LevelRel} (hb : below.IsPer) :
-    LevelRel.IsPer ⟨UnivRel n below, PropRel⟩ where
-  univ_symm
-    | .univ h₁ h₂ => .univ h₂ h₁
-    | .prop h₁ h₂ => .prop h₂ h₁
-  univ_trans
-    | .univ h₁ _, .univ _ h₃ => .univ h₁ h₃
-    | .prop h₁ _, .prop _ h₃ => .prop h₁ h₃
-  univ_unique
-    | .univ _ _, .univ _ _ => fun _ _ => .rfl
-    | .prop _ _, .prop _ _ => fun _ _ => .rfl
-  univ_isPer
-    | .univ _ _ => UnivRel.univ_isPer hb
-    | .prop _ _ => UnivRel.prop_isPer hb
-  prop_symm := PropRel.symm
-  prop_trans := PropRel.trans
-  prop_unique := PropRel.unique
-
-/-- The relations of every level are partial equivalence relations. -/
-theorem levelRel_isPer : (n : Nat) → (levelRel n).IsPer
-  | 0 => UnivRel.isPer LevelRel.empty_isPer
-  | n + 1 => UnivRel.isPer (levelRel_isPer n)
-
-/-- `eq(Ω_n)` has the same clauses at every level. -/
-theorem levelRel_prop (n : Nat) : (levelRel n).prop = PropRel := by
-  cases n <;> rfl
-
-/-- `eq(v)` is a partial equivalence relation, symmetric and transitive.
-RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`, `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
-theorem HasEq.isPer {v : Term 0 []} {R : TermRel} : HasEq v R → R.IsPer
-  | .univ n h => (levelRel_isPer n).univ_isPer h
-  | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
-
-/-- A type of a universe is not a proposition. -/
-theorem HasEq.univ_not_prop {v : Term 0 []} {n k : Nat} {R : TermRel} {b : Prop}
-    (_h : (levelRel n).univ v v R) (h' : (levelRel k).prop v v b) : False := by
-  rw [levelRel_prop] at h'
-  exact nomatch h'
-
-/-- The level of a type of a universe is unique. -/
-theorem HasEq.univ_level {v : Term 0 []} {n n' : Nat} {R R' : TermRel}
-    (h : (levelRel n).univ v v R) (h' : (levelRel n').univ v v R') : n = n' := by
-  cases n <;> cases n' <;> cases h <;> cases h' <;> omega
-
-/-- `eq(v)` is unique: two equalities of the terms of a type relate the same terms.
-RFC: `\mathsf{unique}_{\mathsf{eq}}` -/
-theorem HasEq.unique {v : Term 0 []} {R R' : TermRel} :
-    HasEq v R → HasEq v R' → ∀ t u, R t u ↔ R' t u
-  | .univ n h, .univ n' h' => by
-    cases HasEq.univ_level h h'
-    exact (levelRel_isPer n).univ_unique h h'
-  | .univ _ h, .prop _ _ h' _ => (HasEq.univ_not_prop h h').elim
-  | .prop _ _ h _, .univ _ h' => (HasEq.univ_not_prop h' h).elim
-  | .prop k _ h hR, .prop k' _ h' hR' => by
-    rw [levelRel_prop] at h h'
-    exact fun t u => (hR t u).trans ((PropRel.unique h h').trans (hR' t u).symm)
-
-/-! ## Exactness of the Proofs -/
+follow from those of the levels below it, by induction on the clauses that give a type of the level,
+together with the telescopes of the fields of its constructors, so that each kind of declaration
+adds the cases of its clauses.
+A type is given by the clauses of one level and one sort at most, which `UnivRel.level`,
+`UnivRel.not_prop` and `PropRel.level` show by cases, without induction. -/
 
 /-- The names of a signature stay distinct when its constants are interpreted. -/
 theorem Signature.Distinct.interpret {ι : Interpretation} :
@@ -647,17 +689,389 @@ theorem Signature.Distinct.interpret {ι : Interpretation} :
     rw [hnames] at hn ⊢
     exact hfresh e'' he'' n hn
 
-/-- The names of a meaningful signature are distinct.
-RFC: `\mathsf{distinct}_{\vDash\Sigma}` -/
-theorem ValidSig.distinct {ι : Interpretation} {sig : Signature} (h : ValidSig ι sig) :
-    sig.Distinct :=
-  h.1
-
 /-- In a signature whose names are distinct, a closed term computes to one canonical term at
 most. -/
 theorem Computesι.det {sig : Signature} {ι : Interpretation} {t v₁ v₂ : Term 0 []}
     (hd : sig.Distinct) (h₁ : Computesι sig ι t v₁) (h₂ : Computesι sig ι t v₂) : v₁ = v₂ :=
   Computes.det hd.interpret h₁ h₂
+
+/-- `R` is a partial equivalence relation: symmetric and transitive. -/
+structure IsPer {α : Type} (R : α → α → Prop) : Prop where
+  /-- `R` is symmetric. -/
+  symm {t u : α} : R t u → R u t
+  /-- `R` is transitive. -/
+  trans {t u w : α} : R t u → R u w → R t w
+
+/-- The relations of the sorts of a level give each type they relate a unique equality of its terms,
+itself a partial equivalence relation, and each proposition a unique truth. -/
+structure LevelRel.IsPer (L : LevelRel) : Prop where
+  /-- The equality of the terms of a type of `U_n` is a partial equivalence relation. -/
+  univ_isPer {v : Term 0 []} {R : TermRel} : L.univ v R → _root_.Sic.Core.IsPer R
+  /-- `ty(U_n)` gives a type a unique equality of its terms. -/
+  univ_unique {v : Term 0 []} {R R' : TermRel} : L.univ v R → L.univ v R' → ∀ t u, R t u ↔ R' t u
+  /-- `ty(Ω_n)` gives a proposition a unique truth. -/
+  prop_unique {v : Term 0 []} {b b' : Prop} : L.prop v b → L.prop v b' → (b ↔ b')
+
+/-- The equality that `ty(U_n)` gives a type is unique. -/
+theorem LevelRel.IsPer.univ_eq {L : LevelRel} (hL : L.IsPer) {v : Term 0 []} {R R' : TermRel}
+    (h : L.univ v R) (h' : L.univ v R') : R = R' :=
+  funext fun t => funext fun u => propext (hL.univ_unique h h' t u)
+
+/-- `ty(U_n)` at the level `n`, as the clauses of `UnivRel`. -/
+theorem levelRel_univ_iff {sig : Signature} {ι : Interpretation} {n : Nat} {v : Term 0 []}
+    {R : TermRel} :
+    (levelRel sig ι n).univ v R ↔ UnivRel sig ι n (fun m _ => levelRel sig ι m) v R := by
+  rw [levelRel_univ]
+
+/-- `ty(Ω_n)` at the level `n`, as the clauses of `PropRel`. -/
+theorem levelRel_prop_iff {sig : Signature} {ι : Interpretation} {n : Nat} {v : Term 0 []}
+    {b : Prop} : (levelRel sig ι n).prop v b ↔ PropRel sig ι n (fun m _ => levelRel sig ι m) v b := by
+  rw [levelRel_prop]
+
+/-! ### Relations Built From Others -/
+
+/-- `eq⇓(R)` is a partial equivalence relation when `R` is one, in a signature whose names are
+distinct. -/
+theorem TermRel.computed_isPer {sig : Signature} {ι : Interpretation} {R : TermRel}
+    (hd : sig.Distinct) (hR : IsPer R) : IsPer (R.computed sig ι) where
+  symm := fun ⟨v, w, ht, hu, h⟩ => ⟨w, v, hu, ht, hR.symm h⟩
+  trans := fun ⟨v, _, ht, hu, h⟩ ⟨_, x, hu', hx, h'⟩ => by
+    cases Computesι.det hd hu hu'
+    exact ⟨v, x, ht, hx, hR.trans h h'⟩
+
+/-- `eq⇓(R)` relates the same terms for relations `R` that relate the same terms. -/
+theorem TermRel.computed_congr {sig : Signature} {ι : Interpretation} {R R' : TermRel}
+    (h : ∀ t u, R t u ↔ R' t u) : ∀ t u, R.computed sig ι t u ↔ R'.computed sig ι t u :=
+  fun _ _ => ⟨fun ⟨v, w, ht, hu, hvw⟩ => ⟨v, w, ht, hu, (h v w).1 hvw⟩,
+    fun ⟨v, w, ht, hu, hvw⟩ => ⟨v, w, ht, hu, (h v w).2 hvw⟩⟩
+
+/-- The equality of the terms of the fields of the empty telescope is a partial equivalence
+relation. -/
+theorem FieldsRel.nil_isPer : IsPer FieldsRel.nil where
+  symm {ts us} h := match ts, us, h with
+    | .nil, .nil, _ => trivial
+  trans {ts us ws} h h' := match ts, us, ws, h, h' with
+    | .nil, .nil, .nil, _, _ => trivial
+
+/-- The equality of the terms of the fields of a telescope `x : A, Θ` is a partial equivalence
+relation, when the equality of the terms of `A` is one, and so is the equality of the terms of
+`Θ[a / x]` for each term `a` of `A`, the same for equal terms. -/
+theorem FieldsRel.cons_isPer {F : TermRel} {G : Term 0 [] → FieldsRel} (hF : IsPer F)
+    (hG : ∀ a, F a a → IsPer (G a))
+    (hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us) :
+    IsPer (FieldsRel.cons F G) where
+  symm {ts us} h := match ts, us, h with
+    | .cons t ts, .cons u us, ⟨h₁, h₂⟩ =>
+      ⟨hF.symm h₁, (hG u (hF.trans (hF.symm h₁) h₁)).symm ((hresp t u h₁ ts us).1 h₂)⟩
+  trans {ts us ws} h h' := match ts, us, ws, h, h' with
+    | .cons t _ts, .cons u us, .cons _w ws, ⟨h₁, h₂⟩, ⟨h₁', h₂'⟩ =>
+      ⟨hF.trans h₁ h₁', (hG t (hF.trans h₁ (hF.symm h₁))).trans h₂ ((hresp t u h₁ us ws).2 h₂')⟩
+
+/-- The equalities of the terms of the fields of two telescopes `x : A, Θ` relate the same terms,
+when those of `A` do, and those of `Θ[a / x]` do for each term `a` of `A`. -/
+theorem FieldsRel.cons_congr {F F' : TermRel} {G G' : Term 0 [] → FieldsRel} (hFp : IsPer F)
+    (hF : ∀ t u, F t u ↔ F' t u) (hG : ∀ a, F a a → ∀ ts us, G a ts us ↔ G' a ts us) :
+    ∀ ts us, FieldsRel.cons F G ts us ↔ FieldsRel.cons F' G' ts us
+  | .nil, _ => .rfl
+  | .cons _ _, .nil => .rfl
+  | .cons t ts, .cons u us =>
+    ⟨fun ⟨h₁, h₂⟩ => ⟨(hF t u).1 h₁, (hG t (hFp.trans h₁ (hFp.symm h₁)) ts us).1 h₂⟩,
+      fun ⟨h₁, h₂⟩ =>
+        have h₁' := (hF t u).2 h₁
+        ⟨h₁', (hG t (hFp.trans h₁' (hFp.symm h₁')) ts us).2 h₂⟩⟩
+
+/-- A closed term is a constructor of one declared type, one name, and one list of fields. -/
+theorem Term.IsCtor.inj {D D' c c' : Name} {ts ts' : Terms 0 []} {v : Term 0 []}
+    (h : v.IsCtor D c ts) (h' : v.IsCtor D' c' ts') : D = D' ∧ c = c' ∧ ts = ts' := by
+  obtain ⟨_, _, _, _, _, rfl⟩ := h
+  obtain ⟨_, _, _, _, _, h'⟩ := h'
+  cases h'
+  exact ⟨rfl, rfl, rfl⟩
+
+/-- `(eq_c)` is a partial equivalence relation when the equalities of the terms of the fields of the
+constructors are, which have distinct names. -/
+theorem DataType.ctorRel_isPer {j g k : Nat} {Δ : Scope} {D : Name} {T : DataType j g k Δ}
+    {S : Constructor j g k Δ → FieldsRel} (hc : (T.constructors.map (·.name)).Nodup)
+    (hS : ∀ c ∈ T.constructors, IsPer (S c)) : IsPer (T.ctorRel D S) where
+  symm := fun ⟨c, hcm, ts, us, hv, hw, h⟩ => ⟨c, hcm, us, ts, hw, hv, (hS c hcm).symm h⟩
+  trans := fun ⟨c, hcm, ts, _, hv, hw, h⟩ ⟨_, hcm', _, vs, hw', hx, h'⟩ => by
+    obtain ⟨-, hn, rfl⟩ := hw.inj hw'
+    cases List.eq_of_nodup_map hc hcm hcm' hn
+    exact ⟨c, hcm, ts, vs, hv, hx, (hS c hcm).trans h h'⟩
+
+/-- `(eq_c)` relates the same terms for equalities of the terms of the fields that relate the same
+terms. -/
+theorem DataType.ctorRel_congr {j g k : Nat} {Δ : Scope} {D : Name} {T : DataType j g k Δ}
+    {S S' : Constructor j g k Δ → FieldsRel}
+    (h : ∀ c ∈ T.constructors, ∀ ts us, S c ts us ↔ S' c ts us) :
+    ∀ v w, T.ctorRel D S v w ↔ T.ctorRel D S' v w :=
+  fun _ _ => ⟨fun ⟨c, hcm, ts, us, hv, hw, hS⟩ => ⟨c, hcm, ts, us, hv, hw, (h c hcm ts us).1 hS⟩,
+    fun ⟨c, hcm, ts, us, hv, hw, hS⟩ => ⟨c, hcm, ts, us, hv, hw, (h c hcm ts us).2 hS⟩⟩
+
+/-- `(true_D)` is the same for equalities of the terms of the fields that relate the same terms. -/
+theorem DataType.truth_congr {j g k : Nat} {Δ : Scope} {T : DataType j g k Δ}
+    {S S' : Constructor j g k Δ → FieldsRel}
+    (h : ∀ c ∈ T.constructors, ∀ ts us, S c ts us ↔ S' c ts us) : T.truth S ↔ T.truth S' :=
+  ⟨fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).1 hS⟩,
+    fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).2 hS⟩⟩
+
+/-! ### A Type Has One Level and One Sort -/
+
+/-- A type of a universe has one level, in a signature whose names are distinct. -/
+theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
+    {below₂ : LevelRel.Below m} {v : Term 0 []} {R R' : TermRel} (hd : sig.Distinct)
+    (h : UnivRel sig ι n below₁ v R) (h' : UnivRel sig ι m below₂ v R') : n = m := by
+  cases h with
+  | univ hl hk => cases h' with
+    | univ hl' hk' => omega
+    | data _ _ _ _ hv => cases hv
+  | prop hl hk => cases h' with
+    | prop hl' hk' => omega
+    | data _ _ _ _ hv => cases hv
+  | data h _ _ _ hv _ hn => cases h' with
+    | univ => cases hv
+    | prop => cases hv
+    | data h' _ _ _ hv' _ hn' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      exact hn.symm.trans hn'
+
+/-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
+theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
+    {below₁ : LevelRel.Below n} {below₂ : LevelRel.Below m} {v : Term 0 []} {R : TermRel} {b : Prop}
+    (hd : sig.Distinct) (h : UnivRel sig ι n below₁ v R) (h' : PropRel sig ι m below₂ v b) :
+    False := by
+  cases h' with
+  | data h' _ _ _ hv' hs' =>
+    subst hv'
+    cases h with
+    | data h _ _ _ hv hs =>
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      exact nomatch hs.symm.trans hs'
+
+/-- A proposition has one level, in a signature whose names are distinct. -/
+theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
+    {below₂ : LevelRel.Below m} {v : Term 0 []} {b b' : Prop} (hd : sig.Distinct)
+    (h : PropRel sig ι n below₁ v b) (h' : PropRel sig ι m below₂ v b') : n = m := by
+  cases h with
+  | data h _ _ _ hv _ hn => cases h' with
+    | data h' _ _ _ hv' _ hn' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      exact hn.symm.trans hn'
+
+/-! ### The Relations of a Level -/
+
+mutual
+
+/-- The equality of the terms of a type of `U_n` is a partial equivalence relation, if the relations
+of the levels below `n` are partial equivalence relations. -/
+theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {v : Term 0 []} {R : TermRel} :
+    UnivRel sig ι n (fun m _ => levelRel sig ι m) v R → IsPer R
+  | .univ (k := k) _ hk =>
+    have hL := ih k (hk ▸ Nat.lt_succ_self k)
+    ⟨fun ⟨R', h₁, h₂⟩ => ⟨R', h₂, h₁⟩,
+      fun ⟨R₁, h₁, h₂⟩ ⟨_, h₂', h₃⟩ => ⟨R₁, h₁, hL.univ_eq h₂' h₂ ▸ h₃⟩⟩
+  | .prop (k := k) _ hk =>
+    have hL := ih k (hk ▸ Nat.lt_succ_self k)
+    ⟨fun ⟨b₁, b₂, h₁, h₂, hb⟩ => ⟨b₂, b₁, h₂, h₁, hb.symm⟩,
+      fun ⟨b₁, _, h₁, h₂, hb⟩ ⟨_, b₃, h₂', h₃, hb'⟩ =>
+        ⟨b₁, b₃, h₁, h₃, hb.trans ((hL.prop_unique h₂ h₂').trans hb')⟩⟩
+  | .data _ _ _ _ _ _ _ hc _ hS =>
+    DataType.ctorRel_isPer hc fun c hcm => TelRel.isPer hd ih (hS c hcm)
+
+/-- The equality of the terms of the fields of a telescope is a partial equivalence relation. -/
+theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {S : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → IsPer S
+  | .nil => FieldsRel.nil_isPer
+  | .cons _ hF _ hG hresp =>
+    FieldsRel.cons_isPer (FieldRel.isPer hd ih hF) (fun a ha => TelRel.isPer hd ih (hG a ha)) hresp
+
+/-- The equality of the terms of the type of a field is a partial equivalence relation. -/
+theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {v : Term 0 []} {F : TermRel} :
+    FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F → IsPer F
+  | .univ _ h => TermRel.computed_isPer hd (UnivRel.isPer hd ih h)
+  | .univBelow _ m hm h => TermRel.computed_isPer hd ((ih m hm).univ_isPer h)
+  | .prop _ => ⟨id, fun h _ => h⟩
+  | .propBelow _ _ _ => ⟨id, fun h _ => h⟩
+
+end
+
+mutual
+
+/-- A type of `U_n` has a unique equality of its terms, if the relations of the levels below `n` are
+partial equivalence relations. -/
+theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {v : Term 0 []} {R : TermRel} :
+    UnivRel sig ι n (fun m _ => levelRel sig ι m) v R →
+      ∀ (R' : TermRel), UnivRel sig ι n (fun m _ => levelRel sig ι m) v R' →
+        ∀ t u, R t u ↔ R' t u
+  | .univ hl _, _, h' => by
+    cases h' with
+    | univ hl' _ => subst hl; subst hl'; exact fun _ _ => .rfl
+    | data _ _ _ _ hv => cases hv
+  | .prop hl _, _, h' => by
+    cases h' with
+    | prop hl' _ => subst hl; subst hl'; exact fun _ _ => .rfl
+    | data _ _ _ _ hv => cases hv
+  | .data h _ _ _ hv _ _ _ _ hS, _, h' => by
+    have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
+    cases h' with
+    | univ => cases hv
+    | prop => cases hv
+    | data h' _ _ _ hv' _ _ _ _ hS' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      cases hT
+      cases has
+      exact DataType.ctorRel_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+termination_by structural h _ _ => h
+
+/-- A proposition of `Ω_n` has a unique truth. -/
+theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {v : Term 0 []} {b : Prop} :
+    PropRel sig ι n (fun m _ => levelRel sig ι m) v b →
+      ∀ (b' : Prop), PropRel sig ι n (fun m _ => levelRel sig ι m) v b' → (b ↔ b')
+  | .data h _ _ _ hv _ _ _ _ hS, _, h' => by
+    have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
+    cases h' with
+    | data h' _ _ _ hv' _ _ _ _ hS' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      cases hT
+      cases has
+      exact DataType.truth_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+termination_by structural h _ _ => h
+
+/-- A telescope has a unique equality of the terms of its fields. -/
+theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {S : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S →
+      ∀ (s' : Quality) (S' : FieldsRel), TelRel sig ι n (fun m _ => levelRel sig ι m) s' Θ S' →
+        ∀ ts us, S ts us ↔ S' ts us
+  | .nil, _, _, h' => by cases h'; exact fun _ _ => .rfl
+  | .cons hA hF _ hG _, _, _, h' => by
+    have hFu := FieldRel.unique hd ih hF
+    have hGu := fun a ha => TelRel.unique hd ih (hG a ha)
+    have hFp := FieldRel.isPer hd ih hF
+    cases h' with
+    | cons hA' hF' _ hG' _ =>
+      cases Computesι.det hd hA hA'
+      have hFF := hFu _ _ hF'
+      exact FieldsRel.cons_congr hFp hFF fun a ha => hGu a ha _ _ (hG' a ((hFF a a).1 ha))
+termination_by structural h _ _ _ => h
+
+/-- The type of a field has a unique equality of its terms. -/
+theorem FieldRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {v : Term 0 []} {F : TermRel} :
+    FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F →
+      ∀ (s' : Quality) (F' : TermRel), FieldRel sig ι n (fun m _ => levelRel sig ι m) s' v F' →
+        ∀ t u, F t u ↔ F' t u
+  | .univ _ h, _, _, h' => by
+    have hu := UnivRel.unique hd ih h
+    cases h' with
+    | univ _ h' => exact TermRel.computed_congr (hu _ h')
+    | univBelow _ m hm h' => exact absurd (UnivRel.level hd h (levelRel_univ_iff.1 h')) (by omega)
+    | prop h' => exact (UnivRel.not_prop hd h h').elim
+    | propBelow m _ h' => exact (UnivRel.not_prop hd h (levelRel_prop_iff.1 h')).elim
+  | .univBelow _ m hm h, _, _, h' => by
+    cases h' with
+    | univ _ h' => exact absurd (UnivRel.level hd h' (levelRel_univ_iff.1 h)) (by omega)
+    | univBelow _ m' hm' h' =>
+      cases UnivRel.level hd (levelRel_univ_iff.1 h) (levelRel_univ_iff.1 h')
+      exact TermRel.computed_congr ((ih m hm).univ_unique h h')
+    | prop h' => exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h) h').elim
+    | propBelow m' _ h' =>
+      exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h) (levelRel_prop_iff.1 h')).elim
+  | .prop h, _, _, h' => by
+    have hu := PropRel.unique hd ih h
+    cases h' with
+    | univ _ h' => exact (UnivRel.not_prop hd h' h).elim
+    | univBelow _ m _ h' => exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h') h).elim
+    | prop h' => exact fun _ _ => hu _ h'
+    | propBelow m hm h' => exact absurd (PropRel.level hd h (levelRel_prop_iff.1 h')) (by omega)
+  | .propBelow m hm h, _, _, h' => by
+    cases h' with
+    | univ _ h' => exact (UnivRel.not_prop hd h' (levelRel_prop_iff.1 h)).elim
+    | univBelow _ m' _ h' =>
+      exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h') (levelRel_prop_iff.1 h)).elim
+    | prop h' => exact absurd (PropRel.level hd h' (levelRel_prop_iff.1 h)) (by omega)
+    | propBelow m' hm' h' =>
+      cases PropRel.level hd (levelRel_prop_iff.1 h) (levelRel_prop_iff.1 h')
+      exact fun _ _ => (ih m hm).prop_unique h h'
+termination_by structural h _ _ _ => h
+
+end
+
+/-- The relations of every level are partial equivalence relations, in a signature whose names are
+distinct. -/
+theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :
+    (levelRel sig ι n).IsPer :=
+  have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  { univ_isPer := fun h => UnivRel.isPer hd ih (levelRel_univ_iff.1 h)
+    univ_unique := fun h h' =>
+      UnivRel.unique hd ih (levelRel_univ_iff.1 h) _ (levelRel_univ_iff.1 h')
+    prop_unique := fun h h' =>
+      PropRel.unique hd ih (levelRel_prop_iff.1 h) _ (levelRel_prop_iff.1 h') }
+termination_by n
+decreasing_by all_goals assumption
+
+/-- `eq(v)` is a partial equivalence relation, symmetric and transitive, in a signature whose names
+are distinct.
+RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`, `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
+theorem HasEq.isPer {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R : TermRel}
+    (hd : sig.Distinct) : HasEq sig ι v R → IsPer R
+  | .univ n h => (levelRel_isPer hd n).univ_isPer h
+  | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
+
+/-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
+theorem HasEq.univ_not_prop {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n k : Nat}
+    {R : TermRel} {b : Prop} (hd : sig.Distinct) (h : (levelRel sig ι n).univ v R)
+    (h' : (levelRel sig ι k).prop v b) : False :=
+  UnivRel.not_prop hd (levelRel_univ_iff.1 h) (levelRel_prop_iff.1 h')
+
+/-- The level of a type of a universe is unique, in a signature whose names are distinct. -/
+theorem HasEq.univ_level {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n n' : Nat}
+    {R R' : TermRel} (hd : sig.Distinct) (h : (levelRel sig ι n).univ v R)
+    (h' : (levelRel sig ι n').univ v R') : n = n' :=
+  UnivRel.level hd (levelRel_univ_iff.1 h) (levelRel_univ_iff.1 h')
+
+/-- `eq(v)` is unique: two equalities of the terms of a type relate the same terms, in a signature
+whose names are distinct.
+RFC: `\mathsf{unique}_{\mathsf{eq}}` -/
+theorem HasEq.unique {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R R' : TermRel}
+    (hd : sig.Distinct) : HasEq sig ι v R → HasEq sig ι v R' → ∀ t u, R t u ↔ R' t u
+  | .univ n h, .univ _ h' => by
+    cases HasEq.univ_level hd h h'
+    exact (levelRel_isPer hd n).univ_unique h h'
+  | .univ _ h, .prop _ _ h' _ => (HasEq.univ_not_prop hd h h').elim
+  | .prop _ _ h _, .univ _ h' => (HasEq.univ_not_prop hd h' h).elim
+  | .prop k _ h hR, .prop _ _ h' hR' => by
+    cases PropRel.level hd (levelRel_prop_iff.1 h) (levelRel_prop_iff.1 h')
+    exact fun t u => (hR t u).trans (((levelRel_isPer hd k).prop_unique h h').trans (hR' t u).symm)
+
+/-! ## Exactness of the Proofs -/
+
+/-- The names of a meaningful signature are distinct.
+RFC: `\mathsf{distinct}_{\vDash\Sigma}` -/
+theorem ValidSig.distinct {ι : Interpretation} {sig : Signature} (h : ValidSig ι sig) :
+    sig.Distinct :=
+  h.1
 
 /-- A sort computes to itself. -/
 theorem Computes.sort (sig : Signature) (κ : Universe 0) : Computes sig (.sort κ) (.sort κ) :=
@@ -672,23 +1086,21 @@ theorem Computes.sort_inv {sig : Signature} {κ : Universe 0} {v : Term 0 []} :
     cases ht
 
 /-- The terms that the universe of propositions `Ω_l` relates are propositions. -/
-theorem HasEq.prop_isProp {l : Level 0} {R : TermRel} {v w : Term 0 []}
-    (hR : HasEq (.sort ⟨.prop, l⟩) R) (hvw : R v w) : IsProp v := by
+theorem HasEq.prop_isProp {sig : Signature} {ι : Interpretation} {l : Level 0} {R : TermRel}
+    {v w : Term 0 []} (hR : HasEq sig ι (.sort ⟨.prop, l⟩) R) (hvw : R v w) : IsProp sig ι v := by
   cases hR with
   | univ n h =>
-    cases n with
-    | zero => cases h with | prop h₁ => exact absurd h₁ (Nat.succ_ne_zero _)
-    | succ m =>
-      cases h with
-      | prop =>
-        obtain ⟨b, hb⟩ := hvw
-        exact ⟨m, b, (levelRel_isPer m).prop_trans hb ((levelRel_isPer m).prop_symm hb)⟩
-  | prop _ _ h _ => rw [levelRel_prop] at h; exact nomatch h
+    cases levelRel_univ_iff.1 h with
+    | prop _ hk =>
+      obtain ⟨b, _, hb, -⟩ := hvw
+      exact ⟨_, b, hb⟩
+    | data _ _ _ _ hv => cases hv
+  | prop _ _ h _ => cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
 
 /-- A sort is not a proposition. -/
-theorem not_isProp_sort {κ : Universe 0} : ¬ IsProp (.sort κ) := fun ⟨k, _, h⟩ => by
-  rw [levelRel_prop] at h
-  exact nomatch h
+theorem not_isProp_sort {sig : Signature} {ι : Interpretation} {κ : Universe 0} :
+    ¬ IsProp sig ι (.sort κ) := fun ⟨_, _, h⟩ => by
+  cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
 
 /-- A sort does not compute to a proposition. -/
 theorem not_computesToProp_sort {sig : Signature} {ι : Interpretation} {κ : Universe 0} :
@@ -710,7 +1122,7 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
   constructor
   · rintro ⟨hTA, -, hcl'⟩
     obtain ⟨A₁, R₁, hA₁, hR₁, htu⟩ := hcl' hP
-    have hper := hR₁.isPer
+    have hper := hR₁.isPer hd
     exact ⟨⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans htu (hper.symm htu)⟩⟩,
       ⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans (hper.symm htu) htu⟩⟩⟩
   · rintro ⟨⟨hTA, -, hclt⟩, -⟩
@@ -718,17 +1130,7 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
     obtain ⟨A₁, R₁, hA₁, hR₁, htt⟩ := hclt hP
     cases Computesι.det hd hA₁ hv
     obtain ⟨k, b, hb⟩ := hvp
-    have hRb : ∀ t u, R₁ t u ↔ b := fun t u => hR₁.unique (.prop k b hb fun _ _ => .rfl) t u
+    have hRb : ∀ t u, R₁ t u ↔ b := fun t u => hR₁.unique hd (.prop k b hb fun _ _ => .rfl) t u
     exact ⟨v, R₁, hA₁, hR₁, (hRb t u).2 ((hRb t t).1 htt)⟩
-
-/-! ## Properties of the Core -/
-
-/-- In the core, no type is a proposition, since only the kinds of declarations build propositions. -/
-theorem not_isProp (v : Term 0 []) : ¬ IsProp v := fun ⟨k, _, h⟩ => by
-  cases k <;> cases h
-
-/-- In the core, no type computes to a proposition. -/
-theorem not_computesToProp (sig : Signature) (ι : Interpretation) (A : Term 0 []) :
-    ¬ ComputesToProp sig ι A := fun ⟨A₀, _, h⟩ => not_isProp A₀ h
 
 end Sic.Core

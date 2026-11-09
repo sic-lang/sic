@@ -10,12 +10,14 @@ they are written: an instance `f.{0 ⊔ 0}` of a definition unfolds to its body 
 not the body at the value `0` that the meaning of the signature makes meaningful, and the rule
 `(f_≡)` relates two instances of a constant whose levels are written differently.
 Two terms that differ only by levels of the same values compute alike, to canonical terms that differ
-in the same way, and the equality `eq(v)` relates the sorts by the values of their levels, so that
-no closed judgment tells them apart.
+in the same way, and the graph of the sorts reads the levels of the sorts and of the instances of
+the data types by their values, so that no closed judgment tells them apart.
+The fields of an instance are the fields of its declaration at its levels and its arguments, so that
+a substitution that gives each variable terms equal up to their levels keeps two terms equal up to
+their levels.
 
-The core reduces by `(δ_⟶)` alone, which copies the levels of the constant into its body, and its
-equality `eq(v)` relates sorts only; the kinds of declarations add the cases of their reductions
-and of their clauses.
+The core reduces by `(δ_⟶)` alone, which copies the levels of the constant into its body; the kinds
+of declarations add the cases of their reductions.
 
 ADE have levels as terms, which their rules of equality and their logical relation compare as terms;
 the levels of Sic are not terms, and no counterpart is needed there.
@@ -359,6 +361,238 @@ theorem Term.substLevels_levelEquiv_atLevels {k : Nat} {Γ : Scope} (ls : Fin k 
     (t : Term k Γ) : Term.LevelEquiv (t.substLevels ls) (t.atLevels fun i => (ls i).closedValue) :=
   Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (Level.ofNat_closedValue (ls i))) t
 
+/-! ## Substitution
+
+A substitution that gives each variable terms equal up to their levels keeps two terms equal up to
+their levels, as the fields of an instance of a declared type, which its arguments substitute,
+need. -/
+
+/-- Two values of a substitution of the first order equal up to their levels. -/
+inductive Val.LevelEquiv {k : Nat} {Γ : Scope} : {e : Scope.Entry} → Val k Γ e → Val k Γ e → Prop where
+  /-- The same variable. -/
+  | var {e : Scope.Entry} (x : Var Γ e) : Val.LevelEquiv (.var x) (.var x)
+  /-- Two terms equal up to their levels. -/
+  | term {t₁ t₂ : Term k Γ} (h : Term.LevelEquiv t₁ t₂) : Val.LevelEquiv (.term t₁) (.term t₂)
+
+/-- A renaming keeps two values equal up to their levels. -/
+theorem Val.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} (ξ : Ren Γ Δ)
+    {v₁ v₂ : Val k Δ e} : Val.LevelEquiv v₁ v₂ → Val.LevelEquiv (v₁.rename ξ) (v₂.rename ξ)
+  | .var x => .var (ξ x)
+  | .term h => .term (h.rename ξ)
+
+/-- Two values equal up to their levels applied to arguments equal up to their levels give terms
+equal up to their levels. -/
+theorem Val.LevelEquiv.apply {k : Nat} {Γ : Scope} {e : Scope.Entry} {v₁ v₂ : Val k Γ e}
+    {us₁ us₂ : Args k Γ e.params} :
+    Val.LevelEquiv v₁ v₂ → Args.LevelEquiv us₁ us₂ → Term.LevelEquiv (v₁.apply us₁) (v₂.apply us₂)
+  | .var y, hs => .var y hs
+  | .term h, _ => h
+
+/-- Two substitutions of the first order that give each variable values equal up to their
+levels. -/
+def Subst₀.LevelEquiv {k : Nat} {Γ Δ : Scope} (σ₁ σ₂ : Subst₀ k Γ Δ) : Prop :=
+  ∀ {e : Scope.Entry} (x : Var Δ e), Val.LevelEquiv (σ₁ x) (σ₂ x)
+
+/-- Two substitutions equal up to their levels stay so under a new entry. -/
+theorem Subst₀.LevelEquiv.lift {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (h : Subst₀.LevelEquiv σ₁ σ₂) : Subst₀.LevelEquiv (Subst₀.lift (e := e) σ₁) (Subst₀.lift σ₂) := by
+  intro _ x
+  cases x with
+  | zero => exact .var _
+  | succ x => exact (h x).rename _
+
+/-- Two substitutions equal up to their levels stay so under new variables. -/
+theorem Subst₀.LevelEquiv.liftN {k : Nat} :
+    {Γ Δ : Scope} → (n : Nat) → {σ₁ σ₂ : Subst₀ k Γ Δ} → Subst₀.LevelEquiv σ₁ σ₂ →
+      Subst₀.LevelEquiv (Subst₀.liftN n σ₁) (Subst₀.liftN n σ₂)
+  | _, _, 0, _, _, h => h
+  | _, _, n + 1, _, _, h => Subst₀.LevelEquiv.liftN n (Subst₀.LevelEquiv.lift h)
+
+/-- Two terms equal up to their levels substituted for the last variable. -/
+theorem Subst₀.LevelEquiv.single {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ}
+    (h : Term.LevelEquiv t₁ t₂) : Subst₀.LevelEquiv (Subst₀.single t₁) (Subst₀.single t₂) := by
+  intro _ x
+  cases x with
+  | zero => exact .term h
+  | succ x => exact .var _
+
+mutual
+
+/-- A substitution of the first order equal up to the levels keeps two terms equal up to their
+levels. -/
+theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {t₁ t₂ : Term k Δ} :
+    Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (t₁.subst₀ σ₁) (t₂.subst₀ σ₂)
+  | .var x h => by
+    rw [Term.subst₀_var, Term.subst₀_var]
+    exact (hσ x).apply (h.subst₀ hσ)
+  | .sort s h => .sort s h
+  | .const f qs ps h => .const f qs ps h
+  | .inst D qs ps h has => .inst D qs ps h (has.subst₀ hσ)
+  | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst₀ hσ) (hts.subst₀ hσ)
+  | .recursor r h hCs hus => .recursor r (h.subst₀ hσ) (hCs.subst₀ hσ) (hus.subst₀ hσ)
+
+theorem Args.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Args k Δ ps} :
+    Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.subst₀ σ₁) (ts₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ hσ) (hs.subst₀ hσ)
+
+theorem InstanceArgs.LevelEquiv.subst₀ {k : Nat} {Γ Δ Ξ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {as₁ as₂ : InstanceArgs k Δ Ξ} :
+    InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv (as₁.subst₀ σ₁) (as₂.subst₀ σ₂)
+  | .nil => .nil
+  | .snoc has h => .snoc (has.subst₀ hσ) (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
+
+theorem Terms.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Terms k Δ} :
+    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv (ts₁.subst₀ σ₁) (ts₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ hσ) (hs.subst₀ hσ)
+
+theorem Motives.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Cs₁ Cs₂ : Motives k Δ} :
+    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv (Cs₁.subst₀ σ₁) (Cs₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+
+theorem Branches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {us₁ us₂ : Branches k Δ} :
+    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.subst₀ σ₁) (us₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+
+end
+
+/-- Arguments equal up to their levels instantiate terms equal up to their levels to terms equal up
+to their levels. -/
+theorem Term.LevelEquiv.instantiate {k : Nat} {Γ : Scope} :
+    {ps : List Parameter} → {B₁ B₂ : Term k (Γ.extend ps.length)} → {ts₁ ts₂ : Args k Γ ps} →
+      Term.LevelEquiv B₁ B₂ → Args.LevelEquiv ts₁ ts₂ →
+        Term.LevelEquiv (B₁.instantiate ts₁) (B₂.instantiate ts₂)
+  | [], _, _, .nil, .nil, hB, .nil => hB
+  | _ :: ps, B₁, B₂, .cons t₁ ts₁, .cons t₂ ts₂, hB, .cons h hs => by
+    show Term.LevelEquiv
+      (Term.instantiate (B₁.subst₀ (Subst₀.liftN ps.length (Subst₀.single t₁))) ts₁)
+      (Term.instantiate (B₂.subst₀ (Subst₀.liftN ps.length (Subst₀.single t₂))) ts₂)
+    exact Term.LevelEquiv.instantiate
+      (hB.subst₀ (Subst₀.LevelEquiv.liftN ps.length (Subst₀.LevelEquiv.single h))) hs
+
+/-- Two substitutions of the second order that give each variable abstractions equal up to their
+levels. -/
+def Subst.LevelEquiv {k : Nat} {Γ Δ : Scope} (θ₁ θ₂ : Subst k Γ Δ) : Prop :=
+  ∀ {e : Scope.Entry} (x : Var Δ e), Term.LevelEquiv (θ₁ x) (θ₂ x)
+
+/-- Two substitutions equal up to their levels stay so under a new entry. -/
+theorem Subst.LevelEquiv.lift {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} {θ₁ θ₂ : Subst k Γ Δ}
+    (h : Subst.LevelEquiv θ₁ θ₂) : Subst.LevelEquiv (Subst.lift (e := e) θ₁) (Subst.lift θ₂) := by
+  intro _ x
+  cases x with
+  | zero => exact Term.LevelEquiv.refl _
+  | succ x => exact (h x).rename _
+
+/-- Two substitutions equal up to their levels stay so under new variables. -/
+theorem Subst.LevelEquiv.liftN {k : Nat} :
+    {Γ Δ : Scope} → (n : Nat) → {θ₁ θ₂ : Subst k Γ Δ} → Subst.LevelEquiv θ₁ θ₂ →
+      Subst.LevelEquiv (Subst.liftN n θ₁) (Subst.liftN n θ₂)
+  | _, _, 0, _, _, h => h
+  | _, _, n + 1, _, _, h => Subst.LevelEquiv.liftN n (Subst.LevelEquiv.lift h)
+
+/-- Arguments of an instance equal up to their levels are substitutions equal up to their levels. -/
+theorem InstanceArgs.LevelEquiv.toSubst {k : Nat} {Γ : Scope} :
+    {Δ : Scope} → {as₁ as₂ : InstanceArgs k Γ Δ} → InstanceArgs.LevelEquiv as₁ as₂ →
+      Subst.LevelEquiv as₁.toSubst as₂.toSubst
+  | _, _, _, .snoc _ h, _, .zero => h
+  | _, _, _, .snoc has _, _, .succ x => has.toSubst x
+
+mutual
+
+/-- A substitution of the second order equal up to the levels keeps two terms equal up to their
+levels. -/
+theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {t₁ t₂ : Term k Δ} :
+    Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (t₁.subst θ₁) (t₂.subst θ₂)
+  | .var x h => (hθ x).instantiate (h.subst hθ)
+  | .sort s h => .sort s h
+  | .const f qs ps h => .const f qs ps h
+  | .inst D qs ps h has => .inst D qs ps h (has.subst hθ)
+  | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst hθ) (hts.subst hθ)
+  | .recursor r h hCs hus => .recursor r (h.subst hθ) (hCs.subst hθ) (hus.subst hθ)
+
+theorem Args.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Args k Δ ps} :
+    Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.subst θ₁) (ts₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst hθ) (hs.subst hθ)
+
+theorem InstanceArgs.LevelEquiv.subst {k : Nat} {Γ Δ Ξ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {as₁ as₂ : InstanceArgs k Δ Ξ} :
+    InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv (as₁.subst θ₁) (as₂.subst θ₂)
+  | .nil => .nil
+  | .snoc has h => .snoc (has.subst hθ) (h.subst (Subst.LevelEquiv.liftN _ hθ))
+
+theorem Terms.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Terms k Δ} :
+    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv (ts₁.subst θ₁) (ts₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst hθ) (hs.subst hθ)
+
+theorem Motives.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {Cs₁ Cs₂ : Motives k Δ} :
+    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv (Cs₁.subst θ₁) (Cs₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+
+theorem Branches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {us₁ us₂ : Branches k Δ} :
+    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.subst θ₁) (us₂.subst θ₂)
+  | .nil => .nil
+  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+
+end
+
+/-- Two telescopes whose types are equal up to their levels. -/
+inductive Telescope.LevelEquiv {k : Nat} :
+    {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → Telescope k Γ ps → Prop where
+  /-- `ε`. -/
+  | nil {Γ : Scope} : Telescope.LevelEquiv (Γ := Γ) .nil .nil
+  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
+  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) {A₁ A₂ : Term k Γ}
+      {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps} (h : Term.LevelEquiv A₁ A₂)
+      (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) : Telescope.LevelEquiv (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂)
+
+/-- Equal levels that replace the level variables give telescopes equal up to their levels. -/
+theorem Telescope.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) →
+      Telescope.LevelEquiv (Θ.substLevels ls₁) (Θ.substLevels ls₂)
+  | _, _, .nil => .nil
+  | _, _, .cons q p A Θ =>
+    .cons q p (Term.substLevels_levelEquiv h A) (Telescope.substLevels_levelEquiv h Θ)
+
+/-- A substitution of the first order equal up to the levels keeps two telescopes equal up to their
+levels. -/
+theorem Telescope.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Θ₁ Θ₂ : Telescope k Δ ps} :
+    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.subst₀ σ₁) (Θ₂.subst₀ σ₂)
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p (h.subst₀ hσ) (hΘ.subst₀ (Subst₀.LevelEquiv.lift hσ))
+
+/-- A substitution of the second order equal up to the levels keeps two telescopes equal up to their
+levels. -/
+theorem Telescope.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {θ₁ θ₂ : Subst k Γ Δ} (hθ : Subst.LevelEquiv θ₁ θ₂) {Θ₁ Θ₂ : Telescope k Δ ps} :
+    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.subst θ₁) (Θ₂.subst θ₂)
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p (h.subst hθ) (hΘ.subst (Subst.LevelEquiv.lift hθ))
+
+/-- The fields of a constructor at levels of the same values and at arguments equal up to their
+levels are equal up to their levels. -/
+theorem Constructor.fieldsAt_levelEquiv {j g k : Nat} {Δ : Scope} (c : Constructor j g k Δ)
+    (I : Instance j g) {ls₁ ls₂ : Fin k → Level 0} {as₁ as₂ : InstanceArgs 0 [] Δ}
+    (hls : ∀ i, ls₁ i ≈ ls₂ i) (has : InstanceArgs.LevelEquiv as₁ as₂) :
+    Telescope.LevelEquiv (c.fieldsAt I ls₁ as₁) (c.fieldsAt I ls₂ as₂) :=
+  (Telescope.substLevels_levelEquiv hls _).subst has.toSubst
+
 /-! ## Reduction -/
 
 /-- A head normal form stays one when its levels change for equal ones. -/
@@ -367,6 +601,7 @@ theorem Whnf.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term k 
   cases hw with
   | sort => cases h; exact .sort _
   | inst => cases h; exact .inst _ _ _ _ _
+  | ctor => cases h; exact .ctor _ _ _ _ _ _ _
   | ne hn =>
     cases hn with
     | var => cases h; exact .ne (.var _ _)
@@ -403,85 +638,203 @@ theorem Computes.levelEquiv {sig : Signature} {t t' v : Term 0 []} (hc : Compute
   exact ⟨v', ⟨hs, hc.2.levelEquiv hv⟩, hv⟩
 
 /-! ## Equality of the Canonical Terms
-The relations of the sorts read the levels of the sorts by their values, so that they relate the
-terms whose levels change for equal ones, with the same equality of their terms.
-This is proved level by level, as the partial equivalence relations are, by cases on the clauses,
-so that each kind of declaration adds the cases of its clauses. -/
+The relations of the sorts read the levels of the sorts and of the instances by their values, so
+that they give the types whose levels change for equal ones, with the same equality of their terms,
+which relates the terms whose levels change for equal ones.
+This is proved level by level, as the partial equivalence relations are, by induction on the clauses
+that give a type of the level, together with the telescopes of the fields of its constructors, so
+that each kind of declaration adds the cases of its clauses. -/
 
-/-- The relations of the sorts of a level relate the terms whose levels change for equal ones. -/
+/-- The relations of the sorts of a level give the types whose levels change for equal ones, with the
+same equality of their terms or the same truth. -/
 structure LevelRel.LevelInvariant (L : LevelRel) : Prop where
-  /-- `eq(U_n)` relates them, with the same equality of their terms. -/
-  univ {A B A' B' : Term 0 []} {R : TermRel} :
-    L.univ A B R → Term.LevelEquiv A A' → Term.LevelEquiv B B' → L.univ A' B' R
-  /-- The equality of the terms of a type of `U_n` relates them. -/
-  univ_rel {A B : Term 0 []} {R : TermRel} {t u t' u' : Term 0 []} :
-    L.univ A B R → R t u → Term.LevelEquiv t t' → Term.LevelEquiv u u' → R t' u'
-  /-- `eq(Ω_n)` relates them, with the same truth. -/
-  prop {P Q P' Q' : Term 0 []} {b : Prop} :
-    L.prop P Q b → Term.LevelEquiv P P' → Term.LevelEquiv Q Q' → L.prop P' Q' b
+  /-- `ty(U_n)` gives them, with the same equality of their terms. -/
+  univ {A A' : Term 0 []} {R : TermRel} : L.univ A R → Term.LevelEquiv A A' → L.univ A' R
+  /-- `ty(Ω_n)` gives them, with the same truth. -/
+  prop {P P' : Term 0 []} {b : Prop} : L.prop P b → Term.LevelEquiv P P' → L.prop P' b
 
-/-- No sort is below the level `0`. -/
-theorem LevelRel.empty_levelInvariant : LevelRel.empty.LevelInvariant where
-  univ h := h.elim
-  univ_rel h := h.elim
-  prop h := h.elim
+/-- The equality of the terms of the types of a level relates the terms whose levels change for equal
+ones. -/
+def LevelRel.RelInvariant (L : LevelRel) : Prop :=
+  ∀ {A : Term 0 []} {R : TermRel} {t u t' u' : Term 0 []}, L.univ A R → R t u →
+    Term.LevelEquiv t t' → Term.LevelEquiv u u' → R t' u'
 
-/-- `eq(Ω_n)` relates the propositions whose levels change for equal ones: it has no clause in the
-core. -/
-theorem PropRel.levelEquiv {P Q P' Q' : Term 0 []} {b : Prop} (h : PropRel P Q b)
-    (_hP : Term.LevelEquiv P P') (_hQ : Term.LevelEquiv Q Q') : PropRel P' Q' b := nomatch h
-
-/-- Two sorts at levels of the same value `n` stay so when their levels change for equal ones. -/
-theorem Term.LevelEquiv.sort_value {s : Quality} {l : Level 0} {A' : Term 0 []} {n : Nat}
-    (h : Term.LevelEquiv (.sort ⟨s, l⟩) A') (hl : l.closedValue + 1 = n) :
-    ∃ l', A' = .sort ⟨s, l'⟩ ∧ l'.closedValue + 1 = n := by
+/-- A sort whose level changes for one of the same value. -/
+theorem Term.LevelEquiv.sort_value {s : Quality} {l : Level 0} {A' : Term 0 []} {k : Nat}
+    (h : Term.LevelEquiv (.sort ⟨s, l⟩) A') (hl : l.closedValue = k) :
+    ∃ l', A' = .sort ⟨s, l'⟩ ∧ l'.closedValue = k := by
   cases h with
   | sort _ h => exact ⟨_, rfl, (Level.equal_closed_iff.1 h) ▸ hl⟩
 
-/-- The relations of the level `n` relate the terms whose levels change for equal ones, if those of
-the level below it do. -/
-theorem UnivRel.levelInvariant {n : Nat} {below : LevelRel} (hb : below.LevelInvariant) :
-    LevelRel.LevelInvariant ⟨UnivRel n below, PropRel⟩ where
-  univ
-    | .univ h₁ h₂, hA, hB => by
-      obtain ⟨_, rfl, h₁'⟩ := hA.sort_value h₁
-      obtain ⟨_, rfl, h₂'⟩ := hB.sort_value h₂
-      exact .univ h₁' h₂'
-    | .prop h₁ h₂, hA, hB => by
-      obtain ⟨_, rfl, h₁'⟩ := hA.sort_value h₁
-      obtain ⟨_, rfl, h₂'⟩ := hB.sort_value h₂
-      exact .prop h₁' h₂'
-  univ_rel
-    | .univ _ _, ⟨R, h⟩, ht, hu => ⟨R, hb.univ h ht hu⟩
-    | .prop _ _, ⟨b, h⟩, ht, hu => ⟨b, hb.prop h ht hu⟩
-  prop := PropRel.levelEquiv
+/-- The closed levels `ls₁` and `ls₂` equal one by one give the level `l` the same value. -/
+theorem Level.closedValue_subst_equiv {k : Nat} {ls₁ ls₂ : Fin k → Level 0}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) (l : Level k) :
+    (l.subst ls₁).closedValue = (l.subst ls₂).closedValue :=
+  Level.equal_closed_iff.1 (Level.subst_equiv h l)
 
-/-- The relations of every level relate the terms whose levels change for equal ones. -/
-theorem levelRel_levelInvariant : (n : Nat) → (levelRel n).LevelInvariant
-  | 0 => UnivRel.levelInvariant LevelRel.empty_levelInvariant
-  | n + 1 => UnivRel.levelInvariant (levelRel_levelInvariant n)
+mutual
+
+/-- `ty(U_n)` gives the types whose levels change for equal ones. -/
+theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {R : TermRel} :
+    UnivRel sig ι n (fun m _ => levelRel sig ι m) v R → Term.LevelEquiv v v' →
+      UnivRel sig ι n (fun m _ => levelRel sig ι m) v' R
+  | .univ hl hk, h => by
+    obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
+    exact .univ hl' hk
+  | .prop hl hk, h => by
+    obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
+    exact .prop hl' hk
+  | .data hD hq hl hp hv hs hn hc S hS, h => by
+    subst hv
+    cases h with
+    | inst _ _ _ hls has =>
+      have hl' := hls.length_eq.symm.trans hl
+      have hls' := hls.getFin hl hl'
+      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hc S
+        fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+
+/-- `ty(Ω_n)` gives the propositions whose levels change for equal ones. -/
+theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {b : Prop} :
+    PropRel sig ι n (fun m _ => levelRel sig ι m) v b → Term.LevelEquiv v v' →
+      PropRel sig ι n (fun m _ => levelRel sig ι m) v' b
+  | .data hD hq hl hp hv hs hn hc S hS, h => by
+    subst hv
+    cases h with
+    | inst _ _ _ hls has =>
+      have hl' := hls.length_eq.symm.trans hl
+      have hls' := hls.getFin hl hl'
+      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hc S
+        fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+
+/-- A telescope whose levels change for equal ones has the same equality of the terms of its
+fields. -/
+theorem TelRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality} {ps : List Parameter}
+    {Θ Θ' : Telescope 0 [] ps} {S : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → Telescope.LevelEquiv Θ Θ' →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ' S
+  | .nil, .nil => .nil
+  | .cons hA hF G hG hresp, .cons _ _ h hΘ =>
+    have ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
+    .cons hA' (FieldRel.levelEquiv ih hF hv) G
+      (fun a ha => TelRel.levelEquiv ih (hG a ha)
+        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a))))
+      hresp
+
+/-- The type of a field whose levels change for equal ones has the same equality of its terms. -/
+theorem FieldRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality} {v v' : Term 0 []}
+    {F : TermRel} :
+    FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F → Term.LevelEquiv v v' →
+      FieldRel sig ι n (fun m _ => levelRel sig ι m) s v' F
+  | .univ hs h, hv => .univ hs (UnivRel.levelEquiv ih h hv)
+  | .univBelow hs m hm h, hv => .univBelow hs m hm ((ih m hm).univ h hv)
+  | .prop h, hv => .prop (PropRel.levelEquiv ih h hv)
+  | .propBelow m hm h, hv => .propBelow m hm ((ih m hm).prop h hv)
+
+end
+
+/-- The relations of every level give the types whose levels change for equal ones. -/
+theorem levelRel_levelInvariant {sig : Signature} {ι : Interpretation} (n : Nat) :
+    (levelRel sig ι n).LevelInvariant :=
+  have ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
+    fun m _ => levelRel_levelInvariant m
+  { univ := fun h hv => levelRel_univ_iff.2 (UnivRel.levelEquiv ih (levelRel_univ_iff.1 h) hv)
+    prop := fun h hv => levelRel_prop_iff.2 (PropRel.levelEquiv ih (levelRel_prop_iff.1 h) hv) }
+termination_by n
+decreasing_by all_goals assumption
+
+mutual
+
+/-- The equality of the terms of a type of `U_n` relates the terms whose levels change for equal
+ones, in a signature whose names are distinct. -/
+theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {v : Term 0 []}
+    {R : TermRel} {t u t' u' : Term 0 []} :
+    UnivRel sig ι n (fun m _ => levelRel sig ι m) v R → R t u → Term.LevelEquiv t t' →
+      Term.LevelEquiv u u' → R t' u'
+  | .univ (k := k) _ _, ⟨R', h₁, h₂⟩, ht, hu =>
+    ⟨R', (levelRel_levelInvariant k).univ h₁ ht, (levelRel_levelInvariant k).univ h₂ hu⟩
+  | .prop (k := k) _ _, ⟨b₁, b₂, h₁, h₂, hb⟩, ht, hu =>
+    ⟨b₁, b₂, (levelRel_levelInvariant k).prop h₁ ht, (levelRel_levelInvariant k).prop h₂ hu, hb⟩
+  | .data _ _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
+    obtain ⟨c, hcm, ts, us, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, hcS⟩ := hR
+    cases ht with
+    | ctor _ _ _ _ _ _ hts =>
+      cases hu with
+      | ctor _ _ _ _ _ _ hus =>
+        exact ⟨c, hcm, _, _, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩,
+          TelRel.rel_levelEquiv hd ih (hS c hcm) hcS hts hus⟩
+
+/-- The equality of the terms of the fields of a telescope relates the terms whose levels change
+for equal ones. -/
+theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s : Quality}
+    {ps : List Parameter} {Θ : Telescope 0 [] ps} {S : FieldsRel} {ts us ts' us' : Terms 0 []} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → S ts us → Terms.LevelEquiv ts ts' →
+      Terms.LevelEquiv us us' → S ts' us'
+  | .nil, h, .nil, .nil => h
+  | .cons _ hF G hG hresp, h, .cons ht hts, .cons hu hus => by
+    obtain ⟨h₁, h₂⟩ := h
+    have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
+    have htt := hFp.trans h₁ (hFp.symm h₁)
+    exact ⟨FieldRel.rel_levelEquiv hd ih hF h₁ ht hu,
+      (hresp _ _ (FieldRel.rel_levelEquiv hd ih hF htt (Term.LevelEquiv.refl _) ht) _ _).1
+        (TelRel.rel_levelEquiv hd ih (hG _ htt) h₂ hts hus)⟩
+
+/-- The equality of the terms of the type of a field relates the terms whose levels change for equal
+ones. -/
+theorem FieldRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s : Quality}
+    {v : Term 0 []} {F : TermRel} {t u t' u' : Term 0 []} :
+    FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F → F t u → Term.LevelEquiv t t' →
+      Term.LevelEquiv u u' → F t' u'
+  | .univ _ h, ⟨_, _, hct, hcu, hvw⟩, ht, hu =>
+    have ⟨_, hct', hv⟩ := Computes.levelEquiv hct ht
+    have ⟨_, hcu', hw⟩ := Computes.levelEquiv hcu hu
+    ⟨_, _, hct', hcu', UnivRel.rel_levelEquiv hd ih h hvw hv hw⟩
+  | .univBelow _ m hm h, ⟨_, _, hct, hcu, hvw⟩, ht, hu =>
+    have ⟨_, hct', hv⟩ := Computes.levelEquiv hct ht
+    have ⟨_, hcu', hw⟩ := Computes.levelEquiv hcu hu
+    ⟨_, _, hct', hcu', ih m hm h hvw hv hw⟩
+  | .prop _, h, _, _ => h
+  | .propBelow _ _ _, h, _, _ => h
+
+end
+
+/-- The equality of the terms of the types of every level relates the terms whose levels change for
+equal ones, in a signature whose names are distinct. -/
+theorem levelRel_relInvariant {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    (n : Nat) : (levelRel sig ι n).RelInvariant :=
+  have ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant :=
+    fun m _ => levelRel_relInvariant hd m
+  fun h => UnivRel.rel_levelEquiv hd ih (levelRel_univ_iff.1 h)
+termination_by n
+decreasing_by all_goals assumption
 
 /-- A canonical type whose levels change for equal ones has the same equality of its terms. -/
-theorem HasEq.levelEquiv {v v' : Term 0 []} {R : TermRel} (hA : HasEq v R)
-    (h : Term.LevelEquiv v v') : HasEq v' R :=
+theorem HasEq.levelEquiv {sig : Signature} {ι : Interpretation} {v v' : Term 0 []} {R : TermRel}
+    (hA : HasEq sig ι v R) (h : Term.LevelEquiv v v') : HasEq sig ι v' R :=
   match hA with
-  | .univ n hn => .univ n ((levelRel_levelInvariant n).univ hn h h)
-  | .prop n b hn hR => .prop n b ((levelRel_levelInvariant n).prop hn h h) hR
+  | .univ n hn => .univ n ((levelRel_levelInvariant n).univ hn h)
+  | .prop n b hn hR => .prop n b ((levelRel_levelInvariant n).prop hn h) hR
 
 /-- The equality of the terms of a canonical type relates the terms whose levels change for equal
-ones. -/
-theorem HasEq.rel_levelEquiv {v : Term 0 []} {R : TermRel} {t u t' u' : Term 0 []}
-    (hA : HasEq v R) (htu : R t u) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u') :
-    R t' u' :=
+ones, in a signature whose names are distinct. -/
+theorem HasEq.rel_levelEquiv {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R : TermRel}
+    {t u t' u' : Term 0 []} (hd : sig.Distinct) (hA : HasEq sig ι v R) (htu : R t u)
+    (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u') : R t' u' :=
   match hA with
-  | .univ n hn => (levelRel_levelInvariant n).univ_rel hn htu ht hu
+  | .univ n hn => levelRel_relInvariant hd n hn htu ht hu
   | .prop _ _ _ hR => (hR t' u').2 ((hR t u).1 htu)
 
 /-- A proposition whose levels change for equal ones stays a proposition. -/
-theorem IsProp.levelEquiv {v v' : Term 0 []} (hA : IsProp v) (h : Term.LevelEquiv v v') :
-    IsProp v' :=
+theorem IsProp.levelEquiv {sig : Signature} {ι : Interpretation} {v v' : Term 0 []}
+    (hA : IsProp sig ι v) (h : Term.LevelEquiv v v') : IsProp sig ι v' :=
   let ⟨n, b, hn⟩ := hA
-  ⟨n, b, (levelRel_levelInvariant n).prop hn h h⟩
+  ⟨n, b, (levelRel_levelInvariant n).prop hn h⟩
 
 /-! ## Closed Judgments
 No closed judgment tells apart two terms whose levels change for equal ones. -/
@@ -504,9 +857,9 @@ theorem EqTypeClause.levelEquiv {sig : Signature} {ι : Interpretation} {A B A' 
   ⟨_, _, R, hcA', hcB', hRA.levelEquiv hA₀, hRB.levelEquiv hB₀⟩
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` still hold when the levels of the terms and of the type
-change for equal ones. -/
+change for equal ones, in a signature whose names are distinct. -/
 theorem EqTermClause.levelEquiv {sig : Signature} {ι : Interpretation} {t u A t' u' A' : Term 0 []}
-    (htu : EqTermClause sig ι t u A) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u')
+    (hd : sig.Distinct) (htu : EqTermClause sig ι t u A) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u')
     (hA : Term.LevelEquiv A A') : EqTermClause sig ι t' u' A' := by
   refine ⟨fun hP' => ?_, fun hP' => ?_⟩
   · obtain ⟨_, _, _, R, hcA, hct, hcu, hR, hvw⟩ :=
@@ -514,10 +867,10 @@ theorem EqTermClause.levelEquiv {sig : Signature} {ι : Interpretation} {t u A t
     obtain ⟨_, hcA', hA₀⟩ := hcA.levelEquiv hA
     obtain ⟨_, hct', hv⟩ := hct.levelEquiv ht
     obtain ⟨_, hcu', hw⟩ := hcu.levelEquiv hu
-    exact ⟨_, _, _, R, hcA', hct', hcu', hR.levelEquiv hA₀, hR.rel_levelEquiv hvw hv hw⟩
+    exact ⟨_, _, _, R, hcA', hct', hcu', hR.levelEquiv hA₀, hR.rel_levelEquiv hd hvw hv hw⟩
   · obtain ⟨_, R, hcA, hR, htu'⟩ := htu.2 (hP'.levelEquiv hA.symm)
     obtain ⟨_, hcA', hA₀⟩ := hcA.levelEquiv hA
-    exact ⟨_, R, hcA', hR.levelEquiv hA₀, hR.rel_levelEquiv htu' ht hu⟩
+    exact ⟨_, R, hcA', hR.levelEquiv hA₀, hR.rel_levelEquiv hd htu' ht hu⟩
 
 /-- `(⊨_type≡)` still holds when the levels of the types change for equal ones. -/
 theorem ValidEqType₀.levelEquiv {sig : Signature} {ι : Interpretation} {A B A' B' : Term 0 []}
@@ -530,6 +883,6 @@ ones. -/
 theorem ValidEqTerm₀.levelEquiv {sig : Signature} {ι : Interpretation} {t u A t' u' A' : Term 0 []}
     (htu : ValidEqTerm₀ sig ι t u A) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u')
     (hA : Term.LevelEquiv A A') : ValidEqTerm₀ sig ι t' u' A' :=
-  ⟨htu.1.levelEquiv hA hA, htu.2.levelEquiv ht hu hA⟩
+  ⟨htu.1.levelEquiv hA hA, htu.2.levelEquiv htu.1.1 ht hu hA⟩
 
 end Sic.Core
