@@ -185,7 +185,8 @@ theorem ValidSig.hasConstant {ι : Interpretation} {sig : Signature} (hsig : Val
 /-- A meaningful signature of the core has no declared type, since the kinds of declarations give the
 meaning of their type declarations. -/
 theorem ValidSig.not_hasDeclaredType {ι : Interpretation} {sig : Signature} (hsig : ValidSig ι sig)
-    {D : Name} {decl : TypeDeclaration} : ¬ sig.HasDeclaredType D decl := fun ⟨hd, _⟩ => by
+    {D : Name} {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope} :
+    ¬ sig.HasDeclaredType D decl T := fun ⟨hd, _⟩ => by
   obtain ⟨pre, post, rfl⟩ := List.append_of_mem hd
   have h := ValidSig.drop pre hsig
   simp only [ValidSig] at h

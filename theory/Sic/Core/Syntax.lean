@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.GradeVector
 public import Sic.Core.Universe
 public import Sic.Grade
 public import Sic.Mode
@@ -278,10 +279,13 @@ structure Constructor (j g k : Nat) (Δ : Scope) where
   fields : (I : Instance j g) → Telescope k Δ (params I)
 
 -- ADE: none.
-/-- `D ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration and its constructors, in order. -/
+/-- `D ▶ ζ ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it uses
+the parameters `Δ`, and its constructors, in order. -/
 structure DataType (j g k : Nat) (Δ : Scope) where
   /-- The name `D`. -/
   name : Name
+  /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
+  usage : Instance j g → GradeVector Δ.length
   /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
   constructors : List (Constructor j g k Δ)
 
@@ -350,12 +354,14 @@ inductive Signature.HasConstant (sig : Signature) :
 
 -- ADE: none.
 /--
-`D.{s̄; l̄; p̄} Δ : κ ∈ Σ`: the signature has the declared type `D`, of the type declaration `decl`,
-whose variables, parameters and sort are those of `D`, which the rules of the declared types share.
+`D.{s̄; l̄; p̄} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, the data type `T` of the type
+declaration `decl`, whose variables, parameters and sort are those of `D`, and whose grades `ζ` are
+those of `T`, which the rules of the declared types share.
 RFC: `\in_D`
 -/
-def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclaration) : Prop :=
-  .typeDeclaration decl ∈ sig ∧ D ∈ decl.names
+def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclaration)
+    (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
+  .typeDeclaration decl ∈ sig ∧ T ∈ decl.types ∧ T.name = D
 
 /-- The names of a signature are distinct: each entry introduces names that no entry before it
 does.

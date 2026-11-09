@@ -12,14 +12,24 @@ Usage is defined on the term and the signature alone, whose binders and entries 
 a second-order variable uses its arguments with the grades of the parameters of its telescope, which
 its scope gives.
 
-The core gives the usage of its variables, of its constants and of its sorts, and the rule `(sub)`;
-the kinds of declarations give the usage of their instances and of their terms.
-ADE have no second-order variables, no constants and no sorts of propositions.
+The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
+parameters, which the declaration gives and its formation checks against the usage of the telescopes
+of its constructors, defined here; the usage of the constructors and of the recursors is not given
+yet.
+ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/
 
 @[expose] public section
 
 namespace Sic.Core
+
+-- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
+/-- `γ • (r · p₁) • … • (r · pₐ)`: the vector `γ` extended by a grade for each variable of a telescope
+whose parameters are `ps`, the grade `pᵢ` of its entry multiplied by `r`, the first variable first. -/
+def GradeVector.extendParams {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+    (ps : List Parameter) → GradeVector (Γ.extend ps.length).length
+  | [] => γ
+  | p :: ps => GradeVector.extendParams (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps
 
 mutual
 
@@ -49,6 +59,15 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- A sort uses no variable.
   RFC: `\kappa_{▶}` -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)
+  -- ADE: none.
+  /-- An instance of a declared type uses the variables of its arguments as many times as the type
+  uses its parameters, as the grades `ζ` of the type at the instance say. -/
+  | inst {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
+      {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
+      {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades) (has : UsageInstanceArgs sig δ m (T.usage (.ofLists qs ps hq hp)) as) :
+      Usage sig δ m (.inst D qs ls ps as)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{▶}` -/
@@ -70,6 +89,62 @@ inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : Lis
       (hts : UsageArgs sig δ m ts) :
       UsageArgs sig ((p.usage ·ᶜ γ) +ᶜ δ) m (.cons t ts : Args k Γ (p :: ps))
 
+-- ADE: none.
+/-- `Σ; γ ⊢ ā ▶ ζ; m`: checked in the mode `m`, the arguments `ā` of an instance whose type uses its
+parameters with the grades `ζ` use the variables of their scope as `γ` allows. -/
+inductive UsageInstanceArgs (sig : Signature) : {k : Nat} → {Γ Δ : Scope} → GradeVector Γ.length →
+    Mode → GradeVector Δ.length → InstanceArgs k Γ Δ → Prop where
+  /-- No argument uses no variable. -/
+  | nil {k : Nat} {Γ : Scope} {m : Mode} {ζ : GradeVector ([] : Scope).length} :
+      UsageInstanceArgs sig 𝟘ᶜ m ζ (.nil : InstanceArgs k Γ [])
+  /-- The arguments of the parameters before a variable, and its argument, of the grade `ζ 0` of
+  the variable, checked in the mode `m ⊙ ζ 0`. -/
+  | var {k : Nat} {Γ Δ : Scope} {as : InstanceArgs k Γ Δ} {a : Term k Γ} {m : Mode}
+      {ζ : GradeVector (Scope.Entry.var :: Δ).length} {γ δ : GradeVector Γ.length}
+      (has : UsageInstanceArgs sig γ m (fun x => ζ x.succ) as) (ha : Usage sig δ (m ⊙ ζ 0) a) :
+      UsageInstanceArgs sig (γ +ᶜ (ζ 0 ·ᶜ δ)) m ζ (.snoc (e := .var) as a)
+  /-- The arguments of the parameters before a second-order variable, and the abstraction for it,
+  of the grade `ζ 0` of the variable, whose term, checked in the mode `m' = m ⊙ ζ 0`, uses each
+  variable of the telescope as its grade `p` allows, as `⌜m'⌝ · p`. -/
+  | secondOrder {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+      {as : InstanceArgs k Γ Δ} {B : Term k (Γ.extend ps.length)} {m : Mode}
+      {ζ : GradeVector (Scope.Entry.secondOrder ps χ₀ :: Δ).length} {γ δ : GradeVector Γ.length}
+      (has : UsageInstanceArgs sig γ m (fun x => ζ x.succ) as)
+      (hB : Usage sig (δ.extendParams (m ⊙ ζ 0).grade ps) (m ⊙ ζ 0) B) :
+      UsageInstanceArgs sig (γ +ᶜ (ζ 0 ·ᶜ δ)) m ζ (.snoc (e := .secondOrder ps χ₀) as B)
+
 end
+
+-- ADE: `ΠΣₘ`, in `Graded/Usage.agda`, once for each entry.
+/-- `Σ; γ ⊢ Θ ▶ m`: checked in the mode `m`, the types of the telescope `Θ` use the variables of its
+scope as `γ` allows, each entry `x : A ▶ p; q ◀ r` counting the uses of its type `p` times, and the
+types after it using `x` as `q` allows. -/
+inductive UsageTelescope (sig : Signature) {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
+    GradeVector Γ.length → Mode → Telescope k Γ ps → Prop where
+  /-- The empty telescope uses no variable. -/
+  | nil {Γ : Scope} {m : Mode} : UsageTelescope sig 𝟘ᶜ m (.nil : Telescope k Γ [])
+  /-- The type of the first entry, checked in the mode `m ⊙ p`, and the types after it, which use
+  its variable as `⌜m⌝ · q` allows. -/
+  | cons {Γ : Scope} {ps : List Parameter} {q : Grade} {p : Parameter} {A : Term k Γ}
+      {Θ : Telescope k (.var :: Γ) ps} {m : Mode} {γ δ : GradeVector Γ.length}
+      (hA : Usage sig γ (m ⊙ p.usage) A) (hΘ : UsageTelescope sig (Γ := .var :: Γ) (δ ∙ (m.grade * q)) m Θ) :
+      UsageTelescope sig ((p.usage ·ᶜ γ) +ᶜ δ) m (.cons q p A Θ)
+  /-- A telescope may be given grades lower than its uses. -/
+  | sub {Γ : Scope} {ps : List Parameter} {Θ : Telescope k Γ ps} {m : Mode}
+      {γ δ : GradeVector Γ.length} (h : UsageTelescope sig γ m Θ) (hle : δ ≤ᶜ γ) :
+      UsageTelescope sig δ m Θ
+
+-- ADE: none.
+/-- `Σ; γ ⊢ c̄ ▶ m`: checked in the mode `m`, the telescopes of the constructors `c̄` of a data type,
+at the instance `ι`, use the variables of their scope as `γ` allows, the uses of all the
+constructors added, since the type mentions all of them. -/
+inductive UsageConstructors (sig : Signature) {j g k : Nat} {Δ : Scope} (ι : Instance j g) :
+    GradeVector Δ.length → Mode → List (Constructor j g k Δ) → Prop where
+  /-- No constructor uses no variable. -/
+  | nil {m : Mode} : UsageConstructors sig ι 𝟘ᶜ m []
+  /-- The telescope of the first constructor, and those of the others. -/
+  | cons {c : Constructor j g k Δ} {cs : List (Constructor j g k Δ)} {m : Mode}
+      {γ δ : GradeVector Δ.length} (hΘ : UsageTelescope sig γ m (c.fields ι))
+      (hcs : UsageConstructors sig ι δ m cs) : UsageConstructors sig ι (γ +ᶜ δ) m (c :: cs)
 
 end Sic.Core

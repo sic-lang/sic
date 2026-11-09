@@ -265,8 +265,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   sort of its type declaration.
   RFC: `D` -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
-      {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
@@ -342,8 +342,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- Two instances of a declared type with equal arguments at equal levels are equal.
   RFC: `D_\equiv` -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
-      {D : Name} {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
-      {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl)
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
+      {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -459,6 +459,26 @@ inductive WfTelescope (sig : Signature) {k : Nat} :
       (hκ : κ₁ ≼ κ₂) (hΘ : WfTelescope sig (ctx.var A) Θ κ₂)
       (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfTelescope sig ctx (.cons q p A Θ) κ₂
+
+-- ADE: none.
+/--
+`Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: for each instance of the sort and grade variables,
+the parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
+constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow; the constructors of each
+type have distinct names.
+The fields are checked in the signature `Σ`, which the block does not extend, so that no type of the
+block occurs in them: the block is not recursive.
+-/
+inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
+  /-- The rule, with the uses `γ` of the constructors of each type at each instance. -/
+  | intro {sig : Signature} {decl : TypeDeclaration}
+      (hΔ : ∀ ι, WfCtx sig (decl.params ι))
+      (hΘ : ∀ ι, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
+        WfTelescope sig (decl.params ι) (c.fields ι) (decl.sort ι))
+      (hu : ∀ ι, ∀ T ∈ decl.types, ∃ γ, UsageConstructors sig ι γ .oneOne T.constructors ∧
+        T.usage ι ≤ᶜ γ)
+      (hc : ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup) :
+      WfTypeDeclaration sig decl
 
 
 /-! ## Presuppositions
