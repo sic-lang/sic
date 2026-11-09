@@ -1300,11 +1300,12 @@ theorem _root_.List.idxOf?_map_of_nodup {α : Type} {f : α → Name} :
     cases i with
     | zero =>
       cases ha
-      simp [List.idxOf?_cons]
+      rw [List.map_cons, List.idxOf?_cons, beq_iff_eq.2 rfl, ite_eq_left_of_eq_true _ _ (eq_true rfl)]
     | succ i =>
       have hne : f b ≠ f a := fun he => hn.1 (he ▸ List.mem_map_of_mem (List.mem_of_getElem? ha))
-      rw [List.map_cons, List.idxOf?_cons]
-      simp only [beq_iff_eq, hne, ↓reduceIte, List.idxOf?_map_of_nodup hn.2 ha, Option.map_some]
+      rw [List.map_cons, List.idxOf?_cons, beq_eq_false_iff_ne.2 hne,
+        ite_eq_right_of_eq_false _ _ (eq_false Bool.false_ne_true), List.idxOf?_map_of_nodup hn.2 ha]
+      rfl
 
 /-- In a signature whose names are distinct, the position of a codata type is its position in the
 block of its declaration. -/
