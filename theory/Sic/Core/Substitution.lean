@@ -697,7 +697,8 @@ theorem Branches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
   | .cons n m u us => by
     rw [Branches.subst₀, Branches.subst₀_id_of h us, Term.subst₀_id_of (Subst₀.liftN_id_of _ h) u]
 
-
+/-- A substitution of the first order that renames each variable to itself changes no telescope.
+RFC: `\mathsf{id}_\sigma.\Theta` -/
 theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Parameter}
     {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x : Var Γ a), σ x = .var x) :
     (Θ : Telescope k Γ ps) → Θ.subst₀ σ = Θ
@@ -2029,7 +2030,8 @@ theorem Branches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ�
     rw [Branches.subst, Branches.subst, Branches.subst,
       Branches.subst_subst_of h us, Term.subst_subst_of (Subst.liftN_subst_of _ h) u]
 
-
+/-- Substituting a telescope by `θ₁` then by `θ₂` is substituting it by their composition `θ₃`.
+RFC: `\mathsf{comp}_\theta.\Theta` -/
 theorem Telescope.subst_subst_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ}
     (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
@@ -2632,7 +2634,9 @@ theorem Branches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k
       Branches.subst₀, Branches.substLevels_subst₀_of h us,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) u]
 
-
+/-- The instantiation of the level variables of a telescope commutes with the substitutions of the
+first order.
+RFC: `\mathsf{comm}_{l\sigma}.\Theta` -/
 theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
@@ -2762,7 +2766,9 @@ theorem Branches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fi
     rw [Branches.substLevels, Branches.substLevels, Branches.substLevels,
       Branches.substLevels_substLevels ls₁ ls₂ us, Term.substLevels_substLevels ls₁ ls₂ u]
 
-
+/-- Instantiating the level variables of a telescope by `ls₁` then by `ls₂` is instantiating them by
+their composition.
+RFC: `\mathsf{comp}_l.\Theta` -/
 theorem Telescope.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {ps : List Parameter}
     (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
     (Θ : Telescope k Γ ps) →
@@ -2948,7 +2954,9 @@ theorem Branches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k �
       Branches.subst, Branches.substLevels_subst_of h us,
       Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) u]
 
-
+/-- The instantiation of the level variables of a telescope commutes with the substitutions of the
+second order.
+RFC: `\mathsf{comm}_{l\theta}.\Theta` -/
 theorem Telescope.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
