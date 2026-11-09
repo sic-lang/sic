@@ -63,11 +63,15 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       {as₁ as₂ : InstanceArgs k Γ Δ} (c : Name) {ts₁ ts₂ : Terms k Γ} (h : Level.ListEquiv ls₁ ls₂)
       (has : InstanceArgs.LevelEquiv as₁ as₂) (hts : Terms.LevelEquiv ts₁ ts₂) :
       Term.LevelEquiv (.ctor D qs ls₁ ps as₁ c ts₁) (.ctor D qs ls₂ ps as₂ c ts₂)
-  /-- A recursor of a term, motives and branches equal up to their levels. -/
-  | recursor {Γ : Scope} (r : Grade) {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ}
-      {us₁ us₂ : Branches k Γ} (h : Term.LevelEquiv t₁ t₂) (hCs : Motives.LevelEquiv Cs₁ Cs₂)
-      (hus : Branches.LevelEquiv us₁ us₂) :
-      Term.LevelEquiv (.recursor r t₁ Cs₁ us₁) (.recursor r t₂ Cs₂ us₂)
+  /-- A recursor of an instance at equal levels, with arguments, a term, motives and branches
+  equal up to their levels. -/
+  | recursor {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
+      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ}
+      {us₁ us₂ : Branches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
+      (has : InstanceArgs.LevelEquiv as₁ as₂) (h : Term.LevelEquiv t₁ t₂)
+      (hCs : Motives.LevelEquiv Cs₁ Cs₂) (hus : Branches.LevelEquiv us₁ us₂) :
+      Term.LevelEquiv (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
+        (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂)
 
 /-- The arguments of a telescope, equal up to their levels one by one. -/
 inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
@@ -137,7 +141,8 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
   | .inst D qs ls ps as => .inst D qs ps (Level.ListEquiv.refl ls) (InstanceArgs.LevelEquiv.refl as)
   | .ctor D qs ls ps as c ts => .ctor D qs ps c (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ts)
-  | .recursor r t Cs us => .recursor r (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
+  | .recursor r D qs ls ps as t Cs us => .recursor r D qs ps (Level.ListEquiv.refl ls)
+      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
       (Branches.LevelEquiv.refl us)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
@@ -175,7 +180,8 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .const f qs ps h => .const f qs ps h.symm
   | .inst D qs ps h has => .inst D qs ps h.symm has.symm
   | .ctor D qs ps c h has hts => .ctor D qs ps c h.symm has.symm hts.symm
-  | .recursor r h hCs hus => .recursor r h.symm hCs.symm hus.symm
+  | .recursor r D qs ps hl has h hCs hus =>
+    .recursor r D qs ps hl.symm has.symm h.symm hCs.symm hus.symm
 
 theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
     Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
@@ -216,7 +222,8 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {t₁ 
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.rename ξ)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename ξ) (hts.rename ξ)
-  | .recursor r h hCs hus => .recursor r (h.rename ξ) (hCs.rename ξ) (hus.rename ξ)
+  | .recursor r D qs ps hl has h hCs hus =>
+    .recursor r D qs ps hl (has.rename ξ) (h.rename ξ) (hCs.rename ξ) (hus.rename ξ)
 
 theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
     {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
@@ -272,8 +279,9 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
   | .ctor D qs ls ps as c ts =>
     .ctor D qs ps c (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
       (Terms.substLevels_levelEquiv h ts)
-  | .recursor r t Cs us =>
-    .recursor r (Term.substLevels_levelEquiv h t) (Motives.substLevels_levelEquiv h Cs)
+  | .recursor r D qs ls ps as t Cs us =>
+    .recursor r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+      (Term.substLevels_levelEquiv h t) (Motives.substLevels_levelEquiv h Cs)
       (Branches.substLevels_levelEquiv h us)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
@@ -431,7 +439,8 @@ theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst�
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.subst₀ hσ)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst₀ hσ) (hts.subst₀ hσ)
-  | .recursor r h hCs hus => .recursor r (h.subst₀ hσ) (hCs.subst₀ hσ) (hus.subst₀ hσ)
+  | .recursor r D qs ps hl has h hCs hus =>
+    .recursor r D qs ps hl (has.subst₀ hσ) (h.subst₀ hσ) (hCs.subst₀ hσ) (hus.subst₀ hσ)
 
 theorem Args.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Args k Δ ps} :
@@ -518,7 +527,8 @@ theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k �
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.subst hθ)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst hθ) (hts.subst hθ)
-  | .recursor r h hCs hus => .recursor r (h.subst hθ) (hCs.subst hθ) (hus.subst hθ)
+  | .recursor r D qs ps hl has h hCs hus =>
+    .recursor r D qs ps hl (has.subst hθ) (h.subst hθ) (hCs.subst hθ) (hus.subst hθ)
 
 theorem Args.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {θ₁ θ₂ : Subst k Γ Δ}
     (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Args k Δ ps} :

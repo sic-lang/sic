@@ -219,8 +219,8 @@ mutual
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
 `f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`, a constructor keeps its fields, each at the grade of its
-field, and a recursor keeps its term, at its grade, and its branches, without its motives; a
-second-order variable has no erasure, since the scope has none.
+field, and a recursor keeps its term, at its grade, and its branches, without its instance and its
+motives; a second-order variable has no erasure, since the scope has none.
 The grades of the fields are those of the declaration of the constructor in the signature `sig`;
 a field whose grade the signature does not give, in a term that no declaration types, is erased.
 Whether a grade is in `S` decides the erasure of its position, so that `S` is decidable, as the
@@ -235,7 +235,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
   | .const f _ _ ps => .const f ps
   | .inst .. => .erased
   | .ctor D qs _ ps _ c ts => .ctor c (ts.erase sig S hΓ ((sig.fieldGrades D c qs ps).getD []))
-  | .recursor r t _ us =>
+  | .recursor r _ _ _ _ _ t _ us =>
     .recursor (if r ∈ S then .erased else t.erase sig S hΓ) (us.erase sig S hΓ)
 
 -- ADE: none.
@@ -369,7 +369,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
   | .sort _ | .inst .. => .erased
   | .const .. => .const
   | .ctor _ _ _ _ _ _ ts => .ctor (Terms.erase_lessDefined sig h hΓ ts _)
-  | .recursor r t _ us => by
+  | .recursor r _ _ _ _ _ t _ us => by
     simp only [Term.erase]
     refine .recursor ?_ (Branches.erase_lessDefined sig h hΓ us)
     by_cases h₂ : r ∈ S₂

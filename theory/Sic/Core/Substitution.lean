@@ -71,7 +71,8 @@ def Term.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Term k Δ → Term k Γ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.rename ξ)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.rename ξ) c (ts.rename ξ)
-  | .recursor r t Cs us => .recursor r (t.rename ξ) (Cs.rename ξ) (us.rename ξ)
+  | .recursor r D qs ls ps as t Cs us =>
+    .recursor r D qs ls ps (as.rename ξ) (t.rename ξ) (Cs.rename ξ) (us.rename ξ)
 
 /-- The arguments `t̄` renamed by `ξ`. -/
 def Args.rename {Γ Δ : Scope} {a : List Parameter} (ξ : Ren Γ Δ) : Args k Δ a → Args k Γ a
@@ -174,7 +175,8 @@ def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst₀ σ)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst₀ σ) c (ts.subst₀ σ)
-  | .recursor r t Cs us => .recursor r (t.subst₀ σ) (Cs.subst₀ σ) (us.subst₀ σ)
+  | .recursor r D qs ls ps as t Cs us =>
+    .recursor r D qs ls ps (as.subst₀ σ) (t.subst₀ σ) (Cs.subst₀ σ) (us.subst₀ σ)
 
 /-- The arguments `t̄` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma.\bar t` -/
@@ -256,7 +258,8 @@ def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst θ)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst θ) c (ts.subst θ)
-  | .recursor r t Cs us => .recursor r (t.subst θ) (Cs.subst θ) (us.subst θ)
+  | .recursor r D qs ls ps as t Cs us =>
+    .recursor r D qs ls ps (as.subst θ) (t.subst θ) (Cs.subst θ) (us.subst θ)
 
 /-- The arguments `t̄` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta.\bar t` -/
@@ -323,8 +326,9 @@ def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k
   | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
   | .ctor D qs ls ps as c ts =>
     .ctor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c (ts.substLevels ls')
-  | .recursor r t Cs us =>
-    .recursor r (t.substLevels ls') (Cs.substLevels ls') (us.substLevels ls')
+  | .recursor r D qs ls ps as t Cs us =>
+    .recursor r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls')
+      (Cs.substLevels ls') (us.substLevels ls')
 
 /-- The arguments `t̄` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l.\bar t` -/
@@ -444,8 +448,9 @@ theorem Term.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ
   | .inst D qs ls ps as => by rw [Term.rename, InstanceArgs.rename_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, InstanceArgs.rename_id_of h as, Terms.rename_id_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.rename, Term.rename_id_of h t, Motives.rename_id_of h Cs, Branches.rename_id_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.rename, InstanceArgs.rename_id_of h as, Term.rename_id_of h t,
+      Motives.rename_id_of h Cs, Branches.rename_id_of h us]
 
 theorem Args.rename_id_of {Γ : Scope} {a : List Parameter} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
     (ts : Args k Γ a) → ts.rename ξ = ts
@@ -507,8 +512,9 @@ theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x
   | .inst D qs ls ps as => by rw [Term.subst₀, InstanceArgs.subst₀_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Terms.subst₀_id_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst₀, Term.subst₀_id_of h t, Motives.subst₀_id_of h Cs, Branches.subst₀_id_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Term.subst₀_id_of h t,
+      Motives.subst₀_id_of h Cs, Branches.subst₀_id_of h us]
 
 theorem Args.subst₀_id_of {Γ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (ts : Args k Γ a) → ts.subst₀ σ = ts
@@ -612,9 +618,9 @@ theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Re
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
       Terms.rename_rename_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.rename, Term.rename, Term.rename, Term.rename_rename_of h t,
-      Motives.rename_rename_of h Cs, Branches.rename_rename_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
+      Term.rename_rename_of h t, Motives.rename_rename_of h Cs, Branches.rename_rename_of h us]
 
 theorem Args.rename_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
     {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
@@ -702,9 +708,9 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ :
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
       Terms.subst₀_rename_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.rename, Term.subst₀, Term.subst₀, Term.subst₀_rename_of h t,
-      Motives.subst₀_rename_of h Cs, Branches.subst₀_rename_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
+      Term.subst₀_rename_of h t, Motives.subst₀_rename_of h Cs, Branches.subst₀_rename_of h us]
 
 theorem Args.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
@@ -794,9 +800,9 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ :
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
       Terms.rename_subst₀_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst₀, Term.rename, Term.subst₀, Term.rename_subst₀_of h t,
-      Motives.rename_subst₀_of h Cs, Branches.rename_subst₀_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
+      Term.rename_subst₀_of h t, Motives.rename_subst₀_of h Cs, Branches.rename_subst₀_of h us]
 
 theorem Args.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
@@ -895,9 +901,9 @@ theorem Term.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
       Terms.subst₀_subst₀_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst₀, Term.subst₀, Term.subst₀, Term.subst₀_subst₀_of h t,
-      Motives.subst₀_subst₀_of h Cs, Branches.subst₀_subst₀_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
+      Term.subst₀_subst₀_of h t, Motives.subst₀_subst₀_of h Cs, Branches.subst₀_subst₀_of h us]
 
 theorem Args.subst₀_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {τ : Subst₀ k Γ Δ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
@@ -1169,9 +1175,9 @@ theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren �
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
       Terms.subst_rename_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.rename, Term.subst, Term.subst, Term.subst_rename_of h t, Motives.subst_rename_of h Cs,
-      Branches.subst_rename_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
+      Term.subst_rename_of h t, Motives.subst_rename_of h Cs, Branches.subst_rename_of h us]
 
 theorem Args.subst_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
@@ -1262,9 +1268,9 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren �
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
       Terms.rename_subst_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst, Term.rename, Term.subst, Term.rename_subst_of h t, Motives.rename_subst_of h Cs,
-      Branches.rename_subst_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
+      Term.rename_subst_of h t, Motives.rename_subst_of h Cs, Branches.rename_subst_of h us]
 
 theorem Args.rename_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
@@ -1394,9 +1400,9 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
       Terms.subst_subst₀_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, Term.subst_subst₀_of h t,
-      Motives.subst_subst₀_of h Cs, Branches.subst_subst₀_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
+      Term.subst_subst₀_of h t, Motives.subst_subst₀_of h Cs, Branches.subst_subst₀_of h us]
 
 theorem Args.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
@@ -1576,9 +1582,9 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : 
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
       Terms.subst_subst_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst, Term.subst, Term.subst, Term.subst_subst_of h t, Motives.subst_subst_of h Cs,
-      Branches.subst_subst_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
+      Term.subst_subst_of h t, Motives.subst_subst_of h Cs, Branches.subst_subst_of h us]
 
 theorem Args.subst_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ₁ : Subst k Δ Ξ}
     {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ}
@@ -1661,8 +1667,9 @@ theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var
   | .inst D qs ls ps as => by rw [Term.subst, InstanceArgs.subst_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, InstanceArgs.subst_id_of h as, Terms.subst_id_of h ts]
-  | .recursor r t Cs us => by
-    rw [Term.subst, Term.subst_id_of h t, Motives.subst_id_of h Cs, Branches.subst_id_of h us]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.subst, InstanceArgs.subst_id_of h as, Term.subst_id_of h t, Motives.subst_id_of h Cs,
+      Branches.subst_id_of h us]
 
 theorem Args.subst_id_of {Γ : Scope} {a : List Parameter} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (ts : Args k Γ a) → ts.subst θ = ts
@@ -2022,10 +2029,10 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       InstanceArgs.substLevels_rename ls' ξ as, Terms.substLevels_rename ls' ξ ts]
-  | .recursor r t Cs us => by
+  | .recursor r D qs ls ps as t Cs us => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
-      Term.substLevels_rename ls' ξ t, Motives.substLevels_rename ls' ξ Cs,
-      Branches.substLevels_rename ls' ξ us]
+      InstanceArgs.substLevels_rename ls' ξ as, Term.substLevels_rename ls' ξ t,
+      Motives.substLevels_rename ls' ξ Cs, Branches.substLevels_rename ls' ξ us]
 
 theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Parameter} (ls' : Fin k → Level k')
     (ξ : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename ξ).substLevels ls'
@@ -2111,10 +2118,10 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       InstanceArgs.substLevels_subst₀_of h as, Terms.substLevels_subst₀_of h ts]
-  | .recursor r t Cs us => by
+  | .recursor r D qs ls ps as t Cs us => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
-      Term.substLevels_subst₀_of h t, Motives.substLevels_subst₀_of h Cs,
-      Branches.substLevels_subst₀_of h us]
+      InstanceArgs.substLevels_subst₀_of h as, Term.substLevels_subst₀_of h t,
+      Motives.substLevels_subst₀_of h Cs, Branches.substLevels_subst₀_of h us]
 
 theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
@@ -2205,8 +2212,9 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
   | .ctor D qs ls ps as c ts => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Terms.substLevels_substLevels ls₁ ls₂ ts]
-  | .recursor r t Cs us => by
-    simp only [Term.substLevels, Term.substLevels_substLevels ls₁ ls₂ t,
+  | .recursor r D qs ls ps as t Cs us => by
+    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
+      InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Term.substLevels_substLevels ls₁ ls₂ t,
       Motives.substLevels_substLevels ls₁ ls₂ Cs, Branches.substLevels_substLevels ls₁ ls₂ us]
 
 theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Parameter}
@@ -2387,10 +2395,10 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
       InstanceArgs.substLevels_subst_of h as, Terms.substLevels_subst_of h ts]
-  | .recursor r t Cs us => by
+  | .recursor r D qs ls ps as t Cs us => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
-      Term.substLevels_subst_of h t, Motives.substLevels_subst_of h Cs,
-      Branches.substLevels_subst_of h us]
+      InstanceArgs.substLevels_subst_of h as, Term.substLevels_subst_of h t,
+      Motives.substLevels_subst_of h Cs, Branches.substLevels_subst_of h us]
 
 theorem Args.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}

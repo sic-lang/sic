@@ -129,11 +129,14 @@ inductive Term (k : Nat) : Scope → Type where
   its type. -/
   | ctor {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name) (ts : Terms k Γ) : Term k Γ
-  /-- `rec_r t return C̄ with ū`: the recursor, which uses the term `t` with the grade `r`, with a
-  motive `C_j` for each type of the block and a branch `u_ji` for each constructor of each type, in
-  the order of the declaration. -/
-  | recursor {Γ : Scope} (r : Grade) (t : Term k Γ) (Cs : Motives k Γ) (us : Branches k Γ) :
-      Term k Γ
+  /-- `rec_r T t return C̄ with ū`: the recursor, which uses the term `t` of the instance
+  `T = D.{s̄; l̄; p̄} ā` with the grade `r`, with a motive `C_j` for each type of the block and a
+  branch `u_ji` for each constructor of each type, in the order of the declaration; the recursor
+  carries the instance of the term it eliminates, so that its usage and its ownership read the
+  grades and the requirements of the fields at this instance. -/
+  | recursor {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
+      (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ)
+      (Cs : Motives k Γ) (us : Branches k Γ) : Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
 one first.
