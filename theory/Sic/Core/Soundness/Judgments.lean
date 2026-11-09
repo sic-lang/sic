@@ -496,6 +496,13 @@ structure Soundness : Prop where
   RFC: `\mathsf{sound}.\mathsf{def}` -/
   wfConstantDefinition : ∀ {ι : Interpretation} {sig : Signature} {d : ConstantDefinition},
     ValidInterpretation ι sig → WfConstantDefinition sig d → ValidConstantDefinition sig ι d
+  -- ADE: none.
+  /-- A well-formed constant declaration is meaningful in the signature that it extends, when the
+  interpretation gives it a term of its type, as `(hyp_ι)` asks.
+  RFC: `\mathsf{sound}.\mathsf{decl}` -/
+  wfConstantDeclaration : ∀ {ι : Interpretation} {sig : Signature} {c : ConstantDeclaration},
+    ValidInterpretation ι (.constantDeclaration c :: sig) → WfConstantDeclaration sig c →
+      ValidConstantDeclaration (.constantDeclaration c :: sig) ι c
   -- ADE: `valid`, in `Definition/LogicalRelation/Fundamental.agda`.
   /-- A well-formed context is meaningful.
   RFC: `\mathsf{sound}.\Gamma` -/
@@ -582,6 +589,7 @@ theorem soundness : Soundness where
   wfConstantDefinition hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfConstantDefinition h)
     soundnessIn.wfConstantDefinition hs.1 hs.validEntries h
+  wfConstantDeclaration hι _ := hι _ List.mem_cons_self
   wfCtx hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfCtx h)
     soundnessIn.wfCtx hs.1 hs.validEntries h
