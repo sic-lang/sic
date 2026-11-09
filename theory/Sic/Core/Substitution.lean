@@ -408,6 +408,13 @@ def Context.append : {Γ : Scope} → {ps : List Parameter} → Context k Γ →
   | _, [], ctx, .nil => ctx
   | _, _ :: _, ctx, .cons _ _ A Θ => Context.append (Γ := .var :: _) (ctx.var A) Θ
 
+/-- `Θ_c[T]`: the fields of the constructor `c` at the instance `I` of the sort and grade variables,
+the levels `ls` and the arguments `ā` of the parameters, in the scope `Γ` of the arguments.
+RFC: `\mathsf{inst}_T` -/
+def Constructor.fieldsAt {j g k' : Nat} {Γ Δ : Scope} (c : Constructor j g k' Δ) (I : Instance j g)
+    (ls : Fin k' → Level k) (as : InstanceArgs k Γ Δ) : Telescope k Γ (c.params I) :=
+  ((c.fields I).substLevels ls).subst as.toSubst
+
 /-- A closed term in the scope `Γ`, which it does not use. -/
 def Term.weakenClosed {Γ : Scope} (t : Term k []) : Term k Γ := t.rename fun x => by cases x
 
@@ -2456,5 +2463,35 @@ theorem InstanceArgs.toSubst_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k �
       (as.toSubst x).substLevels ls' = (as.substLevels ls').toSubst x
   | _, .snoc _ _, _, .zero => rfl
   | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_substLevels ls' as x
+
+/-- The terms of substituted arguments are the terms of the arguments substituted. -/
+theorem Args.terms_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.subst θ).terms = ts.terms.subst θ
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_subst θ ts)
+
+/-- The terms of arguments at instantiated levels are the terms of the arguments at these
+levels. -/
+theorem Args.terms_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    {ps : List Parameter} → (ts : Args k Γ ps) → (ts.substLevels ls').terms = ts.terms.substLevels ls'
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_substLevels ls' ts)
+
+/-- The fields of a constructor at arguments of an instance, substituted, are its fields at the
+arguments substituted. -/
+theorem Constructor.fieldsAt_subst {j g k' : Nat} {Γ Δ Ξ : Scope} (c : Constructor j g k' Ξ)
+    (I : Instance j g) (ls : Fin k' → Level k) (as : InstanceArgs k Δ Ξ) (θ : Subst k Γ Δ) :
+    (c.fieldsAt I ls as).subst θ = c.fieldsAt I ls (as.subst θ) :=
+  Telescope.subst_subst_of (InstanceArgs.toSubst_subst θ as) _
+
+/-- The fields of a constructor at levels and arguments of an instance, at instantiated levels, are
+its fields at the levels and the arguments at these levels. -/
+theorem Constructor.fieldsAt_substLevels {j g k' k'' : Nat} {Γ Δ : Scope} (c : Constructor j g k' Δ)
+    (I : Instance j g) (ls : Fin k' → Level k) (as : InstanceArgs k Γ Δ) (ls' : Fin k → Level k'') :
+    (c.fieldsAt I ls as).substLevels ls' =
+      c.fieldsAt I (fun i => (ls i).subst ls') (as.substLevels ls') := by
+  rw [Constructor.fieldsAt, Constructor.fieldsAt,
+    Telescope.substLevels_subst_of (InstanceArgs.toSubst_substLevels ls' as),
+    Telescope.substLevels_substLevels]
 
 end Sic.Core

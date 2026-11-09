@@ -154,13 +154,6 @@ def FieldsRel.cons (F : TermRel) (G : Term 0 [] → FieldsRel) : FieldsRel
   | .cons t ts, .cons u us => F t u ∧ G t ts us
   | _, _ => False
 
-/-- `Θ_c[T]`: the fields of the constructor `c` at the instance `I` of the sort and grade variables,
-the closed levels `ls` and the closed arguments `ā` of the parameters.
-RFC: `\mathsf{inst}_T` -/
-def Constructor.fieldsAt {j g k : Nat} {Δ : Scope} (c : Constructor j g k Δ) (I : Instance j g)
-    (ls : Fin k → Level 0) (as : InstanceArgs 0 [] Δ) : Telescope 0 [] (c.params I) :=
-  ((c.fields I).substLevels ls).subst as.toSubst
-
 /-- `v = T.c(t̄)`: the closed term `v` is the constructor named `c` of the declared type `D`, at some
 instance, applied to the terms `t̄`. -/
 def Term.IsCtor (D c : Name) (ts : Terms 0 []) (v : Term 0 []) : Prop :=
@@ -206,8 +199,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
         ∃ b₁ b₂, (below k (hk ▸ Nat.lt_succ_self k)).prop P b₁ ∧
           (below k (hk ▸ Nat.lt_succ_self k)).prop Q b₂ ∧ (b₁ ↔ b₂)
   /-- `(ty_D)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `U_n`, whose
-  constructors have distinct names and fields that are telescopes in `U_n`, and whose canonical
-  terms are equal by `(eq_c)`.
+  constructors have fields that are telescopes in `U_n`, and whose canonical terms are equal by
+  `(eq_c)`.
   RFC: `\mathsf{ty}_D` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -216,7 +209,6 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (hc : (T.constructors.map (·.name)).Nodup)
       (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ c ∈ T.constructors,
         TelRel sig ι n below .type (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
@@ -230,8 +222,7 @@ relations `below` of the levels below `n`, which gives each proposition its trut
 inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Term 0 [] → Prop → Prop where
   /-- `(ty_DΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `Ω_n`, whose
-  constructors have distinct names and fields that are telescopes in `Ω_n`, and whose truth is
-  `(true_D)`.
+  constructors have fields that are telescopes in `Ω_n`, and whose truth is `(true_D)`.
   RFC: `\mathsf{ty}_{D\Omega}` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -240,7 +231,6 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (hc : (T.constructors.map (·.name)).Nodup)
       (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ c ∈ T.constructors,
         TelRel sig ι n below .prop (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
@@ -655,13 +645,12 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
 -- ADE: none.
 /-- `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
 variables, the fields of each constructor are a telescope in the sort `κ`, in the context of the
-parameters, at each value of the level variables, and the constructors of each type have distinct
-names; the meaning ignores the grades.
+parameters, at each value of the level variables; the meaning ignores the grades, and the names of
+the constructors, distinct, are those of the signature.
 RFC: `{\vDash}\mathsf{data}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
-  (∀ I, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
-    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)) ∧
-    ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup
+  ∀ I, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
+    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)
 
 -- ADE: none.
 /-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/
@@ -693,13 +682,14 @@ A type is given by the clauses of one level and one sort at most, which `UnivRel
 theorem Signature.Distinct.interpret {ι : Interpretation} :
     {sig : Signature} → sig.Distinct → (sig.interpret ι).Distinct
   | [], _ => trivial
-  | e :: _, ⟨h, hnodup, hfresh⟩ => by
+  | e :: _, ⟨h, hnodup, hfresh, hc⟩ => by
     have hnames : ∀ e : Entry, (e.interpret ι).names = e.names := by
       intro e; cases e <;> rfl
-    refine ⟨h.interpret, (hnames e).symm ▸ hnodup, fun e' he' n hn => ?_⟩
-    obtain ⟨e'', he'', rfl⟩ := List.mem_map.1 he'
-    rw [hnames] at hn ⊢
-    exact hfresh e'' he'' n hn
+    refine ⟨h.interpret, (hnames e).symm ▸ hnodup, fun e' he' n hn => ?_, ?_⟩
+    · obtain ⟨e'', he'', rfl⟩ := List.mem_map.1 he'
+      rw [hnames] at hn ⊢
+      exact hfresh e'' he'' n hn
+    · cases e <;> exact hc
 
 /-- In a signature whose names are distinct, a closed term computes to one canonical term at
 most. -/
@@ -896,8 +886,8 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
     ⟨fun ⟨b₁, b₂, h₁, h₂, hb⟩ => ⟨b₂, b₁, h₂, h₁, hb.symm⟩,
       fun ⟨b₁, _, h₁, h₂, hb⟩ ⟨_, b₃, h₂', h₃, hb'⟩ =>
         ⟨b₁, b₃, h₁, h₃, hb.trans ((hL.prop_unique h₂ h₂').trans hb')⟩⟩
-  | .data _ _ _ _ _ _ _ hc _ hS =>
-    DataType.ctorRel_isPer hc fun c hcm => TelRel.isPer hd ih (hS c hcm)
+  | .data h _ _ _ _ _ _ _ hS =>
+    DataType.ctorRel_isPer (hd.constructors_nodup h) fun c hcm => TelRel.isPer hd ih (hS c hcm)
 
 /-- The equality of the terms of the fields of a telescope is a partial equivalence relation. -/
 theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -936,12 +926,12 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     cases h' with
     | prop hl' _ => subst hl; subst hl'; exact fun _ _ => .rfl
     | data _ _ _ _ hv => cases hv
-  | .data h _ _ _ hv _ _ _ _ hS, _, h' => by
+  | .data h _ _ _ hv _ _ _ hS, _, h' => by
     have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
     cases h' with
     | univ => cases hv
     | prop => cases hv
-    | data h' _ _ _ hv' _ _ _ _ hS' =>
+    | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps
@@ -956,10 +946,10 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {v : Term 0 []} {b : Prop} :
     PropRel sig ι n (fun m _ => levelRel sig ι m) v b →
       ∀ (b' : Prop), PropRel sig ι n (fun m _ => levelRel sig ι m) v b' → (b ↔ b')
-  | .data h _ _ _ hv _ _ _ _ hS, _, h' => by
+  | .data h _ _ _ hv _ _ _ hS, _, h' => by
     have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
     cases h' with
-    | data h' _ _ _ hv' _ _ _ _ hS' =>
+    | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps

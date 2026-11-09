@@ -14,7 +14,7 @@ gives each second-order variable its telescope and the ownership of its result, 
 gives each constant its ownership.
 Unlike the vector of the usage, which each premise computes and the conclusion adds, `φ` is the same
 in every premise, as the context of the typing is.
-The kinds of declarations will give the ownership of their terms.
+The data types give the ownership of their instances and of their constructors.
 -/
 
 @[expose] public section
@@ -65,6 +65,23 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   RFC: `\kappa_{◀}` -/
   | sort {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {κ : Universe k} :
       Ownership sig φ m .unrestrictedUnrestricted (.sort κ : Term k Γ)
+  /-- An instance of a declared type, a type, has the least ownership, `ωωᵖ`, which states nothing.
+  RFC: `D_{◀}` -/
+  | inst {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {D : Name} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {Δ : Scope} {as : InstanceArgs k Γ Δ} :
+      Ownership sig φ m .unrestrictedUnrestricted (.inst D qs ls ps as)
+  /-- A constructor builds a new value, which has the ownership `11ᵖ`, whatever its fields; the
+  arguments of its fields satisfy the requirements of their entries, as the arguments of a telescope
+  do.
+  RFC: `c_{◀}` -/
+  | ctor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {os : List Grade}
+      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
+      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
+      Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{sub}_{◀}` -/
   | sub {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {p q : Grade} {t : Term k Γ}

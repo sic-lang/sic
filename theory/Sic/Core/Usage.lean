@@ -69,6 +69,19 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (has : UsageInstanceArgs sig δ m (T.usage (.ofLists qs ps hq hp)) as) :
       Usage sig δ m (.inst D qs ls ps as)
+  -- ADE: none.
+  /-- A constructor uses the variables of the terms of its fields, each checked in the mode of the
+  grade of its field and counted with this grade, as the arguments of its telescope do; the
+  instance it carries uses none.
+  RFC: `c_{▶}` -/
+  | ctor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
+      {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
+      {γ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
+      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : UsageArgs sig γ m ts) :
+      Usage sig γ m (.ctor D qs ls ps as con.name ts.terms)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{▶}` -/

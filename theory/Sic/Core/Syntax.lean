@@ -191,6 +191,12 @@ inductive Branches (k : Nat) : Scope → Type where
 
 end
 
+/-- The terms `t̄` of the arguments of a telescope, without the parameters of its entries, which the
+fields of a constructor take from the declaration. -/
+def Args.terms {k : Nat} {Γ : Scope} : {ps : List Parameter} → Args k Γ ps → Terms k Γ
+  | [], .nil => .nil
+  | _ :: _, .cons t ts => .cons t ts.terms
+
 /-- The variable `x`, applied to no argument. -/
 abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var x .nil
 
@@ -371,12 +377,18 @@ def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclarati
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
   .typeDeclaration decl ∈ sig ∧ T ∈ decl.types ∧ T.name = D
 
+/-- The constructors of each type that an entry declares have distinct names. -/
+def Entry.ConstructorsDistinct : Entry → Prop
+  | .typeDeclaration decl => ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup
+  | _ => True
+
 /-- The names of a signature are distinct: each entry introduces distinct names, which no entry
-before it does.
+before it does, and the constructors of each type it declares have distinct names.
 RFC: `\mathsf{names}_\Sigma` -/
 def Signature.Distinct : Signature → Prop
   | [] => True
-  | e :: sig => Signature.Distinct sig ∧ e.names.Nodup ∧ ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
+  | e :: sig => Signature.Distinct sig ∧ e.names.Nodup ∧
+      (∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names) ∧ e.ConstructorsDistinct
 
 /-- In a signature whose names are distinct, a name is introduced by one entry at most.
 RFC: `\mathsf{unique}_\Sigma` -/
@@ -387,7 +399,7 @@ theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct →
   | nil => intro _ _ _ _ h₁; cases h₁
   | cons e sig ih =>
     intro hd e₁ e₂ n h₁ h₂ hn₁ hn₂
-    obtain ⟨h, -, hfresh⟩ := hd
+    obtain ⟨h, -, hfresh, -⟩ := hd
     rcases List.mem_cons.mp h₁ with rfl | h₁' <;> rcases List.mem_cons.mp h₂ with rfl | h₂'
     · rfl
     · exact absurd hn₂ (hfresh _ h₂' n hn₁)
@@ -398,7 +410,7 @@ theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct →
 theorem Signature.Distinct.nodup : {sig : Signature} → sig.Distinct → {e : Entry} → e ∈ sig →
     e.names.Nodup
   | [], _, _, h => nomatch h
-  | _ :: _, ⟨h, hn, _⟩, _, he => by
+  | _ :: _, ⟨h, hn, _, _⟩, _, he => by
     rcases List.mem_cons.1 he with rfl | he
     · exact hn
     · exact h.nodup he
@@ -433,6 +445,17 @@ theorem Signature.Distinct.hasDeclaredType_unique {sig : Signature} (hd : sig.Di
   simp only [Entry.names, TypeDeclaration.names] at hnodup
   exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map hnodup hT₁ hT₂ (hn₁.trans hn₂.symm))⟩
 
+/-- In a signature whose names are distinct, the constructors of a declared type have distinct
+names. -/
+theorem Signature.Distinct.constructors_nodup : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasDeclaredType D decl T → (T.constructors.map (·.name)).Nodup
+  | [], _, _, _, _, h => nomatch h.1
+  | _ :: _, ⟨hd, _, _, hc⟩, _, _, _, ⟨he, hT, hn⟩ => by
+    rcases List.mem_cons.1 he with he | he
+    · subst he; exact hc _ hT
+    · exact hd.constructors_nodup ⟨he, hT, hn⟩
+
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
   fun i => l.get (i.cast h.symm)
@@ -452,21 +475,96 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
 
 -- ADE: none.
 /-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
-the qualities `qs` and of the grades `ps`, when the signature declares them, which the erasure of a
-constructor reads.
+the qualities `qs` and of the grades `ps`, when the entry declares them. -/
+def Entry.fieldGrades (D c : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List Grade)
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.types.find? (·.name == D)).bind fun T =>
+          (T.constructors.find? (·.name == c)).map fun con =>
+            (con.params (.ofLists qs ps hq hp)).map (·.usage)
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
+the qualities `qs` and of the grades `ps`, in the last entry of the signature that declares them,
+which the erasure of a constructor reads.
 RFC: `\mathsf{grades}_c` -/
 def Signature.fieldGrades (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
     Option (List Grade) :=
-  sig.findSome? fun
-    | .typeDeclaration decl =>
-      if hq : qs.length = decl.sorts then
-        if hp : ps.length = decl.grades then
-          (decl.types.find? (·.name == D)).bind fun T =>
-            (T.constructors.find? (·.name == c)).map fun con =>
-              (con.params (.ofLists qs ps hq hp)).map (·.usage)
-        else none
-      else none
-    | _ => none
+  sig.findSome? (Entry.fieldGrades D c qs ps)
+
+/-- An element of a list whose images by `f` are distinct is the first one with its image. -/
+theorem _root_.List.find?_of_nodup_map {α : Type} {f : α → Name} :
+    {l : List α} → (l.map f).Nodup → {a : α} → a ∈ l → l.find? (f · == f a) = some a
+  | [], _, _, ha => nomatch ha
+  | b :: l, h, a, ha => by
+    rw [List.map_cons, List.nodup_cons] at h
+    rcases List.mem_cons.1 ha with rfl | ha'
+    · exact List.find?_cons_of_pos (beq_iff_eq.2 rfl)
+    · have hne : ¬ (fun x => f x == f a) b = true := fun hb => h.1 (beq_iff_eq.1 hb ▸
+        List.mem_map_of_mem ha')
+      rw [List.find?_cons_of_neg (p := fun x => f x == f a) (l := l) hne]
+      exact List.find?_of_nodup_map h.2 ha'
+
+/-- A type declaration gives the grades of the fields of a constructor of one of its types, whose
+types and constructors have distinct names, at the instance. -/
+theorem Entry.fieldGrades_of_mem {decl : TypeDeclaration}
+    (hn : (decl.types.map (·.name)).Nodup)
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.types)
+    (hc : (T.constructors.map (·.name)).Nodup)
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope} (hcon : con ∈ T.constructors)
+    {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hp : ps.length = decl.grades) :
+    Entry.fieldGrades T.name con.name qs ps (.typeDeclaration decl) =
+      some ((con.params (.ofLists qs ps hq hp)).map (·.usage)) := by
+  simp only [Entry.fieldGrades]
+  split
+  · try split
+    all_goals first
+      | contradiction
+      | rw [List.find?_of_nodup_map hn hT, Option.bind_some, List.find?_of_nodup_map hc hcon,
+          Option.map_some]
+  · contradiction
+
+/-- An entry that does not introduce the name `D` gives the grades of the fields of no constructor
+of `D`. -/
+theorem Entry.fieldGrades_of_not_mem {D c : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.fieldGrades D c qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.types.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ List.mem_map_of_mem hT)
+    simp only [Entry.fieldGrades]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.bind_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- In a signature whose names are distinct, the grades of the fields of a constructor of a declared
+type are those of its telescope at the instance. -/
+theorem Signature.Distinct.fieldGrades : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasDeclaredType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
+    con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    sig.fieldGrades D con.name qs ps = some ((con.params (.ofLists qs ps hq hp)).map (·.usage))
+  | [], _, _, _, _, h, _, _, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, con, hcon, qs, ps, hq, hp => by
+    unfold Signature.fieldGrades
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hg := Entry.fieldGrades_of_mem hn hT (hc T hT) hcon hq hp
+      rw [hD] at hg
+      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
+    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ List.mem_map_of_mem hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldGrades_of_not_mem hDe]; rfl)]
+      exact hd.fieldGrades ⟨he', hT, hD⟩ hcon hq hp
 
 /-- The length of the scope `Γ` extended by `a` variables. -/
 theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a

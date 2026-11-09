@@ -277,6 +277,12 @@ structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
   /-- The first part of a sum in `S` is in `S`.
   RFC: `\mathsf{uncounted}_S.{+}` -/
   add : ∀ p q : Grade, p + q ∈ S → p ∈ S
+  /-- A product in `S` whose first factor is not in `S` has its second factor in `S`.
+  RFC: `\mathsf{uncounted}_S.{\cdot}` -/
+  mul : ∀ p q : Grade, p ∉ S → p * q ∈ S → q ∈ S
+  /-- A grade not in `S` keeps the mode `m`, in which the term of a field of this grade is checked.
+  RFC: `\mathsf{uncounted}_S.{\odot}` -/
+  mode : ∀ p : Grade, p ∉ S → m ⊙ p = m
 
 -- ADE: none.
 /-- The set `S^m` erases only what a term checked in the mode `m` does not count.
@@ -285,16 +291,21 @@ theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   grade := by revert m; decide
   le := by revert m; decide
   add := by revert m; decide
+  mul := by revert m; decide
+  mode := fun _ h => Decidable.of_not_not h
+
+mutual
 
 -- ADE: `erased-hasX`, in `Graded/Erasure/Extraction/Properties/Usage.agda`, for `S^{𝟙ᵐ}`.
 /--
 A variable whose grade is in `S` does not occur in the erasure by `S` of a term checked in a mode
-`m` whose uses `S` does not erase.
+`m` whose uses `S` does not erase, in a signature whose names are distinct, so that the usage and
+the erasure of a constructor read the grades of its fields in the same declaration.
 RFC: `\mathsf{absent}_S`
 -/
-theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector Γ.length}
-    {m : Mode} {t : Term k Γ} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
-    (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
+theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {γ : GradeVector Γ.length} {m : Mode} {t : Term k Γ} {S : Set Grade} [DecidablePred (· ∈ S)]
+    (hS : ErasesUncounted m S) (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
     Usage sig γ m t → γ x ∈ S → ¬ (t.erase sig S hΓ).Occurs x
   | .var (e := .secondOrder ..) (x := y) _, _, _ => nomatch hΓ _ y.mem
   | .var (e := .var) (x := y) (δ := δ) _, hx, ho => by
@@ -305,7 +316,38 @@ theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector 
     exact hS.grade (hS.add _ _ h)
   | .const .., _, ho => nomatch ho
   | .sort, _, ho => nomatch ho
-  | .sub h hle, hx, ho => h.absent hS hΓ (hS.le _ _ (hle x) hx) ho
+  | .ctor h hc hq hp hts, hx, ho => by
+    simp only [Term.erase, hd.fieldGrades h hc hq hp, Option.getD_some] at ho
+    cases ho with
+    | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
+  | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho
+
+-- ADE: none.
+/-- A variable whose grade is in `S` does not occur in the erasure by `S` of the arguments of a
+telescope checked in a mode `m` whose uses `S` does not erase, each at the grade of its entry. -/
+theorem UsageArgs.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {m : Mode} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
+    (hΓ : Γ.FirstOrder) {x : Fin Γ.length} {ps : List Parameter} {γ : GradeVector Γ.length}
+    {ts : Args k Γ ps} :
+    UsageArgs sig γ m ts → γ x ∈ S → ¬ (ts.terms.erase sig S hΓ (ps.map (·.usage))).Occurs x
+  | .nil, _, ho => nomatch ho
+  | .cons (p := p) (γ := γ₁) (δ := δ) ht hts, hx, ho => by
+    have hx' : p.usage * γ₁ x + δ x ∈ S := by
+      simpa [GradeVector.add, GradeVector.smul] using hx
+    simp only [Args.terms, List.map_cons, Terms.erase] at ho
+    cases ho with
+    | head ho =>
+      by_cases hp : p.usage ∈ S
+      · simp only [hp, ↓reduceIte] at ho
+        exact nomatch ho
+      · simp only [hp, ↓reduceIte] at ho
+        have hS' : ErasesUncounted (m ⊙ p.usage) S := (hS.mode _ hp).symm ▸ hS
+        exact Usage.absent hd hS' hΓ ht (hS.mul _ _ hp (hS.add _ _ hx')) ho
+    | tail ho =>
+      rw [Grade.modality.semiring.add_comm] at hx'
+      exact UsageArgs.absent hd hS hΓ hts (hS.add _ _ hx') ho
+
+end
 
 -- ADE: none.
 /-- A cast of the number of variables keeps a term less defined than another. -/

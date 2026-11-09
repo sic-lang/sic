@@ -275,6 +275,21 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
       HasType sig ctx (.inst D qs ls ps as)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+  -- ADE: none.
+  /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
+  whose arguments are arguments of the parameters, is a term of this instance.
+  RFC: `c` -/
+  | ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
+      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
+      (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
+      HasType sig ctx (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as)
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
   RFC: `\mathsf{conv}` -/
@@ -354,6 +369,24 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+  -- ADE: none.
+  /-- Two applications of the same constructor, at equal arguments of the instance, at equal levels
+  and at equal arguments of its fields, are equal.
+  RFC: `c_\equiv` -/
+  | ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
+      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : EqInstanceArgs sig ctx as₁ as₂
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+      (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+      {ts us : Args k Γ (con.params (.ofLists qs ps hq hp))}
+      (hts : EqArgs sig ctx ts us (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)) :
+      EqTerm sig ctx (.ctor D qs ls₁ ps as₁ con.name ts.terms)
+        (.ctor D qs ls₂ ps as₂ con.name us.terms) (.inst D qs ls₁ ps as₁)
 
 /-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
 after it, whose grades typing ignores. -/
@@ -603,6 +636,7 @@ where
     | .univ hctx => wfCtx hctx
     | .prop hctx => wfCtx hctx
     | .inst _ _ _ _ has => hasInstanceArgs has
+    | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -617,6 +651,7 @@ where
     | .univ hctx _ => wfCtx hctx
     | .prop hctx _ => wfCtx hctx
     | .inst _ _ _ _ _ has _ => eqInstanceArgs has
+    | .ctor _ _ _ _ _ _ has _ _ => eqInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
@@ -669,6 +704,9 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
   | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct,
       by cases h with
         | typeDeclaration _ hn _ => exact hn
-        | _ => exact List.pairwise_singleton _ _, h.fresh⟩
+        | _ => exact List.pairwise_singleton _ _, h.fresh,
+      by cases h with
+        | typeDeclaration hdecl _ _ => cases hdecl with | intro _ _ _ hc => exact hc
+        | _ => trivial⟩
 
 end Sic.Core

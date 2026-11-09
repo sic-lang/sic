@@ -686,13 +686,13 @@ theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .prop hl hk, h => by
     obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
     exact .prop hl' hk
-  | .data hD hq hl hp hv hs hn hc S hS, h => by
+  | .data hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hc S
+      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
 
 /-- `ty(Ω_n)` gives the propositions whose levels change for equal ones. -/
@@ -700,13 +700,13 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {b : Prop} :
     PropRel sig ι n (fun m _ => levelRel sig ι m) v b → Term.LevelEquiv v v' →
       PropRel sig ι n (fun m _ => levelRel sig ι m) v' b
-  | .data hD hq hl hp hv hs hn hc S hS, h => by
+  | .data hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hc S
+      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
 
 /-- A telescope whose levels change for equal ones has the same equality of the terms of its
@@ -760,7 +760,7 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     ⟨R', (levelRel_levelInvariant k).univ h₁ ht, (levelRel_levelInvariant k).univ h₂ hu⟩
   | .prop (k := k) _ _, ⟨b₁, b₂, h₁, h₂, hb⟩, ht, hu =>
     ⟨b₁, b₂, (levelRel_levelInvariant k).prop h₁ ht, (levelRel_levelInvariant k).prop h₂ hu, hb⟩
-  | .data _ _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
+  | .data _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
     obtain ⟨c, hcm, ts, us, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, hcS⟩ := hR
     cases ht with
     | ctor _ _ _ _ _ _ hts =>
