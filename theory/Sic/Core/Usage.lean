@@ -13,8 +13,8 @@ a second-order variable uses its arguments with the grades of the parameters of 
 its scope gives.
 
 The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
+parameters, which the declaration gives and its formation checks against the usage of the telescopes
 of its constructors or of its destructors, defined here.
-of its constructors, defined here.
 ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/
 
