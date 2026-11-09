@@ -89,7 +89,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {os : List Grade}
-      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
@@ -101,7 +101,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
-      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →

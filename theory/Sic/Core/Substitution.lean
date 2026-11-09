@@ -493,6 +493,14 @@ def Constructor.fieldsAt {j g k' : Nat} {Γ Δ : Scope} (c : Constructor j g k' 
     (ls : Fin k' → Level k) (as : InstanceArgs k Γ Δ) : Telescope k Γ (c.params I) :=
   ((c.fields I).substLevels ls).subst as.toSubst
 
+/-- The destructors `d̄` in which the levels `ls'` replace the level variables.
+RFC: `\mathsf{inst}_l.\bar d` -/
+def Destructors.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    {ns : List Name} → Destructors k Γ ns → Destructors k' Γ ns
+  | _, .nil => .nil
+  | _, .cons p q Θ B ψ ds =>
+    .cons p q (Θ.substLevels ls') (B.substLevels ls') ψ (ds.substLevels ls')
+
 /-- A closed term in the scope `Γ`, which it does not use. -/
 def Term.weakenClosed {Γ : Scope} (t : Term k []) : Term k Γ := t.rename fun x => by cases x
 
@@ -2240,6 +2248,14 @@ def Subst.closedSingle (t : Term k []) : Subst k [] [.var] := fun x =>
   match x with
   | .zero => t
   | .succ x => nomatch x
+
+/-- `(θ, x̄. B)`: the closed substitution `θ` of the scope `Γ` followed by the abstraction `x̄. B` for
+a new entry. -/
+def Subst.snoc {Γ : Scope} {e : Scope.Entry} (θ : Subst k [] Γ)
+    (B : Term k (Scope.extend [] e.params.length)) : Subst k [] (e :: Γ) := fun x =>
+  match x with
+  | .zero => B
+  | .succ x => θ x
 
 /-- `[t̄ / x̄]`: the closed substitution that gives the variables of a telescope the closed arguments
 `t̄`, the first one first.

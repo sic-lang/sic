@@ -103,6 +103,28 @@ theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend (.
   Subst.ext fun x => congrArg (fun y => σ y)
     (Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => by cases y) x)
 
+/-- The arguments of a telescope that a closed substitution of its variables gives them, the first
+one first. -/
+def Subst.args : (ps : List Parameter) → Subst k [] (Scope.extend [] ps.length) → Args k [] ps
+  | [], _ => .nil
+  | _ :: ps, τ =>
+    .cons (Subst.dropN (Γ := [.var]) ps.length τ .zero) (Subst.args ps (Subst.topN ps.length τ))
+
+/-- A closed substitution of the variables of a telescope is the substitution of its arguments. -/
+theorem Subst.args_toSubst : (ps : List Parameter) → (τ : Subst k [] (Scope.extend [] ps.length)) →
+    @Eq (Subst k [] (Scope.extend [] ps.length)) (Subst.args ps τ).toSubst τ
+  | [], _ => Subst.ext fun x => nomatch x
+  | _ :: ps, τ => Subst.ext fun x => by
+    show Subst.append (Subst.closedSingle _) (Subst.args ps _).toSubst x = τ x
+    rcases Var.cases_extend (Γ := [.var]) ps.length x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+    · rw [Subst.append_weakenN]
+      cases y with
+      | zero => rfl
+      | succ y => nomatch y
+    · rw [Subst.append_liftN_empty]
+      exact congrArg (fun θ : Subst k [] (Scope.extend [] ps.length) => θ z)
+        (Subst.args_toSubst ps (Subst.topN ps.length τ))
+
 /-! ## Equal Substitutions -/
 
 section

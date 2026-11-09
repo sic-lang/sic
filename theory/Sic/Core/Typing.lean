@@ -142,7 +142,7 @@ inductive WfSig : Signature → Prop where
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
   /-- A type declaration, whose names of types are distinct and fresh.
-  RFC: `\mathsf{sig}_{\mathsf{data}}` -/
+  RFC: `\mathsf{sig}_{\mathsf{data}}`, `\mathsf{sig}_{\mathsf{codata}}` -/
   | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
       (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
       (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) : WfSig (.typeDeclaration decl :: sig)
@@ -269,8 +269,9 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   sort of its type declaration.
   RFC: `D` -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
-      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl T)
+      {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
+      {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
@@ -284,7 +285,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
-      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -304,7 +305,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
-      {C : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.dataTypes[h']? = some T)
       (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.dataTypes.length)
@@ -391,8 +392,9 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- Two instances of a declared type with equal arguments at equal levels are equal.
   RFC: `D_\equiv` -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
-      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
-      {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl T)
+      {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
+      {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
+      {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -408,7 +410,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
-      (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -427,7 +429,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {r : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
-      {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T)
+      {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -466,7 +468,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
-      {C : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       {u : Term k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)}
       (has : HasInstanceArgs sig ctx as

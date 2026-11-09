@@ -39,6 +39,7 @@ theorem UnivRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
   | univ => exact .sort _
   | prop => exact .sort _
   | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
 
 /-- `ty(Ω_n)` gives canonical propositions: instances of declared types. -/
 theorem PropRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
@@ -46,6 +47,7 @@ theorem PropRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
     Whnf sig' v := by
   cases h with
   | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
 
 /-- `(eq_c)` relates canonical terms: constructors. -/
 theorem DataType.ctorRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope} {D : Name}
@@ -53,6 +55,12 @@ theorem DataType.ctorRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope} {D :
     (h : T.ctorRel D S v w) : Whnf sig' v ∧ Whnf sig' w := by
   obtain ⟨_, _, _, _, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, _⟩ := h
   exact ⟨.ctor _ _ _ _ _ _ _, .ctor _ _ _ _ _ _ _⟩
+
+/-- `(eq_d)` relates canonical terms: corecursors. -/
+theorem corecRel_whnf {sig' : Signature} {D : Name} {S : ObsRel} {v w : Term 0 []}
+    (h : corecRel D S v w) : Whnf sig' v ∧ Whnf sig' w := by
+  obtain ⟨_, _, ⟨_, _, _, _, _, _, _, _, _, rfl, -⟩, ⟨_, _, _, _, _, _, _, _, _, rfl, -⟩, _⟩ := h
+  exact ⟨.corec _ _ _ _ _ _ _ _ _, .corec _ _ _ _ _ _ _ _ _⟩
 
 /-- `eq(v)` relates closed canonical terms, of any signature, when `v` is not a proposition. -/
 theorem HasEq.canonical {sig : Signature} {ι : Interpretation} {v w₁ w₂ : Term 0 []} {R : TermRel}
@@ -66,6 +74,7 @@ theorem HasEq.canonical {sig : Signature} {ι : Interpretation} {v w₁ w₂ : T
       obtain ⟨_, _, h₁, h₂, -⟩ := hvw
       exact ⟨(levelRel_prop_iff.1 h₁).whnf, (levelRel_prop_iff.1 h₂).whnf⟩
     | data => exact DataType.ctorRel_whnf hvw
+    | codata => exact corecRel_whnf hvw
   | .prop k b h _, hn, _ => absurd ⟨k, b, h⟩ hn
 
 /-- A closed term that is no head normal form of the empty signature: a constant, which it does not
@@ -80,6 +89,7 @@ theorem Term.unknown_not_whnf : ¬ Whnf [] Term.unknown := by
     | sort => cases ht
     | inst => cases ht
     | ctor => cases ht
+    | corec => cases ht
     | ne hn =>
       cases hn with
       | var => cases ht
@@ -341,6 +351,7 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
       obtain ⟨R', h₁, h₂⟩ := hvw
       exact ⟨hd, v, w, R', hv, hw, .univ _ h₁, .univ _ h₂⟩
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: none.
@@ -358,6 +369,7 @@ theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : T
       exact ⟨hd, v, w, fun _ _ => b₁, hv, hw, .prop _ b₁ h₁ fun _ _ => .rfl,
         .prop _ b₂ h₂ fun _ _ => hb⟩
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: `⊩U≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.

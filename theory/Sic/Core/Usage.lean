@@ -72,10 +72,10 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   uses its parameters, as the grades `ζ` of the type at the instance say.
   RFC: `D_{▶}` -/
   | inst {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
-      {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
-      {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (has : UsageInstanceArgs sig δ m (T.usage (.ofLists qs ps hq hp)) as) :
+      {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl ζ) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades) (has : UsageInstanceArgs sig δ m (ζ (.ofLists qs ps hq hp)) as) :
       Usage sig δ m (.inst D qs ls ps as)
   -- ADE: none.
   /-- A constructor uses the variables of the terms of its fields, each checked in the mode of the
@@ -86,7 +86,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
-      {γ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      {γ : GradeVector Γ.length} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : UsageArgs sig γ m ts) :
       Usage sig γ m (.ctor D qs ls ps as con.name ts.terms)
@@ -102,7 +102,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
-      {γ δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      {γ δ : GradeVector Γ.length} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
         Usage sig 𝟘ᶜ .zeroZero C)

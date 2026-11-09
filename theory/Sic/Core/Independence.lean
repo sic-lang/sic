@@ -218,8 +218,13 @@ theorem HasType.not_u₀ : ¬ HasType [] (.empty : Context 0 []) Term.u₀ Term.
       cases levelRel_univ_iff.1 hR' with
       | univ hl' hk' => omega
       | data _ _ _ _ hv => cases hv
+      | codata _ _ _ _ hv => cases hv
     | data _ _ _ _ hv => cases hv
-  | prop _ _ h _ => cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
+  | prop _ _ h _ =>
+    cases levelRel_prop_iff.1 h with
+    | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
 
 /-! ## Independence -/
 

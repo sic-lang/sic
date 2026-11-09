@@ -87,6 +87,11 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → WfTelescope sig ctx Θ κ →
         ValidTelescope sigM ι ctx Θ κ
+  /-- Destructors in a sort. -/
+  wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
+    {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k},
+      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig ctx ds κ →
+        ValidDestructors sigM ι ctx ds κ
   /-- A well-formed type declaration. -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
     sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
@@ -98,7 +103,7 @@ structure SoundnessIn : Prop where
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn :=
   ⟨wfConstantDefinition, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs,
-    eqInstanceArgs, wfTelescope, wfTypeDeclaration⟩
+    eqInstanceArgs, wfTelescope, wfDestructors, wfTypeDeclaration⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
@@ -369,13 +374,32 @@ where
     | .cons hA hκ hΘ _ => fun ρ =>
       ValidTelescopeΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (wfTelescope hd hι hΘ ρ)
+  wfDestructors {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
+      {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k}
+      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      WfDestructors sig ctx ds κ → ValidDestructors sigM ι ctx ds κ
+    | .nil hctx => fun ρ => by
+      simp only [Destructors.atLevels, Destructors.substLevels, ValidDestructorsΓ]
+      exact wfCtx hd hι hctx ρ
+    | .cons hΘ hB hκ _ hds => fun ρ => by
+      have hB' := hasType hd hι hB ρ
+      simp only [Context.atLevels, Context.substLevels_append] at hB'
+      simp only [Destructors.atLevels, Destructors.substLevels, ValidDestructorsΓ]
+      exact ⟨wfTelescope hd hι hΘ ρ, ⟨_, Universe.substLevels_bounded _ hκ, hB'⟩,
+        wfDestructors hd hι hds ρ⟩
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data _ _ hΘ _ _ => fun I T hT c hc => wfTelescope hd hι (hΘ I T hT c hc)
-    | .codata hb .. => fun _ T hT => by
-      simp only [TypeDeclaration.dataTypes, hb] at hT
-      nomatch hT
+    | .data hb _ hΘ _ _ => by
+      unfold ValidTypeDeclaration
+      rw [hb]
+      exact fun I T hT c hc =>
+        wfTelescope hd hι (hΘ I T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
+    | .codata hb _ hds _ _ => by
+      unfold ValidTypeDeclaration
+      rw [hb]
+      exact fun I T hT =>
+        wfDestructors hd hι (hds I T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT))
 
 
 /-! ## Signatures -/
@@ -475,8 +499,14 @@ structure Soundness : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → WfTelescope sig ctx Θ κ → ValidTelescope sig ι ctx Θ κ
   -- ADE: none.
+  /-- Destructors in a sort are meaningful.
+  RFC: `\mathsf{sound}.\bar d` -/
+  wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
+    {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k},
+      ValidInterpretation ι sig → WfDestructors sig ctx ds κ → ValidDestructors sig ι ctx ds κ
+  -- ADE: none.
   /-- A well-formed type declaration is meaningful.
-  RFC: `\mathsf{sound}.\mathsf{data}` -/
+  RFC: `\mathsf{sound}.\mathsf{data}`, `\mathsf{sound}.\mathsf{codata}` -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration},
     ValidInterpretation ι sig → WfTypeDeclaration sig decl → ValidTypeDeclaration sig ι decl
 
@@ -526,6 +556,9 @@ theorem soundness : Soundness where
   wfTelescope hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfTelescope h)
     soundnessIn.wfTelescope hs.1 hs.validEntries h
+  wfDestructors hι h :=
+    have hs := soundness_wfSig hι (presuppositions.wfDestructors h)
+    soundnessIn.wfDestructors hs.1 hs.validEntries h
   wfTypeDeclaration hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfTypeDeclaration h)
     soundnessIn.wfTypeDeclaration hs.1 hs.validEntries h

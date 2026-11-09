@@ -62,6 +62,11 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   | ctor {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
       (as : InstanceArgs k Γ Δ) (c : Name) (ts : Terms k Γ) :
       Whnf sig (.ctor D qs ls ps as c ts)
+  -- ADE: `Whnf.lamₙ`, in `Definition/Untyped/Whnf.agda`, for the functions.
+  /-- `corec_r T from t̄ return Θ̄ with ḡ`, a corecursor, which computes only when it is observed. -/
+  | corec {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
+      (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ) (Ss : States k Γ)
+      (gs : CorecBranches k Γ) : Whnf sig (.corec r D qs ls ps as ss Ss gs)
   -- ADE: `Whnf.ne`, in `Definition/Untyped/Whnf.agda`.
   /-- A neutral term. -/
   | ne {t : Term k Γ} (h : Neutral sig t) : Whnf sig t

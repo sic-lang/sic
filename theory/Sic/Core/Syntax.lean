@@ -255,6 +255,15 @@ def Args.terms {k : Nat} {Γ : Scope} : {ps : List Parameter} → Args k Γ ps �
   | [], .nil => .nil
   | _ :: _, .cons t ts => .cons t ts.terms
 
+/-- Arguments with the same terms are the same arguments. -/
+theorem Args.terms_inj {k : Nat} {Γ : Scope} :
+    {ps : List Parameter} → {ts us : Args k Γ ps} → ts.terms = us.terms → ts = us
+  | [], .nil, .nil, _ => rfl
+  | _ :: _, .cons _ _, .cons _ _, h => by
+    simp only [Args.terms, Terms.cons.injEq] at h
+    obtain ⟨rfl, h₂⟩ := h
+    rw [Args.terms_inj h₂]
+
 /-- The number of the motives `C̄`. -/
 def Motives.length {k : Nat} {Γ : Scope} : Motives k Γ → Nat
   | .nil => 0
@@ -524,14 +533,46 @@ inductive Signature.HasConstant (sig : Signature) :
 
 -- ADE: none.
 /--
-`D.{s̄; l̄; p̄} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, the data type `T` of the type
-declaration `decl`, whose variables, parameters and sort are those of `D`, and whose grades `ζ` are
-those of `T`, which the rules of the declared types share.
+`D.{s̄; l̄; p̄} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, a data type or a codata type of
+the type declaration `decl`, whose variables, parameters and sort are those of `D`, and whose grades
+`ζ` are those of `D`, which the rules of the instances share.
 RFC: `\in_D`
 -/
 def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclaration)
+    (ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length) : Prop :=
+  .typeDeclaration decl ∈ sig ∧
+    ((∃ T ∈ decl.dataTypes, T.name = D ∧ T.usage = ζ) ∨
+      ∃ T ∈ decl.codataTypes, T.name = D ∧ T.usage = ζ)
+
+-- ADE: none.
+/--
+`(data.{s̄; l̄; p̄} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the data type `T`, named `D`,
+of the type declaration `decl`, which the rules of the constructors and of the recursors share.
+-/
+def Signature.HasDataType (sig : Signature) (D : Name) (decl : TypeDeclaration)
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
   .typeDeclaration decl ∈ sig ∧ T ∈ decl.dataTypes ∧ T.name = D
+
+-- ADE: none.
+/--
+`(codata.{s̄; l̄; p̄} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the codata type `T`, named
+`D`, of the type declaration `decl`, which the meaning of its instances reads.
+-/
+def Signature.HasCodataType (sig : Signature) (D : Name) (decl : TypeDeclaration)
+    (T : CodataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
+  .typeDeclaration decl ∈ sig ∧ T ∈ decl.codataTypes ∧ T.name = D
+
+/-- A data type of the signature is one of its declared types. -/
+theorem Signature.HasDataType.hasDeclaredType {sig : Signature} {D : Name} {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasDataType D decl T) :
+    sig.HasDeclaredType D decl T.usage :=
+  ⟨h.1, .inl ⟨T, h.2.1, h.2.2, rfl⟩⟩
+
+/-- A codata type of the signature is one of its declared types. -/
+theorem Signature.HasCodataType.hasDeclaredType {sig : Signature} {D : Name}
+    {decl : TypeDeclaration} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) : sig.HasDeclaredType D decl T.usage :=
+  ⟨h.1, .inr ⟨T, h.2.1, h.2.2, rfl⟩⟩
 
 /-- The names of a type declaration are those of its data types and of its codata types, one of
 which is empty. -/
@@ -606,10 +647,10 @@ theorem _root_.List.eq_of_nodup_map {α β : Type} {f : α → β} :
 
 /-- In a signature whose names are distinct, a declared type is one data type of one type
 declaration. -/
-theorem Signature.Distinct.hasDeclaredType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
+theorem Signature.Distinct.hasDataType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
     {decl₁ decl₂ : TypeDeclaration} {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
     {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
-    (h₁ : sig.HasDeclaredType D decl₁ T₁) (h₂ : sig.HasDeclaredType D decl₂ T₂) :
+    (h₁ : sig.HasDataType D decl₁ T₁) (h₂ : sig.HasDataType D decl₂ T₂) :
     decl₁ = decl₂ ∧ HEq T₁ T₂ := by
   obtain ⟨hm₁, hT₁, hn₁⟩ := h₁
   obtain ⟨hm₂, hT₂, hn₂⟩ := h₂
@@ -624,12 +665,74 @@ theorem Signature.Distinct.hasDeclaredType_unique {sig : Signature} (hd : sig.Di
 names. -/
 theorem Signature.Distinct.constructors_nodup : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
-    sig.HasDeclaredType D decl T → (T.constructors.map (·.name)).Nodup
+    sig.HasDataType D decl T → (T.constructors.map (·.name)).Nodup
   | [], _, _, _, _, h => nomatch h.1
   | _ :: _, ⟨hd, _, _, hc⟩, _, _, _, ⟨he, hT, hn⟩ => by
     rcases List.mem_cons.1 he with he | he
     · subst he; exact hc.1 _ hT
     · exact hd.constructors_nodup ⟨he, hT, hn⟩
+
+/-- A codata type of a type declaration is named by the declaration. -/
+theorem TypeDeclaration.codata_name_mem_names {decl : TypeDeclaration}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes) :
+    T.name ∈ decl.names :=
+  decl.names_eq ▸ List.mem_append_right _ (List.mem_map_of_mem hT)
+
+/-- The codata types of a type declaration whose names are distinct have distinct names. -/
+theorem TypeDeclaration.codataTypes_nodup {decl : TypeDeclaration} (h : decl.names.Nodup) :
+    (decl.codataTypes.map (·.name)).Nodup :=
+  (List.nodup_append.1 (decl.names_eq ▸ h)).2.1
+
+/-- A type declaration has no data type or no codata type. -/
+theorem TypeDeclaration.dataTypes_codataTypes (decl : TypeDeclaration) :
+    decl.dataTypes = [] ∨ decl.codataTypes = [] := by
+  simp only [TypeDeclaration.dataTypes, TypeDeclaration.codataTypes]
+  split <;> simp
+
+/-- In a signature whose names are distinct, a codata type is one codata type of one type
+declaration. -/
+theorem Signature.Distinct.hasCodataType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
+    {decl₁ decl₂ : TypeDeclaration}
+    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasCodataType D decl₁ T₁) (h₂ : sig.HasCodataType D decl₂ T₂) :
+    decl₁ = decl₂ ∧ HEq T₁ T₂ := by
+  obtain ⟨hm₁, hT₁, hn₁⟩ := h₁
+  obtain ⟨hm₂, hT₂, hn₂⟩ := h₂
+  have he := hd.entry_unique hm₁ hm₂ (n := D) (hn₁ ▸ TypeDeclaration.codata_name_mem_names hT₁)
+    (hn₂ ▸ TypeDeclaration.codata_name_mem_names hT₂)
+  injection he with he
+  subst he
+  exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm₁))
+    hT₁ hT₂ (hn₁.trans hn₂.symm))⟩
+
+/-- In a signature whose names are distinct, a declared type is not both a data type and a codata
+type. -/
+theorem Signature.Distinct.not_hasDataType_hasCodataType {sig : Signature} (hd : sig.Distinct)
+    {D : Name} {decl₁ decl₂ : TypeDeclaration}
+    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasDataType D decl₁ T₁) (h₂ : sig.HasCodataType D decl₂ T₂) : False := by
+  obtain ⟨hm₁, hT₁, hn₁⟩ := h₁
+  obtain ⟨hm₂, hT₂, hn₂⟩ := h₂
+  have he := hd.entry_unique hm₁ hm₂ (n := D) (hn₁ ▸ TypeDeclaration.name_mem_names hT₁)
+    (hn₂ ▸ TypeDeclaration.codata_name_mem_names hT₂)
+  injection he with he
+  subst he
+  rcases decl₁.dataTypes_codataTypes with h | h
+  · rw [h] at hT₁; exact nomatch hT₁
+  · rw [h] at hT₂; exact nomatch hT₂
+
+/-- In a signature whose names are distinct, the destructors of a codata type have distinct
+names. -/
+theorem Signature.Distinct.destructors_nodup : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasCodataType D decl T → T.destructors.Nodup
+  | [], _, _, _, _, h => nomatch h.1
+  | _ :: _, ⟨hd, _, _, hc⟩, _, _, _, ⟨he, hT, hn⟩ => by
+    rcases List.mem_cons.1 he with he | he
+    · subst he; exact hc.2 _ hT
+    · exact hd.destructors_nodup ⟨he, hT, hn⟩
 
 /-- Two positions of a list whose images by `f` are distinct, which hold elements with the same
 image, are equal. -/
@@ -861,7 +964,7 @@ theorem Entry.fieldGrades_of_not_mem {D c : Name} {qs : List Quality} {ps : List
 type are those of its telescope at the instance. -/
 theorem Signature.Distinct.fieldGrades : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
-    sig.HasDeclaredType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasDataType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
     con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
     sig.fieldGrades D con.name qs ps = some ((con.params (.ofLists qs ps hq hp)).map (·.usage))

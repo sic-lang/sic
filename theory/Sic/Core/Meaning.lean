@@ -9,17 +9,20 @@ The meaning of the judgments of annex 16 of RFC 36, after the meaning explanatio
 closed judgment is true when its terms compute as it says, and a judgment in a context when it holds
 under every pair of equal closed substitutions of the context.
 Each judgment of the typing has a meaning, with the same objects: the signatures and their entries,
-the contexts, the types, the terms, the arguments of the telescopes and of the instances, and the
-telescopes in a sort.
+the contexts, the types, the terms, the arguments of the telescopes and of the instances, the
+telescopes in a sort and the destructors in a sort.
 The meaning ignores the grades, the modes and the ownerships, as the typing does outside the
 judgments of usage and of ownership that the rule of the constant definitions reads.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
-relation `eq(v)`, which the sorts and the data types give: the universe `U_n` has the types of the
-level below it as terms, equal when they have the same equality of terms, the universe of
-propositions `Ω_n` has the propositions of the level below it, equal when they have the same truth,
-and an instance of a data type has its constructors, equal when they are the same constructor with
-equal fields; a proposition declared as a data type is true when one of its constructors has terms
-for its fields.
+relation `eq(v)`, which the sorts, the data types and the codata types give: the universe `U_n` has
+the types of the level below it as terms, equal when they have the same equality of terms, the
+universe of propositions `Ω_n` has the propositions of the level below it, equal when they have the
+same truth, an instance of a data type has its constructors, equal when they are the same
+constructor with equal fields, and an instance of a codata type has its corecursors, equal when
+their observations at equal arguments are equal, as the partial equivalence relations of the types
+of functions relate the functions; a proposition declared as a data type is true when one of its
+constructors has terms for its fields, and one declared as a codata type when each of its
+destructors has a result.
 
 The universes are defined one level after the other, and at each level by a least relation, which
 gives each type of the level together with the equality of its terms: this induction-recursion is
@@ -119,6 +122,12 @@ def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k 
     (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
   Θ.substLevels fun i => .ofNat (ρ i)
 
+/-- `d̄[ρ]`: the destructors `d̄` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
+def Destructors.atLevels {k : Nat} {Γ : Scope} {ns : List Name} (ρ : Fin k → Nat)
+    (ds : Destructors k Γ ns) : Destructors 0 Γ ns :=
+  ds.substLevels fun i => .ofNat (ρ i)
+
 /-! ## Equality of the Canonical Terms -/
 
 /-- A relation between closed terms. -/
@@ -175,12 +184,55 @@ def DataType.truth {j g k : Nat} {Δ : Scope} (T : DataType j g k Δ)
     (S : Constructor j g k Δ → FieldsRel) : Prop :=
   ∃ c ∈ T.constructors, ∃ ts, S c ts ts
 
+/-- Closed abstractions, one for each destructor, found by its name and the parameters of its
+arguments: the observations of a closed term of a codata type, or what the destructors of the type
+relate. -/
+abbrev Observations : Type := Name → (ps : List Parameter) → Term 0 (Scope.extend [] ps.length)
+
+/-- A relation between closed abstractions for the destructors of a codata type. -/
+abbrev ObsRel : Type := Observations → Observations → Prop
+
+/-- `x̄. v.(T.d)(x̄)`: the observations of the closed term `v` at the instance `T = D.{s̄; l̄; p̄} ā`, an
+abstraction over the arguments of each destructor. -/
+def Term.observations {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level 0))
+    (ps : List Grade) (as : InstanceArgs 0 [] Δ) (v : Term 0 []) : Observations := fun d xs =>
+  .obs D qs ls ps (as.rename fun x => by cases x) v.weakenClosed d (Args.bound (Γ := []) xs).terms
+
+/-- The closed term `v` is a corecursor of the declared type `D`, whose observations at the instance
+it carries are `o`. -/
+def Term.CorecObservations (D : Name) (v : Term 0 []) (o : Observations) : Prop :=
+  ∃ (r : Grade) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (Δ : Scope)
+    (as : InstanceArgs 0 [] Δ) (ss : Terms 0 []) (Ss : States 0 []) (gs : CorecBranches 0 []),
+    v = .corec r D qs ls ps as ss Ss gs ∧ o = v.observations D qs ls ps as
+
+/-- `(eq_d)`: the equality of the canonical terms of an instance of the codata type named `D`, which
+relates two corecursors of `D`, at any instances, whose observations, each at the instance it
+carries, the equality `S` of the destructors of the type relates: the instance only determines the
+type of the term, as for `(eq_c)`.
+RFC: `\mathsf{eq}_d` -/
+def corecRel (D : Name) (S : ObsRel) : TermRel :=
+  fun v w => ∃ o₁ o₂, v.CorecObservations D o₁ ∧ w.CorecObservations D o₂ ∧ S o₁ o₂
+
+/-- `(true_d)`: the truth of a proposition declared as a codata type, true when the equality `S` of
+its destructors relates some abstractions to themselves.
+RFC: `\mathsf{true}_d` -/
+def ObsRel.truth (S : ObsRel) : Prop :=
+  ∃ o, S o o
+
+/-- Two closed abstractions `x̄. B₁` and `x̄. B₂` for a destructor whose arguments have the equality
+`SΘ`: at equal arguments, their results are related by the equality `F t̄` of the terms of the
+result type at the first arguments. -/
+def AbstractionRel {ps : List Parameter} (SΘ : FieldsRel) (F : Terms 0 [] → TermRel)
+    (f₁ f₂ : Term 0 (Scope.extend [] ps.length)) : Prop :=
+  ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
+    F ts.terms (f₁.subst ts.toSubst) (f₂.subst us.toSubst)
+
 mutual
 
 -- ADE: none.
 /--
 `ty(U_n)`: the least relation of the clauses of the universes and of the instances of the data
-types in `U_n`, given the relations `below` of the levels below `n`.
+types and of the codata types in `U_n`, given the relations `below` of the levels below `n`.
 -/
 inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Term 0 [] → TermRel → Prop where
@@ -205,7 +257,7 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
@@ -213,10 +265,25 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hS : ∀ c ∈ T.constructors,
         TelRel sig ι n below .type (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
       UnivRel sig ι n below v (T.ctorRel D S)
+  /-- `(ty_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
+  destructors are in `U_n` at the arguments `ā`, and whose canonical terms are equal by `(eq_d)`.
+  RFC: `\mathsf{ty}_d` -/
+  | codata {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (S : ObsRel)
+      (hS : DesRel sig ι n below .type ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+        as.toSubst S) :
+      UnivRel sig ι n below v (corecRel D S)
 
 -- ADE: none.
 /--
-`ty(Ω_n)`: the least relation of the clauses of the instances of the data types in `Ω_n`, given the
+`ty(Ω_n)`: the least relation of the clauses of the instances of the data types and of the codata
+types in `Ω_n`, given the
 relations `below` of the levels below `n`, which gives each proposition its truth.
 -/
 inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
@@ -227,7 +294,7 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
@@ -235,6 +302,20 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hS : ∀ c ∈ T.constructors,
         TelRel sig ι n below .prop (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
       PropRel sig ι n below v (T.truth S)
+  /-- `(ty_dΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `Ω_n`, whose
+  destructors are in `Ω_n` at the arguments `ā`, and whose truth is `(true_d)`.
+  RFC: `\mathsf{ty}_{d\Omega}` -/
+  | codata {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (S : ObsRel)
+      (hS : DesRel sig ι n below .prop ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+        as.toSubst S) :
+      PropRel sig ι n below v S.truth
 
 -- ADE: none.
 /--
@@ -256,6 +337,43 @@ inductive TelRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
       (hG : ∀ a, F a a → TelRel sig ι n below s (Θ.subst₀ (Subst₀.single a)) (G a))
       (hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us) :
       TelRel sig ι n below s (.cons q p A Θ) (FieldsRel.cons F G)
+
+-- ADE: none.
+/--
+`ty(s_n)` for the destructors: the destructors `d̄`, at the closed substitution `θ` of their scope,
+are in the sort of the quality `s` at the level `n`, and the abstractions for them are equal by `S`;
+the arguments of each destructor are a telescope in `U_n`, its result a type of a sort that `s_n`
+bounds for equal arguments, and the destructors after it are, for each abstraction for it, the
+same for equal abstractions.
+The Lean carries the closed substitution of the scope of the destructors, rather than the closed
+destructors `d̄[θ]` of the RFC, as the closed judgments of the contexts do.
+-/
+inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Quality → {Γ : Scope} → {ns : List Name} → Destructors 0 Γ ns → Subst 0 [] Γ → ObsRel → Prop
+    where
+  /-- `(ty_d̄ε)`: no destructor.
+  RFC: `\mathsf{ty}_{\bar d\varepsilon}` -/
+  | nil {s : Quality} {Γ : Scope} {θ : Subst 0 [] Γ} : DesRel sig ι n below s .nil @θ fun _ _ => True
+  /-- `(ty_d̄|)`: a destructor `d : (Θ ⊢ B ◀ ψ)`, whose arguments `Θ[θ]` are a telescope in `U_n`
+  with the equality `SΘ`, whose result type `B[θ, t̄]` computes, at equal arguments `t̄`, to a type of
+  a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same for equal arguments, and
+  the destructors after it, which are for each abstraction `f` for `d` with the equality `G f`, the
+  same for equal abstractions.
+  RFC: `\mathsf{ty}_{\bar d|}` -/
+  | cons {s : Quality} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      (hΘ : TelRel sig ι n below .type (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
+      (hB : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        ∃ v, Computesι sig ι (B.subst (Subst.append θ ts.toSubst)) v)
+      (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ v,
+        Computesι sig ι (B.subst (Subst.append θ ts.toSubst)) v → FieldRel sig ι n below s v (F ts.terms))
+      (hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u)
+      (G : Term 0 (Scope.extend [] ps.length) → ObsRel)
+      (hG : ∀ f, AbstractionRel SΘ F f f → DesRel sig ι n below s ds (Subst.snoc θ f) (G f))
+      (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
+      DesRel sig ι n below s (.cons (d := d) p q Θ B ψ ds) @θ fun o₁ o₂ =>
+        AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂
 
 -- ADE: none.
 /--
@@ -577,6 +695,20 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqTelescope₀ sig ι κ (Θ.subst σ₁) (Θ.subst σ₂)
 
+-- ADE: none.
+/-- `Σ; Γ ⊨ d̄ : κ`, at levels without variables: the arguments of each destructor are a telescope in
+the universe of the level of `κ`, its result a term of a sort that `κ` bounds, in the context
+extended by its arguments, and the destructors after it are in `κ`, in the context extended by it.
+RFC: `{\vDash}\bar d_{\kappa\varepsilon}`, `{\vDash}\bar d_{\kappa|}` -/
+def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) :
+    {Γ : Scope} → {ns : List Name} → Context 0 Γ → Destructors 0 Γ ns → Universe 0 → Prop
+  /- `(⊨d̄_κε)`. -/
+  | _, _, ctx, .nil, _ => ValidCtx₀ sig ι ctx
+  /- `(⊨d̄_κ|)`. -/
+  | _, _, ctx, .cons _ _ Θ B ψ ds, κ => ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩ ∧
+      (∃ κ₁, κ₁ ≼ κ ∧ ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) ∧
+      ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) ds κ
+
 /-! ## Level Variables -/
 
 /-- `(⊨_ρ)`: `Σ ⊨ Γ`, for every value of the level variables.
@@ -640,18 +772,54 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
     {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
   ∀ ρ, ValidTelescopeΓ sig ι (ctx.atLevels ρ) (Θ.atLevels ρ) (κ.atLevels ρ)
 
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ d̄ : κ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
+def ValidDestructors (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
+    {ns : List Name} (ctx : Context k Γ) (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
+  ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (ds.atLevels ρ) (κ.atLevels ρ)
+
 /-! ## Signatures and Entries -/
 
 -- ADE: none.
-/-- `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
+/-- `Σ ⊨ D`: the type declaration `D` is meaningful in the signature `Σ`.
+`(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
 variables, the fields of each constructor are a telescope in the sort `κ`, in the context of the
-parameters, at each value of the level variables; the meaning ignores the grades, and the names of
-the constructors, distinct, are those of the signature.
-A block of codata types has no data type, and its meaning has no condition yet.
-RFC: `{\vDash}\mathsf{data}` -/
+parameters, at each value of the level variables.
+`(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
+grade variables, the destructors of each type are in the sort `κ`, in the context of the
+parameters, at each value of the level variables.
+The meaning ignores the grades, and the names of the constructors and of the destructors, distinct,
+are those of the signature.
+RFC: `{\vDash}\mathsf{data}`, `{\vDash}\mathsf{codata}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
-  ∀ I, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)
+  match decl.body with
+  | .data Ts => ∀ I, ∀ T ∈ Ts, ∀ c ∈ T.constructors,
+      ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)
+  | .codata Ts => ∀ I, ∀ T ∈ Ts, ValidDestructors sig ι (decl.params I) (T.body I) (decl.sort I)
+
+/-- The fields of the constructors of a data type of a meaningful type declaration are telescopes in
+its sort. -/
+theorem ValidTypeDeclaration.fields {sig : Signature} {ι : Interpretation} {decl : TypeDeclaration}
+    (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
+    {c : Constructor decl.sorts decl.grades decl.levels decl.scope} (hc : c ∈ T.constructors) :
+    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I) := by
+  unfold ValidTypeDeclaration at h
+  unfold TypeDeclaration.dataTypes at hT
+  split at h <;> rename_i heq <;> rw [heq] at hT
+  · exact h I T hT c hc
+  · exact nomatch hT
+
+/-- The destructors of a codata type of a meaningful type declaration are in its sort. -/
+theorem ValidTypeDeclaration.destructors {sig : Signature} {ι : Interpretation}
+    {decl : TypeDeclaration} (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes) :
+    ValidDestructors sig ι (decl.params I) (T.body I) (decl.sort I) := by
+  unfold ValidTypeDeclaration at h
+  unfold TypeDeclaration.codataTypes at hT
+  split at h <;> rename_i heq <;> rw [heq] at hT
+  · exact nomatch hT
+  · exact h I T hT
 
 -- ADE: none.
 /-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/
@@ -818,7 +986,103 @@ theorem DataType.truth_congr {j g k : Nat} {Δ : Scope} {T : DataType j g k Δ}
   ⟨fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).1 hS⟩,
     fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).2 hS⟩⟩
 
+/-- A closed term has the observations of one corecursor at most. -/
+theorem Term.CorecObservations.unique {D D' : Name} {v : Term 0 []} {o o' : Observations}
+    (h : v.CorecObservations D o) (h' : v.CorecObservations D' o') : o = o' := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩ := h
+  obtain ⟨_, _, _, _, _, _, _, _, _, h', rfl⟩ := h'
+  cases h'
+  rfl
+
+/-- `(eq_d)` is a partial equivalence relation when the equality of the destructors is one. -/
+theorem corecRel_isPer {D : Name} {S : ObsRel} (hS : IsPer S) : IsPer (corecRel D S) where
+  symm := fun ⟨o₁, o₂, hv, hw, h⟩ => ⟨o₂, o₁, hw, hv, hS.symm h⟩
+  trans := fun ⟨o₁, o₂, hv, hw, h⟩ ⟨_, o₃, hw', hx, h'⟩ => by
+    cases hw.unique hw'
+    exact ⟨o₁, o₃, hv, hx, hS.trans h h'⟩
+
+/-- `(eq_d)` relates the same terms for equalities of the destructors that relate the same
+abstractions. -/
+theorem corecRel_congr {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂) :
+    ∀ v w, corecRel D S v w ↔ corecRel D S' v w :=
+  fun _ _ => ⟨fun ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, (h _ _).1 hS⟩,
+    fun ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, (h _ _).2 hS⟩⟩
+
+/-- `(true_d)` is the same for equalities of the destructors that relate the same abstractions. -/
+theorem ObsRel.truth_congr {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂) :
+    S.truth ↔ S'.truth :=
+  ⟨fun ⟨o, ho⟩ => ⟨o, (h o o).1 ho⟩, fun ⟨o, ho⟩ => ⟨o, (h o o).2 ho⟩⟩
+
+/-- The equality of the abstractions for a destructor is a partial equivalence relation, when the
+equality of its arguments is one, and so is the equality of the terms of its result at equal
+arguments, the same for equal arguments. -/
+theorem AbstractionRel.isPer {ps : List Parameter} {SΘ : FieldsRel} {F : Terms 0 [] → TermRel}
+    (hS : IsPer SΘ) (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms))
+    (hresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u) :
+    IsPer (AbstractionRel (ps := ps) SΘ F) where
+  symm {_ _} h ts us hts :=
+    have hst := hS.symm hts
+    (hresp _ _ hst _ _).1 ((hF us (hS.trans hst hts)).symm (h us ts hst))
+  trans {_ _ _} h h' ts us hts :=
+    have huu := hS.trans (hS.symm hts) hts
+    (hF ts (hS.trans hts (hS.symm hts))).trans (h ts us hts) ((hresp _ _ hts _ _).2 (h' us us huu))
+
+/-- The equalities of the abstractions for a destructor relate the same abstractions, when the
+equalities of its arguments relate the same arguments, and those of its result the same terms. -/
+theorem AbstractionRel.congr {ps : List Parameter} {SΘ SΘ' : FieldsRel} {F F' : Terms 0 [] → TermRel}
+    (hSp : IsPer SΘ) (hS : ∀ ts us, SΘ ts us ↔ SΘ' ts us)
+    (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u, F ts.terms t u ↔ F' ts.terms t u) :
+    ∀ f₁ f₂, AbstractionRel (ps := ps) SΘ F f₁ f₂ ↔ AbstractionRel SΘ' F' f₁ f₂ :=
+  fun _ _ =>
+    ⟨fun h ts us hts =>
+      have hts' := (hS _ _).2 hts
+      (hF ts (hSp.trans hts' (hSp.symm hts')) _ _).1 (h ts us hts'),
+    fun h ts us hts => (hF ts (hSp.trans hts (hSp.symm hts)) _ _).2 (h ts us ((hS _ _).1 hts))⟩
+
+/-- The equality of the abstractions for a destructor `d` followed by the destructors after it is a
+partial equivalence relation, when the equality `E` of the abstractions for `d` is one, and so is
+the equality `G f` of the destructors after it for each abstraction `f`, the same for equal
+abstractions. -/
+theorem ObsRel.cons_isPer {d : Name} {ps : List Parameter}
+    {E : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
+    {G : Term 0 (Scope.extend [] ps.length) → ObsRel} (hE : IsPer E) (hG : ∀ f, E f f → IsPer (G f))
+    (hresp : ∀ f₁ f₂, E f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
+    IsPer (fun o₁ o₂ : Observations => E (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) where
+  symm := fun ⟨h₁, h₂⟩ =>
+    ⟨hE.symm h₁, (hG _ (hE.trans (hE.symm h₁) h₁)).symm ((hresp _ _ h₁ _ _).1 h₂)⟩
+  trans := fun ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
+    ⟨hE.trans h₁ h₁', (hG _ (hE.trans h₁ (hE.symm h₁))).trans h₂ ((hresp _ _ h₁ _ _).2 h₂')⟩
+
+/-- The equalities of the abstractions for a destructor `d` followed by the destructors after it
+relate the same abstractions, when those for `d` do, and those of the destructors after it do for
+each abstraction for `d`. -/
+theorem ObsRel.cons_congr {d : Name} {ps : List Parameter}
+    {E E' : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
+    {G G' : Term 0 (Scope.extend [] ps.length) → ObsRel} (hEp : IsPer E)
+    (hE : ∀ f₁ f₂, E f₁ f₂ ↔ E' f₁ f₂) (hG : ∀ f, E f f → ∀ o₁ o₂, G f o₁ o₂ ↔ G' f o₁ o₂) :
+    ∀ o₁ o₂ : Observations, (E (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) ↔
+      (E' (o₁ d ps) (o₂ d ps) ∧ G' (o₁ d ps) o₁ o₂) :=
+  fun _ _ =>
+    ⟨fun ⟨h₁, h₂⟩ => ⟨(hE _ _).1 h₁, (hG _ (hEp.trans h₁ (hEp.symm h₁)) _ _).1 h₂⟩,
+      fun ⟨h₁, h₂⟩ =>
+        have h₁' := (hE _ _).2 h₁
+        ⟨h₁', (hG _ (hEp.trans h₁' (hEp.symm h₁')) _ _).2 h₂⟩⟩
+
 /-! ### A Type Has One Level and One Sort -/
+
+/-- Two instances of a declared type of a signature whose names are distinct, given by a data type
+and by a codata type, do not exist. -/
+theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope} {qs₁ qs₂ : List Quality}
+    {ls₁ ls₂ : List (Level 0)} {ps₁ ps₂ : List Grade} {as₁ : InstanceArgs 0 [] decl₁.scope}
+    {as₂ : InstanceArgs 0 [] decl₂.scope} (h₁ : sig.HasDataType D₁ decl₁ T₁)
+    (h₂ : sig.HasCodataType D₂ decl₂ T₂)
+    (hv : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂) : False := by
+  obtain ⟨-, hD, -⟩ := Term.inst.inj hv
+  subst hD
+  exact hd.not_hasDataType_hasCodataType h₁ h₂
 
 /-- A type of a universe has one level, in a signature whose names are distinct. -/
 theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
@@ -828,9 +1092,11 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
   | univ hl hk => cases h' with
     | univ hl' hk' => omega
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | prop hl hk => cases h' with
     | prop hl' hk' => omega
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | data h _ _ _ hv _ hn => cases h' with
     | univ => cases hv
     | prop => cases hv
@@ -838,7 +1104,18 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
+      exact hn.symm.trans hn'
+    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
+  | codata h _ _ _ hv _ hn => cases h' with
+    | univ => cases hv
+    | prop => cases hv
+    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ _ hv' _ hn' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact hn.symm.trans hn'
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
@@ -853,7 +1130,17 @@ theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
     | data h _ _ _ hv hs =>
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
       subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
+      exact nomatch hs.symm.trans hs'
+    | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
+  | codata h' _ _ _ hv' hs' =>
+    subst hv'
+    cases h with
+    | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
+    | codata h _ _ _ hv hs =>
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact nomatch hs.symm.trans hs'
 
 /-- A proposition has one level, in a signature whose names are distinct. -/
@@ -866,7 +1153,16 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
+      exact hn.symm.trans hn'
+    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
+  | codata h _ _ _ hv _ hn => cases h' with
+    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ _ hv' _ hn' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact hn.symm.trans hn'
 
 /-! ### The Relations of a Level -/
@@ -889,6 +1185,7 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         ⟨b₁, b₃, h₁, h₃, hb.trans ((hL.prop_unique h₂ h₂').trans hb')⟩⟩
   | .data h _ _ _ _ _ _ _ hS =>
     DataType.ctorRel_isPer (hd.constructors_nodup h) fun c hcm => TelRel.isPer hd ih (hS c hcm)
+  | .codata _ _ _ _ _ _ _ _ hS => corecRel_isPer (DesRel.isPer hd ih hS)
 
 /-- The equality of the terms of the fields of a telescope is a partial equivalence relation. -/
 theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -898,6 +1195,18 @@ theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
   | .nil => FieldsRel.nil_isPer
   | .cons _ hF _ hG hresp =>
     FieldsRel.cons_isPer (FieldRel.isPer hd ih hF) (fun a ha => TelRel.isPer hd ih (hG a ha)) hresp
+
+/-- The equality of the abstractions for destructors is a partial equivalence relation. -/
+theorem DesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
+    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S → IsPer S
+  | .nil => ⟨fun _ => trivial, fun _ _ => trivial⟩
+  | .cons hΘ _ hB hF hBresp _ hG hresp =>
+    ObsRel.cons_isPer
+      (AbstractionRel.isPer (TelRel.isPer hd ih hΘ)
+        (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp)
+      (fun f hf => DesRel.isPer hd ih (hG f hf)) hresp
 
 /-- The equality of the terms of the type of a field is a partial equivalence relation. -/
 theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -923,10 +1232,12 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     cases h' with
     | univ hl' _ => subst hl; subst hl'; exact fun _ _ => .rfl
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | .prop hl _, _, h' => by
     cases h' with
     | prop hl' _ => subst hl; subst hl'; exact fun _ _ => .rfl
     | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
   | .data h _ _ _ hv _ _ _ hS, _, h' => by
     have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
     cases h' with
@@ -936,10 +1247,25 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
       cases hT
       cases has
       exact DataType.ctorRel_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
+  | .codata h _ _ _ hv _ _ _ hS, _, h' => by
+    have hu := DesRel.unique hd ih hS
+    cases h' with
+    | univ => cases hv
+    | prop => cases hv
+    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ _ hv' _ _ _ hS' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+      cases hT
+      cases has
+      exact corecRel_congr (hu _ _ hS')
 termination_by structural h _ _ => h
 
 /-- A proposition of `Ω_n` has a unique truth. -/
@@ -954,10 +1280,23 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       subst hv
       obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
       subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h h'
+      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
       cases hT
       cases has
       exact DataType.truth_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
+  | .codata h _ _ _ hv _ _ _ hS, _, h' => by
+    have hu := DesRel.unique hd ih hS
+    cases h' with
+    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ _ hv' _ _ _ hS' =>
+      subst hv
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+      cases hT
+      cases has
+      exact ObsRel.truth_congr (hu _ _ hS')
 termination_by structural h _ _ => h
 
 /-- A telescope has a unique equality of the terms of its fields. -/
@@ -977,6 +1316,31 @@ theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       cases Computesι.det hd hA hA'
       have hFF := hFu _ _ hF'
       exact FieldsRel.cons_congr hFp hFF fun a ha => hGu a ha _ _ (hG' a ((hFF a a).1 ha))
+termination_by structural h _ _ _ => h
+
+/-- Destructors have a unique equality of the abstractions for them. -/
+theorem DesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
+    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S →
+      ∀ (s' : Quality) (S' : ObsRel), DesRel sig ι n (fun m _ => levelRel sig ι m) s' ds @θ S' →
+        ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂
+  | .nil, _, _, h' => by cases h'; exact fun _ _ => .rfl
+  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _, _, _, h' => by
+    have hSΘu := TelRel.unique hd ih hΘ
+    have hSΘp := TelRel.isPer hd ih hΘ
+    have hGu := fun f hf => DesRel.unique hd ih (hG f hf)
+    have hEp := AbstractionRel.isPer hSΘp
+      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
+    cases h' with
+    | cons hΘ' F' _ hF' _ _ hG' _ =>
+      have hSS := hSΘu _ _ hΘ'
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u, F ts.terms t u ↔ F' ts.terms t u :=
+          fun ts hts =>
+        have ⟨_, hv⟩ := hB ts hts
+        FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact ObsRel.cons_congr hEp hEE fun f hf => hGu f hf _ _ (hG' f ((hEE f f).1 hf))
 termination_by structural h _ _ _ => h
 
 /-- The type of a field has a unique equality of its terms. -/
@@ -1096,12 +1460,18 @@ theorem HasEq.prop_isProp {sig : Signature} {ι : Interpretation} {l : Level 0} 
       obtain ⟨b, _, hb, -⟩ := hvw
       exact ⟨_, b, hb⟩
     | data _ _ _ _ hv => cases hv
-  | prop _ _ h _ => cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
+  | prop _ _ h _ =>
+    cases levelRel_prop_iff.1 h with
+    | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
 
 /-- A sort is not a proposition. -/
 theorem not_isProp_sort {sig : Signature} {ι : Interpretation} {κ : Universe 0} :
     ¬ IsProp sig ι (.sort κ) := fun ⟨_, _, h⟩ => by
-  cases levelRel_prop_iff.1 h with | data _ _ _ _ hv => cases hv
+  cases levelRel_prop_iff.1 h with
+  | data _ _ _ _ hv => cases hv
+  | codata _ _ _ _ hv => cases hv
 
 /-- A sort does not compute to a proposition. -/
 theorem not_computesToProp_sort {sig : Signature} {ι : Interpretation} {κ : Universe 0} :

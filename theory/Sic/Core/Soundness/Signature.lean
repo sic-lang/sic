@@ -61,11 +61,19 @@ theorem Signature.ValidEntries.hasConstant {ι : Interpretation} {sig sigT : Sig
       ValidConstantDeclaration.iff.1 hv⟩
 
 -- ADE: none.
-/-- A declared type of `Σ_T` is a declared type of `Σ`, whose type declaration is meaningful in `Σ`. -/
-theorem Signature.ValidEntries.hasDeclaredType {ι : Interpretation} {sig sigT : Signature}
+/-- A data type of `Σ_T` is a data type of `Σ`, whose type declaration is meaningful in `Σ`. -/
+theorem Signature.ValidEntries.hasDataType {ι : Interpretation} {sig sigT : Signature}
     (h : sig.ValidEntries ι sigT) {D : Name} {decl : TypeDeclaration}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} :
-    sigT.HasDeclaredType D decl T → sig.HasDeclaredType D decl T ∧ ValidTypeDeclaration sig ι decl
+    sigT.HasDataType D decl T → sig.HasDataType D decl T ∧ ValidTypeDeclaration sig ι decl
+  | ⟨hd, hT, hn⟩ => have ⟨hm, hv⟩ := h _ hd; ⟨⟨hm, hT, hn⟩, hv⟩
+
+-- ADE: none.
+/-- A codata type of `Σ_T` is a codata type of `Σ`, whose type declaration is meaningful in `Σ`. -/
+theorem Signature.ValidEntries.hasCodataType {ι : Interpretation} {sig sigT : Signature}
+    (h : sig.ValidEntries ι sigT) {D : Name} {decl : TypeDeclaration}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} :
+    sigT.HasCodataType D decl T → sig.HasCodataType D decl T ∧ ValidTypeDeclaration sig ι decl
   | ⟨hd, hT, hn⟩ => have ⟨hm, hv⟩ := h _ hd; ⟨⟨hm, hT, hn⟩, hv⟩
 
 end Sic.Core
