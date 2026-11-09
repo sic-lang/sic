@@ -470,7 +470,8 @@ The fields are checked in the signature `Σ`, which the block does not extend, s
 block occurs in them: the block is not recursive.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
-  /-- The rule, with the uses `γ` of the constructors of each type at each instance. -/
+  /-- The rule, with the uses `γ` of the constructors of each type at each instance.
+  RFC: `\mathsf{data}` -/
   | intro {sig : Signature} {decl : TypeDeclaration}
       (hΔ : ∀ ι, WfCtx sig (decl.params ι))
       (hΘ : ∀ ι, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
