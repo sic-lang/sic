@@ -8,12 +8,14 @@ public import Sic.Core.Typing
 The weak head reduction of annex 14 of RFC 36, `Σ ⊢ t ⟶ u`, the computation of the type theory:
 the conversion reduces the terms to their weak head normal forms to compare them, the meaning
 computes the closed terms, `Σ ⊢ t ⇓ v`, and the erasure is sound for this computation.
-The core reduces by the rule `(δ_⟶)`, which unfolds a definition, and the data types by `(ι_⟶)`,
+The core reduces by the rule `(δ_⟶)`, which unfolds a definition, the data types by `(ι_⟶)`,
 which runs the branch of a constructor that a recursor eliminates, and `(rec_⟶)`, which reduces the
-term that a recursor eliminates.
+term that a recursor eliminates, and the codata types by `(β_⟶)`, which runs the branch of a
+destructor in the corecursor that it observes, and `(d_⟶)`, which reduces the term that an
+observation observes.
 A head normal form is a sort, an instance of a declared type, a constructor applied to the terms of
-its fields, or a neutral term, stuck on a variable or on a constant, which no rule unfolds, or a
-recursor on a neutral term.
+its fields, a corecursor, or a neutral term, stuck on a variable or on a constant, which no rule
+unfolds, or a recursor or an observation of a neutral term.
 
 The reduction is untyped and defined on open terms, since the meaning defines the judgments from it
 and the algorithm of the conversion reduces terms of a context.
@@ -44,6 +46,11 @@ inductive Neutral (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop 
   | recursor {Δ : Scope} {r : Grade} {D : Name} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} {as : InstanceArgs k Γ Δ} {t : Term k Γ} {Cs : Motives k Γ}
       {us : Branches k Γ} (h : Neutral sig t) : Neutral sig (.recursor r D qs ls ps as t Cs us)
+  -- ADE: `fstₙ`, `sndₙ` and `∘ₙ`, in `Definition/Untyped/Neutral.agda`.
+  /-- `t.(T.d)(t̄)`: an observation of a neutral term. -/
+  | obs {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      {as : InstanceArgs k Γ Δ} {t : Term k Γ} {d : Name} {bs : Terms k Γ} (h : Neutral sig t) :
+      Neutral sig (.obs D qs ls ps as t d bs)
 
 -- ADE: `Whnf`, in `Definition/Untyped/Whnf.agda`.
 /-- `t` is a head normal form of the core.
@@ -105,6 +112,28 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {ps : List Grade} {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {Cs : Motives k Γ}
       {us : Branches k Γ} (h : Red sig t t') :
       Red sig (.recursor r D qs ls ps as t Cs us) (.recursor r D qs ls ps as t' Cs us)
+  -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
+  /-- An observation of a corecursor steps to the branch of the destructor, the case `i` of the block
+  of the type of the corecursor, with the terms of the state and the arguments substituted for its
+  variables; the instance that the observation carries plays no part, as that of a recursor does
+  not; the block not being recursive, the branch observes nothing again, and the parameters being
+  uniform, it binds none of them.
+  RFC: `\beta_{\longrightarrow}` -/
+  | beta {decl : TypeDeclaration} {i j : Nat}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope} {r : Grade}
+      {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)} {ps ps' : List Grade}
+      {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ Δ'} {ss : Terms k Γ} {Ss : States k Γ}
+      {gs : CorecBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
+      {g : Term k (Γ.extend (0 + m + a))} {v : Term k Γ} (h : .typeDeclaration decl ∈ sig)
+      (hi : decl.codataCases[i]? = some (j, T, d)) (hD : T.name = D)
+      (hg : gs.get i = some ⟨0, m, a, g⟩) (hv : g.instantiateTerms (ss.append bs) = some v) :
+      Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs) v
+  -- ADE: `app-subst`, `fst-subst` and `snd-subst`, in `Definition/Typed.agda`.
+  /-- An observation reduces the term it observes.
+  RFC: `d_{\longrightarrow}` -/
+  | obs {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+      {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {d : Name} {bs : Terms k Γ} (h : Red sig t t') :
+      Red sig (.obs D qs ls ps as t d bs) (.obs D qs ls ps as t' d bs)
 
 -- ADE: `_⊢_⇒*_∷_`, in `Definition/Typed.agda`.
 /-- `Σ ⊢ t ⟶* u`: `t` reduces to `u` in some steps. -/
@@ -137,6 +166,8 @@ theorem Neutral.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k �
       exact nomatch he
   | iota => cases hn with | recursor hn => exact nomatch hn
   | recursor _ ih => cases hn with | recursor hn => exact ih hn
+  | beta => cases hn with | obs hn => exact nomatch hn
+  | obs _ ih => cases hn with | obs hn => exact ih hn
 
 -- ADE: `whnfRedTerm`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A head normal form does not reduce.
@@ -183,6 +214,25 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     cases h₂ with
     | iota => exact (Whnf.not_red hsig (.ctor ..) h₁).elim
     | recursor h₂ => rw [ih h₂]
+  | beta h₁ hi₁ hD₁ hg₁ hv₁ =>
+    cases h₂ with
+    | beta h₂ hi₂ hD₂ hg₂ hv₂ =>
+      have hT₁ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₁)).1
+      have hT₂ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₂)).1
+      have he := hsig.entry_unique h₁ h₂ (TypeDeclaration.codata_name_mem_names hT₁)
+        (by rw [hD₁, ← hD₂]; exact TypeDeclaration.codata_name_mem_names hT₂)
+      cases he
+      have hi := List.getElem?_inj_of_nodup_map (hsig.codataCases_nodup h₁) hi₁ hi₂
+        (by simp only [hD₁, hD₂])
+      subst hi
+      have hg := Option.some.inj (hg₁.symm.trans hg₂)
+      cases hg
+      exact Option.some.inj (hv₁.symm.trans hv₂)
+    | obs h => exact (Whnf.not_red hsig (.corec ..) h).elim
+  | obs h₁ ih =>
+    cases h₂ with
+    | beta => exact (Whnf.not_red hsig (.corec ..) h₁).elim
+    | obs h₂ => rw [ih h₂]
 
 -- ADE: `whrDet*Term`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Two reductions to head normal forms end on the same term.

@@ -479,6 +479,15 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
       have hδ : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
       exact Usage.absent hd hS (hΓ.extend _) (hu i j T' con u' hc hu')
         ((GradeVector.extendParams_addNat δ _ _ x).symm ▸ hδ) ho
+  | .obs (γ := γ₁) (δ := δ) h hq hp hpos ht hbs _, hx, ho => by
+    have hx' : γ₁ x + δ x ∈ S := by
+      simpa [GradeVector.add] using hx
+    simp only [Term.erase, hd.argumentGrades h hq hp hpos, Option.getD_some] at ho
+    cases ho with
+    | obs ho => exact Usage.absent hd hS hΓ ht (hS.add _ _ hx') ho
+    | arg ho =>
+      rw [Grade.modality.semiring.add_comm] at hx'
+      exact UsageArgs.absent hd hS hΓ hbs (hS.add _ _ hx') ho
   | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho
 
 -- ADE: none.

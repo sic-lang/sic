@@ -322,6 +322,29 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       HasType sig ctx (.recursor r D qs ls ps as t Cs us) (C.subst₀ (Subst₀.single t))
+  -- ADE: `_∘ⱼ_`, `fstⱼ` and `sndⱼ`, in `Definition/Typed.agda`.
+  /-- An observation of a term of the instance it carries, whose arguments are arguments of the
+  parameters, by one of the destructors of its codata type, at the position `hd` in the destructors
+  `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the instance, applied to arguments of its
+  telescope, has its result, the destructors `d̄₁` before it being the observations of the term by
+  them, and the arguments substituted for the variables of the telescope.
+  RFC: `d` -/
+  | obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
+      {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
+      {ψ : ResultOwnership ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      (ht : HasType sig ctx t (.inst D qs ls ps as))
+      (hbs : HasArgs sig ctx bs ((Θ.substLevels (ls.getFin hl)).subst
+        (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
+      HasType sig ctx (.obs D qs ls ps as t d bs.terms)
+        (((B.substLevels (ls.getFin hl)).subst
+          (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate bs)
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
   RFC: `\mathsf{conv}` -/
@@ -458,6 +481,29 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
         (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁))
+  -- ADE: `app-cong`, `fst-cong` and `snd-cong`, in `Definition/Typed.agda`.
+  /-- Two observations by the same destructor, at equal arguments of the instance, at equal levels,
+  of equal terms, at equal arguments of its telescope, are equal.
+  RFC: `d_\equiv` -/
+  | obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
+      {t₁ t₂ : Term k Γ} {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
+      {ψ : ResultOwnership ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (has : EqInstanceArgs sig ctx as₁ as₂
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+      (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+      (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁))
+      (hbs : EqArgs sig ctx bs₁ bs₂ ((Θ.substLevels (ls₁.getFin hl₁)).subst
+        (hd.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst))) :
+      EqTerm sig ctx (.obs D qs ls₁ ps as₁ t₁ d bs₁.terms) (.obs D qs ls₂ ps as₂ t₂ d bs₂.terms)
+        (((B.substLevels (ls₁.getFin hl₁)).subst
+          (Subst.liftN _ (hd.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst))).instantiate
+            bs₁)
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
   /-- A recursor on a constructor applied to arguments of its fields, with the premises of `(rec)`,
   is equal to the branch of the constructor, the case `i` of the block, with the arguments
@@ -787,6 +833,7 @@ where
     | .inst _ _ _ _ has => hasInstanceArgs has
     | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ ht .. => hasType ht
+    | .obs _ _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -803,6 +850,7 @@ where
     | .inst _ _ _ _ _ has _ => eqInstanceArgs has
     | .ctor _ _ _ _ _ _ has _ _ => eqInstanceArgs has
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
+    | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig

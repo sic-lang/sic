@@ -9,8 +9,9 @@ The substitutions of annex 09 of RFC 36: the substitutions of the first order, a
 substitution `B[t̄ / Θ]` of the arguments of a telescope for its variables, the substitutions of the
 second order, which replace each application `X[t̄]` by `B[t̄ / x̄]` where `x̄. B` is the
 abstraction given to `X`, among them the substitution `[ā / Δ]` of the arguments of an instance for
-its parameters, the closed substitutions, and the instantiation `[l̄' / l̄]` of the level
-variables.
+its parameters and the substitution `[ā / Δ, t.T / d̄₁]`, which also gives the destructors before a
+destructor the observations of a term by them, the closed substitutions, and the instantiation
+`[l̄' / l̄]` of the level variables.
 
 A substitution of the second order replaces a second-order variable by an abstraction, so that it
 substitutes the arguments of each application in the abstraction, which is not a subterm of the
@@ -60,6 +61,9 @@ end Ren
 def Var.weakenN {Γ : Scope} {e : Scope.Entry} : (n : Nat) → Var Γ e → Var (Γ.extend n) e
   | 0, x => x
   | n + 1, x => Var.weakenN n (.succ x)
+
+/-- The renaming that skips `n` new variables. -/
+def Ren.weakenN {Γ : Scope} (n : Nat) : Ren (Γ.extend n) Γ := fun x => x.weakenN n
 
 mutual
 
@@ -372,6 +376,38 @@ RFC: `\mathsf{params}_\theta` -/
 def InstanceArgs.toSubst {Γ : Scope} : {Δ : Scope} → InstanceArgs k Γ Δ → Subst k Γ Δ
   | _, .snoc _ B, _, .zero => B
   | _, .snoc as _, _, .succ x => as.toSubst x
+
+/-- `(θ, x̄. B)`: the substitution `θ` of the scope `Δ` followed by the abstraction `x̄. B` for a new
+entry. -/
+def Subst.snoc {Γ Δ : Scope} {e : Scope.Entry} (θ : Subst k Γ Δ)
+    (B : Term k (Γ.extend e.params.length)) : Subst k Γ (e :: Δ) := fun x =>
+  match x with
+  | .zero => B
+  | .succ x => θ x
+
+/-- `x̄. t.(T.d)(x̄)`: the observation of the term `t` of the instance `T = D.{s̄; l̄; p̄} ā` by the
+destructor `d`, as an abstraction over a variable for each of its arguments, whose parameters are
+`ps'`. -/
+def Term.observation {Γ Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ) (d : Name) (ps' : List Parameter) :
+    Term k (Γ.extend ps'.length) :=
+  .obs D qs ls ps (as.rename (Ren.weakenN ps'.length)) (t.rename (Ren.weakenN ps'.length)) d
+    (Args.bound ps').terms
+
+/-- `[ā / Δ, t.T / d̄₁]`: at the position of a destructor `d` in the destructors `d̄ = (d̄₁ | d | d̄₂)`
+of the scope `Δ`, the substitution `θ = [ā / Δ]` of the scope, followed by the observation
+`o d' = x̄. t.(T.d')(x̄)` of a term for each destructor `d'` of `d̄₁`, in the scope of the telescope
+and of the result of `d`.
+RFC: `\mathsf{obs}_\theta` -/
+def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q : Grade}
+    {ps : List Parameter} (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Subst k Γ' Γ →
+        Subst k Γ' Ξ
+  | _, _, _, _, _, _, _, .here, θ => θ
+  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') h, θ =>
+    h.obsSubst o (Subst.snoc (e := .secondOrder ps' _) θ (o d' ps'))
 
 /-! ## Instantiation of the Level Variables -/
 
@@ -687,9 +723,6 @@ end
 /-- The identity substitution of the first order changes nothing. -/
 theorem Term.subst₀_id {Γ : Scope} (t : Term k Γ) : t.subst₀ Subst₀.id = t :=
   Term.subst₀_id_of (fun _ => rfl) t
-
-/-- The renaming that skips `n` new variables. -/
-def Ren.weakenN {Γ : Scope} (n : Nat) : Ren (Γ.extend n) Γ := fun x => x.weakenN n
 
 /-- The value `v` substituted by `σ`. -/
 def Val.subst₀ {Γ Δ : Scope} {a : Scope.Entry} (σ : Subst₀ k Γ Δ) : Val k Δ a → Val k Γ a
@@ -2249,14 +2282,6 @@ def Subst.closedSingle (t : Term k []) : Subst k [] [.var] := fun x =>
   | .zero => t
   | .succ x => nomatch x
 
-/-- `(θ, x̄. B)`: the closed substitution `θ` of the scope `Γ` followed by the abstraction `x̄. B` for
-a new entry. -/
-def Subst.snoc {Γ : Scope} {e : Scope.Entry} (θ : Subst k [] Γ)
-    (B : Term k (Scope.extend [] e.params.length)) : Subst k [] (e :: Γ) := fun x =>
-  match x with
-  | .zero => B
-  | .succ x => θ x
-
 /-- `[t̄ / x̄]`: the closed substitution that gives the variables of a telescope the closed arguments
 `t̄`, the first one first.
 RFC: `\mathsf{args}_\theta` -/
@@ -3156,5 +3181,110 @@ theorem Term.atCtor_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ Δ : S
   congr 2
   rw [Term.substLevels, InstanceArgs.substLevels_rename, ← Args.terms_substLevels,
     Args.substLevels_bound]
+
+/-! ## Observations -/
+
+/-- The observation of a term, substituted under the variables of its arguments, is the observation
+of the term substituted. -/
+theorem Term.observation_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ) (t : Term k Δ) (d : Name)
+    (ps' : List Parameter) :
+    (t.observation D qs ls ps as d ps').subst (Subst.liftN ps'.length θ) =
+      (t.subst θ).observation D qs ls ps (as.subst θ) d ps' := by
+  have h : ∀ {a} (x : Var Δ a), Subst.liftN ps'.length θ (Ren.weakenN ps'.length x) =
+      (θ x).rename (Ren.liftN a.params.length (Ren.weakenN ps'.length)) :=
+    fun x => Subst.liftN_weakenN _ θ x
+  simp only [Term.observation, Term.subst, ← Args.terms_subst, Args.bound_subst]
+  rw [Term.subst_rename_of h, InstanceArgs.subst_rename_of h,
+    Term.rename_subst_of (fun _ => rfl), InstanceArgs.rename_subst_of (fun _ => rfl)]
+
+/-- The observation of a term, at arguments, is the observation by the destructor applied to them. -/
+theorem Term.observation_instantiate {Γ Δ : Scope} (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ) (d : Name)
+    {ps' : List Parameter} (ts : Args k Γ ps') :
+    (t.observation D qs ls ps as d ps').instantiate ts = .obs D qs ls ps as t d ts.terms := by
+  rw [Term.instantiate_eq_subst₀, Term.observation, Term.subst₀,
+    InstanceArgs.subst₀_rename_of (ξ := Ren.weakenN ps'.length) (σ' := Subst₀.id)
+      (fun y => Args.toSubst₀_weakenN ts y),
+    InstanceArgs.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
+    Term.subst₀_rename_of (ξ := Ren.weakenN ps'.length) (σ' := Subst₀.id)
+      (fun y => Args.toSubst₀_weakenN ts y),
+    Term.subst₀_id, ← Args.terms_subst₀, Args.bound_toSubst₀]
+
+/-- A position of a destructor in destructors, at instantiated levels. -/
+def Destructors.Pos.substLevels {k' : Nat} (ls' : Fin k → Level k') {d : Name} {p q : Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ →
+        Destructors.Pos d p q (ds.substLevels ls') Ξ (Θ.substLevels ls') (B.substLevels ls') ψ
+  | _, _, _, _, _, _, _, .here => .here
+  | _, _, _, _, _, _, _, .there h => .there (h.substLevels ls')
+
+/-- The substitution of the destructors before a position is the same at instantiated levels, since
+it reads only the scopes. -/
+theorem Destructors.Pos.obsSubst_posSubstLevels {k' k'' : Nat} {Γ' : Scope}
+    (ls' : Fin k' → Level k'')
+    (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) {d : Name} {p q : Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → (hd : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      (θ : Subst k Γ' Γ) → ∀ {a} (x : Var Ξ a),
+        (hd.substLevels ls').obsSubst o θ x = hd.obsSubst o θ x
+  | _, _, _, _, _, _, _, .here, _, _, _ => rfl
+  | _, _, _, _, _, _, _, .there h, _, _, x => h.obsSubst_posSubstLevels ls' o _ x
+
+/-- The observation of a term, at instantiated levels, is the observation of the term at these
+levels. -/
+theorem Term.observation_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (t : Term k Γ) (d : Name) (ps' : List Parameter) :
+    (t.observation D qs ls ps as d ps').substLevels ls' =
+      (t.substLevels ls').observation D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') d
+        ps' := by
+  simp only [Term.observation, Term.substLevels, ← Args.terms_substLevels, Args.substLevels_bound,
+    Term.substLevels_rename, InstanceArgs.substLevels_rename]
+
+/-- The substitution of the destructors before a position, then by `σ`, is the substitution of the
+destructors before it by the observations substituted, when the substitution of the scope and the
+observations commute with `σ`. -/
+theorem Destructors.Pos.obsSubst_subst {k' : Nat} {Γ' Γ'' : Scope} (σ : Subst k Γ'' Γ')
+    {o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)}
+    {o' : Name → (ps' : List Parameter) → Term k (Γ''.extend ps'.length)}
+    (ho : ∀ d ps', (o d ps').subst (Subst.liftN ps'.length σ) = o' d ps') {d : Name} {p q : Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → (hd : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      {θ : Subst k Γ' Γ} → {θ' : Subst k Γ'' Γ} →
+      (∀ {a} (x : Var Γ a), (θ x).subst (Subst.liftN a.params.length σ) = θ' x) →
+      ∀ {a} (x : Var Ξ a),
+        ((hd.obsSubst o θ) x).subst (Subst.liftN a.params.length σ) = hd.obsSubst o' θ' x
+  | _, _, _, _, _, _, _, .here, _, _, h => h
+  | _, _, _, _, _, _, _, .there h', _, _, h => h'.obsSubst_subst σ ho fun x =>
+    match x with
+    | .zero => ho _ _
+    | .succ x => h x
+
+/-- The substitution of the destructors before a position, at instantiated levels, is the
+substitution of the destructors before it by the observations at these levels, when the
+substitution of the scope and the observations commute with the instantiation. -/
+theorem Destructors.Pos.obsSubst_substLevels {k' k'' : Nat} {Γ' : Scope} (ls' : Fin k → Level k'')
+    {o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)}
+    {o' : Name → (ps' : List Parameter) → Term k'' (Γ'.extend ps'.length)}
+    (ho : ∀ d ps', (o d ps').substLevels ls' = o' d ps') {d : Name} {p q : Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → (hd : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      {θ : Subst k Γ' Γ} → {θ' : Subst k'' Γ' Γ} →
+      (∀ {a} (x : Var Γ a), (θ x).substLevels ls' = θ' x) →
+      ∀ {a} (x : Var Ξ a), ((hd.obsSubst o θ) x).substLevels ls' = hd.obsSubst o' θ' x
+  | _, _, _, _, _, _, _, .here, _, _, h => h
+  | _, _, _, _, _, _, _, .there h', _, _, h => h'.obsSubst_substLevels ls' ho fun x =>
+    match x with
+    | .zero => ho _ _
+    | .succ x => h x
 
 end Sic.Core

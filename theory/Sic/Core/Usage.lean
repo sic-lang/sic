@@ -114,6 +114,24 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
         Usage sig (δ.extendParams (m.grade * r) (con.params (.ofLists qs ps hq hp))) m u)
       (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
       Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.recursor r D qs ls ps as t Cs us)
+  -- ADE: `_∘ₘ_`, `fstₘ` and `sndₘ`, in `Graded/Usage.agda`.
+  /-- An observation uses the variables of its term once, the term checked in the mode `m`, and those
+  of its arguments as the arguments of the telescope of the destructor at the instance do; the mode
+  must allow the grade `p` of the destructor, as the mode of a constant must, so that a result
+  without use at run time is observed only in a term without use at run time; the instance it
+  carries uses none.
+  RFC: `d_{▶}` -/
+  | obs {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
+      {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
+      {ψ : ResultOwnership ps'.length} {m : Mode} {γ δ : GradeVector Γ.length}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (ht : Usage sig γ m t) {bs : Args k Γ ps'} (hbs : UsageArgs sig δ m bs)
+      (hm : m ·ᵐ p.mode = m) :
+      Usage sig (γ +ᶜ δ) m (.obs D qs ls ps as t d bs.terms)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{▶}` -/

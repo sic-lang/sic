@@ -834,6 +834,26 @@ theorem Term.LevelEquiv.instantiateTerms {k : Nat} {Γ : Scope} :
   | 0, _, _, _, _, _, .cons .., _, hv => nomatch hv
   | _ + 1, _, _, _, _, _, .nil, _, hv => nomatch hv
 
+/-- Terms equal up to their levels, followed by terms equal up to their levels, are equal up to
+their levels. -/
+theorem Terms.LevelEquiv.append {k : Nat} {Γ : Scope} :
+    {ts₁ ts₂ : Terms k Γ} → Terms.LevelEquiv ts₁ ts₂ → {us₁ us₂ : Terms k Γ} →
+      Terms.LevelEquiv us₁ us₂ → Terms.LevelEquiv (ts₁.append us₁) (ts₂.append us₂)
+  | _, _, .nil, _, _, hu => hu
+  | _, _, .cons h hs, _, _, hu => .cons h (hs.append hu)
+
+/-- The branches of corecursors equal up to their levels have, at a position, branches equal up to
+their levels. -/
+theorem CorecBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :
+    {vs₁ vs₂ : CorecBranches k Γ} → CorecBranches.LevelEquiv vs₁ vs₂ → {i n m a : Nat} →
+      {v₁ : Term k (Γ.extend (n + m + a))} → vs₁.get i = some ⟨n, m, a, v₁⟩ →
+        ∃ v₂, vs₂.get i = some ⟨n, m, a, v₂⟩ ∧ Term.LevelEquiv v₁ v₂
+  | _, _, .nil, _, _, _, _, _, he => nomatch he
+  | _, _, .cons h _, 0, _, _, _, _, he => by
+    cases he
+    exact ⟨_, rfl, h⟩
+  | _, _, .cons _ hs, _ + 1, _, _, _, _, he => hs.get he
+
 /-- A neutral term stays one when its levels change for equal ones. -/
 theorem Neutral.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term k Γ}
     (hn : Neutral sig t) (h : Term.LevelEquiv t t') : Neutral sig t' := by
@@ -843,6 +863,9 @@ theorem Neutral.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term
   | recursor _ ih =>
     cases h with
     | recursor _ _ _ _ _ _ ht => exact .recursor (ih ht)
+  | obs _ ih =>
+    cases h with
+    | obs _ _ _ _ _ _ ht => exact .obs (ih ht)
 
 /-- A head normal form stays one when its levels change for equal ones. -/
 theorem Whnf.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term k Γ}
@@ -878,6 +901,19 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
     | recursor _ _ _ _ hl has ht hCs hus =>
       obtain ⟨u', hr', hu⟩ := ih ht
       exact ⟨_, .recursor hr', .recursor _ _ _ _ hl has hu hCs hus⟩
+  | beta hdecl hi hD hg hv =>
+    cases h with
+    | obs _ _ _ _ _ _ ht hbs =>
+      cases ht with
+      | corec _ _ _ _ _ _ hss _ hgs =>
+        obtain ⟨g', hg', hgg⟩ := hgs.get hg
+        obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms (hss.append hbs) hv
+        exact ⟨v', .beta hdecl hi hD hg' hv', hvv⟩
+  | obs _ ih =>
+    cases h with
+    | obs _ _ _ _ hl has ht hbs =>
+      obtain ⟨u', hr', hu⟩ := ih ht
+      exact ⟨_, .obs hr', .obs _ _ _ _ hl has hu hbs⟩
 
 /-- A term whose levels change for equal ones reduces to the term its reducts become so. -/
 theorem RedStar.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k Γ}

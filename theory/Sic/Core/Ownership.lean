@@ -14,8 +14,8 @@ gives each second-order variable its telescope and the ownership of its result, 
 gives each constant its ownership.
 Unlike the vector of the usage, which each premise computes and the conclusion adds, `φ` is the same
 in every premise, as the context of the typing is.
-The data types give the ownership of their instances, of their constructors and of their
-recursors.
+The declared types give the ownership of their instances, the data types that of their
+constructors and of their recursors, and the codata types that of their observations.
 -/
 
 @[expose] public section
@@ -110,6 +110,23 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
         Ownership sig (Ownership.extendFields φ o (con.params (.ofLists qs ps hq hp))) m p u) :
       Ownership sig φ m p (.recursor r D qs ls ps as t Cs us)
+  /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
+  the result of its destructor, given the ownerships of its arguments, which satisfy the requirements
+  of the entries of the telescope of the destructor, as the arguments of a telescope do: the result
+  of a value owned alone has the ownership that its destructor gives it, and the result of a shared
+  value is shared, since an other owner of the value may observe it.
+  RFC: `d_{◀}` -/
+  | obs {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
+      {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
+      {ψ : ResultOwnership ps'.length} {o v : Grade} {os : List Grade}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (ht : Ownership sig φ m o t) {bs : Args k Γ ps'} (hbs : OwnershipArgs sig φ m bs os)
+      (hv : ψ.value os = some v) :
+      Ownership sig φ m (o * v) (.obs D qs ls ps as t d bs.terms)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{sub}_{◀}` -/
   | sub {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {p q : Grade} {t : Term k Γ}

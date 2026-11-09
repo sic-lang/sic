@@ -192,18 +192,12 @@ abbrev Observations : Type := Name → (ps : List Parameter) → Term 0 (Scope.e
 /-- A relation between closed abstractions for the destructors of a codata type. -/
 abbrev ObsRel : Type := Observations → Observations → Prop
 
-/-- `x̄. v.(T.d)(x̄)`: the observations of the closed term `v` at the instance `T = D.{s̄; l̄; p̄} ā`, an
-abstraction over the arguments of each destructor. -/
-def Term.observations {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level 0))
-    (ps : List Grade) (as : InstanceArgs 0 [] Δ) (v : Term 0 []) : Observations := fun d xs =>
-  .obs D qs ls ps (as.rename fun x => by cases x) v.weakenClosed d (Args.bound (Γ := []) xs).terms
-
 /-- The closed term `v` is a corecursor of the declared type `D`, whose observations at the instance
 it carries are `o`. -/
 def Term.CorecObservations (D : Name) (v : Term 0 []) (o : Observations) : Prop :=
   ∃ (r : Grade) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (Δ : Scope)
     (as : InstanceArgs 0 [] Δ) (ss : Terms 0 []) (Ss : States 0 []) (gs : CorecBranches 0 []),
-    v = .corec r D qs ls ps as ss Ss gs ∧ o = v.observations D qs ls ps as
+    v = .corec r D qs ls ps as ss Ss gs ∧ o = v.observation D qs ls ps as
 
 /-- `(eq_d)`: the equality of the canonical terms of an instance of the codata type named `D`, which
 relates two corecursors of `D`, at any instances, whose observations, each at the instance it

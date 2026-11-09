@@ -119,6 +119,10 @@ theorem Usage.var₀_le {sig : Signature} {k : Nat} {Γ : Scope} {m : Mode} {v :
     cases m <;> decide
   | _, _, .const _ _, he => by cases he
   | _, _, .sort, he => by cases he
+  | _, _, .inst .., he => by cases he
+  | _, _, .ctor .., he => by cases he
+  | _, _, .recursor .., he => by cases he
+  | _, _, .obs .., he => by cases he
   | _, _, .sub h hle, he => Grade.le_trans _ _ _ (hle _) (Usage.var₀_le h he)
 
 /-- The grades of an application `X[t̄]` are at most the grade of the mode for `X` and the uses of
@@ -132,6 +136,10 @@ theorem Usage.var_inv {sig : Signature} {k : Nat} {Γ : Scope} {m : Mode} {e : S
     exact ⟨_, hts, GradeVector.preorder.refl _⟩
   | _, _, .const _ _, he => by cases he
   | _, _, .sort, he => by cases he
+  | _, _, .inst .., he => by cases he
+  | _, _, .ctor .., he => by cases he
+  | _, _, .recursor .., he => by cases he
+  | _, _, .obs .., he => by cases he
   | _, _, .sub h hle, he => by
     obtain ⟨δ, hts, hδ⟩ := Usage.var_inv h he
     exact ⟨δ, hts, GradeVector.preorder.trans hle hδ⟩
@@ -175,6 +183,7 @@ theorem Ownership.var₀_le {sig : Signature} {k : Nat} {Γ : Scope} {φ : Var �
   | _, _, .inst, he => by cases he
   | _, _, .ctor .., he => by cases he
   | _, _, .recursor .., he => by cases he
+  | _, _, .obs .., he => by cases he
   | _, _, .sub h hle, he => Grade.le_trans _ _ _ hle (Ownership.var₀_le h he)
 
 /-- The ownership of an application `X[t̄]` of a second-order variable gives ownerships to its
@@ -191,6 +200,7 @@ theorem Ownership.secondOrder_inv {sig : Signature} {k : Nat} {Γ : Scope}
   | _, _, .inst, he => by cases he
   | _, _, .ctor .., he => by cases he
   | _, _, .recursor .., he => by cases he
+  | _, _, .obs .., he => by cases he
   | _, _, .sub h _, he => Ownership.secondOrder_inv h he
 
 /-- `U₀` is not a term of `U₀`: by the soundness of the typing, the equality of the canonical type

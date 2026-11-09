@@ -95,6 +95,7 @@ theorem Term.unknown_not_whnf : ¬ Whnf [] Term.unknown := by
       | var => cases ht
       | const hc => nomatch hc
       | recursor => cases ht
+      | obs => cases ht
   exact fun h => this h rfl
 
 /-- The equality of the proofs of a proposition relates all the closed terms, or none, in a signature
@@ -262,6 +263,9 @@ theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Sc
   | .iota h hi hD hc hu hv =>
     .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hu hv
   | .recursor h => .recursor h.interpret
+  | .beta h hi hD hg hv =>
+    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hg hv
+  | .obs h => .obs h.interpret
 
 /-- A term computes to the canonical terms of the term it reduces to, in a signature whose names are
 distinct. -/
