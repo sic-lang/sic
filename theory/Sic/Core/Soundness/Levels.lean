@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+import Sic.Core.Soundness.Substitution
 
 /-!
 # Levels by Their Values
@@ -884,5 +885,104 @@ theorem ValidEqTerm₀.levelEquiv {sig : Signature} {ι : Interpretation} {t u A
     (htu : ValidEqTerm₀ sig ι t u A) (ht : Term.LevelEquiv t t') (hu : Term.LevelEquiv u u')
     (hA : Term.LevelEquiv A A') : ValidEqTerm₀ sig ι t' u' A' :=
   ⟨htu.1.levelEquiv hA hA, htu.2.levelEquiv htu.1.1 ht hu hA⟩
+
+/-! ## Contexts and Telescopes
+
+The meaning of a type declaration gives the fields of its constructors in the context of its
+parameters at the values of its levels, while an instance gives them at its own levels: two equal
+substitutions of a context are equal substitutions of the context at levels of the same values, and
+two closed telescopes equal in a sort stay so when their levels and that of the sort change for
+equal ones. -/
+
+/-- Two telescopes equal up to their levels in the other order. -/
+theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {Θ₁ Θ₂ : Telescope k Γ ps} : Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv Θ₂ Θ₁
+  | .nil => .nil
+  | .cons q p h hΘ => .cons q p h.symm hΘ.symm
+
+/-- A substitution is equal to itself up to its levels. -/
+theorem Subst.LevelEquiv.refl {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) : Subst.LevelEquiv θ θ :=
+  fun x => Term.LevelEquiv.refl (θ x)
+
+/-- Two contexts whose types are equal up to their levels. -/
+inductive Context.LevelEquiv {k : Nat} : {Γ : Scope} → Context k Γ → Context k Γ → Prop where
+  /-- `ε`. -/
+  | empty : Context.LevelEquiv .empty .empty
+  /-- `Γ, x : A`. -/
+  | var {Γ : Scope} {ctx₁ ctx₂ : Context k Γ} {A₁ A₂ : Term k Γ} (h : Context.LevelEquiv ctx₁ ctx₂)
+      (hA : Term.LevelEquiv A₁ A₂) : Context.LevelEquiv (ctx₁.var A₁) (ctx₂.var A₂)
+  /-- `Γ, X : (Θ ⊢ A ◀ ψ)`. -/
+  | secondOrder {Γ : Scope} {ps : List Parameter} {ctx₁ ctx₂ : Context k Γ}
+      {Θ₁ Θ₂ : Telescope k Γ ps} {A₁ A₂ : Term k (Γ.extend ps.length)} (χ₀ : Option Grade)
+      (h : Context.LevelEquiv ctx₁ ctx₂) (hΘ : Telescope.LevelEquiv Θ₁ Θ₂)
+      (hA : Term.LevelEquiv A₁ A₂) :
+      Context.LevelEquiv (ctx₁.secondOrder Θ₁ A₁ χ₀) (ctx₂.secondOrder Θ₂ A₂ χ₀)
+
+/-- Equal levels that replace the level variables give contexts equal up to their levels. -/
+theorem Context.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : {Γ : Scope} → (ctx : Context k Γ) →
+      Context.LevelEquiv (ctx.substLevels ls₁) (ctx.substLevels ls₂)
+  | _, .empty => .empty
+  | _, .var ctx A => .var (Context.substLevels_levelEquiv h ctx) (Term.substLevels_levelEquiv h A)
+  | _, .secondOrder ctx Θ A χ₀ => .secondOrder χ₀ (Context.substLevels_levelEquiv h ctx)
+      (Telescope.substLevels_levelEquiv h Θ) (Term.substLevels_levelEquiv h A)
+
+/-- Two contexts equal up to their levels in the other order. -/
+theorem Context.LevelEquiv.symm {k : Nat} {Γ : Scope} {ctx₁ ctx₂ : Context k Γ} :
+    Context.LevelEquiv ctx₁ ctx₂ → Context.LevelEquiv ctx₂ ctx₁
+  | .empty => .empty
+  | .var h hA => .var h.symm hA.symm
+  | .secondOrder χ₀ h hΘ hA => .secondOrder χ₀ h.symm hΘ.symm hA.symm
+
+/-- Contexts and telescopes equal up to their levels give appended contexts equal up to their
+levels. -/
+theorem Context.LevelEquiv.append {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
+    {ctx₁ ctx₂ : Context k Γ} → {Θ₁ Θ₂ : Telescope k Γ ps} → Context.LevelEquiv ctx₁ ctx₂ →
+      Telescope.LevelEquiv Θ₁ Θ₂ → Context.LevelEquiv (ctx₁.append Θ₁) (ctx₂.append Θ₂)
+  | _, _, _, _, _, _, h, .nil => h
+  | _, _, _, _, _, _, h, .cons _ _ hA hΘ => Context.LevelEquiv.append (Γ := .var :: _) (h.var hA) hΘ
+
+/-- Two equal substitutions of a context are equal substitutions of a context equal to it up to its
+levels: each type of the context changes for one equal to it up to its levels, which the meaning of
+the closed judgments does not tell apart. -/
+theorem EqSubst.levelEquiv {sig : Signature} {ι : Interpretation} : {Γ : Scope} →
+    {ctx₁ ctx₂ : Context 0 Γ} → Context.LevelEquiv ctx₁ ctx₂ → {σ₁ σ₂ : Subst 0 [] Γ} →
+      EqSubst sig ι ctx₁ σ₁ σ₂ → EqSubst sig ι ctx₂ σ₁ σ₂
+  | _, _, _, .empty, _, _, hσ => hσ
+  | _, _, _, .var h hA, _, _, hσ => by
+    obtain ⟨hσ, ht⟩ := (EqSubst.var_iff _ _ _ _).1 hσ
+    exact (EqSubst.var_iff _ _ _ _).2 ⟨EqSubst.levelEquiv h hσ,
+      ht.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
+        (hA.subst (Subst.LevelEquiv.refl _))⟩
+  | _, _, _, .secondOrder χ₀ h hΘ hA, _, _, hσ => by
+    obtain ⟨hσ, ht⟩ := (EqSubst.secondOrder_iff _ _ _ _ _ _).1 hσ
+    refine (EqSubst.secondOrder_iff _ _ _ _ _ _).2 ⟨EqSubst.levelEquiv h hσ, fun τ₁ τ₂ hτ => ?_⟩
+    have hτ' := EqSubst.levelEquiv
+      (Context.LevelEquiv.empty.append (hΘ.symm.subst (Subst.LevelEquiv.refl _))) hτ
+    exact (ht τ₁ τ₂ hτ').levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
+      ((hA.subst (Subst.LevelEquiv.refl _)).subst (Subst.LevelEquiv.refl _))
+termination_by _ ctx₁ => ctx₁.size
+decreasing_by
+  all_goals first
+    | (simp only [Context.size]; omega)
+    | (rw [Context.size_append]; simp only [Context.size]; omega)
+
+/-- Two closed telescopes equal in a sort stay so when their levels, and that of the sort, change for
+equal ones, which the meaning of the closed judgments does not tell apart. -/
+theorem ValidEqTelescope₀.levelEquiv {sig : Signature} {ι : Interpretation} {κ κ' : Universe 0}
+    (hq : κ.quality = κ'.quality) (hl : κ.level ≈ κ'.level) :
+    {ps : List Parameter} → {Θ₁ Θ₂ Θ₁' Θ₂' : Telescope 0 [] ps} →
+      ValidEqTelescope₀ sig ι κ Θ₁ Θ₂ → Telescope.LevelEquiv Θ₁ Θ₁' →
+        Telescope.LevelEquiv Θ₂ Θ₂' → ValidEqTelescope₀ sig ι κ' Θ₁' Θ₂'
+  | [], .nil, .nil, .nil, .nil, h, _, _ => by rw [ValidEqTelescope₀] at h ⊢; exact h
+  | _ :: _, .cons .., .cons .., .cons .., .cons .., h, .cons _ _ hA₁ hΘ₁, .cons _ _ hA₂ hΘ₂ => by
+    rw [ValidEqTelescope₀] at h ⊢
+    obtain ⟨⟨κ₁, hκ, hA⟩, hΘ⟩ := h
+    refine ⟨⟨κ₁, ⟨hq ▸ hκ.1, fun ρ => (hl ρ) ▸ hκ.2 ρ⟩,
+      hA.levelEquiv hA₁ hA₂ (Term.LevelEquiv.refl _)⟩, fun v₁ v₂ hv => ?_⟩
+    exact ValidEqTelescope₀.levelEquiv hq hl
+      (hΘ v₁ v₂ (hv.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hA₁.symm))
+      (hΘ₁.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl _)))
+      (hΘ₂.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl _)))
 
 end Sic.Core

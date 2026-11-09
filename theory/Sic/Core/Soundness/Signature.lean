@@ -5,11 +5,11 @@ public import Sic.Core.Meaning
 /-!
 # Entries of the Signature
 
-The soundness of the rules `(f)`, `(δ)` and `(f_≡)` reads an entry of the signature `Σ` of their
-typing, while their meaning is in a signature `Σ'` that holds the entries of `Σ` and gives each of
-them its meaning: the judgments typed in `Σ` are proved meaningful in every such `Σ'`, so that each
-entry of a well-formed signature, typed in the signature before it, is meaningful in the whole
-signature.
+The soundness of the rules `(f)`, `(δ)`, `(f_≡)`, `(D)` and `(D_≡)` reads an entry of the signature
+`Σ` of their typing, while their meaning is in a signature `Σ'` that holds the entries of `Σ` and
+gives each of them its meaning: the judgments typed in `Σ` are proved meaningful in every such `Σ'`,
+so that each entry of a well-formed signature, typed in the signature before it, is meaningful in
+the whole signature.
 
 The meaning is not proved in the signature before the entry and then extended: a type declaration
 quantifies over the closed terms of its fields, which a larger signature may add, so that a type
@@ -61,12 +61,11 @@ theorem Signature.ValidEntries.hasConstant {ι : Interpretation} {sig sigT : Sig
       ValidConstantDeclaration.iff.1 hv⟩
 
 -- ADE: none.
-/-- A signature whose entries a signature gives their meaning has no declared type in the core,
-since the kinds of declarations give the meaning of their type declarations. -/
-theorem Signature.ValidEntries.not_hasDeclaredType {ι : Interpretation} {sig sigT : Signature}
+/-- A declared type of `Σ_T` is a declared type of `Σ`, whose type declaration is meaningful in `Σ`. -/
+theorem Signature.ValidEntries.hasDeclaredType {ι : Interpretation} {sig sigT : Signature}
     (h : sig.ValidEntries ι sigT) {D : Name} {decl : TypeDeclaration}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} :
-    ¬ sigT.HasDeclaredType D decl T :=
-  fun ⟨hd, _⟩ => (h _ hd).2
+    sigT.HasDeclaredType D decl T → sig.HasDeclaredType D decl T ∧ ValidTypeDeclaration sig ι decl
+  | ⟨hd, hT, hn⟩ => have ⟨hm, hv⟩ := h _ hd; ⟨⟨hm, hT, hn⟩, hv⟩
 
 end Sic.Core

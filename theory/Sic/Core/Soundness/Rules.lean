@@ -197,9 +197,6 @@ A constant of the signature `Σ_T` of the typing unfolds, in a signature `Σ` th
 values of its levels, and so at levels of these values, which the meaning
 does not tell apart: the constant is then a term of its type, as `(f)` says, which gives `(δ)` by a
 step of reduction and `(f_≡)` at levels of the same values.
-
-The rules `(D)` and `(D_≡)` need no proof of their own: a signature whose entries are meaningful has
-no declared type in the core, `Signature.ValidEntries.not_hasDeclaredType`.
 -/
 
 -- ADE: none.
@@ -269,6 +266,230 @@ theorem ValidEqTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   ⟨hc.1, fun _ _ h => (hc.2 _ _ h).levelEquiv (Term.LevelEquiv.refl _)
     (.const f qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls)) (Term.LevelEquiv.refl _)⟩
 
+
+/-! ## Declared Types
+
+An instance of a declared type is a type of the sort of its declaration, whose fields are those of
+its declaration at its levels and its arguments: the meaning of the declaration makes them closed
+telescopes equal in this sort for equal arguments, which the graph of the sort gives the same
+equality of their terms, so that equal arguments give instances with the same equality of their
+canonical terms, or the same truth.
+
+The equality of the terms of the rest of a telescope is the one that the graph gives it at each
+term of its first type: it is defined from the graph, as the relation that some equality of the
+terms of the rest relates, rather than chosen among them, since the graph gives one at most.
+The instance at levels of the same values then follows as for the constants. -/
+
+/-- The type of the first field of two closed telescopes equal in the sort `κ`, as `(⊨tel_κ,)` gives
+it, computes to a type of a sort that `κ` bounds, whose terms are equal by `F`, and so does the
+other type, with the same `F`: the terms that `F` relates are equal terms of the type. -/
+theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ κ : Universe 0} (hκ : κ₁ ≼ κ)
+    (h : ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) :
+    ∃ w₁ w₂ F, Computesι sig ι A₁ w₁ ∧ Computesι sig ι A₂ w₂ ∧
+      FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w₁ F ∧
+      FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w₂ F ∧
+      ∀ a₁ a₂, F a₁ a₂ → ValidEqTerm₀ sig ι a₁ a₂ A₁ := by
+  obtain ⟨s₁, l₁⟩ := κ₁
+  have hd := h.1.1
+  have hm : l₁.closedValue ≤ κ.level.closedValue := hκ.2 Fin.elim0
+  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
+  cases hc.sort_inv
+  cases hR with
+  | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+  | univ n hn =>
+    cases levelRel_univ_iff.1 hn with
+    | data _ _ _ _ hv => cases hv
+    | univ hl _ =>
+      subst hl
+      obtain ⟨R', h₁, h₂⟩ := hvw
+      have hs : κ.quality = .type := by
+        have := hκ.1
+        cases hq : κ.quality with
+        | type => rfl
+        | prop => exact nomatch this hq
+      have hF : ∀ w, (levelRel sig ι l₁.closedValue).univ w R' →
+          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w
+            (R'.computed sig ι) := fun w hw => by
+        rcases Nat.lt_or_eq_of_le hm with hlt | heq
+        · exact .univBelow hs _ hlt hw
+        · exact .univ hs (heq ▸ levelRel_univ_iff.1 hw)
+      refine ⟨w₁, w₂, R'.computed sig ι, hw₁, hw₂, hF w₁ h₁, hF w₂ h₂,
+        fun a₁ a₂ ⟨v, w, ha₁, ha₂, hR'⟩ => ⟨(ValidEqTerm₀.univType h).left, fun _ =>
+          ⟨w₁, v, w, R', hw₁, ha₁, ha₂, .univ _ h₁, hR'⟩, fun ⟨v', hv', hP⟩ => ?_⟩⟩
+      cases Computesι.det hd hw₁ hv'
+      obtain ⟨_, _, hP⟩ := hP
+      exact (HasEq.univ_not_prop hd h₁ hP).elim
+    | prop hl _ =>
+      subst hl
+      obtain ⟨b₁, b₂, h₁, h₂, hb⟩ := hvw
+      cases propext hb
+      have hF : ∀ w, (levelRel sig ι l₁.closedValue).prop w b₁ →
+          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w
+            (fun _ _ => b₁) := fun w hw => by
+        rcases Nat.lt_or_eq_of_le hm with hlt | heq
+        · exact .propBelow _ hlt hw
+        · exact .prop (heq ▸ levelRel_prop_iff.1 hw)
+      refine ⟨w₁, w₂, fun _ _ => b₁, hw₁, hw₂, hF w₁ h₁, hF w₂ h₂,
+        fun a₁ a₂ hb₁ => ⟨(ValidEqTerm₀.propType h).left, fun hn => absurd ⟨w₁, hw₁, _, _, h₁⟩ hn,
+          fun _ => ⟨w₁, fun _ _ => b₁, hw₁, .prop _ b₁ h₁ fun _ _ => .rfl, hb₁⟩⟩⟩
+
+/-- Two closed telescopes equal in the sort `κ` are telescopes of the graph of this sort with the same
+equality of the terms of their fields, in a signature whose names are distinct. -/
+theorem ValidEqTelescope₀.telRel (hd : sig.Distinct) {κ : Universe 0} :
+    {ps : List Parameter} → {Θ₁ Θ₂ : Telescope 0 [] ps} → ValidEqTelescope₀ sig ι κ Θ₁ Θ₂ →
+      ∃ S, TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality Θ₁ S ∧
+        TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality Θ₂ S
+  | [], .nil, .nil, _ => ⟨FieldsRel.nil, .nil, .nil⟩
+  | _ :: _, .cons _ _ A₁ Θ₁, .cons _ _ A₂ Θ₂, h => by
+    rw [ValidEqTelescope₀] at h
+    obtain ⟨⟨κ₁, hκ, hA⟩, hΘ⟩ := h
+    obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, hFv⟩ := hA.fieldRel hκ
+    have ih : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
+      fun m _ => levelRel_isPer hd m
+    have hcommon : ∀ a₁ a₂, F a₁ a₂ → ∃ S,
+        TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Θ₁.subst₀ (Subst₀.single a₁)) S ∧
+        TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Θ₂.subst₀ (Subst₀.single a₂)) S :=
+      fun a₁ a₂ ha => ValidEqTelescope₀.telRel hd (hΘ a₁ a₂ (hFv a₁ a₂ ha))
+    let G : Term 0 [] → FieldsRel := fun a ts us => ∃ S,
+      TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        (Θ₁.subst₀ (Subst₀.single a)) S ∧ S ts us
+    have hG : ∀ a S, TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        (Θ₁.subst₀ (Subst₀.single a)) S → G a = S := fun a S hS =>
+      funext fun ts => funext fun us => propext
+        ⟨fun ⟨_, hS', hs⟩ => (TelRel.unique hd ih hS' _ _ hS ts us).1 hs, fun hs => ⟨S, hS, hs⟩⟩
+    have hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us := fun a₁ a₂ ha ts us => by
+      have hFp := FieldRel.isPer hd ih hF₁
+      obtain ⟨S, h₁, h₂⟩ := hcommon a₁ a₂ ha
+      obtain ⟨S', h₁', h₂'⟩ := hcommon a₂ a₂ (hFp.trans (hFp.symm ha) ha)
+      rw [hG a₁ S h₁, hG a₂ S' h₁']
+      exact TelRel.unique hd ih h₂ _ _ h₂' ts us
+    refine ⟨FieldsRel.cons F G, .cons hc₁ hF₁ G (fun a ha => ?_) hresp,
+      .cons hc₂ hF₂ G (fun a ha => ?_) hresp⟩
+    · obtain ⟨S, h₁, -⟩ := hcommon a a ha
+      rw [hG a S h₁]
+      exact h₁
+    · obtain ⟨S, h₁, h₂⟩ := hcommon a a ha
+      rw [hG a S h₁]
+      exact h₂
+
+/-- Two closed terms that compute to types of `U_l` with the same equality of their terms are equal
+terms of `U_l`, in a signature whose names are distinct. -/
+theorem ValidEqTerm₀.ofUniv (hd : sig.Distinct) {t u v w : Term 0 []} {l : Level 0} {R : TermRel}
+    (ht : Computesι sig ι t v) (hu : Computesι sig ι u w)
+    (hv : (levelRel sig ι l.closedValue).univ v R) (hw : (levelRel sig ι l.closedValue).univ w R) :
+    ValidEqTerm₀ sig ι t u (.sort ⟨.type, l⟩) := by
+  have hU : HasEq sig ι (.sort ⟨.type, l⟩)
+      (fun A B => ∃ R, (levelRel sig ι l.closedValue).univ A R ∧
+        (levelRel sig ι l.closedValue).univ B R) :=
+    .univ (l.closedValue + 1) (levelRel_univ_iff.2 (.univ rfl rfl))
+  exact ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
+    fun _ => ⟨_, _, _, _, Computes.sort _ _, ht, hu, hU, R, hv, hw⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+
+/-- Two closed terms that compute to propositions of `Ω_l` with the same truth are equal terms of
+`Ω_l`, in a signature whose names are distinct. -/
+theorem ValidEqTerm₀.ofProp (hd : sig.Distinct) {t u v w : Term 0 []} {l : Level 0} {b : Prop}
+    (ht : Computesι sig ι t v) (hu : Computesι sig ι u w)
+    (hv : (levelRel sig ι l.closedValue).prop v b) (hw : (levelRel sig ι l.closedValue).prop w b) :
+    ValidEqTerm₀ sig ι t u (.sort ⟨.prop, l⟩) := by
+  have hU : HasEq sig ι (.sort ⟨.prop, l⟩)
+      (fun P Q => ∃ b₁ b₂, (levelRel sig ι l.closedValue).prop P b₁ ∧
+        (levelRel sig ι l.closedValue).prop Q b₂ ∧ (b₁ ↔ b₂)) :=
+    .univ (l.closedValue + 1) (levelRel_univ_iff.2 (.prop rfl rfl))
+  exact ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
+    fun _ => ⟨_, _, _, _, Computes.sort _ _, ht, hu, hU, b, b, hv, hw, .rfl⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+
+-- ADE: none.
+/-- `(D)`, closed: two instances of a declared type of `Σ`, whose type declaration is meaningful, at
+the same levels and at equal arguments of its parameters, are equal terms of its sort: the fields
+of each constructor at the two arguments are telescopes of the graph of the sort with the same
+equality of their terms. -/
+theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDeclaredType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst) :
+    ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
+      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := by
+  have hT := h.2.1
+  have hls : ∀ i, Level.ofNat (ls.getFin hl i).closedValue ≈ ls.getFin hl i :=
+    fun i => Level.ofNat_closedValue _
+  have has' := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
+  have hfields : ∀ c ∈ T.constructors, ValidEqTelescope₀ sig ι
+      ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁)
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) := fun c hc =>
+    ValidEqTelescope₀.levelEquiv
+      (κ := (decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+      (κ' := (decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) rfl
+      (Level.subst_equiv hls _)
+      ((hv.1 _ T hT c hc fun i => (ls.getFin hl i).closedValue).2 _ _ has')
+      ((Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _))
+      ((Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _))
+  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  let S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel := fun c ts us =>
+    ∃ S', TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' ts us
+  have hS : ∀ c ∈ T.constructors,
+      TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+        (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S c) ∧
+      TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+        (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S c) := fun c hc => by
+    obtain ⟨S', h₁, h₂⟩ := (hfields c hc).telRel hd
+    have hS' : S c = S' := funext fun ts => funext fun us => propext
+      ⟨fun ⟨_, h', hs⟩ => (TelRel.unique hd ih h' _ _ h₁ ts us).1 hs, fun hs => ⟨S', h₁, hs⟩⟩
+    rw [hS']
+    exact ⟨h₁, h₂⟩
+  have hc := hv.2 T hT
+  have hw : ∀ as : InstanceArgs 0 [] decl.scope, Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
+    fun as => ⟨.refl _, .inst _ _ _ _ as⟩
+  show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
+    (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
+  cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
+  · exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂)
+      (levelRel_univ_iff.2 (.data h hq hl hp rfl hs rfl hc S fun c hc' => hs ▸ (hS c hc').1))
+      (levelRel_univ_iff.2 (.data h hq hl hp rfl hs rfl hc S fun c hc' => hs ▸ (hS c hc').2))
+  · exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂)
+      (levelRel_prop_iff.2 (.data h hq hl hp rfl hs rfl hc S fun c hc' => hs ▸ (hS c hc').1))
+      (levelRel_prop_iff.2 (.data h hq hl hp rfl hs rfl hc S fun c hc' => hs ▸ (hS c hc').2))
+
+-- ADE: none.
+/-- `(D_≡)` keeps the meaning, and `(D)` with it: equal arguments give, at equal substitutions of the
+context, equal arguments of the parameters, hence equal instances, and the second instance at levels
+of the same values is the same term up to its levels. -/
+theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDeclaredType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+    (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+    {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
+    (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+    (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
+    ValidEqTermΓ sig ι ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
+      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁))) := by
+  obtain ⟨h', hv⟩ := hent.hasDeclaredType h
+  have hd := has.1.distinct
+  have hc : ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      ValidEqTerm₀ sig ι (.inst D qs ls₁ ps (as₁.subst σ₁)) (.inst D qs ls₁ ps (as₂.subst σ₂))
+        (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁))) :=
+    fun σ₁ σ₂ hσ => ValidEqTerm₀.inst hd h' hv hq hl₁ hp (has.2 σ₁ σ₂ hσ)
+  refine ⟨⟨has.1, fun σ₁ σ₂ hσ => (hc σ₁ σ₂ hσ).1⟩, fun σ₁ σ₂ hσ => ?_⟩
+  exact (hc σ₁ σ₂ hσ).levelEquiv (Term.LevelEquiv.refl _)
+    (.inst D qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls) (InstanceArgs.LevelEquiv.refl _))
+    (Term.LevelEquiv.refl _)
 
 /-! ## Arguments of Instances -/
 

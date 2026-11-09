@@ -14,16 +14,14 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
 * `Σ; Γ ⊢ t̄ : Θ` and `Σ; Γ ⊢ t̄ ≡ ū : Θ`, the arguments of a telescope;
 * `Σ; Γ ⊢ ā : Δ` and `Σ; Γ ⊢ ā ≡ b̄ : Δ`, the arguments of an instance;
 * `Σ; Γ ⊢ Θ : κ`, a telescope in a sort;
-* `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t` and `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, the entries of the signature.
+* `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p` and
+  `Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where …`, the entries of the signature.
 
 Typing and equality carry no grade; the definitions are checked for their usage.
 An entry of the signature is checked for each instance of its sort and grade variables, once with
 its level variables, so that its rules quantify over the instances.
 A variable `x` is fresh in its context by construction, being a de Bruijn index, so that the
 conditions `x ∉ Γ` disappear; the condition that the names of a signature are fresh remains.
-
-The core names no type: the type declarations enter a signature by the rules of their kinds, which
-come with their annexes.
 
 ADE have no second-order variables, no constants, no sorts of propositions and no declarations,
 and their typing has a context of definitions instead of a signature.
@@ -142,6 +140,11 @@ inductive WfSig : Signature → Prop where
   | constantDeclaration {sig : Signature} {c : ConstantDeclaration}
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
+  /-- A type declaration, whose names of types are distinct and fresh.
+  RFC: `\mathsf{sig}_{\mathsf{data}}` -/
+  | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
+      (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) : WfSig (.typeDeclaration decl :: sig)
 
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
@@ -439,24 +442,22 @@ inductive EqInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Conte
       EqInstanceArgs sig ctx (.snoc (e := .secondOrder ps χ₀) as₁ B₁)
         (.snoc (e := .secondOrder ps χ₀) as₂ B₂) (params.secondOrder Θ A χ₀)
 
-end
-
 /--
 `Σ; Γ ⊢ Θ : κ`: the telescope lives in the sort `κ`, each of its types living in a sort that `κ`
 bounds, and an entry whose type is a proposition has a grade without use at run time.
 -/
-inductive WfTelescope (sig : Signature) {k : Nat} :
-    {Γ : Scope} → {ps : List Parameter} → Context k Γ → Telescope k Γ ps → Universe k → Prop where
+inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
+    Telescope k Γ ps → Universe k → Prop where
   /-- The empty telescope lives in every sort.
   RFC: `\mathsf{tel}_{\kappa\varepsilon}` -/
-  | nil {Γ : Scope} {ctx : Context k Γ} {κ : Universe k} (hctx : WfCtx sig ctx) :
-      WfTelescope sig ctx .nil κ
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
+      (hctx : WfCtx sig ctx) : WfTelescope sig ctx .nil κ
   /-- The first entry, whose type lives in a sort that `κ₂` bounds, with a grade without use at
   run time if it is a proposition, and the others.
   RFC: `\mathsf{tel}_{\kappa,}` -/
-  | cons {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade} {p : Parameter} {A : Term k Γ}
-      {Θ : Telescope k (.var :: Γ) ps} {κ₁ κ₂ : Universe k} (hA : HasType sig ctx A (.sort κ₁))
-      (hκ : κ₁ ≼ κ₂) (hΘ : WfTelescope sig (ctx.var A) Θ κ₂)
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade}
+      {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ₁ κ₂ : Universe k}
+      (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ₂) (hΘ : WfTelescope sig (ctx.var A) Θ κ₂)
       (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfTelescope sig ctx (.cons q p A Θ) κ₂
 
@@ -481,6 +482,7 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       (hc : ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup) :
       WfTypeDeclaration sig decl
 
+end
 
 /-! ## Presuppositions
 
@@ -546,6 +548,14 @@ structure Presuppositions : Prop where
   eqInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
     {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
     EqInstanceArgs sig ctx as₁ as₂ params → WfSig sig
+  /-- A telescope in a sort is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\Theta` -/
+  wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfSig sig
+  /-- A well-formed type declaration is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{data}` -/
+  wfTypeDeclaration : ∀ {sig : Signature} {decl : TypeDeclaration},
+    WfTypeDeclaration sig decl → WfSig sig
   /-- The signature that a well-formed signature extends is well formed.
   RFC: `\mathsf{presup}_\Sigma.e` -/
   tail : ∀ {e : Entry} {sig : Signature}, WfSig (e :: sig) → WfSig sig
@@ -558,10 +568,11 @@ RFC: `\mathsf{presup}_\Sigma.\Gamma`, `\mathsf{presup}_\Sigma.A`
 RFC: `\mathsf{presup}_\Sigma.A_\equiv`, `\mathsf{presup}_\Sigma.t`
 RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
 RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
-RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.e` -/
+RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.\Theta`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, tail⟩
+    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfTypeDeclaration, tail⟩
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
@@ -626,9 +637,17 @@ where
     | .nil hctx => wfCtx hctx
     | .var has _ => eqInstanceArgs has
     | .secondOrder has _ => eqInstanceArgs has
+  wfTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfSig sig
+    | .nil hctx => wfCtx hctx
+    | .cons hA _ _ _ => hasType hA
+  wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
+      WfTypeDeclaration sig decl → WfSig sig
+    | .intro hΔ _ _ _ => wfCtx (hΔ (.default _ _))
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
+    | .typeDeclaration h _ _ => wfTypeDeclaration h
 
 -- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
@@ -640,6 +659,7 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
   | .constantDeclaration _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
+  | .typeDeclaration _ _ h, e', he', n, hn => h e' he' n hn
 
 -- ADE: none.
 /-- The names of a well-formed signature are distinct.
@@ -647,6 +667,8 @@ RFC: `\mathsf{distinct}_\Sigma` -/
 theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
   | [], _ => trivial
   | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct,
-      by cases h <;> exact List.pairwise_singleton _ _, h.fresh⟩
+      by cases h with
+        | typeDeclaration _ hn _ => exact hn
+        | _ => exact List.pairwise_singleton _ _, h.fresh⟩
 
 end Sic.Core

@@ -2250,6 +2250,40 @@ theorem Branches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fi
 
 end
 
+/-- Instantiating the level variables of a telescope by `ls₁` then by `ls₂` is instantiating them by
+their composition.
+RFC: `\mathsf{comp}_l.\Theta` -/
+theorem Telescope.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {ps : List Parameter}
+    (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
+    (Θ : Telescope k Γ ps) →
+      (Θ.substLevels ls₁).substLevels ls₂ = Θ.substLevels fun i => (ls₁ i).subst ls₂
+  | .nil => rfl
+  | .cons q p A Θ => by
+    rw [Telescope.substLevels, Telescope.substLevels, Telescope.substLevels,
+      Term.substLevels_substLevels ls₁ ls₂ A, Telescope.substLevels_substLevels ls₁ ls₂ Θ]
+
+/-- Instantiating the level variables of a context by `ls₁` then by `ls₂` is instantiating them by
+their composition.
+RFC: `\mathsf{comp}_l.\Gamma` -/
+theorem Context.substLevels_substLevels {k' k'' : Nat} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') : {Γ : Scope} → (ctx : Context k Γ) →
+      (ctx.substLevels ls₁).substLevels ls₂ = ctx.substLevels fun i => (ls₁ i).subst ls₂
+  | _, .empty => rfl
+  | _, .var ctx A => by
+    rw [Context.substLevels, Context.substLevels, Context.substLevels,
+      Context.substLevels_substLevels ls₁ ls₂ ctx, Term.substLevels_substLevels ls₁ ls₂ A]
+  | _, .secondOrder ctx Θ A χ₀ => by
+    rw [Context.substLevels, Context.substLevels, Context.substLevels,
+      Context.substLevels_substLevels ls₁ ls₂ ctx, Telescope.substLevels_substLevels ls₁ ls₂ Θ,
+      Term.substLevels_substLevels ls₁ ls₂ A]
+
+/-- Instantiating the level variables of a sort by `ls₁` then by `ls₂` is instantiating them by their
+composition. -/
+theorem Universe.substLevels_substLevels {k' k'' : Nat} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') (κ : Universe k) :
+    (κ.substLevels ls₁).substLevels ls₂ = κ.substLevels fun i => (ls₁ i).subst ls₂ := by
+  simp only [Universe.substLevels, Level.subst_subst]
+
 /-- The instantiation of the level variables of a telescope commutes with the renamings. -/
 theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     (ls' : Fin k → Level k') :

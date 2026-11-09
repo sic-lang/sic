@@ -87,6 +87,10 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → WfTelescope sig ctx Θ κ →
         ValidTelescope sigM ι ctx Θ κ
+  /-- A well-formed type declaration. -/
+  wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
+    sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
+      ValidTypeDeclaration sigM ι decl
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
 -- context.
@@ -94,7 +98,7 @@ structure SoundnessIn : Prop where
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn :=
   ⟨wfConstantDefinition, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs,
-    eqInstanceArgs, wfTelescope⟩
+    eqInstanceArgs, wfTelescope, wfTypeDeclaration⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
@@ -141,7 +145,16 @@ where
       ValidEqTermΓ.sort (q := .type) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
     | .prop hctx => fun ρ =>
       ValidEqTermΓ.sort (q := .prop) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
-    | .inst h _ _ _ _ => fun _ => absurd h hι.not_hasDeclaredType
+    | .inst (ls := ls) h hq hl hp has => fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have has' := hasInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp (by rw [List.getFin_map]; exact has')
+        fun _ => Level.equivalence.refl _
+      rw [List.getFin_map] at hc
+      simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
+      exact hc
     | .conv ht h => fun ρ => (hasType hd hι ht ρ).conv (eqType hd hι h ρ)
   eqTerm {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
       {t u A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
@@ -176,7 +189,19 @@ where
       exact hc
     | .univ hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
     | .prop hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
-    | .inst h _ _ _ _ _ _ => fun _ => absurd h hι.not_hasDeclaredType
+    | .inst (ls₁ := ls₁) (ls₂ := ls₂) h hq hl₁ hl₂ hp has hls => fun ρ => by
+      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₁
+      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₂
+      have has' := eqInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp (by rw [List.getFin_map]; exact has') (by
+          rw [List.getFin_map, List.getFin_map]
+          exact fun i => Level.subst_equal _ (hls i))
+      rw [List.getFin_map] at hc
+      simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
+      exact hc
   hasArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
@@ -238,6 +263,10 @@ where
     | .cons hA hκ hΘ _ => fun ρ =>
       ValidTelescopeΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (wfTelescope hd hι hΘ ρ)
+  wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
+    | .intro _ hΘ _ hc => ⟨fun I T hT c hc' => wfTelescope hd hι (hΘ I T hT c hc'), hc⟩
 
 
 /-! ## Signatures -/
@@ -260,6 +289,7 @@ theorem WfSig.validEntries {ι : Interpretation} {sigM : Signature}
       cases h with
       | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hrest hdef
       | constantDeclaration _ _ => exact hι _ hmem
+      | typeDeclaration hdecl _ _ => exact soundnessIn.wfTypeDeclaration hd hrest hdecl
     · exact hrest e' he'
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
@@ -335,6 +365,11 @@ structure Soundness : Prop where
   wfTelescope : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → WfTelescope sig ctx Θ κ → ValidTelescope sig ι ctx Θ κ
+  -- ADE: none.
+  /-- A well-formed type declaration is meaningful.
+  RFC: `\mathsf{sound}.\mathsf{data}` -/
+  wfTypeDeclaration : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration},
+    ValidInterpretation ι sig → WfTypeDeclaration sig decl → ValidTypeDeclaration sig ι decl
 
 /-- A well-formed signature is meaningful, when the interpretation gives its constant declarations
 terms of their types. -/
@@ -380,9 +415,10 @@ theorem soundness : Soundness where
     have hs := soundness_wfSig hι (presuppositions.eqInstanceArgs h)
     soundnessIn.eqInstanceArgs hs.1 hs.validEntries h
   wfTelescope hι h :=
-    have hs := soundness_wfSig hι (match h with
-      | .nil hctx => presuppositions.wfCtx hctx
-      | .cons hA _ _ _ => presuppositions.hasType hA)
+    have hs := soundness_wfSig hι (presuppositions.wfTelescope h)
     soundnessIn.wfTelescope hs.1 hs.validEntries h
+  wfTypeDeclaration hι h :=
+    have hs := soundness_wfSig hι (presuppositions.wfTypeDeclaration h)
+    soundnessIn.wfTypeDeclaration hs.1 hs.validEntries h
 
 end Sic.Core

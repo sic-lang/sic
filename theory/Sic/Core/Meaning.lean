@@ -377,21 +377,6 @@ def ValidConstantDeclaration (sig : Signature) (ι : Interpretation) (c : Consta
     Prop :=
   sig.Distinct ∧ c.Clause sig ι
 
--- ADE: none.
-/-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`; the kinds of declarations give the
-meaning of their type declarations, which the core does not have. -/
-def ValidEntry (sig : Signature) (ι : Interpretation) : Entry → Prop
-  | .typeDeclaration _ => False
-  | .constantDefinition d => ValidConstantDefinition sig ι d
-  | .constantDeclaration c => ValidConstantDeclaration sig ι c
-
--- ADE: none.
-/-- `⊨ Σ`: the names of the signature are distinct, and each of its entries is meaningful in the
-whole signature.
-RFC: `{\vDash}\mathsf{sig}` -/
-def ValidSig (ι : Interpretation) (sig : Signature) : Prop :=
-  sig.Distinct ∧ ∀ e ∈ sig, ValidEntry sig ι e
-
 /-- `(⊨_type≡)`: `Σ ⊨ A ≡ B`.
 RFC: `\vDash_{\mathsf{type}\equiv}` -/
 def ValidEqType₀ (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
@@ -664,6 +649,33 @@ RFC: `\vDash_\rho` -/
 def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
     {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
   ∀ ρ, ValidTelescopeΓ sig ι (ctx.atLevels ρ) (Θ.atLevels ρ) (κ.atLevels ρ)
+
+/-! ## Signatures and Entries -/
+
+-- ADE: none.
+/-- `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
+variables, the fields of each constructor are a telescope in the sort `κ`, in the context of the
+parameters, at each value of the level variables, and the constructors of each type have distinct
+names; the meaning ignores the grades.
+RFC: `{\vDash}\mathsf{data}` -/
+def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
+  (∀ I, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
+    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)) ∧
+    ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup
+
+-- ADE: none.
+/-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/
+def ValidEntry (sig : Signature) (ι : Interpretation) : Entry → Prop
+  | .typeDeclaration decl => ValidTypeDeclaration sig ι decl
+  | .constantDefinition d => ValidConstantDefinition sig ι d
+  | .constantDeclaration c => ValidConstantDeclaration sig ι c
+
+-- ADE: none.
+/-- `⊨ Σ`: the names of the signature are distinct, and each of its entries is meaningful in the
+whole signature.
+RFC: `{\vDash}\mathsf{sig}` -/
+def ValidSig (ι : Interpretation) (sig : Signature) : Prop :=
+  sig.Distinct ∧ ∀ e ∈ sig, ValidEntry sig ι e
 
 /-! ## Partial Equivalence Relations
 
