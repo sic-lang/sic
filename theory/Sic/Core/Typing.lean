@@ -646,6 +646,7 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
 RFC: `\mathsf{distinct}_\Sigma` -/
 theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
   | [], _ => trivial
-  | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct, h.fresh⟩
+  | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct,
+      by cases h <;> exact List.pairwise_singleton _ _, h.fresh⟩
 
 end Sic.Core

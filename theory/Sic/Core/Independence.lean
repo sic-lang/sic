@@ -190,7 +190,7 @@ none. -/
 theorem HasType.not_u₀ : ¬ HasType [] (.empty : Context 0 []) Term.u₀ Term.u₀ := by
   intro h
   let ι : Interpretation := fun _ _ => Term.u₀
-  obtain ⟨-, hcl⟩ := soundness.hasType (ι := ι) (sig := []) trivial h Fin.elim0
+  obtain ⟨-, hcl⟩ := soundness.hasType (ι := ι) (sig := []) (fun _ h => nomatch h) h Fin.elim0
   obtain ⟨-, hcl, -⟩ := hcl (fun x => nomatch x) (fun x => nomatch x) (by
     rw [show Context.atLevels Fin.elim0 (.empty : Context 0 []) = .empty from rfl, EqSubst]
     trivial)

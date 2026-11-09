@@ -209,55 +209,35 @@ def ConstantDeclaration.Clause (sig : Signature) (ι : Interpretation) (c : Cons
         ((c.type inst).atLevels ρ)
 
 -- ADE: none.
-/-- `⊨ Σ`: each entry of the signature has a fresh name and is meaningful in the signature before
-it.
-RFC: `{\vDash}\mathsf{sig}_\varnothing` -/
-def ValidSig (ι : Interpretation) : Signature → Prop
-  /- `(⊨sig_∅)`. -/
-  | [] => True
-  /- The kinds of declarations give the meaning of their declarations, as the rules of their
-  signatures; the core has none. -/
-  | .typeDeclaration _ :: _ => False
-  /- `(⊨sig_def)`, which `ValidSig.constantDefinition_iff` states as the RFC does. -/
-  | .constantDefinition d :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, d.name ∉ e.names) ∧
-      d.Clause sig ι
-  /- `(⊨sig_decl)`, which `ValidSig.constantDeclaration_iff` states as the RFC does. -/
-  | .constantDeclaration c :: sig => ValidSig ι sig ∧ (∀ e ∈ sig, c.name ∉ e.names) ∧
-      c.Clause sig ι
-
--- ADE: none.
-/-- `(⊨def)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, in a meaningful signature. -/
+/-- `(⊨def)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, in a signature whose names are distinct. -/
 def ValidConstantDefinition (sig : Signature) (ι : Interpretation) (d : ConstantDefinition) : Prop :=
-  ValidSig ι sig ∧ d.Clause sig ι
+  sig.Distinct ∧ d.Clause sig ι
 
 -- ADE: none.
-/-- `(⊨decl)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, in a meaningful signature. -/
+/-- `(⊨decl)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, in a signature whose names are distinct. -/
 def ValidConstantDeclaration (sig : Signature) (ι : Interpretation) (c : ConstantDeclaration) :
     Prop :=
-  ValidSig ι sig ∧ c.Clause sig ι
+  sig.Distinct ∧ c.Clause sig ι
 
-/-- `(⊨sig_def)`, as the RFC states it: the entry is meaningful and its name is fresh.
-RFC: `{\vDash}\mathsf{sig}_{\mathsf{def}}` -/
-theorem ValidSig.constantDefinition_iff {ι : Interpretation} {sig : Signature}
-    {d : ConstantDefinition} :
-    ValidSig ι (.constantDefinition d :: sig) ↔
-      ValidConstantDefinition sig ι d ∧ ∀ e ∈ sig, d.name ∉ e.names := by
-  simp only [ValidSig, ValidConstantDefinition]
-  exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
+-- ADE: none.
+/-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`; the kinds of declarations give the
+meaning of their type declarations, which the core does not have. -/
+def ValidEntry (sig : Signature) (ι : Interpretation) : Entry → Prop
+  | .typeDeclaration _ => False
+  | .constantDefinition d => ValidConstantDefinition sig ι d
+  | .constantDeclaration c => ValidConstantDeclaration sig ι c
 
-/-- `(⊨sig_decl)`, as the RFC states it: the entry is meaningful and its name is fresh.
-RFC: `{\vDash}\mathsf{sig}_{\mathsf{decl}}` -/
-theorem ValidSig.constantDeclaration_iff {ι : Interpretation} {sig : Signature}
-    {c : ConstantDeclaration} :
-    ValidSig ι (.constantDeclaration c :: sig) ↔
-      ValidConstantDeclaration sig ι c ∧ ∀ e ∈ sig, c.name ∉ e.names := by
-  simp only [ValidSig, ValidConstantDeclaration]
-  exact ⟨fun ⟨h, f, c⟩ => ⟨⟨h, c⟩, f⟩, fun ⟨⟨h, c⟩, f⟩ => ⟨h, f, c⟩⟩
+-- ADE: none.
+/-- `⊨ Σ`: the names of the signature are distinct, and each of its entries is meaningful in the
+whole signature.
+RFC: `{\vDash}\mathsf{sig}` -/
+def ValidSig (ι : Interpretation) (sig : Signature) : Prop :=
+  sig.Distinct ∧ ∀ e ∈ sig, ValidEntry sig ι e
 
 /-- `(⊨_type≡)`: `Σ ⊨ A ≡ B`.
 RFC: `\vDash_{\mathsf{type}\equiv}` -/
 def ValidEqType₀ (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
-  ValidSig ι sig ∧ EqTypeClause sig ι A B
+  sig.Distinct ∧ EqTypeClause sig ι A B
 
 /-- `(⊨_type)`: `Σ ⊨ A`.
 RFC: `\vDash_{\mathsf{type}}` -/
@@ -275,14 +255,14 @@ def ValidTerm₀ (sig : Signature) (ι : Interpretation) (t A : Term 0 []) : Pro
   ValidEqTerm₀ sig ι t t A
 
 /-- `(⊨def)`, as the RFC states it: at each instance of the sort and grade variables and each value
-of the level variables, the body is a term of the type; the signature is then meaningful, since an
-instance exists whatever the numbers of the variables.
+of the level variables, the body is a term of the type; the names of the signature are then
+distinct, since an instance exists whatever the numbers of the variables.
 RFC: `{\vDash}\mathsf{def}` -/
 theorem ValidConstantDefinition.iff {sig : Signature} {ι : Interpretation} {d : ConstantDefinition} :
     ValidConstantDefinition sig ι d ↔
       ∀ inst (ρ : Fin d.levels → Nat),
         ValidTerm₀ sig ι ((d.body inst).atLevels ρ) ((d.type inst).atLevels ρ) :=
-  ⟨fun ⟨hsig, hc⟩ inst ρ => ⟨⟨hsig, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
+  ⟨fun ⟨hd, hc⟩ inst ρ => ⟨⟨hd, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
     fun h => ⟨(h ⟨fun _ => .type, fun _ => .zero⟩ fun _ => 0).1.1,
       fun inst ρ => ⟨(h inst ρ).1.2, (h inst ρ).2⟩⟩⟩
 
@@ -294,7 +274,7 @@ theorem ValidConstantDeclaration.iff {sig : Signature} {ι : Interpretation}
     ValidConstantDeclaration sig ι c ↔
       ∀ inst (ρ : Fin c.levels → Nat),
         ValidTerm₀ sig ι ((ι c inst).atLevels ρ) ((c.type inst).atLevels ρ) :=
-  ⟨fun ⟨hsig, hc⟩ inst ρ => ⟨⟨hsig, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
+  ⟨fun ⟨hd, hc⟩ inst ρ => ⟨⟨hd, (hc inst ρ).1⟩, (hc inst ρ).2⟩,
     fun h => ⟨(h ⟨fun _ => .type, fun _ => .zero⟩ fun _ => 0).1.1,
       fun inst ρ => ⟨(h inst ρ).1.2, (h inst ρ).2⟩⟩⟩
 
@@ -351,7 +331,7 @@ before it.
 RFC: `{\vDash}\mathsf{ctx}_\varepsilon` -/
 def ValidCtx₀ (sig : Signature) (ι : Interpretation) : {Γ : Scope} → Context 0 Γ → Prop
   /- `(⊨ctx_ε)`. -/
-  | _, .empty => ValidSig ι sig
+  | _, .empty => sig.Distinct
   /- `(⊨ctx_x)`: `Σ; Γ ⊨ A`. -/
   | _, .var ctx A => ValidCtx₀ sig ι ctx ∧
       ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqType₀ sig ι (A.subst σ₁) (A.subst σ₂)
@@ -448,7 +428,7 @@ RFC: `{\vDash}\mathsf{tel}_{\kappa\varepsilon}`, `{\vDash}\mathsf{tel}_{\kappa,}
 def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
     {ps : List Parameter} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨tel_κε)`. -/
-  | [], .nil, .nil => ValidSig ι sig
+  | [], .nil, .nil => sig.Distinct
   /- `(⊨tel_κ,)`. -/
   | _ :: _, .cons _ _ A₁ Θ₁, .cons _ _ A₂ Θ₂ =>
     (∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
@@ -659,29 +639,25 @@ theorem HasEq.unique {v : Term 0 []} {R R' : TermRel} :
 theorem Signature.Distinct.interpret {ι : Interpretation} :
     {sig : Signature} → sig.Distinct → (sig.interpret ι).Distinct
   | [], _ => trivial
-  | e :: _, ⟨h, hfresh⟩ => by
+  | e :: _, ⟨h, hnodup, hfresh⟩ => by
     have hnames : ∀ e : Entry, (e.interpret ι).names = e.names := by
       intro e; cases e <;> rfl
-    refine ⟨h.interpret, fun e' he' n hn => ?_⟩
+    refine ⟨h.interpret, (hnames e).symm ▸ hnodup, fun e' he' n hn => ?_⟩
     obtain ⟨e'', he'', rfl⟩ := List.mem_map.1 he'
     rw [hnames] at hn ⊢
     exact hfresh e'' he'' n hn
 
 /-- The names of a meaningful signature are distinct.
 RFC: `\mathsf{distinct}_{\vDash\Sigma}` -/
-theorem ValidSig.distinct {ι : Interpretation} : {sig : Signature} → ValidSig ι sig → sig.Distinct
-  | [], _ => trivial
-  | .constantDefinition _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
-      simp only [Entry.names, List.mem_singleton] at hn
-      exact hn ▸ hfresh e he⟩
-  | .constantDeclaration _ :: _, ⟨h, hfresh, _⟩ => ⟨h.distinct, fun e he n hn => by
-      simp only [Entry.names, List.mem_singleton] at hn
-      exact hn ▸ hfresh e he⟩
+theorem ValidSig.distinct {ι : Interpretation} {sig : Signature} (h : ValidSig ι sig) :
+    sig.Distinct :=
+  h.1
 
-/-- In a meaningful signature, a closed term computes to one canonical term at most. -/
+/-- In a signature whose names are distinct, a closed term computes to one canonical term at
+most. -/
 theorem Computesι.det {sig : Signature} {ι : Interpretation} {t v₁ v₂ : Term 0 []}
-    (hsig : ValidSig ι sig) (h₁ : Computesι sig ι t v₁) (h₂ : Computesι sig ι t v₂) : v₁ = v₂ :=
-  Computes.det hsig.distinct.interpret h₁ h₂
+    (hd : sig.Distinct) (h₁ : Computesι sig ι t v₁) (h₂ : Computesι sig ι t v₂) : v₁ = v₂ :=
+  Computes.det hd.interpret h₁ h₂
 
 /-- A sort computes to itself. -/
 theorem Computes.sort (sig : Signature) (κ : Universe 0) : Computes sig (.sort κ) (.sort κ) :=
@@ -726,7 +702,7 @@ RFC: `\mathsf{exact}_\Omega` -/
 theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {l : Level 0}
     (hA : ValidTerm₀ sig ι A (.sort ⟨.prop, l⟩)) :
     ValidEqTerm₀ sig ι t u A ↔ ValidTerm₀ sig ι t A ∧ ValidTerm₀ sig ι u A := by
-  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := hA
+  obtain ⟨⟨hd, -⟩, hcl, -⟩ := hA
   obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   have hvp := hR.prop_isProp hvw
@@ -740,7 +716,7 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
   · rintro ⟨⟨hTA, -, hclt⟩, -⟩
     refine ⟨hTA, fun h => absurd hP h, fun _ => ?_⟩
     obtain ⟨A₁, R₁, hA₁, hR₁, htt⟩ := hclt hP
-    cases Computesι.det hsig hA₁ hv
+    cases Computesι.det hd hA₁ hv
     obtain ⟨k, b, hb⟩ := hvp
     have hRb : ∀ t u, R₁ t u ↔ b := fun t u => hR₁.unique (.prop k b hb fun _ _ => .rfl) t u
     exact ⟨v, R₁, hA₁, hR₁, (hRb t u).2 ((hRb t t).1 htt)⟩

@@ -363,12 +363,12 @@ def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclarati
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
   .typeDeclaration decl ∈ sig ∧ T ∈ decl.types ∧ T.name = D
 
-/-- The names of a signature are distinct: each entry introduces names that no entry before it
-does.
+/-- The names of a signature are distinct: each entry introduces distinct names, which no entry
+before it does.
 RFC: `\mathsf{names}_\Sigma` -/
 def Signature.Distinct : Signature → Prop
   | [] => True
-  | e :: sig => Signature.Distinct sig ∧ ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
+  | e :: sig => Signature.Distinct sig ∧ e.names.Nodup ∧ ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
 
 /-- In a signature whose names are distinct, a name is introduced by one entry at most.
 RFC: `\mathsf{unique}_\Sigma` -/
@@ -379,7 +379,7 @@ theorem Signature.Distinct.entry_unique : {sig : Signature} → sig.Distinct →
   | nil => intro _ _ _ _ h₁; cases h₁
   | cons e sig ih =>
     intro hd e₁ e₂ n h₁ h₂ hn₁ hn₂
-    obtain ⟨h, hfresh⟩ := hd
+    obtain ⟨h, -, hfresh⟩ := hd
     rcases List.mem_cons.mp h₁ with rfl | h₁' <;> rcases List.mem_cons.mp h₂ with rfl | h₂'
     · rfl
     · exact absurd hn₂ (hfresh _ h₂' n hn₁)

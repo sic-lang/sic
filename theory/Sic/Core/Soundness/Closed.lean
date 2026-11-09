@@ -91,13 +91,13 @@ theorem HasEq.prop_any {v t u t' u' : Term 0 []} {R : TermRel} (hA : HasEq v R)
   have hR : ∀ t u, R t u ↔ b := hA.unique (.prop k b hk fun _ _ => .rfl)
   exact (hR _ _).2 ((hR t u).1 htu)
 
-/-- The canonical form of a type that computes to a proposition is a proposition, in a meaningful
-signature. -/
+/-- The canonical form of a type that computes to a proposition is a proposition, in a signature
+whose names are distinct. -/
 theorem ComputesToProp.isProp {sig : Signature} {ι : Interpretation} {A v : Term 0 []}
-    (hp : ComputesToProp sig ι A) (hsig : ValidSig ι sig) (hA : Computesι sig ι A v) :
+    (hp : ComputesToProp sig ι A) (hd : sig.Distinct) (hA : Computesι sig ι A v) :
     IsProp v := by
   obtain ⟨A₁, hA₁, hp⟩ := hp
-  cases Computesι.det hsig hA hA₁
+  cases Computesι.det hd hA hA₁
   exact hp
 
 /-- A type of a sort is a proposition or not, as its equality says. -/
@@ -129,12 +129,12 @@ theorem ValidEqType₀.symm {sig : Signature} {ι : Interpretation} {A B : Term 
     (h : ValidEqType₀ sig ι A B) : ValidEqType₀ sig ι B A :=
   ⟨h.1, h.2.symm⟩
 
-/-- The clause of `(⊨_type≡)` is transitive, in a meaningful signature. -/
+/-- The clause of `(⊨_type≡)` is transitive, in a signature whose names are distinct. -/
 theorem EqTypeClause.trans {sig : Signature} {ι : Interpretation} {A B C : Term 0 []}
-    (hsig : ValidSig ι sig) :
+    (hd : sig.Distinct) :
     EqTypeClause sig ι A B → EqTypeClause sig ι B C → EqTypeClause sig ι A C
   | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀⟩, ⟨B₁, C₀, R', hB', hC, hB₁, hC₀⟩ => by
-    cases Computesι.det hsig hB hB'
+    cases Computesι.det hd hB hB'
     have hRR' : R = R' := funext fun t => funext fun u => propext (hB₀.unique hB₁ t u)
     subst hRR'
     exact ⟨A₀, C₀, R, hA, hC, hA₀, hC₀⟩
@@ -170,19 +170,19 @@ theorem ValidEqTerm₀.symm {sig : Signature} {ι : Interpretation} {t u A : Ter
     (h : ValidEqTerm₀ sig ι t u A) : ValidEqTerm₀ sig ι u t A :=
   ⟨h.1, h.2.symm⟩
 
-/-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` are transitive, in a meaningful signature. -/
+/-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` are transitive, in a signature whose names are distinct. -/
 theorem EqTermClause.trans {sig : Signature} {ι : Interpretation} {t u w A : Term 0 []}
-    (hsig : ValidSig ι sig) (h : EqTermClause sig ι t u A) (h' : EqTermClause sig ι u w A) :
+    (hd : sig.Distinct) (h : EqTermClause sig ι t u A) (h' : EqTermClause sig ι u w A) :
     EqTermClause sig ι t w A := by
   refine ⟨fun hn => ?_, fun hp => ?_⟩
   · obtain ⟨A₀, v₁, v₂, R, hA, ht, hu, hR, hv⟩ := h.1 hn
     obtain ⟨A₁, v₃, v₄, R', hA', hu', hw, hR', hv'⟩ := h'.1 hn
-    cases Computesι.det hsig hA hA'
-    cases Computesι.det hsig hu hu'
+    cases Computesι.det hd hA hA'
+    cases Computesι.det hd hu hu'
     exact ⟨A₀, v₁, v₄, R, hA, ht, hw, hR, hR.isPer.trans hv ((hR'.unique hR _ _).1 hv')⟩
   · obtain ⟨A₀, R, hA, hR, htu⟩ := h.2 hp
     obtain ⟨A₁, R', hA', hR', huw⟩ := h'.2 hp
-    cases Computesι.det hsig hA hA'
+    cases Computesι.det hd hA hA'
     exact ⟨A₀, R, hA, hR, hR.isPer.trans htu ((hR'.unique hR _ _).1 huw)⟩
 
 -- ADE: `transEqTerm`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
@@ -205,21 +205,21 @@ theorem ValidEqTerm₀.right {sig : Signature} {ι : Interpretation} {t u A : Te
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` hold at every type equal to `A`. -/
 theorem EqTermClause.conv {sig : Signature} {ι : Interpretation} {t u A B : Term 0 []}
-    (hsig : ValidSig ι sig) (h : EqTermClause sig ι t u A) (hAB : EqTypeClause sig ι A B) :
+    (hd : sig.Distinct) (h : EqTermClause sig ι t u A) (hAB : EqTypeClause sig ι A B) :
     EqTermClause sig ι t u B := by
   obtain ⟨A₀, B₀, R, hA, hB, hA₀, hB₀⟩ := hAB
   rcases hA₀.isProp_or with hpA₀ | hnA₀
   · have hpA : ComputesToProp sig ι A := ⟨A₀, hA, hpA₀⟩
     obtain ⟨A₁, R', hA', hR', htu⟩ := h.2 hpA
-    cases Computesι.det hsig hA hA'
+    cases Computesι.det hd hA hA'
     have htu : R t u := (hR'.unique hA₀ t u).1 htu
     have hpB₀ : IsProp B₀ := (hA₀.isProp_iff hB₀ htu).1 hpA₀
     exact ⟨fun hn => absurd ⟨B₀, hB, hpB₀⟩ hn, fun _ => ⟨B₀, R, hB, hB₀, htu⟩⟩
-  · obtain ⟨A₁, v, w, R', hA', ht, hu, hR', hvw⟩ := h.1 fun hpA => hnA₀ (hpA.isProp hsig hA)
-    cases Computesι.det hsig hA hA'
+  · obtain ⟨A₁, v, w, R', hA', ht, hu, hR', hvw⟩ := h.1 fun hpA => hnA₀ (hpA.isProp hd hA)
+    cases Computesι.det hd hA hA'
     have hvw : R v w := (hR'.unique hA₀ v w).1 hvw
     refine ⟨fun _ => ⟨B₀, v, w, R, hB, ht, hu, hB₀, hvw⟩, fun hpB => ?_⟩
-    exact ⟨B₀, R, hB, hB₀, hB₀.prop_any (hpB.isProp hsig hB) hvw⟩
+    exact ⟨B₀, R, hB, hB₀, hB₀.prop_any (hpB.isProp hd hB) hvw⟩
 
 -- ADE: `convEqTerm₁`, in `Definition/LogicalRelation/Properties/Conversion.agda`.
 /-- `Σ ⊨ t ≡ u : A` and `Σ ⊨ A ≡ B` give `Σ ⊨ t ≡ u : B`. -/
@@ -239,11 +239,12 @@ theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Sc
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
   | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
 
-/-- A term computes to the canonical terms of the term it reduces to, in a meaningful signature. -/
+/-- A term computes to the canonical terms of the term it reduces to, in a signature whose names are
+distinct. -/
 theorem Computesι.red_iff {sig : Signature} {ι : Interpretation} {t t' v : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) t t') :
     Computesι sig ι t v ↔ Computesι sig ι t' v := by
-  have hd := hsig.distinct.interpret (ι := ι)
+  have hd := hd.interpret (ι := ι)
   constructor
   · rintro ⟨hs, hw⟩
     cases hs with
@@ -252,62 +253,62 @@ theorem Computesι.red_iff {sig : Signature} {ι : Interpretation} {t t' v : Ter
   · rintro ⟨hs, hw⟩
     exact ⟨.step h hs, hw⟩
 
-/-- A type computes to a proposition exactly when the type it reduces to does, in a meaningful
-signature. -/
+/-- A type computes to a proposition exactly when the type it reduces to does, in a signature whose
+names are distinct. -/
 theorem ComputesToProp.red_iff {sig : Signature} {ι : Interpretation} {A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) A A') :
     ComputesToProp sig ι A ↔ ComputesToProp sig ι A' := by
-  simp only [ComputesToProp, Computesι.red_iff hsig h]
+  simp only [ComputesToProp, Computesι.red_iff hd h]
 
 /-- The clause of `(⊨_type≡)` holds of a type exactly when it holds of the type it reduces to, in a
-meaningful signature. -/
+signature whose names are distinct. -/
 theorem EqTypeClause.red_iff {sig : Signature} {ι : Interpretation} {A A' B : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) A A') :
     EqTypeClause sig ι A B ↔ EqTypeClause sig ι A' B := by
-  simp only [EqTypeClause, Computesι.red_iff hsig h]
+  simp only [EqTypeClause, Computesι.red_iff hd h]
 
 -- ADE: `redSubst*`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
 /-- `Σ ⊨ A ≡ B` holds exactly when `Σ ⊨ A' ≡ B` does, for a step `A ⟶ A'`. -/
 theorem ValidEqType₀.red_iff {sig : Signature} {ι : Interpretation} {A A' B : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) A A') :
     ValidEqType₀ sig ι A B ↔ ValidEqType₀ sig ι A' B := by
-  simp only [ValidEqType₀, EqTypeClause.red_iff hsig h]
+  simp only [ValidEqType₀, EqTypeClause.red_iff hd h]
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` hold of a term exactly when they hold of the term it reduces
-to, in a meaningful signature. -/
+to, in a signature whose names are distinct. -/
 theorem EqTermClause.red_iff {sig : Signature} {ι : Interpretation} {t t' u A : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) t t') :
     EqTermClause sig ι t u A ↔ EqTermClause sig ι t' u A := by
-  refine and_congr (by simp only [Computesι.red_iff hsig h]) ⟨fun h' hp => ?_, fun h' hp => ?_⟩
+  refine and_congr (by simp only [Computesι.red_iff hd h]) ⟨fun h' hp => ?_, fun h' hp => ?_⟩
   · obtain ⟨A₀, R, hA, hR, htu⟩ := h' hp
-    exact ⟨A₀, R, hA, hR, hR.prop_any (hp.isProp hsig hA) htu⟩
+    exact ⟨A₀, R, hA, hR, hR.prop_any (hp.isProp hd hA) htu⟩
   · obtain ⟨A₀, R, hA, hR, htu⟩ := h' hp
-    exact ⟨A₀, R, hA, hR, hR.prop_any (hp.isProp hsig hA) htu⟩
+    exact ⟨A₀, R, hA, hR, hR.prop_any (hp.isProp hd hA) htu⟩
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` hold at a type exactly when they hold at the type it reduces
-to, in a meaningful signature. -/
+to, in a signature whose names are distinct. -/
 theorem EqTermClause.red_type_iff {sig : Signature} {ι : Interpretation} {t u A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) A A') :
     EqTermClause sig ι t u A ↔ EqTermClause sig ι t u A' := by
-  simp only [EqTermClause, ComputesToProp.red_iff hsig h, Computesι.red_iff hsig h]
+  simp only [EqTermClause, ComputesToProp.red_iff hd h, Computesι.red_iff hd h]
 
 -- ADE: `redSubst*Term`, in `Definition/LogicalRelation/Properties/Reduction.agda`.
 /-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t' ≡ u : A` does, for a step `t ⟶ t'`. -/
 theorem ValidEqTerm₀.red_iff {sig : Signature} {ι : Interpretation} {t t' u A : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) t t') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) t t') :
     ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t' u A := by
-  simp only [ValidEqTerm₀, EqTermClause.red_iff hsig h]
+  simp only [ValidEqTerm₀, EqTermClause.red_iff hd h]
 
 /-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t ≡ u : A'` does, for a step `A ⟶ A'`. -/
 theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u A A' : Term 0 []}
-    (hsig : ValidSig ι sig) (h : Red (sig.interpret ι) A A') :
+    (hd : sig.Distinct) (h : Red (sig.interpret ι) A A') :
     ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t u A' := by
-  simp only [ValidEqTerm₀, ValidType₀, ValidEqType₀.red_iff hsig h, EqTermClause.red_type_iff hsig h]
+  simp only [ValidEqTerm₀, ValidType₀, ValidEqType₀.red_iff hd h, EqTermClause.red_type_iff hd h]
   constructor
   · rintro ⟨⟨hs, hc⟩, h'⟩
-    exact ⟨⟨hs, ((EqTypeClause.red_iff hsig h).1 hc.symm).symm⟩, h'⟩
+    exact ⟨⟨hs, ((EqTypeClause.red_iff hd h).1 hc.symm).symm⟩, h'⟩
   · rintro ⟨⟨hs, hc⟩, h'⟩
-    exact ⟨⟨hs, ((EqTypeClause.red_iff hsig h).2 hc.symm).symm⟩, h'⟩
+    exact ⟨⟨hs, ((EqTypeClause.red_iff hd h).2 hc.symm).symm⟩, h'⟩
 
 
 /-! ## Sorts -/
@@ -316,7 +317,7 @@ theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u
 /-- `(U_type≡)`, closed: equal terms of a universe are equal types. -/
 theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
     {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.type, l⟩)) : ValidEqType₀ sig ι A B := by
-  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := h
+  obtain ⟨⟨hd, -⟩, hcl, -⟩ := h
   obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   cases hR with
@@ -328,7 +329,7 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
       | univ =>
         obtain ⟨R', h'⟩ := hvw
         have hper := levelRel_isPer m
-        exact ⟨hsig, v, w, R', hv, hw, .univ m (hper.univ_trans h' (hper.univ_symm h')),
+        exact ⟨hd, v, w, R', hv, hw, .univ m (hper.univ_trans h' (hper.univ_symm h')),
           .univ m (hper.univ_trans (hper.univ_symm h') h')⟩
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
@@ -336,7 +337,7 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
 /-- `(Ω_type≡)`, closed: equal propositions are equal types. -/
 theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
     {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.prop, l⟩)) : ValidEqType₀ sig ι A B := by
-  obtain ⟨⟨hsig, -⟩, hcl, -⟩ := h
+  obtain ⟨⟨hd, -⟩, hcl, -⟩ := h
   obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   cases hR with
@@ -348,22 +349,22 @@ theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : T
       | prop =>
         obtain ⟨b, h'⟩ := hvw
         have hper := levelRel_isPer m
-        exact ⟨hsig, v, w, fun _ _ => b, hv, hw,
+        exact ⟨hd, v, w, fun _ _ => b, hv, hw,
           .prop m b (hper.prop_trans h' (hper.prop_symm h')) fun _ _ => .rfl,
           .prop m b (hper.prop_trans (hper.prop_symm h') h') fun _ _ => .rfl⟩
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: `⊩U≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /-- `(U_≡)` and `(Ω_≡)`, closed: two sorts of the same quality at levels of the same value are equal
-terms of the universe above the level of the first, in a meaningful signature. -/
-theorem ValidEqTerm₀.sort {sig : Signature} {ι : Interpretation} (hsig : ValidSig ι sig)
+terms of the universe above the level of the first, in a signature whose names are distinct. -/
+theorem ValidEqTerm₀.sort {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
     {q : Quality} {l₁ l₂ : Level 0} (hl : l₁ ≈ l₂) :
     ValidEqTerm₀ sig ι (.sort ⟨q, l₁⟩) (.sort ⟨q, l₂⟩) (.sort ⟨.type, .succ l₁⟩) := by
   have hU : HasEq (.sort ⟨.type, .succ l₁⟩)
       (fun A B => ∃ R, (levelRel (l₁.closedValue + 1)).univ A B R) :=
     .univ (l₁.closedValue + 2) (.univ rfl rfl)
   have h₂ : l₂.closedValue + 1 = l₁.closedValue + 1 := congrArg (· + 1) (hl Fin.elim0).symm
-  refine ⟨⟨hsig, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
+  refine ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
     fun _ => ⟨_, _, _, _, Computes.sort _ _, Computes.sort _ _, Computes.sort _ _, hU, ?_⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
   cases q
