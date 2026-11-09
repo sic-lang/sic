@@ -3070,6 +3070,16 @@ def Term.atCtor {Γ Δ : Scope} (C : Term k (.var :: Γ)) (D : Name) (qs : List 
   (C.rename (Ren.lift (Ren.weakenN fs.length))).subst₀
     (Subst₀.single (.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c (Args.bound fs).terms))
 
+-- ADE: none.
+/-- `corec_r T from ȳ return Θ̄ with ḡ`: the corecursor of the instance `T = D.{s̄; l̄; p̄} ā` at the
+new variables `ȳ` of a state, whose entries have the parameters `ps`, as its state, the term whose
+observations the types of the branches of the type `D` observe. -/
+def Term.corecAt {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : CorecBranches k Γ)
+    (ps' : List Parameter) : Term k (Γ.extend ps'.length) :=
+  .corec r D qs ls ps (as.rename (Ren.weakenN ps'.length)) (Args.bound ps').terms
+    (Ss.rename (Ren.weakenN ps'.length)) (gs.rename (Ren.weakenN ps'.length))
+
 /-- `B[t̄ / x̄]` for the terms of arguments is their instantiation. -/
 theorem Term.instantiateTerms_terms {Γ : Scope} :
     {ps : List Parameter} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
@@ -3145,6 +3155,75 @@ theorem Branches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : 
     (us : Branches k Γ) → (us.substLevels ls').length = us.length
   | .nil => rfl
   | .cons _ _ _ us => congrArg (· + 1) (Branches.length_substLevels ls' us)
+
+/-- The branch at a position of the branches of a corecursor substituted is the branch
+substituted, under its variables. -/
+theorem CorecBranches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {vs : CorecBranches k Δ} → {i n m a : Nat} → {v : Term k (((Δ.extend n).extend m).extend a)} →
+      vs.get i = some ⟨n, m, a, v⟩ →
+        (vs.subst θ).get i =
+          some ⟨n, m, a, v.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))⟩
+  | .nil, _, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, _, h => by cases h; rfl
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_subst θ (vs := vs) h
+
+/-- The state at a position of states substituted is the state substituted, under its
+variables. -/
+theorem States.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {Ss : States k Δ} → {j n : Nat} → {ps : List Parameter} → {S : Telescope k (Δ.extend n) ps} →
+      Ss.get j = some ⟨n, ps, S⟩ → (Ss.subst θ).get j = some ⟨n, ps, S.subst (Subst.liftN n θ)⟩
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; rfl
+  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_subst θ (Ss := Ss) h
+
+/-- The branch at a position of the branches of a corecursor whose levels are instantiated is a
+branch of the branches, instantiated. -/
+theorem CorecBranches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {vs : CorecBranches k Γ} → {i n m a : Nat} → {v : Term k' (((Γ.extend n).extend m).extend a)} →
+      (vs.substLevels ls').get i = some ⟨n, m, a, v⟩ →
+        ∃ v₀, vs.get i = some ⟨n, m, a, v₀⟩ ∧ v = v₀.substLevels ls'
+  | .nil, _, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_substLevels ls' (vs := vs) h
+
+/-- The branch at a position of the branches of a corecursor is there once their levels are
+instantiated. -/
+theorem CorecBranches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {vs : CorecBranches k Γ} → {i n m a : Nat} → {v : Term k (((Γ.extend n).extend m).extend a)} →
+      vs.get i = some ⟨n, m, a, v⟩ → (vs.substLevels ls').get i = some ⟨n, m, a, v.substLevels ls'⟩
+  | .nil, _, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, _, h => by cases h; rfl
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_substLevels_of ls' (vs := vs) h
+
+/-- The state at a position of states whose levels are instantiated is a state of the states,
+instantiated. -/
+theorem States.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {Ss : States k Γ} → {j n : Nat} → {ps : List Parameter} → {S : Telescope k' (Γ.extend n) ps} →
+      (Ss.substLevels ls').get j = some ⟨n, ps, S⟩ →
+        ∃ S₀, Ss.get j = some ⟨n, ps, S₀⟩ ∧ S = S₀.substLevels ls'
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels ls' (Ss := Ss) h
+
+/-- The state at a position of states is there once their levels are instantiated. -/
+theorem States.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {Ss : States k Γ} → {j n : Nat} → {ps : List Parameter} → {S : Telescope k (Γ.extend n) ps} →
+      Ss.get j = some ⟨n, ps, S⟩ → (Ss.substLevels ls').get j = some ⟨n, ps, S.substLevels ls'⟩
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; rfl
+  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels_of ls' (Ss := Ss) h
+
+/-- The branches of a corecursor whose levels are instantiated are as many. -/
+theorem CorecBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (vs : CorecBranches k Γ) → (vs.substLevels ls').length = vs.length
+  | .nil => rfl
+  | .cons _ _ _ _ vs => congrArg (· + 1) (CorecBranches.length_substLevels ls' vs)
+
+/-- The states of a corecursor whose levels are instantiated are as many. -/
+theorem States.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (Ss : States k Γ) → (Ss.substLevels ls').length = Ss.length
+  | .nil => rfl
+  | .cons _ _ Ss => congrArg (· + 1) (States.length_substLevels ls' Ss)
 
 /-! ## Motives at a Constructor -/
 
@@ -3284,6 +3363,50 @@ theorem Term.observation_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k →
         ps' := by
   simp only [Term.observation, Term.substLevels, ← Args.terms_substLevels, Args.substLevels_bound,
     Term.substLevels_rename, InstanceArgs.substLevels_rename]
+
+/-! ## Corecursors at Their State -/
+
+/-- The corecursor at the variables of a state, substituted under these variables, is the
+corecursor substituted, at the variables of the state. -/
+theorem Term.corecAt_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (r : Grade) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
+    (Ss : States k Δ) (gs : CorecBranches k Δ) (ps' : List Parameter) :
+    (Term.corecAt r D qs ls ps as Ss gs ps').subst (Subst.liftN ps'.length θ) =
+      Term.corecAt r D qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) ps' := by
+  have h : ∀ {a} (x : Var Δ a), Subst.liftN ps'.length θ (Ren.weakenN ps'.length x) =
+      (θ x).rename (Ren.liftN a.params.length (Ren.weakenN ps'.length)) :=
+    fun x => Subst.liftN_weakenN _ θ x
+  simp only [Term.corecAt, Term.subst, ← Args.terms_subst, Args.bound_subst]
+  rw [InstanceArgs.subst_rename_of h, States.subst_rename_of h, CorecBranches.subst_rename_of h,
+    InstanceArgs.rename_subst_of (fun _ => rfl), States.rename_subst_of (fun _ => rfl),
+    CorecBranches.rename_subst_of (fun _ => rfl)]
+
+/-- `(corec_r T from ȳ return Θ̄ with ḡ)[t̄ / ȳ] = corec_r T from t̄ return Θ̄ with ḡ`: the corecursor at
+the variables of a state, instantiated by arguments of the state, is the corecursor from them. -/
+theorem Term.corecAt_instantiate {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
+    (gs : CorecBranches k Γ) {ps' : List Parameter} (ss : Args k Γ ps') :
+    (Term.corecAt r D qs ls ps as Ss gs ps').instantiate ss = .corec r D qs ls ps as ss.terms Ss gs := by
+  have h : ∀ {a} (y : Var Γ a), ss.toSubst₀ (Ren.weakenN ps'.length y) = Subst₀.id y :=
+    fun y => Args.toSubst₀_weakenN ss y
+  rw [Term.instantiate_eq_subst₀, Term.corecAt, Term.subst₀,
+    InstanceArgs.subst₀_rename_of (σ' := Subst₀.id) h,
+    InstanceArgs.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
+    States.subst₀_rename_of (σ' := Subst₀.id) h, States.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
+    CorecBranches.subst₀_rename_of (σ' := Subst₀.id) h,
+    CorecBranches.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl), ← Args.terms_subst₀,
+    Args.bound_toSubst₀]
+
+/-- The corecursor at the variables of a state, at instantiated levels, is the corecursor at these
+levels, at the variables of the state. -/
+theorem Term.corecAt_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') (r : Grade)
+    (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (Ss : States k Γ) (gs : CorecBranches k Γ) (ps' : List Parameter) :
+    (Term.corecAt r D qs ls ps as Ss gs ps').substLevels ls' =
+      Term.corecAt r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (Ss.substLevels ls')
+        (gs.substLevels ls') ps' := by
+  simp only [Term.corecAt, Term.substLevels, ← Args.terms_substLevels, Args.substLevels_bound,
+    InstanceArgs.substLevels_rename, States.substLevels_rename, CorecBranches.substLevels_rename]
 
 /-- The substitution of the destructors before a position, then by `σ`, is the substitution of the
 destructors before it by the observations substituted, when the substitution of the scope and the

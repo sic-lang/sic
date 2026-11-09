@@ -298,6 +298,11 @@ theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Na
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
+/-- The number of the branches `ḡ` of a corecursor. -/
+def CorecBranches.length {k : Nat} {Γ : Scope} : CorecBranches k Γ → Nat
+  | .nil => 0
+  | .cons _ _ _ _ vs => vs.length + 1
+
 /-- The branch at the position `i` of the branches `ḡ` of a corecursor, the first one at `0`, with
 its numbers of non-uniform parameters, of entries of the state and of arguments. -/
 def CorecBranches.get {k : Nat} {Γ : Scope} :
@@ -313,6 +318,11 @@ theorem CorecBranches.get_inj {k : Nat} {Γ : Scope} {vs : CorecBranches k Γ} {
   have h := Option.some.inj (h₁.symm.trans h₂)
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
+
+/-- The number of the states `Θ̄` of a corecursor. -/
+def States.length {k : Nat} {Γ : Scope} : States k Γ → Nat
+  | .nil => 0
+  | .cons _ _ Ss => Ss.length + 1
 
 /-- The state at a position of states, with its number of non-uniform parameters and the
 parameters of its entries. -/
@@ -950,6 +960,36 @@ def Signature.argumentGrades (sig : Signature) (D d : Name) (qs : List Quality) 
     Option (List Grade) :=
   sig.findSome? (Entry.argumentGrades D d qs ps)
 
+/-- The grade `p` of the destructor `d`, when the destructors have one. -/
+def Destructors.grade {k : Nat} : {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Name →
+    Option Grade
+  | _, [], .nil, _ => none
+  | _, d' :: _, .cons p _ _ _ _ ds, d => if d' = d then some p else ds.grade d
+
+-- ADE: none.
+/-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
+order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, when the
+entry declares them. -/
+def Entry.destructorGrades (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List Grade)
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.codataTypes.find? (·.name == D)).bind fun _ =>
+          decl.codataCases.mapM fun c => (c.2.1.body (.ofLists qs ps hq hp)).grade c.2.2
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
+order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, in the last
+entry of the signature that declares them, which the erasure of a corecursor reads.
+RFC: `\mathsf{grades}_{\bar g}` -/
+def Signature.destructorGrades (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List Grade) :=
+  sig.findSome? (Entry.destructorGrades D qs ps)
+
 -- ADE: none.
 /-- The position of the declared type `D` in the block of the entry, when the entry declares it. -/
 def Entry.position (D : Name) : Entry → Option Nat
@@ -1113,6 +1153,188 @@ theorem Signature.Distinct.argumentGrades : {sig : Signature} → sig.Distinct �
         hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.argumentGrades_of_not_mem hDe]; rfl)]
       exact hd.argumentGrades ⟨he', hT, hD⟩ hq hp hpos
+
+/-- Destructors with distinct names give the destructor at a position its grade. -/
+theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+        ds.grade d = some p
+  | _, _, _, _, _, _, _, _, .here => by simp [Destructors.grade]
+  | _, d' :: _, _, _, _, _, _, hn, .there h => by
+    have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
+    simp only [Destructors.grade, hne, ↓reduceIte]
+    exact h.grade (List.nodup_cons.1 hn).2
+
+/-- A destructor named by destructors has a position in them. -/
+theorem Destructors.exists_pos {k : Nat} {d : Name} :
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) → d ∈ ns →
+      ∃ (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k Ξ ps)
+        (B : Term k (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length),
+        Nonempty (Destructors.Pos d p q ds Ξ Θ B ψ)
+  | _, _, .nil, h => nomatch h
+  | _, d' :: _, .cons p q Θ B ψ ds, h => by
+    by_cases he : d' = d
+    · subst he
+      exact ⟨p, q, _, _, Θ, B, ψ, ⟨.here⟩⟩
+    · have h' : d ∈ _ := (List.mem_cons.1 h).resolve_left fun h'' => he h''.symm
+      obtain ⟨p', q', ps', Ξ, Θ', B', ψ', ⟨hpos⟩⟩ := Destructors.exists_pos ds h'
+      exact ⟨p', q', ps', Ξ, Θ', B', ψ', ⟨.there hpos⟩⟩
+
+/-- The results of a function at the elements of a list, all defined, are at the same positions as
+the elements. -/
+theorem _root_.List.getElem?_of_mapM {α β : Type} {f : α → Option β} :
+    {l : List α} → {l' : List β} → l.mapM f = some l' → ∀ {i : Nat} {a : α}, l[i]? = some a →
+      ∃ b, f a = some b ∧ l'[i]? = some b
+  | [], _, _, _, _, ha => nomatch ha
+  | a :: l, l', h, i, a', ha => by
+    rw [List.mapM_cons] at h
+    cases hfa : f a with
+    | none => simp [hfa] at h
+    | some b =>
+      cases hl : l.mapM f with
+      | none => simp [hfa, hl] at h
+      | some bs =>
+        simp only [hfa, hl, Option.bind_eq_bind, Option.bind_some, Option.pure_def,
+          Option.some.injEq] at h
+        subst h
+        cases i with
+        | zero =>
+          cases ha
+          exact ⟨b, hfa, rfl⟩
+        | succ i => exact List.getElem?_of_mapM hl ha
+
+/-- A function defined at every element of a list is defined at the list. -/
+theorem _root_.List.exists_mapM_eq_some {α β : Type} {f : α → Option β} :
+    {l : List α} → (∀ a ∈ l, ∃ b, f a = some b) → ∃ l', l.mapM f = some l'
+  | [], _ => ⟨[], rfl⟩
+  | a :: l, h => by
+    obtain ⟨b, hb⟩ := h a List.mem_cons_self
+    obtain ⟨l', hl'⟩ := List.exists_mapM_eq_some (l := l) fun a' ha' =>
+      h a' (List.mem_cons_of_mem _ ha')
+    exact ⟨b :: l', by simp [List.mapM_cons, hb, hl']⟩
+
+/-- Destructors with distinct names, at their names, all have a grade. -/
+theorem Destructors.isSome_grade {k : Nat} :
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) → ns.Nodup → ∀ d ∈ ns,
+      ∃ p, ds.grade d = some p := fun ds hn d hd => by
+  obtain ⟨p, q, ps, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos ds hd
+  exact ⟨p, hpos.grade hn⟩
+
+/-- A type declaration gives the grades of the destructors of the cases of its block, whose types
+and destructors have distinct names, at the instance: the grade of the destructor of each case. -/
+theorem Entry.destructorGrades_of_mem {decl : TypeDeclaration}
+    (hn : (decl.codataTypes.map (·.name)).Nodup)
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes)
+    (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) {qs : List Quality} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) :
+    ∃ gs, Entry.destructorGrades T.name qs ps (.typeDeclaration decl) = some gs ∧
+      ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name),
+        decl.codataCases[i]? = some (j, T', d) → ∀ p, (T'.body (.ofLists qs ps hq hp)).grade d = some p →
+          gs[i]? = some p := by
+  have hall : ∀ c ∈ decl.codataCases, ∃ p, (c.2.1.body (.ofLists qs ps hq hp)).grade c.2.2 = some p :=
+    fun c hcm => by
+      obtain ⟨hT', hd⟩ := TypeDeclaration.mem_casesFrom hcm
+      exact Destructors.isSome_grade _ (hc _ hT') _ hd
+  obtain ⟨gs, hgs⟩ := List.exists_mapM_eq_some hall
+  refine ⟨gs, ?_, fun i j T' d hi p hpg => ?_⟩
+  · simp only [Entry.destructorGrades]
+    split
+    · try split
+      all_goals first
+        | contradiction
+        | rw [List.find?_of_nodup_map hn hT, Option.bind_some, hgs]
+    · contradiction
+  · obtain ⟨b, hb, hgi⟩ := List.getElem?_of_mapM hgs hi
+    rw [hpg] at hb
+    cases hb
+    exact hgi
+
+/-- An entry that does not introduce the name `D` gives the grades of the destructors of no block
+of `D`. -/
+theorem Entry.destructorGrades_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.destructorGrades D qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
+    simp only [Entry.destructorGrades]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.bind_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- In a signature whose names are distinct, the grades of the destructors of the cases of the
+block of a codata type are those of its declaration, at the instance. -/
+theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    ∃ gs, sig.destructorGrades D qs ps = some gs ∧
+      ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name),
+        decl.codataCases[i]? = some (j, T', d) → ∀ p, (T'.body (.ofLists qs ps hq hp)).grade d = some p →
+          gs[i]? = some p
+  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+    unfold Signature.destructorGrades
+    rcases List.mem_cons.1 he with rfl | he'
+    · obtain ⟨gs, hg, hgs⟩ := Entry.destructorGrades_of_mem (TypeDeclaration.codataTypes_nodup hn)
+        hT (hc.2) hq hp
+      rw [hD] at hg
+      exact ⟨gs, by rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg], hgs⟩
+    · have hDe : D ∉ e.names := fun hDe =>
+        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorGrades_of_not_mem hDe]; rfl)]
+      exact hd.destructorGrades ⟨he', hT, hD⟩ hq hp
+
+/-- The index of the image of an element in the images of a list, distinct, is its position. -/
+theorem _root_.List.idxOf?_map_of_nodup {α : Type} {f : α → Name} :
+    {l : List α} → (l.map f).Nodup → {i : Nat} → {a : α} → l[i]? = some a →
+      (l.map f).idxOf? (f a) = some i
+  | [], _, _, _, ha => nomatch ha
+  | b :: l, hn, i, a, ha => by
+    rw [List.map_cons, List.nodup_cons] at hn
+    cases i with
+    | zero =>
+      cases ha
+      simp [List.idxOf?_cons]
+    | succ i =>
+      have hne : f b ≠ f a := fun he => hn.1 (he ▸ List.mem_map_of_mem (List.mem_of_getElem? ha))
+      rw [List.map_cons, List.idxOf?_cons]
+      simp only [beq_iff_eq, hne, ↓reduceIte, List.idxOf?_map_of_nodup hn.2 ha, Option.map_some]
+
+/-- In a signature whose names are distinct, the position of a codata type is its position in the
+block of its declaration. -/
+theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasCodataType D decl T → {h' : Nat} → decl.codataTypes[h']? = some T →
+    sig.position D = some h'
+  | [], _, _, _, _, h, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, h', hh => by
+    unfold Signature.position
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hc : decl.names = decl.codataTypes.map (·.name) := by
+        rw [decl.names_eq]
+        rcases decl.dataTypes_codataTypes with h | h
+        · rw [h]; rfl
+        · rw [h] at hT; exact nomatch hT
+      have hp : Entry.position D (.typeDeclaration decl) = some h' := by
+        simp only [Entry.position, hc, ← hD]
+        exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup hn) hh
+      rw [List.findSome?_cons_of_isSome (by rw [hp]; rfl), hp]
+    · have hDe : D ∉ e.names := fun hDe =>
+        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
+      have hp : Entry.position D e = none := by
+        cases e with
+        | typeDeclaration decl' =>
+          simp only [Entry.position]
+          exact List.idxOf?_eq_none_iff.2 hDe
+        | _ => rfl
+      rw [List.findSome?_cons_of_isNone (by rw [hp]; rfl)]
+      exact hd.position ⟨he', hT, hD⟩ hh
 
 /-- The length of the scope `Γ` extended by `a` variables. -/
 theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a

@@ -125,6 +125,72 @@ theorem Subst.args_toSubst : (ps : List Parameter) → (τ : Subst k [] (Scope.e
       exact congrArg (fun θ : Subst k [] (Scope.extend [] ps.length) => θ z)
         (Subst.args_toSubst ps (Subst.topN ps.length τ))
 
+/-! ## Corecursors at Closed States -/
+
+/-- The terms of renamed arguments are their terms renamed. -/
+theorem Args.terms_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
+    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.rename ξ).terms = ts.terms.rename ξ
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_rename ξ ts)
+
+/-- `(corec_r T from ȳ return Θ̄ with ḡ)[σ, t̄ / ȳ] = corec_r T[σ] from t̄ return Θ̄[σ] with ḡ[σ]`: the
+corecursor at the variables of a state, substituted by `σ` followed by closed arguments of the
+state, is the corecursor substituted by `σ`, from these arguments. -/
+theorem Term.corecAt_subst_append {Γ Δ : Scope} (σ : Subst k [] Γ) (r : Grade) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (Ss : States k Γ) (gs : CorecBranches k Γ) {ps' : List Parameter} (ss : Args k [] ps') :
+    (Term.corecAt r D qs ls ps as Ss gs ps').subst (Subst.append σ ss.toSubst) =
+      .corec r D qs ls ps (as.subst σ) ss.terms (Ss.subst σ) (gs.subst σ) := by
+  rw [← Term.subst_append, Term.corecAt_subst, ← Term.instantiate_eq_subst,
+    Term.corecAt_instantiate]
+
+/-- Closed arguments renamed under the variables of a state, then substituted by closed arguments
+of the state, are themselves. -/
+theorem Args.rename_weakenN_subst {ps ps' : List Parameter} (ts : Args k [] ps)
+    (ss : Args k [] ps') : (ts.rename (Ren.weakenN ps'.length)).subst ss.toSubst = ts :=
+  (Args.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) ts).trans
+    (Args.subst_id_of (fun _ => rfl) ts)
+
+/-- `g[σ⇑⇑][t̄ / z̄][s̄ / ȳ] = g[σ, s̄, t̄]`: a branch of a corecursor, substituted by a closed
+substitution `σ` under the variables `ȳ` of its state and `z̄` of its arguments, instantiated by
+closed arguments `t̄`, renamed under `ȳ`, then by closed arguments `s̄` of the state, is substituted
+by `σ` followed by `s̄` and `t̄`. -/
+theorem Term.instantiate_instantiate_subst {Γ : Scope} (σ : Subst k [] Γ) {ps' ps₁ : List Parameter}
+    (g : Term k ((Γ.extend ps'.length).extend ps₁.length)) (ss : Args k [] ps')
+    (ts : Args k [] ps₁) :
+    ((g.subst (Subst.liftN ps₁.length (Subst.liftN ps'.length σ))).instantiate
+        (ts.rename (Ren.weakenN ps'.length))).instantiate ss =
+      g.subst (Subst.append (Subst.append σ ss.toSubst) ts.toSubst) := by
+  rw [Term.instantiate_eq_subst, Term.instantiate_subst, Args.rename_weakenN_subst,
+    Term.instantiate_eq_subst,
+    Term.subst_subst_of (Subst.liftN_subst_of ps₁.length
+      (fun x => (Subst.append_eq_liftN σ ss.toSubst x).symm)),
+    Term.subst_append]
+
+/-- `(β_⟶)` substitutes the closed arguments of the state and of the destructor in a branch
+substituted by a closed substitution `σ`: `g[σ⇑⇑][s̄ / ȳ, t̄ / z̄] = g[σ, s̄, t̄]`. -/
+theorem Term.instantiateTerms₂_subst_append {Γ : Scope} (σ : Subst k [] Γ)
+    {ps' ps₁ : List Parameter} (g : Term k ((Γ.extend ps'.length).extend ps₁.length))
+    (ss : Args k [] ps') (ts : Args k [] ps₁) :
+    (g.subst (Subst.liftN ps₁.length (Subst.liftN ps'.length σ))).instantiateTerms₂ ss.terms
+        ts.terms = some (g.subst (Subst.append (Subst.append σ ss.toSubst) ts.toSubst)) := by
+  rw [Term.instantiateTerms₂, ← Args.terms_rename, Term.instantiateTerms_terms, Option.bind_some,
+    Term.instantiateTerms_terms, Term.instantiate_instantiate_subst]
+
+/-- `g[t̄ / z̄][s̄ / ȳ][σ] = g[σ, s̄[σ], t̄[σ]]`: a branch of a corecursor instantiated by arguments `t̄`,
+renamed under the variables `ȳ` of its state, then by arguments `s̄` of the state, substituted by a
+closed substitution `σ`, is substituted by `σ` followed by the arguments substituted. -/
+theorem Term.instantiate_instantiate_subst_closed {Γ : Scope} (σ : Subst k [] Γ)
+    {ps' ps₁ : List Parameter} (g : Term k ((Γ.extend ps'.length).extend ps₁.length))
+    (ss : Args k Γ ps') (ts : Args k Γ ps₁) :
+    ((g.instantiate (ts.rename (Ren.weakenN ps'.length))).instantiate ss).subst σ =
+      g.subst (Subst.append (Subst.append σ (ss.subst σ).toSubst) (ts.subst σ).toSubst) := by
+  have h : (ts.rename (Ren.weakenN ps'.length)).subst (Subst.liftN ps'.length σ) =
+      (ts.subst σ).rename (Ren.weakenN ps'.length) :=
+    (Args.subst_rename_of (fun x => Subst.liftN_weakenN _ σ x) ts).trans
+      (Args.rename_subst_of (fun _ => rfl) ts).symm
+  rw [Term.instantiate_subst, Term.instantiate_subst, h, Term.instantiate_instantiate_subst]
+
 /-! ## Equal Substitutions -/
 
 section

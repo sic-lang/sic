@@ -345,6 +345,56 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       HasType sig ctx (.obs D qs ls ps as t d bs.terms)
         (((B.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate bs)
+  -- ADE: none.
+  /-- A corecursor of the instance it carries, whose arguments are arguments of the parameters, from
+  a state, arguments of the state of its type, with a state for each type of the block, a telescope
+  of a sort `κs j`, and a branch for each case of the block, is a term of the instance: the branch of a
+  destructor `d`, at the position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)`
+  of its type `T'` at the instance, is a term of its result over the variables `ȳ` of the state of
+  `T'` and those of the telescope of `d`, the destructors `d̄₁` before it being the observations of
+  the corecursor of `T'` from `ȳ`.
+  The positions `h'` of the type of the corecursor in the block, `j` of a type and `i` of a case
+  give the states and the branches, as the order of the declaration does.
+  RFC: `\mathsf{corec}` -/
+  | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {Ss : States k Γ} {gs : CorecBranches k Γ} {κs : Nat → Universe k} {h' : Nat}
+      {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
+      (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
+      (hss : HasArgs sig ctx ss S) (hSl : Ss.length = decl.codataTypes.length)
+      (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+        ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
+      (hSt : ∀ j T' (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        decl.codataTypes[j]? = some T' → Ss.get j = some ⟨0, ps'', S'⟩ →
+        WfTelescope sig ctx S' (κs j))
+      (hgl : gs.length = decl.codataCases.length)
+      (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
+      (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+        (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
+        HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+            ps (as.rename (Ren.weakenN ps''.length)))
+            (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+          ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+              ps (as.rename (Ren.weakenN ps''.length)))
+              (as.rename (Ren.weakenN ps''.length)).toSubst)))) :
+      HasType sig ctx (.corec r D qs ls ps as ss.terms Ss gs) (.inst D qs ls ps as)
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
   RFC: `\mathsf{conv}` -/
@@ -538,6 +588,64 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
         (u.instantiate ts) (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
+  -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
+  /-- An observation of a corecursor by the destructor of the case `i` of the block, a destructor of
+  the type of the corecursor, applied to arguments of its telescope, with the premises of `(corec)`,
+  is equal to the branch of the destructor, with the terms of the state substituted for the
+  variables of the state and the arguments for those of the telescope.
+  RFC: `\beta` -/
+  | beta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {Ss : States k Γ} {gs : CorecBranches k Γ} {κs : Nat → Universe k} {h' i : Nat}
+      {ps' : List Parameter}
+      {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {d : Name} {p q : Grade} {ps₀ : List Parameter}
+      {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
+      {ψ₀ : ResultOwnership ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
+      {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
+      (hss : HasArgs sig ctx ss S) (hi : decl.codataCases[i]? = some (h', T, d))
+      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ₀ Θ₀ B₀ ψ₀)
+      (hg : gs.get i = some ⟨0, ps'.length, ps₀.length, g⟩)
+      (hbs : HasArgs sig ctx bs ((Θ₀.substLevels (ls.getFin hl)).subst
+        (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
+          as.toSubst)))
+      (hSl : Ss.length = decl.codataTypes.length)
+      (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+        ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
+      (hSt : ∀ j T' (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        decl.codataTypes[j]? = some T' → Ss.get j = some ⟨0, ps'', S'⟩ →
+        WfTelescope sig ctx S' (κs j))
+      (hgl : gs.length = decl.codataCases.length)
+      (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
+      (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+        (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
+        HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+            ps (as.rename (Ren.weakenN ps''.length)))
+            (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+          ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+              ps (as.rename (Ren.weakenN ps''.length)))
+              (as.rename (Ren.weakenN ps''.length)).toSubst)))) :
+      EqTerm sig ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
+        ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss)
+        (((B₀.substLevels (ls.getFin hl)).subst
+          (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
+            qs ls ps as) as.toSubst))).instantiate bs)
 
 /-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
 after it, whose grades typing ignores. -/
@@ -834,6 +942,7 @@ where
     | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ ht .. => hasType ht
     | .obs _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -852,6 +961,7 @@ where
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
+    | .beta _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx

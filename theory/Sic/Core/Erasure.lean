@@ -319,9 +319,10 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     .recursor (if r ∈ S then .erased else t.erase sig S hΓ) (us.erase sig S hΓ)
   | .obs D qs _ ps _ t d bs =>
     .obs (t.erase sig S hΓ) d (bs.erase sig S hΓ ((sig.argumentGrades D d qs ps).getD []))
-  | .corec r D _ _ _ _ ss Ss vs =>
+  | .corec r D qs _ ps _ ss Ss vs =>
     .corec (ss.erase sig S hΓ (((sig.position D).bind Ss.get).elim []
-      fun ⟨_, ps, _⟩ => ps.map (r * ·.usage))) (vs.erase sig S hΓ)
+      fun ⟨_, ps, _⟩ => ps.map (r * ·.usage)))
+      (vs.erase sig S hΓ ((sig.destructorGrades D qs ps).getD []))
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
@@ -345,15 +346,17 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
       (us.erase sig S hΓ)
 
 -- ADE: none.
-/-- `⌊ḡ⌋_S`: the erasure of the branches of a corecursor, under their new variables.
+/-- `⌊ḡ⌋_{S, p̄}`: the erasure of the branches of a corecursor, under their new variables, each at
+the grade of its destructor in `ps`, a branch without grade being erased.
 RFC: `\mathsf{erase}_{\bar g}` -/
 def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
-    {Γ : Scope} (hΓ : Γ.FirstOrder) : CorecBranches k Γ → TargetCorecBranches Γ.length
-  | .nil => .nil
-  | .cons a b c v vs =>
-    .cons a b c (Scope.length_extend_extend_extend Γ a b c ▸
+    {Γ : Scope} (hΓ : Γ.FirstOrder) : CorecBranches k Γ → List Grade → TargetCorecBranches Γ.length
+  | .nil, _ => .nil
+  | .cons a b c _ vs, [] => .cons a b c .erased (vs.erase sig S hΓ [])
+  | .cons a b c v vs, p :: ps =>
+    .cons a b c (if p ∈ S then .erased else Scope.length_extend_extend_extend Γ a b c ▸
       v.erase sig S (((hΓ.extend a).extend b).extend c))
-      (vs.erase sig S hΓ)
+      (vs.erase sig S hΓ ps)
 
 end
 
@@ -376,6 +379,9 @@ structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
   /-- A product in `S` whose first factor is not in `S` has its second factor in `S`.
   RFC: `\mathsf{uncounted}_S.{\cdot}` -/
   mul : ∀ p q : Grade, p ∉ S → p * q ∈ S → q ∈ S
+  /-- A product of which a factor is in `S` is in `S`.
+  RFC: `\mathsf{uncounted}_S.\mathsf{factor}` -/
+  factor : ∀ p q : Grade, p ∈ S ∨ q ∈ S → p * q ∈ S
   /-- A grade not in `S` keeps the mode `m`, in which the term of a field of this grade is checked.
   RFC: `\mathsf{uncounted}_S.{\odot}` -/
   mode : ∀ p : Grade, p ∉ S → m ⊙ p = m
@@ -388,6 +394,7 @@ theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   le := by revert m; decide
   add := by revert m; decide
   mul := by revert m; decide
+  factor := by revert m; decide
   mode := fun _ h => Decidable.of_not_not h
 
 /-- A term of the target language transported along an equality of the sizes of its scope has the
@@ -434,6 +441,60 @@ theorem GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length
       Fin.ext (by simp only [Fin.val_cast, Fin.val_addNat, Fin.val_succ, List.length_cons]; omega)
     rw [he]
     exact h
+
+/-- A variable occurs in the erasure of the branches of a corecursor when it occurs, as an old
+variable of the scope of a branch whose grade is not erased, in the erasure of the term of this
+branch. -/
+theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
+    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
+    (vs : CorecBranches k Γ) → (ps : List Grade) → (vs.erase sig S hΓ ps).Occurs x →
+      ∃ i a b c v p, vs.get i = some ⟨a, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
+        (v.erase sig S (((hΓ.extend a).extend b).extend c)).Occurs
+          ((x.addNat (a + b + c)).cast (Scope.length_extend_extend_extend Γ a b c).symm)
+  | .nil, _, h => nomatch h
+  | .cons .., [], h => by
+    cases h with
+    | head h => exact nomatch h
+    | tail h =>
+      obtain ⟨i, a', b', c', v', p, hv, hp, _⟩ := CorecBranches.occurs_erase hΓ _ [] h
+      exact nomatch hp
+  | .cons a b c v vs, p :: ps, h => by
+    cases h with
+    | head h =>
+      by_cases hp : p ∈ S
+      · simp only [hp, ↓reduceIte] at h
+        exact nomatch h
+      · simp only [hp, ↓reduceIte] at h
+        exact ⟨0, a, b, c, v, p, rfl, rfl, hp, Target.occurs_cast _ _ _ h⟩
+    | tail h =>
+      obtain ⟨i, a', b', c', v', p', hv, hp, hpS, ho⟩ := CorecBranches.occurs_erase hΓ vs ps h
+      exact ⟨i + 1, a', b', c', v', p', hv, hp, hpS, ho⟩
+
+/-- The branch at a position of the branches of a corecursor is before their end. -/
+theorem CorecBranches.lt_length_of_get {k : Nat} {Γ : Scope} :
+    {vs : CorecBranches k Γ} → {i : Nat} →
+      {a : Σ n m a, Term k (((Γ.extend n).extend m).extend a)} → vs.get i = some a →
+        i < vs.length
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, _ => Nat.zero_lt_succ _
+  | .cons _ _ _ _ vs, _ + 1, _, h =>
+    Nat.succ_lt_succ (CorecBranches.lt_length_of_get (vs := vs) h)
+
+/-- The grades extended by the variables of two telescopes, one after the other, give each old
+variable its grade. -/
+theorem GradeVector.extendParams_extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length)
+    (r₁ r₂ : Grade) (ps₁ ps₂ : List Parameter) (x : Fin Γ.length) :
+    (γ.extendParams r₁ ps₁).extendParams r₂ ps₂
+        ((x.addNat (0 + ps₁.length + ps₂.length)).cast
+          (Scope.length_extend_extend_extend Γ 0 ps₁.length ps₂.length).symm) = γ x := by
+  have he : ((x.addNat (0 + ps₁.length + ps₂.length)).cast
+      (Scope.length_extend_extend_extend Γ 0 ps₁.length ps₂.length).symm :
+        Fin ((Γ.extend ps₁.length).extend ps₂.length).length) =
+      ((((x.addNat ps₁.length).cast (Scope.length_extend Γ ps₁.length).symm).addNat
+        ps₂.length).cast (Scope.length_extend (Γ.extend ps₁.length) ps₂.length).symm) :=
+    Fin.ext (show x.val + (0 + ps₁.length + ps₂.length) = (x.val + ps₁.length) + ps₂.length by
+      omega)
+  rw [he, GradeVector.extendParams_addNat, GradeVector.extendParams_addNat]
 
 mutual
 
@@ -491,6 +552,37 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     | arg ho =>
       rw [Grade.modality.semiring.add_comm] at hx'
       exact UsageArgs.absent hd hS hΓ hbs (hS.add _ _ hx') ho
+  | .corec (decl := decl) (γ := γ₁) (δ := δ) (δs := δs) (r := r) (qs := qs) (ps := ps) h hq hp hh
+      hS₀ _ hss hgl _
+      hSs hgs hgu hδ, hx, ho => by
+    have hx' : r * γ₁ x + δ x ∈ S := by
+      simpa [GradeVector.add, GradeVector.smul] using hx
+    obtain ⟨gr, hgr, hgri⟩ := hd.destructorGrades h hq hp
+    simp only [Term.erase, hd.position h hh, Option.bind_some, hS₀, Option.elim, hgr,
+      Option.getD_some] at ho
+    cases ho with
+    | corec ho => exact UsageArgs.absent_mul hd hS hΓ rfl hss (hS.add _ _ hx') ho
+    | cobranch ho =>
+      obtain ⟨i, a, b, c, v, p', hget, hgi, hpS, ho⟩ := CorecBranches.occurs_erase hΓ _ _ ho
+      have hi : i < _ := hgl ▸ CorecBranches.lt_length_of_get hget
+      obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
+      have hcm := List.mem_of_getElem? hc
+      obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
+      have hj : decl.codataTypes[j]? = some T' := by
+        have := (TypeDeclaration.getElem?_of_mem_casesFrom hcm).2
+        rwa [Nat.sub_zero] at this
+      obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
+      obtain ⟨p, q, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
+      have hpg := hgri i j T' d hc p (hpos.grade (hd.destructors_nodup ⟨h.1, hT', rfl⟩))
+      rw [Option.some.inj (hgi.symm.trans hpg)] at hpS
+      obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ps₁ Ξ Θ B ψ hpos
+      cases Option.some.inj (hget.symm.trans hg)
+      have hδx : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
+      have hpδ : p * δs i x ∈ S := hS.le _ _ (hδ i j T' d p q ps₁ Ξ Θ B ψ hc hpos x) hδx
+      have hS' : ErasesUncounted (m ⊙ p) S := (hS.mode _ hpS).symm ▸ hS
+      exact Usage.absent hd hS' _ (hgu i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hc hSj hpos hg)
+        ((GradeVector.extendParams_extendParams_addNat (δs i) _ _ ps'' ps₁ x).symm ▸
+          hS.mul _ _ hpS hpδ) ho
   | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho
 
 -- ADE: none.
@@ -517,6 +609,42 @@ theorem UsageArgs.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : S
     | tail ho =>
       rw [Grade.modality.semiring.add_comm] at hx'
       exact UsageArgs.absent hd hS hΓ hts (hS.add _ _ hx') ho
+
+-- ADE: none.
+/-- A variable whose grade, times `r`, is in `S` does not occur in the erasure by `S` of the
+arguments of a telescope checked in the mode `m ⊙ r`, where `S` does not erase the uses of the mode
+`m`, each at the grade of its entry times `r`: the state of a corecursor. -/
+theorem UsageArgs.absent_mul {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {m m' : Mode} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
+    (hΓ : Γ.FirstOrder) {x : Fin Γ.length} {r : Grade} (hm : m ⊙ r = m') {ps : List Parameter}
+    {γ : GradeVector Γ.length} {ts : Args k Γ ps} :
+    UsageArgs sig γ m' ts → r * γ x ∈ S →
+      ¬ (ts.terms.erase sig S hΓ (ps.map (r * ·.usage))).Occurs x
+  | .nil, _, ho => nomatch ho
+  | .cons (p := p) (γ := γ₁) (δ := δ) ht hts, hx, ho => by
+    have hx' : r * (p.usage * γ₁ x + δ x) ∈ S := by
+      simpa [GradeVector.add, GradeVector.smul] using hx
+    simp only [Args.terms, List.map_cons, Terms.erase] at ho
+    cases ho with
+    | head ho =>
+      by_cases hp : r * p.usage ∈ S
+      · simp only [hp, ↓reduceIte] at ho
+        exact nomatch ho
+      · simp only [hp, ↓reduceIte] at ho
+        have hr : r ∉ S := fun hr => hp (hS.factor _ _ (.inl hr))
+        have hpu : p.usage ∉ S := fun hpu => hp (hS.factor _ _ (.inr hpu))
+        have hS' : ErasesUncounted (m' ⊙ p.usage) S := by
+          rw [← hm, hS.mode _ hr, hS.mode _ hpu]
+          exact hS
+        exact Usage.absent hd hS' hΓ ht (hS.mul _ _ hpu (hS.add _ _ (hS.mul _ _ hr hx'))) ho
+    | tail ho =>
+      have hδ : r * δ x ∈ S := by
+        by_cases hr : r ∈ S
+        · exact hS.factor _ _ (.inl hr)
+        · have h₁ := hS.mul _ _ hr hx'
+          rw [Grade.modality.semiring.add_comm] at h₁
+          exact hS.factor _ _ (.inr (hS.add _ _ h₁))
+      exact UsageArgs.absent_mul hd hS hΓ hm hts hδ ho
 
 end
 
@@ -551,7 +679,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
   | .obs _ _ _ _ _ t _ bs => .obs (Term.erase_lessDefined sig h hΓ t)
       (Terms.erase_lessDefined sig h hΓ bs _)
   | .corec _ _ _ _ _ _ ss _ vs => .corec (Terms.erase_lessDefined sig h hΓ ss _)
-      (CorecBranches.erase_lessDefined sig h hΓ vs)
+      (CorecBranches.erase_lessDefined sig h hΓ vs _)
 
 -- ADE: none.
 /-- The erasure of fields by a larger set of grades is less defined. -/
@@ -585,12 +713,19 @@ theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
 /-- The erasure of the branches of a corecursor by a larger set of grades is less defined. -/
 theorem CorecBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) : (vs : CorecBranches k Γ) →
-      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ) (vs.erase sig S₁ hΓ)
-  | .nil => .nil
-  | .cons a b c v vs => .cons (Target.LessDefined.cast _
-      (Term.erase_lessDefined sig h (((hΓ.extend a).extend b).extend c) v))
-      (CorecBranches.erase_lessDefined sig h hΓ vs)
+    (hΓ : Γ.FirstOrder) : (vs : CorecBranches k Γ) → (ps : List Grade) →
+      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps) (vs.erase sig S₁ hΓ ps)
+  | .nil, _ => .nil
+  | .cons _ _ _ _ vs, [] => .cons .erased (CorecBranches.erase_lessDefined sig h hΓ vs [])
+  | .cons a b c v vs, p :: ps => by
+    simp only [CorecBranches.erase]
+    refine .cons ?_ (CorecBranches.erase_lessDefined sig h hΓ vs ps)
+    by_cases h₂ : p ∈ S₂
+    · simp only [h₂, ↓reduceIte]; exact .erased
+    · have h₁ : p ∉ S₁ := fun h₁ => h₂ (h p h₁)
+      simp only [h₂, h₁, ↓reduceIte]
+      exact Target.LessDefined.cast _
+        (Term.erase_lessDefined sig h (((hΓ.extend a).extend b).extend c) v)
 
 end
 

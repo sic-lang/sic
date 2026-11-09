@@ -132,6 +132,49 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (ht : Usage sig γ m t) {bs : Args k Γ ps'} (hbs : UsageArgs sig δ m bs)
       (hm : m ·ᵐ p.mode = m) :
       Usage sig (γ +ᶜ δ) m (.obs D qs ls ps as t d bs.terms)
+  -- ADE: none.
+  /-- A corecursor uses the variables of its state `r` times, the state checked in the mode `m ⊙ r`,
+  and those of its branches, each checked in the mode `m' = m ⊙ p` of the grade `p` of its
+  destructor, with uses `δs i` counted `p` times; one of them runs at each observation, so that the
+  corecursor uses the variables as a lower bound `δ` of these uses allows; each branch uses the
+  variable of an entry of the state as `⌜m'⌝ · r` times the grade of the entry allows, and that of
+  an argument as `⌜m'⌝` times the grade of its entry allows; its states, which are types, use no
+  variable, checked in the mode `00ᵐ`; the instance it carries uses none.
+  RFC: `\mathsf{corec}_{▶}` -/
+  | corec {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' : Nat} {ps' : List Parameter}
+      {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {m : Mode} {γ δ : GradeVector Γ.length}
+      {δs : Nat → GradeVector Γ.length} (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
+      (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
+      (hSu : ∀ j (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        Ss.get j = some ⟨0, ps'', S'⟩ → UsageTelescope sig 𝟘ᶜ .zeroZero S')
+      (hss : UsageArgs sig γ (m ⊙ r) ss) (hgl : gs.length = decl.codataCases.length)
+      (hSl : Ss.length = decl.codataTypes.length)
+      (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+        ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
+      (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
+      (hgu : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+        (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
+        Usage sig (((δs i).extendParams ((m ⊙ p).grade * r) ps'').extendParams (m ⊙ p).grade ps₁)
+          (m ⊙ p) g)
+      (hδ : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+        (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+        (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
+      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.corec r D qs ls ps as ss.terms Ss gs)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{▶}` -/
@@ -182,29 +225,29 @@ inductive UsageInstanceArgs (sig : Signature) : {k : Nat} → {Γ Δ : Scope} �
       UsageInstanceArgs sig (Δ := Scope.Entry.secondOrder ps ψ :: Δ) (γ +ᶜ (p ·ᶜ δ)) m (ζ ∙ p)
         (.snoc (e := .secondOrder ps ψ) as B)
 
-end
-
 -- ADE: `ΠΣₘ`, in `Graded/Usage.agda`, once for each entry.
 /-- `Σ; γ ⊢ Θ ▶ m`: checked in the mode `m`, the types of the telescope `Θ` use the variables of its
 scope as `γ` allows, each entry `x : A ▶ p; q ◀ r` counting the uses of its type `p` times, and the
 types after it using `x` as `q` allows. -/
-inductive UsageTelescope (sig : Signature) {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
+inductive UsageTelescope (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
     GradeVector Γ.length → Mode → Telescope k Γ ps → Prop where
   /-- The empty telescope uses no variable.
   RFC: `\Theta_{\varepsilon▶}` -/
-  | nil {Γ : Scope} {m : Mode} : UsageTelescope sig 𝟘ᶜ m (.nil : Telescope k Γ [])
+  | nil {k : Nat} {Γ : Scope} {m : Mode} : UsageTelescope sig 𝟘ᶜ m (.nil : Telescope k Γ [])
   /-- The type of the first entry, checked in the mode `m ⊙ p`, and the types after it, which use
   its variable as `⌜m⌝ · q` allows.
   RFC: `\Theta_{,▶}` -/
-  | cons {Γ : Scope} {ps : List Parameter} {q : Grade} {p : Parameter} {A : Term k Γ}
+  | cons {k : Nat} {Γ : Scope} {ps : List Parameter} {q : Grade} {p : Parameter} {A : Term k Γ}
       {Θ : Telescope k (.var :: Γ) ps} {m : Mode} {γ δ : GradeVector Γ.length}
       (hA : Usage sig γ (m ⊙ p.usage) A) (hΘ : UsageTelescope sig (Γ := .var :: Γ) (δ ∙ (m.grade * q)) m Θ) :
       UsageTelescope sig ((p.usage ·ᶜ γ) +ᶜ δ) m (.cons q p A Θ)
   /-- A telescope may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{\Theta▶}` -/
-  | sub {Γ : Scope} {ps : List Parameter} {Θ : Telescope k Γ ps} {m : Mode}
+  | sub {k : Nat} {Γ : Scope} {ps : List Parameter} {Θ : Telescope k Γ ps} {m : Mode}
       {γ δ : GradeVector Γ.length} (h : UsageTelescope sig γ m Θ) (hle : δ ≤ᶜ γ) :
       UsageTelescope sig δ m Θ
+
+end
 
 -- ADE: none.
 /-- `Σ; γ ⊢ c̄ ▶ m`: checked in the mode `m`, the telescopes of the constructors `c̄` of a data type,

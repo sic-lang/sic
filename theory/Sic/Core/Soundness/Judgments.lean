@@ -97,6 +97,78 @@ structure SoundnessIn : Prop where
     sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
       ValidTypeDeclaration sigM ι decl
 
+/-- The scope of a destructor at the corecursor from the variables of a state, at levels without
+variables, is the scope of the destructor at the corecursor at these levels. -/
+theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat)
+    {d : Name} {p q : Grade} {ps₁ : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns}
+    {Ξ : Scope} {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)}
+    {ψ : ResultOwnership ps₁.length} (hpos : ds.Pos d p q Ξ Θ B ψ) (r : Grade) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (Ss : States k Γ) (gs : CorecBranches k Γ) (ps' : List Parameter) :
+    ∀ {a} (x : Var Ξ a),
+      (hpos.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps').observation D qs ls ps
+          (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst x).substLevels
+        (fun i => (.ofNat (ρ i) : Level 0)) =
+      hpos.obsSubst ((Term.corecAt r D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+          (as.substLevels fun i => .ofNat (ρ i)) (Ss.substLevels fun i => .ofNat (ρ i))
+          (gs.substLevels fun i => .ofNat (ρ i)) ps').observation D qs
+          (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+          ((as.substLevels fun i => .ofNat (ρ i)).rename (Ren.weakenN ps'.length)))
+        ((as.substLevels fun i => .ofNat (ρ i)).rename (Ren.weakenN ps'.length)).toSubst x :=
+  hpos.obsSubst_substLevels _ (fun d' ps'' => by
+    rw [Term.observation_substLevels, Term.corecAt_substLevels, InstanceArgs.substLevels_rename])
+    (fun x => by
+      rw [InstanceArgs.toSubst_substLevels, InstanceArgs.substLevels_rename])
+
+/-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
+variables, are meaningful at the levels without variables `ρ`. -/
+theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+    {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
+    {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
+    {r : Grade} {Ss : States k Γ} {gs : CorecBranches k Γ}
+    (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+      decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+      ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+      ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
+    (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+      (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+      (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+      decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+      gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
+      ValidTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
+        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+            ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst))))
+    (ρ : Fin k → Nat) :
+    CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
+      (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
+      (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
+      (gs.substLevels fun i => .ofNat (ρ i)) := by
+  refine ⟨fun i j T' d ps'' S' hi hSj p q ps₁ Ξ Θ B ψ hpos => ?_,
+    fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg => ?_⟩
+  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
+    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hpos
+    exact ⟨_, CorecBranches.get_substLevels_of _ hg⟩
+  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
+    obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels _ hg
+    have hb := hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ ρ
+    have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
+      hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
+    simp only [Context.atLevels, Context.substLevels_append,
+      Telescope.substLevels_subst_of (fun x => hcl _ x), Telescope.substLevels_substLevels,
+      Term.atLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (fun x => hcl _ x)),
+      Term.substLevels_substLevels] at hb
+    erw [Context.substLevels_append (fun i => (.ofNat (ρ i) : Level 0)) ctx S₀] at hb
+    rw [List.getFin_map]
+    exact hb
+
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
 -- context.
 /-- Every judgment typed in the signature `Σ_T` is meaningful in a signature `Σ` whose names are
@@ -223,6 +295,18 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
+    | .corec (ls := ls) (as := as) (S := S) h hq hl hp has hh hS hss _ _ _ _ hgs hgt => fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have has' := hasInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hss' := hasArgs hd hι hss ρ
+      simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
+      exact ValidTermΓ.corec hι h hq hl' hp (by rw [List.getFin_map]; exact has') hh
+        (States.get_substLevels_of _ hS) hss'
+        (CorecBranchesValid.atLevels hq hl hp hgs
+          (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
+            hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
     | .conv ht h => fun ρ => (hasType hd hι ht ρ).conv (eqType hd hι h ρ)
   eqTerm {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
       {t u A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
@@ -369,6 +453,41 @@ where
       exact ValidEqTermΓ.iota hι h hc hq hl' hp (by rw [List.getFin_map]; exact has')
         (by rw [List.getFin_map]; exact hts') hi hCv (Branches.get_substLevels_of _ hu)
         (by rw [List.getFin_map]; exact hub)
+    | .beta (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Ss := Ss) (gs := gs)
+        (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp has hh hS hss hi hpos hg hbs _ _ _ _ hgs hgt =>
+      fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have has' := hasInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hss' := hasArgs hd hι hss ρ
+      have hbs' := hasArgs hd hι hbs ρ
+      have hcl : ∀ {a} (x : Var Ξ₀ a),
+          ((hpos.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
+            as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
+            hpos.obsSubst ((Term.corec r D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+              (as.substLevels fun i => .ofNat (ρ i)) (ss.substLevels fun i => .ofNat (ρ i)).terms
+              (Ss.substLevels fun i => .ofNat (ρ i)) (gs.substLevels fun i => .ofNat (ρ i))).observation
+              D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+              (as.substLevels fun i => .ofNat (ρ i))) (as.substLevels fun i => .ofNat (ρ i)).toSubst x :=
+        fun x => hpos.obsSubst_substLevels _ (fun d' ps' => by
+          rw [Term.observation_substLevels]
+          simp only [Term.substLevels, ← Args.terms_substLevels])
+          (InstanceArgs.toSubst_substLevels _ as) x
+      simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
+        Telescope.substLevels_substLevels] at hbs'
+      simp only [Term.atLevels, Term.substLevels_instantiate,
+        Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
+        Args.substLevels_rename]
+      simp only [Term.substLevels, ← Args.terms_substLevels]
+      have hc := ValidEqTermΓ.beta hι h hq hl' hp (by rw [List.getFin_map]; exact has') hh
+        (States.get_substLevels_of _ hS) hss' hi hpos (CorecBranches.get_substLevels_of _ hg)
+        (by rw [List.getFin_map]; exact hbs')
+        (CorecBranchesValid.atLevels hq hl hp hgs
+          (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
+            hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+      rw [List.getFin_map] at hc
+      exact hc
   hasArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
