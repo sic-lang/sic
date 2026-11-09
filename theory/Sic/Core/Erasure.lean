@@ -10,19 +10,18 @@ The erasure of annex 15 of RFC 36, which compiles a term to an untyped target la
 replaces by `↯` the positions of `t` whose grade is in the set `S`, and the set `S^m` of the
 grades that a term checked in the mode `m` does not count gives the extraction, `⌊t⌋_{S^{11ᵐ}}`, and
 the program that the proofs see, `⌊t⌋_{S^{01ᵐ}}`.
-The target language has variables, the constants with their grades, `f.{p̄}`, and a value `↯` that
-stands for what was erased; the kinds of declarations add the forms of their terms, and the
-positions of their rules of usage.
+The target language has variables, the constants with their grades, `f.{p̄}`, a value `↯` that
+stands for what was erased, and the constructors and the recursors of the data types, whose fields
+and terms are positions, erased by their grades.
 
 The translation is defined on the terms in a scope of variables only, which the hypothesis
-`Γ.FirstOrder` states: the programs are closed, and the binders of the kinds of declarations
-declare variables, while a second-order variable only appears in the contexts in which the
-declarations are checked.
+`Γ.FirstOrder` states: the programs are closed, and the branches of a recursor bind variables,
+while a second-order variable only appears in the contexts in which the declarations are checked.
 A variable thus has no arguments, and the target language has no second-order variables: the
 clause of a second-order variable discharges it by `Γ.FirstOrder`, so that the clauses are those of
 the RFC.
-The core has no position of its own: the terms that it gives are types, variables and constants,
-so that its clauses do not use `S`, which the kinds of declarations use.
+The new variables of a branch extend the scope, whose length the target language counts, so that
+the erasure of a branch casts its number of variables by `Scope.length_extend`.
 
 ADE extract the terms of their type theory, in which the definitions are names, and replace each
 erased part by `↯` or by a term that does not terminate, as its strictness requires; they erase the
@@ -65,54 +64,184 @@ theorem Var.mem {Γ : Scope} {e : Scope.Entry} : Var Γ e → e ∈ Γ
   | .zero => List.mem_cons_self
   | .succ x => List.mem_cons_of_mem _ x.mem
 
+mutual
+
 -- ADE: `Term`, in `Graded/Erasure/Target.agda`.
 /-- A term `M` of the target language over `n` variables.
 RFC: `\mathsf{syntax}_M` -/
-inductive Target (n : Nat) : Type where
+inductive Target : Nat → Type where
   /-- A variable. -/
-  | var (x : Fin n)
+  | var {n : Nat} (x : Fin n) : Target n
   /-- `f.{p̄}`: the constant `f` at the grades `p̄`. -/
-  | const (f : Name) (ps : List Grade)
+  | const {n : Nat} (f : Name) (ps : List Grade) : Target n
   /-- `↯`, what was erased. -/
-  | erased
+  | erased {n : Nat} : Target n
+  /-- `c(M̄)`: the constructor `c` applied to a term for each of its fields. -/
+  | ctor {n : Nat} (c : Name) (Ms : Targets n) : Target n
+  /-- `rec M with N̄`: the recursor on `M`, with a branch for each constructor, in order. -/
+  | recursor {n : Nat} (M : Target n) (Ns : TargetBranches n) : Target n
+
+-- ADE: none.
+/-- `M̄ = (M₁, …, Mₐ)`: terms of the target language, the first one first. -/
+inductive Targets : Nat → Type where
+  /-- `()`. -/
+  | nil {n : Nat} : Targets n
+  /-- `(M, M̄)`. -/
+  | cons {n : Nat} (M : Target n) (Ms : Targets n) : Targets n
+
+-- ADE: none.
+/-- `N̄`: the branches of a recursor of the target language, in order; the branch `c(x̄; ȳ) ⇒ N` is
+a term over a new variable for each of the `a` fields and of the `b` recursive results. -/
+inductive TargetBranches : Nat → Type where
+  /-- `()`. -/
+  | nil {n : Nat} : TargetBranches n
+  /-- `(c(x̄; ȳ) ⇒ N, N̄)`. -/
+  | cons {n : Nat} (a b : Nat) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
+      TargetBranches n
+
+end
+
+mutual
 
 -- ADE: `HasX`, in `Graded/Erasure/Target.agda`.
 /-- The variable `x` occurs in the term of the target language. -/
-inductive Target.Occurs {n : Nat} (x : Fin n) : Target n → Prop where
+inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   /-- The variable `x` itself.
   RFC: `\mathsf{occurs}_M` -/
-  | var : Occurs x (.var x)
+  | var {n : Nat} {x : Fin n} : Target.Occurs x (.var x)
+  /-- In a field of a constructor. -/
+  | ctor {n : Nat} {x : Fin n} {c : Name} {Ms : Targets n} (h : Targets.Occurs x Ms) :
+      Target.Occurs x (.ctor c Ms)
+  /-- In the term of a recursor. -/
+  | recursor {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n} (h : Target.Occurs x M) :
+      Target.Occurs x (.recursor M Ns)
+  /-- In a branch of a recursor. -/
+  | branch {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n}
+      (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor M Ns)
+
+-- ADE: none.
+/-- The variable `x` occurs in one of the terms. -/
+inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
+  /-- In the first term. -/
+  | head {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Target.Occurs x M) :
+      Targets.Occurs x (.cons M Ms)
+  /-- In the others. -/
+  | tail {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Targets.Occurs x Ms) :
+      Targets.Occurs x (.cons M Ms)
+
+-- ADE: none.
+/-- The variable `x` occurs in one of the branches, under their new variables, which shift it. -/
+inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → Prop where
+  /-- In the first branch. -/
+  | head {n : Nat} {x : Fin n} {a b : Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
+      (h : Target.Occurs (x.addNat (a + b)) N) : TargetBranches.Occurs x (.cons a b N Ns)
+  /-- In the others. -/
+  | tail {n : Nat} {x : Fin n} {a b : Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
+      (h : TargetBranches.Occurs x Ns) : TargetBranches.Occurs x (.cons a b N Ns)
+
+end
+
+mutual
 
 -- ADE: none.
 /-- `M ⊑ N`: the term `M` of the target language is `N` with some subterms replaced by `↯`. -/
-inductive Target.LessDefined {n : Nat} : Target n → Target n → Prop where
+inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop where
   /-- `↯` is less defined than every term.
   RFC: `{\sqsubseteq}.\text{↯}` -/
-  | erased {N : Target n} : LessDefined .erased N
+  | erased {n : Nat} {N : Target n} : Target.LessDefined .erased N
   /-- A variable is less defined than itself.
   RFC: `{\sqsubseteq}.x` -/
-  | var {x : Fin n} : LessDefined (.var x) (.var x)
+  | var {n : Nat} {x : Fin n} : Target.LessDefined (.var x) (.var x)
   /-- A constant is less defined than itself.
   RFC: `{\sqsubseteq}.f` -/
-  | const {f : Name} {ps : List Grade} : LessDefined (.const f ps) (.const f ps)
+  | const {n : Nat} {f : Name} {ps : List Grade} :
+      Target.LessDefined (n := n) (.const f ps) (.const f ps)
+  /-- A constructor is less defined than the same constructor of more defined fields. -/
+  | ctor {n : Nat} {c : Name} {Ms Ns : Targets n} (h : Targets.LessDefined Ms Ns) :
+      Target.LessDefined (.ctor c Ms) (.ctor c Ns)
+  /-- A recursor is less defined than a recursor of a more defined term and branches. -/
+  | recursor {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.LessDefined M N)
+      (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
+
+-- ADE: none.
+/-- The terms are less defined, one by one. -/
+inductive Targets.LessDefined : {n : Nat} → Targets n → Targets n → Prop where
+  /-- `()`. -/
+  | nil {n : Nat} : Targets.LessDefined (n := n) .nil .nil
+  /-- `(M, M̄) ⊑ (N, N̄)`. -/
+  | cons {n : Nat} {M N : Target n} {Ms Ns : Targets n} (h : Target.LessDefined M N)
+      (hs : Targets.LessDefined Ms Ns) : Targets.LessDefined (.cons M Ms) (.cons N Ns)
+
+-- ADE: none.
+/-- The branches are less defined, one by one. -/
+inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → TargetBranches n → Prop where
+  /-- `()`. -/
+  | nil {n : Nat} : TargetBranches.LessDefined (n := n) .nil .nil
+  /-- `(c(x̄; ȳ) ⇒ M, M̄) ⊑ (c(x̄; ȳ) ⇒ N, N̄)`. -/
+  | cons {n a b : Nat} {M N : Target (n + (a + b))} {Ms Ns : TargetBranches n}
+      (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
+      TargetBranches.LessDefined (.cons a b M Ms) (.cons a b N Ns)
+
+end
 
 @[inherit_doc] infix:50 " ⊑ " => Target.LessDefined
+
+-- ADE: none.
+/-- A scope of variables extended by variables is a scope of variables. -/
+theorem Scope.FirstOrder.extend {Γ : Scope} (hΓ : Γ.FirstOrder) :
+    (a : Nat) → (Γ.extend a).FirstOrder
+  | 0 => hΓ
+  | a + 1 => Scope.FirstOrder.extend (Γ := .var :: Γ)
+      (fun e he => by
+        rcases List.mem_cons.mp he with rfl | he
+        · rfl
+        · exact hΓ e he) a
+
+mutual
 
 -- ADE: `erase′`, in `Graded/Erasure/Extraction.agda`.
 /--
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
-grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, and a constant
-`f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`; a second-order variable has no erasure, since the scope
-has none.
+grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
+`f.{s̄; l̄; p̄}` keeps its grades, `f.{p̄}`, a constructor keeps its fields, each at the grade of its
+field, and a recursor keeps its term, at its grade, and its branches, without its motives; a
+second-order variable has no erasure, since the scope has none.
+The grades of the fields are those of the declaration of the constructor in the signature `sig`;
+a field whose grade the signature does not give, in a term that no declaration types, is erased.
+Whether a grade is in `S` decides the erasure of its position, so that `S` is decidable, as the
+sets `S^m` are.
 RFC: `\mathsf{erase}_t`
 -/
-def Term.erase (_S : Set Grade) {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    Term k Γ → Target Γ.length
+def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
+    (hΓ : Γ.FirstOrder) : Term k Γ → Target Γ.length
   | .var (e := .var) x _ => .var x.toFin
   | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
   | .sort _ => .erased
   | .const f _ _ ps => .const f ps
   | .inst .. => .erased
+  | .ctor D qs _ ps _ c ts => .ctor c (ts.erase sig S hΓ ((sig.fieldGrades D c qs ps).getD []))
+  | .recursor r t _ us =>
+    .recursor (if r ∈ S then .erased else t.erase sig S hΓ) (us.erase sig S hΓ)
+
+-- ADE: none.
+/-- `⌊t̄⌋_S`: the erasure of the fields of a constructor, each at the grade of its field in `ps`. -/
+def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
+    (hΓ : Γ.FirstOrder) : Terms k Γ → List Grade → Targets Γ.length
+  | .nil, _ => .nil
+  | .cons _ ts, [] => .cons .erased (ts.erase sig S hΓ [])
+  | .cons t ts, p :: ps =>
+    .cons (if p ∈ S then .erased else t.erase sig S hΓ) (ts.erase sig S hΓ ps)
+
+-- ADE: none.
+/-- `⌊ū⌋_S`: the erasure of the branches of a recursor, under their new variables. -/
+def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
+    (hΓ : Γ.FirstOrder) : Branches k Γ → TargetBranches Γ.length
+  | .nil => .nil
+  | .cons a b u us =>
+    .cons a b (Scope.length_extend Γ (a + b) ▸ u.erase sig S (hΓ.extend (a + b)))
+      (us.erase sig S hΓ)
+
+end
 
 /-! ## Properties -/
 
@@ -146,8 +275,9 @@ A variable whose grade is in `S` does not occur in the erasure by `S` of a term 
 RFC: `\mathsf{absent}_S`
 -/
 theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector Γ.length}
-    {m : Mode} {t : Term k Γ} {S : Set Grade} (hS : ErasesUncounted m S) (hΓ : Γ.FirstOrder)
-    {x : Fin Γ.length} : Usage sig γ m t → γ x ∈ S → ¬ (t.erase S hΓ).Occurs x
+    {m : Mode} {t : Term k Γ} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
+    (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
+    Usage sig γ m t → γ x ∈ S → ¬ (t.erase sig S hΓ).Occurs x
   | .var (e := .secondOrder ..) (x := y) _, _, _ => nomatch hΓ _ y.mem
   | .var (e := .var) (x := y) (δ := δ) _, hx, ho => by
     simp only [Term.erase] at ho
@@ -160,14 +290,62 @@ theorem Usage.absent {sig : Signature} {k : Nat} {Γ : Scope} {γ : GradeVector 
   | .sub h hle, hx, ho => h.absent hS hΓ (hS.le _ _ (hle x) hx) ho
 
 -- ADE: none.
+/-- A cast of the number of variables keeps a term less defined than another. -/
+theorem Target.LessDefined.cast {n n' : Nat} (h : n = n') {M N : Target n} (hMN : M ⊑ N) :
+    (h ▸ M : Target n') ⊑ h ▸ N := by
+  subst h
+  exact hMN
+
+mutual
+
+-- ADE: none.
 /-- The erasure by a larger set of grades is less defined.
-The core has no position whose grade decides what is erased, so that its proof does not use
-`S₁ ⊆ S₂`, which the positions of the kinds of declarations use.
 RFC: `\sqsubseteq_S` -/
-theorem Term.erase_lessDefined {S₁ S₂ : Set Grade} (_h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) : (t : Term k Γ) → t.erase S₂ hΓ ⊑ t.erase S₁ hΓ
+theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [DecidablePred (· ∈ S₁)]
+    [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
+    (t : Term k Γ) → t.erase sig S₂ hΓ ⊑ t.erase sig S₁ hΓ
   | .var (e := .var) .. => by simp only [Term.erase]; constructor
   | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
-  | .sort _ | .const .. | .inst .. => by constructor
+  | .sort _ | .inst .. => .erased
+  | .const .. => .const
+  | .ctor _ _ _ _ _ _ ts => .ctor (Terms.erase_lessDefined sig h hΓ ts _)
+  | .recursor r t _ us => by
+    simp only [Term.erase]
+    refine .recursor ?_ (Branches.erase_lessDefined sig h hΓ us)
+    by_cases h₂ : r ∈ S₂
+    · simp only [h₂, ↓reduceIte]; exact .erased
+    · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
+      simp only [h₂, h₁, ↓reduceIte]
+      exact Term.erase_lessDefined sig h hΓ t
+
+-- ADE: none.
+/-- The erasure of fields by a larger set of grades is less defined. -/
+theorem Terms.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [DecidablePred (· ∈ S₁)]
+    [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
+    (ts : Terms k Γ) → (ps : List Grade) →
+      Targets.LessDefined (ts.erase sig S₂ hΓ ps) (ts.erase sig S₁ hΓ ps)
+  | .nil, _ => .nil
+  | .cons _ ts, [] => .cons .erased (Terms.erase_lessDefined sig h hΓ ts [])
+  | .cons t ts, p :: ps => by
+    simp only [Terms.erase]
+    refine .cons ?_ (Terms.erase_lessDefined sig h hΓ ts ps)
+    by_cases h₂ : p ∈ S₂
+    · simp only [h₂, ↓reduceIte]; exact .erased
+    · have h₁ : p ∉ S₁ := fun h₁ => h₂ (h p h₁)
+      simp only [h₂, h₁, ↓reduceIte]
+      exact Term.erase_lessDefined sig h hΓ t
+
+-- ADE: none.
+/-- The erasure of branches by a larger set of grades is less defined. -/
+theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
+    [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
+    (hΓ : Γ.FirstOrder) : (us : Branches k Γ) →
+      TargetBranches.LessDefined (us.erase sig S₂ hΓ) (us.erase sig S₁ hΓ)
+  | .nil => .nil
+  | .cons a b u us => .cons (Target.LessDefined.cast _
+      (Term.erase_lessDefined sig h (hΓ.extend (a + b)) u))
+      (Branches.erase_lessDefined sig h hΓ us)
+
+end
 
 end Sic.Core

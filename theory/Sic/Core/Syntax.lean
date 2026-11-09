@@ -31,6 +31,10 @@ The level variables are part of the syntax, since an entry is checked once with 
 
 ADE have no second-order variables, and their levels are terms; their definition contexts hold
 definitions only, transparent or opaque, without sort, level or grade variables.
+Their types, the functions, the pairs, the units, the empty type, the natural numbers and the
+identity type, are built in, each with its own terms, while the types here are declared, and the
+terms of the data types are the constructors and the recursor of every declaration; the binders of a
+motive and of a branch of a recursor are counted by the indices, as the telescopes are.
 -/
 
 @[expose] public section
@@ -111,6 +115,16 @@ inductive Term (k : Nat) : Scope → Type where
   /-- `D.{s̄; l̄; p̄} ā`: an instance of the declared type `D`. -/
   | inst {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) : Term k Γ
+  /-- `T.c(t̄)`: the constructor `c` of the data type of the instance `T = D.{s̄; l̄; p̄} ā`, applied
+  to a term for each of its fields; the constructor carries its instance, so that the term determines
+  its type. -/
+  | ctor {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
+      (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name) (ts : Terms k Γ) : Term k Γ
+  /-- `rec_r t return C̄ with ū`: the recursor, which uses the term `t` with the grade `r`, with a
+  motive `C_j` for each type of the block and a branch `u_ji` for each constructor of each type, in
+  the order of the declaration. -/
+  | recursor {Γ : Scope} (r : Grade) (t : Term k Γ) (Cs : Motives k Γ) (us : Branches k Γ) :
+      Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
 one first.
@@ -134,6 +148,34 @@ inductive InstanceArgs (k : Nat) : Scope → Scope → Type where
   /-- `(ā, x̄. B)`, the argument `B` for a parameter whose entry is `e`. -/
   | snoc {Γ Δ : Scope} {e : Scope.Entry} (as : InstanceArgs k Γ Δ)
       (B : Term k (Γ.extend e.params.length)) : InstanceArgs k Γ (e :: Δ)
+
+/-- `t̄ = (t₁, …, tₐ)`: the terms of the fields of a constructor, the first one first, whose grades
+the declaration gives. -/
+inductive Terms (k : Nat) : Scope → Type where
+  /-- `()`. -/
+  | nil {Γ : Scope} : Terms k Γ
+  /-- `(t, t̄)`. -/
+  | cons {Γ : Scope} (t : Term k Γ) (ts : Terms k Γ) : Terms k Γ
+
+/-- `C̄`: the motives of a recursor, one for each type of the block, in order; the motive
+`(x̄_nu, z). C` is a term over a new variable for each non-uniform parameter and one for the
+eliminated term, of which the indices only keep the number `n` of non-uniform parameters. -/
+inductive Motives (k : Nat) : Scope → Type where
+  /-- `()`. -/
+  | nil {Γ : Scope} : Motives k Γ
+  /-- `((x̄_nu, z). C, C̄)`, with `n` non-uniform parameters. -/
+  | cons {Γ : Scope} (n : Nat) (C : Term k (Γ.extend (n + 1))) (Cs : Motives k Γ) : Motives k Γ
+
+/-- `ū`: the branches of a recursor, one for each constructor of each type of the block, in the
+order of the declaration; the branch `c(x̄; ȳ) ⇒ u` is a term over a new variable for each field and
+one for each recursive result, of which the indices only keep the numbers `n` of fields and `m` of
+recursive results. -/
+inductive Branches (k : Nat) : Scope → Type where
+  /-- `()`. -/
+  | nil {Γ : Scope} : Branches k Γ
+  /-- `(c(x̄; ȳ) ⇒ u, ū)`, with `n` fields and `m` recursive results. -/
+  | cons {Γ : Scope} (n m : Nat) (u : Term k (Γ.extend (n + m))) (us : Branches k Γ) :
+      Branches k Γ
 
 end
 
@@ -221,14 +263,31 @@ structure ConstantDeclaration where
   type : Instance sorts grades → Term levels []
 
 -- ADE: none.
+/-- `c : Θ`, a constructor of a data type, over `j` sort variables, `g` grade variables and `k`
+level variables, whose fields `Θ` are a telescope in the scope `Δ` of the parameters of the
+declaration, for each instance, since their grades may be grade variables. -/
+structure Constructor (j g k : Nat) (Δ : Scope) where
+  /-- The name `c`. -/
+  name : Name
+  /-- The parameters of the fields, for each instance. -/
+  params : Instance j g → List Parameter
+  /-- The fields `Θ`, for each instance. -/
+  fields : (I : Instance j g) → Telescope k Δ (params I)
+
+-- ADE: none.
+/-- `D ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration and its constructors, in order. -/
+structure DataType (j g k : Nat) (Δ : Scope) where
+  /-- The name `D`. -/
+  name : Name
+  /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
+  constructors : List (Constructor j g k Δ)
+
+-- ADE: none.
 /--
-The header of a type declaration, `𝒦.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, which is all that
-the system knows of it: the names of the declared types, the parameters `Δ` and the sort `κ`; the
-kind `𝒦` gives the bodies.
+A type declaration, `data.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types declared
+together, with their parameters `Δ` and their sort `κ`.
 -/
 structure TypeDeclaration where
-  /-- The names `D₁, …, Dₙ` of the declared types. -/
-  names : List Name
   /-- The number of sort variables. -/
   sorts : Nat
   /-- The number of level variables. -/
@@ -241,6 +300,12 @@ structure TypeDeclaration where
   params : Instance sorts grades → Context levels scope
   /-- The sort `κ` of the declared types, for each instance. -/
   sort : Instance sorts grades → Universe levels
+  /-- The data types `D₁ ≔ …; …; Dₙ ≔ …` of the block. -/
+  types : List (DataType sorts grades levels scope)
+
+/-- The names `D₁, …, Dₙ` of the declared types. -/
+def TypeDeclaration.names (decl : TypeDeclaration) : List Name :=
+  decl.types.map (·.name)
 
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
@@ -328,6 +393,28 @@ theorem _root_.List.getFin_map {α β : Type} (f : α → β) (l : List α) {n :
 def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.length = j)
     (hp : ps.length = g) : Instance j g :=
   ⟨qs.getFin hq, ps.getFin hp⟩
+
+-- ADE: none.
+/-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
+the qualities `qs` and of the grades `ps`, when the signature declares them, which the erasure of a
+constructor reads. -/
+def Signature.fieldGrades (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List Grade) :=
+  sig.findSome? fun
+    | .typeDeclaration decl =>
+      if hq : qs.length = decl.sorts then
+        if hp : ps.length = decl.grades then
+          (decl.types.find? (·.name == D)).bind fun T =>
+            (T.constructors.find? (·.name == c)).map fun con =>
+              (con.params (.ofLists qs ps hq hp)).map (·.usage)
+        else none
+      else none
+    | _ => none
+
+/-- The length of the scope `Γ` extended by `a` variables. -/
+theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a
+  | 0 => rfl
+  | a + 1 => (Scope.length_extend (.var :: Γ) a).trans (Nat.succ_add _ _)
 
 /-- The position of a variable in its scope, the last entry being `0`. -/
 def Var.toFin {Γ : Scope} {e : Scope.Entry} : Var Γ e → Fin Γ.length

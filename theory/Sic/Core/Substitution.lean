@@ -70,6 +70,8 @@ def Term.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Term k Δ → Term k Γ
   | .sort κ => .sort κ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.rename ξ)
+  | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.rename ξ) c (ts.rename ξ)
+  | .recursor r t Cs us => .recursor r (t.rename ξ) (Cs.rename ξ) (us.rename ξ)
 
 /-- The arguments `t̄` renamed by `ξ`. -/
 def Args.rename {Γ Δ : Scope} {a : List Parameter} (ξ : Ren Γ Δ) : Args k Δ a → Args k Γ a
@@ -80,6 +82,21 @@ def Args.rename {Γ Δ : Scope} {a : List Parameter} (ξ : Ren Γ Δ) : Args k �
 def InstanceArgs.rename {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ) : InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
   | .snoc as B => .snoc (as.rename ξ) (B.rename (Ren.liftN _ ξ))
+
+/-- The terms `t̄` renamed by `ξ`. -/
+def Terms.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Terms k Δ → Terms k Γ
+  | .nil => .nil
+  | .cons t ts => .cons (t.rename ξ) (ts.rename ξ)
+
+/-- The motives `C̄` renamed by `ξ`, under the variables of each motive. -/
+def Motives.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Motives k Δ → Motives k Γ
+  | .nil => .nil
+  | .cons n C Cs => .cons n (C.rename (Ren.liftN _ ξ)) (Cs.rename ξ)
+
+/-- The branches `ū` renamed by `ξ`, under the variables of each branch. -/
+def Branches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Branches k Δ → Branches k Γ
+  | .nil => .nil
+  | .cons n m u us => .cons n m (u.rename (Ren.liftN _ ξ)) (us.rename ξ)
 
 end
 
@@ -156,6 +173,8 @@ def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k
   | .sort κ => .sort κ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst₀ σ)
+  | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst₀ σ) c (ts.subst₀ σ)
+  | .recursor r t Cs us => .recursor r (t.subst₀ σ) (Cs.subst₀ σ) (us.subst₀ σ)
 
 /-- The arguments `t̄` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma.\bar t` -/
@@ -169,6 +188,21 @@ def InstanceArgs.subst₀ {Γ Δ Ξ : Scope} (σ : Subst₀ k Γ Δ) :
     InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
   | .snoc as B => .snoc (as.subst₀ σ) (B.subst₀ (Subst₀.liftN _ σ))
+
+/-- The terms `t̄` substituted by `σ`. -/
+def Terms.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Terms k Δ → Terms k Γ
+  | .nil => .nil
+  | .cons t ts => .cons (t.subst₀ σ) (ts.subst₀ σ)
+
+/-- The motives `C̄` substituted by `σ`, under the variables of each motive. -/
+def Motives.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Motives k Δ → Motives k Γ
+  | .nil => .nil
+  | .cons n C Cs => .cons n (C.subst₀ (Subst₀.liftN _ σ)) (Cs.subst₀ σ)
+
+/-- The branches `ū` substituted by `σ`, under the variables of each branch. -/
+def Branches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Branches k Δ → Branches k Γ
+  | .nil => .nil
+  | .cons n m u us => .cons n m (u.subst₀ (Subst₀.liftN _ σ)) (us.subst₀ σ)
 
 end
 
@@ -218,6 +252,8 @@ def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .sort κ => .sort κ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst θ)
+  | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst θ) c (ts.subst θ)
+  | .recursor r t Cs us => .recursor r (t.subst θ) (Cs.subst θ) (us.subst θ)
 
 /-- The arguments `t̄` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta.\bar t` -/
@@ -231,6 +267,21 @@ def InstanceArgs.subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) :
     InstanceArgs k Δ Ξ → InstanceArgs k Γ Ξ
   | .nil => .nil
   | .snoc as B => .snoc (as.subst θ) (B.subst (Subst.liftN _ θ))
+
+/-- The terms `t̄` substituted by `θ`. -/
+def Terms.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Terms k Δ → Terms k Γ
+  | .nil => .nil
+  | .cons t ts => .cons (t.subst θ) (ts.subst θ)
+
+/-- The motives `C̄` substituted by `θ`, under the variables of each motive. -/
+def Motives.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Motives k Δ → Motives k Γ
+  | .nil => .nil
+  | .cons n C Cs => .cons n (C.subst (Subst.liftN _ θ)) (Cs.subst θ)
+
+/-- The branches `ū` substituted by `θ`, under the variables of each branch. -/
+def Branches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Branches k Δ → Branches k Γ
+  | .nil => .nil
+  | .cons n m u us => .cons n m (u.subst (Subst.liftN _ θ)) (us.subst θ)
 
 end
 
@@ -264,6 +315,10 @@ def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k
   | .sort κ => .sort (κ.substLevels ls')
   | .const c qs ls ps => .const c qs (ls.map (Level.subst ls')) ps
   | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
+  | .ctor D qs ls ps as c ts =>
+    .ctor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c (ts.substLevels ls')
+  | .recursor r t Cs us =>
+    .recursor r (t.substLevels ls') (Cs.substLevels ls') (us.substLevels ls')
 
 /-- The arguments `t̄` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l.\bar t` -/
@@ -278,6 +333,23 @@ def InstanceArgs.substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k
     InstanceArgs k Γ Δ → InstanceArgs k' Γ Δ
   | .nil => .nil
   | .snoc as B => .snoc (as.substLevels ls') (B.substLevels ls')
+
+/-- The terms `t̄` in which the levels `ls'` replace the level variables. -/
+def Terms.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Terms k Γ → Terms k' Γ
+  | .nil => .nil
+  | .cons t ts => .cons (t.substLevels ls') (ts.substLevels ls')
+
+/-- The motives `C̄` in which the levels `ls'` replace the level variables. -/
+def Motives.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    Motives k Γ → Motives k' Γ
+  | .nil => .nil
+  | .cons n C Cs => .cons n (C.substLevels ls') (Cs.substLevels ls')
+
+/-- The branches `ū` in which the levels `ls'` replace the level variables. -/
+def Branches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    Branches k Γ → Branches k' Γ
+  | .nil => .nil
+  | .cons n m u us => .cons n m (u.substLevels ls') (us.substLevels ls')
 
 end
 
@@ -354,6 +426,10 @@ theorem Term.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by rw [Term.rename, InstanceArgs.rename_id_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, InstanceArgs.rename_id_of h as, Terms.rename_id_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.rename, Term.rename_id_of h t, Motives.rename_id_of h Cs, Branches.rename_id_of h us]
 
 theorem Args.rename_id_of {Γ : Scope} {a : List Parameter} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
     (ts : Args k Γ a) → ts.rename ξ = ts
@@ -366,6 +442,24 @@ theorem InstanceArgs.rename_id_of {Γ Ξ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} 
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.rename_id_of h as,
       Term.rename_id_of (Ren.liftN_id_of _ h) B]
+
+theorem Terms.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (ts : Terms k Γ) → ts.rename ξ = ts
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.rename_id_of h ts, Term.rename_id_of h t]
+
+theorem Motives.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (Cs : Motives k Γ) → Cs.rename ξ = Cs
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.rename_id_of h Cs, Term.rename_id_of (Ren.liftN_id_of _ h) C]
+
+theorem Branches.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
+    (us : Branches k Γ) → us.rename ξ = us
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.rename_id_of h us, Term.rename_id_of (Ren.liftN_id_of _ h) u]
 
 end
 
@@ -395,6 +489,10 @@ theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by rw [Term.subst₀, InstanceArgs.subst₀_id_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Terms.subst₀_id_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst₀, Term.subst₀_id_of h t, Motives.subst₀_id_of h Cs, Branches.subst₀_id_of h us]
 
 theorem Args.subst₀_id_of {Γ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (ts : Args k Γ a) → ts.subst₀ σ = ts
@@ -407,6 +505,24 @@ theorem InstanceArgs.subst₀_id_of {Γ Ξ : Scope} {σ : Subst₀ k Γ Γ}
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.subst₀_id_of h as,
       Term.subst₀_id_of (Subst₀.liftN_id_of _ h) B]
+
+theorem Terms.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (ts : Terms k Γ) → ts.subst₀ σ = ts
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.subst₀_id_of h ts, Term.subst₀_id_of h t]
+
+theorem Motives.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (Cs : Motives k Γ) → Cs.subst₀ σ = Cs
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst₀, Motives.subst₀_id_of h Cs, Term.subst₀_id_of (Subst₀.liftN_id_of _ h) C]
+
+theorem Branches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (us : Branches k Γ) → us.subst₀ σ = us
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst₀, Branches.subst₀_id_of h us, Term.subst₀_id_of (Subst₀.liftN_id_of _ h) u]
 
 end
 
@@ -477,6 +593,12 @@ theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Re
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
+      Terms.rename_rename_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.rename, Term.rename, Term.rename, Term.rename_rename_of h t,
+      Motives.rename_rename_of h Cs, Branches.rename_rename_of h us]
 
 theorem Args.rename_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
     {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
@@ -492,6 +614,30 @@ theorem InstanceArgs.rename_rename_of {Γ Δ Ξ Ψ : Scope} {ξ₁ : Ren Γ Δ} 
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.rename, InstanceArgs.rename,
       InstanceArgs.rename_rename_of h as, Term.rename_rename_of (Ren.liftN_comp_of _ h) B]
+
+theorem Terms.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (ts : Terms k Ξ) → (ts.rename ξ₂).rename ξ₁ = ts.rename ξ₃
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.rename, Terms.rename,
+      Terms.rename_rename_of h ts, Term.rename_rename_of h t]
+
+theorem Motives.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (Cs : Motives k Ξ) → (Cs.rename ξ₂).rename ξ₁ = Cs.rename ξ₃
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.rename, Motives.rename,
+      Motives.rename_rename_of h Cs, Term.rename_rename_of (Ren.liftN_comp_of _ h) C]
+
+theorem Branches.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ}
+    {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
+    (us : Branches k Ξ) → (us.rename ξ₂).rename ξ₁ = us.rename ξ₃
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.rename, Branches.rename,
+      Branches.rename_rename_of h us, Term.rename_rename_of (Ren.liftN_comp_of _ h) u]
 
 end
 
@@ -537,6 +683,12 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ :
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
+      Terms.subst₀_rename_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.rename, Term.subst₀, Term.subst₀, Term.subst₀_rename_of h t,
+      Motives.subst₀_rename_of h Cs, Branches.subst₀_rename_of h us]
 
 theorem Args.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
@@ -553,6 +705,30 @@ theorem InstanceArgs.subst₀_rename_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k �
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.subst₀, InstanceArgs.subst₀,
       InstanceArgs.subst₀_rename_of h as, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) B]
+
+theorem Terms.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (ts : Terms k Ξ) → (ts.rename ξ).subst₀ σ = ts.subst₀ σ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.subst₀, Terms.subst₀,
+      Terms.subst₀_rename_of h ts, Term.subst₀_rename_of h t]
+
+theorem Motives.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (Cs : Motives k Ξ) → (Cs.rename ξ).subst₀ σ = Cs.subst₀ σ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.subst₀, Motives.subst₀,
+      Motives.subst₀_rename_of h Cs, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) C]
+
+theorem Branches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
+    (us : Branches k Ξ) → (us.rename ξ).subst₀ σ = us.subst₀ σ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.subst₀, Branches.subst₀,
+      Branches.subst₀_rename_of h us, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) u]
 
 end
 
@@ -599,6 +775,12 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ :
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
+      Terms.rename_subst₀_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst₀, Term.rename, Term.subst₀, Term.rename_subst₀_of h t,
+      Motives.rename_subst₀_of h Cs, Branches.rename_subst₀_of h us]
 
 theorem Args.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
@@ -616,6 +798,33 @@ theorem InstanceArgs.rename_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k �
     rw [InstanceArgs.subst₀, InstanceArgs.rename, InstanceArgs.subst₀,
       InstanceArgs.rename_subst₀_of h as,
       Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) B]
+
+theorem Terms.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (ts : Terms k Ξ) → (ts.subst₀ σ).rename ξ = ts.subst₀ σ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.rename, Terms.subst₀,
+      Terms.rename_subst₀_of h ts,
+      Term.rename_subst₀_of h t]
+
+theorem Motives.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (Cs : Motives k Ξ) → (Cs.subst₀ σ).rename ξ = Cs.subst₀ σ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst₀, Motives.rename, Motives.subst₀,
+      Motives.rename_subst₀_of h Cs,
+      Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) C]
+
+theorem Branches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ : Ren Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
+    (us : Branches k Ξ) → (us.subst₀ σ).rename ξ = us.subst₀ σ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst₀, Branches.rename, Branches.subst₀,
+      Branches.rename_subst₀_of h us,
+      Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) u]
 
 end
 
@@ -667,6 +876,12 @@ theorem Term.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
+      Terms.subst₀_subst₀_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst₀, Term.subst₀, Term.subst₀, Term.subst₀_subst₀_of h t,
+      Motives.subst₀_subst₀_of h Cs, Branches.subst₀_subst₀_of h us]
 
 theorem Args.subst₀_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {τ : Subst₀ k Γ Δ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
@@ -683,6 +898,30 @@ theorem InstanceArgs.subst₀_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.subst₀, InstanceArgs.subst₀,
       InstanceArgs.subst₀_subst₀_of h as, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) B]
+
+theorem Terms.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
+    (ts : Terms k Ξ) → (ts.subst₀ σ).subst₀ τ = ts.subst₀ σ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.subst₀, Terms.subst₀,
+      Terms.subst₀_subst₀_of h ts, Term.subst₀_subst₀_of h t]
+
+theorem Motives.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
+    (Cs : Motives k Ξ) → (Cs.subst₀ σ).subst₀ τ = Cs.subst₀ σ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst₀, Motives.subst₀, Motives.subst₀,
+      Motives.subst₀_subst₀_of h Cs, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) C]
+
+theorem Branches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ}
+    {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
+    (us : Branches k Ξ) → (us.subst₀ σ).subst₀ τ = us.subst₀ σ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst₀, Branches.subst₀, Branches.subst₀,
+      Branches.subst₀_subst₀_of h us, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) u]
 
 end
 
@@ -911,6 +1150,12 @@ theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren �
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
+      Terms.subst_rename_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.rename, Term.subst, Term.subst, Term.subst_rename_of h t, Motives.subst_rename_of h Cs,
+      Branches.subst_rename_of h us]
 
 theorem Args.subst_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
@@ -926,6 +1171,30 @@ theorem InstanceArgs.subst_rename_of {Γ Δ Ξ Ψ : Scope} {θ : Subst k Γ Δ} 
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.subst, InstanceArgs.subst,
       InstanceArgs.subst_rename_of h as, Term.subst_rename_of (Subst.liftN_rename_of _ h) B]
+
+theorem Terms.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (ts : Terms k Ξ) → (ts.rename ξ).subst θ = ts.subst θ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.subst, Terms.subst,
+      Terms.subst_rename_of h ts, Term.subst_rename_of h t]
+
+theorem Motives.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (Cs : Motives k Ξ) → (Cs.rename ξ).subst θ = Cs.subst θ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.subst, Motives.subst,
+      Motives.subst_rename_of h Cs, Term.subst_rename_of (Subst.liftN_rename_of _ h) C]
+
+theorem Branches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Δ Ξ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
+    (us : Branches k Ξ) → (us.rename ξ).subst θ = us.subst θ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.subst, Branches.subst,
+      Branches.subst_rename_of h us, Term.subst_rename_of (Subst.liftN_rename_of _ h) u]
 
 end
 
@@ -974,6 +1243,12 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren �
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
+      Terms.rename_subst_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst, Term.rename, Term.subst, Term.rename_subst_of h t, Motives.rename_subst_of h Cs,
+      Branches.rename_subst_of h us]
 
 theorem Args.rename_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
@@ -989,6 +1264,30 @@ theorem InstanceArgs.rename_subst_of {Γ Δ Ξ Ψ : Scope} {θ : Subst k Δ Ξ} 
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.rename, InstanceArgs.subst,
       InstanceArgs.rename_subst_of h as, Term.rename_subst_of (Subst.liftN_rename_after_of _ h) B]
+
+theorem Terms.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
+    (ts : Terms k Ξ) → (ts.subst θ).rename ξ = ts.subst θ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst, Terms.rename, Terms.subst,
+      Terms.rename_subst_of h ts, Term.rename_subst_of h t]
+
+theorem Motives.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
+    (Cs : Motives k Ξ) → (Cs.subst θ).rename ξ = Cs.subst θ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst, Motives.rename, Motives.subst,
+      Motives.rename_subst_of h Cs, Term.rename_subst_of (Subst.liftN_rename_after_of _ h) C]
+
+theorem Branches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren Γ Δ}
+    {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
+    (us : Branches k Ξ) → (us.subst θ).rename ξ = us.subst θ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst, Branches.rename, Branches.subst,
+      Branches.rename_subst_of h us, Term.rename_subst_of (Subst.liftN_rename_after_of _ h) u]
 
 end
 
@@ -1076,6 +1375,12 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
+      Terms.subst_subst₀_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, Term.subst_subst₀_of h t,
+      Motives.subst_subst₀_of h Cs, Branches.subst_subst₀_of h us]
 
 theorem Args.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
@@ -1092,6 +1397,30 @@ theorem InstanceArgs.subst_subst₀_of {Γ Δ Ξ Ψ Φ : Scope} {σ : Subst₀ k
   | .snoc as B => by
     rw [InstanceArgs.subst₀, InstanceArgs.subst, InstanceArgs.subst, InstanceArgs.subst₀,
       InstanceArgs.subst_subst₀_of h as, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) B]
+
+theorem Terms.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (ts : Terms k Ξ) → (ts.subst₀ σ).subst θ₁ = (ts.subst θ₂).subst₀ σ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.subst, Terms.subst, Terms.subst₀,
+      Terms.subst_subst₀_of h ts, Term.subst_subst₀_of h t]
+
+theorem Motives.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (Cs : Motives k Ξ) → (Cs.subst₀ σ).subst θ₁ = (Cs.subst θ₂).subst₀ σ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst₀, Motives.subst, Motives.subst, Motives.subst₀,
+      Motives.subst_subst₀_of h Cs, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) C]
+
+theorem Branches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
+    {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
+    (us : Branches k Ξ) → (us.subst₀ σ).subst θ₁ = (us.subst θ₂).subst₀ σ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst₀, Branches.subst, Branches.subst, Branches.subst₀,
+      Branches.subst_subst₀_of h us, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) u]
 
 end
 
@@ -1228,6 +1557,12 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : 
   | .const .. => rfl
   | .inst D qs ls ps as => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
+      Terms.subst_subst_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst, Term.subst, Term.subst, Term.subst_subst_of h t, Motives.subst_subst_of h Cs,
+      Branches.subst_subst_of h us]
 
 theorem Args.subst_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ₁ : Subst k Δ Ξ}
     {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ}
@@ -1244,6 +1579,30 @@ theorem InstanceArgs.subst_subst_of {Γ Δ Ξ Ψ : Scope} {θ₁ : Subst k Δ Ξ
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.subst, InstanceArgs.subst,
       InstanceArgs.subst_subst_of h as, Term.subst_subst_of (Subst.liftN_subst_of _ h) B]
+
+theorem Terms.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
+    (ts : Terms k Ξ) → (ts.subst θ₁).subst θ₂ = ts.subst θ₃
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst, Terms.subst, Terms.subst,
+      Terms.subst_subst_of h ts, Term.subst_subst_of h t]
+
+theorem Motives.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
+    (Cs : Motives k Ξ) → (Cs.subst θ₁).subst θ₂ = Cs.subst θ₃
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst, Motives.subst, Motives.subst,
+      Motives.subst_subst_of h Cs, Term.subst_subst_of (Subst.liftN_subst_of _ h) C]
+
+theorem Branches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+    {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
+    (us : Branches k Ξ) → (us.subst θ₁).subst θ₂ = us.subst θ₃
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst, Branches.subst, Branches.subst,
+      Branches.subst_subst_of h us, Term.subst_subst_of (Subst.liftN_subst_of _ h) u]
 
 end
 
@@ -1284,6 +1643,10 @@ theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var
   | .sort _ => rfl
   | .const .. => rfl
   | .inst D qs ls ps as => by rw [Term.subst, InstanceArgs.subst_id_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst, InstanceArgs.subst_id_of h as, Terms.subst_id_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst, Term.subst_id_of h t, Motives.subst_id_of h Cs, Branches.subst_id_of h us]
 
 theorem Args.subst_id_of {Γ : Scope} {a : List Parameter} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (ts : Args k Γ a) → ts.subst θ = ts
@@ -1296,6 +1659,24 @@ theorem InstanceArgs.subst_id_of {Γ Ξ : Scope} {θ : Subst k Γ Γ}
   | .snoc as B => by
     rw [InstanceArgs.subst, InstanceArgs.subst_id_of h as,
       Term.subst_id_of (Subst.liftN_id_of _ h) B]
+
+theorem Terms.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (ts : Terms k Γ) → ts.subst θ = ts
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst, Terms.subst_id_of h ts, Term.subst_id_of h t]
+
+theorem Motives.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (Cs : Motives k Γ) → Cs.subst θ = Cs
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst, Motives.subst_id_of h Cs, Term.subst_id_of (Subst.liftN_id_of _ h) C]
+
+theorem Branches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (us : Branches k Γ) → us.subst θ = us
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst, Branches.subst_id_of h us, Term.subst_id_of (Subst.liftN_id_of _ h) u]
 
 end
 
@@ -1622,6 +2003,13 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
   | .inst D qs ls ps as => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       InstanceArgs.substLevels_rename ls' ξ as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
+      InstanceArgs.substLevels_rename ls' ξ as, Terms.substLevels_rename ls' ξ ts]
+  | .recursor r t Cs us => by
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
+      Term.substLevels_rename ls' ξ t, Motives.substLevels_rename ls' ξ Cs,
+      Branches.substLevels_rename ls' ξ us]
 
 theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Parameter} (ls' : Fin k → Level k')
     (ξ : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename ξ).substLevels ls'
@@ -1638,6 +2026,30 @@ theorem InstanceArgs.substLevels_rename {k' : Nat} {Γ Δ Ξ : Scope} (ls' : Fin
   | .snoc as B => by
     rw [InstanceArgs.rename, InstanceArgs.substLevels, InstanceArgs.substLevels,
       InstanceArgs.rename, InstanceArgs.substLevels_rename ls' ξ as, Term.substLevels_rename]
+
+theorem Terms.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) :
+    (ts : Terms k Δ) → (ts.rename ξ).substLevels ls' = (ts.substLevels ls').rename ξ
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.substLevels, Terms.substLevels, Terms.rename,
+      Terms.substLevels_rename ls' ξ ts, Term.substLevels_rename]
+
+theorem Motives.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) :
+    (Cs : Motives k Δ) → (Cs.rename ξ).substLevels ls' = (Cs.substLevels ls').rename ξ
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.substLevels, Motives.substLevels, Motives.rename,
+      Motives.substLevels_rename ls' ξ Cs, Term.substLevels_rename]
+
+theorem Branches.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) :
+    (us : Branches k Δ) → (us.rename ξ).substLevels ls' = (us.substLevels ls').rename ξ
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.substLevels, Branches.substLevels, Branches.rename,
+      Branches.substLevels_rename ls' ξ us, Term.substLevels_rename]
 
 end
 
@@ -1680,6 +2092,13 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
   | .inst D qs ls ps as => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       InstanceArgs.substLevels_subst₀_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
+      InstanceArgs.substLevels_subst₀_of h as, Terms.substLevels_subst₀_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
+      Term.substLevels_subst₀_of h t, Motives.substLevels_subst₀_of h Cs,
+      Branches.substLevels_subst₀_of h us]
 
 theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
@@ -1699,6 +2118,36 @@ theorem InstanceArgs.substLevels_subst₀_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' 
     rw [InstanceArgs.subst₀, InstanceArgs.substLevels, InstanceArgs.substLevels,
       InstanceArgs.subst₀, InstanceArgs.substLevels_subst₀_of h as,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) B]
+
+theorem Terms.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (ts : Terms k Δ) → (ts.subst₀ σ).substLevels ls' = (ts.substLevels ls').subst₀ σ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.substLevels, Terms.substLevels,
+      Terms.subst₀, Terms.substLevels_subst₀_of h ts,
+      Term.substLevels_subst₀_of h t]
+
+theorem Motives.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (Cs : Motives k Δ) → (Cs.subst₀ σ).substLevels ls' = (Cs.substLevels ls').subst₀ σ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst₀, Motives.substLevels, Motives.substLevels,
+      Motives.subst₀, Motives.substLevels_subst₀_of h Cs,
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) C]
+
+theorem Branches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
+    (us : Branches k Δ) → (us.subst₀ σ).substLevels ls' = (us.substLevels ls').subst₀ σ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst₀, Branches.substLevels, Branches.substLevels,
+      Branches.subst₀, Branches.substLevels_subst₀_of h us,
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) u]
 
 end
 
@@ -1737,6 +2186,12 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
   | .inst D qs ls ps as => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as]
+  | .ctor D qs ls ps as c ts => by
+    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
+      InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Terms.substLevels_substLevels ls₁ ls₂ ts]
+  | .recursor r t Cs us => by
+    simp only [Term.substLevels, Term.substLevels_substLevels ls₁ ls₂ t,
+      Motives.substLevels_substLevels ls₁ ls₂ Cs, Branches.substLevels_substLevels ls₁ ls₂ us]
 
 theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Parameter}
     (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
@@ -1756,6 +2211,33 @@ theorem InstanceArgs.substLevels_substLevels {k' k'' : Nat} {Γ Δ : Scope} (ls�
   | .snoc as B => by
     rw [InstanceArgs.substLevels, InstanceArgs.substLevels, InstanceArgs.substLevels,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Term.substLevels_substLevels ls₁ ls₂ B]
+
+theorem Terms.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') :
+    (ts : Terms k Γ) →
+      (ts.substLevels ls₁).substLevels ls₂ = ts.substLevels fun i => (ls₁ i).subst ls₂
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.substLevels, Terms.substLevels, Terms.substLevels,
+      Terms.substLevels_substLevels ls₁ ls₂ ts, Term.substLevels_substLevels ls₁ ls₂ t]
+
+theorem Motives.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') :
+    (Cs : Motives k Γ) →
+      (Cs.substLevels ls₁).substLevels ls₂ = Cs.substLevels fun i => (ls₁ i).subst ls₂
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.substLevels, Motives.substLevels, Motives.substLevels,
+      Motives.substLevels_substLevels ls₁ ls₂ Cs, Term.substLevels_substLevels ls₁ ls₂ C]
+
+theorem Branches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') :
+    (us : Branches k Γ) →
+      (us.substLevels ls₁).substLevels ls₂ = us.substLevels fun i => (ls₁ i).subst ls₂
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.substLevels, Branches.substLevels, Branches.substLevels,
+      Branches.substLevels_substLevels ls₁ ls₂ us, Term.substLevels_substLevels ls₁ ls₂ u]
 
 end
 
@@ -1780,7 +2262,8 @@ theorem Telescope.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ps : List 
   | _, _, _, .nil => rfl
   | _, _, h, .cons q p A Θ => by
     rw [Telescope.subst₀, Telescope.substLevels, Telescope.substLevels, Telescope.subst₀,
-      Term.substLevels_subst₀_of h, Telescope.substLevels_subst₀_of (Subst₀.lift_substLevels_of h) Θ]
+      Term.substLevels_subst₀_of h,
+      Telescope.substLevels_subst₀_of (Subst₀.lift_substLevels_of h) Θ]
 
 /-- `(Γ, Θ)[l̄' / l̄] = Γ[l̄' / l̄], Θ[l̄' / l̄]`.
 RFC: `\mathsf{comm}_l.\Gamma` -/
@@ -1851,6 +2334,13 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
   | .inst D qs ls ps as => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
       InstanceArgs.substLevels_subst_of h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
+      InstanceArgs.substLevels_subst_of h as, Terms.substLevels_subst_of h ts]
+  | .recursor r t Cs us => by
+    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
+      Term.substLevels_subst_of h t, Motives.substLevels_subst_of h Cs,
+      Branches.substLevels_subst_of h us]
 
 theorem Args.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
@@ -1870,6 +2360,36 @@ theorem InstanceArgs.substLevels_subst_of {k' : Nat} {Γ Δ Ξ : Scope} {ls' : F
     rw [InstanceArgs.subst, InstanceArgs.substLevels, InstanceArgs.substLevels,
       InstanceArgs.subst, InstanceArgs.substLevels_subst_of h as,
       Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) B]
+
+theorem Terms.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (ts : Terms k Δ) → (ts.subst θ).substLevels ls' = (ts.substLevels ls').subst θ'
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst, Terms.substLevels, Terms.substLevels,
+      Terms.subst, Terms.substLevels_subst_of h ts,
+      Term.substLevels_subst_of h t]
+
+theorem Motives.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (Cs : Motives k Δ) → (Cs.subst θ).substLevels ls' = (Cs.substLevels ls').subst θ'
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.subst, Motives.substLevels, Motives.substLevels,
+      Motives.subst, Motives.substLevels_subst_of h Cs,
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) C]
+
+theorem Branches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+    {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
+    (us : Branches k Δ) → (us.subst θ).substLevels ls' = (us.substLevels ls').subst θ'
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.subst, Branches.substLevels, Branches.substLevels,
+      Branches.subst, Branches.substLevels_subst_of h us,
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) u]
 
 end
 

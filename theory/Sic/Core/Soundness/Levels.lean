@@ -54,6 +54,17 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       {as₁ as₂ : InstanceArgs k Γ Δ} (h : Level.ListEquiv ls₁ ls₂)
       (has : InstanceArgs.LevelEquiv as₁ as₂) :
       Term.LevelEquiv (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
+  /-- A constructor of an instance at equal levels, with arguments and fields equal up to their
+  levels. -/
+  | ctor {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
+      {as₁ as₂ : InstanceArgs k Γ Δ} (c : Name) {ts₁ ts₂ : Terms k Γ} (h : Level.ListEquiv ls₁ ls₂)
+      (has : InstanceArgs.LevelEquiv as₁ as₂) (hts : Terms.LevelEquiv ts₁ ts₂) :
+      Term.LevelEquiv (.ctor D qs ls₁ ps as₁ c ts₁) (.ctor D qs ls₂ ps as₂ c ts₂)
+  /-- A recursor of a term, motives and branches equal up to their levels. -/
+  | recursor {Γ : Scope} (r : Grade) {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ}
+      {us₁ us₂ : Branches k Γ} (h : Term.LevelEquiv t₁ t₂) (hCs : Motives.LevelEquiv Cs₁ Cs₂)
+      (hus : Branches.LevelEquiv us₁ us₂) :
+      Term.LevelEquiv (.recursor r t₁ Cs₁ us₁) (.recursor r t₂ Cs₂ us₂)
 
 /-- The arguments of a telescope, equal up to their levels one by one. -/
 inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
@@ -75,6 +86,32 @@ inductive InstanceArgs.LevelEquiv {k : Nat} : {Γ Δ : Scope} → InstanceArgs k
       {B₁ B₂ : Term k (Γ.extend e.params.length)} (has : InstanceArgs.LevelEquiv as₁ as₂)
       (h : Term.LevelEquiv B₁ B₂) : InstanceArgs.LevelEquiv (InstanceArgs.snoc (e := e) as₁ B₁) (.snoc as₂ B₂)
 
+/-- The fields of a constructor, equal up to their levels one by one. -/
+inductive Terms.LevelEquiv {k : Nat} : {Γ : Scope} → Terms k Γ → Terms k Γ → Prop where
+  /-- No field. -/
+  | nil {Γ : Scope} : Terms.LevelEquiv (Γ := Γ) .nil .nil
+  /-- Two fields equal up to their levels, then the others. -/
+  | cons {Γ : Scope} {t₁ t₂ : Term k Γ} {ts₁ ts₂ : Terms k Γ} (h : Term.LevelEquiv t₁ t₂)
+      (hs : Terms.LevelEquiv ts₁ ts₂) : Terms.LevelEquiv (.cons t₁ ts₁) (.cons t₂ ts₂)
+
+/-- The motives of a recursor, equal up to their levels one by one. -/
+inductive Motives.LevelEquiv {k : Nat} : {Γ : Scope} → Motives k Γ → Motives k Γ → Prop where
+  /-- No motive. -/
+  | nil {Γ : Scope} : Motives.LevelEquiv (Γ := Γ) .nil .nil
+  /-- Two motives equal up to their levels, then the others. -/
+  | cons {Γ : Scope} {n : Nat} {C₁ C₂ : Term k (Γ.extend (n + 1))} {Cs₁ Cs₂ : Motives k Γ}
+      (h : Term.LevelEquiv C₁ C₂) (hs : Motives.LevelEquiv Cs₁ Cs₂) :
+      Motives.LevelEquiv (.cons n C₁ Cs₁) (.cons n C₂ Cs₂)
+
+/-- The branches of a recursor, equal up to their levels one by one. -/
+inductive Branches.LevelEquiv {k : Nat} : {Γ : Scope} → Branches k Γ → Branches k Γ → Prop where
+  /-- No branch. -/
+  | nil {Γ : Scope} : Branches.LevelEquiv (Γ := Γ) .nil .nil
+  /-- Two branches equal up to their levels, then the others. -/
+  | cons {Γ : Scope} {n m : Nat} {u₁ u₂ : Term k (Γ.extend (n + m))} {us₁ us₂ : Branches k Γ}
+      (h : Term.LevelEquiv u₁ u₂) (hs : Branches.LevelEquiv us₁ us₂) :
+      Branches.LevelEquiv (.cons n m u₁ us₁) (.cons n m u₂ us₂)
+
 end
 
 /-! ## Equivalence -/
@@ -95,6 +132,10 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
   | .sort ⟨s, l⟩ => .sort s (Level.equivalence.refl l)
   | .const f qs ls ps => .const f qs ps (Level.ListEquiv.refl ls)
   | .inst D qs ls ps as => .inst D qs ps (Level.ListEquiv.refl ls) (InstanceArgs.LevelEquiv.refl as)
+  | .ctor D qs ls ps as c ts => .ctor D qs ps c (Level.ListEquiv.refl ls)
+      (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ts)
+  | .recursor r t Cs us => .recursor r (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
+      (Branches.LevelEquiv.refl us)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (ts : Args k Γ ps) → Args.LevelEquiv ts ts
@@ -106,6 +147,20 @@ theorem InstanceArgs.LevelEquiv.refl {k : Nat} {Γ Δ : Scope} :
   | .nil => .nil
   | .snoc as B => .snoc (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl B)
 
+theorem Terms.LevelEquiv.refl {k : Nat} {Γ : Scope} : (ts : Terms k Γ) → Terms.LevelEquiv ts ts
+  | .nil => .nil
+  | .cons t ts => .cons (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl ts)
+
+theorem Motives.LevelEquiv.refl {k : Nat} {Γ : Scope} :
+    (Cs : Motives k Γ) → Motives.LevelEquiv Cs Cs
+  | .nil => .nil
+  | .cons _ C Cs => .cons (Term.LevelEquiv.refl C) (Motives.LevelEquiv.refl Cs)
+
+theorem Branches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
+    (us : Branches k Γ) → Branches.LevelEquiv us us
+  | .nil => .nil
+  | .cons _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
+
 end
 
 mutual
@@ -116,6 +171,8 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .sort s h => .sort s (Level.equivalence.symm h)
   | .const f qs ps h => .const f qs ps h.symm
   | .inst D qs ps h has => .inst D qs ps h.symm has.symm
+  | .ctor D qs ps c h has hts => .ctor D qs ps c h.symm has.symm hts.symm
+  | .recursor r h hCs hus => .recursor r h.symm hCs.symm hus.symm
 
 theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
     Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
@@ -126,6 +183,21 @@ theorem InstanceArgs.LevelEquiv.symm {k : Nat} {Γ Δ : Scope} {as₁ as₂ : In
     InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv as₂ as₁
   | .nil => .nil
   | .snoc has h => .snoc has.symm h.symm
+
+theorem Terms.LevelEquiv.symm {k : Nat} {Γ : Scope} {ts₁ ts₂ : Terms k Γ} :
+    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv ts₂ ts₁
+  | .nil => .nil
+  | .cons h hs => .cons h.symm hs.symm
+
+theorem Motives.LevelEquiv.symm {k : Nat} {Γ : Scope} {Cs₁ Cs₂ : Motives k Γ} :
+    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv Cs₂ Cs₁
+  | .nil => .nil
+  | .cons h hs => .cons h.symm hs.symm
+
+theorem Branches.LevelEquiv.symm {k : Nat} {Γ : Scope} {us₁ us₂ : Branches k Γ} :
+    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv us₂ us₁
+  | .nil => .nil
+  | .cons h hs => .cons h.symm hs.symm
 
 end
 
@@ -140,6 +212,8 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {t₁ 
   | .sort s h => .sort s h
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.rename ξ)
+  | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename ξ) (hts.rename ξ)
+  | .recursor r h hCs hus => .recursor r (h.rename ξ) (hCs.rename ξ) (hus.rename ξ)
 
 theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
     {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
@@ -151,6 +225,21 @@ theorem InstanceArgs.LevelEquiv.rename {k : Nat} {Γ Δ Ξ : Scope} (ξ : Ren Γ
     InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv (as₁.rename ξ) (as₂.rename ξ)
   | .nil => .nil
   | .snoc has h => .snoc (has.rename ξ) (h.rename (Ren.liftN _ ξ))
+
+theorem Terms.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {ts₁ ts₂ : Terms k Δ} :
+    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
+  | .nil => .nil
+  | .cons h hs => .cons (h.rename ξ) (hs.rename ξ)
+
+theorem Motives.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Cs₁ Cs₂ : Motives k Δ} :
+    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv (Cs₁.rename ξ) (Cs₂.rename ξ)
+  | .nil => .nil
+  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+
+theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {us₁ us₂ : Branches k Δ} :
+    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.rename ξ) (us₂.rename ξ)
+  | .nil => .nil
+  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
 
 end
 
@@ -177,6 +266,12 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
   | .const f qs ls ps => .const f qs ps (Level.ListEquiv.map_subst h ls)
   | .inst D qs ls ps as =>
     .inst D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+  | .ctor D qs ls ps as c ts =>
+    .ctor D qs ps c (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+      (Terms.substLevels_levelEquiv h ts)
+  | .recursor r t Cs us =>
+    .recursor r (Term.substLevels_levelEquiv h t) (Motives.substLevels_levelEquiv h Cs)
+      (Branches.substLevels_levelEquiv h us)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Args k Γ ps) →
@@ -190,6 +285,24 @@ theorem InstanceArgs.substLevels_levelEquiv {k k' : Nat} {Γ Δ : Scope} {ls₁ 
   | .nil => .nil
   | .snoc as B =>
     .snoc (InstanceArgs.substLevels_levelEquiv h as) (Term.substLevels_levelEquiv h B)
+
+theorem Terms.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Terms k Γ) →
+    Terms.LevelEquiv (ts.substLevels ls₁) (ts.substLevels ls₂)
+  | .nil => .nil
+  | .cons t ts => .cons (Term.substLevels_levelEquiv h t) (Terms.substLevels_levelEquiv h ts)
+
+theorem Motives.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : (Cs : Motives k Γ) →
+    Motives.LevelEquiv (Cs.substLevels ls₁) (Cs.substLevels ls₂)
+  | .nil => .nil
+  | .cons _ C Cs => .cons (Term.substLevels_levelEquiv h C) (Motives.substLevels_levelEquiv h Cs)
+
+theorem Branches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : (us : Branches k Γ) →
+    Branches.LevelEquiv (us.substLevels ls₁) (us.substLevels ls₂)
+  | .nil => .nil
+  | .cons _ _ u us => .cons (Term.substLevels_levelEquiv h u) (Branches.substLevels_levelEquiv h us)
 
 end
 
