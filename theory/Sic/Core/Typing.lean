@@ -613,7 +613,7 @@ inductive WfDestructors : Signature → {k : Nat} → {Γ : Scope} → {ns : Lis
   /-- The first destructor, whose arguments live in the universe of the level of `κ` and whose
   result lives in a sort that `κ` bounds, with a grade without use at run time if it is a
   proposition, and the others, in the context extended by it.
-  RFC: `\bar d_{\kappa,}` -/
+  RFC: `\bar d_{\kappa|}` -/
   | cons {sig : Signature} {k : Nat} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
       {ctx : Context k Γ} {p q : Grade} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
       {ψ : ResultOwnership ps.length} {ds : Destructors k (.secondOrder ps ψ :: Γ) ns}

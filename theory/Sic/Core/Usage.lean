@@ -216,7 +216,7 @@ inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : 
   /-- The arguments and the result of the first destructor, checked in the mode `m' = m ⊙ p`, the
   result using each argument `xᵢ` as `⌜m'⌝ · qᵢ` allows, and the destructors after it, which use it
   as `⌜m⌝ · q` allows.
-  RFC: `\bar d_{,▶}` -/
+  RFC: `\bar d_{|▶}` -/
   | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
       {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
       {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} {m : Mode} {γ δ η : GradeVector Γ.length}
