@@ -341,7 +341,48 @@ structure DataType (j g k : Nat) (Δ : Scope) where
 
 -- ADE: none.
 /--
-A type declaration, `data.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types declared
+`d₁ : (Θ₁ ⊢ B₁ ◀ ψ₁) ▶ p₁; q₁ | … | dₙ : (Θₙ ⊢ Bₙ ◀ ψₙ) ▶ pₙ; qₙ`: the destructors of a codata type,
+in the scope `Γ`, whose names are `ns`, in order.
+The destructor `d : (Θ ⊢ B ◀ ψ) ▶ p; q` has the telescope `Θ` of its arguments and its result type
+`B`, in the scope extended by them; its result has the ownership `ψ`, is used with the grade `p`,
+and the destructor is used with the grade `q` by the types of the destructors after it, in whose
+scope it is a second-order variable `d : (Θ ⊢ B ◀ ψ)`.
+-/
+inductive Destructors (k : Nat) : Scope → List Name → Type where
+  /-- No destructor. -/
+  | nil {Γ : Scope} : Destructors k Γ []
+  /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q`, followed by the destructors after it. -/
+  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q : Grade)
+      (Θ : Telescope k Γ ps) (B : Term k (Γ.extend ps.length)) (ψ : ResultOwnership ps.length)
+      (ds : Destructors k (.secondOrder ps ψ :: Γ) ns) : Destructors k Γ (d :: ns)
+
+-- ADE: none.
+/-- `D ▶ ζ ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it uses
+the parameters `Δ`, and its destructors, in order. -/
+structure CodataType (j g k : Nat) (Δ : Scope) where
+  /-- The name `D`. -/
+  name : Name
+  /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
+  usage : Instance j g → GradeVector Δ.length
+  /-- The names `d₁, …, dₙ` of the destructors. -/
+  destructors : List Name
+  /-- The destructors `d₁ : …, …, dₙ : …`, for each instance, since their grades may be grade
+  variables. -/
+  body : Instance j g → Destructors k Δ destructors
+
+-- ADE: none.
+/-- The types of a type declaration: a block of data types, or a block of codata types, so that a
+block is homogeneous. -/
+inductive TypeDeclaration.Body (j g k : Nat) (Δ : Scope) where
+  /-- The data types `D₁ ≔ …; …; Dₙ ≔ …` of a block of data types. -/
+  | data (types : List (DataType j g k Δ))
+  /-- The codata types `D₁ ≔ …; …; Dₙ ≔ …` of a block of codata types. -/
+  | codata (types : List (CodataType j g k Δ))
+
+-- ADE: none.
+/--
+A type declaration, `data.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …` or
+`codata.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types or of codata types declared
 together, with their parameters `Δ` and their sort `κ`.
 -/
 structure TypeDeclaration where
@@ -357,12 +398,28 @@ structure TypeDeclaration where
   params : Instance sorts grades → Context levels scope
   /-- The sort `κ` of the declared types, for each instance. -/
   sort : Instance sorts grades → Universe levels
-  /-- The data types `D₁ ≔ …; …; Dₙ ≔ …` of the block. -/
-  types : List (DataType sorts grades levels scope)
+  /-- The types `D₁ ≔ …; …; Dₙ ≔ …` of the block. -/
+  body : TypeDeclaration.Body sorts grades levels scope
+
+/-- The data types of a type declaration, none for a block of codata types. -/
+def TypeDeclaration.dataTypes (decl : TypeDeclaration) :
+    List (DataType decl.sorts decl.grades decl.levels decl.scope) :=
+  match decl.body with
+  | .data Ts => Ts
+  | .codata _ => []
+
+/-- The codata types of a type declaration, none for a block of data types. -/
+def TypeDeclaration.codataTypes (decl : TypeDeclaration) :
+    List (CodataType decl.sorts decl.grades decl.levels decl.scope) :=
+  match decl.body with
+  | .data _ => []
+  | .codata Ts => Ts
 
 /-- The names `D₁, …, Dₙ` of the declared types. -/
 def TypeDeclaration.names (decl : TypeDeclaration) : List Name :=
-  decl.types.map (·.name)
+  match decl.body with
+  | .data Ts => Ts.map (·.name)
+  | .codata Ts => Ts.map (·.name)
 
 /-- The constructors of the data types `Ts`, the first type at the position `j`, each with the
 position of its type and its type, in the order of the declaration. -/
@@ -376,7 +433,7 @@ its type and its type, in the order of the declaration, which is that of the bra
 def TypeDeclaration.cases (decl : TypeDeclaration) :
     List (Nat × DataType decl.sorts decl.grades decl.levels decl.scope ×
       Constructor decl.sorts decl.grades decl.levels decl.scope) :=
-  TypeDeclaration.casesFrom 0 decl.types
+  TypeDeclaration.casesFrom 0 decl.dataTypes
 
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
@@ -425,15 +482,36 @@ RFC: `\in_D`
 -/
 def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclaration)
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
-  .typeDeclaration decl ∈ sig ∧ T ∈ decl.types ∧ T.name = D
+  .typeDeclaration decl ∈ sig ∧ T ∈ decl.dataTypes ∧ T.name = D
 
-/-- The constructors of each type that an entry declares have distinct names. -/
+/-- The names of a type declaration are those of its data types and of its codata types, one of
+which is empty. -/
+theorem TypeDeclaration.names_eq (decl : TypeDeclaration) :
+    decl.names = decl.dataTypes.map (·.name) ++ decl.codataTypes.map (·.name) := by
+  simp only [TypeDeclaration.names, TypeDeclaration.dataTypes, TypeDeclaration.codataTypes]
+  split <;> simp
+
+/-- A data type of a type declaration is named by the declaration. -/
+theorem TypeDeclaration.name_mem_names {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes) :
+    T.name ∈ decl.names :=
+  decl.names_eq ▸ List.mem_append_left _ (List.mem_map_of_mem hT)
+
+/-- The data types of a type declaration whose names are distinct have distinct names. -/
+theorem TypeDeclaration.dataTypes_nodup {decl : TypeDeclaration} (h : decl.names.Nodup) :
+    (decl.dataTypes.map (·.name)).Nodup :=
+  (List.nodup_append.1 (decl.names_eq ▸ h)).1
+
+/-- The constructors of each data type and the destructors of each codata type that an entry
+declares have distinct names. -/
 def Entry.ConstructorsDistinct : Entry → Prop
-  | .typeDeclaration decl => ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup
+  | .typeDeclaration decl => (∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) ∧
+      ∀ T ∈ decl.codataTypes, T.destructors.Nodup
   | _ => True
 
 /-- The names of a signature are distinct: each entry introduces distinct names, which no entry
-before it does, and the constructors of each type it declares have distinct names.
+before it does, and the constructors or the destructors of each type it declares have distinct
+names.
 RFC: `\mathsf{names}_\Sigma` -/
 def Signature.Distinct : Signature → Prop
   | [] => True
@@ -486,14 +564,12 @@ theorem Signature.Distinct.hasDeclaredType_unique {sig : Signature} (hd : sig.Di
     decl₁ = decl₂ ∧ HEq T₁ T₂ := by
   obtain ⟨hm₁, hT₁, hn₁⟩ := h₁
   obtain ⟨hm₂, hT₂, hn₂⟩ := h₂
-  have he := hd.entry_unique hm₁ hm₂ (n := D)
-    (by simp only [Entry.names, TypeDeclaration.names]; exact hn₁ ▸ List.mem_map_of_mem hT₁)
-    (by simp only [Entry.names, TypeDeclaration.names]; exact hn₂ ▸ List.mem_map_of_mem hT₂)
+  have he := hd.entry_unique hm₁ hm₂ (n := D) (hn₁ ▸ TypeDeclaration.name_mem_names hT₁)
+    (hn₂ ▸ TypeDeclaration.name_mem_names hT₂)
   injection he with he
   subst he
-  have hnodup := hd.nodup hm₁
-  simp only [Entry.names, TypeDeclaration.names] at hnodup
-  exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map hnodup hT₁ hT₂ (hn₁.trans hn₂.symm))⟩
+  exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm₁)) hT₁
+    hT₂ (hn₁.trans hn₂.symm))⟩
 
 /-- In a signature whose names are distinct, the constructors of a declared type have distinct
 names. -/
@@ -503,7 +579,7 @@ theorem Signature.Distinct.constructors_nodup : {sig : Signature} → sig.Distin
   | [], _, _, _, _, h => nomatch h.1
   | _ :: _, ⟨hd, _, _, hc⟩, _, _, _, ⟨he, hT, hn⟩ => by
     rcases List.mem_cons.1 he with he | he
-    · subst he; exact hc _ hT
+    · subst he; exact hc.1 _ hT
     · exact hd.constructors_nodup ⟨he, hT, hn⟩
 
 /-- Two positions of a list whose images by `f` are distinct, which hold elements with the same
@@ -596,7 +672,7 @@ types and of constructors. -/
 theorem Signature.Distinct.cases_nodup {sig : Signature} (hd : sig.Distinct)
     {decl : TypeDeclaration} (h : .typeDeclaration decl ∈ sig) :
     (decl.cases.map fun x => (x.2.1.name, x.2.2.name)).Nodup :=
-  TypeDeclaration.casesFrom_nodup (hd.nodup h) fun _ hT => hd.constructors_nodup ⟨h, hT, rfl⟩
+  TypeDeclaration.casesFrom_nodup (TypeDeclaration.dataTypes_nodup (hd.nodup h)) fun _ hT => hd.constructors_nodup ⟨h, hT, rfl⟩
 
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
@@ -623,7 +699,7 @@ def Entry.fieldGrades (D c : Name) (qs : List Quality) (ps : List Grade) :
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
-        (decl.types.find? (·.name == D)).bind fun T =>
+        (decl.dataTypes.find? (·.name == D)).bind fun T =>
           (T.constructors.find? (·.name == c)).map fun con =>
             (con.params (.ofLists qs ps hq hp)).map (·.usage)
       else none
@@ -655,8 +731,8 @@ theorem _root_.List.find?_of_nodup_map {α : Type} {f : α → Name} :
 /-- A type declaration gives the grades of the fields of a constructor of one of its types, whose
 types and constructors have distinct names, at the instance. -/
 theorem Entry.fieldGrades_of_mem {decl : TypeDeclaration}
-    (hn : (decl.types.map (·.name)).Nodup)
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.types)
+    (hn : (decl.dataTypes.map (·.name)).Nodup)
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
     (hc : (T.constructors.map (·.name)).Nodup)
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope} (hcon : con ∈ T.constructors)
     {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
@@ -677,8 +753,8 @@ of `D`. -/
 theorem Entry.fieldGrades_of_not_mem {D c : Name} {qs : List Quality} {ps : List Grade} :
     {e : Entry} → D ∉ e.names → Entry.fieldGrades D c qs ps e = none
   | .typeDeclaration decl, hD => by
-    have hnone : decl.types.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ List.mem_map_of_mem hT)
+    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
     simp only [Entry.fieldGrades]
     split
     · try split
@@ -701,10 +777,11 @@ theorem Signature.Distinct.fieldGrades : {sig : Signature} → sig.Distinct → 
   | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, con, hcon, qs, ps, hq, hp => by
     unfold Signature.fieldGrades
     rcases List.mem_cons.1 he with rfl | he'
-    · have hg := Entry.fieldGrades_of_mem hn hT (hc T hT) hcon hq hp
+    · have hg := Entry.fieldGrades_of_mem (TypeDeclaration.dataTypes_nodup hn) hT (hc.1 T hT) hcon
+        hq hp
       rw [hD] at hg
       rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ List.mem_map_of_mem hT)
+    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldGrades_of_not_mem hDe]; rfl)]
       exact hd.fieldGrades ⟨he', hT, hD⟩ hcon hq hp
 

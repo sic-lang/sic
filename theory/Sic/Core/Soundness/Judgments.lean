@@ -372,7 +372,7 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .intro _ hΘ _ _ => fun I T hT c hc => wfTelescope hd hι (hΘ I T hT c hc)
+    | .intro _ _ hΘ _ _ => fun I T hT c hc => wfTelescope hd hι (hΘ I T hT c hc)
 
 
 /-! ## Signatures -/

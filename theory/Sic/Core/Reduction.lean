@@ -162,12 +162,8 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     | iota h₂ hi₂ hD₂ hc₂ hu₂ hv₂ =>
       have hT₁ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₁)).1
       have hT₂ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₂)).1
-      have he := hsig.entry_unique h₁ h₂
-        (by simp only [Entry.names, TypeDeclaration.names]; exact List.mem_map_of_mem hT₁)
-        (by
-          simp only [Entry.names, TypeDeclaration.names]
-          rw [hD₁, ← hD₂]
-          exact List.mem_map_of_mem hT₂)
+      have he := hsig.entry_unique h₁ h₂ (TypeDeclaration.name_mem_names hT₁)
+        (by rw [hD₁, ← hD₂]; exact TypeDeclaration.name_mem_names hT₂)
       cases he
       have hi := List.getElem?_inj_of_nodup_map (hsig.cases_nodup h₁) hi₁ hi₂
         (by simp only [hD₁, hD₂, hc₁, hc₂])

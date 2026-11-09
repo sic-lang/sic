@@ -649,7 +649,7 @@ parameters, at each value of the level variables; the meaning ignores the grades
 the constructors, distinct, are those of the signature.
 RFC: `{\vDash}\mathsf{data}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
-  ∀ I, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
+  ∀ I, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
     ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)
 
 -- ADE: none.

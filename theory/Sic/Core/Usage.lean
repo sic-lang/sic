@@ -103,7 +103,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
         Usage sig (δ.extendParams (m.grade * r) (con.params (.ofLists qs ps hq hp))) m u)
-      (hr : m = .oneOne → (∃ T' ∈ decl.types, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
+      (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
       Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.recursor r D qs ls ps as t Cs us)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.

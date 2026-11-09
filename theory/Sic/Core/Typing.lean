@@ -305,10 +305,10 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
       (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.types[h']? = some T)
-      (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.types.length)
-      (hCs : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
-      (hCt : ∀ j T' C', decl.types[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.dataTypes[h']? = some T)
+      (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.dataTypes.length)
+      (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
@@ -432,12 +432,12 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
-      (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.types[h']? = some T)
-      (hC : Cs₁.get h' = some ⟨0, C₁⟩) (hCl₁ : Cs₁.length = decl.types.length)
-      (hCl₂ : Cs₂.length = decl.types.length)
-      (hCs₁ : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
-      (hCs₂ : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs₂.get j = some ⟨0, C'⟩)
-      (hCt : ∀ j T' C₁' C₂', decl.types[j]? = some T' → Cs₁.get j = some ⟨0, C₁'⟩ →
+      (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.dataTypes[h']? = some T)
+      (hC : Cs₁.get h' = some ⟨0, C₁⟩) (hCl₁ : Cs₁.length = decl.dataTypes.length)
+      (hCl₂ : Cs₂.length = decl.dataTypes.length)
+      (hCs₁ : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
+      (hCs₂ : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₂.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C₁' C₂', decl.dataTypes[j]? = some T' → Cs₁.get j = some ⟨0, C₁'⟩ →
         Cs₂.get j = some ⟨0, C₂'⟩ →
         EqTerm sig (ctx.var (.inst T'.name qs ls₁ ps as₁)) C₁' C₂' (.sort κ))
       (hul₁ : us₁.length = decl.cases.length) (hul₂ : us₂.length = decl.cases.length)
@@ -474,9 +474,9 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
       (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
-      (hCl : Cs.length = decl.types.length)
-      (hCs : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
-      (hCt : ∀ j T' C', decl.types[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      (hCl : Cs.length = decl.dataTypes.length)
+      (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
@@ -608,13 +608,14 @@ block occurs in them: the block is not recursive.
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   /-- The rule, with the uses `γ` of the constructors of each type at each instance.
   RFC: `\mathsf{data}` -/
-  | intro {sig : Signature} {decl : TypeDeclaration}
+  | intro {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
+      decl.levels decl.scope)} (hb : decl.body = .data Ts)
       (hΔ : ∀ ι, WfCtx sig (decl.params ι))
-      (hΘ : ∀ ι, ∀ T ∈ decl.types, ∀ c ∈ T.constructors,
+      (hΘ : ∀ ι, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
         WfTelescope sig (decl.params ι) (c.fields ι) (decl.sort ι))
-      (hu : ∀ ι, ∀ T ∈ decl.types, ∃ γ, UsageConstructors sig ι γ .oneOne T.constructors ∧
+      (hu : ∀ ι, ∀ T ∈ decl.dataTypes, ∃ γ, UsageConstructors sig ι γ .oneOne T.constructors ∧
         T.usage ι ≤ᶜ γ)
-      (hc : ∀ T ∈ decl.types, (T.constructors.map (·.name)).Nodup) :
+      (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
       WfTypeDeclaration sig decl
 
 end
@@ -783,7 +784,7 @@ where
     | .cons hA _ _ _ => hasType hA
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .intro hΔ _ _ _ => wfCtx (hΔ (.default _ _))
+    | .intro _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
@@ -811,7 +812,11 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
         | typeDeclaration _ hn _ => exact hn
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
-        | typeDeclaration hdecl _ _ => cases hdecl with | intro _ _ _ hc => exact hc
+        | typeDeclaration hdecl _ _ => cases hdecl with
+          | intro hb _ _ _ hc =>
+            refine ⟨hc, fun T hT => ?_⟩
+            simp only [TypeDeclaration.codataTypes, hb] at hT
+            nomatch hT
         | _ => trivial⟩
 
 end Sic.Core
