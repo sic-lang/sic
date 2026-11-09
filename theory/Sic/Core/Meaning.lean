@@ -346,7 +346,10 @@ the arguments of each destructor are a telescope in `U_n`, its result a type of 
 bounds for equal arguments, and the destructors after it are, for each abstraction for it, the
 same for equal abstractions.
 The Lean carries the closed substitution of the scope of the destructors, rather than the closed
-destructors `d̄[θ]` of the RFC, as the closed judgments of the contexts do.
+destructors `d̄[θ]` of the RFC, as the closed judgments of the contexts do, so that the substitution
+of the destructors and their instance `d̄ⱼ[T]` at the arguments of the parameters need no definition
+of their own.
+RFC: `\mathsf{subst}_\theta.\bar d`, `\mathsf{inst}_{\bar d}`
 -/
 inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Quality → {Γ : Scope} → {ns : List Name} → Destructors 0 Γ ns → Subst 0 [] Γ → ObsRel → Prop
