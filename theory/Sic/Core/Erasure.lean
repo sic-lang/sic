@@ -294,6 +294,51 @@ theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   mul := by revert m; decide
   mode := fun _ h => Decidable.of_not_not h
 
+/-- A term of the target language transported along an equality of the sizes of its scope has the
+occurrences of the term, at the transported indices. -/
+theorem Target.occurs_cast {n n' : Nat} (h : n = n') (M : Target n) (y : Fin n') :
+    (h ▸ M).Occurs y → M.Occurs (y.cast h.symm) := by
+  subst h
+  exact id
+
+/-- A variable occurs in the erasure of branches when it occurs, as an old variable of the scope
+of a branch, in the erasure of the term of this branch. -/
+theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
+    {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} : (us : Branches k Γ) →
+      (us.erase sig S hΓ).Occurs x → ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
+        (u.erase sig S (hΓ.extend (a + b))).Occurs
+          ((x.addNat (a + b)).cast (Scope.length_extend Γ (a + b)).symm)
+  | .nil, h => nomatch h
+  | .cons a b u us, h => by
+    cases h with
+    | head h => exact ⟨0, a, b, u, rfl, Target.occurs_cast _ _ _ h⟩
+    | tail h =>
+      obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ us h
+      exact ⟨i + 1, a', b', u', hu, ho⟩
+
+/-- The branch at a position of branches is before their end. -/
+theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
+    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k (Γ.extend (n + m))} →
+      us.get i = some a → i < us.length
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, _ => Nat.zero_lt_succ _
+  | .cons _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
+
+/-- The grades extended by the variables of a telescope give each old variable its grade. -/
+theorem GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+    (ps : List Parameter) → (x : Fin Γ.length) →
+      γ.extendParams r ps ((x.addNat ps.length).cast (Scope.length_extend Γ ps.length).symm) =
+        γ x
+  | [], _ => rfl
+  | p :: ps, x => by
+    have h := GradeVector.extendParams_addNat (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps x.succ
+    have he : ((x.addNat (p :: ps).length).cast (Scope.length_extend Γ (p :: ps).length).symm :
+        Fin (Γ.extend (p :: ps).length).length) =
+        (x.succ.addNat ps.length).cast (Scope.length_extend (.var :: Γ) ps.length).symm :=
+      Fin.ext (by simp only [Fin.val_cast, Fin.val_addNat, Fin.val_succ, List.length_cons]; omega)
+    rw [he]
+    exact h
+
 mutual
 
 -- ADE: `erased-hasX`, in `Graded/Erasure/Extraction/Properties/Usage.agda`, for `S^{𝟙ᵐ}`.
@@ -320,6 +365,27 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     simp only [Term.erase, hd.fieldGrades h hc hq hp, Option.getD_some] at ho
     cases ho with
     | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
+  | .recursor (γ := γ₁) (δ := δ) (r := r) _ _ _ _ ht hul hus hu _, hx, ho => by
+    have hx' : r * γ₁ x + δ x ∈ S := by
+      simpa [GradeVector.add, GradeVector.smul] using hx
+    simp only [Term.erase] at ho
+    cases ho with
+    | recursor ho =>
+      by_cases hr : r ∈ S
+      · simp only [hr, ↓reduceIte] at ho
+        exact nomatch ho
+      · simp only [hr, ↓reduceIte] at ho
+        have hS' : ErasesUncounted (m ⊙ r) S := (hS.mode _ hr).symm ▸ hS
+        exact Usage.absent hd hS' hΓ ht (hS.mul _ _ hr (hS.add _ _ hx')) ho
+    | branch ho =>
+      obtain ⟨i, a, b, u, hget, ho⟩ := Branches.occurs_erase hΓ _ ho
+      have hi : i < _ := hul ▸ Branches.lt_length_of_get hget
+      obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
+      obtain ⟨u', hu'⟩ := hus i j T' con hc
+      cases Option.some.inj (hget.symm.trans hu')
+      have hδ : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
+      exact Usage.absent hd hS (hΓ.extend _) (hu i j T' con u' hc hu')
+        ((GradeVector.extendParams_addNat δ _ _ x).symm ▸ hδ) ho
   | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho
 
 -- ADE: none.

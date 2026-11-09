@@ -14,8 +14,7 @@ its scope gives.
 
 The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
 parameters, which the declaration gives and its formation checks against the usage of the telescopes
-of its constructors, defined here; the usage of the constructors and of the recursors is not given
-yet.
+of its constructors, defined here.
 ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/
 
@@ -82,6 +81,30 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : UsageArgs sig γ m ts) :
       Usage sig γ m (.ctor D qs ls ps as con.name ts.terms)
+  -- ADE: `natrecₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ`, in `Graded/Usage.agda`.
+  /-- A recursor uses the variables of its term `r` times, the term checked in the mode `m ⊙ r`, and
+  those of its branches, which share the same uses `δ` of the variables of the scope, since one of
+  them runs, each using the variable of a field as `⌜m⌝ · r` times the grade of the field at the
+  instance allows; its motives, which are types, use no variable, checked in the mode `00ᵐ`; in the
+  mode `11ᵐ`, a recursor on a block of which a type has two constructors or more uses its term at
+  run time, whose constructor chooses the branch.
+  RFC: `\mathsf{rec}_{▶}` -/
+  | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
+      {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
+      {γ δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades)
+      (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
+        Usage sig 𝟘ᶜ .zeroZero C)
+      (ht : Usage sig γ (m ⊙ r) t) (hul : us.length = decl.cases.length)
+      (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
+        Usage sig (δ.extendParams (m.grade * r) (con.params (.ofLists qs ps hq hp))) m u)
+      (hr : m = .oneOne → (∃ T' ∈ decl.types, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
+      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.recursor r D qs ls ps as t Cs us)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.
   RFC: `\mathsf{sub}_{▶}` -/

@@ -84,6 +84,7 @@ theorem Term.unknown_not_whnf : ¬ Whnf [] Term.unknown := by
       cases hn with
       | var => cases ht
       | const hc => nomatch hc
+      | recursor => cases ht
   exact fun h => this h rfl
 
 /-- The equality of the proofs of a proposition relates all the closed terms, or none, in a signature
@@ -248,6 +249,9 @@ of the signature itself.
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
   | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
+  | .iota h hi hD hc hu hv =>
+    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hu hv
+  | .recursor h => .recursor h.interpret
 
 /-- A term computes to the canonical terms of the term it reduces to, in a signature whose names are
 distinct. -/

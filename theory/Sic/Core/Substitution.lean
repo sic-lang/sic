@@ -222,6 +222,16 @@ def Term.instantiate {Γ : Scope} :
   | _ :: ps, B, .cons t ts =>
     Term.instantiate (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) ts
 
+/-- `B[t̄ / x̄]`, for the terms `t̄` of the fields of a constructor, which do not carry the parameters
+of their entries: each new variable of the scope becomes its term, when there are as many terms as
+new variables, as `Term.instantiate` does for the arguments of a telescope. -/
+def Term.instantiateTerms {Γ : Scope} :
+    {n : Nat} → Term k (Γ.extend n) → Terms k Γ → Option (Term k Γ)
+  | 0, B, .nil => some B
+  | n + 1, B, .cons t ts =>
+    Term.instantiateTerms (B.subst₀ (Subst₀.liftN n (Subst₀.single t))) ts
+  | _, _, _ => none
+
 /-! ## Substitutions of the Second Order -/
 
 /-- A substitution of the second order of the scope `Δ` in the scope `Γ`, which gives each variable an
@@ -1981,6 +1991,20 @@ theorem Telescope.subst_lift_single {Γ : Scope} {ps : List Parameter} (σ : Sub
         (Telescope.subst_subst_of
           (fun x => (Subst.append_eq_liftN (n := 1) σ (Subst.closedSingle v) x).symm) Θ)))
 
+-- ADE: none.
+/-- `C[σ⇑][v / x] = C[σ, v]`: a term under a new variable, substituted by a closed substitution `σ`
+of the context, then by a closed term `v` for this variable, is substituted by `σ` followed by
+`v`. -/
+theorem Term.subst_lift_single {Γ : Scope} (σ : Subst k [] Γ) (v : Term k [])
+    (C : Term k (.var :: Γ)) :
+    (C.subst (Subst.lift σ)).subst₀ (Subst₀.single v) =
+      C.subst (Subst.append (n := 1) σ (Subst.closedSingle v)) :=
+  (Term.subst_id_of (fun x => by cases x) _).symm.trans
+    ((Term.subst_subst₀_of (Subst₀.Swaps.closedSingle v) _).trans
+      ((Term.subst₀_id_of (fun _ => rfl) _).trans
+        (Term.subst_subst_of
+          (fun x => (Subst.append_eq_liftN (n := 1) σ (Subst.closedSingle v) x).symm) C)))
+
 /-! ## Levels
 
 The instantiation of the level variables replaces levels only, so that it commutes with the
@@ -2501,5 +2525,168 @@ theorem Constructor.fieldsAt_substLevels {j g k' k'' : Nat} {Γ Δ : Scope} (c :
   rw [Constructor.fieldsAt, Constructor.fieldsAt,
     Telescope.substLevels_subst_of (InstanceArgs.toSubst_substLevels ls' as),
     Telescope.substLevels_substLevels]
+
+/-! ## Motives at a Constructor -/
+
+-- ADE: none.
+/-- `C[T.c(x̄) / z]`: the motive `C`, over the term `z` it eliminates, at the constructor `c` of the
+instance `T = D.{s̄; l̄; p̄} ā` applied to the new variables `x̄` of its fields, whose entries have the
+parameters `fs`, the type of the branch of `c`. -/
+def Term.atCtor {Γ Δ : Scope} (C : Term k (.var :: Γ)) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name)
+    (fs : List Parameter) : Term k (Γ.extend fs.length) :=
+  (C.rename (Ren.lift (Ren.weakenN fs.length))).subst₀
+    (Subst₀.single (.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c (Args.bound fs).terms))
+
+/-- `B[t̄ / x̄]` for the terms of arguments is their instantiation. -/
+theorem Term.instantiateTerms_terms {Γ : Scope} :
+    {ps : List Parameter} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
+      B.instantiateTerms ts.terms = some (B.instantiate ts)
+  | [], _, .nil => rfl
+  | _ :: _, B, .cons _ ts =>
+    Term.instantiateTerms_terms (B.subst₀ (Subst₀.liftN _ (Subst₀.single _))) ts
+
+/-! ## Motives and Branches at a Position -/
+
+/-- The motive at a position of motives substituted is the motive substituted, under its
+variables. -/
+theorem Motives.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Δ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
+      (Cs.subst θ).get j = some ⟨n, C.subst (Subst.liftN (n + 1) θ)⟩
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; rfl
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_subst θ (Cs := Cs) h
+
+/-- The branch at a position of branches substituted is the branch substituted, under its
+variables. -/
+theorem Branches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {us : Branches k Δ} → {i n m : Nat} → {u : Term k (Δ.extend (n + m))} →
+      us.get i = some ⟨n, m, u⟩ → (us.subst θ).get i = some ⟨n, m, u.subst (Subst.liftN (n + m) θ)⟩
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; rfl
+  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst θ (us := us) h
+
+/-- The motive at a position of motives whose levels are instantiated is a motive of the motives,
+instantiated. -/
+theorem Motives.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {Cs : Motives k Γ} → {j n : Nat} → {C : Term k' (Γ.extend (n + 1))} →
+      (Cs.substLevels ls').get j = some ⟨n, C⟩ →
+        ∃ C₀, Cs.get j = some ⟨n, C₀⟩ ∧ C = C₀.substLevels ls'
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_substLevels ls' (Cs := Cs) h
+
+/-- The motive at a position of motives is there once their levels are instantiated. -/
+theorem Motives.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {Cs : Motives k Γ} → {j n : Nat} → {C : Term k (Γ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
+      (Cs.substLevels ls').get j = some ⟨n, C.substLevels ls'⟩
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; rfl
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_substLevels_of ls' (Cs := Cs) h
+
+/-- The branch at a position of branches whose levels are instantiated is a branch of the branches,
+instantiated. -/
+theorem Branches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k' (Γ.extend (n + m))} →
+      (us.substLevels ls').get i = some ⟨n, m, u⟩ →
+        ∃ u₀, us.get i = some ⟨n, m, u₀⟩ ∧ u = u₀.substLevels ls'
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels ls' (us := us) h
+
+/-- The branch at a position of branches is there once their levels are instantiated. -/
+theorem Branches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k (Γ.extend (n + m))} →
+      us.get i = some ⟨n, m, u⟩ → (us.substLevels ls').get i = some ⟨n, m, u.substLevels ls'⟩
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; rfl
+  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels_of ls' (us := us) h
+
+/-- Motives whose levels are instantiated are as many. -/
+theorem Motives.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (Cs : Motives k Γ) → (Cs.substLevels ls').length = Cs.length
+  | .nil => rfl
+  | .cons _ _ Cs => congrArg (· + 1) (Motives.length_substLevels ls' Cs)
+
+/-- Branches whose levels are instantiated are as many. -/
+theorem Branches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (us : Branches k Γ) → (us.substLevels ls').length = us.length
+  | .nil => rfl
+  | .cons _ _ _ us => congrArg (· + 1) (Branches.length_substLevels ls' us)
+
+/-! ## Motives at a Constructor -/
+
+/-- The terms of arguments substituted are the terms of the arguments substituted. -/
+theorem Args.terms_subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) :
+    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.subst₀ σ).terms = ts.terms.subst₀ σ
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_subst₀ σ ts)
+
+/-- `C[T.c(x̄) / z][t̄ / x̄] = C[T.c(t̄) / z]`: the motive at a constructor applied to the new variables
+of its fields, instantiated by arguments of the fields, is the motive at the constructor applied to
+them. -/
+theorem Term.atCtor_instantiate {Γ Δ : Scope} (C : Term k (.var :: Γ)) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name)
+    {fs : List Parameter} (ts : Args k Γ fs) :
+    (C.atCtor D qs ls ps as c fs).instantiate ts =
+      C.subst₀ (Subst₀.single (.ctor D qs ls ps as c ts.terms)) := by
+  rw [Term.instantiate_eq_subst₀, Term.atCtor, Term.subst₀_subst₀_of (fun _ => rfl),
+    Term.subst₀_rename_of]
+  intro _ x
+  cases x with
+  | zero =>
+    show Val.term ((Term.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c
+      (Args.bound fs).terms).subst₀ ts.toSubst₀) = _
+    rw [Term.subst₀, InstanceArgs.subst₀_rename_of (ξ := Ren.weakenN fs.length) (σ' := Subst₀.id)
+        (fun y => Args.toSubst₀_weakenN ts y),
+      InstanceArgs.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl), ← Args.terms_subst₀,
+      Args.bound_toSubst₀]
+    rfl
+  | succ y => exact Args.toSubst₀_weakenN ts y
+
+/-- The motive at a constructor, substituted under the variables of the fields, is the motive
+substituted, at the constructor of the instance substituted. -/
+theorem Term.atCtor_subst {Γ Γ' Δ : Scope} (θ : Subst k Γ' Γ) (C : Term k (.var :: Γ)) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name)
+    (fs : List Parameter) :
+    (C.atCtor D qs ls ps as c fs).subst (Subst.liftN fs.length θ) =
+      (C.subst (Subst.lift θ)).atCtor D qs ls ps (as.subst θ) c fs := by
+  rw [Term.atCtor, Term.atCtor, Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+  congr 1
+  · have hX : (Term.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c
+          (Args.bound fs).terms).subst (Subst.liftN fs.length θ) =
+        Term.ctor D qs ls ps ((as.subst θ).rename (Ren.weakenN fs.length)) c
+          (Args.bound fs).terms := by
+      rw [Term.subst, ← Args.terms_subst, Args.bound_subst,
+        InstanceArgs.subst_rename_of (fun _ => rfl),
+        InstanceArgs.rename_subst_of (θ' := fun y => Subst.liftN fs.length θ (y.weakenN fs.length))
+          fun y => (Subst.liftN_weakenN _ θ y).symm]
+      rfl
+    rw [hX]
+  · rw [Term.subst_rename_of (fun _ => rfl), Term.rename_subst_of (fun _ => rfl)]
+    refine congrArg (fun θ' : Subst k _ _ => Term.subst θ' C) ?_
+    funext _ x
+    cases x with
+    | zero => rfl
+    | succ y =>
+      show ((Subst.liftN fs.length θ) (y.weakenN fs.length)).rename (Ren.liftN _ Ren.weaken) =
+        ((θ y).rename (Ren.liftN _ Ren.weaken)).rename (Ren.liftN _ (Ren.lift (Ren.weakenN _)))
+      rw [Subst.liftN_weakenN, Term.rename_rename_of (Ren.liftN_comp_of _ fun _ => rfl),
+        Term.rename_rename_of (Ren.liftN_comp_of _ fun _ => rfl)]
+      rfl
+
+/-- The motive at a constructor whose levels are instantiated is the motive instantiated, at the
+constructor of the instance instantiated. -/
+theorem Term.atCtor_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ Δ : Scope}
+    (C : Term k (.var :: Γ)) (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Γ Δ) (c : Name) (fs : List Parameter) :
+    (C.atCtor D qs ls ps as c fs).substLevels ls' =
+      (C.substLevels ls').atCtor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c fs := by
+  rw [Term.atCtor, Term.atCtor, Term.substLevels_subst₀_of (σ' := Subst₀.single
+    ((Term.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c (Args.bound fs).terms).substLevels
+      ls')) (fun x => by cases x <;> rfl), Term.substLevels_rename]
+  congr 2
+  rw [Term.substLevels, InstanceArgs.substLevels_rename, ← Args.terms_substLevels,
+    Args.substLevels_bound]
 
 end Sic.Core

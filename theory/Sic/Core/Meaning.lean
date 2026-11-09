@@ -1083,9 +1083,7 @@ theorem Computes.sort (sig : Signature) (κ : Universe 0) : Computes sig (.sort 
 theorem Computes.sort_inv {sig : Signature} {κ : Universe 0} {v : Term 0 []} :
     Computes sig (.sort κ) v → v = .sort κ
   | ⟨.refl _, _⟩ => rfl
-  | ⟨.step h _, _⟩ => by
-    obtain ⟨_, _, _, _, _, _, _, _, ht, _⟩ := h.inv
-    cases ht
+  | ⟨.step h _, _⟩ => nomatch h
 
 /-- The terms that the universe of propositions `Ω_l` relates are propositions. -/
 theorem HasEq.prop_isProp {sig : Signature} {ι : Interpretation} {l : Level 0} {R : TermRel}

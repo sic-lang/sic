@@ -200,6 +200,39 @@ def Args.terms {k : Nat} {Γ : Scope} : {ps : List Parameter} → Args k Γ ps �
   | [], .nil => .nil
   | _ :: _, .cons t ts => .cons t ts.terms
 
+/-- The number of the motives `C̄`. -/
+def Motives.length {k : Nat} {Γ : Scope} : Motives k Γ → Nat
+  | .nil => 0
+  | .cons _ _ Cs => Cs.length + 1
+
+/-- The motive at the position `j` of the motives `C̄`, the first one at `0`, with its number of
+non-uniform parameters. -/
+def Motives.get {k : Nat} {Γ : Scope} : Motives k Γ → Nat → Option (Σ n, Term k (Γ.extend (n + 1)))
+  | .nil, _ => none
+  | .cons n C _, 0 => some ⟨n, C⟩
+  | .cons _ _ Cs, j + 1 => Cs.get j
+
+/-- The number of the branches `ū`. -/
+def Branches.length {k : Nat} {Γ : Scope} : Branches k Γ → Nat
+  | .nil => 0
+  | .cons _ _ _ us => us.length + 1
+
+/-- The branch at the position `i` of the branches `ū`, the first one at `0`, with its numbers of
+fields and of recursive results. -/
+def Branches.get {k : Nat} {Γ : Scope} :
+    Branches k Γ → Nat → Option (Σ n m, Term k (Γ.extend (n + m)))
+  | .nil, _ => none
+  | .cons n m u _, 0 => some ⟨n, m, u⟩
+  | .cons _ _ _ us, i + 1 => us.get i
+
+/-- The branch at a position of branches is one term. -/
+theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Nat}
+    {u₁ u₂ : Term k (Γ.extend (n + m))} (h₁ : us.get i = some ⟨n, m, u₁⟩)
+    (h₂ : us.get i = some ⟨n, m, u₂⟩) : u₁ = u₂ := by
+  have h := Option.some.inj (h₁.symm.trans h₂)
+  simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
+  exact h
+
 /-- The variable `x`, applied to no argument. -/
 abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var x .nil
 
@@ -331,6 +364,20 @@ structure TypeDeclaration where
 def TypeDeclaration.names (decl : TypeDeclaration) : List Name :=
   decl.types.map (·.name)
 
+/-- The constructors of the data types `Ts`, the first type at the position `j`, each with the
+position of its type and its type, in the order of the declaration. -/
+def TypeDeclaration.casesFrom {j g k : Nat} {Δ : Scope} :
+    Nat → List (DataType j g k Δ) → List (Nat × DataType j g k Δ × Constructor j g k Δ)
+  | _, [] => []
+  | i, T :: Ts => T.constructors.map (fun c => (i, T, c)) ++ TypeDeclaration.casesFrom (i + 1) Ts
+
+/-- The cases of a recursor on a block: the constructors of its types, each with the position of
+its type and its type, in the order of the declaration, which is that of the branches. -/
+def TypeDeclaration.cases (decl : TypeDeclaration) :
+    List (Nat × DataType decl.sorts decl.grades decl.levels decl.scope ×
+      Constructor decl.sorts decl.grades decl.levels decl.scope) :=
+  TypeDeclaration.casesFrom 0 decl.types
+
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
 inductive Entry where
@@ -458,6 +505,98 @@ theorem Signature.Distinct.constructors_nodup : {sig : Signature} → sig.Distin
     rcases List.mem_cons.1 he with he | he
     · subst he; exact hc _ hT
     · exact hd.constructors_nodup ⟨he, hT, hn⟩
+
+/-- Two positions of a list whose images by `f` are distinct, which hold elements with the same
+image, are equal. -/
+theorem _root_.List.getElem?_inj_of_nodup_map {α β : Type} {f : α → β} :
+    {l : List α} → (l.map f).Nodup → {i i' : Nat} → {a b : α} → l[i]? = some a →
+      l[i']? = some b → f a = f b → i = i'
+  | [], _, _, _, _, _, ha, _, _ => nomatch ha
+  | _ :: l, h, i, i', _, _, ha, hb, hab => by
+    rw [List.map_cons, List.nodup_cons] at h
+    match i, i', ha, hb with
+    | 0, 0, _, _ => rfl
+    | 0, i' + 1, ha, hb =>
+      cases ha
+      exact absurd (hab ▸ List.mem_map_of_mem (List.mem_of_getElem? hb)) h.1
+    | i + 1, 0, ha, hb =>
+      cases hb
+      exact absurd (hab.symm ▸ List.mem_map_of_mem (List.mem_of_getElem? ha)) h.1
+    | i + 1, i' + 1, ha, hb => exact congrArg (· + 1) (List.getElem?_inj_of_nodup_map h.2 ha hb hab)
+
+/-- A case of the types `Ts` is a constructor of one of them. -/
+theorem TypeDeclaration.mem_casesFrom {j g k : Nat} {Δ : Scope} :
+    {i : Nat} → {Ts : List (DataType j g k Δ)} → {x : Nat × DataType j g k Δ × Constructor j g k Δ} →
+      x ∈ TypeDeclaration.casesFrom i Ts → x.2.1 ∈ Ts ∧ x.2.2 ∈ x.2.1.constructors
+  | _, [], _, h => nomatch h
+  | _, _ :: _, _, h => by
+    rcases List.mem_append.1 h with h | h
+    · obtain ⟨c, hc, rfl⟩ := List.mem_map.1 h
+      exact ⟨List.mem_cons_self, hc⟩
+    · obtain ⟨h₁, h₂⟩ := TypeDeclaration.mem_casesFrom h
+      exact ⟨List.mem_cons_of_mem _ h₁, h₂⟩
+
+/-- A case of the types `Ts`, the first one at the position `i`, holds the position of its type. -/
+theorem TypeDeclaration.getElem?_of_mem_casesFrom {j g k : Nat} {Δ : Scope} :
+    {i : Nat} → {Ts : List (DataType j g k Δ)} → {j' : Nat} → {T : DataType j g k Δ} →
+      {c : Constructor j g k Δ} → (j', T, c) ∈ TypeDeclaration.casesFrom i Ts →
+        i ≤ j' ∧ Ts[j' - i]? = some T
+  | _, [], _, _, _, h => nomatch h
+  | i, _ :: Ts, j', _, _, h => by
+    rcases List.mem_append.1 h with h | h
+    · obtain ⟨_, _, he⟩ := List.mem_map.1 h
+      cases he
+      exact ⟨Nat.le_refl _, by simp⟩
+    · obtain ⟨hle, hT⟩ := TypeDeclaration.getElem?_of_mem_casesFrom h
+      refine ⟨Nat.le_of_succ_le hle, ?_⟩
+      have he : j' - i = (j' - (i + 1)) + 1 := by omega
+      rw [he, List.getElem?_cons_succ]
+      exact hT
+
+/-- A constructor of the type at the position `j'` of the types `Ts` is a case of them. -/
+theorem TypeDeclaration.mem_casesFrom_of {j g k : Nat} {Δ : Scope} :
+    {i : Nat} → {Ts : List (DataType j g k Δ)} → {j' : Nat} → {T : DataType j g k Δ} →
+      {c : Constructor j g k Δ} → Ts[j']? = some T → c ∈ T.constructors →
+        (i + j', T, c) ∈ TypeDeclaration.casesFrom i Ts
+  | _, [], _, _, _, h, _ => nomatch h
+  | i, _ :: Ts, 0, _, _, h, hc => by
+    cases h
+    exact List.mem_append_left _ (List.mem_map_of_mem hc)
+  | i, _ :: Ts, j' + 1, _, _, h, hc => by
+    have he : i + (j' + 1) = (i + 1) + j' := by omega
+    rw [he]
+    exact List.mem_append_right _ (TypeDeclaration.mem_casesFrom_of h hc)
+
+/-- The cases of types with distinct names, whose constructors have distinct names, have distinct
+names of types and of constructors. -/
+theorem TypeDeclaration.casesFrom_nodup {j g k : Nat} {Δ : Scope} :
+    {i : Nat} → {Ts : List (DataType j g k Δ)} → (Ts.map (·.name)).Nodup →
+      (∀ T ∈ Ts, (T.constructors.map (·.name)).Nodup) →
+        ((TypeDeclaration.casesFrom i Ts).map fun x => (x.2.1.name, x.2.2.name)).Nodup
+  | _, [], _, _ => List.nodup_nil
+  | i, T :: Ts, hn, hc => by
+    rw [List.map_cons, List.nodup_cons] at hn
+    have he : (TypeDeclaration.casesFrom i (T :: Ts)).map (fun x => (x.2.1.name, x.2.2.name)) =
+        (T.constructors.map (·.name)).map (Prod.mk T.name) ++
+          (TypeDeclaration.casesFrom (i + 1) Ts).map (fun x => (x.2.1.name, x.2.2.name)) := by
+      simp only [TypeDeclaration.casesFrom, List.map_append, List.map_map]
+      rfl
+    rw [he]
+    refine List.nodup_append.2 ⟨(hc T List.mem_cons_self).map (Prod.mk T.name)
+      (fun _ _ hab he => hab (Prod.mk.inj he).2),
+      TypeDeclaration.casesFrom_nodup hn.2 fun T hT => hc T (List.mem_cons_of_mem _ hT), ?_⟩
+    intro a ha b hb hab
+    obtain ⟨n, _, rfl⟩ := List.mem_map.1 ha
+    obtain ⟨x, hx, rfl⟩ := List.mem_map.1 hb
+    have hn' : T.name = x.2.1.name := congrArg Prod.fst hab
+    exact hn.1 (hn' ▸ List.mem_map_of_mem (TypeDeclaration.mem_casesFrom hx).1)
+
+/-- In a signature whose names are distinct, the cases of a type declaration have distinct names of
+types and of constructors. -/
+theorem Signature.Distinct.cases_nodup {sig : Signature} (hd : sig.Distinct)
+    {decl : TypeDeclaration} (h : .typeDeclaration decl ∈ sig) :
+    (decl.cases.map fun x => (x.2.1.name, x.2.2.name)).Nodup :=
+  TypeDeclaration.casesFrom_nodup (hd.nodup h) fun _ hT => hd.constructors_nodup ⟨h, hT, rfl⟩
 
 /-- The `n` elements of a list of length `n`, numbered. -/
 def _root_.List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=

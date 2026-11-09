@@ -14,7 +14,8 @@ gives each second-order variable its telescope and the ownership of its result, 
 gives each constant its ownership.
 Unlike the vector of the usage, which each premise computes and the conclusion adds, `φ` is the same
 in every premise, as the context of the typing is.
-The data types give the ownership of their instances and of their constructors.
+The data types give the ownership of their instances, of their constructors and of their
+recursors.
 -/
 
 @[expose] public section
@@ -36,6 +37,16 @@ RFC: `\mathsf{value}_\psi` -/
 def ResultOwnership.value : {n : Nat} → ResultOwnership n → List Grade → Option Grade
   | _ + 1, ψ, o :: os => Option.merge (· ⊓ ·) ((ψ.coefficient 0).map (o * ·)) (ψ.tail.value os)
   | _, ψ, _ => ψ.constant
+
+-- ADE: none.
+/-- `φ, x̄ ◀ o · r̄`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
+`o · rᵢ` of the new variable of each entry of a telescope whose parameters are `ps`, the first one
+first, `rᵢ` being the requirement of the entry. -/
+def Ownership.extendFields {Γ : Scope} (φ : Var Γ .var → Grade) (o : Grade) :
+    (ps : List Parameter) → Var (Γ.extend ps.length) .var → Grade
+  | [] => φ
+  | p :: ps => Ownership.extendFields (Γ := .var :: Γ)
+      (fun | .zero => o * p.requirement | .succ x => φ x) o ps
 
 mutual
 
@@ -82,6 +93,23 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
+  /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
+  times the requirement of the entry of each field, for the variable of the field: a field of a
+  unique value has the ownership its entry requires, and a field of a shared value is shared.
+  RFC: `\mathsf{rec}_{◀}` -/
+  | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
+      (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
+      (hul : us.length = decl.cases.length)
+      (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
+        Ownership sig (Ownership.extendFields φ o (con.params (.ofLists qs ps hq hp))) m p u) :
+      Ownership sig φ m p (.recursor r D qs ls ps as t Cs us)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{sub}_{◀}` -/
   | sub {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {p q : Grade} {t : Term k Γ}

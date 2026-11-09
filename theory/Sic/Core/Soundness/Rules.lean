@@ -726,6 +726,359 @@ theorem ValidTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single]
   exact hΘ.2 _ _ ((EqSubst.var_iff ctx A _ _).2 ⟨h, hv⟩)
 
+/-! ## Recursors
+
+A recursor on two equal closed terms of an instance of a data type of a meaningful declaration
+computes, by the reduction of their terms, then by `(ι_⟶)`, to the branches of the constructor that
+both compute to, at the terms of their fields, which the equality of the instance relates; the
+branches at equal substitutions of the fields are equal terms of the motive at the constructor,
+which the motive makes equal to the motive at the term.
+On a proposition, whose proofs need not compute, the truth of the instance gives a constructor with
+terms of its fields, whose branch is a proof of the motive, then a proposition, at the constructor:
+the motive is then true at the term, and the recursors are equal proofs of it. -/
+
+/-- Two equal closed terms of the type of a field, whose terms are equal by `F`, are related by `F`:
+the converse of `FieldRel.of_validEqTerm`. -/
+theorem FieldRel.validEqTerm (hd : sig.Distinct) {n : Nat} {s : Quality} {A v t u : Term 0 []}
+    {F : TermRel} (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F)
+    (hA : Computesι sig ι A v) (htu : F t u) : ValidEqTerm₀ sig ι t u A := by
+  have huniv : ∀ m R, (levelRel sig ι m).univ v R → R.computed sig ι t u →
+      ValidEqTerm₀ sig ι t u A := fun m R hR ⟨w₁, w₂, h₁, h₂, hw⟩ =>
+    ⟨⟨hd, v, v, R, hA, hA, .univ m hR, .univ m hR⟩, fun _ => ⟨v, w₁, w₂, R, hA, h₁, h₂, .univ m hR, hw⟩,
+      fun ⟨v', hv', _, _, hP⟩ => by
+        cases Computesι.det hd hA hv'
+        exact (HasEq.univ_not_prop hd hR hP).elim⟩
+  have hprop : ∀ m b, (levelRel sig ι m).prop v b → b → ValidEqTerm₀ sig ι t u A :=
+    fun m b hP hb =>
+      ⟨⟨hd, v, v, fun _ _ => b, hA, hA, .prop m b hP fun _ _ => .rfl,
+        .prop m b hP fun _ _ => .rfl⟩, fun hn => absurd ⟨v, hA, m, b, hP⟩ hn,
+        fun _ => ⟨v, fun _ _ => b, hA, .prop m b hP fun _ _ => .rfl, hb⟩⟩
+  cases hF with
+  | univ _ hU => exact huniv n _ (levelRel_univ_iff.2 hU) htu
+  | univBelow _ m _ hU => exact huniv m _ hU htu
+  | prop hP => exact hprop n _ (levelRel_prop_iff.2 hP) htu
+  | propBelow m _ hP => exact hprop m _ hP htu
+
+/-- Terms of the fields of a closed telescope of the graph of a sort, related by the equality `S` of
+its fields, are the terms of equal arguments of the telescope: the converse of
+`TelRel.of_eqSubst`. -/
+theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} :
+    {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : FieldsRel} →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → (ts us : Terms 0 []) → S ts us →
+        ∃ ts' us' : Args 0 [] ps, ts'.terms = ts ∧ us'.terms = us ∧
+          EqSubst sig ι (Context.empty.append Θ) ts'.toSubst us'.toSubst
+  | [], .nil, _, .nil, .nil, .nil, _ =>
+    ⟨.nil, .nil, rfl, rfl, (EqSubst.empty_iff _ _).2 trivial⟩
+  | [], .nil, _, .nil, .nil, .cons .., h => nomatch h
+  | [], .nil, _, .nil, .cons .., _, h => nomatch h
+  | _ :: ps, .cons q p A Θ, _, .cons hA hF G hG _, .cons t ts, .cons u us, ⟨htu, hts⟩ => by
+    have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
+    obtain ⟨ts', us', rfl, rfl, hτ⟩ :=
+      TelRel.to_eqSubst hd (hG t (hFp.trans htu (hFp.symm htu))) ts us hts
+    refine ⟨.cons t ts', .cons u us', rfl, rfl, ?_⟩
+    let σ : Subst 0 [] [] := fun x => nomatch x
+    have hc : Telescope.subst σ (.cons q p A Θ) = .cons q p A Θ :=
+      Telescope.subst_id_of (fun x => by cases x) _
+    have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle t) ts'.toSubst) .zero = t :=
+      Subst.dropN_append _ _ .zero
+    have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle u) us'.toSubst) .zero = u :=
+      Subst.dropN_append _ _ .zero
+    show EqSubst sig ι (Context.empty.append (.cons q p A Θ))
+      (Subst.append (Subst.closedSingle t) ts'.toSubst) (Subst.append (Subst.closedSingle u) us'.toSubst)
+    rw [← hc, EqSubst.telescope_cons_iff, d₁, d₂, Term.subst_empty,
+      Telescope.subst₀_single_subst Θ t σ _ (d₁.trans (Term.subst_empty σ t).symm),
+      Telescope.subst_id_of (fun x => by cases x),
+      EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
+    exact ⟨hF.validEqTerm hd hA htu, hτ⟩
+  | _ :: _, .cons .., _, .cons .., .nil, _, h => nomatch h
+  | _ :: _, .cons .., _, .cons .., .cons .., .nil, h => nomatch h
+
+-- ADE: none.
+/-- The equality of the canonical terms of an instance of a declared type of `Σ` is, at the equality
+`S` of the fields of its constructors that the graph gives, `(eq_c)` for an instance in a universe,
+and the truth `(true_D)` of the instance for a proposition, in a signature whose names are
+distinct. -/
+theorem HasEq.inst_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDeclaredType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 [] decl.scope} {R : TermRel} (hR : HasEq sig ι (.inst D qs ls ps as) R) :
+    ∃ n S, (∀ c ∈ T.constructors,
+        TelRel sig ι n (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) ∧
+      (((decl.sort (.ofLists qs ps hq hp)).quality = .type ∧
+          (levelRel sig ι n).univ (.inst D qs ls ps as) R ∧ R = T.ctorRel D S) ∨
+        ((decl.sort (.ofLists qs ps hq hp)).quality = .prop ∧
+          (levelRel sig ι n).prop (.inst D qs ls ps as) (T.truth S) ∧
+          ∀ t u, R t u ↔ T.truth S)) := by
+  cases hR with
+  | univ n hU =>
+    have hU' := levelRel_univ_iff.1 hU
+    cases hU' with
+    | data h' _ _ _ hv hs _ S hS =>
+      have hD := congrArg (fun t : Term 0 [] => match t with | .inst D .. => D | _ => "") hv
+      dsimp only at hD
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h (hD ▸ h')
+      cases hT
+      cases hv
+      exact ⟨n, S, fun c hc => hs ▸ hS c hc, .inl ⟨hs, hU, rfl⟩⟩
+  | prop n b hP hRb =>
+    have hP' := levelRel_prop_iff.1 hP
+    cases hP' with
+    | data h' _ _ _ hv hs _ S hS =>
+      have hD := congrArg (fun t : Term 0 [] => match t with | .inst D .. => D | _ => "") hv
+      dsimp only at hD
+      obtain ⟨rfl, hT⟩ := hd.hasDeclaredType_unique h (hD ▸ h')
+      cases hT
+      cases hv
+      exact ⟨n, S, fun c hc => hs ▸ hS c hc, .inr ⟨hs, hP, hRb⟩⟩
+
+/-- A recursor reduces as its term does. -/
+theorem RedStar.recursor {sig' : Signature} {k : Nat} {Γ Δ : Scope} {r : Grade} {D : Name}
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
+    {Cs : Motives k Γ} {us : Branches k Γ} {t t' : Term k Γ} (h : RedStar sig' t t') :
+    RedStar sig' (.recursor r D qs ls ps as t Cs us) (.recursor r D qs ls ps as t' Cs us) := by
+  induction h with
+  | refl => exact .refl _
+  | step h _ ih => exact .step (.recursor h) ih
+
+/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t' ≡ u : A` does, for steps `t ⟶* t'`. -/
+theorem ValidEqTerm₀.redStar_iff (hd : sig.Distinct) {t t' u A : Term 0 []}
+    (h : RedStar (sig.interpret ι) t t') :
+    ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t' u A := by
+  induction h with
+  | refl => exact .rfl
+  | step h _ ih => exact (ValidEqTerm₀.red_iff hd h).trans ih
+
+/-- `(ι_⟶)` steps a recursor whose branches are substituted by `σ`, on a constructor of a declared
+type of `Σ` applied to the terms of closed arguments of its fields, to the branch of the
+constructor substituted by `σ` followed by the arguments. -/
+theorem Red.iota_subst {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDeclaredType D decl T) {i j : Nat} (hi : decl.cases[i]? = some (j, T, con))
+    {Γ : Scope} (σ : Subst 0 [] Γ) {fs : List Parameter} (ts : Args 0 [] fs) {us : Branches 0 Γ}
+    {u : Term 0 (Γ.extend (fs.length + 0))} (hu : us.get i = some ⟨fs.length, 0, u⟩) {r : Grade}
+    {D' : Name} {qs qs' : List Quality} {ls ls' : List (Level 0)} {ps ps' : List Grade}
+    {Δ Δ' : Scope} {as : InstanceArgs 0 [] Δ} {as' : InstanceArgs 0 [] Δ'} {Cs : Motives 0 []} :
+    Red (sig.interpret ι) (.recursor r D' qs' ls' ps' as' (.ctor D qs ls ps as con.name ts.terms) Cs
+      (us.subst σ)) (u.subst (Subst.append σ ts.toSubst)) :=
+  .iota (List.mem_map_of_mem (f := Entry.interpret ι) h.1) hi h.2.2 rfl (Branches.get_subst σ hu)
+    ((Term.instantiateTerms_terms _ ts).trans
+      (congrArg some ((Term.instantiate_eq_subst _ ts).trans (Term.subst_append σ _ u))))
+
+/-- `C[T.c(x̄) / z][σ, t̄ / x̄] = C[σ⇑][T[σ].c(t̄) / z]`: the motive at a constructor, substituted by
+`σ` followed by closed arguments of its fields, is the motive substituted by `σ` at the constructor
+of the instance substituted, applied to the arguments. -/
+theorem Term.atCtor_subst_append {Γ Δ : Scope} (σ : Subst 0 [] Γ) (C : Term 0 (.var :: Γ))
+    (D : Name) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (as : InstanceArgs 0 Γ Δ)
+    (c : Name) {fs : List Parameter} (ts : Args 0 [] fs) :
+    (C.atCtor D qs ls ps as c fs).subst (Subst.append σ ts.toSubst) =
+      (C.subst (Subst.lift σ)).subst₀ (Subst₀.single (.ctor D qs ls ps (as.subst σ) c ts.terms)) := by
+  rw [← Term.subst_append, Term.atCtor_subst, ← Term.instantiate_eq_subst, Term.atCtor_instantiate]
+
+/-- A motive of a sort, meaningful over a term of an instance, gives equal types at equal
+substitutions and equal terms of the instance. -/
+theorem ValidTermΓ.motive {Γ : Scope} {ctx : Context 0 Γ} {A : Term 0 Γ} {C : Term 0 (.var :: Γ)}
+    {κ : Universe 0} (hC : ValidTermΓ sig ι (ctx.var A) C (.sort κ)) {σ₁ σ₂ : Subst 0 [] Γ}
+    {a₁ a₂ : Term 0 []} (hσ : EqSubst sig ι ctx σ₁ σ₂) (ha : ValidEqTerm₀ sig ι a₁ a₂ (A.subst σ₁)) :
+    ValidEqType₀ sig ι ((C.subst (Subst.lift σ₁)).subst₀ (Subst₀.single a₁))
+      ((C.subst (Subst.lift σ₂)).subst₀ (Subst₀.single a₂)) := by
+  rw [Term.subst_lift_single, Term.subst_lift_single]
+  have hC' := hC.2 _ _ ((EqSubst.var_iff ctx A (Subst.append (n := 1) σ₁ (Subst.closedSingle a₁))
+    (Subst.append (n := 1) σ₂ (Subst.closedSingle a₂))).2 ⟨hσ, ha⟩)
+  obtain ⟨s, l⟩ := κ
+  cases s
+  · exact ValidEqTerm₀.univType hC'
+  · exact ValidEqTerm₀.propType hC'
+
+/-- A motive of a universe of propositions, meaningful over a term of an instance, is a proposition
+at a substitution and a term of the instance. -/
+theorem ValidTermΓ.motive_prop {Γ : Scope} {ctx : Context 0 Γ} {A : Term 0 Γ}
+    {C : Term 0 (.var :: Γ)} {l : Level 0} (hC : ValidTermΓ sig ι (ctx.var A) C (.sort ⟨.prop, l⟩))
+    {σ : Subst 0 [] Γ} {a : Term 0 []} (hσ : EqSubst sig ι ctx σ σ)
+    (ha : ValidEqTerm₀ sig ι a a (A.subst σ)) :
+    ComputesToProp sig ι ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single a)) := by
+  rw [Term.subst_lift_single]
+  have hC' := hC.2 _ _ ((EqSubst.var_iff ctx A (Subst.append (n := 1) σ (Subst.closedSingle a))
+    (Subst.append (n := 1) σ (Subst.closedSingle a))).2 ⟨hσ, ha⟩)
+  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, -, hR, hw⟩ := hC'.2.1 not_computesToProp_sort
+  cases hc.sort_inv
+  exact ⟨w₁, hw₁, HasEq.prop_isProp hR hw⟩
+
+-- ADE: `natrec-congᵛ`, `prodrec-congᵛ`, `unitrec-congᵛ` and `emptyrec-congᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/`.
+/-- `(rec_≡)` keeps the meaning, and `(rec)` with it: at equal substitutions of the context, the
+terms compute to the same constructor, whose branches at the terms of its fields are equal terms of
+the motive at the constructor, equal to the motive at the term; on a proposition, the branch of a
+constructor that its truth gives is a proof of the motive, which makes it true. -/
+theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDeclaredType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+    (hp : ps.length = decl.grades) {as₁ : InstanceArgs 0 Γ decl.scope} {Δ₂ : Scope}
+    {as₂ : InstanceArgs 0 Γ Δ₂} {r : Grade} {t₁ t₂ : Term 0 Γ} {Cs₁ Cs₂ : Motives 0 Γ}
+    {us₁ us₂ : Branches 0 Γ} {κ : Universe 0} {h' : Nat} {C₁ : Term 0 (.var :: Γ)}
+    (ht : ValidEqTermΓ sig ι ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.types[h']? = some T)
+    (hC : Cs₁.get h' = some ⟨0, C₁⟩)
+    (hCv : ValidTermΓ sig ι (ctx.var (.inst D qs ls₁ ps as₁)) C₁ (.sort κ))
+    (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+    (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+    (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
+      Cs₁.get j = some ⟨0, C'⟩ →
+      us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₁⟩ →
+      us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₂⟩ →
+      ValidEqTermΓ sig ι (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁))
+        u₁ u₂ (C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))))
+    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      κ.quality = .prop) :
+    ValidEqTermΓ sig ι ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
+      (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁)) := by
+  obtain ⟨hsig, -⟩ := hent.hasDeclaredType h
+  have hD := h.2.2
+  subst hD
+  have hctx := ht.1.1
+  have hd := hctx.distinct
+  have ht₁ := ht.trans ht.symm
+  refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
+  · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
+      Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+    exact hCv.motive hσ (ht₁.2 σ₁ σ₂ hσ)
+  have ht' := ht.2 σ₁ σ₂ hσ
+  have hσ₁ := hσ.left hctx
+  rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+  have hI : Computesι sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁))
+      (.inst T.name qs ls₁ ps (as₁.subst σ₁)) := ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht'.1.2
+  cases Computesι.det hd hcv hI
+  obtain ⟨n, S, hS, hRS⟩ := HasEq.inst_inv hd hsig hq hl₁ hp hR
+  -- The branches of a constructor of the type, at equal arguments of its fields, are equal terms
+  -- of the motive at the constructor, and the recursors on the constructor step to them.
+  have hbranch : ∀ con ∈ T.constructors, ∀ ts₁ ts₂ : Args 0 [] (con.params (.ofLists qs ps hq hp)),
+      EqSubst sig ι (Context.empty.append
+        ((con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁).subst σ₁)) ts₁.toSubst
+        ts₂.toSubst →
+      ∃ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ ((C₁.subst (Subst.lift σ₁)).subst₀
+          (Subst₀.single (.ctor T.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms))) ∧
+        (∀ {qs'' : List Quality} {ls'' : List (Level 0)} {ps'' : List Grade} {Δ'' : Scope}
+          {as'' : InstanceArgs 0 [] Δ''},
+          Red (sig.interpret ι) (.recursor r T.name qs ls₁ ps (as₁.subst σ₁)
+            (.ctor T.name qs'' ls'' ps'' as'' con.name ts₁.terms) (Cs₁.subst σ₁) (us₁.subst σ₁)) v₁) ∧
+        (∀ {qs'' : List Quality} {ls'' : List (Level 0)} {ps'' : List Grade} {Δ'' : Scope}
+          {as'' : InstanceArgs 0 [] Δ''},
+          Red (sig.interpret ι) (.recursor r T.name qs ls₂ ps (as₂.subst σ₂)
+            (.ctor T.name qs'' ls'' ps'' as'' con.name ts₂.terms) (Cs₂.subst σ₂) (us₂.subst σ₂)) v₂) := by
+    intro con hcon ts₁ ts₂ hts
+    have hmem : (h', T, con) ∈ decl.cases := by
+      have := TypeDeclaration.mem_casesFrom_of (i := 0) hh hcon
+      rwa [Nat.zero_add] at this
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
+    obtain ⟨u₁, hu₁⟩ := hus₁ i h' T con hi
+    obtain ⟨u₂, hu₂⟩ := hus₂ i h' T con hi
+    have hb := (hut i h' T con C₁ u₁ u₂ hi hC hu₁ hu₂).2 _ _
+      ((EqSubst.append_append_iff ctx _ σ₁ σ₂ _ _).2 ⟨hσ, hts⟩)
+    rw [Term.atCtor_subst_append] at hb
+    exact ⟨_, _, hb, Red.iota_subst hsig hi σ₁ ts₁ hu₁, Red.iota_subst hsig hi σ₂ ts₂ hu₂⟩
+  rcases hRS with ⟨hs, hU, rfl⟩ | ⟨hs, hP, hRb⟩
+  · -- An instance in a universe: the terms compute to the same constructor.
+    have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+      fun ⟨v, hv, k, b, hk⟩ => by
+        cases Computesι.det hd hI hv
+        exact HasEq.univ_not_prop hd hU hk
+    obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht'.2.1 hnp
+    cases Computesι.det hd hI hv'
+    have hrel' := (HasEq.unique hd hR' hR w₁ w₂).1 hrel
+    obtain ⟨con, hcon, fs₁, fs₂, ⟨qs₁, ls₁', ps₁, Δ₁, as₁', rfl⟩, ⟨qs₂, ls₂', ps₂, Δ₂', as₂', rfl⟩,
+      hS₁₂⟩ := hrel'
+    obtain ⟨ts₁, ts₂, rfl, rfl, hts⟩ := TelRel.to_eqSubst hd (hS con hcon) fs₁ fs₂ hS₁₂
+    obtain ⟨v₁, v₂, hb, hr₁, hr₂⟩ := hbranch con hcon ts₁ ts₂
+      (by rw [Constructor.fieldsAt_subst]; exact hts)
+    have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) (hS con hcon)
+    have hct : ValidEqTerm₀ sig ι (.ctor T.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms)
+        (t₁.subst σ₁) (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+      ⟨ht'.1, fun _ => ⟨_, _, _, _, hI, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩, hw₁, hR,
+        ⟨con, hcon, ts₁.terms, ts₁.terms, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩,
+          hSp.trans hS₁₂ (hSp.symm hS₁₂)⟩⟩, fun hp => absurd hp hnp⟩
+    have hb' := hb.conv (hCv.motive hσ₁ hct)
+    refine (ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₁.1)).2
+      ((ValidEqTerm₀.red_iff hd hr₁).2 ?_)
+    exact ((ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₂.1)).2
+      ((ValidEqTerm₀.red_iff hd hr₂).2 hb'.symm)).symm
+  · -- A proposition: its truth gives a constructor, whose branch proves the motive.
+    have hprop : ComputesToProp sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+      ⟨_, hI, n, _, hP⟩
+    obtain ⟨v', R', hv', hR', hrel⟩ := ht'.2.2 hprop
+    cases Computesι.det hd hI hv'
+    have htrue : T.truth S := (hRb _ _).1 ((HasEq.unique hd hR' hR _ _).1 hrel)
+    obtain ⟨con, hcon, fs, hfs⟩ := htrue
+    obtain ⟨ts₁, ts₂, rfl, -, hts⟩ := TelRel.to_eqSubst hd (hS con hcon) fs fs hfs
+    obtain ⟨v₁, v₂, hb, -, -⟩ := hbranch con hcon ts₁ ts₂
+      (by rw [Constructor.fieldsAt_subst]; exact hts)
+    have hct : ValidEqTerm₀ sig ι (.ctor T.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms)
+        (t₁.subst σ₁) (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+      ⟨ht'.1, fun hn => absurd hprop hn, fun _ => ⟨_, R, hI, hR, (hRb _ _).2 ⟨con, hcon, _, hfs⟩⟩⟩
+    have hb' := hb.conv (hCv.motive hσ₁ hct)
+    obtain ⟨s, l⟩ := κ
+    have hs' : s = .prop := hκ hs (List.ne_nil_of_mem (by
+      have := TypeDeclaration.mem_casesFrom_of (i := 0) hh hcon
+      rwa [Nat.zero_add] at this))
+    subst hs'
+    have hCp := hCv.motive_prop hσ₁ (ht₁.2 σ₁ σ₁ hσ₁)
+    obtain ⟨w, R'', hw, hR'', hrel''⟩ := hb'.2.2 hCp
+    exact ⟨hb'.1, fun hn => absurd hCp hn,
+      fun _ => ⟨w, R'', hw, hR'', hR''.prop_any hd (hCp.isProp hd hw) hrel''⟩⟩
+
+-- ADE: `natrec-zeroᵛ`, `natrec-sucᵛ`, `prodrec-βᵛ` and `unitrec-βᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/`.
+/-- `(ι)` keeps the meaning: at equal substitutions of the context, the recursor on the constructor
+steps to the branch of the constructor at the arguments substituted, which is the substituted
+instance of the branch by the arguments, an equal term of the motive at the constructor. -/
+theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDeclaredType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 Γ decl.scope}
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    {ts : Args 0 Γ (con.params (.ofLists qs ps hq hp))}
+    (hts : ValidArgsΓ sig ι ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+    {i j : Nat} (hi : decl.cases[i]? = some (j, T, con)) {r : Grade} {Cs : Motives 0 Γ}
+    {us : Branches 0 Γ} {κ : Universe 0} {C : Term 0 (.var :: Γ)}
+    (hCv : ValidTermΓ sig ι (ctx.var (.inst D qs ls ps as)) C (.sort κ))
+    {u : Term 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)}
+    (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+    (hub : ValidTermΓ sig ι (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
+      (C.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp)))) :
+    ValidEqTermΓ sig ι ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
+      (u.instantiate ts) (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms))) := by
+  obtain ⟨hsig, -⟩ := hent.hasDeclaredType h
+  have hD := h.2.2
+  subst hD
+  have hctx := has.1
+  have hd := hctx.distinct
+  have hct := ValidEqTermΓ.ctor hent h hc hq hl hl hp has (fun _ => Level.equivalence.refl _) hts
+  refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
+  · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
+      Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+    exact hCv.motive hσ (hct.2 σ₁ σ₂ hσ)
+  have hb := hub.2 _ _ ((EqSubst.append_append_iff ctx _ σ₁ σ₂ (ts.subst σ₁).toSubst
+    (ts.subst σ₂).toSubst).2 ⟨hσ, hts.2 σ₁ σ₂ hσ⟩)
+  rw [Term.atCtor_subst_append] at hb
+  rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _), Term.instantiate_subst,
+    Term.instantiate_eq_subst, Term.subst_append]
+  show ValidEqTerm₀ sig ι (.recursor r T.name qs ls ps (as.subst σ₁)
+    (.ctor T.name qs ls ps (as.subst σ₁) con.name (ts.terms.subst σ₁)) (Cs.subst σ₁) (us.subst σ₁))
+    _ ((C.subst (Subst.lift σ₁)).subst₀
+      (Subst₀.single (.ctor T.name qs ls ps (as.subst σ₁) con.name (ts.terms.subst σ₁))))
+  rw [← Args.terms_subst]
+  exact (ValidEqTerm₀.red_iff hd (Red.iota_subst hsig hi σ₁ (ts.subst σ₁) hu)).2 hb
+
 /-! ## Entries of the Signature -/
 
 /-- A judgment in the empty context is its closed judgment, at the substitution of no variable. -/

@@ -172,6 +172,9 @@ theorem Ownership.var₀_le {sig : Signature} {k : Nat} {Γ : Scope} {φ : Var �
   | _, _, .secondOrder _ _, he => by cases he
   | _, _, .const _, he => by cases he
   | _, _, .sort, he => by cases he
+  | _, _, .inst, he => by cases he
+  | _, _, .ctor .., he => by cases he
+  | _, _, .recursor .., he => by cases he
   | _, _, .sub h hle, he => Grade.le_trans _ _ _ hle (Ownership.var₀_le h he)
 
 /-- The ownership of an application `X[t̄]` of a second-order variable gives ownerships to its
@@ -185,6 +188,9 @@ theorem Ownership.secondOrder_inv {sig : Signature} {k : Nat} {Γ : Scope}
   | _, _, .secondOrder hts _, he => by cases he; exact ⟨_, hts⟩
   | _, _, .const _, he => by cases he
   | _, _, .sort, he => by cases he
+  | _, _, .inst, he => by cases he
+  | _, _, .ctor .., he => by cases he
+  | _, _, .recursor .., he => by cases he
   | _, _, .sub h _, he => Ownership.secondOrder_inv h he
 
 /-- `U₀` is not a term of `U₀`: by the soundness of the typing, the equality of the canonical type

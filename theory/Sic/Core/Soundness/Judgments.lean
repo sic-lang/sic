@@ -166,6 +166,33 @@ where
         (fun _ => Level.equivalence.refl _) (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
+    | .recursor (ls := ls) (T := T) (t := t) (C := C) h hq hl hp ht hh hC _ _ hCt _ hus hut hκ =>
+      fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have ht' := hasType hd hι ht ρ
+      have hCv := hasType hd hι (hCt _ T C hh hC) ρ
+      simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at ht' hCv
+      rw [h.2.2] at hCv
+      simp only [Term.atLevels]
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)]
+      simp only [Term.substLevels]
+      exact ValidEqTermΓ.recursor hι h hq hl' hp ht' hh (Motives.get_substLevels_of _ hC) hCv
+        (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
+          obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+          obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
+          obtain ⟨u₀', hu₀', rfl⟩ := Branches.get_substLevels _ hu₂
+          cases Branches.get_inj hu₀ hu₀'
+          have hb := hasType hd hι (hut i j T' con C₀ u₀ hi hC₀ hu₀) ρ
+          simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
+            Constructor.fieldsAt_substLevels] at hb
+          erw [Term.atCtor_substLevels] at hb
+          rw [List.getFin_map]
+          exact hb)
+        hκ
     | .conv ht h => fun ρ => (hasType hd hι ht ρ).conv (eqType hd hι h ρ)
   eqTerm {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
       {t u A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
@@ -229,6 +256,58 @@ where
         (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
+    | .recursor (ls₁ := ls₁) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ _ hp _ _ ht hh hC _ _ _ hCs₂
+        hCt _ _ hus₁ hus₂ hut hκ => fun ρ => by
+      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₁
+      have ht' := eqTerm hd hι ht ρ
+      obtain ⟨C₂, hC₂⟩ := hCs₂ _ T hh
+      have hCv := eqTerm hd hι (hCt _ T C₁ C₂ hh hC hC₂) ρ
+      simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at ht' hCv
+      rw [h.2.2] at hCv
+      simp only [Term.atLevels]
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)]
+      simp only [Term.substLevels]
+      exact ValidEqTermΓ.recursor hι h hq hl₁' hp ht' hh (Motives.get_substLevels_of _ hC)
+        (hCv.trans hCv.symm)
+        (fun i j T' con hi => let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
+          obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+          obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
+          obtain ⟨u₀', hu₀', rfl⟩ := Branches.get_substLevels _ hu₂
+          have hb := eqTerm hd hι (hut i j T' con C₀ u₀ u₀' hi hC₀ hu₀ hu₀') ρ
+          simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
+            Constructor.fieldsAt_substLevels] at hb
+          erw [Term.atCtor_substLevels] at hb
+          rw [List.getFin_map]
+          exact hb)
+        hκ
+    | .iota (ls := ls) (T := T) (C := C) h hc hq hl hp has hts hi hC hu _ _ hCt _ _ hut _ =>
+      fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have has' := hasInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hts' := hasArgs hd hι hts ρ
+      simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
+      obtain ⟨-, hj⟩ := TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)
+      rw [Nat.sub_zero] at hj
+      have hCv := hasType hd hι (hCt _ T C hj hC) ρ
+      simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
+      rw [h.2.2] at hCv
+      have hub := hasType hd hι (hut _ _ T _ C _ hi hC hu) ρ
+      simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
+        Constructor.fieldsAt_substLevels] at hub
+      erw [Term.atCtor_substLevels] at hub
+      simp only [Term.atLevels]
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels (fun i => .ofNat (ρ i))
+        (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate]
+      simp only [Term.substLevels, ← Args.terms_substLevels]
+      exact ValidEqTermΓ.iota hι h hc hq hl' hp (by rw [List.getFin_map]; exact has')
+        (by rw [List.getFin_map]; exact hts') hi hCv (Branches.get_substLevels_of _ hu)
+        (by rw [List.getFin_map]; exact hub)
   hasArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ

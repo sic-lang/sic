@@ -290,6 +290,36 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
       (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
       HasType sig ctx (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as)
+  -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
+  /-- A recursor on a term of the instance it carries, with a motive for each type of the block, a
+  type of the sort `κ` over a term of the instance of this type, and a branch for each case of the
+  block, a term of the motive of its type at its constructor applied to the variables of its
+  fields, has the motive of the type of the term at the term; the motives on a block of
+  propositions that has a constructor are propositions.
+  The positions `h'` of the type of the term in the block, `j` of a type and `i` of a case give the
+  motives and the branches, as the order of the declaration does.
+  RFC: `\mathsf{rec}` -/
+  | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
+      {C : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T) (hq : qs.length = decl.sorts)
+      (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.types[h']? = some T)
+      (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.types.length)
+      (hCs : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C', decl.types[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+        HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
+      (hul : us.length = decl.cases.length)
+      (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
+        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
+          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+        κ.quality = .prop) :
+      HasType sig ctx (.recursor r D qs ls ps as t Cs us) (C.subst₀ (Subst₀.single t))
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
   RFC: `\mathsf{conv}` -/
@@ -387,6 +417,78 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hts : EqArgs sig ctx ts us (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)) :
       EqTerm sig ctx (.ctor D qs ls₁ ps as₁ con.name ts.terms)
         (.ctor D qs ls₂ ps as₂ con.name us.terms) (.inst D qs ls₁ ps as₁)
+  -- ADE: `natrec-cong`, `prodrec-cong`, `unitrec-cong` and `emptyrec-cong`, in
+  -- `Definition/Typed.agda`.
+  /-- Two recursors at equal arguments of the instance, at equal levels, on equal terms, with equal
+  motives and equal branches, are equal.
+  RFC: `\mathsf{rec}_\equiv` -/
+  | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
+      {r : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
+      {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T)
+      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : EqInstanceArgs sig ctx as₁ as₂
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+      (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+      (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.types[h']? = some T)
+      (hC : Cs₁.get h' = some ⟨0, C₁⟩) (hCl₁ : Cs₁.length = decl.types.length)
+      (hCl₂ : Cs₂.length = decl.types.length)
+      (hCs₁ : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
+      (hCs₂ : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs₂.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C₁' C₂', decl.types[j]? = some T' → Cs₁.get j = some ⟨0, C₁'⟩ →
+        Cs₂.get j = some ⟨0, C₂'⟩ →
+        EqTerm sig (ctx.var (.inst T'.name qs ls₁ ps as₁)) C₁' C₂' (.sort κ))
+      (hul₁ : us₁.length = decl.cases.length) (hul₂ : us₂.length = decl.cases.length)
+      (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
+        Cs₁.get j = some ⟨0, C'⟩ →
+        us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₁⟩ →
+        us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₂⟩ →
+        EqTerm sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)) u₁ u₂
+          (C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))))
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+        κ.quality = .prop) :
+      EqTerm sig ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
+        (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁))
+  -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
+  /-- A recursor on a constructor applied to arguments of its fields, with the premises of `(rec)`,
+  is equal to the branch of the constructor, the case `i` of the block, with the arguments
+  substituted for the variables of the fields.
+  RFC: `\iota` -/
+  | iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
+      {C : Term k (.var :: Γ)} (h : sig.HasDeclaredType D decl T) (hc : con ∈ T.constructors)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      {u : Term k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)}
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
+      (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+      (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
+      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hCl : Cs.length = decl.types.length)
+      (hCs : ∀ j T', decl.types[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C', decl.types[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+        HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
+      (hul : us.length = decl.cases.length)
+      (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
+        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
+          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+        κ.quality = .prop) :
+      EqTerm sig ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
+        (u.instantiate ts) (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
 
 /-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
 after it, whose grades typing ignores. -/
@@ -637,6 +739,7 @@ where
     | .prop hctx => wfCtx hctx
     | .inst _ _ _ _ has => hasInstanceArgs has
     | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
+    | .recursor _ _ _ _ ht .. => hasType ht
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -652,6 +755,8 @@ where
     | .prop hctx _ => wfCtx hctx
     | .inst _ _ _ _ _ has _ => eqInstanceArgs has
     | .ctor _ _ _ _ _ _ has _ _ => eqInstanceArgs has
+    | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
+    | .iota _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
