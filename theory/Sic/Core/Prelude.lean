@@ -98,8 +98,8 @@ def Prelude.stepNext : Constructor 1 3 2 Prelude.stepScope where
   params ι := [⟨ι.grades 0, Grade.one⟩]
   fields ι := .cons Grade.zero ⟨ι.grades 0, Grade.one⟩ (.var₀ (.succ .zero)) .nil
 
-/-- `done : (x : B ▶ q; 00ᵖ ◀ ρ)`, the constructor of a term already built, which requires the
-ownership `ρ`. -/
+/-- `done : (x : B ▶ q; 00ᵖ ◀ r)`, the constructor of a term already built, which requires the
+ownership `r`. -/
 def Prelude.stepDone : Constructor 1 3 2 Prelude.stepScope where
   name := "done"
   params ι := [⟨ι.grades 1, ι.grades 2⟩]
@@ -112,11 +112,11 @@ def Prelude.stepType : DataType 1 3 2 Prelude.stepScope :=
     constructors := [Prelude.stepNext, Prelude.stepDone] }
 
 -- ADE: none.
-/-- `data.{s; l₁, l₂; p, q, ρ | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}
-where Step ▶ 00ᵞ • p • q ≔ next : (x : A ▶ p; 00ᵖ ◀ 11ᵖ) | done : (x : B ▶ q; 00ᵖ ◀ ρ)`: the type
+/-- `data.{s; l₁, l₂; p, q, r | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}
+where Step ▶ 00ᵞ • p • q ≔ next : (x : A ▶ p; 00ᵖ ◀ 11ᵖ) | done : (x : B ▶ q; 00ᵖ ◀ r)`: the type
 of the positions of a corecursor, either a new state of `A`, used with the grade `p`, of the
 ownership of a new value, or a term of `B`, of any sort, already built, used with the grade `q`, of
-the ownership `ρ`, in a universe; the constraint admits the instances where a proposition `B` has a
+the ownership `r`, in a universe; the constraint admits the instances where a proposition `B` has a
 grade without use at run time.
 RFC: `\mathsf{prelude}.\mathsf{Step}` -/
 def Prelude.step : TypeDeclaration where
@@ -431,15 +431,16 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
 abbrev Prelude.stepArgs {Γ : Scope} (A B : Term k Γ) : InstanceArgs k Γ Prelude.stepScope :=
   .snoc (.snoc .nil A) B
 
-/-- `Step.{s; l₁, l₂; p, q, ρ} (A, B)`: an instance of the type of positions. -/
-abbrev Prelude.stepInst {Γ : Scope} (s : Quality) (l₁ l₂ : Level k) (p q ρ : Grade)
+/-- `Step.{s; l₁, l₂; p, q, r} (A, B)`: an instance of the type of positions. -/
+abbrev Prelude.stepInst {Γ : Scope} (s : Quality) (l₁ l₂ : Level k) (p q r : Grade)
     (A B : Term k Γ) : Term k Γ :=
-  .inst "Step" [s] [l₁, l₂] [p, q, ρ] (Prelude.stepArgs A B)
+  .inst "Step" [s] [l₁, l₂] [p, q, r] (Prelude.stepArgs A B)
 
 -- ADE: none.
 /-- `q_s`: the grade of a term already built of a position, of the quality `s`: `11ᵖ` in a universe,
 and `01ᵖ`, without use at run time, in a universe of propositions, as the constraint of the type of
-positions requires. -/
+positions requires.
+RFC: `q_s` -/
 def Prelude.doneGrade : Quality → Grade
   | .type => Grade.one
   | .prop => Grade.noneLinear
@@ -460,7 +461,8 @@ def States.stateOf {Γ : Scope} (names : List Name) (Ss : States k Γ) (D : Name
 /-- `Step.{s; level_κ̄(l), l'; r, q_s, χ} (⟨Θ⟩_{κ̄; l}, T)`, with `l = level_κ̄(0)`: the type of the
 positions of a corecursor of the grade `r` whose state `Θ`, whose entries live in the sorts `κ̄`,
 packs into a universe, and of the terms of `T`, of the sort `κ = s_{l'}`, that the ownership `χ`
-requires. -/
+requires.
+RFC: `\mathsf{pos}` -/
 def Term.positions {Γ : Scope} {ps : List Parameter} (κ : Universe k) (r χ : Grade)
     (S : Telescope k Γ ps) (κs : List (Universe k)) (T : Term k Γ) : Term k Γ :=
   Prelude.stepInst κ.quality (Telescope.packLevel κs (Telescope.packLevel κs .zero)) κ.level r
@@ -470,7 +472,8 @@ def Term.positions {Γ : Scope} {ps : List Parameter} (κ : Universe k) (r χ : 
 /-- `pos_{Θ̄}(B, T)`: the type of the branch of a destructor whose declared result is `B` and whose
 result is `T`, at the states `Ss` of the block whose names are `names`: the positions of the state of
 the type of the block that `B` names, of the sort `κ`, with the constant `χ` of the ownership of the
-result, if `B` is an instance of a type of the block, and `T` otherwise. -/
+result, if `B` is an instance of a type of the block, and `T` otherwise.
+RFC: `\mathsf{pos}_{\bar\Theta}` -/
 def Term.branchResult {k' : Nat} {Ψ Γ : Scope} (names : List Name) (B : Term k' Ψ)
     (κ : Universe k) (r χ : Grade) (Ss : States k Γ) (T : Term k Γ) : Term k Γ :=
   match B.blockName names with
@@ -506,7 +509,8 @@ def Term.resume {Γ Δ : Scope} {ps' : List Parameter} (r : Grade) (D : Name) (q
 `κ`, with the states `Ss` and the branches `gs`, by a destructor whose result is an instance of the
 type `rec` of the block whose names are `names`, if any, and the constant of the ownership of whose
 result is `χ`, at the branch `v` at the state and the arguments: `resume(v)` for the corecursor of
-the instance of `rec`, if the destructor is recursive, and `v` otherwise. -/
+the instance of `rec`, if the destructor is recursive, and `v` otherwise.
+RFC: `\mathsf{resume}_B` -/
 def Term.observed {Γ Δ : Scope} (names : List Name) (rec : Option Name) (r : Grade)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
     (Ss : States k Γ) (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
