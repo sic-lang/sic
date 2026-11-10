@@ -137,6 +137,36 @@ RFC: `\mathsf{identity}_\theta` -/
 def Var.eta {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) : Term k (Γ.extend e.params.length) :=
   .var (x.weakenN e.params.length) (Args.bound e.params)
 
+-- ADE: none.
+/-- `x̄_Δ`: the parameters `Δ` themselves, as the arguments of an instance in their own scope, each
+one an abstraction over its telescope. -/
+def InstanceArgs.identity : (Δ : Scope) → InstanceArgs k Δ Δ
+  | [] => .nil
+  | _ :: Δ => .snoc ((InstanceArgs.identity Δ).rename Ren.weaken) (Var.eta .zero)
+
+-- ADE: none.
+/-- `D.{s̄; l̄; p̄} ā`: the type `D` of the block of the type declaration `decl` at the instance `ι`
+of its sort and grade variables, at its level variables and at the arguments `ā`, the type of a
+recursive field when `ā` are the parameters themselves. -/
+def TypeDeclaration.blockInstance {Γ : Scope} (decl : TypeDeclaration)
+    (ι : Instance decl.sorts decl.grades) (D : Name) (as : InstanceArgs decl.levels Γ decl.scope) :
+    Term decl.levels Γ :=
+  .inst D (List.ofFn ι.sorts) (List.ofFn Level.var) (List.ofFn ι.grades) as
+
+/-- A renamed term is the instance of the same type of a block. -/
+theorem Term.blockName_rename {Γ Δ : Scope} (names : List Name) (ξ : Ren Γ Δ) :
+    (A : Term k Δ) → (A.rename ξ).blockName names = A.blockName names
+  | .var .. | .sort _ | .const .. | .inst .. | .ctor .. | .recursor .. | .obs .. | .corec .. => rfl
+
+/-- A renamed telescope has its recursive fields at the same positions. -/
+theorem Telescope.recursion_rename {Γ Δ : Scope} (names : List Name) :
+    {ps : List Parameter} → (ξ : Ren Γ Δ) → (Θ : Telescope k Δ ps) →
+      (Θ.rename ξ).recursion names = Θ.recursion names
+  | [], _, .nil => rfl
+  | _ :: _, ξ, .cons _ _ A Θ => by
+    rw [Telescope.rename, Telescope.recursion, Telescope.recursion, Term.blockName_rename,
+      Telescope.recursion_rename names (Ren.lift ξ) Θ]
+
 /-! ## Substitutions of the First Order -/
 
 /-- What a substitution of the first order gives a variable whose entry is `e`: a variable with the
@@ -2293,6 +2323,238 @@ theorem Var.split_liftN_empty {Γ : Scope} {e : Scope.Entry} :
         Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z,
         Var.split_liftN_empty (Γ := .var :: Γ) n z]
 
+/-! ### Variables for Variables
+
+A substitution of the first order that gives each variable a variable, as a variable or as a term
+for a variable, is the renaming that these variables make, which shows that the arguments `x̄` of the
+new variables instantiate a term renamed under them as itself, so that `(x̄. x[x̄])[θ] = θ(x)`. -/
+
+/-- The value `v` is the variable `y`, as a variable, or as a term for a variable. -/
+inductive Val.IsVar {Γ : Scope} : {a : Scope.Entry} → Var Γ a → Val k Γ a → Prop where
+  /-- The variable `y`. -/
+  | var {a : Scope.Entry} (y : Var Γ a) : Val.IsVar y (.var y)
+  /-- The term `y[]`. -/
+  | term (y : Var Γ .var) : Val.IsVar y (.term (.var y .nil))
+
+theorem Subst₀.lift_isVar {Γ Δ : Scope} {b : Scope.Entry} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) :
+    ∀ {a} (x : Var (b :: Δ) a), (Subst₀.lift σ x).IsVar (Ren.lift ξ x)
+  | _, .zero => .var _
+  | _, .succ x => by
+    show ((σ x).rename Ren.weaken).IsVar (Var.succ (ξ x))
+    have hx := h x
+    revert hx
+    generalize σ x = v
+    intro hx
+    cases hx with
+    | var => exact .var _
+    | term => exact .term _
+
+theorem Subst₀.liftN_isVar {Γ Δ : Scope} :
+    ∀ (n : Nat) {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}, (∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) →
+      ∀ {a} (x : Var (Δ.extend n) a), (Subst₀.liftN n σ x).IsVar (Ren.liftN n ξ x)
+  | 0, _, _, h => h
+  | n + 1, _, _, h => Subst₀.liftN_isVar (Γ := .var :: Γ) (Δ := .var :: Δ) n (Subst₀.lift_isVar h)
+
+mutual
+
+/-- A substitution that gives each variable a variable renames by them. -/
+theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (t : Term k Δ) → t.subst₀ σ = t.rename ξ
+  | .var x ts => by
+    rw [Term.subst₀_var, Term.rename]
+    have hx := h x
+    revert hx
+    generalize σ x = v
+    intro hx
+    cases hx with
+    | var => rw [Args.subst₀_isVar h ts]; rfl
+    | term => cases ts; rfl
+  | .sort _ => rfl
+  | .const .. => rfl
+  | .inst D qs ls ps as => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as]
+  | .ctor D qs ls ps as c ts => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Terms.subst₀_isVar h ts]
+  | .recursor r D qs ls ps as t Cs us => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Term.subst₀_isVar h t,
+      Motives.subst₀_isVar h Cs, Branches.subst₀_isVar h us]
+  | .obs D qs ls ps as t d bs => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Term.subst₀_isVar h t,
+      Terms.subst₀_isVar h bs]
+  | .corec r D qs ls ps as ss Ss vs => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Terms.subst₀_isVar h ss,
+      States.subst₀_isVar h Ss, CorecBranches.subst₀_isVar h vs]
+
+theorem Args.subst₀_isVar {Γ Δ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (ts : Args k Δ a) → ts.subst₀ σ = ts.rename ξ
+  | .nil => rfl
+  | .cons t ts => by rw [Args.rename, Args.subst₀, Term.subst₀_isVar h t, Args.subst₀_isVar h ts]
+
+theorem InstanceArgs.subst₀_isVar {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) :
+    (as : InstanceArgs k Δ Ξ) → as.subst₀ σ = as.rename ξ
+  | .nil => rfl
+  | .snoc as B => by
+    rw [InstanceArgs.rename, InstanceArgs.subst₀, InstanceArgs.subst₀_isVar h as,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) B]
+
+theorem Terms.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (ts : Terms k Δ) → ts.subst₀ σ = ts.rename ξ
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.rename, Terms.subst₀, Terms.subst₀_isVar h ts, Term.subst₀_isVar h t]
+
+theorem Motives.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (Cs : Motives k Δ) → Cs.subst₀ σ = Cs.rename ξ
+  | .nil => rfl
+  | .cons n C Cs => by
+    rw [Motives.rename, Motives.subst₀, Motives.subst₀_isVar h Cs,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) C]
+
+theorem Branches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (us : Branches k Δ) → us.subst₀ σ = us.rename ξ
+  | .nil => rfl
+  | .cons n m u us => by
+    rw [Branches.rename, Branches.subst₀, Branches.subst₀_isVar h us,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) u]
+
+theorem Telescope.subst₀_isVar {Γ Δ : Scope} {ps : List Parameter} {σ : Subst₀ k Γ Δ}
+    {ξ : Ren Γ Δ} (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) :
+    (Θ : Telescope k Δ ps) → Θ.subst₀ σ = Θ.rename ξ
+  | .nil => rfl
+  | .cons q p A Θ => by
+    rw [Telescope.rename, Telescope.subst₀, Telescope.subst₀_isVar (Subst₀.lift_isVar h) Θ,
+      Term.subst₀_isVar h A]
+
+theorem States.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (Ss : States k Δ) → Ss.subst₀ σ = Ss.rename ξ
+  | .nil => rfl
+  | .cons n S Ss => by
+    rw [States.rename, States.subst₀, States.subst₀_isVar h Ss,
+      Telescope.subst₀_isVar (Subst₀.liftN_isVar _ h) S]
+
+theorem CorecBranches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) :
+    (vs : CorecBranches k Δ) → vs.subst₀ σ = vs.rename ξ
+  | .nil => rfl
+  | .cons n m a v vs => by
+    rw [CorecBranches.rename, CorecBranches.subst₀, CorecBranches.subst₀_isVar h vs,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ h))) v]
+
+end
+
+/-- A substitution of the first order under `n` new variables gives the new variables themselves. -/
+theorem Subst₀.liftN_empty {Γ : Scope} :
+    ∀ (n : Nat) (σ : Subst₀ k Γ []) {a : Scope.Entry} (z : Var (Scope.extend [] n) a),
+      Subst₀.liftN n σ z = .var (Ren.liftN n Ren.empty z)
+  | 0, _, _, z => nomatch z
+  | n + 1, σ, _, z => by
+    rcases Var.cases_extend (Γ := [.var]) n z with ⟨y, rfl⟩ | ⟨z, rfl⟩
+    · cases y with
+      | zero =>
+        show Subst₀.liftN n (Subst₀.lift σ) (Var.weakenN n .zero) =
+          .var (Ren.liftN n (Ren.lift Ren.empty) (Var.weakenN n .zero))
+        rw [Subst₀.liftN_weakenN, Ren.liftN_weakenN]
+        rfl
+      | succ y => nomatch y
+    · show Subst₀.liftN n (Subst₀.lift σ) (Ren.liftN n Ren.empty z) =
+        .var (Ren.liftN n (Ren.lift Ren.empty) (Ren.liftN n Ren.empty z))
+      rw [Subst₀.liftN_rename_of n (σ' := fun y => Subst₀.lift σ (Ren.empty y)) (fun _ => rfl),
+        Subst₀.liftN_empty (Γ := .var :: Γ) n _ z,
+        Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z]
+
+/-- The arguments `x̄` of the new variables give, under them, the variable of a term renamed under
+them. -/
+theorem Args.bound_toSubst₀_isVar :
+    (ps : List Parameter) → {Γ : Scope} → ∀ {a} (x : Var (Γ.extend ps.length) a),
+      ((Args.bound (k := k) (Γ := Γ) ps).toSubst₀
+        (Ren.liftN ps.length (Ren.weakenN ps.length) x)).IsVar x
+  | [], _, _, _ => .var _
+  | _ :: ps, Γ, a, x => by
+    have key : ∀ x : Var (Scope.extend (.var :: Γ) ps.length) a,
+        (Val.subst₀ (Args.bound (k := k) (Γ := .var :: Γ) ps).toSubst₀
+          (Subst₀.liftN ps.length (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)))
+            (Ren.liftN ps.length (Ren.lift (Ren.weakenN (Γ := Γ) (ps.length + 1))) x))).IsVar x := by
+      intro x
+      rcases Var.cases_extend (Γ := .var :: Γ) ps.length x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+      · erw [Ren.liftN_weakenN, Subst₀.liftN_weakenN]
+        cases y with
+        | zero =>
+          have hv : Val.subst₀ (Args.bound (k := k) (Γ := .var :: Γ) ps).toSubst₀
+              (Val.rename (Ren.weakenN ps.length)
+                (Subst₀.single (Term.var₀ (Var.weakenN ps.length .zero))
+                  (Ren.lift (Ren.weakenN (Γ := Γ) (ps.length + 1)) .zero))) =
+              .term (.var (Var.weakenN ps.length .zero) .nil) := by
+            show Val.term (((Term.var₀ (Var.weakenN ps.length .zero)).rename
+              (Ren.weakenN ps.length)).subst₀ _) = _
+            rw [Term.var₀, Term.rename, Term.subst₀_var, Ren.weakenN, Args.toSubst₀_weakenN]
+            rfl
+          rw [hv]
+          exact .term _
+        | succ y =>
+          have hv : Val.subst₀ (Args.bound (k := k) (Γ := .var :: Γ) ps).toSubst₀
+              (Val.rename (Ren.weakenN ps.length)
+                (Subst₀.single (Term.var₀ (Var.weakenN ps.length .zero))
+                  (Ren.lift (Ren.weakenN (Γ := Γ) (ps.length + 1)) (.succ y)))) =
+              .var (Var.weakenN ps.length (Var.succ y)) := by
+            show (Args.bound (k := k) (Γ := .var :: Γ) ps).toSubst₀
+              (Var.weakenN ps.length (Var.weakenN ps.length (Var.succ y))) = _
+            rw [Args.toSubst₀_weakenN]
+          rw [hv]
+          exact .var _
+      · have hz : Ren.liftN ps.length (Ren.lift (Ren.weakenN (Γ := Γ) (ps.length + 1)))
+            (Ren.liftN ps.length (Ren.empty (Γ := .var :: Γ)) z) =
+            Ren.liftN ps.length Ren.empty z :=
+          Ren.liftN_comp_of ps.length (ξ₃ := Ren.empty) (fun y => nomatch y) z
+        erw [hz, Subst₀.liftN_rename_of ps.length
+          (σ' := fun y => Subst₀.single (.var₀ (Var.weakenN ps.length .zero)) (Ren.empty y))
+          (fun _ => rfl), Subst₀.liftN_empty]
+        have := (Args.bound_toSubst₀_isVar ps (Γ := .var :: Γ) : _)
+          (Ren.liftN ps.length Ren.empty z)
+        rwa [Ren.liftN_comp_of ps.length (ξ₃ := Ren.empty) (fun y => nomatch y) z] at this
+    exact key x
+
+/-- `B[ξ⇑][x̄ / x̄] = B`: a term renamed under new variables, then instantiated by them, is itself. -/
+theorem Term.instantiate_bound_rename {Γ : Scope} (ps : List Parameter)
+    (B : Term k (Γ.extend ps.length)) :
+    (B.rename (Ren.liftN ps.length (Ren.weakenN ps.length))).instantiate (Args.bound ps) = B := by
+  rw [Term.instantiate_eq_subst₀, Term.subst₀_rename_of (fun _ => rfl),
+    Term.subst₀_isVar (ξ := fun x => x) (Args.bound_toSubst₀_isVar ps), Term.rename_id]
+
+/-- `(x̄. x[x̄])[θ⇑] = θ(x)`: the variable `x`, as an abstraction, substituted by `θ`, is what `θ` gives
+it.
+RFC: `\mathsf{identity}_\theta` -/
+theorem Var.eta_subst {Γ Δ : Scope} {e : Scope.Entry} (θ : Subst k Γ Δ) (x : Var Δ e) :
+    (Var.eta x).subst (Subst.liftN e.params.length θ) = θ x := by
+  rw [Var.eta, Term.subst, Subst.liftN_weakenN, Args.bound_subst, Term.instantiate_bound_rename]
+
+/-- `[x̄_Δ / Δ][θ]`: the parameters themselves, substituted by `θ`, give each parameter what `θ`
+gives it. -/
+theorem InstanceArgs.identity_subst {Γ : Scope} :
+    {Δ : Scope} → (θ : Subst k Γ Δ) → ∀ {a} (x : Var Δ a),
+      ((InstanceArgs.identity Δ).subst θ).toSubst x = θ x
+  | _ :: _, θ, _, .zero => Var.eta_subst θ .zero
+  | _ :: _, θ, _, .succ x => by
+    show (((InstanceArgs.identity _).rename Ren.weaken).subst θ).toSubst x = θ x.succ
+    rw [InstanceArgs.subst_rename_of (ξ := Ren.weaken) (θ' := fun y => θ y.succ) (fun _ => rfl)]
+    exact InstanceArgs.identity_subst (fun y => θ y.succ) x
+
+/-- Arguments of an instance with the same substitution are the same. -/
+theorem InstanceArgs.toSubst_inj {Γ : Scope} :
+    {Δ : Scope} → {as₁ as₂ : InstanceArgs k Γ Δ} → (∀ {a} (x : Var Δ a), as₁.toSubst x = as₂.toSubst x) →
+      as₁ = as₂
+  | [], .nil, .nil, _ => rfl
+  | _ :: _, .snoc as₁ B₁, .snoc as₂ B₂, h => by
+    have h₀ : B₁ = B₂ := h .zero
+    rw [h₀, InstanceArgs.toSubst_inj fun x => h (.succ x)]
+
+/-- `x̄_Δ[ā / Δ] = ā`: the parameters themselves, substituted by the arguments of an instance, are
+these arguments. -/
+theorem InstanceArgs.identity_subst_toSubst {Γ Δ : Scope} (as : InstanceArgs k Γ Δ) :
+    (InstanceArgs.identity Δ).subst as.toSubst = as :=
+  InstanceArgs.toSubst_inj fun x => InstanceArgs.identity_subst as.toSubst x
+
 /-- `(θ₁, θ₂)` gives the variables of `Γ` what `θ₁` gives them. -/
 theorem Subst.append_weakenN {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
     (θ₂ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (y : Var Γ a) :
@@ -2885,6 +3147,15 @@ theorem Args.substLevels_bound {k' : Nat} (ls' : Fin k → Level k') :
 theorem Var.eta_substLevels {k' : Nat} {Γ : Scope} {e : Scope.Entry} (ls' : Fin k → Level k')
     (x : Var Γ e) : (Var.eta x : Term k _).substLevels ls' = Var.eta x := by
   rw [Var.eta, Term.substLevels, Args.substLevels_bound, Var.eta]
+
+/-- The parameters themselves have no level. -/
+theorem InstanceArgs.identity_substLevels {k' : Nat} (ls' : Fin k → Level k') :
+    (Δ : Scope) → (InstanceArgs.identity (k := k) Δ).substLevels ls' = InstanceArgs.identity Δ
+  | [] => rfl
+  | _ :: Δ => by
+    rw [InstanceArgs.identity, InstanceArgs.substLevels, InstanceArgs.substLevels_rename,
+      InstanceArgs.identity_substLevels ls' Δ, Var.eta_substLevels]
+    rfl
 
 theorem Subst.lift_substLevels_of {k' : Nat} {Γ Δ : Scope} {b : Scope.Entry}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}

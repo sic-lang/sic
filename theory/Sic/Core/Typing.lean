@@ -294,8 +294,9 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
       HasType sig ctx (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as)
   -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
-  /-- A recursor on a term of the instance it carries, with a motive for each type of the block, a
-  type of the sort `κ` over a term of the instance of this type, and a branch for each case of the
+  /-- A recursor on a term of the instance it carries, whose arguments are arguments of the
+  parameters, with a motive for each type of the block, a type of the sort `κ` over a term of the
+  instance of this type, and a branch for each case of the
   block, a term of the motive of its type at its constructor applied to the variables of its
   fields, has the motive of the type of the term at the term; the motives on a block of
   propositions that has a constructor are propositions.
@@ -308,6 +309,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.dataTypes[h']? = some T)
       (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.dataTypes.length)
       (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
@@ -654,6 +657,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as))
       (he : HasType sig (ctx.var (.inst D qs ls ps as)) e C)
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
@@ -911,14 +916,59 @@ inductive WfDestructors : Signature → {k : Nat} → {Γ : Scope} → {ns : Lis
 
 -- ADE: none.
 /--
+`Σ; Γ ⊢_𝒟 Θ : κ`: the fields `Θ` of a constructor of the block of data types `decl`, at the instance
+`ι` of its sort and grade variables, live in the sort `κ`, in the context `Γ` of the parameters
+extended by the fields before them that are not recursive, where `ā` are the parameters
+themselves.
+A field whose type is an instance of a type of the block is recursive: its type is this type at the
+instance of the block, at its level variables and at the parameters themselves, and no field after
+it depends on it, so that it does not extend the context.
+The type of a field that is not recursive lives in a sort that `κ` bounds, with a grade without use
+at run time if it is a proposition, in the signature `Σ`, which the block does not extend, so that no
+type of the block occurs in it.
+-/
+inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
+    {Γ : Scope} → InstanceArgs decl.levels Γ decl.scope → Context decl.levels Γ →
+    {ps : List Parameter} →
+    Telescope decl.levels Γ ps → Universe decl.levels → Prop where
+  /-- No field.
+  RFC: `\mathsf{fields}_\varepsilon` -/
+  | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {κ : Universe decl.levels}
+      (hctx : WfCtx sig ctx) : WfFields sig decl ι as ctx .nil κ
+  /-- A first field that is not recursive, whose type lives in a sort that `κ` bounds, and the
+  others, in the context extended by it.
+  RFC: `\mathsf{fields}_{,}` -/
+  | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter} {A : Term decl.levels Γ}
+      {Θ : Telescope decl.levels (.var :: Γ) ps} {κ₁ κ : Universe decl.levels}
+      (hn : A.blockName decl.names = none) (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hΘ : WfFields sig decl ι (as.rename Ren.weaken) (ctx.var A) Θ κ)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx (.cons q p A Θ) κ
+  /-- A first field that is recursive, a type `D` of the block at the instance of the block and at
+  the parameters, with a grade without use at run time if the block is a block of propositions, and
+  the others, which do not depend on it, in the same context.
+  RFC: `\mathsf{fields}_{\mathsf{rec}}` -/
+  | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter} {D : Name} {Θ : Telescope decl.levels Γ ps}
+      {κ : Universe decl.levels} (hD : D ∈ decl.names) (hΘ : WfFields sig decl ι as ctx Θ κ)
+      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx (.cons q p (decl.blockInstance ι D as) (Θ.rename Ren.weaken)) κ
+
+-- ADE: none.
+/--
 `Σ ⊢ 𝒟`: the type declaration is well formed.
 A block of data types is well formed when, for each instance of the sort and grade variables, the
 parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
-constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow; the constructors of
-each type have distinct names.
+constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow, in the signature
+extended by the block; the constructors of each type have distinct names.
+The fields may be recursive, as the judgment of the fields allows.
 A block of codata types likewise, with the destructors of each type in place of its constructors.
-The fields and the destructors are checked in the signature `Σ`, which the block does not extend, so
-that no type of the block occurs in them: the block is not recursive.
+The destructors are checked in the signature `Σ`, which the block does not extend, so that no type of
+the block occurs in them: the block is not recursive.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   /-- A block of data types, with the uses `γ` of the constructors of each type at each instance.
@@ -927,8 +977,9 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       decl.levels decl.scope)} (hb : decl.body = .data Ts)
       (hΔ : ∀ ι, WfCtx sig (decl.params ι))
       (hΘ : ∀ ι, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-        WfTelescope sig (decl.params ι) (c.fields ι) (decl.sort ι))
-      (hu : ∀ ι, ∀ T ∈ decl.dataTypes, ∃ γ, UsageConstructors sig ι γ .oneOne T.constructors ∧
+        WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
+      (hu : ∀ ι, ∀ T ∈ decl.dataTypes, ∃ γ,
+        UsageConstructors (.typeDeclaration decl :: sig) ι γ .oneOne T.constructors ∧
         T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
       WfTypeDeclaration sig decl
@@ -1022,6 +1073,12 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.\bar d` -/
   wfDestructors : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
     {ds : Destructors k Γ ns} {κ : Universe k}, WfDestructors sig ctx ds κ → WfSig sig
+  /-- The fields of a constructor in a sort are in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}` -/
+  wfFields : ∀ {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+    {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+    {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels},
+    WfFields sig decl ι as ctx Θ κ → WfSig sig
   /-- A well-formed type declaration is in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}` -/
   wfTypeDeclaration : ∀ {sig : Signature} {decl : TypeDeclaration},
@@ -1040,12 +1097,12 @@ RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
 RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
 RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.\Theta`
 RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`, `\mathsf{presup}_\Sigma.\bar d`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`, `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}`
 RFC: `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, eqTelescope, wfDestructors, wfTypeDeclaration,
-    tail⟩
+    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, eqTelescope, wfDestructors, wfFields,
+    wfTypeDeclaration, tail⟩
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
@@ -1077,7 +1134,7 @@ where
     | .prop hctx => wfCtx hctx
     | .inst _ _ _ _ has => hasInstanceArgs has
     | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
-    | .recursor _ _ _ _ ht .. => hasType ht
+    | .recursor _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
@@ -1098,7 +1155,7 @@ where
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaCtor _ _ _ _ _ ht .. => hasType ht
+    | .etaCtor _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
     | .etaObs _ _ _ _ ht .. => hasType ht
@@ -1134,6 +1191,13 @@ where
       {ds : Destructors k Γ ns} {κ : Universe k} : WfDestructors sig ctx ds κ → WfSig sig
     | .nil hctx => wfCtx hctx
     | .cons hΘ .. => wfTelescope hΘ
+  wfFields {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels} :
+      WfFields sig decl ι as ctx Θ κ → WfSig sig
+    | .nil hctx => wfCtx hctx
+    | .cons _ hA _ _ _ => hasType hA
+    | .recursive _ hΘ _ => wfFields hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
     | .data _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))

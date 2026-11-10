@@ -1000,7 +1000,7 @@ theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
-        fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+        fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
   | .codata hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
@@ -1022,7 +1022,7 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
-        fun c hcm => TelRel.levelEquiv ih (hS c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+        fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
   | .codata hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
@@ -1035,17 +1035,20 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
 /-- A telescope whose levels change for equal ones has the same equality of the terms of its
 fields. -/
 theorem TelRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality} {ps : List Parameter}
-    {Θ Θ' : Telescope 0 [] ps} {S : FieldsRel} :
-    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → Telescope.LevelEquiv Θ Θ' →
-      TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ' S
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality}
+    {rs : Nat → Option TermRel} {ps : List Parameter} {Θ Θ' : Telescope 0 [] ps} {S : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S → Telescope.LevelEquiv Θ Θ' →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ' S
   | .nil, .nil => .nil
-  | .cons hA hF G hG hresp, .cons _ _ h hΘ =>
+  | .cons hA hF G hG hresp hrs, .cons _ _ h hΘ =>
     have ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
     .cons hA' (FieldRel.levelEquiv ih hF hv) G
       (fun a ha => TelRel.levelEquiv ih (hG a ha)
         (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a))))
-      hresp
+      hresp hrs
+  | .recursive hrs G hG, .cons _ _ _ hΘ =>
+    .recursive hrs G fun a => TelRel.levelEquiv ih (hG a)
+      (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for
 equal ones, have the same equality of the abstractions for them. -/
@@ -1105,14 +1108,29 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     ⟨R', (levelRel_levelInvariant k).univ h₁ ht, (levelRel_levelInvariant k).univ h₂ hu⟩
   | .prop (k := k) _ _, ⟨b₁, b₂, h₁, h₂, hb⟩, ht, hu =>
     ⟨b₁, b₂, (levelRel_levelInvariant k).prop h₁ ht, (levelRel_levelInvariant k).prop h₂ hu, hb⟩
-  | .data _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
-    obtain ⟨c, hcm, ts, us, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, hcS⟩ := hR
-    cases ht with
+  | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
+    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hmono := fun (X Y : Name → TermRel) (hXY : ∀ D v w, X D v w → Y D v w) =>
+      TelRel.block_mono hd hp (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
+        (F := fun X D => (X D).computed sig ι) hS X Y fun D _ _ => TermRel.computed_mono (hXY D)
+    refine hR (fun D v w => ∀ v' w', Term.LevelEquiv v v' → Term.LevelEquiv w w' →
+        DataType.blockRel _ S D v' w')
+      (fun T hT v w ⟨c, hcm, ts, us, hv, hw, hcS⟩ v' w' hv' hw' => ?_) _ _ ht hu
+    obtain ⟨_, _, _, _, _, rfl⟩ := hv
+    obtain ⟨_, _, _, _, _, rfl⟩ := hw
+    cases hv' with
     | ctor _ _ _ _ _ _ hts =>
-      cases hu with
+      cases hw' with
       | ctor _ _ _ _ _ _ hus =>
-        exact ⟨c, hcm, _, _, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩,
-          TelRel.rel_levelEquiv hd ih (hS c hcm) hcS hts hus⟩
+        exact DataType.blockRel_closed hmono hT ⟨c, hcm, _, _, ⟨_, _, _, _, _, rfl⟩,
+          ⟨_, _, _, _, _, rfl⟩, TelRel.rel_levelEquiv hd ih (hS _ T hT c hcm) _ _ _
+            (hS _ T hT c hcm)
+            (fun _ => Option.rel_map (fun D _ _ _ _ h ht hu => by
+              obtain ⟨v₁, w₁, hc₁, hc₂, hX⟩ := h
+              obtain ⟨v₂, hc₁', hv₂⟩ := Computes.levelEquiv hc₁ ht
+              obtain ⟨w₂, hc₂', hw₂⟩ := Computes.levelEquiv hc₂ hu
+              exact ⟨v₂, w₂, hc₁', hc₂', hX _ _ hv₂ hw₂⟩) _)
+            hcS hts hus⟩
   | .codata _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
     obtain ⟨o₁, o₂, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩,
       hS'⟩ := hR
@@ -1128,20 +1146,45 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
             ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
 
 /-- The equality of the terms of the fields of a telescope relates the terms whose levels change
-for equal ones. -/
+for equal ones, at relations of the recursive fields that do. -/
 theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s : Quality}
-    {ps : List Parameter} {Θ : Telescope 0 [] ps} {S : FieldsRel} {ts us ts' us' : Terms 0 []} :
-    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → S ts us → Terms.LevelEquiv ts ts' →
-      Terms.LevelEquiv us us' → S ts' us'
-  | .nil, h, .nil, .nil => h
-  | .cons _ hF G hG hresp, h, .cons ht hts, .cons hu hus => by
-    obtain ⟨h₁, h₂⟩ := h
-    have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
-    have htt := hFp.trans h₁ (hFp.symm h₁)
-    exact ⟨FieldRel.rel_levelEquiv hd ih hF h₁ ht hu,
-      (hresp _ _ (FieldRel.rel_levelEquiv hd ih hF htt (Term.LevelEquiv.refl _) ht) _ _).1
-        (TelRel.rel_levelEquiv hd ih (hG _ htt) h₂ hts hus)⟩
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s₁ : Quality}
+    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps} {S₁ : FieldsRel}
+    {ts us ts' us' : Terms 0 []} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
+        (∀ i, Option.Rel (fun R₁ R₂ => ∀ t u t' u', R₁ t u → Term.LevelEquiv t t' →
+          Term.LevelEquiv u u' → R₂ t' u') (rs₁ i) (rs₂ i)) →
+        S₁ ts us → Terms.LevelEquiv ts ts' → Terms.LevelEquiv us us' → S₂ ts' us'
+  | .nil, _, _, _, h', _, h, .nil, .nil => by cases h'; exact h
+  | .cons hA hF _ hG _ hrs, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
+    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    cases h' with
+    | cons hA' hF' _ hG' hresp' _ =>
+      cases Computesι.det hd hA hA'
+      obtain ⟨h₁, h₂⟩ := h
+      have hFF := FieldRel.unique hd hp hF _ _ hF'
+      have hFp := FieldRel.isPer hd hp hF
+      have htt := hFp.trans h₁ (hFp.symm h₁)
+      have htt' := FieldRel.rel_levelEquiv hd ih hF htt (Term.LevelEquiv.refl _) ht
+      exact ⟨(hFF _ _).1 (FieldRel.rel_levelEquiv hd ih hF h₁ ht hu),
+        (hresp' _ _ ((hFF _ _).1 htt') _ _).1
+          (TelRel.rel_levelEquiv hd ih (hG _ htt) _ _ _ (hG' _ ((hFF _ _).1 htt))
+            (fun i => hR (i + 1)) h₂ hts hus)⟩
+    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive hrs _ hG, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
+    cases h' with
+    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        obtain ⟨h₁, h₂⟩ := h
+        exact ⟨hr _ _ _ _ h₁ ht hu,
+          TelRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1)) h₂
+            hts hus⟩
 
 /-- The equality of the abstractions for destructors relates the observations whose levels change
 for equal ones. -/
@@ -1154,7 +1197,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       (∀ d ps, Term.LevelEquiv (o₂ d ps) (o₂' d ps)) → S o₁' o₂'
   | .nil, h, _, _ => h
   | .cons (d := d) (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG hresp, ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) hΘ
+    have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) (fun _ _ h => by cases h) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts
         FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) (hF ts hts _ hv)) hBresp

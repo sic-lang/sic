@@ -56,6 +56,13 @@ theorem DataType.ctorRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope} {D :
   obtain ⟨_, _, _, _, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, _⟩ := h
   exact ⟨.ctor _ _ _ _ _ _ _, .ctor _ _ _ _ _ _ _⟩
 
+/-- `(eq_μ)` relates canonical terms: constructors, since the relations that relate canonical
+terms are closed under `(eq_c)`. -/
+theorem DataType.blockRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope}
+    {Ts : List (DataType j g k Δ)} {S : (Name → TermRel) → Constructor j g k Δ → FieldsRel}
+    {D : Name} {v w : Term 0 []} (h : DataType.blockRel Ts S D v w) : Whnf sig' v ∧ Whnf sig' w :=
+  h (fun _ v w => Whnf sig' v ∧ Whnf sig' w) fun _ _ _ _ hc => DataType.ctorRel_whnf hc
+
 /-- `(eq_d)` relates canonical terms: corecursors. -/
 theorem corecRel_whnf {sig' : Signature} {D : Name} {S : ObsRel} {v w : Term 0 []}
     (h : corecRel D S v w) : Whnf sig' v ∧ Whnf sig' w := by
@@ -73,7 +80,7 @@ theorem HasEq.canonical {sig : Signature} {ι : Interpretation} {v w₁ w₂ : T
     | prop =>
       obtain ⟨_, _, h₁, h₂, -⟩ := hvw
       exact ⟨(levelRel_prop_iff.1 h₁).whnf, (levelRel_prop_iff.1 h₂).whnf⟩
-    | data => exact DataType.ctorRel_whnf hvw
+    | data => exact DataType.blockRel_whnf hvw
     | codata => exact corecRel_whnf hvw
   | .prop k b h _, hn, _ => absurd ⟨k, b, h⟩ hn
 

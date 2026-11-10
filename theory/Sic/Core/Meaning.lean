@@ -184,6 +184,26 @@ def DataType.truth {j g k : Nat} {Δ : Scope} (T : DataType j g k Δ)
     (S : Constructor j g k Δ → FieldsRel) : Prop :=
   ∃ c ∈ T.constructors, ∃ ts, S c ts ts
 
+/-- `(eq_μ)`: the equality of the canonical terms of the instances of the data types `Ts` of a block,
+the least relations, one for each type, that relate the canonical terms that `(eq_c)` relates, when
+the equality `S X c` of the terms of the fields of each constructor `c` relates the terms of its
+recursive fields by the relations `X`: they are related by every relations `X` closed under these
+clauses.
+RFC: `\mathsf{eq}_\mu` -/
+def DataType.blockRel {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → TermRel) → Constructor j g k Δ → FieldsRel) (D : Name) : TermRel :=
+  fun v w => ∀ X : Name → TermRel,
+    (∀ T ∈ Ts, ∀ v w, T.ctorRel T.name (S X) v w → X T.name v w) → X D v w
+
+/-- `(true_μ)`: the truth of the propositions declared as the data types `Ts` of a block, the least
+truths, one for each type, that `(true_D)` gives, when the equality `S B c` of the terms of the fields
+of each constructor `c` reads the truths `B` of its recursive fields: true when every truths `B`
+closed under these clauses are.
+RFC: `\mathsf{true}_\mu` -/
+def DataType.blockTruth {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → Prop) → Constructor j g k Δ → FieldsRel) (D : Name) : Prop :=
+  ∀ B : Name → Prop, (∀ T ∈ Ts, T.truth (S B) → B T.name) → B D
+
 /-- Closed abstractions, one for each destructor, found by its name and the parameters of its
 arguments: the observations of a closed term of a codata type, or what the destructors of the type
 relate. -/
@@ -245,8 +265,9 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
         ∃ b₁ b₂, (below k (hk ▸ Nat.lt_succ_self k)).prop P b₁ ∧
           (below k (hk ▸ Nat.lt_succ_self k)).prop Q b₂ ∧ (b₁ ↔ b₂)
   /-- `(ty_D)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `U_n`, whose
-  constructors have fields that are telescopes in `U_n`, and whose canonical terms are equal by
-  `(eq_c)`.
+  block has types whose constructors have fields that are telescopes in `U_n`, whatever the
+  relations `X` of the instances of the types of the block at their recursive fields, and whose
+  canonical terms are equal by `(eq_μ)`.
   RFC: `\mathsf{ty}_D` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -255,10 +276,13 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
-      (hS : ∀ c ∈ T.constructors,
-        TelRel sig ι n below .type (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
-      UnivRel sig ι n below v (T.ctorRel D S)
+      (S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
+      (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
+        TelRel sig ι n below .type
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
+      UnivRel sig ι n below v (DataType.blockRel decl.dataTypes S D)
   /-- `(ty_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
   destructors are in `U_n` at the arguments `ā`, and whose canonical terms are equal by `(eq_d)`.
   RFC: `\mathsf{ty}_d` -/
@@ -283,7 +307,9 @@ relations `below` of the levels below `n`, which gives each proposition its trut
 inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Term 0 [] → Prop → Prop where
   /-- `(ty_DΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `Ω_n`, whose
-  constructors have fields that are telescopes in `Ω_n`, and whose truth is `(true_D)`.
+  block has types whose constructors have fields that are telescopes in `Ω_n`, whatever the truths
+  `B` of the instances of the types of the block at their recursive fields, and whose truth is
+  `(true_μ)`.
   RFC: `\mathsf{ty}_{D\Omega}` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -292,10 +318,13 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (S : Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
-      (hS : ∀ c ∈ T.constructors,
-        TelRel sig ι n below .prop (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S c)) :
-      PropRel sig ι n below v (T.truth S)
+      (S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
+      (hS : ∀ B, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
+        TelRel sig ι n below .prop
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => fun _ _ => B D')
+          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S B c)) :
+      PropRel sig ι n below v (DataType.blockTruth decl.dataTypes S D)
   /-- `(ty_dΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `Ω_n`, whose
   destructors are in `Ω_n` at the arguments `ā`, and whose truth is `(true_d)`.
   RFC: `\mathsf{ty}_{d\Omega}` -/
@@ -316,21 +345,35 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
 `ty(s_n)` for the telescopes: `Θ` is a closed telescope in the sort of the quality `s` at the level
 `n`, the terms of whose entries are equal by `S`; the equality of the terms of the rest of the
 telescope, which the first term instantiates, is the same for equal first terms.
+The entries at the positions `i` where `rs i` is `R` are recursive fields, whose terms are equal by
+`R`, given rather than computed, and on which the rest does not depend; a telescope that is not the
+fields of a constructor has none, `rs` being `fun _ => none`.
 -/
 inductive TelRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
-    Quality → {ps : List Parameter} → Telescope 0 [] ps → FieldsRel → Prop where
+    Quality → (Nat → Option TermRel) → {ps : List Parameter} → Telescope 0 [] ps →
+      FieldsRel → Prop where
   /-- `(ty_Θε)`: the empty telescope.
   RFC: `\mathsf{ty}_{\Theta\varepsilon}` -/
-  | nil {s : Quality} : TelRel sig ι n below s .nil FieldsRel.nil
-  /-- `(ty_Θ,)`: a first type that computes to a type of a sort that `s_n` bounds, whose terms are
-  equal by `F`, and a rest that is a telescope for each term of it.
+  | nil {s : Quality} {rs : Nat → Option TermRel} :
+      TelRel sig ι n below s rs .nil FieldsRel.nil
+  /-- `(ty_Θ,)`: a first type, not a recursive field, that computes to a type of a sort that `s_n`
+  bounds, whose terms are equal by `F`, and a rest that is a telescope for each term of it.
   RFC: `\mathsf{ty}_{\Theta,}` -/
-  | cons {s : Quality} {q : Grade} {p : Parameter} {ps : List Parameter} {A v : Term 0 []}
-      {Θ : Telescope 0 [.var] ps} {F : TermRel} (hA : Computesι sig ι A v)
-      (hF : FieldRel sig ι n below s v F) (G : Term 0 [] → FieldsRel)
-      (hG : ∀ a, F a a → TelRel sig ι n below s (Θ.subst₀ (Subst₀.single a)) (G a))
-      (hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us) :
-      TelRel sig ι n below s (.cons q p A Θ) (FieldsRel.cons F G)
+  | cons {s : Quality} {rs : Nat → Option TermRel} {q : Grade} {p : Parameter}
+      {ps : List Parameter} {A v : Term 0 []} {Θ : Telescope 0 [.var] ps} {F : TermRel}
+      (hA : Computesι sig ι A v) (hF : FieldRel sig ι n below s v F) (G : Term 0 [] → FieldsRel)
+      (hG : ∀ a, F a a → TelRel sig ι n below s (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a))
+        (G a))
+      (hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us) (hrs : rs 0 = none) :
+      TelRel sig ι n below s rs (.cons q p A Θ) (FieldsRel.cons F G)
+  /-- `(ty_Θrec)`: a first type that is a recursive field, whose terms are equal by the relation `R`
+  that `rs` gives it, and a rest that is the same telescope, with the same equality, for every term.
+  RFC: `\mathsf{ty}_{\Theta\mathsf{rec}}` -/
+  | recursive {s : Quality} {rs : Nat → Option TermRel} {q : Grade} {p : Parameter}
+      {ps : List Parameter} {A : Term 0 []} {Θ : Telescope 0 [.var] ps} {R : TermRel}
+      (hrs : rs 0 = some R) (G : FieldsRel)
+      (hG : ∀ a, TelRel sig ι n below s (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a)) G) :
+      TelRel sig ι n below s rs (.cons q p A Θ) (FieldsRel.cons R fun _ => G)
 
 -- ADE: none.
 /--
@@ -360,7 +403,7 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
   | cons {s : Quality} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
-      (hΘ : TelRel sig ι n below .type (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
+      (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
       (hB : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         ∃ v, Computesι sig ι (B.subst (Subst.append θ ts.toSubst)) v)
       (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ v,
@@ -712,6 +755,43 @@ def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) :
       (∃ κ₁, κ₁ ≼ κ ∧ ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) ∧
       ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) ds κ
 
+-- ADE: none.
+/-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors, whose recursive fields `rs` gives: the
+fields that are not recursive are equal types of a sort that `κ` bounds, the recursive fields of the
+type `D` are the instances `inst₁ D` and `inst₂ D` of the block, and the rest of them are equal for
+every pair of equal terms of the fields that are not recursive, and for every pair of terms of the
+recursive ones, on which they do not depend; the meaning ignores their grades.
+RFC: `{\vDash}\mathsf{fields}_\varepsilon`, `{\vDash}\mathsf{fields}_{,}`,
+`{\vDash}\mathsf{fields}_{\mathsf{rec}}` -/
+def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0)
+    (inst₁ inst₂ : Name → Term 0 []) :
+    {ps : List Parameter} → (Nat → Option Name) → Telescope 0 [] ps → Telescope 0 [] ps → Prop
+  /- `(⊨fields_ε)`. -/
+  | [], _, .nil, .nil => sig.Distinct
+  | _ :: _, rs, .cons _ _ A₁ Θ₁, .cons _ _ A₂ Θ₂ =>
+    match rs 0 with
+    /- `(⊨fields_,)`. -/
+    | none => (∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
+      ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ A₁ →
+        ValidEqFields₀ sig ι κ inst₁ inst₂ (fun i => rs (i + 1)) (Θ₁.subst₀ (Subst₀.single v₁))
+          (Θ₂.subst₀ (Subst₀.single v₂))
+    /- `(⊨fields_rec)`. -/
+    | some D => A₁ = inst₁ D ∧ A₂ = inst₂ D ∧
+      ∀ v₁ v₂, ValidEqFields₀ sig ι κ inst₁ inst₂ (fun i => rs (i + 1))
+        (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
+
+-- ADE: none.
+/-- `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, whose recursive fields `rs` gives, of the
+instances `inst D` of the block, at levels without variables: the fields substituted by two equal
+closed substitutions of the context give equal closed fields in the sort `κ`.
+RFC: `{\vDash}\Gamma_{\mathsf{fields}}` -/
+def ValidFieldsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
+    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Option Name) (Θ : Telescope 0 Γ ps)
+    (κ : Universe 0) : Prop :=
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqFields₀ sig ι κ (fun D => (inst D).subst σ₁)
+      (fun D => (inst D).subst σ₂) rs (Θ.subst σ₁) (Θ.subst σ₂)
+
 /-! ## Level Variables -/
 
 /-- `(⊨_ρ)`: `Σ ⊨ Γ`, for every value of the level variables.
@@ -787,13 +867,22 @@ def ValidDestructors (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Sco
     {ns : List Name} (ctx : Context k Γ) (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
   ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (ds.atLevels ρ) (κ.atLevels ρ)
 
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, for every value of the level variables.
+RFC: `\vDash_\rho` -/
+def ValidFields (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
+    (ctx : Context k Γ) (inst : Name → Term k Γ) (rs : Nat → Option Name) (Θ : Telescope k Γ ps)
+    (κ : Universe k) : Prop :=
+  ∀ ρ, ValidFieldsΓ sig ι (ctx.atLevels ρ) (fun D => (inst D).atLevels ρ) rs (Θ.atLevels ρ)
+    (κ.atLevels ρ)
+
 /-! ## Signatures and Entries -/
 
 -- ADE: none.
 /-- `Σ ⊨ D`: the type declaration `D` is meaningful in the signature `Σ`.
 `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
-variables, the fields of each constructor are a telescope in the sort `κ`, in the context of the
-parameters, at each value of the level variables.
+variables, the fields of each constructor are fields in the sort `κ`, in the context of the
+parameters, at each value of the level variables, whose recursive fields are the types of the block
+at the parameters themselves.
 `(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
 grade variables, the destructors of each type are in the sort `κ`, in the context of the
 parameters, at each value of the level variables.
@@ -803,16 +892,18 @@ RFC: `{\vDash}\mathsf{data}`, `{\vDash}\mathsf{codata}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
   match decl.body with
   | .data Ts => ∀ I, ∀ T ∈ Ts, ∀ c ∈ T.constructors,
-      ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I)
+      ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
+        ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I)
   | .codata Ts => ∀ I, ∀ T ∈ Ts, ValidDestructors sig ι (decl.params I) (T.body I) (decl.sort I)
 
-/-- The fields of the constructors of a data type of a meaningful type declaration are telescopes in
-its sort. -/
+/-- The fields of the constructors of a data type of a meaningful type declaration are fields in its
+sort. -/
 theorem ValidTypeDeclaration.fields {sig : Signature} {ι : Interpretation} {decl : TypeDeclaration}
     (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope} (hc : c ∈ T.constructors) :
-    ValidTelescope sig ι (decl.params I) (c.fields I) (decl.sort I) := by
+    ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
+      ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I) := by
   unfold ValidTypeDeclaration at h
   unfold TypeDeclaration.dataTypes at hT
   split at h <;> rename_i heq <;> rw [heq] at hT
@@ -995,6 +1086,194 @@ theorem DataType.truth_congr {j g k : Nat} {Δ : Scope} {T : DataType j g k Δ}
   ⟨fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).1 hS⟩,
     fun ⟨c, hcm, ts, hS⟩ => ⟨c, hcm, ts, (h c hcm ts ts).2 hS⟩⟩
 
+/-- The equalities of the terms of the fields of two telescopes `x : A, Θ` relate the terms that the
+first one relates, when those of `A` do, and those of `Θ[a / x]` do for the terms `a` of `A`. -/
+theorem FieldsRel.cons_mono {F₁ F₂ : TermRel} {G₁ G₂ : Term 0 [] → FieldsRel}
+    (hF : ∀ t u, F₁ t u → F₂ t u) (hG : ∀ t u, F₁ t u → ∀ ts us, G₁ t ts us → G₂ t ts us) :
+    ∀ ts us, FieldsRel.cons F₁ G₁ ts us → FieldsRel.cons F₂ G₂ ts us
+  | .nil, _, h => h.elim
+  | .cons _ _, .nil, h => h.elim
+  | .cons t ts, .cons u us, ⟨h₁, h₂⟩ => ⟨hF t u h₁, hG t u h₁ ts us h₂⟩
+
+/-- The equality of the terms of the fields of a telescope `x : A, Θ` relates in the other order the
+terms that the equality of another one relates, when those of `A` do, and those of `Θ[a / x]` do. -/
+theorem FieldsRel.cons_symm {F₁ F₂ : TermRel} {G₁ G₂ : Term 0 [] → FieldsRel}
+    (hF : ∀ t u, F₁ t u → F₂ u t) (hG : ∀ t u, F₁ t u → ∀ ts us, G₁ t ts us → G₂ u us ts) :
+    ∀ ts us, FieldsRel.cons F₁ G₁ ts us → FieldsRel.cons F₂ G₂ us ts
+  | .nil, _, h => h.elim
+  | .cons _ _, .nil, h => h.elim
+  | .cons t ts, .cons u us, ⟨h₁, h₂⟩ => ⟨hF t u h₁, hG t u h₁ ts us h₂⟩
+
+/-- The equality of the terms of the fields of a telescope `x : A, Θ` relates the terms that two
+others relate in a chain, when those of `A` do, and those of `Θ[a / x]` do. -/
+theorem FieldsRel.cons_trans {F₁ F₂ F₃ : TermRel} {G₁ G₂ G₃ : Term 0 [] → FieldsRel}
+    (hF : ∀ t u v, F₁ t u → F₂ u v → F₃ t v)
+    (hG : ∀ t u v, F₁ t u → F₂ u v → ∀ ts us vs, G₁ t ts us → G₂ u us vs → G₃ t ts vs) :
+    ∀ ts us vs, FieldsRel.cons F₁ G₁ ts us → FieldsRel.cons F₂ G₂ us vs →
+      FieldsRel.cons F₃ G₃ ts vs
+  | .nil, _, _, h, _ => h.elim
+  | .cons _ _, .nil, _, h, _ => h.elim
+  | .cons _ _, .cons _ _, .nil, _, h => h.elim
+  | .cons t ts, .cons u us, .cons v vs, ⟨h₁, h₂⟩, ⟨h₁', h₂'⟩ =>
+    ⟨hF t u v h₁ h₁', hG t u v h₁ h₁' ts us vs h₂ h₂'⟩
+
+/-- `eq⇓(R₂)` relates the terms that `eq⇓(R₁)` relates, when `R₂` relates the canonical terms that
+`R₁` relates. -/
+theorem TermRel.computed_mono {sig : Signature} {ι : Interpretation} {R₁ R₂ : TermRel}
+    (h : ∀ v w, R₁ v w → R₂ v w) {t u : Term 0 []} :
+    R₁.computed sig ι t u → R₂.computed sig ι t u :=
+  fun ⟨v, w, ht, hu, hvw⟩ => ⟨v, w, ht, hu, h v w hvw⟩
+
+/-- `eq⇓(R₂)` relates in the other order the terms that `eq⇓(R₁)` relates, when `R₂` relates so the
+canonical terms that `R₁` relates. -/
+theorem TermRel.computed_symm {sig : Signature} {ι : Interpretation} {R₁ R₂ : TermRel}
+    (h : ∀ v w, R₁ v w → R₂ w v) {t u : Term 0 []} :
+    R₁.computed sig ι t u → R₂.computed sig ι u t :=
+  fun ⟨v, w, ht, hu, hvw⟩ => ⟨w, v, hu, ht, h v w hvw⟩
+
+/-- `eq⇓(R₃)` relates the terms that `eq⇓(R₁)` and `eq⇓(R₂)` relate in a chain, when `R₃` relates so
+the canonical terms, in a signature whose names are distinct. -/
+theorem TermRel.computed_trans {sig : Signature} {ι : Interpretation} {R₁ R₂ R₃ : TermRel}
+    (hd : sig.Distinct) (h : ∀ v w x, R₁ v w → R₂ w x → R₃ v x) {t u w : Term 0 []} :
+    R₁.computed sig ι t u → R₂.computed sig ι u w → R₃.computed sig ι t w :=
+  fun ⟨v, _, ht, hu, h₁⟩ ⟨_, x, hu', hw, h₂⟩ => by
+    cases Computesι.det hd hu hu'
+    exact ⟨v, x, ht, hw, h _ _ _ h₁ h₂⟩
+
+/-- The images of an option by two functions are related when the images of each value are. -/
+theorem Option.rel_map {α β γ : Type} {r : β → γ → Prop} {f : α → β} {g : α → γ}
+    (h : ∀ x, r (f x) (g x)) : (o : Option α) → Option.Rel r (o.map f) (o.map g)
+  | none => .none
+  | some x => .some (h x)
+
+/-- The images of an option by three functions are all none, or related when the images of each
+value are. -/
+theorem Option.rel_map₃ {α β : Type} {r : β → β → β → Prop} {f g h : α → β}
+    (hr : ∀ x, r (f x) (g x) (h x)) (o : Option α) :
+    (o.map f = none ∧ o.map g = none ∧ o.map h = none) ∨
+      ∃ x y z, o.map f = some x ∧ o.map g = some y ∧ o.map h = some z ∧ r x y z :=
+  match o with
+  | none => .inl ⟨rfl, rfl, rfl⟩
+  | some x => .inr ⟨_, _, _, rfl, rfl, rfl, hr x⟩
+
+/-- A telescope that is not the fields of a constructor relates its recursive fields as any
+other. -/
+theorem TelRel.none_rel {α β : Type} {r : α → β → Prop} (i : Nat) :
+    Option.Rel r ((fun _ => none : Nat → Option α) i) ((fun _ => none : Nat → Option β) i) :=
+  .none
+
+/-- The same values at the recursive fields are related, when each one is related to itself. -/
+theorem Option.rel_refl {α : Type} {r : α → α → Prop} (h : ∀ x, r x x) :
+    (o : Option α) → Option.Rel r o o
+  | none => .none
+  | some x => .some (h x)
+
+/-! ### Least Fixed Points
+
+The equality `(eq_μ)` of the terms of the instances of a block is the least relation closed under
+the clauses of its constructors, which every relation closed under them contains; it is closed
+under them itself, and is a partial equivalence relation, when the equality of the terms of the
+fields grows with the relations of the recursive fields, and inverts and composes them, by the
+strict positivity of their occurrences. -/
+
+section LeastFixedPoints
+
+variable {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
+  {S : (Name → TermRel) → Constructor j g k Δ → FieldsRel}
+
+/-- `(eq_μ)` is closed under the clauses of the constructors, when the equality of the terms of the
+fields grows with the relations of the recursive fields. -/
+theorem DataType.blockRel_closed
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    {T : DataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
+    (h : T.ctorRel T.name (S (DataType.blockRel Ts S)) v w) :
+    DataType.blockRel Ts S T.name v w :=
+  fun X hX =>
+    have ⟨c, hc, ts, us, hv, hw, hs⟩ := h
+    hX T hT v w ⟨c, hc, ts, us, hv, hw, hmono _ X (fun _ _ _ h => h X hX) T hT c hc ts us hs⟩
+
+/-- `(eq_μ)` relates the constructors that the clauses relate only, when the equality of the terms
+of the fields grows with the relations of the recursive fields. -/
+theorem DataType.blockRel_inv
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    {D : Name} {v w : Term 0 []} (h : DataType.blockRel Ts S D v w) :
+    ∃ T ∈ Ts, T.name = D ∧ T.ctorRel T.name (S (DataType.blockRel Ts S)) v w :=
+  h (fun D v w => ∃ T ∈ Ts, T.name = D ∧ T.ctorRel T.name (S (DataType.blockRel Ts S)) v w)
+    fun T hT _ _ ⟨c, hc, ts, us, hv, hw, hs⟩ =>
+      ⟨T, hT, rfl, c, hc, ts, us, hv, hw,
+        hmono _ _ (fun _ _ _ ⟨_, hT', hD, hr⟩ => hD ▸ DataType.blockRel_closed hmono hT' hr)
+          T hT c hc ts us hs⟩
+
+/-- `(eq_μ)` is a partial equivalence relation, when the equality of the terms of the fields grows
+with the relations of the recursive fields, and inverts and composes them, and when the names of the
+types and of the constructors of each type are distinct. -/
+theorem DataType.blockRel_isPer
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c us ts)
+    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ ts us vs, S X c ts us → S Y c us vs → S Z c ts vs)
+    (hn : (Ts.map (·.name)).Nodup) (hc : ∀ T ∈ Ts, (T.constructors.map (·.name)).Nodup)
+    (D : Name) : IsPer (DataType.blockRel Ts S D) where
+  symm h := h (fun D v w => DataType.blockRel Ts S D w v) fun T hT v w ⟨c, hcm, ts, us, hv, hw, hs⟩ =>
+    DataType.blockRel_closed hmono hT
+      ⟨c, hcm, us, ts, hw, hv, hsymm _ _ (fun _ _ _ h => h) T hT c hcm ts us hs⟩
+  trans h₁ h₂ := h₁ (fun D u v => ∀ w, DataType.blockRel Ts S D v w → DataType.blockRel Ts S D u w)
+    (fun T hT u v ⟨c, hcm, ts, us, hu, hv, hs⟩ w hw => by
+      obtain ⟨T', hT', hn', c', hcm', us', vs, hv', hw', hs'⟩ := DataType.blockRel_inv hmono hw
+      cases List.eq_of_nodup_map hn hT' hT hn'
+      obtain ⟨-, hcn, rfl⟩ := hv.inj hv'
+      cases List.eq_of_nodup_map (hc T hT) hcm hcm' hcn
+      exact DataType.blockRel_closed hmono hT
+        ⟨c, hcm, ts, vs, hu, hw', htrans _ _ _ (fun _ _ _ _ h₁ h₂ => h₁ _ h₂) T hT c hcm ts us vs hs hs'⟩)
+    _ h₂
+
+/-- `(true_μ)` is closed under the clauses of the constructors, when the equality of the terms of
+the fields grows with the truths of the recursive fields. -/
+theorem DataType.blockTruth_closed {S' : (Name → Prop) → Constructor j g k Δ → FieldsRel}
+    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us,
+      S' B c ts us → S' B' c ts us)
+    {T : DataType j g k Δ} (hT : T ∈ Ts) (h : T.truth (S' (DataType.blockTruth Ts S'))) :
+    DataType.blockTruth Ts S' T.name :=
+  fun B hB =>
+    have ⟨c, hc, ts, hs⟩ := h
+    hB T hT ⟨c, hc, ts, hmono _ B (fun _ h => h B hB) T hT c hc ts ts hs⟩
+
+/-- `(true_μ)` holds by the clause of a constructor only, when the equality of the terms of the
+fields grows with the truths of the recursive fields. -/
+theorem DataType.blockTruth_inv {S' : (Name → Prop) → Constructor j g k Δ → FieldsRel}
+    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us,
+      S' B c ts us → S' B' c ts us)
+    {D : Name} (h : DataType.blockTruth Ts S' D) :
+    ∃ T ∈ Ts, T.name = D ∧ T.truth (S' (DataType.blockTruth Ts S')) :=
+  h (fun D => ∃ T ∈ Ts, T.name = D ∧ T.truth (S' (DataType.blockTruth Ts S')))
+    fun T hT ⟨c, hc, ts, hs⟩ =>
+      ⟨T, hT, rfl, c, hc, ts, hmono _ _ (fun _ ⟨_, hT', hD, ht⟩ => hD ▸
+        DataType.blockTruth_closed hmono hT' ht) T hT c hc ts ts hs⟩
+
+end LeastFixedPoints
+
+/-- `(eq_μ)` relates the same terms for equalities of the terms of the fields that relate the same
+terms. -/
+theorem DataType.blockRel_congr {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
+    {S S' : (Name → TermRel) → Constructor j g k Δ → FieldsRel}
+    (h : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us, S X c ts us ↔ S' X c ts us) (D : Name) :
+    ∀ v w, DataType.blockRel Ts S D v w ↔ DataType.blockRel Ts S' D v w :=
+  fun _ _ => ⟨fun hr X hX => hr X fun T hT v w hc =>
+      hX T hT v w ((DataType.ctorRel_congr (h X T hT) v w).1 hc),
+    fun hr X hX => hr X fun T hT v w hc => hX T hT v w ((DataType.ctorRel_congr (h X T hT) v w).2 hc)⟩
+
+/-- `(true_μ)` is the same for equalities of the terms of the fields that relate the same terms. -/
+theorem DataType.blockTruth_congr {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
+    {S S' : (Name → Prop) → Constructor j g k Δ → FieldsRel}
+    (h : ∀ B, ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us, S B c ts us ↔ S' B c ts us) (D : Name) :
+    DataType.blockTruth Ts S D ↔ DataType.blockTruth Ts S' D :=
+  ⟨fun hr B hB => hr B fun T hT hc => hB T hT ((DataType.truth_congr (h B T hT)).1 hc),
+    fun hr B hB => hr B fun T hT hc => hB T hT ((DataType.truth_congr (h B T hT)).2 hc)⟩
+
 /-- A closed term has the observations of one corecursor at most. -/
 theorem Term.CorecObservations.unique {D D' : Name} {v : Term 0 []} {o o' : Observations}
     (h : v.CorecObservations D o) (h' : v.CorecObservations D' o') : o = o' := by
@@ -1174,7 +1453,12 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact hn.symm.trans hn'
 
-/-! ### The Relations of a Level -/
+/-! ### The Relations of a Level
+
+The partial equivalence and the uniqueness are proved together, since the equality `(eq_μ)` of a
+block is a partial equivalence relation by the transfer of the equalities of the fields between
+relations of the recursive fields, which identifies the equalities of the fields that are not
+recursive by their uniqueness. -/
 
 mutual
 
@@ -1193,29 +1477,40 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       fun ⟨b₁, _, h₁, h₂, hb⟩ ⟨_, b₃, h₂', h₃, hb'⟩ =>
         ⟨b₁, b₃, h₁, h₃, hb.trans ((hL.prop_unique h₂ h₂').trans hb')⟩⟩
   | .data h _ _ _ _ _ _ _ hS =>
-    DataType.ctorRel_isPer (hd.constructors_nodup h) fun c hcm => TelRel.isPer hd ih (hS c hcm)
+    DataType.blockRel_isPer
+      (fun X Y hXY T hT c hc ts us hs => TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
+        (fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _) ts us hs)
+      (fun X Y hXY T hT c hc ts us hs => TelRel.symm_of hd ih (hS X T hT c hc) _ _ _
+        (hS Y T hT c hc) (fun _ => Option.rel_map (fun D _ _ => TermRel.computed_symm (hXY D)) _)
+        ts us hs)
+      (fun X Y Z hXYZ T hT c hc ts us vs hs hs' => TelRel.trans_of hd ih (hS X T hT c hc) _ _ _
+        (hS Y T hT c hc) _ _ _ (hS Z T hT c hc)
+        (fun _ => Option.rel_map₃
+          (r := fun (x y z : TermRel) => ∀ t u w, x t u → y u w → z t w)
+          (f := fun D => (X D).computed sig ι) (g := fun D => (Y D).computed sig ι)
+          (h := fun D => (Z D).computed sig ι)
+          (fun D _ _ _ => TermRel.computed_trans hd (hXYZ D)) _)
+        ts us vs hs hs')
+      (TypeDeclaration.dataTypes_nodup (hd.nodup h.1))
+      (fun _ hT => hd.constructors_nodup ⟨h.1, hT, rfl⟩) _
   | .codata _ _ _ _ _ _ _ _ hS => corecRel_isPer (DesRel.isPer hd ih hS)
-
-/-- The equality of the terms of the fields of a telescope is a partial equivalence relation. -/
-theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
-    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {ps : List Parameter}
-    {Θ : Telescope 0 [] ps} {S : FieldsRel} :
-    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S → IsPer S
-  | .nil => FieldsRel.nil_isPer
-  | .cons _ hF _ hG hresp =>
-    FieldsRel.cons_isPer (FieldRel.isPer hd ih hF) (fun a ha => TelRel.isPer hd ih (hG a ha)) hresp
+termination_by structural h => h
 
 /-- The equality of the abstractions for destructors is a partial equivalence relation. -/
 theorem DesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
     {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel} :
     DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S → IsPer S
-  | .nil => ⟨fun _ => trivial, fun _ _ => trivial⟩
   | .cons hΘ _ hB hF hBresp _ hG hresp =>
     ObsRel.cons_isPer
-      (AbstractionRel.isPer (TelRel.isPer hd ih hΘ)
+      (AbstractionRel.isPer
+        ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+          fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+            _ _ _ h h'⟩
         (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp)
       (fun f hf => DesRel.isPer hd ih (hG f hf)) hresp
+  | .nil => ⟨fun _ => trivial, fun _ _ => trivial⟩
+termination_by structural h => h
 
 /-- The equality of the terms of the type of a field is a partial equivalence relation. -/
 theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -1225,10 +1520,179 @@ theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
   | .univBelow _ m hm h => TermRel.computed_isPer hd ((ih m hm).univ_isPer h)
   | .prop _ => ⟨id, fun h _ => h⟩
   | .propBelow _ _ _ => ⟨id, fun h _ => h⟩
+termination_by structural h => h
 
-end
+/-- The equality of the terms of the fields of a telescope relates the terms that the equality of
+the same telescope relates, at relations of the recursive fields that relate more terms. -/
+theorem TelRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
+    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S₁ : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y t u) (rs₁ i) (rs₂ i)) →
+        ∀ ts us, S₁ ts us → S₂ ts us
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ h => h
+  | .cons hA hF _ hG hresp hrs, _, _, _, h', hR => by
+    have hFp := FieldRel.isPer hd ih hF
+    cases h' with
+    | cons hA' hF' _ hG' _ _ =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      refine FieldsRel.cons_mono (fun t u h => (hFF t u).1 h) fun t u htu ts us hg => ?_
+      have htt := hFp.trans htu (hFp.symm htu)
+      exact TelRel.mono hd ih (hG t htt) _ _ _ (hG' t ((hFF t t).1 htt)) (fun i => hR (i + 1))
+        ts us hg
+    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive hrs _ hG, _, _, _, h', hR => by
+    cases h' with
+    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        exact FieldsRel.cons_mono hr fun t _ _ ts us hg =>
+          TelRel.mono hd ih (hG t) _ _ _ (hG' t) (fun i => hR (i + 1)) ts us hg
+termination_by structural h _ _ _ _ _ => h
 
-mutual
+/-- The equality of the terms of the fields of a telescope relates in the other order the terms that
+the equality of the same telescope relates, at relations of the recursive fields that do so. -/
+theorem TelRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
+    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S₁ : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y u t) (rs₁ i) (rs₂ i)) →
+        ∀ ts us, S₁ ts us → S₂ us ts
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ h => FieldsRel.nil_isPer.symm h
+  | .cons hA hF _ hG hresp hrs, _, _, _, h', hR => by
+    have hFp := FieldRel.isPer hd ih hF
+    cases h' with
+    | cons hA' hF' _ hG' _ _ =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      refine FieldsRel.cons_symm (fun t u h => (hFF u t).1 (hFp.symm h)) fun t u htu ts us hg => ?_
+      have huu := hFp.trans (hFp.symm htu) htu
+      exact TelRel.symm_of hd ih (hG u huu) _ _ _ (hG' u ((hFF u u).1 huu)) (fun i => hR (i + 1))
+        ts us ((hresp t u htu ts us).1 hg)
+    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive hrs _ hG, _, _, _, h', hR => by
+    cases h' with
+    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        exact FieldsRel.cons_symm hr fun _ u _ ts us hg =>
+          TelRel.symm_of hd ih (hG u) _ _ _ (hG' u) (fun i => hR (i + 1)) ts us hg
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality of the terms of the fields of a telescope relates the terms that two equalities of
+the same telescope relate in a chain, at relations of the recursive fields that do so. -/
+theorem TelRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
+    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S₁ : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
+      ∀ (s₃ : Quality) (rs₃ : Nat → Option TermRel) (S₃ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₃ rs₃ Θ S₃ →
+        (∀ i, (rs₁ i = none ∧ rs₂ i = none ∧ rs₃ i = none) ∨
+          ∃ x y z, rs₁ i = some x ∧ rs₂ i = some y ∧ rs₃ i = some z ∧
+            ∀ t u w, x t u → y u w → z t w) →
+        ∀ ts us vs, S₁ ts us → S₂ us vs → S₃ ts vs
+  | .nil, _, _, _, h', _, _, _, h'', _ => by
+    cases h'; cases h''; exact fun _ _ _ h h' => FieldsRel.nil_isPer.trans h h'
+  | .cons hA hF _ hG _ hrs, _, _, _, h', _, _, _, h'', hR => by
+    have hFp := FieldRel.isPer hd ih hF
+    cases h' with
+    | cons hA' hF' _ hG' hresp' _ =>
+      cases h'' with
+      | cons hA'' hF'' _ hG'' _ _ =>
+        cases Computesι.det hd hA hA'
+        cases Computesι.det hd hA hA''
+        have hFF' := FieldRel.unique hd ih hF _ _ hF'
+        have hFF'' := FieldRel.unique hd ih hF _ _ hF''
+        refine FieldsRel.cons_trans
+          (fun t u w h₁ h₂ => (hFF'' t w).1 (hFp.trans h₁ ((hFF' u w).2 h₂)))
+          fun t u w htu huw ts us vs hg hg' => ?_
+        have htt := hFp.trans htu (hFp.symm htu)
+        exact TelRel.trans_of hd ih (hG t htt) _ _ _ (hG' t ((hFF' t t).1 htt)) _ _ _
+          (hG'' t ((hFF'' t t).1 htt)) (fun i => hR (i + 1)) ts us vs hg
+          ((hresp' t u ((hFF' t u).1 htu) us vs).2 hg')
+      | recursive hrs'' _ _ =>
+        rcases hR 0 with ⟨-, -, h0⟩ | ⟨_, _, _, h0, -⟩
+        · rw [hrs''] at h0; cases h0
+        · rw [hrs] at h0; cases h0
+    | recursive hrs' _ _ =>
+      rcases hR 0 with ⟨-, h0, -⟩ | ⟨_, _, _, h0, -⟩
+      · rw [hrs'] at h0; cases h0
+      · rw [hrs] at h0; cases h0
+  | .recursive hrs _ hG, _, _, _, h', _, _, _, h'', hR => by
+    cases h' with
+    | cons _ _ _ _ _ hrs' =>
+      rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, h0, -⟩
+      · rw [hrs] at h0; cases h0
+      · rw [hrs'] at h0; cases h0
+    | recursive hrs' _ hG' =>
+      cases h'' with
+      | cons _ _ _ _ _ hrs'' =>
+        rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, -, h0, -⟩
+        · rw [hrs] at h0; cases h0
+        · rw [hrs''] at h0; cases h0
+      | recursive hrs'' _ hG'' =>
+        rcases hR 0 with ⟨h0, -, -⟩ | ⟨x, y, z, hx, hy, hz, hr⟩
+        · rw [hrs] at h0; cases h0
+        · rw [hrs] at hx; rw [hrs'] at hy; rw [hrs''] at hz
+          cases hx; cases hy; cases hz
+          exact FieldsRel.cons_trans hr fun t _ _ _ _ ts us vs hg hg' =>
+            TelRel.trans_of hd ih (hG t) _ _ _ (hG' t) _ _ _ (hG'' t) (fun i => hR (i + 1))
+              ts us vs hg hg'
+termination_by structural h _ _ _ _ _ _ _ _ _ => h
+
+/-- The equalities of the terms of the fields of a telescope relate the same terms, at relations of
+the recursive fields that relate the same terms. -/
+theorem TelRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
+    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S₁ : FieldsRel} :
+    TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u ↔ y t u) (rs₁ i) (rs₂ i)) →
+        ∀ ts us, S₁ ts us ↔ S₂ ts us
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
+  | .cons hA hF _ hG _ hrs, _, _, _, h', hR => by
+    have hFp := FieldRel.isPer hd ih hF
+    cases h' with
+    | cons hA' hF' _ hG' _ _ =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      exact FieldsRel.cons_congr hFp hFF fun a ha =>
+        TelRel.congr hd ih (hG a ha) _ _ _ (hG' a ((hFF a a).1 ha)) (fun i => hR (i + 1))
+    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive hrs _ hG, _, _, _, h', hR => by
+    cases h' with
+    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        have hGG := TelRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+          (fun i => hR (i + 1))
+        intro ts us
+        match ts, us with
+        | .nil, _ => exact .rfl
+        | .cons _ _, .nil => exact .rfl
+        | .cons t ts, .cons u us => exact and_congr (hr t u) (hGG ts us)
+termination_by structural h _ _ _ _ _ => h
 
 /-- A type of `U_n` has a unique equality of its terms, if the relations of the levels below `n` are
 partial equivalence relations. -/
@@ -1248,7 +1712,6 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
   | .data h _ _ _ hv _ _ _ hS, _, h' => by
-    have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
     cases h' with
     | univ => cases hv
     | prop => cases hv
@@ -1259,7 +1722,8 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
       cases hT
       cases has
-      exact DataType.ctorRel_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+      exact DataType.blockRel_congr (fun X T hT c hc => TelRel.congr hd ih (hS X T hT c hc) _ _ _
+        (hS' X T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     have hu := DesRel.unique hd ih hS
@@ -1283,7 +1747,6 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     PropRel sig ι n (fun m _ => levelRel sig ι m) v b →
       ∀ (b' : Prop), PropRel sig ι n (fun m _ => levelRel sig ι m) v b' → (b ↔ b')
   | .data h _ _ _ hv _ _ _ hS, _, h' => by
-    have hu := fun c hcm => TelRel.unique hd ih (hS c hcm)
     cases h' with
     | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
@@ -1292,7 +1755,8 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
       cases hT
       cases has
-      exact DataType.truth_congr fun c hcm => hu c hcm _ _ (hS' c hcm)
+      exact DataType.blockTruth_congr (fun B T hT c hc => TelRel.congr hd ih (hS B T hT c hc) _ _ _
+        (hS' B T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     have hu := DesRel.unique hd ih hS
@@ -1308,25 +1772,6 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       exact ObsRel.truth_congr (hu _ _ hS')
 termination_by structural h _ _ => h
 
-/-- A telescope has a unique equality of the terms of its fields. -/
-theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
-    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {ps : List Parameter}
-    {Θ : Telescope 0 [] ps} {S : FieldsRel} :
-    TelRel sig ι n (fun m _ => levelRel sig ι m) s Θ S →
-      ∀ (s' : Quality) (S' : FieldsRel), TelRel sig ι n (fun m _ => levelRel sig ι m) s' Θ S' →
-        ∀ ts us, S ts us ↔ S' ts us
-  | .nil, _, _, h' => by cases h'; exact fun _ _ => .rfl
-  | .cons hA hF _ hG _, _, _, h' => by
-    have hFu := FieldRel.unique hd ih hF
-    have hGu := fun a ha => TelRel.unique hd ih (hG a ha)
-    have hFp := FieldRel.isPer hd ih hF
-    cases h' with
-    | cons hA' hF' _ hG' _ =>
-      cases Computesι.det hd hA hA'
-      have hFF := hFu _ _ hF'
-      exact FieldsRel.cons_congr hFp hFF fun a ha => hGu a ha _ _ (hG' a ((hFF a a).1 ha))
-termination_by structural h _ _ _ => h
-
 /-- Destructors have a unique equality of the abstractions for them. -/
 theorem DesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
@@ -1336,14 +1781,16 @@ theorem DesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂
   | .nil, _, _, h' => by cases h'; exact fun _ _ => .rfl
   | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _, _, _, h' => by
-    have hSΘu := TelRel.unique hd ih hΘ
-    have hSΘp := TelRel.isPer hd ih hΘ
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
     have hGu := fun f hf => DesRel.unique hd ih (hG f hf)
     have hEp := AbstractionRel.isPer hSΘp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
     cases h' with
     | cons hΘ' F' _ hF' _ _ hG' _ =>
-      have hSS := hSΘu _ _ hΘ'
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u, F ts.terms t u ↔ F' ts.terms t u :=
           fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts
@@ -1393,6 +1840,49 @@ theorem FieldRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
 termination_by structural h _ _ _ => h
 
 end
+
+/-- The equality of the terms of the fields of a telescope is a partial equivalence relation, at
+relations of the recursive fields that are. -/
+theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality}
+    {rs : Nat → Option TermRel} (hrs : ∀ i x, rs i = some x → IsPer x)
+    {ps : List Parameter} {Θ : Telescope 0 [] ps} {S : FieldsRel}
+    (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S) : IsPer S where
+  symm h' := TelRel.symm_of hd ih h _ _ _ h (fun i => by
+    match hi : rs i with
+    | none => exact .none
+    | some x => exact .some fun _ _ => (hrs i x hi).symm) _ _ h'
+  trans h₁ h₂ := TelRel.trans_of hd ih h _ _ _ h _ _ _ h (fun i => by
+    match hi : rs i with
+    | none => exact .inl ⟨rfl, rfl, rfl⟩
+    | some x => exact .inr ⟨x, x, x, rfl, rfl, rfl, fun _ _ _ => (hrs i x hi).trans⟩) _ _ _ h₁ h₂
+
+/-- A telescope has a unique equality of the terms of its fields, at given relations of its
+recursive fields. -/
+theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality}
+    {rs : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S : FieldsRel} (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S) (s' : Quality)
+    (S' : FieldsRel) (h' : TelRel sig ι n (fun m _ => levelRel sig ι m) s' rs Θ S') :
+    ∀ ts us, S ts us ↔ S' ts us :=
+  TelRel.congr hd ih h _ _ _ h' fun _ => Option.rel_refl (fun _ _ _ => .rfl) _
+
+/-- The equality of the terms of the fields of the constructors of a block, at relations `F X D` of
+its recursive fields of the type `D`, grows with `X` when they do: the premise of the properties of
+`(eq_μ)` and `(true_μ)`. -/
+theorem TelRel.block_mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {j g k : Nat} {Δ : Scope} {α : Type}
+    {Ts : List (DataType j g k Δ)} {s : Quality}
+    {rec : Constructor j g k Δ → Nat → Option Name}
+    {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps}
+    {F : α → Name → TermRel} {S : α → Constructor j g k Δ → FieldsRel}
+    (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, TelRel sig ι n (fun m _ => levelRel sig ι m) s
+      (fun i => (rec c i).map (F X)) (Θ c).2 (S X c))
+    (X Y : α) (hXY : ∀ D t u, F X D t u → F Y D t u) (T : DataType j g k Δ)
+    (hT : T ∈ Ts) (c : Constructor j g k Δ) (hc : c ∈ T.constructors) (ts us : Terms 0 []) :
+    S X c ts us → S Y c ts us :=
+  TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
+    (fun _ => Option.rel_map (fun D => hXY D) _) ts us
 
 /-- The relations of every level are partial equivalence relations, in a signature whose names are
 distinct. -/

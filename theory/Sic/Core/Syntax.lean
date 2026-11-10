@@ -265,6 +265,50 @@ theorem Args.terms_inj {k : Nat} {Γ : Scope} :
     obtain ⟨rfl, h₂⟩ := h
     rw [Args.terms_inj h₂]
 
+-- ADE: none.
+/-- The type of the block whose names are `names` that the type `A` of a field is an instance of,
+if any: the field is then recursive.
+RFC: `\mathsf{rec}_A` -/
+def Term.blockName {k : Nat} {Γ : Scope} (names : List Name) : Term k Γ → Option Name
+  | .inst D _ _ _ _ => if D ∈ names then some D else none
+  | _ => none
+
+-- ADE: none.
+/-- The types of the block whose names are `names` that the types of the entries of a telescope are
+instances of, in order: `some D` for a recursive field of the type `D`, `none` for the others.
+RFC: `\mathsf{rec}_\Theta` -/
+def Telescope.recursion {k : Nat} {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → Telescope k Γ ps → List (Option Name)
+  | [], .nil => []
+  | _ :: _, .cons _ _ A Θ => A.blockName names :: Θ.recursion names
+
+/-- The type `D` of the block whose names are `names` of the recursive field at each position of
+the telescope `Θ`, the first one at `0`, and none at the other positions. -/
+def Telescope.recursionAt {k : Nat} {Γ : Scope} {ps : List Parameter} (names : List Name)
+    (Θ : Telescope k Γ ps) : Nat → Option Name :=
+  fun i => ((Θ.recursion names)[i]?).join
+
+/-- The type that the type of a recursive field is an instance of is a type of the block. -/
+theorem Term.blockName_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
+    {A : Term k Γ} → A.blockName names = some D → D ∈ names
+  | .inst D' _ _ _ _, h => by
+    by_cases hm : D' ∈ names
+    · simp only [Term.blockName, hm, ↓reduceIte, Option.some.injEq] at h
+      exact h ▸ hm
+    · simp only [Term.blockName, hm, ↓reduceIte, reduceCtorEq] at h
+  | .var .., h | .sort _, h | .const .., h | .ctor .., h | .recursor .., h | .obs .., h
+  | .corec .., h => by cases h
+
+/-- The type of a recursive field of a telescope is a type of the block. -/
+theorem Telescope.recursionAt_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
+    {ps : List Parameter} → {Θ : Telescope k Γ ps} → {i : Nat} → Θ.recursionAt names i = some D →
+      D ∈ names
+  | [], .nil, _, h => by simp [Telescope.recursionAt, Telescope.recursion] at h
+  | _ :: _, .cons _ _ A _, 0, h => Term.blockName_mem (by simpa [Telescope.recursionAt,
+      Telescope.recursion] using h)
+  | _ :: _, .cons _ _ _ Θ, i + 1, h => Telescope.recursionAt_mem (Θ := Θ) (i := i)
+      (by simpa [Telescope.recursionAt, Telescope.recursion] using h)
+
 /-- The number of the motives `C̄`. -/
 def Motives.length {k : Nat} {Γ : Scope} : Motives k Γ → Nat
   | .nil => 0
@@ -645,6 +689,19 @@ theorem TypeDeclaration.name_mem_names {decl : TypeDeclaration}
     T.name ∈ decl.names :=
   decl.names_eq ▸ List.mem_append_left _ (List.mem_map_of_mem hT)
 
+/-- A name of a type declaration with a data type is the name of one of its data types. -/
+theorem TypeDeclaration.mem_names_of_dataTypes {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
+    {D : Name} (hD : D ∈ decl.names) : ∃ T' ∈ decl.dataTypes, T'.name = D := by
+  unfold TypeDeclaration.dataTypes at hT ⊢
+  unfold TypeDeclaration.names at hD
+  split at hT
+  · rename_i heq
+    rw [heq] at hD
+    obtain ⟨T', hT', rfl⟩ := List.mem_map.1 hD
+    exact ⟨T', hT', rfl⟩
+  · cases hT
+
 /-- The data types of a type declaration whose names are distinct have distinct names. -/
 theorem TypeDeclaration.dataTypes_nodup {decl : TypeDeclaration} (h : decl.names.Nodup) :
     (decl.dataTypes.map (·.name)).Nodup :=
@@ -900,6 +957,15 @@ theorem _root_.List.getFin_map {α β : Type} (f : α → β) (l : List α) {n :
     (l.map f).getFin h = fun i => f (l.getFin ((List.length_map f).symm.trans h) i) := by
   funext i
   simp [List.getFin]
+
+/-- The numbered elements of a list are the list. -/
+theorem _root_.List.ofFn_getFin {α : Type} :
+    (l : List α) → {n : Nat} → (h : l.length = n) → List.ofFn (l.getFin h) = l
+  | [], _, h => by subst h; rfl
+  | a :: l, _, h => by
+    subst h
+    rw [List.ofFn_succ]
+    exact congrArg (a :: ·) (List.ofFn_getFin l rfl)
 
 /-- The instance that gives the sort variables the sorts `qs` and the grade variables the grades
 `ps`. -/
