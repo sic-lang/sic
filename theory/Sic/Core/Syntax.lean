@@ -268,7 +268,7 @@ theorem Args.terms_inj {k : Nat} {Γ : Scope} :
 -- ADE: none.
 /-- The type of the block whose names are `names` that the type `A` of a field is an instance of,
 if any: the field is then recursive.
-RFC: `\mathsf{rec}_A` -/
+RFC: `\mathsf{recursive}_A` -/
 def Term.blockName {k : Nat} {Γ : Scope} (names : List Name) : Term k Γ → Option Name
   | .inst D _ _ _ _ => if D ∈ names then some D else none
   | _ => none
@@ -276,7 +276,7 @@ def Term.blockName {k : Nat} {Γ : Scope} (names : List Name) : Term k Γ → Op
 -- ADE: none.
 /-- The types of the block whose names are `names` that the types of the entries of a telescope are
 instances of, in order: `some D` for a recursive field of the type `D`, `none` for the others.
-RFC: `\mathsf{rec}_\Theta` -/
+RFC: `\mathsf{recursive}_\Theta` -/
 def Telescope.recursion {k : Nat} {Γ : Scope} (names : List Name) :
     {ps : List Parameter} → Telescope k Γ ps → List (Option Name)
   | [], .nil => []

@@ -2523,8 +2523,7 @@ theorem Term.instantiate_bound_rename {Γ : Scope} (ps : List Parameter)
     Term.subst₀_isVar (ξ := fun x => x) (Args.bound_toSubst₀_isVar ps), Term.rename_id]
 
 /-- `(x̄. x[x̄])[θ⇑] = θ(x)`: the variable `x`, as an abstraction, substituted by `θ`, is what `θ` gives
-it.
-RFC: `\mathsf{identity}_\theta` -/
+it. -/
 theorem Var.eta_subst {Γ Δ : Scope} {e : Scope.Entry} (θ : Subst k Γ Δ) (x : Var Δ e) :
     (Var.eta x).subst (Subst.liftN e.params.length θ) = θ x := by
   rw [Var.eta, Term.subst, Subst.liftN_weakenN, Args.bound_subst, Term.instantiate_bound_rename]

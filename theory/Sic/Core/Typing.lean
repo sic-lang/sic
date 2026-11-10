@@ -926,6 +926,9 @@ it depends on it, so that it does not extend the context.
 The type of a field that is not recursive lives in a sort that `κ` bounds, with a grade without use
 at run time if it is a proposition, in the signature `Σ`, which the block does not extend, so that no
 type of the block occurs in it.
+The RFC writes the parameters themselves as the variables `x̄_Δ`, the same under every field; the
+Lean carries them as the arguments `ā` of the parameters in the scope of the fields, the identity
+renamed under the fields before, since de Bruijn indices shift under each field.
 -/
 inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
     {Γ : Scope} → InstanceArgs decl.levels Γ decl.scope → Context decl.levels Γ →
