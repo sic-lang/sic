@@ -332,14 +332,22 @@
               };
             };
           };
-          # Runs every setup, with the same arguments.
+          # Runs every setup that the contributor confirms, since each one configures a tool they may
+          # not use, with the same arguments.
           setupAll = command {
             name = "setup";
             text = ''
               status=0
-              ${lib.concatMapStrings (
-                name: ''${lib.getExe setups.${name}.command.run} "$@" || status=1'' + "\n"
-              ) (lib.attrNames setups)}
+              confirm() {
+                local answer
+                read -r -p "$1? [y/N] " answer || true
+                [[ $answer == [yY]* ]]
+              }
+              ${lib.concatMapStrings (name: ''
+                if confirm "${setups.${name}.description}"; then
+                  ${lib.getExe setups.${name}.command.run} "$@" || status=1
+                fi
+              '') (lib.attrNames setups)}
               exit "$status"
             '';
           };
