@@ -74,6 +74,13 @@ theorem TypedRen.liftable : Subst.Liftable sig (@TypedRen.Base sig k) where
     rw [Term.var_subst_of (hθ x)]
     exact .var hctx (hv hx)
 
+-- ADE: `step`, in `Definition/Typed/Weakening.agda`.
+/-- The renaming of a context in the context extended by a variable is typed, when the context
+extended is well formed. -/
+theorem TypedRen.weaken {Γ : Scope} {ctx : Context k Γ} {B : Term k Γ} (h : WfCtx sig (ctx.var B)) :
+    TypedRen sig (ctx.var B) Ren.weaken ctx :=
+  ⟨h, .succVar, .succVar⟩
+
 /-! ## Stability of the Typing -/
 
 -- ADE: `wk`, `wkEq`, `wkTerm` and `wkEqTerm`, in `Definition/Typed/Weakening.agda`.

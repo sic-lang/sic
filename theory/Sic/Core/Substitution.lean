@@ -4126,6 +4126,80 @@ theorem Term.weakenClosed_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) (t : Term k
     Term.rename_eq_subst]
   exact Term.subst_congr (fun x => by cases x) t
 
+/-! ## Substitutions of the First Order as Substitutions of the Second Order
+
+A substitution of the first order is the substitution of the second order that gives each variable
+the term it gives it, or the abstraction of the variable it gives it, so that the laws of the
+substitutions of the second order hold for it. -/
+
+/-- The value `v` as an abstraction over the variables of the telescope of its entry: the term
+itself, for a variable without telescope, or the abstraction `ȳ. y[ȳ]` of the variable `y`. -/
+def Val.eta {Γ : Scope} {e : Scope.Entry} : Val k Γ e → Term k (Γ.extend e.params.length)
+  | .var y => Var.eta y
+  | .term t => t
+
+/-- The substitution `σ` of the first order as a substitution of the second order, which gives each
+variable the abstraction of its value. -/
+def Subst₀.toSubst {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Subst k Γ Δ := fun x => (σ x).eta
+
+/-- A substitution of the first order then the identity is the identity then the substitution as
+one of the second order. -/
+theorem Subst₀.Swaps.toSubst {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) :
+    Subst₀.Swaps σ (fun x => Var.eta x) σ.toSubst Subst₀.id :=
+  ⟨fun x y h => by
+      have h' : σ x = .var y := h
+      show (σ x).eta.subst₀ (Subst₀.liftN _ Subst₀.id) = Var.eta y
+      rw [h', Val.eta]
+      exact Term.subst₀_id_of (Subst₀.liftN_id_of _ fun _ => rfl) _,
+    fun x u h => by
+      have h' : σ x = .term u := h
+      show (σ x).eta.subst₀ Subst₀.id = u.subst fun x => Var.eta x
+      rw [h', Val.eta]
+      exact (Term.subst₀_id u).trans (Term.subst_id_of (fun _ => rfl) u).symm⟩
+
+/-- The identity, under new variables, gives each variable its abstraction. -/
+theorem Subst.liftN_eta_id {Γ : Scope} (n : Nat) :
+    ∀ {a} (x : Var (Γ.extend n) a), Subst.liftN n (fun x => Var.eta (k := k) x) x = Var.eta x :=
+  fun x => (Subst.liftN_eta_of n (ξ := fun x => x) (fun _ => rfl) x).trans
+    (congrArg Var.eta (Ren.liftN_id_of n (fun _ => rfl) x))
+
+/-- A term substituted by a substitution of the first order under new variables is the term
+substituted by it as one of the second order, under them. -/
+theorem Term.subst₀_liftN_eq_subst {Γ Δ : Scope} (n : Nat) (σ : Subst₀ k Γ Δ)
+    (t : Term k (Δ.extend n)) :
+    t.subst₀ (Subst₀.liftN n σ) = t.subst (Subst.liftN n σ.toSubst) := by
+  have h := Term.subst_subst₀_of ((Subst₀.Swaps.toSubst σ).liftN n) t
+  rwa [Term.subst_id_of (Subst.liftN_eta_id n),
+    Term.subst₀_id_of (σ := Subst₀.liftN n Subst₀.id) (Subst₀.liftN_id_of n fun _ => rfl)] at h
+
+/-- A term substituted by a substitution of the first order is the term substituted by it as one of
+the second order. -/
+theorem Term.subst₀_eq_subst {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) (t : Term k Δ) :
+    t.subst₀ σ = t.subst σ.toSubst := by
+  have h := Term.subst_subst₀_of (Subst₀.Swaps.toSubst σ) t
+  rwa [Term.subst_id_of fun _ => rfl, Term.subst₀_id_of (σ := Subst₀.id) fun _ => rfl] at h
+
+/-- Arguments substituted by a substitution of the first order are the arguments substituted by it
+as one of the second order. -/
+theorem Args.subst₀_eq_subst {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ Δ)
+    (ts : Args k Δ ps) : ts.subst₀ σ = ts.subst σ.toSubst := by
+  have h := Args.subst_subst₀_of (Subst₀.Swaps.toSubst σ) ts
+  rwa [Args.subst_id_of fun _ => rfl, Args.subst₀_id_of (σ := Subst₀.id) fun _ => rfl] at h
+
+/-- Arguments of an instance substituted by a substitution of the first order are the arguments
+substituted by it as one of the second order. -/
+theorem InstanceArgs.subst₀_eq_subst {Γ Δ Ξ : Scope} (σ : Subst₀ k Γ Δ)
+    (as : InstanceArgs k Δ Ξ) : as.subst₀ σ = as.subst σ.toSubst := by
+  have h := InstanceArgs.subst_subst₀_of (Subst₀.Swaps.toSubst σ) as
+  rwa [InstanceArgs.subst_id_of fun _ => rfl, InstanceArgs.subst₀_id_of (σ := Subst₀.id) fun _ => rfl] at h
+
+/-- A telescope substituted by a substitution of the first order is the telescope substituted by it
+as one of the second order. -/
+theorem Telescope.subst₀_eq_subst {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ Δ)
+    (Θ : Telescope k Δ ps) : Θ.subst₀ σ = Θ.subst σ.toSubst := by
+  have h := Telescope.subst_subst₀_of (Subst₀.Swaps.toSubst σ) Θ
+  rwa [Telescope.subst_id_of fun _ => rfl, Telescope.subst₀_id_of (σ := Subst₀.id) fun _ => rfl] at h
+
 /-! ## Positions in Substituted Motives, Branches and States -/
 
 /-- A motive at a position of motives substituted is a motive of the motives, substituted. -/
