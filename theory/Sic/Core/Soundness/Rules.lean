@@ -1085,6 +1085,46 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
         .prop _ _ hP' fun _ _ => .rfl, htrue⟩⟩
 
 -- ADE: none.
+/-- Two equal terms of an instance in a universe of a data type of `Σ`, whose type declaration is
+meaningful, at arguments of its parameters, compute to the same constructor of a type of the block,
+applied to equal arguments of its fields: the canonical terms that `(eq_μ)` relates. -/
+theorem ValidEqTerm₀.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as.toSubst as.toSubst)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) {t₁ t₂ : Term 0 []}
+    (ht : ValidEqTerm₀ sig ι t₁ t₂ (.inst D qs ls ps as)) :
+    ∃ T' ∈ decl.dataTypes, T'.name = D ∧ ∃ con ∈ T'.constructors,
+      ∃ ts₁ ts₂ : Args 0 [] (con.params (.ofLists qs ps hq hp)),
+        (∃ (qs' : List Quality) (ls' : List (Level 0)) (ps' : List Grade) (Δ' : Scope)
+          (as' : InstanceArgs 0 [] Δ'),
+          Computesι sig ι t₁ (.ctor D qs' ls' ps' as' con.name ts₁.terms)) ∧
+        (∃ (qs' : List Quality) (ls' : List (Level 0)) (ps' : List Grade) (Δ' : Scope)
+          (as' : InstanceArgs 0 [] Δ'),
+          Computesι sig ι t₂ (.ctor D qs' ls' ps' as' con.name ts₂.terms)) ∧
+        EqSubst sig ι
+          (Context.empty.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+          ts₁.toSubst ts₂.toSubst := by
+  obtain ⟨hdecl, hT, rfl⟩ := h
+  obtain ⟨S, hU, hmono, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
+  have hU' := levelRel_univ_iff.2 (hU T hT).1
+  have hw : Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
+    ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨v, w₁, w₂, R, hv', hw₁, hw₂, hR, hrel⟩ := ht.2.1 fun ⟨v, hv', _, _, hP⟩ => by
+    cases Computesι.det hd hw hv'
+    exact HasEq.univ_not_prop hd hU' hP
+  cases Computesι.det hd hw hv'
+  have hrel' := (HasEq.unique hd hR (.univ _ hU') w₁ w₂).1 hrel
+  obtain ⟨T', hT', hn, c, hc, fs₁, fs₂, ⟨qs₁, ls₁, ps₁, Δ₁, as₁, rfl⟩,
+    ⟨qs₂, ls₂, ps₂, Δ₂, as₂, rfl⟩, hS⟩ := DataType.blockRel_inv hmono hrel'
+  obtain ⟨ts₁, ts₂, rfl, rfl, hts⟩ := (hiff T' hT' c hc).2.1 _ _ hS
+  exact ⟨T', hT', hn, c, hc, ts₁, ts₂, ⟨_, _, _, _, _, hn ▸ hw₁⟩, ⟨_, _, _, _, _, hn ▸ hw₂⟩, hts⟩
+
+-- ADE: none.
 /-- `(arg_ε≡)` keeps the meaning, and `(arg_ε)` with it: no arguments are equal substitutions of the
 empty parameters. -/
 theorem ValidEqInstanceArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
