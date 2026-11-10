@@ -92,6 +92,13 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
+  /-- The fields of a constructor in a sort. -/
+  wfFields : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
+    {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
+    {κ : Universe decl.levels},
+      sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
+        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.recursionAt decl.names) Θ κ
   /-- The destructors of a codata type in a sort. -/
   wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
@@ -100,13 +107,6 @@ structure SoundnessIn : Prop where
       sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
           (ds.recursionAt decl.names) ds κ
-  /-- The fields of a constructor in a sort. -/
-  wfFields : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
-    {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
-    {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.recursionAt decl.names) Θ κ
   /-- A well-formed type declaration. -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
     sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
@@ -234,7 +234,7 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn :=
   ⟨wfConstantDefinition, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs,
-    eqInstanceArgs, wfTelescope, eqTelescope, wfDestructors, wfFields, wfTypeDeclaration⟩
+    eqInstanceArgs, wfTelescope, eqTelescope, wfFields, wfDestructors, wfTypeDeclaration⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
@@ -720,6 +720,36 @@ where
     | .cons hA hκ hΘ _ => fun ρ =>
       ValidEqTelescopeΓ.cons (eqTerm hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (eqTelescope hd hι hΘ ρ)
+  wfFields {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+      {I : Instance decl.sorts decl.grades} {Γ : Scope}
+      {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+      {ps : List Parameter} {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels}
+      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      WfFields sig decl I as ctx Θ κ →
+        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.recursionAt decl.names) Θ κ
+    | .nil hctx => fun ρ => ValidFieldsΓ.nil (wfCtx hd hι hctx ρ)
+    | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
+      have hΘ' := wfFields hd hι hΘ ρ
+      rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
+          fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
+        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
+      exact ValidFieldsΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
+        (by simp [Telescope.recursionAt, Telescope.recursion, hn]) hΘ'
+    | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
+      have hΘ' := wfFields hd hι hΘ ρ
+      show ValidFieldsΓ sigM ι _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
+        ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
+      rw [Telescope.substLevels_rename]
+      refine ValidFieldsΓ.recursive (D := D)
+        (by simp [Telescope.recursionAt, Telescope.recursion, TypeDeclaration.blockInstance,
+          Term.blockName, hD]) ?_
+      have hr : (fun i => (Telescope.cons q p (decl.blockInstance I D as)
+          (Θ'.rename Ren.weaken)).recursionAt decl.names (i + 1)) = Θ'.recursionAt decl.names := by
+        funext i
+        simp only [Telescope.recursionAt, Telescope.recursion, Telescope.recursion_rename,
+          List.getElem?_cons_succ]
+      rw [hr]
+      exact hΘ'
   wfDestructors {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
@@ -760,36 +790,6 @@ where
           List.getElem?_cons_succ]
       rw [hr]
       exact hds'
-  wfFields {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-      {I : Instance decl.sorts decl.grades} {Γ : Scope}
-      {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
-      {ps : List Parameter} {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
-      WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.recursionAt decl.names) Θ κ
-    | .nil hctx => fun ρ => ValidFieldsΓ.nil (wfCtx hd hι hctx ρ)
-    | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι hΘ ρ
-      rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
-          fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
-        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
-      exact ValidFieldsΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
-        (by simp [Telescope.recursionAt, Telescope.recursion, hn]) hΘ'
-    | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι hΘ ρ
-      show ValidFieldsΓ sigM ι _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
-        ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
-      rw [Telescope.substLevels_rename]
-      refine ValidFieldsΓ.recursive (D := D)
-        (by simp [Telescope.recursionAt, Telescope.recursion, TypeDeclaration.blockInstance,
-          Term.blockName, hD]) ?_
-      have hr : (fun i => (Telescope.cons q p (decl.blockInstance I D as)
-          (Θ'.rename Ren.weaken)).recursionAt decl.names (i + 1)) = Θ'.recursionAt decl.names := by
-        funext i
-        simp only [Telescope.recursionAt, Telescope.recursion, Telescope.recursion_rename,
-          List.getElem?_cons_succ]
-      rw [hr]
-      exact hΘ'
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl

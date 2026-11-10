@@ -266,8 +266,8 @@ theorem Args.terms_inj {k : Nat} {Γ : Scope} :
     rw [Args.terms_inj h₂]
 
 -- ADE: none.
-/-- The type of the block whose names are `names` that the type `A` of a field is an instance of,
-if any: the field is then recursive.
+/-- The type of the block whose names are `names` that the type `A` of a field, or of the result of a
+destructor, is an instance of, if any: the field or the destructor is then recursive.
 RFC: `\mathsf{recursive}_A` -/
 def Term.blockName {k : Nat} {Γ : Scope} (names : List Name) : Term k Γ → Option Name
   | .inst D _ _ _ _ => if D ∈ names then some D else none
@@ -549,7 +549,7 @@ inductive Destructors.Pos {k : Nat} (d : Name) (p q : Grade) {ps : List Paramete
 -- ADE: none.
 /-- The types of the block whose names are `names` that the results of the destructors are instances
 of, in order: `some D` for a recursive destructor of the type `D`, `none` for the others.
-RFC: `\mathsf{rec}_{\bar d}` -/
+RFC: `\mathsf{recursive}_{\bar d}` -/
 def Destructors.recursion {k : Nat} (names : List Name) :
     {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → List (Option Name)
   | _, _, .nil => []
