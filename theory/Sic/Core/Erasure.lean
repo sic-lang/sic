@@ -496,6 +496,59 @@ theorem GradeVector.extendParams_extendParams_addNat {Γ : Scope} (γ : GradeVec
       omega)
   rw [he, GradeVector.extendParams_addNat, GradeVector.extendParams_addNat]
 
+/-- The grades extended by a grade for each variable of a telescope give each old variable its
+grade. -/
+theorem GradeVector.extendGrades_addNat {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
+    (ps : List Parameter) → (x : Fin Γ.length) →
+      γ.extendGrades g ps ((x.addNat ps.length).cast (Scope.length_extend Γ ps.length).symm) =
+        γ x
+  | [], _ => rfl
+  | p :: ps, x => by
+    have h := GradeVector.extendGrades_addNat (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
+      x.succ
+    have he : ((x.addNat (p :: ps).length).cast (Scope.length_extend Γ (p :: ps).length).symm :
+        Fin (Γ.extend (p :: ps).length).length) =
+        (x.succ.addNat ps.length).cast (Scope.length_extend (.var :: Γ) ps.length).symm :=
+      Fin.ext (by simp only [Fin.val_cast, Fin.val_addNat, Fin.val_succ, List.length_cons]; omega)
+    rw [he]
+    exact h
+
+/-- The grades extended by a grade for each recursive result give each old variable its grade. -/
+theorem GradeVector.extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
+    (rs : List (Option Name)) → (ps : List Parameter) → (x : Fin Γ.length) →
+      γ.extendResults e rs ps ((x.addNat (Telescope.resultParams rs ps).length).cast
+        (Scope.length_extend Γ _).symm) = γ x
+  | some D :: rs, p :: ps, x => by
+    have h := GradeVector.extendResults_addNat (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs
+      ps x.succ
+    have he : ((x.addNat (Telescope.resultParams (some D :: rs) (p :: ps)).length).cast
+        (Scope.length_extend Γ _).symm :
+          Fin (Γ.extend (Telescope.resultParams (some D :: rs) (p :: ps)).length).length) =
+        (x.succ.addNat (Telescope.resultParams rs ps).length).cast
+          (Scope.length_extend (.var :: Γ) _).symm :=
+      Fin.ext (show x.val + ((Telescope.resultParams rs ps).length + 1) =
+        (x.val + 1) + (Telescope.resultParams rs ps).length by omega)
+    rw [he]
+    exact h
+  | none :: rs, _ :: ps, x => GradeVector.extendResults_addNat γ (fun l => e (l + 1)) rs ps x
+  | [], _, _ | some _ :: _, [], _ | none :: _, [], _ => rfl
+
+/-- The grades extended by a grade for each field, then for each recursive result, as in the scope
+of a branch of a recursor, give each old variable its grade. -/
+theorem GradeVector.extendGrades_extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length)
+    (g e : Nat → Grade) (rs : List (Option Name)) (ps : List Parameter) (x : Fin Γ.length) :
+    (γ.extendGrades g ps).extendResults e rs ps
+        ((x.addNat (ps.length + (Telescope.resultParams rs ps).length)).cast
+          (Scope.length_extend_extend Γ _ _).symm) = γ x := by
+  have he : ((x.addNat (ps.length + (Telescope.resultParams rs ps).length)).cast
+      (Scope.length_extend_extend Γ _ _).symm :
+        Fin ((Γ.extend ps.length).extend (Telescope.resultParams rs ps).length).length) =
+      ((((x.addNat ps.length).cast (Scope.length_extend Γ ps.length).symm).addNat
+        (Telescope.resultParams rs ps).length).cast (Scope.length_extend _ _).symm) :=
+    Fin.ext (show x.val + (ps.length + (Telescope.resultParams rs ps).length) =
+      (x.val + ps.length) + (Telescope.resultParams rs ps).length by omega)
+  rw [he, GradeVector.extendResults_addNat, GradeVector.extendGrades_addNat]
+
 mutual
 
 -- ADE: `erased-hasX`, in `Graded/Erasure/Extraction/Properties/Usage.agda`, for `S^{𝟙ᵐ}`.
@@ -522,8 +575,8 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     simp only [Term.erase, hd.fieldGrades h hc hq hp, Option.getD_some] at ho
     cases ho with
     | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
-  | .recursor (γ := γ₁) (δ := δ) (r := r) _ _ _ _ ht hul hus hu _, hx, ho => by
-    have hx' : r * γ₁ x + δ x ∈ S := by
+  | .recursor (γ := γ₁) (χ := χ) (δs := δs) (r := r) _ _ _ _ ht hul hus hu _ hχ _, hx, ho => by
+    have hx' : r * γ₁ x + χ x ∈ S := by
       simpa [GradeVector.add, GradeVector.smul] using hx
     simp only [Term.erase] at ho
     cases ho with
@@ -540,9 +593,13 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
       obtain ⟨u', hu'⟩ := hus i j T' con hc
       cases Option.some.inj (hget.symm.trans hu')
-      have hδ : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
-      exact Usage.absent hd hS (hΓ.extend _) (hu i j T' con u' hc hu')
-        ((GradeVector.extendParams_addNat δ _ _ x).symm ▸ hδ) ho
+      have hχx : χ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
+      have hδ : δs i x ∈ S := by
+        have h' := hS.le _ _ (hχ i j T' con hc x) hχx
+        simp only [GradeVector.add, GradeVector.smul] at h'
+        exact hS.add _ _ h'
+      exact Usage.absent hd hS ((hΓ.extend _).extend _) (hu i j T' con u' hc hu')
+        (by rw [GradeVector.extendGrades_extendResults_addNat]; exact hδ) ho
   | .obs (γ := γ₁) (δ := δ) h hq hp hpos ht hbs _, hx, ho => by
     have hx' : γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add] using hx

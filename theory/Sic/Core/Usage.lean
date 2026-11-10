@@ -39,6 +39,34 @@ def GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : GradeVector Γ.leng
   | [], .nil => γ
   | _ :: _, .cons q _ _ Θ => GradeVector.extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
 
+-- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
+/-- `γ • g₀ • … • gₐ₋₁`: the vector `γ` extended by the grade `g l` of the variable of the entry at
+each position `l` of a telescope whose parameters are `ps`, the first one at `0`. -/
+def GradeVector.extendGrades {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
+    (ps : List Parameter) → GradeVector (Γ.extend ps.length).length
+  | [] => γ
+  | _ :: ps => GradeVector.extendGrades (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
+
+-- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
+/-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
+each recursive field, at its position `l` in the fields whose entries have the parameters `ps` and
+whose recursive fields the types `rs` of the block mark, the first field at `0`, in order. -/
+def GradeVector.extendResults {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
+    (rs : List (Option Name)) → (ps : List Parameter) →
+      GradeVector (Γ.extend (Telescope.resultParams rs ps).length).length
+  | some _ :: rs, _ :: ps =>
+    GradeVector.extendResults (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
+  | none :: rs, _ :: ps => GradeVector.extendResults γ (fun l => e (l + 1)) rs ps
+  | [], _ | some _ :: _, [] | none :: _, [] => γ
+
+-- ADE: none.
+/-- `e_{l₁} + … + e_{l_b}`: the sum of the grades `e l` of the recursive results of the recursive
+fields that the types `rs` of the block mark, at their positions `l`, the first field at `0`. -/
+def Telescope.resultSum (e : Nat → Grade) : List (Option Name) → Grade
+  | [] => Grade.zero
+  | some _ :: rs => e 0 + Telescope.resultSum (fun l => e (l + 1)) rs
+  | none :: rs => Telescope.resultSum (fun l => e (l + 1)) rs
+
 mutual
 
 -- ADE: `_▸[_]_`, in `Graded/Usage.agda`.
@@ -90,30 +118,45 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : UsageArgs sig γ m ts) :
       Usage sig γ m (.ctor D qs ls ps as con.name ts.terms)
-  -- ADE: `natrecₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ`, in `Graded/Usage.agda`.
+  -- ADE: `natrec-no-nrₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ`, in `Graded/Usage.agda`.
   /-- A recursor uses the variables of its term `r` times, the term checked in the mode `m ⊙ r`, and
-  those of its branches, which share the same uses `δ` of the variables of the scope, since one of
-  them runs, each using the variable of a field as `⌜m⌝ · r` times the grade of the field at the
-  instance allows; its motives, which are types, use no variable, checked in the mode `00ᵐ`; in the
-  mode `11ᵐ`, a recursor on a block of which a type has two constructors or more uses its term at
-  run time, whose constructor chooses the branch.
+  those of its branches: each branch uses the variables of the scope as `δs i`, the variable of the
+  field at the position `l` as `gs i l` and that of its recursive result as `es i l`; a use of the
+  recursive result of a field runs the recursor on it again, which uses the field `r` times and the
+  variables of the scope as `χ`, so that the uses of a field and of its result must cover `⌜m⌝ · r`
+  times the grade of the field at the instance, and `χ` the uses of each branch and of its recursive
+  results; its motives, which are types, use no variable, checked in the mode `00ᵐ`; in the mode
+  `11ᵐ`, a recursor on a block of which a type has two constructors or more uses its term at run
+  time, whose constructor chooses the branch.
   RFC: `\mathsf{rec}_{▶}` -/
   | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
-      {γ δ : GradeVector Γ.length} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades)
+      {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs es : Nat → Nat → Grade}
+      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
         Usage sig 𝟘ᶜ .zeroZero C)
       (ht : Usage sig γ (m ⊙ r) t) (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
-        Usage sig (δ.extendParams (m.grade * r) (con.params (.ofLists qs ps hq hp))) m u)
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        Usage sig (((δs i).extendGrades (gs i) (con.params (.ofLists qs ps hq hp))).extendResults
+          (es i) ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
+          (con.params (.ofLists qs ps hq hp))) m u)
+      (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+        (con.params (.ofLists qs ps hq hp))[l]? = some p →
+        m.grade * r * p.usage ≤ gs i l +
+          (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then es i l
+            else Grade.zero) * r)
+      (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        χ ≤ᶜ δs i +ᶜ Telescope.resultSum (es i)
+          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
       (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
-      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.recursor r D qs ls ps as t Cs us)
+      Usage sig ((r ·ᶜ γ) +ᶜ χ) m (.recursor r D qs ls ps as t Cs us)
   -- ADE: `_∘ₘ_`, `fstₘ` and `sndₘ`, in `Graded/Usage.agda`.
   /-- An observation uses the variables of its term once, the term checked in the mode `m`, and those
   of its arguments as the arguments of the telescope of the destructor at the instance do; the mode

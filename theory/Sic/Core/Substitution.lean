@@ -3353,15 +3353,6 @@ def Term.corecAt {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls 
 /-! ## Recursive Results -/
 
 -- ADE: none.
-/-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
-those of the recursive fields, which the types `rs` of the block mark, in order: each result has the
-parameter of its field, which no judgment reads. -/
-def Telescope.resultParams : List (Option Name) → List Parameter → List Parameter
-  | some _ :: rs, p :: ps => p :: Telescope.resultParams rs ps
-  | none :: rs, _ :: ps => Telescope.resultParams rs ps
-  | [], _ | some _ :: _, [] | none :: _, [] => []
-
--- ADE: none.
 /-- `res_C̄(x̄)`: the recursive results of the fields `x̄`, whose entries have the parameters `ps` and
 whose recursive fields the types `rs` of the block whose names are `names` mark, a variable
 `y : C_D[x / z]` for each recursive field `x` of the type `D`, at the motive `C_D` of `D` in `C̄`,
@@ -3405,12 +3396,6 @@ theorem Args.results_terms {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
   | some _ :: rs, _ :: _, .cons _ ts => congrArg _ (Args.results_terms f rs ts)
   | none :: rs, _ :: _, .cons _ ts => Args.results_terms f rs ts
   | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
-
-/-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
-whose types have the names `names`. -/
-abbrev Constructor.resultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)
-    (I : Instance j g) (names : List Name) : List Parameter :=
-  Telescope.resultParams ((c.fields I).recursion names) (c.params I)
 
 -- ADE: none.
 /-- `res_C̄(Θ_c)`: the recursive results of the fields of the constructor `c` at the instance `I`, in
