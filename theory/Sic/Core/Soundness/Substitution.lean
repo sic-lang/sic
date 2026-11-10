@@ -58,6 +58,54 @@ theorem Term.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (t.subst (Subst.liftN n σ)).subst τ = t.subst (Subst.append σ τ) :=
   Term.subst_subst_of (fun x => (Subst.append_eq_liftN σ τ x).symm) t
 
+/-- `t̄[σ⇑][τ] = t̄[σ, τ]`. -/
+theorem Args.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) {ps : List Parameter} (ts : Args k (Γ.extend n) ps) :
+    (ts.subst (Subst.liftN n σ)).subst τ = ts.subst (Subst.append σ τ) :=
+  Args.subst_subst_of (fun x => (Subst.append_eq_liftN σ τ x).symm) ts
+
+/-- The variables of a telescope, substituted by closed arguments of it, are these arguments. -/
+theorem Args.bound_subst_toSubst :
+    {ps : List Parameter} → (ts : Args k [] ps) → (Args.bound (Γ := []) ps).subst ts.toSubst = ts
+  | [], .nil => rfl
+  | _ :: ps, .cons t ts => by
+    show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).subst
+        (Subst.append (Subst.closedSingle t) ts.toSubst))
+      ((Args.bound (Γ := [.var]) ps).subst (Subst.append (Subst.closedSingle t) ts.toSubst)) = _
+    rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst ts]
+    congr 1
+    show (Subst.append (Subst.closedSingle t) ts.toSubst (Var.weakenN ps.length .zero)).instantiate
+      .nil = t
+    rw [Subst.append_weakenN]
+    rfl
+
+/-- The variables of a telescope, substituted by a closed substitution `σ` of its context followed by
+closed arguments of it, are these arguments. -/
+theorem Args.bound_subst_append {Γ : Scope} (σ : Subst k [] Γ) {ps : List Parameter}
+    (ts : Args k [] ps) : (Args.bound (Γ := Γ) ps).subst (Subst.append σ ts.toSubst) = ts := by
+  rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst]
+
+/-- The recursive results of the fields of a constructor, substituted by a closed substitution `σ` of
+the context followed by closed arguments of the fields, are those of the arguments, at the motives
+substituted by `σ`. -/
+theorem Constructor.results_subst_append {j g k' : Nat} {Δ Γ : Scope}
+    {c : Constructor j g k' Δ} {I : Instance j g} {names : List Name} {Cs : Motives k Γ}
+    {R : Telescope k (Γ.extend (c.params I).length) (c.resultParams I names)}
+    (h : c.results I names Cs = some R) (σ : Subst k [] Γ) (ts : Args k [] (c.params I)) :
+    Motives.results names (Cs.subst σ) ((c.fields I).recursion names) ts.terms =
+      some (R.subst (Subst.append σ ts.toSubst)) := by
+  have h' := Motives.results_subst names (Subst.append σ ts.toSubst) _ h
+  rwa [Motives.subst_rename_of (ξ := Ren.weakenN (c.params I).length) (θ' := σ)
+      (fun x => Subst.append_weakenN σ _ x), ← Args.terms_subst,
+    Args.bound_subst_append] at h'
+
+/-- A term renamed under `n` new variables, substituted by `σ` followed by a substitution of them,
+is the term substituted by `σ`. -/
+theorem Term.subst_append_rename_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) (t : Term k Γ) :
+    (t.rename (Ren.weakenN n)).subst (Subst.append σ τ) = t.subst σ :=
+  Term.subst_rename_of (fun x => Subst.append_weakenN σ τ x) t
+
 /-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
 theorem Subst.dropN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var Γ a) :
@@ -150,6 +198,62 @@ theorem Args.rename_weakenN_subst {ps ps' : List Parameter} (ts : Args k [] ps)
     (ss : Args k [] ps') : (ts.rename (Ren.weakenN ps'.length)).subst ss.toSubst = ts :=
   (Args.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) ts).trans
     (Args.subst_id_of (fun _ => rfl) ts)
+
+/-- The arguments of recursive results, substituted, are those of the arguments substituted, by
+functions that commute with the substitution. -/
+theorem Args.results_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) {f : Name → Term k Δ → Term k Δ}
+    {f' : Name → Term k Γ → Term k Γ} (hf : ∀ D t, (f D t).subst θ = f' D (t.subst θ)) :
+    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Δ ps) →
+      (ts.results f rs).subst θ = (ts.subst θ).results f' rs
+  | some D :: rs, _ :: _, .cons t ts => by
+    show Args.cons ((f D t).subst θ) ((ts.results f rs).subst θ) = _
+    rw [hf, Args.results_subst θ hf rs ts]
+    rfl
+  | none :: rs, _ :: _, .cons _ ts => Args.results_subst θ hf rs ts
+  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
+
+/-- The motive at a position of motives renamed is the motive renamed, under its variables. -/
+theorem Motives.get_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
+    {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Δ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
+      (Cs.rename ξ).get j = some ⟨n, C.rename (Ren.liftN (n + 1) ξ)⟩
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; rfl
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_rename ξ (Cs := Cs) h
+
+/-- Fields have recursive results when the motives have a motive without non-uniform parameters for
+each type of the block. -/
+theorem Motives.results_isSome (names : List Name) :
+    {Δ : Scope} → {Cs : Motives k Δ} →
+      (∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) → (rs : List (Option Name)) →
+      {ps : List Parameter} → (xs : Args k Δ ps) → rs.length = ps.length →
+      (∀ D, some D ∈ rs → D ∈ names) →
+        ∃ R, Motives.results names Cs rs (ps := ps) xs.terms = some R
+  | _, Cs, hCs, some D :: rs, p :: ps, .cons x xs, hl, hrs => by
+    obtain ⟨C, hC⟩ := hCs D (hrs D (List.mem_cons_self ..))
+    obtain ⟨R, hR⟩ := Motives.results_isSome names (Cs := Cs.rename Ren.weaken)
+      (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩) rs (xs.rename Ren.weaken)
+      (Nat.succ.inj hl) (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
+    rw [Args.terms_rename] at hR
+    refine ⟨.cons Grade.zero p (C.subst₀ (Subst₀.single x)) R, ?_⟩
+    unfold Motives.results
+    simp only [Args.terms, hC, hR]
+    rfl
+  | _, Cs, hCs, none :: rs, _ :: ps, .cons _ xs, hl, hrs => by
+    obtain ⟨R, hR⟩ := Motives.results_isSome names hCs rs xs (Nat.succ.inj hl)
+      (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
+    exact ⟨R, by unfold Motives.results; exact hR⟩
+  | _, _, _, [], _, _, _, _ => ⟨.nil, by unfold Motives.results; rfl⟩
+  | _, _, _, _ :: _, [], .nil, hl, _ => nomatch hl
+
+/-- A constructor has recursive results when the motives have a motive without non-uniform
+parameters for each type of the block. -/
+theorem Constructor.results_isSome {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ)
+    (I : Instance j g) {names : List Name} {Cs : Motives k Γ}
+    (hCs : ∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) :
+    ∃ R, c.results I names Cs = some R :=
+  Motives.results_isSome names (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩)
+    _ (Args.bound (c.params I)) (Telescope.length_recursion names _)
+    (fun _ hD => Telescope.mem_recursion hD)
 
 /-- `g[σ⇑⇑][t̄ / z̄][s̄ / ȳ] = g[σ, s̄, t̄]`: a branch of a corecursor, substituted by a closed
 substitution `σ` under the variables `ȳ` of its state and `z̄` of its arguments, instantiated by

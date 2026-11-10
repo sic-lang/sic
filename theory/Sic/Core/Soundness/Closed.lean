@@ -267,8 +267,8 @@ of the signature itself.
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
   | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
-  | .iota h hi hD hc hu hv =>
-    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hu hv
+  | .iota h hi hD hc hq hp hu hv =>
+    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hq hp hu hv
   | .recursor h => .recursor h.interpret
   | .beta h hi hD hg hv =>
     .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hg hv

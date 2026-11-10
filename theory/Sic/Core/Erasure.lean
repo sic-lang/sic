@@ -342,7 +342,7 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
     (hΓ : Γ.FirstOrder) : Branches k Γ → TargetBranches Γ.length
   | .nil => .nil
   | .cons a b u us =>
-    .cons a b (Scope.length_extend Γ (a + b) ▸ u.erase sig S (hΓ.extend (a + b)))
+    .cons a b (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
       (us.erase sig S hΓ)
 
 -- ADE: none.
@@ -409,8 +409,8 @@ of a branch, in the erasure of the term of this branch. -/
 theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} : (us : Branches k Γ) →
       (us.erase sig S hΓ).Occurs x → ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
-        (u.erase sig S (hΓ.extend (a + b))).Occurs
-          ((x.addNat (a + b)).cast (Scope.length_extend Γ (a + b)).symm)
+        (u.erase sig S ((hΓ.extend a).extend b)).Occurs
+          ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
   | .nil, h => nomatch h
   | .cons a b u us, h => by
     cases h with
@@ -421,7 +421,7 @@ theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (
 
 /-- The branch at a position of branches is before their end. -/
 theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
-    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k (Γ.extend (n + m))} →
+    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k ((Γ.extend n).extend m)} →
       us.get i = some a → i < us.length
   | .nil, _, _, h => nomatch h
   | .cons .., 0, _, _ => Nat.zero_lt_succ _
@@ -706,7 +706,7 @@ theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
       TargetBranches.LessDefined (us.erase sig S₂ hΓ) (us.erase sig S₁ hΓ)
   | .nil => .nil
   | .cons a b u us => .cons (Target.LessDefined.cast _
-      (Term.erase_lessDefined sig h (hΓ.extend (a + b)) u))
+      (Term.erase_lessDefined sig h ((hΓ.extend a).extend b) u))
       (Branches.erase_lessDefined sig h hΓ us)
 
 -- ADE: none.

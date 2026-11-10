@@ -296,10 +296,10 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
   /-- A recursor on a term of the instance it carries, whose arguments are arguments of the
   parameters, with a motive for each type of the block, a type of the sort `κ` over a term of the
-  instance of this type, and a branch for each case of the
-  block, a term of the motive of its type at its constructor applied to the variables of its
-  fields, has the motive of the type of the term at the term; the motives on a block of
-  propositions that has a constructor are propositions.
+  instance of this type, and a branch for each case of the block, a term of the motive of its type
+  at its constructor applied to the variables of its fields, in the context extended by its fields
+  and by its recursive results, has the motive of the type of the term at the term; the motives on a
+  block of propositions that has a constructor are propositions.
   The positions `h'` of the type of the term in the block, `j` of a type and `i` of a case give the
   motives and the branches, as the order of the declaration does.
   RFC: `\mathsf{rec}` -/
@@ -318,11 +318,14 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
-      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
-        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
-          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hut : ∀ i j T' con C' R u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        con.results (.ofLists qs ps hq hp) decl.names Cs = some R →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append R)
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+            (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       HasType sig ctx (.recursor r D qs ls ps as t Cs us) (C.subst₀ (Subst₀.single t))
@@ -522,15 +525,19 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         EqTerm sig (ctx.var (.inst T'.name qs ls₁ ps as₁)) C₁' C₂' (.sort κ))
       (hul₁ : us₁.length = decl.cases.length) (hul₂ : us₂.length = decl.cases.length)
       (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+        ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
       (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
-      (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
-        Cs₁.get j = some ⟨0, C'⟩ →
-        us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₁⟩ →
-        us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u₂⟩ →
-        EqTerm sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)) u₁ u₂
-          (C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))))
+        ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hut : ∀ i j T' con C' R u₁ u₂, decl.cases[i]? = some (j, T', con) →
+        Cs₁.get j = some ⟨0, C'⟩ → con.results (.ofLists qs ps hq hp) decl.names Cs₁ = some R →
+        us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
+        us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
+        EqTerm sig
+          ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)).append R) u₁ u₂
+          ((C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))).rename
+            (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
@@ -614,7 +621,9 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
   /-- A recursor on a constructor applied to arguments of its fields, with the premises of `(rec)`,
   is equal to the branch of the constructor, the case `i` of the block, with the arguments
-  substituted for the variables of the fields.
+  substituted for the variables of the fields and, for those of the recursive results, the
+  recursors on the arguments of the recursive fields, at the same instance, with the same motives
+  and the same branches.
   RFC: `\iota` -/
   | iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -623,28 +632,35 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      {u : Term k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)}
+      {u : Term k ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length)}
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
       (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
-      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
       (hCl : Cs.length = decl.dataTypes.length)
       (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
       (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
-      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
-        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
-          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hut : ∀ i j T' con C' R u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        con.results (.ofLists qs ps hq hp) decl.names Cs = some R →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append R)
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+            (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
-        (u.instantiate ts) (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
+        ((u.instantiate ((ts.results (fun D' t => .recursor r D' qs ls ps as t Cs us)
+          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)).rename
+            (Ren.weakenN _))).instantiate ts)
+        (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
   -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`, for the unit type with `η`.
   /-- A term `e` over a term `t` of a data type with a single constructor, the case `i` of the block,
   is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of the type is that of
@@ -670,11 +686,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
-      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
-        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
-          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hut : ∀ i j T' con C' R u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        con.results (.ofLists qs ps hq hp) decl.names Cs = some R →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append R)
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+            (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (e.subst₀ (Subst₀.single t)) (.recursor r D qs ls ps as t Cs us)

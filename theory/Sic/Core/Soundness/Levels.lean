@@ -130,7 +130,7 @@ inductive Branches.LevelEquiv {k : Nat} : {Γ : Scope} → Branches k Γ → Bra
   /-- No branch. -/
   | nil {Γ : Scope} : Branches.LevelEquiv (Γ := Γ) .nil .nil
   /-- Two branches equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n m : Nat} {u₁ u₂ : Term k (Γ.extend (n + m))} {us₁ us₂ : Branches k Γ}
+  | cons {Γ : Scope} {n m : Nat} {u₁ u₂ : Term k ((Γ.extend n).extend m)} {us₁ us₂ : Branches k Γ}
       (h : Term.LevelEquiv u₁ u₂) (hs : Branches.LevelEquiv us₁ us₂) :
       Branches.LevelEquiv (.cons n m u₁ us₁) (.cons n m u₂ us₂)
 
@@ -352,7 +352,7 @@ theorem Motives.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Cs
 theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {us₁ us₂ : Branches k Δ} :
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.rename ξ) (us₂.rename ξ)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+  | .cons (n := n) (m := m) h hs => .cons (h.rename (Ren.liftN m (Ren.liftN n ξ))) (hs.rename ξ)
 
 
 theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
@@ -634,7 +634,8 @@ theorem Branches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Su
     (hσ : Subst₀.LevelEquiv σ₁ σ₂) {us₁ us₂ : Branches k Δ} :
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.subst₀ σ₁) (us₂.subst₀ σ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+  | .cons h hs =>
+    .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ (Subst₀.LevelEquiv.liftN _ hσ))) (hs.subst₀ hσ)
 
 
 /-- A substitution of the first order equal up to the levels keeps two telescopes equal up to their
@@ -775,7 +776,8 @@ theorem Branches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst
     (hθ : Subst.LevelEquiv θ₁ θ₂) {us₁ us₂ : Branches k Δ} :
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.subst θ₁) (us₂.subst θ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+  | .cons h hs =>
+    .cons (h.subst (Subst.LevelEquiv.liftN _ (Subst.LevelEquiv.liftN _ hθ))) (hs.subst hθ)
 
 
 /-- A substitution of the second order equal up to the levels keeps two telescopes equal up to their
@@ -814,7 +816,7 @@ theorem Constructor.fieldsAt_levelEquiv {j g k : Nat} {Δ : Scope} (c : Construc
 /-- The branches of two branches equal up to their levels are equal up to their levels. -/
 theorem Branches.LevelEquiv.get {k : Nat} {Γ : Scope} :
     {us₁ us₂ : Branches k Γ} → Branches.LevelEquiv us₁ us₂ → {i n m : Nat} →
-      {u₁ : Term k (Γ.extend (n + m))} → us₁.get i = some ⟨n, m, u₁⟩ →
+      {u₁ : Term k ((Γ.extend n).extend m)} → us₁.get i = some ⟨n, m, u₁⟩ →
         ∃ u₂, us₂.get i = some ⟨n, m, u₂⟩ ∧ Term.LevelEquiv u₁ u₂
   | _, _, .nil, _, _, _, _, he => nomatch he
   | _, _, .cons h _, 0, _, _, _, he => by
@@ -853,6 +855,17 @@ theorem Term.LevelEquiv.instantiateTerms₂ {k : Nat} {Γ : Scope} {m a : Nat}
     obtain ⟨w₂, hg₂, hw⟩ := h.instantiateTerms (hus.rename _) hg₁
     obtain ⟨v₂, hv₂, hvv⟩ := hw.instantiateTerms hts hv
     exact ⟨v₂, by rw [hg₂]; exact hv₂, hvv⟩
+
+/-- The recursive results of terms equal up to their levels, by functions that give terms equal up to
+their levels, are equal up to their levels. -/
+theorem Terms.LevelEquiv.results {k : Nat} {Γ : Scope} {f₁ f₂ : Name → Term k Γ → Term k Γ}
+    (hf : ∀ D t₁ t₂, Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (f₁ D t₁) (f₂ D t₂)) :
+    {ts₁ ts₂ : Terms k Γ} → Terms.LevelEquiv ts₁ ts₂ → (rs : List (Option Name)) →
+      Terms.LevelEquiv (ts₁.results f₁ rs) (ts₂.results f₂ rs)
+  | _, _, _, [] => .nil
+  | _, _, .nil, some _ :: _ | _, _, .nil, none :: _ => .nil
+  | _, _, .cons ht hts, some D :: rs => .cons (hf D _ _ ht) (Terms.LevelEquiv.results hf hts rs)
+  | _, _, .cons _ hts, none :: rs => Terms.LevelEquiv.results hf hts rs
 
 /-- The branches of corecursors equal up to their levels have, at a position, branches equal up to
 their levels. -/
@@ -900,14 +913,15 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
       have hl' := hls.length_eq.symm.trans hl
       exact ⟨_, .delta hd hq hl' hp,
         (Term.substLevels_levelEquiv (hls.getFin hl hl') _).rename _⟩
-  | iota hdecl hi hD hc hu hv =>
+  | iota hdecl hi hD hc hq hp hu hv =>
     cases h with
-    | recursor _ _ _ _ _ _ ht _ hus =>
+    | recursor _ _ _ _ hl has ht hCs hus =>
       cases ht with
       | ctor _ _ _ _ _ _ hts =>
         obtain ⟨u', hu', huu⟩ := hus.get hu
-        obtain ⟨v', hv', hvv⟩ := huu.instantiateTerms hts hv
-        exact ⟨v', .iota hdecl hi hD hc hu' hv', hvv⟩
+        obtain ⟨v', hv', hvv⟩ := huu.instantiateTerms₂ hts
+          (Terms.LevelEquiv.results (fun D _ _ h => .recursor _ D _ _ hl has h hCs hus) hts _) hv
+        exact ⟨v', .iota hdecl hi hD hc hq hp hu' hv', hvv⟩
   | recursor _ ih =>
     cases h with
     | recursor _ _ _ _ hl has ht hCs hus =>

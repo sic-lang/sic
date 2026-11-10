@@ -203,7 +203,7 @@ inductive Branches (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Branches k Γ
   /-- `(c(x̄; ȳ) ⇒ u, ū)`, with `n` fields and `m` recursive results. -/
-  | cons {Γ : Scope} (n m : Nat) (u : Term k (Γ.extend (n + m))) (us : Branches k Γ) :
+  | cons {Γ : Scope} (n m : Nat) (u : Term k ((Γ.extend n).extend m)) (us : Branches k Γ) :
       Branches k Γ
 
 -- ADE: none.
@@ -309,6 +309,21 @@ theorem Telescope.recursionAt_mem {k : Nat} {Γ : Scope} {names : List Name} {D 
   | _ :: _, .cons _ _ _ Θ, i + 1, h => Telescope.recursionAt_mem (Θ := Θ) (i := i)
       (by simpa [Telescope.recursionAt, Telescope.recursion] using h)
 
+/-- A telescope has a type of the block or none for each of its entries. -/
+theorem Telescope.length_recursion {k : Nat} {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (Θ.recursion names).length = ps.length
+  | [], .nil => rfl
+  | _ :: _, .cons _ _ _ Θ => congrArg (· + 1) (Telescope.length_recursion names Θ)
+
+/-- The types of the recursive fields of a telescope are types of the block. -/
+theorem Telescope.mem_recursion {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
+    {ps : List Parameter} → {Θ : Telescope k Γ ps} → some D ∈ Θ.recursion names → D ∈ names
+  | [], .nil, h => nomatch h
+  | _ :: _, .cons _ _ A Θ, h => by
+    rcases List.mem_cons.1 h with h | h
+    · exact Term.blockName_mem h.symm
+    · exact Telescope.mem_recursion h
+
 /-- The number of the motives `C̄`. -/
 def Motives.length {k : Nat} {Γ : Scope} : Motives k Γ → Nat
   | .nil => 0
@@ -329,14 +344,14 @@ def Branches.length {k : Nat} {Γ : Scope} : Branches k Γ → Nat
 /-- The branch at the position `i` of the branches `ū`, the first one at `0`, with its numbers of
 fields and of recursive results. -/
 def Branches.get {k : Nat} {Γ : Scope} :
-    Branches k Γ → Nat → Option (Σ n m, Term k (Γ.extend (n + m)))
+    Branches k Γ → Nat → Option (Σ n m, Term k ((Γ.extend n).extend m))
   | .nil, _ => none
   | .cons n m u _, 0 => some ⟨n, m, u⟩
   | .cons _ _ _ us, i + 1 => us.get i
 
 /-- The branch at a position of branches is one term. -/
 theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Nat}
-    {u₁ u₂ : Term k (Γ.extend (n + m))} (h₁ : us.get i = some ⟨n, m, u₁⟩)
+    {u₁ u₂ : Term k ((Γ.extend n).extend m)} (h₁ : us.get i = some ⟨n, m, u₁⟩)
     (h₂ : us.get i = some ⟨n, m, u₂⟩) : u₁ = u₂ := by
   have h := Option.some.inj (h₁.symm.trans h₂)
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
@@ -706,6 +721,22 @@ theorem TypeDeclaration.mem_names_of_dataTypes {decl : TypeDeclaration}
 theorem TypeDeclaration.dataTypes_nodup {decl : TypeDeclaration} (h : decl.names.Nodup) :
     (decl.dataTypes.map (·.name)).Nodup :=
   (List.nodup_append.1 (decl.names_eq ▸ h)).1
+
+/-- The type at a position of the data types of a declaration whose names are distinct is at the
+same position of its names. -/
+theorem TypeDeclaration.idxOf_dataTypes {decl : TypeDeclaration} (h : decl.names.Nodup) {j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hj : decl.dataTypes[j]? = some T) :
+    decl.names.idxOf T.name = j := by
+  obtain ⟨hj', he⟩ := List.getElem?_eq_some_iff.1 hj
+  have hl : j < decl.names.length := by
+    rw [decl.names_eq, List.length_append, List.length_map]
+    omega
+  have hn : decl.names[j] = T.name := by
+    have hm : j < (decl.dataTypes.map (·.name)).length := by rw [List.length_map]; exact hj'
+    simp only [decl.names_eq]
+    rw [List.getElem_append_left hm, List.getElem_map, he]
+  rw [← hn]
+  exact h.idxOf_getElem j hl
 
 /-- The constructors of each data type and the destructors of each codata type that an entry
 declares have distinct names. -/
@@ -1407,6 +1438,13 @@ theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D 
 theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a
   | 0 => rfl
   | a + 1 => (Scope.length_extend (.var :: Γ) a).trans (Nat.succ_add _ _)
+
+/-- The length of the scope `Γ` extended by `a`, then `b` variables, as the scope of a branch of a
+recursor is. -/
+theorem Scope.length_extend_extend (Γ : Scope) (a b : Nat) :
+    ((Γ.extend a).extend b).length = Γ.length + (a + b) := by
+  rw [Scope.length_extend, Scope.length_extend]
+  omega
 
 /-- The length of the scope `Γ` extended by `a`, then `b`, then `c` variables, as the scope of a
 branch of a corecursor is. -/

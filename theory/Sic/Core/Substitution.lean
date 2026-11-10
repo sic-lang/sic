@@ -104,7 +104,7 @@ def Motives.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Motives k Δ → Motives k
 /-- The branches `ū` renamed by `ξ`, under the variables of each branch. -/
 def Branches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.rename (Ren.liftN _ ξ)) (us.rename ξ)
+  | .cons n m u us => .cons n m (u.rename (Ren.liftN m (Ren.liftN n ξ))) (us.rename ξ)
 
 /-- The telescope `Θ` renamed by `ξ`. -/
 def Telescope.rename {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) :
@@ -264,7 +264,7 @@ def Motives.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Motives k Δ → 
 RFC: `\mathsf{subst}_\sigma.\bar u` -/
 def Branches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.subst₀ (Subst₀.liftN _ σ)) (us.subst₀ σ)
+  | .cons n m u us => .cons n m (u.subst₀ (Subst₀.liftN m (Subst₀.liftN n σ))) (us.subst₀ σ)
 
 /-- `Θ[σ]`: the telescope `Θ` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma.\Theta` -/
@@ -388,7 +388,7 @@ def Motives.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Motives k Δ → Motive
 RFC: `\mathsf{subst}_\theta.\bar u` -/
 def Branches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.subst (Subst.liftN _ θ)) (us.subst θ)
+  | .cons n m u us => .cons n m (u.subst (Subst.liftN m (Subst.liftN n θ))) (us.subst θ)
 
 /-- `Θ[θ]`: the telescope `Θ` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta.\Theta` -/
@@ -645,7 +645,7 @@ theorem Branches.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Va
     (us : Branches k Γ) → us.rename ξ = us
   | .nil => rfl
   | .cons n m u us => by
-    rw [Branches.rename, Branches.rename_id_of h us, Term.rename_id_of (Ren.liftN_id_of _ h) u]
+    rw [Branches.rename, Branches.rename_id_of h us, Term.rename_id_of (Ren.liftN_id_of _ (Ren.liftN_id_of _ h)) u]
 
 
 theorem Telescope.rename_id_of {Γ : Scope} {ps : List Parameter}
@@ -736,7 +736,7 @@ theorem Branches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (us : Branches k Γ) → us.subst₀ σ = us
   | .nil => rfl
   | .cons n m u us => by
-    rw [Branches.subst₀, Branches.subst₀_id_of h us, Term.subst₀_id_of (Subst₀.liftN_id_of _ h) u]
+    rw [Branches.subst₀, Branches.subst₀_id_of h us, Term.subst₀_id_of (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ h)) u]
 
 /-- A substitution of the first order that renames each variable to itself changes no telescope.
 RFC: `\mathsf{id}_\sigma.\Theta` -/
@@ -877,7 +877,7 @@ theorem Branches.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ 
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.rename, Branches.rename, Branches.rename,
-      Branches.rename_rename_of h us, Term.rename_rename_of (Ren.liftN_comp_of _ h) u]
+      Branches.rename_rename_of h us, Term.rename_rename_of (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ h)) u]
 
 
 theorem Telescope.rename_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1002,7 +1002,7 @@ theorem Branches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.rename, Branches.subst₀, Branches.subst₀,
-      Branches.subst₀_rename_of h us, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) u]
+      Branches.subst₀_rename_of h us, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ h)) u]
 
 
 theorem Telescope.subst₀_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1132,7 +1132,7 @@ theorem Branches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {
   | .cons n m u us => by
     rw [Branches.subst₀, Branches.rename, Branches.subst₀,
       Branches.rename_subst₀_of h us,
-      Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) u]
+      Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ (Subst₀.liftN_rename_after_of _ h)) u]
 
 
 theorem Telescope.rename_subst₀_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1267,7 +1267,7 @@ theorem Branches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ}
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.subst₀, Branches.subst₀, Branches.subst₀,
-      Branches.subst₀_subst₀_of h us, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) u]
+      Branches.subst₀_subst₀_of h us, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ h)) u]
 
 
 theorem Telescope.subst₀_subst₀_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1573,7 +1573,7 @@ theorem Branches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : R
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.rename, Branches.subst, Branches.subst,
-      Branches.subst_rename_of h us, Term.subst_rename_of (Subst.liftN_rename_of _ h) u]
+      Branches.subst_rename_of h us, Term.subst_rename_of (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ h)) u]
 
 
 theorem Telescope.subst_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1699,7 +1699,7 @@ theorem Branches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : R
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.subst, Branches.rename, Branches.subst,
-      Branches.rename_subst_of h us, Term.rename_subst_of (Subst.liftN_rename_after_of _ h) u]
+      Branches.rename_subst_of h us, Term.rename_subst_of (Subst.liftN_rename_after_of _ (Subst.liftN_rename_after_of _ h)) u]
 
 
 theorem Telescope.rename_subst_of {Γ Δ Ξ : Scope} {ps : List Parameter}
@@ -1867,7 +1867,7 @@ theorem Branches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.subst₀, Branches.subst, Branches.subst, Branches.subst₀,
-      Branches.subst_subst₀_of h us, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) u]
+      Branches.subst_subst₀_of h us, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ h)) u]
 
 
 theorem Telescope.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter}
@@ -2083,7 +2083,7 @@ theorem Branches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ�
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.subst, Branches.subst, Branches.subst,
-      Branches.subst_subst_of h us, Term.subst_subst_of (Subst.liftN_subst_of _ h) u]
+      Branches.subst_subst_of h us, Term.subst_subst_of (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ h)) u]
 
 /-- Substituting a telescope by `θ₁` then by `θ₂` is substituting it by their composition `θ₃`.
 RFC: `\mathsf{comp}_\theta.\Theta` -/
@@ -2192,7 +2192,7 @@ theorem Branches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (us : Branches k Γ) → us.subst θ = us
   | .nil => rfl
   | .cons n m u us => by
-    rw [Branches.subst, Branches.subst_id_of h us, Term.subst_id_of (Subst.liftN_id_of _ h) u]
+    rw [Branches.subst, Branches.subst_id_of h us, Term.subst_id_of (Subst.liftN_id_of _ (Subst.liftN_id_of _ h)) u]
 
 
 theorem Telescope.subst_id_of {Γ : Scope} {ps : List Parameter}
@@ -2417,7 +2417,7 @@ theorem Branches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Re
   | .nil => rfl
   | .cons n m u us => by
     rw [Branches.rename, Branches.subst₀, Branches.subst₀_isVar h us,
-      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) u]
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ h)) u]
 
 theorem Telescope.subst₀_isVar {Γ Δ : Scope} {ps : List Parameter} {σ : Subst₀ k Γ Δ}
     {ξ : Ren Γ Δ} (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) :
@@ -2920,7 +2920,7 @@ theorem Branches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k
   | .cons n m u us => by
     rw [Branches.subst₀, Branches.substLevels, Branches.substLevels,
       Branches.subst₀, Branches.substLevels_subst₀_of h us,
-      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) u]
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ (Subst₀.liftN_substLevels_of _ h)) u]
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
 first order.
@@ -3251,7 +3251,7 @@ theorem Branches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k �
   | .cons n m u us => by
     rw [Branches.subst, Branches.substLevels, Branches.substLevels,
       Branches.subst, Branches.substLevels_subst_of h us,
-      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) u]
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (Subst.liftN_substLevels_of _ h)) u]
 
 /-- The instantiation of the level variables of a telescope commutes with the substitutions of the
 second order.
@@ -3350,6 +3350,78 @@ def Term.corecAt {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls 
   .corec r D qs ls ps (as.rename (Ren.weakenN ps'.length)) (Args.bound ps').terms
     (Ss.rename (Ren.weakenN ps'.length)) (gs.rename (Ren.weakenN ps'.length))
 
+/-! ## Recursive Results -/
+
+-- ADE: none.
+/-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
+those of the recursive fields, which the types `rs` of the block mark, in order: each result has the
+parameter of its field, which no judgment reads. -/
+def Telescope.resultParams : List (Option Name) → List Parameter → List Parameter
+  | some _ :: rs, p :: ps => p :: Telescope.resultParams rs ps
+  | none :: rs, _ :: ps => Telescope.resultParams rs ps
+  | [], _ | some _ :: _, [] | none :: _, [] => []
+
+-- ADE: none.
+/-- `res_C̄(x̄)`: the recursive results of the fields `x̄`, whose entries have the parameters `ps` and
+whose recursive fields the types `rs` of the block whose names are `names` mark, a variable
+`y : C_D[x / z]` for each recursive field `x` of the type `D`, at the motive `C_D` of `D` in `C̄`,
+in order, if `C̄` has a motive without non-uniform parameters for each of these types.
+RFC: `\mathsf{results}` -/
+def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (rs : List (Option Name)) →
+    {ps : List Parameter} → Terms k Δ → Option (Telescope k Δ (Telescope.resultParams rs ps))
+  | _, Cs, some D :: rs, p :: ps, .cons x xs =>
+    match Cs.get (names.idxOf D) with
+    | some ⟨0, C⟩ => (Motives.results names (Cs.rename Ren.weaken) rs (ps := ps)
+        (xs.rename Ren.weaken)).map (Telescope.cons Grade.zero p (C.subst₀ (Subst₀.single x)))
+    | _ => none
+  | _, Cs, none :: rs, _ :: ps, .cons _ xs => Motives.results names Cs rs (ps := ps) xs
+  | _, _, some _ :: _, _ :: _, .nil | _, _, none :: _, _ :: _, .nil => none
+  | _, _, [], _, _ | _, _, some _ :: _, [], _ | _, _, none :: _, [], _ => some .nil
+
+-- ADE: none.
+/-- `f(D, t̄)`: the term `f D t` for each term `t` of a recursive field of the type `D` that the types
+`rs` of the block mark, in order: the recursive results of a recursor at the terms of the fields of
+a constructor, `f D t` being the recursor on `t` at the type `D`.
+RFC: `\mathsf{results}_t` -/
+def Terms.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) : List (Option Name) → Terms k Γ → Terms k Γ
+  | some D :: rs, .cons t ts => .cons (f D t) (Terms.results f rs ts)
+  | none :: rs, .cons _ ts => Terms.results f rs ts
+  | [], _ | _ :: _, .nil => .nil
+
+-- ADE: none.
+/-- `f(D, t̄)` for the arguments `t̄` of a telescope whose entries have the parameters `ps`: the
+arguments of the recursive results, as `Terms.results` gives their terms. -/
+def Args.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
+    (rs : List (Option Name)) → {ps : List Parameter} → Args k Γ ps →
+      Args k Γ (Telescope.resultParams rs ps)
+  | some D :: rs, _ :: _, .cons t ts => .cons (f D t) (Args.results f rs ts)
+  | none :: rs, _ :: _, .cons _ ts => Args.results f rs ts
+  | [], _, _ | some _ :: _, [], .nil | none :: _, [], .nil => .nil
+
+/-- The terms of the arguments of the recursive results are the recursive results of the terms. -/
+theorem Args.results_terms {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
+    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Γ ps) →
+      (Args.results f rs ts).terms = Terms.results f rs ts.terms
+  | some _ :: rs, _ :: _, .cons _ ts => congrArg _ (Args.results_terms f rs ts)
+  | none :: rs, _ :: _, .cons _ ts => Args.results_terms f rs ts
+  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
+
+/-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
+whose types have the names `names`. -/
+abbrev Constructor.resultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)
+    (I : Instance j g) (names : List Name) : List Parameter :=
+  Telescope.resultParams ((c.fields I).recursion names) (c.params I)
+
+-- ADE: none.
+/-- `res_C̄(Θ_c)`: the recursive results of the fields of the constructor `c` at the instance `I`, in
+a block whose types have the names `names`, in the scope `Γ` extended by its fields, for the motives
+`C̄` in `Γ`. -/
+def Constructor.results {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ) (I : Instance j g)
+    (names : List Name) (Cs : Motives k Γ) :
+    Option (Telescope k (Γ.extend (c.params I).length) (c.resultParams I names)) :=
+  Motives.results names (Cs.rename (Ren.weakenN _)) ((c.fields I).recursion names)
+    (Args.bound (Γ := Γ) (c.params I)).terms
+
 /-- `B[t̄ / x̄]` for the terms of arguments is their instantiation. -/
 theorem Term.instantiateTerms_terms {Γ : Scope} :
     {ps : List Parameter} → (B : Term k (Γ.extend ps.length)) → (ts : Args k Γ ps) →
@@ -3372,8 +3444,9 @@ theorem Motives.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 /-- The branch at a position of branches substituted is the branch substituted, under its
 variables. -/
 theorem Branches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
-    {us : Branches k Δ} → {i n m : Nat} → {u : Term k (Δ.extend (n + m))} →
-      us.get i = some ⟨n, m, u⟩ → (us.subst θ).get i = some ⟨n, m, u.subst (Subst.liftN (n + m) θ)⟩
+    {us : Branches k Δ} → {i n m : Nat} → {u : Term k ((Δ.extend n).extend m)} →
+      us.get i = some ⟨n, m, u⟩ →
+        (us.subst θ).get i = some ⟨n, m, u.subst (Subst.liftN m (Subst.liftN n θ))⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
   | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst θ (us := us) h
@@ -3399,7 +3472,7 @@ theorem Motives.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : S
 /-- The branch at a position of branches whose levels are instantiated is a branch of the branches,
 instantiated. -/
 theorem Branches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
-    {us : Branches k Γ} → {i n m : Nat} → {u : Term k' (Γ.extend (n + m))} →
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k' ((Γ.extend n).extend m)} →
       (us.substLevels ls').get i = some ⟨n, m, u⟩ →
         ∃ u₀, us.get i = some ⟨n, m, u₀⟩ ∧ u = u₀.substLevels ls'
   | .nil, _, _, _, _, h => nomatch h
@@ -3408,11 +3481,167 @@ theorem Branches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Sco
 
 /-- The branch at a position of branches is there once their levels are instantiated. -/
 theorem Branches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
-    {us : Branches k Γ} → {i n m : Nat} → {u : Term k (Γ.extend (n + m))} →
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} →
       us.get i = some ⟨n, m, u⟩ → (us.substLevels ls').get i = some ⟨n, m, u.substLevels ls'⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
   | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels_of ls' (us := us) h
+
+/-! ## Recursive Results Substituted -/
+
+/-- Motives renamed under a new variable, substituted under it, are the motives substituted, renamed
+under it. -/
+theorem Motives.subst_lift_rename_weaken {Γ Δ : Scope} (θ : Subst k Γ Δ) (Cs : Motives k Δ) :
+    (Cs.rename (Ren.weaken (e := .var))).subst (Subst.lift θ) = (Cs.subst θ).rename Ren.weaken :=
+  (Motives.subst_rename_of (fun _ => rfl) Cs).trans (Motives.rename_subst_of (fun _ => rfl) Cs).symm
+
+/-- Terms renamed under a new variable, substituted under it, are the terms substituted, renamed
+under it. -/
+theorem Terms.subst_lift_rename_weaken {Γ Δ : Scope} (θ : Subst k Γ Δ) (ts : Terms k Δ) :
+    (ts.rename (Ren.weaken (e := .var))).subst (Subst.lift θ) = (ts.subst θ).rename Ren.weaken :=
+  (Terms.subst_rename_of (fun _ => rfl) ts).trans (Terms.rename_subst_of (fun _ => rfl) ts).symm
+
+/-- The recursive results of terms, substituted, are those of the terms substituted, at the motives
+substituted. -/
+theorem Motives.results_subst (names : List Name) :
+    {Γ Δ : Scope} → (θ : Subst k Γ Δ) → {Cs : Motives k Δ} → (rs : List (Option Name)) →
+      {ps : List Parameter} → {xs : Terms k Δ} → {R : Telescope k Δ (Telescope.resultParams rs ps)} →
+      Motives.results names Cs rs xs = some R →
+        Motives.results names (Cs.subst θ) rs (xs.subst θ) = some (R.subst θ)
+  | _, _, θ, Cs, some D :: rs, p :: ps, .cons x xs, R, h => by
+    unfold Motives.results at h
+    cases hC : Cs.get (names.idxOf D) with
+    | none => simp only [hC] at h; cases h
+    | some a =>
+      obtain ⟨n, C⟩ := a
+      cases n with
+      | succ => simp only [hC] at h; cases h
+      | zero =>
+        simp only [hC] at h
+        obtain ⟨R', hR', rfl⟩ := Option.map_eq_some_iff.1 h
+        have ih := Motives.results_subst names (Subst.lift θ) rs hR'
+        rw [Motives.subst_lift_rename_weaken, Terms.subst_lift_rename_weaken] at ih
+        unfold Motives.results
+        simp only [Terms.subst, Motives.get_subst θ hC]
+        simp only [ih, Telescope.subst]
+        rw [Term.subst_subst₀_of (Subst₀.Swaps.single x θ) C]
+        rfl
+  | _, _, θ, Cs, none :: rs, _ :: ps, .cons _ xs, R, h => by
+    unfold Motives.results at h ⊢
+    exact Motives.results_subst names θ rs h
+  | _, _, _, _, some _ :: _, _ :: _, .nil, _, h | _, _, _, _, none :: _, _ :: _, .nil, _, h => by
+    unfold Motives.results at h; cases h
+  | _, _, _, _, [], _, _, R, h | _, _, _, _, some _ :: _, [], _, R, h
+  | _, _, _, _, none :: _, [], _, R, h => by
+    unfold Motives.results at h ⊢
+    cases h
+    rfl
+
+/-- The recursive results of terms whose levels are instantiated are those of the terms, at the
+motives, instantiated. -/
+theorem Motives.results_substLevels {k' : Nat} (ls' : Fin k → Level k') (names : List Name) :
+    {Δ : Scope} → {Cs : Motives k Δ} → (rs : List (Option Name)) →
+      {ps : List Parameter} → {xs : Terms k Δ} → {R : Telescope k Δ (Telescope.resultParams rs ps)} →
+      Motives.results names Cs rs xs = some R →
+        Motives.results names (Cs.substLevels ls') rs (xs.substLevels ls') =
+          some (R.substLevels ls')
+  | _, Cs, some D :: rs, p :: ps, .cons x xs, R, h => by
+    unfold Motives.results at h
+    cases hC : Cs.get (names.idxOf D) with
+    | none => simp only [hC] at h; cases h
+    | some a =>
+      obtain ⟨n, C⟩ := a
+      cases n with
+      | succ => simp only [hC] at h; cases h
+      | zero =>
+        simp only [hC] at h
+        obtain ⟨R', hR', rfl⟩ := Option.map_eq_some_iff.1 h
+        have ih := Motives.results_substLevels ls' names rs hR'
+        rw [Motives.substLevels_rename, Terms.substLevels_rename] at ih
+        unfold Motives.results
+        simp only [Terms.substLevels, Motives.get_substLevels_of ls' hC]
+        simp only [ih, Telescope.substLevels]
+        rw [Term.substLevels_subst₀_of (σ := Subst₀.single x)
+          (σ' := Subst₀.single (x.substLevels ls')) (fun y => by cases y <;> rfl) C]
+        rfl
+  | _, Cs, none :: rs, _ :: ps, .cons _ xs, R, h => by
+    unfold Motives.results at h ⊢
+    exact Motives.results_substLevels ls' names rs h
+  | _, _, some _ :: _, _ :: _, .nil, _, h | _, _, none :: _, _ :: _, .nil, _, h => by
+    unfold Motives.results at h; cases h
+  | _, _, [], _, _, R, h | _, _, some _ :: _, [], _, R, h
+  | _, _, none :: _, [], _, R, h => by
+    unfold Motives.results at h ⊢
+    cases h
+    rfl
+
+/-- The arguments of recursive results whose levels are instantiated are those of the arguments
+instantiated, by functions that commute with the instantiation. -/
+theorem Args.results_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope}
+    {f : Name → Term k Γ → Term k Γ} {f' : Name → Term k' Γ → Term k' Γ}
+    (hf : ∀ D t, (f D t).substLevels ls' = f' D (t.substLevels ls')) :
+    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Γ ps) →
+      (ts.results f rs).substLevels ls' = (ts.substLevels ls').results f' rs
+  | some D :: rs, _ :: _, .cons t ts => by
+    show Args.cons ((f D t).substLevels ls') ((ts.results f rs).substLevels ls') = _
+    rw [hf, Args.results_substLevels ls' hf rs ts]
+    rfl
+  | none :: rs, _ :: _, .cons _ ts => Args.results_substLevels ls' hf rs ts
+  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
+
+/-- Recursive results of terms whose levels are instantiated, at the motives instantiated, are those
+of the terms, instantiated. -/
+theorem Motives.results_substLevels_inv {k' : Nat} (ls' : Fin k → Level k') (names : List Name) :
+    {Δ : Scope} → {Cs : Motives k Δ} → (rs : List (Option Name)) →
+      {ps : List Parameter} → {xs : Terms k Δ} →
+      {R' : Telescope k' Δ (Telescope.resultParams rs ps)} →
+      Motives.results names (Cs.substLevels ls') rs (xs.substLevels ls') = some R' →
+        ∃ R, Motives.results names Cs rs xs = some R ∧ R' = R.substLevels ls'
+  | _, Cs, some D :: rs, p :: ps, .cons x xs, R', h => by
+    unfold Motives.results at h
+    simp only [Terms.substLevels] at h
+    cases hC' : (Cs.substLevels ls').get (names.idxOf D) with
+    | none => simp only [hC'] at h; cases h
+    | some a =>
+      obtain ⟨n, C'⟩ := a
+      cases n with
+      | succ => simp only [hC'] at h; cases h
+      | zero =>
+        obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
+        simp only [hC'] at h
+        obtain ⟨R'', hR'', rfl⟩ := Option.map_eq_some_iff.1 h
+        rw [← Motives.substLevels_rename, ← Terms.substLevels_rename] at hR''
+        obtain ⟨R₀, hR₀, rfl⟩ := Motives.results_substLevels_inv ls' names rs hR''
+        refine ⟨.cons Grade.zero p (C₀.subst₀ (Subst₀.single x)) R₀, ?_, ?_⟩
+        · unfold Motives.results
+          simp only [hC₀, hR₀]
+          rfl
+        · show Telescope.cons Grade.zero p _ _ = Telescope.cons Grade.zero p _ _
+          rw [Term.substLevels_subst₀_of (σ := Subst₀.single x)
+            (σ' := Subst₀.single (x.substLevels ls')) (fun y => by cases y <;> rfl) C₀]
+          rfl
+  | _, Cs, none :: rs, _ :: ps, .cons _ xs, R', h => by
+    unfold Motives.results at h ⊢
+    exact Motives.results_substLevels_inv ls' names rs h
+  | _, _, some _ :: _, _ :: _, .nil, _, h | _, _, none :: _, _ :: _, .nil, _, h => by
+    unfold Motives.results at h; cases h
+  | _, _, [], _, _, R', h | _, _, some _ :: _, [], _, R', h
+  | _, _, none :: _, [], _, R', h => by
+    unfold Motives.results at h
+    cases h
+    exact ⟨.nil, by unfold Motives.results; rfl, rfl⟩
+
+/-- The recursive results of a constructor at motives whose levels are instantiated are its
+recursive results at the motives, instantiated. -/
+theorem Constructor.results_substLevels_inv {k' : Nat} (ls' : Fin k → Level k') {j g k'' : Nat}
+    {Δ Γ : Scope} {c : Constructor j g k'' Δ} {I : Instance j g} {names : List Name}
+    {Cs : Motives k Γ} {R' : Telescope k' (Γ.extend (c.params I).length) (c.resultParams I names)}
+    (h : c.results I names (Cs.substLevels ls') = some R') :
+    ∃ R, c.results I names Cs = some R ∧ R' = R.substLevels ls' := by
+  unfold Constructor.results at h ⊢
+  rw [← Motives.substLevels_rename, ← Args.substLevels_bound ls' (c.params I),
+    Args.terms_substLevels] at h
+  exact Motives.results_substLevels_inv ls' names _ h
 
 /-- Motives whose levels are instantiated are as many. -/
 theorem Motives.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
