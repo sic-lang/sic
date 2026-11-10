@@ -642,6 +642,38 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
         (u.instantiate ts) (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
+  -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`, for the unit type with `η`.
+  /-- A term `e` over a term `t` of a data type with a single constructor, the case `i` of the block,
+  is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of the type is that of
+  `e` and whose branch of the constructor is `e` at the constructor applied to its fields.
+  RFC: `\eta_c` -/
+  | etaCtor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
+      {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (ht : HasType sig ctx t (.inst D qs ls ps as))
+      (he : HasType sig (ctx.var (.inst D qs ls ps as)) e C)
+      (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
+      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0,
+        e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))⟩)
+      (hCl : Cs.length = decl.dataTypes.length)
+      (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+      (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+        HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
+      (hul : us.length = decl.cases.length)
+      (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩)
+      (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0, u⟩ →
+        HasType sig (ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) u
+          (C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))))
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+        κ.quality = .prop) :
+      EqTerm sig ctx (e.subst₀ (Subst₀.single t)) (.recursor r D qs ls ps as t Cs us)
+        (C.subst₀ (Subst₀.single t))
   -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
   /-- An observation of a corecursor by the destructor of the case `i` of the block, a destructor of
   the type of the corecursor, applied to arguments of its telescope, with the premises of `(corec)`,
@@ -1045,6 +1077,7 @@ where
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaCtor _ _ _ _ _ ht .. => hasType ht
     | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}

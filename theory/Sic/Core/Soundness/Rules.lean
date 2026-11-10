@@ -1272,6 +1272,97 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   rw [← Args.terms_subst]
   exact (ValidEqTerm₀.red_iff hd (Red.iota_subst hsig hi σ₁ (ts.subst σ₁) hu)).2 hb
 
+-- ADE: `unitrec-β-ηᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Unit.agda`.
+/-- `(η_c)` keeps the meaning: at equal substitutions of the context, the term `t` of an instance in
+a universe computes to the single constructor of its type, at fields equal to those of the other
+substitution, so that the recursor at the other substitution steps to `e` at this constructor, equal
+to `e` at the term `t` since the two are equal terms of the instance; on a proposition, the motive is
+a proposition, true since `e` proves it. -/
+theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDataType D decl T) (hc : T.constructors = [con]) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {t : Term 0 Γ} {Cs : Motives 0 Γ}
+    {us : Branches 0 Γ} {κ : Universe 0} {i j : Nat} {C e : Term 0 (.var :: Γ)}
+    (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
+    (he : ValidTermΓ sig ι (ctx.var (.inst D qs ls ps as)) e C)
+    (hCv : ValidTermΓ sig ι (ctx.var (.inst D qs ls ps as)) C (.sort κ))
+    (hi : decl.cases[i]? = some (j, T, con))
+    (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0,
+      e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))⟩)
+    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      κ.quality = .prop) :
+    ValidEqTermΓ sig ι ctx (e.subst₀ (Subst₀.single t)) (.recursor r D qs ls ps as t Cs us)
+      (C.subst₀ (Subst₀.single t)) := by
+  obtain ⟨hsig, -⟩ := hent.hasDataType h
+  have hD := h.2.2
+  subst hD
+  have hctx := ht.1.1
+  have hd := hctx.distinct
+  have hcon : con ∈ T.constructors := hc ▸ List.mem_singleton_self con
+  refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
+  · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
+      Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+    exact hCv.motive hσ (ht.2 σ₁ σ₂ hσ)
+  have ht' := ht.2 σ₁ σ₂ hσ
+  have hσ₁ := hσ.left hctx
+  rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
+    Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+  have hI : Computesι sig ι (.inst T.name qs ls ps (as.subst σ₁))
+      (.inst T.name qs ls ps (as.subst σ₁)) := ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht'.1.2
+  cases Computesι.det hd hcv hI
+  obtain ⟨n, S, hS, hRS⟩ := HasEq.inst_inv hd hsig hq hl hp hR
+  rcases hRS with ⟨hs, hU, rfl⟩ | ⟨hs, hP, -⟩
+  · -- An instance in a universe: the term computes to the constructor, at both substitutions.
+    have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls ps (as.subst σ₁)) :=
+      fun ⟨v, hv, k, b, hk⟩ => by
+        cases Computesι.det hd hI hv
+        exact HasEq.univ_not_prop hd hU hk
+    obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht'.2.1 hnp
+    cases Computesι.det hd hI hv'
+    have hrel' := (HasEq.unique hd hR' hR w₁ w₂).1 hrel
+    obtain ⟨con', hcon', fs₁, fs₂, ⟨qs₁, ls₁, ps₁, Δ₁, as₁, rfl⟩, ⟨qs₂, ls₂, ps₂, Δ₂, as₂, rfl⟩,
+      hS₁₂⟩ := hrel'
+    rw [hc, List.mem_singleton] at hcon'
+    subst hcon'
+    obtain ⟨ts₁, ts₂, rfl, rfl, -⟩ := TelRel.to_eqSubst hd (hS con' hcon) fs₁ fs₂ hS₁₂
+    have hct : ValidEqTerm₀ sig ι (t.subst σ₁)
+        (.ctor T.name qs ls ps (as.subst σ₂) con'.name ts₂.terms)
+        (.inst T.name qs ls ps (as.subst σ₁)) :=
+      ⟨ht'.1, fun _ => ⟨_, _, _, _, hI, hw₁, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩, hR,
+        ⟨con', hcon, ts₁.terms, ts₂.terms, ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, hS₁₂⟩⟩,
+        fun hp => absurd hp hnp⟩
+    have hb := he.2 _ _ ((EqSubst.var_iff ctx _
+      (Subst.append (n := 1) σ₁ (Subst.closedSingle (t.subst σ₁)))
+      (Subst.append (n := 1) σ₂ (Subst.closedSingle _))).2 ⟨hσ, hct⟩)
+    have hbr : ValidEqTerm₀ sig ι ((e.subst (Subst.lift σ₁)).subst₀ (Subst₀.single (t.subst σ₁)))
+        ((e.atCtor T.name qs ls ps as con'.name (con'.params (.ofLists qs ps hq hp))).subst
+          (Subst.append σ₂ ts₂.toSubst))
+        ((C.subst (Subst.lift σ₁)).subst₀ (Subst₀.single (t.subst σ₁))) := by
+      rw [Term.atCtor_subst_append, Term.subst_lift_single, Term.subst_lift_single,
+        Term.subst_lift_single]
+      exact hb
+    exact ((ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₂.1)).2
+      ((ValidEqTerm₀.red_iff hd (Red.iota_subst hsig hi σ₂ ts₂ hu)).2 hbr.symm)).symm
+  · -- A proposition: the motive is one, which `e` proves.
+    obtain ⟨s, l⟩ := κ
+    have hs' : s = .prop := hκ hs (List.ne_nil_of_mem (List.mem_of_getElem? hi))
+    subst hs'
+    have ht₁ := ht.2 σ₁ σ₁ hσ₁
+    have hCp := hCv.motive_prop hσ₁ ht₁
+    have hb := he.2 _ _ ((EqSubst.var_iff ctx _
+      (Subst.append (n := 1) σ₁ (Subst.closedSingle (t.subst σ₁)))
+      (Subst.append (n := 1) σ₁ (Subst.closedSingle (t.subst σ₁)))).2 ⟨hσ₁, ht₁⟩)
+    rw [Term.subst_lift_single] at hCp
+    rw [Term.subst_lift_single, Term.subst_lift_single]
+    obtain ⟨w, R'', hw, hR'', hrel''⟩ := hb.2.2 hCp
+    exact ⟨hb.1, fun hn => absurd hCp hn,
+      fun _ => ⟨w, R'', hw, hR'', hR''.prop_any hd (hCp.isProp hd hw) hrel''⟩⟩
+
 /-! ## Observations
 
 An observation of two equal closed terms of an instance of a codata type of a meaningful declaration

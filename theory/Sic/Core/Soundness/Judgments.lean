@@ -521,6 +521,28 @@ where
       exact ValidEqTermΓ.iota hι h hc hq hl' hp (by rw [List.getFin_map]; exact has')
         (by rw [List.getFin_map]; exact hts') hi hCv (Branches.get_substLevels_of _ hu)
         (by rw [List.getFin_map]; exact hub)
+    | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp ht he hi hC hu _ _ hCt
+        _ _ _ hκ =>
+      fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      obtain ⟨-, hj⟩ := TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)
+      rw [Nat.sub_zero] at hj
+      have ht' := hasType hd hι ht ρ
+      have he' := hasType hd hι he ρ
+      have hCv := hasType hd hι (hCt _ T C hj hC) ρ
+      simp only [Context.atLevels, Context.substLevels, Term.atLevels,
+        Term.substLevels] at ht' he' hCv
+      rw [h.2.2] at hCv
+      have hu' := Branches.get_substLevels_of (fun i => (.ofNat (ρ i) : Level 0)) hu
+      erw [Term.atCtor_substLevels] at hu'
+      simp only [Term.atLevels]
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
+          (fun x => by cases x <;> rfl),
+        Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
+          (fun x => by cases x <;> rfl)]
+      simp only [Term.substLevels]
+      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp ht' he' hCv hi hu' hκ
     | .beta (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Ss := Ss) (gs := gs)
         (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp has hh hS hss hi hpos hg hbs _ _ _ _ hgs hgt =>
       fun ρ => by
