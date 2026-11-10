@@ -92,11 +92,14 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
-  /-- Destructors in a sort. -/
-  wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-    {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig ctx ds κ →
-        ValidDestructors sigM ι ctx ds κ
+  /-- The destructors of a codata type in a sort. -/
+  wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
+      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I as ctx ds κ →
+        ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
+          (ds.recursionAt decl.names) ds κ
   /-- The fields of a constructor in a sort. -/
   wfFields : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
@@ -618,15 +621,18 @@ where
             hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc
       exact hc
-    | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp ht
-        hu hobs =>
+    | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp
+        has ht hu hobs =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
+      have has' := hasInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have ht' := hasType hd hι ht ρ
       have hu' := hasType hd hι hu ρ
       simp only [Term.atLevels, Term.substLevels] at ht' hu'
-      refine ValidEqTermΓ.etaObs hι h hq hl' hp ht' hu' fun d p q ps' Ξ Θ B ψ hpos => ?_
+      refine ValidEqTermΓ.etaObs hι h hq hl' hp (by rw [List.getFin_map]; exact has') ht' hu'
+        fun d p q ps' Ξ Θ B ψ hpos => ?_
       have hb := eqTerm hd hι (hobs d p q ps' Ξ Θ B ψ hpos) ρ
       have hcl : ∀ {a} (x : Var Ξ a),
           ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels
@@ -714,19 +720,46 @@ where
     | .cons hA hκ hΘ _ => fun ρ =>
       ValidEqTelescopeΓ.cons (eqTerm hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (eqTelescope hd hι hΘ ρ)
-  wfDestructors {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-      {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k}
+  wfDestructors {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+      {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+      {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+      {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
-      WfDestructors sig ctx ds κ → ValidDestructors sigM ι ctx ds κ
-    | .nil hctx => fun ρ => by
-      simp only [Destructors.atLevels, Destructors.substLevels, ValidDestructorsΓ]
-      exact wfCtx hd hι hctx ρ
-    | .cons hΘ hB hκ _ hds => fun ρ => by
+      WfDestructors sig decl I as ctx ds κ →
+        ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
+          (ds.recursionAt decl.names) ds κ
+    | .nil hctx => fun ρ => ValidDestructorsΓ.nil (wfCtx hd hι hctx ρ)
+    | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) hn hΘ hB hκ _ hds => fun ρ => by
       have hB' := hasType hd hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
-      simp only [Destructors.atLevels, Destructors.substLevels, ValidDestructorsΓ]
-      exact ⟨wfTelescope hd hι hΘ ρ, ⟨_, Universe.substLevels_bounded _ hκ, hB'⟩,
-        wfDestructors hd hι hds ρ⟩
+      have hds' := wfDestructors hd hι hds ρ
+      rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
+          fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
+        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hds'
+      exact ValidDestructorsΓ.cons
+        (by simp [Destructors.recursionAt, Destructors.recursion, hn])
+        (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
+    | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) hD hΘ
+        _ hds => fun ρ => by
+      have hds' := wfDestructors hd hι hds ρ
+      show ValidDestructorsΓ sigM ι _ _ _ (.cons p q (Θ.substLevels fun i => .ofNat (ρ i))
+        ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
+        ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
+      rw [Destructors.substLevels_rename,
+        show (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ =
+          ((decl.blockInstance I D as).atLevels ρ).rename (Ren.weakenN ps.length) from
+        Term.substLevels_rename _ _ (decl.blockInstance I D as)]
+      refine ValidDestructorsΓ.recursive (D := D)
+        (by simp [Destructors.recursionAt, Destructors.recursion, TypeDeclaration.blockInstance,
+          Term.blockName, hD]) (wfTelescope hd hι hΘ ρ) ?_
+      have hr : (fun i => (Destructors.cons (d := d) p q Θ
+          (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
+          (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
+        funext i
+        simp only [Destructors.recursionAt, Destructors.recursion, Destructors.recursion_rename,
+          List.getElem?_cons_succ]
+      rw [hr]
+      exact hds'
   wfFields {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       {I : Instance decl.sorts decl.grades} {Γ : Scope}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
@@ -883,11 +916,15 @@ structure Soundness : Prop where
       ValidInterpretation ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sig ι ctx Θ₁ Θ₂ κ
   -- ADE: none.
-  /-- Destructors in a sort are meaningful.
+  /-- The destructors of a codata type in a sort are meaningful.
   RFC: `\mathsf{sound}.\bar d` -/
-  wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
-    {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k},
-      ValidInterpretation ι sig → WfDestructors sig ctx ds κ → ValidDestructors sig ι ctx ds κ
+  wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
+      ValidInterpretation ι sig → WfDestructors sig decl I as ctx ds κ →
+        ValidDestructors sig ι ctx (fun D => decl.blockInstance I D as)
+          (ds.recursionAt decl.names) ds κ
   -- ADE: none.
   /-- A well-formed type declaration is meaningful.
   RFC: `\mathsf{sound}.\mathsf{data}`

@@ -1206,6 +1206,117 @@ theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Contex
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
   exact hΘ.2 σ₁ σ₂ h
 
+/-! ## Destructors of a Block -/
+
+/-- A closed substitution followed by closed arguments gives a renamed variable under the arguments
+what a substitution that the renaming composes gives the variable. -/
+theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (ξ : Ren Γ Δ) {θ : Subst 0 [] Γ}
+    {θ' : Subst 0 [] Δ} (h : ∀ {a} (x : Var Δ a), θ (ξ x) = θ' x)
+    (τ : Subst 0 [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var (Δ.extend n) a) :
+    Subst.append θ τ (Ren.liftN n ξ x) = Subst.append θ' τ x := by
+  rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+  · rw [Ren.liftN_weakenN, Subst.append_weakenN, Subst.append_weakenN]
+    exact h y
+  · rw [Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z, Subst.append_liftN_empty,
+      Subst.append_liftN_empty]
+
+/-- Renamed destructors, at closed substitutions that the renaming composes, are equal when the
+destructors are, at the composed substitutions, with the instances of the block renamed. -/
+theorem ValidEqDestructors₀.rename {κ : Universe 0} :
+    {Γ Δ : Scope} → {ns : List Name} → (ξ : Ren Γ Δ) → {inst : Name → Term 0 Δ} →
+      {rs : Nat → Option Name} → {ds : Destructors 0 Δ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      {θ₁' θ₂' : Subst 0 [] Δ} → (∀ {a} (x : Var Δ a), θ₁ (ξ x) = θ₁' x) →
+      (∀ {a} (x : Var Δ a), θ₂ (ξ x) = θ₂' x) →
+      ValidEqDestructors₀ sig ι κ inst rs ds θ₁' θ₂' →
+      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename ξ) rs (ds.rename ξ) θ₁ θ₂
+  | _, _, _, _, _, _, .nil, _, _, _, _, _, _, h => h
+  | _, _, _, ξ, inst, rs, .cons (ps := ps) (ψ := ψ) _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂, h => by
+    rw [ValidEqDestructors₀] at h
+    rw [Destructors.rename, ValidEqDestructors₀, Telescope.subst_rename_of h₁,
+      Telescope.subst_rename_of h₂]
+    obtain ⟨hΘ, h⟩ := h
+    refine ⟨hΘ, ?_⟩
+    have hB : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (ξ x) = θ' x) →
+        ∀ τ, (B.rename (Ren.liftN ps.length ξ)).subst (Subst.append θ τ) =
+          B.subst (Subst.append θ' τ) := fun θ θ' hθ τ =>
+      Term.subst_rename_of (Subst.append_liftN_rename ξ hθ τ) B
+    have hsnoc : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (ξ x) = θ' x) →
+        ∀ f {a} (x : Var (.secondOrder ps ψ :: _) a),
+          Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift ξ x) =
+            Subst.snoc (e := .secondOrder ps ψ) θ' f x := fun θ θ' hθ f a x => by
+      cases x with
+      | zero => rfl
+      | succ x => exact hθ x
+    have hinst : (fun D => ((inst D).rename ξ).rename Ren.weaken) =
+        fun D => ((inst D).rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) ξ) :=
+      funext fun D => (Term.rename_rename_of (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl)
+        _).trans (Term.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+          (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl) _).symm
+    split at h
+    · obtain ⟨⟨κ₁, hκ, hBe⟩, hds⟩ := h
+      refine ⟨⟨κ₁, hκ, fun τ₁ τ₂ hτ => ?_⟩, fun f₁ f₂ hf => ?_⟩
+      · rw [hB θ₁ θ₁' h₁, hB θ₂ θ₂' h₂]
+        exact hBe τ₁ τ₂ hτ
+      · rw [hinst]
+        refine ValidEqDestructors₀.rename (Ren.lift ξ) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂ fun τ₁ τ₂ hτ => ?_)
+        rw [← hB θ₁ θ₁' h₁]
+        exact hf τ₁ τ₂ hτ
+    · rename_i D _
+      obtain ⟨hBD, hds⟩ := h
+      refine ⟨?_, fun f₁ f₂ => ?_⟩
+      · rw [hBD, Term.rename_rename_of (ξ₁ := Ren.liftN ps.length ξ)
+            (ξ₂ := Ren.weakenN ps.length) (ξ₃ := fun x => (ξ x).weakenN ps.length)
+            (fun x => Ren.liftN_weakenN _ ξ x),
+          Term.rename_rename_of (ξ₁ := Ren.weakenN ps.length) (ξ₂ := ξ)
+            (ξ₃ := fun x => (ξ x).weakenN ps.length) (fun _ => rfl)]
+      · rw [hinst]
+        exact ValidEqDestructors₀.rename (Ren.lift ξ) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂)
+
+/-- `(⊨d̄_κε)`, in a context. -/
+theorem ValidDestructorsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} {inst : Name → Term 0 Γ}
+    {rs : Nat → Option Name} {κ : Universe 0} (hctx : ValidCtx₀ sig ι ctx) :
+    ValidDestructorsΓ sig ι ctx inst rs .nil κ :=
+  ⟨hctx, fun _ _ _ => by rw [ValidEqDestructors₀]; exact hctx.distinct⟩
+
+/-- `(⊨d̄_κ|)`, in a context: the destructors after a destructor that is not recursive are in the
+context extended by it. -/
+theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} (hr : rs 0 = none)
+    (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+    (hds : ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) (fun D => (inst D).rename Ren.weaken)
+      (fun i => rs (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs (.cons (d := d) p q Θ B ψ ds) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr]
+  refine ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
+    hB.2 _ _ ((EqSubst.append_append_iff ctx Θ σ₁ σ₂ τ₁ τ₂).2 ⟨h, hτ⟩)⟩, fun f₁ f₂ hf => ?_⟩
+  refine hds.2 _ _ ((EqSubst.secondOrder_iff ctx Θ B ψ _ _).2 ⟨h, fun τ₁ τ₂ hτ => ?_⟩)
+  show ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) ((B.subst (Subst.liftN _ σ₁)).subst τ₁)
+  rw [Term.subst_append]
+  exact hf τ₁ τ₂ hτ
+
+/-- `(⊨d̄_κrec)`, in a context: the destructors after a recursive destructor, which do not depend on
+it, are in the same context. -/
+theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership ps.length}
+    {ds : Destructors 0 Γ ns} {κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name}
+    {D : Name} (hr : rs 0 = some D) (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs
+      (.cons (d := d) p q Θ ((inst D).rename (Ren.weakenN ps.length)) ψ (ds.rename Ren.weaken))
+      κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr]
+  exact ⟨hΘ.2 σ₁ σ₂ h, rfl, fun f₁ f₂ =>
+    ValidEqDestructors₀.rename (θ₁' := σ₁) (θ₂' := σ₂) Ren.weaken (fun _ => rfl) (fun _ => rfl)
+      (hds.2 σ₁ σ₂ h)⟩
+
+
 /-! ## Recursors
 
 A recursor on two equal closed terms of an instance of a data type of a meaningful declaration
@@ -1218,153 +1329,267 @@ terms of its fields, whose branch is a proof of the motive, then a proposition, 
 the motive is then true at the term, and the recursors are equal proofs of it. -/
 
 -- ADE: none.
-/-- Destructors in a sort `κ`, at two equal closed substitutions of their context, are destructors of
-the graph of `κ` with the same equality of the abstractions for them, in a signature whose names are
-distinct: the equality of the results of a destructor is defined from the graph at the first
-substitution, rather than chosen, since the graph gives one at most, and so is that of the
-destructors after it, at each abstraction for it. -/
-theorem ValidDestructorsΓ.desRel (hd : sig.Distinct) {κ : Universe 0} :
-    {Γ : Scope} → {ns : List Name} → {ctx : Context 0 Γ} → {ds : Destructors 0 Γ ns} →
-      ValidDestructorsΓ sig ι ctx ds κ → (θ₁ θ₂ : Subst 0 [] Γ) → EqSubst sig ι ctx θ₁ θ₂ →
-      ∃ S, DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds @θ₁ S ∧
-        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds @θ₂ S
-  | _, _, _, .nil, _, _, _, _ => ⟨fun _ _ => True, .nil, .nil⟩
-  | _, _, ctx, .cons (d := d) (ps := ps) _ _ Θ B ψ ds, h, θ₁, θ₂, hθ => by
-    rw [ValidDestructorsΓ] at h
-    obtain ⟨hΘ, ⟨κ₁, hκ, hB⟩, hds⟩ := h
-    have hctx := hΘ.1
+/-- Destructors equal in a sort `κ` at two closed substitutions of their scope are destructors of the
+graph of `κ` with the same equality of the abstractions for them, at these substitutions, whatever
+the relations `Rf D` of the results of their recursive destructors of the type `D`, in a signature
+whose names are distinct: the equality of the results of a destructor is defined from the graph at
+the first substitution, rather than chosen, since the graph gives one at most, and so is that of the
+destructors after it, at each abstraction for it; after a recursive destructor, on which they do not
+depend, it is the one at any abstraction. -/
+theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf : Name → TermRel) :
+    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} →
+      {ds : Destructors 0 Γ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ →
+      ∃ S, DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs i).map Rf) ds @θ₁ S ∧
+        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs i).map Rf) ds @θ₂ S
+  | _, _, _, _, .nil, _, _, _ => ⟨fun _ _ => True, .nil, .nil⟩
+  | _, _, _, rs, .cons (d := d) (ps := ps) _ _ Θ B ψ ds, θ₁, θ₂, h => by
+    rw [ValidEqDestructors₀] at h
+    obtain ⟨hΘ, h⟩ := h
     have ih : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
-    have hθ₁ := hθ.left hctx
-    obtain ⟨SΘ, hT₁, hT₂⟩ := (hΘ.2 θ₁ θ₂ hθ).telRel hd
+    obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
       (fun _ _ h => by cases h)
     have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hT₁
-    -- The results at equal substitutions of the context and equal arguments are equal types.
-    have hBeq : ∀ θa θb, EqSubst sig ι ctx θa θb → ∀ ts us : Args 0 [] ps,
-        EqSubst sig ι (Context.empty.append (Θ.subst θa)) ts.toSubst us.toSubst →
-        ValidEqTerm₀ sig ι (B.subst (Subst.append θa ts.toSubst))
-          (B.subst (Subst.append θb us.toSubst)) (.sort κ₁) := fun θa θb hab ts us hτ =>
-      hB.2 _ _ ((EqSubst.append_append_iff ctx Θ θa θb _ _).2 ⟨hab, hτ⟩)
-    let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-      ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-        FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F' ∧ F' t u
-    have hFeq : ∀ (ts : Args 0 [] ps) w F₀, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
-        FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F₀ →
-        F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
-      funext fun t => funext fun u => propext
-        ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
-          cases Args.terms_inj hts'
-          cases Computesι.det hd hw hw'
-          exact (FieldRel.unique hd ih hF' _ _ hF₀ t u).1 h',
-        fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
-    -- At equal arguments, the result at `θ₁` and at a substitution equal to it has the equality `F`.
-    have hres : ∀ θa, EqSubst sig ι ctx θ₁ θa → ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
-        (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w) ∧
-        ∀ v, Computesι sig ι (B.subst (Subst.append θa us.toSubst)) v →
-          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
-            (F ts.terms) := fun θa h1a ts us hts => by
-      obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ :=
-        (hBeq θ₁ θa h1a ts us ((hT ts us).1 hts)).fieldRel hκ
-      refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
-      cases Computesι.det hd hw₂ hv
-      rw [hFeq ts w₁ F₀ hw₁ hF₁]
-      exact hF₂
-    have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-      obtain ⟨ts', us', rfl, rfl, hτ⟩ := hT₁.to_eqSubst hd
-        (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _ _ hts
-      have huu := hSp.trans (hSp.symm hts) hts
-      obtain ⟨⟨w, hw⟩, hF⟩ := hres θ₁ hθ₁ ts' us' hts
-      obtain ⟨⟨w', hw'⟩, -⟩ := hres θ₁ hθ₁ us' us' huu
-      rw [hFeq us' w' _ hw' ((hres θ₁ hθ₁ us' us' huu).2 w' hw'),
-        ← hFeq us' w' _ hw' (hF w' hw')]
-    -- Equal abstractions for the destructor extend equal substitutions of the context.
-    have hext : ∀ θa, EqSubst sig ι ctx θ₁ θa → ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ →
-        EqSubst sig ι (ctx.secondOrder Θ B ψ) (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θa f₂) :=
-      fun θa h1a f₁ f₂ hf => (EqSubst.secondOrder_iff ctx Θ B ψ _ _).2 ⟨h1a, fun τ₁ τ₂ hτ => by
-        show ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) ((B.subst (Subst.liftN _ θ₁)).subst τ₁)
-        obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
-            @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
-          ⟨_, Subst.args_toSubst ps τ₁⟩
-        obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
-            @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
-          ⟨_, Subst.args_toSubst ps τ₂⟩
-        rw [Term.subst_append]
-        have hts := (hT ts us).2 hτ
-        obtain ⟨⟨w, hw⟩, hF⟩ := hres θ₁ hθ₁ _ _ (hSp.trans hts (hSp.symm hts))
-        exact (hF w hw).validEqTerm hd hw (hf _ _ hts)⟩
-    let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
-      DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds
-        (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧ S' o₁ o₂
-    have hGeq : ∀ f S', DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds
-        (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' → G f = S' := fun f S' hS' =>
-      funext fun o₁ => funext fun o₂ => propext
-        ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd ih h' _ _ hS' o₁ o₂).1 hs, fun hs => ⟨S', hS', hs⟩⟩
-    have hG : ∀ θa, EqSubst sig ι ctx θ₁ θa → ∀ f, AbstractionRel SΘ F f f →
-        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds
-          (Subst.snoc (e := .secondOrder ps ψ) θa f) (G f) := fun θa h1a f hf => by
-      obtain ⟨S', h₁, h₂⟩ := ValidDestructorsΓ.desRel hd hds _ _ (hext θa h1a f f hf)
-      rw [hGeq f S' h₁]
-      exact h₂
-    have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂ :=
-      fun f₁ f₂ hf o₁ o₂ => by
-        have hEp := AbstractionRel.isPer hSp (fun ts hts =>
-          have ⟨⟨w, hw⟩, hF⟩ := hres θ₁ hθ₁ ts ts hts
-          FieldRel.isPer hd ih (hF w hw)) hBresp
-        obtain ⟨S', h₁, h₂⟩ := ValidDestructorsΓ.desRel hd hds _ _ (hext θ₁ hθ₁ f₁ f₂ hf)
-        rw [hGeq f₁ S' h₁, hGeq f₂ S' (by
-          obtain ⟨S'', h₁', h₂'⟩ := ValidDestructorsΓ.desRel hd hds _ _
-            (hext θ₁ hθ₁ f₂ f₂ (hEp.trans (hEp.symm hf) hf))
-          have : S'' = S' := funext fun o₁ => funext fun o₂ => propext
-            (DesRel.unique hd ih h₁' _ _ h₂ o₁ o₂)
-          rw [← this]
-          exact h₁')]
-    refine ⟨_, .cons hT₁ F (fun ts hts => (hres θ₁ hθ₁ ts ts hts).1)
-      (fun ts hts => (hres θ₁ hθ₁ ts ts hts).2) hBresp G (hG θ₁ hθ₁) hresp,
-      .cons hT₂ F (fun ts hts => ?_) (fun ts hts => (hres θ₂ hθ ts ts hts).2) hBresp G
-        (hG θ₂ hθ) hresp⟩
-    obtain ⟨w₁, w₂, -, -, hw₂, -⟩ :=
-      (hBeq θ₁ θ₂ hθ ts ts ((hT ts ts).1 hts)).fieldRel hκ
-    exact ⟨w₂, hw₂⟩
+    split at h
+    · rename_i hr
+      obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
+      -- The results at the first substitution and equal arguments are equal types.
+      have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
+          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
+            (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
+        have huu := hSp.trans (hSp.symm hts) hts
+        (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+      let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
+        ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
+          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F' ∧ F' t u
+      have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
+          Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
+          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F₀ →
+          F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
+        funext fun t => funext fun u => propext
+          ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
+            cases Args.terms_inj hts'
+            cases Computesι.det hd hw hw'
+            exact (FieldRel.unique hd ih hF' _ _ hF₀ t u).1 h',
+          fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
+      -- A type equal to the result at the first substitution and the arguments `ts` has the
+      -- equality `F ts`.
+      have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
+          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
+          (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w) ∧
+          ∀ v, Computesι sig ι A v →
+            FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
+              (F ts.terms) := fun ts A hA => by
+        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ
+        refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
+        cases Computesι.det hd hw₂ hv
+        rw [hFeq ts w₁ F₀ hw₁ hF₁]
+        exact hF₂
+      have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
+        obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst hd
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+          _ _ hts
+        have huu := hSp.trans (hSp.symm hts) hts
+        obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
+        rw [hFeq us' w' _ hw' ((hres ts' _ (hBB ts' us' hts)).2 w' hw')]
+      -- Equal abstractions for the destructor have equal instances at equal arguments.
+      have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
+          EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+          ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
+        fun f₁ f₂ hf τ₁ τ₂ hτ => by
+          obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
+            ⟨_, Subst.args_toSubst ps τ₁⟩
+          obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
+            ⟨_, Subst.args_toSubst ps τ₂⟩
+          have hts := (hT ts us).2 hτ
+          have htt := hSp.trans hts (hSp.symm hts)
+          obtain ⟨⟨w, hw⟩, hF⟩ := hres ts _ (hBB ts ts htt)
+          exact (hF w hw).validEqTerm hd hw (hf _ _ hts)
+      let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
+        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧
+          S' o₁ o₂
+      have hGeq : ∀ f S', DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' →
+          G f = S' := fun f S' hS' =>
+        funext fun o₁ => funext fun o₂ => propext
+          ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd ih h' _ _ hS' o₁ o₂).1 hs, fun hs => ⟨S', hS', hs⟩⟩
+      have hG : ∀ f, AbstractionRel SΘ F f f →
+          DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) (G f) ∧
+          DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₂ f) (G f) :=
+          fun f hf => by
+        obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f (hcond f f hf))
+        rw [hGeq f S' h₁]
+        exact ⟨h₁, h₂⟩
+      have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂ :=
+        fun f₁ f₂ hf o₁ o₂ => by
+          have hEp := AbstractionRel.isPer hSp (fun ts hts =>
+            have ⟨⟨w, hw⟩, hF⟩ := hres ts _ (hBB ts ts hts)
+            FieldRel.isPer hd ih (hF w hw)) hBresp
+          obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₁ f₂ (hcond f₁ f₂ hf))
+          have hf₂ := hEp.trans (hEp.symm hf) hf
+          obtain ⟨S'', h₁', h₂'⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₂ f₂ (hcond f₂ f₂ hf₂))
+          rw [hGeq f₁ S' h₁, hGeq f₂ S'' h₁']
+          exact DesRel.unique hd ih h₂ _ _ h₂' o₁ o₂
+      have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
+      refine ⟨_, .cons hT₁ F (fun ts hts => (hres ts _ (hBB ts ts hts)).1)
+        (fun ts hts => (hres ts _ (hBB ts ts hts)).2) hBresp G (fun f hf => (hG f hf).1) hresp hr',
+        .cons hT₂ F (fun ts hts => ?_) (fun ts hts => (hres ts _ (hB _ _ ((hT ts ts).1 hts))).2)
+          hBresp G (fun f hf => (hG f hf).2) hresp hr'⟩
+      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ
+      exact ⟨w₂, hw₂⟩
+    · rename_i D hr
+      obtain ⟨-, hds⟩ := h
+      let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
+      obtain ⟨G, h₀₁, h₀₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f₀)
+      have hr' : (rs 0).map Rf = some (Rf D) := by rw [hr]; rfl
+      refine ⟨_, .recursive hr' hT₁ G fun f => ?_, .recursive hr' hT₂ G fun f => ?_⟩
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f₀)
+        have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+          (DesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
+        exact hSG ▸ h₁
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f)
+        have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+          (DesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
+        exact hSG ▸ h₂
 
 -- ADE: none.
 /-- At equal closed arguments of the parameters of a meaningful type declaration, the destructors of
-one of its codata types at the two arguments are destructors of the graph of its sort with one
-equality of the abstractions for them. -/
-theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
-    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
-    (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+each of its codata types, at relations `Rf D` of its recursive destructors of the type `D`, are
+destructors of the graph of its sort at the two arguments with one equality `S Rf T` of the
+abstractions for them, defined from the graph rather than chosen, since the graph gives one at
+most. -/
+theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+    (hp : ps.length = decl.grades) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
-    ∃ S : ObsRel,
-      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-        (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S ∧
-      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-        (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S := by
+    ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      ∀ Rf, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+          (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
+          ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S Rf T) ∧
+        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+          (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
+          ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst (S Rf T) := by
   have hls : ∀ i, Level.ofNat (ls.getFin hl i).closedValue ≈ ls.getFin hl i :=
     fun i => Level.ofNat_closedValue _
   have has' := EqSubst.levelEquiv
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  obtain ⟨S, h₁, h₂⟩ := ValidDestructorsΓ.desRel hd
-    (hv.destructors _ h.2.1 fun i => (ls.getFin hl i).closedValue) _ _ has'
   have hn := Level.closedValue_subst_equiv hls (decl.sort (.ofLists qs ps hq hp)).level
+  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun Rf T o₁ o₂ => ∃ S',
+      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+        (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' o₁ o₂
+  refine ⟨S, fun Rf T hT => ?_⟩
+  obtain ⟨S', h₁, h₂⟩ :=
+    ((hv.destructors _ hT fun i => (ls.getFin hl i).closedValue).2 _ _ has').desRel hd Rf
   have hds := Destructors.substLevels_levelEquiv hls (T.body (.ofLists qs ps hq hp))
-  refine ⟨S, ?_, ?_⟩
-  · rw [← hn]
+  have h₁' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+      (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' := by
+    rw [← hn]
     exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hds (Subst.LevelEquiv.refl _)
-  · rw [← hn]
+  have h₂' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
+      (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S' := by
+    rw [← hn]
     exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ hds (Subst.LevelEquiv.refl _)
+  have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
+    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd ih h' _ _ h₁' o₁ o₂).1 hs, fun hs => ⟨S', h₁', hs⟩⟩
+  rw [hS]
+  exact ⟨h₁', h₂'⟩
+
+-- ADE: none.
+/-- The instances of the types of a meaningful block of codata types in a universe, at equal closed
+arguments of its parameters, are types of the graph of its sort whose equality is `(eq_ν)`, at the
+equality `S` of the destructors that the graph gives, which grows with the relations of the
+recursive destructors. -/
+theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) :
+    ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      (∀ X, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) .type
+          (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S X T)) ∧
+      (∀ T ∈ decl.codataTypes,
+        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
+          (CodataType.blockRel decl.codataTypes S T.name) ∧
+        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
+          (CodataType.blockRel decl.codataTypes S T.name)) := by
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp has
+  let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun X => S₀ fun D => (X D).computed sig ι
+  refine ⟨S, fun X T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
+    ⟨.codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').1,
+      .codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').2⟩⟩
+
+-- ADE: none.
+/-- The instances of the types of a meaningful block of codata types in a universe of propositions,
+at equal closed arguments of its parameters, are propositions of the graph of its sort whose truth
+is `(true_ν)`, at the equality `S` of the destructors that the graph gives, which grows with the
+truths of the recursive destructors. -/
+theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop) :
+    ∃ S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      (∀ B, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) .prop
+          (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => fun _ _ => B D')
+          ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S B T)) ∧
+      (∀ T ∈ decl.codataTypes,
+        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
+          (CodataType.blockTruth decl.codataTypes S T.name) ∧
+        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
+          (CodataType.blockTruth decl.codataTypes S T.name)) := by
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp has
+  let S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun B => S₀ fun D _ _ => B D
+  refine ⟨S, fun B T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
+    ⟨.codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun B T' hT' => hs ▸ (hS₀ _ T' hT').1,
+      .codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun B T' hT' => hs ▸ (hS₀ _ T' hT').2⟩⟩
 
 -- ADE: none.
 /-- `(D)`, closed, for a codata type: two instances of a codata type of `Σ`, whose type declaration
 is meaningful, at the same levels and at equal arguments of its parameters, are equal terms of its
-sort: its destructors at the two arguments are destructors of the graph of the sort with the same
-equality of the abstractions for them. -/
+sort: the destructors of the types of its block at the two arguments are destructors of the graph
+of the sort with the same equality of the abstractions for them. -/
 theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
@@ -1375,18 +1600,19 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
       as₁.toSubst as₂.toSubst) :
     ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
       (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := by
-  obtain ⟨S, h₁, h₂⟩ := ValidTypeDeclaration.destructorsRel hd h hv hq hl hp has
-  have hw : ∀ as : InstanceArgs 0 [] decl.scope, Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
+  obtain ⟨hdecl, hT, rfl⟩ := h
+  have hw : ∀ as : InstanceArgs 0 [] decl.scope,
+      Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
     fun as => ⟨.refl _, .inst _ _ _ _ as⟩
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
     (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
-  · exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂)
-      (levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₁)))
-      (levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₂)))
-  · exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂)
-      (levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₁)))
-      (levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₂)))
+  · obtain ⟨S, -, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp has hs
+    exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
+      (levelRel_univ_iff.2 (hU T hT).2)
+  · obtain ⟨S, -, hP⟩ := hv.codataPropRel hd hdecl hq hl hp has hs
+    exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
+      (levelRel_prop_iff.2 (hP T hT).2)
 
 -- ADE: none.
 /-- `(D_≡)` keeps the meaning, and `(D)` with it: equal arguments give, at equal substitutions of the
@@ -2159,23 +2385,25 @@ theorem AbstractionRel.congr_computes {n : Nat} {s : Quality} {ps : List Paramet
   exact ⟨fun h' ts us hts => (key ts us hts).1 (h' ts us hts),
     fun h' ts us hts => (key ts us hts).2 (h' ts us hts)⟩
 
-/-- At observations related by the equality of destructors, whose first destructor is `d`, the
-observations `f₁` and `f₂` that compute as them are, for `d`, equal terms of its result at equal
-arguments, and the equality of the destructors after `d`, with `f₁` for `d`, relates them. -/
-theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {Γ : Scope} {d : Name}
-    {ns : List Name} {ps : List Parameter} {p q : Grade} {Θ : Telescope 0 Γ ps}
-    {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+/-- At observations related by the equality of destructors, whose first destructor `d` is not
+recursive, the observations `f₁` and `f₂` that compute as them are, for `d`, equal terms of its
+result at equal arguments, and the equality of the destructors after `d`, with `f₁` for `d`, relates
+them. -/
+theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Option TermRel}
+    {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
     {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {S : ObsRel}
-    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s (.cons (d := d) p q Θ B ψ ds) @θ S)
-    {o₁ o₂ f₁ f₂ : Observations} (hS : S o₁ o₂) (hf₁ : ObsEquiv sig ι s f₁ o₁)
-    (hf₂ : ObsEquiv sig ι s f₂ o₂) :
+    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs (.cons (d := d) p q Θ B ψ ds) @θ S)
+    (hr : rs 0 = none) {o₁ o₂ f₁ f₂ : Observations} (hS : S o₁ o₂)
+    (hf₁ : ObsEquiv sig ι s f₁ o₁) (hf₂ : ObsEquiv sig ι s f₂ o₂) :
     (∀ ts us : Args 0 [] ps, EqSubst sig ι (Context.empty.append (Θ.subst θ)) ts.toSubst us.toSubst →
       ValidEqTerm₀ sig ι ((f₁ d ps).subst ts.toSubst) ((f₂ d ps).subst us.toSubst)
         (B.subst (Subst.append θ ts.toSubst))) ∧
-    ∃ S', DesRel sig ι n (fun m _ => levelRel sig ι m) s ds
+    ∃ S', DesRel sig ι n (fun m _ => levelRel sig ι m) s (fun i => rs (i + 1)) ds
       (Subst.snoc (e := .secondOrder ps ψ) θ (f₁ d ps)) S' ∧ S' o₁ o₂ := by
   cases h with
-  | @cons _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
+  | recursive hrs => rw [hr] at hrs; cases hrs
+  | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
     obtain ⟨hA, hGo⟩ := hS
     have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
@@ -2210,70 +2438,163 @@ theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {Γ : Scope} {d 
     obtain ⟨v, hv⟩ := hB ts htt
     exact (hF ts htt v hv).validEqTerm hd hv (hA' ts us hts)
 
+/-- At observations related by the equality of destructors, whose first destructor `d` is recursive,
+with results equal by `R`, the equality of the terms of a type of the graph, the observations `f₁`
+and `f₂` that compute as them are, for `d`, related by `R` at equal arguments, and the equality of
+the destructors after `d`, at any abstraction for `d`, relates them. -/
+theorem DesRel.headRec (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Option TermRel}
+    {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+    {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {S : ObsRel}
+    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs (.cons (d := d) p q Θ B ψ ds) @θ S)
+    {R : TermRel} (hr : rs 0 = some R) {v : Term 0 []}
+    (hR : FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R) {o₁ o₂ f₁ f₂ : Observations}
+    (hS : S o₁ o₂) (hf₁ : ObsEquiv sig ι s f₁ o₁) (hf₂ : ObsEquiv sig ι s f₂ o₂) :
+    (∀ ts us : Args 0 [] ps, EqSubst sig ι (Context.empty.append (Θ.subst θ)) ts.toSubst us.toSubst →
+      R ((f₁ d ps).subst ts.toSubst) ((f₂ d ps).subst us.toSubst)) ∧
+    ∀ f, ∃ S', DesRel sig ι n (fun m _ => levelRel sig ι m) s (fun i => rs (i + 1)) ds
+      (Subst.snoc (e := .secondOrder ps ψ) θ f) S' ∧ S' o₁ o₂ := by
+  cases h with
+  | cons _ _ _ _ _ _ _ _ hrs => rw [hr] at hrs; cases hrs
+  | @recursive _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ R' hrs hΘ G hG =>
+    rw [hr] at hrs
+    cases hrs
+    obtain ⟨hA, hGo⟩ := hS
+    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
+    have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
+        ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
+      fun hf => hf.imp_right fun h τ w => h d ps τ w
+    refine ⟨fun ts us hτ => ?_, fun f => ⟨G, hG f, hGo⟩⟩
+    have hts := (TelRel.eqSubst_iff hd hΘ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
+      (fun _ _ h => by cases h) ts us).2 hτ
+    refine (hR.congr_computes ?_).1 (hA ts us hts)
+    rcases hc hf₁ with h₁ | h₁
+    · exact .inl h₁
+    rcases hc hf₂ with h₂ | h₂
+    · exact .inl h₂
+    exact .inr ⟨fun w => (h₁ _ w).symm, fun w => (h₂ _ w).symm⟩
+
 -- ADE: none.
-/-- At a position of a destructor `d` in destructors in a sort `κ`, at equal closed substitutions of
-their context, observations that compute as observations related by the equality of the destructors
-give equal substitutions of the scope of `d`, in which its result is a type, and are, for `d`,
-equal terms of its result at equal arguments: the destructors before `d` are, one by one, equal
-abstractions for them. -/
+/-- At a position of a destructor `d` in destructors equal in a sort `κ` at two closed substitutions
+of their scope, whose recursive destructors `rs` gives, of the instances `inst D` of the block,
+observations that compute as observations related by the equality of the destructors, at the
+relations of the recursive destructors that are the equalities of the instances, give results of
+`d` that are equal types at equal arguments, and are, for `d`, equal terms of its result at equal
+arguments: the destructors before `d` are, one by one, equal abstractions for them, and a recursive
+one, on which the destructors after it do not depend, gives terms of an instance. -/
 theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p q : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
       {ψ : ResultOwnership ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
-      {ctx : Context 0 Γ} → ValidDestructorsΓ sig ι ctx ds κ → {θ₁ θ₂ : Subst 0 [] Γ} →
-      EqSubst sig ι ctx θ₁ θ₂ → {S : ObsRel} →
-      DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality ds @θ₁ S →
+      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ → {rsR : Nat → Option TermRel} →
+      (∀ i, rs i = none → rsR i = none) →
+      (∀ i D, rs i = some D → ∃ R v, rsR i = some R ∧ Computesι sig ι ((inst D).subst θ₁) v ∧
+        FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v R) →
+      (∀ i D, rs i = some D → ∃ κ₁,
+        ValidEqTerm₀ sig ι ((inst D).subst θ₁) ((inst D).subst θ₂) (.sort κ₁)) →
+      {S : ObsRel} →
+      DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality rsR ds @θ₁ S →
       {o₁ o₂ f₁ f₂ : Observations} → S o₁ o₂ → ObsEquiv sig ι κ.quality f₁ o₁ →
       ObsEquiv sig ι κ.quality f₂ o₂ →
-      ∃ ctxΞ : Context 0 Ξ, EqSubst sig ι ctxΞ (hpos.obsSubst f₁ θ₁) (hpos.obsSubst f₂ θ₂) ∧
-        (∃ κ₁, κ₁ ≼ κ ∧ ValidTermΓ sig ι (ctxΞ.append Θ) B (.sort κ₁)) ∧
-        ∀ ts us : Args 0 [] ps,
-          EqSubst sig ι (Context.empty.append (Θ.subst (hpos.obsSubst f₁ θ₁))) ts.toSubst
-            us.toSubst →
-          ValidEqTerm₀ sig ι ((f₁ d ps).subst ts.toSubst) ((f₂ d ps).subst us.toSubst)
-            (B.subst (Subst.append (hpos.obsSubst f₁ θ₁) ts.toSubst))
-  | _, _, _, _, _, _, _, .here, ctx, hv, _, _, hθ, _, hS, _, _, _, _, ho, hf₁, hf₂ => by
-    rw [ValidDestructorsΓ] at hv
-    obtain ⟨-, hB, -⟩ := hv
-    exact ⟨ctx, hθ, hB, (DesRel.head hd hS ho hf₁ hf₂).1⟩
-  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') (Θ' := Θ') (B' := B') (ψ' := ψ') h, ctx,
-      hv, θ₁, θ₂, hθ, _, hS, _, _, f₁, f₂, ho, hf₁, hf₂ => by
-    rw [ValidDestructorsΓ] at hv
-    obtain ⟨-, -, hds⟩ := hv
-    obtain ⟨hhead, S', hS', ho'⟩ := DesRel.head hd hS ho hf₁ hf₂
-    have hext : EqSubst sig ι (ctx.secondOrder Θ' B' ψ')
-        (Subst.snoc (e := .secondOrder ps' ψ') θ₁ (f₁ d' ps'))
-        (Subst.snoc (e := .secondOrder ps' ψ') θ₂ (f₂ d' ps')) :=
-      (EqSubst.secondOrder_iff ctx Θ' B' ψ' _ _).2 ⟨hθ, fun τ₁ τ₂ hτ => by
-        show ValidEqTerm₀ sig ι ((f₁ d' ps').subst τ₁) ((f₂ d' ps').subst τ₂)
-          ((B'.subst (Subst.liftN _ θ₁)).subst τ₁)
+      (∃ κ₁, ∀ ts us : Args 0 [] ps,
+        EqSubst sig ι (Context.empty.append (Θ.subst (hpos.obsSubst f₁ θ₁))) ts.toSubst
+          us.toSubst →
+        ValidEqTerm₀ sig ι (B.subst (Subst.append (hpos.obsSubst f₁ θ₁) ts.toSubst))
+          (B.subst (Subst.append (hpos.obsSubst f₂ θ₂) us.toSubst)) (.sort κ₁)) ∧
+      ∀ ts us : Args 0 [] ps,
+        EqSubst sig ι (Context.empty.append (Θ.subst (hpos.obsSubst f₁ θ₁))) ts.toSubst
+          us.toSubst →
+        ValidEqTerm₀ sig ι ((f₁ d ps).subst ts.toSubst) ((f₂ d ps).subst us.toSubst)
+          (B.subst (Subst.append (hpos.obsSubst f₁ θ₁) ts.toSubst))
+  | _, _, _, _, _, B, _, .here, inst, rs, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, _, _, ho, hf₁,
+      hf₂ => by
+    rw [ValidEqDestructors₀] at hv
+    obtain ⟨-, hv⟩ := hv
+    split at hv
+    · rename_i hr
+      obtain ⟨⟨κ₁, -, hB⟩, -⟩ := hv
+      exact ⟨⟨κ₁, fun ts us hτ => hB _ _ hτ⟩, (DesRel.head hd hS (hN 0 hr) ho hf₁ hf₂).1⟩
+    · rename_i D hr
+      obtain ⟨rfl, -⟩ := hv
+      obtain ⟨R, v, hR0, hcv, hFv⟩ := hR 0 D hr
+      obtain ⟨κ₁, hI0⟩ := hI 0 D hr
+      have hhead := (DesRel.headRec hd hS hR0 hFv ho hf₁ hf₂).1
+      refine ⟨⟨κ₁, fun ts us _ => ?_⟩, fun ts us hτ => ?_⟩
+      · rw [Term.subst_append_rename_weakenN, Term.subst_append_rename_weakenN]
+        exact hI0
+      · rw [Term.subst_append_rename_weakenN]
+        exact hFv.validEqTerm hd hcv (hhead ts us hτ)
+  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') (Θ' := Θ') (B' := B') (ψ' := ψ') h, inst,
+      rs, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, f₁, f₂, ho, hf₁, hf₂ => by
+    rw [ValidEqDestructors₀] at hv
+    obtain ⟨-, hv⟩ := hv
+    have hsw : ∀ (θ : Subst 0 [] _) (f : Term 0 (Scope.extend [] ps'.length)) D,
+        ((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ f) =
+          (inst D).subst θ := fun θ f D => Term.subst_rename_of (fun _ => rfl) _
+    have hN' : ∀ i, rs (i + 1) = none → rsR (i + 1) = none := fun i => hN (i + 1)
+    have hR' : ∀ (f : Term 0 (Scope.extend [] ps'.length)) i D, rs (i + 1) = some D → ∃ R v,
+        rsR (i + 1) = some R ∧ Computesι sig ι
+          (((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ₁ f)) v ∧
+        FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v R :=
+      fun f i D hi => by rw [hsw]; exact hR (i + 1) D hi
+    have hI' : ∀ (f₁ f₂ : Term 0 (Scope.extend [] ps'.length)) i D, rs (i + 1) = some D → ∃ κ₁,
+        ValidEqTerm₀ sig ι
+          (((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ₁ f₁))
+          (((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ₂ f₂))
+          (.sort κ₁) :=
+      fun f₁ f₂ i D hi => by rw [hsw, hsw]; exact hI (i + 1) D hi
+    split at hv
+    · rename_i hr
+      obtain ⟨-, hds⟩ := hv
+      obtain ⟨hhead, S', hS', ho'⟩ := DesRel.head hd hS (hN 0 hr) ho hf₁ hf₂
+      have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ'.subst θ₁)) τ₁ τ₂ →
+          ValidEqTerm₀ sig ι ((f₁ d' ps').subst τ₁) ((f₂ d' ps').subst τ₂)
+            (B'.subst (Subst.append θ₁ τ₁)) := fun τ₁ τ₂ hτ => by
         obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
             @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
           ⟨_, Subst.args_toSubst ps' τ₁⟩
         obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps',
             @Eq (Subst 0 [] (Scope.extend [] ps'.length)) us.toSubst @τ₂ :=
           ⟨_, Subst.args_toSubst ps' τ₂⟩
-        rw [Term.subst_append]
-        exact hhead ts us hτ⟩
-    exact h.sound hd hds hext hS' ho' hf₁ hf₂
+        exact hhead ts us hτ
+      exact h.sound hd (hds _ _ hcond) hN' (hR' _) (hI' _ _) hS' ho' hf₁ hf₂
+    · rename_i D hr
+      obtain ⟨-, hds⟩ := hv
+      obtain ⟨R, v, hR0, -, hFv⟩ := hR 0 D hr
+      obtain ⟨-, hrest⟩ := DesRel.headRec hd hS hR0 hFv ho hf₁ hf₂
+      obtain ⟨S', hS', ho'⟩ := hrest (f₁ d' ps')
+      exact h.sound hd (hds (f₁ d' ps') (f₂ d' ps')) hN' (hR' _) (hI' _ _) hS' ho' hf₁ hf₂
 
 /-- The equality of the canonical terms of an instance of a codata type of `Σ` is, at the equality
-`S` of the abstractions for its destructors that the graph gives, `(eq_d)` for an instance in a
-universe, and the truth `(true_d)` of the instance for a proposition, in a signature whose names are
-distinct. -/
+`S` of the destructors of the types of its block that the graph gives, `(eq_ν)` for an instance in
+a universe, and the truth `(true_ν)` of the instance for a proposition, in a signature whose names
+are distinct. -/
 theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     {as : InstanceArgs 0 [] decl.scope} {R : TermRel} (hR : HasEq sig ι (.inst D qs ls ps as) R) :
-    ∃ n S, ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n ∧
-      DesRel sig ι n (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S ∧
-      (((decl.sort (.ofLists qs ps hq hp)).quality = .type ∧
-          (levelRel sig ι n).univ (.inst D qs ls ps as) R ∧ R = corecRel D S) ∨
-        ((decl.sort (.ofLists qs ps hq hp)).quality = .prop ∧
-          (levelRel sig ι n).prop (.inst D qs ls ps as) S.truth ∧ ∀ t u, R t u ↔ S.truth)) := by
+    ((decl.sort (.ofLists qs ps hq hp)).quality = .type ∧
+      ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+        (∀ X, ∀ T' ∈ decl.codataTypes,
+          DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+            (fun m _ => levelRel sig ι m) .type
+            (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+              fun D' => (X D').computed sig ι)
+            ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) ∧
+        R = CodataType.blockRel decl.codataTypes S D) ∨
+    ((decl.sort (.ofLists qs ps hq hp)).quality = .prop ∧
+      ∃ S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+        (∀ B, ∀ T' ∈ decl.codataTypes,
+          DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+            (fun m _ => levelRel sig ι m) .prop
+            (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+              fun D' => fun _ _ => B D')
+            ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S B T')) ∧
+        ∀ t u, R t u ↔ CodataType.blockTruth decl.codataTypes S D) := by
   cases hR with
   | univ n hU =>
     have hU' := levelRel_univ_iff.1 hU
@@ -2285,7 +2606,8 @@ theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h (hD ▸ h')
       cases hT
       cases hv
-      exact ⟨n, S, hn, hs ▸ hS, .inl ⟨hs, hU, rfl⟩⟩
+      subst hn
+      exact .inl ⟨hs, S, fun X T' hT' => hs ▸ hS X T' hT', rfl⟩
   | prop n b hP hRb =>
     have hP' := levelRel_prop_iff.1 hP
     cases hP' with
@@ -2296,7 +2618,8 @@ theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h (hD ▸ h')
       cases hT
       cases hv
-      exact ⟨n, S, hn, hs ▸ hS, .inr ⟨hs, hP, hRb⟩⟩
+      subst hn
+      exact .inr ⟨hs, S, fun B T' hT' => hs ▸ hS B T' hT', hRb⟩
 
 /-- The observation of a closed term, substituted by closed arguments, is the observation by the
 destructor applied to them. -/
@@ -2356,47 +2679,117 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   let L := ls.getFin hl
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
+  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
   have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hvD := hv.destructors (.ofLists qs ps hq hp) h.2.1 ρ
   have hθ := EqSubst.levelEquiv
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hn := Level.closedValue_subst_equiv hls (decl.sort (.ofLists qs ps hq hp)).level
+  have hmean := (hv.destructors I h.2.1 ρ).2 _ _ hθ
+  have hn := Level.closedValue_subst_equiv hls (decl.sort I).level
+  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
+    fun m _ => levelRel_isPer hd m
+  -- The instances of the block, at the levels without variables and at the arguments.
+  let X : InstanceArgs 0 [] decl.scope → Name → Term 0 [] := fun a D' =>
+    ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a.toSubst
+  have hX : ∀ a D', Term.LevelEquiv (X a D') (.inst D' qs ls ps a) := fun a D' =>
+    decl.blockInstance_atLevels_subst hq hl hp a D'
+  have hcX : ∀ a D', Computesι sig ι (X a D') (X a D') := fun _ _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X a₁ D') (X a₂ D') (.sort κ₁) :=
+    fun D' hD' => by
+      obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1 hD'
+      exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨h.1, hT', rfl⟩ hv hq hl hp has).levelEquiv
+        (hX a₁ _).symm (hX a₂ _).symm (Term.LevelEquiv.refl _)⟩
   -- The equality of the instance.
   have hI : Computesι sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₁) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
   obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht.1.2
   cases Computesι.det hd hcv hI
-  obtain ⟨n, S, hnS, hS, hRS⟩ := HasEq.instCodata_inv hd h hq hl hp hR
-  subst hnS
-  have hSρ : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).atLevels ρ).level.closedValue
-      (fun m _ => levelRel sig ι m) ((decl.sort (.ofLists qs ps hq hp)).atLevels ρ).quality
-      ((T.body (.ofLists qs ps hq hp)).atLevels ρ) a₁.toSubst S := by
-    have e : ((decl.sort (.ofLists qs ps hq hp)).atLevels ρ).level.closedValue =
-        ((decl.sort (.ofLists qs ps hq hp)).level.subst L).closedValue := hn
-    rw [e]
-    exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _)
-  -- Observations related by the equality of the destructors, which those of the terms compute as.
-  have hobs : ∃ o₁ o₂, S o₁ o₂ ∧
-      ObsEquiv sig ι (decl.sort (.ofLists qs ps hq hp)).quality (t₁.observation D qs ls ps a₁) o₁ ∧
-      ObsEquiv sig ι (decl.sort (.ofLists qs ps hq hp)).quality (t₂.observation D qs ls ps a₂) o₂ := by
-    rcases hRS with ⟨hs, hU, rfl⟩ | ⟨hs, hP, hRb⟩
-    · have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps a₁) := fun ⟨v, hv, k, b, hk⟩ => by
+  -- Observations related by the equality of the destructors, at the equalities of the instances
+  -- for the recursive destructors, which those of the terms compute as.
+  have hobs : ∃ (rsR : Nat → Option TermRel) (S : ObsRel) (o₁ o₂ : Observations),
+      DesRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
+        ((decl.sort I).atLevels ρ).quality rsR ((T.body I).atLevels ρ) a₁.toSubst S ∧
+      S o₁ o₂ ∧
+      ObsEquiv sig ι (decl.sort I).quality (t₁.observation D qs ls ps a₁) o₁ ∧
+      ObsEquiv sig ι (decl.sort I).quality (t₂.observation D qs ls ps a₂) o₂ ∧
+      (∀ i, (T.body I).recursionAt decl.names i = none → rsR i = none) ∧
+      (∀ i D', (T.body I).recursionAt decl.names i = some D' → ∃ R v, rsR i = some R ∧
+        Computesι sig ι (X a₁ D') v ∧
+        FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
+          ((decl.sort I).atLevels ρ).quality v R) := by
+    have hlev : ∀ {s : Quality} {rs : Nat → Option TermRel} {S : ObsRel},
+        DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+          ((T.body I).substLevels L) a₁.toSubst S →
+        DesRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m) s
+          rs ((T.body I).atLevels ρ) a₁.toSubst S := fun hS => by
+      have e : ((decl.sort I).atLevels ρ).level.closedValue =
+          ((decl.sort I).level.subst L).closedValue := hn
+      rw [e]
+      exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+        (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+        (Subst.LevelEquiv.refl _)
+    have hF : ∀ {s : Quality} {R' : TermRel} {D' : Name},
+        FieldRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s
+          (.inst D' qs ls ps a₁) R' →
+        FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
+          s (X a₁ D') R' := fun hF' => by
+      have e : ((decl.sort I).atLevels ρ).level.closedValue =
+          ((decl.sort I).level.subst L).closedValue := hn
+      rw [e]
+      exact FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hF' (hX a₁ _).symm
+    rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
+    · have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+          (.inst D qs ls ps a₁) (CodataType.blockRel decl.codataTypes S D) :=
+        levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
+      have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps a₁) := fun ⟨v, hv, k, b, hk⟩ => by
         cases Computesι.det hd hI hv
-        exact HasEq.univ_not_prop hd hU hk
+        exact HasEq.univ_not_prop hd hU₀ hk
       obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht.2.1 hnp
       cases Computesι.det hd hI hv'
-      obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := (HasEq.unique hd hR' hR w₁ w₂).1 hrel
-      exact ⟨o₁, o₂, ho, ObsEquiv.of_computes hd hw₁ hc₁, ObsEquiv.of_computes hd hw₂ hc₂⟩
-    · have hprop : ComputesToProp sig ι (.inst D qs ls ps a₁) := ⟨_, hI, _, _, hP⟩
+      have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
+          ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, S X T' o₁ o₂ → S Y T' o₁ o₂ :=
+        fun X Y hXY T' hT' => DesRel.mono hd ih (hS X T' hT') _ _ _ (hS Y T' hT')
+          fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+      have hrel' := (HasEq.unique hd hR' hR w₁ w₂).1 hrel
+      rw [← h.2.2] at hrel'
+      obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel'
+      refine ⟨_, _, o₁, o₂, hlev (hs ▸ hS _ T h.2.1), ho, ObsEquiv.of_computes hd hw₁ hc₁,
+        ObsEquiv.of_computes hd hw₂ hc₂, fun i hi => by rw [hi]; rfl, fun i D' hi => ?_⟩
+      obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
+        (Destructors.recursionAt_mem hi)
+      have hU : UnivRel sig ι ((decl.sort I).level.subst L).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps a₁)
+          (CodataType.blockRel decl.codataTypes S T'.name) :=
+        .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
+      rw [hi]
+      exact ⟨_, _, rfl, hcX _ _, hs ▸ hF (.univ rfl hU)⟩
+    · have hP : PropRel sig ι ((decl.sort I).level.subst L).closedValue
+          (fun m _ => levelRel sig ι m) (.inst D qs ls ps a₁)
+          (CodataType.blockTruth decl.codataTypes S D) :=
+        .codata h hq hl hp rfl hs rfl S hS
+      have hprop : ComputesToProp sig ι (.inst D qs ls ps a₁) :=
+        ⟨_, hI, _, _, levelRel_prop_iff.2 hP⟩
       obtain ⟨v', R', hv', hR', hrel⟩ := ht.2.2 hprop
       cases Computesι.det hd hI hv'
-      obtain ⟨o, ho⟩ := (hRb _ _).1 ((HasEq.unique hd hR' hR _ _).1 hrel)
-      exact ⟨o, o, ho, .inl hs, .inl hs⟩
-  obtain ⟨o₁, o₂, ho, hf₁, hf₂⟩ := hobs
-  obtain ⟨ctxΞ, hch, ⟨κ₁, -, hBv⟩, hres⟩ :=
-    (hpos.substLevels Lρ).sound hd hvD hθ hSρ ho hf₁ hf₂
+      have hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂,
+          S B T' o₁ o₂ → S B' T' o₁ o₂ :=
+        fun B B' hB T' hT' => DesRel.mono hd ih (hS B T' hT') _ _ _ (hS B' T' hT')
+          fun _ => Option.rel_map (fun D _ _ => hB D) _
+      have htrue := (hRb _ _).1 ((HasEq.unique hd hR' hR _ _).1 hrel)
+      rw [← h.2.2] at htrue
+      obtain ⟨o, ho⟩ := CodataType.blockTruth_unfold hmono h.2.1 htrue
+      refine ⟨_, _, o, o, hlev (hs ▸ hS _ T h.2.1), ho, .inl hs, .inl hs,
+        fun i hi => by rw [hi]; rfl, fun i D' hi => ?_⟩
+      obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
+        (Destructors.recursionAt_mem hi)
+      have hP' : PropRel sig ι ((decl.sort I).level.subst L).closedValue
+          (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps a₁)
+          (CodataType.blockTruth decl.codataTypes S T'.name) :=
+        .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
+      rw [hi]
+      exact ⟨_, _, rfl, hcX _ _, hs ▸ hF (.prop hP')⟩
+  obtain ⟨rsR, S, o₁, o₂, hSρ, ho, hf₁, hf₂, hN, hRr⟩ := hobs
+  obtain ⟨⟨κ₁, hBeq⟩, hres⟩ := (hpos.substLevels Lρ).sound hd hmean hN hRr
+    (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hSρ ho hf₁ hf₂
   -- The substitutions of the scope of the destructor, at the levels of the declaration and at the
   -- levels without variables, are the same.
   have hcE : ∀ {f : Observations} {a : InstanceArgs 0 [] decl.scope},
@@ -2421,7 +2814,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   · have hr := hres bs₁ bs₂ hbsρ
     rw [Term.observation_subst_args, Term.observation_subst_args] at hr
     exact hr.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hBE
-  · have hB := hBv.2 _ _ ((EqSubst.append_append_iff ctxΞ _ _ _ _ _).2 ⟨hch, hbsρ⟩)
+  · have hB := hBeq bs₁ bs₂ hbsρ
     obtain ⟨s, l⟩ := κ₁
     cases s
     · exact (ValidEqTerm₀.univType hB).levelEquiv hBE hBE
@@ -2512,13 +2905,21 @@ On a proposition, the observations of the corecursor, related to themselves, mak
 
 -- ADE: none.
 /-- Observations equal, destructor by destructor, at equal arguments, are related by the equality
-of the destructors, at instantiated levels: the destructors before each destructor being the
-observations `o₁`, as the equality of the destructors reads them, from the first one. -/
-theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Nat}
+of the destructors, at instantiated levels, at relations of the recursive destructors that the
+equalities of the instances of the block relate: the destructors before each destructor being the
+observations `o₁`, as the equality of the destructors reads them, from the first one, and the
+results of a recursive destructor being terms of an instance, as the meaning of the destructors
+says. -/
+theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe 0} {k' : Nat}
     (L : Fin k' → Level 0) :
-    {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {θ : Subst 0 [] Γ} →
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {inst : Name → Term 0 Γ} →
+      {rs : Nat → Option Name} → {θ θ' : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs (ds.substLevels L) θ θ' →
+      {rsR : Nat → Option TermRel} → (∀ i, rs i = none → rsR i = none) →
+      (∀ i D, rs i = some D → ∃ R v, rsR i = some R ∧ Computesι sig ι ((inst D).subst θ) v ∧
+        FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R) →
       {S : ObsRel} →
-      DesRel sig ι n (fun m _ => levelRel sig ι m) s (ds.substLevels L) @θ S →
+      DesRel sig ι n (fun m _ => levelRel sig ι m) s rsR (ds.substLevels L) @θ S →
       {o₁ o₂ : Observations} →
       (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
         (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
@@ -2528,33 +2929,91 @@ theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Nat}
         ValidEqTerm₀ sig ι ((o₁ d ps).subst ts.toSubst) ((o₂ d ps).subst us.toSubst)
           ((B.substLevels L).subst (Subst.append (hpos.obsSubst o₁ θ) ts.toSubst))) →
       S o₁ o₂
-  | _, _, .nil, _, _, h, _, _, _ => by
+  | _, _, .nil, _, _, _, _, _, _, _, _, _, h, _, _, _ => by
     cases h
     trivial
-  | _, _, .cons (d := d) (ps := ps) p q Θ B ψ ds, θ, _, h, o₁, o₂, hv => by
-    cases h with
-    | @cons _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
-      have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-      have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
-      have hEp := AbstractionRel.isPer hSp (fun ts hts =>
-        have ⟨v, hv'⟩ := hB ts hts
-        FieldRel.isPer hd ih (hF ts hts v hv')) hBresp
-      have hA : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) := fun ts us hts => by
-        have hτ := (TelRel.eqSubst_iff hd hΘ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => by cases h) ts us).1 hts
-        have htt := hSp.trans hts (hSp.symm hts)
-        obtain ⟨v, hv'⟩ := hB ts htt
-        exact (hF ts htt v hv').of_validEqTerm hv' (hv d p q ps _ Θ B ψ .here ts us hτ)
-      exact ⟨hA, DesRel.of_obs hd L ds (hG _ (hEp.trans hA (hEp.symm hA)))
-        fun d' p' q' ps' Ξ' Θ' B' ψ' hpos ts us hτ =>
-          hv d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos) ts us hτ⟩
+  | _, _, .cons (d := d) (ps := ps) p q Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hR, _, h, o₁, o₂,
+      hv => by
+    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    rw [Destructors.substLevels, ValidEqDestructors₀] at hm
+    obtain ⟨-, hm⟩ := hm
+    have hsw : ∀ (f : Term 0 (Scope.extend [] ps.length)) D,
+        ((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f) =
+          (inst D).subst θ := fun f D => Term.subst_rename_of (fun _ => rfl) _
+    have hR' : ∀ (f : Term 0 (Scope.extend [] ps.length)) i D, rs (i + 1) = some D → ∃ R v,
+        rsR (i + 1) = some R ∧ Computesι sig ι
+          (((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f)) v ∧
+        FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R :=
+      fun f i D hi => by rw [hsw]; exact hR (i + 1) D hi
+    have hv' : ∀ (d' : Name) (p' q' : Grade) (ps' : List Parameter) (Ξ' : Scope)
+        (Θ' : Telescope k' Ξ' ps') (B' : Term k' (Ξ'.extend ps'.length))
+        (ψ' : ResultOwnership ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ')
+        (ts us : Args 0 [] ps'),
+        EqSubst sig ι (Context.empty.append ((Θ'.substLevels L).subst
+          (hpos.obsSubst o₁ (Subst.snoc (e := .secondOrder ps ψ) θ (o₁ d ps))))) ts.toSubst
+          us.toSubst →
+        ValidEqTerm₀ sig ι ((o₁ d' ps').subst ts.toSubst) ((o₂ d' ps').subst us.toSubst)
+          ((B'.substLevels L).subst (Subst.append
+            (hpos.obsSubst o₁ (Subst.snoc (e := .secondOrder ps ψ) θ (o₁ d ps))) ts.toSubst)) :=
+      fun d' p' q' ps' Ξ' Θ' B' ψ' hpos ts us hτ =>
+        hv d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos) ts us hτ
+    split at hm
+    · rename_i hr
+      obtain ⟨-, hds⟩ := hm
+      cases h with
+      | recursive hrs => rw [hN 0 hr] at hrs; cases hrs
+      | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
+        have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
+        have hEp := AbstractionRel.isPer hSp (fun ts hts =>
+          have ⟨v, hv'⟩ := hB ts hts
+          FieldRel.isPer hd ih (hF ts hts v hv')) hBresp
+        have hT := TelRel.eqSubst_iff hd hΘ
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+        have hA : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) := fun ts us hts => by
+          have htt := hSp.trans hts (hSp.symm hts)
+          obtain ⟨v, hv'⟩ := hB ts htt
+          exact (hF ts htt v hv').of_validEqTerm hv' (hv d p q ps _ Θ B ψ .here ts us
+            ((hT ts us).1 hts))
+        have hff := hEp.trans hA (hEp.symm hA)
+        have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
+            τ₁ τ₂ → ValidEqTerm₀ sig ι ((o₁ d ps).subst τ₁) ((o₁ d ps).subst τ₂)
+              ((B.substLevels L).subst (Subst.append θ τ₁)) := fun τ₁ τ₂ hτ => by
+          obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
+            ⟨_, Subst.args_toSubst ps τ₁⟩
+          obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
+            ⟨_, Subst.args_toSubst ps τ₂⟩
+          have hts := (hT ts us).2 hτ
+          have htt := hSp.trans hts (hSp.symm hts)
+          obtain ⟨v, hv'⟩ := hB ts htt
+          exact (hF ts htt v hv').validEqTerm hd hv' (hff ts us hts)
+        exact ⟨hA, DesRel.of_obs hd L ds (hds _ _ hcond) (fun i => hN (i + 1)) (hR' _)
+          (hG _ hff) hv'⟩
+    · rename_i D hr
+      obtain ⟨hBD, hds⟩ := hm
+      obtain ⟨R, v, hR0, hcv, hFv⟩ := hR 0 D hr
+      cases h with
+      | cons _ _ _ _ _ _ _ _ hrs => rw [hR0] at hrs; cases hrs
+      | @recursive _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ R' hrs hΘ G hG =>
+        rw [hR0] at hrs
+        cases hrs
+        have hT := TelRel.eqSubst_iff hd hΘ
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+        refine ⟨fun ts us hts => ?_, DesRel.of_obs hd L ds (hds (o₁ d ps) (o₁ d ps))
+          (fun i => hN (i + 1)) (hR' _) (hG _) hv'⟩
+        have he := hv d p q ps _ Θ B ψ .here ts us ((hT ts us).1 hts)
+        have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D).subst θ := by
+          rw [hBD, Term.subst_append_rename_weakenN]
+        exact hFv.of_validEqTerm hcv (e ▸ he)
 
 -- ADE: none.
 /-- `(corec)`, closed: two corecursors of an instance of a codata type of `Σ`, whose type
 declaration is meaningful, at the same levels and at equal arguments of its parameters, whose
 observations by each destructor, at equal arguments of its telescope, are equal terms of its
-result, are equal terms of the instance: canonical terms that `(eq_d)` relates, or proofs of a
-proposition that their observations make true. -/
+result, are equal terms of the instance: canonical terms that `(eq_ν)` relates, since the
+relation that `(eq_d)` gives them at `(eq_ν)` is consistent with the clauses of the destructors, or
+proofs of a proposition that their observations make true. -/
 theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
@@ -2582,39 +3041,112 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
       (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
         (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩) :=
     ValidEqTerm₀.instCodata hd h hv hq hl hp has
-  obtain ⟨S, h₁, -⟩ := ValidTypeDeclaration.destructorsRel hd h hv hq hl hp has
-  have hS : S ((Term.corec r₁ D qs ls ps a₁ ss₁ Ss₁ gs₁).observation D qs ls ps a₁)
-      ((Term.corec r₂ D qs ls ps a₂ ss₂ Ss₂ gs₂).observation D qs ls ps a₂) :=
-    DesRel.of_obs hd (ls.getFin hl) (T.body (.ofLists qs ps hq hp)) h₁
+  obtain ⟨hdecl, hT, rfl⟩ := h
+  have hn := TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)
+  let L := ls.getFin hl
+  let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
+  let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
+  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
+  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
+  have hθ := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
+  have hmean := (hv.destructors I hT ρ).2 _ _ hθ
+  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
+    fun m _ => levelRel_isPer hd m
+  -- The instances of the block, at the levels without variables and at the first arguments.
+  let X : Name → Term 0 [] := fun D' =>
+    ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a₁.toSubst
+  have hX : ∀ D', Term.LevelEquiv (X D') (.inst D' qs ls ps a₁) := fun D' =>
+    decl.blockInstance_atLevels_subst hq hl hp a₁ D'
+  have hcX : ∀ D', Computesι sig ι (X D') (X D') := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  -- The observations at the levels without variables.
+  let c₁ : Term 0 [] := .corec r₁ T.name qs ls ps a₁ ss₁ Ss₁ gs₁
+  let c₂ : Term 0 [] := .corec r₂ T.name qs ls ps a₂ ss₂ Ss₂ gs₂
+  have hobs' : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
+      (ψ : ResultOwnership ps'.length) (hpos : (T.body I).Pos d p q Ξ Θ B ψ)
+      (ts us : Args 0 [] ps'),
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
+        (hpos.obsSubst (c₁.observation T.name qs ls ps a₁) a₁.toSubst))) ts.toSubst us.toSubst →
+      ValidEqTerm₀ sig ι (((c₁.observation T.name qs ls ps a₁) d ps').subst ts.toSubst)
+        (((c₂.observation T.name qs ls ps a₂) d ps').subst us.toSubst)
+        ((B.substLevels Lρ).subst (Subst.append
+          (hpos.obsSubst (c₁.observation T.name qs ls ps a₁) a₁.toSubst) ts.toSubst)) :=
       fun d p q ps' Ξ Θ B ψ hpos ts us hτ => by
-        rw [Term.observation_subst_args, Term.observation_subst_args]
-        exact hobs d p q ps' Ξ Θ B ψ hpos ts us hτ
-  have hw : Computesι sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₁) :=
+    rw [Term.observation_subst_args, Term.observation_subst_args]
+    have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Telescope.substLevels_levelEquiv hls Θ))) hτ
+    exact (hobs d p q ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
+      (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+  have hlev : ∀ {s : Quality} {rs : Nat → Option TermRel} {S : ObsRel},
+      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+        ((T.body I).substLevels L) a₁.toSubst S →
+      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+        ((T.body I).substLevels Lρ) a₁.toSubst S := fun hS =>
+    DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+      (Subst.LevelEquiv.refl _)
+  have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
   have hct : ∀ (r : Grade) (a : InstanceArgs 0 [] decl.scope) (ss : Terms 0 []) (Ss : States 0 [])
-      (gs : CorecBranches 0 []), Computesι sig ι (.corec r D qs ls ps a ss Ss gs)
-        (.corec r D qs ls ps a ss Ss gs) :=
+      (gs : CorecBranches 0 []), Computesι sig ι (.corec r T.name qs ls ps a ss Ss gs)
+        (.corec r T.name qs ls ps a ss Ss gs) :=
     fun _ _ _ _ _ => ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩
-  cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
+  cases hs : (decl.sort I).quality
   · rw [hs] at hI
-    have hU : (levelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst
-        (ls.getFin hl)).closedValue).univ (.inst D qs ls ps a₁) (corecRel D S) :=
-      levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₁))
+    obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp has hs
+    have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
+        ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, S X T' o₁ o₂ → S Y T' o₁ o₂ :=
+      fun X Y hXY T' hT' => DesRel.mono hd ih (hS X T' hT') _ _ _ (hS Y T' hT')
+        fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+    have hU' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+        (.inst T.name qs ls ps a₁) (CodataType.blockRel decl.codataTypes S T.name) :=
+      levelRel_univ_iff.2 (hU T hT).1
+    have hrel : CodataType.blockRel decl.codataTypes S T.name c₁ c₂ :=
+      CodataType.blockRel_fold hmono hn hT ⟨_, _, ⟨r₁, qs, ls, ps, _, a₁, ss₁, Ss₁, gs₁, rfl, rfl⟩,
+        ⟨r₂, qs, ls, ps, _, a₂, ss₂, Ss₂, gs₂, rfl, rfl⟩,
+        DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+          (fun i D' hi => by
+            obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
+              (Destructors.recursionAt_mem hi)
+            rw [hi]
+            exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+              (.univ rfl (hU T' hT').1) (hX _).symm⟩)
+          (hlev (hS (CodataType.blockRel decl.codataTypes S) T hT)) hobs'⟩
     refine ⟨(ValidEqTerm₀.univType hI).left,
-      fun _ => ⟨_, _, _, _, hw, hct _ _ _ _ _, hct _ _ _ _ _, .univ _ hU,
-        _, _, ⟨r₁, qs, ls, ps, _, a₁, ss₁, Ss₁, gs₁, rfl, rfl⟩,
-        ⟨r₂, qs, ls, ps, _, a₂, ss₂, Ss₂, gs₂, rfl, rfl⟩, hS⟩,
+      fun _ => ⟨_, _, _, _, hw, hct _ _ _ _ _, hct _ _ _ _ _, .univ _ hU', hrel⟩,
       fun ⟨v, hv', _, _, hP⟩ => ?_⟩
     cases Computesι.det hd hw hv'
-    exact (HasEq.univ_not_prop hd hU hP).elim
+    exact (HasEq.univ_not_prop hd hU' hP).elim
   · rw [hs] at hI
-    have hP : (levelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst
-        (ls.getFin hl)).closedValue).prop (.inst D qs ls ps a₁) S.truth :=
-      levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S (hs ▸ h₁))
-    have hSp := DesRel.isPer hd (fun m _ => levelRel_isPer hd m) h₁
-    refine ⟨(ValidEqTerm₀.propType hI).left, fun hn => absurd ⟨_, hw, _, _, hP⟩ hn,
-      fun _ => ⟨_, fun _ _ => S.truth, hw, .prop _ _ hP fun _ _ => .rfl,
-        _, hSp.trans hS (hSp.symm hS)⟩⟩
+    obtain ⟨S, hS, hP⟩ := hv.codataPropRel hd hdecl hq hl hp has hs
+    have hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂,
+        S B T' o₁ o₂ → S B' T' o₁ o₂ :=
+      fun B B' hB T' hT' => DesRel.mono hd ih (hS B T' hT') _ _ _ (hS B' T' hT')
+        fun _ => Option.rel_map (fun D _ _ => hB D) _
+    have hP' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).prop
+        (.inst T.name qs ls ps a₁) (CodataType.blockTruth decl.codataTypes S T.name) :=
+      levelRel_prop_iff.2 (hP T hT).1
+    have hS₁ := DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+      (fun i D' hi => by
+        obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
+          (Destructors.recursionAt_mem hi)
+        rw [hi]
+        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+          (.prop (hP T' hT').1) (hX _).symm⟩)
+      (hlev (hS (CodataType.blockTruth decl.codataTypes S) T hT)) hobs'
+    have hSp := DesRel.isPer hd ih (fun i x hx => by
+      cases hr : (T.body I).recursionAt decl.names i with
+      | none => rw [hr] at hx; cases hx
+      | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩)
+      (hlev (hS (CodataType.blockTruth decl.codataTypes S) T hT))
+    have htrue : CodataType.blockTruth decl.codataTypes S T.name :=
+      CodataType.blockTruth_fold hmono hn hT ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
+    refine ⟨(ValidEqTerm₀.propType hI).left, fun hn => absurd ⟨_, hw, _, _, hP'⟩ hn,
+      fun _ => ⟨_, fun _ _ => CodataType.blockTruth decl.codataTypes S T.name, hw,
+        .prop _ _ hP' fun _ _ => .rfl, htrue⟩⟩
 
 /-- The scope of a destructor, over the state of a corecursor, at the corecursor from the state,
 substituted by a closed substitution of the context followed by closed arguments of the state, is
@@ -2916,20 +3448,28 @@ On a proposition, the observations of the first term, related to themselves, mak
 
 -- ADE: none.
 /-- The equality of destructors relates the observations `o₁` and `o₂` when it relates observations
-`f₁` and `f₂` that compute as them: the abstractions for each destructor compute as each other, so
+`f₁` and `f₂` that compute as them, at relations of the recursive destructors that are equalities
+of the terms of types of the graph: the abstractions for each destructor compute as each other, so
 that the equality of its result relates them, and the destructors after it are the same for
 abstractions that the equality of the destructor relates. -/
 theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
-    {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {θ : Subst 0 [] Γ} →
-      {S : ObsRel} → DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S →
+    {rs : Nat → Option TermRel} → {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} →
+      {θ : Subst 0 [] Γ} → {S : ObsRel} →
+      (∀ i R, rs i = some R → ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R) →
+      DesRel sig ι n (fun m _ => levelRel sig ι m) s rs ds @θ S →
       {f₁ f₂ o₁ o₂ : Observations} → S f₁ f₂ → ObsEquiv sig ι s f₁ o₁ →
       ObsEquiv sig ι s f₂ o₂ → S o₁ o₂
-  | _, _, .nil, _, _, h, _, _, _, _, _, _, _ => by
+  | _, _, _, .nil, _, _, _, h, _, _, _, _, _, _, _ => by
     cases h
     trivial
-  | _, _, .cons (d := d) (ps := ps) _ _ _ _ _ _, _, _, h, f₁, f₂, o₁, o₂, hS, hf₁, hf₂ => by
+  | rs, _, _, .cons (d := d) (ps := ps) _ _ _ _ _ _, _, _, hRF, h, f₁, f₂, o₁, o₂, hS, hf₁, hf₂ => by
+    have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
+        ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
+      fun hf => hf.imp_right fun h τ w => h d ps τ w
+    have hRF' : ∀ i R, rs (i + 1) = some R →
+        ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R := fun i => hRF (i + 1)
     cases h with
-    | @cons _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
+    | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
       obtain ⟨hA, hGf⟩ := hS
       have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
       have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
@@ -2940,9 +3480,6 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
       have hEp := AbstractionRel.isPer hSp (fun ts hts =>
         have ⟨_, hv⟩ := hFv ts hts
         FieldRel.isPer hd ih hv) hBresp
-      have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
-          ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
-        fun hf => hf.imp_right fun h τ w => h d ps τ w
       have hA' : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) :=
         (AbstractionRel.congr_computes hSp hFv (by
           rcases hc hf₁ with h₁ | h₁
@@ -2956,18 +3493,33 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
           rcases hc hf₁ with h₁ | h₁
           · exact .inl h₁
           exact .inr ⟨fun _ _ => .rfl, h₁⟩)).1 hff
-      exact ⟨hA', (hresp _ _ hfo o₁ o₂).1 (DesRel.obsEquiv hd (hG _ hff) hGf hf₁ hf₂)⟩
+      exact ⟨hA', (hresp _ _ hfo o₁ o₂).1 (DesRel.obsEquiv hd hRF' (hG _ hff) hGf hf₁ hf₂)⟩
+    | @recursive _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ R hrs hΘ G hG =>
+      obtain ⟨hA, hGf⟩ := hS
+      obtain ⟨v, hv⟩ := hRF 0 R hrs
+      refine ⟨fun ts us hts => (hv.congr_computes ?_).1 (hA ts us hts),
+        DesRel.obsEquiv hd hRF' (hG (o₁ d ps)) hGf hf₁ hf₂⟩
+      rcases hc hf₁ with h₁ | h₁
+      · exact .inl h₁
+      rcases hc hf₂ with h₂ | h₂
+      · exact .inl h₂
+      exact .inr ⟨h₁ _, h₂ _⟩
 
 -- ADE: none.
-/-- `(η_d)`, closed: two closed terms of an instance of a codata type of `Σ` whose observations by
-each destructor, at equal arguments of its telescope, are equal terms of its result, whatever the
-instance that the second observation carries, are equal terms of the instance: canonical terms that `(eq_d)` relates, or proofs of a proposition that their
-observations make true. -/
+/-- `(η_d)`, closed: two closed terms of an instance of a codata type of `Σ`, whose type
+declaration is meaningful, at arguments of its parameters, whose observations by each destructor,
+at equal arguments of its telescope, are equal terms of its result, whatever the instance that the
+second observation carries, are equal terms of the instance: canonical terms that `(eq_ν)` relates,
+since the relation that `(eq_d)` gives the corecursors they compute to at `(eq_ν)` is consistent with
+the clauses of the destructors, or proofs of a proposition that their observations make true. -/
 theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
-    (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    {as a₂ : InstanceArgs 0 [] decl.scope} {t u : Term 0 []}
+    (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as a₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as.toSubst as.toSubst) {t u : Term 0 []}
     (ht : ValidTerm₀ sig ι t (.inst D qs ls ps as)) (hu : ValidTerm₀ sig ι u (.inst D qs ls ps as))
     (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
@@ -2983,31 +3535,127 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     ⟨.refl _, .inst _ _ _ _ _⟩
   obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht.1.2
   cases Computesι.det hd hcv hI
-  obtain ⟨n, S, -, hS, hRS⟩ := HasEq.instCodata_inv hd h hq hl hp hR
-  -- The equality of the destructors relates the observations of the terms.
-  have hS' : S (t.observation D qs ls ps as) (u.observation D qs ls ps a₂) :=
-    DesRel.of_obs hd (ls.getFin hl) (T.body (.ofLists qs ps hq hp)) hS
+  have hnd := TypeDeclaration.codataTypes_nodup (hd.nodup h.1)
+  let L := ls.getFin hl
+  let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
+  let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
+  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
+  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
+  have hθ := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
+  have hmean := (hv.destructors I h.2.1 ρ).2 _ _ hθ
+  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
+    fun m _ => levelRel_isPer hd m
+  -- The instances of the block, at the levels without variables and at the arguments.
+  let X : Name → Term 0 [] := fun D' =>
+    ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst
+  have hX : ∀ D', Term.LevelEquiv (X D') (.inst D' qs ls ps as) := fun D' =>
+    decl.blockInstance_atLevels_subst hq hl hp as D'
+  have hcX : ∀ D', Computesι sig ι (X D') (X D') := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  -- The observations at the levels without variables.
+  have hobs' : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
+      (ψ : ResultOwnership ps'.length) (hpos : (T.body I).Pos d p q Ξ Θ B ψ)
+      (ts us : Args 0 [] ps'),
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
+        (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) ts.toSubst us.toSubst →
+      ValidEqTerm₀ sig ι (((t.observation D qs ls ps as) d ps').subst ts.toSubst)
+        (((u.observation D qs ls ps a₂) d ps').subst us.toSubst)
+        ((B.substLevels Lρ).subst (Subst.append
+          (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst)) :=
       fun d p q ps' Ξ Θ B ψ hpos ts us hτ => by
-        rw [Term.observation_subst_args, Term.observation_subst_args]
-        exact hobs d p q ps' Ξ Θ B ψ hpos ts us hτ
-  rcases hRS with ⟨hs, hU, rfl⟩ | ⟨hs, hP, hRb⟩
+    rw [Term.observation_subst_args, Term.observation_subst_args]
+    have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Telescope.substLevels_levelEquiv hls Θ))) hτ
+    exact (hobs d p q ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
+      (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+  have hlev : ∀ {s : Quality} {rs : Nat → Option TermRel} {S : ObsRel},
+      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+        ((T.body I).substLevels L) as.toSubst S →
+      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+        ((T.body I).substLevels Lρ) as.toSubst S := fun hS =>
+    DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+      (Subst.LevelEquiv.refl _)
+  rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
+    have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
+        ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, S X T' o₁ o₂ → S Y T' o₁ o₂ :=
+      fun X Y hXY T' hT' => DesRel.mono hd ih (hS X T' hT') _ _ _ (hS Y T' hT')
+        fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+    have hU : ∀ T' ∈ decl.codataTypes, UnivRel sig ι ((decl.sort I).level.subst L).closedValue
+        (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
+        (CodataType.blockRel decl.codataTypes S T'.name) := fun T' hT' =>
+      .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
+    have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+        (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes S D) :=
+      levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
     have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps as) := fun ⟨v, hv, k, b, hk⟩ => by
       cases Computesι.det hd hI hv
-      exact HasEq.univ_not_prop hd hU hk
+      exact HasEq.univ_not_prop hd hU₀ hk
+    have hDS := hlev (hS (CodataType.blockRel decl.codataTypes S) T h.2.1)
+    have hS₁ := DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+      (fun i D' hi => by
+        obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
+          (Destructors.recursionAt_mem hi)
+        rw [hi]
+        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+          (.univ rfl (hU T' hT')) (hX _).symm⟩)
+      hDS hobs'
     obtain ⟨v₁, w₁, w₁', R₁, hv₁, hw₁, -, hR₁, hrel₁⟩ := ht.2.1 hnp
     cases Computesι.det hd hI hv₁
-    obtain ⟨o₁, -, hc₁, -, -⟩ := (HasEq.unique hd hR₁ hR w₁ w₁').1 hrel₁
+    have hrel₁' := (HasEq.unique hd hR₁ hR w₁ w₁').1 hrel₁
+    rw [← h.2.2] at hrel₁'
+    obtain ⟨o₁, -, hc₁, -, -⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel₁'
     obtain ⟨v₂, w₂, w₂', R₂, hv₂, hw₂, -, hR₂, hrel₂⟩ := hu.2.1 hnp
     cases Computesι.det hd hI hv₂
-    obtain ⟨o₂, -, hc₂, -, -⟩ := (HasEq.unique hd hR₂ hR w₂ w₂').1 hrel₂
-    exact ⟨ht.1, fun _ => ⟨_, w₁, w₂, _, hI, hw₁, hw₂, hR, o₁, o₂, hc₁, hc₂,
-      DesRel.obsEquiv hd hS hS' (ObsEquiv.of_computes hd hw₁ hc₁)
-        (ObsEquiv.of_computes hd hw₂ hc₂)⟩, fun hp => absurd hp hnp⟩
+    have hrel₂' := (HasEq.unique hd hR₂ hR w₂ w₂').1 hrel₂
+    rw [← h.2.2] at hrel₂'
+    obtain ⟨o₂, -, hc₂, -, -⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel₂'
+    have hS₂ := DesRel.obsEquiv hd (fun i R' hi => by
+        cases hr : (T.body I).recursionAt decl.names i with
+        | none => rw [hr] at hi; cases hi
+        | some D' =>
+          rw [hr] at hi
+          cases hi
+          obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
+            (Destructors.recursionAt_mem hr)
+          exact ⟨_, .univ rfl (hU T' hT')⟩)
+      hDS hS₁ (ObsEquiv.of_computes hd hw₁ hc₁) (ObsEquiv.of_computes hd hw₂ hc₂)
+    have hrel := CodataType.blockRel_fold hmono hnd h.2.1 ⟨o₁, o₂, hc₁, hc₂, hS₂⟩
+    rw [h.2.2] at hrel
+    exact ⟨ht.1, fun _ => ⟨_, w₁, w₂, _, hI, hw₁, hw₂, hR, hrel⟩, fun hp => absurd hp hnp⟩
   · -- A proposition: the observations of the first term make it true.
-    have hSp := DesRel.isPer hd (fun m _ => levelRel_isPer hd m) hS
-    exact ⟨ht.1, fun hn => absurd ⟨_, hI, _, _, hP⟩ hn,
-      fun _ => ⟨_, R, hI, hR, (hRb _ _).2 ⟨_, hSp.trans hS' (hSp.symm hS')⟩⟩⟩
+    have hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂,
+        S B T' o₁ o₂ → S B' T' o₁ o₂ :=
+      fun B B' hB T' hT' => DesRel.mono hd ih (hS B T' hT') _ _ _ (hS B' T' hT')
+        fun _ => Option.rel_map (fun D _ _ => hB D) _
+    have hP : ∀ T' ∈ decl.codataTypes, PropRel sig ι ((decl.sort I).level.subst L).closedValue
+        (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
+        (CodataType.blockTruth decl.codataTypes S T'.name) := fun T' hT' =>
+      .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
+    have hP₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).prop
+        (.inst D qs ls ps as) (CodataType.blockTruth decl.codataTypes S D) :=
+      levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
+    have hDS := hlev (hS (CodataType.blockTruth decl.codataTypes S) T h.2.1)
+    have hS₁ := DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+      (fun i D' hi => by
+        obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
+          (Destructors.recursionAt_mem hi)
+        rw [hi]
+        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+          (.prop (hP T' hT')) (hX _).symm⟩)
+      hDS hobs'
+    have hSp := DesRel.isPer hd ih (fun i x hx => by
+      cases hr : (T.body I).recursionAt decl.names i with
+      | none => rw [hr] at hx; cases hx
+      | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩) hDS
+    have htrue := CodataType.blockTruth_fold hmono hnd h.2.1 ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
+    rw [h.2.2] at htrue
+    exact ⟨ht.1, fun hn => absurd ⟨_, hI, _, _, hP₀⟩ hn,
+      fun _ => ⟨_, R, hI, hR, (hRb _ _).2 htrue⟩⟩
 
 -- ADE: `η-eqᵛ`, `Σ-ηᵛ` and `η-unitᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/`.
 /-- `(η_d)` keeps the meaning: at equal substitutions of the context, the observations of the terms,
@@ -3019,7 +3667,9 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    {as : InstanceArgs 0 Γ decl.scope} {t u : Term 0 Γ}
+    {as : InstanceArgs 0 Γ decl.scope}
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) {t u : Term 0 Γ}
     (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
     (hu : ValidTermΓ sig ι ctx u (.inst D qs ls ps as))
     (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
@@ -3031,12 +3681,13 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
         ((B.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
     ValidEqTermΓ sig ι ctx t u (.inst D qs ls ps as) := by
-  obtain ⟨h', -⟩ := hent.hasCodataType h
+  obtain ⟨h', hv⟩ := hent.hasCodataType h
   have hctx := ht.1.1
   have hd := hctx.distinct
   refine ⟨ht.1, fun σ₁ σ₂ hσ => ?_⟩
   have hu' := hu.2 σ₁ σ₂ hσ
-  refine ValidEqTerm₀.etaObs (a₂ := as.subst σ₂) hd h' hq hl hp (ht.2 σ₁ σ₁ (hσ.left hctx))
+  refine ValidEqTerm₀.etaObs (a₂ := as.subst σ₂) hd h' hv hq hl hp
+    (has.2 σ₁ σ₁ (hσ.left hctx)) (ht.2 σ₁ σ₁ (hσ.left hctx))
     hu'.right
     fun d p q ps' Ξ Θ B ψ hpos ts us hτ => ?_
   -- The scope of the destructor, substituted, is that of the observations of the term substituted.

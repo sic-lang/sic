@@ -241,6 +241,26 @@ def AbstractionRel {ps : List Parameter} (SΘ : FieldsRel) (F : Terms 0 [] → T
   ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
     F ts.terms (f₁.subst ts.toSubst) (f₂.subst us.toSubst)
 
+/-- `(eq_ν)`: the equality of the canonical terms of the instances of the codata types `Ts` of a
+block, the greatest relations, one for each type, whose related terms `(eq_d)` relates, when the
+equality `S X T` of the destructors of each type `T` relates the results of its recursive
+destructors by the relations `X`: they are related by some relations `X` consistent with these
+clauses.
+RFC: `\mathsf{eq}_\nu` -/
+def CodataType.blockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S : (Name → TermRel) → CodataType j g k Δ → ObsRel) (D : Name) : TermRel :=
+  fun v w => ∃ X : Name → TermRel,
+    (∀ T ∈ Ts, ∀ v w, X T.name v w → corecRel T.name (S X T) v w) ∧ X D v w
+
+/-- `(true_ν)`: the truth of the propositions declared as the codata types `Ts` of a block, the
+greatest truths, one for each type, that `(true_d)` gives, when the equality `S B T` of the
+destructors of each type `T` reads the truths `B` of its recursive destructors: true when some
+truths `B` consistent with these clauses are.
+RFC: `\mathsf{true}_\nu` -/
+def CodataType.blockTruth {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S : (Name → Prop) → CodataType j g k Δ → ObsRel) (D : Name) : Prop :=
+  ∃ B : Name → Prop, (∀ T ∈ Ts, B T.name → (S B T).truth) ∧ B D
+
 mutual
 
 -- ADE: none.
@@ -284,7 +304,9 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
       UnivRel sig ι n below v (DataType.blockRel decl.dataTypes S D)
   /-- `(ty_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
-  destructors are in `U_n` at the arguments `ā`, and whose canonical terms are equal by `(eq_d)`.
+  block has types whose destructors are in `U_n` at the arguments `ā`, whatever the relations `X` of
+  the instances of the types of the block at their recursive destructors, and whose canonical terms
+  are equal by `(eq_ν)`.
   RFC: `\mathsf{ty}_d` -/
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -293,10 +315,13 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (S : ObsRel)
-      (hS : DesRel sig ι n below .type ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-        as.toSubst S) :
-      UnivRel sig ι n below v (corecRel D S)
+      (S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
+      (hS : ∀ X, ∀ T' ∈ decl.codataTypes,
+        DesRel sig ι n below .type
+          (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) :
+      UnivRel sig ι n below v (CodataType.blockRel decl.codataTypes S D)
 
 -- ADE: none.
 /--
@@ -326,7 +351,9 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S B c)) :
       PropRel sig ι n below v (DataType.blockTruth decl.dataTypes S D)
   /-- `(ty_dΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `Ω_n`, whose
-  destructors are in `Ω_n` at the arguments `ā`, and whose truth is `(true_d)`.
+  block has types whose destructors are in `Ω_n` at the arguments `ā`, whatever the truths `B` of
+  the instances of the types of the block at their recursive destructors, and whose truth is
+  `(true_ν)`.
   RFC: `\mathsf{ty}_{d\Omega}` -/
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -335,10 +362,13 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
       (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (S : ObsRel)
-      (hS : DesRel sig ι n below .prop ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-        as.toSubst S) :
-      PropRel sig ι n below v S.truth
+      (S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
+      (hS : ∀ B, ∀ T' ∈ decl.codataTypes,
+        DesRel sig ι n below .prop
+          (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => fun _ _ => B D')
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S B T')) :
+      PropRel sig ι n below v (CodataType.blockTruth decl.codataTypes S D)
 
 -- ADE: none.
 /--
@@ -382,6 +412,9 @@ are in the sort of the quality `s` at the level `n`, and the abstractions for th
 the arguments of each destructor are a telescope in `U_n`, its result a type of a sort that `s_n`
 bounds for equal arguments, and the destructors after it are, for each abstraction for it, the
 same for equal abstractions.
+The destructors at the positions `i` where `rs i` is `R` are recursive, whose results are equal by
+`R`, given rather than computed, and on which the destructors after them do not depend; the
+destructors of a type that is not recursive have none.
 The Lean carries the closed substitution of the scope of the destructors, rather than the closed
 destructors `d̄[θ]` of the RFC, as the closed judgments of the contexts do, so that the substitution
 of the destructors and their instance `d̄ⱼ[T]` at the arguments of the parameters need no definition
@@ -390,18 +423,20 @@ RFC: `\mathsf{subst}_\theta.\bar d`
 RFC: `\mathsf{inst}_{\bar d}`
 -/
 inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
-    Quality → {Γ : Scope} → {ns : List Name} → Destructors 0 Γ ns → Subst 0 [] Γ → ObsRel → Prop
-    where
+    Quality → (Nat → Option TermRel) → {Γ : Scope} → {ns : List Name} → Destructors 0 Γ ns →
+      Subst 0 [] Γ → ObsRel → Prop where
   /-- `(ty_d̄ε)`: no destructor.
   RFC: `\mathsf{ty}_{\bar d\varepsilon}` -/
-  | nil {s : Quality} {Γ : Scope} {θ : Subst 0 [] Γ} : DesRel sig ι n below s .nil @θ fun _ _ => True
-  /-- `(ty_d̄|)`: a destructor `d : (Θ ⊢ B ◀ ψ)`, whose arguments `Θ[θ]` are a telescope in `U_n`
-  with the equality `SΘ`, whose result type `B[θ, t̄]` computes, at equal arguments `t̄`, to a type of
-  a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same for equal arguments, and
-  the destructors after it, which are for each abstraction `f` for `d` with the equality `G f`, the
-  same for equal abstractions.
+  | nil {s : Quality} {rs : Nat → Option TermRel} {Γ : Scope} {θ : Subst 0 [] Γ} :
+      DesRel sig ι n below s rs .nil @θ fun _ _ => True
+  /-- `(ty_d̄|)`: a destructor `d : (Θ ⊢ B ◀ ψ)`, not recursive, whose arguments `Θ[θ]` are a telescope
+  in `U_n` with the equality `SΘ`, whose result type `B[θ, t̄]` computes, at equal arguments `t̄`, to a
+  type of a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same for equal
+  arguments, and the destructors after it, which are for each abstraction `f` for `d` with the
+  equality `G f`, the same for equal abstractions.
   RFC: `\mathsf{ty}_{\bar d|}` -/
-  | cons {s : Quality} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+  | cons {s : Quality} {rs : Nat → Option TermRel} {Γ : Scope} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q : Grade}
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
@@ -411,10 +446,25 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
         Computesι sig ι (B.subst (Subst.append θ ts.toSubst)) v → FieldRel sig ι n below s v (F ts.terms))
       (hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u)
       (G : Term 0 (Scope.extend [] ps.length) → ObsRel)
-      (hG : ∀ f, AbstractionRel SΘ F f f → DesRel sig ι n below s ds (Subst.snoc θ f) (G f))
-      (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
-      DesRel sig ι n below s (.cons (d := d) p q Θ B ψ ds) @θ fun o₁ o₂ =>
+      (hG : ∀ f, AbstractionRel SΘ F f f →
+        DesRel sig ι n below s (fun i => rs (i + 1)) ds (Subst.snoc θ f) (G f))
+      (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂)
+      (hrs : rs 0 = none) :
+      DesRel sig ι n below s rs (.cons (d := d) p q Θ B ψ ds) @θ fun o₁ o₂ =>
         AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂
+  /-- `(ty_d̄rec)`: a recursive destructor `d : (Θ ⊢ B ◀ ψ)`, whose arguments `Θ[θ]` are a telescope
+  in `U_n` with the equality `SΘ`, whose results are equal by the relation `R` that `rs` gives it, and
+  the destructors after it, the same, with the same equality, for every abstraction for it.
+  RFC: `\mathsf{ty}_{\bar d\mathsf{rec}}` -/
+  | recursive {s : Quality} {rs : Nat → Option TermRel} {Γ : Scope} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      {R : TermRel} (hrs : rs 0 = some R)
+      (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (G : ObsRel)
+      (hG : ∀ f, DesRel sig ι n below s (fun i => rs (i + 1)) ds (Subst.snoc θ f) G) :
+      DesRel sig ι n below s rs (.cons (d := d) p q Θ B ψ ds) @θ fun o₁ o₂ =>
+        AbstractionRel SΘ (fun _ => R) (o₁ d ps) (o₂ d ps) ∧ G o₁ o₂
 
 -- ADE: none.
 /--
@@ -748,19 +798,52 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
   ValidEqTelescopeΓ sig ι ctx Θ Θ κ
 
 -- ADE: none.
-/-- `Σ; Γ ⊨ d̄ : κ`, at levels without variables: the arguments of each destructor are a telescope in
-the universe of the level of `κ`, its result a term of a sort that `κ` bounds, in the context
-extended by its arguments, and the destructors after it are in `κ`, in the context extended by it.
+/-- `Σ ⊨ d̄[θ₁] ≡ d̄[θ₂] : κ` for the destructors of a codata type, whose recursive destructors `rs`
+gives, of the instances `inst D` of the block: the destructors at two closed substitutions `θ₁` and
+`θ₂` of their scope are equal in the sort `κ`; the arguments of each destructor are equal
+telescopes in the universe of the level of `κ`; the results of a destructor that is not recursive
+are equal types of a sort that `κ` bounds at equal arguments, and the destructors after it are equal
+for every pair of abstractions for it whose instances at equal arguments are equal terms of its
+result; the result of a recursive destructor of the type `D` is the instance `inst D` of the block,
+and the destructors after it are equal for every pair of abstractions for it, on which they do not
+depend.
+The Lean carries the closed substitutions of the scope of the destructors, as the equality of the
+abstractions for them does.
 RFC: `{\vDash}\bar d_{\kappa\varepsilon}`
-RFC: `{\vDash}\bar d_{\kappa|}` -/
-def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) :
-    {Γ : Scope} → {ns : List Name} → Context 0 Γ → Destructors 0 Γ ns → Universe 0 → Prop
+RFC: `{\vDash}\bar d_{\kappa|}`
+RFC: `{\vDash}\bar d_{\kappa\mathsf{rec}}` -/
+def ValidEqDestructors₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
+    {Γ : Scope} → {ns : List Name} → (Name → Term 0 Γ) → (Nat → Option Name) →
+      Destructors 0 Γ ns → Subst 0 [] Γ → Subst 0 [] Γ → Prop
   /- `(⊨d̄_κε)`. -/
-  | _, _, ctx, .nil, _ => ValidCtx₀ sig ι ctx
-  /- `(⊨d̄_κ|)`. -/
-  | _, _, ctx, .cons _ _ Θ B ψ ds, κ => ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩ ∧
-      (∃ κ₁, κ₁ ≼ κ ∧ ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) ∧
-      ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) ds κ
+  | _, _, _, _, .nil, _, _ => sig.Distinct
+  | _, _ :: _, inst, rs, .cons (ps := ps) _ _ Θ B ψ ds, θ₁, θ₂ =>
+    ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) ∧
+    match rs 0 with
+    /- `(⊨d̄_κ|)`. -/
+    | none =>
+      (∃ κ₁, κ₁ ≼ κ ∧ ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+        ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
+          (.sort κ₁)) ∧
+      ∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+          ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
+        ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken) (fun i => rs (i + 1)) ds
+          (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
+    /- `(⊨d̄_κrec)`. -/
+    | some D => B = (inst D).rename (Ren.weakenN ps.length) ∧
+      ∀ f₁ f₂, ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken)
+        (fun i => rs (i + 1)) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁)
+        (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
+
+-- ADE: none.
+/-- `Σ; Γ ⊨_𝒟 d̄ : κ`, at levels without variables, for the destructors of a codata type, whose
+recursive destructors `rs` gives, of the instances `inst D` of the block: the destructors at two
+equal closed substitutions of the context are equal in the sort `κ`.
+RFC: `{\vDash}\Gamma_{\bar d}` -/
+def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ns : List Name}
+    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Option Name)
+    (ds : Destructors 0 Γ ns) (κ : Universe 0) : Prop :=
+  ValidCtx₀ sig ι ctx ∧ ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqDestructors₀ sig ι κ inst rs ds σ₁ σ₂
 
 -- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors, whose recursive fields `rs` gives: the
@@ -869,11 +952,14 @@ def ValidTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope
     {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
   ∀ ρ, ValidTelescopeΓ sig ι (ctx.atLevels ρ) (Θ.atLevels ρ) (κ.atLevels ρ)
 
-/-- `(⊨_ρ)`: `Σ; Γ ⊨ d̄ : κ`, for every value of the level variables.
+/-- `(⊨_ρ)`: `Σ; Γ ⊨_𝒟 d̄ : κ` for the destructors of a codata type, for every value of the level
+variables.
 RFC: `\vDash_\rho` -/
 def ValidDestructors (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
-    {ns : List Name} (ctx : Context k Γ) (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
-  ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (ds.atLevels ρ) (κ.atLevels ρ)
+    {ns : List Name} (ctx : Context k Γ) (inst : Name → Term k Γ) (rs : Nat → Option Name)
+    (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
+  ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (fun D => (inst D).atLevels ρ) rs (ds.atLevels ρ)
+    (κ.atLevels ρ)
 
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, for every value of the level variables.
 RFC: `\vDash_\rho` -/
@@ -893,7 +979,8 @@ parameters, at each value of the level variables, whose recursive fields are the
 at the parameters themselves.
 `(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
 grade variables, the destructors of each type are in the sort `κ`, in the context of the
-parameters, at each value of the level variables.
+parameters, at each value of the level variables, whose recursive destructors have the types of the
+block at the parameters themselves as results.
 The meaning ignores the grades, and the names of the constructors and of the destructors, distinct,
 are those of the signature.
 RFC: `{\vDash}\mathsf{data}`
@@ -903,7 +990,9 @@ def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDec
   | .data Ts => ∀ I, ∀ T ∈ Ts, ∀ c ∈ T.constructors,
       ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
         ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I)
-  | .codata Ts => ∀ I, ∀ T ∈ Ts, ValidDestructors sig ι (decl.params I) (T.body I) (decl.sort I)
+  | .codata Ts => ∀ I, ∀ T ∈ Ts,
+      ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
+        ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I)
 
 /-- The fields of the constructors of a data type of a meaningful type declaration are fields in its
 sort. -/
@@ -919,11 +1008,13 @@ theorem ValidTypeDeclaration.fields {sig : Signature} {ι : Interpretation} {dec
   · exact h I T hT c hc
   · exact nomatch hT
 
-/-- The destructors of a codata type of a meaningful type declaration are in its sort. -/
+/-- The destructors of a codata type of a meaningful type declaration are in its sort, with the types
+of the block at the parameters themselves as the results of the recursive ones. -/
 theorem ValidTypeDeclaration.destructors {sig : Signature} {ι : Interpretation}
     {decl : TypeDeclaration} (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes) :
-    ValidDestructors sig ι (decl.params I) (T.body I) (decl.sort I) := by
+    ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
+      ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I) := by
   unfold ValidTypeDeclaration at h
   unfold TypeDeclaration.codataTypes at hT
   split at h <;> rename_i heq <;> rw [heq] at hT
@@ -1291,25 +1382,6 @@ theorem Term.CorecObservations.unique {D D' : Name} {v : Term 0 []} {o o' : Obse
   cases h'
   rfl
 
-/-- `(eq_d)` is a partial equivalence relation when the equality of the destructors is one. -/
-theorem corecRel_isPer {D : Name} {S : ObsRel} (hS : IsPer S) : IsPer (corecRel D S) where
-  symm := fun ⟨o₁, o₂, hv, hw, h⟩ => ⟨o₂, o₁, hw, hv, hS.symm h⟩
-  trans := fun ⟨o₁, o₂, hv, hw, h⟩ ⟨_, o₃, hw', hx, h'⟩ => by
-    cases hw.unique hw'
-    exact ⟨o₁, o₃, hv, hx, hS.trans h h'⟩
-
-/-- `(eq_d)` relates the same terms for equalities of the destructors that relate the same
-abstractions. -/
-theorem corecRel_congr {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂) :
-    ∀ v w, corecRel D S v w ↔ corecRel D S' v w :=
-  fun _ _ => ⟨fun ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, (h _ _).1 hS⟩,
-    fun ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, (h _ _).2 hS⟩⟩
-
-/-- `(true_d)` is the same for equalities of the destructors that relate the same abstractions. -/
-theorem ObsRel.truth_congr {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂) :
-    S.truth ↔ S'.truth :=
-  ⟨fun ⟨o, ho⟩ => ⟨o, (h o o).1 ho⟩, fun ⟨o, ho⟩ => ⟨o, (h o o).2 ho⟩⟩
-
 /-- The equality of the abstractions for a destructor is a partial equivalence relation, when the
 equality of its arguments is one, and so is the equality of the terms of its result at equal
 arguments, the same for equal arguments. -/
@@ -1364,6 +1436,130 @@ theorem ObsRel.cons_congr {d : Name} {ps : List Parameter}
       fun ⟨h₁, h₂⟩ =>
         have h₁' := (hE _ _).2 h₁
         ⟨h₁', (hG _ (hEp.trans h₁' (hEp.symm h₁')) _ _).2 h₂⟩⟩
+
+/-- `(eq_d)` relates the terms that it relates for an equality of the destructors that relates
+fewer abstractions. -/
+theorem corecRel_mono {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ → S' o₁ o₂) :
+    ∀ v w, corecRel D S v w → corecRel D S' v w :=
+  fun _ _ ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, h _ _ hS⟩
+
+/-- `(true_d)` holds when it holds for an equality of the destructors that relates fewer
+abstractions. -/
+theorem ObsRel.truth_mono {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ → S' o₁ o₂) :
+    S.truth → S'.truth :=
+  fun ⟨o, ho⟩ => ⟨o, h o o ho⟩
+
+/-! ### Greatest Fixed Points
+
+The equality `(eq_ν)` of the terms of the instances of a block of codata types is the greatest
+relation consistent with the clauses of its destructors, which contains every relation consistent
+with them; it is consistent with them itself, closed under them, and a partial equivalence
+relation, when the equality of the destructors grows with the relations of the recursive
+destructors, and inverts and composes them, by the strict positivity of their occurrences. -/
+
+section GreatestFixedPoints
+
+variable {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+  {S : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+
+/-- `(eq_ν)` is consistent with the clauses of the destructors, when the equality of the destructors
+grows with the relations of the recursive destructors. -/
+theorem CodataType.blockRel_unfold
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S Y T o₁ o₂)
+    {T : CodataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
+    (h : CodataType.blockRel Ts S T.name v w) :
+    corecRel T.name (S (CodataType.blockRel Ts S) T) v w :=
+  have ⟨X, hX, hv⟩ := h
+  corecRel_mono (hmono X _ (fun _ _ _ h => ⟨X, hX, h⟩) T hT) _ _ (hX T hT v w hv)
+
+/-- `(eq_ν)` is closed under the clauses of the destructors, when the equality of the destructors
+grows with the relations of the recursive destructors, and when the names of the types are
+distinct. -/
+theorem CodataType.blockRel_fold
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S Y T o₁ o₂)
+    (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
+    (h : corecRel T.name (S (CodataType.blockRel Ts S) T) v w) :
+    CodataType.blockRel Ts S T.name v w :=
+  ⟨fun D a b => CodataType.blockRel Ts S D a b ∨
+      (D = T.name ∧ corecRel T.name (S (CodataType.blockRel Ts S) T) a b),
+    fun T' hT' a b hab => by
+      rcases hab with hab | ⟨hD, hab⟩
+      · exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T' hT') _ _
+          (CodataType.blockRel_unfold hmono hT' hab)
+      · cases List.eq_of_nodup_map hn hT hT' hD.symm
+        exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T hT) _ _ hab,
+    .inr ⟨rfl, h⟩⟩
+
+/-- `(eq_ν)` is a partial equivalence relation, when the equality of the destructors inverts and
+composes the relations of the recursive destructors. -/
+theorem CodataType.blockRel_isPer
+    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S Y T o₂ o₁)
+    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
+      ∀ o₁ o₂ o₃, S X T o₁ o₂ → S Y T o₂ o₃ → S Z T o₁ o₃)
+    (D : Name) : IsPer (CodataType.blockRel Ts S D) where
+  symm := fun ⟨X, hX, h⟩ => ⟨fun D v w => X D w v, fun T hT v w hvw =>
+      have ⟨o₁, o₂, hw, hv, hs⟩ := hX T hT w v hvw
+      ⟨o₂, o₁, hv, hw, hsymm X _ (fun _ _ _ h => h) T hT o₁ o₂ hs⟩, h⟩
+  trans := fun ⟨X, hX, h⟩ ⟨Y, hY, h'⟩ => ⟨fun D u w => ∃ v, X D u v ∧ Y D v w,
+      fun T hT u w ⟨v, huv, hvw⟩ => by
+        obtain ⟨o₁, o₂, hu, hv, hs⟩ := hX T hT u v huv
+        obtain ⟨o₂', o₃, hv', hw, hs'⟩ := hY T hT v w hvw
+        rw [← hv.unique hv'] at hs'
+        exact ⟨o₁, o₃, hu, hw, htrans X Y _ (fun _ _ _ _ h₁ h₂ => ⟨_, h₁, h₂⟩) T hT o₁ o₂ o₃ hs hs'⟩,
+      _, h, h'⟩
+
+/-- `(true_ν)` is consistent with the clauses of the destructors, when the equality of the
+destructors grows with the truths of the recursive destructors. -/
+theorem CodataType.blockTruth_unfold {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
+    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    {T : CodataType j g k Δ} (hT : T ∈ Ts) (h : CodataType.blockTruth Ts S' T.name) :
+    (S' (CodataType.blockTruth Ts S') T).truth :=
+  have ⟨B, hB, hb⟩ := h
+  ObsRel.truth_mono (hmono B _ (fun _ h => ⟨B, hB, h⟩) T hT) (hB T hT hb)
+
+/-- `(true_ν)` holds by the clause of the destructors of its type, when the equality of the
+destructors grows with the truths of the recursive destructors, and when the names of the types are
+distinct. -/
+theorem CodataType.blockTruth_fold {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
+    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts)
+    (h : (S' (CodataType.blockTruth Ts S') T).truth) : CodataType.blockTruth Ts S' T.name :=
+  ⟨fun D => CodataType.blockTruth Ts S' D ∨ (D = T.name ∧ (S' (CodataType.blockTruth Ts S') T).truth),
+    fun T' hT' hb => by
+      rcases hb with hb | ⟨hD, hb⟩
+      · exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T' hT')
+          (CodataType.blockTruth_unfold hmono hT' hb)
+      · cases List.eq_of_nodup_map hn hT hT' hD.symm
+        exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T hT) hb,
+    .inr ⟨rfl, h⟩⟩
+
+end GreatestFixedPoints
+
+/-- `(eq_ν)` relates the same terms for equalities of the destructors that relate the same
+abstractions. -/
+theorem CodataType.blockRel_congr {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S S' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+    (h : ∀ X, ∀ T ∈ Ts, ∀ o₁ o₂, S X T o₁ o₂ ↔ S' X T o₁ o₂) (D : Name) :
+    ∀ v w, CodataType.blockRel Ts S D v w ↔ CodataType.blockRel Ts S' D v w :=
+  fun _ _ => ⟨fun ⟨X, hX, hv⟩ => ⟨X, fun T hT v w hx =>
+      corecRel_mono (fun o₁ o₂ => (h X T hT o₁ o₂).1) _ _ (hX T hT v w hx), hv⟩,
+    fun ⟨X, hX, hv⟩ => ⟨X, fun T hT v w hx =>
+      corecRel_mono (fun o₁ o₂ => (h X T hT o₁ o₂).2) _ _ (hX T hT v w hx), hv⟩⟩
+
+/-- `(true_ν)` is the same for equalities of the destructors that relate the same abstractions. -/
+theorem CodataType.blockTruth_congr {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
+    (h : ∀ B, ∀ T ∈ Ts, ∀ o₁ o₂, S B T o₁ o₂ ↔ S' B T o₁ o₂) (D : Name) :
+    CodataType.blockTruth Ts S D ↔ CodataType.blockTruth Ts S' D :=
+  ⟨fun ⟨B, hB, hb⟩ => ⟨B, fun T hT h' => ObsRel.truth_mono (fun o₁ o₂ => (h B T hT o₁ o₂).1)
+      (hB T hT h'), hb⟩,
+    fun ⟨B, hB, hb⟩ => ⟨B, fun T hT h' => ObsRel.truth_mono (fun o₁ o₂ => (h B T hT o₁ o₂).2)
+      (hB T hT h'), hb⟩⟩
 
 /-! ### A Type Has One Level and One Sort -/
 
@@ -1502,24 +1698,204 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         ts us vs hs hs')
       (TypeDeclaration.dataTypes_nodup (hd.nodup h.1))
       (fun _ hT => hd.constructors_nodup ⟨h.1, hT, rfl⟩) _
-  | .codata _ _ _ _ _ _ _ _ hS => corecRel_isPer (DesRel.isPer hd ih hS)
+  | .codata _ _ _ _ _ _ _ _ hS =>
+    CodataType.blockRel_isPer
+      (fun X Y hXY T hT o₁ o₂ hs => DesRel.symm_of hd ih (hS X T hT) _ _ _ (hS Y T hT)
+        (fun _ => Option.rel_map (fun D _ _ => TermRel.computed_symm (hXY D)) _) o₁ o₂ hs)
+      (fun X Y Z hXYZ T hT o₁ o₂ o₃ hs hs' => DesRel.trans_of hd ih (hS X T hT) _ _ _ (hS Y T hT)
+        _ _ _ (hS Z T hT)
+        (fun _ => Option.rel_map₃
+          (r := fun (x y z : TermRel) => ∀ t u w, x t u → y u w → z t w)
+          (f := fun D => (X D).computed sig ι) (g := fun D => (Y D).computed sig ι)
+          (h := fun D => (Z D).computed sig ι)
+          (fun D _ _ _ => TermRel.computed_trans hd (hXYZ D)) _)
+        o₁ o₂ o₃ hs hs') _
 termination_by structural h => h
 
-/-- The equality of the abstractions for destructors is a partial equivalence relation. -/
-theorem DesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
-    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
-    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel} :
-    DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S → IsPer S
-  | .cons hΘ _ hB hF hBresp _ hG hresp =>
-    ObsRel.cons_isPer
-      (AbstractionRel.isPer
-        ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-          fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
-            _ _ _ h h'⟩
-        (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp)
-      (fun f hf => DesRel.isPer hd ih (hG f hf)) hresp
-  | .nil => ⟨fun _ => trivial, fun _ _ => trivial⟩
-termination_by structural h => h
+/-- The equality of the abstractions for destructors relates in the other order the abstractions
+that the equality of the same destructors relates, at relations of the recursive destructors that do
+so. -/
+theorem DesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {rs₁ : Nat → Option TermRel}
+    {Γ : Scope} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S₁ : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : ObsRel),
+        DesRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ ds @θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y u t) (rs₁ i) (rs₂ i)) →
+        ∀ o₁ o₂, S₁ o₁ o₂ → S₂ o₂ o₁
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
+  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp
+      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
+    cases h' with
+    | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        have ⟨_, hv⟩ := hB ts hts
+        FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        have hf := hEp.trans h₁ (hEp.symm h₁)
+        ⟨(hEE _ _).1 (hEp.symm h₁), (hresp' _ _ ((hEE _ _).1 h₁) _ _).1
+          (DesRel.symm_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf)) (fun i => hR (i + 1))
+            _ _ h₂)⟩
+    | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    cases h' with
+    | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' hΘ' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+          ⟨fun ts us hts => hr _ _ (h₁ us ts (hSΘp.symm ((hSS _ _).2 hts))),
+            DesRel.symm_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+              (fun i => hR (i + 1)) _ _ h₂⟩
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality of the abstractions for destructors relates the abstractions that two equalities of
+the same destructors relate in a chain, at relations of the recursive destructors that do so. -/
+theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {rs₁ : Nat → Option TermRel}
+    {Γ : Scope} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S₁ : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : ObsRel),
+        DesRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ ds @θ S₂ →
+      ∀ (s₃ : Quality) (rs₃ : Nat → Option TermRel) (S₃ : ObsRel),
+        DesRel sig ι n (fun m _ => levelRel sig ι m) s₃ rs₃ ds @θ S₃ →
+        (∀ i, (rs₁ i = none ∧ rs₂ i = none ∧ rs₃ i = none) ∨
+          ∃ x y z, rs₁ i = some x ∧ rs₂ i = some y ∧ rs₃ i = some z ∧
+            ∀ t u w, x t u → y u w → z t w) →
+        ∀ o₁ o₂ o₃, S₁ o₁ o₂ → S₂ o₂ o₃ → S₃ o₁ o₃
+  | .nil, _, _, _, h', _, _, _, h'', _ => by
+    cases h'; cases h''; exact fun _ _ _ _ _ => trivial
+  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', _, _, _, h'', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp
+      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
+    cases h' with
+    | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>
+      cases h'' with
+      | cons hΘ'' F'' _ hF'' _ _ hG'' _ _ =>
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        have hFF' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+            F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+          have ⟨_, hv⟩ := hB ts hts
+          FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS' _ _).1 hts) _ hv)
+        have hFF'' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+            F ts.terms t u ↔ F'' ts.terms t u := fun ts hts =>
+          have ⟨_, hv⟩ := hB ts hts
+          FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF'' ts ((hSS'' _ _).1 hts) _ hv)
+        have hEE' := AbstractionRel.congr hSΘp hSS' hFF'
+        have hEE'' := AbstractionRel.congr hSΘp hSS'' hFF''
+        exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
+          have hf := hEp.trans h₁ (hEp.symm h₁)
+          ⟨(hEE'' _ _).1 (hEp.trans h₁ ((hEE' _ _).2 h₁')),
+            DesRel.trans_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE' _ _).1 hf)) _ _ _
+              (hG'' _ ((hEE'' _ _).1 hf)) (fun i => hR (i + 1)) _ _ _ h₂
+              ((hresp' _ _ ((hEE' _ _).1 h₁) _ _).2 h₂')⟩
+      | recursive hrs'' =>
+        rcases hR 0 with ⟨-, -, h0⟩ | ⟨_, _, _, h0, -⟩
+        · rw [hrs''] at h0; cases h0
+        · rw [hrs] at h0; cases h0
+    | recursive hrs' =>
+      rcases hR 0 with ⟨-, h0, -⟩ | ⟨_, _, _, h0, -⟩
+      · rw [hrs'] at h0; cases h0
+      · rw [hrs] at h0; cases h0
+  | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', _, _, _, h'', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    cases h' with
+    | cons _ _ _ _ _ _ _ _ hrs' =>
+      rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, h0, -⟩
+      · rw [hrs] at h0; cases h0
+      · rw [hrs'] at h0; cases h0
+    | recursive hrs' hΘ' _ hG' =>
+      cases h'' with
+      | cons _ _ _ _ _ _ _ _ hrs'' =>
+        rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, -, h0, -⟩
+        · rw [hrs] at h0; cases h0
+        · rw [hrs''] at h0; cases h0
+      | recursive hrs'' hΘ'' _ hG'' =>
+        rcases hR 0 with ⟨h0, -, -⟩ | ⟨x, y, z, hx, hy, hz, hr⟩
+        · rw [hrs] at h0; cases h0
+        · rw [hrs] at hx; rw [hrs'] at hy; rw [hrs''] at hz
+          cases hx; cases hy; cases hz
+          have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+          have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+          exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
+            ⟨fun ts us hts =>
+              have hts' := (hSS'' _ _).2 hts
+              have hus := hSΘp.trans (hSΘp.symm hts') hts'
+              hr _ _ _ (h₁ ts us hts') (h₁' us us ((hSS' _ _).1 hus)),
+              DesRel.trans_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+                _ _ _ (hG'' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1)) _ _ _ h₂ h₂'⟩
+termination_by structural h _ _ _ _ _ _ _ _ _ => h
+
+/-- The equalities of the abstractions for destructors relate the same abstractions, at relations of
+the recursive destructors that relate the same terms. -/
+theorem DesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {rs₁ : Nat → Option TermRel}
+    {Γ : Scope} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S₁ : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : ObsRel),
+        DesRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ ds @θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u ↔ y t u) (rs₁ i) (rs₂ i)) →
+        ∀ o₁ o₂, S₁ o₁ o₂ ↔ S₂ o₁ o₂
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
+  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp
+      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
+    cases h' with
+    | cons hΘ' F' _ hF' _ _ hG' _ _ =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        have ⟨_, hv⟩ := hB ts hts
+        FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact ObsRel.cons_congr hEp hEE fun f hf =>
+        DesRel.congr hd ih (hG f hf) _ _ _ (hG' f ((hEE f f).1 hf)) (fun i => hR (i + 1))
+    | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    cases h' with
+    | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' hΘ' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hGG := DesRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _
+          (hG' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1))
+        exact fun o₁ o₂ =>
+          and_congr (AbstractionRel.congr hSΘp hSS (fun _ _ => hr) _ _) (hGG o₁ o₂)
+termination_by structural h _ _ _ _ _ => h
 
 /-- The equality of the terms of the type of a field is a partial equivalence relation. -/
 theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -1735,7 +2111,6 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
         (hS' X T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
-    have hu := DesRel.unique hd ih hS
     cases h' with
     | univ => cases hv
     | prop => cases hv
@@ -1747,7 +2122,8 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       cases hT
       cases has
-      exact corecRel_congr (hu _ _ hS')
+      exact CodataType.blockRel_congr (fun X T hT => DesRel.congr hd ih (hS X T hT) _ _ _
+        (hS' X T hT) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
 termination_by structural h _ _ => h
 
 /-- A proposition of `Ω_n` has a unique truth. -/
@@ -1768,7 +2144,6 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
         (hS' B T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
-    have hu := DesRel.unique hd ih hS
     cases h' with
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ _ _ hS' =>
@@ -1778,35 +2153,9 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       cases hT
       cases has
-      exact ObsRel.truth_congr (hu _ _ hS')
+      exact CodataType.blockTruth_congr (fun B T hT => DesRel.congr hd ih (hS B T hT) _ _ _
+        (hS' B T hT) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
 termination_by structural h _ _ => h
-
-/-- Destructors have a unique equality of the abstractions for them. -/
-theorem DesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
-    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope} {ns : List Name}
-    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel} :
-    DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S →
-      ∀ (s' : Quality) (S' : ObsRel), DesRel sig ι n (fun m _ => levelRel sig ι m) s' ds @θ S' →
-        ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂
-  | .nil, _, _, h' => by cases h'; exact fun _ _ => .rfl
-  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _, _, _, h' => by
-    have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
-          _ _ _ h h'⟩
-    have hGu := fun f hf => DesRel.unique hd ih (hG f hf)
-    have hEp := AbstractionRel.isPer hSΘp
-      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
-    cases h' with
-    | cons hΘ' F' _ hF' _ _ hG' _ =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u, F ts.terms t u ↔ F' ts.terms t u :=
-          fun ts hts =>
-        have ⟨_, hv⟩ := hB ts hts
-        FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
-      exact ObsRel.cons_congr hEp hEE fun f hf => hGu f hf _ _ (hG' f ((hEE f f).1 hf))
-termination_by structural h _ _ _ => h
 
 /-- The type of a field has a unique equality of its terms. -/
 theorem FieldRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -1875,6 +2224,73 @@ theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
     (S' : FieldsRel) (h' : TelRel sig ι n (fun m _ => levelRel sig ι m) s' rs Θ S') :
     ∀ ts us, S ts us ↔ S' ts us :=
   TelRel.congr hd ih h _ _ _ h' fun _ => Option.rel_refl (fun _ _ _ => .rfl) _
+
+/-- The equality of the abstractions for destructors is a partial equivalence relation, at relations
+of the recursive destructors that are. -/
+theorem DesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality}
+    {rs : Nat → Option TermRel} (hrs : ∀ i x, rs i = some x → IsPer x) {Γ : Scope}
+    {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel}
+    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs ds @θ S) : IsPer S where
+  symm h' := DesRel.symm_of hd ih h _ _ _ h (fun i => by
+    match hi : rs i with
+    | none => exact .none
+    | some x => exact .some fun _ _ => (hrs i x hi).symm) _ _ h'
+  trans h₁ h₂ := DesRel.trans_of hd ih h _ _ _ h _ _ _ h (fun i => by
+    match hi : rs i with
+    | none => exact .inl ⟨rfl, rfl, rfl⟩
+    | some x => exact .inr ⟨x, x, x, rfl, rfl, rfl, fun _ _ _ => (hrs i x hi).trans⟩) _ _ _ h₁ h₂
+
+/-- Destructors have a unique equality of the abstractions for them, at given relations of their
+recursive destructors. -/
+theorem DesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {rs : Nat → Option TermRel}
+    {Γ : Scope} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel}
+    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs ds @θ S) (s' : Quality) (S' : ObsRel)
+    (h' : DesRel sig ι n (fun m _ => levelRel sig ι m) s' rs ds @θ S') :
+    ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂ :=
+  DesRel.congr hd ih h _ _ _ h' fun _ => Option.rel_refl (fun _ _ _ => .rfl) _
+
+/-- The equality of the abstractions for destructors relates the abstractions that the equality of
+the same destructors relates, at relations of the recursive destructors that relate more terms. -/
+theorem DesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {rs₁ : Nat → Option TermRel}
+    {Γ : Scope} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S₁ : ObsRel} :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : ObsRel),
+        DesRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ ds @θ S₂ →
+        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y t u) (rs₁ i) (rs₂ i)) →
+        ∀ o₁ o₂, S₁ o₁ o₂ → S₂ o₁ o₂
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
+  | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
+    have hSΘp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
+    have hEp := AbstractionRel.isPer hSΘp
+      (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
+    cases h' with
+    | cons hΘ' F' _ hF' _ _ hG' _ _ =>
+      have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        have ⟨_, hv⟩ := hB ts hts
+        FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        have hf := hEp.trans h₁ (hEp.symm h₁)
+        ⟨(hEE _ _).1 h₁, DesRel.mono hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
+          (fun i => hR (i + 1)) _ _ h₂⟩
+    | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+  | .recursive hrs hΘ _ hG, _, _, _, h', hR => by
+    cases h' with
+    | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
+    | recursive hrs' hΘ' _ hG' =>
+      have h0 := hR 0
+      rw [hrs, hrs'] at h0
+      cases h0 with
+      | some hr =>
+        have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
+        exact fun o₁ o₂ ⟨h₁, h₂⟩ => ⟨fun ts us hts => hr _ _ (h₁ ts us ((hSS _ _).2 hts)),
+          DesRel.mono hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+            (fun i => hR (i + 1)) _ _ h₂⟩
 
 /-- The equality of the terms of the fields of the constructors of a block, at relations `F X D` of
 its recursive fields of the type `D`, grows with `X` when they do: the premise of the properties of

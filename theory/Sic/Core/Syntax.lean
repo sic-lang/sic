@@ -547,6 +547,31 @@ inductive Destructors.Pos {k : Nat} (d : Name) (p q : Grade) {ps : List Paramete
       Destructors.Pos d p q (.cons (d := d') p' q' Θ' B' ψ' ds) Ξ Θ B ψ
 
 -- ADE: none.
+/-- The types of the block whose names are `names` that the results of the destructors are instances
+of, in order: `some D` for a recursive destructor of the type `D`, `none` for the others.
+RFC: `\mathsf{rec}_{\bar d}` -/
+def Destructors.recursion {k : Nat} (names : List Name) :
+    {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → List (Option Name)
+  | _, _, .nil => []
+  | _, _, .cons _ _ _ B _ ds => B.blockName names :: ds.recursion names
+
+/-- The type `D` of the block whose names are `names` of the recursive destructor at each position
+of the destructors `d̄`, the first one at `0`, and none at the other positions. -/
+def Destructors.recursionAt {k : Nat} {Γ : Scope} {ns : List Name} (names : List Name)
+    (ds : Destructors k Γ ns) : Nat → Option Name :=
+  fun i => ((ds.recursion names)[i]?).join
+
+/-- The type of the result of a recursive destructor is a type of the block. -/
+theorem Destructors.recursionAt_mem {k : Nat} {names : List Name} {D : Name} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {i : Nat} →
+      ds.recursionAt names i = some D → D ∈ names
+  | _, _, .nil, _, h => by simp [Destructors.recursionAt, Destructors.recursion] at h
+  | _, _, .cons _ _ _ B _ _, 0, h => Term.blockName_mem (A := B) (by
+      simpa [Destructors.recursionAt, Destructors.recursion] using h)
+  | _, _, .cons _ _ _ _ _ ds, i + 1, h => Destructors.recursionAt_mem (ds := ds) (i := i)
+      (by simpa [Destructors.recursionAt, Destructors.recursion] using h)
+
+-- ADE: none.
 /-- `D ▶ ζ ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it uses
 the parameters `Δ`, and its destructors, in order. -/
 structure CodataType (j g k : Nat) (Δ : Scope) where
@@ -741,6 +766,19 @@ theorem TypeDeclaration.mem_names_of_dataTypes {decl : TypeDeclaration}
     obtain ⟨T', hT', rfl⟩ := List.mem_map.1 hD
     exact ⟨T', hT', rfl⟩
   · cases hT
+
+/-- A name of a type declaration with a codata type is the name of one of its codata types. -/
+theorem TypeDeclaration.mem_names_of_codataTypes {decl : TypeDeclaration}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes)
+    {D : Name} (hD : D ∈ decl.names) : ∃ T' ∈ decl.codataTypes, T'.name = D := by
+  unfold TypeDeclaration.codataTypes at hT ⊢
+  unfold TypeDeclaration.names at hD
+  split at hT
+  · cases hT
+  · rename_i heq
+    rw [heq] at hD
+    obtain ⟨T', hT', rfl⟩ := List.mem_map.1 hD
+    exact ⟨T', hT', rfl⟩
 
 /-- The data types of a type declaration whose names are distinct have distinct names. -/
 theorem TypeDeclaration.dataTypes_nodup {decl : TypeDeclaration} (h : decl.names.Nodup) :

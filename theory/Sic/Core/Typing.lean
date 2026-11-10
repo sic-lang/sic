@@ -760,16 +760,19 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
           (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
             qs ls ps as) as.toSubst))).instantiate bs)
   -- ADE: `η-eq`, `Σ-η` and `η-unit`, in `Definition/Typed.agda`.
-  /-- Two terms of the instance of a codata type whose observations by each destructor, at the
-  position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the
-  instance, are equal over the variables of its telescope, the destructors `d̄₁` before it being the
-  observations of the first term by them, are equal.
+  /-- Two terms of the instance of a codata type, whose arguments are arguments of the parameters,
+  whose observations by each destructor, at the position `hd` in the destructors
+  `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the instance, are equal over the variables
+  of its telescope, the destructors `d̄₁` before it being the observations of the first term by
+  them, are equal.
   RFC: `\eta_d` -/
   | etaObs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
       (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
@@ -912,29 +915,62 @@ inductive EqTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
 
 -- ADE: none.
 /--
-`Σ; Γ ⊢ d̄ : κ`: the destructors live in the sort `κ = s_l`, the arguments of each in the universe
-`U_l` and its result in a sort that `κ` bounds, a result that is a proposition having a grade
-without use at run time; each destructor is a second-order variable of the context of the
-destructors after it.
+`Σ; Γ ⊢_𝒟 d̄ : κ`: the destructors `d̄` of a codata type of the block `decl`, at the instance `ι` of
+its sort and grade variables, live in the sort `κ = s_l`, in the context `Γ` of the parameters
+extended by the destructors before them that are not recursive, where `ā` are the parameters
+themselves: the arguments of each destructor live in the universe `U_l`, and each destructor that is
+not recursive is a second-order variable of the context of the destructors after it.
+A destructor whose result is an instance of a type of the block is recursive: its result is this
+type at the instance of the block, at its level variables and at the parameters themselves, with a
+grade without use at run time if the block is a block of propositions, and no destructor after it
+depends on it, so that it does not extend the context.
+The result of a destructor that is not recursive lives in a sort that `κ` bounds, with a grade
+without use at run time if it is a proposition.
+The arguments and the results are checked in the signature `Σ`, which the block does not extend, so
+that the types of the block occur only as the results of the recursive destructors.
+The RFC writes the parameters themselves as the variables `x̄_Δ`; the Lean carries them as the
+arguments `ā` of the parameters, renamed under the destructors before and under the arguments, as for
+the fields.
 -/
-inductive WfDestructors : Signature → {k : Nat} → {Γ : Scope} → {ns : List Name} → Context k Γ →
-    Destructors k Γ ns → Universe k → Prop where
+inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
+    {Γ : Scope} → {ns : List Name} → InstanceArgs decl.levels Γ decl.scope →
+    Context decl.levels Γ → Destructors decl.levels Γ ns → Universe decl.levels → Prop where
   /-- No destructor lives in every sort.
   RFC: `\bar d_{\kappa\varepsilon}` -/
-  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
-      (hctx : WfCtx sig ctx) : WfDestructors sig ctx .nil κ
-  /-- The first destructor, whose arguments live in the universe of the level of `κ` and whose
-  result lives in a sort that `κ` bounds, with a grade without use at run time if it is a
-  proposition, and the others, in the context extended by it.
+  | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+      {κ : Universe decl.levels} (hctx : WfCtx sig ctx) : WfDestructors sig decl ι as ctx .nil κ
+  /-- A first destructor that is not recursive, whose arguments live in the universe of the level of
+  `κ` and whose result lives in a sort that `κ` bounds, with a grade without use at run time if it is
+  a proposition, and the others, in the context extended by it.
   RFC: `\bar d_{\kappa|}` -/
-  | cons {sig : Signature} {k : Nat} {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-      {ctx : Context k Γ} {p q : Grade} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
-      {ψ : ResultOwnership ps.length} {ds : Destructors k (.secondOrder ps ψ :: Γ) ns}
-      {κ₁ κ : Universe k} (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+  | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
+      {ps : List Parameter} {ctx : Context decl.levels Γ} {p q : Grade}
+      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
+      {ψ : ResultOwnership ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
+      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
       (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig (ctx.secondOrder Θ B ψ) ds κ) :
-      WfDestructors sig ctx (.cons (d := d) p q Θ B ψ ds) κ
+      (hds : WfDestructors sig decl ι (as.rename Ren.weaken) (ctx.secondOrder Θ B ψ) ds κ) :
+      WfDestructors sig decl ι as ctx (.cons (d := d) p q Θ B ψ ds) κ
+  /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
+  and whose result is a type `D` of the block at the instance of the block and at the parameters,
+  with a grade without use at run time if the block is a block of propositions, and the others,
+  which do not depend on it, in the same context.
+  RFC: `\bar d_{\kappa\mathsf{rec}}` -/
+  | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
+      {ps : List Parameter} {ctx : Context decl.levels Γ} {p q : Grade}
+      {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership ps.length} {D : Name}
+      {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hp : κ.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig decl ι as ctx ds κ) :
+      WfDestructors sig decl ι as ctx
+        (.cons (d := d) p q Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
+          (ds.rename Ren.weaken)) κ
 
 -- ADE: none.
 /--
@@ -991,9 +1027,8 @@ parameters `Δ` form a context, the fields of each constructor live in the sort 
 constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow, in the signature
 extended by the block; the constructors of each type have distinct names.
 The fields may be recursive, as the judgment of the fields allows.
-A block of codata types likewise, with the destructors of each type in place of its constructors.
-The destructors are checked in the signature `Σ`, which the block does not extend, so that no type of
-the block occurs in them: the block is not recursive.
+A block of codata types likewise, with the destructors of each type in place of its constructors,
+which may be recursive, as the judgment of the destructors allows.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   /-- A block of data types, with the uses `γ` of the constructors of each type at each instance.
@@ -1013,9 +1048,10 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   | codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
       decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
       (hΔ : ∀ ι, WfCtx sig (decl.params ι))
-      (hd : ∀ ι, ∀ T ∈ decl.codataTypes, WfDestructors sig (decl.params ι) (T.body ι) (decl.sort ι))
-      (hu : ∀ ι, ∀ T ∈ decl.codataTypes, ∃ γ, UsageDestructors sig γ .oneOne (T.body ι) ∧
-        T.usage ι ≤ᶜ γ)
+      (hd : ∀ ι, ∀ T ∈ decl.codataTypes,
+        WfDestructors sig decl ι (.identity decl.scope) (decl.params ι) (T.body ι) (decl.sort ι))
+      (hu : ∀ ι, ∀ T ∈ decl.codataTypes, ∃ γ,
+        UsageDestructors (.typeDeclaration decl :: sig) γ .oneOne (T.body ι) ∧ T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
       WfTypeDeclaration sig decl
 
@@ -1094,10 +1130,12 @@ structure Presuppositions : Prop where
   eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
     EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
-  /-- Destructors in a sort are in a well-formed signature.
+  /-- The destructors of a codata type in a sort are in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\bar d` -/
-  wfDestructors : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
-    {ds : Destructors k Γ ns} {κ : Universe k}, WfDestructors sig ctx ds κ → WfSig sig
+  wfDestructors : ∀ {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+    {Γ : Scope} {ns : List Name} {as : InstanceArgs decl.levels Γ decl.scope}
+    {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
+    WfDestructors sig decl ι as ctx ds κ → WfSig sig
   /-- The fields of a constructor in a sort are in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}` -/
   wfFields : ∀ {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
@@ -1193,7 +1231,7 @@ where
     | .etaCtor _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ ht .. => hasType ht
+    | .etaObs _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
@@ -1222,10 +1260,13 @@ where
       {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
     | .nil hctx => wfCtx hctx
     | .cons hA _ _ _ => eqTerm hA
-  wfDestructors {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
-      {ds : Destructors k Γ ns} {κ : Universe k} : WfDestructors sig ctx ds κ → WfSig sig
+  wfDestructors {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ns : List Name} {as : InstanceArgs decl.levels Γ decl.scope}
+      {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} :
+      WfDestructors sig decl ι as ctx ds κ → WfSig sig
     | .nil hctx => wfCtx hctx
-    | .cons hΘ .. => wfTelescope hΘ
+    | .cons _ hΘ .. => wfTelescope hΘ
+    | .recursive _ hΘ .. => wfTelescope hΘ
   wfFields {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
       {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels} :

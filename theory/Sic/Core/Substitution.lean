@@ -167,6 +167,23 @@ theorem Telescope.recursion_rename {Γ Δ : Scope} (names : List Name) :
     rw [Telescope.rename, Telescope.recursion, Telescope.recursion, Term.blockName_rename,
       Telescope.recursion_rename names (Ren.lift ξ) Θ]
 
+/-- The destructors `d̄` renamed by `ξ`, the arguments and the result of each under the destructors
+before it, and the result under its arguments. -/
+def Destructors.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
+    {ns : List Name} → Destructors k Δ ns → Destructors k Γ ns
+  | _, .nil => .nil
+  | _, .cons p q Θ B ψ ds =>
+    .cons p q (Θ.rename ξ) (B.rename (Ren.liftN _ ξ)) ψ (ds.rename (Ren.lift ξ))
+
+/-- Renamed destructors have their recursive destructors at the same positions. -/
+theorem Destructors.recursion_rename {Γ Δ : Scope} (names : List Name) :
+    {ns : List Name} → (ξ : Ren Γ Δ) → (ds : Destructors k Δ ns) →
+      (ds.rename ξ).recursion names = ds.recursion names
+  | _, _, .nil => rfl
+  | _, ξ, .cons _ _ _ B _ ds => by
+    rw [Destructors.rename, Destructors.recursion, Destructors.recursion, Term.blockName_rename,
+      Destructors.recursion_rename names (Ren.lift ξ) ds]
+
 /-! ## Substitutions of the First Order -/
 
 /-- What a substitution of the first order gives a variable whose entry is `e`: a variable with the
@@ -2798,6 +2815,17 @@ theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Param
   | .cons q p A Θ => by
     rw [Telescope.rename, Telescope.substLevels, Telescope.substLevels, Telescope.rename,
       Telescope.substLevels_rename ls' (Ren.lift ξ) Θ, Term.substLevels_rename]
+
+/-- The levels of renamed destructors are instantiated as those of the destructors. -/
+theorem Destructors.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (ξ : Ren Γ Δ) :
+    {ns : List Name} → (ds : Destructors k Δ ns) →
+      (ds.rename ξ).substLevels ls' = (ds.substLevels ls').rename ξ
+  | _, .nil => rfl
+  | _, .cons p q Θ B ψ ds => by
+    rw [Destructors.rename, Destructors.substLevels, Destructors.substLevels, Destructors.rename,
+      Destructors.substLevels_rename ls' (Ren.lift ξ) ds, Telescope.substLevels_rename,
+      Term.substLevels_rename]
 
 theorem States.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
     (ξ : Ren Γ Δ) :
