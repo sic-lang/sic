@@ -89,7 +89,7 @@ theorem TypedRen.comp {Γ Δ Ξ : Scope} {ctx₁ : Context k Γ} {ctx₂ : Conte
   ⟨h₁.wfCtx, fun hx => by
     rw [← Term.rename_rename_of (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl)]
     exact h₁.varIn (h₂.varIn hx),
-   fun hX => by
+    fun hX => by
     rw [← Telescope.rename_rename_of (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl),
       ← Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl))]
     exact h₁.secondOrderIn (h₂.secondOrderIn hX)⟩
@@ -110,7 +110,7 @@ theorem TypedRen.lift {Γ Δ : Scope} {ctx' : Context k Γ} {ξ : Ren Γ Δ} {ct
         (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl),
         ← Term.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl)]
       exact .succVar (h.varIn hx),
-   fun
+    fun
     | .succVar hX => by
       rw [Telescope.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
         (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl),
