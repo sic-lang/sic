@@ -81,6 +81,45 @@ theorem TypedRen.weaken {Γ : Scope} {ctx : Context k Γ} {B : Term k Γ} (h : W
     TypedRen sig (ctx.var B) Ren.weaken ctx :=
   ⟨h, .succVar, .succVar⟩
 
+-- ADE: `_•ₜ_`, in `Definition/Typed/Weakening.agda`.
+/-- Two typed renamings compose. -/
+theorem TypedRen.comp {Γ Δ Ξ : Scope} {ctx₁ : Context k Γ} {ctx₂ : Context k Δ}
+    {ctx₃ : Context k Ξ} {ξ₁ : Ren Γ Δ} {ξ₂ : Ren Δ Ξ} (h₁ : TypedRen sig ctx₁ ξ₁ ctx₂)
+    (h₂ : TypedRen sig ctx₂ ξ₂ ctx₃) : TypedRen sig ctx₁ (fun x => ξ₁ (ξ₂ x)) ctx₃ :=
+  ⟨h₁.wfCtx, fun hx => by
+    rw [← Term.rename_rename_of (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl)]
+    exact h₁.varIn (h₂.varIn hx),
+   fun hX => by
+    rw [← Telescope.rename_rename_of (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl),
+      ← Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := ξ₁) (ξ₂ := ξ₂) (fun _ => rfl))]
+    exact h₁.secondOrderIn (h₂.secondOrderIn hX)⟩
+
+-- ADE: `lift`, the constructor of `_∷_⊇_`, in `Definition/Typed/Weakening.agda`.
+/-- A typed renaming lifted under a variable, whose type, renamed, is a type. -/
+theorem TypedRen.lift {Γ Δ : Scope} {ctx' : Context k Γ} {ξ : Ren Γ Δ} {ctx : Context k Δ}
+    {A : Term k Δ} (h : TypedRen sig ctx' ξ ctx) (hA : WfType sig ctx' (A.rename ξ)) :
+    TypedRen sig (ctx'.var (A.rename ξ)) (Ren.lift ξ) (ctx.var A) :=
+  ⟨.var hA, fun
+    | .zero => by
+      rw [Term.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+        (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl),
+        ← Term.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl)]
+      exact .zero
+    | .succVar hx => by
+      rw [Term.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+        (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl),
+        ← Term.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl)]
+      exact .succVar (h.varIn hx),
+   fun
+    | .succVar hX => by
+      rw [Telescope.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+        (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl),
+        ← Telescope.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl),
+        Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
+          (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl)),
+        ← Term.rename_rename_of (Ren.liftN_comp_of _ (ξ₁ := Ren.weaken) (ξ₂ := ξ) (fun _ => rfl))]
+      exact .succVar (h.secondOrderIn hX)⟩
+
 /-! ## Stability of the Typing -/
 
 -- ADE: `wk`, `wkEq`, `wkTerm` and `wkEqTerm`, in `Definition/Typed/Weakening.agda`.

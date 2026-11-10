@@ -4369,4 +4369,86 @@ theorem Args.results_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) {f : Name → Te
   | none :: rs, _ :: _, .cons _ ts => Args.results_subst θ hf rs ts
   | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
 
+/-! ## Renamings as Substitutions -/
+
+-- ADE: none.
+/-- A substitution of the first order that gives each variable a variable renames. -/
+theorem Term.subst₀_eq_rename_of {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), σ x = .var (ξ x)) (t : Term k Δ) : t.subst₀ σ = t.rename ξ := by
+  rw [Term.subst₀_eq_subst, Term.rename_eq_subst_of (θ := σ.toSubst) (fun x => by
+    show (σ x).eta = _
+    rw [h x]
+    rfl)]
+
+-- ADE: none.
+/-- A substitution of the first order that gives each variable a variable or the term of a
+variable renames. -/
+theorem Term.subst₀_eq_rename_of_eta {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), (σ x).eta = Var.eta (ξ x)) (t : Term k Δ) :
+    t.subst₀ σ = t.rename ξ := by
+  rw [Term.subst₀_eq_subst, Term.rename_eq_subst_of (θ := σ.toSubst) h]
+
+-- ADE: none.
+/-- A substitution of the first order of a telescope that gives each variable a variable or the term
+of a variable renames it. -/
+theorem Telescope.subst₀_eq_rename_of_eta {Γ Δ : Scope} {ps : List Parameter} {σ : Subst₀ k Γ Δ}
+    {ξ : Ren Γ Δ} (h : ∀ {a} (x : Var Δ a), (σ x).eta = Var.eta (ξ x)) (Θ : Telescope k Δ ps) :
+    Θ.subst₀ σ = Θ.rename ξ := by
+  rw [Telescope.subst₀_eq_subst, Telescope.rename_eq_subst_of (θ := σ.toSubst) h]
+
+-- ADE: none.
+/-- A term renamed then substituted by a substitution that gives each variable a variable or the
+term of a variable is the term renamed. -/
+theorem Term.subst₀_rename_eq_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Δ Ξ}
+    {ρ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ (ξ x)).eta = Var.eta (ρ x)) (t : Term k Ξ) :
+    (t.rename ξ).subst₀ σ = t.rename ρ :=
+  (Term.subst₀_rename_of (σ' := fun x => σ (ξ x)) (fun _ => rfl) t).trans
+    (Term.subst₀_eq_rename_of_eta h t)
+
+-- ADE: none.
+/-- Substituting then renaming is renaming then substituting, when the two agree on each variable. -/
+theorem Term.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {σ₁ : Subst₀ k Δ Ξ} {ξ₁ : Ren Γ Δ}
+    {σ₂ : Subst₀ k Γ Ψ} {ξ₂ : Ren Ψ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ₁ x).rename ξ₁ = σ₂ (ξ₂ x))
+    (t : Term k Ξ) : (t.subst₀ σ₁).rename ξ₁ = (t.rename ξ₂).subst₀ σ₂ :=
+  (Term.rename_subst₀_of (σ' := fun x => σ₂ (ξ₂ x)) h t).trans
+    (Term.subst₀_rename_of (fun _ => rfl) t).symm
+
+-- ADE: none.
+/-- Substituting then renaming a telescope is renaming then substituting it, when the two agree on
+each variable. -/
+theorem Telescope.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter}
+    {σ₁ : Subst₀ k Δ Ξ} {ξ₁ : Ren Γ Δ} {σ₂ : Subst₀ k Γ Ψ} {ξ₂ : Ren Ψ Ξ}
+    (h : ∀ {a} (x : Var Ξ a), (σ₁ x).rename ξ₁ = σ₂ (ξ₂ x)) (Θ : Telescope k Ξ ps) :
+    (Θ.subst₀ σ₁).rename ξ₁ = (Θ.rename ξ₂).subst₀ σ₂ :=
+  (Telescope.rename_subst₀_of (σ' := fun x => σ₂ (ξ₂ x)) h Θ).trans
+    (Telescope.subst₀_rename_of (fun _ => rfl) Θ).symm
+
+-- ADE: none.
+/-- `X[x]` at the abstraction `x. B` is `B`. -/
+theorem Term.subst₀_single_zero_rename_lift_weaken {Γ : Scope} (B : Term k (.var :: Γ)) :
+    (B.rename (Ren.lift Ren.weaken)).subst₀ (Subst₀.single (.var₀ .zero)) = B := by
+  rw [Term.subst₀_rename_of (σ' := fun x => Subst₀.single (.var₀ .zero) (Ren.lift Ren.weaken x))
+    (fun _ => rfl), Term.subst₀_eq_subst]
+  exact Term.subst_id_of (fun x => by cases x <;> rfl) B
+
+-- ADE: `wk1-sgSubst`, in `Definition/Untyped/Properties.agda`.
+/-- A motive that does not depend on the term it eliminates, at a term, is the motive. -/
+theorem Term.subst₀_single_rename_weaken {Γ : Scope} (C t : Term k Γ) :
+    (C.rename Ren.weaken).subst₀ (Subst₀.single t) = C :=
+  (Term.subst₀_rename_of (σ := Subst₀.single t) (ξ := Ren.weaken) (σ' := Subst₀.id)
+    (fun _ => rfl) C).trans (Term.subst₀_id C)
+
+-- ADE: none.
+/-- A motive that does not depend on the term it eliminates, at a constructor, is the motive under
+the variables of the fields. -/
+theorem Term.atCtor_rename_weaken {Γ Δ : Scope} (C : Term k Γ) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name)
+    (fs : List Parameter) :
+    (C.rename Ren.weaken).atCtor D qs ls ps as c fs = C.rename (Ren.weakenN fs.length) := by
+  rw [Term.atCtor, Term.rename_rename_of (ξ₁ := Ren.lift (Ren.weakenN fs.length))
+    (ξ₂ := Ren.weaken) (ξ₃ := fun x => .succ (Ren.weakenN fs.length x)) (fun _ => rfl),
+    Term.subst₀_rename_of (ξ := fun x => .succ (Ren.weakenN fs.length x))
+      (σ' := fun x => .var (Ren.weakenN fs.length x)) (fun _ => rfl)]
+  exact Term.subst₀_eq_rename_of (fun _ => rfl) C
+
 end Sic.Core
