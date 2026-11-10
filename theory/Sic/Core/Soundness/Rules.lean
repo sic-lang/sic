@@ -1973,9 +1973,10 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
 -- ADE: `unitrec-β-ηᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Unit.agda`.
 /-- `(η_c)` keeps the meaning: at equal substitutions of the context, the term `t` of an instance in
 a universe computes to the single constructor of its type, at fields equal to those of the other
-substitution, so that the recursor at the other substitution steps to `e` at this constructor, equal
-to `e` at the term `t` since the two are equal terms of the instance; on a proposition, the motive is
-a proposition, true since `e` proves it. -/
+substitution, without recursive results since it has no recursive field, so that the recursor at the
+other substitution steps to `e` at this constructor, equal to `e` at the term `t` since the two are
+equal terms of the instance; on a proposition, the motive is a proposition, true since `e` proves
+it. -/
 theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -1983,6 +1984,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
     (h : sigT.HasDataType D decl T) (hc : T.constructors = [con]) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hr : ∀ R ∈ (con.fields (.ofLists qs ps hq hp)).recursion decl.names, R = none)
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {t : Term 0 Γ} {Cs : Motives 0 Γ}
     {us : Branches 0 Γ} {κ : Universe 0} {i j : Nat} {C e : Term 0 (.var :: Γ)}
     (has : ValidInstanceArgsΓ sig ι ctx as
@@ -1993,9 +1995,6 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
     (hi : decl.cases[i]? = some (j, T, con))
     (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0,
       e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))⟩)
-    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
     (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
       κ.quality = .prop) :
     ValidEqTermΓ sig ι ctx (e.subst₀ (Subst₀.single t)) (.recursor r D qs ls ps as t Cs us)
@@ -2006,11 +2005,8 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
   have hctx := ht.1.1
   have hd := hctx.distinct
   have hcon : con ∈ T.constructors := hc ▸ List.mem_singleton_self con
-  have h0 : con.resultParams (.ofLists qs ps hq hp) decl.names = [] := by
-    obtain ⟨u', hu'⟩ := hus i j T con hi
-    have he := Option.some.inj (hu.symm.trans hu')
-    simp only [Sigma.mk.injEq] at he
-    exact List.eq_nil_of_length_eq_zero (congrArg Sigma.fst (eq_of_heq he.2)).symm
+  have h0 : con.resultParams (.ofLists qs ps hq hp) decl.names = [] :=
+    Telescope.resultParams_of_none hr
   refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
   · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
       Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]

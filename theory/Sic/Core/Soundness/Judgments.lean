@@ -558,8 +558,8 @@ where
           rw [List.getFin_map]
           exact hb)
         hκ (Branches.get_substLevels_of _ hu)
-    | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp has ht he hi hC hu _ _
-        hCt _ hus _ hκ =>
+    | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp hr has ht he hi hC hu
+        _ _ hCt _ _ _ hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -581,9 +581,8 @@ where
         Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
           (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp (by rw [List.getFin_map]; exact has') ht' he' hCv hi
-        hu' (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi;
-          ⟨_, Branches.get_substLevels_of _ hu⟩) hκ
+      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hr (by rw [List.getFin_map]; exact has') ht' he'
+        hCv hi hu' hκ
     | .beta (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Ss := Ss) (gs := gs)
         (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp has hh hS hss hi hpos hg hbs _ _ _ _ hgs hgt =>
       fun ρ => by

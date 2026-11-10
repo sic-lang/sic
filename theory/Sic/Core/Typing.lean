@@ -663,9 +663,10 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
             (Ren.weakenN _))).instantiate ts)
         (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
   -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`, for the unit type with `η`.
-  /-- A term `e` over a term `t` of a data type with a single constructor, the case `i` of the block,
-  is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of the type is that of
-  `e` and whose branch of the constructor is `e` at the constructor applied to its fields.
+  /-- A term `e` over a term `t` of a data type with a single constructor without recursive field, the
+  case `i` of the block, is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of
+  the type is that of `e` and whose branch of the constructor is `e` at the constructor applied to its
+  fields.
   RFC: `\eta_c` -/
   | etaCtor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -674,6 +675,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hr : ∀ R ∈ (con.fields (.ofLists qs ps hq hp)).recursion decl.names, R = none)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as))
@@ -1188,7 +1190,7 @@ where
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaCtor _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaCtor _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
     | .etaObs _ _ _ _ ht .. => hasType ht

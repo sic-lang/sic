@@ -297,6 +297,14 @@ def Telescope.resultParams : List (Option Name) → List Parameter → List Para
   | none :: rs, _ :: ps => Telescope.resultParams rs ps
   | [], _ | some _ :: _, [] | none :: _, [] => []
 
+/-- Fields without recursive fields have no recursive results. -/
+theorem Telescope.resultParams_of_none : {rs : List (Option Name)} → {ps : List Parameter} →
+    (∀ R ∈ rs, R = none) → Telescope.resultParams rs ps = []
+  | [], _, _ | some _ :: _, [], _ | none :: _, [], _ => rfl
+  | some _ :: _, _ :: _, h => by cases h _ List.mem_cons_self
+  | none :: rs, _ :: ps, h =>
+    Telescope.resultParams_of_none (rs := rs) (ps := ps) fun R hR => h R (List.mem_cons_of_mem _ hR)
+
 /-- The type that the type of a recursive field is an instance of is a type of the block. -/
 theorem Term.blockName_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
     {A : Term k Γ} → A.blockName names = some D → D ∈ names
