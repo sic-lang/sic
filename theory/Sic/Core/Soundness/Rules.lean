@@ -2357,7 +2357,7 @@ theorem Computesι.obs_corec_iff {Δ₁ Δ₂ Δ : Scope} {D₁ D₂ D : Name} {
   | refl => cases hv with | ne hn => cases hn with | obs hn => cases hn
   | step h hs =>
     cases h with
-    | beta h hi hD hg hv' => exact ⟨.step (.beta h hi hD hg hv') hs, hv⟩
+    | beta h hi hD hq hl hp hg hv' => exact ⟨.step (.beta h hi hD hq hl hp hg hv') hs, hv⟩
     | obs h => exact nomatch h
 
 -- ADE: none.
@@ -3222,13 +3222,18 @@ theorem ValidEqTerm₀.obs_corec {sigT : Signature} {Γ : Scope} {ctx : Context 
     {ψ : ResultOwnership ps₁.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {g₁ g₂ : Term 0 ((Γ.extend ps'.length).extend ps₁.length)}
     (hg : gs.get i = some ⟨0, ps'.length, ps₁.length, g₁⟩)
+    (hnr : B.blockName decl.names = none)
     (hgv : ValidEqTermΓ sig ι ((ctx.append S).append ((Θ.substLevels (ls.getFin hl)).subst
       (hpos.obsSubst ((Term.corecAt r T.name qs ls ps as Ss gs ps').observation T.name qs ls
         ps (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst)))
       g₁ g₂
-      ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-        (hpos.obsSubst ((Term.corecAt r T.name qs ls ps as Ss gs ps').observation T.name qs ls
-          ps (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst))))
+      (Term.branchResult decl.names B
+        ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+        (ψ.constant.getD .unrestrictedUnrestricted)
+        ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length))
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hpos.obsSubst ((Term.corecAt r T.name qs ls ps as Ss gs ps').observation T.name qs ls
+            ps (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst)))))
     {σ₁ σ₂ : Subst 0 [] Γ} (hσ : EqSubst sig ι ctx σ₁ σ₂) {ts us : Args 0 [] ps₁}
     (hts : EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
       (hpos.obsSubst ((Term.corec r D qs ls ps (as.subst σ₁) (ss₁.subst σ₁).terms (Ss.subst σ₁)
@@ -3242,6 +3247,7 @@ theorem ValidEqTerm₀.obs_corec {sigT : Signature} {Γ : Scope} {ctx : Context 
         (hpos.obsSubst ((Term.corec r D qs ls ps (as.subst σ₁) (ss₁.subst σ₁).terms (Ss.subst σ₁)
           (gs.subst σ₁)).observation D qs ls ps (as.subst σ₁)) (as.subst σ₁).toSubst)
         ts.toSubst)) := by
+  simp only [Term.branchResult, hnr] at hgv
   obtain ⟨h₀, -⟩ := hent.hasCodataType h
   have hd := hss.1.distinct
   have hD : T.name = D := h.2.2
@@ -3265,8 +3271,17 @@ theorem ValidEqTerm₀.obs_corec {sigT : Signature} {Γ : Scope} {ctx : Context 
   have hred : Red (sig.interpret ι)
       (.obs T.name qs ls ps (as.subst σ₁) (.corec r T.name qs ls ps (as.subst σ₁)
         (ss₁.subst σ₁).terms (Ss.subst σ₁) (gs.subst σ₁)) d ts.terms)
-      (g₁.subst (Subst.append (Subst.append σ₁ (ss₁.subst σ₁).toSubst) ts.toSubst)) :=
-    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl
+      (g₁.subst (Subst.append (Subst.append σ₁ (ss₁.subst σ₁).toSubst) ts.toSubst)) := by
+    have he : g₁.subst (Subst.append (Subst.append σ₁ (ss₁.subst σ₁).toSubst) ts.toSubst) =
+        Term.observed decl.names ((T.body (.ofLists qs ps hq hp)).resultName decl.names d) r qs ls
+          ps (as.subst σ₁) (Ss.subst σ₁) (gs.subst σ₁)
+          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+          (((T.body (.ofLists qs ps hq hp)).resultConstant d).getD .unrestrictedUnrestricted)
+          (g₁.subst (Subst.append (Subst.append σ₁ (ss₁.subst σ₁).toSubst) ts.toSubst)) := by
+      rw [hpos.resultName decl.names (hd.destructors_nodup h₀), hnr]
+      rfl
+    rw [he]
+    exact .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl hq hl hp
       (CorecBranches.get_subst σ₁ hg) (Term.instantiateTerms₂_subst_append σ₁ g₁ _ _)
   exact (ValidEqTerm₀.red_iff hd hred).2 hb
 
@@ -3298,9 +3313,14 @@ def CorecBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (c
       (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs ls
         ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
       g₁ g₂
-      ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs ls
-          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
+      (Term.branchResult decl.names B
+        ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+        (ψ.constant.getD .unrestrictedUnrestricted)
+        ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs
+            ls ps (as.rename (Ren.weakenN ps''.length)))
+            (as.rename (Ren.weakenN ps''.length)).toSubst))))
 
 /-- The branches of a corecursor are terms of the results of their destructors, as `(corec)`
 premises them: the premise that the Lean of `(corec)` and of `(β)` reads, at the levels without
@@ -3352,13 +3372,25 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
           rwa [Nat.zero_add] at this
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
         obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hg.1 i h' T d ps' S₁ hi hS₁ p q ps₁ Ξ Θ B ψ hpos
-        have h₁ := ValidEqTerm₀.obs_corec hent h hq hl₁ hp hss hi hpos hg₁
+        cases hnr : B.blockName decl.names with
+        | some _ => sorry
+        | none =>
+        have h₁ := ValidEqTerm₀.obs_corec hent h hq hl₁ hp hss hi hpos hg₁ hnr
           (hg.2 i h' T d ps' S₁ p q ps₁ Ξ Θ B ψ g₁ g₂ hi hS₁ hpos hg₁ hg₂) hσ hτ
         have hred₂ : Red (sig.interpret ι)
             (.obs D qs ls₁ ps (as₂.subst σ₂) (.corec r D qs ls₁ ps (as₂.subst σ₂)
               (ss₂.subst σ₂).terms (Ss₂.subst σ₂) (gs₂.subst σ₂)) d us.terms)
-            (g₂.subst (Subst.append (Subst.append σ₂ (ss₂.subst σ₂).toSubst) us.toSubst)) :=
-          .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi h.2.2
+            (g₂.subst (Subst.append (Subst.append σ₂ (ss₂.subst σ₂).toSubst) us.toSubst)) := by
+          have he : g₂.subst (Subst.append (Subst.append σ₂ (ss₂.subst σ₂).toSubst) us.toSubst) =
+              Term.observed decl.names ((T.body (.ofLists qs ps hq hp)).resultName decl.names d) r
+                qs ls₁ ps (as₂.subst σ₂) (Ss₂.subst σ₂) (gs₂.subst σ₂)
+                ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁))
+                (((T.body (.ofLists qs ps hq hp)).resultConstant d).getD .unrestrictedUnrestricted)
+                (g₂.subst (Subst.append (Subst.append σ₂ (ss₂.subst σ₂).toSubst) us.toSubst)) := by
+            rw [hpos.resultName decl.names (hd.destructors_nodup h₀), hnr]
+            rfl
+          rw [he]
+          exact .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi h.2.2 hq hl₁ hp
             (CorecBranches.get_subst σ₂ hg₂) (Term.instantiateTerms₂_subst_append σ₂ g₂ _ _)
         exact ((ValidEqTerm₀.red_iff hd hred₂).2 h₁.symm).symm
   refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
@@ -3423,7 +3455,10 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         as.toSubst)))
     (hg : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
     ValidEqTermΓ sig ι ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
-      ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss)
+      (Term.observed decl.names (B₀.blockName decl.names) r qs ls ps as Ss gs
+        ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+        (ψ₀.constant.getD .unrestrictedUnrestricted)
+        ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss))
       (((B₀.substLevels (ls.getFin hl)).subst
         (Subst.liftN _ (hpos.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
           qs ls ps as) as.toSubst))).instantiate bs) := by
@@ -3439,10 +3474,14 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         (gs.subst σ)).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
     fun σ => hpos.obsSubst_subst σ (fun d' ps'' => by
       rw [Term.observation_subst, Term.corec_subst]) (InstanceArgs.toSubst_subst σ as)
+  cases hnr : B₀.blockName decl.names with
+  | some _ => sorry
+  | none =>
+  simp only [Term.observed]
   refine ⟨hobs.1, fun σ₁ σ₂ hσ => ?_⟩
   have hts := hbs.2 σ₁ σ₂ hσ
   rw [Telescope.subst_subst_of (hsc σ₁)] at hts
-  have hb := ValidEqTerm₀.obs_corec hent h hq hl hp hss hi hpos hgi
+  have hb := ValidEqTerm₀.obs_corec hent h hq hl hp hss hi hpos hgi hnr
     (hg.2 i h' T d ps' S p q ps₀ Ξ₀ Θ₀ B₀ ψ₀ g g hi hS hpos hgi hgi) hσ hts
   rw [Term.instantiate_instantiate_subst_closed, Term.instantiate_subst,
     Term.subst_subst_of (Subst.liftN_subst_of _ (hsc σ₁)), Term.instantiate_eq_subst,

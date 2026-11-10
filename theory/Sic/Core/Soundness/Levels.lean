@@ -928,6 +928,136 @@ theorem Whnf.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term k 
   | corec => cases h; exact .corec _ _ _ _ _ _ _ _ _
   | ne hn => exact .ne (hn.levelEquiv h)
 
+/-! ## Positions -/
+
+theorem Universe.ListEquiv.tail {k : Nat} {κs₁ κs₂ : List (Universe k)} :
+    Universe.ListEquiv κs₁ κs₂ → Universe.ListEquiv κs₁.tail κs₂.tail
+  | .nil => .nil
+  | .cons _ _ hs => hs
+
+/-- The levels of packings of sorts equal one by one, below equal levels, are equal. -/
+theorem Telescope.packLevel_equiv {k : Nat} : {κs₁ κs₂ : List (Universe k)} →
+    Universe.ListEquiv κs₁ κs₂ → {l₁ l₂ : Level k} → l₁ ≈ l₂ →
+      Telescope.packLevel κs₁ l₁ ≈ Telescope.packLevel κs₂ l₂
+  | _, _, .nil, _, _, h => h
+  | _, _, .cons _ h hs, _, _, hl => fun ρ => by
+    show Level.value ρ (.max _ (Telescope.packLevel _ _)) =
+      Level.value ρ (.max _ (Telescope.packLevel _ _))
+    simp only [Level.value]
+    rw [h ρ, Telescope.packLevel_equiv hs hl ρ]
+
+/-- The packings of telescopes equal up to their levels, at sorts equal one by one and at equal
+levels, are equal up to their levels. -/
+theorem Telescope.LevelEquiv.pack {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
+    {Θ₁ Θ₂ : Telescope k Γ ps} → Telescope.LevelEquiv Θ₁ Θ₂ →
+    {κs₁ κs₂ : List (Universe k)} → Universe.ListEquiv κs₁ κs₂ → {l₁ l₂ : Level k} → l₁ ≈ l₂ →
+      Term.LevelEquiv (Θ₁.pack κs₁ l₁) (Θ₂.pack κs₂ l₂)
+  | _, [], _, _, .nil, _, _, _, _, _, hl =>
+    .inst _ _ _ (.cons hl .nil) .nil
+  | _, _ :: _, _, _, .cons _ _ hA hΘ, _, _, .nil, _, _, hl =>
+    .inst _ _ _ (.cons hl (.cons (Telescope.packLevel_equiv .nil hl) .nil))
+      (.snoc (.snoc .nil hA) (hΘ.pack .nil hl))
+  | _, _ :: _, _, _, .cons _ _ hA hΘ, _, _, .cons _ h hs, _, _, hl =>
+    .inst _ _ _ (.cons h (.cons (Telescope.packLevel_equiv hs hl) .nil))
+      (.snoc (.snoc .nil hA) (hΘ.pack hs hl))
+
+/-- Unpackings of terms, telescopes, motives and terms equal up to their levels, at sorts equal one
+by one and at equal levels, are equal up to their levels. -/
+theorem Term.LevelEquiv.unpack {k : Nat} (r : Grade) : {Γ : Scope} → {ps : List Parameter} →
+    {u₁ u₂ : Term k Γ} → Term.LevelEquiv u₁ u₂ → {Θ₁ Θ₂ : Telescope k Γ ps} →
+    Telescope.LevelEquiv Θ₁ Θ₂ → {κs₁ κs₂ : List (Universe k)} → Universe.ListEquiv κs₁ κs₂ →
+    {l₁ l₂ : Level k} → l₁ ≈ l₂ → {C₁ C₂ : Term k Γ} → Term.LevelEquiv C₁ C₂ →
+    {b₁ b₂ : Term k (Γ.extend ps.length)} → Term.LevelEquiv b₁ b₂ →
+      Term.LevelEquiv (Term.unpack r u₁ Θ₁ κs₁ l₁ C₁ b₁) (Term.unpack r u₂ Θ₂ κs₂ l₂ C₂ b₂)
+  | _, [], _, _, hu, _, _, .nil, _, _, _, _, _, hl, _, _, hC, _, _, hb =>
+    .recursor _ _ _ _ (.cons hl .nil) .nil hu (.cons (hC.rename _) .nil) (.cons hb .nil)
+  | _, _ :: _, _, _, hu, _, _, .cons _ _ hA hΘ, _, _, hκ, _, _, hl, _, _, hC, _, _, hb => by
+    cases hκ with
+    | nil =>
+      exact .recursor _ _ _ _ (.cons hl (.cons (Telescope.packLevel_equiv .nil hl) .nil))
+        (.snoc (.snoc .nil hA) (hΘ.pack .nil hl)) hu (.cons (hC.rename _) .nil)
+        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) .nil hl
+          (hC.rename _) (hb.rename _)) .nil)
+    | cons _ h hs =>
+      exact .recursor _ _ _ _ (.cons h (.cons (Telescope.packLevel_equiv hs hl) .nil))
+        (.snoc (.snoc .nil hA) (hΘ.pack hs hl)) hu (.cons (hC.rename _) .nil)
+        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) hs hl
+          (hC.rename _) (hb.rename _)) .nil)
+
+/-- The states at a position of states equal up to their levels are equal up to their levels, and
+so are their sorts. -/
+theorem States.LevelEquiv.getAt {k : Nat} {Γ : Scope} : {Ss₁ Ss₂ : States k Γ} →
+    States.LevelEquiv Ss₁ Ss₂ → (j : Nat) →
+      (Ss₁.get j = none ∧ Ss₂.get j = none) ∨
+        ∃ (n : Nat) (ps : List Parameter) (S₁ S₂ : Telescope k (Γ.extend n) ps),
+          Ss₁.get j = some ⟨n, ps, S₁⟩ ∧ Ss₂.get j = some ⟨n, ps, S₂⟩ ∧
+          Telescope.LevelEquiv S₁ S₂ ∧ Universe.ListEquiv (Ss₁.sorts j) (Ss₂.sorts j)
+  | _, _, .nil, _ => .inl ⟨rfl, rfl⟩
+  | _, _, .cons hS hκ _, 0 => .inr ⟨_, _, _, _, rfl, rfl, hS, hκ⟩
+  | _, _, .cons _ _ hs, j + 1 => hs.getAt j
+
+/-- The states of a type in states equal up to their levels, and their sorts, are equal up to
+their levels. -/
+theorem States.LevelEquiv.stateOf {k : Nat} {Γ : Scope} (names : List Name) (D : Name)
+    {Ss₁ Ss₂ : States k Γ} (h : States.LevelEquiv Ss₁ Ss₂) :
+    (Ss₁.stateOf names D = none ∧ Ss₂.stateOf names D = none) ∨
+      ∃ (ps : List Parameter) (S₁ S₂ : Telescope k Γ ps) (κs₁ κs₂ : List (Universe k)),
+        Ss₁.stateOf names D = some ⟨ps, S₁, κs₁⟩ ∧ Ss₂.stateOf names D = some ⟨ps, S₂, κs₂⟩ ∧
+        Telescope.LevelEquiv S₁ S₂ ∧ Universe.ListEquiv κs₁ κs₂ := by
+  unfold States.stateOf
+  cases names.idxOf? D with
+  | none => exact .inl ⟨rfl, rfl⟩
+  | some j =>
+    simp only
+    rcases h.getAt j with ⟨h₁, h₂⟩ | ⟨n, ps, S₁, S₂, h₁, h₂, hS, hκ⟩
+    · rw [h₁, h₂]; exact .inl ⟨rfl, rfl⟩
+    · rw [h₁, h₂]
+      cases n with
+      | zero => exact .inr ⟨_, S₁, S₂, _, _, rfl, rfl, hS, hκ⟩
+      | succ => exact .inl ⟨rfl, rfl⟩
+
+/-- `resume` of positions equal up to their levels, for corecursors equal up to their levels, of
+sorts of the same quality at equal levels, is equal up to its levels. -/
+theorem Term.LevelEquiv.resume {k : Nat} {Γ Δ : Scope} {ps' : List Parameter} (r : Grade)
+    (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
+    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    (s : Quality) {l₁ l₂ : Level k} (χ : Grade) {S₁ S₂ : Telescope k Γ ps'}
+    {κs₁ κs₂ : List (Universe k)} {v₁ v₂ : Term k Γ} (hl : Level.ListEquiv ls₁ ls₂)
+    (has : InstanceArgs.LevelEquiv as₁ as₂) (hSs : States.LevelEquiv Ss₁ Ss₂)
+    (hgs : CorecBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hS : Telescope.LevelEquiv S₁ S₂)
+    (hκs : Universe.ListEquiv κs₁ κs₂) (hv : Term.LevelEquiv v₁ v₂) :
+    Term.LevelEquiv (Term.resume r D qs ls₁ ps as₁ Ss₁ gs₁ ⟨s, l₁⟩ χ S₁ κs₁ v₁)
+      (Term.resume r D qs ls₂ ps as₂ Ss₂ gs₂ ⟨s, l₂⟩ χ S₂ κs₂ v₂) := by
+  have h0 := Telescope.packLevel_equiv hκs (Level.equivalence.refl .zero)
+  have hT : Term.LevelEquiv (Term.inst D qs ls₁ ps as₁) (Term.inst D qs ls₂ ps as₂) :=
+    .inst _ _ _ hl has
+  exact .recursor _ _ _ _ (.cons (Telescope.packLevel_equiv hκs h0) (.cons hκ .nil))
+    (.snoc (.snoc .nil (hS.pack hκs h0)) hT) hv (.cons (hT.rename _) .nil)
+    (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hS.rename _) hκs h0 (hT.rename _)
+        (.corec _ _ _ _ hl ((has.rename _).rename _) (Terms.LevelEquiv.refl _)
+          ((hSs.rename _).rename _) ((hgs.rename _).rename _)))
+      (.cons (Term.LevelEquiv.refl _) .nil))
+
+/-- The observed terms of corecursors equal up to their levels, of sorts of the same quality at
+equal levels, at branches equal up to their levels, are equal up to their levels. -/
+theorem Term.LevelEquiv.observed {k : Nat} {Γ Δ : Scope} (names : List Name) (rec : Option Name)
+    (r : Grade) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
+    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    (s : Quality) {l₁ l₂ : Level k} (χ : Grade) {v₁ v₂ : Term k Γ} (hl : Level.ListEquiv ls₁ ls₂)
+    (has : InstanceArgs.LevelEquiv as₁ as₂) (hSs : States.LevelEquiv Ss₁ Ss₂)
+    (hgs : CorecBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hv : Term.LevelEquiv v₁ v₂) :
+    Term.LevelEquiv (Term.observed names rec r qs ls₁ ps as₁ Ss₁ gs₁ ⟨s, l₁⟩ χ v₁)
+      (Term.observed names rec r qs ls₂ ps as₂ Ss₂ gs₂ ⟨s, l₂⟩ χ v₂) := by
+  unfold Term.observed
+  cases rec with
+  | none => exact hv
+  | some D =>
+    simp only
+    rcases hSs.stateOf names D with ⟨h₁, h₂⟩ | ⟨ps', S₁, S₂, κs₁, κs₂, h₁, h₂, hS, hκs⟩
+    · rw [h₁, h₂]; exact hv
+    · rw [h₁, h₂]
+      exact Term.LevelEquiv.resume r D qs ps s χ hl has hSs hgs hκ hS hκs hv
+
 /-- A term whose levels change for equal ones reduces to the term its reduct becomes so. -/
 theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k Γ}
     (hr : Red sig t u) (h : Term.LevelEquiv t t') :
@@ -953,14 +1083,17 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
     | recursor _ _ _ _ hl has ht hCs hus =>
       obtain ⟨u', hr', hu⟩ := ih ht
       exact ⟨_, .recursor hr', .recursor _ _ _ _ hl has hu hCs hus⟩
-  | beta hdecl hi hD hg hv =>
+  | beta hdecl hi hD hq hl hp hg hv =>
     cases h with
     | obs _ _ _ _ _ _ ht hbs =>
       cases ht with
-      | corec _ _ _ _ _ _ hss _ hgs =>
+      | corec _ _ _ _ hls has hss hSs hgs =>
         obtain ⟨g', hg', hgg⟩ := hgs.get hg
         obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms₂ hss hbs hv
-        exact ⟨v', .beta hdecl hi hD hg' hv', hvv⟩
+        have hl' := hls.length_eq.symm.trans hl
+        exact ⟨_, .beta hdecl hi hD hq hl' hp hg' hv',
+          Term.LevelEquiv.observed _ _ _ _ _ _ _ hls has hSs hgs
+            (Level.subst_equiv (hls.getFin hl hl') _) hvv⟩
   | obs _ ih =>
     cases h with
     | obs _ _ _ _ hl has ht hbs =>

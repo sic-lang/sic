@@ -279,8 +279,8 @@ theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Sc
   | .iota h hi hD hc hq hp hu hv =>
     .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hq hp hu hv
   | .recursor h => .recursor h.interpret
-  | .beta h hi hD hg hv =>
-    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hg hv
+  | .beta h hi hD hq hl hp hg hv =>
+    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hq hl hp hg hv
   | .obs h => .obs h.interpret
 
 /-- A term computes to the canonical terms of the term it reduces to, in a signature whose names are

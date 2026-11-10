@@ -4029,6 +4029,13 @@ theorem Term.subst_liftN_rename_weakenN {Γ Δ : Scope} (n : Nat) (θ : Subst k 
     (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
     (fun x => Subst.liftN_weakenN n θ x), Term.rename_subst_of (fun _ => rfl)]
 
+theorem States.subst_liftN_rename_weakenN {Γ Δ : Scope} (n : Nat) (θ : Subst k Γ Δ)
+    (Ss : States k Δ) :
+    (Ss.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (Ss.subst θ).rename (Ren.weakenN n) := by
+  rw [States.subst_rename_of (ξ := Ren.weakenN n)
+    (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
+    (fun x => Subst.liftN_weakenN n θ x), States.rename_subst_of (fun _ => rfl)]
+
 theorem Args.subst_liftN_rename_weakenN {Γ Δ : Scope} {ps : List Parameter} (n : Nat) (θ : Subst k Γ Δ)
     (ts : Args k Δ ps) :
     (ts.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (ts.subst θ).rename (Ren.weakenN n) := by

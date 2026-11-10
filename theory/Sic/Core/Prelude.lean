@@ -371,4 +371,434 @@ theorem Term.unpack_branch_instantiate (r : Grade) {Γ : Scope} {p : Parameter} 
   erw [h₅]
   rfl
 
+-- ADE: none.
+/-- The unpacking, substituted, is the unpacking of the terms substituted. -/
+theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter} →
+    (θ : Subst k Γ Δ) → (u : Term k Δ) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) →
+    (l : Level k) → (C : Term k Δ) → (b : Term k (Δ.extend ps.length)) →
+      (Term.unpack r u Θ κs l C b).subst θ =
+        Term.unpack r (u.subst θ) (Θ.subst θ) κs l (C.subst θ) (b.subst (Subst.liftN _ θ))
+  | _, _, [], θ, u, .nil, _, l, C, b => by
+    show Term.recursor r "Unit" [] [l] [] .nil (u.subst θ)
+      (.cons 0 ((C.rename Ren.weaken).subst (Subst.lift θ)) .nil) (.cons 0 0 (b.subst θ) .nil) =
+      Term.recursor r "Unit" [] [l] [] .nil (u.subst θ)
+      (.cons 0 ((C.subst θ).rename Ren.weaken) .nil) (.cons 0 0 (b.subst θ) .nil)
+    exact congrArg (fun X => Term.recursor r "Unit" [] [l] [] .nil (u.subst θ) (.cons 0 X .nil)
+      (.cons 0 0 (b.subst θ) .nil)) (Term.subst_lift_rename_weaken θ C)
+  | _, _, _ :: ps, θ, u, .cons _ p A Θ, κs, l, C, b => by
+    show Term.recursor r "Pair" _ _ _
+      (Prelude.pairArgs (A.subst θ) ((Θ.pack κs.tail l).subst (Subst.lift θ))) (u.subst θ)
+      (.cons 0 ((C.rename Ren.weaken).subst (Subst.lift θ)) .nil)
+      (.cons 2 0 ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+        (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))).subst
+          (Subst.lift (Subst.lift θ))) .nil) = _
+    have h₁ := Telescope.pack_subst (Subst.lift θ) Θ κs.tail l
+    have h₂ := Term.subst_lift_rename_weaken (e := .var) θ C
+    have h₃ := Term.unpack_subst r (Subst.lift (Subst.lift θ)) (.var₀ .zero) (Θ.rename Ren.weaken)
+      κs.tail l (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))
+    have h₅ := (Telescope.subst_lift_rename_weaken (e := .var) (Subst.lift (e := .var) θ) Θ).symm
+    have h₆ := (Term.subst_liftN_rename_weakenN 2 θ C).symm
+    have h₇ : (b.subst (Subst.liftN ps.length (Subst.lift (e := .var) θ))).rename
+        (Ren.liftN ps.length (Ren.weaken (e := .var))) =
+        (b.rename (Ren.liftN ps.length (Ren.weaken (e := .var)))).subst
+          (Subst.liftN ps.length (Subst.lift (e := .var) (Subst.lift (e := .var) θ))) :=
+      (Term.rename_subst_of (fun _ => rfl) b).trans
+        (Term.subst_rename_of (Subst.liftN_rename_comm_of ps.length (fun _ => rfl)) b).symm
+    show _ = Term.recursor r "Pair" _ _ _
+      (Prelude.pairArgs (A.subst θ) ((Θ.subst (Subst.lift θ)).pack κs.tail l)) (u.subst θ)
+      (.cons 0 ((C.subst θ).rename Ren.weaken) .nil)
+      (.cons 2 0 (Term.unpack r (.var₀ .zero) ((Θ.subst (Subst.lift θ)).rename Ren.weaken) κs.tail l
+        ((C.subst θ).rename (Ren.weakenN 2))
+        ((b.subst (Subst.liftN ps.length (Subst.lift θ))).rename (Ren.liftN ps.length Ren.weaken))) .nil)
+    rw [h₁]
+    let F := fun (X : Term k (.var :: _)) (Y : Term k (.var :: .var :: _)) =>
+      Term.recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
+        [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
+        (Prelude.pairArgs (A.subst θ) ((Θ.subst (Subst.lift θ)).pack κs.tail l)) (u.subst θ)
+        (.cons 0 X .nil) (.cons 2 0 Y .nil)
+    refine (congrArg (fun X => F X _) h₂).trans (congrArg (F _) (h₃.trans ?_))
+    erw [h₅, h₆, h₇]
+    rfl
+
+/-! ## Positions -/
+
+/-- The arguments `(A, B)` of an instance of the type of positions. -/
+abbrev Prelude.stepArgs {Γ : Scope} (A B : Term k Γ) : InstanceArgs k Γ Prelude.stepScope :=
+  .snoc (.snoc .nil A) B
+
+/-- `Step.{s; l₁, l₂; p, q, ρ} (A, B)`: an instance of the type of positions. -/
+abbrev Prelude.stepInst {Γ : Scope} (s : Quality) (l₁ l₂ : Level k) (p q ρ : Grade)
+    (A B : Term k Γ) : Term k Γ :=
+  .inst "Step" [s] [l₁, l₂] [p, q, ρ] (Prelude.stepArgs A B)
+
+-- ADE: none.
+/-- `q_s`: the grade of a term already built of a position, of the quality `s`: `11ᵖ` in a universe,
+and `01ᵖ`, without use at run time, in a universe of propositions, as the constraint of the type of
+positions requires. -/
+def Prelude.doneGrade : Quality → Grade
+  | .type => Grade.one
+  | .prop => Grade.noneLinear
+
+-- ADE: none.
+/-- The state of the type `D` of a block, whose names are `names`, in the states `Ss` of a
+corecursor, with the sorts of its entries, when `D` has a state without non-uniform parameters. -/
+def States.stateOf {Γ : Scope} (names : List Name) (Ss : States k Γ) (D : Name) :
+    Option ((ps : List Parameter) × Telescope k Γ ps × List (Universe k)) :=
+  match names.idxOf? D with
+  | none => none
+  | some j =>
+    match Ss.get j with
+    | some ⟨0, ps, S⟩ => some ⟨ps, S, Ss.sorts j⟩
+    | _ => none
+
+-- ADE: none.
+/-- `Step.{s; level_κ̄(l), l'; r, q_s, χ} (⟨Θ⟩_{κ̄; l}, T)`, with `l = level_κ̄(0)`: the type of the
+positions of a corecursor of the grade `r` whose state `Θ`, whose entries live in the sorts `κ̄`,
+packs into a universe, and of the terms of `T`, of the sort `κ = s_{l'}`, that the ownership `χ`
+requires. -/
+def Term.positions {Γ : Scope} {ps : List Parameter} (κ : Universe k) (r χ : Grade)
+    (S : Telescope k Γ ps) (κs : List (Universe k)) (T : Term k Γ) : Term k Γ :=
+  Prelude.stepInst κ.quality (Telescope.packLevel κs (Telescope.packLevel κs .zero)) κ.level r
+    (Prelude.doneGrade κ.quality) χ (S.pack κs (Telescope.packLevel κs .zero)) T
+
+-- ADE: none.
+/-- `pos_{Θ̄}(B, T)`: the type of the branch of a destructor whose declared result is `B` and whose
+result is `T`, at the states `Ss` of the block whose names are `names`: the positions of the state of
+the type of the block that `B` names, of the sort `κ`, with the constant `χ` of the ownership of the
+result, if `B` is an instance of a type of the block, and `T` otherwise. -/
+def Term.branchResult {k' : Nat} {Ψ Γ : Scope} (names : List Name) (B : Term k' Ψ)
+    (κ : Universe k) (r χ : Grade) (Ss : States k Γ) (T : Term k Γ) : Term k Γ :=
+  match B.blockName names with
+  | none => T
+  | some D =>
+    match Ss.stateOf names D with
+    | none => T
+    | some ⟨_, S, κs⟩ => Term.positions κ r χ S κs T
+
+-- ADE: none.
+/-- `resume(v)`: the position `v` of a corecursor of the grade `r` of the instance
+`T = D.{s̄; l̄; p̄} ā` of the sort `κ`, with the states `Ss` and the branches `gs`, the state of `D`
+being `Θ`, whose entries live in the sorts `κ̄`, resumed: a recursor on `v`, which unpacks a new
+state into the corecursor of `T` from it, and gives a term already built itself.
+RFC: `\mathsf{resume}` -/
+def Term.resume {Γ Δ : Scope} {ps' : List Parameter} (r : Grade) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
+    (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (S : Telescope k Γ ps')
+    (κs : List (Universe k)) (v : Term k Γ) : Term k Γ :=
+  .recursor Grade.one "Step" [κ.quality]
+    [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]
+    [r, Prelude.doneGrade κ.quality, χ]
+    (Prelude.stepArgs (S.pack κs (Telescope.packLevel κs .zero)) (.inst D qs ls ps as)) v
+    (.cons 0 ((Term.inst D qs ls ps as).rename Ren.weaken) .nil)
+    (.cons 1 0 (Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs (Telescope.packLevel κs .zero)
+        ((Term.inst D qs ls ps as).rename Ren.weaken)
+        (Term.corecAt r D qs ls ps (as.rename Ren.weaken) (Ss.rename Ren.weaken)
+          (gs.rename Ren.weaken) ps'))
+      (.cons 1 0 (.var₀ .zero) .nil))
+
+-- ADE: none.
+/-- The observation of a corecursor of the grade `r` of the instance `D'.{s̄; l̄; p̄} ā`, of the sort
+`κ`, with the states `Ss` and the branches `gs`, by a destructor whose result is an instance of the
+type `rec` of the block whose names are `names`, if any, and the constant of the ownership of whose
+result is `χ`, at the branch `v` at the state and the arguments: `resume(v)` for the corecursor of
+the instance of `rec`, if the destructor is recursive, and `v` otherwise. -/
+def Term.observed {Γ Δ : Scope} (names : List Name) (rec : Option Name) (r : Grade)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (Ss : States k Γ) (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
+    Term k Γ :=
+  match rec with
+  | none => v
+  | some D =>
+    match Ss.stateOf names D with
+    | none => v
+    | some ⟨_, S, κs⟩ => Term.resume r D qs ls ps as Ss gs κ χ S κs v
+
+/-! ### Commutation of the Positions with the Substitutions -/
+
+-- ADE: none.
+/-- The states at a position of states substituted are the states at the position, substituted. -/
+theorem States.get_subst_eq {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (Ss : States k Δ) → (j : Nat) →
+      (Ss.subst θ).get j =
+        (Ss.get j).map fun x => ⟨x.1, x.2.1, x.2.2.subst (Subst.liftN x.1 θ)⟩
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ Ss, j + 1 => States.get_subst_eq θ Ss j
+
+-- ADE: none.
+/-- The state of a type in states substituted is its state, substituted, with the same sorts. -/
+theorem States.stateOf_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) (names : List Name)
+    (Ss : States k Δ) (D : Name) :
+    (Ss.subst θ).stateOf names D =
+      (Ss.stateOf names D).map fun x => ⟨x.1, x.2.1.subst θ, x.2.2⟩ := by
+  unfold States.stateOf
+  cases names.idxOf? D with
+  | none => rfl
+  | some j =>
+    simp only
+    rw [States.get_subst_eq, States.sorts_subst]
+    cases Ss.get j with
+    | none => rfl
+    | some x =>
+      obtain ⟨n, ps, S⟩ := x
+      cases n <;> rfl
+
+-- ADE: none.
+/-- The positions of a state, substituted, are the positions of the state substituted. -/
+theorem Term.positions_subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k Γ Δ)
+    (κ : Universe k) (r χ : Grade) (S : Telescope k Δ ps) (κs : List (Universe k))
+    (T : Term k Δ) :
+    (Term.positions κ r χ S κs T).subst θ = Term.positions κ r χ (S.subst θ) κs (T.subst θ) := by
+  have h := Telescope.pack_subst θ S κs (Telescope.packLevel κs .zero)
+  unfold Term.positions
+  rw [← h]
+  rfl
+
+-- ADE: none.
+/-- The type of the result of a branch, substituted, is the type of the result of the branch
+substituted, at the states substituted. -/
+theorem Term.branchResult_subst {k' : Nat} {Ψ Γ Δ : Scope} (θ : Subst k Γ Δ) (names : List Name)
+    (B : Term k' Ψ) (κ : Universe k) (r χ : Grade) (Ss : States k Δ) (T : Term k Δ) :
+    (Term.branchResult names B κ r χ Ss T).subst θ =
+      Term.branchResult names B κ r χ (Ss.subst θ) (T.subst θ) := by
+  unfold Term.branchResult
+  cases B.blockName names with
+  | none => rfl
+  | some D =>
+    simp only
+    rw [States.stateOf_subst]
+    cases Ss.stateOf names D with
+    | none => rfl
+    | some x =>
+      obtain ⟨ps, S, κs⟩ := x
+      exact Term.positions_subst θ κ r χ S κs T
+
+-- ADE: none.
+/-- `resume(v)`, substituted, is `resume` of the position substituted, for the corecursor
+substituted. -/
+theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst k Γ Δ) (r : Grade)
+    (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : CorecBranches k Δ) (κ : Universe k)
+    (χ : Grade) (S : Telescope k Δ ps') (κs : List (Universe k)) (v : Term k Δ) :
+    (Term.resume r D qs ls ps as Ss gs κ χ S κs v).subst θ =
+      Term.resume r D qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) κ χ (S.subst θ) κs
+        (v.subst θ) := by
+  have hw : ∀ {a} (x : Var Δ a), Subst.lift (e := .var) θ (Ren.weaken x) =
+      (θ x).rename (Ren.liftN a.params.length Ren.weaken) := fun _ => rfl
+  have ha : (as.rename Ren.weaken).subst (Subst.lift (e := .var) θ) =
+      (as.subst θ).rename Ren.weaken :=
+    (InstanceArgs.subst_rename_of hw as).trans (InstanceArgs.rename_subst_of (fun _ => rfl) as).symm
+  have hS : (Ss.rename Ren.weaken).subst (Subst.lift (e := .var) θ) =
+      (Ss.subst θ).rename Ren.weaken :=
+    (States.subst_rename_of hw Ss).trans (States.rename_subst_of (fun _ => rfl) Ss).symm
+  have hg : (gs.rename Ren.weaken).subst (Subst.lift (e := .var) θ) =
+      (gs.subst θ).rename Ren.weaken :=
+    (CorecBranches.subst_rename_of hw gs).trans
+      (CorecBranches.rename_subst_of (fun _ => rfl) gs).symm
+  have hb := Term.corecAt_subst (Subst.lift (e := .var) θ) r D qs ls ps (as.rename Ren.weaken)
+    (Ss.rename Ren.weaken) (gs.rename Ren.weaken) ps'
+  rw [ha, hS, hg] at hb
+  have hu := Term.unpack_subst r (Subst.lift (e := .var) θ) (.var₀ .zero) (S.rename Ren.weaken) κs
+    (Telescope.packLevel κs .zero) ((Term.inst D qs ls ps as).rename Ren.weaken)
+    (Term.corecAt r D qs ls ps (as.rename Ren.weaken) (Ss.rename Ren.weaken)
+      (gs.rename Ren.weaken) ps')
+  rw [hb, Telescope.subst_lift_rename_weaken, Term.subst_lift_rename_weaken] at hu
+  have hp := Telescope.pack_subst θ S κs (Telescope.packLevel κs .zero)
+  unfold Term.resume
+  show Term.recursor _ _ _ _ _
+      (Prelude.stepArgs ((S.pack κs _).subst θ) ((Term.inst D qs ls ps as).subst θ)) (v.subst θ)
+      (.cons 0 (((Term.inst D qs ls ps as).rename Ren.weaken).subst (Subst.lift θ)) .nil)
+      (.cons 1 0 ((Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs
+          (Telescope.packLevel κs .zero) ((Term.inst D qs ls ps as).rename Ren.weaken)
+          (Term.corecAt r D qs ls ps (as.rename Ren.weaken) (Ss.rename Ren.weaken)
+            (gs.rename Ren.weaken) ps')).subst (Subst.lift θ))
+        (.cons 1 0 ((Term.var₀ .zero).subst (Subst.lift (e := .var) θ)) .nil)) = _
+  rw [hp]
+  erw [Term.subst_lift_rename_weaken, hu]
+  rfl
+
+-- ADE: none.
+/-- The observed term, substituted, is the observed term at the corecursor and the branch
+substituted. -/
+theorem Term.observed_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (names : List Name)
+    (rec : Option Name) (r : Grade) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : CorecBranches k Δ) (κ : Universe k)
+    (χ : Grade) (v : Term k Δ) :
+    (Term.observed names rec r qs ls ps as Ss gs κ χ v).subst θ =
+      Term.observed names rec r qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) κ χ
+        (v.subst θ) := by
+  unfold Term.observed
+  cases rec with
+  | none => rfl
+  | some D =>
+    simp only
+    rw [States.stateOf_subst]
+    cases Ss.stateOf names D with
+    | none => rfl
+    | some x =>
+      obtain ⟨ps', S, κs⟩ := x
+      exact Term.resume_subst θ r D qs ls ps as Ss gs κ χ S κs v
+
+/-! ### Commutation of the Positions with the Instantiation of the Levels -/
+
+-- ADE: none.
+/-- The level of a packing, instantiated, is the level of the packing at the sorts instantiated. -/
+theorem Telescope.packLevel_subst {k' : Nat} (ls' : Fin k → Level k') :
+    (κs : List (Universe k)) → (l : Level k) →
+      (Telescope.packLevel κs l).subst ls' =
+        Telescope.packLevel (κs.map (Universe.substLevels ls')) (l.subst ls')
+  | [], _ => rfl
+  | _ :: κs, l => congrArg (Level.max _) (Telescope.packLevel_subst ls' κs l)
+
+-- ADE: none.
+/-- The packing of a telescope, instantiated, is the packing of the telescope instantiated, at the
+sorts and the level instantiated. -/
+theorem Telescope.pack_substLevels {k' : Nat} (ls' : Fin k → Level k') : {Γ : Scope} →
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (κs : List (Universe k)) → (l : Level k) →
+      (Θ.pack κs l).substLevels ls' =
+        (Θ.substLevels ls').pack (κs.map (Universe.substLevels ls')) (l.subst ls')
+  | _, [], .nil, _, _ => rfl
+  | _, _ :: _, .cons _ p A Θ, [], l => by
+    have h := Telescope.pack_substLevels ls' Θ [] l
+    simp only [Telescope.pack, Term.substLevels, InstanceArgs.substLevels, List.map,
+      List.headD, List.tail, Telescope.packLevel, List.foldr] at h ⊢
+    erw [h]
+    rfl
+  | _, _ :: _, .cons _ p A Θ, κ :: κs, l => by
+    have h := Telescope.pack_substLevels ls' Θ κs l
+    simp only [Telescope.pack, Term.substLevels, InstanceArgs.substLevels, List.map,
+      List.headD, List.tail, Universe.substLevels] at h ⊢
+    erw [h, Telescope.packLevel_subst]
+    rfl
+
+-- ADE: none.
+/-- The states at a position of states instantiated are the states at the position, instantiated. -/
+theorem States.get_substLevels_eq {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    (Ss : States k Γ) → (j : Nat) →
+      (Ss.substLevels ls').get j = (Ss.get j).map fun x => ⟨x.1, x.2.1, x.2.2.substLevels ls'⟩
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ Ss, j + 1 => States.get_substLevels_eq ls' Ss j
+
+-- ADE: none.
+/-- The state of a type in states instantiated is its state, instantiated, at its sorts
+instantiated. -/
+theorem States.stateOf_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k')
+    (names : List Name) (Ss : States k Γ) (D : Name) :
+    (Ss.substLevels ls').stateOf names D =
+      (Ss.stateOf names D).map fun x =>
+        ⟨x.1, x.2.1.substLevels ls', x.2.2.map (Universe.substLevels ls')⟩ := by
+  unfold States.stateOf
+  cases names.idxOf? D with
+  | none => rfl
+  | some j =>
+    simp only
+    rw [States.sorts_substLevels]
+    rw [States.get_substLevels_eq]
+    cases Ss.get j with
+    | none => rfl
+    | some x =>
+      obtain ⟨n, ps, S⟩ := x
+      cases n <;> rfl
+
+-- ADE: none.
+/-- The type of the result of a branch, instantiated, is the type of the result of the branch
+instantiated, at the sort and the states instantiated. -/
+theorem Term.branchResult_substLevels {k'' k' : Nat} {Ψ Γ : Scope} (ls' : Fin k → Level k')
+    (names : List Name) (B : Term k'' Ψ) (κ : Universe k) (r χ : Grade) (Ss : States k Γ)
+    (T : Term k Γ) :
+    (Term.branchResult names B κ r χ Ss T).substLevels ls' =
+      Term.branchResult names B (κ.substLevels ls') r χ (Ss.substLevels ls')
+        (T.substLevels ls') := by
+  unfold Term.branchResult
+  cases B.blockName names with
+  | none => rfl
+  | some D =>
+    simp only
+    rw [States.stateOf_substLevels]
+    cases Ss.stateOf names D with
+    | none => rfl
+    | some x =>
+      obtain ⟨ps, S, κs⟩ := x
+      simp only [Option.map, Term.positions, Term.substLevels, InstanceArgs.substLevels,
+        Telescope.packLevel_subst, Universe.substLevels, List.map]
+      erw [Telescope.pack_substLevels, Telescope.packLevel_subst]
+      rfl
+
+-- ADE: none.
+/-- The unpacking, instantiated, is the unpacking of the terms instantiated, at the sorts and the
+level instantiated. -/
+theorem Term.unpack_substLevels {k' : Nat} (ls' : Fin k → Level k') (r : Grade) :
+    {Γ : Scope} → {ps : List Parameter} → (u : Term k Γ) → (Θ : Telescope k Γ ps) →
+    (κs : List (Universe k)) → (l : Level k) → (C : Term k Γ) →
+    (b : Term k (Γ.extend ps.length)) →
+      (Term.unpack r u Θ κs l C b).substLevels ls' =
+        Term.unpack r (u.substLevels ls') (Θ.substLevels ls') (κs.map (Universe.substLevels ls'))
+          (l.subst ls') (C.substLevels ls') (b.substLevels ls')
+  | _, [], u, .nil, _, l, C, b => by
+    simp only [Term.unpack, Term.substLevels, Motives.substLevels, Branches.substLevels,
+      InstanceArgs.substLevels, Telescope.substLevels, List.map]
+    erw [Term.substLevels_rename]
+    rfl
+  | _, _ :: ps, u, .cons _ p A Θ, κs, l, C, b => by
+    have ih := Term.unpack_substLevels ls' r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+      (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))
+    cases κs with
+    | nil =>
+      simp only [Term.unpack, Term.substLevels, Motives.substLevels, Branches.substLevels,
+        InstanceArgs.substLevels, Telescope.substLevels, List.map, List.headD, List.tail,
+        Telescope.packLevel, List.foldr] at ih ⊢
+      erw [ih, Telescope.pack_substLevels, Term.substLevels_rename, Term.substLevels_rename,
+        Term.substLevels_rename, Telescope.substLevels_rename]
+      rfl
+    | cons κ κs =>
+      simp only [Term.unpack, Term.substLevels, Motives.substLevels, Branches.substLevels,
+        InstanceArgs.substLevels, Telescope.substLevels, List.map, List.headD, List.tail,
+        Universe.substLevels] at ih ⊢
+      erw [ih, Telescope.pack_substLevels, Telescope.packLevel_subst, Term.substLevels_rename,
+        Term.substLevels_rename, Term.substLevels_rename, Telescope.substLevels_rename]
+      rfl
+
+-- ADE: none.
+/-- `resume(v)`, instantiated, is `resume` of the position instantiated, for the corecursor
+instantiated, of the sort instantiated. -/
+theorem Term.resume_substLevels {k' : Nat} {Γ Δ : Scope} {ps' : List Parameter}
+    (ls' : Fin k → Level k') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : CorecBranches k Γ)
+    (κ : Universe k) (χ : Grade) (S : Telescope k Γ ps') (κs : List (Universe k))
+    (v : Term k Γ) :
+    (Term.resume r D qs ls ps as Ss gs κ χ S κs v).substLevels ls' =
+      Term.resume r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (Ss.substLevels ls')
+        (gs.substLevels ls') (κ.substLevels ls') χ (S.substLevels ls')
+        (κs.map (Universe.substLevels ls')) (v.substLevels ls') := by
+  simp only [Term.resume, Term.substLevels, Motives.substLevels, Branches.substLevels,
+    InstanceArgs.substLevels, List.map, Universe.substLevels]
+  erw [Term.unpack_substLevels, Term.corecAt_substLevels, Telescope.pack_substLevels,
+    Telescope.packLevel_subst, Telescope.packLevel_subst, Telescope.substLevels_rename,
+    Term.substLevels_rename, InstanceArgs.substLevels_rename, States.substLevels_rename,
+    CorecBranches.substLevels_rename]
+  rfl
+
+-- ADE: none.
+/-- The observed term, instantiated, is the observed term at the corecursor, the sort and the
+branch instantiated. -/
+theorem Term.observed_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (names : List Name) (rec : Option Name) (r : Grade) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
+    (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
+    (Term.observed names rec r qs ls ps as Ss gs κ χ v).substLevels ls' =
+      Term.observed names rec r qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
+        (Ss.substLevels ls') (gs.substLevels ls') (κ.substLevels ls') χ (v.substLevels ls') := by
+  unfold Term.observed
+  cases rec with
+  | none => rfl
+  | some D =>
+    simp only
+    rw [States.stateOf_substLevels]
+    cases Ss.stateOf names D with
+    | none => rfl
+    | some x =>
+      obtain ⟨ps', S, κs⟩ := x
+      exact Term.resume_substLevels ls' r D qs ls ps as Ss gs κ χ S κs v
+
 end Sic.Core

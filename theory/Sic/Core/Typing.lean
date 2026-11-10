@@ -380,6 +380,10 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+        (i : Nat) (D' : Name),
+        decl.codataTypes[j]? = some T' ∧
+        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
@@ -407,10 +411,14 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
             ps (as.rename (Ren.weakenN ps''.length)))
             (as.rename (Ren.weakenN ps''.length)).toSubst))) g
-          ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-              ps (as.rename (Ren.weakenN ps''.length)))
-              (as.rename (Ren.weakenN ps''.length)).toSubst)))) :
+          (Term.branchResult decl.names B
+            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+            (ψ.constant.getD .unrestrictedUnrestricted)
+            ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
+            ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+              (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
+                ls ps (as.rename (Ren.weakenN ps''.length)))
+                (as.rename (Ren.weakenN ps''.length)).toSubst))))) :
       HasType sig ctx (.corec r D qs ls ps as ss.terms Ss gs) (.inst D qs ls ps as)
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
@@ -595,6 +603,10 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+        (i : Nat) (D' : Name),
+        decl.codataTypes[j]? = some T' ∧
+        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
@@ -632,10 +644,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
           (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation T'.name
             qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
             (as₁.rename (Ren.weakenN ps''.length)).toSubst))) g₁ g₂
-          ((B.substLevels (ls₁.getFin hl₁)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation T'.name
-              qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
-              (as₁.rename (Ren.weakenN ps''.length)).toSubst)))) :
+          (Term.branchResult decl.names B
+            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)) r
+            (ψ.constant.getD .unrestrictedUnrestricted)
+            ((Ss₁.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
+            ((B.substLevels (ls₁.getFin hl₁)).subst (Subst.liftN _
+              (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation
+                T'.name qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
+                (as₁.rename (Ren.weakenN ps''.length)).toSubst))))) :
       EqTerm sig ctx (.corec r D qs ls₁ ps as₁ ss₁.terms Ss₁ gs₁)
         (.corec r D qs ls₂ ps as₂ ss₂.terms Ss₂ gs₂) (.inst D qs ls₁ ps as₁)
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
@@ -739,6 +755,10 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+        (i : Nat) (D' : Name),
+        decl.codataTypes[j]? = some T' ∧
+        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
@@ -772,12 +792,19 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
           (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
             ps (as.rename (Ren.weakenN ps''.length)))
             (as.rename (Ren.weakenN ps''.length)).toSubst))) g
-          ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-              ps (as.rename (Ren.weakenN ps''.length)))
-              (as.rename (Ren.weakenN ps''.length)).toSubst)))) :
+          (Term.branchResult decl.names B
+            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+            (ψ.constant.getD .unrestrictedUnrestricted)
+            ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
+            ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+              (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
+                ls ps (as.rename (Ren.weakenN ps''.length)))
+                (as.rename (Ren.weakenN ps''.length)).toSubst))))) :
       EqTerm sig ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
-        ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss)
+        (Term.observed decl.names (B₀.blockName decl.names) r qs ls ps as Ss gs
+          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+          (ψ₀.constant.getD .unrestrictedUnrestricted)
+          ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss))
         (((B₀.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
             qs ls ps as) as.toSubst))).instantiate bs)
@@ -1261,7 +1288,7 @@ where
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -1281,8 +1308,8 @@ where
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .beta _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
@@ -1431,7 +1458,7 @@ where
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfCtx sig ctx
@@ -1451,8 +1478,8 @@ where
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .beta _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfCtx sig ctx

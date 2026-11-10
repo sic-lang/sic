@@ -234,9 +234,9 @@ where
       rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
       exact hasArgs hbs hθ
     | .corec (r := r) (qs := qs) (ls := ls) (ps := ps) (as := as) (Ss := Ss) (gs := gs) (ss := ss)
-        h hq hl hp hadm has hh hS hss hSl hSs hSt hgl hgs hgt, hθ => by
+        h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt, hθ => by
       rw [Term.corec_subst]
-      refine .corec h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst _ hS)
+      refine .corec h hq hl hp hadm hpre (hasInstanceArgs has hθ) hh (States.get_subst _ hS)
         (hasArgs hss hθ) ((States.length_subst _ Ss).trans hSl) ?_ ?_
         ((CorecBranches.length_subst _ gs).trans hgl) ?_ ?_
       · intro j T' hj
@@ -256,6 +256,8 @@ where
         have ih := hasType (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
+        rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
+          States.subst_liftN_rename_weakenN] at ih
         rw [Telescope.subst_subst_of (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
           Term.subst_subst_of (Subst.liftN_subst_of _
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
@@ -333,10 +335,10 @@ where
       rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
       exact eqArgs hbs hθ
     | .corec (r := r) (qs := qs) (ls₁ := ls) (ps := ps) (as₁ := as) (Ss₁ := Ss₁) (Ss₂ := Ss₂)
-        (gs₁ := gs₁) (gs₂ := gs₂) (ss₁ := ss₁) (ss₂ := ss₂) h hq hl₁ hl₂ hp hadm has hls
+        (gs₁ := gs₁) (gs₂ := gs₂) (ss₁ := ss₁) (ss₂ := ss₂) h hq hl₁ hl₂ hp hadm hpre has hls
         hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt, hθ => by
       rw [Term.corec_subst, Term.corec_subst]
-      refine .corec h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls hh
+      refine .corec h hq hl₁ hl₂ hp hadm hpre (eqInstanceArgs has hθ) hls hh
         (States.get_subst θ hS₁) (States.get_subst θ hS₂) (eqArgs hss hθ)
         ((States.length_subst θ Ss₁).trans hSl₁) ((States.length_subst θ Ss₂).trans hSl₂) ?_
         (fun j => by rw [States.sorts_subst, States.sorts_subst]; exact hSk j) ?_ ?_
@@ -365,6 +367,8 @@ where
         have ih := eqTerm (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hd hg₁₀ hg₂₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
+        rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
+          States.subst_liftN_rename_weakenN] at ih
         rw [Telescope.subst_subst_of
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss₁ gs₁ ps''),
           Term.subst_subst_of (Subst.liftN_subst_of _
@@ -433,13 +437,13 @@ where
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
         exact ih
     | .beta (r := r) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (Ss := Ss) (gs := gs)
-        (ss := ss) h hq hl hp hadm has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt,
+        (ss := ss) h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt,
         hθ => by
-      rw [Term.obs_subst, Term.corec_subst, Term.instantiate_subst, Term.instantiate_subst,
+      rw [Term.obs_subst, Term.corec_subst, Term.observed_subst, Term.instantiate_subst, Term.instantiate_subst,
         Args.subst_liftN_rename_weakenN, Term.instantiate_subst, Term.subst_subst_of
           (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
         Term.corec_subst]
-      refine .beta h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst θ hS)
+      refine .beta h hq hl hp hadm hpre (hasInstanceArgs has hθ) hh (States.get_subst θ hS)
         (hasArgs hss hθ) hi hd (CorecBranches.get_subst θ hg) ?_
         ((States.length_subst θ Ss).trans hSl) ?_ ?_ ((CorecBranches.length_subst θ gs).trans hgl)
         ?_ ?_
@@ -464,6 +468,8 @@ where
         have ih := hasType (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
+        rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
+          States.subst_liftN_rename_weakenN] at ih
         rw [Telescope.subst_subst_of (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
           Term.subst_subst_of (Subst.liftN_subst_of _
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih

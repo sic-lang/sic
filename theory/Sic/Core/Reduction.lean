@@ -119,9 +119,9 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
   /-- An observation of a corecursor steps to the branch of the destructor, the case `i` of the block
   of the type of the corecursor, with the terms of the state and the arguments substituted for its
-  variables; the instance that the observation carries plays no part, as that of a recursor does
-  not; the block not being recursive, the branch observes nothing again, and the parameters being
-  uniform, it binds none of them.
+  variables, resumed if the destructor is recursive, so that a new state that the branch gives
+  becomes the corecursor from it; the instance that the observation carries plays no part, as that
+  of a recursor does not, and the parameters being uniform, the branch binds none of them.
   RFC: `\beta_{\longrightarrow}` -/
   | beta {decl : TypeDeclaration} {i j : Nat}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope} {r : Grade}
@@ -130,9 +130,13 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {gs : CorecBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
       {g : Term k (((Γ.extend 0).extend m).extend a)} {v : Term k Γ}
       (h : .typeDeclaration decl ∈ sig) (hi : decl.codataCases[i]? = some (j, T, d))
-      (hD : T.name = D) (hg : gs.get i = some ⟨0, m, a, g⟩)
+      (hD : T.name = D) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hg : gs.get i = some ⟨0, m, a, g⟩)
       (hv : g.instantiateTerms₂ ss bs = some v) :
-      Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs) v
+      Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs)
+        (Term.observed decl.names ((T.body (.ofLists qs ps hq hp)).resultName decl.names d) r qs ls
+          ps as Ss gs ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+          (((T.body (.ofLists qs ps hq hp)).resultConstant d).getD .unrestrictedUnrestricted) v)
   -- ADE: `app-subst`, `fst-subst` and `snd-subst`, in `Definition/Typed.agda`.
   /-- An observation reduces the term it observes.
   RFC: `d_{\longrightarrow}` -/
@@ -218,9 +222,9 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     cases h₂ with
     | iota => exact (Whnf.not_red hsig (.ctor ..) h₁).elim
     | recursor h₂ => rw [ih h₂]
-  | beta h₁ hi₁ hD₁ hg₁ hv₁ =>
+  | beta h₁ hi₁ hD₁ _ _ _ hg₁ hv₁ =>
     cases h₂ with
-    | beta h₂ hi₂ hD₂ hg₂ hv₂ =>
+    | beta h₂ hi₂ hD₂ _ _ _ hg₂ hv₂ =>
       have hT₁ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₁)).1
       have hT₂ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₂)).1
       have he := hsig.entry_unique h₁ h₂ (TypeDeclaration.codata_name_mem_names hT₁)
@@ -231,7 +235,10 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
       subst hi
       have hg := Option.some.inj (hg₁.symm.trans hg₂)
       cases hg
-      exact Option.some.inj (hv₁.symm.trans hv₂)
+      cases Option.some.inj (hv₁.symm.trans hv₂)
+      rw [hi₁] at hi₂
+      cases hi₂
+      rfl
     | obs h => exact (Whnf.not_red hsig (.corec ..) h).elim
   | obs h₁ ih =>
     cases h₂ with

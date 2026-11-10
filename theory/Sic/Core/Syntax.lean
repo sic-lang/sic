@@ -1136,6 +1136,20 @@ def Destructors.grade {k : Nat} : {Γ : Scope} → {ns : List Name} → Destruct
   | _, [], .nil, _ => none
   | _, d' :: _, .cons p _ _ _ _ ds, d => if d' = d then some p else ds.grade d
 
+/-- The type of the block whose names are `names` that the result of the destructor `d` is an
+instance of, when the destructors have `d` and its result is one. -/
+def Destructors.resultName {k : Nat} (names : List Name) : {Γ : Scope} → {ns : List Name} →
+    Destructors k Γ ns → Name → Option Name
+  | _, [], .nil, _ => none
+  | _, d' :: _, .cons _ _ _ B _ ds, d => if d' = d then B.blockName names else ds.resultName names d
+
+/-- The constant `χ₀` of the ownership of the result of the destructor `d`, when the destructors have
+`d` and the ownership has one. -/
+def Destructors.resultConstant {k : Nat} : {Γ : Scope} → {ns : List Name} →
+    Destructors k Γ ns → Name → Option Grade
+  | _, [], .nil, _ => none
+  | _, d' :: _, .cons _ _ _ _ ψ ds, d => if d' = d then ψ.constant else ds.resultConstant d
+
 -- ADE: none.
 /-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
 order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, when the
@@ -1335,6 +1349,32 @@ theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Para
     have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
     simp only [Destructors.grade, hne, ↓reduceIte]
     exact h.grade (List.nodup_cons.1 hn).2
+
+/-- The destructor at a position of destructors whose names are distinct has the result there. -/
+theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter}
+    (names : List Name) :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+        ds.resultName names d = B.blockName names
+  | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultName]
+  | _, d' :: _, _, _, _, _, _, hn, .there h => by
+    have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
+    simp only [Destructors.resultName, hne, ↓reduceIte]
+    exact h.resultName names (List.nodup_cons.1 hn).2
+
+/-- The destructor at a position of destructors whose names are distinct has the ownership of its
+result there. -/
+theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+        ds.resultConstant d = ψ.constant
+  | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultConstant]
+  | _, d' :: _, _, _, _, _, _, hn, .there h => by
+    have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
+    simp only [Destructors.resultConstant, hne, ↓reduceIte]
+    exact h.resultConstant (List.nodup_cons.1 hn).2
 
 /-- A destructor named by destructors has a position in them. -/
 theorem Destructors.exists_pos {k : Nat} {d : Name} :
