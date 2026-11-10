@@ -375,7 +375,7 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
-    | .corec (ls := ls) (as := as) (S := S) h hq hl hp hadm _ has hh hS hss _ _ _ _ hgs hgt =>
+    | .corec (ls := ls) (as := as) (S := S) h hq hl hp hadm hpre has hh hS hss _ hSs _ _ hgs hgt =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -383,8 +383,11 @@ where
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hss' := hasArgs hd hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidTermΓ.corec hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') hh
+      exact ValidTermΓ.corec hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has') hh
         (States.get_substLevels_of _ hS) hss'
+        (fun j T' hj =>
+          have ⟨ps'', S', hS'⟩ := hSs j T' hj
+          ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
@@ -517,8 +520,8 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
-    | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp hadm _ has hls hh hS₁ _ hss _ _
-        _ _ _ _ _ _ hgs hgt =>
+    | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ _ hss
+        _ _ hSs _ _ _ _ _ hgs hgt =>
       fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
@@ -528,11 +531,14 @@ where
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hss' := eqArgs hd hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm hpre (by rw [List.getFin_map]; exact has')
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
         hh (States.get_substLevels_of _ hS₁) hss'
+        (fun j T' hj =>
+          have ⟨ps'', S₁', S₂', hS₁', hS₂'⟩ := hSs j T' hj
+          ⟨ps'', _, _, States.get_substLevels_of _ hS₁', States.get_substLevels_of _ hS₂'⟩)
         (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
           (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             eqTerm hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
@@ -600,8 +606,8 @@ where
       exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hadm hr (by rw [List.getFin_map]; exact has') ht' he'
         hCv hi hu' hκ
     | .beta (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Ss := Ss) (gs := gs)
-        (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp hadm _ has hh hS hss hi hpos hg hbs _ _ _ _ hgs
-        hgt =>
+        (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp hadm hpre has hh hS hss hi hpos hg hbs _ hSs _ _
+        hgs hgt =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -628,9 +634,12 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') hh
-        (States.get_substLevels_of _ hS) hss' hi hpos (CorecBranches.get_substLevels_of _ hg)
+      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has')
+        hh (States.get_substLevels_of _ hS) hss' hi hpos (CorecBranches.get_substLevels_of _ hg)
         (by rw [List.getFin_map]; exact hbs')
+        (fun j T' hj =>
+          have ⟨ps'', S', hS'⟩ := hSs j T' hj
+          ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)

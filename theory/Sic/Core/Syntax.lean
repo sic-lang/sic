@@ -908,6 +908,35 @@ theorem TypeDeclaration.dataTypes_codataTypes (decl : TypeDeclaration) :
   simp only [TypeDeclaration.dataTypes, TypeDeclaration.codataTypes]
   split <;> simp
 
+/-- The element at a position of a list whose elements are distinct has the position as its first
+index. -/
+theorem List.idxOf?_of_getElem? {α : Type} [BEq α] [LawfulBEq α] :
+    {l : List α} → {j : Nat} → {a : α} → l.Nodup → l[j]? = some a → l.idxOf? a = some j
+  | _ :: _, 0, _, _, h => by
+    cases h
+    rw [List.idxOf?_cons, beq_self_eq_true]
+    rfl
+  | x :: xs, _ + 1, a, hn, h => by
+    have hne : (x == a) = false :=
+      beq_false_of_ne fun e => (List.nodup_cons.1 hn).1 (e ▸ List.mem_of_getElem? h)
+    rw [List.idxOf?_cons, hne, List.idxOf?_of_getElem? (List.nodup_cons.1 hn).2 h]
+    rfl
+
+/-- The codata type at a position of the codata types of a declaration whose names are distinct is
+at the same position of its names. -/
+theorem TypeDeclaration.idxOf?_codataTypes {decl : TypeDeclaration} (h : decl.names.Nodup)
+    {j : Nat} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (hj : decl.codataTypes[j]? = some T) : decl.names.idxOf? T.name = some j := by
+  have hD : decl.dataTypes = [] := by
+    rcases decl.dataTypes_codataTypes with h' | h'
+    · exact h'
+    · rw [h'] at hj; cases hj
+  have hn : decl.names = decl.codataTypes.map (·.name) := by
+    rw [decl.names_eq, hD, List.map_nil, List.nil_append]
+  refine List.idxOf?_of_getElem? h ?_
+  rw [hn, List.getElem?_map, hj]
+  rfl
+
 /-- In a signature whose names are distinct, a codata type is one codata type of one type
 declaration. -/
 theorem Signature.Distinct.hasCodataType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
@@ -1375,6 +1404,29 @@ theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q : Grade} {ps : 
     have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
     simp only [Destructors.resultConstant, hne, ↓reduceIte]
     exact h.resultConstant (List.nodup_cons.1 hn).2
+
+/-- The position of a destructor in the destructors, as a number, the first one at `0`. -/
+def Destructors.Pos.index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Nat
+  | _, _, _, _, _, _, _, .here => 0
+  | _, _, _, _, _, _, _, .there h => h.index + 1
+
+/-- The destructor at a position is recursive, of the type of the block that its result names, at
+the number of the position. -/
+theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter}
+    (names : List Name) :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
+        ds.recursionAt names hpos.index = B.blockName names
+  | _, _, _, _, _, _, _, .here => by
+    simp [Destructors.Pos.index, Destructors.recursionAt, Destructors.recursion]
+  | _, _, _, _, _, _, _, .there h => by
+    simp only [Destructors.Pos.index, Destructors.recursionAt, Destructors.recursion,
+      List.getElem?_cons_succ]
+    exact h.recursionAt_index names
 
 /-- A destructor named by destructors has a position in them. -/
 theorem Destructors.exists_pos {k : Nat} {d : Name} :

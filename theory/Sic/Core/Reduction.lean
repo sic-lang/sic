@@ -258,6 +258,13 @@ theorem RedStar.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term
     cases h₁.det hsig h₂
     exact hs₁.det hsig hw₁ hs₂ hw₂
 
+/-- Steps followed by steps are steps. -/
+theorem RedStar.trans {sig : Signature} {k : Nat} {Γ : Scope} {t u v : Term k Γ}
+    (h₁ : RedStar sig t u) (h₂ : RedStar sig u v) : RedStar sig t v := by
+  induction h₁ with
+  | refl => exact h₂
+  | step h _ ih => exact .step h (ih h₂)
+
 /-- A closed term computes to one head normal form at most.
 RFC: `\mathsf{det}_{\Downarrow}` -/
 theorem Computes.det {sig : Signature} {t v₁ v₂ : Term 0 []} (hsig : sig.Distinct)

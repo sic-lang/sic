@@ -201,6 +201,11 @@ theorem Signature.HasPrelude.unit {sig : Signature} (hpre : sig.HasPrelude) :
     sig.HasDataType "Unit" Prelude.unit Prelude.unitType :=
   ⟨hpre _ (by simp [Signature.prelude]), List.mem_singleton_self _, rfl⟩
 
+/-- The signature that holds the prelude has its type of positions. -/
+theorem Signature.HasPrelude.step {sig : Signature} (hpre : sig.HasPrelude) :
+    sig.HasDataType "Step" Prelude.step Prelude.stepType :=
+  ⟨hpre _ (by simp [Signature.prelude]), List.mem_singleton_self _, rfl⟩
+
 -- ADE: none.
 /-- The type `X[y]` of the second field of the pair, at the abstraction `x. B` for `X`, is `B`. -/
 theorem Prelude.pairSecond {Γ : Scope} (B : Term k (.var :: Γ)) :
@@ -524,6 +529,18 @@ theorem States.get_subst_eq {Γ Δ : Scope} (θ : Subst k Γ Δ) :
   | .nil, _ => rfl
   | .cons .., 0 => rfl
   | .cons _ _ _ Ss, j + 1 => States.get_subst_eq θ Ss j
+
+/-- The state of a type of a block whose names are distinct, at its position in the states, when it
+has no non-uniform parameters. -/
+theorem States.stateOf_of_get {Γ : Scope} {decl : TypeDeclaration} (h : decl.names.Nodup)
+    {j : Nat} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (hj : decl.codataTypes[j]? = some T) {Ss : States k Γ} {ps : List Parameter}
+    {S : Telescope k Γ ps} (hS : Ss.get j = some ⟨0, ps, S⟩) :
+    Ss.stateOf decl.names T.name = some ⟨ps, S, Ss.sorts j⟩ := by
+  unfold States.stateOf
+  rw [TypeDeclaration.idxOf?_codataTypes h hj]
+  simp only [hS]
+  rfl
 
 -- ADE: none.
 /-- The state of a type in states substituted is its state, substituted, with the same sorts. -/
