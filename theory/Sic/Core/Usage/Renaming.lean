@@ -127,18 +127,28 @@ where
     | _ :: Δ, _, .zero, p, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ rename (Δ := Δ) (fun y => update 𝟘ᶜ (Var.toFin .zero) p y.succ) _ = _
       rw [show (fun y : Fin Δ.length => update 𝟘ᶜ (Var.toFin (.zero (Γ := Δ))) p y.succ) = 𝟘ᶜ from
-        funext fun y => by simp [update, Var.toFin, zero, Fin.ext_iff], rename_zero]
+        funext fun y => by
+          show (if _ then p else Grade.zero) = Grade.zero
+          split
+          · exact absurd (congrArg Fin.val ‹_›) (Nat.succ_ne_zero _)
+          · rfl, rename_zero]
       funext y
       simp only [add, update, zero]
       split <;> revert p <;> decide
-    | _ :: Δ, _, .succ x, p, ξ => by
+    | e₀ :: Δ, _, .succ x, p, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ
         rename (Δ := Δ) (fun y => update 𝟘ᶜ (Var.toFin (.succ x)) p y.succ) _ = _
       rw [show (fun y : Fin Δ.length => update 𝟘ᶜ (Var.toFin (.succ x)) p y.succ) =
-          update 𝟘ᶜ x.toFin p from funext fun y => by simp [update, Var.toFin, zero],
+          update 𝟘ᶜ x.toFin p from funext fun y => by exact ite_succ y x.toFin p,
         rename_update x p (fun y => ξ (.succ y))]
-      funext y
-      simp [add, update, zero, Var.toFin, Fin.ext_iff, Grade.modality.semiring.zero_add]
+      have hz : update 𝟘ᶜ (Var.toFin (.succ (e' := e₀) x)) p (Var.toFin (.zero (Γ := Δ))) =
+          Grade.zero := by
+        show (if _ then p else Grade.zero) = Grade.zero
+        split
+        · exact absurd (congrArg Fin.val ‹_›).symm (Nat.succ_ne_zero _)
+        · rfl
+      rw [hz, update_zero]
+      exact module.zero_add _
   rename_succ {Γ : Scope} : {Δ : Scope} → {e : Scope.Entry} → (γ : GradeVector Δ.length) →
       (ξ : Ren Γ Δ) → γ.rename (fun x => (ξ x).succ (e' := e)) = γ.rename ξ ∙ Grade.zero
     | [], _, _, _ => funext fun y => by cases y using Fin.cases <;> rfl
@@ -148,8 +158,12 @@ where
       funext y
       cases y using Fin.cases with
       | zero =>
-        simp [add, update, zero, extend, Var.toFin, Fin.ext_iff, Grade.modality.semiring.zero_add]
-      | succ y => simp [add, update, zero, extend, rename, Var.toFin, Fin.ext_iff]
+        simp only [add, update, zero, extend, Var.toFin, Fin.cases_zero]
+        exact (congrArg (· + Grade.zero) (ite_zero_succ _ _)).trans
+          (Grade.modality.semiring.zero_add _)
+      | succ y =>
+        simp only [add, update, zero, extend, Var.toFin, Fin.cases_succ]
+        exact congrArg (· + _) (ite_succ _ _ _)
   rename_extend {Γ : Scope} {Δ : Scope} {e : Scope.Entry} (γ : GradeVector Δ.length) (p : Grade)
       (ξ : Ren Γ Δ) : rename (Δ := e :: Δ) (γ ∙ p) (Ren.lift ξ) = γ.rename ξ ∙ p := by
     show update 𝟘ᶜ _ p +ᶜ rename γ (fun x => (ξ x).succ (e' := e)) = _
@@ -162,8 +176,27 @@ where
       · exact (Grade.modality.semiring.add_comm _ _).trans (Grade.modality.semiring.zero_add _)
       · exact absurd rfl ‹_›
     | succ y =>
-      simp [add, update, zero, extend, Ren.lift, Var.toFin, Fin.ext_iff,
-        Grade.modality.semiring.zero_add]
+      simp only [add, update, zero, extend, Ren.lift, Var.toFin, Fin.cases_succ]
+      exact (congrArg (· + _) (ite_succ_zero _ _)).trans (Grade.modality.semiring.zero_add _)
+  ite_succ {n : Nat} (y t : Fin n) (a : Grade) :
+      (if y.succ = t.succ then a else Grade.zero) = (if y = t then a else Grade.zero) := by
+    split <;> split <;> rename_i h₁ h₂
+    · rfl
+    · exact absurd (Fin.succ_inj.mp h₁) h₂
+    · exact absurd (congrArg Fin.succ h₂) h₁
+    · rfl
+  ite_zero_succ {n : Nat} (t : Fin n) (a : Grade) :
+      (if (0 : Fin (n + 1)) = t.succ then a else Grade.zero) = Grade.zero := by
+    split
+    · exact absurd ‹_› (Fin.succ_ne_zero t).symm
+    · rfl
+  ite_succ_zero {n : Nat} (y : Fin n) (a : Grade) :
+      (if y.succ = ⟨0, Nat.zero_lt_succ n⟩ then a else Grade.zero) = Grade.zero := by
+    split
+    · exact absurd (congrArg Fin.val ‹_›) (Nat.succ_ne_zero _)
+    · rfl
+  update_zero {n : Nat} (i : Fin n) : update 𝟘ᶜ i Grade.zero = 𝟘ᶜ :=
+    funext fun _ => by show (if _ then _ else _) = _; split <;> rfl
 
 /-- A vector extended by the grades of the variables of a telescope, renamed under them, is the
 vector renamed, extended. -/
