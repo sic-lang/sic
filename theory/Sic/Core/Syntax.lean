@@ -597,9 +597,9 @@ inductive TypeDeclaration.Body (j g k : Nat) (Δ : Scope) where
 
 -- ADE: none.
 /--
-A type declaration, `data.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …` or
-`codata.{s̄; l̄; p̄} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types or of codata types declared
-together, with their parameters `Δ` and their sort `κ`.
+A type declaration, `data.{s̄; l̄; p̄ | C} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …` or
+`codata.{s̄; l̄; p̄ | C} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types or of codata types
+declared together, with the constraint `C` on its instances, their parameters `Δ` and their sort `κ`.
 -/
 structure TypeDeclaration where
   /-- The number of sort variables. -/
@@ -608,6 +608,9 @@ structure TypeDeclaration where
   levels : Nat
   /-- The number of grade variables. -/
   grades : Nat
+  /-- The constraint `C` on the instances of the sort and grade variables, which gives those at which
+  the declared types exist. -/
+  constraint : Instance sorts grades → Prop
   /-- The scope of the parameters. -/
   scope : Scope
   /-- The parameters `Δ`, for each instance. -/
@@ -700,8 +703,8 @@ inductive Signature.HasConstant (sig : Signature) :
 
 -- ADE: none.
 /--
-`D.{s̄; l̄; p̄} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, a data type or a codata type of
-the type declaration `decl`, whose variables, parameters and sort are those of `D`, and whose grades
+`D.{s̄; l̄; p̄ | C} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, a data type or a codata
+type of the type declaration `decl`, whose variables, constraint, parameters and sort are those of `D`, and whose grades
 `ζ` are those of `D`, which the rules of the instances share.
 RFC: `\in_D`
 -/
@@ -713,8 +716,8 @@ def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclarati
 
 -- ADE: none.
 /--
-`(data.{s̄; l̄; p̄} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the data type `T`, named `D`,
-of the type declaration `decl`, which the rules of the constructors and of the recursors share.
+`(data.{s̄; l̄; p̄ | C} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the data type `T`, named
+`D`, of the type declaration `decl`, which the rules of the constructors and of the recursors share.
 -/
 def Signature.HasDataType (sig : Signature) (D : Name) (decl : TypeDeclaration)
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
@@ -722,7 +725,7 @@ def Signature.HasDataType (sig : Signature) (D : Name) (decl : TypeDeclaration)
 
 -- ADE: none.
 /--
-`(codata.{s̄; l̄; p̄} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the codata type `T`, named
+`(codata.{s̄; l̄; p̄ | C} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the codata type `T`, named
 `D`, of the type declaration `decl`, which the meaning of its instances reads.
 -/
 def Signature.HasCodataType (sig : Signature) (D : Name) (decl : TypeDeclaration)

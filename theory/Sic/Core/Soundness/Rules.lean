@@ -744,7 +744,8 @@ of equal arguments of the fields, and only them. -/
 theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
     ∃ S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel,
@@ -788,7 +789,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
       (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' ts us
   refine ⟨S, fun Rf T hT c hc => ?_⟩
-  have hF := (hv.fields _ hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
+  have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
   obtain ⟨S', h₁, h₂⟩ := hF.telRel hd Rf
   have h₁' := hn ▸ TelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ (hΘ c as₁)
   have h₂' := hn ▸ TelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
@@ -839,6 +840,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst)
@@ -868,7 +870,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
               ts.toSubst us.toSubst) ∧
         ∀ fs₁ fs₂, S (DataType.blockRel decl.dataTypes S) c fs₁ fs₂ →
           S (DataType.blockRel decl.dataTypes S) c fs₁ fs₁ := by
-  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp has
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
@@ -928,6 +930,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst)
@@ -957,7 +960,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
               ts.toSubst us.toSubst) ∧
         ∀ fs₁ fs₂, S (DataType.blockTruth decl.dataTypes S) c fs₁ fs₂ →
           S (DataType.blockTruth decl.dataTypes S) c fs₁ fs₁ := by
-  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp has
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
   let S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope →
@@ -1008,6 +1011,7 @@ theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
@@ -1020,10 +1024,10 @@ theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
     (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
-  · obtain ⟨S, hU, -⟩ := hv.univRel hd hdecl hq hl hp has hs
+  · obtain ⟨S, hU, -⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
       (levelRel_univ_iff.2 (hU T hT).2)
-  · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp has hs
+  · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
       (levelRel_prop_iff.2 (hP T hT).2)
 
@@ -1038,6 +1042,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl)
     (hc : con ∈ T.constructors) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst)
@@ -1049,7 +1054,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   have hI : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
       (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
         (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩) :=
-    ValidEqTerm₀.inst hd h hv hq hl hp has
+    ValidEqTerm₀.inst hd h hv hq hl hp hadm has
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : Computesι sig ι (.inst T.name qs ls ps as₁) (.inst T.name qs ls ps as₁) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
@@ -1059,7 +1064,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     fun _ _ => ⟨.refl _, .ctor _ _ _ _ _ _ _⟩
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · rw [hs] at hI
-    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl hp has hs
+    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
     have hU' := levelRel_univ_iff.2 (hU T hT).1
     have hrel : DataType.blockRel decl.dataTypes S T.name
         (.ctor T.name qs ls ps as₁ con.name ts.terms) (.ctor T.name qs ls ps as₂ con.name us.terms) :=
@@ -1070,7 +1075,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     cases Computesι.det hd hw hv'
     exact (HasEq.univ_not_prop hd hU' hP).elim
   · rw [hs] at hI
-    obtain ⟨S, hP, hmono, hrec, hiff⟩ := hv.propRel hd hdecl hq hl hp has hs
+    obtain ⟨S, hP, hmono, hrec, hiff⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1
     have htrue : DataType.blockTruth decl.dataTypes S T.name :=
       DataType.blockTruth_closed hmono hT ⟨con, hc, ts.terms,
@@ -1470,7 +1475,8 @@ most. -/
 theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
     ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
@@ -1498,7 +1504,7 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' o₁ o₂
   refine ⟨S, fun Rf T hT => ?_⟩
   obtain ⟨S', h₁, h₂⟩ :=
-    ((hv.destructors _ hT fun i => (ls.getFin hl i).closedValue).2 _ _ has').desRel hd Rf
+    ((hv.destructors _ hadm hT fun i => (ls.getFin hl i).closedValue).2 _ _ has').desRel hd Rf
   have hds := Destructors.substLevels_levelEquiv hls (T.body (.ofLists qs ps hq hp))
   have h₁' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
       (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
@@ -1526,6 +1532,7 @@ theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDecla
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst)
@@ -1544,7 +1551,7 @@ theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDecla
         UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.blockRel decl.codataTypes S T.name)) := by
-  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp has
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp hadm has
   let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
     fun X => S₀ fun D => (X D).computed sig ι
   refine ⟨S, fun X T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
@@ -1560,6 +1567,7 @@ theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDecla
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst)
@@ -1578,7 +1586,7 @@ theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDecla
         PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.blockTruth decl.codataTypes S T.name)) := by
-  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp has
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp hadm has
   let S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
     fun B => S₀ fun D _ _ => B D
   refine ⟨S, fun B T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
@@ -1595,6 +1603,7 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
@@ -1607,10 +1616,10 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
     (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
-  · obtain ⟨S, -, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp has hs
+  · obtain ⟨S, -, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
       (levelRel_univ_iff.2 (hU T hT).2)
-  · obtain ⟨S, -, hP⟩ := hv.codataPropRel hd hdecl hq hl hp has hs
+  · obtain ⟨S, -, hP⟩ := hv.codataPropRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
       (levelRel_prop_iff.2 (hP T hT).2)
 
@@ -1624,6 +1633,7 @@ theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (h : sigT.HasDeclaredType D decl ζ) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
@@ -1637,10 +1647,10 @@ theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     fun σ₁ σ₂ hσ => match h with
       | ⟨hm, .inl ⟨_, hT, hn, _⟩⟩ =>
         have ⟨h', hv⟩ := hent.hasDataType ⟨hm, hT, hn⟩
-        ValidEqTerm₀.inst hd h' hv hq hl₁ hp (has.2 σ₁ σ₂ hσ)
+        ValidEqTerm₀.inst hd h' hv hq hl₁ hp hadm (has.2 σ₁ σ₂ hσ)
       | ⟨hm, .inr ⟨_, hT, hn, _⟩⟩ =>
         have ⟨h', hv⟩ := hent.hasCodataType ⟨hm, hT, hn⟩
-        ValidEqTerm₀.instCodata hd h' hv hq hl₁ hp (has.2 σ₁ σ₂ hσ)
+        ValidEqTerm₀.instCodata hd h' hv hq hl₁ hp hadm (has.2 σ₁ σ₂ hσ)
   refine ⟨⟨has.1, fun σ₁ σ₂ hσ => (hc σ₁ σ₂ hσ).1⟩, fun σ₁ σ₂ hσ => ?_⟩
   exact (hc σ₁ σ₂ hσ).levelEquiv (Term.LevelEquiv.refl _)
     (.inst D qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls) (InstanceArgs.LevelEquiv.refl _))
@@ -1658,7 +1668,8 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (h : sigT.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
     {ls₁ ls₂ : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl₁ : ls₁.length = decl.levels) (hl₂ : ls₂.length = decl.levels)
-    (hp : ps.length = decl.grades) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
+    (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
     (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
@@ -1671,13 +1682,13 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   have hI : ValidEqTermΓ sig ι ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₁ ps as₂)
       (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
         (decl.sort (.ofLists qs ps hq hp)).level.subst (ls₁.getFin hl₁)⟩) :=
-    ValidEqTermΓ.inst hent h.hasDeclaredType hq hl₁ hl₁ hp has fun _ => Level.equivalence.refl _
+    ValidEqTermΓ.inst hent h.hasDeclaredType hq hl₁ hl₁ hp hadm has fun _ => Level.equivalence.refl _
   have hA : ValidTypeΓ sig ι ctx (.inst D qs ls₁ ps as₁) := by
     cases hs : (decl.sort (.ofLists qs ps hq hp)).quality <;> rw [hs] at hI
     · exact hI.univType.left
     · exact hI.propType.left
   refine ⟨hA, fun σ₁ σ₂ hσ => ?_⟩
-  have hc' := ValidEqTerm₀.ctor hd h' hv hc hq hl₁ hp (has.2 σ₁ σ₂ hσ)
+  have hc' := ValidEqTerm₀.ctor hd h' hv hc hq hl₁ hp hadm (has.2 σ₁ σ₂ hσ)
     (ts := ts.subst σ₁) (us := us.subst σ₂)
     (by rw [← Constructor.fieldsAt_subst]; exact hts.2 σ₁ σ₂ hσ)
   rw [Args.terms_subst, Args.terms_subst] at hc'
@@ -1882,7 +1893,8 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-    (hp : ps.length = decl.grades) {as₁ : InstanceArgs 0 Γ decl.scope} {Δ₂ : Scope}
+    (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ : InstanceArgs 0 Γ decl.scope} {Δ₂ : Scope}
     {as₂ : InstanceArgs 0 Γ Δ₂} {r : Grade} {t₁ t₂ : Term 0 Γ} {Cs₁ Cs₂ : Motives 0 Γ}
     {us₁ us₂ : Branches 0 Γ} {κ : Universe 0} {h' : Nat} {C₁ : Term 0 (.var :: Γ)}
     {as₁' : InstanceArgs 0 Γ decl.scope}
@@ -2009,7 +2021,7 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
       (.inst T.name qs ls₁ ps (as₁.subst σ₁)) := ht'.trans ht'.symm
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · -- An instance in a universe: induction on `(eq_μ)`.
-    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl₁ hp hasσ hs
+    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl₁ hp hadm hasσ hs
     have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
         (DataType.blockRel decl.dataTypes S T'.name).computed sig ι a b →
           ValidEqTerm₀ sig ι a b (.inst T'.name qs ls₁ ps (as₁.subst σ₁)) :=
@@ -2072,7 +2084,7 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
     exact (ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₁.1)).2
       ((ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₂.1)).2 hP'.symm).symm
   · -- A proposition: induction on `(true_μ)`.
-    obtain ⟨S, hP, hmono, hrec, hiff⟩ := hv.propRel hd hdecl hq hl₁ hp hasσ hs
+    obtain ⟨S, hP, hmono, hrec, hiff⟩ := hv.propRel hd hdecl hq hl₁ hp hadm hasσ hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1
     have hprop : ComputesToProp sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
       ⟨_, hI _, _, _, hP'⟩
@@ -2140,6 +2152,7 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (h : sigT.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -2175,11 +2188,11 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   have hD := h.2.2
   subst hD
   have hd := has.1.distinct
-  have hct := ValidEqTermΓ.ctor hent h hc hq hl hl hp has (fun _ => Level.equivalence.refl _) hts
+  have hct := ValidEqTermΓ.ctor hent h hc hq hl hl hp hadm has (fun _ => Level.equivalence.refl _) hts
   have hj : decl.dataTypes[j]? = some T := by
     have := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
     rwa [Nat.sub_zero] at this
-  have hrec := ValidEqTermΓ.recursor hent h hq hl hp has hct hj hC hCs hCv hus hus
+  have hrec := ValidEqTermΓ.recursor hent h hq hl hp hadm has hct hj hC hCs hCv hus hus
     (fun i j T' con C' R u₁ u₂ hi hC hR hu₁ hu₂ => by
       cases Branches.get_inj hu₁ hu₂
       exact hut i j T' con C' R u₁ hi hC hR hu₁) hκ (ls₂ := ls) (Cs₂ := Cs) (us₂ := us) (r := r)
@@ -2210,6 +2223,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
     (h : sigT.HasDataType D decl T) (hc : T.constructors = [con]) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     (hr : ∀ R ∈ (con.fields (.ofLists qs ps hq hp)).recursion decl.names, R = none)
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {t : Term 0 Γ} {Cs : Motives 0 Γ}
     {us : Branches 0 Γ} {κ : Universe 0} {i j : Nat} {C e : Term 0 (.var :: Γ)}
@@ -2248,7 +2262,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
   have hasσ := has.2 σ₁ σ₁ hσ₁
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · -- An instance in a universe: the term computes to the constructor, at both substitutions.
-    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl hp hasσ hs
+    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
     have hU' := levelRel_univ_iff.2 (hU T hT).1
     have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls ps (as.subst σ₁)) :=
       fun ⟨v, hv, k, b, hk⟩ => by
@@ -2653,7 +2667,8 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {d : Name} {p q : Grade}
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {d : Name} {p q : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
     {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
@@ -2683,7 +2698,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
   have hθ := EqSubst.levelEquiv
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I h.2.1 ρ).2 _ _ hθ
+  have hmean := (hv.destructors I hadm h.2.1 ρ).2 _ _ hθ
   have hn := Level.closedValue_subst_equiv hls (decl.sort I).level
   have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
     fun m _ => levelRel_isPer hd m
@@ -2696,7 +2711,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X a₁ D') (X a₂ D') (.sort κ₁) :=
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1 hD'
-      exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨h.1, hT', rfl⟩ hv hq hl hp has).levelEquiv
+      exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨h.1, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
         (hX a₁ _).symm (hX a₂ _).symm (Term.LevelEquiv.refl _)⟩
   -- The equality of the instance.
   have hI : Computesι sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₁) :=
@@ -2833,7 +2848,8 @@ theorem ValidEqTermΓ.obs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-    (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades) {d : Name} {p q : Grade}
+    (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {d : Name} {p q : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
     {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
@@ -2879,7 +2895,7 @@ theorem ValidEqTermΓ.obs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   have hcl := fun σ₁ σ₂ (hσ : EqSubst sig ι ctx σ₁ σ₂) => by
     have hbs' := hbs.2 σ₁ σ₂ hσ
     rw [hΘ] at hbs'
-    exact ValidEqTerm₀.obs hd h' hv hq hl₁ hp hpos (has.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) hbs'
+    exact ValidEqTerm₀.obs hd h' hv hq hl₁ hp hadm hpos (has.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) hbs'
   refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
   · rw [hA, hA]
     exact (hcl σ₁ σ₂ hσ).2.trans (hcl σ₂ σ₂ (hσ.right hctx)).2.symm
@@ -3019,6 +3035,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {a₁ a₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       a₁.toSubst a₂.toSubst)
@@ -3040,7 +3057,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
   have hI : ValidEqTerm₀ sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₂)
       (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
         (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩) :=
-    ValidEqTerm₀.instCodata hd h hv hq hl hp has
+    ValidEqTerm₀.instCodata hd h hv hq hl hp hadm has
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hn := TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)
   let L := ls.getFin hl
@@ -3050,7 +3067,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
   have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
   have hθ := EqSubst.levelEquiv
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I hT ρ).2 _ _ hθ
+  have hmean := (hv.destructors I hadm hT ρ).2 _ _ hθ
   have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
     fun m _ => levelRel_isPer hd m
   -- The instances of the block, at the levels without variables and at the first arguments.
@@ -3096,7 +3113,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
     fun _ _ _ _ _ => ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩
   cases hs : (decl.sort I).quality
   · rw [hs] at hI
-    obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp has hs
+    obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
     have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
         ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, S X T' o₁ o₂ → S Y T' o₁ o₂ :=
       fun X Y hXY T' hT' => DesRel.mono hd ih (hS X T' hT') _ _ _ (hS Y T' hT')
@@ -3121,7 +3138,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
     cases Computesι.det hd hw hv'
     exact (HasEq.univ_not_prop hd hU' hP).elim
   · rw [hs] at hI
-    obtain ⟨S, hS, hP⟩ := hv.codataPropRel hd hdecl hq hl hp has hs
+    obtain ⟨S, hS, hP⟩ := hv.codataPropRel hd hdecl hq hl hp hadm has hs
     have hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂,
         S B T' o₁ o₂ → S B' T' o₁ o₂ :=
       fun B B' hB T' hT' => DesRel.mono hd ih (hS B T' hT') _ _ _ (hS B' T' hT')
@@ -3316,6 +3333,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
@@ -3335,7 +3353,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         (.corec r D qs ls₁ ps (as₁.subst σ₁) (ss₁.subst σ₁).terms (Ss₁.subst σ₁) (gs₁.subst σ₁))
         (.corec r D qs ls₁ ps (as₂.subst σ₂) (ss₂.subst σ₂).terms (Ss₂.subst σ₂) (gs₂.subst σ₂))
         (.inst D qs ls₁ ps (as₁.subst σ₁)) := fun σ₁ σ₂ hσ =>
-    ValidEqTerm₀.corec hd h₀ hv hq hl₁ hp (has.2 σ₁ σ₂ hσ)
+    ValidEqTerm₀.corec hd h₀ hv hq hl₁ hp hadm (has.2 σ₁ σ₂ hσ)
       fun d p q ps₁ Ξ Θ B ψ hpos ts us hτ => by
         have hmem : (h', T, d) ∈ decl.codataCases := by
           have := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hh
@@ -3353,8 +3371,8 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             (CorecBranches.get_subst σ₂ hg₂) (Term.instantiateTerms₂_subst_append σ₂ g₂ _ _)
         exact ((ValidEqTerm₀.red_iff hd hred₂).2 h₁.symm).symm
   refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
-  · have hI := (ValidEqTerm₀.instCodata hd h₀ hv hq hl₁ hp (has.2 σ₁ σ₂ hσ)).trans
-      (ValidEqTerm₀.instCodata hd h₀ hv hq hl₁ hp (has.2 σ₂ σ₂ (hσ.right hctx))).symm
+  · have hI := (ValidEqTerm₀.instCodata hd h₀ hv hq hl₁ hp hadm (has.2 σ₁ σ₂ hσ)).trans
+      (ValidEqTerm₀.instCodata hd h₀ hv hq hl₁ hp hadm (has.2 σ₂ σ₂ (hσ.right hctx))).symm
     show ValidEqType₀ sig ι (.inst D qs ls₁ ps (as₁.subst σ₁)) (.inst D qs ls₁ ps (as₁.subst σ₂))
     revert hI
     show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
@@ -3375,6 +3393,7 @@ theorem ValidTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -3383,7 +3402,7 @@ theorem ValidTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hS : Ss.get h' = some ⟨0, ps', S⟩) (hss : ValidArgsΓ sig ι ctx ss S)
     (hg : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
     ValidTermΓ sig ι ctx (.corec r D qs ls ps as ss.terms Ss gs) (.inst D qs ls ps as) :=
-  ValidEqTermΓ.corec hent h hq hl hl hp has (fun _ => Level.equivalence.refl _) hh hS hss hg
+  ValidEqTermΓ.corec hent h hq hl hl hp hadm has (fun _ => Level.equivalence.refl _) hh hS hss hg
 
 -- ADE: `β-redᵛ`, `Σ-β₁ᵛ` and `Σ-β₂ᵛ`, in
 -- `Definition/LogicalRelation/Substitution/Introductions/`.
@@ -3396,6 +3415,7 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -3416,8 +3436,8 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       (((B₀.substLevels (ls.getFin hl)).subst
         (Subst.liftN _ (hpos.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
           qs ls ps as) as.toSubst))).instantiate bs) := by
-  have hc := ValidTermΓ.corec hent h hq hl hp has hh hS hss hg
-  have hobs := ValidEqTermΓ.obs hent h hq hl hl hp hpos has (fun _ => Level.equivalence.refl _)
+  have hc := ValidTermΓ.corec hent h hq hl hp hadm has hh hS hss hg
+  have hobs := ValidEqTermΓ.obs hent h hq hl hl hp hadm hpos has (fun _ => Level.equivalence.refl _)
     hc hbs
   -- The scope of the destructor, substituted, is that of the observations of the corecursor
   -- substituted.
@@ -3517,6 +3537,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as a₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as.toSubst as.toSubst) {t u : Term 0 []}
@@ -3543,7 +3564,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
   have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
   have hθ := EqSubst.levelEquiv
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I h.2.1 ρ).2 _ _ hθ
+  have hmean := (hv.destructors I hadm h.2.1 ρ).2 _ _ hθ
   have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
     fun m _ => levelRel_isPer hd m
   -- The instances of the block, at the levels without variables and at the arguments.
@@ -3667,6 +3688,7 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp))
     {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) {t u : Term 0 Γ}
@@ -3686,7 +3708,7 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
   have hd := hctx.distinct
   refine ⟨ht.1, fun σ₁ σ₂ hσ => ?_⟩
   have hu' := hu.2 σ₁ σ₂ hσ
-  refine ValidEqTerm₀.etaObs (a₂ := as.subst σ₂) hd h' hv hq hl hp
+  refine ValidEqTerm₀.etaObs (a₂ := as.subst σ₂) hd h' hv hq hl hp hadm
     (has.2 σ₁ σ₁ (hσ.left hctx)) (ht.2 σ₁ σ₁ (hσ.left hctx))
     hu'.right
     fun d p q ps' Ξ Θ B ψ hpos ts us hτ => ?_

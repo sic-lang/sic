@@ -281,28 +281,28 @@ where
       ValidEqTermΓ.sort (q := .type) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
     | .prop hctx => fun ρ =>
       ValidEqTermΓ.sort (q := .prop) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
-    | .inst (ls := ls) h hq hl hp has => fun ρ => by
+    | .inst (ls := ls) h hq hl hp hadm has => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
       have has' := hasInstanceArgs hd hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
         fun _ => Level.equivalence.refl _
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
       exact hc
-    | .ctor (ls := ls) h hc hq hl hp has hts => fun ρ => by
+    | .ctor (ls := ls) h hc hq hl hp hadm has hts => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
       have has' := hasInstanceArgs hd hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hts' := hasArgs hd hι hts ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp (by rw [List.getFin_map]; exact has')
+      have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
         (fun _ => Level.equivalence.refl _) (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
-    | .recursor (ls := ls) (T := T) (t := t) (C := C) h hq hl hp has ht hh hC _ hCs hCt _ hus hut
+    | .recursor (ls := ls) (T := T) (t := t) (C := C) h hq hl hp hadm has ht hh hC _ hCs hCt _ hus hut
         hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -315,7 +315,7 @@ where
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι h hq hl' hp (by rw [List.getFin_map]; exact has') ht' hh
+      exact ValidEqTermΓ.recursor hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
@@ -338,7 +338,7 @@ where
           rw [List.getFin_map]
           exact hb)
         hκ
-    | .obs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (Ξ := Ξ) h hq hl hp hpos
+    | .obs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (Ξ := Ξ) h hq hl hp hadm hpos
         has ht hbs =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -356,21 +356,21 @@ where
           (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as) x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hpos (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hadm hpos (by rw [List.getFin_map]; exact has')
         (fun _ => Level.equivalence.refl _) ht' (by rw [List.getFin_map]; exact hbs')
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels_instantiate,
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
-    | .corec (ls := ls) (as := as) (S := S) h hq hl hp has hh hS hss _ _ _ _ hgs hgt => fun ρ => by
+    | .corec (ls := ls) (as := as) (S := S) h hq hl hp hadm has hh hS hss _ _ _ _ hgs hgt => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
       have has' := hasInstanceArgs hd hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hss' := hasArgs hd hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidTermΓ.corec hι h hq hl' hp (by rw [List.getFin_map]; exact has') hh
+      exact ValidTermΓ.corec hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') hh
         (States.get_substLevels_of _ hS) hss'
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
@@ -409,20 +409,20 @@ where
       exact hc
     | .univ hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
     | .prop hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
-    | .inst (ls₁ := ls₁) (ls₂ := ls₂) h hq hl₁ hl₂ hp has hls => fun ρ => by
+    | .inst (ls₁ := ls₁) (ls₂ := ls₂) h hq hl₁ hl₂ hp hadm has hls => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
       have has' := eqInstanceArgs hd hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp (by rw [List.getFin_map]; exact has') (by
+      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has') (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
       exact hc
-    | .ctor (ls₁ := ls₁) (ls₂ := ls₂) h hc hq hl₁ hl₂ hp has hls hts => fun ρ => by
+    | .ctor (ls₁ := ls₁) (ls₂ := ls₂) h hc hq hl₁ hl₂ hp hadm has hls hts => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -431,14 +431,14 @@ where
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hts' := eqArgs hd hι hts ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp (by rw [List.getFin_map]; exact has')
+      have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has')
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
         (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
-    | .recursor (ls₁ := ls₁) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ _ hp has _ ht hh hC _ _ hCs₁
+    | .recursor (ls₁ := ls₁) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ _ hp hadm has _ ht hh hC _ _ hCs₁
         hCs₂ hCt _ _ hus₁ hus₂ hut hκ => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
@@ -450,7 +450,7 @@ where
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι h hq hl₁' hp (by rw [List.getFin_map]; exact has') ht' hh
+      exact ValidEqTermΓ.recursor hι h hq hl₁' hp hadm (by rw [List.getFin_map]; exact has') ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
@@ -474,7 +474,7 @@ where
           exact hb)
         hκ
     | .obs (D := D) (qs := qs) (ls₁ := ls₁) (ls₂ := ls₂) (ps := ps) (as₁ := as₁) (t₁ := t₁)
-        (Ξ := Ξ) h hq hl₁ hl₂ hp hpos has hls ht hbs =>
+        (Ξ := Ξ) h hq hl₁ hl₂ hp hadm hpos has hls ht hbs =>
       fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
@@ -494,7 +494,7 @@ where
           (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as₁) x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hpos (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hadm hpos (by rw [List.getFin_map]; exact has')
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -504,7 +504,7 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
-    | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp has hls hh hS₁ _ hss _ _ _ _
+    | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp hadm has hls hh hS₁ _ hss _ _ _ _
         _ _ hgs hgt =>
       fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -515,7 +515,7 @@ where
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hss' := eqArgs hd hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has')
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -524,7 +524,7 @@ where
           (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             eqTerm hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
     | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Cs := Cs) (us := us) (T := T)
-        (C := C) h hc hq hl hp has hts hi hC hu _ hCs hCt _ hus hut hκ =>
+        (C := C) h hc hq hl hp hadm has hts hi hC hu _ hCs hCt _ hus hut hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -541,7 +541,7 @@ where
           (Cs.substLevels fun i => .ofNat (ρ i)) (us.substLevels fun i => .ofNat (ρ i)))
           (fun _ _ => rfl)]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.iota hι h hc hq hl' hp (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.iota hι h hc hq hl' hp hadm (by rw [List.getFin_map]; exact has')
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
@@ -561,7 +561,7 @@ where
           rw [List.getFin_map]
           exact hb)
         hκ (Branches.get_substLevels_of _ hu)
-    | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp hr has ht he hi hC hu
+    | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp hadm hr has ht he hi hC hu
         _ _ hCt _ _ _ hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -584,10 +584,10 @@ where
         Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
           (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hr (by rw [List.getFin_map]; exact has') ht' he'
+      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hadm hr (by rw [List.getFin_map]; exact has') ht' he'
         hCv hi hu' hκ
     | .beta (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Ss := Ss) (gs := gs)
-        (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp has hh hS hss hi hpos hg hbs _ _ _ _ hgs hgt =>
+        (ss := ss) (bs := bs) (Ξ₀ := Ξ₀) h hq hl hp hadm has hh hS hss hi hpos hg hbs _ _ _ _ hgs hgt =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -613,7 +613,7 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      have hc := ValidEqTermΓ.beta hι h hq hl' hp (by rw [List.getFin_map]; exact has') hh
+      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') hh
         (States.get_substLevels_of _ hS) hss' hi hpos (CorecBranches.get_substLevels_of _ hg)
         (by rw [List.getFin_map]; exact hbs')
         (CorecBranchesValid.atLevels hq hl hp hgs
@@ -621,7 +621,7 @@ where
             hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc
       exact hc
-    | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp
+    | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp hadm
         has ht hu hobs =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -631,7 +631,7 @@ where
       have ht' := hasType hd hι ht ρ
       have hu' := hasType hd hι hu ρ
       simp only [Term.atLevels, Term.substLevels] at ht' hu'
-      refine ValidEqTermΓ.etaObs hι h hq hl' hp (by rw [List.getFin_map]; exact has') ht' hu'
+      refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hu'
         fun d p q ps' Ξ Θ B ψ hpos => ?_
       have hb := eqTerm hd hι (hobs d p q ps' Ξ Θ B ψ hpos) ρ
       have hcl : ∀ {a} (x : Var Ξ a),
@@ -793,16 +793,16 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data hb _ hΘ _ _ => by
+    | .data hb _ _ hΘ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
-      exact fun I T hT c hc =>
-        wfFields hd hι (hΘ I T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
-    | .codata hb _ hds _ _ => by
+      exact fun I hI T hT c hc =>
+        wfFields hd hι (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
+    | .codata hb _ _ hds _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
-      exact fun I T hT =>
-        wfDestructors hd hι (hds I T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT))
+      exact fun I hI T hT =>
+        wfDestructors hd hι (hds I hI T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT))
 
 
 /-! ## Signatures -/

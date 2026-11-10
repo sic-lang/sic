@@ -16,12 +16,13 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
 * `Σ; Γ ⊢ Θ : κ` and `Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`, telescopes in a sort, and `Σ; Γ ⊢ d̄ : κ`, destructors
   in a sort;
 * `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`,
-  `Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where …` and `Σ ⊢ codata.{s̄; l̄; p̄} Δ : κ where …`, the entries of
-  the signature.
+  `Σ ⊢ data.{s̄; l̄; p̄ | C} Δ : κ where …` and `Σ ⊢ codata.{s̄; l̄; p̄ | C} Δ : κ where …`, the
+  entries of the signature.
 
 Typing and equality carry no grade; the definitions are checked for their usage.
 An entry of the signature is checked for each instance of its sort and grade variables, once with
-its level variables, so that its rules quantify over the instances.
+its level variables, so that its rules quantify over the instances; a type declaration only at the
+instances that its constraint admits.
 A variable `x` is fresh in its context by construction, being a de Bruijn index, so that the
 conditions `x ∉ Γ` disappear; the condition that the names of a signature are fresh remains.
 
@@ -267,21 +268,23 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   RFC: `\Omega` -/
   | prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       (hctx : WfCtx sig ctx) : HasType sig ctx (.sort ⟨.prop, l⟩) (.sort ⟨.type, .succ l⟩)
-  /-- An instance of a declared type, whose arguments are arguments of its parameters, is in the
-  sort of its type declaration.
+  /-- An instance of a declared type that its constraint admits, whose arguments are arguments of its
+  parameters, is in the sort of its type declaration.
   RFC: `D` -/
   | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
       HasType sig ctx (.inst D qs ls ps as)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
   -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
-  whose arguments are arguments of the parameters, is a term of this instance.
+  which the constraint admits and whose arguments are arguments of the parameters, is a term of this
+  instance.
   RFC: `c` -/
   | ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -289,18 +292,19 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
       (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
       HasType sig ctx (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as)
   -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
-  /-- A recursor on a term of the instance it carries, whose arguments are arguments of the
-  parameters, with a motive for each type of the block, a type of the sort `κ` over a term of the
-  instance of this type, and a branch for each case of the block, a term of the motive of its type
-  at its constructor applied to the variables of its fields, in the context extended by its fields
-  and by its recursive results, has the motive of the type of the term at the term; the motives on a
-  block of propositions that has a constructor are propositions.
+  /-- A recursor on a term of the instance it carries, which the constraint admits and whose
+  arguments are arguments of the parameters, with a motive for each type of the block, a type of the
+  sort `κ` over a term of the instance of this type, and a branch for each case of the block, a term
+  of the motive of its type at its constructor applied to the variables of its fields, in the
+  context extended by its fields and by its recursive results, has the motive of the type of the
+  term at the term; the motives on a block of propositions that has a constructor are propositions.
   The positions `h'` of the type of the term in the block, `j` of a type and `i` of a case give the
   motives and the branches, as the order of the declaration does.
   RFC: `\mathsf{rec}` -/
@@ -310,6 +314,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.dataTypes[h']? = some T)
@@ -331,11 +336,12 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         κ.quality = .prop) :
       HasType sig ctx (.recursor r D qs ls ps as t Cs us) (C.subst₀ (Subst₀.single t))
   -- ADE: `_∘ⱼ_`, `fstⱼ` and `sndⱼ`, in `Definition/Typed.agda`.
-  /-- An observation of a term of the instance it carries, whose arguments are arguments of the
-  parameters, by one of the destructors of its codata type, at the position `hd` in the destructors
-  `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the instance, applied to arguments of its
-  telescope, has its result, the destructors `d̄₁` before it being the observations of the term by
-  them, and the arguments substituted for the variables of the telescope.
+  /-- An observation of a term of the instance it carries, which the constraint admits and whose
+  arguments are arguments of the parameters, by one of the destructors of its codata type, at the
+  position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the
+  instance, applied to arguments of its telescope, has its result, the destructors `d̄₁` before it
+  being the observations of the term by them, and the arguments substituted for the variables of the
+  telescope.
   RFC: `d` -/
   | obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -344,6 +350,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -354,13 +361,13 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         (((B.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate bs)
   -- ADE: none.
-  /-- A corecursor of the instance it carries, whose arguments are arguments of the parameters, from
-  a state, arguments of the state of its type, with a state for each type of the block, a telescope
-  of a sort `κs j`, and a branch for each case of the block, is a term of the instance: the branch of a
-  destructor `d`, at the position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)`
-  of its type `T'` at the instance, is a term of its result over the variables `ȳ` of the state of
-  `T'` and those of the telescope of `d`, the destructors `d̄₁` before it being the observations of
-  the corecursor of `T'` from `ȳ`.
+  /-- A corecursor of the instance it carries, which the constraint admits and whose arguments are
+  arguments of the parameters, from a state, arguments of the state of its type, with a state for
+  each type of the block, a telescope of a sort `κs j`, and a branch for each case of the block, is a
+  term of the instance: the branch of a destructor `d`, at the position `hd` in the destructors
+  `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of its type `T'` at the instance, is a term of its result
+  over the variables `ȳ` of the state of `T'` and those of the telescope of `d`, the destructors `d̄₁`
+  before it being the observations of the corecursor of `T'` from `ȳ`.
   The positions `h'` of the type of the corecursor in the block, `j` of a type and `i` of a case
   give the states and the branches, as the order of the declaration does.
   RFC: `\mathsf{corec}` -/
@@ -371,6 +378,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
@@ -478,6 +486,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
@@ -494,6 +503,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
@@ -513,6 +523,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
@@ -555,6 +566,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ψ : ResultOwnership ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
@@ -581,6 +593,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : EqInstanceArgs sig ctx as₁ as₂
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
@@ -633,6 +646,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       {u : Term k ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend
         (con.resultParams (.ofLists qs ps hq hp) decl.names).length)}
       (has : HasInstanceArgs sig ctx as
@@ -675,6 +689,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (hr : ∀ R ∈ (con.fields (.ofLists qs ps hq hp)).recursion decl.names, R = none)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
@@ -717,6 +732,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ψ₀ : ResultOwnership ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
       {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
@@ -771,6 +787,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
@@ -1022,8 +1039,8 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
 -- ADE: none.
 /--
 `Σ ⊢ 𝒟`: the type declaration is well formed.
-A block of data types is well formed when, for each instance of the sort and grade variables, the
-parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
+A block of data types is well formed when its constraint `C` admits an instance of the sort and grade
+variables and, for each instance it admits, the parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
 constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow, in the signature
 extended by the block; the constructors of each type have distinct names.
 The fields may be recursive, as the judgment of the fields allows.
@@ -1035,10 +1052,10 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   RFC: `\mathsf{data}` -/
   | data {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
       decl.levels decl.scope)} (hb : decl.body = .data Ts)
-      (hΔ : ∀ ι, WfCtx sig (decl.params ι))
-      (hΘ : ∀ ι, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
+      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
+      (hΘ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
         WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
-      (hu : ∀ ι, ∀ T ∈ decl.dataTypes, ∃ γ,
+      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∃ γ,
         UsageConstructors (.typeDeclaration decl :: sig) ι γ .oneOne T.constructors ∧
         T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
@@ -1047,10 +1064,10 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   RFC: `\mathsf{codata}` -/
   | codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
       decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
-      (hΔ : ∀ ι, WfCtx sig (decl.params ι))
-      (hd : ∀ ι, ∀ T ∈ decl.codataTypes,
+      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
+      (hd : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes,
         WfDestructors sig decl ι (.identity decl.scope) (decl.params ι) (T.body ι) (decl.sort ι))
-      (hu : ∀ ι, ∀ T ∈ decl.codataTypes, ∃ γ,
+      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∃ γ,
         UsageDestructors (.typeDeclaration decl :: sig) γ .oneOne (T.body ι) ∧ T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
       WfTypeDeclaration sig decl
@@ -1205,11 +1222,11 @@ where
     | .const hctx _ _ _ _ => wfCtx hctx
     | .univ hctx => wfCtx hctx
     | .prop hctx => wfCtx hctx
-    | .inst _ _ _ _ has => hasInstanceArgs has
-    | .ctor _ _ _ _ _ has _ => hasInstanceArgs has
-    | .recursor _ _ _ _ has .. => hasInstanceArgs has
-    | .obs _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ has .. => hasInstanceArgs has
+    | .inst _ _ _ _ _ has => hasInstanceArgs has
+    | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
+    | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
+    | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ has .. => hasInstanceArgs has
     | .conv ht _ => hasType ht
   eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
       EqTerm sig ctx t u A → WfSig sig
@@ -1223,15 +1240,15 @@ where
     | .const hctx .. => wfCtx hctx
     | .univ hctx _ => wfCtx hctx
     | .prop hctx _ => wfCtx hctx
-    | .inst _ _ _ _ _ has _ => eqInstanceArgs has
-    | .ctor _ _ _ _ _ _ has _ _ => eqInstanceArgs has
-    | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
-    | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .iota _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaCtor _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ has .. => eqInstanceArgs has
-    | .beta _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ has .. => hasInstanceArgs has
+    | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
+    | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
+    | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .beta _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
@@ -1276,8 +1293,8 @@ where
     | .recursive _ hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .data _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
-    | .codata _ hΔ _ _ _ => wfCtx (hΔ (.default _ _))
+    | .data _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
+    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
@@ -1306,11 +1323,11 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
         | typeDeclaration hdecl _ _ => cases hdecl with
-          | data hb _ _ _ hc =>
+          | data hb _ _ _ _ hc =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
             nomatch hT
-          | codata hb _ _ _ hc =>
+          | codata hb _ _ _ _ hc =>
             refine ⟨fun T hT => ?_, hc⟩
             simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT

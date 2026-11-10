@@ -973,53 +973,56 @@ def ValidFields (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {
 
 -- ADE: none.
 /-- `Σ ⊨ D`: the type declaration `D` is meaningful in the signature `Σ`.
-`(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and grade
-variables, the fields of each constructor are fields in the sort `κ`, in the context of the
-parameters, at each value of the level variables, whose recursive fields are the types of the block
-at the parameters themselves.
-`(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
-grade variables, the destructors of each type are in the sort `κ`, in the context of the
-parameters, at each value of the level variables, whose recursive destructors have the types of the
-block at the parameters themselves as results.
+`(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
+grade variables that `C` admits, the fields of each constructor are fields in the sort `κ`, in the
+context of the parameters, at each value of the level variables, whose recursive fields are the
+types of the block at the parameters themselves.
+`(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort
+and grade variables that `C` admits, the destructors of each type are in the sort `κ`, in the
+context of the parameters, at each value of the level variables, whose recursive destructors have
+the types of the block at the parameters themselves as results.
 The meaning ignores the grades, and the names of the constructors and of the destructors, distinct,
 are those of the signature.
 RFC: `{\vDash}\mathsf{data}`
 RFC: `{\vDash}\mathsf{codata}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
   match decl.body with
-  | .data Ts => ∀ I, ∀ T ∈ Ts, ∀ c ∈ T.constructors,
+  | .data Ts => ∀ I, decl.constraint I → ∀ T ∈ Ts, ∀ c ∈ T.constructors,
       ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
         ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I)
-  | .codata Ts => ∀ I, ∀ T ∈ Ts,
+  | .codata Ts => ∀ I, decl.constraint I → ∀ T ∈ Ts,
       ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
         ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I)
 
 /-- The fields of the constructors of a data type of a meaningful type declaration are fields in its
-sort. -/
+sort, at each instance that its constraint admits. -/
 theorem ValidTypeDeclaration.fields {sig : Signature} {ι : Interpretation} {decl : TypeDeclaration}
     (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
+    (hadm : decl.constraint I) {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (hT : T ∈ decl.dataTypes)
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope} (hc : c ∈ T.constructors) :
     ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
       ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I) := by
   unfold ValidTypeDeclaration at h
   unfold TypeDeclaration.dataTypes at hT
   split at h <;> rename_i heq <;> rw [heq] at hT
-  · exact h I T hT c hc
+  · exact h I hadm T hT c hc
   · exact nomatch hT
 
 /-- The destructors of a codata type of a meaningful type declaration are in its sort, with the types
-of the block at the parameters themselves as the results of the recursive ones. -/
+of the block at the parameters themselves as the results of the recursive ones, at each instance
+that its constraint admits. -/
 theorem ValidTypeDeclaration.destructors {sig : Signature} {ι : Interpretation}
     {decl : TypeDeclaration} (h : ValidTypeDeclaration sig ι decl) (I : Instance decl.sorts decl.grades)
-    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes) :
+    (hadm : decl.constraint I) {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (hT : T ∈ decl.codataTypes) :
     ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
       ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I) := by
   unfold ValidTypeDeclaration at h
   unfold TypeDeclaration.codataTypes at hT
   split at h <;> rename_i heq <;> rw [heq] at hT
   · exact nomatch hT
-  · exact h I T hT
+  · exact h I hadm T hT
 
 -- ADE: none.
 /-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/
