@@ -761,8 +761,8 @@ fields that are not recursive are equal types of a sort that `κ` bounds, the re
 type `D` are the instances `inst₁ D` and `inst₂ D` of the block, and the rest of them are equal for
 every pair of equal terms of the fields that are not recursive, and for every pair of terms of the
 recursive ones, on which they do not depend; the meaning ignores their grades.
-RFC: `{\vDash}\mathsf{fields}_\varepsilon`, `{\vDash}\mathsf{fields}_{,}`,
-`{\vDash}\mathsf{fields}_{\mathsf{rec}}` -/
+RFC: `{\vDash}\mathsf{fields}_\varepsilon`, `{\vDash}\mathsf{fields}_{,}`
+RFC: `{\vDash}\mathsf{fields}_{\mathsf{rec}}` -/
 def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0)
     (inst₁ inst₂ : Name → Term 0 []) :
     {ps : List Parameter} → (Nat → Option Name) → Telescope 0 [] ps → Telescope 0 [] ps → Prop
