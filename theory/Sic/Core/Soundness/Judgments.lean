@@ -770,7 +770,7 @@ where
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
     | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) hD hΘ
-        _ hds => fun ρ => by
+        _ _ hds => fun ρ => by
       have hds' := wfDestructors hd hι hds ρ
       show ValidDestructorsΓ sigM ι _ _ _ (.cons p q (Θ.substLevels fun i => .ofNat (ρ i))
         ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
