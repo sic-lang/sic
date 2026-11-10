@@ -1,14 +1,17 @@
 module
 
 public import Sic.Core.Prelude
+import Sic.Core.Ownership.Renaming
+import Sic.Core.Usage.Renaming
 
 /-!
 # Unpacking
 
 The unpacking of annex 17 of RFC 36: a term `u` of the packing `⟨Θ⟩` of a telescope, unpacked into a
 term `b` over the variables of `Θ`, by a recursor on each pair, then on the unit, with a motive that
-does not depend on the term unpacked; its typing, its computation on the packing of arguments and its
-extensionality, derived from the rules of the recursors of the pair and of the unit.
+does not depend on the term unpacked; its typing, its computation on the packing of arguments, its
+extensionality, its usage and its ownership, derived from the rules of the recursors of the pair and
+of the unit.
 
 The rules of the recursors on the pair and on the unit are the rules of the data types at the
 instances of the prelude, whose premises on the block hold by computation.
@@ -823,5 +826,187 @@ theorem EqTerm.unpackEta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     have h := h₁.trans h₂
     rw [Term.subst₀_single_rename_weaken] at h
     exact h
+
+/-! ## Usage and Ownership of the Recursors of the Pair and of the Unit -/
+
+-- ADE: `prodrecₘ`, in `Graded/Usage.agda`.
+/-- The recursor on a term of the pair uses the variables of its term `r` times and those of its
+branch, whose uses of the two fields cover `⌜m⌝ · r` times their grades. -/
+theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : Quality}
+    {ls : List (Level k)} {p ρ r g₀ g₁ : Grade} {as : InstanceArgs k Γ Prelude.pairScope}
+    {t : Term k Γ} {C : Term k (.var :: Γ)} {u : Term k (.var :: .var :: Γ)}
+    {γ δ : GradeVector Γ.length}
+    (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t)
+    (hu : Usage (Γ := .var :: .var :: Γ) sig ((δ ∙ g₀) ∙ g₁) m u)
+    (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * Grade.one ≤ g₁) :
+    Usage sig ((r ·ᶜ γ) +ᶜ δ) m
+      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 u .nil)) := by
+  have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
+  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
+    (gs := fun _ l => if l = 0 then g₀ else g₁) (es := fun _ _ => Grade.zero) hpre.pair rfl rfl
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_
+  · intro j n C' hj
+    match j, hj with
+    | 0, hj => cases hj; exact hC
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con u' hi hu'
+    match i, hi, hu' with
+    | 0, rfl, rfl => exact hu
+  · intro i j T' con l p' hi hl
+    match i, hi with
+    | 0, rfl =>
+      match l, hl with
+      | 0, rfl => exact hz _ _ _ hg₀
+      | 1, rfl => exact hz _ _ _ hg₁
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl =>
+      intro x
+      show δ x ≤ δ x + Grade.zero * δ x
+      generalize δ x = a
+      revert a
+      decide
+  · intro _ ⟨T', hT', h2⟩
+    rcases hT' with _ | ⟨_, ⟨⟩⟩
+    exact absurd h2 (by decide)
+
+-- ADE: `unitrecₘ`, in `Graded/Usage.agda`.
+/-- The recursor on a term of the unit uses the variables of its term `r` times and those of its
+branch. -/
+theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : Level k}
+    {r : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)} {γ δ : GradeVector Γ.length}
+    (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t) (hu : Usage sig δ m u) :
+    Usage sig ((r ·ᶜ γ) +ᶜ δ) m
+      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 u .nil)) := by
+  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
+    (gs := fun _ _ => Grade.zero) (es := fun _ _ => Grade.zero) hpre.unit rfl rfl
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_
+  · intro j n C' hj
+    match j, hj with
+    | 0, hj => cases hj; exact hC
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con u' hi hu'
+    match i, hi, hu' with
+    | 0, rfl, rfl => exact hu
+  · intro i j T' con l p' hi hl
+    match i, hi with
+    | 0, rfl => exact nomatch hl
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl =>
+      intro x
+      show δ x ≤ δ x + Grade.zero * δ x
+      generalize δ x = a
+      revert a
+      decide
+  · intro _ ⟨T', hT', h2⟩
+    rcases hT' with _ | ⟨_, ⟨⟩⟩
+    exact absurd h2 (by decide)
+
+-- ADE: none.
+/-- The recursor on a term of the pair has the ownership of its branch, checked with the ownership
+`o` of the term times the requirement of each field for its variable. -/
+theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
+    {m : Mode} {q : Quality} {ls : List (Level k)} {p ρ r o p' : Grade}
+    {as : InstanceArgs k Γ Prelude.pairScope} {t : Term k Γ} {C : Term k (.var :: Γ)}
+    {u : Term k (.var :: .var :: Γ)} (ht : Ownership sig φ (m ⊙ r) o t)
+    (hu : Ownership sig (Ownership.extendFields φ o [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
+    Ownership sig φ m p'
+      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 u .nil)) := by
+  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht rfl ?_ ?_
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con u' hi hu'
+    match i, hi, hu' with
+    | 0, rfl, rfl => exact hu
+
+-- ADE: none.
+/-- The recursor on a term of the unit has the ownership of its branch. -/
+theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
+    {m : Mode} {l : Level k} {r o p' : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)}
+    (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
+    Ownership sig φ m p'
+      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 u .nil)) := by
+  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht rfl ?_ ?_
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con u' hi hu'
+    match i, hi, hu' with
+    | 0, rfl, rfl => exact hu
+
+/-! ## Usage and Ownership of the Unpacking -/
+
+-- ADE: `prodrecₘ` and `unitrecₘ`, in `Graded/Usage.agda`, nested.
+/-- The unpacking uses the variables of its term `r` times and those of its branch, which uses the
+variable of each entry of the telescope `⌜m⌝ · r` times its grade; its motive, a type, uses no
+variable.
+RFC: `\mathsf{unpack}_{▶}` -/
+theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} → {ps : List Parameter} →
+    {m : Mode} → {γ δ : GradeVector Γ.length} → {u : Term k Γ} → {Θ : Telescope k Γ ps} →
+    {κs : List (Universe k)} → {l : Level k} → {C : Term k Γ} →
+    {b : Term k (Γ.extend ps.length)} →
+    Usage sig 𝟘ᶜ .zeroZero C → Usage sig γ (m ⊙ r) u →
+    Usage sig (δ.extendParams (m.grade * r) ps) m b →
+      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (Term.unpack r u Θ κs l C b)
+  | _, [], _, _, _, _, .nil, _, _, _, _, hC, hu, hb => by
+    have hC' := usageStableUnderRenaming.usage (Ren.weaken (e := .var)) hC
+    rw [GradeVector.rename_commutes.rename_zero] at hC'
+    exact Usage.unitRecursor hpre hC' hu hb
+  | Γ, p :: ps, m, γ, δ, u, .cons _ _ A Θ, κs, l, C, b, hC, hu, hb => by
+    have hC₁ := usageStableUnderRenaming.usage (Ren.weaken (e := .var)) hC
+    rw [GradeVector.rename_commutes.rename_zero] at hC₁
+    have hC₂ := usageStableUnderRenaming.usage (Ren.weakenN (Γ := Γ) 2) hC
+    rw [GradeVector.rename_commutes.rename_zero] at hC₂
+    have hb' := usageStableUnderRenaming.usage (Ren.liftN ps.length (Ren.weaken (e := .var))) hb
+    erw [GradeVector.rename_extendParams (Γ := .var :: .var :: Γ) (Δ := .var :: Γ) (δ ∙ (m.grade * r * p.usage))
+      (m.grade * r) ps (Ren.weaken (e := .var)), GradeVector.rename_weaken] at hb'
+    have hy : Usage sig (GradeVector.update 𝟘ᶜ (Var.toFin .zero) (m ⊙ r).grade +ᶜ 𝟘ᶜ) (m ⊙ r)
+        (Term.var₀ (Γ := .var :: .var :: Γ) (k := k) .zero) := .var .nil
+    have ih := Usage.unpack hpre r (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l) hC₂ hy hb'
+    have hz : ∀ r a : Grade, r * a ≤ r * (a + Grade.zero) + Grade.zero := by decide
+    have hs : ∀ r c : Grade, c ≤ r * (Grade.zero + Grade.zero) + c := by decide
+    have hm : ∀ (m : Mode) (r : Grade), m.grade * r * Grade.one ≤ r * (m ⊙ r).grade := by decide
+    refine Usage.pairRecursor (g₁ := r * (m ⊙ r).grade) hpre hC₁ hu (.sub ih ?_) (Grade.le_refl _)
+      (hm m r)
+    intro y
+    cases y using Fin.cases with
+    | zero =>
+      exact (congrArg (fun c => r * (m ⊙ r).grade ≤ r * (c + Grade.zero) + Grade.zero)
+        (ite_eq_left rfl)).mpr (hz r _)
+    | succ y =>
+      exact (congrArg (fun c => (δ ∙ (m.grade * r * p.usage)) y ≤ r * (c + Grade.zero) +
+        (δ ∙ (m.grade * r * p.usage)) y) (ite_eq_right (Fin.succ_ne_zero y))).mpr (hs r _)
+
+-- ADE: none.
+/-- The unpacking has the ownership of its branch, checked with the ownership `o` of its term times
+the requirement of each entry of the telescope for its variable: the second field of each pair
+requires `11ᵖ`, so that each entry keeps the ownership `o` times its requirement.
+RFC: `\mathsf{unpack}_{◀}` -/
+theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
+    {ps : List Parameter} → {φ : Var Γ .var → Grade} → {m : Mode} → {o p' : Grade} →
+    {u : Term k Γ} → {Θ : Telescope k Γ ps} → {κs : List (Universe k)} → {l : Level k} →
+    {C : Term k Γ} → {b : Term k (Γ.extend ps.length)} →
+    Ownership sig φ (m ⊙ r) o u → Ownership sig (Ownership.extendFields φ o ps) m p' b →
+      Ownership sig φ m p' (Term.unpack r u Θ κs l C b)
+  | _, [], _, _, _, _, _, .nil, _, _, _, _, hu, hb => Ownership.unitRecursor hpre hu hb
+  | Γ, p :: ps, φ, m, o, p', u, .cons _ _ A Θ, κs, l, C, b, hu, hb => by
+    have h1 : o * Grade.one = o := Grade.modality.semiring.mul_one o
+    let φ' : Var (.var :: .var :: Γ) .var → Grade :=
+      Ownership.extendFields φ o [⟨p.usage, p.requirement⟩, ⟨Grade.one, Grade.one⟩]
+    have hy₀ : Ownership sig φ' (m ⊙ r) (o * Grade.one) (Term.var₀ (k := k) .zero) :=
+      Ownership.var (φ := φ') (x := .zero)
+    have hy : Ownership sig φ' (m ⊙ r) o (Term.var₀ (k := k) .zero) := h1 ▸ hy₀
+    have hb' := ownershipStableUnderRenaming.ownership (Ren.liftN ps.length (Ren.weaken (e := .var)))
+      (Ownership.extendFields_liftN (φ' := φ') (ξ := Ren.weaken)
+        (fun | .zero => rfl | .succ _ => rfl) o ps) hb
+    have ih := Ownership.unpack hpre r (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l)
+      (C := C.rename (Ren.weakenN 2)) hy hb'
+    exact Ownership.pairRecursor hpre hu ih
 
 end Sic.Core

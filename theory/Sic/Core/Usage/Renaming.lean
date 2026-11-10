@@ -235,6 +235,29 @@ theorem rename_extendResults {Γ : Scope} : {Δ : Scope} → (γ : GradeVector �
   | _, γ, e, none :: rs, _ :: ps, ξ => rename_extendResults γ (fun l => e (l + 1)) rs ps ξ
   | _, _, _, [], _, _ | _, _, _, some _ :: _, [], _ | _, _, _, none :: _, [], _ => rfl
 
+-- ADE: `wkConₘ` of `step`, in `Graded/Context/Weakening.agda`.
+/-- A vector renamed by the weakening is the vector extended by the grade `𝟘` of the new variable,
+which is the image of none. -/
+theorem rename_weaken {Γ : Scope} {e : Scope.Entry} (γ : GradeVector Γ.length) :
+    γ.rename (Ren.weaken (e := e)) = γ ∙ Grade.zero :=
+  (rename_commutes.rename_succ γ (fun x => x)).trans (congrArg (· ∙ Grade.zero) (rename_id γ))
+where
+  rename_id : {Γ : Scope} → (γ : GradeVector Γ.length) → γ.rename (fun x => x) = γ
+    | [], _ => funext fun y => nomatch y
+    | _ :: _, γ => by
+      show update 𝟘ᶜ _ _ +ᶜ rename (fun x => γ x.succ) (fun x => (.succ x : Var _ _)) = _
+      rw [rename_commutes.rename_succ (fun x => γ x.succ) (fun x => x), rename_id]
+      funext y
+      cases y using Fin.cases with
+      | zero =>
+        show (if _ then γ (Var.toFin .zero) else Grade.zero) + Grade.zero = γ 0
+        exact (congrArg (· + Grade.zero) (ite_eq_left rfl)).trans
+          ((Grade.modality.semiring.add_comm _ _).trans (Grade.modality.semiring.zero_add _))
+      | succ y =>
+        simp only [add, update, zero, extend, Var.toFin, Fin.cases_succ]
+        exact (congrArg (· + _) (rename_commutes.ite_succ_zero _ _)).trans
+          (Grade.modality.semiring.zero_add _)
+
 end GradeVector
 
 /-! ## Stability of the Usage -/
