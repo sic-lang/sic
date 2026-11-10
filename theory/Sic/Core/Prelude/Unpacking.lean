@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Prelude
+public import Sic.Core.Prelude.Packing
 import Sic.Core.Ownership.Renaming
 import Sic.Core.Usage.Renaming
 
@@ -359,126 +359,7 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
       exact (congrArg (EqTerm sig ((ctx.var A).var B) u₁ u₂)
         (Term.rename_id_of (Γ := .var :: .var :: Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
-/-! ## Unpacking -/
-
--- ADE: `prodrec` and `unitrec`, in `Definition/Untyped.agda`, nested.
-/-- `unpack_r u : ⟨Θ⟩_{κ̄; l} return C with b`: the term `b`, over the variables of the telescope
-`Θ`, at the terms that the packed term `u` holds, by a recursor on each pair, then on the unit, each
-using its term with the grade `r`, with the motive `C`, which does not depend on the term
-eliminated.
-RFC: `\mathsf{unpack}` -/
-def Term.unpack (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Term k Γ →
-    Telescope k Γ ps → List (Universe k) → Level k → Term k Γ → Term k (Γ.extend ps.length) →
-      Term k Γ
-  | _, [], u, .nil, _, l, C, b =>
-    .recursor r "Unit" [] [l] [] .nil u (.cons 0 (C.rename Ren.weaken) .nil) (.cons 0 0 b .nil)
-  | _, _ :: ps, u, .cons _ p A Θ, κs, l, C, b =>
-    .recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
-      [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
-      (Prelude.pairArgs A (Θ.pack κs.tail l)) u (.cons 0 (C.rename Ren.weaken) .nil)
-      (.cons 2 0 (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
-        (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))) .nil)
-
--- ADE: none.
-/-- The unpacking, substituted, is the unpacking of the terms substituted. -/
-theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter} →
-    (σ : Subst₀ k Γ Δ) → (u : Term k Δ) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) →
-    (l : Level k) → (C : Term k Δ) → (b : Term k (Δ.extend ps.length)) →
-      (Term.unpack r u Θ κs l C b).subst₀ σ =
-        Term.unpack r (u.subst₀ σ) (Θ.subst₀ σ) κs l (C.subst₀ σ) (b.subst₀ (Subst₀.liftN _ σ))
-  | _, _, [], σ, u, .nil, _, l, C, b => by
-    show Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
-      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil) (.cons 0 0 (b.subst₀ σ) .nil) =
-      Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
-      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil) (.cons 0 0 (b.subst₀ σ) .nil)
-    exact congrArg (fun X => Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ) (.cons 0 X .nil)
-      (.cons 0 0 (b.subst₀ σ) .nil)) (Term.rename_weaken_subst₀_lift σ C)
-  | _, _, _ :: ps, σ, u, .cons _ p A Θ, κs, l, C, b => by
-    show Term.recursor r "Pair" _ _ _
-      (Prelude.pairArgs (A.subst₀ σ) ((Θ.pack κs.tail l).subst₀ (Subst₀.lift σ))) (u.subst₀ σ)
-      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil)
-      (.cons 2 0 ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
-        (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))).subst₀
-          (Subst₀.lift (Subst₀.lift σ))) .nil) = _
-    have h₁ := Telescope.pack_subst₀ (Subst₀.lift σ) Θ κs.tail l
-    have h₂ := Term.rename_weaken_subst₀_lift (b := .var) σ C
-    have h₃ := Term.unpack_subst₀ r (Subst₀.lift (Subst₀.lift σ)) (.var₀ .zero) (Θ.rename Ren.weaken)
-      κs.tail l (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))
-    have h₅ := (Telescope.subst₀_rename_comm_of (σ₁ := Subst₀.lift (e := .var) σ)
-      (ξ₁ := Ren.weaken (e := .var)) (σ₂ := Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ))
-      (ξ₂ := Ren.weaken (e := .var)) (fun _ => rfl) Θ).symm
-    have h₆ := (Term.subst₀_rename_comm_of (σ₁ := σ) (ξ₁ := Ren.weakenN 2)
-      (σ₂ := Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ)) (ξ₂ := Ren.weakenN 2) (fun x => by
-        show _ = ((σ x).rename Ren.weaken).rename Ren.weaken
-        rw [Val.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := Ren.weaken) (ξ₃ := Ren.weakenN 2)
-          (fun _ => rfl)]
-        rfl) C).symm
-    have h₇ := (Term.subst₀_rename_comm_of (σ₁ := Subst₀.liftN ps.length (Subst₀.lift σ))
-      (ξ₁ := Ren.liftN ps.length (Ren.weaken (e := .var)))
-      (σ₂ := Subst₀.liftN ps.length (Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ)))
-      (ξ₂ := Ren.liftN ps.length (Ren.weaken (e := .var)))
-      (Subst₀.liftN_rename_comm_of ps.length (fun _ => rfl)) b).symm
-    show _ = Term.recursor r "Pair" _ _ _
-      (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
-      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil)
-      (.cons 2 0 (Term.unpack r (.var₀ .zero) ((Θ.subst₀ (Subst₀.lift σ)).rename Ren.weaken) κs.tail l
-        ((C.subst₀ σ).rename (Ren.weakenN 2))
-        ((b.subst₀ (Subst₀.liftN ps.length (Subst₀.lift σ))).rename (Ren.liftN ps.length Ren.weaken))) .nil)
-    rw [h₁]
-    let F := fun (X : Term k (.var :: _)) (Y : Term k (.var :: .var :: _)) =>
-      Term.recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
-        [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
-        (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
-        (.cons 0 X .nil) (.cons 2 0 Y .nil)
-    refine (congrArg (fun X => F X _) h₂).trans (congrArg (F _) (h₃.trans ?_))
-    rw [h₅]
-    erw [h₆, h₇]
-    rfl
-
--- ADE: none.
-/-- The unpacking in the branch of a pair, at the fields `t` and `P`, is the unpacking of `P` into
-the term at `t`. -/
-theorem Term.unpack_branch_instantiate (r : Grade) {Γ : Scope} {p : Parameter} {ps : List Parameter}
-    (t P : Term k Γ) (Θ : Telescope k (.var :: Γ) ps) (κs : List (Universe k)) (l : Level k)
-    (C : Term k Γ) (b : Term k (Scope.extend (.var :: Γ) ps.length)) :
-    (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs l (C.rename (Ren.weakenN 2))
-      (b.rename (Ren.liftN ps.length Ren.weaken))).instantiate
-        (ps := [p, ⟨Grade.one, Grade.one⟩]) (.cons t (.cons P .nil)) =
-      Term.unpack r P (Θ.subst₀ (Subst₀.single t)) κs l C
-        (b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) := by
-  show ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs l (C.rename (Ren.weakenN 2))
-      (b.rename (Ren.liftN ps.length Ren.weaken))).subst₀ (Subst₀.lift (Subst₀.single t))).subst₀
-        (Subst₀.single P) = _
-  have h₁ := (Telescope.subst₀_rename_comm_of (σ₁ := Subst₀.single t)
-    (ξ₁ := Ren.weaken (e := .var)) (σ₂ := Subst₀.lift (e := .var) (Subst₀.single t))
-    (ξ₂ := Ren.weaken (e := .var)) (fun _ => rfl) Θ).symm
-  have h₂ : (C.rename (Ren.weakenN 2)).subst₀ (Subst₀.lift (e := .var) (Subst₀.single t)) =
-      C.rename Ren.weaken :=
-    (Term.subst₀_rename_of (σ := Subst₀.lift (e := .var) (Subst₀.single t)) (ξ := Ren.weakenN 2)
-      (σ' := fun x => .var (Ren.weaken x)) (fun _ => rfl) C).trans
-      (Term.subst₀_eq_rename_of (fun _ => rfl) C)
-  have h₃ := (Term.subst₀_rename_comm_of (σ₁ := Subst₀.liftN ps.length (Subst₀.single t))
-    (ξ₁ := Ren.liftN ps.length (Ren.weaken (e := .var)))
-    (σ₂ := Subst₀.liftN ps.length (Subst₀.lift (e := .var) (Subst₀.single t)))
-    (ξ₂ := Ren.liftN ps.length (Ren.weaken (e := .var)))
-    (Subst₀.liftN_rename_comm_of ps.length (fun _ => rfl)) b).symm
-  have h₄ : ((Θ.subst₀ (Subst₀.single t)).rename Ren.weaken).subst₀ (Subst₀.single P) =
-      Θ.subst₀ (Subst₀.single t) :=
-    (Telescope.subst₀_rename_of (σ := Subst₀.single P) (ξ := Ren.weaken) (σ' := Subst₀.id)
-      (fun _ => rfl) _).trans
-      (Telescope.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl) _)
-  have h₅ : ((b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))).rename
-      (Ren.liftN ps.length Ren.weaken)).subst₀ (Subst₀.liftN ps.length (Subst₀.single P)) =
-      b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t)) :=
-    (Term.subst₀_rename_of (σ := Subst₀.liftN ps.length (Subst₀.single P))
-      (ξ := Ren.liftN ps.length Ren.weaken) (σ' := Subst₀.liftN ps.length Subst₀.id)
-      (Subst₀.liftN_rename_of ps.length (fun _ => rfl)) _).trans
-      (Term.subst₀_id_of (Subst₀.liftN_id_of ps.length (fun _ => rfl)) _)
-  rw [Term.unpack_subst₀, h₁]
-  erw [h₂, h₃]
-  rw [Term.unpack_subst₀, h₄, Term.subst₀_single_rename_weaken]
-  erw [h₅]
-  rfl
+/-! ## Packing of the Variables -/
 
 -- ADE: none.
 /-- `e[⟨x̄⟩ / z]`: the term `e`, over a term `z` of the packing of the telescope `Θ`, at the packing

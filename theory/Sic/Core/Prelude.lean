@@ -1,14 +1,15 @@
 module
 
-public import Sic.Core.Typing.Substitution
+public import Sic.Core.Substitution
 
 /-!
 # Prelude
 
 The prelude of annex 17 of RFC 36: three type declarations that the type system uses for its own
 needs, the unit `Unit`, the pair `Pair` and the type of positions `Step`, the packing `⟨Θ⟩` of a
-telescope into nested pairs and the packing `⟨t̄⟩` of its arguments, with the formation of the
-prelude and the typing, the usage and the ownership of the packings.
+telescope into nested pairs, the packing `⟨t̄⟩` of its arguments and the unpacking of a term of a
+packing, with the commutation of these definitions with the renamings and the substitutions; the
+typing of a corecursor reads them, and the modules of `Sic/Core/Prelude/` give their properties.
 
 The packing lives in a universe, whatever the sorts of the entries of the telescope, so that a
 recursor on it may build a term of any sort: a data type of propositions with a constructor has
@@ -130,139 +131,6 @@ RFC: `\mathsf{prelude}_\Sigma` -/
 def Signature.prelude : Signature :=
   [.typeDeclaration Prelude.step, .typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit]
 
-/-! ## Formation -/
-
-/-- A sort is a term of the universe above its level, in a well-formed context. -/
-theorem HasType.sort {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-    (hctx : WfCtx sig ctx) : (κ : Universe k) →
-      HasType sig ctx (.sort κ) (.sort ⟨.type, .succ κ.level⟩)
-  | ⟨.type, _⟩ => .univ hctx
-  | ⟨.prop, _⟩ => .prop hctx
-
-/-- A term of a sort is a type. -/
-theorem WfType.ofSort {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
-    {κ : Universe k} → HasType sig ctx A (.sort κ) → WfType sig ctx A
-  | ⟨.type, _⟩, h => .univType h
-  | ⟨.prop, _⟩, h => .propType h
-
-/-- The unit is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
-    WfTypeDeclaration sig Prelude.unit :=
-  .data (Ts := _) rfl ⟨⟨Fin.elim0, Fin.elim0⟩, trivial⟩ (fun _ _ => .empty h)
-    (fun _ _ T hT c hc => by
-      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hc
-      exact .nil (.empty h))
-    (fun ι _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      exact ⟨_, .cons .nil .nil, fun x => x.elim0⟩)
-    (fun T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      decide)
-
-/-- The parameters of the pair form a context, whatever the sort of `A`. -/
-theorem WfCtx.pairParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
-    WfCtx sig (Prelude.pair.params ι) := by
-  have hA : WfCtx sig (Context.empty.var (.sort ⟨ι.sorts 0, .var 0⟩) : Context 2 [.var]) :=
-    .var (WfType.ofSort (HasType.sort (.empty h) _))
-  have hx := WfCtx.var (WfType.ofSort (HasType.var hA .zero))
-  exact .secondOrder (WfType.ofSort (HasType.sort hx ⟨.type, .var 1⟩)) (.inl rfl)
-
-/-- The pair is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
-    WfTypeDeclaration sig Prelude.pair :=
-  .data (Ts := _) rfl ⟨⟨fun _ => .type, fun _ => Grade.zero⟩, fun h => nomatch h⟩
-    (fun ι _ => WfCtx.pairParams h ι)
-    (fun ι hι T hT c hc => by
-      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hc
-      have hctx := WfCtx.pairParams h ι
-      have hA : HasType sig (Prelude.pair.params ι) (.var₀ (.succ .zero))
-          (.sort ⟨ι.sorts (0 : Fin 1), .var (0 : Fin 2)⟩) :=
-        .var hctx (.succSecondOrder .zero)
-      have hx := WfCtx.var (WfType.ofSort hA)
-      have hB : HasType sig ((Prelude.pair.params ι).var (.var₀ (.succ .zero)))
-          (.var (.succ .zero) (.cons (.var₀ .zero) .nil)) (.sort ⟨.type, .var (1 : Fin 2)⟩) :=
-        .secondOrder (.succVar .zero) (.cons (.var hx .zero) (.nil hx))
-      exact .cons rfl hA ⟨fun h => (by cases h), fun _ => (by simp [Prelude.pair, Level.value]; omega)⟩
-        (.cons rfl hB ⟨fun h => (by cases h), fun _ => (by simp [Prelude.pair, Level.value]; omega)⟩
-          (.nil (.var (WfType.ofSort hB))) nofun)
-        hι)
-    (fun (ι : Instance 1 2) _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      refine ⟨_, .cons (c := Prelude.pairMk) (.cons (δ := (𝟘ᶜ ∙ Grade.zero) ∙ Grade.one)
-        (Usage.var .nil) (.sub (.cons (δ := 𝟘ᶜ) (Usage.var (.cons (Usage.var .nil) .nil))
-          (.sub .nil ?_)) ?_)) .nil, ?_⟩
-      all_goals
-        intro x
-        try simp only [Prelude.pairType]
-        generalize ι.grades 0 = p
-        generalize ι.grades 1 = ρ
-        revert x p ρ
-        decide)
-    (fun T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      decide)
-
-/-- The parameters of the type of positions form a context, whatever the sort of `B`. -/
-theorem WfCtx.stepParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
-    WfCtx sig (Prelude.step.params ι) := by
-  have hS : WfCtx sig (Context.empty.var (.sort ⟨.type, .var 0⟩) : Context 2 [.var]) :=
-    .var (WfType.ofSort (HasType.sort (.empty h) _))
-  exact .var (WfType.ofSort (HasType.sort hS ⟨ι.sorts 0, .var 1⟩))
-
-/-- The type of positions is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
-    WfTypeDeclaration sig Prelude.step :=
-  .data (Ts := _) rfl ⟨⟨fun _ => .type, fun _ => Grade.zero⟩, fun h => nomatch h⟩
-    (fun ι _ => WfCtx.stepParams h ι)
-    (fun ι hι T hT c hc => by
-      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      have hctx := WfCtx.stepParams h ι
-      obtain _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩ := hc
-      · have hS : HasType sig (Prelude.step.params ι) (.var₀ (.succ .zero))
-            (.sort ⟨.type, .var (0 : Fin 2)⟩) :=
-          .var hctx (.succVar .zero)
-        exact .cons rfl hS ⟨fun h => (by cases h), fun _ => (by simp [Prelude.step, Level.value]; omega)⟩
-          (.nil (.var (WfType.ofSort hS))) nofun
-      · have hT : HasType sig (Prelude.step.params ι) (.var₀ .zero)
-            (.sort ⟨ι.sorts (0 : Fin 1), .var (1 : Fin 2)⟩) :=
-          .var hctx .zero
-        exact .cons rfl hT ⟨fun h => (by cases h), fun _ => (by simp [Prelude.step, Level.value]; omega)⟩
-          (.nil (.var (WfType.ofSort hT))) hι)
-    (fun (ι : Instance 1 2) _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      refine ⟨_, .cons (c := Prelude.stepNext) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_))
-        (.cons (c := Prelude.stepDone) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_)) .nil), ?_⟩
-      all_goals
-        intro x
-        try simp only [Prelude.stepType]
-        generalize ι.grades 0 = r
-        generalize ι.grades 1 = p
-        revert x r p
-        decide)
-    (fun T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      decide)
-
-/-- The prelude is a well-formed signature.
-RFC: `\mathsf{prelude}_{\vdash}` -/
-theorem WfSig.prelude : WfSig Signature.prelude :=
-  have hu : WfSig [.typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.unit .empty) (by decide) nofun
-  have hp : WfSig [.typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.pair hu) (by decide) (by decide)
-  .typeDeclaration (.step hp) (by decide) (by decide)
-
 /-- `Σ ∋ prelude`: the signature holds the declarations of the prelude.
 RFC: `\mathsf{prelude}_\in` -/
 def Signature.HasPrelude (sig : Signature) : Prop := ∀ e ∈ Signature.prelude, e ∈ sig
@@ -273,27 +141,6 @@ theorem Signature.hasPrelude_prelude : Signature.prelude.HasPrelude := fun _ h =
 /-! ## Packing -/
 
 variable {k : Nat}
-
--- ADE: none.
-/-- `Σ; Γ ⊢ Θ : κ̄ ≤ l`: the types of the telescope `Θ` live in the sorts `κ̄`, one for each entry,
-whose levels are below `l`, and an entry whose type is a proposition has a grade without use at run
-time, as in a telescope in a sort; the packing of `Θ` needs the sort of each entry, which the
-telescope does not give. -/
-inductive WfTelescopeSorts : Signature → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
-    Telescope k Γ ps → List (Universe k) → Level k → Prop where
-  /-- The empty telescope, of no sort, below every level.
-  RFC: `\mathsf{tel}_{\bar\kappa\varepsilon}` -/
-  | nil {sig : Signature} {Γ : Scope} {ctx : Context k Γ} {l : Level k} (hctx : WfCtx sig ctx) :
-      WfTelescopeSorts sig ctx .nil [] l
-  /-- The first entry, whose type lives in the sort `κ` of a level below `l`, with a grade without
-  use at run time if it is a proposition, and the others.
-  RFC: `\mathsf{tel}_{\bar\kappa,}` -/
-  | cons {sig : Signature} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade}
-      {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ : Universe k}
-      {κs : List (Universe k)} {l : Level k} (hA : HasType sig ctx A (.sort κ))
-      (hl : κ.level ≤ l) (hΘ : WfTelescopeSorts sig (ctx.var A) Θ κs l)
-      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
 
 /-- `level_κ̄(l) = l₁ ⊔ (… ⊔ (lₐ ⊔ l))`: the level of the packing of a telescope whose entries live
 in the sorts `κ̄`, of levels `l̄`, below the level `l`.
@@ -336,57 +183,10 @@ def Args.pack {Γ : Scope} : {ps : List Parameter} → Args k Γ ps → Telescop
       (.cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
 
 -- ADE: none.
-/-- The arguments `(A, x. B)` are arguments of the parameters of the pair, when `A` is a type of the
-sort `κ` and `B` a type of `U_{l₂}` over a variable of `A`. -/
-theorem HasInstanceArgs.pair {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
-    {B : Term k (.var :: Γ)} {κ : Universe k} {l₂ : Level k} (p r : Grade)
-    (hA : HasType sig ctx A (.sort κ)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩)) :
-    HasInstanceArgs sig ctx (Prelude.pairArgs A B)
-      ((Prelude.pair.params (.ofLists [κ.quality] [p, r] rfl rfl)).substLevels
-        ([κ.level, l₂].getFin rfl)) := by
-  show HasInstanceArgs sig _ (Prelude.pairArgs A B)
-    ((Context.empty.var (.sort κ)).secondOrder
-      (.cons .unrestrictedUnrestricted ⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩
-        (.var₀ .zero) .nil)
-      (.sort ⟨.type, l₂⟩) Prelude.pairOwnership)
-  have has : HasInstanceArgs sig _ (.snoc (e := .var) .nil A) (Context.empty.var (.sort κ)) :=
-    .var (.nil (contextPresuppositions.hasType hA)) hA
-  exact .secondOrder (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩])
-    (Θ := .cons .unrestrictedUnrestricted ⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩
-      (.var₀ .zero) .nil)
-    (A := .sort ⟨.type, l₂⟩) has hB
-
--- ADE: none.
 /-- `Pair.{s; l₁, l₂; p, r} (A, x. B)`: the instance of the pair at the sort `κ = s_{l₁}`. -/
 abbrev Prelude.pairInst {Γ : Scope} (κ : Universe k) (l₂ : Level k) (p r : Grade) (A : Term k Γ)
     (B : Term k (.var :: Γ)) : Term k Γ :=
   .inst "Pair" [κ.quality] [κ.level, l₂] [p, r] (Prelude.pairArgs A B)
-
--- ADE: `ΠΣⱼ`, in `Definition/Typed.agda`.
-/-- An instance of the pair is a type of the universe of the join of its levels. -/
-theorem HasType.pairInst {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k}
-    {l₂ : Level k} {p ρ : Grade} {A : Term k Γ} {B : Term k (.var :: Γ)}
-    (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
-    (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩)) :
-    HasType sig ctx (Prelude.pairInst κA l₂ p ρ A B) (.sort ⟨.type, .max κA.level l₂⟩) :=
-  .inst (D := "Pair") (decl := Prelude.pair) (ζ := Prelude.pairType.usage)
-    ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
-    rfl rfl rfl hadm (HasInstanceArgs.pair p ρ hA hB)
-
--- ADE: none.
-/-- The packing of a telescope is a type of the universe of the level of its packing.
-RFC: `\mathsf{pack}_{\Theta:}` -/
-theorem HasType.packLevel {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
-    {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) :
-    HasType sig ctx (Θ.pack κs l) (.sort ⟨.type, Telescope.packLevel κs l⟩) := by
-  induction h with
-  | nil hctx =>
-    refine .inst (D := "Unit") (decl := Prelude.unit) (ζ := Prelude.unitType.usage)
-      ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
-      rfl rfl rfl trivial ?_
-    exact .nil hctx
-  | cons hA _ _ hp ih => exact HasType.pairInst hpre hp hA ih
 
 /-- The signature that holds the prelude has its pair. -/
 theorem Signature.HasPrelude.pair {sig : Signature} (hpre : sig.HasPrelude) :
@@ -447,111 +247,125 @@ theorem Args.pack_rename : {Γ Δ : Scope} → {ps : List Parameter} → (ξ : R
     rw [h₁, h₂, h₃]
     rfl
 
-variable {Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop}
+/-! ## Unpacking -/
+
+-- ADE: `prodrec` and `unitrec`, in `Definition/Untyped.agda`, nested.
+/-- `unpack_r u : ⟨Θ⟩_{κ̄; l} return C with b`: the term `b`, over the variables of the telescope
+`Θ`, at the terms that the packed term `u` holds, by a recursor on each pair, then on the unit, each
+using its term with the grade `r`, with the motive `C`, which does not depend on the term
+eliminated.
+RFC: `\mathsf{unpack}` -/
+def Term.unpack (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Term k Γ →
+    Telescope k Γ ps → List (Universe k) → Level k → Term k Γ → Term k (Γ.extend ps.length) →
+      Term k Γ
+  | _, [], u, .nil, _, l, C, b =>
+    .recursor r "Unit" [] [l] [] .nil u (.cons 0 (C.rename Ren.weaken) .nil) (.cons 0 0 b .nil)
+  | _, _ :: ps, u, .cons _ p A Θ, κs, l, C, b =>
+    .recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
+      [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
+      (Prelude.pairArgs A (Θ.pack κs.tail l)) u (.cons 0 (C.rename Ren.weaken) .nil)
+      (.cons 2 0 (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+        (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))) .nil)
 
 -- ADE: none.
-/-- A telescope whose entries live in sorts, substituted by a lifted substitution of a family that
-`Subst.Liftable` accepts, lives in the sorts. -/
-theorem WfTelescopeSorts.subst (hB : Subst.Liftable sig @Base) {Γ Δ : Scope} {ps : List Parameter}
-    {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
-    {κs : List (Universe k)} {l : Level k} :
-    WfTelescopeSorts sig ctx Θ κs l → Subst.Lifted @Base ctx' @θ ctx → WfCtx sig ctx' →
-      WfTelescopeSorts sig ctx' (Θ.subst θ) κs l
-  | .nil _, _, hctx => .nil hctx
-  | .cons hA hl hΘ hp, hθ, hctx =>
-    have hA' := hB.stable.hasType hA hθ
-    .cons hA' hl (WfTelescopeSorts.subst hB hΘ (hθ.var _) (.var (WfType.ofSort hA'))) hp
+/-- The unpacking, substituted, is the unpacking of the terms substituted. -/
+theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter} →
+    (σ : Subst₀ k Γ Δ) → (u : Term k Δ) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) →
+    (l : Level k) → (C : Term k Δ) → (b : Term k (Δ.extend ps.length)) →
+      (Term.unpack r u Θ κs l C b).subst₀ σ =
+        Term.unpack r (u.subst₀ σ) (Θ.subst₀ σ) κs l (C.subst₀ σ) (b.subst₀ (Subst₀.liftN _ σ))
+  | _, _, [], σ, u, .nil, _, l, C, b => by
+    show Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
+      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil) (.cons 0 0 (b.subst₀ σ) .nil) =
+      Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
+      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil) (.cons 0 0 (b.subst₀ σ) .nil)
+    exact congrArg (fun X => Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ) (.cons 0 X .nil)
+      (.cons 0 0 (b.subst₀ σ) .nil)) (Term.rename_weaken_subst₀_lift σ C)
+  | _, _, _ :: ps, σ, u, .cons _ p A Θ, κs, l, C, b => by
+    show Term.recursor r "Pair" _ _ _
+      (Prelude.pairArgs (A.subst₀ σ) ((Θ.pack κs.tail l).subst₀ (Subst₀.lift σ))) (u.subst₀ σ)
+      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil)
+      (.cons 2 0 ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+        (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))).subst₀
+          (Subst₀.lift (Subst₀.lift σ))) .nil) = _
+    have h₁ := Telescope.pack_subst₀ (Subst₀.lift σ) Θ κs.tail l
+    have h₂ := Term.rename_weaken_subst₀_lift (b := .var) σ C
+    have h₃ := Term.unpack_subst₀ r (Subst₀.lift (Subst₀.lift σ)) (.var₀ .zero) (Θ.rename Ren.weaken)
+      κs.tail l (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))
+    have h₅ := (Telescope.subst₀_rename_comm_of (σ₁ := Subst₀.lift (e := .var) σ)
+      (ξ₁ := Ren.weaken (e := .var)) (σ₂ := Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ))
+      (ξ₂ := Ren.weaken (e := .var)) (fun _ => rfl) Θ).symm
+    have h₆ := (Term.subst₀_rename_comm_of (σ₁ := σ) (ξ₁ := Ren.weakenN 2)
+      (σ₂ := Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ)) (ξ₂ := Ren.weakenN 2) (fun x => by
+        show _ = ((σ x).rename Ren.weaken).rename Ren.weaken
+        rw [Val.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := Ren.weaken) (ξ₃ := Ren.weakenN 2)
+          (fun _ => rfl)]
+        rfl) C).symm
+    have h₇ := (Term.subst₀_rename_comm_of (σ₁ := Subst₀.liftN ps.length (Subst₀.lift σ))
+      (ξ₁ := Ren.liftN ps.length (Ren.weaken (e := .var)))
+      (σ₂ := Subst₀.liftN ps.length (Subst₀.lift (e := .var) (Subst₀.lift (e := .var) σ)))
+      (ξ₂ := Ren.liftN ps.length (Ren.weaken (e := .var)))
+      (Subst₀.liftN_rename_comm_of ps.length (fun _ => rfl)) b).symm
+    show _ = Term.recursor r "Pair" _ _ _
+      (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
+      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil)
+      (.cons 2 0 (Term.unpack r (.var₀ .zero) ((Θ.subst₀ (Subst₀.lift σ)).rename Ren.weaken) κs.tail l
+        ((C.subst₀ σ).rename (Ren.weakenN 2))
+        ((b.subst₀ (Subst₀.liftN ps.length (Subst₀.lift σ))).rename (Ren.liftN ps.length Ren.weaken))) .nil)
+    rw [h₁]
+    let F := fun (X : Term k (.var :: _)) (Y : Term k (.var :: .var :: _)) =>
+      Term.recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
+        [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
+        (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
+        (.cons 0 X .nil) (.cons 2 0 Y .nil)
+    refine (congrArg (fun X => F X _) h₂).trans (congrArg (F _) (h₃.trans ?_))
+    rw [h₅]
+    erw [h₆, h₇]
+    rfl
 
 -- ADE: none.
-/-- A telescope whose entries live in sorts, renamed by a typed renaming, lives in the sorts. -/
-theorem WfTelescopeSorts.rename {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ}
-    {ξ : Ren Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) (hξ : TypedRen sig ctx' ξ ctx) :
-    WfTelescopeSorts sig ctx' (Θ.rename ξ) κs l := by
-  rw [Telescope.rename_eq_subst]
-  exact h.subst TypedRen.liftable (.base ⟨_, hξ, fun _ => rfl⟩) hξ.wfCtx
-
--- ADE: none.
-/-- A telescope whose entries live in sorts, substituted by a typed substitution of the first order,
-lives in the sorts. -/
-theorem WfTelescopeSorts.subst₀ {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ}
-    {σ : Subst₀ k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) (hσ : TypedSubst sig ctx' σ ctx) :
-    WfTelescopeSorts sig ctx' (Θ.subst₀ σ) κs l := by
-  rw [Telescope.subst₀_eq_subst]
-  exact h.subst TypedSubst.liftable (.base ⟨_, hσ, rfl⟩) hσ.wfCtx
-
--- ADE: `prodⱼ` and `starⱼ`, in `Definition/Typed.agda`.
-/-- The packing of arguments of a telescope whose entries live in sorts is a term of the packing of
-the telescope.
-RFC: `\mathsf{pack}_{\bar t:}` -/
-theorem HasType.packArgs (hpre : sig.HasPrelude) : {Γ : Scope} → {ps : List Parameter} →
-    {ctx : Context k Γ} → {ts : Args k Γ ps} → {Θ : Telescope k Γ ps} →
-    {κs : List (Universe k)} → {l : Level k} → WfTelescopeSorts sig ctx Θ κs l →
-      HasArgs sig ctx ts Θ → HasType sig ctx (ts.pack Θ κs l) (Θ.pack κs l)
-  | _, [], _, .nil, .nil, _, _, .nil hctx, _ =>
-    .ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl rfl
-      trivial (.nil hctx) (.nil hctx)
-  | _, p :: _, _, .cons t ts, .cons _ _ A Θ, κ :: κs, l, .cons hA hl hΘ hp, .cons ht hts => by
-    have hr := HasType.packArgs hpre (hΘ.subst₀ (TypedSubst.single ht)) hts
-    rw [← Telescope.pack_subst₀] at hr
-    have hctx := contextPresuppositions.hasType hA
-    refine .ctor (con := Prelude.pairMk) (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs l) .nil))
-      (qs := [κ.quality]) (ls := [κ.level, Telescope.packLevel κs l])
-      (ps := [p.usage, p.requirement])
-      hpre.pair (List.mem_singleton_self _) rfl rfl rfl hp
-      (HasInstanceArgs.pair p.usage p.requirement hA (HasType.packLevel hpre hΘ)) ?_
-    show HasArgs sig _ _ (.cons .unrestrictedUnrestricted ⟨p.usage, p.requirement⟩ A
-      (.cons Grade.zero ⟨Grade.one, Grade.one⟩ (((Θ.pack κs l).rename (Ren.liftN 1 Ren.weaken)).instantiate
-        (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩]) (.cons (Term.var₀ .zero) .nil)) .nil))
-    rw [Prelude.pairSecond]
-    exact .cons ht (.cons hr (.nil hctx))
-
--- ADE: none.
-/-- The packing of arguments uses the variables as the arguments do: each pair uses its first term
-with the grade of its entry and the rest once, and the unit uses none.
-RFC: `\mathsf{pack}_{\bar t▶}` -/
-theorem Usage.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} :
-    {ps : List Parameter} → {γ : GradeVector Γ.length} → {ts : Args k Γ ps} →
-      (Θ : Telescope k Γ ps) → (κs : List (Universe k)) → (l : Level k) →
-      UsageArgs sig γ m ts → Usage sig γ m (ts.pack Θ κs l)
-  | [], _, .nil, .nil, _, l, .nil =>
-    Usage.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl
-      .nil
-  | p :: _, _, .cons t ts, .cons _ _ A Θ, κs, l, .cons (γ := γ) (δ := δ) ht hts => by
-    have hr := Usage.pack hpre (Θ.subst₀ (Subst₀.single t)) κs.tail l hts
-    have hm : m ⊙ Grade.one = m := by cases m <;> decide
-    refine .sub (Usage.ctor (con := Prelude.pairMk)
-      (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
-      (qs := [(κs.headD ⟨.type, l⟩).quality]) (ps := [p.usage, p.requirement])
-      hpre.pair (List.mem_singleton_self _) rfl rfl (.cons ht (.cons (hm ▸ hr) .nil))) ?_
-    intro x
-    show p.usage * γ x + δ x ≤ p.usage * γ x + (Grade.one * δ x + Grade.zero)
-    generalize p.usage * γ x = a
-    generalize δ x = b
-    revert a b
-    decide
-
--- ADE: none.
-/-- The packing of arguments that satisfy the requirements of their entries is a new value, of the
-ownership `11ᵖ`, as every constructor: each pair requires of its first term the requirement of its
-entry, and of the rest a new value, which it is.
-RFC: `\mathsf{pack}_{\bar t◀}` -/
-theorem Ownership.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
-    {φ : Var Γ .var → Grade} {m : Mode} :
-    {ps : List Parameter} → {ts : Args k Γ ps} → {os : List Grade} →
-      (Θ : Telescope k Γ ps) → (κs : List (Universe k)) → (l : Level k) →
-      OwnershipArgs sig φ m ts os → Ownership sig φ m .linearLinear (ts.pack Θ κs l)
-  | [], .nil, _, .nil, _, l, .nil =>
-    Ownership.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl
-      rfl .nil
-  | p :: _, .cons t ts, _, .cons _ _ A Θ, κs, l, .cons ht hr hts => by
-    have hm : m ⊙ Grade.one = m := by cases m <;> decide
-    exact Ownership.ctor (con := Prelude.pairMk)
-      (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
-      (qs := [(κs.headD ⟨.type, l⟩).quality]) (ps := [p.usage, p.requirement])
-      hpre.pair (List.mem_singleton_self _) rfl rfl
-      (.cons ht hr (.cons (hm ▸ Ownership.pack hpre (Θ.subst₀ (Subst₀.single t)) κs.tail l hts)
-        (fun _ => by decide) .nil))
+/-- The unpacking in the branch of a pair, at the fields `t` and `P`, is the unpacking of `P` into
+the term at `t`. -/
+theorem Term.unpack_branch_instantiate (r : Grade) {Γ : Scope} {p : Parameter} {ps : List Parameter}
+    (t P : Term k Γ) (Θ : Telescope k (.var :: Γ) ps) (κs : List (Universe k)) (l : Level k)
+    (C : Term k Γ) (b : Term k (Scope.extend (.var :: Γ) ps.length)) :
+    (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs l (C.rename (Ren.weakenN 2))
+      (b.rename (Ren.liftN ps.length Ren.weaken))).instantiate
+        (ps := [p, ⟨Grade.one, Grade.one⟩]) (.cons t (.cons P .nil)) =
+      Term.unpack r P (Θ.subst₀ (Subst₀.single t)) κs l C
+        (b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) := by
+  show ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs l (C.rename (Ren.weakenN 2))
+      (b.rename (Ren.liftN ps.length Ren.weaken))).subst₀ (Subst₀.lift (Subst₀.single t))).subst₀
+        (Subst₀.single P) = _
+  have h₁ := (Telescope.subst₀_rename_comm_of (σ₁ := Subst₀.single t)
+    (ξ₁ := Ren.weaken (e := .var)) (σ₂ := Subst₀.lift (e := .var) (Subst₀.single t))
+    (ξ₂ := Ren.weaken (e := .var)) (fun _ => rfl) Θ).symm
+  have h₂ : (C.rename (Ren.weakenN 2)).subst₀ (Subst₀.lift (e := .var) (Subst₀.single t)) =
+      C.rename Ren.weaken :=
+    (Term.subst₀_rename_of (σ := Subst₀.lift (e := .var) (Subst₀.single t)) (ξ := Ren.weakenN 2)
+      (σ' := fun x => .var (Ren.weaken x)) (fun _ => rfl) C).trans
+      (Term.subst₀_eq_rename_of (fun _ => rfl) C)
+  have h₃ := (Term.subst₀_rename_comm_of (σ₁ := Subst₀.liftN ps.length (Subst₀.single t))
+    (ξ₁ := Ren.liftN ps.length (Ren.weaken (e := .var)))
+    (σ₂ := Subst₀.liftN ps.length (Subst₀.lift (e := .var) (Subst₀.single t)))
+    (ξ₂ := Ren.liftN ps.length (Ren.weaken (e := .var)))
+    (Subst₀.liftN_rename_comm_of ps.length (fun _ => rfl)) b).symm
+  have h₄ : ((Θ.subst₀ (Subst₀.single t)).rename Ren.weaken).subst₀ (Subst₀.single P) =
+      Θ.subst₀ (Subst₀.single t) :=
+    (Telescope.subst₀_rename_of (σ := Subst₀.single P) (ξ := Ren.weaken) (σ' := Subst₀.id)
+      (fun _ => rfl) _).trans
+      (Telescope.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl) _)
+  have h₅ : ((b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))).rename
+      (Ren.liftN ps.length Ren.weaken)).subst₀ (Subst₀.liftN ps.length (Subst₀.single P)) =
+      b.subst₀ (Subst₀.liftN ps.length (Subst₀.single t)) :=
+    (Term.subst₀_rename_of (σ := Subst₀.liftN ps.length (Subst₀.single P))
+      (ξ := Ren.liftN ps.length Ren.weaken) (σ' := Subst₀.liftN ps.length Subst₀.id)
+      (Subst₀.liftN_rename_of ps.length (fun _ => rfl)) _).trans
+      (Term.subst₀_id_of (Subst₀.liftN_id_of ps.length (fun _ => rfl)) _)
+  rw [Term.unpack_subst₀, h₁]
+  erw [h₂, h₃]
+  rw [Term.unpack_subst₀, h₄, Term.subst₀_single_rename_weaken]
+  erw [h₅]
+  rfl
 
 end Sic.Core
