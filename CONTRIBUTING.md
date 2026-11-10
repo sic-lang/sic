@@ -109,7 +109,7 @@ With [direnv](https://direnv.net/), `.envrc` loads it when entering the reposito
 The setups write these files:
 
 - `setup-hooks` copies the Git hooks to the hooks of the clone: `commit-msg` rejects a commit without the sign-off of its author, which the `commits` check requires.
-- `setup-vscode` writes the recommended extensions and settings of VS Code to `.vscode/`, which git ignores.
+- `setup-vscode` writes the recommended extensions and settings of VS Code to `.vscode/`, which Git ignores.
 
 ## Checks
 

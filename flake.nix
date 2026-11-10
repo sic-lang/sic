@@ -109,7 +109,7 @@
               ];
               command = "git ls-files -z .envrc '*.sh' | xargs -0 shfmt --diff";
             };
-            # The files git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
+            # The files Git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
             # with TOML files.
             taplo = {
               tools = [
@@ -318,7 +318,7 @@
                 sources = [ commitMsgHook.run ];
               };
             };
-            # Writes the configuration to .vscode/, which git ignores.
+            # Writes the configuration to .vscode/, which Git ignores.
             vscode = {
               description = "Write the recommended VS Code configuration to .vscode/";
               command = setup {
@@ -440,7 +440,7 @@
             packages = lib.unique (lib.concatMap (check: check.tools) (lib.attrValues fileChecks)) ++ [
               pkgs.nixd
             ];
-            # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which git
+            # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which Git
             # ignores: written from the Lean of the shell, it always matches flake.lock.
             shellHook = ''
               echo "leanprover/lean4:v${pkgs.lean4.version}" >"$(${lib.getExe pkgs.git} rev-parse --show-toplevel)/theory/lean-toolchain"
