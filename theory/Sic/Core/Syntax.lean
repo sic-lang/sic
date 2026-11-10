@@ -222,16 +222,17 @@ inductive Telescope (k : Nat) : Scope → List Parameter → Type where
       (Θ : Telescope k (.var :: Γ) ps) : Telescope k Γ (p :: ps)
 
 /-- `Θ̄`: the states of a corecursor, one for each type of the block, in order; the state
-`x̄. Θ` is a telescope over a new variable for each non-uniform parameter, of which the indices
-only keep the number `n` of non-uniform parameters.
+`x̄. Θ : κ̄` is a telescope over a new variable for each non-uniform parameter, of which the indices
+only keep the number `n` of non-uniform parameters, with the sorts `κ̄` of its entries, which its
+packing reads.
 RFC: `\mathsf{syntax}_{\bar\Theta}` -/
 inductive States (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : States k Γ
-  /-- `(x̄. Θ, Θ̄)`, with `n` non-uniform parameters and a telescope `Θ` whose entries have the
-  parameters `ps`. -/
+  /-- `(x̄. Θ : κ̄, Θ̄)`, with `n` non-uniform parameters, a telescope `Θ` whose entries have the
+  parameters `ps`, and the sorts `κ̄` of its entries. -/
   | cons {Γ : Scope} (n : Nat) {ps : List Parameter} (S : Telescope k (Γ.extend n) ps)
-      (Ss : States k Γ) : States k Γ
+      (κs : List (Universe k)) (Ss : States k Γ) : States k Γ
 
 /-- `ḡ`: the branches of a corecursor, one for each destructor of each type of the block, in the
 order of the declaration; the branch `D.d(x̄; ȳ; z̄) ⇒ g` is a term over a new variable for each
@@ -398,15 +399,21 @@ theorem CorecBranches.get_inj {k : Nat} {Γ : Scope} {vs : CorecBranches k Γ} {
 /-- The number of the states `Θ̄` of a corecursor. -/
 def States.length {k : Nat} {Γ : Scope} : States k Γ → Nat
   | .nil => 0
-  | .cons _ _ Ss => Ss.length + 1
+  | .cons _ _ _ Ss => Ss.length + 1
 
 /-- The state at a position of states, with its number of non-uniform parameters and the
 parameters of its entries. -/
 def States.get {k : Nat} {Γ : Scope} :
     States k Γ → Nat → Option (Σ n, Σ ps : List Parameter, Telescope k (Γ.extend n) ps)
   | .nil, _ => none
-  | .cons n S _, 0 => some ⟨n, _, S⟩
-  | .cons _ _ Ss, j + 1 => Ss.get j
+  | .cons n S _ _, 0 => some ⟨n, _, S⟩
+  | .cons _ _ _ Ss, j + 1 => Ss.get j
+
+/-- The sorts `κ̄` of the entries of the state at a position of states, none past the last state. -/
+def States.sorts {k : Nat} {Γ : Scope} : States k Γ → Nat → List (Universe k)
+  | .nil, _ => []
+  | .cons _ _ κs _, 0 => κs
+  | .cons _ _ _ Ss, j + 1 => Ss.sorts j
 
 /-- The variable `x`, applied to no argument. -/
 abbrev Term.var₀ {k : Nat} {Γ : Scope} (x : Var Γ .var) : Term k Γ := .var x .nil

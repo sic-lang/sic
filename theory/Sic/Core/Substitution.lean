@@ -115,7 +115,7 @@ def Telescope.rename {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) :
 /-- The states `Θ̄` renamed by `ξ`, under the variables of each state. -/
 def States.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
-  | .cons n S Ss => .cons n (S.rename (Ren.liftN _ ξ)) (Ss.rename ξ)
+  | .cons n S κs Ss => .cons n (S.rename (Ren.liftN _ ξ)) κs (Ss.rename ξ)
 
 /-- The branches `ḡ` of a corecursor renamed by `ξ`, under the variables of each branch. -/
 def CorecBranches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
@@ -294,7 +294,7 @@ def Telescope.subst₀ {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ
 RFC: `\mathsf{subst}_\sigma.\bar\Theta` -/
 def States.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
-  | .cons n S Ss => .cons n (S.subst₀ (Subst₀.liftN _ σ)) (Ss.subst₀ σ)
+  | .cons n S κs Ss => .cons n (S.subst₀ (Subst₀.liftN _ σ)) κs (Ss.subst₀ σ)
 
 /-- The branches `ḡ` of a corecursor substituted by `σ`, under the variables of each branch.
 RFC: `\mathsf{subst}_\sigma.\bar g` -/
@@ -418,7 +418,7 @@ def Telescope.subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k Γ Δ) :
 RFC: `\mathsf{subst}_\theta.\bar\Theta` -/
 def States.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
-  | .cons n S Ss => .cons n (S.subst (Subst.liftN _ θ)) (Ss.subst θ)
+  | .cons n S κs Ss => .cons n (S.subst (Subst.liftN _ θ)) κs (Ss.subst θ)
 
 /-- The branches `ḡ` of a corecursor substituted by `θ`, under the variables of each branch.
 RFC: `\mathsf{subst}_\theta.\bar g` -/
@@ -549,7 +549,8 @@ each state.
 RFC: `\mathsf{inst}_l.\bar\Theta` -/
 def States.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : States k Γ → States k' Γ
   | .nil => .nil
-  | .cons n S Ss => .cons n (S.substLevels ls') (Ss.substLevels ls')
+  | .cons n S κs Ss =>
+    .cons n (S.substLevels ls') (κs.map (Universe.substLevels ls')) (Ss.substLevels ls')
 
 /-- The branches `ḡ` of a corecursor in which the levels `ls'` replace the level variables, under
 the variables of each branch.
@@ -675,7 +676,7 @@ theorem Telescope.rename_id_of {Γ : Scope} {ps : List Parameter}
 theorem States.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
     (Ss : States k Γ) → Ss.rename ξ = Ss
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.rename_id_of h Ss, Telescope.rename_id_of (Ren.liftN_id_of _ h) S]
 
 theorem CorecBranches.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
@@ -767,7 +768,7 @@ theorem Telescope.subst₀_id_of {Γ : Scope} {ps : List Parameter}
 theorem States.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (Ss : States k Γ) → Ss.subst₀ σ = Ss
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst₀, States.subst₀_id_of h Ss, Telescope.subst₀_id_of (Subst₀.liftN_id_of _ h) S]
 
 theorem CorecBranches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
@@ -909,7 +910,7 @@ theorem States.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ : 
     {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
     (Ss : States k Ξ) → (Ss.rename ξ₂).rename ξ₁ = Ss.rename ξ₃
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.rename, States.rename,
       States.rename_rename_of h Ss, Telescope.rename_rename_of (Ren.liftN_comp_of _ h) S]
 
@@ -1034,7 +1035,7 @@ theorem States.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {ξ
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
     (Ss : States k Ξ) → (Ss.rename ξ).subst₀ σ = Ss.subst₀ σ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.subst₀, States.subst₀,
       States.subst₀_rename_of h Ss, Telescope.subst₀_rename_of (Subst₀.liftN_rename_of _ h) S]
 
@@ -1166,7 +1167,7 @@ theorem States.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {ξ
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
     (Ss : States k Ξ) → (Ss.subst₀ σ).rename ξ = Ss.subst₀ σ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst₀, States.rename, States.subst₀,
       States.rename_subst₀_of h Ss,
       Telescope.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) S]
@@ -1300,7 +1301,7 @@ theorem States.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
     (Ss : States k Ξ) → (Ss.subst₀ σ).subst₀ τ = Ss.subst₀ σ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst₀, States.subst₀, States.subst₀,
       States.subst₀_subst₀_of h Ss, Telescope.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) S]
 
@@ -1605,7 +1606,7 @@ theorem States.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : Ren
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
     (Ss : States k Ξ) → (Ss.rename ξ).subst θ = Ss.subst θ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.subst, States.subst,
       States.subst_rename_of h Ss, Telescope.subst_rename_of (Subst.liftN_rename_of _ h) S]
 
@@ -1732,7 +1733,7 @@ theorem States.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : Ren
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
     (Ss : States k Ξ) → (Ss.subst θ).rename ξ = Ss.subst θ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst, States.rename, States.subst,
       States.rename_subst_of h Ss, Telescope.rename_subst_of (Subst.liftN_rename_after_of _ h) S]
 
@@ -1900,7 +1901,7 @@ theorem States.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
     (Ss : States k Ξ) → (Ss.subst₀ σ).subst θ₁ = (Ss.subst θ₂).subst₀ σ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst₀, States.subst, States.subst, States.subst₀,
       States.subst_subst₀_of h Ss, Telescope.subst_subst₀_of (Subst₀.Swaps.liftN _ h) S]
 
@@ -2117,7 +2118,7 @@ theorem States.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ 
     {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
     (Ss : States k Ξ) → (Ss.subst θ₁).subst θ₂ = Ss.subst θ₃
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst, States.subst, States.subst,
       States.subst_subst_of h Ss, Telescope.subst_subst_of (Subst.liftN_subst_of _ h) S]
 
@@ -2222,7 +2223,7 @@ theorem Telescope.subst_id_of {Γ : Scope} {ps : List Parameter}
 theorem States.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (Ss : States k Γ) → Ss.subst θ = Ss
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst, States.subst_id_of h Ss, Telescope.subst_id_of (Subst.liftN_id_of _ h) S]
 
 theorem CorecBranches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
@@ -2447,7 +2448,7 @@ theorem Telescope.subst₀_isVar {Γ Δ : Scope} {ps : List Parameter} {σ : Sub
 theorem States.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (Ss : States k Δ) → Ss.subst₀ σ = Ss.rename ξ
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.subst₀, States.subst₀_isVar h Ss,
       Telescope.subst₀_isVar (Subst₀.liftN_isVar _ h) S]
 
@@ -2831,7 +2832,7 @@ theorem States.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Le
     (ξ : Ren Γ Δ) :
     (Ss : States k Δ) → (Ss.rename ξ).substLevels ls' = (Ss.substLevels ls').rename ξ
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.rename, States.substLevels, States.substLevels, States.rename,
       States.substLevels_rename ls' ξ Ss, Telescope.substLevels_rename]
 
@@ -2968,7 +2969,7 @@ theorem States.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k �
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
     (Ss : States k Δ) → (Ss.subst₀ σ).substLevels ls' = (Ss.substLevels ls').subst₀ σ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst₀, States.substLevels, States.substLevels,
       States.subst₀, States.substLevels_subst₀_of h Ss,
       Telescope.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) S]
@@ -3003,6 +3004,13 @@ theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (ls' : Fin k → Le
     exact Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of ps.length (ls' := ls')
       (σ := Subst₀.single t) (σ' := Subst₀.single (t.substLevels ls'))
       fun x => by cases x <;> rfl) B
+
+/-- Instantiating the level variables of a sort by `ls₁` then by `ls₂` is instantiating them by their
+composition. -/
+theorem Universe.substLevels_substLevels {k' k'' : Nat} (ls₁ : Fin k → Level k')
+    (ls₂ : Fin k' → Level k'') (κ : Universe k) :
+    (κ.substLevels ls₁).substLevels ls₂ = κ.substLevels fun i => (ls₁ i).subst ls₂ := by
+  simp only [Universe.substLevels, Level.subst_subst]
 
 mutual
 
@@ -3101,9 +3109,11 @@ theorem States.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin 
     (Ss : States k Γ) →
       (Ss.substLevels ls₁).substLevels ls₂ = Ss.substLevels fun i => (ls₁ i).subst ls₂
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.substLevels, States.substLevels, States.substLevels,
-      States.substLevels_substLevels ls₁ ls₂ Ss, Telescope.substLevels_substLevels ls₁ ls₂ S]
+      States.substLevels_substLevels ls₁ ls₂ Ss, Telescope.substLevels_substLevels ls₁ ls₂ S,
+      List.map_map]
+    simp only [Function.comp_def, Universe.substLevels_substLevels]
 
 theorem CorecBranches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
     (ls₂ : Fin k' → Level k'') :
@@ -3130,13 +3140,6 @@ theorem Context.substLevels_substLevels {k' k'' : Nat} (ls₁ : Fin k → Level 
     rw [Context.substLevels, Context.substLevels, Context.substLevels,
       Context.substLevels_substLevels ls₁ ls₂ ctx, Telescope.substLevels_substLevels ls₁ ls₂ Θ,
       Term.substLevels_substLevels ls₁ ls₂ A]
-
-/-- Instantiating the level variables of a sort by `ls₁` then by `ls₂` is instantiating them by their
-composition. -/
-theorem Universe.substLevels_substLevels {k' k'' : Nat} (ls₁ : Fin k → Level k')
-    (ls₂ : Fin k' → Level k'') (κ : Universe k) :
-    (κ.substLevels ls₁).substLevels ls₂ = κ.substLevels fun i => (ls₁ i).subst ls₂ := by
-  simp only [Universe.substLevels, Level.subst_subst]
 
 /-- `(Γ, Θ)[l̄' / l̄] = Γ[l̄' / l̄], Θ[l̄' / l̄]`.
 RFC: `\mathsf{comm}_l.\Gamma` -/
@@ -3299,7 +3302,7 @@ theorem States.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → 
     (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
     (Ss : States k Δ) → (Ss.subst θ).substLevels ls' = (Ss.substLevels ls').subst θ'
   | .nil => rfl
-  | .cons n S Ss => by
+  | .cons n S κs Ss => by
     rw [States.subst, States.substLevels, States.substLevels,
       States.subst, States.substLevels_subst_of h Ss,
       Telescope.substLevels_subst_of (Subst.liftN_substLevels_of _ h) S]
@@ -3740,7 +3743,7 @@ theorem States.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
       Ss.get j = some ⟨n, ps, S⟩ → (Ss.subst θ).get j = some ⟨n, ps, S.subst (Subst.liftN n θ)⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
-  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_subst θ (Ss := Ss) h
+  | .cons _ _ _ Ss, _ + 1, _, _, _, h => States.get_subst θ (Ss := Ss) h
 
 /-- The branch at a position of the branches of a corecursor whose levels are instantiated is a
 branch of the branches, instantiated. -/
@@ -3769,7 +3772,7 @@ theorem States.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope
         ∃ S₀, Ss.get j = some ⟨n, ps, S₀⟩ ∧ S = S₀.substLevels ls'
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels ls' (Ss := Ss) h
+  | .cons _ _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels ls' (Ss := Ss) h
 
 /-- The state at a position of states is there once their levels are instantiated. -/
 theorem States.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
@@ -3777,7 +3780,7 @@ theorem States.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Sc
       Ss.get j = some ⟨n, ps, S⟩ → (Ss.substLevels ls').get j = some ⟨n, ps, S.substLevels ls'⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
-  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels_of ls' (Ss := Ss) h
+  | .cons _ _ _ Ss, _ + 1, _, _, _, h => States.get_substLevels_of ls' (Ss := Ss) h
 
 /-- The branches of a corecursor whose levels are instantiated are as many. -/
 theorem CorecBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
@@ -3789,7 +3792,7 @@ theorem CorecBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {
 theorem States.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
     (Ss : States k Γ) → (Ss.substLevels ls').length = Ss.length
   | .nil => rfl
-  | .cons _ _ Ss => congrArg (· + 1) (States.length_substLevels ls' Ss)
+  | .cons _ _ _ Ss => congrArg (· + 1) (States.length_substLevels ls' Ss)
 
 /-! ## Motives at a Constructor -/
 
@@ -4227,7 +4230,7 @@ theorem States.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
         ∃ S₀, Ss.get j = some ⟨n, ps, S₀⟩ ∧ S = S₀.subst (Subst.liftN n θ)
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_subst_inv θ (Ss := Ss) h
+  | .cons _ _ _ Ss, _ + 1, _, _, _, h => States.get_subst_inv θ (Ss := Ss) h
 
 /-- A branch at a position of the branches of a corecursor substituted is a branch of the branches,
 substituted. -/
@@ -4256,7 +4259,23 @@ theorem Branches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 theorem States.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
     (Ss : States k Δ) → (Ss.subst θ).length = Ss.length
   | .nil => rfl
-  | .cons _ _ Ss => congrArg (· + 1) (States.length_subst θ Ss)
+  | .cons _ _ _ Ss => congrArg (· + 1) (States.length_subst θ Ss)
+
+/-- The sorts of a state of states substituted are the sorts of the state. -/
+theorem States.sorts_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (Ss : States k Δ) → (j : Nat) → (Ss.subst θ).sorts j = Ss.sorts j
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ Ss, j + 1 => States.sorts_subst θ Ss j
+
+/-- The sorts of a state of states whose levels are instantiated are the sorts of the state,
+instantiated. -/
+theorem States.sorts_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    (Ss : States k Γ) → (j : Nat) →
+      (Ss.substLevels ls').sorts j = (Ss.sorts j).map (Universe.substLevels ls')
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ Ss, j + 1 => States.sorts_substLevels ls' Ss j
 
 /-- Branches of a corecursor substituted are as many. -/
 theorem CorecBranches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :

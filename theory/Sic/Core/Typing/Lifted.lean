@@ -234,9 +234,9 @@ where
       rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
       exact hasArgs hbs hθ
     | .corec (r := r) (qs := qs) (ls := ls) (ps := ps) (as := as) (Ss := Ss) (gs := gs) (ss := ss)
-        (κs := κs) h hq hl hp hadm has hh hS hss hSl hSs hSt hgl hgs hgt, hθ => by
+        h hq hl hp hadm has hh hS hss hSl hSs hSt hgl hgs hgt, hθ => by
       rw [Term.corec_subst]
-      refine .corec (κs := κs) h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst _ hS)
+      refine .corec h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst _ hS)
         (hasArgs hss hθ) ((States.length_subst _ Ss).trans hSl) ?_ ?_
         ((CorecBranches.length_subst _ gs).trans hgl) ?_ ?_
       · intro j T' hj
@@ -244,7 +244,8 @@ where
         exact ⟨ps'', _, States.get_subst _ hS'⟩
       · intro j T' ps'' S' hj hS'
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        exact wfTelescope (hSt j T' ps'' S₀ hj hS₀) hθ
+        rw [States.sorts_subst]
+        exact wfTelescopeSorts (hSt j T' ps'' S₀ hj hS₀) hθ
       · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
@@ -332,21 +333,27 @@ where
       rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
       exact eqArgs hbs hθ
     | .corec (r := r) (qs := qs) (ls₁ := ls) (ps := ps) (as₁ := as) (Ss₁ := Ss₁) (Ss₂ := Ss₂)
-        (gs₁ := gs₁) (gs₂ := gs₂) (ss₁ := ss₁) (ss₂ := ss₂) (κs := κs) h hq hl₁ hl₂ hp hadm has hls
-        hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSt hgl₁ hgl₂ hgs hgt, hθ => by
+        (gs₁ := gs₁) (gs₂ := gs₂) (ss₁ := ss₁) (ss₂ := ss₂) h hq hl₁ hl₂ hp hadm has hls
+        hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt, hθ => by
       rw [Term.corec_subst, Term.corec_subst]
-      refine .corec (κs := κs) h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls hh
+      refine .corec h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls hh
         (States.get_subst θ hS₁) (States.get_subst θ hS₂) (eqArgs hss hθ)
-        ((States.length_subst θ Ss₁).trans hSl₁) ((States.length_subst θ Ss₂).trans hSl₂) ?_ ?_
+        ((States.length_subst θ Ss₁).trans hSl₁) ((States.length_subst θ Ss₂).trans hSl₂) ?_
+        (fun j => by rw [States.sorts_subst, States.sorts_subst]; exact hSk j) ?_ ?_
         ((CorecBranches.length_subst θ gs₁).trans hgl₁) ((CorecBranches.length_subst θ gs₂).trans hgl₂)
         ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S₁', S₂', h₁, h₂⟩ := hSs j T' hj
         exact ⟨ps'', _, _, States.get_subst θ h₁, States.get_subst θ h₂⟩
+      · intro j T' ps'' S₁' hj h₁
+        obtain ⟨S₁₀, hS₁₀, rfl⟩ := States.get_subst_inv θ h₁
+        rw [States.sorts_subst]
+        exact wfTelescopeSorts (hSt j T' ps'' S₁₀ hj hS₁₀) hθ
       · intro j T' ps'' S₁' S₂' hj h₁ h₂
         obtain ⟨S₁₀, hS₁₀, rfl⟩ := States.get_subst_inv θ h₁
         obtain ⟨S₂₀, hS₂₀, rfl⟩ := States.get_subst_inv θ h₂
-        exact eqTelescope (hSt j T' ps'' S₁₀ S₂₀ hj hS₁₀ hS₂₀) hθ
+        rw [States.sorts_subst]
+        exact eqTelescope (hSe j T' ps'' S₁₀ S₂₀ hj hS₁₀ hS₂₀) hθ
       · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
@@ -426,13 +433,13 @@ where
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
         exact ih
     | .beta (r := r) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (Ss := Ss) (gs := gs)
-        (ss := ss) (κs := κs) h hq hl hp hadm has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt,
+        (ss := ss) h hq hl hp hadm has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt,
         hθ => by
       rw [Term.obs_subst, Term.corec_subst, Term.instantiate_subst, Term.instantiate_subst,
         Args.subst_liftN_rename_weakenN, Term.instantiate_subst, Term.subst_subst_of
           (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
         Term.corec_subst]
-      refine .beta (κs := κs) h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst θ hS)
+      refine .beta h hq hl hp hadm (hasInstanceArgs has hθ) hh (States.get_subst θ hS)
         (hasArgs hss hθ) hi hd (CorecBranches.get_subst θ hg) ?_
         ((States.length_subst θ Ss).trans hSl) ?_ ?_ ((CorecBranches.length_subst θ gs).trans hgl)
         ?_ ?_
@@ -445,7 +452,8 @@ where
         exact ⟨ps'', _, States.get_subst θ hS'⟩
       · intro j T' ps'' S' hj hS'
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
-        exact wfTelescope (hSt j T' ps'' S₀ hj hS₀) hθ
+        rw [States.sorts_subst]
+        exact wfTelescopeSorts (hSt j T' ps'' S₀ hj hS₀) hθ
       · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd

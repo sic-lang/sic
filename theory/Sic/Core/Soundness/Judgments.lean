@@ -505,7 +505,7 @@ where
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
     | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp hadm has hls hh hS₁ _ hss _ _ _ _
-        _ _ hgs hgt =>
+        _ _ _ _ hgs hgt =>
       fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁

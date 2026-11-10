@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Ownership
+public import Sic.Core.Prelude
 public import Sic.Core.Substitution
 public import Sic.Core.Usage
 
@@ -374,7 +375,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {Ss : States k Γ} {gs : CorecBranches k Γ} {κs : Nat → Universe k} {h' : Nat}
+      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' : Nat}
       {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -387,7 +388,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
       (hSt : ∀ j T' (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataTypes[j]? = some T' → Ss.get j = some ⟨0, ps'', S'⟩ →
-        WfTelescope sig ctx S' (κs j))
+        WfTelescopeSorts sig ctx S' (Ss.sorts j) (Telescope.packLevel (Ss.sorts j) .zero))
       (hgl : gs.length = decl.codataCases.length)
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
@@ -588,7 +589,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
-      {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ} {κs : Nat → Universe k}
+      {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
       {h' : Nat} {ps' : List Parameter} {S₁ S₂ : Telescope k Γ ps'} {ss₁ ss₂ : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
@@ -603,9 +604,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
         ∃ (ps'' : List Parameter) (S₁' S₂' : Telescope k Γ ps''),
           Ss₁.get j = some ⟨0, ps'', S₁'⟩ ∧ Ss₂.get j = some ⟨0, ps'', S₂'⟩)
-      (hSt : ∀ j T' (ps'' : List Parameter) (S₁' S₂' : Telescope k Γ ps''),
+      (hSk : ∀ j, Ss₁.sorts j = Ss₂.sorts j)
+      (hSt : ∀ j T' (ps'' : List Parameter) (S₁' : Telescope k Γ ps''),
         decl.codataTypes[j]? = some T' → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
-        Ss₂.get j = some ⟨0, ps'', S₂'⟩ → EqTelescope sig ctx S₁' S₂' (κs j))
+        WfTelescopeSorts sig ctx S₁' (Ss₁.sorts j) (Telescope.packLevel (Ss₁.sorts j) .zero))
+      (hSe : ∀ j T' (ps'' : List Parameter) (S₁' S₂' : Telescope k Γ ps''),
+        decl.codataTypes[j]? = some T' → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
+        Ss₂.get j = some ⟨0, ps'', S₂'⟩ →
+        EqTelescope sig ctx S₁' S₂' ⟨.type, Telescope.packLevel (Ss₁.sorts j) .zero⟩)
       (hgl₁ : gs₁.length = decl.codataCases.length) (hgl₂ : gs₂.length = decl.codataCases.length)
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
@@ -725,7 +731,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | beta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {Ss : States k Γ} {gs : CorecBranches k Γ} {κs : Nat → Universe k} {h' i : Nat}
+      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' i : Nat}
       {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {d : Name} {p q : Grade} {ps₀ : List Parameter}
       {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
@@ -747,7 +753,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
       (hSt : ∀ j T' (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataTypes[j]? = some T' → Ss.get j = some ⟨0, ps'', S'⟩ →
-        WfTelescope sig ctx S' (κs j))
+        WfTelescopeSorts sig ctx S' (Ss.sorts j) (Telescope.packLevel (Ss.sorts j) .zero))
       (hgl : gs.length = decl.codataCases.length)
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →

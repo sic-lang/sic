@@ -38,6 +38,14 @@ inductive Level.ListEquiv {k : Nat} : List (Level k) → List (Level k) → Prop
   | cons {l₁ l₂ : Level k} {ls₁ ls₂ : List (Level k)} (h : l₁ ≈ l₂) (hs : ListEquiv ls₁ ls₂) :
       ListEquiv (l₁ :: ls₁) (l₂ :: ls₂)
 
+/-- Lists of sorts with the same qualities, at levels equal one by one. -/
+inductive Universe.ListEquiv {k : Nat} : List (Universe k) → List (Universe k) → Prop where
+  /-- No sort. -/
+  | nil : ListEquiv [] []
+  /-- Two sorts of the same quality at equal levels, then the others. -/
+  | cons (s : Quality) {l₁ l₂ : Level k} {κs₁ κs₂ : List (Universe k)} (h : l₁ ≈ l₂)
+      (hs : ListEquiv κs₁ κs₂) : ListEquiv (⟨s, l₁⟩ :: κs₁) (⟨s, l₂⟩ :: κs₂)
+
 mutual
 
 -- ADE: none.
@@ -150,8 +158,9 @@ inductive States.LevelEquiv {k : Nat} : {Γ : Scope} → States k Γ → States 
   | nil {Γ : Scope} : States.LevelEquiv (Γ := Γ) .nil .nil
   /-- Two states equal up to their levels, then the others. -/
   | cons {Γ : Scope} {n : Nat} {ps : List Parameter} {S₁ S₂ : Telescope k (Γ.extend n) ps}
-      {Ss₁ Ss₂ : States k Γ} (h : Telescope.LevelEquiv S₁ S₂) (hs : States.LevelEquiv Ss₁ Ss₂) :
-      States.LevelEquiv (.cons n S₁ Ss₁) (.cons n S₂ Ss₂)
+      {κs₁ κs₂ : List (Universe k)} {Ss₁ Ss₂ : States k Γ} (h : Telescope.LevelEquiv S₁ S₂)
+      (hκ : Universe.ListEquiv κs₁ κs₂) (hs : States.LevelEquiv Ss₁ Ss₂) :
+      States.LevelEquiv (.cons n S₁ κs₁ Ss₁) (.cons n S₂ κs₂ Ss₂)
 
 /-- The branches of a corecursor, equal up to their levels one by one. -/
 inductive CorecBranches.LevelEquiv {k : Nat} :
@@ -190,6 +199,15 @@ theorem Level.ListEquiv.symm {k : Nat} {ls₁ ls₂ : List (Level k)} :
     ListEquiv ls₁ ls₂ → ListEquiv ls₂ ls₁
   | .nil => .nil
   | .cons h hs => .cons (Level.equivalence.symm h) hs.symm
+
+theorem Universe.ListEquiv.refl {k : Nat} : (κs : List (Universe k)) → ListEquiv κs κs
+  | [] => .nil
+  | ⟨s, l⟩ :: κs => .cons s (Level.equivalence.refl l) (ListEquiv.refl κs)
+
+theorem Universe.ListEquiv.symm {k : Nat} {κs₁ κs₂ : List (Universe k)} :
+    ListEquiv κs₁ κs₂ → ListEquiv κs₂ κs₁
+  | .nil => .nil
+  | .cons s h hs => .cons s (Level.equivalence.symm h) hs.symm
 
 mutual
 
@@ -242,7 +260,8 @@ theorem Telescope.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
 theorem States.LevelEquiv.refl {k : Nat} {Γ : Scope} :
     (Ss : States k Γ) → States.LevelEquiv Ss Ss
   | .nil => .nil
-  | .cons _ S Ss => .cons (Telescope.LevelEquiv.refl S) (States.LevelEquiv.refl Ss)
+  | .cons _ S κs Ss =>
+    .cons (Telescope.LevelEquiv.refl S) (Universe.ListEquiv.refl κs) (States.LevelEquiv.refl Ss)
 
 theorem CorecBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
     (vs : CorecBranches k Γ) → CorecBranches.LevelEquiv vs vs
@@ -301,7 +320,7 @@ theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}
 theorem States.LevelEquiv.symm {k : Nat} {Γ : Scope} {Ss₁ Ss₂ : States k Γ} :
     States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv Ss₂ Ss₁
   | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
+  | .cons h hκ hs => .cons h.symm hκ.symm hs.symm
 
 theorem CorecBranches.LevelEquiv.symm {k : Nat} {Γ : Scope} {vs₁ vs₂ : CorecBranches k Γ} :
     CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv vs₂ vs₁
@@ -364,7 +383,7 @@ theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Paramet
 theorem States.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Ss₁ Ss₂ : States k Δ} :
     States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.rename ξ) (Ss₂.rename ξ)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+  | .cons h hκ hs => .cons (h.rename (Ren.liftN _ ξ)) hκ (hs.rename ξ)
 
 theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ)
     {vs₁ vs₂ : CorecBranches k Δ} :
@@ -380,6 +399,12 @@ theorem Level.subst_equiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'} (h : �
     (l : Level k) : l.subst ls₁ ≈ l.subst ls₂ := fun ρ => by
   rw [Level.value_subst, Level.value_subst]
   exact congrArg (l.value ·) (funext fun i => h i ρ)
+
+theorem Universe.ListEquiv.map_subst {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
+    (h : ∀ i, ls₁ i ≈ ls₂ i) : (κs : List (Universe k)) →
+      ListEquiv (κs.map (Universe.substLevels ls₁)) (κs.map (Universe.substLevels ls₂))
+  | [] => .nil
+  | ⟨s, l⟩ :: κs => .cons s (Level.subst_equiv h l) (ListEquiv.map_subst h κs)
 
 theorem Level.ListEquiv.map_subst {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
     (h : ∀ i, ls₁ i ≈ ls₂ i) :
@@ -457,8 +482,9 @@ theorem States.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : F
     (h : ∀ i, ls₁ i ≈ ls₂ i) : (Ss : States k Γ) →
     States.LevelEquiv (Ss.substLevels ls₁) (Ss.substLevels ls₂)
   | .nil => .nil
-  | .cons _ S Ss =>
-    .cons (Telescope.substLevels_levelEquiv h S) (States.substLevels_levelEquiv h Ss)
+  | .cons _ S κs Ss =>
+    .cons (Telescope.substLevels_levelEquiv h S) (Universe.ListEquiv.map_subst h κs)
+      (States.substLevels_levelEquiv h Ss)
 
 theorem CorecBranches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (vs : CorecBranches k Γ) →
@@ -650,7 +676,7 @@ theorem States.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subs
     (hσ : Subst₀.LevelEquiv σ₁ σ₂) {Ss₁ Ss₂ : States k Δ} :
     States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.subst₀ σ₁) (Ss₂.subst₀ σ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (hs.subst₀ hσ)
+  | .cons h hκ hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) hκ (hs.subst₀ hσ)
 
 theorem CorecBranches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
     (hσ : Subst₀.LevelEquiv σ₁ σ₂) {vs₁ vs₂ : CorecBranches k Δ} :
@@ -792,7 +818,7 @@ theorem States.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k
     (hθ : Subst.LevelEquiv θ₁ θ₂) {Ss₁ Ss₂ : States k Δ} :
     States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.subst θ₁) (Ss₂.subst θ₂)
   | .nil => .nil
-  | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) (hs.subst hθ)
+  | .cons h hκ hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) hκ (hs.subst hθ)
 
 theorem CorecBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
     (hθ : Subst.LevelEquiv θ₁ θ₂) {vs₁ vs₂ : CorecBranches k Δ} :
