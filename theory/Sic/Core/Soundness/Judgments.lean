@@ -87,6 +87,11 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → WfTelescope sig ctx Θ κ →
         ValidTelescope sigM ι ctx Θ κ
+  /-- An equality of telescopes in a sort. -/
+  eqTelescope : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
+    {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
+      sigM.Distinct → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
+        ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
   /-- Destructors in a sort. -/
   wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
     {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k},
@@ -120,8 +125,62 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
     (fun x => by
       rw [InstanceArgs.toSubst_substLevels, InstanceArgs.substLevels_rename])
 
+/-- The premises of `(corec_≡)` on its branches, each pair of branches meaningful for every value of
+the level variables, are meaningful at the levels without variables `ρ`. -/
+theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+    {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
+    {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
+    {r : Grade} {Ss : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+      decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+      ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+      ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
+        gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
+    (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+      (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+      (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+      decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+      gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
+      gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
+      ValidEqTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
+        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs ls
+          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
+        g₁ g₂
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs ls
+            ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst))))
+    (ρ : Fin k → Nat) :
+    CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
+      (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
+      (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
+      (gs₁.substLevels fun i => .ofNat (ρ i)) (gs₂.substLevels fun i => .ofNat (ρ i)) := by
+  refine ⟨fun i j T' d ps'' S' hi hSj p q ps₁ Ξ Θ B ψ hpos => ?_,
+    fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ => ?_⟩
+  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
+    obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hpos
+    exact ⟨_, _, CorecBranches.get_substLevels_of _ hg₁, CorecBranches.get_substLevels_of _ hg₂⟩
+  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
+    obtain ⟨g₁₀, hg₁₀, rfl⟩ := CorecBranches.get_substLevels _ hg₁
+    obtain ⟨g₂₀, hg₂₀, rfl⟩ := CorecBranches.get_substLevels _ hg₂
+    have hb := hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hpos hg₁₀ hg₂₀ ρ
+    have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
+      hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs₁ ps'' x
+    simp only [Context.atLevels, Context.substLevels_append,
+      Telescope.substLevels_subst_of (fun x => hcl _ x), Telescope.substLevels_substLevels,
+      Term.atLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (fun x => hcl _ x)),
+      Term.substLevels_substLevels] at hb
+    erw [Context.substLevels_append (fun i => (.ofNat (ρ i) : Level 0)) ctx S₀] at hb
+    rw [List.getFin_map]
+    exact hb
+
 /-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
-variables, are meaningful at the levels without variables `ρ`. -/
+variables, are meaningful at the levels without variables `ρ`: those of `(corec_≡)` at the same
+branches. -/
 theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
@@ -150,24 +209,14 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
     CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
-      (gs.substLevels fun i => .ofNat (ρ i)) := by
-  refine ⟨fun i j T' d ps'' S' hi hSj p q ps₁ Ξ Θ B ψ hpos => ?_,
-    fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg => ?_⟩
-  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
-    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hpos
-    exact ⟨_, CorecBranches.get_substLevels_of _ hg⟩
-  · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
-    obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels _ hg
-    have hb := hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ ρ
-    have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
-      hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
-    simp only [Context.atLevels, Context.substLevels_append,
-      Telescope.substLevels_subst_of (fun x => hcl _ x), Telescope.substLevels_substLevels,
-      Term.atLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (fun x => hcl _ x)),
-      Term.substLevels_substLevels] at hb
-    erw [Context.substLevels_append (fun i => (.ofNat (ρ i) : Level 0)) ctx S₀] at hb
-    rw [List.getFin_map]
-    exact hb
+      (gs.substLevels fun i => .ofNat (ρ i)) :=
+  CorecBranchesEqValid.atLevels hq hl hp
+    (fun i j T' d ps'' S' hi hSj p q ps₁ Ξ Θ B ψ hpos =>
+      have ⟨g, hg⟩ := hgs i j T' d ps'' S' hi hSj p q ps₁ Ξ Θ B ψ hpos
+      ⟨g, g, hg, hg⟩)
+    (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ => by
+      cases CorecBranches.get_inj hg₁ hg₂
+      exact hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ hi hSj hpos hg₁) ρ
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
 -- context.
@@ -175,7 +224,7 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn :=
   ⟨wfConstantDefinition, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs,
-    eqInstanceArgs, wfTelescope, wfDestructors, wfTypeDeclaration⟩
+    eqInstanceArgs, wfTelescope, eqTelescope, wfDestructors, wfTypeDeclaration⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
@@ -429,6 +478,25 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
+    | .corec (ls₁ := ls₁) (ls₂ := ls₂) (as₁ := as₁) h hq hl₁ hl₂ hp has hls hh hS₁ _ hss _ _ _ _
+        _ _ hgs hgt =>
+      fun ρ => by
+      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₁
+      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₂
+      have has' := eqInstanceArgs hd hι has ρ
+      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hss' := eqArgs hd hι hss ρ
+      simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
+      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp (by rw [List.getFin_map]; exact has')
+        (by
+          rw [List.getFin_map, List.getFin_map]
+          exact fun i => Level.subst_equal _ (hls i))
+        hh (States.get_substLevels_of _ hS₁) hss'
+        (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
+          (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
+            eqTerm hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
     | .iota (ls := ls) (T := T) (C := C) h hc hq hl hp has hts hi hC hu _ _ hCt _ _ hut _ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
@@ -545,10 +613,18 @@ where
   wfTelescope {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
       {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfTelescope sig ctx Θ κ → ValidTelescope sigM ι ctx Θ κ
-    | .nil hctx => fun ρ => ValidTelescopeΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hι hctx ρ)
     | .cons hA hκ hΘ _ => fun ρ =>
-      ValidTelescopeΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
+      ValidEqTelescopeΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (wfTelescope hd hι hΘ ρ)
+  eqTelescope {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
+      {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k}
+      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      EqTelescope sig ctx Θ₁ Θ₂ κ → ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
+    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hι hctx ρ)
+    | .cons hA hκ hΘ _ => fun ρ =>
+      ValidEqTelescopeΓ.cons (eqTerm hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
+        (eqTelescope hd hι hΘ ρ)
   wfDestructors {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
       {ns : List Name} {ctx : Context k Γ} {ds : Destructors k Γ ns} {κ : Universe k}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
@@ -681,6 +757,13 @@ structure Soundness : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → WfTelescope sig ctx Θ κ → ValidTelescope sig ι ctx Θ κ
   -- ADE: none.
+  /-- An equality of telescopes in a sort is meaningful.
+  RFC: `\mathsf{sound}.\Theta_\equiv` -/
+  eqTelescope : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
+    {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
+      ValidInterpretation ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
+        ValidEqTelescope sig ι ctx Θ₁ Θ₂ κ
+  -- ADE: none.
   /-- Destructors in a sort are meaningful.
   RFC: `\mathsf{sound}.\bar d` -/
   wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
@@ -739,6 +822,9 @@ theorem soundness : Soundness where
   wfTelescope hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfTelescope h)
     soundnessIn.wfTelescope hs.1 hs.validEntries h
+  eqTelescope hι h :=
+    have hs := soundness_wfSig hι (presuppositions.eqTelescope h)
+    soundnessIn.eqTelescope hs.1 hs.validEntries h
   wfDestructors hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfDestructors h)
     soundnessIn.wfDestructors hs.1 hs.validEntries h

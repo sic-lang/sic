@@ -684,13 +684,19 @@ def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0
         ValidEqTelescope₀ sig ι κ (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
 
 -- ADE: none.
-/-- `(⊨Γ_tel_κ)`: `Σ; Γ ⊨ Θ : κ`, at levels without variables: the telescope substituted by two
-equal closed substitutions of the context gives equal closed telescopes in the sort `κ`.
+/-- `(⊨Γ_tel_κ≡)`: `Σ; Γ ⊨ Θ₁ ≡ Θ₂ : κ`, at levels without variables: the telescopes substituted by
+two equal closed substitutions of the context give equal closed telescopes in the sort `κ`.
+RFC: `{\vDash}\Gamma_{\mathsf{tel}\kappa\equiv}` -/
+def ValidEqTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
+    (ctx : Context 0 Γ) (Θ₁ Θ₂ : Telescope 0 Γ ps) (κ : Universe 0) : Prop :=
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqTelescope₀ sig ι κ (Θ₁.subst σ₁) (Θ₂.subst σ₂)
+
+/-- `(⊨Γ_tel_κ)`: `Σ; Γ ⊨ Θ : κ`, at levels without variables.
 RFC: `{\vDash}\Gamma_{\mathsf{tel}\kappa}` -/
 def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
     (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (κ : Universe 0) : Prop :=
-  ValidCtx₀ sig ι ctx ∧
-    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqTelescope₀ sig ι κ (Θ.subst σ₁) (Θ.subst σ₂)
+  ValidEqTelescopeΓ sig ι ctx Θ Θ κ
 
 -- ADE: none.
 /-- `Σ; Γ ⊨ d̄ : κ`, at levels without variables: the arguments of each destructor are a telescope in
@@ -762,6 +768,12 @@ RFC: `\vDash_\rho` -/
 def ValidInstanceArgs (sig : Signature) (ι : Interpretation) {k : Nat} {Γ Δ : Scope}
     (ctx : Context k Γ) (as : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
   ∀ ρ, ValidInstanceArgsΓ sig ι (ctx.atLevels ρ) (as.atLevels ρ) (params.atLevels ρ)
+
+/-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ₁ ≡ Θ₂ : κ`, for every value of the level variables.
+RFC: `\vDash_\rho` -/
+def ValidEqTelescope (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
+    {ps : List Parameter} (ctx : Context k Γ) (Θ₁ Θ₂ : Telescope k Γ ps) (κ : Universe k) : Prop :=
+  ∀ ρ, ValidEqTelescopeΓ sig ι (ctx.atLevels ρ) (Θ₁.atLevels ρ) (Θ₂.atLevels ρ) (κ.atLevels ρ)
 
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ`, for every value of the level variables.
 RFC: `\vDash_\rho` -/

@@ -13,7 +13,8 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
 * `⊢ Σ`, `Σ ⊢ Γ`, `Σ; Γ ⊢ A`, `Σ; Γ ⊢ A ≡ B`, `Σ; Γ ⊢ t : A` and `Σ; Γ ⊢ t ≡ u : A`;
 * `Σ; Γ ⊢ t̄ : Θ` and `Σ; Γ ⊢ t̄ ≡ ū : Θ`, the arguments of a telescope;
 * `Σ; Γ ⊢ ā : Δ` and `Σ; Γ ⊢ ā ≡ b̄ : Δ`, the arguments of an instance;
-* `Σ; Γ ⊢ Θ : κ`, a telescope in a sort, and `Σ; Γ ⊢ d̄ : κ`, destructors in a sort;
+* `Σ; Γ ⊢ Θ : κ` and `Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`, telescopes in a sort, and `Σ; Γ ⊢ d̄ : κ`, destructors
+  in a sort;
 * `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`,
   `Σ ⊢ data.{s̄; l̄; p̄} Δ : κ where …` and `Σ ⊢ codata.{s̄; l̄; p̄} Δ : κ where …`, the entries of
   the signature.
@@ -554,6 +555,59 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (((B.substLevels (ls₁.getFin hl₁)).subst
           (Subst.liftN _ (hd.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst))).instantiate
             bs₁)
+  -- ADE: `prod-cong`, in `Definition/Typed.agda`.
+  /-- Two corecursors of the same type, at equal arguments of the instance, at equal levels, from
+  equal states, with equal states and equal branches, are equal: the branch of a destructor `d` of a
+  type `T'` of the block is over the variables of the state of `T'` and those of the telescope of
+  `d`, the destructors before it being the observations of the first corecursor of `T'` from the
+  variables of its state, as `(corec)` types it.
+  RFC: `\mathsf{corec}_\equiv` -/
+  | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
+      {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ} {κs : Nat → Universe k}
+      {h' : Nat} {ps' : List Parameter} {S₁ S₂ : Telescope k Γ ps'} {ss₁ ss₂ : Args k Γ ps'}
+      (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
+      (has : EqInstanceArgs sig ctx as₁ as₂
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+      (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+      (hh : decl.codataTypes[h']? = some T) (hS₁ : Ss₁.get h' = some ⟨0, ps', S₁⟩)
+      (hS₂ : Ss₂.get h' = some ⟨0, ps', S₂⟩) (hss : EqArgs sig ctx ss₁ ss₂ S₁)
+      (hSl₁ : Ss₁.length = decl.codataTypes.length) (hSl₂ : Ss₂.length = decl.codataTypes.length)
+      (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+        ∃ (ps'' : List Parameter) (S₁' S₂' : Telescope k Γ ps''),
+          Ss₁.get j = some ⟨0, ps'', S₁'⟩ ∧ Ss₂.get j = some ⟨0, ps'', S₂'⟩)
+      (hSt : ∀ j T' (ps'' : List Parameter) (S₁' S₂' : Telescope k Γ ps''),
+        decl.codataTypes[j]? = some T' → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
+        Ss₂.get j = some ⟨0, ps'', S₂'⟩ → EqTelescope sig ctx S₁' S₂' (κs j))
+      (hgl₁ : gs₁.length = decl.codataCases.length) (hgl₂ : gs₂.length = decl.codataCases.length)
+      (hgs : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps''),
+        decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
+        ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
+          gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
+      (hgt : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps'') (p q : Grade)
+        (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+        gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
+        gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
+        EqTerm sig ((ctx.append S₁').append ((Θ.substLevels (ls₁.getFin hl₁)).subst
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation T'.name
+            qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
+            (as₁.rename (Ren.weakenN ps''.length)).toSubst))) g₁ g₂
+          ((B.substLevels (ls₁.getFin hl₁)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation T'.name
+              qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
+              (as₁.rename (Ren.weakenN ps''.length)).toSubst)))) :
+      EqTerm sig ctx (.corec r D qs ls₁ ps as₁ ss₁.terms Ss₁ gs₁)
+        (.corec r D qs ls₂ ps as₂ ss₂.terms Ss₂ gs₂) (.inst D qs ls₁ ps as₁)
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
   /-- A recursor on a constructor applied to arguments of its fields, with the premises of `(rec)`,
   is equal to the branch of the constructor, the case `i` of the block, with the arguments
@@ -755,6 +809,29 @@ inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
 
 -- ADE: none.
 /--
+`Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`: the telescopes are equal in the sort `κ`, entry by entry, with the same grades,
+their types being equal types of a sort that `κ` bounds, and an entry whose type is a proposition has
+a grade without use at run time.
+-/
+inductive EqTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
+    Context k Γ → Telescope k Γ ps → Telescope k Γ ps → Universe k → Prop where
+  /-- The empty telescope is equal to itself in every sort.
+  RFC: `\mathsf{tel}_{\kappa\varepsilon\equiv}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
+      (hctx : WfCtx sig ctx) : EqTelescope sig ctx .nil .nil κ
+  /-- The first entries, with the same grades, whose types are equal types of a sort that `κ₂`
+  bounds, with a grade without use at run time if they are propositions, and the others, equal in
+  the context extended by the first entry of the first telescope.
+  RFC: `\mathsf{tel}_{\kappa,\equiv}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {q : Grade} {p : Parameter} {A₁ A₂ : Term k Γ} {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps}
+      {κ₁ κ₂ : Universe k} (hA : EqTerm sig ctx A₁ A₂ (.sort κ₁)) (hκ : κ₁ ≼ κ₂)
+      (hΘ : EqTelescope sig (ctx.var A₁) Θ₁ Θ₂ κ₂)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      EqTelescope sig ctx (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂) κ₂
+
+-- ADE: none.
+/--
 `Σ; Γ ⊢ d̄ : κ`: the destructors live in the sort `κ = s_l`, the arguments of each in the universe
 `U_l` and its result in a sort that `κ` bounds, a result that is a proposition having a grade
 without use at run time; each destructor is a second-order variable of the context of the
@@ -883,6 +960,11 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.\Theta` -/
   wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
     {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfSig sig
+  /-- An equality of telescopes in a sort is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv` -/
+  eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
+    EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
   /-- Destructors in a sort are in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\bar d` -/
   wfDestructors : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
@@ -904,11 +986,13 @@ RFC: `\mathsf{presup}_\Sigma.A_\equiv`, `\mathsf{presup}_\Sigma.t`
 RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
 RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
 RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.\Theta`
-RFC: `\mathsf{presup}_\Sigma.\bar d`, `\mathsf{presup}_\Sigma.\mathsf{data}`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`, `\mathsf{presup}_\Sigma.e` -/
+RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`, `\mathsf{presup}_\Sigma.\bar d`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}`
+RFC: `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfDestructors, wfTypeDeclaration, tail⟩
+    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, eqTelescope, wfDestructors, wfTypeDeclaration,
+    tail⟩
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
@@ -961,6 +1045,7 @@ where
     | .recursor _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .iota _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
@@ -986,6 +1071,10 @@ where
       {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfSig sig
     | .nil hctx => wfCtx hctx
     | .cons hA _ _ _ => hasType hA
+  eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
+    | .nil hctx => wfCtx hctx
+    | .cons hA _ _ _ => eqTerm hA
   wfDestructors {sig : Signature} {k : Nat} {Γ : Scope} {ns : List Name} {ctx : Context k Γ}
       {ds : Destructors k Γ ns} {κ : Universe k} : WfDestructors sig ctx ds κ → WfSig sig
     | .nil hctx => wfCtx hctx
