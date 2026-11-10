@@ -231,43 +231,115 @@
             # the extension would report at every start.
             "lean4.showSetupWarnings" = false;
           };
-          # Writes the recommended configuration to .vscode/, which git ignores, without overwriting a
-          # file that differs from it, unless --force is given.
-          setupVscode = command {
-            name = "setup-vscode";
-            runtimeInputs = [
-              pkgs.coreutils
-              pkgs.diffutils
-              pkgs.git
-            ];
+          # The recommended Git hooks: commit-msg rejects a commit without the sign-off of its author,
+          # which the commits check requires, before it exists. It runs the Bash and the Git of the
+          # contributor, since its copy cannot depend on paths of the Nix store, which may be collected:
+          # two variants, as for the commands, the one of nix flake check runs ShellCheck.
+          hook = args: {
+            run = pkgs.writeTextFile (args // { executable = true; });
+            checked = pkgs.writeTextFile (
+              args
+              // {
+                executable = true;
+                checkPhase = ''${lib.getExe pkgs.shellcheck} "$target"'';
+              }
+            );
+          };
+          commitMsgHook = hook {
+            name = "commit-msg";
             text = ''
-              force=false
-              case "$*" in
-              "") ;;
-              --force) force=true ;;
-              *)
-                echo "usage: setup-vscode [--force]" >&2
-                exit 2
-                ;;
-              esac
-              dir=$(git rev-parse --show-toplevel)/.vscode
+              #!/usr/bin/env bash
+              set -euo pipefail
+              author=$(git var GIT_AUTHOR_IDENT | sed 's/ [0-9]* [-+][0-9]*$//')
+              if ! git interpret-trailers --parse "$1" | grep -qxF "Signed-off-by: $author"; then
+                echo "no Signed-off-by: $author, which git commit -s adds" >&2
+                exit 1
+              fi
+            '';
+          };
+          # A setup: writes recommended files to a directory, each under the name of its source in the
+          # Nix store, without overwriting a file that differs from it, unless --force is given.
+          setup =
+            {
+              name,
+              dir,
+              mode,
+              sources,
+            }:
+            command {
+              inherit name;
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.diffutils
+                pkgs.git
+              ];
+              text = ''
+                force=false
+                case "$*" in
+                "") ;;
+                --force) force=true ;;
+                *)
+                  echo "usage: ${name} [--force]" >&2
+                  exit 2
+                  ;;
+                esac
+                dir=${dir}
+                sources=(${lib.concatStringsSep " " sources})
+                status=0
+                for source in "''${sources[@]}"; do
+                  target=$dir/''${source#*-}
+                  if [ ! -e "$target" ]; then
+                    install -D -m ${mode} "$source" "$target"
+                    echo "created $target"
+                  elif cmp -s "$source" "$target"; then
+                    echo "up to date $target"
+                  elif $force; then
+                    install -m ${mode} "$source" "$target"
+                    echo "overwritten $target"
+                  else
+                    diff -u --color=auto "$target" "$source" || true
+                    echo "kept $target, which differs from the recommended one above: merge it by hand, or overwrite it with --force" >&2
+                    status=1
+                  fi
+                done
+                exit "$status"
+              '';
+            };
+          # Every setup, as a command setup-<name>, with the description of its app.
+          setups = {
+            # Copies the hooks to the directory where Git looks for them, .git/hooks unless
+            # core.hooksPath says otherwise.
+            hooks = {
+              description = "Copy the recommended Git hooks to the hooks of the clone";
+              command = setup {
+                name = "setup-hooks";
+                dir = "$(git rev-parse --path-format=absolute --git-path hooks)";
+                mode = "755";
+                sources = [ commitMsgHook.run ];
+              };
+            };
+            # Writes the configuration to .vscode/, which git ignores.
+            vscode = {
+              description = "Write the recommended VS Code configuration to .vscode/";
+              command = setup {
+                name = "setup-vscode";
+                dir = "$(git rev-parse --show-toplevel)/.vscode";
+                mode = "644";
+                sources = [
+                  vscodeExtensions
+                  vscodeSettings
+                ];
+              };
+            };
+          };
+          # Runs every setup, with the same arguments.
+          setupAll = command {
+            name = "setup";
+            text = ''
               status=0
-              for source in ${vscodeExtensions} ${vscodeSettings}; do
-                target=$dir/''${source#*-}
-                if [ ! -e "$target" ]; then
-                  install -D -m 644 "$source" "$target"
-                  echo "created $target"
-                elif cmp -s "$source" "$target"; then
-                  echo "up to date $target"
-                elif $force; then
-                  install -m 644 "$source" "$target"
-                  echo "overwritten $target"
-                else
-                  diff -u --color=auto "$target" "$source" || true
-                  echo "kept $target, which differs from the recommended one above: merge it by hand, or overwrite it with --force" >&2
-                  status=1
-                fi
-              done
+              ${lib.concatMapStrings (
+                name: ''${lib.getExe setups.${name}.command.run} "$@" || status=1'' + "\n"
+              ) (lib.attrNames setups)}
               exit "$status"
             '';
           };
@@ -337,18 +409,23 @@
               check = app checkAll "Run every check";
               build-site = app buildSite "Build the site that GitHub Pages serves into book/";
               docs = app docs "Generate the documentation of the metatheory";
-              setup-vscode = app setupVscode "Write the recommended VS Code configuration to .vscode/";
-            };
+              setup = app setupAll "Run every setup";
+            }
+            // lib.mapAttrs' (
+              name: setup: lib.nameValuePair "setup-${name}" (app setup.command setup.description)
+            ) setups;
 
-          # Built by nix flake check, which runs ShellCheck on their scripts.
+          # Built by nix flake check, which runs ShellCheck on their scripts and on the hooks.
           checks =
             lib.mapAttrs' (name: command: lib.nameValuePair "check-${name}" command.checked) checkCommands
             // {
               build-site = buildSite.checked;
               check = checkAll.checked;
               docs = docs.checked;
-              setup-vscode = setupVscode.checked;
-            };
+              hook-commit-msg = commitMsgHook.checked;
+              setup = setupAll.checked;
+            }
+            // lib.mapAttrs' (name: setup: lib.nameValuePair "setup-${name}" setup.command.checked) setups;
 
           # The tools of the checks, and the language servers of the editors.
           devShells.default = pkgs.mkShellNoCC {
