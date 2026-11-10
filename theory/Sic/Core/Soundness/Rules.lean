@@ -2197,6 +2197,153 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   simp only [Term.subst, ← Args.terms_subst]
   exact hb
 
+/-! ## Extensionality of the Codata Types
+
+Two terms of an instance of a codata type whose observations are equal, destructor by destructor,
+are equal: the equality of the destructors relates their observations, as it relates those of two
+corecursors, and then the observations of the corecursors they compute to, which compute as theirs.
+On a proposition, the observations of the first term, related to themselves, make it true. -/
+
+-- ADE: none.
+/-- The equality of destructors relates the observations `o₁` and `o₂` when it relates observations
+`f₁` and `f₂` that compute as them: the abstractions for each destructor compute as each other, so
+that the equality of its result relates them, and the destructors after it are the same for
+abstractions that the equality of the destructor relates. -/
+theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {θ : Subst 0 [] Γ} →
+      {S : ObsRel} → DesRel sig ι n (fun m _ => levelRel sig ι m) s ds @θ S →
+      {f₁ f₂ o₁ o₂ : Observations} → S f₁ f₂ → ObsEquiv sig ι s f₁ o₁ →
+      ObsEquiv sig ι s f₂ o₂ → S o₁ o₂
+  | _, _, .nil, _, _, h, _, _, _, _, _, _, _ => by
+    cases h
+    trivial
+  | _, _, .cons (d := d) (ps := ps) _ _ _ _ _ _, _, _, h, f₁, f₂, o₁, o₂, hS, hf₁, hf₂ => by
+    cases h with
+    | @cons _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
+      obtain ⟨hA, hGf⟩ := hS
+      have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+      have hSp := TelRel.isPer hd ih hΘ
+      have hFv : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+          ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v (F ts.terms) := fun ts hts =>
+        have ⟨v, hv⟩ := hB ts hts
+        ⟨v, hF ts hts v hv⟩
+      have hEp := AbstractionRel.isPer hSp (fun ts hts =>
+        have ⟨_, hv⟩ := hFv ts hts
+        FieldRel.isPer hd ih hv) hBresp
+      have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
+          ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
+        fun hf => hf.imp_right fun h τ w => h d ps τ w
+      have hA' : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) :=
+        (AbstractionRel.congr_computes hSp hFv (by
+          rcases hc hf₁ with h₁ | h₁
+          · exact .inl h₁
+          rcases hc hf₂ with h₂ | h₂
+          · exact .inl h₂
+          exact .inr ⟨h₁, h₂⟩)).1 hA
+      have hff : AbstractionRel SΘ F (f₁ d ps) (f₁ d ps) := hEp.trans hA (hEp.symm hA)
+      have hfo : AbstractionRel SΘ F (f₁ d ps) (o₁ d ps) :=
+        (AbstractionRel.congr_computes hSp hFv (by
+          rcases hc hf₁ with h₁ | h₁
+          · exact .inl h₁
+          exact .inr ⟨fun _ _ => .rfl, h₁⟩)).1 hff
+      exact ⟨hA', (hresp _ _ hfo o₁ o₂).1 (DesRel.obsEquiv hd (hG _ hff) hGf hf₁ hf₂)⟩
+
+-- ADE: none.
+/-- `(η_d)`, closed: two closed terms of an instance of a codata type of `Σ` whose observations by
+each destructor, at equal arguments of its telescope, are equal terms of its result, whatever the
+instance that the second observation carries, are equal terms of the instance: canonical terms that `(eq_d)` relates, or proofs of a proposition that their
+observations make true. -/
+theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as a₂ : InstanceArgs 0 [] decl.scope} {t u : Term 0 []}
+    (ht : ValidTerm₀ sig ι t (.inst D qs ls ps as)) (hu : ValidTerm₀ sig ι u (.inst D qs ls ps as))
+    (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
+      (ψ : ResultOwnership ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (ts us : Args 0 [] ps'),
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
+        (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) ts.toSubst us.toSubst →
+      ValidEqTerm₀ sig ι (.obs D qs ls ps as t d ts.terms) (.obs D qs ls ps a₂ u d us.terms)
+        ((B.substLevels (ls.getFin hl)).subst (Subst.append
+          (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst))) :
+    ValidEqTerm₀ sig ι t u (.inst D qs ls ps as) := by
+  have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
+    ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht.1.2
+  cases Computesι.det hd hcv hI
+  obtain ⟨n, S, -, hS, hRS⟩ := HasEq.instCodata_inv hd h hq hl hp hR
+  -- The equality of the destructors relates the observations of the terms.
+  have hS' : S (t.observation D qs ls ps as) (u.observation D qs ls ps a₂) :=
+    DesRel.of_obs hd (ls.getFin hl) (T.body (.ofLists qs ps hq hp)) hS
+      fun d p q ps' Ξ Θ B ψ hpos ts us hτ => by
+        rw [Term.observation_subst_args, Term.observation_subst_args]
+        exact hobs d p q ps' Ξ Θ B ψ hpos ts us hτ
+  rcases hRS with ⟨hs, hU, rfl⟩ | ⟨hs, hP, hRb⟩
+  · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
+    have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps as) := fun ⟨v, hv, k, b, hk⟩ => by
+      cases Computesι.det hd hI hv
+      exact HasEq.univ_not_prop hd hU hk
+    obtain ⟨v₁, w₁, w₁', R₁, hv₁, hw₁, -, hR₁, hrel₁⟩ := ht.2.1 hnp
+    cases Computesι.det hd hI hv₁
+    obtain ⟨o₁, -, hc₁, -, -⟩ := (HasEq.unique hd hR₁ hR w₁ w₁').1 hrel₁
+    obtain ⟨v₂, w₂, w₂', R₂, hv₂, hw₂, -, hR₂, hrel₂⟩ := hu.2.1 hnp
+    cases Computesι.det hd hI hv₂
+    obtain ⟨o₂, -, hc₂, -, -⟩ := (HasEq.unique hd hR₂ hR w₂ w₂').1 hrel₂
+    exact ⟨ht.1, fun _ => ⟨_, w₁, w₂, _, hI, hw₁, hw₂, hR, o₁, o₂, hc₁, hc₂,
+      DesRel.obsEquiv hd hS hS' (ObsEquiv.of_computes hd hw₁ hc₁)
+        (ObsEquiv.of_computes hd hw₂ hc₂)⟩, fun hp => absurd hp hnp⟩
+  · -- A proposition: the observations of the first term make it true.
+    have hSp := DesRel.isPer hd (fun m _ => levelRel_isPer hd m) hS
+    exact ⟨ht.1, fun hn => absurd ⟨_, hI, _, _, hP⟩ hn,
+      fun _ => ⟨_, R, hI, hR, (hRb _ _).2 ⟨_, hSp.trans hS' (hSp.symm hS')⟩⟩⟩
+
+-- ADE: `η-eqᵛ`, `Σ-ηᵛ` and `η-unitᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/`.
+/-- `(η_d)` keeps the meaning: at equal substitutions of the context, the observations of the terms,
+at the arguments of the instance substituted, are the closed observations of
+`ValidEqTerm₀.etaObs`, since the observations of a term substituted are those of the substituted
+term; the second term at the first substitution is equal to itself at the second one. -/
+theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 Γ decl.scope} {t u : Term 0 Γ}
+    (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
+    (hu : ValidTermΓ sig ι ctx u (.inst D qs ls ps as))
+    (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
+      (ψ : ResultOwnership ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
+      ValidEqTermΓ sig ι (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
+        (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+        (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')
+        ((B.substLevels (ls.getFin hl)).subst
+          (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
+    ValidEqTermΓ sig ι ctx t u (.inst D qs ls ps as) := by
+  obtain ⟨h', -⟩ := hent.hasCodataType h
+  have hctx := ht.1.1
+  have hd := hctx.distinct
+  refine ⟨ht.1, fun σ₁ σ₂ hσ => ?_⟩
+  have hu' := hu.2 σ₁ σ₂ hσ
+  refine ValidEqTerm₀.etaObs (a₂ := as.subst σ₂) hd h' hq hl hp (ht.2 σ₁ σ₁ (hσ.left hctx))
+    hu'.right
+    fun d p q ps' Ξ Θ B ψ hpos ts us hτ => ?_
+  -- The scope of the destructor, substituted, is that of the observations of the term substituted.
+  have hc : ∀ {a} (x : Var Ξ a),
+      ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).subst
+        (Subst.liftN a.params.length σ₁) =
+      hpos.obsSubst ((t.subst σ₁).observation D qs ls ps (as.subst σ₁)) (as.subst σ₁).toSubst x :=
+    hpos.obsSubst_subst σ₁ (fun d ps' => Term.observation_subst σ₁ D qs ls ps as t d ps')
+      (InstanceArgs.toSubst_subst σ₁ as)
+  have hb := (hobs d p q ps' Ξ Θ B ψ hpos).2 _ _
+    ((EqSubst.append_append_iff ctx _ σ₁ σ₂ ts.toSubst us.toSubst).2
+      ⟨hσ, by rw [Telescope.subst_subst_of hc]; exact hτ⟩)
+  rw [← Term.subst_append, ← Term.subst_append, ← Term.subst_append, Term.observation_subst,
+    Term.observation_subst, Term.observation_subst_args, Term.observation_subst_args,
+    Term.subst_subst_of (Subst.liftN_subst_of _ hc), Term.subst_append] at hb
+  exact hb
+
 /-! ## Entries of the Signature -/
 
 /-- A judgment in the empty context is its closed judgment, at the substitution of no variable. -/

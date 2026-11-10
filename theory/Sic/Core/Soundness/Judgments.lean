@@ -578,6 +578,33 @@ where
             hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc
       exact hc
+    | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp ht
+        hu hobs =>
+      fun ρ => by
+      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl
+      have ht' := hasType hd hι ht ρ
+      have hu' := hasType hd hι hu ρ
+      simp only [Term.atLevels, Term.substLevels] at ht' hu'
+      refine ValidEqTermΓ.etaObs hι h hq hl' hp ht' hu' fun d p q ps' Ξ Θ B ψ hpos => ?_
+      have hb := eqTerm hd hι (hobs d p q ps' Ξ Θ B ψ hpos) ρ
+      have hcl : ∀ {a} (x : Var Ξ a),
+          ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels
+              (fun i => (.ofNat (ρ i) : Level 0)) =
+            hpos.obsSubst ((t.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs
+              (ls.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
+              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))))
+              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))).toSubst x := fun x =>
+        hpos.obsSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0))
+          (fun d ps' => Term.observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps
+            as t d ps')
+          (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as) x
+      simp only [Context.atLevels, Context.substLevels_append,
+        Telescope.substLevels_subst_of hcl, Telescope.substLevels_substLevels, Term.atLevels,
+        Term.observation_substLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl),
+        Term.substLevels_substLevels] at hb
+      rw [List.getFin_map]
+      exact hb
   hasArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ

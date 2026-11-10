@@ -732,6 +732,27 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (((B₀.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
             qs ls ps as) as.toSubst))).instantiate bs)
+  -- ADE: `η-eq`, `Σ-η` and `η-unit`, in `Definition/Typed.agda`.
+  /-- Two terms of the instance of a codata type whose observations by each destructor, at the
+  position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the
+  instance, are equal over the variables of its telescope, the destructors `d̄₁` before it being the
+  observations of the first term by them, are equal.
+  RFC: `\eta_d` -/
+  | etaObs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
+      (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
+      (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
+        (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
+        (ψ : ResultOwnership ps'.length) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
+        EqTerm sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
+          (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+          (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')
+          ((B.substLevels (ls.getFin hl)).subst
+            (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
+      EqTerm sig ctx t u (.inst D qs ls ps as)
 
 /-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
 after it, whose grades typing ignores. -/
@@ -1080,6 +1101,7 @@ where
     | .etaCtor _ _ _ _ _ ht .. => hasType ht
     | .corec _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ has .. => hasInstanceArgs has
+    | .etaObs _ _ _ _ ht .. => hasType ht
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
