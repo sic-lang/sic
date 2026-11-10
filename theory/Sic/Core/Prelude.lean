@@ -91,35 +91,38 @@ def Prelude.pair : TypeDeclaration where
 /-- The scope of the parameters of the type of positions, `A` and `B`, the last one first. -/
 abbrev Prelude.stepScope : Scope := [.var, .var]
 
-/-- `next : (x : A ▶ p; 00ᵖ ◀ ωωᵖ)`, the constructor of a new state. -/
-def Prelude.stepNext : Constructor 1 2 2 Prelude.stepScope where
+/-- `next : (x : A ▶ p; 00ᵖ ◀ 11ᵖ)`, the constructor of a new state, which requires the ownership
+of a new value, that of every packing of arguments. -/
+def Prelude.stepNext : Constructor 1 3 2 Prelude.stepScope where
   name := "next"
-  params ι := [⟨ι.grades 0, .unrestrictedUnrestricted⟩]
-  fields ι := .cons Grade.zero ⟨ι.grades 0, .unrestrictedUnrestricted⟩ (.var₀ (.succ .zero)) .nil
+  params ι := [⟨ι.grades 0, Grade.one⟩]
+  fields ι := .cons Grade.zero ⟨ι.grades 0, Grade.one⟩ (.var₀ (.succ .zero)) .nil
 
-/-- `done : (x : B ▶ q; 00ᵖ ◀ ωωᵖ)`, the constructor of a term already built. -/
-def Prelude.stepDone : Constructor 1 2 2 Prelude.stepScope where
+/-- `done : (x : B ▶ q; 00ᵖ ◀ ρ)`, the constructor of a term already built, which requires the
+ownership `ρ`. -/
+def Prelude.stepDone : Constructor 1 3 2 Prelude.stepScope where
   name := "done"
-  params ι := [⟨ι.grades 1, .unrestrictedUnrestricted⟩]
-  fields ι := .cons Grade.zero ⟨ι.grades 1, .unrestrictedUnrestricted⟩ (.var₀ .zero) .nil
+  params ι := [⟨ι.grades 1, ι.grades 2⟩]
+  fields ι := .cons Grade.zero ⟨ι.grades 1, ι.grades 2⟩ (.var₀ .zero) .nil
 
 /-- `Step ▶ 00ᵞ • p • q ≔ next : … | done : …`, the type of positions, which uses `A` with the grade
 `p` of its new states and `B` with the grade `q` of its terms already built. -/
-def Prelude.stepType : DataType 1 2 2 Prelude.stepScope :=
+def Prelude.stepType : DataType 1 3 2 Prelude.stepScope :=
   { name := "Step", usage := fun ι => (𝟘ᶜ ∙ ι.grades 0) ∙ ι.grades 1,
     constructors := [Prelude.stepNext, Prelude.stepDone] }
 
 -- ADE: none.
-/-- `data.{s; l₁, l₂; p, q | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}
-where Step ▶ 00ᵞ • p • q ≔ next : (x : A ▶ p; 00ᵖ ◀ ωωᵖ) | done : (x : B ▶ q; 00ᵖ ◀ ωωᵖ)`: the
-type of the positions of a corecursor, either a new state of `A`, used with the grade `p`, or a term
-of `B`, of any sort, already built, used with the grade `q`, in a universe; the constraint admits the
-instances where a proposition `B` has a grade without use at run time.
+/-- `data.{s; l₁, l₂; p, q, ρ | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}
+where Step ▶ 00ᵞ • p • q ≔ next : (x : A ▶ p; 00ᵖ ◀ 11ᵖ) | done : (x : B ▶ q; 00ᵖ ◀ ρ)`: the type
+of the positions of a corecursor, either a new state of `A`, used with the grade `p`, of the
+ownership of a new value, or a term of `B`, of any sort, already built, used with the grade `q`, of
+the ownership `ρ`, in a universe; the constraint admits the instances where a proposition `B` has a
+grade without use at run time.
 RFC: `\mathsf{prelude}.\mathsf{Step}` -/
 def Prelude.step : TypeDeclaration where
   sorts := 1
   levels := 2
-  grades := 2
+  grades := 3
   constraint ι := ι.sorts 0 = .prop → (ι.grades 1).mode ≠ .oneOne
   scope := Prelude.stepScope
   params ι := (Context.empty.var (.sort ⟨.type, .var 0⟩)).var (.sort ⟨ι.sorts 0, .var 1⟩)

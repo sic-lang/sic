@@ -93,7 +93,7 @@ theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
       decide)
 
 /-- The parameters of the type of positions form a context, whatever the sort of `B`. -/
-theorem WfCtx.stepParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
+theorem WfCtx.stepParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 3) :
     WfCtx sig (Prelude.step.params ι) := by
   have hS : WfCtx sig (Context.empty.var (.sort ⟨.type, .var 0⟩) : Context 2 [.var]) :=
     .var (WfType.ofSort (HasType.sort (.empty h) _))
@@ -119,7 +119,7 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
           .var hctx .zero
         exact .cons rfl hT ⟨fun h => (by cases h), fun _ => (by simp [Prelude.step, Level.value]; omega)⟩
           (.nil (.var (WfType.ofSort hT))) hι)
-    (fun (ι : Instance 1 2) _ T hT => by
+    (fun (ι : Instance 1 3) _ T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       refine ⟨_, .cons (c := Prelude.stepNext) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_))
