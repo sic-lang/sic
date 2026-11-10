@@ -3332,6 +3332,35 @@ theorem Args.terms_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg _ (Args.terms_subst θ ts)
 
+/-- A constructor applied to arguments, substituted, is the constructor applied to the arguments
+substituted. -/
+theorem Term.ctor_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ) (c : Name)
+    {ps' : List Parameter} (ts : Args k Δ ps') :
+    (Term.ctor D qs ls ps as c ts.terms).subst θ = .ctor D qs ls ps (as.subst θ) c (ts.subst θ).terms := by
+  rw [Args.terms_subst]
+  rfl
+
+/-- An observation applied to arguments, substituted, is the observation of the term substituted
+applied to the arguments substituted. -/
+theorem Term.obs_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ) (t : Term k Δ) (d : Name)
+    {ps' : List Parameter} (bs : Args k Δ ps') :
+    (Term.obs D qs ls ps as t d bs.terms).subst θ =
+      .obs D qs ls ps (as.subst θ) (t.subst θ) d (bs.subst θ).terms := by
+  rw [Args.terms_subst]
+  rfl
+
+/-- A corecursor from a state, substituted, is the corecursor substituted from the state
+substituted. -/
+theorem Term.corec_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (r : Grade) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
+    {ps' : List Parameter} (ss : Args k Δ ps') (Ss : States k Δ) (gs : CorecBranches k Δ) :
+    (Term.corec r D qs ls ps as ss.terms Ss gs).subst θ =
+      .corec r D qs ls ps (as.subst θ) (ss.subst θ).terms (Ss.subst θ) (gs.subst θ) := by
+  rw [Args.terms_subst]
+  rfl
+
 /-- The terms of arguments at instantiated levels are the terms of the arguments at these
 levels. -/
 theorem Args.terms_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
@@ -3501,6 +3530,31 @@ theorem Branches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : 
   | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels_of ls' (us := us) h
 
 /-! ## Recursive Results Substituted -/
+
+/-- A term renamed under a new entry, substituted under it, is the term substituted, renamed under
+it. -/
+theorem Term.subst_lift_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} (θ : Subst k Γ Δ)
+    (t : Term k Δ) :
+    (t.rename (Ren.weaken (e := e))).subst (Subst.lift θ) = (t.subst θ).rename Ren.weaken :=
+  (Term.subst_rename_of (fun _ => rfl) t).trans (Term.rename_subst_of (fun _ => rfl) t).symm
+
+/-- A telescope renamed under a new entry, substituted under it, is the telescope substituted,
+renamed under it. -/
+theorem Telescope.subst_lift_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} {ps : List Parameter}
+    (θ : Subst k Γ Δ) (Θ : Telescope k Δ ps) :
+    (Θ.rename (Ren.weaken (e := e))).subst (Subst.lift θ) = (Θ.subst θ).rename Ren.weaken :=
+  (Telescope.subst_rename_of (fun _ => rfl) Θ).trans
+    (Telescope.rename_subst_of (fun _ => rfl) Θ).symm
+
+/-- A term renamed under a new entry before `n` variables, substituted under them, is the term
+substituted, renamed under them. -/
+theorem Term.subst_liftN_lift_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} (n : Nat)
+    (θ : Subst k Γ Δ) (t : Term k (Δ.extend n)) :
+    (t.rename (Ren.liftN n (Ren.weaken (e := e)))).subst (Subst.liftN n (Subst.lift θ)) =
+      (t.subst (Subst.liftN n θ)).rename (Ren.liftN n Ren.weaken) :=
+  (Term.subst_rename_of (Subst.liftN_rename_comm_of n (θ₁ := Subst.lift θ) (ξ₁ := Ren.weaken)
+    (θ₂ := θ) (ξ₂ := Ren.weaken) fun _ => rfl) t).trans
+    (Term.rename_subst_of (fun _ => rfl) t).symm
 
 /-- Motives renamed under a new variable, substituted under it, are the motives substituted, renamed
 under it. -/
@@ -3960,5 +4014,285 @@ theorem Destructors.Pos.obsSubst_substLevels {k' k'' : Nat} {Γ' : Scope} (ls' :
     match x with
     | .zero => ho _ _
     | .succ x => h x
+
+/-! ## Substitutions under New Variables
+
+A term renamed under new variables, substituted under them, is the term substituted, renamed under
+them. -/
+
+theorem Term.subst_liftN_rename_weakenN {Γ Δ : Scope} (n : Nat) (θ : Subst k Γ Δ) (t : Term k Δ) :
+    (t.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (t.subst θ).rename (Ren.weakenN n) := by
+  rw [Term.subst_rename_of (ξ := Ren.weakenN n)
+    (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
+    (fun x => Subst.liftN_weakenN n θ x), Term.rename_subst_of (fun _ => rfl)]
+
+theorem Args.subst_liftN_rename_weakenN {Γ Δ : Scope} {ps : List Parameter} (n : Nat) (θ : Subst k Γ Δ)
+    (ts : Args k Δ ps) :
+    (ts.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (ts.subst θ).rename (Ren.weakenN n) := by
+  rw [Args.subst_rename_of (ξ := Ren.weakenN n)
+    (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
+    (fun x => Subst.liftN_weakenN n θ x), Args.rename_subst_of (fun _ => rfl)]
+
+theorem InstanceArgs.subst_liftN_rename_weakenN {Γ Δ Ξ : Scope} (n : Nat) (θ : Subst k Γ Δ)
+    (as : InstanceArgs k Δ Ξ) :
+    (as.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (as.subst θ).rename (Ren.weakenN n) := by
+  rw [InstanceArgs.subst_rename_of (ξ := Ren.weakenN n)
+    (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
+    (fun x => Subst.liftN_weakenN n θ x),
+    InstanceArgs.rename_subst_of (fun _ => rfl)]
+
+theorem Motives.subst_liftN_rename_weakenN {Γ Δ : Scope} (n : Nat) (θ : Subst k Γ Δ)
+    (Cs : Motives k Δ) :
+    (Cs.rename (Ren.weakenN n)).subst (Subst.liftN n θ) = (Cs.subst θ).rename (Ren.weakenN n) := by
+  rw [Motives.subst_rename_of (ξ := Ren.weakenN n)
+    (θ' := fun x => (θ x).rename (Ren.liftN _ (Ren.weakenN n)))
+    (fun x => Subst.liftN_weakenN n θ x), Motives.rename_subst_of (fun _ => rfl)]
+
+/-! ## Renamings as Substitutions
+
+A renaming is the substitution of the second order that gives each variable the abstraction of its
+image, so that the laws of the substitutions hold for the renamings. -/
+
+/-- The renaming `ξ` as a substitution of the second order, which gives each variable `x` the
+abstraction `ȳ. ξ(x)[ȳ]`. -/
+def Ren.toSubst {Γ Δ : Scope} (ξ : Ren Γ Δ) : Subst k Γ Δ := fun x => Var.eta (ξ x)
+
+/-- A substitution that gives each variable the abstraction of its image by a renaming does so
+under a new entry. -/
+theorem Subst.lift_eta_of {Γ Δ : Scope} {b : Scope.Entry} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) :
+    ∀ {a} (x : Var (b :: Δ) a), Subst.lift θ x = Var.eta (Ren.lift ξ x)
+  | _, .zero => rfl
+  | _, .succ x => by
+    show (θ x).rename (Ren.liftN _ Ren.weaken) = _
+    rw [h x]
+    exact Var.eta_rename Ren.weaken (ξ x)
+
+/-- A substitution that gives each variable the abstraction of its image by a renaming does so
+under new variables. -/
+theorem Subst.liftN_eta_of {Γ Δ : Scope} :
+    ∀ (n : Nat) {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}, (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
+      ∀ {a} (x : Var (Δ.extend n) a), Subst.liftN n θ x = Var.eta (Ren.liftN n ξ x)
+  | 0, _, _, h => h
+  | n + 1, _, _, h => Subst.liftN_eta_of (Γ := .var :: Γ) (Δ := .var :: Δ) n (Subst.lift_eta_of h)
+
+/-- An application of a variable that a substitution gives a variable is the application of this
+variable. -/
+theorem Term.var_subst_of {Γ Δ : Scope} {e : Scope.Entry} {θ : Subst k Γ Δ} {x : Var Δ e}
+    {y : Var Γ e} (h : θ x = Var.eta y) (ts : Args k Δ e.params) :
+    (Term.var x ts).subst θ = .var y (ts.subst θ) := by
+  rw [Term.subst, h, Var.eta_instantiate]
+
+/-- A term renamed is the term substituted by a substitution that gives each variable the
+abstraction of its image. -/
+theorem Term.rename_eq_subst_of {Γ Δ : Scope} {ξ : Ren Γ Δ} {θ : Subst k Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) (t : Term k Δ) : t.rename ξ = t.subst θ :=
+  (Term.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (t.rename ξ)).symm.trans
+    (Term.subst_rename_of (fun x => (h x).symm) t)
+
+/-- A telescope renamed is the telescope substituted by a substitution that gives each variable the
+abstraction of its image. -/
+theorem Telescope.rename_eq_subst_of {Γ Δ : Scope} {ps : List Parameter} {ξ : Ren Γ Δ}
+    {θ : Subst k Γ Δ} (h : ∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) (Θ : Telescope k Δ ps) :
+    Θ.rename ξ = Θ.subst θ :=
+  (Telescope.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (Θ.rename ξ)).symm.trans
+    (Telescope.subst_rename_of (fun x => (h x).symm) Θ)
+
+theorem Term.rename_eq_subst {Γ Δ : Scope} (ξ : Ren Γ Δ) (t : Term k Δ) :
+    t.rename ξ = t.subst (Ren.toSubst ξ) :=
+  (Term.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (t.rename ξ)).symm.trans
+    (Term.subst_rename_of (fun _ => rfl) t)
+
+theorem Args.rename_eq_subst {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) (ts : Args k Δ ps) :
+    ts.rename ξ = ts.subst (Ren.toSubst ξ) :=
+  (Args.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (ts.rename ξ)).symm.trans
+    (Args.subst_rename_of (fun _ => rfl) ts)
+
+theorem InstanceArgs.rename_eq_subst {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ) (as : InstanceArgs k Δ Ξ) :
+    as.rename ξ = as.subst (Ren.toSubst ξ) :=
+  (InstanceArgs.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (as.rename ξ)).symm.trans
+    (InstanceArgs.subst_rename_of (fun _ => rfl) as)
+
+theorem Telescope.rename_eq_subst {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
+    (Θ : Telescope k Δ ps) : Θ.rename ξ = Θ.subst (Ren.toSubst ξ) :=
+  (Telescope.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (Θ.rename ξ)).symm.trans
+    (Telescope.subst_rename_of (fun _ => rfl) Θ)
+
+/-- A closed term weakened to a scope, substituted, is the closed term weakened to the other
+scope. -/
+theorem Term.weakenClosed_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) (t : Term k []) :
+    (t.weakenClosed : Term k Δ).subst θ = t.weakenClosed := by
+  rw [Term.weakenClosed, Term.weakenClosed, Term.subst_rename_of (fun _ => rfl),
+    Term.rename_eq_subst]
+  exact Term.subst_congr (fun x => by cases x) t
+
+/-! ## Positions in Substituted Motives, Branches and States -/
+
+/-- A motive at a position of motives substituted is a motive of the motives, substituted. -/
+theorem Motives.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Γ.extend (n + 1))} →
+      (Cs.subst θ).get j = some ⟨n, C⟩ →
+        ∃ C₀, Cs.get j = some ⟨n, C₀⟩ ∧ C = C₀.subst (Subst.liftN (n + 1) θ)
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_subst_inv θ (Cs := Cs) h
+
+/-- A branch at a position of branches substituted is a branch of the branches, substituted. -/
+theorem Branches.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {us : Branches k Δ} → {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} →
+      (us.subst θ).get i = some ⟨n, m, u⟩ →
+        ∃ u₀, us.get i = some ⟨n, m, u₀⟩ ∧ u = u₀.subst (Subst.liftN m (Subst.liftN n θ))
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst_inv θ (us := us) h
+
+/-- A state at a position of states substituted is a state of the states, substituted. -/
+theorem States.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {Ss : States k Δ} → {j n : Nat} → {ps : List Parameter} → {S : Telescope k (Γ.extend n) ps} →
+      (Ss.subst θ).get j = some ⟨n, ps, S⟩ →
+        ∃ S₀, Ss.get j = some ⟨n, ps, S₀⟩ ∧ S = S₀.subst (Subst.liftN n θ)
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ Ss, _ + 1, _, _, _, h => States.get_subst_inv θ (Ss := Ss) h
+
+/-- A branch at a position of the branches of a corecursor substituted is a branch of the branches,
+substituted. -/
+theorem CorecBranches.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {vs : CorecBranches k Δ} → {i n m a : Nat} → {v : Term k (((Γ.extend n).extend m).extend a)} →
+      (vs.subst θ).get i = some ⟨n, m, a, v⟩ →
+        ∃ v₀, vs.get i = some ⟨n, m, a, v₀⟩ ∧
+          v = v₀.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))
+  | .nil, _, _, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_subst_inv θ (vs := vs) h
+
+/-- Motives substituted are as many. -/
+theorem Motives.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (Cs : Motives k Δ) → (Cs.subst θ).length = Cs.length
+  | .nil => rfl
+  | .cons _ _ Cs => congrArg (· + 1) (Motives.length_subst θ Cs)
+
+/-- Branches substituted are as many. -/
+theorem Branches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (us : Branches k Δ) → (us.subst θ).length = us.length
+  | .nil => rfl
+  | .cons _ _ _ us => congrArg (· + 1) (Branches.length_subst θ us)
+
+/-- States substituted are as many. -/
+theorem States.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (Ss : States k Δ) → (Ss.subst θ).length = Ss.length
+  | .nil => rfl
+  | .cons _ _ Ss => congrArg (· + 1) (States.length_subst θ Ss)
+
+/-- Branches of a corecursor substituted are as many. -/
+theorem CorecBranches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (vs : CorecBranches k Δ) → (vs.subst θ).length = vs.length
+  | .nil => rfl
+  | .cons _ _ _ _ vs => congrArg (· + 1) (CorecBranches.length_subst θ vs)
+
+/-! ## Recursive Results of Substituted Motives -/
+
+/-- Recursive results of terms substituted, at the motives substituted, are those of the terms,
+substituted. -/
+theorem Motives.results_subst_inv (names : List Name) :
+    {Γ Δ : Scope} → (θ : Subst k Γ Δ) → {Cs : Motives k Δ} → (rs : List (Option Name)) →
+      {ps : List Parameter} → {xs : Terms k Δ} →
+      {R' : Telescope k Γ (Telescope.resultParams rs ps)} →
+      Motives.results names (Cs.subst θ) rs (xs.subst θ) = some R' →
+        ∃ R, Motives.results names Cs rs xs = some R ∧ R' = R.subst θ
+  | _, _, θ, Cs, some D :: rs, p :: ps, .cons x xs, R', h => by
+    unfold Motives.results at h
+    simp only [Terms.subst] at h
+    cases hC' : (Cs.subst θ).get (names.idxOf D) with
+    | none => simp only [hC'] at h; cases h
+    | some a =>
+      obtain ⟨n, C'⟩ := a
+      cases n with
+      | succ => simp only [hC'] at h; cases h
+      | zero =>
+        obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
+        simp only [hC'] at h
+        obtain ⟨R'', hR'', rfl⟩ := Option.map_eq_some_iff.1 h
+        rw [← Motives.subst_lift_rename_weaken, ← Terms.subst_lift_rename_weaken] at hR''
+        obtain ⟨R₀, hR₀, rfl⟩ := Motives.results_subst_inv names (Subst.lift θ) rs hR''
+        refine ⟨.cons Grade.zero p (C₀.subst₀ (Subst₀.single x)) R₀, ?_, ?_⟩
+        · unfold Motives.results
+          simp only [hC₀, hR₀]
+          rfl
+        · show Telescope.cons Grade.zero p _ _ = Telescope.cons Grade.zero p _ _
+          rw [Term.subst_subst₀_of (Subst₀.Swaps.single x θ) C₀]
+          rfl
+  | _, _, θ, Cs, none :: rs, _ :: ps, .cons _ xs, R', h => by
+    unfold Motives.results at h ⊢
+    exact Motives.results_subst_inv names θ rs h
+  | _, _, _, _, some _ :: _, _ :: _, .nil, _, h | _, _, _, _, none :: _, _ :: _, .nil, _, h => by
+    unfold Motives.results at h; cases h
+  | _, _, _, _, [], _, _, R', h | _, _, _, _, some _ :: _, [], _, R', h
+  | _, _, _, _, none :: _, [], _, R', h => by
+    unfold Motives.results at h
+    cases h
+    exact ⟨.nil, by unfold Motives.results; rfl, rfl⟩
+
+/-- The recursive results of a constructor at motives substituted are its recursive results at the
+motives, substituted under its fields. -/
+theorem Constructor.results_subst_inv {j g k'' : Nat} {Δ Γ Γ' : Scope} (θ : Subst k Γ' Γ)
+    {c : Constructor j g k'' Δ} {I : Instance j g} {names : List Name} {Cs : Motives k Γ}
+    {R' : Telescope k (Γ'.extend (c.params I).length) (c.resultParams I names)}
+    (h : c.results I names (Cs.subst θ) = some R') :
+    ∃ R, c.results I names Cs = some R ∧ R' = R.subst (Subst.liftN _ θ) := by
+  unfold Constructor.results at h ⊢
+  rw [← Args.bound_subst (c.params I) θ, Args.terms_subst, ← Motives.subst_liftN_rename_weakenN] at h
+  exact Motives.results_subst_inv names _ _ h
+
+/-- The substitution of the destructors before a position by the observations of a term, substituted,
+is the substitution by the observations of the term substituted, at the arguments substituted. -/
+theorem Destructors.Pos.obsSubst_observation_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
+    (σ : Subst k Γ'' Γ') (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Γ' Δ) (t : Term k Γ') {d : Name} {p q : Grade} {ps' : List Parameter}
+    {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
+    {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
+    (hd : Destructors.Pos d p q ds Ξ Θ B ψ) :
+    ∀ {a} (x : Var Ξ a),
+      ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).subst
+          (Subst.liftN a.params.length σ) =
+        hd.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
+  hd.obsSubst_subst σ (fun d ps' => Term.observation_subst σ D qs ls ps as t d ps')
+    (InstanceArgs.toSubst_subst σ as)
+
+/-- The substitution of the destructors before a position by the observations of a corecursor at
+the variables of its state, substituted under them, is the substitution by the observations of the
+corecursor substituted. -/
+theorem Destructors.Pos.obsSubst_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
+    (σ : Subst k Γ'' Γ') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
+    (ps : List Grade) (as : InstanceArgs k Γ' Δ) (Ss : States k Γ') (gs : CorecBranches k Γ')
+    (ps'' : List Parameter) {d : Name} {p q : Grade} {ps' : List Parameter} {ns : List Name}
+    {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
+    {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
+    (hd : Destructors.Pos d p q ds Ξ Θ B ψ) :
+    ∀ {a} (x : Var Ξ a),
+      ((hd.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps'').observation D qs ls ps
+          (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst) x).subst
+          (Subst.liftN a.params.length (Subst.liftN ps''.length σ)) =
+        hd.obsSubst ((Term.corecAt r D qs ls ps (as.subst σ) (Ss.subst σ) (gs.subst σ) ps'').observation
+          D qs ls ps ((as.subst σ).rename (Ren.weakenN ps''.length)))
+          ((as.subst σ).rename (Ren.weakenN ps''.length)).toSubst x := by
+  intro a x
+  have h := hd.obsSubst_observation_subst (Subst.liftN ps''.length σ) D qs ls ps
+    (as.rename (Ren.weakenN ps''.length)) (Term.corecAt r D qs ls ps as Ss gs ps'') x
+  rw [Term.corecAt_subst, InstanceArgs.subst_liftN_rename_weakenN] at h
+  exact h
+
+/-- The arguments of recursive results, substituted, are those of the arguments substituted, by
+functions that commute with the substitution. -/
+theorem Args.results_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) {f : Name → Term k Δ → Term k Δ}
+    {f' : Name → Term k Γ → Term k Γ} (hf : ∀ D t, (f D t).subst θ = f' D (t.subst θ)) :
+    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Δ ps) →
+      (ts.results f rs).subst θ = (ts.subst θ).results f' rs
+  | some D :: rs, _ :: _, .cons t ts => by
+    show Args.cons ((f D t).subst θ) ((ts.results f rs).subst θ) = _
+    rw [hf, Args.results_subst θ hf rs ts]
+    rfl
+  | none :: rs, _ :: _, .cons _ ts => Args.results_subst θ hf rs ts
+  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
 
 end Sic.Core

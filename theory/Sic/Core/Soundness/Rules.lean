@@ -3312,15 +3312,6 @@ def CorecBranchesValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx
     Prop :=
   CorecBranchesEqValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs gs
 
-/-- A corecursor substituted is the corecursor of the instance substituted, from the state
-substituted. -/
-theorem Term.corec_subst {Γ Δ Ξ : Scope} (θ : Subst 0 Γ Δ) (r : Grade) (D : Name)
-    (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (as : InstanceArgs 0 Δ Ξ)
-    {ps' : List Parameter} (ss : Args 0 Δ ps') (Ss : States 0 Δ) (gs : CorecBranches 0 Δ) :
-    (Term.corec r D qs ls ps as ss.terms Ss gs).subst θ =
-      .corec r D qs ls ps (as.subst θ) (ss.subst θ).terms (Ss.subst θ) (gs.subst θ) := by
-  rw [Term.subst, Args.terms_subst]
-
 -- ADE: `prod-congᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Sigma.agda`.
 /-- `(corec_≡)` keeps the meaning: at equal substitutions of the context, the corecursors are
 canonical terms whose observations by each destructor compute, by `(β_⟶)`, as the branches of the

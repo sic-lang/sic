@@ -199,19 +199,6 @@ theorem Args.rename_weakenN_subst {ps ps' : List Parameter} (ts : Args k [] ps)
   (Args.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) ts).trans
     (Args.subst_id_of (fun _ => rfl) ts)
 
-/-- The arguments of recursive results, substituted, are those of the arguments substituted, by
-functions that commute with the substitution. -/
-theorem Args.results_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) {f : Name → Term k Δ → Term k Δ}
-    {f' : Name → Term k Γ → Term k Γ} (hf : ∀ D t, (f D t).subst θ = f' D (t.subst θ)) :
-    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Δ ps) →
-      (ts.results f rs).subst θ = (ts.subst θ).results f' rs
-  | some D :: rs, _ :: _, .cons t ts => by
-    show Args.cons ((f D t).subst θ) ((ts.results f rs).subst θ) = _
-    rw [hf, Args.results_subst θ hf rs ts]
-    rfl
-  | none :: rs, _ :: _, .cons _ ts => Args.results_subst θ hf rs ts
-  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
-
 /-- The motive at a position of motives renamed is the motive renamed, under its variables. -/
 theorem Motives.get_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
     {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Δ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
