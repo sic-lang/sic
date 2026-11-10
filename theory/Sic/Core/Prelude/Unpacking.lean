@@ -556,7 +556,7 @@ theorem UnpackBranch.of (hpre : sig.HasPrelude) {Γ : Scope} {ps : List Paramete
   have hB := HasType.packLevel hpre hΘ
   have hctx₂ : WfCtx sig ((ctx.var A).var (Θ.pack κs l)) := .var (WfType.ofSort hB)
   have hw := TypedRen.weaken hctx₂
-  have hΘ₂ := hΘ.rename hw
+  have hΘ₂ := stableUnderRenaming.wfTelescopeSorts hΘ hw
   have hu₂ : HasType sig ((ctx.var A).var (Θ.pack κs l)) (.var₀ .zero)
       ((Θ.rename Ren.weaken).pack κs l) := by
     rw [← Telescope.pack_rename]
@@ -638,7 +638,7 @@ theorem EqTerm.unpackBeta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
       (TypedRen.weaken (.var (WfType.ofSort (HasType.packLevel hpre hW))))
     obtain ⟨hΘ₂, hu₂, hC₂, hb₂⟩ := UnpackBranch.of (A := A) hpre hΘ hC
     have hσ := TypedSubst.single ht
-    have hΘt := hΘ.subst₀ hσ
+    have hΘt := stableUnderSubstitution.wfTelescopeSorts hΘ hσ
     have hP := HasType.packArgs hpre hΘt hts
     rw [← Telescope.pack_subst₀] at hP
     have h := EqTerm.pairIota (r := r) hpre hp hA (HasType.packLevel hpre hΘ) ht hP hC' (by

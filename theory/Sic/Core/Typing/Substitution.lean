@@ -180,6 +180,13 @@ structure StableUnderSubstitution : Prop where
     {ctx' : Context k Γ} {σ : Subst₀ k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
     {κ : Universe k},
     WfTelescope sig ctx Θ κ → TypedSubst sig ctx' σ ctx → WfTelescope sig ctx' (Θ.subst₀ σ) κ
+  /-- A telescope in sorts, substituted, is in the sorts.
+  RFC: `\mathsf{subst}_\vdash.\Theta_{\bar\kappa}` -/
+  wfTelescopeSorts : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {ctx' : Context k Γ} {σ : Subst₀ k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
+    {κs : List (Universe k)} {l : Level k},
+    WfTelescopeSorts sig ctx Θ κs l → TypedSubst sig ctx' σ ctx →
+      WfTelescopeSorts sig ctx' (Θ.subst₀ σ) κs l
   /-- Equal telescopes in a sort, substituted, are equal in the sort.
   RFC: `\mathsf{subst}_\vdash.\Theta_\equiv` -/
   eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
@@ -201,6 +208,7 @@ RFC: `\mathsf{subst}_\vdash.\bar t_\equiv`
 RFC: `\mathsf{subst}_\vdash.\bar a`
 RFC: `\mathsf{subst}_\vdash.\bar a_\equiv`
 RFC: `\mathsf{subst}_\vdash.\Theta`
+RFC: `\mathsf{subst}_\vdash.\Theta_{\bar\kappa}`
 RFC: `\mathsf{subst}_\vdash.\Theta_\equiv` -/
 theorem stableUnderSubstitution : StableUnderSubstitution :=
   ⟨fun h hσ => by
@@ -230,6 +238,9 @@ theorem stableUnderSubstitution : StableUnderSubstitution :=
     fun h hσ => by
       rw [Telescope.subst₀_eq_subst]
       exact TypedSubst.liftable.stable.wfTelescope h (.base ⟨_, hσ, rfl⟩),
+    fun h hσ => by
+      rw [Telescope.subst₀_eq_subst]
+      exact TypedSubst.liftable.stable.wfTelescopeSorts h (.base ⟨_, hσ, rfl⟩),
     fun h hσ => by
       rw [Telescope.subst₀_eq_subst, Telescope.subst₀_eq_subst]
       exact TypedSubst.liftable.stable.eqTelescope h (.base ⟨_, hσ, rfl⟩)⟩

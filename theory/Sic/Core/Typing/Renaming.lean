@@ -177,6 +177,13 @@ structure StableUnderRenaming : Prop where
     {ctx' : Context k Γ} {ξ : Ren Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
     {κ : Universe k},
     WfTelescope sig ctx Θ κ → TypedRen sig ctx' ξ ctx → WfTelescope sig ctx' (Θ.rename ξ) κ
+  /-- A telescope in sorts, renamed, is in the sorts.
+  RFC: `\mathsf{ren}_\vdash.\Theta_{\bar\kappa}` -/
+  wfTelescopeSorts : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
+    {ctx' : Context k Γ} {ξ : Ren Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
+    {κs : List (Universe k)} {l : Level k},
+    WfTelescopeSorts sig ctx Θ κs l → TypedRen sig ctx' ξ ctx →
+      WfTelescopeSorts sig ctx' (Θ.rename ξ) κs l
   /-- Equal telescopes in a sort, renamed, are equal in the sort.
   RFC: `\mathsf{ren}_\vdash.\Theta_\equiv` -/
   eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
@@ -196,6 +203,7 @@ RFC: `\mathsf{ren}_\vdash.\bar t_\equiv`
 RFC: `\mathsf{ren}_\vdash.\bar a`
 RFC: `\mathsf{ren}_\vdash.\bar a_\equiv`
 RFC: `\mathsf{ren}_\vdash.\Theta`
+RFC: `\mathsf{ren}_\vdash.\Theta_{\bar\kappa}`
 RFC: `\mathsf{ren}_\vdash.\Theta_\equiv` -/
 theorem stableUnderRenaming : StableUnderRenaming :=
   ⟨fun h hξ => by
@@ -224,6 +232,9 @@ theorem stableUnderRenaming : StableUnderRenaming :=
     fun h hξ => by
       rw [Telescope.rename_eq_subst]
       exact TypedRen.liftable.stable.wfTelescope h (.base ⟨_, hξ, fun _ => rfl⟩),
+    fun h hξ => by
+      rw [Telescope.rename_eq_subst]
+      exact TypedRen.liftable.stable.wfTelescopeSorts h (.base ⟨_, hξ, fun _ => rfl⟩),
     fun h hξ => by
       rw [Telescope.rename_eq_subst, Telescope.rename_eq_subst]
       exact TypedRen.liftable.stable.eqTelescope h (.base ⟨_, hξ, fun _ => rfl⟩)⟩

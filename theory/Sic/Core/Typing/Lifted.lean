@@ -145,6 +145,11 @@ structure Subst.Stable (sig : Signature)
   wfTelescope : ∀ {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
     {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κ : Universe k},
     WfTelescope sig ctx Θ κ → Lifted @Base ctx' @θ ctx → WfTelescope sig ctx' (Θ.subst θ) κ
+  /-- A telescope in sorts, substituted, is in the sorts. -/
+  wfTelescopeSorts : ∀ {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ}
+    {θ : Subst k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κs : List (Universe k)}
+    {l : Level k}, WfTelescopeSorts sig ctx Θ κs l → Lifted @Base ctx' @θ ctx →
+      WfTelescopeSorts sig ctx' (Θ.subst θ) κs l
   /-- Equal telescopes in a sort, substituted, are equal in the sort. -/
   eqTelescope : ∀ {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
     {ctx : Context k Δ} {Θ₁ Θ₂ : Telescope k Δ ps} {κ : Universe k},
@@ -157,7 +162,7 @@ structure Subst.Stable (sig : Signature)
 `Subst.Liftable` says. -/
 theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig @Base :=
   ⟨wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope,
-    eqTelescope⟩
+    wfTelescopeSorts, eqTelescope⟩
 where
   wfCtx {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
       {ctx : Context k Δ} : WfCtx sig ctx → Subst.Lifted @Base ctx' @θ ctx → WfCtx sig ctx'
@@ -523,6 +528,15 @@ where
     | .cons (A := A) hA hκ hΘ hp, hθ => by
       refine .cons (hasType hA hθ) hκ ?_ hp
       exact wfTelescope hΘ (hθ.var A)
+  wfTelescopeSorts {Γ Δ : Scope} {ps : List Parameter}
+      {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
+      {κs : List (Universe k)} {l : Level k} :
+      WfTelescopeSorts sig ctx Θ κs l → Subst.Lifted @Base ctx' @θ ctx →
+        WfTelescopeSorts sig ctx' (Θ.subst θ) κs l
+    | .nil hctx, hθ => .nil (wfCtx hctx hθ)
+    | .cons (A := A) hA hl hΘ hp, hθ => by
+      refine .cons (hasType hA hθ) hl ?_ hp
+      exact wfTelescopeSorts hΘ (hθ.var A)
   eqTelescope {Γ Δ : Scope} {ps : List Parameter}
       {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ} {Θ₁ Θ₂ : Telescope k Δ ps}
       {κ : Universe k} :

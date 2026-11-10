@@ -19,27 +19,6 @@ namespace Sic.Core
 variable {sig : Signature} {k : Nat}
 
 -- ADE: none.
-/-- `Σ; Γ ⊢ Θ : κ̄ ≤ l`: the types of the telescope `Θ` live in the sorts `κ̄`, one for each entry,
-whose levels are below `l`, and an entry whose type is a proposition has a grade without use at run
-time, as in a telescope in a sort; the packing of `Θ` needs the sort of each entry, which the
-telescope does not give. -/
-inductive WfTelescopeSorts : Signature → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
-    Telescope k Γ ps → List (Universe k) → Level k → Prop where
-  /-- The empty telescope, of no sort, below every level.
-  RFC: `\mathsf{tel}_{\bar\kappa\varepsilon}` -/
-  | nil {sig : Signature} {Γ : Scope} {ctx : Context k Γ} {l : Level k} (hctx : WfCtx sig ctx) :
-      WfTelescopeSorts sig ctx .nil [] l
-  /-- The first entry, whose type lives in the sort `κ` of a level below `l`, with a grade without
-  use at run time if it is a proposition, and the others.
-  RFC: `\mathsf{tel}_{\bar\kappa,}` -/
-  | cons {sig : Signature} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade}
-      {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ : Universe k}
-      {κs : List (Universe k)} {l : Level k} (hA : HasType sig ctx A (.sort κ))
-      (hl : κ.level ≤ l) (hΘ : WfTelescopeSorts sig (ctx.var A) Θ κs l)
-      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
-
--- ADE: none.
 /-- The arguments `(A, x. B)` are arguments of the parameters of the pair, when `A` is a type of the
 sort `κ` and `B` a type of `U_{l₂}` over a variable of `A`. -/
 theorem HasInstanceArgs.pair {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
@@ -74,51 +53,16 @@ theorem HasType.pairInst {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelud
 -- ADE: none.
 /-- The packing of a telescope is a type of the universe of the level of its packing.
 RFC: `\mathsf{pack}_{\Theta:}` -/
-theorem HasType.packLevel {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
-    {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) :
-    HasType sig ctx (Θ.pack κs l) (.sort ⟨.type, Telescope.packLevel κs l⟩) := by
-  induction h with
-  | nil hctx =>
+theorem HasType.packLevel {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} :
+    {ps : List Parameter} → {ctx : Context k Γ} → {Θ : Telescope k Γ ps} →
+    {κs : List (Universe k)} → {l : Level k} → WfTelescopeSorts sig ctx Θ κs l →
+      HasType sig ctx (Θ.pack κs l) (.sort ⟨.type, Telescope.packLevel κs l⟩)
+  | _, _, _, _, _, .nil hctx => by
     refine .inst (D := "Unit") (decl := Prelude.unit) (ζ := Prelude.unitType.usage)
       ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
       rfl rfl rfl trivial ?_
     exact .nil hctx
-  | cons hA _ _ hp ih => exact HasType.pairInst hpre hp hA ih
-
-variable {Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop}
-
--- ADE: none.
-/-- A telescope whose entries live in sorts, substituted by a lifted substitution of a family that
-`Subst.Liftable` accepts, lives in the sorts. -/
-theorem WfTelescopeSorts.subst (hB : Subst.Liftable sig @Base) {Γ Δ : Scope} {ps : List Parameter}
-    {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps}
-    {κs : List (Universe k)} {l : Level k} :
-    WfTelescopeSorts sig ctx Θ κs l → Subst.Lifted @Base ctx' @θ ctx → WfCtx sig ctx' →
-      WfTelescopeSorts sig ctx' (Θ.subst θ) κs l
-  | .nil _, _, hctx => .nil hctx
-  | .cons hA hl hΘ hp, hθ, hctx =>
-    have hA' := hB.stable.hasType hA hθ
-    .cons hA' hl (WfTelescopeSorts.subst hB hΘ (hθ.var _) (.var (WfType.ofSort hA'))) hp
-
--- ADE: none.
-/-- A telescope whose entries live in sorts, renamed by a typed renaming, lives in the sorts. -/
-theorem WfTelescopeSorts.rename {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ}
-    {ξ : Ren Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) (hξ : TypedRen sig ctx' ξ ctx) :
-    WfTelescopeSorts sig ctx' (Θ.rename ξ) κs l := by
-  rw [Telescope.rename_eq_subst]
-  exact h.subst TypedRen.liftable (.base ⟨_, hξ, fun _ => rfl⟩) hξ.wfCtx
-
--- ADE: none.
-/-- A telescope whose entries live in sorts, substituted by a typed substitution of the first order,
-lives in the sorts. -/
-theorem WfTelescopeSorts.subst₀ {Γ Δ : Scope} {ps : List Parameter} {ctx' : Context k Γ}
-    {σ : Subst₀ k Γ Δ} {ctx : Context k Δ} {Θ : Telescope k Δ ps} {κs : List (Universe k)}
-    {l : Level k} (h : WfTelescopeSorts sig ctx Θ κs l) (hσ : TypedSubst sig ctx' σ ctx) :
-    WfTelescopeSorts sig ctx' (Θ.subst₀ σ) κs l := by
-  rw [Telescope.subst₀_eq_subst]
-  exact h.subst TypedSubst.liftable (.base ⟨_, hσ, rfl⟩) hσ.wfCtx
+  | _, _, _, _, _, .cons hA _ hΘ hp => HasType.pairInst hpre hp hA (HasType.packLevel hpre hΘ)
 
 -- ADE: `prodⱼ` and `starⱼ`, in `Definition/Typed.agda`.
 /-- The packing of arguments of a telescope whose entries live in sorts is a term of the packing of
@@ -132,7 +76,7 @@ theorem HasType.packArgs (hpre : sig.HasPrelude) : {Γ : Scope} → {ps : List P
     .ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl rfl
       trivial (.nil hctx) (.nil hctx)
   | _, p :: _, _, .cons t ts, .cons _ _ A Θ, κ :: κs, l, .cons hA hl hΘ hp, .cons ht hts => by
-    have hr := HasType.packArgs hpre (hΘ.subst₀ (TypedSubst.single ht)) hts
+    have hr := HasType.packArgs hpre (stableUnderSubstitution.wfTelescopeSorts hΘ (TypedSubst.single ht)) hts
     rw [← Telescope.pack_subst₀] at hr
     have hctx := contextPresuppositions.hasType hA
     refine .ctor (con := Prelude.pairMk) (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs l) .nil))

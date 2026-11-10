@@ -908,6 +908,27 @@ inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
       WfTelescope sig ctx (.cons q p A Θ) κ₂
 
 -- ADE: none.
+/-- `Σ; Γ ⊢ Θ : κ̄ ≤ l`: the types of the telescope `Θ` live in the sorts `κ̄`, one for each entry,
+whose levels are below `l`, and an entry whose type is a proposition has a grade without use at run
+time, as in a telescope in a sort; the packing of `Θ` needs the sort of each entry, which the
+telescope does not give. -/
+inductive WfTelescopeSorts : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
+    Context k Γ → Telescope k Γ ps → List (Universe k) → Level k → Prop where
+  /-- The empty telescope, of no sort, below every level.
+  RFC: `\mathsf{tel}_{\bar\kappa\varepsilon}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+      (hctx : WfCtx sig ctx) : WfTelescopeSorts sig ctx .nil [] l
+  /-- The first entry, whose type lives in the sort `κ` of a level below `l`, with a grade without
+  use at run time if it is a proposition, and the others.
+  RFC: `\mathsf{tel}_{\bar\kappa,}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {q : Grade} {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ : Universe k}
+      {κs : List (Universe k)} {l : Level k} (hA : HasType sig ctx A (.sort κ))
+      (hl : κ.level ≤ l) (hΘ : WfTelescopeSorts sig (ctx.var A) Θ κs l)
+      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
+
+-- ADE: none.
 /--
 `Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`: the telescopes are equal in the sort `κ`, entry by entry, with the same grades,
 their types being equal types of a sort that `κ` bounds, and an entry whose type is a proposition has
@@ -1142,6 +1163,11 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.\Theta` -/
   wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
     {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfSig sig
+  /-- A telescope in sorts is in a well-formed signature.
+  RFC: `\mathsf{presup}_\Sigma.\Theta_{\bar\kappa}` -/
+  wfTelescopeSorts : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k},
+    WfTelescopeSorts sig ctx Θ κs l → WfSig sig
   /-- An equality of telescopes in a sort is in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv` -/
   eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
@@ -1183,6 +1209,7 @@ RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`
 RFC: `\mathsf{presup}_\Sigma.\bar a`
 RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`
 RFC: `\mathsf{presup}_\Sigma.\Theta`
+RFC: `\mathsf{presup}_\Sigma.\Theta_{\bar\kappa}`
 RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`
 RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`
 RFC: `\mathsf{presup}_\Sigma.\bar d`
@@ -1191,8 +1218,8 @@ RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`
 RFC: `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, eqTelescope, wfFields, wfDestructors,
-    wfTypeDeclaration, tail⟩
+    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfTelescopeSorts, eqTelescope, wfFields,
+    wfDestructors, wfTypeDeclaration, tail⟩
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
@@ -1273,6 +1300,11 @@ where
       {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfSig sig
     | .nil hctx => wfCtx hctx
     | .cons hA _ _ _ => hasType hA
+  wfTelescopeSorts {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k} :
+      WfTelescopeSorts sig ctx Θ κs l → WfSig sig
+    | .nil hctx => wfCtx hctx
+    | .cons hA _ _ _ => hasType hA
   eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
     | .nil hctx => wfCtx hctx
@@ -1341,6 +1373,11 @@ structure ContextPresuppositions : Prop where
   RFC: `\mathsf{presup}_\Gamma.\Theta` -/
   wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
     {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfCtx sig ctx
+  /-- A telescope in sorts is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}` -/
+  wfTelescopeSorts : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k},
+    WfTelescopeSorts sig ctx Θ κs l → WfCtx sig ctx
   /-- An equality of telescopes in a sort is in a well-formed context.
   RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
   eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
@@ -1358,10 +1395,11 @@ RFC: `\mathsf{presup}_\Gamma.\bar t_\equiv`
 RFC: `\mathsf{presup}_\Gamma.\bar a`
 RFC: `\mathsf{presup}_\Gamma.\bar a_\equiv`
 RFC: `\mathsf{presup}_\Gamma.\Theta`
+RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}`
 RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
 theorem contextPresuppositions : ContextPresuppositions :=
   ⟨wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope,
-    eqTelescope⟩
+    wfTelescopeSorts, eqTelescope⟩
 where
   wfType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
       WfType sig ctx A → WfCtx sig ctx
@@ -1430,6 +1468,11 @@ where
     | .secondOrder has _ => eqInstanceArgs has
   wfTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .cons hA _ _ _ => hasType hA
+  wfTelescopeSorts {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k} :
+      WfTelescopeSorts sig ctx Θ κs l → WfCtx sig ctx
     | .nil hctx => hctx
     | .cons hA _ _ _ => hasType hA
   eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
