@@ -1300,6 +1300,143 @@ where
     | .constantDeclaration h _ => wfConstantDeclaration h
     | .typeDeclaration h _ _ => wfTypeDeclaration h
 
+-- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- Every judgment in a context holds in a well-formed context. -/
+structure ContextPresuppositions : Prop where
+  /-- A type is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.A` -/
+  wfType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ},
+    WfType sig ctx A → WfCtx sig ctx
+  /-- An equality of types is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.A_\equiv` -/
+  eqType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ},
+    EqType sig ctx A B → WfCtx sig ctx
+  /-- A typing is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.t` -/
+  hasType : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ},
+    HasType sig ctx t A → WfCtx sig ctx
+  /-- An equality of terms is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.t_\equiv` -/
+  eqTerm : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ},
+    EqTerm sig ctx t u A → WfCtx sig ctx
+  /-- Arguments of a telescope are in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\bar t` -/
+  hasArgs : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {ts : Args k Γ ps} {Θ : Telescope k Γ ps}, HasArgs sig ctx ts Θ → WfCtx sig ctx
+  /-- Equal arguments of a telescope are in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\bar t_\equiv` -/
+  eqArgs : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {ts us : Args k Γ ps} {Θ : Telescope k Γ ps}, EqArgs sig ctx ts us Θ → WfCtx sig ctx
+  /-- Arguments of an instance are in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\bar a` -/
+  hasInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+    {as : InstanceArgs k Γ Δ} {params : Context k Δ},
+    HasInstanceArgs sig ctx as params → WfCtx sig ctx
+  /-- Equal arguments of instances are in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\bar a_\equiv` -/
+  eqInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+    {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
+    EqInstanceArgs sig ctx as₁ as₂ params → WfCtx sig ctx
+  /-- A telescope in a sort is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\Theta` -/
+  wfTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {Θ : Telescope k Γ ps} {κ : Universe k}, WfTelescope sig ctx Θ κ → WfCtx sig ctx
+  /-- An equality of telescopes in a sort is in a well-formed context.
+  RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
+  eqTelescope : ∀ {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
+    EqTelescope sig ctx Θ₁ Θ₂ κ → WfCtx sig ctx
+
+-- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- The judgments in a context hold in a well-formed context.
+RFC: `\mathsf{presup}_\Gamma.A`
+RFC: `\mathsf{presup}_\Gamma.A_\equiv`
+RFC: `\mathsf{presup}_\Gamma.t`
+RFC: `\mathsf{presup}_\Gamma.t_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\bar t`
+RFC: `\mathsf{presup}_\Gamma.\bar t_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\bar a`
+RFC: `\mathsf{presup}_\Gamma.\bar a_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\Theta`
+RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
+theorem contextPresuppositions : ContextPresuppositions :=
+  ⟨wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope,
+    eqTelescope⟩
+where
+  wfType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
+      WfType sig ctx A → WfCtx sig ctx
+    | .univType h => hasType h
+    | .propType h => hasType h
+  eqType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ} :
+      EqType sig ctx A B → WfCtx sig ctx
+    | .refl h => wfType h
+    | .symm h => eqType h
+    | .trans h _ => eqType h
+    | .univType h => eqTerm h
+    | .propType h => eqTerm h
+  hasType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ} :
+      HasType sig ctx t A → WfCtx sig ctx
+    | .var hctx _ => hctx
+    | .secondOrder _ hts => hasArgs hts
+    | .const hctx _ _ _ _ => hctx
+    | .univ hctx => hctx
+    | .prop hctx => hctx
+    | .inst _ _ _ _ _ has => hasInstanceArgs has
+    | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
+    | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
+    | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ has .. => hasInstanceArgs has
+    | .conv ht _ => hasType ht
+  eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
+      EqTerm sig ctx t u A → WfCtx sig ctx
+    | .refl h => hasType h
+    | .symm h => eqTerm h
+    | .trans h _ => eqTerm h
+    | .conv h _ => eqTerm h
+    | .irr ht _ _ => hasType ht
+    | .secondOrder _ hts => eqArgs hts
+    | .delta hctx _ _ _ _ => hctx
+    | .const hctx .. => hctx
+    | .univ hctx _ => hctx
+    | .prop hctx _ => hctx
+    | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
+    | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
+    | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
+    | .corec _ _ _ _ _ _ has .. => eqInstanceArgs has
+    | .beta _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
+  hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .cons ht _ => hasType ht
+  eqArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {ts us : Args k Γ ps} {Θ : Telescope k Γ ps} : EqArgs sig ctx ts us Θ → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .cons ht _ => eqTerm ht
+  hasInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+      {as : InstanceArgs k Γ Δ} {params : Context k Δ} :
+      HasInstanceArgs sig ctx as params → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .var has _ => hasInstanceArgs has
+    | .secondOrder has _ => hasInstanceArgs has
+  eqInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+      {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} :
+      EqInstanceArgs sig ctx as₁ as₂ params → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .var has _ => eqInstanceArgs has
+    | .secondOrder has _ => eqInstanceArgs has
+  wfTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .cons hA _ _ _ => hasType hA
+  eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfCtx sig ctx
+    | .nil hctx => hctx
+    | .cons hA _ _ _ => eqTerm hA
+
 -- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
 theorem WfSig.fresh {e : Entry} {sig : Signature} :
