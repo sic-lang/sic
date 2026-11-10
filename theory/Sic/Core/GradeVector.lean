@@ -91,7 +91,8 @@ modality does. -/
 
 -- ADE: `Conₘ-semimodule`, in `Graded/Context/Properties.agda`.
 /-- The addition and the multiplication by a grade make the vectors a module over the grades.
-RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{+}`, `\mathsf{module}_\gamma.\mathsf{comm}_{+}`
+RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{+}`
+RFC: `\mathsf{module}_\gamma.\mathsf{comm}_{+}`
 RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{+}`
 RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+^{\gamma}}`
 RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+}`
@@ -118,7 +119,8 @@ theorem meet_comm (γ₁ γ₂ : GradeVector n) : γ₁ ⊓ᶜ γ₂ = γ₂ ⊓
 
 -- ADE: `≤ᶜ-preorder`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order is a preorder.
-RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}`, `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
+RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}`
+RFC: `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
 theorem preorder : IsPreorder (α := GradeVector n) (· ≤ᶜ ·) where
   refl γ x := Grade.le_refl (γ x)
   trans h₁ h₂ x := Grade.le_trans _ _ _ (h₁ x) (h₂ x)
@@ -168,7 +170,8 @@ structure ExtendCommutes : Prop where
 
 -- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations.
-RFC: `\mathsf{op}{\bullet}_\gamma.{00}`, `\mathsf{op}{\bullet}_\gamma.{+}`
+RFC: `\mathsf{op}{\bullet}_\gamma.{00}`
+RFC: `\mathsf{op}{\bullet}_\gamma.{+}`
 RFC: `\mathsf{op}{\bullet}_\gamma.{\cdot}` -/
 theorem extend_commutes : ExtendCommutes where
   zero_extend _ := funext fun x => by cases x using Fin.cases <;> rfl

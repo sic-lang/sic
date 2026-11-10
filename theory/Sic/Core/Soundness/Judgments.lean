@@ -891,7 +891,8 @@ structure Soundness : Prop where
       ValidInterpretation ι sig → WfDestructors sig ctx ds κ → ValidDestructors sig ι ctx ds κ
   -- ADE: none.
   /-- A well-formed type declaration is meaningful.
-  RFC: `\mathsf{sound}.\mathsf{data}`, `\mathsf{sound}.\mathsf{codata}` -/
+  RFC: `\mathsf{sound}.\mathsf{data}`
+  RFC: `\mathsf{sound}.\mathsf{codata}` -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration},
     ValidInterpretation ι sig → WfTypeDeclaration sig decl → ValidTypeDeclaration sig ι decl
 

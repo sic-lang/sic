@@ -386,7 +386,8 @@ The Lean carries the closed substitution of the scope of the destructors, rather
 destructors `d̄[θ]` of the RFC, as the closed judgments of the contexts do, so that the substitution
 of the destructors and their instance `d̄ⱼ[T]` at the arguments of the parameters need no definition
 of their own.
-RFC: `\mathsf{subst}_\theta.\bar d`, `\mathsf{inst}_{\bar d}`
+RFC: `\mathsf{subst}_\theta.\bar d`
+RFC: `\mathsf{inst}_{\bar d}`
 -/
 inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Quality → {Γ : Scope} → {ns : List Name} → Destructors 0 Γ ns → Subst 0 [] Γ → ObsRel → Prop
@@ -464,7 +465,8 @@ inductive HasEq (sig : Signature) (ι : Interpretation) (v : Term 0 []) (R : Ter
   | univ (n : Nat) (h : (levelRel sig ι n).univ v R)
   /-- `(eq_true)` and `(eq_false)`: a proposition of `Ω_n` whose truth is `b`, whose closed terms are
   all equal proofs when it is true, and none when it is false.
-  RFC: `\mathsf{eq}_{\mathsf{true}}`, `\mathsf{eq}_{\mathsf{false}}` -/
+  RFC: `\mathsf{eq}_{\mathsf{true}}`
+  RFC: `\mathsf{eq}_{\mathsf{false}}` -/
   | prop (n : Nat) (b : Prop) (h : (levelRel sig ι n).prop v b) (hR : ∀ t u, R t u ↔ b)
 
 /-- `(prop_v)`: `v` is a proposition, a term of a universe of propositions.
@@ -536,7 +538,8 @@ def ValidType₀ (sig : Signature) (ι : Interpretation) (A : Term 0 []) : Prop 
   ValidEqType₀ sig ι A A
 
 /-- `(⊨_≡)` and `(⊨_≡Ω)`: `Σ ⊨ t ≡ u : A`.
-RFC: `\vDash_\equiv`, `\vDash_{\equiv\Omega}` -/
+RFC: `\vDash_\equiv`
+RFC: `\vDash_{\equiv\Omega}` -/
 def ValidEqTerm₀ (sig : Signature) (ι : Interpretation) (t u A : Term 0 []) : Prop :=
   ValidType₀ sig ι A ∧ EqTermClause sig ι t u A
 
@@ -596,7 +599,9 @@ theorem Context.size_append {k : Nat} :
 terms of its type, and each second-order variable abstractions whose instances by equal arguments are
 equal terms of its type; the arguments of a telescope are the equal substitutions of the context it
 forms.
-RFC: `\mathsf{eq}_\varepsilon`, `\mathsf{eq}_x`, `\mathsf{eq}_X`
+RFC: `\mathsf{eq}_\varepsilon`
+RFC: `\mathsf{eq}_x`
+RFC: `\mathsf{eq}_X`
 -/
 def EqSubst (sig : Signature) (ι : Interpretation) :
     {Γ : Scope} → Context 0 Γ → Subst 0 [] Γ → Subst 0 [] Γ → Prop
@@ -715,7 +720,8 @@ theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Sc
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their first types being
 equal types of a sort that `κ` bounds, and the rest of them equal for every pair of equal terms of
 these types; the meaning ignores their grades.
-RFC: `{\vDash}\mathsf{tel}_{\kappa\varepsilon}`, `{\vDash}\mathsf{tel}_{\kappa,}` -/
+RFC: `{\vDash}\mathsf{tel}_{\kappa\varepsilon}`
+RFC: `{\vDash}\mathsf{tel}_{\kappa,}` -/
 def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
     {ps : List Parameter} → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨tel_κε)`. -/
@@ -745,7 +751,8 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
 /-- `Σ; Γ ⊨ d̄ : κ`, at levels without variables: the arguments of each destructor are a telescope in
 the universe of the level of `κ`, its result a term of a sort that `κ` bounds, in the context
 extended by its arguments, and the destructors after it are in `κ`, in the context extended by it.
-RFC: `{\vDash}\bar d_{\kappa\varepsilon}`, `{\vDash}\bar d_{\kappa|}` -/
+RFC: `{\vDash}\bar d_{\kappa\varepsilon}`
+RFC: `{\vDash}\bar d_{\kappa|}` -/
 def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) :
     {Γ : Scope} → {ns : List Name} → Context 0 Γ → Destructors 0 Γ ns → Universe 0 → Prop
   /- `(⊨d̄_κε)`. -/
@@ -761,7 +768,8 @@ fields that are not recursive are equal types of a sort that `κ` bounds, the re
 type `D` are the instances `inst₁ D` and `inst₂ D` of the block, and the rest of them are equal for
 every pair of equal terms of the fields that are not recursive, and for every pair of terms of the
 recursive ones, on which they do not depend; the meaning ignores their grades.
-RFC: `{\vDash}\mathsf{fields}_\varepsilon`, `{\vDash}\mathsf{fields}_{,}`
+RFC: `{\vDash}\mathsf{fields}_\varepsilon`
+RFC: `{\vDash}\mathsf{fields}_{,}`
 RFC: `{\vDash}\mathsf{fields}_{\mathsf{rec}}` -/
 def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0)
     (inst₁ inst₂ : Name → Term 0 []) :
@@ -888,7 +896,8 @@ grade variables, the destructors of each type are in the sort `κ`, in the conte
 parameters, at each value of the level variables.
 The meaning ignores the grades, and the names of the constructors and of the destructors, distinct,
 are those of the signature.
-RFC: `{\vDash}\mathsf{data}`, `{\vDash}\mathsf{codata}` -/
+RFC: `{\vDash}\mathsf{data}`
+RFC: `{\vDash}\mathsf{codata}` -/
 def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDeclaration) : Prop :=
   match decl.body with
   | .data Ts => ∀ I, ∀ T ∈ Ts, ∀ c ∈ T.constructors,
@@ -1899,7 +1908,8 @@ decreasing_by all_goals assumption
 
 /-- `eq(v)` is a partial equivalence relation, symmetric and transitive, in a signature whose names
 are distinct.
-RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`, `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
+RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`
+RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
 theorem HasEq.isPer {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R : TermRel}
     (hd : sig.Distinct) : HasEq sig ι v R → IsPer R
   | .univ n h => (levelRel_isPer hd n).univ_isPer h

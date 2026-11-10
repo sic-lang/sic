@@ -18,11 +18,13 @@ namespace Sic
 /-- The relation `r` is a preorder: reflexive and transitive. -/
 structure IsPreorder {α : Type} (r : α → α → Prop) : Prop where
   /-- The relation is reflexive.
-  RFC: `\mathsf{preorder}_l.\mathsf{refl}`, `\mathsf{preorder}_\kappa.\mathsf{refl}`
+  RFC: `\mathsf{preorder}_l.\mathsf{refl}`
+  RFC: `\mathsf{preorder}_\kappa.\mathsf{refl}`
   RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}` -/
   refl : ∀ a, r a a
   /-- The relation is transitive.
-  RFC: `\mathsf{preorder}_l.\mathsf{trans}`, `\mathsf{preorder}_\kappa.\mathsf{trans}`
+  RFC: `\mathsf{preorder}_l.\mathsf{trans}`
+  RFC: `\mathsf{preorder}_\kappa.\mathsf{trans}`
   RFC: `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
   trans : ∀ {a b c}, r a b → r b c → r a c
 
@@ -31,13 +33,16 @@ structure IsPreorder {α : Type} (r : α → α → Prop) : Prop where
 every element above both. -/
 structure IsLeastUpperBound {α : Type} (r : α → α → Prop) (a b j : α) : Prop where
   /-- `j` is above `a`.
-  RFC: `{\sqcup}{\le}_s.\mathsf{left}`, `{\sqcup}{\preceq}_\kappa.\mathsf{left}` -/
+  RFC: `{\sqcup}{\le}_s.\mathsf{left}`
+  RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{left}` -/
   le_left : r a j
   /-- `j` is above `b`.
-  RFC: `{\sqcup}{\le}_s.\mathsf{right}`, `{\sqcup}{\preceq}_\kappa.\mathsf{right}` -/
+  RFC: `{\sqcup}{\le}_s.\mathsf{right}`
+  RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{right}` -/
   le_right : r b j
   /-- `j` is below every element above `a` and `b`.
-  RFC: `{\sqcup}{\le}_s.\mathsf{least}`, `{\sqcup}{\preceq}_\kappa.\mathsf{least}` -/
+  RFC: `{\sqcup}{\le}_s.\mathsf{least}`
+  RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{least}` -/
   least : ∀ c, r a c → r b c → r j c
 
 end Sic

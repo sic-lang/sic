@@ -143,7 +143,8 @@ inductive WfSig : Signature → Prop where
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
   /-- A type declaration, whose names of types are distinct and fresh.
-  RFC: `\mathsf{sig}_{\mathsf{data}}`, `\mathsf{sig}_{\mathsf{codata}}` -/
+  RFC: `\mathsf{sig}_{\mathsf{data}}`
+  RFC: `\mathsf{sig}_{\mathsf{codata}}` -/
   | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
       (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
       (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) : WfSig (.typeDeclaration decl :: sig)
@@ -1102,7 +1103,8 @@ structure Presuppositions : Prop where
     {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels},
     WfFields sig decl ι as ctx Θ κ → WfSig sig
   /-- A well-formed type declaration is in a well-formed signature.
-  RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}` -/
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
+  RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}` -/
   wfTypeDeclaration : ∀ {sig : Signature} {decl : TypeDeclaration},
     WfTypeDeclaration sig decl → WfSig sig
   /-- The signature that a well-formed signature extends is well formed.
@@ -1112,14 +1114,23 @@ structure Presuppositions : Prop where
 -- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
 -- the judgments in a context of definitions.
 /-- The judgments hold in well-formed signatures.
-RFC: `\mathsf{presup}_\Sigma.\mathsf{def}`, `\mathsf{presup}_\Sigma.\mathsf{decl}`
-RFC: `\mathsf{presup}_\Sigma.\Gamma`, `\mathsf{presup}_\Sigma.A`
-RFC: `\mathsf{presup}_\Sigma.A_\equiv`, `\mathsf{presup}_\Sigma.t`
-RFC: `\mathsf{presup}_\Sigma.t_\equiv`, `\mathsf{presup}_\Sigma.\bar t`
-RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`, `\mathsf{presup}_\Sigma.\bar a`
-RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`, `\mathsf{presup}_\Sigma.\Theta`
-RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`, `\mathsf{presup}_\Sigma.\bar d`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`, `\mathsf{presup}_\Sigma.\mathsf{data}`, `\mathsf{presup}_\Sigma.\mathsf{codata}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{def}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{decl}`
+RFC: `\mathsf{presup}_\Sigma.\Gamma`
+RFC: `\mathsf{presup}_\Sigma.A`
+RFC: `\mathsf{presup}_\Sigma.A_\equiv`
+RFC: `\mathsf{presup}_\Sigma.t`
+RFC: `\mathsf{presup}_\Sigma.t_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\bar t`
+RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\bar a`
+RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\Theta`
+RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\bar d`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`
 RFC: `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
   ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,

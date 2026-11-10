@@ -66,11 +66,13 @@ structure IsMeetSemilattice (α : Type) [Min α] : Prop where
 /-- The operation `mul` of `α` distributes over its operation `add`, on both sides. -/
 structure DistributesOver {α : Type} (mul add : α → α → α) : Prop where
   /-- `mul` distributes on the left.
-  RFC: `{\cdot}{+}_\xi.\mathsf{left}`, `{\cdot}{\wedge}_\xi.\mathsf{left}`
+  RFC: `{\cdot}{+}_\xi.\mathsf{left}`
+  RFC: `{\cdot}{\wedge}_\xi.\mathsf{left}`
   RFC: `{+}{\wedge}_\xi.\mathsf{left}` -/
   left : ∀ a b c : α, mul a (add b c) = add (mul a b) (mul a c)
   /-- `mul` distributes on the right.
-  RFC: `{\cdot}{+}_\xi.\mathsf{right}`, `{\cdot}{\wedge}_\xi.\mathsf{right}`
+  RFC: `{\cdot}{+}_\xi.\mathsf{right}`
+  RFC: `{\cdot}{\wedge}_\xi.\mathsf{right}`
   RFC: `{+}{\wedge}_\xi.\mathsf{right}` -/
   right : ∀ a b c : α, mul (add b c) a = add (mul b a) (mul c a)
 

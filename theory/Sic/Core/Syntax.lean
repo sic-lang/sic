@@ -645,7 +645,9 @@ def Entry.names : Entry → List Name
 -- ADE: `DCon`, in `Definition/Untyped/NotParametrised.agda`, which holds definitions only.
 /-- A signature, its entries in order, the last entry first, so that `Σ, e` is `e :: Σ`.
 The membership of the lists, `e ∈ Σ`, is the one of the signatures.
-RFC: `\mathsf{syntax}_\Sigma`, `\in_\Sigma.e`, `\in_\Sigma.e,e` -/
+RFC: `\mathsf{syntax}_\Sigma`
+RFC: `\in_\Sigma.e`
+RFC: `\in_\Sigma.e,e` -/
 abbrev Signature : Type := List Entry
 
 /--
