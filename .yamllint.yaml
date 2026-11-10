@@ -1,7 +1,7 @@
 # The defaults, except where documented.
 extends: default
 
-# The files git ignores, such as the packages Lake fetches.
+# The files Git ignores, such as the packages Lake fetches.
 ignore-from-file: .gitignore
 
 rules:
