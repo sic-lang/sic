@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Soundness.Rules
+public import Sic.Core.Soundness.Corecursors
 
 /-!
 # Soundness of the Judgments
@@ -13,7 +13,7 @@ The proof is by mutual structural recursion on the derivations, in the clause `w
 theorem, whose auxiliary theorems give the fields of the record: each case takes the values `ρ` of
 the level variables, instantiates the levels of its premises by them, which commutes with the
 substitutions and the entries of the contexts and of the signature, and concludes by the rule of
-the same name in `Rules`.
+the same name in `Rules`, `Recursors` or `Corecursors`.
 A premise that is not a subterm of the derivation, such as the well-formed signature that
 `presuppositions` gives, would stop the recursion: the meaningful signature and context of a case
 come from the meaning of one of its premises.
