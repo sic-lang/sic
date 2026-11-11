@@ -213,7 +213,7 @@ def page (url path title : String) (names : Array RfcName)
     match decls.get? n.name with
       | some ds =>
         for d in ds do
-          out := out ++ s!"\n{declarationLink path d}:\n\n```lean\n{d.source}\n```\n"
+          out := out ++ s!"\nIn {declarationLink path d}:\n\n```lean\n{d.source}\n```\n"
       | none => out := out ++ "\nNot yet formalized.\n"
   return out
 

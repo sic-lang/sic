@@ -80,6 +80,19 @@
                 "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic theory/SicExample >/dev/null"
               ];
             };
+            # Checks the imports of the modules of Sic/ against the rules of theory/imports.toml, through
+            # the modules they import in turn, which fails with the path of the imports that a rule
+            # forbids.
+            imports = {
+              tools = [
+                pkgs.coreutils
+                pkgs.lean4
+              ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "lake --dir theory env lean --run theory/Imports.lean theory/imports.toml \"$(mktemp)\" theory/Sic"
+              ];
+            };
             markdownlint = {
               tools = [ pkgs.markdownlint-cli2 ];
               command = "markdownlint-cli2 '**/*.md'";
@@ -109,7 +122,7 @@
               ];
               command = "git ls-files -z .envrc '*.sh' | xargs -0 shfmt --diff";
             };
-            # The files git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
+            # The files Git does not ignore, since Taplo reads no .gitignore, while Lake fetches packages
             # with TOML files.
             taplo = {
               tools = [
@@ -231,43 +244,123 @@
             # the extension would report at every start.
             "lean4.showSetupWarnings" = false;
           };
-          # Writes the recommended configuration to .vscode/, which git ignores, without overwriting a
-          # file that differs from it, unless --force is given.
-          setupVscode = command {
-            name = "setup-vscode";
-            runtimeInputs = [
-              pkgs.coreutils
-              pkgs.diffutils
-              pkgs.git
-            ];
+          # The recommended Git hooks: commit-msg rejects a commit without the sign-off of its author,
+          # which the commits check requires, before it exists. It runs the Bash and the Git of the
+          # contributor, since its copy cannot depend on paths of the Nix store, which may be collected:
+          # two variants, as for the commands, the one of nix flake check runs ShellCheck.
+          hook = args: {
+            run = pkgs.writeTextFile (args // { executable = true; });
+            checked = pkgs.writeTextFile (
+              args
+              // {
+                executable = true;
+                checkPhase = ''${lib.getExe pkgs.shellcheck} "$target"'';
+              }
+            );
+          };
+          commitMsgHook = hook {
+            name = "commit-msg";
             text = ''
-              force=false
-              case "$*" in
-              "") ;;
-              --force) force=true ;;
-              *)
-                echo "usage: setup-vscode [--force]" >&2
-                exit 2
-                ;;
-              esac
-              dir=$(git rev-parse --show-toplevel)/.vscode
+              #!/usr/bin/env bash
+              set -euo pipefail
+              author=$(git var GIT_AUTHOR_IDENT | sed 's/ [0-9]* [-+][0-9]*$//')
+              if ! git interpret-trailers --parse "$1" | grep -qxF "Signed-off-by: $author"; then
+                echo "no Signed-off-by: $author, which git commit -s adds" >&2
+                exit 1
+              fi
+            '';
+          };
+          # A setup: writes recommended files to a directory, each under the name of its source in the
+          # Nix store, without overwriting a file that differs from it, unless --force is given.
+          setup =
+            {
+              name,
+              dir,
+              mode,
+              sources,
+            }:
+            command {
+              inherit name;
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.diffutils
+                pkgs.git
+              ];
+              text = ''
+                force=false
+                case "$*" in
+                "") ;;
+                --force) force=true ;;
+                *)
+                  echo "usage: ${name} [--force]" >&2
+                  exit 2
+                  ;;
+                esac
+                dir=${dir}
+                sources=(${lib.concatStringsSep " " sources})
+                status=0
+                for source in "''${sources[@]}"; do
+                  target=$dir/''${source#*-}
+                  if [ ! -e "$target" ]; then
+                    install -D -m ${mode} "$source" "$target"
+                    echo "created $target"
+                  elif cmp -s "$source" "$target"; then
+                    echo "up to date $target"
+                  elif $force; then
+                    install -m ${mode} "$source" "$target"
+                    echo "overwritten $target"
+                  else
+                    diff -u --color=auto "$target" "$source" || true
+                    echo "kept $target, which differs from the recommended one above: merge it by hand, or overwrite it with --force" >&2
+                    status=1
+                  fi
+                done
+                exit "$status"
+              '';
+            };
+          # Every setup, as a command setup-<name>, with the description of its app.
+          setups = {
+            # Copies the hooks to the directory where Git looks for them, .git/hooks unless
+            # core.hooksPath says otherwise.
+            hooks = {
+              description = "Copy the recommended Git hooks to the hooks of the clone";
+              command = setup {
+                name = "setup-hooks";
+                dir = "$(git rev-parse --path-format=absolute --git-path hooks)";
+                mode = "755";
+                sources = [ commitMsgHook.run ];
+              };
+            };
+            # Writes the configuration to .vscode/, which Git ignores.
+            vscode = {
+              description = "Write the recommended VS Code configuration to .vscode/";
+              command = setup {
+                name = "setup-vscode";
+                dir = "$(git rev-parse --show-toplevel)/.vscode";
+                mode = "644";
+                sources = [
+                  vscodeExtensions
+                  vscodeSettings
+                ];
+              };
+            };
+          };
+          # Runs every setup that the contributor confirms, since each one configures a tool they may
+          # not use, with the same arguments.
+          setupAll = command {
+            name = "setup";
+            text = ''
               status=0
-              for source in ${vscodeExtensions} ${vscodeSettings}; do
-                target=$dir/''${source#*-}
-                if [ ! -e "$target" ]; then
-                  install -D -m 644 "$source" "$target"
-                  echo "created $target"
-                elif cmp -s "$source" "$target"; then
-                  echo "up to date $target"
-                elif $force; then
-                  install -m 644 "$source" "$target"
-                  echo "overwritten $target"
-                else
-                  diff -u --color=auto "$target" "$source" || true
-                  echo "kept $target, which differs from the recommended one above: merge it by hand, or overwrite it with --force" >&2
-                  status=1
+              confirm() {
+                local answer
+                read -r -p "$1? [y/N] " answer || true
+                [[ $answer == [yY]* ]]
+              }
+              ${lib.concatMapStrings (name: ''
+                if confirm "${setups.${name}.description}"; then
+                  ${lib.getExe setups.${name}.command.run} "$@" || status=1
                 fi
-              done
+              '') (lib.attrNames setups)}
               exit "$status"
             '';
           };
@@ -310,6 +403,7 @@
               pkgs.lean4
               pkgs.mdbook
               pkgs.mdbook-katex
+              pkgs.mdbook-mermaid
             ];
             text = ''
               cd "$(git rev-parse --show-toplevel)"
@@ -321,7 +415,16 @@
               {
                 printf '[Introduction](introduction.md)\n\n'
                 lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic theory/SicExample
+                lake --dir theory env lean --run theory/Imports.lean theory/imports.toml site/imports.md theory/Sic
+                printf -- '- [Imports](imports.md)\n'
               } >site/SUMMARY.md
+              # The JavaScript files of mdbook-mermaid, which its install command writes next to the
+              # book.toml it rewrites: a temporary one, which keeps that of the repository as it is.
+              mermaid=$(mktemp -d)
+              trap 'rm -rf "$mermaid"' EXIT
+              touch "$mermaid/book.toml"
+              RUST_LOG=warn mdbook-mermaid install "$mermaid"
+              cp "$mermaid"/*.js .
               mdbook build
               ${lib.getExe docs.run}
               cp -r theory/docbuild/.lake/build/doc book/theory
@@ -337,25 +440,30 @@
               check = app checkAll "Run every check";
               build-site = app buildSite "Build the site that GitHub Pages serves into book/";
               docs = app docs "Generate the documentation of the metatheory";
-              setup-vscode = app setupVscode "Write the recommended VS Code configuration to .vscode/";
-            };
+              setup = app setupAll "Run every setup";
+            }
+            // lib.mapAttrs' (
+              name: setup: lib.nameValuePair "setup-${name}" (app setup.command setup.description)
+            ) setups;
 
-          # Built by nix flake check, which runs ShellCheck on their scripts.
+          # Built by nix flake check, which runs ShellCheck on their scripts and on the hooks.
           checks =
             lib.mapAttrs' (name: command: lib.nameValuePair "check-${name}" command.checked) checkCommands
             // {
               build-site = buildSite.checked;
               check = checkAll.checked;
               docs = docs.checked;
-              setup-vscode = setupVscode.checked;
-            };
+              hook-commit-msg = commitMsgHook.checked;
+              setup = setupAll.checked;
+            }
+            // lib.mapAttrs' (name: setup: lib.nameValuePair "setup-${name}" setup.command.checked) setups;
 
           # The tools of the checks, and the language servers of the editors.
           devShells.default = pkgs.mkShellNoCC {
             packages = lib.unique (lib.concatMap (check: check.tools) (lib.attrValues fileChecks)) ++ [
               pkgs.nixd
             ];
-            # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which git
+            # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which Git
             # ignores: written from the Lean of the shell, it always matches flake.lock.
             shellHook = ''
               echo "leanprover/lean4:v${pkgs.lean4.version}" >"$(${lib.getExe pkgs.git} rev-parse --show-toplevel)/theory/lean-toolchain"

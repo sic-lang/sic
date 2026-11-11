@@ -1,0 +1,4 @@
+/* Centers the diagrams of mdbook-mermaid, which it draws as an inline SVG in a pre block. */
+pre.mermaid {
+  text-align: center;
+}

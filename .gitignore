@@ -3,6 +3,8 @@
 
 # Written by nix run .#build-site.
 /book/
+/mermaid-init.js
+/mermaid.min.js
 /site/
 
 # Written by nix run .#setup-vscode, then personal.
