@@ -347,12 +347,13 @@ where
     | .obs h hq hp hd ht hbs hm, hθ => by
       rw [Term.obs_subst, GradeVector.rename_commutes.rename_add]
       exact .obs h hq hp hd (usage ht hθ) (usageArgs hbs hθ) hm
-    | .corec (Ss := Ss) (gs := gs) (δs := δs) h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ, hθ => by
+    | .corec (Ss := Ss) (gs := gs) (δs := δs) h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr,
+        hθ => by
       rw [Term.corec_subst, GradeVector.rename_commutes.rename_add,
         GradeVector.rename_commutes.rename_smul]
       refine .corec (δs := fun i => (δs i).rename ξ) h hq hp hh (States.get_subst _ hS) ?_
         (usageArgs hss hθ) ((CorecBranches.length_subst _ gs).trans hgl)
-        ((States.length_subst _ Ss).trans hSl) ?_ ?_ ?_ ?_
+        ((States.length_subst _ Ss).trans hSl) ?_ ?_ ?_ ?_ ?_
       · intro j ps'' S' hS'
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         have ih := usageTelescope (hSu j ps'' S₀ hS₀) hθ
@@ -376,6 +377,11 @@ where
       · intro i j T' d p q ps₁ Ξ Θ B ψ hi hd
         have := GradeVector.rename_commutes.rename_le ξ (hδ i j T' d p q ps₁ Ξ Θ B ψ hi hd)
         rw [GradeVector.rename_commutes.rename_smul] at this
+        exact this
+      · intro i j T' d p q ps₁ Ξ Θ B ψ D' hi hd hn
+        have := GradeVector.rename_commutes.rename_le ξ (hδr i j T' d p q ps₁ Ξ Θ B ψ D' hi hd hn)
+        rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul,
+          GradeVector.rename_commutes.rename_smul] at this
         exact this
     | .sub h hle, hθ => .sub (usage h hθ) (GradeVector.rename_commutes.rename_le ξ hle)
   usageArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}

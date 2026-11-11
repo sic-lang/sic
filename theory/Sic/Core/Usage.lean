@@ -199,7 +199,12 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- A corecursor uses the variables of its state `r` times, the state checked in the mode `m ⊙ r`,
   and those of its branches, each checked in the mode `m' = m ⊙ p` of the grade `p` of its
   destructor, with uses `δs i` counted `p` times; one of them runs at each observation, so that the
-  corecursor uses the variables as a lower bound `δ` of these uses allows; each branch uses the
+  corecursor uses the variables as a lower bound `δ` of these uses allows; the observation resumes
+  the position that the branch of a recursive destructor gives into the corecursor, which uses the
+  variables again, or gives the term already built, so that `δ` is also a lower bound of the uses
+  of the branch plus those of the corecursor, both counted `p` times, as the eliminator of the
+  natural numbers of Abel, Danielsson and Eriksson bounds its uses by those of its branch for the
+  successor plus its own uses again; each branch uses the
   variable of an entry of the state as `⌜m'⌝ · r` times the grade of the entry allows, and that of
   an argument as `⌜m'⌝` times the grade of its entry allows; its states, which are types, use no
   variable, checked in the mode `00ᵐ`; the instance it carries uses none.
@@ -236,7 +241,12 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hδ : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
+      (hδr : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+        (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+        (ψ : ResultOwnership ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → B.blockName decl.names = some D' →
+        δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ)) :
       Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.corec r D qs ls ps as ss.terms Ss gs)
   -- ADE: `sub`, in `Graded/Usage.agda`.
   /-- A term may be given grades lower than its uses.

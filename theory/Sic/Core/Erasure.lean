@@ -611,7 +611,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
       exact UsageArgs.absent hd hS hΓ hbs (hS.add _ _ hx') ho
   | .corec (decl := decl) (γ := γ₁) (δ := δ) (δs := δs) (r := r) (qs := qs) (ps := ps) h hq hp hh
       hS₀ _ hss hgl _
-      hSs hgs hgu hδ, hx, ho => by
+      hSs hgs hgu hδ _, hx, ho => by
     have hx' : r * γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add, GradeVector.smul] using hx
     obtain ⟨gr, hgr, hgri⟩ := hd.destructorGrades h hq hp
