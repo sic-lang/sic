@@ -177,7 +177,9 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   which the branch uses the variable, so that a variable used more than once is shared, has the
   ownership `ψ[ō / x̄]` of the result of the destructor for every ownerships `ō` of its arguments
   that satisfy the requirements of their entries, since an observation reads `ψ` at the ownerships
-  of its arguments.
+  of its arguments; the branch of a recursive destructor has the ownership `11ᵖ` of a new value
+  instead, since its position is resumed by a recursor, which gives the term already built of a
+  position the ownership `χ` that the position requires of it only when the position is owned alone.
   RFC: `\mathsf{corec}_{◀}` -/
   | corec {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -203,10 +205,20 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
-        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → ∀ os' v,
-        Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
+        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = none →
+        ∀ os' v, Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
         Ownership sig (Ownership.extendArgs (Ownership.extendFields φ .linearLinear
-          ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) v g) :
+          ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) v g)
+      (hgr : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+        (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (g : Term k ((Γ.extend ps''.length).extend ps₁.length)) (D' : Name),
+        decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = some D' →
+        ∀ os', Parameter.Allow (m ⊙ p) ps₁ os' →
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ .linearLinear
+          ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) .linearLinear g) :
       Ownership sig φ m .linearLinear (.corec r D qs ls ps as ss.terms Ss gs)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{sub}_{◀}` -/
