@@ -196,6 +196,33 @@ end
 mutual
 
 -- ADE: none.
+/-- The term of the target language is a skeleton: it is built of constructors and of `↯` only,
+and has no variable. -/
+inductive Target.IsSkeleton : {n : Nat} → Target n → Prop where
+  /-- `↯` is a skeleton.
+  RFC: `\mathsf{skeleton}_M.\text{↯}` -/
+  | erased {n : Nat} : Target.IsSkeleton (n := n) .erased
+  /-- A constructor whose fields are skeletons is a skeleton.
+  RFC: `\mathsf{skeleton}_M.c` -/
+  | ctor {n : Nat} {i : Nat} {Ms : Targets n} (h : Targets.IsSkeleton Ms) :
+      Target.IsSkeleton (.ctor i Ms)
+
+-- ADE: none.
+/-- The terms are skeletons, one by one. -/
+inductive Targets.IsSkeleton : {n : Nat} → Targets n → Prop where
+  /-- `()`.
+  RFC: `\mathsf{skeleton}_{\bar M}.\varepsilon` -/
+  | nil {n : Nat} : Targets.IsSkeleton (n := n) .nil
+  /-- `(M, M̄)`.
+  RFC: `\mathsf{skeleton}_{\bar M}.{,}` -/
+  | cons {n : Nat} {M : Target n} {Ms : Targets n} (h : Target.IsSkeleton M)
+      (hs : Targets.IsSkeleton Ms) : Targets.IsSkeleton (.cons M Ms)
+
+end
+
+mutual
+
+-- ADE: none.
 /-- `M ⊑ N`: the term `M` of the target language is `N` with some subterms replaced by `↯`. -/
 inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop where
   /-- `↯` is less defined than every term.
@@ -215,6 +242,11 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   /-- A recursor is less defined than a recursor of a more defined term and branches.
   RFC: `{\sqsubseteq}.\mathsf{rec}` -/
   | recursor {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.LessDefined M N)
+      (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
+  /-- A recursor on a skeleton is less defined than a recursor on any term, of more defined
+  branches: the skeleton holds nothing but what the type of the term already gives.
+  RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{skeleton}}` -/
+  | skeleton {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.IsSkeleton M)
       (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
   /-- An observation is less defined than the same observation of a more defined term and
   arguments.
@@ -289,6 +321,61 @@ def States.arity {k : Nat} {Γ : Scope} (Ss : States k Γ) (j : Nat) : Option Na
   | some ⟨0, ps, _⟩ => some ps.length
   | _ => none
 
+-- ADE: none.
+/-- The terms `(M₁, …, Mₐ)` of a list, the first one first. -/
+def Targets.ofList {n : Nat} : List (Target n) → Targets n
+  | [] => .nil
+  | M :: Ms => .cons M (Targets.ofList Ms)
+
+-- ADE: none.
+/-- The skeleton of the data type `D` of the block of the type declaration `decl`, at the instance
+`I`, within the depth `d`: the constructor of its case applied to `↯` for each field that is not
+recursive and to the skeleton of the type of each recursive field, when `D` has exactly one
+constructor, and `↯` when it has none or several, or when the depth is reached. -/
+def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades)
+    {n : Nat} : Nat → Name → Target n
+  | 0, _ => .erased
+  | d + 1, D =>
+    match decl.dataTypes.find? (·.name == D) with
+    | some T =>
+      match T.constructors with
+      | [con] =>
+        match decl.cases.findIdx? (fun x => x.2.1.name == D && x.2.2.name == con.name) with
+        | some i => .ctor i (Targets.ofList (((con.fields I).recursion decl.names).map fun
+            | some D' => decl.skeleton I d D'
+            | none => .erased))
+        | none => .erased
+      | _ => .erased
+    | none => .erased
+
+-- ADE: none.
+/-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
+within the depth of the number of the types of its block, when the entry declares it. -/
+def Entry.skeleton {n : Nat} (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (Target n)
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.dataTypes.find? (·.name == D)).map fun _ =>
+          decl.skeleton (.ofLists qs ps hq hp) decl.names.length D
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
+in the last entry of the signature that declares it, and `↯` when the signature has no such entry,
+which the erasure of a recursor on an erased term reads: in a block whose types have one
+constructor at most, the type of a term gives its form, which the skeleton rebuilds, so that the
+recursor runs its branches on it.
+The depth of the number of the types of the block is reached only on a type without closed term:
+along a path of a closed term of a type, no type of the block comes twice, since each type has one
+constructor, so that the term would hold a term of the same form, without end.
+RFC: `\mathsf{skeleton}_D` -/
+def Signature.skeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality)
+    (ps : List Grade) : Target n :=
+  (sig.findSome? (Entry.skeleton D qs ps)).getD .erased
+
 mutual
 
 -- ADE: `erase′`, in `Graded/Erasure/Extraction.agda`.
@@ -296,8 +383,8 @@ mutual
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
 `f.{s̄; l̄; p̄}` keeps its qualities and its grades, `f.{s̄; p̄}`, a constructor keeps its case and its
-fields, each at the grade of its field, a recursor keeps its term, at its grade, and its branches,
-without its instance and its motives, an observation keeps its term, the case of its destructor and
+fields, each at the grade of its field, a recursor keeps its term, at its grade, or the skeleton of its type when its grade
+is erased, and its branches, without its instance and its motives, an observation keeps its term, the case of its destructor and
 its arguments, each at the grade of its argument, and a corecursor keeps its state, each entry at
 its grade times the grade of the corecursor, and its branches, without its instance and its
 states; a second-order variable has no erasure, since the scope has none.
@@ -322,7 +409,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     | some i => .ctor i (ts.erase sig S hΓ ((sig.fieldGrades D c qs ps).getD []))
     | none => .erased
   | .recursor r D qs _ ps _ t _ us =>
-    .recursor (if r ∈ S then .erased else t.erase sig S hΓ)
+    .recursor (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
       (us.erase sig S hΓ ((sig.recursiveFields D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>
     match sig.destructorCase D d with
@@ -386,6 +473,77 @@ theorem Target.LessDefined.cast {n n' : Nat} (h : n = n') {M N : Target n} (hMN 
   subst h
   exact hMN
 
+-- ADE: none.
+/-- The terms of a list of skeletons are skeletons. -/
+theorem Targets.isSkeleton_ofList {n : Nat} :
+    (Ms : List (Target n)) → (∀ M ∈ Ms, M.IsSkeleton) → (Targets.ofList Ms).IsSkeleton
+  | [], _ => .nil
+  | M :: Ms, h => .cons (h M List.mem_cons_self)
+      (Targets.isSkeleton_ofList Ms fun M' hM' => h M' (List.mem_cons_of_mem _ hM'))
+
+-- ADE: none.
+/-- The skeleton of a data type of a block is a skeleton. -/
+theorem TypeDeclaration.skeleton_isSkeleton (decl : TypeDeclaration)
+    (I : Instance decl.sorts decl.grades) {n : Nat} :
+    (d : Nat) → (D : Name) → (decl.skeleton I d D : Target n).IsSkeleton
+  | 0, _ => .erased
+  | d + 1, D => by
+    simp only [TypeDeclaration.skeleton]
+    split
+    · split
+      · split
+        · refine .ctor (Targets.isSkeleton_ofList _ fun M hM => ?_)
+          obtain ⟨r, _, rfl⟩ := List.mem_map.mp hM
+          cases r with
+          | some D' => exact decl.skeleton_isSkeleton I d D'
+          | none => exact .erased
+        · exact .erased
+      · exact .erased
+    · exact .erased
+
+-- ADE: none.
+/-- The skeleton of a data type in a signature is a skeleton. -/
+theorem Signature.skeleton_isSkeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality)
+    (ps : List Grade) : (sig.skeleton D qs ps : Target n).IsSkeleton := by
+  unfold Signature.skeleton
+  induction sig with
+  | nil => exact .erased
+  | cons e sig ih =>
+    simp only [List.findSome?_cons]
+    split
+    · rename_i M hM
+      simp only [Option.getD_some]
+      cases e with
+      | typeDeclaration decl =>
+        simp only [Entry.skeleton] at hM
+        split at hM
+        · split at hM
+          · obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp hM
+            exact decl.skeleton_isSkeleton _ _ _
+          · exact nomatch hM
+        · exact nomatch hM
+      | _ => simp only [Entry.skeleton] at hM; exact nomatch hM
+    · exact ih
+
+mutual
+
+-- ADE: none.
+/-- No variable occurs in a skeleton. -/
+theorem Target.IsSkeleton.not_occurs {n : Nat} {x : Fin n} :
+    {M : Target n} → M.IsSkeleton → ¬M.Occurs x
+  | _, .erased, h => nomatch h
+  | _, .ctor hs, .ctor h => Targets.IsSkeleton.not_occurs hs h
+
+-- ADE: none.
+/-- No variable occurs in skeletons. -/
+theorem Targets.IsSkeleton.not_occurs {n : Nat} {x : Fin n} :
+    {Ms : Targets n} → Ms.IsSkeleton → ¬Ms.Occurs x
+  | _, .nil, h => nomatch h
+  | _, .cons h _, .head ho => Target.IsSkeleton.not_occurs h ho
+  | _, .cons _ hs, .tail ho => Targets.IsSkeleton.not_occurs hs ho
+
+end
+
 mutual
 
 -- ADE: none.
@@ -405,12 +563,12 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     | none => exact .erased
   | .recursor r _ _ _ _ _ t _ us => by
     simp only [Term.erase]
-    refine .recursor ?_ (Branches.erase_lessDefined sig h hΓ us _)
     by_cases h₂ : r ∈ S₂
-    · simp only [h₂, ↓reduceIte]; exact .erased
+    · simp only [h₂, ↓reduceIte]
+      exact .skeleton (sig.skeleton_isSkeleton _ _ _) (Branches.erase_lessDefined sig h hΓ us _)
     · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
       simp only [h₂, h₁, ↓reduceIte]
-      exact Term.erase_lessDefined sig h hΓ t
+      exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ us _)
   | .obs D _ _ _ _ t d bs => by
     simp only [Term.erase]
     cases sig.destructorCase D d with
