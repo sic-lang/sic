@@ -104,7 +104,7 @@ def Motives.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Motives k Δ → Motives k
 /-- The branches `ū` renamed by `ξ`, under the variables of each branch. -/
 def Branches.rename {Γ Δ : Scope} (ξ : Ren Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.rename (Ren.liftN m (Ren.liftN n ξ))) (us.rename ξ)
+  | .cons n m es u us => .cons n m es (u.rename (Ren.liftN m (Ren.liftN n ξ))) (us.rename ξ)
 
 /-- The telescope `Θ` renamed by `ξ`. -/
 def Telescope.rename {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ) :
@@ -281,7 +281,7 @@ def Motives.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Motives k Δ → 
 RFC: `\mathsf{subst}_\sigma.\bar u` -/
 def Branches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.subst₀ (Subst₀.liftN m (Subst₀.liftN n σ))) (us.subst₀ σ)
+  | .cons n m es u us => .cons n m es (u.subst₀ (Subst₀.liftN m (Subst₀.liftN n σ))) (us.subst₀ σ)
 
 /-- `Θ[σ]`: the telescope `Θ` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma.\Theta` -/
@@ -405,7 +405,7 @@ def Motives.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Motives k Δ → Motive
 RFC: `\mathsf{subst}_\theta.\bar u` -/
 def Branches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Branches k Δ → Branches k Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.subst (Subst.liftN m (Subst.liftN n θ))) (us.subst θ)
+  | .cons n m es u us => .cons n m es (u.subst (Subst.liftN m (Subst.liftN n θ))) (us.subst θ)
 
 /-- `Θ[θ]`: the telescope `Θ` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta.\Theta` -/
@@ -535,7 +535,7 @@ RFC: `\mathsf{inst}_l.\bar u` -/
 def Branches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     Branches k Γ → Branches k' Γ
   | .nil => .nil
-  | .cons n m u us => .cons n m (u.substLevels ls') (us.substLevels ls')
+  | .cons n m es u us => .cons n m es (u.substLevels ls') (us.substLevels ls')
 
 /-- The telescope `Θ` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l.\Theta` -/
@@ -662,7 +662,7 @@ theorem Motives.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var
 theorem Branches.rename_id_of {Γ : Scope} {ξ : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), ξ x = x) :
     (us : Branches k Γ) → us.rename ξ = us
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.rename_id_of h us, Term.rename_id_of (Ren.liftN_id_of _ (Ren.liftN_id_of _ h)) u]
 
 
@@ -753,7 +753,7 @@ theorem Motives.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
 theorem Branches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (us : Branches k Γ) → us.subst₀ σ = us
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst₀, Branches.subst₀_id_of h us, Term.subst₀_id_of (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ h)) u]
 
 /-- A substitution of the first order that renames each variable to itself changes no telescope.
@@ -893,7 +893,7 @@ theorem Branches.rename_rename_of {Γ Δ Ξ : Scope} {ξ₁ : Ren Γ Δ} {ξ₂ 
     {ξ₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), ξ₁ (ξ₂ x) = ξ₃ x) :
     (us : Branches k Ξ) → (us.rename ξ₂).rename ξ₁ = us.rename ξ₃
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.rename, Branches.rename,
       Branches.rename_rename_of h us, Term.rename_rename_of (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ h)) u]
 
@@ -1018,7 +1018,7 @@ theorem Branches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (ξ x) = σ' x) :
     (us : Branches k Ξ) → (us.rename ξ).subst₀ σ = us.subst₀ σ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.subst₀, Branches.subst₀,
       Branches.subst₀_rename_of h us, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ h)) u]
 
@@ -1147,7 +1147,7 @@ theorem Branches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename ξ = σ' x) :
     (us : Branches k Ξ) → (us.subst₀ σ).rename ξ = us.subst₀ σ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst₀, Branches.rename, Branches.subst₀,
       Branches.rename_subst₀_of h us,
       Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ (Subst₀.liftN_rename_after_of _ h)) u]
@@ -1283,7 +1283,7 @@ theorem Branches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
     (us : Branches k Ξ) → (us.subst₀ σ).subst₀ τ = us.subst₀ σ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst₀, Branches.subst₀, Branches.subst₀,
       Branches.subst₀_subst₀_of h us, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ h)) u]
 
@@ -1589,7 +1589,7 @@ theorem Branches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {ξ : R
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (ξ x) = θ' x) :
     (us : Branches k Ξ) → (us.rename ξ).subst θ = us.subst θ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.subst, Branches.subst,
       Branches.subst_rename_of h us, Term.subst_rename_of (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ h)) u]
 
@@ -1715,7 +1715,7 @@ theorem Branches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {ξ : R
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length ξ) = θ' x) :
     (us : Branches k Ξ) → (us.subst θ).rename ξ = us.subst θ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst, Branches.rename, Branches.subst,
       Branches.rename_subst_of h us, Term.rename_subst_of (Subst.liftN_rename_after_of _ (Subst.liftN_rename_after_of _ h)) u]
 
@@ -1883,7 +1883,7 @@ theorem Branches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
     (us : Branches k Ξ) → (us.subst₀ σ).subst θ₁ = (us.subst θ₂).subst₀ σ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst₀, Branches.subst, Branches.subst, Branches.subst₀,
       Branches.subst_subst₀_of h us, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ h)) u]
 
@@ -2099,7 +2099,7 @@ theorem Branches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ�
     {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
     (us : Branches k Ξ) → (us.subst θ₁).subst θ₂ = us.subst θ₃
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst, Branches.subst, Branches.subst,
       Branches.subst_subst_of h us, Term.subst_subst_of (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ h)) u]
 
@@ -2209,7 +2209,7 @@ theorem Motives.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
 theorem Branches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (us : Branches k Γ) → us.subst θ = us
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst, Branches.subst_id_of h us, Term.subst_id_of (Subst.liftN_id_of _ (Subst.liftN_id_of _ h)) u]
 
 
@@ -2433,7 +2433,7 @@ theorem Motives.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren
 theorem Branches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {ξ : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (ξ x)) : (us : Branches k Δ) → us.subst₀ σ = us.rename ξ
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.subst₀, Branches.subst₀_isVar h us,
       Term.subst₀_isVar (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ h)) u]
 
@@ -2804,7 +2804,7 @@ theorem Branches.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → 
     (ξ : Ren Γ Δ) :
     (us : Branches k Δ) → (us.rename ξ).substLevels ls' = (us.substLevels ls').rename ξ
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.rename, Branches.substLevels, Branches.substLevels, Branches.rename,
       Branches.substLevels_rename ls' ξ us, Term.substLevels_rename]
 
@@ -2946,7 +2946,7 @@ theorem Branches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
     (us : Branches k Δ) → (us.subst₀ σ).substLevels ls' = (us.substLevels ls').subst₀ σ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst₀, Branches.substLevels, Branches.substLevels,
       Branches.subst₀, Branches.substLevels_subst₀_of h us,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ (Subst₀.liftN_substLevels_of _ h)) u]
@@ -3088,7 +3088,7 @@ theorem Branches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fi
     (us : Branches k Γ) →
       (us.substLevels ls₁).substLevels ls₂ = us.substLevels fun i => (ls₁ i).subst ls₂
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.substLevels, Branches.substLevels, Branches.substLevels,
       Branches.substLevels_substLevels ls₁ ls₂ us, Term.substLevels_substLevels ls₁ ls₂ u]
 
@@ -3279,7 +3279,7 @@ theorem Branches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k �
     (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
     (us : Branches k Δ) → (us.subst θ).substLevels ls' = (us.substLevels ls').subst θ'
   | .nil => rfl
-  | .cons n m u us => by
+  | .cons n m es u us => by
     rw [Branches.subst, Branches.substLevels, Branches.substLevels,
       Branches.subst, Branches.substLevels_subst_of h us,
       Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (Subst.liftN_substLevels_of _ h)) u]
@@ -3494,7 +3494,7 @@ theorem Branches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
         (us.subst θ).get i = some ⟨n, m, u.subst (Subst.liftN m (Subst.liftN n θ))⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
-  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst θ (us := us) h
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst θ (us := us) h
 
 /-- The motive at a position of motives whose levels are instantiated is a motive of the motives,
 instantiated. -/
@@ -3522,7 +3522,7 @@ theorem Branches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Sco
         ∃ u₀, us.get i = some ⟨n, m, u₀⟩ ∧ u = u₀.substLevels ls'
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels ls' (us := us) h
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels ls' (us := us) h
 
 /-- The branch at a position of branches is there once their levels are instantiated. -/
 theorem Branches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
@@ -3530,7 +3530,7 @@ theorem Branches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : 
       us.get i = some ⟨n, m, u⟩ → (us.substLevels ls').get i = some ⟨n, m, u.substLevels ls'⟩
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; rfl
-  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels_of ls' (us := us) h
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.get_substLevels_of ls' (us := us) h
 
 /-! ## Recursive Results Substituted -/
 
@@ -3723,7 +3723,7 @@ theorem Motives.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : S
 theorem Branches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
     (us : Branches k Γ) → (us.substLevels ls').length = us.length
   | .nil => rfl
-  | .cons _ _ _ us => congrArg (· + 1) (Branches.length_substLevels ls' us)
+  | .cons _ _ _ _ us => congrArg (· + 1) (Branches.length_substLevels ls' us)
 
 /-- The branch at a position of the branches of a corecursor substituted is the branch
 substituted, under its variables. -/
@@ -4228,7 +4228,7 @@ theorem Branches.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
         ∃ u₀, us.get i = some ⟨n, m, u₀⟩ ∧ u = u₀.subst (Subst.liftN m (Subst.liftN n θ))
   | .nil, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst_inv θ (us := us) h
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.get_subst_inv θ (us := us) h
 
 /-- A state at a position of states substituted is a state of the states, substituted. -/
 theorem States.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
@@ -4260,7 +4260,15 @@ theorem Motives.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 theorem Branches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
     (us : Branches k Δ) → (us.subst θ).length = us.length
   | .nil => rfl
-  | .cons _ _ _ us => congrArg (· + 1) (Branches.length_subst θ us)
+  | .cons _ _ _ _ us => congrArg (· + 1) (Branches.length_subst θ us)
+
+/-- The grades of the recursive results of a branch of branches substituted are those of the
+branch. -/
+theorem Branches.grades_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (us : Branches k Δ) → (i : Nat) → (us.subst θ).grades i = us.grades i
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ _ us, i + 1 => Branches.grades_subst θ us i
 
 /-- States substituted are as many. -/
 theorem States.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :

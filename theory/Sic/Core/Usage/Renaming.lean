@@ -260,6 +260,12 @@ where
 
 end GradeVector
 
+/-- The grades of the recursive results of branches substituted are those of the branches. -/
+theorem Branches.resultGrades_subst {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) (us : Branches k Δ) :
+    (us.subst θ).resultGrades = us.resultGrades := by
+  funext i rs
+  simp only [Branches.resultGrades, Branches.grades_subst]
+
 /-! ## Stability of the Usage -/
 
 -- ADE: `wkUsage`, in `Graded/Usage/Weakening.agda`.
@@ -311,11 +317,12 @@ where
     | .ctor h hc hq hp hts, hθ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (usageArgs hts hθ)
-    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) (es := es) h hq hp hC ht hul hus hu hg
+    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hp hC ht hul hus hu hg
         hχ hr, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
-      refine .recursor (δs := fun i => (δs i).rename ξ) (gs := gs) (es := es) h hq hp ?_
-        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_ hg ?_ hr
+      refine .recursor (δs := fun i => (δs i).rename ξ) (gs := gs) h hq hp ?_
+        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_
+        (by rw [Branches.resultGrades_subst]; exact hg) ?_ hr
       · intro j n C hC'
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'
         have ih := usage (hC j n C₀ hC₀) (Subst.liftN_eta_of _ hθ)
@@ -330,10 +337,12 @@ where
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
         rw [GradeVector.rename_extendResults _ _ _ _ (Ren.liftN _ ξ),
           GradeVector.rename_extendGrades _ _ _ ξ] at ih
+        rw [Branches.resultGrades_subst]
         exact ih
       · intro i j T' con hi
         have := GradeVector.rename_commutes.rename_le ξ (hχ i j T' con hi)
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul] at this
+        rw [Branches.resultGrades_subst]
         exact this
     | .obs h hq hp hd ht hbs hm, hθ => by
       rw [Term.obs_subst, GradeVector.rename_commutes.rename_add]

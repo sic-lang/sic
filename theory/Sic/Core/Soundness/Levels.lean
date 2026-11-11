@@ -138,9 +138,9 @@ inductive Branches.LevelEquiv {k : Nat} : {Γ : Scope} → Branches k Γ → Bra
   /-- No branch. -/
   | nil {Γ : Scope} : Branches.LevelEquiv (Γ := Γ) .nil .nil
   /-- Two branches equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n m : Nat} {u₁ u₂ : Term k ((Γ.extend n).extend m)} {us₁ us₂ : Branches k Γ}
+  | cons {Γ : Scope} {n m : Nat} {es : Vector Grade m} {u₁ u₂ : Term k ((Γ.extend n).extend m)} {us₁ us₂ : Branches k Γ}
       (h : Term.LevelEquiv u₁ u₂) (hs : Branches.LevelEquiv us₁ us₂) :
-      Branches.LevelEquiv (.cons n m u₁ us₁) (.cons n m u₂ us₂)
+      Branches.LevelEquiv (.cons n m es u₁ us₁) (.cons n m es u₂ us₂)
 
 /-- Two telescopes whose types are equal up to their levels. -/
 inductive Telescope.LevelEquiv {k : Nat} :
@@ -249,7 +249,7 @@ theorem Motives.LevelEquiv.refl {k : Nat} {Γ : Scope} :
 theorem Branches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
     (us : Branches k Γ) → Branches.LevelEquiv us us
   | .nil => .nil
-  | .cons _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
+  | .cons _ _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
 
 
 theorem Telescope.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
@@ -467,7 +467,7 @@ theorem Branches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ :
     (h : ∀ i, ls₁ i ≈ ls₂ i) : (us : Branches k Γ) →
     Branches.LevelEquiv (us.substLevels ls₁) (us.substLevels ls₂)
   | .nil => .nil
-  | .cons _ _ u us => .cons (Term.substLevels_levelEquiv h u) (Branches.substLevels_levelEquiv h us)
+  | .cons _ _ _ u us => .cons (Term.substLevels_levelEquiv h u) (Branches.substLevels_levelEquiv h us)
 
 
 /-- Equal levels that replace the level variables give telescopes equal up to their levels. -/

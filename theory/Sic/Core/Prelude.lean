@@ -267,12 +267,12 @@ def Term.unpack (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Term k 
     Telescope k Γ ps → List (Universe k) → Level k → Term k Γ → Term k (Γ.extend ps.length) →
       Term k Γ
   | _, [], u, .nil, _, l, C, b =>
-    .recursor r "Unit" [] [l] [] .nil u (.cons 0 (C.rename Ren.weaken) .nil) (.cons 0 0 b .nil)
+    .recursor r "Unit" [] [l] [] .nil u (.cons 0 (C.rename Ren.weaken) .nil) (.cons 0 0 #v[] b .nil)
   | _, _ :: ps, u, .cons _ p A Θ, κs, l, C, b =>
     .recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
       [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
       (Prelude.pairArgs A (Θ.pack κs.tail l)) u (.cons 0 (C.rename Ren.weaken) .nil)
-      (.cons 2 0 (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+      (.cons 2 0 #v[] (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
         (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))) .nil)
 
 -- ADE: none.
@@ -284,16 +284,16 @@ theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parame
         Term.unpack r (u.subst₀ σ) (Θ.subst₀ σ) κs l (C.subst₀ σ) (b.subst₀ (Subst₀.liftN _ σ))
   | _, _, [], σ, u, .nil, _, l, C, b => by
     show Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
-      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil) (.cons 0 0 (b.subst₀ σ) .nil) =
+      (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil) (.cons 0 0 #v[] (b.subst₀ σ) .nil) =
       Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ)
-      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil) (.cons 0 0 (b.subst₀ σ) .nil)
+      (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil) (.cons 0 0 #v[] (b.subst₀ σ) .nil)
     exact congrArg (fun X => Term.recursor r "Unit" [] [l] [] .nil (u.subst₀ σ) (.cons 0 X .nil)
-      (.cons 0 0 (b.subst₀ σ) .nil)) (Term.rename_weaken_subst₀_lift σ C)
+      (.cons 0 0 #v[] (b.subst₀ σ) .nil)) (Term.rename_weaken_subst₀_lift σ C)
   | _, _, _ :: ps, σ, u, .cons _ p A Θ, κs, l, C, b => by
     show Term.recursor r "Pair" _ _ _
       (Prelude.pairArgs (A.subst₀ σ) ((Θ.pack κs.tail l).subst₀ (Subst₀.lift σ))) (u.subst₀ σ)
       (.cons 0 ((C.rename Ren.weaken).subst₀ (Subst₀.lift σ)) .nil)
-      (.cons 2 0 ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+      (.cons 2 0 #v[] ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
         (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))).subst₀
           (Subst₀.lift (Subst₀.lift σ))) .nil) = _
     have h₁ := Telescope.pack_subst₀ (Subst₀.lift σ) Θ κs.tail l
@@ -317,7 +317,7 @@ theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parame
     show _ = Term.recursor r "Pair" _ _ _
       (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
       (.cons 0 ((C.subst₀ σ).rename Ren.weaken) .nil)
-      (.cons 2 0 (Term.unpack r (.var₀ .zero) ((Θ.subst₀ (Subst₀.lift σ)).rename Ren.weaken) κs.tail l
+      (.cons 2 0 #v[] (Term.unpack r (.var₀ .zero) ((Θ.subst₀ (Subst₀.lift σ)).rename Ren.weaken) κs.tail l
         ((C.subst₀ σ).rename (Ren.weakenN 2))
         ((b.subst₀ (Subst₀.liftN ps.length (Subst₀.lift σ))).rename (Ren.liftN ps.length Ren.weaken))) .nil)
     rw [h₁]
@@ -325,7 +325,7 @@ theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parame
       Term.recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
         [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
         (Prelude.pairArgs (A.subst₀ σ) ((Θ.subst₀ (Subst₀.lift σ)).pack κs.tail l)) (u.subst₀ σ)
-        (.cons 0 X .nil) (.cons 2 0 Y .nil)
+        (.cons 0 X .nil) (.cons 2 0 #v[] Y .nil)
     refine (congrArg (fun X => F X _) h₂).trans (congrArg (F _) (h₃.trans ?_))
     rw [h₅]
     erw [h₆, h₇]
@@ -385,16 +385,16 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
         Term.unpack r (u.subst θ) (Θ.subst θ) κs l (C.subst θ) (b.subst (Subst.liftN _ θ))
   | _, _, [], θ, u, .nil, _, l, C, b => by
     show Term.recursor r "Unit" [] [l] [] .nil (u.subst θ)
-      (.cons 0 ((C.rename Ren.weaken).subst (Subst.lift θ)) .nil) (.cons 0 0 (b.subst θ) .nil) =
+      (.cons 0 ((C.rename Ren.weaken).subst (Subst.lift θ)) .nil) (.cons 0 0 #v[] (b.subst θ) .nil) =
       Term.recursor r "Unit" [] [l] [] .nil (u.subst θ)
-      (.cons 0 ((C.subst θ).rename Ren.weaken) .nil) (.cons 0 0 (b.subst θ) .nil)
+      (.cons 0 ((C.subst θ).rename Ren.weaken) .nil) (.cons 0 0 #v[] (b.subst θ) .nil)
     exact congrArg (fun X => Term.recursor r "Unit" [] [l] [] .nil (u.subst θ) (.cons 0 X .nil)
-      (.cons 0 0 (b.subst θ) .nil)) (Term.subst_lift_rename_weaken θ C)
+      (.cons 0 0 #v[] (b.subst θ) .nil)) (Term.subst_lift_rename_weaken θ C)
   | _, _, _ :: ps, θ, u, .cons _ p A Θ, κs, l, C, b => by
     show Term.recursor r "Pair" _ _ _
       (Prelude.pairArgs (A.subst θ) ((Θ.pack κs.tail l).subst (Subst.lift θ))) (u.subst θ)
       (.cons 0 ((C.rename Ren.weaken).subst (Subst.lift θ)) .nil)
-      (.cons 2 0 ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
+      (.cons 2 0 #v[] ((Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l
         (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))).subst
           (Subst.lift (Subst.lift θ))) .nil) = _
     have h₁ := Telescope.pack_subst (Subst.lift θ) Θ κs.tail l
@@ -412,7 +412,7 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
     show _ = Term.recursor r "Pair" _ _ _
       (Prelude.pairArgs (A.subst θ) ((Θ.subst (Subst.lift θ)).pack κs.tail l)) (u.subst θ)
       (.cons 0 ((C.subst θ).rename Ren.weaken) .nil)
-      (.cons 2 0 (Term.unpack r (.var₀ .zero) ((Θ.subst (Subst.lift θ)).rename Ren.weaken) κs.tail l
+      (.cons 2 0 #v[] (Term.unpack r (.var₀ .zero) ((Θ.subst (Subst.lift θ)).rename Ren.weaken) κs.tail l
         ((C.subst θ).rename (Ren.weakenN 2))
         ((b.subst (Subst.liftN ps.length (Subst.lift θ))).rename (Ren.liftN ps.length Ren.weaken))) .nil)
     rw [h₁]
@@ -420,7 +420,7 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
       Term.recursor r "Pair" [(κs.headD ⟨.type, l⟩).quality]
         [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
         (Prelude.pairArgs (A.subst θ) ((Θ.subst (Subst.lift θ)).pack κs.tail l)) (u.subst θ)
-        (.cons 0 X .nil) (.cons 2 0 Y .nil)
+        (.cons 0 X .nil) (.cons 2 0 #v[] Y .nil)
     refine (congrArg (fun X => F X _) h₂).trans (congrArg (F _) (h₃.trans ?_))
     erw [h₅, h₆, h₇]
     rfl
@@ -498,11 +498,11 @@ def Term.resume {Γ Δ : Scope} {ps' : List Parameter} (r : Grade) (D : Name) (q
     [r, Prelude.doneGrade κ.quality, χ]
     (Prelude.stepArgs (S.pack κs (Telescope.packLevel κs .zero)) (.inst D qs ls ps as)) v
     (.cons 0 ((Term.inst D qs ls ps as).rename Ren.weaken) .nil)
-    (.cons 1 0 (Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs (Telescope.packLevel κs .zero)
+    (.cons 1 0 #v[] (Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs (Telescope.packLevel κs .zero)
         ((Term.inst D qs ls ps as).rename Ren.weaken)
         (Term.corecAt r D qs ls ps (as.rename Ren.weaken) (Ss.rename Ren.weaken)
           (gs.rename Ren.weaken) ps'))
-      (.cons 1 0 (.var₀ .zero) .nil))
+      (.cons 1 0 #v[] (.var₀ .zero) .nil))
 
 -- ADE: none.
 /-- The observation of a corecursor of the grade `r` of the instance `D'.{s̄; l̄; p̄} ā`, of the sort
@@ -629,11 +629,11 @@ theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst 
   show Term.recursor _ _ _ _ _
       (Prelude.stepArgs ((S.pack κs _).subst θ) ((Term.inst D qs ls ps as).subst θ)) (v.subst θ)
       (.cons 0 (((Term.inst D qs ls ps as).rename Ren.weaken).subst (Subst.lift θ)) .nil)
-      (.cons 1 0 ((Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs
+      (.cons 1 0 #v[] ((Term.unpack r (.var₀ .zero) (S.rename Ren.weaken) κs
           (Telescope.packLevel κs .zero) ((Term.inst D qs ls ps as).rename Ren.weaken)
           (Term.corecAt r D qs ls ps (as.rename Ren.weaken) (Ss.rename Ren.weaken)
             (gs.rename Ren.weaken) ps')).subst (Subst.lift θ))
-        (.cons 1 0 ((Term.var₀ .zero).subst (Subst.lift (e := .var) θ)) .nil)) = _
+        (.cons 1 0 #v[] ((Term.var₀ .zero).subst (Subst.lift (e := .var) θ)) .nil)) = _
   rw [hp]
   erw [Term.subst_lift_rename_weaken, hu]
   rfl

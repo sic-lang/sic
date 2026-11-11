@@ -40,7 +40,7 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
       (C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
     HasType sig ctx (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
-      (.cons 0 C .nil) (.cons 2 0 u .nil)) (C.subst₀ (Subst₀.single t)) := by
+      (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) hpre.pair rfl rfl rfl hadm
     (HasInstanceArgs.pair p ρ hA hB) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
   · intro j T' hj
@@ -70,7 +70,7 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     (ht : HasType sig ctx t (.inst "Unit" [] [l] [] .nil))
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) C (.sort κ))
     (hu : HasType sig ctx u (C.atCtor "Unit" [] [l] [] .nil "mk" [])) :
-    HasType sig ctx (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 u .nil))
+    HasType sig ctx (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil))
       (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (h' := 0) (κ := κ) hpre.unit rfl rfl
     rfl trivial (.nil (contextPresuppositions.hasType ht)) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_
@@ -105,13 +105,13 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     EqTerm sig ctx (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B)
       (.ctor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
         (.cons t (.cons P .nil)))
-      (.cons 0 C .nil) (.cons 2 0 u .nil))
+      (.cons 0 C .nil) (.cons 2 0 #v[] u .nil))
       (u.instantiate (ps := [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) (.cons t (.cons P .nil)))
       (C.subst₀ (Subst₀.single (.ctor "Pair" [κA.quality] [κA.level, l₂] [p, ρ]
         (Prelude.pairArgs A B) "mk" (.cons t (.cons P .nil))))) := by
   refine .iota (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
     (j := 0) (κ := κ) (qs := [κA.quality]) (ls := [κA.level, l₂]) (ps := [p, ρ])
-    (Cs := .cons 0 C .nil) (us := .cons 2 0 u .nil) (C := C) (u := u)
+    (Cs := .cons 0 C .nil) (us := .cons 2 0 #v[] u .nil) (C := C) (u := u)
     (ts := .cons t (.cons P .nil)) hpre.pair (List.mem_singleton_self _) rfl rfl
     rfl hadm (HasInstanceArgs.pair p ρ hA hB) ?_ rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_
     (fun h => nomatch h)
@@ -147,11 +147,11 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) C (.sort κ))
     (hu : HasType sig ctx u (C.atCtor "Unit" [] [l] [] .nil "mk" [])) :
     EqTerm sig ctx (.recursor r "Unit" [] [l] [] .nil (.ctor "Unit" [] [l] [] .nil "mk" .nil)
-      (.cons 0 C .nil) (.cons 0 0 u .nil)) u
+      (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) u
       (C.subst₀ (Subst₀.single (.ctor "Unit" [] [l] [] .nil "mk" .nil))) := by
   refine .iota (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
     (j := 0) (κ := κ) (qs := []) (ls := [l]) (ps := []) (Cs := .cons 0 C .nil)
-    (us := .cons 0 0 u .nil) (C := C) (u := u) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl
+    (us := .cons 0 0 #v[] u .nil) (C := C) (u := u) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl
     rfl trivial (.nil hctx) (.nil hctx) rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
@@ -235,7 +235,7 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
     EqTerm sig ctx (e.subst₀ (Subst₀.single t))
       (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
         (.cons 0 Cm .nil)
-        (.cons 2 0 (e.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
+        (.cons 2 0 #v[] (e.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) .nil))
       (Cm.subst₀ (Subst₀.single t)) := by
   refine .etaCtor (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
@@ -279,7 +279,7 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) Cm (.sort κ)) :
     EqTerm sig ctx (e.subst₀ (Subst₀.single t))
       (.recursor r "Unit" [] [l] [] .nil t (.cons 0 Cm .nil)
-        (.cons 0 0 (e.atCtor "Unit" [] [l] [] .nil "mk" []) .nil))
+        (.cons 0 0 #v[] (e.atCtor "Unit" [] [l] [] .nil "mk" []) .nil))
       (Cm.subst₀ (Subst₀.single t)) := by
   have hctx := contextPresuppositions.hasType ht
   have hmk : HasType sig ctx (.ctor "Unit" [] [l] [] .nil "mk" .nil) (.inst "Unit" [] [l] [] .nil) :=
@@ -326,9 +326,9 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
     EqTerm sig ctx
       (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
-        (.cons 0 C .nil) (.cons 2 0 u₁ .nil))
+        (.cons 0 C .nil) (.cons 2 0 #v[] u₁ .nil))
       (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
-        (.cons 0 C .nil) (.cons 2 0 u₂ .nil))
+        (.cons 0 C .nil) (.cons 2 0 #v[] u₂ .nil))
       (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) (C₁ := C)
     hpre.pair rfl rfl rfl rfl hadm (EqInstanceArgs.refl (HasInstanceArgs.pair p ρ hA hB))
@@ -721,10 +721,10 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     (hu : Usage (Γ := .var :: .var :: Γ) sig ((δ ∙ g₀) ∙ g₁) m u)
     (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * Grade.one ≤ g₁) :
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
-      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 u .nil)) := by
+      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
-    (gs := fun _ l => if l = 0 then g₀ else g₁) (es := fun _ _ => Grade.zero) hpre.pair rfl rfl
+    (gs := fun _ l => if l = 0 then g₀ else g₁) hpre.pair rfl rfl
     ?_ ht rfl ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
@@ -760,9 +760,9 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
     {r : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)} {γ δ : GradeVector Γ.length}
     (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t) (hu : Usage sig δ m u) :
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
-      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 u .nil)) := by
+      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
-    (gs := fun _ _ => Grade.zero) (es := fun _ _ => Grade.zero) hpre.unit rfl rfl
+    (gs := fun _ _ => Grade.zero) hpre.unit rfl rfl
     ?_ ht rfl ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
@@ -797,7 +797,7 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     {u : Term k (.var :: .var :: Γ)} (ht : Ownership sig φ (m ⊙ r) o t)
     (hu : Ownership sig (Ownership.extendFields φ o [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
     Ownership sig φ m p'
-      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 u .nil)) := by
+      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht rfl ?_ ?_
   · intro i j T' con hi
     match i, hi with
@@ -812,7 +812,7 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     {m : Mode} {l : Level k} {r o p' : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)}
     (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
     Ownership sig φ m p'
-      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 u .nil)) := by
+      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht rfl ?_ ?_
   · intro i j T' con hi
     match i, hi with

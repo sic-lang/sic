@@ -47,6 +47,22 @@ def GradeVector.extendGrades {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat 
   | [] => γ
   | _ :: ps => GradeVector.extendGrades (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
 
+-- ADE: none.
+/-- `e_l`: the grade of the recursive result of the field at each position `l` of the fields whose
+recursive fields the types `rs` of the block mark, the first field at `0`, read from the grades `es`
+of the recursive results in order, and `0` for a field that is not recursive. -/
+def Telescope.resultGrades : List (Option Name) → List Grade → Nat → Grade
+  | some _ :: _, e :: _, 0 => e
+  | some _ :: rs, _ :: es, l + 1 => Telescope.resultGrades rs es l
+  | none :: rs, es, l + 1 => Telescope.resultGrades rs es l
+  | _, _, _ => Grade.zero
+
+/-- `e_{jil}`: the grade of the recursive result of the field at each position `l` of the branch at
+the position `i` of the branches `us`, whose recursive fields the types `rs` of the block mark. -/
+def Branches.resultGrades {k : Nat} {Γ : Scope} (us : Branches k Γ) (i : Nat)
+    (rs : List (Option Name)) : Nat → Grade :=
+  Telescope.resultGrades rs (us.grades i)
+
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
 each recursive field, at its position `l` in the fields whose entries have the parameters `ps` and
@@ -121,7 +137,8 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   -- ADE: `natrec-no-nrₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ`, in `Graded/Usage.agda`.
   /-- A recursor uses the variables of its term `r` times, the term checked in the mode `m ⊙ r`, and
   those of its branches: each branch uses the variables of the scope as `δs i`, the variable of the
-  field at the position `l` as `gs i l` and that of its recursive result as `es i l`; a use of the
+  field at the position `l` as `gs i l` and that of its recursive result with the grade `e_l` that
+  the branch gives it; a use of the
   recursive result of a field runs the recursor on it again, which uses the field `r` times and the
   variables of the scope as `χ`, so that the uses of a field and of its result must cover `⌜m⌝ · r`
   times the grade of the field at the instance, and `χ` the uses of each branch and of its recursive
@@ -133,7 +150,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
-      {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs es : Nat → Nat → Grade}
+      {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
         Usage sig 𝟘ᶜ .zeroZero C)
@@ -145,15 +162,18 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Usage sig (((δs i).extendGrades (gs i) (con.params (.ofLists qs ps hq hp))).extendResults
-          (es i) ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
+          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
+          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
           (con.params (.ofLists qs ps hq hp))) m u)
       (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
         (con.params (.ofLists qs ps hq hp))[l]? = some p →
         m.grade * r * p.usage ≤ gs i l +
-          (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then es i l
+          (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
+            (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) l
             else Grade.zero) * r)
       (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        χ ≤ᶜ δs i +ᶜ Telescope.resultSum (es i)
+        χ ≤ᶜ δs i +ᶜ Telescope.resultSum
+          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
           ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
       (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
       Usage sig ((r ·ᶜ γ) +ᶜ χ) m (.recursor r D qs ls ps as t Cs us)

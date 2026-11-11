@@ -195,16 +195,16 @@ inductive Motives (k : Nat) : Scope → Type where
   | cons {Γ : Scope} (n : Nat) (C : Term k (Γ.extend (n + 1))) (Cs : Motives k Γ) : Motives k Γ
 
 /-- `ū`: the branches of a recursor, one for each constructor of each type of the block, in the
-order of the declaration; the branch `c(x̄; ȳ) ⇒ u` is a term over a new variable for each field and
-one for each recursive result, of which the indices only keep the numbers `n` of fields and `m` of
-recursive results.
+order of the declaration; the branch `c(x̄; ȳ ▶ ē) ⇒ u` is a term over a new variable for each field
+and one for each recursive result, with the grade `e` of each recursive result, of which the indices
+only keep the numbers `n` of fields and `m` of recursive results.
 RFC: `\mathsf{syntax}_{\bar u}` -/
 inductive Branches (k : Nat) : Scope → Type where
   /-- `()`. -/
   | nil {Γ : Scope} : Branches k Γ
-  /-- `(c(x̄; ȳ) ⇒ u, ū)`, with `n` fields and `m` recursive results. -/
-  | cons {Γ : Scope} (n m : Nat) (u : Term k ((Γ.extend n).extend m)) (us : Branches k Γ) :
-      Branches k Γ
+  /-- `(c(x̄; ȳ ▶ ē) ⇒ u, ū)`, with `n` fields and `m` recursive results of grades `es`. -/
+  | cons {Γ : Scope} (n m : Nat) (es : Vector Grade m) (u : Term k ((Γ.extend n).extend m))
+      (us : Branches k Γ) : Branches k Γ
 
 -- ADE: none.
 /--
@@ -357,15 +357,15 @@ def Motives.get {k : Nat} {Γ : Scope} : Motives k Γ → Nat → Option (Σ n, 
 /-- The number of the branches `ū`. -/
 def Branches.length {k : Nat} {Γ : Scope} : Branches k Γ → Nat
   | .nil => 0
-  | .cons _ _ _ us => us.length + 1
+  | .cons _ _ _ _ us => us.length + 1
 
 /-- The branch at the position `i` of the branches `ū`, the first one at `0`, with its numbers of
 fields and of recursive results. -/
 def Branches.get {k : Nat} {Γ : Scope} :
     Branches k Γ → Nat → Option (Σ n m, Term k ((Γ.extend n).extend m))
   | .nil, _ => none
-  | .cons n m u _, 0 => some ⟨n, m, u⟩
-  | .cons _ _ _ us, i + 1 => us.get i
+  | .cons n m _ u _, 0 => some ⟨n, m, u⟩
+  | .cons _ _ _ _ us, i + 1 => us.get i
 
 /-- The branch at a position of branches is one term. -/
 theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Nat}
@@ -374,6 +374,13 @@ theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Na
   have h := Option.some.inj (h₁.symm.trans h₂)
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
+
+/-- The grades `ē` of the recursive results of the branch at the position `i` of the branches `ū`,
+the first one at `0`, in order, and none when there is no branch at `i`. -/
+def Branches.grades {k : Nat} {Γ : Scope} : Branches k Γ → Nat → List Grade
+  | .nil, _ => []
+  | .cons _ _ es _ _, 0 => es.toList
+  | .cons _ _ _ _ us, i + 1 => us.grades i
 
 /-- The number of the branches `ḡ` of a corecursor. -/
 def CorecBranches.length {k : Nat} {Γ : Scope} : CorecBranches k Γ → Nat

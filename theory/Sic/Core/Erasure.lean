@@ -341,7 +341,7 @@ RFC: `\mathsf{erase}_{\bar u}` -/
 def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : Branches k Γ → TargetBranches Γ.length
   | .nil => .nil
-  | .cons a b u us =>
+  | .cons a b _ u us =>
     .cons a b (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
       (us.erase sig S hΓ)
 
@@ -412,7 +412,7 @@ theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (
         (u.erase sig S ((hΓ.extend a).extend b)).Occurs
           ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
   | .nil, h => nomatch h
-  | .cons a b u us, h => by
+  | .cons a b es u us, h => by
     cases h with
     | head h => exact ⟨0, a, b, u, rfl, Target.occurs_cast _ _ _ h⟩
     | tail h =>
@@ -425,7 +425,7 @@ theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
       us.get i = some a → i < us.length
   | .nil, _, _, h => nomatch h
   | .cons .., 0, _, _ => Nat.zero_lt_succ _
-  | .cons _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
+  | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
 
 /-- The grades extended by the variables of a telescope give each old variable its grade. -/
 theorem GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
@@ -762,7 +762,7 @@ theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     (hΓ : Γ.FirstOrder) : (us : Branches k Γ) →
       TargetBranches.LessDefined (us.erase sig S₂ hΓ) (us.erase sig S₁ hΓ)
   | .nil => .nil
-  | .cons a b u us => .cons (Target.LessDefined.cast _
+  | .cons a b _ u us => .cons (Target.LessDefined.cast _
       (Term.erase_lessDefined sig h ((hΓ.extend a).extend b) u))
       (Branches.erase_lessDefined sig h hΓ us)
 
