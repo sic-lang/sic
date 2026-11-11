@@ -1798,4 +1798,14 @@ theorem Term.subst₀_single_rename_weaken {Γ : Scope} (C t : Term k Γ) :
   (Term.subst₀_rename_of (σ := Subst₀.single t) (α := Ren.weaken) (σ' := Subst₀.id)
     (fun _ => rfl) C).trans (Term.subst₀_id C)
 
+/-! ## Contexts -/
+
+/-- The entries of `Γ, Θ` are those of `Γ` and of `Θ`. -/
+theorem Context.size_append {k : Nat} :
+    {Γ : Scope} → {ps : List Parameter} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
+      (ctx.append Θ).size = ctx.size + ps.length
+  | _, [], _, .nil => rfl
+  | _, _ :: _, ctx, .cons _ _ A Θ =>
+    (Context.size_append (ctx.var A) Θ).trans (by simp only [Context.size, List.length_cons]; omega)
+
 end Sic.Core

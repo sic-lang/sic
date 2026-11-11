@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+import Sic.Core.Meaning.Relations
 import Sic.Core.Soundness.Substitution
 
 /-!

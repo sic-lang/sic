@@ -1,6 +1,8 @@
 module
 
 public import Sic.Core.Meaning
+import Sic.Core.Meaning.Exactness
+import Sic.Core.Meaning.Relations
 
 /-!
 # Closed Judgments

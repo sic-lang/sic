@@ -3,6 +3,7 @@ module
 public import Sic.Core.Substitution.Rules
 import Sic.Core.Substitution.Composition
 import Sic.Core.Substitution.Levels
+import Sic.Core.Syntax.Signature
 
 /-!
 # Prelude

@@ -1,6 +1,8 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Typing.Presuppositions
+import Sic.Core.Typing.Reflexivity
 import Sic.Core.Typing.Renaming
 import Sic.Core.Typing.Substitution
 

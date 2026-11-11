@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Prelude
 public import Sic.Core.Substitution.Levels
+import Sic.Core.Syntax.Signature
 
 /-!
 # Reduction

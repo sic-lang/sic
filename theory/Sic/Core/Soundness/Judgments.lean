@@ -2,7 +2,13 @@ module
 
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Typing
+import Sic.Core.Meaning.Judgments
 import Sic.Core.Soundness.Recursors
+import Sic.Core.Soundness.Rules
+import Sic.Core.Syntax.Signature
+import Sic.Core.Syntax.Terms
+import Sic.Core.Typing.Levels
+import Sic.Core.Typing.Presuppositions
 
 /-!
 # Soundness of the Judgments

@@ -2,7 +2,9 @@ module
 
 public import Sic.Core.Meaning
 public import Sic.Core.Typing
+import Sic.Core.Meaning.Judgments
 import Sic.Core.Soundness.Closed
+import Sic.Core.Syntax.Terms
 
 /-!
 # Equal Substitutions

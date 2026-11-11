@@ -584,6 +584,13 @@ def Context.append : {Γ : Scope} → {ps : List Parameter} → Context k Γ →
   | _, [], ctx, .nil => ctx
   | _, _ :: _, ctx, .cons _ _ A Θ => Context.append (Γ := .var :: _) (ctx.var A) Θ
 
+/-- The number of the entries of a context, those of the telescope of a second-order variable
+included. -/
+def Context.size {k : Nat} : {Γ : Scope} → Context k Γ → Nat
+  | _, .empty => 0
+  | _, .var ctx _ => ctx.size + 1
+  | _, .secondOrder (ps := ps) ctx _ _ _ => ctx.size + ps.length + 1
+
 /-- `Θ_c[T]`: the fields of the constructor `c` at the instance `I` of the sort and grade variables,
 the levels `ls` and the arguments `ā` of the parameters, in the scope `Γ` of the arguments.
 RFC: `\mathsf{inst}_T` -/

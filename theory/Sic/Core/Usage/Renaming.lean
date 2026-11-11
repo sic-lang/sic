@@ -1,7 +1,7 @@
 module
 
-public import Sic.Core.Usage
 public import Sic.Core.Substitution
+public import Sic.Core.Usage
 import Sic.Core.Substitution.Composition
 import Sic.Core.Substitution.Levels
 import Sic.Core.Substitution.Rules

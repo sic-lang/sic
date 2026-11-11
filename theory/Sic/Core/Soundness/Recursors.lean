@@ -1,8 +1,14 @@
 module
 
-public import Sic.Core.Soundness.Rules
+public import Sic.Core.Soundness.DeclaredTypes
+public import Sic.Core.Soundness.Signature
+import Sic.Core.Meaning.Exactness
+import Sic.Core.Meaning.Relations
 import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
+import Sic.Core.Syntax.Signature
+import Sic.Core.Syntax.Terms
 
 /-!
 # Soundness of the Rules of the Recursors

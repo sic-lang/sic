@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+import Sic.Core.Meaning.Judgments
 
 /-!
 # Entries of the Signature

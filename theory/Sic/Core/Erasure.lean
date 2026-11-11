@@ -1,7 +1,9 @@
 module
 
+public import Sic.Core.Syntax.Terms
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
+import Sic.Core.Syntax.Signature
 
 /-!
 # Erasure
