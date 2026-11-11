@@ -1,10 +1,15 @@
-# The site that GitHub Pages serves: nix run .#build-site writes the book of the correspondence in
-# site/ and builds it into book/, with the documentation of the metatheory in book/theory/.
+# The site that GitHub Pages serves: nix run .#build-site writes the book of the correspondence and
+# the page of the imports of the modules in site/ and builds it into book/, with the documentation
+# of the metatheory in book/theory/.
 [book]
 title = "Sic"
 src = "site"
 
 [output.html]
+# Centers the diagrams, which mdBook aligns to the left like any pre block.
+additional-css = ["mermaid.css"]
+# The files of mdbook-mermaid, which build-site writes where its install command does.
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
 git-repository-url = "https://github.com/sic-lang/sic"
 # The pages are those of the files of the RFCs, whose numbers the chapter numbers would contradict.
 no-section-label = true
@@ -14,3 +19,8 @@ site-url = "/sic/"
 
 [preprocessor.katex]
 command = "mdbook-katex"
+
+# Draws the graph of the imports of the modules, which theory/Imports.lean writes as a Mermaid
+# flowchart.
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

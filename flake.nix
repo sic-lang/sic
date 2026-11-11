@@ -80,6 +80,19 @@
                 "lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} \"$(mktemp -d)\" theory/Sic theory/SicExample >/dev/null"
               ];
             };
+            # Checks the imports of the modules of Sic/ against the rules of theory/imports.toml, through
+            # the modules they import in turn, which fails with the path of the imports that a rule
+            # forbids.
+            imports = {
+              tools = [
+                pkgs.coreutils
+                pkgs.lean4
+              ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "lake --dir theory env lean --run theory/Imports.lean theory/imports.toml \"$(mktemp)\" theory/Sic"
+              ];
+            };
             markdownlint = {
               tools = [ pkgs.markdownlint-cli2 ];
               command = "markdownlint-cli2 '**/*.md'";
@@ -390,6 +403,7 @@
               pkgs.lean4
               pkgs.mdbook
               pkgs.mdbook-katex
+              pkgs.mdbook-mermaid
             ];
             text = ''
               cd "$(git rev-parse --show-toplevel)"
@@ -401,7 +415,16 @@
               {
                 printf '[Introduction](introduction.md)\n\n'
                 lake --dir theory env lean --run theory/Correspondence.lean ${rfcs} ${rfcsUrl} site theory/Sic theory/SicExample
+                lake --dir theory env lean --run theory/Imports.lean theory/imports.toml site/imports.md theory/Sic
+                printf -- '- [Imports](imports.md)\n'
               } >site/SUMMARY.md
+              # The JavaScript files of mdbook-mermaid, which its install command writes next to the
+              # book.toml it rewrites: a temporary one, which keeps that of the repository as it is.
+              mermaid=$(mktemp -d)
+              trap 'rm -rf "$mermaid"' EXIT
+              touch "$mermaid/book.toml"
+              RUST_LOG=warn mdbook-mermaid install "$mermaid"
+              cp "$mermaid"/*.js .
               mdbook build
               ${lib.getExe docs.run}
               cp -r theory/docbuild/.lake/build/doc book/theory

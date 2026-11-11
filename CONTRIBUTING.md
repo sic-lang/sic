@@ -82,6 +82,7 @@ A declaration of `Sic/` that formalizes definitions, formulas or rules of the RF
 A declaration of `Sic/` names its counterparts in the formalizations that `Sic/` follows, with their files, or `none`, in comments above its doc string, such as ``-- ADE: `wkEq`, in `Definition/Typed/Weakening.agda`.``, which the [README](README.md) relates to the commits of these formalizations, while the header of its module says how the module differs from them.
 These comments are not doc strings, since the documentation would make links of the names of these formalizations whenever a declaration of Sic has the same name.
 Every file is a module of the [module system of Lean](https://lean-lang.org/doc/reference/latest/Source-Files-and-Modules/), so that a module only passes on the imports it declares public: an import is private, unless the type of a public declaration mentions what it imports (`public import`).
+The modules of `Sic/` import only what their concepts need: [`theory/imports.toml`](theory/imports.toml) groups them by subject and states, with its reason, each separation between concepts, such as a judgment that has no premise of another, as a rule on the imports, direct or not, which the check `imports` enforces; a new separation adds a rule there.
 A directory without a module of its own groups the concepts of one proof, such as `Sic/Core/Reducibility/` for the logical relation.
 The declarations of a module of `Sic/` are in the namespace of its directory, such as `Sic.Core` for `Sic/Core/Typing.lean`, except those on a type of another namespace, which are in the namespace of that type so that its dot notation finds them.
 The declarations are public and expose their bodies (`@[expose] public section`), so that the other modules compute with them, and the documentation shows the statements that check a definition beside it.
@@ -117,7 +118,7 @@ The setups write these files:
 
 ## Site
 
-`nix run '.#build-site'` builds into `book/` the site that GitHub Pages publishes at each push to `main`, to read it as it will be published, from `book/index.html`: the book of the correspondence between the RFCs and the formalization, whose pages `theory/Correspondence.lean` writes, with each formula of the RFCs and the source of the declarations that formalize it, after a page of how many of the names of each page are formalized, and the documentation of the metatheory, which `nix run '.#docs'` generates with [doc-gen4](https://github.com/leanprover/doc-gen4), in `book/theory/`.
+`nix run '.#build-site'` builds into `book/` the site that GitHub Pages publishes at each push to `main`, to read it as it will be published, from `book/index.html`: the book of the correspondence between the RFCs and the formalization, whose pages `theory/Correspondence.lean` writes, with each formula of the RFCs and the source of the declarations that formalize it, after a page of how many of the names of each page are formalized, the graph of the imports of the modules of `Sic/` with the rules of their imports, which `theory/Imports.lean` writes, and the documentation of the metatheory, which `nix run '.#docs'` generates with [doc-gen4](https://github.com/leanprover/doc-gen4), in `book/theory/`.
 The flake pins the commit of the RFCs whose names the pages list: `nix flake update rfcs` follows their changes.
 
 ## Developer Certificate of Origin
