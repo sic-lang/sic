@@ -551,6 +551,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hes : us₁.grades = us₂.grades)
       (hut : ∀ i j T' con C' R u₁ u₂, decl.cases[i]? = some (j, T', con) →
         Cs₁.get j = some ⟨0, C'⟩ → con.results (.ofLists qs ps hq hp) decl.names Cs₁ = some R →
         us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →

@@ -455,7 +455,7 @@ where
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
     | .recursor (ls₁ := ls₁) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ _ hp hadm has _ ht hh hC _ _ hCs₁
-        hCs₂ hCt _ _ hus₁ hus₂ hut hκ => fun ρ => by
+        hCs₂ hCt _ _ hus₁ hus₂ _ hut hκ => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
       have has' := eqInstanceArgs hd hι has ρ

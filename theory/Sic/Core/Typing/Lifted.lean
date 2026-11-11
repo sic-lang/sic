@@ -294,13 +294,14 @@ where
       rw [← Constructor.fieldsAt_subst]
       exact eqArgs hts hθ
     | .recursor (as₁ := as) (t₁ := t) (Cs₁ := Cs₁) (Cs₂ := Cs₂) (us₁ := us₁) (us₂ := us₂)
-        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hut hκ,
-        hθ => by
+        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes hut
+        hκ, hθ => by
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
       refine .recursor h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls (eqTerm ht hθ) hh
         (Motives.get_subst θ hC) ((Motives.length_subst θ Cs₁).trans hCl₁)
         ((Motives.length_subst θ Cs₂).trans hCl₂) ?_ ?_ ?_ ((Branches.length_subst θ us₁).trans hul₁)
-        ((Branches.length_subst θ us₂).trans hul₂) ?_ ?_ ?_ hκ
+        ((Branches.length_subst θ us₂).trans hul₂) ?_ ?_
+        (by funext i; rw [Branches.grades_subst, Branches.grades_subst, hes]) ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs₁ j T' hj
         exact ⟨_, Motives.get_subst θ hC'⟩

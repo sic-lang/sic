@@ -332,7 +332,8 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
       (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) (C₁ := C)
     hpre.pair rfl rfl rfl rfl hadm (EqInstanceArgs.refl (HasInstanceArgs.pair p ρ hA hB))
-    (fun _ _ => rfl) (.refl ht) rfl rfl rfl rfl ?_ ?_ ?_ rfl rfl ?_ ?_ ?_ (fun h => nomatch h)
+    (fun _ _ => rfl) (.refl ht) rfl rfl rfl rfl ?_ ?_ ?_ rfl rfl ?_ ?_
+    (funext fun i => by cases i <;> rfl) ?_ (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
     | 0, _ => exact ⟨C, rfl⟩
