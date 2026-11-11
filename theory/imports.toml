@@ -53,6 +53,10 @@ modules = ["Sic.Core.Meaning"]
 name = "Soundness"
 modules = ["Sic.Core.Soundness"]
 
+[[group]]
+name = "RunTime"
+modules = ["Sic.Core.RunTime"]
+
 [[rule]]
 reason = "the mathematics are generic, and know nothing of Sic"
 modules = ["Sic.Math"]
@@ -77,6 +81,7 @@ forbidden = [
   "Sic.Core.Meaning",
   "Sic.Core.Ownership",
   "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
   "Sic.Core.Soundness",
   "Sic.Core.Typing",
   "Sic.Core.Usage",
@@ -118,6 +123,7 @@ forbidden = [
   "Sic.Core.Meaning",
   "Sic.Core.Ownership",
   "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
   "Sic.Core.Typing",
   "Sic.Core.Usage",
 ]
@@ -125,7 +131,12 @@ forbidden = [
 [[rule]]
 reason = "the reduction and the meaning are defined on the terms alone, so that the meaning explains the judgments without reading them"
 modules = ["Sic.Core.Meaning", "Sic.Core.Reduction"]
-forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+forbidden = [
+  "Sic.Core.Ownership",
+  "Sic.Core.RunTime",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
 
 [[rule]]
 reason = "the typing is a judgment of its own, with no premise of the usage or of the ownership, the signature included"
@@ -136,3 +147,20 @@ forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
 reason = "the soundness of the typing reads the typing and the meaning only"
 modules = ["Sic.Core.Soundness"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the extension of the heaps is defined on the evaluation alone, and reads no judgment"
+modules = ["Sic.Core.RunTime.Heap"]
+forbidden = [
+  "Sic.Core.Erasure.Absence",
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the relation of run time reads the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
+modules = ["Sic.Core.RunTime.Relation"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
