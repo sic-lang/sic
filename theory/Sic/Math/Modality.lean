@@ -84,31 +84,31 @@ operations that are not the instances of `V`. -/
 structure IsModule (R V : Type) [Add R] [Mul R] (zero one : R)
     (zeroV : V) (addV : V → V → V) (smulV : R → V → V) : Prop where
   /-- The addition is associative.
-  RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{assoc}_{+}` -/
   add_assoc : ∀ a b c : V, addV (addV a b) c = addV a (addV b c)
   /-- The addition is commutative.
-  RFC: `\mathsf{module}_\gamma.\mathsf{comm}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{comm}_{+}` -/
   add_comm : ∀ a b : V, addV a b = addV b a
   /-- The zero is neutral for the addition.
-  RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{unit}_{+}` -/
   zero_add : ∀ a : V, addV zeroV a = a
   /-- The multiplication distributes over the addition of `V`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+^{\gamma}}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{distrib}_{+^{\mu}}` -/
   smul_add : ∀ (p : R) (a b : V), smulV p (addV a b) = addV (smulV p a) (smulV p b)
   /-- The multiplication distributes over the addition of `R`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{distrib}_{+}` -/
   add_smul : ∀ (p q : R) (a : V), smulV (p + q) a = addV (smulV p a) (smulV q a)
   /-- The multiplication by a product is the multiplication by each of its factors.
-  RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{assoc}_{\cdot}` -/
   mul_smul : ∀ (p q : R) (a : V), smulV (p * q) a = smulV p (smulV q a)
   /-- The unit of `R` is neutral for the multiplication.
-  RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{unit}_{\cdot}` -/
   one_smul : ∀ a : V, smulV one a = a
   /-- The zero of `R` multiplies every element into the zero of `V`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{lzero}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{lzero}_{\cdot}` -/
   zero_smul : ∀ a : V, smulV zero a = zeroV
   /-- Every element of `R` multiplies the zero of `V` into itself.
-  RFC: `\mathsf{module}_\gamma.\mathsf{rzero}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{rzero}_{\cdot}` -/
   smul_zero : ∀ p : R, smulV p zeroV = zeroV
 
 -- ADE: `Has-well-behaved-zero`, in `Graded/Modality.agda`.

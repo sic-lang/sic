@@ -20,12 +20,12 @@ structure IsPreorder {α : Type} (r : α → α → Prop) : Prop where
   /-- The relation is reflexive.
   RFC: `\mathsf{preorder}_l.\mathsf{refl}`
   RFC: `\mathsf{preorder}_\kappa.\mathsf{refl}`
-  RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}` -/
+  RFC: `\mathsf{preorder}_\mu.\mathsf{refl}` -/
   refl : ∀ a, r a a
   /-- The relation is transitive.
   RFC: `\mathsf{preorder}_l.\mathsf{trans}`
   RFC: `\mathsf{preorder}_\kappa.\mathsf{trans}`
-  RFC: `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
+  RFC: `\mathsf{preorder}_\mu.\mathsf{trans}` -/
   trans : ∀ {a b c}, r a b → r b c → r a c
 
 -- ADE: none.
