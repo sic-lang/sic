@@ -12,7 +12,7 @@ import Sic.Core.Syntax.Terms
 /-!
 # Soundness of the Declared Types
 
-The rules of the declared types of annex 14 of RFC 36 keep the meaning of annex 17: an instance of a
+The rules of the declared types of annex 14 of RFC 36 keep the meaning of annex 18: an instance of a
 declared type is a type of the sort of its declaration, whose fields are those of its declaration at
 its levels and its arguments, and equal arguments give instances with the same equality of their
 canonical terms, or the same truth.

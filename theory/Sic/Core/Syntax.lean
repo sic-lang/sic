@@ -804,6 +804,93 @@ RFC: `\mathsf{position}_D` -/
 def Signature.position (sig : Signature) (D : Name) : Option Nat :=
   sig.findSome? (Entry.position D)
 
+-- ADE: none.
+/-- The case of the constructor `c` of the data type `D` in its block, when the entry declares
+them. -/
+def Entry.constructorCase (D c : Name) : Entry → Option Nat
+  | .typeDeclaration decl => decl.cases.findIdx? fun x => x.2.1.name == D && x.2.2.name == c
+  | _ => none
+
+-- ADE: none.
+/-- The case `i` of the constructor `c` of the data type `D` in its block, in the order of the
+declaration, which is that of the branches of a recursor, in the last entry of the signature that
+declares them, which the erasure of a constructor reads; the cases are counted from `0`, as the
+indices of the lists, while the RFC counts them from `1`.
+RFC: `\mathsf{case}_c` -/
+def Signature.constructorCase (sig : Signature) (D c : Name) : Option Nat :=
+  sig.findSome? (Entry.constructorCase D c)
+
+-- ADE: none.
+/-- The case of the destructor `d` of the codata type `D` in its block, when the entry declares
+them. -/
+def Entry.destructorCase (D d : Name) : Entry → Option Nat
+  | .typeDeclaration decl => decl.codataCases.findIdx? fun x => x.2.1.name == D && x.2.2 == d
+  | _ => none
+
+-- ADE: none.
+/-- The case `i` of the destructor `d` of the codata type `D` in its block, in the order of the
+declaration, which is that of the branches of a corecursor, in the last entry of the signature that
+declares them, which the erasure of an observation reads; the cases are counted from `0`.
+RFC: `\mathsf{case}_d` -/
+def Signature.destructorCase (sig : Signature) (D d : Name) : Option Nat :=
+  sig.findSome? (Entry.destructorCase D d)
+
+-- ADE: none.
+/-- The positions of the recursive fields of each constructor of the block of the data type `D`, at
+the instance of the qualities `qs` and of the grades `ps`, in the order of the declaration, when the
+entry declares them. -/
+def Entry.recursiveFields (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List (List Nat))
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.dataTypes.find? (·.name == D)).map fun _ =>
+          decl.cases.map fun x =>
+            ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
+              fun y => y.1.map fun _ => y.2
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The positions `ē` of the recursive fields of each constructor of the block of the data type `D`,
+the first field at `0`, at the instance of the qualities `qs` and of the grades `ps`, in the order of
+the declaration, which is that of the branches of a recursor, in the last entry of the signature
+that declares them, which the erasure of a recursor reads to tell the field of each recursive
+result.
+RFC: `\mathsf{recursive}_c` -/
+def Signature.recursiveFields (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List (List Nat)) :=
+  sig.findSome? (Entry.recursiveFields D qs ps)
+
+-- ADE: none.
+/-- The position in the block of the type of the result of each destructor of the block of the codata
+type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
+declaration, `none` for a destructor that is not recursive, when the entry declares them. -/
+def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List (Option Nat))
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.codataTypes.find? (·.name == D)).map fun _ =>
+          decl.codataCases.map fun x =>
+            ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind
+              decl.names.idxOf?
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The position in the block of the type of the result of each destructor of the block of the
+codata type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
+declaration, which is that of the branches of a corecursor, `none` for a destructor that is not
+recursive, in the last entry of the signature that declares them, which the erasure of a
+corecursor reads to find the state that a branch resumes.
+RFC: `\mathsf{resumed}_d` -/
+def Signature.resumedTypes (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List (Option Nat)) :=
+  sig.findSome? (Entry.resumedTypes D qs ps)
+
 /-- The position of a destructor in the destructors, as a number, the first one at `0`. -/
 def Destructors.Pos.index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →

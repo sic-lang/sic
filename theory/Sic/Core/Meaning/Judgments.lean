@@ -5,7 +5,7 @@ public import Sic.Core.Meaning
 /-!
 # Meaning of the Judgments
 
-The meaning of the judgments of annex 17 of RFC 36 unfolded: the meaning of an entry of the signature
+The meaning of the judgments of annex 18 of RFC 36 unfolded: the meaning of an entry of the signature
 by its clauses, that of a context by its last entry, and the fields and the destructors of a
 meaningful type declaration.
 

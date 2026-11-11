@@ -7,7 +7,7 @@ import Sic.Core.Usage.Renaming
 /-!
 # Usage of the Prelude
 
-The usage of the prelude of annex 18 of RFC 36: the constructors of its types use their parameters
+The usage of the prelude of annex 19 of RFC 36: the constructors of its types use their parameters
 as the grades of the types allow, and the packing of arguments, the recursors on the pair, on the
 unit and on the type of positions, the unpacking of a term of a packing and the resumption of a
 position, which an observation of a recursive destructor computes, use the variables as their rules

@@ -6,7 +6,7 @@ import Sic.Core.Meaning.Relations
 /-!
 # Exactness of the Meaning
 
-The exactness of the meaning of annex 17 of RFC 36 for the proofs: a meaningful signature has
+The exactness of the meaning of annex 18 of RFC 36 for the proofs: a meaningful signature has
 distinct names, a sort computes to itself and only to itself, and a sort is not a proposition, so
 that the propositions are told apart from the types.
 

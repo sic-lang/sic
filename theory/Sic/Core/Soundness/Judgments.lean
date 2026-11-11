@@ -13,7 +13,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Soundness of the Judgments
 
-Every judgment of annex 14 of RFC 36 is meaningful, as annex 17 defines it, at every value of its
+Every judgment of annex 14 of RFC 36 is meaningful, as annex 18 defines it, at every value of its
 level variables, in a signature whose constant declarations the interpretation gives terms of their
 types, `(hyp_ι)`.
 

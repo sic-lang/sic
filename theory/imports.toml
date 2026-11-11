@@ -42,6 +42,10 @@ name = "Erasure"
 modules = ["Sic.Core.Erasure"]
 
 [[group]]
+name = "Evaluation"
+modules = ["Sic.Core.Evaluation"]
+
+[[group]]
 name = "Meaning"
 modules = ["Sic.Core.Meaning"]
 
@@ -69,6 +73,7 @@ modules = [
 ]
 forbidden = [
   "Sic.Core.Erasure",
+  "Sic.Core.Evaluation",
   "Sic.Core.Meaning",
   "Sic.Core.Ownership",
   "Sic.Core.Reduction",
@@ -104,6 +109,16 @@ forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
 reason = "the erasure is untyped, and reads the grades of the syntax and the usage only"
 modules = ["Sic.Core.Erasure"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
+
+[[rule]]
+reason = "the evaluation runs the untyped target language of the erasure, by the calling convention, on the terms alone"
+modules = ["Sic.Core.Evaluation"]
+forbidden = [
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.Typing",
+]
 
 [[rule]]
 reason = "the reduction and the meaning are defined on the terms alone, so that the meaning explains the judgments without reading them"

@@ -6,7 +6,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Relations of the Meaning
 
-The relations of annex 17 of RFC 36 are partial equivalence relations, and each type has one: the
+The relations of annex 18 of RFC 36 are partial equivalence relations, and each type has one: the
 relations built from others, the least fixed points of the data types and the greatest fixed points
 of the codata types, and the relations of a level, by mutual recursion on the graph, which gives a
 type a single level and a single sort.

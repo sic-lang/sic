@@ -9,7 +9,7 @@ import Sic.Core.Typing.Substitution
 /-!
 # Typing of the Prelude
 
-The typing of the prelude of annex 18 of RFC 36: each of its declarations is well formed in the
+The typing of the prelude of annex 19 of RFC 36: each of its declarations is well formed in the
 declarations before it, at every instance that its constraint admits; the packing of a telescope
 whose entries live in sorts is a type of a universe, and the packing of its arguments a term of it;
 a term `u` of the packing `⟨Θ⟩` of a telescope, unpacked into a term `b` over the variables of `Θ`,

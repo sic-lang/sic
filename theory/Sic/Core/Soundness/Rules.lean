@@ -14,7 +14,7 @@ import Sic.Core.Syntax.Terms
 /-!
 # Soundness of the Rules
 
-Each rule of annex 14 of RFC 36 keeps the meaning of annex 17: when its premises are meaningful, in
+Each rule of annex 14 of RFC 36 keeps the meaning of annex 18: when its premises are meaningful, in
 the context of the rule at levels without variables, so is its conclusion; `Recursors` and
 `Corecursors` prove it of the rules of the recursors and of those of the observations and the
 corecursors, in the same way.

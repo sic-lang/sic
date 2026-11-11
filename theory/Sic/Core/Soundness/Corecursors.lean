@@ -14,7 +14,7 @@ import Sic.Core.Syntax.Terms
 # Soundness of the Rules of the Corecursors
 
 The rules `(d)`, `(d_≡)`, `(corec)`, `(corec_≡)`, `(β)` and `(η_d)` of annex 14 of RFC 36 keep the
-meaning of annex 17, as `Rules` proves it of the other rules, from the meaning of the codata types:
+meaning of annex 18, as `Rules` proves it of the other rules, from the meaning of the codata types:
 the equality of the corecursors is proved by coinduction, and a recursive destructor resumes its
 position, a constructor of the type of positions of the prelude, which the recursors on its
 constructor and on the pairs of a packing eliminate, as `Recursors` reduces them.
