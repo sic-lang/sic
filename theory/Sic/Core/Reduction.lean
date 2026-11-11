@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Typing
+public import Sic.Core.Prelude
 
 /-!
 # Reduction

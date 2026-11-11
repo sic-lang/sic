@@ -82,3 +82,8 @@ forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
 reason = "the erasure is untyped, and reads the grades of the syntax and the usage only"
 modules = ["Sic.Core.Erasure"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
+
+[[rule]]
+reason = "the reduction and the meaning are defined on the terms alone, so that the meaning explains the judgments without reading them"
+modules = ["Sic.Core.Meaning", "Sic.Core.Reduction"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]

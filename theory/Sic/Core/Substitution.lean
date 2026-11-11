@@ -3388,6 +3388,24 @@ theorem Constructor.fieldsAt_substLevels {j g k' k'' : Nat} {Γ Δ : Scope} (c :
     Telescope.substLevels_subst_of (InstanceArgs.toSubst_substLevels ls' as),
     Telescope.substLevels_substLevels]
 
+/-- `A[s̄' / s̄, l̄' / l̄, p̄' / p̄]`: the type or the body `A` of an entry of the signature at the
+instance `ι` of its sort and grade variables, then at the levels `l̄'`, weakened from the empty scope
+to the scope `Γ`.
+RFC: `\mathsf{inst}_e` -/
+def Signature.instanceType {k k' j g : Nat} {Γ : Scope} (A : Instance j g → Term k' [])
+    (ι : Instance j g) (ls : Fin k' → Level k) : Term k Γ :=
+  ((A ι).substLevels ls).weakenClosed
+
+/-- An entry of the signature at the levels `ls`, then instantiated by `ls'`, is the entry at the
+levels `ls` instantiated by `ls'`. -/
+theorem Signature.instanceType_substLevels {k k' k'' j g : Nat} {Γ : Scope}
+    (A : Instance j g → Term k' []) (ι : Instance j g) (ls : Fin k' → Level k)
+    (ls' : Fin k → Level k'') :
+    (Signature.instanceType A ι ls : Term k Γ).substLevels ls'
+      = Signature.instanceType A ι fun i => (ls i).subst ls' := by
+  rw [Signature.instanceType, Signature.instanceType, Term.weakenClosed, Term.weakenClosed,
+    Term.substLevels_rename, Term.substLevels_substLevels]
+
 /-! ## Motives at a Constructor -/
 
 -- ADE: none.
