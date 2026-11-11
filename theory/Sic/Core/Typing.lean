@@ -1077,7 +1077,8 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
   /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
   and whose result is a type `D` of the block at the instance of the block and at the parameters,
   with a grade without use at run time if the block is a block of propositions and an ownership `ψ`
-  of its result that is a constant `χ`, which the ownerships of its arguments do not change, and the
+  of its result that is a constant `χ`, which the ownerships of its arguments do not change, below
+  the ownership `11ᵖ` of a new value, which an observation that resumes the corecursor gives, and the
   others, which do not depend on it, in the same context.
   RFC: `\bar d_{\kappa\mathsf{rec}}` -/
   | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
@@ -1087,7 +1088,7 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hp : κ.quality = .prop → p.mode ≠ .oneOne)
-      (hψ : ∃ χ, ψ = ⟨some χ, fun _ => none⟩)
+      (hψ : ∃ χ, χ ≤ Grade.one ∧ ψ = ⟨some χ, fun _ => none⟩)
       (hds : WfDestructors sig decl ι as ctx ds κ) :
       WfDestructors sig decl ι as ctx
         (.cons (d := d) p q Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
