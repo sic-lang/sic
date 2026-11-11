@@ -24,12 +24,11 @@ modules = [
 
 [[group]]
 name = "Judgments"
-modules = [
-  "Sic.Core.Independence",
-  "Sic.Core.Ownership",
-  "Sic.Core.Typing",
-  "Sic.Core.Usage",
-]
+modules = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[group]]
+name = "Prelude"
+modules = ["Sic.Core.Prelude"]
 
 [[group]]
 name = "Reduction and erasure"
