@@ -106,18 +106,20 @@ modules = ["Sic.Core.Ownership"]
 forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
 
 [[rule]]
-reason = "the erasure is untyped, and reads the grades of the syntax and the usage only"
+reason = "the erasure is untyped and reads the grades of the syntax, and only the absence of the erased variables reads the usage"
 modules = ["Sic.Core.Erasure"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
 
 [[rule]]
-reason = "the evaluation runs the untyped target language of the erasure, by the calling convention, on the terms alone"
+reason = "the evaluation runs the untyped target language of the erasure, by the calling convention, on the terms alone, and reads no judgment"
 modules = ["Sic.Core.Evaluation"]
 forbidden = [
+  "Sic.Core.Erasure.Absence",
   "Sic.Core.Meaning",
   "Sic.Core.Ownership",
   "Sic.Core.Reduction",
   "Sic.Core.Typing",
+  "Sic.Core.Usage",
 ]
 
 [[rule]]
