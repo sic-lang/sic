@@ -79,6 +79,19 @@ forbidden = [
 ]
 
 [[rule]]
+reason = "the prelude is defined on the syntax alone, and each judgment proves its properties on it"
+modules = ["Sic.Core.Prelude"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Prelude",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
+]
+
+[[rule]]
 reason = "the usage is a judgment of its own, with no premise of the typing or of the ownership"
 modules = ["Sic.Core.Usage"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]

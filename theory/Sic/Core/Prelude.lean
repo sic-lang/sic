@@ -427,6 +427,170 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
     erw [h₅, h₆, h₇]
     rfl
 
+/-! ### Packing of the Variables -/
+
+-- ADE: none.
+/-- `e[⟨x̄⟩ / z]`: the term `e`, over a term `z` of the packing of the telescope `Θ`, at the packing
+of the variables of `Θ`, under them. -/
+def Term.atPack {Γ : Scope} {ps : List Parameter} (e : Term k (.var :: Γ)) (Θ : Telescope k Γ ps)
+    (κs : List (Universe k)) (l : Level k) : Term k (Γ.extend ps.length) :=
+  (e.rename (Ren.lift (Ren.weakenN ps.length))).subst₀
+    (Subst₀.single ((Args.bound ps).pack (Θ.rename (Ren.weakenN ps.length)) κs l))
+
+-- ADE: none.
+/-- The term `e` at the packing of the variables of a telescope that starts with an entry `x : A`, in
+the branch of the pair of `x` and `y`, is the term `e` at the pair of `x` and of the packing of the
+variables of the rest, which unpacks `y`. -/
+theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q : Grade)
+    (A : Term k Γ) (Θ : Telescope k (.var :: Γ) ps) (κA : Universe k) (κs : List (Universe k))
+    (l : Level k) (e : Term k (.var :: Γ)) :
+    ((e.atCtor "Pair" [κA.quality] [κA.level, Telescope.packLevel κs l] [p.usage, p.requirement]
+      (Prelude.pairArgs A (Θ.pack κs l)) "mk" [⟨p.usage, p.requirement⟩, ⟨Grade.one, Grade.one⟩]).rename
+        (Ren.lift (Ren.weaken (e := .var)))).atPack (Θ.rename Ren.weaken) κs l =
+      (e.atPack (.cons q p A Θ) (κA :: κs) l).rename (Ren.liftN ps.length (Ren.weaken (e := .var))) := by
+  -- The renaming that skips `y` and the variables of the rest, on the scope of the telescope.
+  let ρ : Ren ((Scope.extend (.var :: .var :: Γ) ps.length)) Γ :=
+    fun v => Var.weakenN ps.length (Var.succ (Var.succ v))
+  have hρ : ∀ {a} (v : Var Γ a), Ren.liftN ps.length (Ren.weaken (e := .var))
+      (Ren.weakenN (Γ := Γ) (ps.length + 1) v) = ρ v :=
+    fun v => Ren.liftN_weakenN ps.length Ren.weaken v.succ
+  let MK : Term k (.var :: .var :: Γ) := .ctor "Pair" [κA.quality]
+    [κA.level, Telescope.packLevel κs l] [p.usage, p.requirement]
+    ((Prelude.pairArgs A (Θ.pack κs l)).rename (Ren.weakenN 2)) "mk"
+    (Args.bound (Γ := Γ) [⟨p.usage, p.requirement⟩, ⟨Grade.one, Grade.one⟩]).terms
+  let PK' := (Args.bound (k := k) (Γ := .var :: .var :: Γ) ps).pack
+    ((Θ.rename Ren.weaken).rename (Ren.weakenN ps.length)) κs l
+  let PK := (Args.bound (k := k) (Γ := Γ) (p :: ps)).pack
+    ((Telescope.cons q p A Θ).rename (Ren.weakenN (ps.length + 1))) (κA :: κs) l
+  have hL : ((((e.rename (Ren.lift (Ren.weakenN 2))).subst₀ (Subst₀.single MK)).rename
+      (Ren.lift (Ren.weaken (e := .var)))).rename (Ren.lift (Ren.weakenN ps.length))).subst₀
+        (Subst₀.single PK') =
+      e.subst₀ (fun x => (((Subst₀.single MK (Ren.lift (Ren.weakenN 2) x)).rename
+        (Ren.lift (Ren.weaken (e := .var)))).rename (Ren.lift (Ren.weakenN ps.length))).subst₀
+          (Subst₀.single PK')) := by
+    let σ₁ : Subst₀ k (.var :: .var :: .var :: Γ) (.var :: .var :: .var :: Γ) := fun x =>
+      (Subst₀.single MK x).rename (Ren.lift (Ren.weaken (e := .var)))
+    let σ₂ : Subst₀ k (.var :: Scope.extend (.var :: .var :: Γ) ps.length)
+        (.var :: .var :: .var :: Γ) := fun x =>
+      (σ₁ x).rename (Ren.lift (Ren.weakenN ps.length))
+    have a₁ := Term.rename_subst₀_of (σ := Subst₀.single MK)
+      (α := Ren.lift (Ren.weaken (e := .var))) (σ' := σ₁) (fun _ => rfl)
+      (e.rename (Ren.lift (Ren.weakenN 2)))
+    have a₂ := Term.rename_subst₀_of (σ := σ₁) (α := Ren.lift (Ren.weakenN ps.length)) (σ' := σ₂)
+      (fun _ => rfl) (e.rename (Ren.lift (Ren.weakenN 2)))
+    have a₃ := Term.subst₀_subst₀_of (σ := σ₂) (τ := Subst₀.single PK')
+      (σ' := fun x => (σ₂ x).subst₀ (Subst₀.single PK')) (fun _ => rfl)
+      (e.rename (Ren.lift (Ren.weakenN 2)))
+    have a₄ := Term.subst₀_rename_of (σ := fun x => (σ₂ x).subst₀ (Subst₀.single PK'))
+      (α := Ren.lift (Ren.weakenN 2))
+      (σ' := fun x => (σ₂ (Ren.lift (Ren.weakenN 2) x)).subst₀ (Subst₀.single PK')) (fun _ => rfl) e
+    exact (congrArg (fun t => (t.rename (Ren.lift (Ren.weakenN ps.length))).subst₀
+      (Subst₀.single PK')) a₁).trans ((congrArg (·.subst₀ (Subst₀.single PK')) a₂).trans
+        (a₃.trans a₄))
+  have hR : ((e.rename (Ren.lift (Ren.weakenN (ps.length + 1)))).subst₀ (Subst₀.single PK)).rename
+      (Ren.liftN ps.length (Ren.weaken (e := .var))) =
+      e.subst₀ (fun x => (Subst₀.single PK (Ren.lift (Ren.weakenN (ps.length + 1)) x)).rename
+        (Ren.liftN ps.length (Ren.weaken (e := .var)))) := by
+    exact (Term.rename_subst₀_of (σ := Subst₀.single PK)
+      (α := Ren.liftN ps.length (Ren.weaken (e := .var)))
+      (σ' := fun x => (Subst₀.single PK x).rename (Ren.liftN ps.length (Ren.weaken (e := .var))))
+      (fun _ => rfl) _).trans (Term.subst₀_rename_of (fun _ => rfl) e)
+  refine hL.trans ((Term.subst₀_congr (fun x => ?_) e).trans hR.symm)
+  cases x with
+  | succ v =>
+    show Val.var (Var.weakenN ps.length v.succ.succ) =
+      Val.var (Ren.liftN ps.length (Ren.weaken (e := .var)) (Ren.weakenN (ps.length + 1) v))
+    rw [hρ]
+  | zero =>
+    show Val.term _ = Val.term _
+    congr 1
+    let L : Ren (Scope.extend (.var :: .var :: Γ) ps.length) (Scope.extend (.var :: Γ) ps.length) :=
+      fun x => Ren.liftN ps.length (Ren.weaken (e := .var) (Γ := .var :: Γ)) x
+    let W' : Ren (Scope.extend (.var :: Γ) ps.length) Γ := fun x => Ren.weakenN (ps.length + 1) x
+    let s₃ : Ren (.var :: .var :: .var :: Γ) Γ := fun v => v.succ.succ.succ
+    let m : Ren (.var :: Scope.extend (.var :: .var :: Γ) ps.length) Γ := fun v =>
+      Ren.lift (e := .var) (Ren.weakenN (Γ := .var :: .var :: Γ) ps.length) v.succ.succ.succ
+    have hA : (((A.rename (Ren.weakenN 2)).rename (Ren.lift (Ren.weaken (e := .var)))).rename
+        (Ren.lift (Ren.weakenN ps.length))).subst₀ (Subst₀.single PK') = (A.rename W').rename L := by
+      have e₁ : (A.rename (Ren.weakenN 2)).rename (Ren.lift (Ren.weaken (e := .var))) =
+          A.rename s₃ :=
+        Term.rename_rename_of (α₁ := Ren.lift (Ren.weaken (e := .var))) (α₂ := Ren.weakenN 2)
+          (fun _ => rfl) A
+      have e₂ : (A.rename s₃).rename (Ren.lift (Ren.weakenN ps.length)) =
+          A.rename m :=
+        Term.rename_rename_of (α₁ := Ren.lift (Ren.weakenN ps.length))
+          (α₂ := s₃) (fun _ => rfl) A
+      have e₃ : (A.rename m).subst₀
+          (Subst₀.single PK') = A.rename ρ := Term.subst₀_rename_eq_rename_of (fun _ => rfl) A
+      exact (congrArg (fun (t : Term k (.var :: .var :: .var :: Γ)) =>
+        (t.rename (Ren.lift (Ren.weakenN ps.length))).subst₀ (Subst₀.single PK')) e₁).trans
+        ((congrArg (·.subst₀ (Subst₀.single PK')) e₂).trans
+          (e₃.trans (Term.rename_rename_of hρ A).symm))
+    have hB : ((((Θ.pack κs l).rename (Ren.lift (Ren.weakenN 2))).rename
+        (Ren.lift (Ren.lift (Ren.weaken (e := .var))))).rename
+          (Ren.lift (Ren.lift (Ren.weakenN ps.length)))).subst₀ (Subst₀.lift (Subst₀.single PK')) =
+        ((Θ.rename (Ren.lift W')).pack κs l).rename (Ren.lift L) := by
+      have e₁ : ((Θ.pack κs l).rename (Ren.lift (Ren.weakenN 2))).rename
+          (Ren.lift (Ren.lift (Ren.weaken (e := .var)))) =
+          (Θ.pack κs l).rename (Ren.lift s₃) :=
+        Term.rename_rename_of (Ren.lift_comp_of (α₁ := Ren.lift (Ren.weaken (e := .var)))
+          (α₂ := Ren.weakenN 2) (fun _ => rfl)) _
+      have e₂ : ((Θ.pack κs l).rename (Ren.lift s₃)).rename
+          (Ren.lift (Ren.lift (Ren.weakenN ps.length))) =
+          (Θ.pack κs l).rename (Ren.lift m) :=
+        Term.rename_rename_of (Ren.lift_comp_of (α₁ := Ren.lift (Ren.weakenN ps.length))
+          (α₂ := s₃) (fun _ => rfl)) _
+      have e₃ : ((Θ.pack κs l).rename (Ren.lift m)).subst₀
+          (Subst₀.lift (Subst₀.single PK')) = (Θ.pack κs l).rename (Ren.lift ρ) :=
+        Term.subst₀_rename_eq_rename_of (fun x => by cases x <;> rfl) _
+      have e₄ : ((Θ.rename (Ren.lift W')).pack κs l).rename (Ren.lift L) =
+          (Θ.pack κs l).rename (Ren.lift ρ) := by
+        rw [← Telescope.pack_rename]
+        exact Term.rename_rename_of (Ren.lift_comp_of hρ) _
+      exact (congrArg (fun (t : Term k (.var :: .var :: .var :: .var :: Γ)) =>
+        (t.rename (Ren.lift (Ren.lift (Ren.weakenN ps.length)))).subst₀
+          (Subst₀.lift (Subst₀.single PK'))) e₁).trans
+        ((congrArg (·.subst₀ (Subst₀.lift (Subst₀.single PK'))) e₂).trans (e₃.trans e₄.symm))
+    have hT : ((Θ.rename (Ren.lift W')).subst₀ (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)))).rename L =
+        (Θ.rename Ren.weaken).rename (Ren.weakenN ps.length) := by
+      rw [Telescope.rename_subst₀_of (σ' := fun z =>
+          (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)) z).rename L) (fun _ => rfl),
+        Telescope.subst₀_rename_of (σ' := fun z =>
+          (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)) (Ren.lift W' z)).rename L)
+          (fun _ => rfl),
+        Telescope.subst₀_eq_rename_of_eta (α := fun v => Var.weakenN ps.length (Ren.weaken v))
+          (fun x => by
+            cases x with
+            | zero =>
+              show Term.var₀ (Ren.liftN ps.length (Ren.weaken (e := .var) (Γ := .var :: Γ))
+                (Var.weakenN ps.length .zero)) = _
+              rw [Ren.liftN_weakenN]
+              rfl
+            | succ v =>
+              show Var.eta (Ren.liftN ps.length (Ren.weaken (e := .var) (Γ := .var :: Γ))
+                (Ren.weakenN (ps.length + 1) v)) = _
+              rw [hρ]
+              rfl),
+        Telescope.rename_rename_of (α₁ := Ren.weakenN ps.length) (α₂ := Ren.weaken)
+          (α₃ := fun v => Var.weakenN ps.length (Ren.weaken v)) (fun _ => rfl)]
+    have hrest := Args.pack_rename L (Args.bound (k := k) (Γ := .var :: Γ) ps)
+      ((Θ.rename (Ren.lift W')).subst₀ (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)))) κs l
+    rw [Args.bound_rename, hT] at hrest
+    show Term.ctor _ _ _ _ _ _ _ = Term.ctor _ _ _ _ _ _ _
+    congr 1
+    · show InstanceArgs.snoc (.snoc .nil _) _ = InstanceArgs.snoc (.snoc .nil _) _
+      congr 1
+      exact congrArg (InstanceArgs.snoc (e := .var) .nil) hA
+    · show Terms.cons _ (Terms.cons _ .nil) = Terms.cons _ (Terms.cons _ .nil)
+      congr 1
+      · show Term.var₀ (Var.weakenN ps.length (Var.succ .zero)) =
+          Term.var₀ (Ren.liftN ps.length (Ren.weaken (e := .var) (Γ := .var :: Γ))
+            (Var.weakenN ps.length .zero))
+        rw [Ren.liftN_weakenN]
+        rfl
+      · congr 1
+        exact hrest.symm
+
 /-! ## Positions -/
 
 /-- The arguments `(A, B)` of an instance of the type of positions. -/
