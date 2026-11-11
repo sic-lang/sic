@@ -5,11 +5,11 @@ import Lean.Util.Path
 Checks the imports of the modules of a library against the rules of `imports.toml`, and writes the
 page of the graph of their imports.
 
-A rule names modules and the modules they must not import, each with the modules below it, such as
-`Sic.Core.Usage.Renaming` below `Sic.Core.Usage`, and fails if one of them imports one of the others,
-directly or through other modules, which it shows by the path of the imports from the one to the
-other; a rule or a group that names no module fails too, so that renaming a module cannot leave a
-rule behind.
+A rule names modules, each with the modules below it, such as `Sic.Core.Usage.Renaming` below
+`Sic.Core.Usage`, and either the modules they must not import or the only modules they may import,
+and fails if one of them imports a module that it forbids or does not allow, directly or through
+other modules, which it shows by the path of the imports from the one to the other; a rule or a
+group that names no module fails too, so that renaming a module cannot leave a rule behind.
 The imports are those of the modules as Lake builds them, so that the check reads the graph that
 Lean uses, not a parse of the sources.
 
@@ -30,14 +30,30 @@ structure Group where
   /-- The modules of the group, each with the modules below it. -/
   modules : Array Name
 
-/-- A rule: no module of `modules` imports a module of `forbidden`, directly or not. -/
+/-- The imports that a rule constrains, by the modules it names, each with the modules below it. -/
+inductive Imports where
+  /-- The modules must not import these modules. -/
+  | forbidden (names : Array Name)
+  /-- The modules import only these modules. -/
+  | allowed (names : Array Name)
+
+/-- The modules that the imports name. -/
+def Imports.names : Imports → Array Name
+  | .forbidden names | .allowed names => names
+
+/-- Whether the imports exclude the module: a module that they forbid, or that they do not allow. -/
+def Imports.excludes : Imports → Name → Bool
+  | .forbidden names, module => names.any (·.isPrefixOf module)
+  | .allowed names, module => !names.any (·.isPrefixOf module)
+
+/-- A rule: no module of `modules` imports, directly or not, a module that `imports` excludes. -/
 structure Rule where
   /-- Why the rule holds, which the page and the failures give. -/
   reason : String
   /-- The modules that the rule constrains, each with the modules below it. -/
   modules : Array Name
-  /-- The modules they must not import, each with the modules below it. -/
-  forbidden : Array Name
+  /-- The imports that the rule forbids or allows them. -/
+  imports : Imports
 
 /-- The groups and the rules of `imports.toml`. -/
 structure Rules where
@@ -54,10 +70,11 @@ instance : DecodeToml Group where
 instance : DecodeToml Rule where
   decode v := do
     let t ← v.decodeTable
-    return {
-      reason := ← t.decode `reason
-      modules := ← t.decode `modules
-      forbidden := ← t.decode `forbidden }
+    let imports ← match ← t.decode? `forbidden, ← t.decode? `allowed with
+      | some names, none => pure (Imports.forbidden names)
+      | none, some names => pure (Imports.allowed names)
+      | _, _ => throwDecodeErrorAt v.ref "a rule needs exactly one of the keys forbidden and allowed"
+    return { reason := ← t.decode `reason, modules := ← t.decode `modules, imports }
 
 /-- Reads the groups and the rules of a TOML file. -/
 def readRules (file : System.FilePath) : IO Rules := do
@@ -113,14 +130,14 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
     | groups =>
       failures := failures.push s!"{module} belongs to several groups: {groups.map (·.name)}"
   for rule in rules.rules do
-    for name in rule.modules ++ rule.forbidden do
+    for name in rule.modules ++ rule.imports.names do
       unless modules.any name.covers do
         failures := failures.push s!"a rule names {name}, which is no module: {rule.reason}"
     for module in modules do
       unless rule.modules.any (·.covers module) do continue
-      if let some path := pathTo graph module fun m => rule.forbidden.any (·.covers m) then
+      if let some path := pathTo graph module rule.imports.excludes then
         failures := failures.push
-          s!"{" → ".intercalate (path.map toString)}, which the rule forbids: {rule.reason}"
+          s!"{" → ".intercalate (path.map toString)}, which the rule excludes: {rule.reason}"
   return failures
 
 /-- The page of the graph: the direct imports as a Mermaid flowchart, a subgraph for each group,
@@ -147,11 +164,15 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   lines := lines ++ #[
     "```",
     "",
-    "The check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it, each module standing for the modules below it:",
+    "The check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it:",
     ""]
   for rule in rules.rules do
     let names (ms : Array Name) := ", ".intercalate (ms.toList.map fun m => s!"`{m}`")
-    lines := lines.push s!"- No module of {names rule.modules} imports a module of {names rule.forbidden}: {rule.reason}."
+    lines := lines.push <| match rule.imports with
+      | .forbidden ms =>
+        s!"- No module of {names rule.modules} imports a module of {names ms}: {rule.reason}."
+      | .allowed ms =>
+        s!"- The modules of {names rule.modules} import only modules of {names ms}: {rule.reason}."
   return "\n".intercalate lines.toList ++ "\n"
 
 def main : List String → IO UInt32

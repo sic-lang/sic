@@ -48,7 +48,14 @@ modules = [
   "Sic.Order",
   "Sic.Set",
 ]
-forbidden = ["Sic.Core"]
+allowed = [
+  "Sic.Grade",
+  "Sic.Modality",
+  "Sic.Mode",
+  "Sic.Multiplicity",
+  "Sic.Order",
+  "Sic.Set",
+]
 
 [[rule]]
 reason = "the syntax and the substitution are defined before every judgment that reads them"
