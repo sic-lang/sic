@@ -134,6 +134,9 @@ RFC: `\mathsf{order}_\xi` -/
 def order {α : Type} [Min α] (a b : α) : Prop :=
   a = a ⊓ b
 
+instance {α : Type} [Min α] [DecidableEq α] (a b : α) : Decidable (order a b) :=
+  inferInstanceAs (Decidable (a = a ⊓ b))
+
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- `α` is a modality, whose zero is `zero` and whose unit is `one`: a semiring whose addition and
 multiplication distribute over its meet, with a well-behaved zero. -/

@@ -53,15 +53,15 @@ renaming of the usage follows its rules one by one. -/
 structure RenameCommutes : Prop where
   /-- The zero vector, renamed, is the zero vector.
   RFC: `\mathsf{ren}_\gamma.{00}` -/
-  rename_zero : ∀ {Γ Δ : Scope} (ξ : Ren Γ Δ), (𝟘ᶜ : GradeVector Δ.length).rename ξ = 𝟘ᶜ
+  rename_zero : ∀ {Γ Δ : Scope} (ξ : Ren Γ Δ), rename (𝟘ᶜ : GradeVector Δ.length) ξ = 𝟘ᶜ
   /-- The sum of two vectors, renamed, is the sum of the vectors renamed.
   RFC: `\mathsf{ren}_\gamma.{+}` -/
   rename_add : ∀ {Γ Δ : Scope} (γ δ : GradeVector Δ.length) (ξ : Ren Γ Δ),
-    (γ +ᶜ δ).rename ξ = γ.rename ξ +ᶜ δ.rename ξ
+    rename (γ +ᶜ δ) ξ = γ.rename ξ +ᶜ δ.rename ξ
   /-- A vector multiplied by a grade, renamed, is the vector renamed multiplied by the grade.
   RFC: `\mathsf{ren}_\gamma.{\cdot}` -/
   rename_smul : ∀ {Γ Δ : Scope} (p : Grade) (γ : GradeVector Δ.length) (ξ : Ren Γ Δ),
-    (p ·ᶜ γ).rename ξ = p ·ᶜ γ.rename ξ
+    rename (p ·ᶜ γ) ξ = p ·ᶜ γ.rename ξ
   /-- The renaming keeps the order.
   RFC: `\mathsf{ren}_\gamma.{\le}` -/
   rename_le : ∀ {Γ Δ : Scope} {γ δ : GradeVector Δ.length} (ξ : Ren Γ Δ), γ ≤ᶜ δ →
@@ -69,7 +69,7 @@ structure RenameCommutes : Prop where
   /-- The zero vector updated at a variable, renamed, is the zero vector updated at its image.
   RFC: `\mathsf{ren}_\gamma.\mathsf{update}` -/
   rename_update : ∀ {Γ Δ : Scope} {e : Scope.Entry} (x : Var Δ e) (p : Grade) (ξ : Ren Γ Δ),
-    (update 𝟘ᶜ x.toFin p).rename ξ = update 𝟘ᶜ (ξ x).toFin p
+    rename (update 𝟘ᶜ x.toFin p) ξ = update 𝟘ᶜ (ξ x).toFin p
   /-- An extended vector, renamed under the new variable, is the vector renamed, extended.
   RFC: `\mathsf{ren}_\gamma.{\bullet}` -/
   rename_extend : ∀ {Γ Δ : Scope} {e : Scope.Entry} (γ : GradeVector Δ.length) (p : Grade)
@@ -87,7 +87,7 @@ RFC: `\mathsf{ren}_\gamma.{\bullet}` -/
 theorem rename_commutes : RenameCommutes :=
   ⟨rename_zero, rename_add, rename_smul, rename_le, rename_update, rename_extend⟩
 where
-  rename_zero {Γ : Scope} : {Δ : Scope} → (ξ : Ren Γ Δ) → (𝟘ᶜ : GradeVector Δ.length).rename ξ = 𝟘ᶜ
+  rename_zero {Γ : Scope} : {Δ : Scope} → (ξ : Ren Γ Δ) → rename (𝟘ᶜ : GradeVector Δ.length) ξ = 𝟘ᶜ
     | [], _ => rfl
     | _ :: _, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ rename 𝟘ᶜ _ = _
@@ -96,7 +96,7 @@ where
       simp only [add, update, zero]
       split <;> rfl
   rename_add {Γ : Scope} : {Δ : Scope} → (γ δ : GradeVector Δ.length) → (ξ : Ren Γ Δ) →
-      (γ +ᶜ δ).rename ξ = γ.rename ξ +ᶜ δ.rename ξ
+      rename (γ +ᶜ δ) ξ = γ.rename ξ +ᶜ δ.rename ξ
     | [], _, _, _ => funext fun _ => rfl
     | _ :: _, γ, δ, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ rename ((fun x => γ x.succ) +ᶜ (fun x => δ x.succ)) _ = _
@@ -109,7 +109,7 @@ where
       generalize rename (fun x => δ x.succ) (fun x => ξ (.succ x)) y = d
       split <;> revert a b c d <;> decide
   rename_smul {Γ : Scope} : {Δ : Scope} → (p : Grade) → (γ : GradeVector Δ.length) → (ξ : Ren Γ Δ) →
-      (p ·ᶜ γ).rename ξ = p ·ᶜ γ.rename ξ
+      rename (p ·ᶜ γ) ξ = p ·ᶜ γ.rename ξ
     | [], p, _, _ => funext fun _ => (Grade.modality.semiring.mul_zero p).symm
     | _ :: _, p, γ, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ rename (p ·ᶜ (fun x => γ x.succ)) _ = _
@@ -123,13 +123,13 @@ where
       γ.rename ξ ≤ᶜ δ.rename ξ
     | [], _, _, _, _ => fun _ => Grade.le_refl _
     | _ :: _, _, _, ξ, h => by
-      refine add_le_add (fun y => ?_) (rename_le (fun x => ξ (.succ x)) fun x => h x.succ)
+      refine add_le_add Grade.modality (fun y => ?_) (rename_le (fun x => ξ (.succ x)) fun x => h x.succ)
       simp only [update]
       split
       · exact h _
       · exact Grade.le_refl _
   rename_update {Γ : Scope} : {Δ : Scope} → {e : Scope.Entry} → (x : Var Δ e) → (p : Grade) →
-      (ξ : Ren Γ Δ) → (update 𝟘ᶜ x.toFin p).rename ξ = update 𝟘ᶜ (ξ x).toFin p
+      (ξ : Ren Γ Δ) → rename (update 𝟘ᶜ x.toFin p) ξ = update 𝟘ᶜ (ξ x).toFin p
     | _ :: Δ, _, .zero, p, ξ => by
       show update 𝟘ᶜ _ _ +ᶜ rename (Δ := Δ) (fun y => update 𝟘ᶜ (Var.toFin .zero) p y.succ) _ = _
       rw [show (fun y : Fin Δ.length => update 𝟘ᶜ (Var.toFin (.zero (Γ := Δ))) p y.succ) = 𝟘ᶜ from
@@ -154,7 +154,7 @@ where
         · exact absurd (congrArg Fin.val ‹_›).symm (Nat.succ_ne_zero _)
         · rfl
       rw [hz, update_zero]
-      exact module.zero_add _
+      exact (module Grade.modality).zero_add _
   rename_succ {Γ : Scope} : {Δ : Scope} → {e : Scope.Entry} → (γ : GradeVector Δ.length) →
       (ξ : Ren Γ Δ) → γ.rename (fun x => (ξ x).succ (e' := e)) = γ.rename ξ ∙ Grade.zero
     | [], _, _, _ => funext fun y => by cases y using Fin.cases <;> rfl
