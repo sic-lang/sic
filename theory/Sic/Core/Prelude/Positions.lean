@@ -118,7 +118,7 @@ theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ) (r : Grade) (D :
 
 -- ADE: none.
 /-- The resumption of a position `v`, in a mode `m` that allows the grade `q_s` of a term already
-built, uses the variables of `v` and those of the corecursor resumed as a lower bound `χ` of its
+built, uses the variables of `v` and those of the corecursor resumed as a lower bound `η` of its
 uses `δ` and of no use allows, since a position resumes the corecursor or gives a term already
 built: the corecursor from the variables of the state, which uses them as `⌜m⌝ · r` times their
 grades allow, uses the others as `δ` allows.
@@ -126,12 +126,12 @@ RFC: `\mathsf{resume}_{▶}` -/
 theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Parameter} {r : Grade}
     {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ Δ} {Ss : States k Γ} {gs : CorecBranches k Γ} {κ : Universe k}
-    {χ' : Grade} {S : Telescope k Γ ps'} {κs : List (Universe k)} {v : Term k Γ} {m : Mode}
-    {γ δ χ : GradeVector Γ.length}
+    {χ : Grade} {S : Telescope k Γ ps'} {κs : List (Universe k)} {v : Term k Γ} {m : Mode}
+    {γ δ η : GradeVector Γ.length}
     (hT : Usage sig 𝟘ᶜ .zeroZero (Term.inst D qs ls ps as)) (hv : Usage sig γ m v)
     (hc : Usage sig (δ.extendParams (m.grade * r) ps') m (Term.corecAt r D qs ls ps as Ss gs ps'))
-    (hm : m ·ᵐ (Prelude.doneGrade κ.quality).mode = m) (hχδ : χ ≤ᶜ δ) (hχ : χ ≤ᶜ 𝟘ᶜ) :
-    Usage sig (γ +ᶜ χ) m (Term.resume r D qs ls ps as Ss gs κ χ' S κs v) := by
+    (hm : m ·ᵐ (Prelude.doneGrade κ.quality).mode = m) (hηδ : η ≤ᶜ δ) (hη : η ≤ᶜ 𝟘ᶜ) :
+    Usage sig (γ +ᶜ η) m (Term.resume r D qs ls ps as Ss gs κ χ S κs v) := by
   have hT' := usageStableUnderRenaming.usage (Ren.weaken (e := .var)) hT
   rw [GradeVector.rename_commutes.rename_zero] at hT'
   have hc' := usageStableUnderRenaming.usage (Ren.liftN ps'.length (Ren.weaken (e := .var))) hc
@@ -154,15 +154,15 @@ theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Paramet
   have h0 : ∀ a : Grade, a ≤ a + Grade.zero := by decide
   have h00 : Grade.zero ≤ Grade.zero + Grade.zero := by decide
   have h1 := Usage.stepRecursor (q := κ.quality)
-    (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]) (p := r) (ρ := χ')
+    (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]) (p := r) (ρ := χ)
     (as := Prelude.stepArgs (S.pack κs (Telescope.packLevel κs .zero)) (.inst D qs ls ps as))
-    (g₀ := r * (m ⊙ r).grade) (g₁ := m.grade) (δ₁ := 𝟘ᶜ) (χ := χ)
-    hpre hT' hv' (.sub hn ?_) (.sub hx ?_) (hn' m r) (hd m _ hm) hχδ hχ (fun _ => by decide)
+    (g₀ := r * (m ⊙ r).grade) (g₁ := m.grade) (δ₁ := 𝟘ᶜ) (χ := η)
+    hpre hT' hv' (.sub hn ?_) (.sub hx ?_) (hn' m r) (hd m _ hm) hηδ hη (fun _ => by decide)
   · have hγ : ∀ x, (Grade.one ·ᶜ γ) x = γ x := fun x => by
       show Grade.one * γ x = γ x
       generalize γ x = a; revert a; decide
     exact .sub h1 (fun x => by
-      show (γ +ᶜ χ) x ≤ (Grade.one ·ᶜ γ +ᶜ χ) x
+      show (γ +ᶜ η) x ≤ (Grade.one ·ᶜ γ +ᶜ η) x
       simp only [GradeVector.add, hγ]
       exact Grade.le_refl _)
   · intro y
