@@ -33,7 +33,9 @@ grade `𝟘` only, in the mode `𝟙ᵐ`, while the erasure here is stated for e
 
 @[expose] public section
 
-namespace Sic.Mode
+namespace Sic.Grading.Mode
+
+open Sic.Math
 
 -- ADE: none.
 /-- `S^m`: the grades of the positions that a term checked in the mode `m` checks in a more erased
@@ -54,9 +56,11 @@ theorem erased_values :
     (∀ p, p ∉ zeroZero.erased) := by
   decide
 
-end Sic.Mode
+end Sic.Grading.Mode
 
 namespace Sic.Core
+
+open Sic.Grading Sic.Math
 
 /-- The scope `Γ` declares variables only, and no second-order variable. -/
 def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
@@ -388,7 +392,7 @@ structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
 -- ADE: none.
 /-- The set `S^m` erases only what a term checked in the mode `m` does not count.
 RFC: `\mathsf{erases}_m` -/
-theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
+theorem _root_.Sic.Grading.Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   grade := by revert m; decide
   le := by revert m; decide
   add := by revert m; decide
@@ -427,13 +431,13 @@ theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
   | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
 
 /-- The grades extended by the variables of a telescope give each old variable its grade. -/
-theorem GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+theorem _root_.Sic.Grading.GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
     (ps : List Parameter) → (x : Fin Γ.length) →
       γ.extendParams r ps ((x.addNat ps.length).cast (Scope.length_extend Γ ps.length).symm) =
         γ x
   | [], _ => rfl
   | p :: ps, x => by
-    have h := GradeVector.extendParams_addNat (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps x.succ
+    have h := extendParams_addNat (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps x.succ
     have he : ((x.addNat (p :: ps).length).cast (Scope.length_extend Γ (p :: ps).length).symm :
         Fin (Γ.extend (p :: ps).length).length) =
         (x.succ.addNat ps.length).cast (Scope.length_extend (.var :: Γ) ps.length).symm :=
@@ -481,7 +485,7 @@ theorem CorecBranches.lt_length_of_get {k : Nat} {Γ : Scope} :
 
 /-- The grades extended by the variables of two telescopes, one after the other, give each old
 variable its grade. -/
-theorem GradeVector.extendParams_extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length)
+theorem _root_.Sic.Grading.GradeVector.extendParams_extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length)
     (r₁ r₂ : Grade) (ps₁ ps₂ : List Parameter) (x : Fin Γ.length) :
     (γ.extendParams r₁ ps₁).extendParams r₂ ps₂
         ((x.addNat (0 + ps₁.length + ps₂.length)).cast
@@ -497,13 +501,13 @@ theorem GradeVector.extendParams_extendParams_addNat {Γ : Scope} (γ : GradeVec
 
 /-- The grades extended by a grade for each variable of a telescope give each old variable its
 grade. -/
-theorem GradeVector.extendGrades_addNat {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
+theorem _root_.Sic.Grading.GradeVector.extendGrades_addNat {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
     (ps : List Parameter) → (x : Fin Γ.length) →
       γ.extendGrades g ps ((x.addNat ps.length).cast (Scope.length_extend Γ ps.length).symm) =
         γ x
   | [], _ => rfl
   | p :: ps, x => by
-    have h := GradeVector.extendGrades_addNat (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
+    have h := extendGrades_addNat (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
       x.succ
     have he : ((x.addNat (p :: ps).length).cast (Scope.length_extend Γ (p :: ps).length).symm :
         Fin (Γ.extend (p :: ps).length).length) =
@@ -513,12 +517,12 @@ theorem GradeVector.extendGrades_addNat {Γ : Scope} (γ : GradeVector Γ.length
     exact h
 
 /-- The grades extended by a grade for each recursive result give each old variable its grade. -/
-theorem GradeVector.extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
+theorem _root_.Sic.Grading.GradeVector.extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
     (rs : List (Option Name)) → (ps : List Parameter) → (x : Fin Γ.length) →
       γ.extendResults e rs ps ((x.addNat (Telescope.resultParams rs ps).length).cast
         (Scope.length_extend Γ _).symm) = γ x
   | some D :: rs, p :: ps, x => by
-    have h := GradeVector.extendResults_addNat (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs
+    have h := extendResults_addNat (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs
       ps x.succ
     have he : ((x.addNat (Telescope.resultParams (some D :: rs) (p :: ps)).length).cast
         (Scope.length_extend Γ _).symm :
@@ -529,12 +533,12 @@ theorem GradeVector.extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.lengt
         (x.val + 1) + (Telescope.resultParams rs ps).length by omega)
     rw [he]
     exact h
-  | none :: rs, _ :: ps, x => GradeVector.extendResults_addNat γ (fun l => e (l + 1)) rs ps x
+  | none :: rs, _ :: ps, x => extendResults_addNat γ (fun l => e (l + 1)) rs ps x
   | [], _, _ | some _ :: _, [], _ | none :: _, [], _ => rfl
 
 /-- The grades extended by a grade for each field, then for each recursive result, as in the scope
 of a branch of a recursor, give each old variable its grade. -/
-theorem GradeVector.extendGrades_extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length)
+theorem _root_.Sic.Grading.GradeVector.extendGrades_extendResults_addNat {Γ : Scope} (γ : GradeVector Γ.length)
     (g e : Nat → Grade) (rs : List (Option Name)) (ps : List Parameter) (x : Fin Γ.length) :
     (γ.extendGrades g ps).extendResults e rs ps
         ((x.addNat (ps.length + (Telescope.resultParams rs ps).length)).cast

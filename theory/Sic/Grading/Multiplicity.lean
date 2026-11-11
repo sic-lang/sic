@@ -1,7 +1,7 @@
 module
 
-public import Sic.Modality
-public import Sic.Set
+public import Sic.Math.Modality
+public import Sic.Math.Set
 
 /-!
 # Multiplicities
@@ -15,7 +15,9 @@ The meet is written `⊓`, since `∧` is the conjunction of Lean.
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Grading
+
+open Sic.Math
 
 -- ADE: `Linearity`, in `Graded/Modality/Instances/Linearity.agda`.
 /-- A multiplicity, which counts the uses of a variable.
@@ -283,4 +285,4 @@ theorem modality : IsModality Multiplicity zero one where
 
 end Multiplicity
 
-end Sic
+end Sic.Grading

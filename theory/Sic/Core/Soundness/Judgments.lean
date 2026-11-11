@@ -28,6 +28,8 @@ levels, whose definitions have bodies, so that they need no interpretation.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: none.
 /-- The interpretation `ι` gives each constant declaration of the signature a term of its type, in
 the signature.

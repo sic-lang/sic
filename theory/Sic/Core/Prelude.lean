@@ -21,6 +21,8 @@ ADE have no prelude: their pairs and their unit are types of the theory, which a
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-! ## Declarations -/
 
 /-- `mk : ()`, the constructor of the unit, without fields. -/

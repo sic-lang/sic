@@ -15,6 +15,8 @@ declarations before it, at every instance that its constraint admits.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-- A sort is a term of the universe above its level, in a well-formed context. -/
 theorem HasType.sort {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     (hctx : WfCtx sig ctx) : (κ : Universe k) →

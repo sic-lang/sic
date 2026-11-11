@@ -23,6 +23,8 @@ context of definitions, `» ∇′ ⊇ ∇`, on which their logical relation is 
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: none.
 /-- The signature `Σ` holds each entry of the signature `Σ_T` and gives it its meaning, so that the
 judgments typed in `Σ_T` are meaningful in `Σ`. -/

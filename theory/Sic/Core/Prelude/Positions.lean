@@ -26,6 +26,8 @@ ADE have no codata types, hence no positions.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 variable {sig : Signature} {k : Nat}
 
 /-! ## Rules of the Type of Positions -/

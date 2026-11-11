@@ -17,6 +17,8 @@ and their ownership.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 variable {sig : Signature} {k : Nat}
 
 -- ADE: none.

@@ -1,6 +1,6 @@
 module
 
-public import Sic.Order
+public import Sic.Math.Order
 
 /-!
 # Levels
@@ -94,7 +94,7 @@ theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
 /-- The order is a preorder.
 RFC: `\mathsf{preorder}_l.\mathsf{refl}`
 RFC: `\mathsf{preorder}_l.\mathsf{trans}` -/
-theorem preorder : IsPreorder (α := Level k) (· ≤ ·) where
+theorem preorder : Math.IsPreorder (α := Level k) (· ≤ ·) where
   refl _ _ := Nat.le_refl _
   trans h₁ h₂ ρ := Nat.le_trans (h₁ ρ) (h₂ ρ)
 

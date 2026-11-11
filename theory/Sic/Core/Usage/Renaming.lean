@@ -25,6 +25,14 @@ grade `𝟘` to the new variables; here the renamings are all of them.
 
 namespace Sic.Core
 
+open Sic.Grading
+
+end Sic.Core
+
+namespace Sic.Grading.GradeVector
+
+open Sic.Core
+
 /-! ## Renamed Vectors -/
 
 -- ADE: `wkConₘ`, in `Graded/Context/Weakening.agda`, for the renamings that keep the order.
@@ -32,13 +40,11 @@ namespace Sic.Core
 that `γ` gives the variables that `ξ` renames to it, the grade `𝟘` to a variable that is the image
 of none.
 RFC: `\mathsf{ren}_\gamma` -/
-def GradeVector.rename {Γ : Scope} : {Δ : Scope} → GradeVector Δ.length → Ren Γ Δ →
+def rename {Γ : Scope} : {Δ : Scope} → GradeVector Δ.length → Ren Γ Δ →
     GradeVector Γ.length
   | [], _, _ => 𝟘ᶜ
   | _ :: _, γ, ξ => GradeVector.update 𝟘ᶜ (ξ .zero).toFin (γ (Var.toFin .zero)) +ᶜ
       GradeVector.rename (fun x => γ x.succ) (fun x => ξ (.succ x))
-
-namespace GradeVector
 
 -- ADE: `wk-𝟘ᶜ`, `wk-+ᶜ`, `wk-·ᶜ`, `wk-≤ᶜ`, `wk-,≔` and `wkConₘ` of `lift`, in
 -- `Graded/Context/Weakening.agda`.
@@ -258,7 +264,11 @@ where
         exact (congrArg (· + _) (rename_commutes.ite_succ_zero _ _)).trans
           (Grade.modality.semiring.zero_add _)
 
-end GradeVector
+end Sic.Grading.GradeVector
+
+namespace Sic.Core
+
+open Sic.Grading
 
 /-- The grades of the recursive results of branches substituted are those of the branches. -/
 theorem Branches.resultGrades_subst {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) (us : Branches k Δ) :

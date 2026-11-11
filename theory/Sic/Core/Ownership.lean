@@ -23,6 +23,8 @@ corecursors.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: none.
 /-- `ψ'`: the ownership `ψ` of the result of a second-order variable without the factor of the first
 variable of its telescope, over the variables after it. -/

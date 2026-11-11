@@ -1,6 +1,6 @@
 module
 
-public import Sic.Multiplicity
+public import Sic.Grading.Multiplicity
 
 /-!
 # Grades
@@ -14,7 +14,9 @@ states.
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Grading
+
+open Sic.Math
 
 -- ADE: none.
 /--
@@ -488,4 +490,4 @@ theorem run_le {p q : Grade} (h : p ≤ q) : p.run ≤ q.run :=
 
 end Grade
 
-end Sic
+end Sic.Grading

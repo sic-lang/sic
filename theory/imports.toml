@@ -2,16 +2,12 @@
 # and draws: a name stands for the module and for the modules below it.
 
 [[group]]
-name = "Grades"
-modules = [
-  "Sic.Core.GradeVector",
-  "Sic.Grade",
-  "Sic.Modality",
-  "Sic.Mode",
-  "Sic.Multiplicity",
-  "Sic.Order",
-  "Sic.Set",
-]
+name = "Mathematics"
+modules = ["Sic.Math"]
+
+[[group]]
+name = "Grading"
+modules = ["Sic.Grading"]
 
 [[group]]
 name = "Syntax"
@@ -39,23 +35,14 @@ name = "Meaning and soundness"
 modules = ["Sic.Core.Meaning", "Sic.Core.Soundness"]
 
 [[rule]]
+reason = "the mathematics are generic, and know nothing of Sic"
+modules = ["Sic.Math"]
+allowed = ["Sic.Math"]
+
+[[rule]]
 reason = "the grades, the multiplicities and the modes are an algebra that knows nothing of the core"
-modules = [
-  "Sic.Grade",
-  "Sic.Modality",
-  "Sic.Mode",
-  "Sic.Multiplicity",
-  "Sic.Order",
-  "Sic.Set",
-]
-allowed = [
-  "Sic.Grade",
-  "Sic.Modality",
-  "Sic.Mode",
-  "Sic.Multiplicity",
-  "Sic.Order",
-  "Sic.Set",
-]
+modules = ["Sic.Grading"]
+allowed = ["Sic.Grading", "Sic.Math"]
 
 [[rule]]
 reason = "the syntax and the substitution are defined before every judgment that reads them"

@@ -23,6 +23,8 @@ clause `where` of the theorem.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-! ## Renamed Ownerships -/
 
 /-- The ownerships of the variables extended by those of the variables of a telescope give the

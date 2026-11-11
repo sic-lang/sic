@@ -21,30 +21,32 @@ ADE have no second-order variables, no constants, no sorts of propositions and n
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • (r · p₁) • … • (r · pₐ)`: the vector `γ` extended by a grade for each variable of a telescope
 whose parameters are `ps`, the grade `pᵢ` of its entry multiplied by `r`, the first variable first. -/
-def GradeVector.extendParams {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+def _root_.Sic.Grading.GradeVector.extendParams {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
     (ps : List Parameter) → GradeVector (Γ.extend ps.length).length
   | [] => γ
-  | p :: ps => GradeVector.extendParams (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps
+  | p :: ps => extendParams (Γ := .var :: Γ) (γ ∙ (r * p.usage)) r ps
 
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • (r · q₁) • … • (r · qₐ)`: the vector `γ` extended by a grade for each variable of the
 telescope `Θ`, the grade `qᵢ` with which the types after its entry use it multiplied by `r`, the
 first variable first. -/
-def GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
+def _root_.Sic.Grading.GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
     {ps : List Parameter} → Telescope k Γ ps → GradeVector (Γ.extend ps.length).length
   | [], .nil => γ
-  | _ :: _, .cons q _ _ Θ => GradeVector.extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
+  | _ :: _, .cons q _ _ Θ => extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
 
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • g₀ • … • gₐ₋₁`: the vector `γ` extended by the grade `g l` of the variable of the entry at
 each position `l` of a telescope whose parameters are `ps`, the first one at `0`. -/
-def GradeVector.extendGrades {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
+def _root_.Sic.Grading.GradeVector.extendGrades {Γ : Scope} (γ : GradeVector Γ.length) (g : Nat → Grade) :
     (ps : List Parameter) → GradeVector (Γ.extend ps.length).length
   | [] => γ
-  | _ :: ps => GradeVector.extendGrades (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
+  | _ :: ps => extendGrades (Γ := .var :: Γ) (γ ∙ g 0) (fun l => g (l + 1)) ps
 
 -- ADE: none.
 /-- `e_l`: the grade of the recursive result of the field at each position `l` of the fields whose
@@ -66,12 +68,12 @@ def Branches.resultGrades {k : Nat} {Γ : Scope} (us : Branches k Γ) (i : Nat)
 /-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
 each recursive field, at its position `l` in the fields whose entries have the parameters `ps` and
 whose recursive fields the types `rs` of the block mark, the first field at `0`, in order. -/
-def GradeVector.extendResults {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
+def _root_.Sic.Grading.GradeVector.extendResults {Γ : Scope} (γ : GradeVector Γ.length) (e : Nat → Grade) :
     (rs : List (Option Name)) → (ps : List Parameter) →
       GradeVector (Γ.extend (Telescope.resultParams rs ps).length).length
   | some _ :: rs, _ :: ps =>
-    GradeVector.extendResults (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
-  | none :: rs, _ :: ps => GradeVector.extendResults γ (fun l => e (l + 1)) rs ps
+    extendResults (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
+  | none :: rs, _ :: ps => extendResults γ (fun l => e (l + 1)) rs ps
   | [], _ | some _ :: _, [] | none :: _, [] => γ
 
 -- ADE: none.

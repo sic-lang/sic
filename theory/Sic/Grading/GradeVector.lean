@@ -1,7 +1,7 @@
 module
 
-public import Sic.Grade
-public import Sic.Order
+public import Sic.Grading.Grade
+public import Sic.Math.Order
 
 /-!
 # Vectors of Grades
@@ -17,7 +17,9 @@ at each entry.
 
 @[expose] public section
 
-namespace Sic.Core
+namespace Sic.Grading
+
+open Sic.Math
 
 -- ADE: `Conₘ`, in `Graded/Context.agda`.
 /-- A vector of grades over `n` entries, which gives each entry its grade. -/
@@ -121,7 +123,7 @@ theorem meet_comm (γ₁ γ₂ : GradeVector n) : γ₁ ⊓ᶜ γ₂ = γ₂ ⊓
 /-- The order is a preorder.
 RFC: `\mathsf{preorder}_\gamma.\mathsf{refl}`
 RFC: `\mathsf{preorder}_\gamma.\mathsf{trans}` -/
-theorem preorder : IsPreorder (α := GradeVector n) (· ≤ᶜ ·) where
+theorem preorder : Math.IsPreorder (α := GradeVector n) (· ≤ᶜ ·) where
   refl γ x := Grade.le_refl (γ x)
   trans h₁ h₂ x := Grade.le_trans _ _ _ (h₁ x) (h₂ x)
 
@@ -190,4 +192,4 @@ instance (γ₁ γ₂ : GradeVector n) : Decidable (γ₁ ≤ᶜ γ₂) := infer
 
 end GradeVector
 
-end Sic.Core
+end Sic.Grading

@@ -12,7 +12,7 @@ not.
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Math
 
 -- ADE: `IsPreorder`, of the standard library of Agda, in `Tools/Relation.agda`.
 /-- The relation `r` is a preorder: reflexive and transitive. -/
@@ -45,4 +45,4 @@ structure IsLeastUpperBound {α : Type} (r : α → α → Prop) (a b j : α) : 
   RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{least}` -/
   least : ∀ c, r a c → r b c → r j c
 
-end Sic
+end Sic.Math

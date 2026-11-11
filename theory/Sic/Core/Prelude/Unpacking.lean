@@ -30,6 +30,8 @@ unit itself.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 variable {sig : Signature} {k : Nat}
 
 /-! ## Rules of the Pair and of the Unit -/

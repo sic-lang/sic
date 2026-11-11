@@ -34,6 +34,8 @@ and their typing has a context of definitions instead of a signature.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-! ## Entries of Contexts -/
 
 /-- `x : A ∈ Γ`: the variable `x` is declared with the type `A` in the context, by the cases of the

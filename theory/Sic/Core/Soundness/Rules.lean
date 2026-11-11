@@ -34,6 +34,8 @@ for their judgments with a context of definitions and without levels.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 section
 
 variable {sig : Signature} {ι : Interpretation}

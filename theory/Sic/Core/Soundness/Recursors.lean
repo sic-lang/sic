@@ -18,6 +18,8 @@ ADE prove the validity of the rules of their eliminators in
 
 namespace Sic.Core
 
+open Sic.Grading
+
 section
 
 variable {sig : Signature} {ι : Interpretation}

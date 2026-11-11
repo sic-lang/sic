@@ -1,6 +1,6 @@
 module
 
-public import Sic.Grade
+public import Sic.Grading.Grade
 
 /-!
 # Modes
@@ -13,7 +13,9 @@ an erased term still counts all its uses.
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Grading
+
+open Sic.Math
 
 -- ADE: `Mode`, in `Graded/Mode.agda`, which has the modes `𝟘ᵐ` and `𝟙ᵐ` only.
 /--
@@ -270,4 +272,4 @@ theorem run_odot :
 
 end Mode
 
-end Sic
+end Sic.Grading

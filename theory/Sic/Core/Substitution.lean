@@ -31,6 +31,8 @@ ADE substitute terms for variables of the first order only, in `Definition/Untyp
 
 namespace Sic.Core
 
+open Sic.Grading
+
 variable {k : Nat}
 
 /-! ## Renamings -/

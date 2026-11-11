@@ -52,6 +52,8 @@ the decidability of the conversion, and it is not a model of the type theory in 
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-! ## Interpretation of the Constants -/
 
 -- ADE: none.

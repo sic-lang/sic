@@ -31,6 +31,8 @@ the first order only, so that no telescope occurs there.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 variable {k : Nat}
 
 /-! ## Substitutions of a Context Extended by a Telescope -/

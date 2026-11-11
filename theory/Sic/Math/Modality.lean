@@ -14,7 +14,7 @@ ADE state the laws of the modalities as the fields of their record `Modality`, i
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Math
 
 /-- The meet, written as in Mathlib, on which this package does not depend. -/
 infixl:69 " ⊓ " => min
@@ -177,4 +177,4 @@ theorem le_meet_iff (h : IsModality α zero one) (a b c : α) :
 
 end IsModality
 
-end Sic
+end Sic.Math

@@ -28,6 +28,8 @@ the levels of Sic are not terms, and no counterpart is needed there.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 /-! ## Terms Equal up to the Values of Their Levels -/
 
 /-- Two lists of levels whose levels are equal one by one. -/

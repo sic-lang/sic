@@ -1,8 +1,8 @@
 module
 
-public import Sic.Core.GradeVector
+public import Sic.Grading.GradeVector
 public import Sic.Core.Universe
-public import Sic.Mode
+public import Sic.Grading.Mode
 
 /-!
 # Syntax
@@ -40,6 +40,8 @@ motive and of a branch of a recursor are counted by the indices, as the telescop
 @[expose] public section
 
 namespace Sic.Core
+
+open Sic.Grading
 
 /-- The name of an entry of the signature, or of a type that a declaration declares. -/
 abbrev Name : Type := String

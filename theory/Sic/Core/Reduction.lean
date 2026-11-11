@@ -30,6 +30,8 @@ signature are distinct when it is well formed.
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: `Neutral`, in `Definition/Untyped/Neutral.agda`.
 /-- `t` is neutral: its reduction is stuck on a variable or on a declared constant.
 RFC: `\mathsf{neutral}_t` -/
