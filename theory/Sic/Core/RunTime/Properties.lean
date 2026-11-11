@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Meaning.Relations
+import Sic.Core.Meaning.Relations
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Syntax.Signature
 
