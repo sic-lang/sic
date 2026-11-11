@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.GradeVector
 public import Sic.Core.Syntax
 
 /-!

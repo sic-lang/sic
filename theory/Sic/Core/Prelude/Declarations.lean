@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Prelude
 public import Sic.Core.Ownership
 public import Sic.Core.Typing
 public import Sic.Core.Usage

@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Prelude
-public import Sic.Core.Substitution
 
 /-!
 # Typing

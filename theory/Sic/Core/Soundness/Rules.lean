@@ -2,7 +2,9 @@ module
 
 public import Sic.Core.Soundness.Levels
 public import Sic.Core.Soundness.Signature
-public import Sic.Core.Soundness.Substitution
+public import Sic.Core.Typing
+import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Substitution
 
 /-!
 # Soundness of the Rules

@@ -1,7 +1,8 @@
 module
 
-public import Sic.Core.Soundness.Closed
+public import Sic.Core.Meaning
 public import Sic.Core.Typing
+import Sic.Core.Soundness.Closed
 
 /-!
 # Equal Substitutions

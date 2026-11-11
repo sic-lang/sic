@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.GradeVector
 public import Sic.Core.Universe
-public import Sic.Grade
 public import Sic.Mode
 
 /-!

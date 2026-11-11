@@ -1,8 +1,9 @@
 module
 
-public import Sic.Core.Prelude
-public import Sic.Core.Prelude.Declarations
-public import Sic.Core.Typing.Substitution
+public import Sic.Core.Ownership
+public import Sic.Core.Typing
+public import Sic.Core.Usage
+import Sic.Core.Typing.Substitution
 
 /-!
 # Packing

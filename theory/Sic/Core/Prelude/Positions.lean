@@ -1,7 +1,10 @@
 module
 
-public import Sic.Core.Prelude.Unpacking
+public import Sic.Core.Ownership
+public import Sic.Core.Prelude
+public import Sic.Core.Usage
 import Sic.Core.Ownership.Renaming
+import Sic.Core.Prelude.Unpacking
 import Sic.Core.Usage.Renaming
 
 /-!

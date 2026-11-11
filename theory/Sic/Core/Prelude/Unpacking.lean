@@ -1,7 +1,13 @@
 module
 
-public import Sic.Core.Prelude.Packing
+public import Sic.Core.Ownership
+public import Sic.Core.Typing
+public import Sic.Core.Usage
 import Sic.Core.Ownership.Renaming
+import Sic.Core.Prelude.Declarations
+import Sic.Core.Prelude.Packing
+import Sic.Core.Typing.Renaming
+import Sic.Core.Typing.Substitution
 import Sic.Core.Usage.Renaming
 
 /-!

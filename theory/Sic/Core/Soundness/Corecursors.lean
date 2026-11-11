@@ -1,6 +1,9 @@
 module
 
-public import Sic.Core.Soundness.Recursors
+public import Sic.Core.Soundness.Signature
+import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Recursors
+import Sic.Core.Soundness.Substitution
 
 /-!
 # Soundness of the Rules of the Corecursors

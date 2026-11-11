@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Level
-public import Sic.Order
 
 /-!
 # Universes

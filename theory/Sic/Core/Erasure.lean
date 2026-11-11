@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Usage
-public import Sic.Set
 
 /-!
 # Erasure

@@ -1,6 +1,8 @@
 module
 
 public import Sic.Core.Soundness.Rules
+import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Substitution
 
 /-!
 # Soundness of the Rules of the Recursors

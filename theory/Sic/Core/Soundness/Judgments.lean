@@ -1,6 +1,8 @@
 module
 
 public import Sic.Core.Soundness.Corecursors
+public import Sic.Core.Typing
+import Sic.Core.Soundness.Recursors
 
 /-!
 # Soundness of the Judgments
