@@ -30,37 +30,40 @@ images of the variables by a renaming lifted under them the same ownerships when
 before the extension do. -/
 theorem Ownership.extendFields_liftN :
     {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (o : Grade) → (ps : List Parameter) →
+      (∀ x, φ' (ξ x) = φ x) → (o g : Grade) → (ps : List Parameter) →
       ∀ x,
-        Ownership.extendFields φ' o ps (Ren.liftN ps.length ξ x) = Ownership.extendFields φ o ps x
-  | _, _, _, _, _, h, _, [] => h
-  | Γ, Δ, _, _, ξ, h, o, _ :: ps =>
+        Ownership.extendFields φ' o g ps (Ren.liftN ps.length ξ x) =
+          Ownership.extendFields φ o g ps x
+  | _, _, _, _, _, h, _, _, [] => h
+  | Γ, Δ, _, _, ξ, h, o, g, _ :: ps =>
     Ownership.extendFields_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
-      (fun | .zero => rfl | .succ x => h x) o ps
+      (fun | .zero => rfl | .succ x => h x) o g ps
 
-/-- The ownerships of the variables extended by those of new variables give the images of the
+/-- The ownerships of the variables extended by those of recursive results give the images of the
 variables by a renaming lifted under them the same ownerships when the ownerships before the
 extension do. -/
-theorem Ownership.extendSame_liftN :
+theorem Ownership.extendResults_liftN :
     {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (o : Grade) → (n : Nat) →
-      ∀ x, Ownership.extendSame φ' o n (Ren.liftN n ξ x) = Ownership.extendSame φ o n x
-  | _, _, _, _, _, h, _, 0 => h
-  | Γ, Δ, _, _, ξ, h, o, n + 1 =>
-    Ownership.extendSame_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
-      (fun | .zero => rfl | .succ x => h x) o n
+      (∀ x, φ' (ξ x) = φ x) → (p : Grade) → (es : List Grade) → (n : Nat) →
+      ∀ x, Ownership.extendResults φ' p es n (Ren.liftN n ξ x) = Ownership.extendResults φ p es n x
+  | _, _, _, _, _, h, _, _, 0 => h
+  | Γ, Δ, _, _, ξ, h, p, es, n + 1 =>
+    Ownership.extendResults_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
+      (fun | .zero => rfl | .succ x => h x) p es.tail n
 
 /-- The ownerships of the variables extended by those of the arguments of a telescope give the
 images of the variables by a renaming lifted under them the same ownerships when the ownerships
 before the extension do. -/
 theorem Ownership.extendArgs_liftN :
     {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (ps : List Parameter) → (os : List Grade) →
-      ∀ x, Ownership.extendArgs φ' ps os (Ren.liftN ps.length ξ x) = Ownership.extendArgs φ ps os x
-  | _, _, _, _, _, h, [], _ => h
-  | Γ, Δ, _, _, ξ, h, _ :: ps, os =>
+      (∀ x, φ' (ξ x) = φ x) → (g : Grade) → (ps : List Parameter) → (os : List Grade) →
+      ∀ x,
+        Ownership.extendArgs φ' g ps os (Ren.liftN ps.length ξ x) =
+          Ownership.extendArgs φ g ps os x
+  | _, _, _, _, _, h, _, [], _ => h
+  | Γ, Δ, _, _, ξ, h, g, _ :: ps, os =>
     Ownership.extendArgs_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
-      (fun | .zero => rfl | .succ x => h x) ps os.tail
+      (fun | .zero => rfl | .succ x => h x) g ps os.tail
 
 /-! ## Stability of the Ownership -/
 
@@ -112,8 +115,9 @@ where
         exact ⟨_, Branches.get_subst _ hu'⟩
       · intro i j T' con u hi hu'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv _ hu'
+        rw [Branches.grades_subst]
         exact ownership (hu i j T' con u₀ hi hu₀) (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-          (Ownership.extendSame_liftN (Ownership.extendFields_liftN hφ _ _) _ _)
+          (Ownership.extendResults_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
     | .obs h hq hp hd ht hbs hv, hθ, hφ => by
       rw [Term.obs_subst]
       exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv
@@ -134,7 +138,7 @@ where
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
         exact ownership (hgo i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀ os' v hos hv)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _) _ _)
+          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
     | .sub h hle, hθ, hφ => .sub (ownership h hθ hφ) hle
   ownershipArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
       {ps : List Parameter} {φ' : Var Γ .var → Grade} {φ : Var Δ .var → Grade} {m : Mode}

@@ -40,32 +40,37 @@ def ResultOwnership.value : {n : Nat} → ResultOwnership n → List Grade → O
   | _, ψ, _ => ψ.constant
 
 -- ADE: none.
-/-- `φ, x̄ ◀ o · r̄`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
-`o · rᵢ` of the new variable of each entry of a telescope whose parameters are `ps`, the first one
-first, `rᵢ` being the requirement of the entry. -/
-def Ownership.extendFields {Γ : Scope} (φ : Var Γ .var → Grade) (o : Grade) :
+/-- `φ, x̄ ◀ o · r̄ · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
+ownership `o · rᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are
+`ps`, the first one first, `rᵢ` being the requirement of the entry and `qᵢ` its grade: the value
+that the entry requires `o · rᵢ` is used `g · qᵢ` times through its variable, as its usage allows. -/
+def Ownership.extendFields {Γ : Scope} (φ : Var Γ .var → Grade) (o g : Grade) :
     (ps : List Parameter) → Var (Γ.extend ps.length) .var → Grade
   | [] => φ
   | p :: ps => Ownership.extendFields (Γ := .var :: Γ)
-      (fun | .zero => o * p.requirement | .succ x => φ x) o ps
+      (fun | .zero => (o * p.requirement) * (g * p.usage) | .succ x => φ x) o g ps
 
 -- ADE: none.
-/-- `φ, ȳ ◀ o`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership `o`
-of `n` new variables. -/
-def Ownership.extendSame {Γ : Scope} (φ : Var Γ .var → Grade) (o : Grade) :
-    (n : Nat) → Var (Γ.extend n) .var → Grade
-  | 0 => φ
-  | n + 1 => Ownership.extendSame (Γ := .var :: Γ) (fun | .zero => o | .succ x => φ x) o n
+/-- `φ, ȳ ◀ p · ē`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
+`p · eᵢ` of `n` new variables, `eᵢ` being the grade `es` gives the `i`-th one, the first one first:
+the value of ownership `p` is used `eᵢ` times through the variable, as its usage allows. -/
+def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) (p : Grade) :
+    List Grade → (n : Nat) → Var (Γ.extend n) .var → Grade
+  | _, 0 => φ
+  | es, n + 1 => Ownership.extendResults (Γ := .var :: Γ)
+      (fun | .zero => p * es.headD Grade.zero | .succ x => φ x) p es.tail n
 
 -- ADE: none.
-/-- `φ, x̄ ◀ ō`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership `oᵢ`
-of the new variable of each entry of a telescope whose parameters are `ps`, the first one first, and
-`ωωᵖ`, which states nothing, for a variable without one. -/
-def Ownership.extendArgs {Γ : Scope} (φ : Var Γ .var → Grade) :
+/-- `φ, x̄ ◀ ō · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
+ownership `oᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are `ps`,
+the first one first, `qᵢ` being the grade of the entry, and `ωωᵖ · (g · qᵢ)` for a variable without
+`oᵢ`: the value of ownership `oᵢ` is used `g · qᵢ` times through its variable, as its usage allows. -/
+def Ownership.extendArgs {Γ : Scope} (φ : Var Γ .var → Grade) (g : Grade) :
     (ps : List Parameter) → List Grade → Var (Γ.extend ps.length) .var → Grade
   | [], _ => φ
-  | _ :: ps, os => Ownership.extendArgs (Γ := .var :: Γ)
-      (fun | .zero => os.headD .unrestrictedUnrestricted | .succ x => φ x) ps os.tail
+  | p :: ps, os => Ownership.extendArgs (Γ := .var :: Γ)
+      (fun | .zero => os.headD .unrestrictedUnrestricted * (g * p.usage) | .succ x => φ x) g ps
+        os.tail
 
 -- ADE: none.
 /-- The ownerships `ō` of arguments of a telescope whose entries have the parameters `ps`, checked in
@@ -123,10 +128,12 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
-  times the requirement of the entry of each field, for the variable of the field, and with the
-  ownership `p` of the recursor for the variable of each recursive result: a field of a unique value
-  has the ownership its entry requires, a field of a shared value is shared, and a recursive result
-  is a result of the recursor.
+  times the requirement of the entry of each field, times the grade `⌜m⌝ · r · q` with which the
+  branch uses the field of grade `q`, for the variable of the field, and with the ownership `p` of
+  the recursor times the grade `e` that the branch gives each recursive result, for its variable: a
+  field of a unique value has the ownership its entry requires, a field of a shared value is
+  shared, a recursive result is a result of the recursor, and a variable used more than once is
+  shared.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -141,8 +148,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-        Ownership sig (Ownership.extendSame (Ownership.extendFields φ o
-          (con.params (.ofLists qs ps hq hp))) p
+        Ownership sig (Ownership.extendResults (Ownership.extendFields φ o (m.grade * r)
+          (con.params (.ofLists qs ps hq hp))) p (us.grades i)
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
       Ownership sig φ m p (.recursor r D qs ls ps as t Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
@@ -166,9 +173,11 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   satisfy the requirements of the entries of the state of its type, as the arguments of a telescope
   do, checked in the mode `m ⊙ r`; the branch of each destructor, checked in the mode `m ⊙ p` of its
   grade `p`, with the requirement of its entry for the variable of each entry of the state, which
-  the value owned alone holds, has the ownership `ψ[ō / x̄]` of the result of the destructor for
-  every ownerships `ō` of its arguments that satisfy the requirements of their entries, since an
-  observation reads `ψ` at the ownerships of its arguments.
+  the value owned alone holds, and the ownership `oᵢ` of each argument, each times the grade with
+  which the branch uses the variable, so that a variable used more than once is shared, has the
+  ownership `ψ[ō / x̄]` of the result of the destructor for every ownerships `ō` of its arguments
+  that satisfy the requirements of their entries, since an observation reads `ψ` at the ownerships
+  of its arguments.
   RFC: `\mathsf{corec}_{◀}` -/
   | corec {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -196,8 +205,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → ∀ os' v,
         Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
-        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ .linearLinear ps'') ps₁ os')
-          (m ⊙ p) v g) :
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ .linearLinear
+          ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) v g) :
       Ownership sig φ m .linearLinear (.corec r D qs ls ps as ss.terms Ss gs)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{sub}_{◀}` -/
