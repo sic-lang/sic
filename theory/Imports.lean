@@ -13,9 +13,9 @@ rule behind.
 The imports are those of the modules as Lake builds them, so that the check reads the graph that
 Lean uses, not a parse of the sources.
 
-The page draws the direct imports of the library as a Mermaid flowchart, an arrow from each module
-to each module it imports, each group of `imports.toml` as a subgraph; every module belongs to
-exactly one group.
+The page draws the direct imports of the library as a Mermaid flowchart, an arrow going up from each
+module to each module it imports, so that the foundations are at the top, each group of
+`imports.toml` as a subgraph; every module belongs to exactly one group.
 
 Run with the file of the rules, the file of the page and the directory of the library, `Sic/`,
 whose modules it imports, as Lake builds them.
@@ -131,10 +131,10 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   let mut lines := #[
     "# Imports",
     "",
-    "The modules of `Sic/` import each other as the graph below shows, an arrow going from a module to each module it imports, and the boxes grouping the modules by subject.",
+    "The modules of `Sic/` import each other as the graph below shows, an arrow going up from a module to each module it imports, so that the foundations are at the top, and the boxes grouping the modules by subject.",
     "",
     "```mermaid",
-    "flowchart TD"]
+    "flowchart BT"]
   for (group, index) in rules.groups.zipIdx do
     lines := lines.push s!"  subgraph g{index} [\"{group.name}\"]"
     for module in modules do
