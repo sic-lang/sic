@@ -8,7 +8,8 @@ src = "site"
 [output.html]
 # Centers the diagrams, which mdBook aligns to the left like any pre block.
 additional-css = ["mermaid.css"]
-# The files of mdbook-mermaid, which build-site writes where its install command does.
+# The files of mdbook-mermaid, which build-site writes where its install command does, with the
+# Mermaid of the flake.
 additional-js = ["mermaid.min.js", "mermaid-init.js"]
 git-repository-url = "https://github.com/sic-lang/sic"
 # The pages are those of the files of the RFCs, whose numbers the chapter numbers would contradict.

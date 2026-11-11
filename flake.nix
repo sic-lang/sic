@@ -41,6 +41,12 @@
           };
           # The files of the RFCs at the pinned commit, to which the pages of the correspondence link.
           rfcsUrl = "https://github.com/sic-lang/rfcs/blob/${rfcs.rev}";
+          # Mermaid 12, in place of the Mermaid 11.6.0 that mdbook-mermaid 0.17.1 bundles, whose layout
+          # stretches the boxes of the graph of the imports far wider than their modules.
+          mermaidJs = pkgs.fetchurl {
+            url = "https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.min.js";
+            hash = "sha256-qKam+AWwdKgmGiglyG+ZyAVKyzs19Qu34kpPnyw8O58=";
+          };
           # The checks of the files: their tools, also provided by the development shell, and their
           # command, run from the root of the repository.
           fileChecks = {
@@ -440,6 +446,7 @@
               touch "$mermaid/book.toml"
               RUST_LOG=warn mdbook-mermaid install "$mermaid"
               cp "$mermaid"/*.js .
+              install -m 644 ${mermaidJs} mermaid.min.js
               mdbook build
               ${lib.getExe docs.run}
               cp -r theory/docbuild/.lake/build/doc book/theory
