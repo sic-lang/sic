@@ -19,20 +19,36 @@ modules = [
 ]
 
 [[group]]
-name = "Judgments"
-modules = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+name = "Typing"
+modules = ["Sic.Core.Typing"]
+
+[[group]]
+name = "Usage"
+modules = ["Sic.Core.Usage"]
+
+[[group]]
+name = "Ownership"
+modules = ["Sic.Core.Ownership"]
 
 [[group]]
 name = "Prelude"
 modules = ["Sic.Core.Prelude"]
 
 [[group]]
-name = "Reduction and erasure"
-modules = ["Sic.Core.Erasure", "Sic.Core.Reduction"]
+name = "Reduction"
+modules = ["Sic.Core.Reduction"]
 
 [[group]]
-name = "Meaning and soundness"
-modules = ["Sic.Core.Meaning", "Sic.Core.Soundness"]
+name = "Erasure"
+modules = ["Sic.Core.Erasure"]
+
+[[group]]
+name = "Meaning"
+modules = ["Sic.Core.Meaning"]
+
+[[group]]
+name = "Soundness"
+modules = ["Sic.Core.Soundness"]
 
 [[rule]]
 reason = "the mathematics are generic, and know nothing of Sic"
