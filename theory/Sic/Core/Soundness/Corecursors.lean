@@ -1183,7 +1183,7 @@ theorem Destructors.Pos.obsSubst_corecAt {k' : Nat} {Γ Δ : Scope} {d : Name} {
         (gs.subst σ)).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
   hpos.obsSubst_subst (Subst.append σ ss.toSubst) (fun d' ps'' => by
     rw [Term.observation_subst, Term.corecAt_subst_append,
-      InstanceArgs.subst_rename_of (ξ := Ren.weakenN ps'.length) (θ' := σ)
+      InstanceArgs.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ)
         (fun y => Subst.append_weakenN σ ss.toSubst y)])
     hΔ
 
@@ -1197,7 +1197,7 @@ theorem InstanceArgs.toSubst_rename_subst_append {Γ Δ : Scope} (σ : Subst 0 [
     ((as.rename (Ren.weakenN ps'.length)).toSubst x).subst
         (Subst.liftN a.params.length (Subst.append σ ss.toSubst)) = (as.subst σ).toSubst x := by
   rw [InstanceArgs.toSubst_subst,
-    InstanceArgs.subst_rename_of (ξ := Ren.weakenN ps'.length) (θ' := σ)
+    InstanceArgs.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ)
       (fun y => Subst.append_weakenN σ ss.toSubst y)]
 
 -- ADE: none.
@@ -1285,9 +1285,9 @@ theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : Typ
   have hb := hgv.2 _ _ hτ
   have hS : ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length)).subst
       (Subst.append (Subst.append σ₁ ss₁.toSubst) ts.toSubst) = Ss.subst σ₁ := by
-    rw [States.subst_rename_of (ξ := Ren.weakenN ps₁.length)
+    rw [States.subst_rename_of (α := Ren.weakenN ps₁.length)
         (θ' := Subst.append σ₁ ss₁.toSubst) (fun y => Subst.append_weakenN _ ts.toSubst y),
-      States.subst_rename_of (ξ := Ren.weakenN ps'.length) (θ' := σ₁)
+      States.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ₁)
         (fun y => Subst.append_weakenN σ₁ ss₁.toSubst y)]
   rw [Term.branchResult_subst, hS] at hb
   conv at hb =>

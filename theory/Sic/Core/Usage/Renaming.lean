@@ -7,8 +7,8 @@ public import Sic.Core.Usage
 # Renaming of the Usage
 
 The judgments of usage of annex 12 of RFC 36 are stable under the renamings: a term that uses the
-variables of its scope as `γ` allows, renamed by `ξ`, uses them as the vector `ξ γ` allows, which
-gives each variable the sum of the grades of the variables that `ξ` renames to it.
+variables of its scope as `γ` allows, renamed by `α`, uses them as the vector `α γ` allows, which
+gives each variable the sum of the grades of the variables that `α` renames to it.
 
 The usage has no context, so that every renaming keeps it, even one that renames two variables to
 the same one, whose uses add up.
@@ -36,15 +36,15 @@ open Sic.Core
 /-! ## Renamed Vectors -/
 
 -- ADE: `wkConₘ`, in `Graded/Context/Weakening.agda`, for the renamings that keep the order.
-/-- `ξ γ`: the vector `γ` renamed by `ξ`, which gives each variable of `Γ` the sum of the grades
-that `γ` gives the variables that `ξ` renames to it, the grade `𝟘` to a variable that is the image
+/-- `α γ`: the vector `γ` renamed by `α`, which gives each variable of `Γ` the sum of the grades
+that `γ` gives the variables that `α` renames to it, the grade `𝟘` to a variable that is the image
 of none.
 RFC: `\mathsf{ren}_\gamma` -/
 def rename {Γ : Scope} : {Δ : Scope} → GradeVector Δ.length → Ren Γ Δ →
     GradeVector Γ.length
   | [], _, _ => 𝟘ᶜ
-  | _ :: _, γ, ξ => GradeVector.update 𝟘ᶜ (ξ .zero).toFin (γ (Var.toFin .zero)) +ᶜ
-      GradeVector.rename (fun x => γ x.succ) (fun x => ξ (.succ x))
+  | _ :: _, γ, α => GradeVector.update 𝟘ᶜ (α .zero).toFin (γ (Var.toFin .zero)) +ᶜ
+      GradeVector.rename (fun x => γ x.succ) (fun x => α (.succ x))
 
 -- ADE: `wk-𝟘ᶜ`, `wk-+ᶜ`, `wk-·ᶜ`, `wk-≤ᶜ`, `wk-,≔` and `wkConₘ` of `lift`, in
 -- `Graded/Context/Weakening.agda`.
@@ -53,27 +53,27 @@ renaming of the usage follows its rules one by one. -/
 structure RenameCommutes : Prop where
   /-- The zero vector, renamed, is the zero vector.
   RFC: `\mathsf{ren}_\gamma.{00}` -/
-  rename_zero : ∀ {Γ Δ : Scope} (ξ : Ren Γ Δ), rename (𝟘ᶜ : GradeVector Δ.length) ξ = 𝟘ᶜ
+  rename_zero : ∀ {Γ Δ : Scope} (α : Ren Γ Δ), rename (𝟘ᶜ : GradeVector Δ.length) α = 𝟘ᶜ
   /-- The sum of two vectors, renamed, is the sum of the vectors renamed.
   RFC: `\mathsf{ren}_\gamma.{+}` -/
-  rename_add : ∀ {Γ Δ : Scope} (γ δ : GradeVector Δ.length) (ξ : Ren Γ Δ),
-    rename (γ +ᶜ δ) ξ = γ.rename ξ +ᶜ δ.rename ξ
+  rename_add : ∀ {Γ Δ : Scope} (γ δ : GradeVector Δ.length) (α : Ren Γ Δ),
+    rename (γ +ᶜ δ) α = γ.rename α +ᶜ δ.rename α
   /-- A vector multiplied by a grade, renamed, is the vector renamed multiplied by the grade.
   RFC: `\mathsf{ren}_\gamma.{\cdot}` -/
-  rename_smul : ∀ {Γ Δ : Scope} (p : Grade) (γ : GradeVector Δ.length) (ξ : Ren Γ Δ),
-    rename (p ·ᶜ γ) ξ = p ·ᶜ γ.rename ξ
+  rename_smul : ∀ {Γ Δ : Scope} (p : Grade) (γ : GradeVector Δ.length) (α : Ren Γ Δ),
+    rename (p ·ᶜ γ) α = p ·ᶜ γ.rename α
   /-- The renaming keeps the order.
   RFC: `\mathsf{ren}_\gamma.{\le}` -/
-  rename_le : ∀ {Γ Δ : Scope} {γ δ : GradeVector Δ.length} (ξ : Ren Γ Δ), γ ≤ᶜ δ →
-    γ.rename ξ ≤ᶜ δ.rename ξ
+  rename_le : ∀ {Γ Δ : Scope} {γ δ : GradeVector Δ.length} (α : Ren Γ Δ), γ ≤ᶜ δ →
+    γ.rename α ≤ᶜ δ.rename α
   /-- The zero vector updated at a variable, renamed, is the zero vector updated at its image.
   RFC: `\mathsf{ren}_\gamma.\mathsf{update}` -/
-  rename_update : ∀ {Γ Δ : Scope} {e : Scope.Entry} (x : Var Δ e) (p : Grade) (ξ : Ren Γ Δ),
-    rename (update 𝟘ᶜ x.toFin p) ξ = update 𝟘ᶜ (ξ x).toFin p
+  rename_update : ∀ {Γ Δ : Scope} {e : Scope.Entry} (x : Var Δ e) (p : Grade) (α : Ren Γ Δ),
+    rename (update 𝟘ᶜ x.toFin p) α = update 𝟘ᶜ (α x).toFin p
   /-- An extended vector, renamed under the new variable, is the vector renamed, extended.
   RFC: `\mathsf{ren}_\gamma.{\bullet}` -/
   rename_extend : ∀ {Γ Δ : Scope} {e : Scope.Entry} (γ : GradeVector Δ.length) (p : Grade)
-    (ξ : Ren Γ Δ), rename (Δ := e :: Δ) (γ ∙ p) (Ren.lift ξ) = γ.rename ξ ∙ p
+    (α : Ren Γ Δ), rename (Δ := e :: Δ) (γ ∙ p) (Ren.lift α) = γ.rename α ∙ p
 
 -- ADE: `wk-𝟘ᶜ`, `wk-+ᶜ`, `wk-·ᶜ`, `wk-≤ᶜ`, `wk-,≔` and `wkConₘ` of `lift`, in
 -- `Graded/Context/Weakening.agda`.
@@ -87,50 +87,50 @@ RFC: `\mathsf{ren}_\gamma.{\bullet}` -/
 theorem rename_commutes : RenameCommutes :=
   ⟨rename_zero, rename_add, rename_smul, rename_le, rename_update, rename_extend⟩
 where
-  rename_zero {Γ : Scope} : {Δ : Scope} → (ξ : Ren Γ Δ) → rename (𝟘ᶜ : GradeVector Δ.length) ξ = 𝟘ᶜ
+  rename_zero {Γ : Scope} : {Δ : Scope} → (α : Ren Γ Δ) → rename (𝟘ᶜ : GradeVector Δ.length) α = 𝟘ᶜ
     | [], _ => rfl
-    | _ :: _, ξ => by
+    | _ :: _, α => by
       show update 𝟘ᶜ _ _ +ᶜ rename 𝟘ᶜ _ = _
       rw [rename_zero]
       funext y
       simp only [add, update, zero]
       split <;> rfl
-  rename_add {Γ : Scope} : {Δ : Scope} → (γ δ : GradeVector Δ.length) → (ξ : Ren Γ Δ) →
-      rename (γ +ᶜ δ) ξ = γ.rename ξ +ᶜ δ.rename ξ
+  rename_add {Γ : Scope} : {Δ : Scope} → (γ δ : GradeVector Δ.length) → (α : Ren Γ Δ) →
+      rename (γ +ᶜ δ) α = γ.rename α +ᶜ δ.rename α
     | [], _, _, _ => funext fun _ => rfl
-    | _ :: _, γ, δ, ξ => by
+    | _ :: _, γ, δ, α => by
       show update 𝟘ᶜ _ _ +ᶜ rename ((fun x => γ x.succ) +ᶜ (fun x => δ x.succ)) _ = _
       rw [rename_add]
       funext y
       simp only [rename, add, update, zero]
       generalize γ (Var.toFin .zero) = a
       generalize δ (Var.toFin .zero) = b
-      generalize rename (fun x => γ x.succ) (fun x => ξ (.succ x)) y = c
-      generalize rename (fun x => δ x.succ) (fun x => ξ (.succ x)) y = d
+      generalize rename (fun x => γ x.succ) (fun x => α (.succ x)) y = c
+      generalize rename (fun x => δ x.succ) (fun x => α (.succ x)) y = d
       split <;> revert a b c d <;> decide
-  rename_smul {Γ : Scope} : {Δ : Scope} → (p : Grade) → (γ : GradeVector Δ.length) → (ξ : Ren Γ Δ) →
-      rename (p ·ᶜ γ) ξ = p ·ᶜ γ.rename ξ
+  rename_smul {Γ : Scope} : {Δ : Scope} → (p : Grade) → (γ : GradeVector Δ.length) → (α : Ren Γ Δ) →
+      rename (p ·ᶜ γ) α = p ·ᶜ γ.rename α
     | [], p, _, _ => funext fun _ => (Grade.modality.semiring.mul_zero p).symm
-    | _ :: _, p, γ, ξ => by
+    | _ :: _, p, γ, α => by
       show update 𝟘ᶜ _ _ +ᶜ rename (p ·ᶜ (fun x => γ x.succ)) _ = _
       rw [rename_smul]
       funext y
       simp only [rename, add, smul, update, zero]
       generalize γ (Var.toFin .zero) = a
-      generalize rename (fun x => γ x.succ) (fun x => ξ (.succ x)) y = c
+      generalize rename (fun x => γ x.succ) (fun x => α (.succ x)) y = c
       split <;> revert p a c <;> decide
-  rename_le {Γ : Scope} : {Δ : Scope} → {γ δ : GradeVector Δ.length} → (ξ : Ren Γ Δ) → γ ≤ᶜ δ →
-      γ.rename ξ ≤ᶜ δ.rename ξ
+  rename_le {Γ : Scope} : {Δ : Scope} → {γ δ : GradeVector Δ.length} → (α : Ren Γ Δ) → γ ≤ᶜ δ →
+      γ.rename α ≤ᶜ δ.rename α
     | [], _, _, _, _ => fun _ => Grade.le_refl _
-    | _ :: _, _, _, ξ, h => by
-      refine add_le_add Grade.modality (fun y => ?_) (rename_le (fun x => ξ (.succ x)) fun x => h x.succ)
+    | _ :: _, _, _, α, h => by
+      refine add_le_add Grade.modality (fun y => ?_) (rename_le (fun x => α (.succ x)) fun x => h x.succ)
       simp only [update]
       split
       · exact h _
       · exact Grade.le_refl _
   rename_update {Γ : Scope} : {Δ : Scope} → {e : Scope.Entry} → (x : Var Δ e) → (p : Grade) →
-      (ξ : Ren Γ Δ) → rename (update 𝟘ᶜ x.toFin p) ξ = update 𝟘ᶜ (ξ x).toFin p
-    | _ :: Δ, _, .zero, p, ξ => by
+      (α : Ren Γ Δ) → rename (update 𝟘ᶜ x.toFin p) α = update 𝟘ᶜ (α x).toFin p
+    | _ :: Δ, _, .zero, p, α => by
       show update 𝟘ᶜ _ _ +ᶜ rename (Δ := Δ) (fun y => update 𝟘ᶜ (Var.toFin .zero) p y.succ) _ = _
       rw [show (fun y : Fin Δ.length => update 𝟘ᶜ (Var.toFin (.zero (Γ := Δ))) p y.succ) = 𝟘ᶜ from
         funext fun y => by
@@ -141,12 +141,12 @@ where
       funext y
       simp only [add, update, zero]
       split <;> revert p <;> decide
-    | e₀ :: Δ, _, .succ x, p, ξ => by
+    | e₀ :: Δ, _, .succ x, p, α => by
       show update 𝟘ᶜ _ _ +ᶜ
         rename (Δ := Δ) (fun y => update 𝟘ᶜ (Var.toFin (.succ x)) p y.succ) _ = _
       rw [show (fun y : Fin Δ.length => update 𝟘ᶜ (Var.toFin (.succ x)) p y.succ) =
           update 𝟘ᶜ x.toFin p from funext fun y => by exact ite_succ y x.toFin p,
-        rename_update x p (fun y => ξ (.succ y))]
+        rename_update x p (fun y => α (.succ y))]
       have hz : update 𝟘ᶜ (Var.toFin (.succ (e' := e₀) x)) p (Var.toFin (.zero (Γ := Δ))) =
           Grade.zero := by
         show (if _ then p else Grade.zero) = Grade.zero
@@ -156,11 +156,11 @@ where
       rw [hz, update_zero]
       exact (module Grade.modality).zero_add _
   rename_succ {Γ : Scope} : {Δ : Scope} → {e : Scope.Entry} → (γ : GradeVector Δ.length) →
-      (ξ : Ren Γ Δ) → γ.rename (fun x => (ξ x).succ (e' := e)) = γ.rename ξ ∙ Grade.zero
+      (α : Ren Γ Δ) → γ.rename (fun x => (α x).succ (e' := e)) = γ.rename α ∙ Grade.zero
     | [], _, _, _ => funext fun y => by cases y using Fin.cases <;> rfl
-    | _ :: _, e, γ, ξ => by
-      show update 𝟘ᶜ _ _ +ᶜ rename _ (fun x => (ξ (.succ x)).succ (e' := e)) = _
-      rw [rename_succ (fun x => γ x.succ) (fun x => ξ (.succ x))]
+    | _ :: _, e, γ, α => by
+      show update 𝟘ᶜ _ _ +ᶜ rename _ (fun x => (α (.succ x)).succ (e' := e)) = _
+      rw [rename_succ (fun x => γ x.succ) (fun x => α (.succ x))]
       funext y
       cases y using Fin.cases with
       | zero =>
@@ -171,8 +171,8 @@ where
         simp only [add, update, zero, extend, Var.toFin, Fin.cases_succ]
         exact congrArg (· + _) (ite_succ _ _ _)
   rename_extend {Γ : Scope} {Δ : Scope} {e : Scope.Entry} (γ : GradeVector Δ.length) (p : Grade)
-      (ξ : Ren Γ Δ) : rename (Δ := e :: Δ) (γ ∙ p) (Ren.lift ξ) = γ.rename ξ ∙ p := by
-    show update 𝟘ᶜ _ p +ᶜ rename γ (fun x => (ξ x).succ (e' := e)) = _
+      (α : Ren Γ Δ) : rename (Δ := e :: Δ) (γ ∙ p) (Ren.lift α) = γ.rename α ∙ p := by
+    show update 𝟘ᶜ _ p +ᶜ rename γ (fun x => (α x).succ (e' := e)) = _
     rw [rename_succ]
     funext y
     cases y using Fin.cases with
@@ -207,38 +207,38 @@ where
 /-- A vector extended by the grades of the variables of a telescope, renamed under them, is the
 vector renamed, extended. -/
 theorem rename_extendParams {Γ : Scope} : {Δ : Scope} → (γ : GradeVector Δ.length) → (r : Grade) →
-    (ps : List Parameter) → (ξ : Ren Γ Δ) →
-      (γ.extendParams r ps).rename (Ren.liftN ps.length ξ) = (γ.rename ξ).extendParams r ps
+    (ps : List Parameter) → (α : Ren Γ Δ) →
+      (γ.extendParams r ps).rename (Ren.liftN ps.length α) = (γ.rename α).extendParams r ps
   | _, _, _, [], _ => rfl
-  | _, γ, r, p :: ps, ξ =>
+  | _, γ, r, p :: ps, α =>
     (rename_extendParams (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ (r * p.usage)) r ps
-      (Ren.lift ξ)).trans
-      (congrArg (fun δ => extendParams δ r ps) (rename_commutes.rename_extend γ _ ξ))
+      (Ren.lift α)).trans
+      (congrArg (fun δ => extendParams δ r ps) (rename_commutes.rename_extend γ _ α))
 
 /-- A vector extended by the grades `g`, renamed under the new variables, is the vector renamed,
 extended. -/
 theorem rename_extendGrades {Γ : Scope} : {Δ : Scope} → (γ : GradeVector Δ.length) →
-    (g : Nat → Grade) → (ps : List Parameter) → (ξ : Ren Γ Δ) →
-      (γ.extendGrades g ps).rename (Ren.liftN ps.length ξ) = (γ.rename ξ).extendGrades g ps
+    (g : Nat → Grade) → (ps : List Parameter) → (α : Ren Γ Δ) →
+      (γ.extendGrades g ps).rename (Ren.liftN ps.length α) = (γ.rename α).extendGrades g ps
   | _, _, _, [], _ => rfl
-  | _, γ, g, _ :: ps, ξ =>
+  | _, γ, g, _ :: ps, α =>
     (rename_extendGrades (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ g 0) (fun l => g (l + 1)) ps
-      (Ren.lift ξ)).trans
+      (Ren.lift α)).trans
       (congrArg (fun δ => extendGrades δ (fun l => g (l + 1)) ps)
-        (rename_commutes.rename_extend γ _ ξ))
+        (rename_commutes.rename_extend γ _ α))
 
 /-- A vector extended by the grades of the recursive results, renamed under them, is the vector
 renamed, extended. -/
 theorem rename_extendResults {Γ : Scope} : {Δ : Scope} → (γ : GradeVector Δ.length) →
-    (e : Nat → Grade) → (rs : List (Option Name)) → (ps : List Parameter) → (ξ : Ren Γ Δ) →
-      (γ.extendResults e rs ps).rename (Ren.liftN (Telescope.resultParams rs ps).length ξ) =
-        (γ.rename ξ).extendResults e rs ps
-  | _, γ, e, some _ :: rs, _ :: ps, ξ =>
+    (e : Nat → Grade) → (rs : List (Option Name)) → (ps : List Parameter) → (α : Ren Γ Δ) →
+      (γ.extendResults e rs ps).rename (Ren.liftN (Telescope.resultParams rs ps).length α) =
+        (γ.rename α).extendResults e rs ps
+  | _, γ, e, some _ :: rs, _ :: ps, α =>
     (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
-      (Ren.lift ξ)).trans
+      (Ren.lift α)).trans
       (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) rs ps)
-        (rename_commutes.rename_extend γ _ ξ))
-  | _, γ, e, none :: rs, _ :: ps, ξ => rename_extendResults γ (fun l => e (l + 1)) rs ps ξ
+        (rename_commutes.rename_extend γ _ α))
+  | _, γ, e, none :: rs, _ :: ps, α => rename_extendResults γ (fun l => e (l + 1)) rs ps α
   | _, _, _, [], _, _ | _, _, _, some _ :: _, [], _ | _, _, _, none :: _, [], _ => rfl
 
 -- ADE: `wkConₘ` of `step`, in `Graded/Context/Weakening.agda`.
@@ -284,22 +284,22 @@ structure UsageStableUnderRenaming : Prop where
   /-- A term, renamed, uses the variables as the vector renamed allows.
   RFC: `\mathsf{ren}_{▶}.t` -/
   usage : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {γ : GradeVector Δ.length} {m : Mode}
-    {t : Term k Δ} (ξ : Ren Γ Δ), Usage sig γ m t → Usage sig (γ.rename ξ) m (t.rename ξ)
+    {t : Term k Δ} (α : Ren Γ Δ), Usage sig γ m t → Usage sig (γ.rename α) m (t.rename α)
   /-- Arguments of a telescope, renamed, use the variables as the vector renamed allows.
   RFC: `\mathsf{ren}_{▶}.\bar t` -/
   usageArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
-    {γ : GradeVector Δ.length} {m : Mode} {ts : Args k Δ ps} (ξ : Ren Γ Δ),
-    UsageArgs sig γ m ts → UsageArgs sig (γ.rename ξ) m (ts.rename ξ)
+    {γ : GradeVector Δ.length} {m : Mode} {ts : Args k Δ ps} (α : Ren Γ Δ),
+    UsageArgs sig γ m ts → UsageArgs sig (γ.rename α) m (ts.rename α)
   /-- Arguments of an instance, renamed, use the variables as the vector renamed allows.
   RFC: `\mathsf{ren}_{▶}.\bar a` -/
   usageInstanceArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ Ψ : Scope} {γ : GradeVector Δ.length}
-    {m : Mode} {ζ : GradeVector Ψ.length} {as : InstanceArgs k Δ Ψ} (ξ : Ren Γ Δ),
-    UsageInstanceArgs sig γ m ζ as → UsageInstanceArgs sig (γ.rename ξ) m ζ (as.rename ξ)
+    {m : Mode} {ζ : GradeVector Ψ.length} {as : InstanceArgs k Δ Ψ} (α : Ren Γ Δ),
+    UsageInstanceArgs sig γ m ζ as → UsageInstanceArgs sig (γ.rename α) m ζ (as.rename α)
   /-- A telescope, renamed, uses the variables as the vector renamed allows.
   RFC: `\mathsf{ren}_{▶}.\Theta` -/
   usageTelescope : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
-    {γ : GradeVector Δ.length} {m : Mode} {Θ : Telescope k Δ ps} (ξ : Ren Γ Δ),
-    UsageTelescope sig γ m Θ → UsageTelescope sig (γ.rename ξ) m (Θ.rename ξ)
+    {γ : GradeVector Δ.length} {m : Mode} {Θ : Telescope k Δ ps} (α : Ren Γ Δ),
+    UsageTelescope sig γ m Θ → UsageTelescope sig (γ.rename α) m (Θ.rename α)
 
 -- ADE: `wkUsage`, in `Graded/Usage/Weakening.agda`.
 /-- The judgments of usage are stable under the renamings.
@@ -308,15 +308,15 @@ RFC: `\mathsf{ren}_{▶}.\bar t`
 RFC: `\mathsf{ren}_{▶}.\bar a`
 RFC: `\mathsf{ren}_{▶}.\Theta` -/
 theorem usageStableUnderRenaming : UsageStableUnderRenaming :=
-  ⟨fun ξ h => by rw [Term.rename_eq_subst]; exact usage h fun _ => rfl,
-    fun ξ h => by rw [Args.rename_eq_subst]; exact usageArgs h fun _ => rfl,
-    fun ξ h => by rw [InstanceArgs.rename_eq_subst]; exact usageInstanceArgs h fun _ => rfl,
-    fun ξ h => by rw [Telescope.rename_eq_subst]; exact usageTelescope h fun _ => rfl⟩
+  ⟨fun α h => by rw [Term.rename_eq_subst]; exact usage h fun _ => rfl,
+    fun α h => by rw [Args.rename_eq_subst]; exact usageArgs h fun _ => rfl,
+    fun α h => by rw [InstanceArgs.rename_eq_subst]; exact usageInstanceArgs h fun _ => rfl,
+    fun α h => by rw [Telescope.rename_eq_subst]; exact usageTelescope h fun _ => rfl⟩
 where
-  usage {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+  usage {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {γ : GradeVector Δ.length} {m : Mode} {t : Term k Δ} :
-      Usage sig γ m t → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        Usage sig (γ.rename ξ) m (t.subst θ)
+      Usage sig γ m t → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        Usage sig (γ.rename α) m (t.subst θ)
     | .var (x := x) hts, hθ => by
       rw [Term.var_subst_of (hθ x), GradeVector.rename_commutes.rename_add,
         GradeVector.rename_commutes.rename_update]
@@ -330,7 +330,7 @@ where
     | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hp hC ht hul hus hu hg
         hχ hr, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
-      refine .recursor (δs := fun i => (δs i).rename ξ) (gs := gs) h hq hp ?_
+      refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hp ?_
         (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_
         (by rw [Branches.resultGrades_subst]; exact hg) ?_ hr
       · intro j n C hC'
@@ -345,12 +345,12 @@ where
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv _ hu'
         have ih := usage (hu i j T' con u₀ hi hu₀)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-        rw [GradeVector.rename_extendResults _ _ _ _ (Ren.liftN _ ξ),
-          GradeVector.rename_extendGrades _ _ _ ξ] at ih
+        rw [GradeVector.rename_extendResults _ _ _ _ (Ren.liftN _ α),
+          GradeVector.rename_extendGrades _ _ _ α] at ih
         rw [Branches.resultGrades_subst]
         exact ih
       · intro i j T' con hi
-        have := GradeVector.rename_commutes.rename_le ξ (hχ i j T' con hi)
+        have := GradeVector.rename_commutes.rename_le α (hχ i j T' con hi)
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul] at this
         rw [Branches.resultGrades_subst]
         exact this
@@ -361,7 +361,7 @@ where
         hθ => by
       rw [Term.corec_subst, GradeVector.rename_commutes.rename_add,
         GradeVector.rename_commutes.rename_smul]
-      refine .corec (δs := fun i => (δs i).rename ξ) h hq hp hh (States.get_subst _ hS) ?_
+      refine .corec (δs := fun i => (δs i).rename α) h hq hp hh (States.get_subst _ hS) ?_
         (usageArgs hss hθ) ((CorecBranches.length_subst _ gs).trans hgl)
         ((States.length_subst _ Ss).trans hSl) ?_ ?_ ?_ ?_ ?_
       · intro j ps'' S' hS'
@@ -381,32 +381,32 @@ where
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
         have ih := usage (hgu i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-        rw [GradeVector.rename_extendParams _ _ ps₁ (Ren.liftN ps''.length ξ),
-          GradeVector.rename_extendParams _ _ ps'' ξ] at ih
+        rw [GradeVector.rename_extendParams _ _ ps₁ (Ren.liftN ps''.length α),
+          GradeVector.rename_extendParams _ _ ps'' α] at ih
         exact ih
       · intro i j T' d p q ps₁ Ξ Θ B ψ hi hd
-        have := GradeVector.rename_commutes.rename_le ξ (hδ i j T' d p q ps₁ Ξ Θ B ψ hi hd)
+        have := GradeVector.rename_commutes.rename_le α (hδ i j T' d p q ps₁ Ξ Θ B ψ hi hd)
         rw [GradeVector.rename_commutes.rename_smul] at this
         exact this
       · intro i j T' d p q ps₁ Ξ Θ B ψ D' hi hd hn
-        have := GradeVector.rename_commutes.rename_le ξ (hδr i j T' d p q ps₁ Ξ Θ B ψ D' hi hd hn)
+        have := GradeVector.rename_commutes.rename_le α (hδr i j T' d p q ps₁ Ξ Θ B ψ D' hi hd hn)
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul,
           GradeVector.rename_commutes.rename_smul] at this
         exact this
-    | .sub h hle, hθ => .sub (usage h hθ) (GradeVector.rename_commutes.rename_le ξ hle)
-  usageArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+    | .sub h hle, hθ => .sub (usage h hθ) (GradeVector.rename_commutes.rename_le α hle)
+  usageArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {ps : List Parameter} {γ : GradeVector Δ.length} {m : Mode} {ts : Args k Δ ps} :
-      UsageArgs sig γ m ts → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        UsageArgs sig (γ.rename ξ) m (ts.subst θ)
+      UsageArgs sig γ m ts → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        UsageArgs sig (γ.rename α) m (ts.subst θ)
     | .nil, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .nil
     | .cons ht hts, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
       exact .cons (usage ht hθ) (usageArgs hts hθ)
-  usageInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+  usageInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {γ : GradeVector Δ.length} {m : Mode} :
       {Ψ : Scope} → {ζ : GradeVector Ψ.length} → {as : InstanceArgs k Δ Ψ} →
-      UsageInstanceArgs sig γ m ζ as → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        UsageInstanceArgs sig (γ.rename ξ) m ζ (as.subst θ)
+      UsageInstanceArgs sig γ m ζ as → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        UsageInstanceArgs sig (γ.rename α) m ζ (as.subst θ)
     -- A pattern of a rule elaborates only when the scope of the parameters is given its first
     -- entry, which the vector `ζ ∙ p` of the conclusion does not give the elaborator.
     | [], _, _, .nil, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .nil
@@ -416,18 +416,18 @@ where
     | .secondOrder _ _ :: _, _, _, .secondOrder has hB, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
       have ih := usage hB (Subst.liftN_eta_of _ hθ)
-      rw [GradeVector.rename_extendParams _ _ _ ξ] at ih
+      rw [GradeVector.rename_extendParams _ _ _ α] at ih
       exact .secondOrder (usageInstanceArgs has hθ) ih
-  usageTelescope {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+  usageTelescope {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {ps : List Parameter} {γ : GradeVector Δ.length} {m : Mode} {Θ : Telescope k Δ ps} :
-      UsageTelescope sig γ m Θ → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        UsageTelescope sig (γ.rename ξ) m (Θ.subst θ)
+      UsageTelescope sig γ m Θ → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        UsageTelescope sig (γ.rename α) m (Θ.subst θ)
     | .nil, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .nil
     | .cons hA hΘ, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
       have ih := usageTelescope hΘ (Subst.lift_eta_of hθ)
-      rw [GradeVector.rename_commutes.rename_extend _ _ ξ] at ih
+      rw [GradeVector.rename_commutes.rename_extend _ _ α] at ih
       exact .cons (usage hA hθ) ih
-    | .sub h hle, hθ => .sub (usageTelescope h hθ) (GradeVector.rename_commutes.rename_le ξ hle)
+    | .sub h hle, hθ => .sub (usageTelescope h hθ) (GradeVector.rename_commutes.rename_le α hle)
 
 end Sic.Core

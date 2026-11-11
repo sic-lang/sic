@@ -7,7 +7,7 @@ public import Sic.Core.Substitution
 # Renaming of the Ownership
 
 The judgments of ownership of annex 13 of RFC 36 are stable under the renamings: a term whose value
-has an ownership, given the ownerships `φ` of the variables of its scope, renamed by `ξ`, has the
+has an ownership, given the ownerships `φ` of the variables of its scope, renamed by `α`, has the
 same ownership, given ownerships `φ'` that give the image of each variable its ownership by `φ`.
 
 The ownerships of the variables are the same in every premise, as a context is, so that they are
@@ -31,40 +31,40 @@ open Sic.Grading
 images of the variables by a renaming lifted under them the same ownerships when the ownerships
 before the extension do. -/
 theorem Ownership.extendFields_liftN :
-    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (o g : Grade) → (ps : List Parameter) →
+    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {α : Ren Γ Δ} →
+      (∀ x, φ' (α x) = φ x) → (o g : Grade) → (ps : List Parameter) →
       ∀ x,
-        Ownership.extendFields φ' o g ps (Ren.liftN ps.length ξ x) =
+        Ownership.extendFields φ' o g ps (Ren.liftN ps.length α x) =
           Ownership.extendFields φ o g ps x
   | _, _, _, _, _, h, _, _, [] => h
-  | Γ, Δ, _, _, ξ, h, o, g, _ :: ps =>
-    Ownership.extendFields_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
+  | Γ, Δ, _, _, α, h, o, g, _ :: ps =>
+    Ownership.extendFields_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (α := Ren.lift α)
       (fun | .zero => rfl | .succ x => h x) o g ps
 
 /-- The ownerships of the variables extended by those of recursive results give the images of the
 variables by a renaming lifted under them the same ownerships when the ownerships before the
 extension do. -/
 theorem Ownership.extendResults_liftN :
-    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (p : Grade) → (es : List Grade) → (n : Nat) →
-      ∀ x, Ownership.extendResults φ' p es n (Ren.liftN n ξ x) = Ownership.extendResults φ p es n x
+    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {α : Ren Γ Δ} →
+      (∀ x, φ' (α x) = φ x) → (p : Grade) → (es : List Grade) → (n : Nat) →
+      ∀ x, Ownership.extendResults φ' p es n (Ren.liftN n α x) = Ownership.extendResults φ p es n x
   | _, _, _, _, _, h, _, _, 0 => h
-  | Γ, Δ, _, _, ξ, h, p, es, n + 1 =>
-    Ownership.extendResults_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
+  | Γ, Δ, _, _, α, h, p, es, n + 1 =>
+    Ownership.extendResults_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (α := Ren.lift α)
       (fun | .zero => rfl | .succ x => h x) p es.tail n
 
 /-- The ownerships of the variables extended by those of the arguments of a telescope give the
 images of the variables by a renaming lifted under them the same ownerships when the ownerships
 before the extension do. -/
 theorem Ownership.extendArgs_liftN :
-    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {ξ : Ren Γ Δ} →
-      (∀ x, φ' (ξ x) = φ x) → (g : Grade) → (ps : List Parameter) → (os : List Grade) →
+    {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {α : Ren Γ Δ} →
+      (∀ x, φ' (α x) = φ x) → (g : Grade) → (ps : List Parameter) → (os : List Grade) →
       ∀ x,
-        Ownership.extendArgs φ' g ps os (Ren.liftN ps.length ξ x) =
+        Ownership.extendArgs φ' g ps os (Ren.liftN ps.length α x) =
           Ownership.extendArgs φ g ps os x
   | _, _, _, _, _, h, _, [], _ => h
-  | Γ, Δ, _, _, ξ, h, g, _ :: ps, os =>
-    Ownership.extendArgs_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (ξ := Ren.lift ξ)
+  | Γ, Δ, _, _, α, h, g, _ :: ps, os =>
+    Ownership.extendArgs_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (α := Ren.lift α)
       (fun | .zero => rfl | .succ x => h x) g ps os.tail
 
 /-! ## Stability of the Ownership -/
@@ -76,28 +76,28 @@ structure OwnershipStableUnderRenaming : Prop where
   of each variable its ownership.
   RFC: `\mathsf{ren}_{◀}.t` -/
   ownership : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {φ' : Var Γ .var → Grade}
-    {φ : Var Δ .var → Grade} {m : Mode} {p : Grade} {t : Term k Δ} (ξ : Ren Γ Δ),
-    (∀ x, φ' (ξ x) = φ x) → Ownership sig φ m p t → Ownership sig φ' m p (t.rename ξ)
+    {φ : Var Δ .var → Grade} {m : Mode} {p : Grade} {t : Term k Δ} (α : Ren Γ Δ),
+    (∀ x, φ' (α x) = φ x) → Ownership sig φ m p t → Ownership sig φ' m p (t.rename α)
   /-- Arguments of a telescope, renamed, have the same ownerships, given ownerships of the variables
   that give the image of each variable its ownership.
   RFC: `\mathsf{ren}_{◀}.\bar t` -/
   ownershipArgs : ∀ {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {φ' : Var Γ .var → Grade} {φ : Var Δ .var → Grade} {m : Mode} {ts : Args k Δ ps}
-    {os : List Grade} (ξ : Ren Γ Δ),
-    (∀ x, φ' (ξ x) = φ x) → OwnershipArgs sig φ m ts os → OwnershipArgs sig φ' m (ts.rename ξ) os
+    {os : List Grade} (α : Ren Γ Δ),
+    (∀ x, φ' (α x) = φ x) → OwnershipArgs sig φ m ts os → OwnershipArgs sig φ' m (ts.rename α) os
 
 -- ADE: none.
 /-- The judgments of ownership are stable under the renamings.
 RFC: `\mathsf{ren}_{◀}.t`
 RFC: `\mathsf{ren}_{◀}.\bar t` -/
 theorem ownershipStableUnderRenaming : OwnershipStableUnderRenaming :=
-  ⟨fun ξ hφ h => by rw [Term.rename_eq_subst]; exact ownership h (fun _ => rfl) hφ,
-    fun ξ hφ h => by rw [Args.rename_eq_subst]; exact ownershipArgs h (fun _ => rfl) hφ⟩
+  ⟨fun α hφ h => by rw [Term.rename_eq_subst]; exact ownership h (fun _ => rfl) hφ,
+    fun α hφ h => by rw [Args.rename_eq_subst]; exact ownershipArgs h (fun _ => rfl) hφ⟩
 where
-  ownership {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+  ownership {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {φ' : Var Γ .var → Grade} {φ : Var Δ .var → Grade} {m : Mode} {p : Grade} {t : Term k Δ} :
-      Ownership sig φ m p t → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        (∀ x, φ' (ξ x) = φ x) → Ownership sig φ' m p (t.subst θ)
+      Ownership sig φ m p t → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        (∀ x, φ' (α x) = φ x) → Ownership sig φ' m p (t.subst θ)
     | .var (x := x), hθ, hφ => by
       rw [Term.var_subst_of (hθ x), ← hφ x]
       exact .var
@@ -148,11 +148,11 @@ where
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
     | .sub h hle, hθ, hφ => .sub (ownership h hθ hφ) hle
-  ownershipArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {ξ : Ren Γ Δ}
+  ownershipArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {ps : List Parameter} {φ' : Var Γ .var → Grade} {φ : Var Δ .var → Grade} {m : Mode}
       {ts : Args k Δ ps} {os : List Grade} :
-      OwnershipArgs sig φ m ts os → (∀ {a} (x : Var Δ a), θ x = Var.eta (ξ x)) →
-        (∀ x, φ' (ξ x) = φ x) → OwnershipArgs sig φ' m (ts.subst θ) os
+      OwnershipArgs sig φ m ts os → (∀ {a} (x : Var Δ a), θ x = Var.eta (α x)) →
+        (∀ x, φ' (α x) = φ x) → OwnershipArgs sig φ' m (ts.subst θ) os
     | .nil, _, _ => .nil
     | .cons ht hr hts, hθ, hφ => .cons (ownership ht hθ hφ) hr (ownershipArgs hts hθ hφ)
 

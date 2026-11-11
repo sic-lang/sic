@@ -69,7 +69,7 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]).rename (Ren.weakenN 0))
       rw [Prelude.pairSecond]
       exact (congrArg (HasType sig ((ctx.var A).var B) u)
-        (Term.rename_id_of (Γ := .var :: .var :: Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := .var :: .var :: Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 -- ADE: `unitrecⱼ`, in `Definition/Typed.agda`.
 /-- The recursor on a term of the unit, whose branch has the motive at the constructor. -/
@@ -96,7 +96,7 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     match i, hi, hC', hR, hu' with
     | 0, rfl, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx u)
-        (Term.rename_id_of (Γ := Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 -- ADE: `prodrec-β`, in `Definition/Typed.agda`.
 /-- The recursor on a pair built by its constructor is its branch at the fields. -/
@@ -146,7 +146,7 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]).rename (Ren.weakenN 0))
       rw [Prelude.pairSecond]
       exact (congrArg (HasType sig ((ctx.var A).var B) u)
-        (Term.rename_id_of (Γ := .var :: .var :: Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := .var :: .var :: Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 -- ADE: `unitrec-β`, in `Definition/Typed.agda`.
 /-- The recursor on the constructor of the unit is its branch. -/
@@ -174,7 +174,7 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     match i, hi, hC', hR, hu' with
     | 0, rfl, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx u)
-        (Term.rename_id_of (Γ := Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 -- ADE: none.
 /-- A term over a pair, at the constructor applied to the variables of its fields, has its type at
@@ -197,7 +197,7 @@ theorem HasType.pairAtCtor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrel
   have hB₂ := stableUnderRenaming.hasType hB (TypedRen.lift hW (WfType.ofSort hA₂))
   have hx : HasType sig ((ctx.var A).var B) (.var₀ (.succ .zero)) (A.rename (Ren.weakenN 2)) := by
     have h := HasType.var hctx₂ (.succVar (.zero (A := A)))
-    rw [Term.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := Ren.weaken) (ξ₃ := Ren.weakenN 2)
+    rw [Term.rename_rename_of (α₁ := Ren.weaken) (α₂ := Ren.weaken) (α₃ := Ren.weakenN 2)
       (fun _ => rfl)] at h
     exact h
   have hy : HasType sig ((ctx.var A).var B) (.var₀ .zero)
@@ -205,9 +205,9 @@ theorem HasType.pairAtCtor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrel
     have e : (B.rename (Ren.lift (Ren.weakenN 2))).subst₀ (Subst₀.single (.var₀ (.succ .zero))) =
         B.rename Ren.weaken :=
       (Term.subst₀_rename_of (σ := Subst₀.single (.var₀ (.succ .zero)))
-        (ξ := Ren.lift (Ren.weakenN 2))
+        (α := Ren.lift (Ren.weakenN 2))
         (σ' := fun x => Subst₀.single (.var₀ (.succ .zero)) (Ren.lift (Ren.weakenN 2) x))
-        (fun _ => rfl) B).trans (Term.subst₀_eq_rename_of_eta (ξ := Ren.weaken) (fun x => by
+        (fun _ => rfl) B).trans (Term.subst₀_eq_rename_of_eta (α := Ren.weaken) (fun x => by
           cases x <;> rfl) B)
     exact (congrArg (HasType sig ((ctx.var A).var B) (.var₀ .zero)) e).mpr (.var hctx₂ .zero)
   have hMK : HasType sig ((ctx.var A).var B)
@@ -275,7 +275,7 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]).rename (Ren.weakenN 0))
       rw [Prelude.pairSecond]
       exact (congrArg (HasType sig ((ctx.var A).var B) _)
-        (Term.rename_id_of (Γ := .var :: .var :: Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr
+        (Term.rename_id_of (Γ := .var :: .var :: Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr
         (HasType.pairAtCtor hpre hadm hA hB he)
 
 -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`.
@@ -296,9 +296,9 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
   have hu : HasType sig ctx (e.atCtor "Unit" [] [l] [] .nil "mk" [])
       (Cm.atCtor "Unit" [] [l] [] .nil "mk" []) := by
     have h := stableUnderSubstitution.hasType he (TypedSubst.single hmk)
-    rw [← Term.rename_id_of (Γ := .var :: Γ) (ξ := Ren.lift (Ren.weakenN 0))
+    rw [← Term.rename_id_of (Γ := .var :: Γ) (α := Ren.lift (Ren.weakenN 0))
       (Ren.lift_id_of (fun _ => rfl)) e,
-      ← Term.rename_id_of (Γ := .var :: Γ) (ξ := Ren.lift (Ren.weakenN 0))
+      ← Term.rename_id_of (Γ := .var :: Γ) (α := Ren.lift (Ren.weakenN 0))
       (Ren.lift_id_of (fun _ => rfl)) Cm] at h
     exact h
   refine .etaCtor (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
@@ -318,7 +318,7 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
     match i, hi, hC', hR, hu' with
     | 0, rfl, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx _)
-        (Term.rename_id_of (Γ := Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 -- ADE: `prodrec-cong`, in `Definition/Typed.agda`.
 /-- Two recursors on a pair whose branches are equal are equal. -/
@@ -366,7 +366,7 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]).rename (Ren.weakenN 0))
       rw [Prelude.pairSecond]
       exact (congrArg (EqTerm sig ((ctx.var A).var B) u₁ u₂)
-        (Term.rename_id_of (Γ := .var :: .var :: Γ) (ξ := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
+        (Term.rename_id_of (Γ := .var :: .var :: Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
 /-! ## Packing of the Variables -/
 
@@ -415,15 +415,15 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
         (.var :: .var :: .var :: Γ) := fun x =>
       (σ₁ x).rename (Ren.lift (Ren.weakenN ps.length))
     have a₁ := Term.rename_subst₀_of (σ := Subst₀.single MK)
-      (ξ := Ren.lift (Ren.weaken (e := .var))) (σ' := σ₁) (fun _ => rfl)
+      (α := Ren.lift (Ren.weaken (e := .var))) (σ' := σ₁) (fun _ => rfl)
       (e.rename (Ren.lift (Ren.weakenN 2)))
-    have a₂ := Term.rename_subst₀_of (σ := σ₁) (ξ := Ren.lift (Ren.weakenN ps.length)) (σ' := σ₂)
+    have a₂ := Term.rename_subst₀_of (σ := σ₁) (α := Ren.lift (Ren.weakenN ps.length)) (σ' := σ₂)
       (fun _ => rfl) (e.rename (Ren.lift (Ren.weakenN 2)))
     have a₃ := Term.subst₀_subst₀_of (σ := σ₂) (τ := Subst₀.single PK')
       (σ' := fun x => (σ₂ x).subst₀ (Subst₀.single PK')) (fun _ => rfl)
       (e.rename (Ren.lift (Ren.weakenN 2)))
     have a₄ := Term.subst₀_rename_of (σ := fun x => (σ₂ x).subst₀ (Subst₀.single PK'))
-      (ξ := Ren.lift (Ren.weakenN 2))
+      (α := Ren.lift (Ren.weakenN 2))
       (σ' := fun x => (σ₂ (Ren.lift (Ren.weakenN 2) x)).subst₀ (Subst₀.single PK')) (fun _ => rfl) e
     exact (congrArg (fun t => (t.rename (Ren.lift (Ren.weakenN ps.length))).subst₀
       (Subst₀.single PK')) a₁).trans ((congrArg (·.subst₀ (Subst₀.single PK')) a₂).trans
@@ -433,7 +433,7 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
       e.subst₀ (fun x => (Subst₀.single PK (Ren.lift (Ren.weakenN (ps.length + 1)) x)).rename
         (Ren.liftN ps.length (Ren.weaken (e := .var)))) := by
     exact (Term.rename_subst₀_of (σ := Subst₀.single PK)
-      (ξ := Ren.liftN ps.length (Ren.weaken (e := .var)))
+      (α := Ren.liftN ps.length (Ren.weaken (e := .var)))
       (σ' := fun x => (Subst₀.single PK x).rename (Ren.liftN ps.length (Ren.weaken (e := .var))))
       (fun _ => rfl) _).trans (Term.subst₀_rename_of (fun _ => rfl) e)
   refine hL.trans ((Term.subst₀_congr (fun x => ?_) e).trans hR.symm)
@@ -455,12 +455,12 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
         (Ren.lift (Ren.weakenN ps.length))).subst₀ (Subst₀.single PK') = (A.rename W').rename L := by
       have e₁ : (A.rename (Ren.weakenN 2)).rename (Ren.lift (Ren.weaken (e := .var))) =
           A.rename s₃ :=
-        Term.rename_rename_of (ξ₁ := Ren.lift (Ren.weaken (e := .var))) (ξ₂ := Ren.weakenN 2)
+        Term.rename_rename_of (α₁ := Ren.lift (Ren.weaken (e := .var))) (α₂ := Ren.weakenN 2)
           (fun _ => rfl) A
       have e₂ : (A.rename s₃).rename (Ren.lift (Ren.weakenN ps.length)) =
           A.rename m :=
-        Term.rename_rename_of (ξ₁ := Ren.lift (Ren.weakenN ps.length))
-          (ξ₂ := s₃) (fun _ => rfl) A
+        Term.rename_rename_of (α₁ := Ren.lift (Ren.weakenN ps.length))
+          (α₂ := s₃) (fun _ => rfl) A
       have e₃ : (A.rename m).subst₀
           (Subst₀.single PK') = A.rename ρ := Term.subst₀_rename_eq_rename_of (fun _ => rfl) A
       exact (congrArg (fun (t : Term k (.var :: .var :: .var :: Γ)) =>
@@ -474,13 +474,13 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
       have e₁ : ((Θ.pack κs l).rename (Ren.lift (Ren.weakenN 2))).rename
           (Ren.lift (Ren.lift (Ren.weaken (e := .var)))) =
           (Θ.pack κs l).rename (Ren.lift s₃) :=
-        Term.rename_rename_of (Ren.lift_comp_of (ξ₁ := Ren.lift (Ren.weaken (e := .var)))
-          (ξ₂ := Ren.weakenN 2) (fun _ => rfl)) _
+        Term.rename_rename_of (Ren.lift_comp_of (α₁ := Ren.lift (Ren.weaken (e := .var)))
+          (α₂ := Ren.weakenN 2) (fun _ => rfl)) _
       have e₂ : ((Θ.pack κs l).rename (Ren.lift s₃)).rename
           (Ren.lift (Ren.lift (Ren.weakenN ps.length))) =
           (Θ.pack κs l).rename (Ren.lift m) :=
-        Term.rename_rename_of (Ren.lift_comp_of (ξ₁ := Ren.lift (Ren.weakenN ps.length))
-          (ξ₂ := s₃) (fun _ => rfl)) _
+        Term.rename_rename_of (Ren.lift_comp_of (α₁ := Ren.lift (Ren.weakenN ps.length))
+          (α₂ := s₃) (fun _ => rfl)) _
       have e₃ : ((Θ.pack κs l).rename (Ren.lift m)).subst₀
           (Subst₀.lift (Subst₀.single PK')) = (Θ.pack κs l).rename (Ren.lift ρ) :=
         Term.subst₀_rename_eq_rename_of (fun x => by cases x <;> rfl) _
@@ -499,7 +499,7 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
         Telescope.subst₀_rename_of (σ' := fun z =>
           (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)) (Ren.lift W' z)).rename L)
           (fun _ => rfl),
-        Telescope.subst₀_eq_rename_of_eta (ξ := fun v => Var.weakenN ps.length (Ren.weaken v))
+        Telescope.subst₀_eq_rename_of_eta (α := fun v => Var.weakenN ps.length (Ren.weaken v))
           (fun x => by
             cases x with
             | zero =>
@@ -512,8 +512,8 @@ theorem Term.atPack_pair {Γ : Scope} {p : Parameter} {ps : List Parameter} (q :
                 (Ren.weakenN (ps.length + 1) v)) = _
               rw [hρ]
               rfl),
-        Telescope.rename_rename_of (ξ₁ := Ren.weakenN ps.length) (ξ₂ := Ren.weaken)
-          (ξ₃ := fun v => Var.weakenN ps.length (Ren.weaken v)) (fun _ => rfl)]
+        Telescope.rename_rename_of (α₁ := Ren.weakenN ps.length) (α₂ := Ren.weaken)
+          (α₃ := fun v => Var.weakenN ps.length (Ren.weaken v)) (fun _ => rfl)]
     have hrest := Args.pack_rename L (Args.bound (k := k) (Γ := .var :: Γ) ps)
       ((Θ.rename (Ren.lift W')).subst₀ (Subst₀.single (.var₀ (Var.weakenN ps.length .zero)))) κs l
     rw [Args.bound_rename, hT] at hrest
@@ -573,7 +573,7 @@ theorem UnpackBranch.of (hpre : sig.HasPrelude) {Γ : Scope} {ps : List Paramete
   have hC₂ : HasType sig ((ctx.var A).var (Θ.pack κs l)) (C.rename (Ren.weakenN 2)) (.sort κ) := by
     have h := stableUnderRenaming.hasType (stableUnderRenaming.hasType hC
       (TypedRen.weaken (contextPresuppositions.hasType hB))) hw
-    rw [Term.rename_rename_of (ξ₁ := Ren.weaken) (ξ₂ := Ren.weaken) (ξ₃ := Ren.weakenN 2)
+    rw [Term.rename_rename_of (α₁ := Ren.weaken) (α₂ := Ren.weaken) (α₃ := Ren.weakenN 2)
       (fun _ => rfl)] at h
     exact h
   refine ⟨hΘ₂, hu₂, hC₂, fun {b} hb => ?_⟩
@@ -586,14 +586,14 @@ theorem UnpackBranch.of (hpre : sig.HasPrelude) {Γ : Scope} {ps : List Paramete
     erw [Term.rename_eq_subst_of hL (C.rename (Ren.weakenN (ps.length + 1)))]
     exact TypedRen.liftable.stable.hasType hb
       (Subst.Lifted.append Θ (.base ⟨Ren.weaken, hw, fun _ => rfl⟩))
-  erw [Term.rename_rename_of (ξ₁ := Ren.liftN ps.length Ren.weaken)
-    (ξ₂ := Ren.weakenN (ps.length + 1)) (ξ₃ := fun x => Ren.weakenN ps.length (Ren.weakenN 2 x))
+  erw [Term.rename_rename_of (α₁ := Ren.liftN ps.length Ren.weaken)
+    (α₂ := Ren.weakenN (ps.length + 1)) (α₃ := fun x => Ren.weakenN ps.length (Ren.weakenN 2 x))
     (fun x => by
       show Ren.liftN ps.length Ren.weaken (Var.weakenN ps.length x.succ) = _
       rw [Ren.liftN_weakenN]
       rfl)] at hb₂
-  erw [Term.rename_rename_of (ξ₁ := Ren.weakenN ps.length) (ξ₂ := Ren.weakenN 2)
-    (ξ₃ := fun x => Ren.weakenN ps.length (Ren.weakenN 2 x)) (fun _ => rfl)]
+  erw [Term.rename_rename_of (α₁ := Ren.weakenN ps.length) (α₂ := Ren.weakenN 2)
+    (α₃ := fun x => Ren.weakenN ps.length (Ren.weakenN 2 x)) (fun _ => rfl)]
   exact hb₂
 
 -- ADE: `prodrecⱼ` and `unitrecⱼ`, in `Definition/Typed.agda`, nested.
@@ -660,7 +660,7 @@ theorem EqTerm.unpackBeta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
       have e : (C.rename (Ren.weakenN (ps.length + 1))).subst₀
           (Subst₀.liftN ps.length (Subst₀.single t)) = C.rename (Ren.weakenN ps.length) :=
         (Term.subst₀_rename_of (σ := Subst₀.liftN ps.length (Subst₀.single t))
-          (ξ := Ren.weakenN (ps.length + 1)) (σ' := fun x => .var (Ren.weakenN ps.length x))
+          (α := Ren.weakenN (ps.length + 1)) (σ' := fun x => .var (Ren.weakenN ps.length x))
           (fun x => by
             show Subst₀.liftN ps.length (Subst₀.single t) (Var.weakenN ps.length x.succ) = _
             rw [Subst₀.liftN_weakenN]
@@ -703,10 +703,10 @@ theorem EqTerm.unpackEta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     have he'' := stableUnderRenaming.hasType he'
       (TypedRen.lift hw (WfType.ofSort (stableUnderRenaming.hasType hB hw)))
     rw [Telescope.pack_rename] at he''
-    erw [Term.rename_rename_of (ξ₁ := Ren.lift (Ren.weaken (e := .var)))
-      (ξ₂ := Ren.weakenN (Γ := Γ) 2) (ξ₃ := fun x => x.succ.succ.succ) (fun _ => rfl),
-      ← Term.rename_rename_of (ξ₁ := Ren.weaken (e := .var)) (ξ₂ := Ren.weakenN (Γ := Γ) 2)
-        (ξ₃ := fun x => x.succ.succ.succ) (fun _ => rfl)] at he''
+    erw [Term.rename_rename_of (α₁ := Ren.lift (Ren.weaken (e := .var)))
+      (α₂ := Ren.weakenN (Γ := Γ) 2) (α₃ := fun x => x.succ.succ.succ) (fun _ => rfl),
+      ← Term.rename_rename_of (α₁ := Ren.weaken (e := .var)) (α₂ := Ren.weakenN (Γ := Γ) 2)
+        (α₃ := fun x => x.succ.succ.succ) (fun _ => rfl)] at he''
     have ih := EqTerm.unpackEta hpre r hΘ₂ hu₂ hC₂ he''
     erw [Term.subst₀_single_zero_rename_lift_weaken, Term.atPack_pair] at ih
     have h₁ := EqTerm.pairEta (r := r) hpre hp hA hB hu he hC'
@@ -911,7 +911,7 @@ theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
         (Term.var₀ (k := k) .zero) :=
       Ownership.var (φ := φ') (x := .zero)
     have hb' := ownershipStableUnderRenaming.ownership (Ren.liftN ps.length (Ren.weaken (e := .var)))
-      (Ownership.extendFields_liftN (φ' := φ') (ξ := Ren.weaken)
+      (Ownership.extendFields_liftN (φ' := φ') (α := Ren.weaken)
         (fun | .zero => rfl | .succ _ => rfl) o (m.grade * r) ps) hb
     have hi : ∀ (m : Mode) (r o ρ q : Grade),
         (((o * Grade.one) * ((m.grade * r) * Grade.one)) * ρ) * ((m.grade * r) * q) =

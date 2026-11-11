@@ -336,63 +336,63 @@ end
 mutual
 
 /-- A renaming keeps two terms equal up to their levels. -/
-theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {t₁ t₂ : Term k Δ} :
-    Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (t₁.rename ξ) (t₂.rename ξ)
-  | .var x h => .var (ξ x) (h.rename ξ)
+theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {t₁ t₂ : Term k Δ} :
+    Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (t₁.rename α) (t₂.rename α)
+  | .var x h => .var (α x) (h.rename α)
   | .sort s h => .sort s h
   | .const f qs ps h => .const f qs ps h
-  | .inst D qs ps h has => .inst D qs ps h (has.rename ξ)
-  | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename ξ) (hts.rename ξ)
+  | .inst D qs ps h has => .inst D qs ps h (has.rename α)
+  | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename α) (hts.rename α)
   | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl (has.rename ξ) (h.rename ξ) (hCs.rename ξ) (hus.rename ξ)
-  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.rename ξ) (h.rename ξ) (hbs.rename ξ)
+    .recursor r D qs ps hl (has.rename α) (h.rename α) (hCs.rename α) (hus.rename α)
+  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.rename α) (h.rename α) (hbs.rename α)
   | .corec r D qs ps hl has hss hSs hvs =>
-    .corec r D qs ps hl (has.rename ξ) (hss.rename ξ) (hSs.rename ξ) (hvs.rename ξ)
+    .corec r D qs ps hl (has.rename α) (hss.rename α) (hSs.rename α) (hvs.rename α)
 
-theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
-    {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
+theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
+    {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename α) (ts₂.rename α)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename ξ) (hs.rename ξ)
+  | .cons h hs => .cons (h.rename α) (hs.rename α)
 
-theorem InstanceArgs.LevelEquiv.rename {k : Nat} {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ)
+theorem InstanceArgs.LevelEquiv.rename {k : Nat} {Γ Δ Ξ : Scope} (α : Ren Γ Δ)
     {as₁ as₂ : InstanceArgs k Δ Ξ} :
-    InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv (as₁.rename ξ) (as₂.rename ξ)
+    InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv (as₁.rename α) (as₂.rename α)
   | .nil => .nil
-  | .snoc has h => .snoc (has.rename ξ) (h.rename (Ren.liftN _ ξ))
+  | .snoc has h => .snoc (has.rename α) (h.rename (Ren.liftN _ α))
 
-theorem Terms.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {ts₁ ts₂ : Terms k Δ} :
-    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv (ts₁.rename ξ) (ts₂.rename ξ)
+theorem Terms.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {ts₁ ts₂ : Terms k Δ} :
+    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv (ts₁.rename α) (ts₂.rename α)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename ξ) (hs.rename ξ)
+  | .cons h hs => .cons (h.rename α) (hs.rename α)
 
-theorem Motives.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Cs₁ Cs₂ : Motives k Δ} :
-    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv (Cs₁.rename ξ) (Cs₂.rename ξ)
+theorem Motives.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {Cs₁ Cs₂ : Motives k Δ} :
+    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv (Cs₁.rename α) (Cs₂.rename α)
   | .nil => .nil
-  | .cons h hs => .cons (h.rename (Ren.liftN _ ξ)) (hs.rename ξ)
+  | .cons h hs => .cons (h.rename (Ren.liftN _ α)) (hs.rename α)
 
-theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {us₁ us₂ : Branches k Δ} :
-    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.rename ξ) (us₂.rename ξ)
+theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {us₁ us₂ : Branches k Δ} :
+    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv (us₁.rename α) (us₂.rename α)
   | .nil => .nil
-  | .cons (n := n) (m := m) h hs => .cons (h.rename (Ren.liftN m (Ren.liftN n ξ))) (hs.rename ξ)
+  | .cons (n := n) (m := m) h hs => .cons (h.rename (Ren.liftN m (Ren.liftN n α))) (hs.rename α)
 
 
-theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (ξ : Ren Γ Δ)
+theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
     {Θ₁ Θ₂ : Telescope k Δ ps} :
-    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.rename ξ) (Θ₂.rename ξ)
+    Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.rename α) (Θ₂.rename α)
   | .nil => .nil
-  | .cons q p h hΘ => .cons q p (h.rename ξ) (hΘ.rename (Ren.lift ξ))
+  | .cons q p h hΘ => .cons q p (h.rename α) (hΘ.rename (Ren.lift α))
 
-theorem States.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ) {Ss₁ Ss₂ : States k Δ} :
-    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.rename ξ) (Ss₂.rename ξ)
+theorem States.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {Ss₁ Ss₂ : States k Δ} :
+    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv (Ss₁.rename α) (Ss₂.rename α)
   | .nil => .nil
-  | .cons h hκ hs => .cons (h.rename (Ren.liftN _ ξ)) hκ (hs.rename ξ)
+  | .cons h hκ hs => .cons (h.rename (Ren.liftN _ α)) hκ (hs.rename α)
 
-theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (ξ : Ren Γ Δ)
+theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ)
     {vs₁ vs₂ : CorecBranches k Δ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.rename ξ) (vs₂.rename ξ)
+    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.rename α) (vs₂.rename α)
   | .nil => .nil
   | .cons (n := n) (m := m) (a := a) h hs =>
-    .cons (h.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n ξ)))) (hs.rename ξ)
+    .cons (h.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n α)))) (hs.rename α)
 
 end
 
@@ -573,10 +573,10 @@ inductive Val.LevelEquiv {k : Nat} {Γ : Scope} : {e : Scope.Entry} → Val k Γ
   | term {t₁ t₂ : Term k Γ} (h : Term.LevelEquiv t₁ t₂) : Val.LevelEquiv (.term t₁) (.term t₂)
 
 /-- A renaming keeps two values equal up to their levels. -/
-theorem Val.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} (ξ : Ren Γ Δ)
-    {v₁ v₂ : Val k Δ e} : Val.LevelEquiv v₁ v₂ → Val.LevelEquiv (v₁.rename ξ) (v₂.rename ξ)
-  | .var x => .var (ξ x)
-  | .term h => .term (h.rename ξ)
+theorem Val.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} (α : Ren Γ Δ)
+    {v₁ v₂ : Val k Δ e} : Val.LevelEquiv v₁ v₂ → Val.LevelEquiv (v₁.rename α) (v₂.rename α)
+  | .var x => .var (α x)
+  | .term h => .term (h.rename α)
 
 /-- Two values equal up to their levels applied to arguments equal up to their levels give terms
 equal up to their levels. -/

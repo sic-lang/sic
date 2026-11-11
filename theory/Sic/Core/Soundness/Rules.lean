@@ -1296,68 +1296,68 @@ theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Contex
 
 /-- A closed substitution followed by closed arguments gives a renamed variable under the arguments
 what a substitution that the renaming composes gives the variable. -/
-theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (ξ : Ren Γ Δ) {θ : Subst 0 [] Γ}
-    {θ' : Subst 0 [] Δ} (h : ∀ {a} (x : Var Δ a), θ (ξ x) = θ' x)
+theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (α : Ren Γ Δ) {θ : Subst 0 [] Γ}
+    {θ' : Subst 0 [] Δ} (h : ∀ {a} (x : Var Δ a), θ (α x) = θ' x)
     (τ : Subst 0 [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var (Δ.extend n) a) :
-    Subst.append θ τ (Ren.liftN n ξ x) = Subst.append θ' τ x := by
+    Subst.append θ τ (Ren.liftN n α x) = Subst.append θ' τ x := by
   rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
   · rw [Ren.liftN_weakenN, Subst.append_weakenN, Subst.append_weakenN]
     exact h y
-  · rw [Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => nomatch y) z, Subst.append_liftN_empty,
+  · rw [Ren.liftN_comp_of n (α₃ := Ren.empty) (fun y => nomatch y) z, Subst.append_liftN_empty,
       Subst.append_liftN_empty]
 
 /-- Renamed destructors, at closed substitutions that the renaming composes, are equal when the
 destructors are, at the composed substitutions, with the instances of the block renamed. -/
 theorem ValidEqDestructors₀.rename {κ : Universe 0} :
-    {Γ Δ : Scope} → {ns : List Name} → (ξ : Ren Γ Δ) → {inst : Name → Term 0 Δ} →
+    {Γ Δ : Scope} → {ns : List Name} → (α : Ren Γ Δ) → {inst : Name → Term 0 Δ} →
       {rs : Nat → Option Name} → {ds : Destructors 0 Δ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
-      {θ₁' θ₂' : Subst 0 [] Δ} → (∀ {a} (x : Var Δ a), θ₁ (ξ x) = θ₁' x) →
-      (∀ {a} (x : Var Δ a), θ₂ (ξ x) = θ₂' x) →
+      {θ₁' θ₂' : Subst 0 [] Δ} → (∀ {a} (x : Var Δ a), θ₁ (α x) = θ₁' x) →
+      (∀ {a} (x : Var Δ a), θ₂ (α x) = θ₂' x) →
       ValidEqDestructors₀ sig ι κ inst rs ds θ₁' θ₂' →
-      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename ξ) rs (ds.rename ξ) θ₁ θ₂
+      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename α) rs (ds.rename α) θ₁ θ₂
   | _, _, _, _, _, _, .nil, _, _, _, _, _, _, h => h
-  | _, _, _, ξ, inst, rs, .cons (ps := ps) (ψ := ψ) _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂, h => by
+  | _, _, _, α, inst, rs, .cons (ps := ps) (ψ := ψ) _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂, h => by
     rw [ValidEqDestructors₀] at h
     rw [Destructors.rename, ValidEqDestructors₀, Telescope.subst_rename_of h₁,
       Telescope.subst_rename_of h₂]
     obtain ⟨hΘ, h⟩ := h
     refine ⟨hΘ, ?_⟩
-    have hB : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (ξ x) = θ' x) →
-        ∀ τ, (B.rename (Ren.liftN ps.length ξ)).subst (Subst.append θ τ) =
+    have hB : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (α x) = θ' x) →
+        ∀ τ, (B.rename (Ren.liftN ps.length α)).subst (Subst.append θ τ) =
           B.subst (Subst.append θ' τ) := fun θ θ' hθ τ =>
-      Term.subst_rename_of (Subst.append_liftN_rename ξ hθ τ) B
-    have hsnoc : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (ξ x) = θ' x) →
+      Term.subst_rename_of (Subst.append_liftN_rename α hθ τ) B
+    have hsnoc : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (α x) = θ' x) →
         ∀ f {a} (x : Var (.secondOrder ps ψ :: _) a),
-          Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift ξ x) =
+          Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift α x) =
             Subst.snoc (e := .secondOrder ps ψ) θ' f x := fun θ θ' hθ f a x => by
       cases x with
       | zero => rfl
       | succ x => exact hθ x
-    have hinst : (fun D => ((inst D).rename ξ).rename Ren.weaken) =
-        fun D => ((inst D).rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) ξ) :=
-      funext fun D => (Term.rename_rename_of (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl)
-        _).trans (Term.rename_rename_of (ξ₁ := Ren.lift ξ) (ξ₂ := Ren.weaken)
-          (ξ₃ := fun x => Ren.weaken (ξ x)) (fun _ => rfl) _).symm
+    have hinst : (fun D => ((inst D).rename α).rename Ren.weaken) =
+        fun D => ((inst D).rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) α) :=
+      funext fun D => (Term.rename_rename_of (α₃ := fun x => Ren.weaken (α x)) (fun _ => rfl)
+        _).trans (Term.rename_rename_of (α₁ := Ren.lift α) (α₂ := Ren.weaken)
+          (α₃ := fun x => Ren.weaken (α x)) (fun _ => rfl) _).symm
     split at h
     · obtain ⟨⟨κ₁, hκ, hBe⟩, hds⟩ := h
       refine ⟨⟨κ₁, hκ, fun τ₁ τ₂ hτ => ?_⟩, fun f₁ f₂ hf => ?_⟩
       · rw [hB θ₁ θ₁' h₁, hB θ₂ θ₂' h₂]
         exact hBe τ₁ τ₂ hτ
       · rw [hinst]
-        refine ValidEqDestructors₀.rename (Ren.lift ξ) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+        refine ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
           (hds f₁ f₂ fun τ₁ τ₂ hτ => ?_)
         rw [← hB θ₁ θ₁' h₁]
         exact hf τ₁ τ₂ hτ
     · rename_i D _
       obtain ⟨hBD, hds⟩ := h
       refine ⟨?_, fun f₁ f₂ => ?_⟩
-      · rw [hBD, Term.rename_rename_of (ξ₁ := Ren.liftN ps.length ξ)
-            (ξ₂ := Ren.weakenN ps.length) (ξ₃ := fun x => (ξ x).weakenN ps.length)
-            (fun x => Ren.liftN_weakenN _ ξ x),
-          Term.rename_rename_of (ξ₁ := Ren.weakenN ps.length) (ξ₂ := ξ)
-            (ξ₃ := fun x => (ξ x).weakenN ps.length) (fun _ => rfl)]
+      · rw [hBD, Term.rename_rename_of (α₁ := Ren.liftN ps.length α)
+            (α₂ := Ren.weakenN ps.length) (α₃ := fun x => (α x).weakenN ps.length)
+            (fun x => Ren.liftN_weakenN _ α x),
+          Term.rename_rename_of (α₁ := Ren.weakenN ps.length) (α₂ := α)
+            (α₃ := fun x => (α x).weakenN ps.length) (fun _ => rfl)]
       · rw [hinst]
-        exact ValidEqDestructors₀.rename (Ren.lift ξ) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+        exact ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
           (hds f₁ f₂)
 
 /-- `(⊨d̄_κε)`, in a context. -/

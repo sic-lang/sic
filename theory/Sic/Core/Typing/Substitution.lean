@@ -57,7 +57,7 @@ theorem TypedSubst.single {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
     (ht : HasType sig ctx t A) : TypedSubst sig ctx (Subst₀.single t) (ctx.var A) :=
   have hctx := contextPresuppositions.hasType ht
   have hB (B : Term k Γ) : (B.rename Ren.weaken).subst₀ (Subst₀.single t) = B :=
-    (Term.subst₀_rename_of (σ := Subst₀.single t) (ξ := Ren.weaken) (σ' := Subst₀.id)
+    (Term.subst₀_rename_of (σ := Subst₀.single t) (α := Ren.weaken) (σ' := Subst₀.id)
       (fun _ => rfl) B).trans (Term.subst₀_id B)
   ⟨hctx, fun
     | .zero => by
@@ -70,10 +70,10 @@ theorem TypedSubst.single {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
       exact .var hctx hy,
     fun
     | .succVar (Θ := Θ) (A := B) hX => ⟨_, rfl, by
-      rw [(Telescope.subst₀_rename_of (σ := Subst₀.single t) (ξ := Ren.weaken) (σ' := Subst₀.id)
+      rw [(Telescope.subst₀_rename_of (σ := Subst₀.single t) (α := Ren.weaken) (σ' := Subst₀.id)
           (fun _ => rfl) Θ).trans (Telescope.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl) Θ),
         (Term.subst₀_rename_of (σ := Subst₀.liftN _ (Subst₀.single t))
-          (ξ := Ren.liftN _ Ren.weaken) (σ' := Subst₀.liftN _ Subst₀.id)
+          (α := Ren.liftN _ Ren.weaken) (σ' := Subst₀.liftN _ Subst₀.id)
           (Subst₀.liftN_rename_of _ fun _ => rfl) B).trans
           (Term.subst₀_id_of (σ := Subst₀.liftN _ Subst₀.id) (Subst₀.liftN_id_of _ fun _ => rfl) B)]
       exact hX⟩⟩

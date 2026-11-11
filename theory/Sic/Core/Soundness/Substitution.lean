@@ -99,7 +99,7 @@ theorem Constructor.results_subst_append {j g k' : Nat} {Δ Γ : Scope}
     Motives.results names (Cs.subst σ) ((c.fields I).recursion names) ts.terms =
       some (R.subst (Subst.append σ ts.toSubst)) := by
   have h' := Motives.results_subst names (Subst.append σ ts.toSubst) _ h
-  rwa [Motives.subst_rename_of (ξ := Ren.weakenN (c.params I).length) (θ' := σ)
+  rwa [Motives.subst_rename_of (α := Ren.weakenN (c.params I).length) (θ' := σ)
       (fun x => Subst.append_weakenN σ _ x), ← Args.terms_subst,
     Args.bound_subst_append] at h'
 
@@ -132,7 +132,7 @@ theorem Subst.dropN_append_succ {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := .var :: Γ) n x)).symm
   show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.params.length τ)
   rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.params.length
-    (ξ := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
+    (α := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
 
 /-- `(σ, τ)` gives the first new variable what `τ` gives it. -/
 theorem Subst.dropN_append_zero {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
@@ -153,7 +153,7 @@ theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend (.
     @Eq (Subst k [] (Scope.extend [] n)) (Subst.topN n (Subst.topN (Γ := Γ) (n + 1) σ))
       (Subst.topN n σ) :=
   Subst.ext fun x => congrArg (fun y => σ y)
-    (Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => by cases y) x)
+    (Ren.liftN_comp_of n (α₃ := Ren.empty) (fun y => by cases y) x)
 
 /-- The arguments of a telescope that a closed substitution of its variables gives them, the first
 one first. -/
@@ -180,10 +180,10 @@ theorem Subst.args_toSubst : (ps : List Parameter) → (τ : Subst k [] (Scope.e
 /-! ## Corecursors at Closed States -/
 
 /-- The terms of renamed arguments are their terms renamed. -/
-theorem Args.terms_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
-    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.rename ξ).terms = ts.terms.rename ξ
+theorem Args.terms_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
+    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.rename α).terms = ts.terms.rename α
   | [], .nil => rfl
-  | _ :: _, .cons _ ts => congrArg _ (Args.terms_rename ξ ts)
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_rename α ts)
 
 /-- `(corec_r T from ȳ return Θ̄ with ḡ)[σ, t̄ / ȳ] = corec_r T[σ] from t̄ return Θ̄[σ] with ḡ[σ]`: the
 corecursor at the variables of a state, substituted by `σ` followed by closed arguments of the
@@ -204,12 +204,12 @@ theorem Args.rename_weakenN_subst {ps ps' : List Parameter} (ts : Args k [] ps)
     (Args.subst_id_of (fun _ => rfl) ts)
 
 /-- The motive at a position of motives renamed is the motive renamed, under its variables. -/
-theorem Motives.get_rename {Γ Δ : Scope} (ξ : Ren Γ Δ) :
+theorem Motives.get_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
     {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Δ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
-      (Cs.rename ξ).get j = some ⟨n, C.rename (Ren.liftN (n + 1) ξ)⟩
+      (Cs.rename α).get j = some ⟨n, C.rename (Ren.liftN (n + 1) α)⟩
   | .nil, _, _, _, h => nomatch h
   | .cons .., 0, _, _, h => by cases h; rfl
-  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_rename ξ (Cs := Cs) h
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_rename α (Cs := Cs) h
 
 /-- Fields have recursive results when the motives have a motive without non-uniform parameters for
 each type of the block. -/
@@ -344,7 +344,7 @@ theorem EqSubst.append_iff :
       | zero => exact Subst.dropN_topN_zero σ₁
       | succ y =>
         show ((Subst.dropN (ps.length + 1) σ₁ y).rename (Ren.liftN _ Ren.weaken)).subst _ = _
-        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (ξ := Ren.weaken)
+        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (α := Ren.weaken)
           (θ' := Subst.tail (Subst.dropN ps.length (Subst.topN (Γ := Γ) (ps.length + 1) σ₁)))
           fun _ => rfl)]
         exact Term.subst_liftN_empty _ _

@@ -107,17 +107,17 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
 -- ADE: none.
 /-- The corecursor from the variables of a state, renamed under the variables of the state, is the
 corecursor from these variables of its instance, states and branches renamed. -/
-theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (ξ : Ren Γ Δ) (r : Grade) (D : Name)
+theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
     (Ss : States k Δ) (gs : CorecBranches k Δ) (ps' : List Parameter) :
-    (Term.corecAt r D qs ls ps as Ss gs ps').rename (Ren.liftN ps'.length ξ) =
-      Term.corecAt r D qs ls ps (as.rename ξ) (Ss.rename ξ) (gs.rename ξ) ps' := by
-  rw [Term.rename_eq_subst_of (θ := Subst.liftN ps'.length (Ren.toSubst ξ))
+    (Term.corecAt r D qs ls ps as Ss gs ps').rename (Ren.liftN ps'.length α) =
+      Term.corecAt r D qs ls ps (as.rename α) (Ss.rename α) (gs.rename α) ps' := by
+  rw [Term.rename_eq_subst_of (θ := Subst.liftN ps'.length (Ren.toSubst α))
       (Subst.liftN_eta_of ps'.length (fun _ => rfl)),
     Term.corecAt_subst, ← InstanceArgs.rename_eq_subst,
-    (States.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (Ss.rename ξ)).symm.trans
+    (States.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (Ss.rename α)).symm.trans
       (States.subst_rename_of (fun _ => rfl) Ss),
-    (CorecBranches.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (gs.rename ξ)).symm.trans
+    (CorecBranches.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (gs.rename α)).symm.trans
       (CorecBranches.subst_rename_of (fun _ => rfl) gs)]
   rfl
 
@@ -215,7 +215,7 @@ theorem Ownership.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Par
   have hy : Ownership sig φ' (m ⊙ r) (o * (m.grade * r)) (Term.var₀ (k := k) .zero) :=
     hx ▸ Ownership.var (φ := φ') (x := .zero)
   have hc' := ownershipStableUnderRenaming.ownership (Ren.liftN ps'.length (Ren.weaken (e := .var)))
-    (Ownership.extendFields_liftN (φ' := φ') (ξ := Ren.weaken)
+    (Ownership.extendFields_liftN (φ' := φ') (α := Ren.weaken)
       (fun _ => rfl) (o * (m.grade * r)) (m.grade * r) ps') hc
   erw [Term.corecAt_rename] at hc'
   have hn := Ownership.unpack hpre r (Θ := S.rename Ren.weaken) (κs := κs)
