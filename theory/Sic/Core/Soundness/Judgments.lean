@@ -646,7 +646,7 @@ where
       rw [List.getFin_map] at hc
       exact hc
     | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp hadm
-        has ht hu hobs =>
+        _ has ht hu hobs =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl

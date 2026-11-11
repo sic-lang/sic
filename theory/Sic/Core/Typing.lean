@@ -810,11 +810,12 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
           (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
             qs ls ps as) as.toSubst))).instantiate bs)
   -- ADE: `η-eq`, `Σ-η` and `η-unit`, in `Definition/Typed.agda`.
-  /-- Two terms of the instance of a codata type, whose arguments are arguments of the parameters,
-  whose observations by each destructor, at the position `hd` in the destructors
-  `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the instance, are equal over the variables
-  of its telescope, the destructors `d̄₁` before it being the observations of the first term by
-  them, are equal.
+  /-- Two terms of the instance of a codata type without recursive destructor, whose arguments are
+  arguments of the parameters, whose observations by each destructor, at the position `hd` in the
+  destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)` of the type at the instance, are equal over
+  the variables of its telescope, the destructors `d̄₁` before it being the observations of the
+  first term by them, are equal. The premise `hr` is not needed by the soundness: comparing two
+  terms by their observations ends only when no observation gives a term of the block again.
   RFC: `\eta_d` -/
   | etaObs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -822,6 +823,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hr : ∀ R ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, R = none)
       (has : HasInstanceArgs sig ctx as
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
@@ -1312,7 +1314,7 @@ where
     | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaObs _ _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
     | .nil hctx => wfCtx hctx
@@ -1482,7 +1484,7 @@ where
     | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
     | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ _ has .. => hasInstanceArgs has
+    | .etaObs _ _ _ _ _ _ has .. => hasInstanceArgs has
   hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
       {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfCtx sig ctx
     | .nil hctx => hctx

@@ -476,8 +476,8 @@ where
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
         exact ih
     | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp
-        hadm has ht hu hobs, hθ => by
-      refine .etaObs h hq hl hp hadm (hasInstanceArgs has hθ) (hasType ht hθ) (hasType hu hθ) ?_
+        hadm hr has ht hu hobs, hθ => by
+      refine .etaObs h hq hl hp hadm hr (hasInstanceArgs has hθ) (hasType ht hθ) (hasType hu hθ) ?_
       intro d p q ps' Ξ Θ B ψ hd
       have ih := eqTerm (hobs d p q ps' Ξ Θ B ψ hd) (hθ.append _)
       rw [Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t),
