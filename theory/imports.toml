@@ -1,0 +1,85 @@
+# The groups of the modules of Sic/ and the rules of their imports, which theory/Imports.lean checks
+# and draws: a name stands for the module and for the modules below it.
+
+[[group]]
+name = "Grades"
+modules = [
+  "Sic.Core.GradeVector",
+  "Sic.Grade",
+  "Sic.Modality",
+  "Sic.Mode",
+  "Sic.Multiplicity",
+  "Sic.Order",
+  "Sic.Set",
+]
+
+[[group]]
+name = "Syntax"
+modules = [
+  "Sic.Core.Level",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+]
+
+[[group]]
+name = "Judgments"
+modules = [
+  "Sic.Core.Independence",
+  "Sic.Core.Ownership",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[group]]
+name = "Reduction and erasure"
+modules = ["Sic.Core.Erasure", "Sic.Core.Reduction"]
+
+[[group]]
+name = "Meaning and soundness"
+modules = ["Sic.Core.Meaning", "Sic.Core.Soundness"]
+
+[[rule]]
+reason = "the grades, the multiplicities and the modes are an algebra that knows nothing of the core"
+modules = [
+  "Sic.Grade",
+  "Sic.Modality",
+  "Sic.Mode",
+  "Sic.Multiplicity",
+  "Sic.Order",
+  "Sic.Set",
+]
+forbidden = ["Sic.Core"]
+
+[[rule]]
+reason = "the syntax and the substitution are defined before every judgment that reads them"
+modules = [
+  "Sic.Core.Level",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+]
+forbidden = [
+  "Sic.Core.Erasure",
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.Soundness",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the usage is a judgment of its own, with no premise of the typing or of the ownership"
+modules = ["Sic.Core.Usage"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
+
+[[rule]]
+reason = "the ownership is a judgment of its own, with no premise of the typing or of the usage"
+modules = ["Sic.Core.Ownership"]
+forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the erasure is untyped, and reads the grades of the syntax and the usage only"
+modules = ["Sic.Core.Erasure"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
