@@ -5,7 +5,7 @@ public import Sic.Core.Substitution
 /-!
 # Prelude
 
-The prelude of annex 17 of RFC 36: three type declarations that the type system uses for its own
+The prelude of annex 18 of RFC 36: three type declarations that the type system uses for its own
 needs, the unit `Unit`, the pair `Pair` and the type of positions `Step`, the packing `⟨Θ⟩` of a
 telescope into nested pairs, the packing `⟨t̄⟩` of its arguments and the unpacking of a term of a
 packing, with the commutation of these definitions with the renamings and the substitutions; the

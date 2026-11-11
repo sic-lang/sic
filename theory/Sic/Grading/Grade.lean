@@ -1,7 +1,6 @@
 module
 
 public import Sic.Grading.Multiplicity
-public import Sic.Math.Set
 
 /-!
 # Grades
@@ -9,8 +8,7 @@ public import Sic.Math.Set
 The grades of annex 04 of RFC 36: a grade counts the uses of a variable along two axes, its uses at
 run time and all its uses, as a pair of multiplicities.
 ADE have no such modality, and prove the laws of a modality for each of their instances; the grades
-are proved here to satisfy them, for the multiplications and the greatest lower bounds that the RFC
-states.
+are proved here to satisfy them, for the multiplications that the RFC states.
 Their meaning, the pairs of numbers of uses, is in `Sic/Grading/Meaning/`.
 -/
 
@@ -223,112 +221,13 @@ theorem modality : IsModality Grade zero one where
 
 theorem le_antisymm : ∀ p q : Grade, p ≤ q → q ≤ p → p = q := by decide
 
-/-! ### Greatest lower bounds
-
-Every non-empty decidable set of grades has a greatest lower bound, its meet, which the usage of the
-recursion of the data and codata types takes over all the shapes of a term. -/
-
--- ADE: `Greatest-lower-bound`, in `Graded/Modality.agda`.
-/-- `g` is the greatest lower bound of the set `S` of grades, written `⋀ S`.
-RFC: `\textstyle\bigwedge_p` -/
-def IsGLB (S : Set Grade) (g : Grade) : Prop :=
-  (∀ p, p ∈ S → g ≤ p) ∧ ∀ r, (∀ p, p ∈ S → r ≤ p) → r ≤ g
-
 theorem le_trans : ∀ p q r : Grade, p ≤ q → q ≤ r → p ≤ r := by decide
 
-/-- The seven grades, in a list. -/
-def all : List Grade :=
-  [noneNone, noneLinear, noneUnrestricted, linearLinear, linearUnrestricted, affineLinear,
-    unrestrictedUnrestricted]
-
-theorem mem_all (p : Grade) : p ∈ all := by
-  rcases cases p with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [all]
-
 theorem le_refl : ∀ p : Grade, p ≤ p := by decide
-
-/-- The meet of `g` and of the grades of a list is their greatest lower bound. -/
-theorem isGLB_foldl (L : List Grade) : ∀ g : Grade,
-    IsGLB { p | p = g ∨ p ∈ L } (L.foldl (· ⊓ ·) g) := by
-  have meet_le : ∀ g x : Grade, g ⊓ x ≤ g ∧ g ⊓ x ≤ x := by decide
-  induction L with
-  | nil =>
-    intro g
-    refine ⟨?_, fun r h => h g (Or.inl rfl)⟩
-    intro p hp
-    rcases hp with hp | hp
-    · rw [hp]
-      exact le_refl g
-    · cases hp
-  | cons x xs ih =>
-    intro g
-    obtain ⟨h₁, h₂⟩ := ih (g ⊓ x)
-    refine ⟨?_, ?_⟩
-    · intro p hp
-      rcases hp with hp | hp
-      · rw [hp]
-        exact le_trans _ _ _ (h₁ (g ⊓ x) (Or.inl rfl)) (meet_le g x).1
-      · rcases List.mem_cons.1 hp with hp | hp
-        · rw [hp]
-          exact le_trans _ _ _ (h₁ (g ⊓ x) (Or.inl rfl)) (meet_le g x).2
-        · exact h₁ p (Or.inr hp)
-    · intro r h
-      apply h₂
-      intro p hp
-      rcases hp with hp | hp
-      · rw [hp]
-        exact (modality.le_meet_iff g x r).1 ⟨h g (Or.inl rfl), h x (Or.inr List.mem_cons_self)⟩
-      · exact h p (Or.inr (List.mem_cons_of_mem _ hp))
-
-/-- Every non-empty decidable set of grades has a greatest lower bound.
-RFC: `\textstyle\bigwedge_p`
-The set is decidable, which the proof needs to compute the bound without the axiom of choice; the
-sets of grades that a rule computes are. -/
-theorem exists_isGLB (S : Set Grade) [DecidablePred (· ∈ S)] (h : ∃ p, p ∈ S) :
-    ∃ g, IsGLB S g := by
-  obtain ⟨p₀, h₀⟩ := h
-  let L := all.filter (fun p => decide (p ∈ S))
-  have mem : ∀ p, p ∈ S ↔ p ∈ L := by
-    intro p
-    simp only [L, List.mem_filter, decide_eq_true_eq]
-    exact ⟨fun h => ⟨mem_all p, h⟩, fun h => h.2⟩
-  have hL : p₀ ∈ L := (mem p₀).1 h₀
-  refine ⟨L.foldl (· ⊓ ·) p₀, ?_, ?_⟩
-  · intro p hp
-    exact (isGLB_foldl L p₀).1 p (Or.inr ((mem p).1 hp))
-  · intro r hr
-    apply (isGLB_foldl L p₀).2
-    intro p hp
-    rcases hp with hp | hp
-    · rw [hp]; exact hr p₀ h₀
-    · exact hr p ((mem p).2 hp)
-
-/-- The set of the grades of a family. -/
-def range {I : Type} (p : I → Grade) : Set Grade :=
-  { x | ∃ i, p i = x }
 
 theorem add_le_add : ∀ p q r s : Grade, p ≤ q → r ≤ s → p + r ≤ q + s := by decide
 
 theorem mul_le_mul_left : ∀ r p q : Grade, p ≤ q → r * p ≤ r * q := by decide
-
-/-- The greatest lower bound of a family is superadditive, for every family `(pᵢ)` and `(qᵢ)`.
-RFC: `\textstyle\bigwedge{+}_p` -/
-theorem glb_add {I : Type} (p q : I → Grade) {g h k : Grade} (hg : IsGLB (range p) g)
-    (hh : IsGLB (range q) h) (hk : IsGLB (range fun i => p i + q i) k) : g + h ≤ k :=
-  hk.2 (g + h) fun _ ⟨i, hi⟩ => hi ▸ add_le_add _ _ _ _ (hg.1 (p i) ⟨i, rfl⟩) (hh.1 (q i) ⟨i, rfl⟩)
-
--- ADE: `·-GLBˡ` of `Has-well-behaved-GLBs`, in `Graded/Modality.agda`.
-/-- The multiplication by a grade commutes with the greatest lower bound of a family indexed by a
-non-empty set.
-RFC: `\textstyle\bigwedge{\cdot}_p`
-The proof is the finiteness of the grades: the grades `p` such that `l ≤ r · p` form a filter, which
-has a least element. -/
-theorem glb_mul {I : Type} (p : I → Grade) (i₀ : I) (r : Grade) {g : Grade}
-    (hg : IsGLB (range p) g) : IsGLB (range fun i => r * p i) (r * g) := by
-  refine ⟨fun _ ⟨i, hi⟩ => hi ▸ mul_le_mul_left r _ _ (hg.1 (p i) ⟨i, rfl⟩), ?_⟩
-  intro l hl
-  have filter : ∀ r l : Grade, (∃ p, l ≤ r * p) → ∃ f, ∀ p, l ≤ r * p ↔ f ≤ p := by decide
-  obtain ⟨f, hf⟩ := filter r l ⟨p i₀, hl _ ⟨i₀, rfl⟩⟩
-  exact (hf g).2 (hg.2 f fun x ⟨i, hi⟩ => hi ▸ (hf (p i)).1 (hl _ ⟨i, rfl⟩))
 
 /-! ### Projection
 

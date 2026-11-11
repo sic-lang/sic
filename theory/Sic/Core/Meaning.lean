@@ -5,7 +5,7 @@ public import Sic.Core.Reduction
 /-!
 # Meaning
 
-The meaning of the judgments of annex 16 of RFC 36, after the meaning explanations of Martin-Löf: a
+The meaning of the judgments of annex 17 of RFC 36, after the meaning explanations of Martin-Löf: a
 closed judgment is true when its terms compute as it says, and a judgment in a context when it holds
 under every pair of equal closed substitutions of the context.
 Each judgment of the typing has a meaning, with the same objects: the signatures and their entries,

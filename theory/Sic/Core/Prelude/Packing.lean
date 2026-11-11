@@ -8,7 +8,7 @@ import Sic.Core.Typing.Substitution
 /-!
 # Packing
 
-The properties of the packings of annex 17 of RFC 36: the packing of a telescope whose entries live
+The properties of the packings of annex 18 of RFC 36: the packing of a telescope whose entries live
 in sorts is a type of a universe, and the packing of its arguments a term of it, with their usage
 and their ownership.
 -/

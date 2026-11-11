@@ -5,7 +5,7 @@ public import Sic.Core.Prelude
 /-!
 # Reduction
 
-The weak head reduction of annex 14 of RFC 36, `Σ ⊢ t ⟶ u`, the computation of the type theory:
+The weak head reduction of annex 15 of RFC 36, `Σ ⊢ t ⟶ u`, the computation of the type theory:
 the conversion reduces the terms to their weak head normal forms to compare them, the meaning
 computes the closed terms, `Σ ⊢ t ⇓ v`, and the erasure is sound for this computation.
 The core reduces by the rule `(δ_⟶)`, which unfolds a definition, the data types by `(ι_⟶)`,

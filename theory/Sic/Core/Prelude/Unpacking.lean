@@ -13,7 +13,7 @@ import Sic.Core.Usage.Renaming
 /-!
 # Unpacking
 
-The unpacking of annex 17 of RFC 36: a term `u` of the packing `⟨Θ⟩` of a telescope, unpacked into a
+The unpacking of annex 18 of RFC 36: a term `u` of the packing `⟨Θ⟩` of a telescope, unpacked into a
 term `b` over the variables of `Θ`, by a recursor on each pair, then on the unit, with a motive that
 does not depend on the term unpacked; its typing, its computation on the packing of arguments, its
 extensionality, its usage and its ownership, derived from the rules of the recursors of the pair and

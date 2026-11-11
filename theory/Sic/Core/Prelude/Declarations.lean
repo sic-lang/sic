@@ -7,7 +7,7 @@ public import Sic.Core.Usage
 /-!
 # Formation of the Prelude
 
-The formation of the prelude of annex 17 of RFC 36: each of its declarations is well formed in the
+The formation of the prelude of annex 18 of RFC 36: each of its declarations is well formed in the
 declarations before it, at every instance that its constraint admits.
 -/
 

@@ -10,7 +10,7 @@ import Sic.Core.Usage.Renaming
 /-!
 # Positions
 
-The positions of annex 17 of RFC 36: the resumption of a position, which an observation of a
+The positions of annex 18 of RFC 36: the resumption of a position, which an observation of a
 recursive destructor computes, a recursor on the type of positions that unpacks a new state into the
 corecursor from it, or gives a term already built; its usage and its ownership, derived from the
 rules of the recursor of the type of positions and of the unpacking, which show what the rules of

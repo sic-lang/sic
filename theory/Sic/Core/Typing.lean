@@ -5,7 +5,7 @@ public import Sic.Core.Prelude
 /-!
 # Typing
 
-The judgments of typing and of equality of annex 13 of RFC 36, with the judgments for signatures
+The judgments of typing and of equality of annex 14 of RFC 36, with the judgments for signatures
 and contexts, for the arguments of telescopes and of instances, and for the telescopes in a sort:
 
 * `⊢ Σ`, `Σ ⊢ Γ`, `Σ; Γ ⊢ A`, `Σ; Γ ⊢ A ≡ B`, `Σ; Γ ⊢ t : A` and `Σ; Γ ⊢ t ≡ u : A`;

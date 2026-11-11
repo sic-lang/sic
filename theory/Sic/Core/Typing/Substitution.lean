@@ -6,7 +6,7 @@ import Sic.Core.Typing.Renaming
 /-!
 # Substitution of the Typing
 
-The judgments of typing and of equality of annex 13 of RFC 36 are stable under the typed
+The judgments of typing and of equality of annex 14 of RFC 36 are stable under the typed
 substitutions of the first order `Σ; Γ ⊢ σ : Δ`: a judgment in the context `Δ` holds, substituted by
 `σ`, in the context `Γ`, in which the term that `σ` gives each variable of `Δ` has its type,
 substituted.

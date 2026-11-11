@@ -1,12 +1,13 @@
 module
 
 public import Sic.Core.Usage
+public import Sic.Grading.GradeSet
 
 /-!
 # Erasure
 
-The erasure of annex 15 of RFC 36, which compiles a term to an untyped target language: `⌊t⌋_S`
-replaces by `↯` the positions of `t` whose grade is in the set `S`, and the set `S^m` of the
+The erasure of annex 16 of RFC 36, which compiles a term to an untyped target language: `⌊t⌋_S`
+replaces by `↯` the positions of `t` whose grade is in the set `S`, and the set of grades `S^m` of the
 grades that a term checked in the mode `m` does not count gives the extraction, `⌊t⌋_{S^{11ᵐ}}`, and
 the program that the proofs see, `⌊t⌋_{S^{01ᵐ}}`.
 The target language has variables, the constants with their grades, `f.{p̄}`, a value `↯` that
@@ -32,31 +33,6 @@ grade `𝟘` only, in the mode `𝟙ᵐ`, while the erasure here is stated for e
 -/
 
 @[expose] public section
-
-namespace Sic.Grading.Mode
-
-open Sic.Math
-
--- ADE: none.
-/-- `S^m`: the grades of the positions that a term checked in the mode `m` checks in a more erased
-mode, `m ⊙ p ≠ m`, and which it does not count.
-RFC: `\mathsf{uncounted}_m` -/
-def erased (m : Mode) : Set Grade := { p | m ⊙ p ≠ m }
-
-instance (m : Mode) : DecidablePred (· ∈ m.erased) :=
-  fun p => inferInstanceAs (Decidable (m ⊙ p ≠ m))
-
--- ADE: none.
-/-- The three sets `S^m`: the mode `11ᵐ` of run time does not count the grades without use at run
-time, the mode `01ᵐ` the grade `00ᵖ`, and the mode `00ᵐ`, which counts no use, erases nothing.
-RFC: `\mathsf{values}_m` -/
-theorem erased_values :
-    (∀ p, p ∈ oneOne.erased ↔ p.run = .zero) ∧
-    (∀ p, p ∈ zeroOne.erased ↔ p = Grade.zero) ∧
-    (∀ p, p ∉ zeroZero.erased) := by
-  decide
-
-end Sic.Grading.Mode
 
 namespace Sic.Core
 
@@ -364,41 +340,6 @@ def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈
 end
 
 /-! ## Properties -/
-
--- ADE: none.
-/-- A set `S` of grades erases only what a term checked in the mode `m` does not count, and
-follows the rules of usage: a variable checked in the mode `m` uses itself with a grade outside
-`S`, and a grade above a grade of `S`, or a part of a sum in `S`, is in `S`. -/
-structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
-  /-- The grade `⌜m⌝` is not erased.
-  RFC: `\mathsf{uncounted}_S.\mathsf{grade}` -/
-  grade : m.grade ∉ S
-  /-- A grade above a grade of `S` is in `S`.
-  RFC: `\mathsf{uncounted}_S.{\le}` -/
-  le : ∀ p q : Grade, p ≤ q → p ∈ S → q ∈ S
-  /-- The first part of a sum in `S` is in `S`.
-  RFC: `\mathsf{uncounted}_S.{+}` -/
-  add : ∀ p q : Grade, p + q ∈ S → p ∈ S
-  /-- A product in `S` whose first factor is not in `S` has its second factor in `S`.
-  RFC: `\mathsf{uncounted}_S.{\cdot}` -/
-  mul : ∀ p q : Grade, p ∉ S → p * q ∈ S → q ∈ S
-  /-- A product of which a factor is in `S` is in `S`.
-  RFC: `\mathsf{uncounted}_S.\mathsf{factor}` -/
-  factor : ∀ p q : Grade, p ∈ S ∨ q ∈ S → p * q ∈ S
-  /-- A grade not in `S` keeps the mode `m`, in which the term of a field of this grade is checked.
-  RFC: `\mathsf{uncounted}_S.{\odot}` -/
-  mode : ∀ p : Grade, p ∉ S → m ⊙ p = m
-
--- ADE: none.
-/-- The set `S^m` erases only what a term checked in the mode `m` does not count.
-RFC: `\mathsf{erases}_m` -/
-theorem _root_.Sic.Grading.Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
-  grade := by revert m; decide
-  le := by revert m; decide
-  add := by revert m; decide
-  mul := by revert m; decide
-  factor := by revert m; decide
-  mode := fun _ h => Decidable.of_not_not h
 
 /-- A term of the target language transported along an equality of the sizes of its scope has the
 occurrences of the term, at the transported indices. -/
