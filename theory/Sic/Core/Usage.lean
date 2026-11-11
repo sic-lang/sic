@@ -364,4 +364,43 @@ inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : 
       {γ δ : GradeVector Γ.length} (h : UsageDestructors sig γ m ds) (hle : δ ≤ᶜ γ) :
       UsageDestructors sig δ m ds
 
+-- ADE: none.
+/--
+`⊢ Σ ▶`: the entries of the signature use the variables as their grades allow: at each instance of
+its sort and grade variables, the body of a constant definition uses no variable, in the mode of the
+definition; at each instance that the constraint of a type declaration admits, the constructors or
+the destructors of each of its types use the parameters as the grades `ζ` of the type allow, the
+uses of all of them added, in the signature extended by the declaration, which gives the grades of
+its types.
+-/
+inductive UsageSig : Signature → Prop where
+  /-- The empty signature.
+  RFC: `\mathsf{sig}_{\varnothing▶}` -/
+  | empty : UsageSig []
+  /-- A constant definition, whose body uses no variable.
+  RFC: `\mathsf{sig}_{\mathsf{def}▶}` -/
+  | constantDefinition {sig : Signature} {d : ConstantDefinition} (h : UsageSig sig)
+      (hu : ∀ ι, Usage sig 𝟘ᶜ d.mode (d.body ι)) : UsageSig (.constantDefinition d :: sig)
+  /-- A constant declaration, which has no body.
+  RFC: `\mathsf{sig}_{\mathsf{decl}▶}` -/
+  | constantDeclaration {sig : Signature} {c : ConstantDeclaration} (h : UsageSig sig) :
+      UsageSig (.constantDeclaration c :: sig)
+  /-- A block of data types, with the uses `γ` of the constructors of each type at each instance.
+  RFC: `\mathsf{sig}_{\mathsf{data}▶}` -/
+  | data {sig : Signature} {decl : TypeDeclaration}
+      {Ts : List (DataType decl.sorts decl.grades decl.levels decl.scope)} (h : UsageSig sig)
+      (hb : decl.body = .data Ts)
+      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∃ γ,
+        UsageConstructors (.typeDeclaration decl :: sig) ι γ .oneOne T.constructors ∧
+        T.usage ι ≤ᶜ γ) :
+      UsageSig (.typeDeclaration decl :: sig)
+  /-- A block of codata types, with the uses `γ` of the destructors of each type at each instance.
+  RFC: `\mathsf{sig}_{\mathsf{codata}▶}` -/
+  | codata {sig : Signature} {decl : TypeDeclaration}
+      {Ts : List (CodataType decl.sorts decl.grades decl.levels decl.scope)} (h : UsageSig sig)
+      (hb : decl.body = .codata Ts)
+      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∃ γ,
+        UsageDestructors (.typeDeclaration decl :: sig) γ .oneOne (T.body ι) ∧ T.usage ι ≤ᶜ γ) :
+      UsageSig (.typeDeclaration decl :: sig)
+
 end Sic.Core

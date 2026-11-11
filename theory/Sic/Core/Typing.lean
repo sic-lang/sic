@@ -1,9 +1,7 @@
 module
 
-public import Sic.Core.Ownership
 public import Sic.Core.Prelude
 public import Sic.Core.Substitution
-public import Sic.Core.Usage
 
 /-!
 # Typing
@@ -20,7 +18,9 @@ and contexts, for the arguments of telescopes and of instances, and for the tele
   `Σ ⊢ data.{s̄; l̄; p̄ | C} Δ : κ where …` and `Σ ⊢ codata.{s̄; l̄; p̄ | C} Δ : κ where …`, the
   entries of the signature.
 
-Typing and equality carry no grade; the definitions are checked for their usage.
+Typing and equality carry no grade, and no rule has a premise of the usage or of the ownership:
+the usage and the ownership of the entries of the signature are their own judgments, `⊢ Σ ▶` and
+`⊢ Σ ◀`, which `Sic/Core/Usage.lean` and `Sic/Core/Ownership.lean` define.
 An entry of the signature is checked for each instance of its sort and grade variables, once with
 its level variables, so that its rules quantify over the instances; a type declaration only at the
 instances that its constraint admits.
@@ -135,8 +135,7 @@ inductive WfSig : Signature → Prop where
 
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
-type of some sort and the body `t` a term of it, both in the empty context, and the body uses no
-variable in the mode `m`, where its value has the ownership `p` of the definition.
+type of some sort and the body `t` a term of it, both in the empty context.
 -/
 inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.
@@ -144,9 +143,7 @@ inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
   | intro {sig : Signature} {d : ConstantDefinition}
       (κ : Instance d.sorts d.grades → Universe d.levels)
       (hA : ∀ ι, HasType sig .empty (d.type ι) (.sort (κ ι)))
-      (ht : ∀ ι, HasType sig .empty (d.body ι) (d.type ι))
-      (hu : ∀ ι, Usage sig 𝟘ᶜ d.mode (d.body ι))
-      (ho : ∀ ι, Ownership sig (fun x : Var [] .var => nomatch x) d.mode d.ownership (d.body ι)) :
+      (ht : ∀ ι, HasType sig .empty (d.body ι) (d.type ι)) :
       WfConstantDefinition sig d
 
 /-- `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`: for each instance of the sort and grade variables, the type `A` is a
@@ -169,13 +166,11 @@ inductive WfCtx : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → 
   RFC: `\mathsf{ctx}_x` -/
   | var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       (h : WfType sig ctx A) : WfCtx sig (ctx.var A)
-  /-- A second-order variable, whose type is a type in the context extended by its telescope, and
-  the ownership `ψ` of whose result has a constant or a factor.
+  /-- A second-order variable, whose type is a type in the context extended by its telescope.
   RFC: `\mathsf{ctx}_X` -/
   | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
       {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
-      (h : WfType sig (ctx.append Θ) A) (hc : ψ.constant.isSome ∨ ∃ i, (ψ.coefficient i).isSome) :
-      WfCtx sig (ctx.secondOrder Θ A ψ)
+      (h : WfType sig (ctx.append Θ) A) : WfCtx sig (ctx.secondOrder Θ A ψ)
 
 -- ADE: `_⊢_`, in `Definition/Typed.agda`.
 /-- `Σ; Γ ⊢ A`: `A` is a type. -/
@@ -1060,10 +1055,8 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
       WfDestructors sig decl ι as ctx (.cons (d := d) p q Θ B ψ ds) κ
   /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
   and whose result is a type `D` of the block at the instance of the block and at the parameters,
-  with a grade without use at run time if the block is a block of propositions and an ownership `ψ`
-  of its result that is a constant `χ`, which the ownerships of its arguments do not change, below
-  the ownership `11ᵖ` of a new value, which an observation that resumes the corecursor gives, and the
-  others, which do not depend on it, in the same context.
+  with a grade without use at run time if the block is a block of propositions, and the others, which
+  do not depend on it, in the same context.
   RFC: `\bar d_{\kappa\mathsf{rec}}` -/
   | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
@@ -1072,7 +1065,6 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hp : κ.quality = .prop → p.mode ≠ .oneOne)
-      (hψ : ∃ χ, χ ≤ Grade.one ∧ ψ = ⟨some χ, fun _ => none⟩)
       (hds : WfDestructors sig decl ι as ctx ds κ) :
       WfDestructors sig decl ι as ctx
         (.cons (d := d) p q Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
@@ -1082,35 +1074,29 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
 /--
 `Σ ⊢ 𝒟`: the type declaration is well formed.
 A block of data types is well formed when its constraint `C` admits an instance of the sort and grade
-variables and, for each instance it admits, the parameters `Δ` form a context, the fields of each constructor live in the sort `κ`, and the
-constructors of each type `Dⱼ` use the parameters as its grades `ζⱼ` allow, in the signature
-extended by the block; the constructors of each type have distinct names.
+variables and, for each instance it admits, the parameters `Δ` form a context and the fields of each
+constructor live in the sort `κ`; the constructors of each type have distinct names.
 The fields may be recursive, as the judgment of the fields allows.
 A block of codata types likewise, with the destructors of each type in place of its constructors,
 which may be recursive, as the judgment of the destructors allows.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
-  /-- A block of data types, with the uses `γ` of the constructors of each type at each instance.
+  /-- A block of data types.
   RFC: `\mathsf{data}` -/
   | data {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
       decl.levels decl.scope)} (hb : decl.body = .data Ts)
       (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
       (hΘ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
         WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
-      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∃ γ,
-        UsageConstructors (.typeDeclaration decl :: sig) ι γ .oneOne T.constructors ∧
-        T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
       WfTypeDeclaration sig decl
-  /-- A block of codata types, with the uses `γ` of the destructors of each type at each instance.
+  /-- A block of codata types.
   RFC: `\mathsf{codata}` -/
   | codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
       decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
       (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
       (hd : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes,
         WfDestructors sig decl ι (.identity decl.scope) (decl.params ι) (T.body ι) (decl.sort ι))
-      (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∃ γ,
-        UsageDestructors (.typeDeclaration decl :: sig) γ .oneOne (T.body ι) ∧ T.usage ι ≤ᶜ γ)
       (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
       WfTypeDeclaration sig decl
 
@@ -1244,14 +1230,14 @@ theorem presuppositions : Presuppositions :=
 where
   wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
       WfConstantDefinition sig d → WfSig sig
-    | .intro _ hA _ _ _ => hasType (hA (.default _ _))
+    | .intro _ hA _ => hasType (hA (.default _ _))
   wfConstantDeclaration {sig : Signature} {c : ConstantDeclaration} :
       WfConstantDeclaration sig c → WfSig sig
     | .intro _ hA => hasType (hA (.default _ _))
   wfCtx {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} : WfCtx sig ctx → WfSig sig
     | .empty h => h
     | .var h => wfType h
-    | .secondOrder h _ => wfType h
+    | .secondOrder h => wfType h
   wfType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
       WfType sig ctx A → WfSig sig
     | .univType h => hasType h
@@ -1346,8 +1332,8 @@ where
     | .recursive _ hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .data _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
-    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
+    | .data _ ⟨_, hadm⟩ hΔ _ _ => wfCtx (hΔ _ hadm)
+    | .codata _ ⟨_, hadm⟩ hΔ _ _ => wfCtx (hΔ _ hadm)
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
@@ -1524,11 +1510,11 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
         | typeDeclaration hdecl _ _ => cases hdecl with
-          | data hb _ _ _ _ hc =>
+          | data hb _ _ _ hc =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
             nomatch hT
-          | codata hb _ _ _ _ hc =>
+          | codata hb _ _ _ hc =>
             refine ⟨fun T hT => ?_, hc⟩
             simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT

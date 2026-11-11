@@ -1,7 +1,9 @@
 module
 
 public import Sic.Core.Prelude
+public import Sic.Core.Ownership
 public import Sic.Core.Typing
+public import Sic.Core.Usage
 
 /-!
 # Formation of the Prelude
@@ -36,10 +38,6 @@ theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       obtain _ | ⟨_, ⟨⟩⟩ := hc
       exact .nil (.empty h))
-    (fun ι _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      exact ⟨_, .cons .nil .nil, fun x => x.elim0⟩)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
@@ -51,7 +49,7 @@ theorem WfCtx.pairParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
   have hA : WfCtx sig (Context.empty.var (.sort ⟨ι.sorts 0, .var 0⟩) : Context 2 [.var]) :=
     .var (WfType.ofSort (HasType.sort (.empty h) _))
   have hx := WfCtx.var (WfType.ofSort (HasType.var hA .zero))
-  exact .secondOrder (WfType.ofSort (HasType.sort hx ⟨.type, .var 1⟩)) (.inl rfl)
+  exact .secondOrder (WfType.ofSort (HasType.sort hx ⟨.type, .var 1⟩))
 
 /-- The pair is well formed in every well-formed signature. -/
 theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
@@ -74,19 +72,6 @@ theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
         (.cons rfl hB ⟨fun h => (by cases h), fun _ => (by simp [Prelude.pair, Level.value]; omega)⟩
           (.nil (.var (WfType.ofSort hB))) nofun)
         hι)
-    (fun (ι : Instance 1 2) _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      refine ⟨_, .cons (c := Prelude.pairMk) (.cons (δ := (𝟘ᶜ ∙ Grade.zero) ∙ Grade.one)
-        (Usage.var .nil) (.sub (.cons (δ := 𝟘ᶜ) (Usage.var (.cons (Usage.var .nil) .nil))
-          (.sub .nil ?_)) ?_)) .nil, ?_⟩
-      all_goals
-        intro x
-        try simp only [Prelude.pairType]
-        generalize ι.grades 0 = p
-        generalize ι.grades 1 = ρ
-        revert x p ρ
-        decide)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
@@ -119,18 +104,6 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
           .var hctx .zero
         exact .cons rfl hT ⟨fun h => (by cases h), fun _ => (by simp [Prelude.step, Level.value]; omega)⟩
           (.nil (.var (WfType.ofSort hT))) hι)
-    (fun (ι : Instance 1 3) _ T hT => by
-      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
-      obtain _ | ⟨_, ⟨⟩⟩ := hT
-      refine ⟨_, .cons (c := Prelude.stepNext) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_))
-        (.cons (c := Prelude.stepDone) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_)) .nil), ?_⟩
-      all_goals
-        intro x
-        try simp only [Prelude.stepType]
-        generalize ι.grades 0 = r
-        generalize ι.grades 1 = p
-        revert x r p
-        decide)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
@@ -144,4 +117,48 @@ theorem WfSig.prelude : WfSig Signature.prelude :=
   have hp : WfSig [.typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit] :=
     .typeDeclaration (.pair hu) (by decide) (by decide)
   .typeDeclaration (.step hp) (by decide) (by decide)
+
+/-- The constructors of the types of the prelude use their parameters as the grades of the types
+allow.
+RFC: `\mathsf{prelude}_{▶}` -/
+theorem UsageSig.prelude : UsageSig Signature.prelude :=
+  .data (.data (.data .empty rfl
+    (fun ι _ T hT => by
+      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      exact ⟨_, .cons .nil .nil, fun x => x.elim0⟩))
+    rfl
+    (fun (ι : Instance 1 2) _ T hT => by
+      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      refine ⟨_, .cons (c := Prelude.pairMk) (.cons (δ := (𝟘ᶜ ∙ Grade.zero) ∙ Grade.one)
+        (Usage.var .nil) (.sub (.cons (δ := 𝟘ᶜ) (Usage.var (.cons (Usage.var .nil) .nil))
+          (.sub .nil ?_)) ?_)) .nil, ?_⟩
+      all_goals
+        intro x
+        try simp only [Prelude.pairType]
+        generalize ι.grades 0 = p
+        generalize ι.grades 1 = ρ
+        revert x p ρ
+        decide))
+    rfl
+    (fun (ι : Instance 1 3) _ T hT => by
+      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      refine ⟨_, .cons (c := Prelude.stepNext) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_))
+        (.cons (c := Prelude.stepDone) (.cons (δ := 𝟘ᶜ) (Usage.var .nil) (.sub .nil ?_)) .nil), ?_⟩
+      all_goals
+        intro x
+        try simp only [Prelude.stepType]
+        generalize ι.grades 0 = r
+        generalize ι.grades 1 = p
+        revert x r p
+        decide)
+
+/-- The prelude declares data types only, whose values have the ownerships that their constructors
+give.
+RFC: `\mathsf{prelude}_{◀}` -/
+theorem OwnershipSig.prelude : OwnershipSig Signature.prelude :=
+  .data (.data (.data .empty rfl) rfl) rfl
+
 end Sic.Core

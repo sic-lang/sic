@@ -245,4 +245,43 @@ inductive OwnershipArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps :
 
 end
 
+-- ADE: none.
+/--
+`⊢ Σ ◀`: the values of the entries of the signature have their ownerships: at each instance of its
+sort and grade variables, the value of the body of a constant definition has the ownership of the
+definition, in its mode, without variable; at each instance that the constraint of a block of codata
+types admits, the ownership `ψ` of the result of each recursive destructor is a constant `χ`, which
+the ownerships of its arguments do not change, below the ownership `11ᵖ` of a new value, which an
+observation that resumes the corecursor gives.
+-/
+inductive OwnershipSig : Signature → Prop where
+  /-- The empty signature.
+  RFC: `\mathsf{sig}_{\varnothing◀}` -/
+  | empty : OwnershipSig []
+  /-- A constant definition, whose body has the ownership of the definition.
+  RFC: `\mathsf{sig}_{\mathsf{def}◀}` -/
+  | constantDefinition {sig : Signature} {d : ConstantDefinition} (h : OwnershipSig sig)
+      (ho : ∀ ι, Ownership sig (fun x : Var [] .var => nomatch x) d.mode d.ownership (d.body ι)) :
+      OwnershipSig (.constantDefinition d :: sig)
+  /-- A constant declaration, which has no body.
+  RFC: `\mathsf{sig}_{\mathsf{decl}◀}` -/
+  | constantDeclaration {sig : Signature} {c : ConstantDeclaration} (h : OwnershipSig sig) :
+      OwnershipSig (.constantDeclaration c :: sig)
+  /-- A block of data types, whose constructors give the ownerships of their values.
+  RFC: `\mathsf{sig}_{\mathsf{data}◀}` -/
+  | data {sig : Signature} {decl : TypeDeclaration}
+      {Ts : List (DataType decl.sorts decl.grades decl.levels decl.scope)} (h : OwnershipSig sig)
+      (hb : decl.body = .data Ts) : OwnershipSig (.typeDeclaration decl :: sig)
+  /-- A block of codata types, the ownership of the result of each recursive destructor a constant
+  `χ ≤ 11ᵖ` at each instance.
+  RFC: `\mathsf{sig}_{\mathsf{codata}◀}` -/
+  | codata {sig : Signature} {decl : TypeDeclaration}
+      {Ts : List (CodataType decl.sorts decl.grades decl.levels decl.scope)} (h : OwnershipSig sig)
+      (hb : decl.body = .codata Ts)
+      (hψ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ d p q ps Ξ
+        (Θ : Telescope decl.levels Ξ ps) (B : Term decl.levels (Ξ.extend ps.length))
+        (ψ : ResultOwnership ps.length), (T.body ι).Pos d p q Ξ Θ B ψ →
+        B.blockName decl.names ≠ none → ∃ χ, χ ≤ Grade.one ∧ ψ = ⟨some χ, fun _ => none⟩) :
+      OwnershipSig (.typeDeclaration decl :: sig)
+
 end Sic.Core

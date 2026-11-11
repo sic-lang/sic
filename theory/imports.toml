@@ -87,3 +87,13 @@ forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
 reason = "the reduction and the meaning are defined on the terms alone, so that the meaning explains the judgments without reading them"
 modules = ["Sic.Core.Meaning", "Sic.Core.Reduction"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the typing is a judgment of its own, with no premise of the usage or of the ownership, the signature included"
+modules = ["Sic.Core.Typing"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the soundness of the typing reads the typing and the meaning only"
+modules = ["Sic.Core.Soundness"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]

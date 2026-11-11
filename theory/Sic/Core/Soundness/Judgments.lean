@@ -250,7 +250,7 @@ theorem soundnessIn : SoundnessIn :=
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
-    | .intro _ _ ht _ _ => ValidConstantDefinition.intro fun inst => hasType hd hι (ht inst)
+    | .intro _ _ ht => ValidConstantDefinition.intro fun inst => hasType hd hι (ht inst)
   wfCtx {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfCtx sig ctx → ValidCtx sigM ι ctx
     | .empty _ => fun _ => by
@@ -258,7 +258,7 @@ where
       rw [ValidCtx₀]
       exact hd
     | .var h => fun ρ => (validCtx₀_var _ _).2 (wfType hd hι h ρ)
-    | .secondOrder h _ => fun ρ => by
+    | .secondOrder h => fun ρ => by
       have hA := wfType hd hι h ρ
       simp only [Context.atLevels, Context.substLevels_append] at hA
       exact (validCtx₀_secondOrder _ _ _ _).2 hA
@@ -794,7 +794,7 @@ where
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
     | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) hD hΘ
-        _ _ hds => fun ρ => by
+        _ hds => fun ρ => by
       have hds' := wfDestructors hd hι hds ρ
       show ValidDestructorsΓ sigM ι _ _ _ (.cons p q (Θ.substLevels fun i => .ofNat (ρ i))
         ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
@@ -817,12 +817,12 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data hb _ _ hΘ _ _ => by
+    | .data hb _ _ hΘ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT c hc =>
         wfFields hd hι (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
-    | .codata hb _ _ hds _ _ => by
+    | .codata hb _ _ hds _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT =>
