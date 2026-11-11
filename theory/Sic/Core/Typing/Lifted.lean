@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Substitution.Composition
 
 /-!
 # Lifted Substitutions of the Typing

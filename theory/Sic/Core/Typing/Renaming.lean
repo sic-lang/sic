@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing.Lifted
+import Sic.Core.Substitution.Composition
 
 /-!
 # Renaming of the Typing

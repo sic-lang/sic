@@ -2,6 +2,9 @@ module
 
 public import Sic.Core.Ownership
 public import Sic.Core.Substitution
+import Sic.Core.Substitution.Composition
+import Sic.Core.Substitution.Levels
+import Sic.Core.Substitution.Rules
 
 /-!
 # Renaming of the Ownership

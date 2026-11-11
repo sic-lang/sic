@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Reduction
+public import Sic.Core.Substitution.Closed
 
 /-!
 # Meaning
