@@ -161,6 +161,6 @@ forbidden = [
 ]
 
 [[rule]]
-reason = "the relation of run time reads the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
-modules = ["Sic.Core.RunTime.Relation"]
+reason = "the relation of run time and its properties read the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
+modules = ["Sic.Core.RunTime.Properties", "Sic.Core.RunTime.Relation"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
