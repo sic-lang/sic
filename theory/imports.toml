@@ -11,12 +11,11 @@ modules = ["Sic.Grading"]
 
 [[group]]
 name = "Syntax"
-modules = [
-  "Sic.Core.Level",
-  "Sic.Core.Substitution",
-  "Sic.Core.Syntax",
-  "Sic.Core.Universe",
-]
+modules = ["Sic.Core.Level", "Sic.Core.Syntax", "Sic.Core.Universe"]
+
+[[group]]
+name = "Substitution"
+modules = ["Sic.Core.Substitution"]
 
 [[group]]
 name = "Typing"
