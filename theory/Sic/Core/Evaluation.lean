@@ -101,15 +101,14 @@ def TargetBranches.get {n : Nat} :
 
 /-- The branch at a position of the branches of a corecursor of the target language. -/
 def TargetCorecBranches.get {n : Nat} :
-    TargetCorecBranches n → Nat → Option (Option Nat × Σ b c, Target (n + (b + c)))
+    TargetCorecBranches n → Nat → Option (Resumption × Σ b c, Target (n + (b + c)))
   | .nil, _ => none
   | .cons o b c N _, 0 => some (o, ⟨b, c, N⟩)
   | .cons _ _ _ _ Ns, i + 1 => Ns.get i
 
 -- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄`: the addresses of the `k` entries that the value at the address `x`
-packs, the first fields of `k` nested pairs, or the address `x` itself `k` times when the value is
-`↯`, the new state of a corecursor whose grade has no use at run time. -/
+packs, the first fields of `k` nested pairs. -/
 inductive Unpack : Heap → Nat → Nat → List Nat → Prop where
   /-- No entry.
   RFC: `\mathsf{unpack}_\Downarrow.0` -/
@@ -118,29 +117,33 @@ inductive Unpack : Heap → Nat → Nat → List Nat → Prop where
   RFC: `\mathsf{unpack}_\Downarrow.{,}` -/
   | pair {H : Heap} {k x y z : Nat} {ss : List Nat} (h : H[x]? = some (.ctor 0 [y, z]))
       (hs : Unpack H k z ss) : Unpack H (k + 1) x (y :: ss)
-  /-- `↯`, whose entries are `↯` at its own address, `k` times.
-  RFC: `\mathsf{unpack}_\Downarrow.\text{↯}` -/
-  | erased {H : Heap} {k x : Nat} (h : H[x]? = some .erased) : Unpack H k x (List.replicate k x)
 
 -- ADE: none.
 /-- `H ⊢ ⟨E; P̄⟩ ↻_k w ⇓ v; H'`: the value at the address `w` that the branch of a destructor gives,
 resumed: itself when the branch resumes no state, a new closure of the same branches from the state
-of `k` entries that `next` packs, or the term already built that `done` holds. -/
-inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n → Option Nat → Nat →
+of `k` entries that `next` packs, or from `k` erased entries, which stand at the address of the new
+state without reading it, or the term already built that `done` holds. -/
+inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n → Resumption → Nat →
     Nat → Heap → Prop where
   /-- The branch resumes no state.
   RFC: `\mathsf{resume}_\Downarrow.\bot` -/
   | none {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {w : Nat} :
-      EvalResume H n E Ps none w w H
+      EvalResume H n E Ps .none w w H
   /-- `next(x)`: a new closure from the state that `x` packs.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{next}` -/
   | next {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
       {ss : List Nat} (h : H[w]? = some (.ctor 0 [x])) (hs : Unpack H k x ss) :
-      EvalResume H n E Ps (some k) w H.length (H ++ [.corec n E Ps ss])
+      EvalResume H n E Ps (.unpack k) w H.length (H ++ [.corec n E Ps ss])
+  /-- `next(x)`, for an erased state: a new closure whose `k` entries stand at the address `x`,
+  which is not read.
+  RFC: `\mathsf{resume}_\Downarrow.\text{↯}` -/
+  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
+      (h : H[w]? = some (.ctor 0 [x])) :
+      EvalResume H n E Ps (.erased k) w H.length (H ++ [.corec n E Ps (List.replicate k x)])
   /-- `done(x)`: the term already built `x`.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{done}` -/
-  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
-      (h : H[w]? = some (.ctor 1 [x])) : EvalResume H n E Ps (some k) w x H
+  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {o : Resumption}
+      {w x : Nat} (ho : o ≠ .none) (h : H[w]? = some (.ctor 1 [x])) : EvalResume H n E Ps o w x H
 
 mutual
 
@@ -239,7 +242,7 @@ resumed when the branch resumes a state. -/
 inductive EvalObs (P : Program) : Heap → Nat → Nat → List Nat → Nat → Heap → Prop where
   /-- RFC: `\beta_\Downarrow` -/
   | beta {H₁ H₂ H₃ : Heap} {a i : Nat} {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat}
-      {Ps : TargetCorecBranches n} {ss : List Nat} {o : Option Nat} {b c : Nat}
+      {Ps : TargetCorecBranches n} {ss : List Nat} {o : Resumption} {b c : Nat}
       {N : Target (n + (b + c))} (h : H₁[a]? = some (.corec n E Ps ss))
       (hP : Ps.get i = some (o, ⟨b, c, N⟩)) (hb : ss.length = b) (hc : bs.length = c)
       (hw : Eval P H₁ (bs.reverse ++ ss.reverse ++ E) N w H₂)
@@ -253,30 +256,31 @@ end
 theorem Unpack.det {H : Heap} {k x : Nat} {ss₁ ss₂ : List Nat} :
     Unpack H k x ss₁ → Unpack H k x ss₂ → ss₁ = ss₂
   | .zero, .zero => rfl
-  | .zero, .erased _ | .erased _, .zero => rfl
   | .pair h hs, .pair h' hs' => by
     rw [h] at h'
     cases h'
     rw [Unpack.det hs hs']
-  | .pair h _, .erased h' | .erased h, .pair h' _ => by
-    rw [h] at h'
-    cases h'
-  | .erased _, .erased _ => rfl
 
 /-- The resumption of a value is unique. -/
 theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
-    {o : Option Nat} {w v₁ v₂ : Nat} :
+    {o : Resumption} {w v₁ v₂ : Nat} :
     EvalResume H n E Ps o w v₁ H₁ → EvalResume H n E Ps o w v₂ H₂ → v₁ = v₂ ∧ H₁ = H₂
   | .none, .none => ⟨rfl, rfl⟩
+  | .none, .done ho _ | .done ho _, .none => (ho rfl).elim
   | .next h hs, .next h' hs' => by
     rw [h] at h'
     cases h'
     cases Unpack.det hs hs'
     exact ⟨rfl, rfl⟩
-  | .next h _, .done h' | .done h, .next h' _ => by
+  | .erased h, .erased h' => by
     rw [h] at h'
     cases h'
-  | .done h, .done h' => by
+    exact ⟨rfl, rfl⟩
+  | .next h _, .done _ h' | .done _ h, .next h' _ | .erased h, .done _ h'
+  | .done _ h, .erased h' => by
+    rw [h] at h'
+    cases h'
+  | .done _ h, .done _ h' => by
     rw [h] at h'
     cases h'
     exact ⟨rfl, rfl⟩

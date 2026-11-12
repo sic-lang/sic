@@ -71,7 +71,7 @@ variable of the scope of a branch whose grade is not erased, in the erasure of t
 branch. -/
 theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
-    (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List (Option Nat)) →
+    (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
       (vs.erase sig S hΓ ps ks).Occurs x →
         ∃ i b c v p, vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
           (v.erase sig S ((hΓ.extend b).extend c)).Occurs
