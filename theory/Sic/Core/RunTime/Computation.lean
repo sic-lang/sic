@@ -54,4 +54,12 @@ theorem RunsAs.conv {sig : Signature} {ι : Interpretation} {P : Program} {H : H
     exact ⟨w, hB, .inl (hv.isProp_of_prop hd hw hp ((hv₁.unique hd hv t t).1 htt))⟩
   · exact ⟨w, hB, .inr ⟨Q, (hr P Q).1 hQ, htQ⟩⟩
 
+/-- A term is related at run time to the addresses that a term with the same computations is related
+to. -/
+theorem RunsAs.congr_computes {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
+    {t t' : Term 0 []} {a : Nat} {A : Term 0 []}
+    (h : ∀ w, Computesι sig ι t w ↔ Computesι sig ι t' w) :
+    RunsAs sig ι P H t a A ↔ RunsAs sig ι P H t' a A := by
+  simp only [RunsAs, RunRel.computed, h]
+
 end Sic.Core

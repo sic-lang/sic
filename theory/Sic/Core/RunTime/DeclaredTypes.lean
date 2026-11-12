@@ -180,6 +180,42 @@ theorem HasRun.data (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       exact ⟨n, S, hS, rfl⟩
     | codata hc _ _ _ hv' => exact (hd.inst_data_codata h hc hv').elim
 
+/-- The relation of run time of an instance of a codata type of a type is `(®_ν)` of its block, for
+relations of the destructors that the graph of its level gives, in a signature whose names are
+distinct. -/
+theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasCodataType D decl T)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 [] decl.scope} {R : RunRel}
+    (hR : HasRun sig ι P (.inst D qs ls ps as) R)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) :
+    ∃ n S, ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n ∧
+      (∀ X, ∀ T' ∈ decl.codataTypes,
+        RunDesRel sig ι P n (fun m _ => levelRel sig ι m) T'.name
+          (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) ∧
+      R = CodataType.runBlockRel decl.codataTypes S D := by
+  cases hR with
+  | prop n b hb _ =>
+    cases levelRel_prop_iff.1 hb with
+    | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
+    | codata h' _ _ _ hv' hs' =>
+      obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h h'
+      exact nomatch hs.symm.trans hs'
+  | univ n hn =>
+    cases levelRel_run_iff.1 hn with
+    | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
+    | codata h' _ _ _ hv' _ hn S hS =>
+      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h h'
+      cases eq_of_heq has
+      exact ⟨n, S, hn, hS, rfl⟩
+
 -- ADE: none.
 /-- `(c)` at run time, closed: a constructor of a data type of `Σ`, whose type declaration is
 meaningful, applied to arguments of its fields that the meaning relates to themselves, is related at
