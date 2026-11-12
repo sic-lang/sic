@@ -108,7 +108,8 @@ def TargetCorecBranches.get {n : Nat} :
 
 -- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄`: the addresses of the `k` entries that the value at the address `x`
-packs, the first fields of `k` nested pairs. -/
+packs, the first fields of `k` nested pairs, or the address `x` itself `k` times when the value is
+`↯`, the new state of a corecursor whose grade has no use at run time. -/
 inductive Unpack : Heap → Nat → Nat → List Nat → Prop where
   /-- No entry.
   RFC: `\mathsf{unpack}_\Downarrow.0` -/
@@ -117,6 +118,9 @@ inductive Unpack : Heap → Nat → Nat → List Nat → Prop where
   RFC: `\mathsf{unpack}_\Downarrow.{,}` -/
   | pair {H : Heap} {k x y z : Nat} {ss : List Nat} (h : H[x]? = some (.ctor 0 [y, z]))
       (hs : Unpack H k z ss) : Unpack H (k + 1) x (y :: ss)
+  /-- `↯`, whose entries are `↯` at its own address, `k` times.
+  RFC: `\mathsf{unpack}_\Downarrow.\text{↯}` -/
+  | erased {H : Heap} {k x : Nat} (h : H[x]? = some .erased) : Unpack H k x (List.replicate k x)
 
 -- ADE: none.
 /-- `H ⊢ ⟨E; P̄⟩ ↻_k w ⇓ v; H'`: the value at the address `w` that the branch of a destructor gives,
@@ -249,10 +253,15 @@ end
 theorem Unpack.det {H : Heap} {k x : Nat} {ss₁ ss₂ : List Nat} :
     Unpack H k x ss₁ → Unpack H k x ss₂ → ss₁ = ss₂
   | .zero, .zero => rfl
+  | .zero, .erased _ | .erased _, .zero => rfl
   | .pair h hs, .pair h' hs' => by
     rw [h] at h'
     cases h'
     rw [Unpack.det hs hs']
+  | .pair h _, .erased h' | .erased h, .pair h' _ => by
+    rw [h] at h'
+    cases h'
+  | .erased _, .erased _ => rfl
 
 /-- The resumption of a value is unique. -/
 theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
