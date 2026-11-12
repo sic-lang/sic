@@ -143,6 +143,20 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
           s!"{" → ".intercalate (path.map toString)}, which the rule excludes: {rule.reason}"
   return failures
 
+/-- The longest namespace of all the names, `anonymous` if there is none. -/
+def commonPrefix (names : Array Name) : Name :=
+  match names.toList with
+  | [] => .anonymous
+  | first :: rest =>
+    let components := first.components
+    let length := rest.foldl (init := components.length) fun length name =>
+      min length ((components.zip name.components).takeWhile (fun (a, b) => a == b)).length
+    (components.take length).foldl (· ++ ·) .anonymous
+
+/-- The name of a module below the namespace `space`. -/
+def shorten (space module : Name) : Name :=
+  (module.components.drop space.components.length).foldl (· ++ ·) .anonymous
+
 /-- Whether a path of the arrows goes from `start` to `target`, or `start` is `target`. -/
 def reaches (arrows : Array (String × String)) (start target : String) : Bool := Id.run do
   let mut seen := #[start]
@@ -171,16 +185,7 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   let groupOf (module : Name) : Nat :=
     rules.groups.findIdx (·.modules.any (·.covers module))
   let id (module : Name) : String := s!"n{modules.idxOf module}"
-  -- The start of a flowchart, drawn at its own size rather than shrunk to the width of the page,
-  -- which would shrink its text with it.
-  let flowchart := #[
-    "```mermaid",
-    "---",
-    "config:",
-    "  flowchart:",
-    "    useMaxWidth: false",
-    "---",
-    "flowchart BT"]
+  let flowchart := #["```mermaid", "flowchart BT"]
   let mut lines := #[
     "# Imports",
     "",
@@ -211,13 +216,16 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   for (group, index) in rules.groups.zipIdx do
     let members := modules.filter (groupOf · == index)
     let others := members.flatMap (graph.getD · #[]) |>.map groupOf |>.filter (· != index)
+    -- The namespace of the modules of the group, which their names in the graph omit, so that it
+    -- fits the width of the page; a module keeps the last component of its name.
+    let space := commonPrefix (members.map (·.getPrefix))
     lines := lines ++ #[
       s!"### {group.name}",
       "",
-      s!"The modules of the group {group.name} import the modules below.",
+      s!"The modules of the group {group.name}, whose names omit `{space}.`, import each other and the other groups as the graph below shows.",
       ""] ++ flowchart
     for module in members do
-      lines := lines.push s!"  {id module}[\"{module}\"]"
+      lines := lines.push s!"  {id module}[\"{shorten space module}\"]"
     for (other, otherIndex) in rules.groups.zipIdx do
       if others.contains otherIndex then
         lines := lines.push s!"  g{otherIndex}([\"{other.name}\"])"
