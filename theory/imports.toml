@@ -187,6 +187,7 @@ modules = [
   "Sic.Core.RunTime.DeclaredTypes",
   "Sic.Core.RunTime.Levels",
   "Sic.Core.RunTime.Monotonicity",
+  "Sic.Core.RunTime.Recursors",
   "Sic.Core.RunTime.Relation",
   "Sic.Core.RunTime.Rules",
   "Sic.Core.RunTime.Skeleton",

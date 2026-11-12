@@ -4,9 +4,10 @@ module
 # Lists
 
 Properties of the lists that Lean does not provide: the positions and the images of the elements of
-a list whose images are distinct, the numbered elements of a list of a known length, the results of
-a function defined at every element of a list, and the length of a list whose distinct elements are
-all in another.
+a list whose images are distinct, the element at the position that `findIdx?` finds, the first
+element after a prefix, the pairs of the elements of two lists of the same length, the numbered
+elements of a list of a known length, the results of a function defined at every element of a list,
+and the length of a list whose distinct elements are all in another.
 -/
 
 @[expose] public section
@@ -54,6 +55,48 @@ theorem List.getElem?_inj_of_nodup_map {α β : Type} {f : α → β} :
       cases hb
       exact absurd (hab.symm ▸ List.mem_map_of_mem (List.mem_of_getElem? ha)) h.1
     | i + 1, i' + 1, ha, hb => exact congrArg (· + 1) (List.getElem?_inj_of_nodup_map h.2 ha hb hab)
+
+/-- The position that `findIdx?` finds holds an element that satisfies the predicate, as
+`List.of_findIdx?_eq_some`, without its choice. -/
+theorem List.getElem?_of_findIdx?_eq_some {α : Type} {p : α → Bool} :
+    {l : List α} → {i : Nat} → l.findIdx? p = some i → ∃ a, l[i]? = some a ∧ p a = true
+  | [], _, h => nomatch h
+  | a :: l, i, h => by
+    rw [List.findIdx?_cons] at h
+    cases ha : p a with
+    | true =>
+      rw [ha, ite_eq_left_of_eq_true _ _ (eq_true rfl)] at h
+      cases h
+      exact ⟨a, rfl, ha⟩
+    | false =>
+      rw [ha, ite_eq_right_of_eq_false _ _ (eq_false Bool.false_ne_true)] at h
+      cases hl : l.findIdx? p with
+      | none => rw [hl] at h; cases h
+      | some i' =>
+        rw [hl] at h
+        cases h
+        show ∃ b, (a :: l)[i' + 1]? = some b ∧ p b = true
+        rw [List.getElem?_cons_succ]
+        exact List.getElem?_of_findIdx?_eq_some hl
+
+/-- The first element after the first `i` elements of a list is its element at the position `i`. -/
+theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]? = some a) :
+    (l.drop i).headD d = a := by
+  rw [List.headD_eq_head?_getD, List.head?_drop, h]
+  rfl
+
+/-- The elements `ks j` of positions `j < m`, each `none` when the element `gs[j]` satisfies `p`, and
+the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length `m`. -/
+theorem List.ofFn_ite_getElem? {α : Type} {m : Nat} (p : α → Prop) [DecidablePred p]
+    (gs : Vector α m) (L : List Nat) (hL : L.length = m) :
+    List.ofFn (fun j : Fin m => if p gs[j] then none else L[(j : Nat)]?) =
+      List.zipWith (fun e l => if p e then none else some l) gs.toList L := by
+  apply List.ext_getElem
+  · simp [hL]
+  · intro j _ h₂
+    have hj : j < L.length := by simp at h₂; omega
+    simp [List.getElem_ofFn, List.getElem_zipWith, Vector.getElem_toList,
+      List.getElem?_eq_getElem hj]
 
 /-- The `n` elements of a list of length `n`, numbered. -/
 def List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
