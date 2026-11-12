@@ -976,6 +976,106 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   rw [hd.skeleton ⟨hdecl, hT, rfl⟩ hq hp]
   exact hev
 
+
+-- ADE: the cases `natrecₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ` of `fundamental`, in
+-- `Graded/Erasure/LogicalRelation/Fundamental.agda`.
+/-- `(rec)` keeps the validity at run time: the erasure of the recursor evaluates its term, or the
+skeleton of its instance when its grade `r` is erased, then the branch of the case of its value. A
+recursor on a block of propositions has no constructor, in the mode `11ᵐ`, so that no term of its
+instance is true and none is substituted. -/
+theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
+    (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    {γ : GradeVector Γ.length} {t : Term 0 Γ} {h' : Nat} {C : Term 0 (.var :: Γ)}
+    (hh : decl.dataTypes[h']? = some T) (hC : Cs.get h' = some ⟨0, C⟩)
+    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
+    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
+      ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
+      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+        ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
+    (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
+    (htr : r ∉ Mode.oneOne.erased → RunValid sig ι P hΓ ctx γ t (.inst D qs ls ps as))
+    (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as Cs us δs gs)
+    (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+      (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      Mode.oneOne.grade * r * p.usage ≤ gs i l +
+        (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
+          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) l
+          else Grade.zero) * r)
+    (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      χ ≤ᶜ δs i +ᶜ Telescope.resultSum
+        (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
+        ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
+    (hr : (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
+    (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases = []) :
+    RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ χ) (.recursor r D qs ls ps as t Cs us)
+      (C.subst₀ (Subst₀.single t)) := by
+  intro σ H E hσ hE
+  obtain ⟨hdecl, hT, rfl⟩ := id h
+  have hS := Mode.erasesUncounted .oneOne
+  have hEχ : RunsAsSubst sig ι P H ctx χ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+    h (hS.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
+  have hg' : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+      (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      r * p.usage ≤ gs i l +
+        (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
+          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) l
+          else Grade.zero) * r := fun i j T' con l p hi hl' => by
+    have h₁ := hg i j T' con l p hi hl'
+    rwa [show Mode.oneOne.grade = Grade.one from rfl, Grade.modality.semiring.one_mul] at h₁
+  have htσ : ValidTerm₀ sig ι (t.subst σ) ((Term.inst T.name qs ls ps as).subst σ) :=
+    ht.2 σ σ hσ
+  have hCσ : (C.subst₀ (Subst₀.single t)).subst σ =
+      (C.subst (Subst.lift σ)).subst₀ (Subst₀.single (t.subst σ)) :=
+    Term.subst_subst₀_of (Subst₀.Swaps.single _ _) C
+  rw [hCσ]
+  cases hs : (decl.sort (.ofLists qs ps hq hp)).quality with
+  | prop =>
+    -- No term of an instance of a block of propositions without constructor is true.
+    have hasσ := has.2 σ σ hσ
+    obtain ⟨S, hP, hmono, -, -⟩ := hv.propRel hd hdecl hq hl hp hadm hasσ hs
+    have hP' := levelRel_prop_iff.2 (hP T hT).1
+    have hI : Computesι sig ι (.inst T.name qs ls ps (as.subst σ))
+        (.inst T.name qs ls ps (as.subst σ)) := ⟨.refl _, .inst _ _ _ _ _⟩
+    obtain ⟨v', R', hv', hR', hrel⟩ := htσ.2.2 ⟨_, hI, _, _, hP'⟩
+    cases Computesι.det hd hI hv'
+    have htrue : DataType.blockTruth decl.dataTypes S T.name :=
+      (HasEq.unique hd hR' (.prop _ _ hP' fun _ _ => .rfl) _ _).1 hrel
+    obtain ⟨T₀, hT₀, -, con₀, hcon₀, -⟩ := DataType.blockTruth_inv hmono htrue
+    obtain ⟨i, j, hi, -⟩ := TypeDeclaration.exists_cases hT₀ hcon₀
+    rw [hprop hs] at hi
+    cases hi
+  | type =>
+    by_cases hrS : r ∈ Mode.oneOne.erased
+    · -- The skeleton of the instance stands for the term.
+      have h1 : ∀ T' ∈ decl.dataTypes, T'.constructors.length ≤ 1 := fun T' hT' => by
+        refine Nat.le_of_not_lt fun h2 => ?_
+        exact (by decide : ∀ r : Grade, r ∈ Mode.oneOne.erased → r.mode ≠ .oneOne) r hrS
+          (hr ⟨T', hT', h2⟩)
+      obtain ⟨a, H₂, b, H₃, hev, hevr, hH₃, hrun⟩ := RunsAs.recursor_skeleton hd h hv hadm has
+        hh hC hCs hCv hus hrec husr hg' hχ hs hrS h1 hσ hEχ (List.prefix_refl H) htσ
+      refine ⟨b, H₃, ?_, hH₃, hrun⟩
+      show Eval P H E (.recursor (if r ∈ Mode.oneOne.erased then _ else _) _) b H₃
+      rw [ite_eq_left hrS]
+      exact .recursor hev hevr
+    · -- The term evaluates to the address of its value.
+      have hγ : RunsAsSubst sig ι P H ctx γ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+        h (hS.mul _ _ hrS (hS.add _ _ h'))) hE
+      obtain ⟨a, H₁, hev, hH₁, hta⟩ := htr hrS σ H E hσ hγ
+      obtain ⟨b, H₂, hevr, hH₂, hrun⟩ := RunsAs.recursor hd h hv hadm has hh hC hCs hCv hus
+        hrec husr hg' hχ hs hrS hσ hEχ hH₁ htσ hta
+      refine ⟨b, H₂, ?_, hH₁.trans hH₂, hrun⟩
+      show Eval P H E (.recursor (if r ∈ Mode.oneOne.erased then _ else _) _) b H₂
+      rw [ite_eq_right hrS]
+      exact .recursor hev hevr
+
 end
 
 end Sic.Core
