@@ -54,7 +54,7 @@ name = "Soundness"
 modules = ["Sic.Core.Soundness"]
 
 [[group]]
-name = "RunTime"
+name = "Run Time"
 modules = ["Sic.Core.RunTime"]
 
 [[rule]]
