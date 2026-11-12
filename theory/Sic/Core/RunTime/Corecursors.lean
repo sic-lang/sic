@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.RunTime.Relation
+public import Sic.Core.Soundness.Corecursors
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
@@ -8,9 +9,9 @@ import Sic.Core.RunTime.Computation
 import Sic.Core.RunTime.DeclaredTypes
 import Sic.Core.RunTime.Levels
 import Sic.Core.RunTime.Monotonicity
+import Sic.Core.RunTime.Recursors
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
-import Sic.Core.Soundness.Corecursors
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
@@ -32,6 +33,13 @@ of the observations relates them, so that the telescope and the result of the de
 types at both, with the same relations of run time.
 The formation gives the destructors of a proposition grades without use at run time, so that no
 observation of a proof runs.
+
+The position that the branch of a recursive destructor gives is a constructor of the type of
+positions of the prelude, which has no recursive field: a new state, whose packing unpacks into the
+nested pairs of the arguments of the state, related to the addresses that the evaluation unpacks
+when the grade of the corecursor is used at run time, and whose entries have grades without use at
+run time otherwise, so that the evaluation does not read it; or a term already built, related to
+the address of its field.
 -/
 
 @[expose] public section
@@ -506,6 +514,176 @@ theorem RunValid.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx
   rw [hA]
   simp only [Term.subst, ← Args.terms_subst]
   exact hrun
+
+/-! ## Positions -/
+
+/-- The case of the constructor of the pair of the prelude is the first one. -/
+theorem Signature.Distinct.pairCase (hd : sig.Distinct) (hpre : sig.HasPrelude) {i : Nat}
+    (hi : sig.constructorCase "Pair" "mk" = some i) : i = 0 := by
+  obtain ⟨j, hj⟩ := hd.cases_of_constructorCase hpre.pair (List.mem_singleton_self _)
+    (hi : sig.constructorCase Prelude.pairType.name Prelude.pairMk.name = some i)
+  rw [show Prelude.pair.cases = [(0, Prelude.pairType, Prelude.pairMk)] from rfl] at hj
+  match i, hj with
+  | 0, _ => rfl
+
+/-- A closed term of the packing of a closed telescope, related to an address, computes to the
+nested pairs of arguments of the telescope, which the meaning relates to themselves, and the value at
+the address unpacks into addresses to which the arguments are related, each at the type of its
+entry, when its grade is used at run time, in a signature whose names are distinct and that holds
+the prelude. -/
+theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
+    {ps : List Parameter} → (Θ : Telescope 0 [] ps) → (κs : List (Universe 0)) → (l : Level 0) →
+      {x : Term 0 []} → {a : Nat} → ValidTerm₀ sig ι x (Θ.pack κs l) →
+      RunsAs sig ι P H x a (Θ.pack κs l) →
+      ∃ (ts : Args 0 [] ps) (as : List Nat), Term.Packs sig ι x ts.terms ∧
+        EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst ∧
+        Unpack H ps.length a as ∧ RunsAsArgs sig ι P H (Parameter.grades ps) ts as Θ
+  | [], .nil, _, l, _, _, hx, hr => by
+    obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, -, -, -, -⟩ := RunsAs.ctor_inv hd hpre.unit
+      (qs := []) (ls := [l]) (ps := []) rfl rfl rfl rfl
+      (fun T' hT' c hc i => by
+        obtain rfl := List.mem_singleton.1 hT'
+        rcases hc with _ | ⟨_, ⟨⟩⟩
+        rfl) hx hr
+    obtain rfl := List.mem_singleton.1 hT'
+    rcases hc with _ | ⟨_, ⟨⟩⟩
+    match ts with
+    | .nil =>
+      refine ⟨.nil, [], ?_, (EqSubst.empty_iff _ _).2 trivial, .zero, trivial⟩
+      simp only [Args.terms, Term.Packs]
+      exact hct
+  | _ :: _, .cons q p A Θ, κs, l, _, _, hx, hr => by
+    obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, hi, ha, hts, hruns⟩ := RunsAs.ctor_inv hd hpre.pair
+      (qs := [(κs.headD ⟨.type, l⟩).quality])
+      (ls := [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l])
+      (ps := [p.usage, p.requirement]) rfl rfl rfl rfl
+      (fun T' hT' c hc i => by
+        obtain rfl := List.mem_singleton.1 hT'
+        rcases hc with _ | ⟨_, ⟨⟩⟩
+        rcases i with _ | _ | _ <;> rfl) hx hr
+    obtain rfl := List.mem_singleton.1 hT'
+    rcases hc with _ | ⟨_, ⟨⟩⟩
+    obtain rfl := hd.pairCase hpre hi
+    match ts, bs, hts, hruns with
+    | .cons t (.cons y .nil), [b, c], hts, hruns =>
+      obtain ⟨ht, hys⟩ := EqSubst.args_cons_iff.1 hts
+      obtain ⟨hy, -⟩ := EqSubst.args_cons_iff.1 hys
+      obtain ⟨hb, hc', -⟩ := hruns
+      have hy' : ValidTerm₀ sig ι y ((Θ.subst₀ (Subst₀.single t)).pack κs.tail l) := by
+        rw [← Telescope.pack_subst₀, ← Prelude.pairSecond (Θ.pack κs.tail l)]
+        exact hy
+      have hry : RunsAs sig ι P H y c ((Θ.subst₀ (Subst₀.single t)).pack κs.tail l) := by
+        rw [← Telescope.pack_subst₀, ← Prelude.pairSecond (Θ.pack κs.tail l)]
+        exact hc' (by decide : Grade.one ∉ Mode.oneOne.erased)
+      obtain ⟨ts', as', hp', hτ, hu, hrs⟩ := RunsAs.unpack hd hpre _ κs.tail l hy' hry
+      obtain ⟨qs₁, ls₁, ps₁, Δ₁, as₁, hc₁⟩ := hct
+      refine ⟨.cons t ts', b :: as', ?_, EqSubst.args_cons_iff.2 ⟨ht, hτ⟩, .pair ha hu, hb, hrs⟩
+      simp only [Args.terms, Term.Packs]
+      exact ⟨qs₁, ls₁, ps₁, Δ₁, as₁, y, hc₁, hp'⟩
+
+
+/-- The case of the constructor `next` of the type of positions of the prelude is the first one. -/
+theorem Signature.Distinct.nextCase (hd : sig.Distinct) (hpre : sig.HasPrelude) {i : Nat}
+    (hi : sig.constructorCase "Step" "next" = some i) : i = 0 := by
+  obtain ⟨j, hj⟩ := hd.cases_of_constructorCase hpre.step (List.mem_cons_self ..)
+    (hi : sig.constructorCase Prelude.stepType.name Prelude.stepNext.name = some i)
+  rw [show Prelude.step.cases = [(0, Prelude.stepType, Prelude.stepNext),
+    (0, Prelude.stepType, Prelude.stepDone)] from rfl] at hj
+  match i, hj with
+  | 0, _ => rfl
+  | 1, hj =>
+    exact absurd (congrArg (fun x => x.2.2.name) (Option.some.inj hj))
+      (by decide : Prelude.stepDone.name ≠ Prelude.stepNext.name)
+
+/-- The case of the constructor `done` of the type of positions of the prelude is the second one. -/
+theorem Signature.Distinct.doneCase (hd : sig.Distinct) (hpre : sig.HasPrelude) {i : Nat}
+    (hi : sig.constructorCase "Step" "done" = some i) : i = 1 := by
+  obtain ⟨j, hj⟩ := hd.cases_of_constructorCase hpre.step
+    (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+    (hi : sig.constructorCase Prelude.stepType.name Prelude.stepDone.name = some i)
+  rw [show Prelude.step.cases = [(0, Prelude.stepType, Prelude.stepNext),
+    (0, Prelude.stepType, Prelude.stepDone)] from rfl] at hj
+  match i, hj with
+  | 0, hj =>
+    exact absurd (congrArg (fun x => x.2.2.name) (Option.some.inj hj))
+      (by decide : Prelude.stepNext.name ≠ Prelude.stepDone.name)
+  | 1, _ => rfl
+
+-- ADE: none.
+/-- A closed position of a corecursor of the grade `r`, in a universe, related to an address,
+resumes: the position computes to a new state, the nested pairs of arguments of the state that the
+meaning relates to themselves, and its resumption, a new closure from addresses to which the
+arguments are related at the grades of the state times `r`, which it unpacks from the new state
+when `r` is used at run time, and takes at the address of the new state otherwise, without reading
+it; or the position computes to a term already built, related to the address that its resumption
+gives. -/
+theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe 0}
+    (hκ : κ.quality = .type) {r χ : Grade} {ps' : List Parameter} {S : Telescope 0 [] ps'}
+    {κs : List (Universe 0)} {T g : Term 0 []}
+    (hgv : ValidTerm₀ sig ι g (Term.positions κ r χ S κs T)) {H : Heap} {w : Nat}
+    (hg : RunsAs sig ι P H g w (Term.positions κ r χ S κs T)) (n : Nat) (E : List Nat)
+    (Ps : TargetCorecBranches n) (D' : Name) (qs : List Quality) (ls : List (Level 0))
+    (ps : List Grade) {Δ : Scope} (as : InstanceArgs 0 [] Δ) (Ss : States 0 [])
+    (gs : CorecBranches 0 []) :
+    ∃ v H', EvalResume H n E Ps
+        (Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (some ps'.length)) w v H' ∧
+      H.Extends H' ∧
+      ((∃ (ts : Args 0 [] ps') (bs : List Nat),
+          RedStar (sig.interpret ι) (Term.resume r D' qs ls ps as Ss gs κ χ S κs g)
+            (.corec r D' qs ls ps as ts.terms Ss gs) ∧
+          EqSubst sig ι (Context.empty.append S) ts.toSubst ts.toSubst ∧
+          RunsAsArgs sig ι P H (fun l => r * Parameter.grades ps' l) ts bs S ∧
+          H' = H ++ [.corec n E Ps bs] ∧ v = H.length) ∨
+        (H' = H ∧ RunsAs sig ι P H (Term.resume r D' qs ls ps as Ss gs κ χ S κs g) v T)) := by
+  obtain ⟨T', hT', -, con, hc, ts, i, bs, ⟨qs', ls', ps'', Δ', as', hct⟩, hi, ha, hts, hruns⟩ :=
+    RunsAs.ctor_inv hd hpre.step (qs := [κ.quality])
+      (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level])
+      (ps := [r, Prelude.doneGrade κ.quality, χ]) rfl rfl rfl rfl
+      (fun T' hT' c hc i => by
+        obtain rfl := List.mem_singleton.1 hT'
+        rcases hc with _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩ <;> cases i <;> rfl) hgv hg
+  obtain rfl := List.mem_singleton.1 hT'
+  rcases hc with _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩
+  · -- A new state.
+    obtain rfl := hd.nextCase hpre hi
+    match ts, bs, hts, hruns with
+    | .cons x .nil, [b], hts, hruns =>
+      have hx := (EqSubst.args_cons_iff.1 hts).1
+      have hred := fun (ts' : Args 0 [] ps') (hp' : Term.Packs sig ι x ts'.terms) =>
+        RedStar.resume_next (r := r) (D := D') (qs := qs) (ls := ls) (ps := ps) (as := as)
+          (Ss := Ss) (gs := gs) (κ := κ) (χ := χ) (S := S) (κs := κs) hpre hct.1 ts' hp'
+      by_cases hrS : r ∈ Mode.oneOne.erased
+      · -- The state is erased, and the new closure does not read it.
+        obtain ⟨ts₁, ts₂, hp₁, hp₂, hτ⟩ := ValidEqTerm₀.pack_inv hpre S κs _ hx
+        have e₀ := Args.terms_inj (Term.Packs.det hd hp₁ hp₂)
+        subst e₀
+        refine ⟨_, _, ?_, List.prefix_append _ _, .inl ⟨ts₁, List.replicate ps'.length b,
+          hred ts₁ hp₁, hτ, RunsAsArgs.of_erased ts₁ _ S (fun l p _ =>
+            (by decide : ∀ r u : Grade, r ∈ Mode.oneOne.erased → r * u ∈ Mode.oneOne.erased) r
+              _ hrS) List.length_replicate, rfl, rfl⟩⟩
+        simp only [hrS, decide_true, Resumption.ofArity, ↓reduceIte]
+        exact .erased ha
+      · -- The state is used, and the new closure unpacks it.
+        obtain ⟨ts', bs', hp', hτ, hu, hrs⟩ := RunsAs.unpack hd hpre S κs _ hx (hruns.1 hrS)
+        refine ⟨_, _, ?_, List.prefix_append _ _, .inl ⟨ts', bs', hred ts' hp', hτ,
+          RunsAsArgs.of_counted (fun l h => (by decide : ∀ r u : Grade,
+            r * u ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased) r (Parameter.grades ps' l) h) hrs,
+          rfl, rfl⟩⟩
+        simp only [hrS, decide_false, Resumption.ofArity, Bool.false_eq_true, ↓reduceIte]
+        exact .next ha hu
+  · -- A term already built.
+    obtain rfl := hd.doneCase hpre hi
+    match ts, bs, hruns with
+    | .cons t .nil, [b], hruns =>
+      have hne : Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (some ps'.length) ≠
+          .none := by
+        cases decide (r ∈ Mode.oneOne.erased) <;> intro h <;> cases h
+      refine ⟨b, H, .done hne ha, List.prefix_refl _, .inr ⟨rfl, ?_⟩⟩
+      rw [RunsAs.redStar_iff hd (RedStar.resume_done hpre hct.1)]
+      exact hruns.1 (by
+        show Prelude.doneGrade κ.quality ∉ Mode.oneOne.erased
+        rw [hκ]
+        decide)
 
 end
 
