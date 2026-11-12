@@ -14,6 +14,7 @@ import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
+import Sic.Math.Relation
 
 /-!
 # Run Time of the Recursors
@@ -29,6 +30,17 @@ relations of the canonical terms that `(®_μ)` relates and on whose addresses t
 to the address of a value related to the recursor at the motive are closed, since the recursor on a
 constructor steps to its branch, at the terms of the fields and at the recursive results, which
 these relations relate to the addresses of the fields and of the results.
+
+When the grade of the recursor is erased, every type of the block has one constructor at most, and
+every field of the branch is erased, so that the skeleton of the instance stands for the term: the
+term computes to a canonical term that `(eq_μ)` relates, and the relations of the canonical terms
+that `(eq_μ)` relates, whose type is accessible for `≺`, and on whose skeletons the recursor evaluates
+to the address of a value related to the recursor at the motive, are closed, since the skeleton of a
+type unfolds into its constructor, applied to the skeletons of the types of its recursive fields,
+within a depth that their ancestors, fewer than the types of the block, never reach.
+
+Both cases eliminate a constructor in the same way, once its fields are related to their addresses
+and its recursive results evaluated, which `RunsAs.recursor_ctor` states.
 
 ADE prove the validity of their recursors at run time in the modules of
 `Graded/Erasure/LogicalRelation/Fundamental/`, one module for each type.
@@ -87,6 +99,25 @@ theorem TypeDeclaration.exists_cases {decl : TypeDeclaration}
     rwa [Nat.zero_add] at this
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
   exact ⟨i, j, hi, hj⟩
+
+/-- In a signature whose names are distinct, the case of a constructor of a block is its position in
+the cases of the block. -/
+theorem Entry.constructorCase_of_cases {decl : TypeDeclaration}
+    (hn : (decl.cases.map fun x => (x.2.1.name, x.2.2.name)).Nodup) {i j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hi : decl.cases[i]? = some (j, T, con)) :
+    Entry.constructorCase T.name con.name (.typeDeclaration decl) = some i := by
+  show decl.cases.findIdx? (fun x => x.2.1.name == T.name && x.2.2.name == con.name) = some i
+  have hs := List.findIdx?_isSome_of_mem
+    (p := fun x => x.2.1.name == T.name && x.2.2.name == con.name) (List.mem_of_getElem? hi)
+    (by simp only [Bool.and_eq_true, beq_iff_eq, and_self])
+  cases h : decl.cases.findIdx? (fun x => x.2.1.name == T.name && x.2.2.name == con.name) with
+  | none => rw [h] at hs; cases hs
+  | some i' =>
+    obtain ⟨x, hx, hpx⟩ := List.getElem?_of_findIdx?_eq_some h
+    simp only [Bool.and_eq_true, beq_iff_eq] at hpx
+    exact congrArg some (List.getElem?_inj_of_nodup_map hn hx hi (by rw [hpx.1, hpx.2]))
 
 /-! ## Erasure -/
 
@@ -154,6 +185,37 @@ theorem Terms.RecRel.of_diag {Q Q' : Name → TermRel} :
   | none :: rs, .cons _ _, h, hs =>
     Terms.RecRel.of_diag (Q := Q) rs (fun D hD => h D (List.mem_cons_of_mem _ hD)) hs
   | [], _, _, _ | some _ :: _, .nil, _, _ | none :: _, .nil, _, _ => trivial
+
+/-- Arguments whose grades are all erased are related to addresses as many as them, whatever they
+are. -/
+theorem RunsAsArgs.of_erased {H : Heap} : {ps : List Parameter} → {g : Nat → Grade} →
+    (ts : Args 0 [] ps) → (bs : List Nat) → (Θ : Telescope 0 [] ps) →
+    (∀ l (p : Parameter), ps[l]? = some p → g l ∈ Mode.oneOne.erased) → bs.length = ps.length →
+    RunsAsArgs sig ι P H g ts bs Θ
+  | [], _, .nil, [], .nil, _, _ => trivial
+  | _ :: _, _, .cons _ ts, _ :: bs, .cons _ _ _ _, hg, hl =>
+    ⟨fun h => (h (hg 0 _ rfl)).elim,
+      RunsAsArgs.of_erased ts bs _ (fun l p h => hg (l + 1) p h) (Nat.succ.inj hl)⟩
+  | [], _, .nil, _ :: _, .nil, _, hl => nomatch hl
+  | _ :: _, _, .cons _ _, [], .cons _ _ _ _, _, hl => nomatch hl
+
+/-- The fields of arguments related at the recursive fields by `Q`, a recursive field of a type `D`
+of which is marked by `rs`, have terms that `Q D` relates. -/
+theorem Terms.RecRel.exists_of_mem {Q : Name → TermRel} {D : Name} : {ps : List Parameter} →
+    (rs : List (Option Name)) → rs.length = ps.length → (ts us : Args 0 [] ps) →
+    Terms.RecRel Q rs ts.terms us.terms → some D ∈ rs → ∃ t u, Q D t u
+  | [], [], _, .nil, .nil, _, h => nomatch h
+  | _ :: _, some _ :: rs, hl, .cons t ts, .cons u us, hq, hm => by
+    rcases List.mem_cons.1 hm with he | hm
+    · cases he
+      exact ⟨t, u, hq.1⟩
+    · exact Terms.RecRel.exists_of_mem rs (Nat.succ.inj hl) ts us hq.2 hm
+  | _ :: _, none :: rs, hl, .cons _ ts, .cons _ us, hq, hm => by
+    rcases List.mem_cons.1 hm with he | hm
+    · cases he
+    · exact Terms.RecRel.exists_of_mem rs (Nat.succ.inj hl) ts us hq hm
+  | [], _ :: _, hl, _, _, _, _ => nomatch hl
+  | _ :: _, [], hl, _, _, _, _ => nomatch hl
 
 /-! ## Recursive Results -/
 
@@ -313,6 +375,37 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {Ns : TargetBranches m} {
         ((if e ∈ Mode.oneOne.erased then none else some o) :: _) _ H₃
       rw [ite_eq_right_of_eq_false _ _ (eq_false he)]
       exact .recursor hbo hev hevs
+
+/-- Terms of a list evaluate to as many addresses. -/
+theorem EvalAll.length_ofList {n : Nat} {H H' : Heap} {E : List Nat} :
+    (Ms : List (Target n)) → {as : List Nat} → EvalAll P H E (Targets.ofList Ms) as H' →
+      as.length = Ms.length
+  | [], _, .nil => rfl
+  | _ :: Ms, _, .cons _ hs => congrArg (· + 1) (EvalAll.length_ofList Ms hs)
+
+/-- The fields of arguments related at the recursive fields by `V`, at the addresses to which the
+terms `G (some D)` of their types `D` evaluate, satisfy `Q`, when `Q D` holds of each term of a
+recursive field that `V D` relates, at each address to which `G (some D)` evaluates in a heap that
+extends `H₀`, to a heap that `Hf` extends. -/
+theorem EvalAll.recAt {n : Nat} {E : List Nat} {G : Option Name → Target n}
+    {V : Name → TermRel} {Q : Name → Term 0 [] → Nat → Prop} {H₀ Hf : Heap} :
+    {ps : List Parameter} → (rs : List (Option Name)) →
+    (∀ D, some D ∈ rs → ∀ t u, V D t u → ∀ Ha b Hb, H₀.Extends Ha →
+      Eval P Ha E (G (some D)) b Hb → Hb.Extends Hf → Q D t b) →
+    rs.length = ps.length → (es : List Grade) → (ts us : Args 0 [] ps) → {H₁ : Heap} →
+    {as : List Nat} → H₀.Extends H₁ → EvalAll P H₁ E (Targets.ofList (rs.map G)) as Hf →
+    Terms.RecRel V rs ts.terms us.terms → Terms.RecAt Q rs es ts.terms as
+  | [], [], _, _, _, .nil, .nil, _, _, _, _, _ => trivial
+  | _ :: _, some D :: rs, hG, hl, _ :: es, .cons t ts, .cons u us, _, _, hH, .cons h hs, hV =>
+    ⟨fun _ => hG D (List.mem_cons_self ..) t u hV.1 _ _ _ hH h hs.extends,
+      EvalAll.recAt rs (fun D hD => hG D (List.mem_cons_of_mem _ hD)) (Nat.succ.inj hl) es ts us
+        (hH.trans h.extends) hs hV.2⟩
+  | _ :: _, some _ :: _, _, _, [], .cons _ _, .cons _ _, _, _, _, _, _ => trivial
+  | _ :: _, none :: rs, hG, hl, es, .cons _ ts, .cons _ us, _, _, hH, .cons h hs, hV =>
+    EvalAll.recAt rs (fun D hD => hG D (List.mem_cons_of_mem _ hD)) (Nat.succ.inj hl) es ts us
+      (hH.trans h.extends) hs hV
+  | [], _ :: _, _, hl, _, _, _, _, _, _, _, _ => nomatch hl
+  | _ :: _, [], _, hl, _, _, _, _, _, _, _, _ => nomatch hl
 
 /-! ## Recursors -/
 
@@ -714,6 +807,174 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     obtain ⟨b, H₂, hev, hH₂, hrun⟩ :=
       (hRw X hclosed).2 H₁ (List.prefix_refl _) hH₁ (hwv.trans hwv.symm) C hC₀
     exact ⟨b, H₂, hev, hH₂, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC htw.1 htv hrun⟩
+
+/-- `r ∈ S`, by induction on `(eq_μ)`: the skeleton of the instance evaluates to an address that the
+erased recursor eliminates to the address of a value to which the recursor on a term of the
+instance is related at the motive at the term, when every type of the block has one constructor at
+most. -/
+theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl T)
+    (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    {h' : Nat} {C : Term 0 (.var :: Γ)} (hh : decl.dataTypes[h']? = some T)
+    (hC : Cs.get h' = some ⟨0, C⟩)
+    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
+    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
+      ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
+      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+        ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
+    (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as Cs us δs gs)
+    (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+      (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      r * p.usage ≤ gs i l +
+        (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
+          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) l
+          else Grade.zero) * r)
+    (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      χ ≤ᶜ δs i +ᶜ Telescope.resultSum
+        (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
+        ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    (hr : r ∈ Mode.oneOne.erased) (h1 : ∀ T' ∈ decl.dataTypes, T'.constructors.length ≤ 1)
+    {σ : Subst 0 [] Γ} {H : Heap} {E : List Nat}
+    (hσ : EqSubst sig ι ctx σ σ) (hE : RunsAsSubst sig ι P H ctx χ σ E) {H₁ : Heap}
+    (hH₁ : H.Extends H₁) {t : Term 0 []}
+    (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ)) :
+    ∃ a H₂ b H₃, Eval P H₁ E (sig.skeleton D qs ps : Target Γ.length) a H₂ ∧
+      EvalRec P H₂ E (us.erase sig Mode.oneOne.erased hΓ
+        ((sig.recursiveFields D qs ps).getD [])) a b H₃ ∧ H₁.Extends H₃ ∧
+      RunsAs sig ι P H₃ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
+        ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
+  obtain ⟨hdecl, hT, rfl⟩ := id h
+  have hnd : decl.names.Nodup := hd.nodup hdecl
+  have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
+    fun _ _ hj => TypeDeclaration.idxOf_dataTypes hnd hj
+  have hasσ := has.2 σ σ hσ
+  have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  -- The equality of the block at the arguments substituted.
+  obtain ⟨SM, hUM, hmonoM, hrecM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
+  have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
+      (DataType.blockRel decl.dataTypes SM T'.name).computed sig ι a b →
+        ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
+    fun T' hT' _ _ hab => (FieldRel.univ rfl (hUM T' hT').1).validEqTerm hd (hI _) hab
+  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
+  let Ns := us.erase sig Mode.oneOne.erased hΓ ((sig.recursiveFields T.name qs ps).getD [])
+  let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
+    .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
+  -- The erased recursor on a skeleton of the type `D'` of a canonical term `v`, within the depth of
+  -- the number of the types of the block minus that of the ancestors `A` of `D'`, evaluates, in
+  -- each heap that extends the heap of the skeleton, to the address of a value related to the
+  -- recursor on `v` at the motive.
+  let Pk : Name → Term 0 [] → Prop := fun D' v => ∀ (A : List Name) (d : Nat), A.Nodup →
+    (∀ X ∈ A, X ∈ decl.names) → (∀ X ∈ A, Relation.TransGen (decl.Below I) D' X) →
+    d + A.length = decl.names.length → ∀ H₂ a H₃, H.Extends H₂ →
+    Eval P H₂ E (decl.skeleton I d D' : Target Γ.length) a H₃ →
+    ValidTerm₀ sig ι v (.inst D' qs ls ps (as.subst σ)) → ∀ H', H₃.Extends H' →
+    ∃ b H₄, EvalRec P H' E Ns a b H₄ ∧ H'.Extends H₄ ∧
+      ∀ C' : Term 0 (.var :: Γ), Cs.get (decl.names.idxOf D') = some ⟨0, C'⟩ →
+        RunsAs sig ι P H₄ (f D' v) b ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single v))
+  -- The relations of the canonical terms that `(eq_μ)` relates, whose type is accessible for `≺`,
+  -- and on whose skeletons the erased recursor evaluates as `Pk` states.
+  let X : Name → TermRel := fun D' v w =>
+    DataType.blockRel decl.dataTypes SM D' v w ∧ Acc (decl.Below I) D' ∧ Pk D' v
+  have hclosed : ∀ T' ∈ decl.dataTypes, ∀ v w, T'.ctorRel T'.name (SM X) v w →
+      X T'.name v w := by
+    intro T' hT' v w hc
+    obtain ⟨con, hcon, fs, fs₂, hvc, hwc, hSX⟩ := hc
+    have hSX' := hmonoM X _ (fun _ _ _ h => h.1) T' hT' con hcon fs fs₂ hSX
+    obtain ⟨ts, us', rfl, rfl, -⟩ := (hiffM T' hT' con hcon).2.1 _ _ hSX'
+    have hrX := hrecM X T' hT' con hcon _ _ hSX
+    have hcons : T'.constructors = [con] :=
+      List.eq_singleton_of_mem_of_length_le_one hcon (h1 T' hT')
+    -- The type is accessible for `≺`: each type below it is that of a recursive field.
+    have hacc : Acc (decl.Below I) T'.name := Acc.intro _ fun D'' ⟨T₀, hT₀, hn₀, c₀, hc₀, hm⟩ => by
+      cases List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup hnd) hT₀ hT' hn₀
+      rw [hcons] at hc₀
+      cases hc₀
+      obtain ⟨_, _, _, _, _, _, hX₁⟩ :=
+        Terms.RecRel.exists_of_mem _ (Telescope.length_recursion _ _) ts us' hrX hm
+      exact hX₁.2.1
+    refine ⟨DataType.blockRel_closed hmonoM hT'
+      ⟨con, hcon, ts.terms, us'.terms, hvc, hwc, hSX'⟩, hacc, ?_⟩
+    intro A d hA hAn hAD hdA H₂ a H₃ hH₂ hev hvv H' hH'
+    -- The depth is not reached, since the ancestors are fewer than the types of the block.
+    have hlt := TypeDeclaration.length_ancestors_lt hacc (TypeDeclaration.name_mem_names hT') hA
+      hAn hAD
+    obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+    -- The skeleton unfolds into the constructor of the case of the type.
+    obtain ⟨i, j, hi, hj⟩ := TypeDeclaration.exists_cases hT' hcon
+    rw [TypeDeclaration.skeleton_succ hnd I hT' rfl hcons
+      (Entry.constructorCase_of_cases (hd.cases_nodup hdecl) hi)] at hev
+    cases hev with
+    | ctor hall =>
+    rename_i H₂₀ bs
+    have hH₂₀ : H₂₀.Extends H' :=
+      (List.prefix_append H₂₀ [.ctor i bs]).trans hH'
+    have hHH' : H.Extends H' := hH₂.trans (hall.extends.trans hH₂₀)
+    have hbl : bs.length = (con.params I).length := by
+      rw [EvalAll.length_ofList _ hall, List.length_map, Telescope.length_recursion]
+    obtain ⟨b, H₄, hevr, hH₄, hrun⟩ := RunsAs.recursor_ctor hd ⟨hdecl, hT, rfl⟩ hv hadm has hCs
+      hCv hus hrec husr hχ hs hσ hE hj hcon hi hvc hvv hHH'
+      (hH'.getElem? List.getElem?_concat_length)
+      fun ts' hfs _ _ => by
+        rw [hfs]
+        -- The fields are erased, at grades erased since the grade of the recursor is.
+        refine ⟨RunsAsArgs.of_erased ts' bs _ (fun l p hl' => (by decide : ∀ r p g x : Grade,
+          r ∈ Mode.oneOne.erased → r * p ≤ g + x * r → g ∈ Mode.oneOne.erased) r p.usage
+          (gs i l) _ hr (hg i j T' con l p hi hl')) hbl, ?_⟩
+        -- The recursive results used at run time, on the skeletons of the recursive fields.
+        refine EvalAll.recAt _ (fun D'' hD'' t u ⟨v₁, w₁, hcv, hcw, hX₁⟩ Ha b' Hb hHa hevb hHb
+          H'' hH'' => ?_) (Telescope.length_recursion _ _) _ ts us' (List.prefix_refl _) hall hrX
+        have hDn := Telescope.mem_recursion hD''
+        obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hDn
+        have htu := hval T₃ hT₃ t u ⟨v₁, w₁, hcv, hcw, hX₁.1⟩
+        have hVt := htu.trans htu.symm
+        have hvv₁ := (ValidEqTerm₀.redStar_iff hd hcv.1).1 hVt
+        have hb : decl.Below I T₃.name T'.name := ⟨T', hT', rfl, con, hcons, hD''⟩
+        obtain ⟨b'', H₅, hev', hH₅, hrun'⟩ := hX₁.2.2 (T'.name :: A) d'
+          (List.nodup_cons.2 ⟨fun hm => hacc.not_transGen_self (hAD _ hm), hA⟩)
+          (fun X hX => by
+            rcases List.mem_cons.1 hX with rfl | hX
+            · exact TypeDeclaration.name_mem_names hT'
+            · exact hAn X hX)
+          (fun X hX => by
+            rcases List.mem_cons.1 hX with rfl | hX
+            · exact .single hb
+            · exact .trans (.single hb) (hAD X hX))
+          (by simp only [List.length_cons]; omega) Ha b' Hb (hH₂.trans hHa) hevb
+          (hvv₁.trans hvv₁.symm) H'' (hHb.trans (hH₂₀.trans hH''))
+        refine ⟨b'', H₅, hev', hH₅, fun C₄ hC₄ => ?_⟩
+        obtain ⟨j₄, T₄, C₄', hj₄, hT₄, hC₄', rfl⟩ :=
+          Motives.get_subst_idxOf hT hnd hCs σ hDn hC₄
+        obtain rfl : T₄ = T₃ := List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup hnd)
+          (List.mem_of_getElem? hj₄) hT₃ hT₄
+        exact RunsAs.recursor_of_redStar hd hCv hrec hσ hj₄ hC₄' hcv.1 hVt
+          (hrun' C₄' ((hidx j₄ _ hj₄).symm ▸ hC₄'))
+    refine ⟨b, H₄, hevr, hH₄, fun C' hC' => hrun C' ?_⟩
+    rwa [hidx j T' hj] at hC'
+  -- The term of the recursor computes to a canonical term that `(eq_μ)` relates, which the
+  -- relations `X` contain.
+  obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ := htv.2.1 fun ⟨v, hv', _, _, hk⟩ => by
+    cases Computesι.det hd (hI _) hv'
+    exact HasEq.univ_not_prop hd (levelRel_univ_iff.2 (hUM T hT).1) hk
+  cases Computesι.det hd (hI _) hv'
+  have hX := ((HasEq.unique hd hR' (.univ _ (levelRel_univ_iff.2 (hUM T hT).1)) _ _).1 hrel) X
+    hclosed
+  have hww := (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htv
+  obtain ⟨a, H₂, hev, hH₂⟩ := (decl.skeleton_isSkeleton I decl.names.length T.name).eval P H₁ E
+  obtain ⟨b, H₃, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
+    (fun _ h => nomatch h) rfl H₁ a H₂ hH₁ hev (hww.trans hww.symm) H₂ (List.prefix_refl _)
+  refine ⟨a, H₂, b, H₃, ?_, hevr, hH₂.trans hH₃, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC
+    hw₁.1 htv (hrun C ((hidx h' T hh).symm ▸ hC))⟩
+  rw [hd.skeleton ⟨hdecl, hT, rfl⟩ hq hp]
+  exact hev
 
 end
 

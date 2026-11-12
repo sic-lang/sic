@@ -79,6 +79,35 @@ theorem List.getElem?_of_findIdx?_eq_some {α : Type} {p : α → Bool} :
         rw [List.getElem?_cons_succ]
         exact List.getElem?_of_findIdx?_eq_some hl
 
+/-- A list with an element that satisfies the predicate has a position that `findIdx?` finds, as
+`List.findIdx?_isSome`, without its choice. -/
+theorem List.findIdx?_isSome_of_mem {α : Type} {p : α → Bool} :
+    {l : List α} → {a : α} → a ∈ l → p a = true → (l.findIdx? p).isSome
+  | [], _, h, _ => nomatch h
+  | b :: l, a, h, hp => by
+    rw [List.findIdx?_cons]
+    cases hb : p b with
+    | true =>
+      rw [ite_eq_left_of_eq_true _ _ (eq_true rfl)]
+      rfl
+    | false =>
+      rw [ite_eq_right_of_eq_false _ _ (eq_false Bool.false_ne_true)]
+      rcases List.mem_cons.1 h with rfl | h'
+      · rw [hp] at hb
+        cases hb
+      · have hs := List.findIdx?_isSome_of_mem h' hp
+        cases hl : l.findIdx? p with
+        | none => rw [hl] at hs; cases hs
+        | some _ => rfl
+
+/-- A list of one element at most that holds `a` is `[a]`. -/
+theorem List.eq_singleton_of_mem_of_length_le_one {α : Type} :
+    {l : List α} → {a : α} → a ∈ l → l.length ≤ 1 → l = [a]
+  | [], _, h, _ => nomatch h
+  | [_], _, .head _, _ => rfl
+  | [_], _, .tail _ h, _ => nomatch h
+  | _ :: _ :: _, _, _, h => absurd h (Nat.not_succ_le_zero _ ∘ Nat.le_of_succ_le_succ)
+
 /-- The first element after the first `i` elements of a list is its element at the position `i`. -/
 theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]? = some a) :
     (l.drop i).headD d = a := by
