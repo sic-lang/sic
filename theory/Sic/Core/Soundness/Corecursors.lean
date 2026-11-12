@@ -57,14 +57,6 @@ theorem RedStar.obs {sig' : Signature} {k : Nat} {Γ Δ : Scope} {D : Name} {qs 
   | refl => exact .refl _
   | step h _ ih => exact .step (.obs h) ih
 
-/-- A term computes to the canonical terms of the terms it reduces to, in a signature whose names
-are distinct. -/
-theorem Computesι.redStar_iff (hd : sig.Distinct) {t t' v : Term 0 []}
-    (h : RedStar (sig.interpret ι) t t') : Computesι sig ι t v ↔ Computesι sig ι t' v := by
-  induction h with
-  | refl => exact .rfl
-  | step h _ ih => exact (Computesι.red_iff hd h).trans ih
-
 /-- An observation of a corecursor computes as the observation of the same corecursor by the same
 destructor at the same arguments, whatever instance each observation carries, since `(β_⟶)` does
 not read it, and the corecursor does not reduce. -/

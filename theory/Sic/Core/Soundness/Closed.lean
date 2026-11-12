@@ -301,6 +301,15 @@ theorem Computesι.red_iff {sig : Signature} {ι : Interpretation} {t t' v : Ter
   · rintro ⟨hs, hw⟩
     exact ⟨.step h hs, hw⟩
 
+/-- A term computes to the canonical terms of the terms it reduces to, in a signature whose names
+are distinct. -/
+theorem Computesι.redStar_iff {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    {t t' v : Term 0 []} (h : RedStar (sig.interpret ι) t t') :
+    Computesι sig ι t v ↔ Computesι sig ι t' v := by
+  induction h with
+  | refl => exact .rfl
+  | step h _ ih => exact (Computesι.red_iff hd h).trans ih
+
 /-- A type computes to a proposition exactly when the type it reduces to does, in a signature whose
 names are distinct. -/
 theorem ComputesToProp.red_iff {sig : Signature} {ι : Interpretation} {A A' : Term 0 []}
