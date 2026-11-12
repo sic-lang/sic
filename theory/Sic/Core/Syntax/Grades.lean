@@ -67,6 +67,13 @@ def Telescope.resultGrades : List (Option Name) → List Grade → Nat → Grade
   | none :: rs, es, l + 1 => Telescope.resultGrades rs es l
   | _, _, _ => Grade.zero
 
+/-- A position has the grade `0`, erased, when no grade of a recursive result is left. -/
+theorem Telescope.resultGrades_nil : (rs : List (Option Name)) → (l : Nat) →
+    Telescope.resultGrades rs [] l = Grade.zero
+  | [], _ | some _ :: _, _ => rfl
+  | none :: _, 0 => rfl
+  | none :: rs, l + 1 => Telescope.resultGrades_nil rs l
+
 /-- `e_{jil}`: the grade of the recursive result of the field at each position `l` of the branch at
 the position `i` of the branches `us`, whose recursive fields the types `rs` of the block mark. -/
 def Branches.resultGrades {k : Nat} {Γ : Scope} (us : Branches k Γ) (i : Nat)
@@ -84,6 +91,22 @@ def _root_.Sic.Grading.GradeVector.extendResults {Γ : Scope} (γ : GradeVector 
     extendResults (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
   | none :: rs, _ :: ps => extendResults γ (fun l => e (l + 1)) rs ps
   | [], _ | some _ :: _, [] | none :: _, [] => γ
+
+/-- The extension by the recursive results at the grades `es`, in order, is the extension by the
+variables of the telescope of their parameters at these grades. -/
+theorem _root_.Sic.Grading.GradeVector.extendResults_resultGrades {Γ : Scope} :
+    (γ : GradeVector Γ.length) → (rs : List (Option Name)) → (ps : List Parameter) →
+    (es : List Grade) →
+    γ.extendResults (Telescope.resultGrades rs es) rs ps =
+      γ.extendGrades (fun l => es.getD l Grade.zero) (Telescope.resultParams rs ps)
+  | γ, some _ :: rs, _ :: ps, e :: es =>
+    extendResults_resultGrades (Γ := .var :: Γ) (γ ∙ e) rs ps es
+  | γ, some _ :: rs, _ :: ps, [] => by
+    have h := extendResults_resultGrades (Γ := .var :: Γ) (γ ∙ Grade.zero) rs ps []
+    rw [funext (Telescope.resultGrades_nil rs)] at h
+    exact h
+  | γ, none :: rs, _ :: ps, es => extendResults_resultGrades γ rs ps es
+  | _, [], _, _ | _, some _ :: _, [], _ | _, none :: _, [], _ => rfl
 
 -- ADE: none.
 /-- `e_{l₁} + … + e_{l_b}`: the sum of the grades `e l` of the recursive results of the recursive
