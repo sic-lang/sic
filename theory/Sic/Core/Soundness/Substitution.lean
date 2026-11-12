@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Typing
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Soundness.Closed
 
@@ -605,98 +604,6 @@ at a substitution of that context. -/
 theorem Telescope.subst_weaken {Γ : Scope} {e : Scope.Entry} {qs : List Parameter} (σ : Subst k [] (e :: Γ))
     (Θ : Telescope k Γ qs) : (Θ.rename Ren.weaken).subst σ = Θ.subst (Subst.tail σ) :=
   Telescope.subst_rename_of (fun _ => rfl) Θ
-
--- ADE: the substitutions in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
-/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the variable `x : A ∈ Γ` equal closed terms of the type `A[σ₁]`. -/
-theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
-    (hx : ctx.VarIn x A) {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
-    ValidEqTerm₀ sig ι (σ₁ x) (σ₂ x) (A.subst σ₁) := by
-  induction hx with
-  | @zero _ ctx A =>
-    rw [Term.subst_weaken]
-    exact ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).2
-  | @succVar _ ctx _ A B _ ih =>
-    rw [Term.subst_weaken]
-    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
-    rw [Term.subst_weaken]
-    exact ih ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
-
--- ADE: none.
-/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
-instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
-arguments. -/
-theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {ψ : ResultOwnership ps.length}
-    {X : Var Γ (.secondOrder ps ψ)}
-    {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
-    {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
-    ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι ((σ₁ X).subst τ₁) ((σ₂ X).subst τ₂)
-        ((A.subst (Subst.liftN _ σ₁)).subst τ₁) := by
-  induction hX with
-  | @zero _ _ _ ctx Θ A =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).2
-  | @succVar _ _ _ ctx _ Θ A B _ ih =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ih ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1
-
-
--- ADE: the type in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
-/-- The type of the variable `x : A ∈ Γ` is a type in the context, when `Σ ⊨ Γ`. -/
-theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
-    (hx : ctx.VarIn x A) : ValidCtx₀ sig ι ctx → ValidTypeΓ sig ι ctx A := by
-  induction hx with
-  | @zero _ ctx A =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact ((validCtx₀_var ctx A).1 hctx).2 _ _ ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).1
-  | @succVar _ ctx _ A B _ ih =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact (ih ((validCtx₀_var ctx B).1 hctx).1).2 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact (ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ B _).1 hctx).1)).2 _ _
-      ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
-
--- ADE: none.
-/-- The type of the second-order variable `X : (Θ ⊢ A) ∈ Γ` is a type in the context extended by its
-telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
-substitutions of `Θ[σ₁]`, it gives equal closed types. -/
-theorem Context.SecondOrderIn.validEqType {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
-    {ψ : ResultOwnership ps.length} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
-    {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A) :
-    ValidCtx₀ sig ι ctx → ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
-      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
-        ValidEqType₀ sig ι ((A.subst (Subst.liftN _ σ₁)).subst τ₁)
-          ((A.subst (Subst.liftN _ σ₂)).subst τ₂) := by
-  induction hX with
-  | @zero _ _ _ ctx Θ A =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken, Term.subst_append, Term.subst_append]
-    exact ((validCtx₀_secondOrder ctx Θ A _).1 hctx).2 _ _
-      ((EqSubst.append_append_iff ctx Θ _ _ τ₁ τ₂).2
-        ⟨((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).1, hτ⟩)
-  | @succVar _ _ _ ctx _ Θ A B _ ih =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
-    exact ih ((validCtx₀_var ctx B).1 hctx).1 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
-  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
-    exact ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ' B _).1 hctx).1) _ _
-      ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
 
 end
 

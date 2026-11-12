@@ -148,6 +148,17 @@ modules = ["Sic.Core.Soundness"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
 
 [[rule]]
+reason = "the properties of the meaning of the substitutions, of the levels and of the declared types read no typing, so that the relation of run time uses them"
+modules = [
+  "Sic.Core.Soundness.Closed",
+  "Sic.Core.Soundness.DeclaredTypes",
+  "Sic.Core.Soundness.Levels",
+  "Sic.Core.Soundness.Signature",
+  "Sic.Core.Soundness.Substitution",
+]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
 reason = "the relation of run time and its properties read the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
 modules = [
   "Sic.Core.RunTime.Computation",
