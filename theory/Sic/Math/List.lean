@@ -4,8 +4,9 @@ module
 # Lists
 
 Properties of the lists that Lean does not provide: the positions and the images of the elements of
-a list whose images are distinct, the numbered elements of a list of a known length, and the results
-of a function defined at every element of a list.
+a list whose images are distinct, the numbered elements of a list of a known length, the results of
+a function defined at every element of a list, and the length of a list whose distinct elements are
+all in another.
 -/
 
 @[expose] public section
@@ -136,3 +137,45 @@ theorem List.idxOf?_map_of_nodup {α β : Type} [BEq β] [LawfulBEq β] {f : α 
       rw [List.map_cons, List.idxOf?_cons, beq_eq_false_iff_ne.2 hne,
         ite_eq_right_of_eq_false _ _ (eq_false Bool.false_ne_true), List.idxOf?_map_of_nodup hn.2 ha]
       rfl
+
+/-- A list whose elements are distinct and all in a list `l₂` is not longer than `l₂`, as
+`List.Nodup.length_le_of_subset`, without its choice: removing the first element `a` of the list
+from `l₂` keeps the others in `l₂` and shortens it by one. -/
+theorem List.length_le_of_nodup_subset {α : Type} [BEq α] [LawfulBEq α] :
+    {l₁ l₂ : List α} → l₁.Nodup → (∀ a ∈ l₁, a ∈ l₂) → l₁.length ≤ l₂.length
+  | [], _, _, _ => Nat.zero_le _
+  | a :: t, l₂, hn, h => by
+    have hmem : ∀ {l : List α} {x : α}, x ≠ a → x ∈ l → x ∈ l.erase a := by
+      intro l x hx hl
+      induction l with
+      | nil => cases hl
+      | cons b l ih =>
+        cases hba : (b == a) with
+        | true =>
+          simp only [List.erase_cons, hba, ↓reduceIte]
+          rcases List.mem_cons.1 hl with rfl | hl
+          · exact absurd (beq_iff_eq.1 hba) hx
+          · exact hl
+        | false =>
+          rw [List.erase_cons, hba]
+          rcases List.mem_cons.1 hl with rfl | hl
+          · exact List.mem_cons_self
+          · exact List.mem_cons_of_mem _ (ih hl)
+    have hlen : ∀ {l : List α}, a ∈ l → (l.erase a).length + 1 = l.length := by
+      intro l hl
+      induction l with
+      | nil => cases hl
+      | cons b l ih =>
+        cases hba : (b == a) with
+        | true => simp only [List.erase_cons, hba, ↓reduceIte, List.length_cons]
+        | false =>
+          rw [List.erase_cons, hba]
+          rcases List.mem_cons.1 hl with rfl | hl
+          · exact absurd (beq_self_eq_true _) (by rw [hba]; exact Bool.false_ne_true)
+          · simp only [Bool.false_eq_true, ↓reduceIte, List.length_cons, ih hl]
+    have ht := List.length_le_of_nodup_subset (l₂ := l₂.erase a) (List.nodup_cons.1 hn).2
+      fun x hx => hmem (fun (e : x = a) => (List.nodup_cons.1 hn).1 (e ▸ hx))
+        (h x (List.mem_cons_of_mem _ hx))
+    have hl := hlen (h a List.mem_cons_self)
+    simp only [List.length_cons]
+    omega
