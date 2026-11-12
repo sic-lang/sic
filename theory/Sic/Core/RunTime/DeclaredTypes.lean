@@ -3,13 +3,10 @@ module
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
-import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Levels
 import Sic.Core.RunTime.Monotonicity
-import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 
