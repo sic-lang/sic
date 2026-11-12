@@ -17,18 +17,28 @@ namespace Sic.Core
 
 open Sic.Grading
 
+-- ADE: none.
+/-- Addresses that stand for a substitution as the grades `δ` require stand for it as any grades
+`γ` require that count at run time only variables that `δ` counts. -/
+theorem RunsAsSubst.of_counted {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
+    {Γ : Scope} → (ctx : Context 0 Γ) → {γ δ : GradeVector Γ.length} → {σ : Subst 0 [] Γ} →
+    {E : List Nat} → (∀ x, γ x ∉ Mode.oneOne.erased → δ x ∉ Mode.oneOne.erased) →
+    RunsAsSubst sig ι P H ctx δ σ E → RunsAsSubst sig ι P H ctx γ σ E
+  | _, .empty, _, _, _, _, _, h => h
+  | _, .var ctx _, _, _, _, _, hc, h => by
+    obtain ⟨a, E', hE, hs, hx⟩ := h
+    exact ⟨a, E', hE, RunsAsSubst.of_counted ctx (fun x => hc x.succ) hs, fun hγ => hx (hc 0 hγ)⟩
+  | _, .secondOrder .., _, _, _, _, _, h => h
+
 -- ADE: none, a step of `subsumption-▸⊩ʳ∷[]-≤`.
 /-- Addresses that stand for a substitution as the grades `δ` require stand for it as any grades
 `γ` above `δ` require. -/
-theorem RunsAsSubst.of_le {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
-    {Γ : Scope} → (ctx : Context 0 Γ) → {γ δ : GradeVector Γ.length} → {σ : Subst 0 [] Γ} →
-    {E : List Nat} → δ ≤ᶜ γ → RunsAsSubst sig ι P H ctx δ σ E → RunsAsSubst sig ι P H ctx γ σ E
-  | _, .empty, _, _, _, _, _, h => h
-  | _, .var ctx _, _, _, _, _, hle, h => by
-    obtain ⟨a, E', hE, hs, hx⟩ := h
-    exact ⟨a, E', hE, RunsAsSubst.of_le ctx (fun x => hle x.succ) hs,
-      fun hγ => hx fun hδ => hγ ((Mode.erasesUncounted .oneOne).le _ _ (hle 0) hδ)⟩
-  | _, .secondOrder .., _, _, _, _, _, h => h
+theorem RunsAsSubst.of_le {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
+    {Γ : Scope} (ctx : Context 0 Γ) {γ δ : GradeVector Γ.length} {σ : Subst 0 [] Γ}
+    {E : List Nat} (hle : δ ≤ᶜ γ) : RunsAsSubst sig ι P H ctx δ σ E →
+      RunsAsSubst sig ι P H ctx γ σ E :=
+  RunsAsSubst.of_counted ctx fun x hγ hδ =>
+    hγ ((Mode.erasesUncounted .oneOne).le _ _ (hle x) hδ)
 
 -- ADE: `subsumption-▸⊩ʳ∷[]-≤`, in `Graded/Erasure/LogicalRelation/Hidden.agda`.
 /-- A term valid at run time with the grades `γ` is valid with any grades `δ ≤ᶜ γ`.

@@ -277,6 +277,34 @@ theorem TypeDeclaration.mem_casesFrom_of {α β : Type} {f : α → List β} :
     rw [he]
     exact List.mem_append_right _ (TypeDeclaration.mem_casesFrom_of h hc)
 
+/-- Each constructor of a data type that an entry of the signature declares has a case. -/
+theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hdecl : .typeDeclaration decl ∈ sig) (hT : T ∈ decl.dataTypes) (hc : con ∈ T.constructors) :
+    ∃ i, sig.constructorCase T.name con.name = some i := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
+  have hm := TypeDeclaration.mem_casesFrom_of (i := 0) (f := DataType.constructors) hj hc
+  have he : (Entry.constructorCase T.name con.name (.typeDeclaration decl)).isSome := by
+    simp only [Entry.constructorCase, List.findIdx?_isSome, List.any_eq_true]
+    exact ⟨_, hm, show (T.name == T.name && con.name == con.name) = true by
+      rw [show (T.name == T.name) = true from decide_eq_true rfl,
+        show (con.name == con.name) = true from decide_eq_true rfl]; rfl⟩
+  clear hm hj
+  induction sig with
+  | nil => nomatch hdecl
+  | cons e sig ih =>
+    show ∃ i, (e :: sig).findSome? (Entry.constructorCase T.name con.name) = some i
+    cases he' : Entry.constructorCase T.name con.name e with
+    | some i => exact ⟨i, by rw [List.findSome?_cons, he']⟩
+    | none =>
+      rw [List.findSome?_cons, he']
+      rcases List.mem_cons.1 hdecl with h | h
+      · subst h
+        rw [he'] at he
+        nomatch he
+      · exact ih h
+
 /-- Each destructor of a codata type that an entry of the signature declares has a case. -/
 theorem Signature.destructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {d : Name}

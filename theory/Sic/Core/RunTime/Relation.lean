@@ -14,6 +14,9 @@ whose relation of run time, which the meaning gives, relates the term to the add
 A term with grades `γ` is valid at run time, `Σ; γ; Γ ⊨® t : A`, when its erasure computes, from the
 addresses of the variables that `γ` counts at run time, a value related to the term substituted by
 the closed terms that these addresses stand for: the statement of the fundamental lemma.
+The arguments of a telescope are related to addresses, `t̄ ®_H b̄ : Θ`, and valid at run time,
+`Σ; γ; Γ ⊨® t̄ : Θ`, in the same way, each at the type of its entry, when its grade is used at run
+time.
 
 ADE relate a term to the term of the target language that it extracts to, `t ® v ∷ A / [A]`, by
 recursion on the proof that `A` is reducible, in `Graded/Erasure/LogicalRelation.agda`.
@@ -35,6 +38,19 @@ def RunsAs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) (t :
     (a : Nat) (A : Term 0 []) : Prop :=
   ∃ v, Computesι sig ι A v ∧
     (IsProp sig ι v ∨ ∃ R, HasRun sig ι P v R ∧ R.computed sig ι H t a)
+
+-- ADE: none.
+/-- `t̄ ®_H b̄ : Θ`: the closed arguments `t̄` of the closed telescope `Θ` and the addresses `b̄` of
+their values in the heap `H`, one for each entry, the first one first: each argument whose grade is
+not in `S^{11ᵐ}`, so that the erasure keeps it, is related to its address at the type of its entry,
+in which the arguments before it are substituted. -/
+def RunsAsArgs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) :
+    {ps : List Parameter} → Args 0 [] ps → List Nat → Telescope 0 [] ps → Prop
+  | [], .nil, [], .nil => True
+  | _ :: _, .cons t ts, b :: bs, .cons _ p A Θ =>
+    (p.usage ∉ Mode.oneOne.erased → RunsAs sig ι P H t b A) ∧
+      RunsAsArgs sig ι P H ts bs (Θ.subst₀ (Subst₀.single t))
+  | _, _, _, _ => False
 
 -- ADE: `_®_∷[_]_◂_`, for the substitutions, in `Graded/Erasure/LogicalRelation.agda`.
 /-- `(σ, E) ∈ ®_H(Γ, γ)`: the closed substitution `σ` of the context `Γ`, whose variables are all
@@ -64,5 +80,18 @@ def RunValid (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope} 
   ∀ σ H E, EqSubst sig ι ctx σ σ → RunsAsSubst sig ι P H ctx γ σ E →
     ∃ a H', Eval P H E (t.erase sig Mode.oneOne.erased hΓ) a H' ∧ H.Extends H' ∧
       RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
+
+-- ADE: none.
+/-- `Σ; γ; Γ ⊨® t̄ : Θ`, at levels without variables: for each closed substitution `σ` of the
+first-order context `Γ` that the meaning relates to itself, and each heap `H` in which the addresses
+`E` stand for `σ` as `γ` requires, the erasure of the arguments `t̄` at the grades of the entries of
+`Θ` evaluates, in `E` and `H`, to addresses `b̄` in a heap `H'` that extends `H`, to which `t̄[σ]`
+are related at `Θ[σ]`. -/
+def RunValidArgs (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
+    (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) {ps : List Parameter}
+    (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
+  ∀ σ H E, EqSubst sig ι ctx σ σ → RunsAsSubst sig ι P H ctx γ σ E →
+    ∃ bs H', EvalAll P H E (ts.terms.erase sig Mode.oneOne.erased hΓ (ps.map (·.usage))) bs H' ∧
+      H.Extends H' ∧ RunsAsArgs sig ι P H' (ts.subst σ) bs (Θ.subst σ)
 
 end Sic.Core

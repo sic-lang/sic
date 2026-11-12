@@ -241,4 +241,30 @@ theorem RunsAs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' 
   | ⟨v, hA, .inr ⟨R, hR, ht⟩⟩ =>
     ⟨v, hA, .inr ⟨R, hR, RunRel.computed_mono (fun _ _ hv => hR.mono hd hH hv) ht⟩⟩
 
+
+-- ADE: none.
+/-- Addresses that stand for a substitution in the heap `H` stand for it in each heap `H'` that
+extends `H`, in a signature whose names are distinct. -/
+theorem RunsAsSubst.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}
+    (hd : sig.Distinct) (hH : H.Extends H') :
+    {Γ : Scope} → (ctx : Context 0 Γ) → {γ : GradeVector Γ.length} → {σ : Subst 0 [] Γ} →
+    {E : List Nat} → RunsAsSubst sig ι P H ctx γ σ E → RunsAsSubst sig ι P H' ctx γ σ E
+  | _, .empty, _, _, _, h => h
+  | _, .var ctx _, _, _, _, h => by
+    obtain ⟨a, E', hE, hs, hx⟩ := h
+    exact ⟨a, E', hE, RunsAsSubst.mono hd hH ctx hs, fun hγ => (hx hγ).mono hd hH⟩
+  | _, .secondOrder .., _, _, _, h => h
+
+-- ADE: none.
+/-- Arguments related to addresses at a telescope in the heap `H` are related to them in each heap
+`H'` that extends `H`, in a signature whose names are distinct. -/
+theorem RunsAsArgs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}
+    (hd : sig.Distinct) (hH : H.Extends H') :
+    {ps : List Parameter} → {ts : Args 0 [] ps} → {bs : List Nat} → {Θ : Telescope 0 [] ps} →
+    RunsAsArgs sig ι P H ts bs Θ → RunsAsArgs sig ι P H' ts bs Θ
+  | [], .nil, [], .nil, h => h
+  | _ :: _, .cons _ _, _ :: _, .cons _ _ _ _, h => by
+    obtain ⟨ht, hts⟩ := h
+    exact ⟨fun hp => (ht hp).mono hd hH, RunsAsArgs.mono hd hH hts⟩
+
 end Sic.Core

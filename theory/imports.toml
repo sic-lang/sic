@@ -162,6 +162,8 @@ forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
 reason = "the relation of run time and its properties read the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
 modules = [
   "Sic.Core.RunTime.Computation",
+  "Sic.Core.RunTime.DeclaredTypes",
+  "Sic.Core.RunTime.Levels",
   "Sic.Core.RunTime.Monotonicity",
   "Sic.Core.RunTime.Relation",
   "Sic.Core.RunTime.Rules",

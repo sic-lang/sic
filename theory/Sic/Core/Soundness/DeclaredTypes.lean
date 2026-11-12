@@ -869,7 +869,7 @@ arguments of its parameters, are types of the graph of run time of its sort whos
 time is `(®_μ)`, at a relation `S` of the fields common to the two arguments, for each program `P`:
 the fields of each constructor at the two arguments are telescopes of the graph of run time with
 the same relation, defined from the graph at the first arguments, rather than chosen, since the
-graph gives one at most. -/
+graph gives one at most, whatever the relations of the recursive fields. -/
 theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
@@ -881,6 +881,12 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) (P : Program) :
     ∃ S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
         RunFieldsRel,
+      (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
+        RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          (fun m _ => levelRel sig ι m)
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S X c)) ∧
       ∀ T ∈ decl.dataTypes,
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
@@ -933,7 +939,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         fun hs => ⟨S', h₁', hs⟩⟩
     rw [hSS]
     exact ⟨h₁', h₂'⟩
-  exact ⟨S, fun T hT =>
+  exact ⟨S, fun X T hT c hc => (hS X T hT c hc).1, fun T hT =>
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => (hS X T' hT' c hc).1,
       .data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => (hS X T' hT' c hc).2⟩⟩
 
@@ -964,7 +970,7 @@ theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   · obtain ⟨S, hU, -⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
       (levelRel_univ_iff.2 (hU T hT).2) fun P =>
-        have ⟨S', hR⟩ := hv.runUnivRel hd hdecl hq hl hp hadm has hs P
+        have ⟨S', _, hR⟩ := hv.runUnivRel hd hdecl hq hl hp hadm has hs P
         ⟨_, levelRel_run_iff.2 (hR T hT).1, levelRel_run_iff.2 (hR T hT).2⟩
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
