@@ -17,6 +17,8 @@ The page draws the direct imports of the library as Mermaid flowcharts, an arrow
 module or group to each one it imports, so that the foundations are at the top: one flowchart of
 the groups of `imports.toml`, then one for the modules of each group, with a node for each other
 group that they import; every module belongs to exactly one group.
+Each flowchart omits the arrows that a path of its other arrows replaces, its transitive reduction,
+since a module brings the modules that it imports.
 
 Run with the file of the rules, the file of the page and the directory of the library, `Sic/`,
 whose modules it imports, as Lake builds them.
@@ -141,8 +143,28 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
           s!"{" → ".intercalate (path.map toString)}, which the rule excludes: {rule.reason}"
   return failures
 
-/-- The page of the graphs: the direct imports between the groups as a Mermaid flowchart, then those
-of the modules of each group, then the rules. -/
+/-- Whether a path of the arrows goes from `start` to `target`, or `start` is `target`. -/
+def reaches (arrows : Array (String × String)) (start target : String) : Bool := Id.run do
+  let mut seen := #[start]
+  let mut index := 0
+  while h : index < seen.size do
+    let node := seen[index]
+    index := index + 1
+    if node == target then return true
+    for (source, next) in arrows do
+      if source == node && !seen.contains next then
+        seen := seen.push next
+  return false
+
+/-- The arrows of a graph without cycles that no path of its other arrows replaces, its transitive
+reduction: they draw the same imports, since a module brings the modules that it imports. -/
+def reduce (arrows : Array (String × String)) : Array (String × String) :=
+  arrows.filter fun (source, target) =>
+    !arrows.any fun (source', next) => source' == source && next != target && reaches arrows next target
+
+/-- The page of the graphs: the imports between the groups as a Mermaid flowchart, then those of the
+modules of each group, each without the arrows that a path of other arrows replaces, then the
+rules. -/
 def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array Name)) : String :=
   Id.run do
   -- The index of the group of a module, which `checkRules` requires to be unique.
@@ -162,7 +184,7 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   let mut lines := #[
     "# Imports",
     "",
-    "The modules of `Sic/` are grouped by subject, and import each other as the graphs of this page show, an arrow going up from a module or a group to each one it imports, so that the foundations are at the top.",
+    "The modules of `Sic/` are grouped by subject, and import each other as the graphs of this page show, an arrow going up from a module or a group to each one it imports, so that the foundations are at the top, unless a path of other arrows already goes there, since a module brings the modules that it imports.",
     "",
     "## Groups",
     "",
@@ -170,12 +192,15 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     ""] ++ flowchart
   for (group, index) in rules.groups.zipIdx do
     lines := lines.push s!"  g{index}[\"{group.name}\"]"
+  let mut groupArrows := #[]
   for index in [0:rules.groups.size] do
     let imported := modules.filter (groupOf · == index) |>.flatMap (graph.getD · #[])
       |>.map groupOf |>.filter (· != index)
     for target in [0:rules.groups.size] do
       if imported.contains target then
-        lines := lines.push s!"  g{index} --> g{target}"
+        groupArrows := groupArrows.push (s!"g{index}", s!"g{target}")
+  for (source, target) in reduce groupArrows do
+    lines := lines.push s!"  {source} --> {target}"
   lines := lines ++ #[
     "```",
     "",
@@ -196,14 +221,17 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     for (other, otherIndex) in rules.groups.zipIdx do
       if others.contains otherIndex then
         lines := lines.push s!"  g{otherIndex}([\"{other.name}\"])"
+    let mut arrows := #[]
     for module in members do
       let imports := graph.getD module #[]
       for imported in imports do
         if groupOf imported == index then
-          lines := lines.push s!"  {id module} --> {id imported}"
+          arrows := arrows.push (id module, id imported)
       for otherIndex in [0:rules.groups.size] do
         if otherIndex != index && imports.any (groupOf · == otherIndex) then
-          lines := lines.push s!"  {id module} --> g{otherIndex}"
+          arrows := arrows.push (id module, s!"g{otherIndex}")
+    for (source, target) in reduce arrows do
+      lines := lines.push s!"  {source} --> {target}"
     lines := lines ++ #["```", ""]
   lines := lines ++ #[
     "## Rules",
