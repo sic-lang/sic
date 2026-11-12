@@ -428,6 +428,48 @@ theorem Signature.Distinct.fieldGrades : {sig : Signature} → sig.Distinct → 
       rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldGrades_of_not_mem hDe]; rfl)]
       exact hd.fieldGrades ⟨he', hT, hD⟩ hcon hq hp
 
+/-- An entry that does not introduce the name `D` gives the recursive fields of no data type named
+`D`. -/
+theorem Entry.recursiveFields_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.recursiveFields D qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
+    simp only [Entry.recursiveFields]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.map_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+-- ADE: none.
+/-- In a signature whose names are distinct, the positions of the recursive fields of the
+constructors of a data type are those of the block of its declaration, at the instance. -/
+theorem Signature.Distinct.recursiveFields : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    sig.recursiveFields D qs ps = some (decl.cases.map fun x =>
+      ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
+        fun y => y.1.map fun _ => y.2)
+  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+    unfold Signature.recursiveFields
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hs : Entry.recursiveFields D qs ps (.typeDeclaration decl) =
+          some (decl.cases.map fun x =>
+            ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
+              fun y => y.1.map fun _ => y.2) := by
+        simp only [Entry.recursiveFields, hq, hp, ↓reduceDIte, ← hD,
+          List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
+      rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
+    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveFields_of_not_mem hDe]; rfl)]
+      exact hd.recursiveFields ⟨he', hT, hD⟩ hq hp
+
 /-- The destructor at a position in destructors is named by them. -/
 theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
