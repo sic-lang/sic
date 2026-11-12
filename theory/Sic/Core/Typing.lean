@@ -37,54 +37,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
-/-! ## Entries of Contexts -/
-
-/-- `x : A ∈ Γ`: the variable `x` is declared with the type `A` in the context, by the cases of the
-last entry; the empty context, which has no variable, has no constructor, and the type is weakened
-to the scope of the context. -/
-inductive Context.VarIn {k : Nat} : {Γ : Scope} → Context k Γ → Var Γ .var → Term k Γ → Prop where
-  /-- The last entry.
-  RFC: `\in_\Gamma.x` -/
-  | zero {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
-      VarIn (ctx.var A) .zero (A.rename Ren.weaken)
-  /-- An entry before a variable.
-  RFC: `\in_\Gamma.x,y` -/
-  | succVar {Γ : Scope} {ctx : Context k Γ} {x : Var Γ .var} {A B : Term k Γ} (h : VarIn ctx x A) :
-      VarIn (ctx.var B) x.succ (A.rename Ren.weaken)
-  /-- An entry before a second-order variable.
-  RFC: `\in_\Gamma.x,Y` -/
-  | succSecondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
-      {x : Var Γ .var} {A : Term k Γ} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
-      (h : VarIn ctx x A) : VarIn (ctx.secondOrder Θ B ψ) x.succ (A.rename Ren.weaken)
-
-/-- `X : (Θ ⊢ A) ∈ Γ`: the second-order variable `X` is declared with the telescope `Θ` and the
-type `A` in the context, by the cases of the last entry; the empty context, which has no
-second-order variable, has no constructor, and the telescope and the type are weakened to the scope
-of the context. -/
-inductive Context.SecondOrderIn {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
-    {ψ : ResultOwnership ps.length} → Context k Γ → Var Γ (.secondOrder ps ψ) → Telescope k Γ ps →
-    Term k (Γ.extend ps.length) → Prop where
-  /-- The last entry.
-  RFC: `\in_\Gamma.X` -/
-  | zero {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
-      {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} :
-      SecondOrderIn (ctx.secondOrder Θ A ψ) .zero (Θ.rename Ren.weaken)
-        (A.rename (Ren.liftN _ Ren.weaken))
-  /-- An entry before a variable.
-  RFC: `\in_\Gamma.X,y` -/
-  | succVar {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
-      {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
-      {B : Term k Γ} (h : SecondOrderIn ctx X Θ A) :
-      SecondOrderIn (ctx.var B) X.succ (Θ.rename Ren.weaken) (A.rename (Ren.liftN _ Ren.weaken))
-  /-- An entry before a second-order variable.
-  RFC: `\in_\Gamma.X,Y` -/
-  | succSecondOrder {Γ : Scope} {ps qs : List Parameter} {ψ : ResultOwnership ps.length} {ψ' : ResultOwnership qs.length}
-      {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps}
-      {A : Term k (Γ.extend ps.length)} {Θ' : Telescope k Γ qs} {B : Term k (Γ.extend qs.length)}
-      (h : SecondOrderIn ctx X Θ A) :
-      SecondOrderIn (ctx.secondOrder Θ' B ψ') X.succ (Θ.rename Ren.weaken)
-        (A.rename (Ren.liftN _ Ren.weaken))
-
 /-! ## Judgments -/
 
 mutual
