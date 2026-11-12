@@ -236,7 +236,9 @@ distinct.
 RFC: `\mathsf{ext}_\circledR` -/
 theorem RunsAs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}
     {t : Term 0 []} {a : Nat} {A : Term 0 []} (hd : sig.Distinct) (hH : H.Extends H') :
-    RunsAs sig ι P H t a A → RunsAs sig ι P H' t a A :=
-  fun ⟨v, R, hA, hR, ht⟩ => ⟨v, R, hA, hR, RunRel.computed_mono (fun _ _ hv => hR.mono hd hH hv) ht⟩
+    RunsAs sig ι P H t a A → RunsAs sig ι P H' t a A
+  | ⟨v, hA, .inl hp⟩ => ⟨v, hA, .inl hp⟩
+  | ⟨v, hA, .inr ⟨R, hR, ht⟩⟩ =>
+    ⟨v, hA, .inr ⟨R, hR, RunRel.computed_mono (fun _ _ hv => hR.mono hd hH hv) ht⟩⟩
 
 end Sic.Core

@@ -8,8 +8,8 @@ public import Sic.Core.Meaning
 The relation of run time of annex 20 of RFC 36, `t ®_H a : A`, between a closed term `t` of the
 source of a closed type `A` and the address `a` of a value of the target language in the heap `H`,
 which states that the value at `a` is what the erasure by `S^{11ᵐ}` of `t` computes at run time: the
-type computes to a canonical type, whose relation of run time, which the meaning gives, relates the
-term to the address.
+type computes to a proposition, whose proofs are related to every address, or to a canonical type,
+whose relation of run time, which the meaning gives, relates the term to the address.
 
 A term with grades `γ` is valid at run time, `Σ; γ; Γ ⊨® t : A`, when its erasure computes, from the
 addresses of the variables that `γ` counts at run time, a value related to the term substituted by
@@ -26,12 +26,15 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: `_®_∷_/_`, in `Graded/Erasure/LogicalRelation.agda`.
-/-- `t ®_H a : A`: the closed type `A` computes to a type or a proposition whose relation of run time
-relates the closed term `t` to the address `a` in the heap `H`.
+/-- `t ®_H a : A`: the closed type `A` computes to a proposition, whose closed terms are related to
+every address, as `(rt_⇓)` relates the terms of a field, since a proof has no use at run time and the
+meaning does not compute it, or to a type whose relation of run time relates what the closed term `t`
+computes to the address `a` in the heap `H`.
 RFC: `\circledR_A` -/
 def RunsAs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) (t : Term 0 [])
     (a : Nat) (A : Term 0 []) : Prop :=
-  ∃ v R, Computesι sig ι A v ∧ HasRun sig ι P v R ∧ R.computed sig ι H t a
+  ∃ v, Computesι sig ι A v ∧
+    (IsProp sig ι v ∨ ∃ R, HasRun sig ι P v R ∧ R.computed sig ι H t a)
 
 -- ADE: `_®_∷[_]_◂_`, for the substitutions, in `Graded/Erasure/LogicalRelation.agda`.
 /-- `(σ, E) ∈ ®_H(Γ, γ)`: the closed substitution `σ` of the context `Γ`, whose variables are all
