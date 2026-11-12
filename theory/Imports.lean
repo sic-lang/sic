@@ -13,9 +13,10 @@ group that names no module fails too, so that renaming a module cannot leave a r
 The imports are those of the modules as Lake builds them, so that the check reads the graph that
 Lean uses, not a parse of the sources.
 
-The page draws the direct imports of the library as a Mermaid flowchart, an arrow going up from each
-module to each module it imports, so that the foundations are at the top, each group of
-`imports.toml` as a subgraph; every module belongs to exactly one group.
+The page draws the direct imports of the library as Mermaid flowcharts, an arrow going up from each
+module or group to each one it imports, so that the foundations are at the top: one flowchart of
+the groups of `imports.toml`, then one for the modules of each group, with a node for each other
+group that they import; every module belongs to exactly one group.
 
 Run with the file of the rules, the file of the page and the directory of the library, `Sic/`,
 whose modules it imports, as Lake builds them.
@@ -140,29 +141,72 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
           s!"{" → ".intercalate (path.map toString)}, which the rule excludes: {rule.reason}"
   return failures
 
-/-- The page of the graph: the direct imports as a Mermaid flowchart, a subgraph for each group,
-then the rules. -/
+/-- The page of the graphs: the direct imports between the groups as a Mermaid flowchart, then those
+of the modules of each group, then the rules. -/
 def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array Name)) : String :=
   Id.run do
+  -- The index of the group of a module, which `checkRules` requires to be unique.
+  let groupOf (module : Name) : Nat :=
+    rules.groups.findIdx (·.modules.any (·.covers module))
   let id (module : Name) : String := s!"n{modules.idxOf module}"
+  -- The start of a flowchart, drawn at its own size rather than shrunk to the width of the page,
+  -- which would shrink its text with it.
+  let flowchart := #[
+    "```mermaid",
+    "---",
+    "config:",
+    "  flowchart:",
+    "    useMaxWidth: false",
+    "---",
+    "flowchart BT"]
   let mut lines := #[
     "# Imports",
     "",
-    "The modules of `Sic/` import each other as the graph below shows, an arrow going up from a module to each module it imports, so that the foundations are at the top, and the boxes grouping the modules by subject.",
+    "The modules of `Sic/` are grouped by subject, and import each other as the graphs of this page show, an arrow going up from a module or a group to each one it imports, so that the foundations are at the top.",
     "",
-    "```mermaid",
-    "flowchart BT"]
+    "## Groups",
+    "",
+    "The groups import each other as the graph below shows, a group importing another when one of its modules imports a module of the other.",
+    ""] ++ flowchart
   for (group, index) in rules.groups.zipIdx do
-    lines := lines.push s!"  subgraph g{index} [\"{group.name}\"]"
-    for module in modules do
-      if group.modules.any (·.covers module) then
-        lines := lines.push s!"    {id module}[\"{module}\"]"
-    lines := lines.push "  end"
-  for module in modules do
-    for imported in graph.getD module #[] do
-      lines := lines.push s!"  {id module} --> {id imported}"
+    lines := lines.push s!"  g{index}[\"{group.name}\"]"
+  for index in [0:rules.groups.size] do
+    let imported := modules.filter (groupOf · == index) |>.flatMap (graph.getD · #[])
+      |>.map groupOf |>.filter (· != index)
+    for target in [0:rules.groups.size] do
+      if imported.contains target then
+        lines := lines.push s!"  g{index} --> g{target}"
   lines := lines ++ #[
     "```",
+    "",
+    "## Modules",
+    "",
+    "The modules of each group import each other, and the modules of the other groups, as the graph of its section shows, a rounded box standing for the modules of another group.",
+    ""]
+  for (group, index) in rules.groups.zipIdx do
+    let members := modules.filter (groupOf · == index)
+    let others := members.flatMap (graph.getD · #[]) |>.map groupOf |>.filter (· != index)
+    lines := lines ++ #[
+      s!"### {group.name}",
+      "",
+      s!"The modules of the group {group.name} import the modules below.",
+      ""] ++ flowchart
+    for module in members do
+      lines := lines.push s!"  {id module}[\"{module}\"]"
+    for (other, otherIndex) in rules.groups.zipIdx do
+      if others.contains otherIndex then
+        lines := lines.push s!"  g{otherIndex}([\"{other.name}\"])"
+    for module in members do
+      let imports := graph.getD module #[]
+      for imported in imports do
+        if groupOf imported == index then
+          lines := lines.push s!"  {id module} --> {id imported}"
+      for otherIndex in [0:rules.groups.size] do
+        if otherIndex != index && imports.any (groupOf · == otherIndex) then
+          lines := lines.push s!"  {id module} --> g{otherIndex}"
+    lines := lines ++ #["```", ""]
+  lines := lines ++ #[
+    "## Rules",
     "",
     "The check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it:",
     ""]

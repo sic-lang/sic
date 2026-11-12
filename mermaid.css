@@ -1,4 +1,9 @@
-/* Centers the diagrams of mdbook-mermaid, which it draws as an inline SVG in a pre block. */
+/*
+ * Centers the diagrams of mdbook-mermaid, which it draws as an inline SVG in a pre block, and
+ * scrolls those wider than the page, which are drawn at their own size so that their text stays
+ * readable.
+ */
 pre.mermaid {
+  overflow-x: auto;
   text-align: center;
 }
