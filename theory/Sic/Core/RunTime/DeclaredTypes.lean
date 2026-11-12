@@ -72,26 +72,31 @@ theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {inst : Name → T
       RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Θ.RecHeads sig ι inst rsN →
       (∀ i R, rs i = some R → ∃ D, rsN i = some D ∧
         ∀ t b, RunsAs sig ι P H t b (inst D) → R H t b) →
+      (g : Nat → Grade) → (∀ l p, ps[l]? = some p → p.usage ∉ Mode.oneOne.erased →
+        g l ∉ Mode.oneOne.erased) →
       (ts : Args 0 [] ps) → EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst →
-      (bs : List Nat) → RunsAsArgs sig ι P H ts bs Θ → S H ts.terms bs
-  | [], .nil, _, _, _, h', _, _, .nil, _, [], _ => by cases h'; trivial
-  | [], .nil, _, _, _, _, _, _, .nil, _, _ :: _, h => (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, _, _, _, .cons _ _, _, [], h => (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, .cons t ts, h, b :: bs, hargs => by
+      (bs : List Nat) → RunsAsArgs sig ι P H g ts bs Θ → S H ts.terms bs
+  | [], .nil, _, _, _, h', _, _, _, _, .nil, _, [], _ => by cases h'; trivial
+  | [], .nil, _, _, _, _, _, _, _, _, .nil, _, _ :: _, h => (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, _, _, _, _, _, _, .cons _ _, _, [], h => (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, g, hg, .cons t ts, h, b :: bs, hargs => by
     obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
     obtain ⟨hb, hbs⟩ := hargs
     rw [Telescope.RecHeads] at hH
+    have hg' : ∀ l (p : Parameter), _ → p.usage ∉ Mode.oneOne.erased →
+        g (l + 1) ∉ Mode.oneOne.erased :=
+      fun l p hl => hg (l + 1) p hl
     cases h' with
     | cons hA hF hRf G hG _ =>
       have hFtt := hF.of_validEqTerm hA ht
-      exact And.intro ⟨hFtt, fun hp => hRf.of_runsAs hd hA (hb hp)⟩
-        (RunTelRel.of_runsAsArgs hd (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h) ts hts
-          bs hbs)
+      exact And.intro ⟨hFtt, fun hp => hRf.of_runsAs hd hA (hb (hg 0 _ rfl hp))⟩
+        (RunTelRel.of_runsAsArgs hd (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h) _ hg'
+          ts hts bs hbs)
     | recursive hrs G hG =>
       obtain ⟨D, hD, hRD⟩ := hR 0 _ hrs
-      exact And.intro (fun hp => hRD t b (hH.1 D hD ▸ hb hp))
-        (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h) ts hts bs
-          hbs)
+      exact And.intro (fun hp => hRD t b (hH.1 D hD ▸ hb (hg 0 _ rfl hp)))
+        (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h) _ hg' ts hts
+          bs hbs)
 
 /-- A term related to an address by the relation of run time of the type of a field is related to
 it at a type that computes to this type: the converse of `RunFieldRel.of_runsAs`. -/
@@ -114,26 +119,32 @@ theorem RunsAsArgs.of_runTelRel {n : Nat} {inst : Name → Term 0 []} {H : Heap}
       RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Θ.RecHeads sig ι inst rsN →
       (∀ i R, rs i = some R → ∃ D, rsN i = some D ∧
         ∀ t b, R H t b → RunsAs sig ι P H t b (inst D)) →
+      (g : Nat → Grade) → (∀ l p, ps[l]? = some p → g l ∉ Mode.oneOne.erased →
+        p.usage ∉ Mode.oneOne.erased) →
       (ts : Args 0 [] ps) → EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst →
-      (bs : List Nat) → S H ts.terms bs → RunsAsArgs sig ι P H ts bs Θ
-  | [], .nil, _, _, _, _, _, _, .nil, _, [], _ => trivial
-  | [], .nil, _, _, _, h', _, _, .nil, _, _ :: _, h => by cases h'; exact (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', _, _, .cons _ _, _, [], h => by
+      (bs : List Nat) → S H ts.terms bs → RunsAsArgs sig ι P H g ts bs Θ
+  | [], .nil, _, _, _, _, _, _, _, _, .nil, _, [], _ => trivial
+  | [], .nil, _, _, _, h', _, _, _, _, .nil, _, _ :: _, h => by cases h'; exact (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, _, h', _, _, _, _, .cons _ _, _, [], h => by
     cases h' <;> exact (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, .cons t ts, h, b :: bs, hS => by
+  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, g, hg, .cons t ts, h, b :: bs, hS => by
     obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
     rw [Telescope.RecHeads] at hH
+    have hg' : ∀ l (p : Parameter), _ → g (l + 1) ∉ Mode.oneOne.erased →
+        p.usage ∉ Mode.oneOne.erased :=
+      fun l p hl => hg (l + 1) p hl
     cases h' with
     | cons hA _ hRf G hG _ =>
       obtain ⟨⟨hFtt, hb⟩, hbs⟩ := hS
-      exact And.intro (fun hp => hRf.runsAs hA (hb hp))
-        (RunsAsArgs.of_runTelRel (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h) ts hts bs
-          hbs)
+      exact And.intro (fun hp => hRf.runsAs hA (hb (hg 0 _ rfl hp)))
+        (RunsAsArgs.of_runTelRel (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h) _ hg' ts
+          hts bs hbs)
     | recursive hrs G hG =>
       obtain ⟨hb, hbs⟩ := hS
       obtain ⟨D, hD, hRD⟩ := hR 0 _ hrs
-      exact And.intro (fun hp => hH.1 D hD ▸ hRD t b (hb hp))
-        (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h) ts hts bs hbs)
+      exact And.intro (fun hp => hH.1 D hD ▸ hRD t b (hb (hg 0 _ rfl hp)))
+        (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h) _ hg' ts hts bs
+          hbs)
 
 /-- The relation of run time of an instance of a data type of a type is `(®_μ)` of its block, for
 relations of the fields that the graph of a level gives, in a signature whose names are distinct. -/
@@ -189,7 +200,8 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ts.toSubst ts.toSubst)
     {i : Nat} (hi : sig.constructorCase D con.name = some i) {H : Heap} {a : Nat} {bs : List Nat}
     (ha : H[a]? = some (.ctor i bs))
-    (hbs : RunsAsArgs sig ι P H ts bs (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
+    (hbs : RunsAsArgs sig ι P H (Parameter.grades (con.params (.ofLists qs ps hq hp))) ts bs
+      (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
     RunsAs sig ι P H (.ctor D qs ls ps as con.name ts.terms) a (.inst D qs ls ps as) := by
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps as) (.inst D' qs ls ps as) :=
@@ -251,7 +263,9 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hE : EqSubst sig ι (Context.empty.append (((con.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) ts.toSubst ts.toSubst :=
       EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘ.symm) hts
-    have hS' := RunTelRel.of_runsAsArgs hd h₁ hF.recHeads hrec ts hE bs (hbs.levelEquiv hΘ.symm)
+    have hS' := RunTelRel.of_runsAsArgs hd h₁ hF.recHeads hrec _
+      (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts hE bs
+      (hbs.levelEquiv hΘ.symm)
     exact (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
       (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs

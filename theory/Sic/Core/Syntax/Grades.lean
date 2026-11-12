@@ -38,6 +38,17 @@ def _root_.Sic.Grading.GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : 
   | [], .nil => γ
   | _ :: _, .cons q _ _ Θ => extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
 
+-- ADE: none.
+/-- The grades of the entries whose parameters are `ps`, the grade `p l` of the entry at each
+position `l`, and `0`, erased, after them. -/
+def Parameter.grades (ps : List Parameter) : Nat → Grade :=
+  fun l => (ps.map (·.usage)).getD l Grade.zero
+
+/-- The grade of the entry at a position is that of its parameter. -/
+theorem Parameter.grades_of_getElem? {ps : List Parameter} {l : Nat} {p : Parameter}
+    (h : ps[l]? = some p) : Parameter.grades ps l = p.usage := by
+  simp [Parameter.grades, List.getD_eq_getElem?_getD, h]
+
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • g₀ • … • gₐ₋₁`: the vector `γ` extended by the grade `g l` of the variable of the entry at
 each position `l` of a telescope whose parameters are `ps`, the first one at `0`. -/

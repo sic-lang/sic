@@ -37,10 +37,11 @@ theorem RunsAs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} 
 /-- Arguments related to addresses at a telescope are related to them at every telescope equal to
 it up to its levels. -/
 theorem RunsAsArgs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
-    {ps : List Parameter} → {ts : Args 0 [] ps} → {bs : List Nat} → {Θ Θ' : Telescope 0 [] ps} →
-    Telescope.LevelEquiv Θ Θ' → RunsAsArgs sig ι P H ts bs Θ → RunsAsArgs sig ι P H ts bs Θ'
-  | [], .nil, [], .nil, .nil, .nil, h => h
-  | _ :: _, .cons _ _, _ :: _, .cons _ _ _ _, .cons _ _ _ _, .cons _ _ hA hΘ, h => by
+    {ps : List Parameter} → {g : Nat → Grade} → {ts : Args 0 [] ps} → {bs : List Nat} →
+    {Θ Θ' : Telescope 0 [] ps} → Telescope.LevelEquiv Θ Θ' → RunsAsArgs sig ι P H g ts bs Θ →
+      RunsAsArgs sig ι P H g ts bs Θ'
+  | [], _, .nil, [], .nil, .nil, .nil, h => h
+  | _ :: _, _, .cons _ _, _ :: _, .cons _ _ _ _, .cons _ _ _ _, .cons _ _ hA hΘ, h => by
     obtain ⟨ht, hts⟩ := h
     exact ⟨fun hp => (ht hp).levelEquiv hA,
       RunsAsArgs.levelEquiv (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl _))) hts⟩

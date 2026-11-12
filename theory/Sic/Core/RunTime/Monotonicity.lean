@@ -260,10 +260,10 @@ theorem RunsAsSubst.mono {sig : Signature} {ι : Interpretation} {P : Program} {
 `H'` that extends `H`, in a signature whose names are distinct. -/
 theorem RunsAsArgs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}
     (hd : sig.Distinct) (hH : H.Extends H') :
-    {ps : List Parameter} → {ts : Args 0 [] ps} → {bs : List Nat} → {Θ : Telescope 0 [] ps} →
-    RunsAsArgs sig ι P H ts bs Θ → RunsAsArgs sig ι P H' ts bs Θ
-  | [], .nil, [], .nil, h => h
-  | _ :: _, .cons _ _, _ :: _, .cons _ _ _ _, h => by
+    {ps : List Parameter} → {g : Nat → Grade} → {ts : Args 0 [] ps} → {bs : List Nat} →
+    {Θ : Telescope 0 [] ps} → RunsAsArgs sig ι P H g ts bs Θ → RunsAsArgs sig ι P H' g ts bs Θ
+  | [], _, .nil, [], .nil, h => h
+  | _ :: _, _, .cons _ _, _ :: _, .cons _ _ _ _, h => by
     obtain ⟨ht, hts⟩ := h
     exact ⟨fun hp => (ht hp).mono hd hH, RunsAsArgs.mono hd hH hts⟩
 

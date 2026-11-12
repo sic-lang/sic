@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Syntax.Grades
 
 /-!
 # Relation of Run Time
@@ -40,17 +41,19 @@ def RunsAs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) (t :
     (IsProp sig ι v ∨ ∃ R, HasRun sig ι P v R ∧ R.computed sig ι H t a)
 
 -- ADE: none.
-/-- `t̄ ®_H b̄ : Θ`: the closed arguments `t̄` of the closed telescope `Θ` and the addresses `b̄` of
-their values in the heap `H`, one for each entry, the first one first: each argument whose grade is
-not in `S^{11ᵐ}`, so that the erasure keeps it, is related to its address at the type of its entry,
-in which the arguments before it are substituted. -/
+/-- `t̄ ®_H^{p̄} b̄ : Θ`: the closed arguments `t̄` of the closed telescope `Θ` and the addresses `b̄`
+of their values in the heap `H`, one for each entry, the first one first, at the grades `p̄`, the
+grade `p l` of the argument at each position `l`: each argument whose grade is not in `S^{11ᵐ}`, so
+that the erasure keeps it, is related to its address at the type of its entry, in which the
+arguments before it are substituted. The grades are those of the entries for the fields of a
+constructor, and those of the variables of a branch for its fields and its recursive results. -/
 def RunsAsArgs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) :
-    {ps : List Parameter} → Args 0 [] ps → List Nat → Telescope 0 [] ps → Prop
-  | [], .nil, [], .nil => True
-  | _ :: _, .cons t ts, b :: bs, .cons _ p A Θ =>
-    (p.usage ∉ Mode.oneOne.erased → RunsAs sig ι P H t b A) ∧
-      RunsAsArgs sig ι P H ts bs (Θ.subst₀ (Subst₀.single t))
-  | _, _, _, _ => False
+    {ps : List Parameter} → (Nat → Grade) → Args 0 [] ps → List Nat → Telescope 0 [] ps → Prop
+  | [], _, .nil, [], .nil => True
+  | _ :: _, g, .cons t ts, b :: bs, .cons _ _ A Θ =>
+    (g 0 ∉ Mode.oneOne.erased → RunsAs sig ι P H t b A) ∧
+      RunsAsArgs sig ι P H (fun l => g (l + 1)) ts bs (Θ.subst₀ (Subst₀.single t))
+  | _, _, _, _, _ => False
 
 -- ADE: `_®_∷[_]_◂_`, for the substitutions, in `Graded/Erasure/LogicalRelation.agda`.
 /-- `(σ, E) ∈ ®_H(Γ, γ)`: the closed substitution `σ` of the context `Γ`, whose variables are all
@@ -92,6 +95,6 @@ def RunValidArgs (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Sco
     (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ∀ σ H E, EqSubst sig ι ctx σ σ → RunsAsSubst sig ι P H ctx γ σ E →
     ∃ bs H', EvalAll P H E (ts.terms.erase sig Mode.oneOne.erased hΓ (ps.map (·.usage))) bs H' ∧
-      H.Extends H' ∧ RunsAsArgs sig ι P H' (ts.subst σ) bs (Θ.subst σ)
+      H.Extends H' ∧ RunsAsArgs sig ι P H' (Parameter.grades ps) (ts.subst σ) bs (Θ.subst σ)
 
 end Sic.Core
