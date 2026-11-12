@@ -19,6 +19,7 @@ The page draws the direct imports of the library as Mermaid flowcharts, an arrow
 module or group to each one it imports, so that the foundations are at the top: one flowchart of
 the groups of `imports.toml`, then one for the modules of each group, with a node for each other
 group that they import, and the rules of the group; every module belongs to exactly one group.
+A group links to its section, and a module to the page of its documentation.
 Each flowchart omits the arrows that a path of its other arrows replaces, its transitive reduction,
 since a module brings the modules that it imports.
 
@@ -193,6 +194,12 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
   -- The index of the group of a module, which `checkRules` requires to be unique.
   let groupOf (module : Name) : Nat := (rules.groupOf module).getD rules.groups.size
   let id (module : Name) : String := s!"n{modules.idxOf module}"
+  -- The anchor of the section of a group, which its heading gives so that the links to it do not
+  -- depend on how mdBook derives an anchor from a heading.
+  let anchor (group : Group) : String := "-".intercalate (group.name.toLower.splitOn " ")
+  -- The page of the documentation of a module, which `build-site` publishes in `theory/`.
+  let documentation (module : Name) : String :=
+    s!"theory/{"/".intercalate (module.components.map toString)}.html"
   let flowchart := #["```mermaid", "flowchart BT"]
   let mut lines := #[
     "# Imports",
@@ -201,10 +208,12 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     "",
     "## Groups",
     "",
-    "The groups import each other as the graph below shows, a group importing another when one of its modules imports a module of the other.",
+    "The groups import each other as the graph below shows, a group importing another when one of its modules imports a module of the other, and each group leads to its section.",
     ""] ++ flowchart
   for (group, index) in rules.groups.zipIdx do
-    lines := lines.push s!"  g{index}[\"{group.name}\"]"
+    lines := lines ++ #[
+      s!"  g{index}[\"{group.name}\"]",
+      s!"  click g{index} href \"#{anchor group}\""]
   let mut groupArrows := #[]
   for index in [0:rules.groups.size] do
     let imported := modules.filter (groupOf · == index) |>.flatMap (graph.getD · #[])
@@ -219,7 +228,7 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     "",
     "## Modules",
     "",
-    "The modules of each group import each other, and the modules of the other groups, as the graph of its section shows, a rounded box standing for the modules of another group.",
+    "The modules of each group import each other, and the modules of the other groups, as the graph of its section shows, a rounded box standing for the modules of another group, which leads to its section, while a module leads to its documentation.",
     "The section gives the rules of the imports of the group after its graph: the check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it.",
     ""]
   for (group, index) in rules.groups.zipIdx do
@@ -229,15 +238,19 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     -- fits the width of the page; a module keeps the last component of its name.
     let space := commonPrefix (members.map (·.getPrefix))
     lines := lines ++ #[
-      s!"### {group.name}",
+      s!"### {group.name} \{#{anchor group}}",
       "",
       s!"The modules of the group {group.name}, whose names omit `{space}.`, import each other and the other groups as the graph below shows.",
       ""] ++ flowchart
     for module in members do
-      lines := lines.push s!"  {id module}[\"{shorten space module}\"]"
+      lines := lines ++ #[
+        s!"  {id module}[\"{shorten space module}\"]",
+        s!"  click {id module} href \"{documentation module}\""]
     for (other, otherIndex) in rules.groups.zipIdx do
       if others.contains otherIndex then
-        lines := lines.push s!"  g{otherIndex}([\"{other.name}\"])"
+        lines := lines ++ #[
+          s!"  g{otherIndex}([\"{other.name}\"])",
+          s!"  click g{otherIndex} href \"#{anchor other}\""]
     let mut arrows := #[]
     for module in members do
       let imports := graph.getD module #[]
