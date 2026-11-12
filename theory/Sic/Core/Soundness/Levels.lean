@@ -1125,18 +1125,21 @@ theorem Computes.levelEquiv {sig : Signature} {t t' v : Term 0 []} (hc : Compute
 /-! ## Equality of the Canonical Terms
 The relations of the sorts read the levels of the sorts and of the instances by their values, so
 that they give the types whose levels change for equal ones, with the same equality of their terms,
-which relates the terms whose levels change for equal ones.
+which relates the terms whose levels change for equal ones, and with the same relation of run time.
 This is proved level by level, as the partial equivalence relations are, by induction on the clauses
 that give a type of the level, together with the telescopes of the fields of its constructors, so
 that each kind of declaration adds the cases of its clauses. -/
 
 /-- The relations of the sorts of a level give the types whose levels change for equal ones, with the
-same equality of their terms or the same truth. -/
+same equality of their terms or the same truth, and the same relation of run time. -/
 structure LevelRel.LevelInvariant (L : LevelRel) : Prop where
   /-- `ty(U_n)` gives them, with the same equality of their terms. -/
   univ {A A' : Term 0 []} {R : TermRel} : L.univ A R → Term.LevelEquiv A A' → L.univ A' R
   /-- `ty(Ω_n)` gives them, with the same truth. -/
   prop {P P' : Term 0 []} {b : Prop} : L.prop P b → Term.LevelEquiv P P' → L.prop P' b
+  /-- `rt(U_n)` gives them, with the same relation of run time. -/
+  run {P : Program} {A A' : Term 0 []} {R : RunRel} : L.run P A R → Term.LevelEquiv A A' →
+    L.run P A' R
 
 /-- The equality of the terms of the types of a level relates the terms whose levels change for equal
 ones. -/
@@ -1268,13 +1271,111 @@ theorem FieldRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
 
 end
 
+mutual
+
+/-- `rt(U_n)` gives the types whose levels change for equal ones, with the same relation of run
+time. -/
+theorem RunUnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {R : RunRel} :
+    RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) v R → Term.LevelEquiv v v' →
+      RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) v' R
+  | .univ hl hk, h => by
+    obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
+    exact .univ hl' hk
+  | .prop hl hk, h => by
+    obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
+    exact .prop hl' hk
+  | .data hD hq hl hp hv hs hn S hS, h => by
+    subst hv
+    cases h with
+    | inst _ _ _ hls has =>
+      have hl' := hls.length_eq.symm.trans hl
+      have hls' := hls.getFin hl hl'
+      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+        fun X _ hT c hcm =>
+          RunTelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+  | .codata hD hq hl hp hv hs hn S hS, h => by
+    subst hv
+    cases h with
+    | inst _ _ _ hls has =>
+      have hl' := hls.length_eq.symm.trans hl
+      have hls' := hls.getFin hl hl'
+      exact .codata hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+        fun X _ hT => RunDesRel.levelEquiv ih (hS X _ hT)
+          (Destructors.substLevels_levelEquiv hls' _) has.toSubst
+
+/-- A telescope whose levels change for equal ones has the same relation of run time of the terms
+of its fields. -/
+theorem RunTelRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {rs : Nat → Option RunRel}
+    {ps : List Parameter} {Θ Θ' : Telescope 0 [] ps} {S : RunFieldsRel} :
+    RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Telescope.LevelEquiv Θ Θ' →
+      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ' S
+  | .nil, .nil => .nil
+  | .cons hA hF hR G hG hrs, .cons _ _ h hΘ =>
+    have ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
+    .cons hA' (FieldRel.levelEquiv ih hF hv) (RunFieldRel.levelEquiv ih hR hv) G
+      (fun a ha => RunTelRel.levelEquiv ih (hG a ha)
+        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a))))
+      hrs
+  | .recursive hrs G hG, .cons _ _ _ hΘ =>
+    .recursive hrs G fun a => RunTelRel.levelEquiv ih (hG a)
+      (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
+
+/-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for
+equal ones, have the same relation of run time of the observations by them. -/
+theorem RunDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {D : Name} {Γ : Scope}
+    {rs : Nat → Option RunRel} {ns : List Name} {ds ds' : Destructors 0 Γ ns} {θ θ' : Subst 0 [] Γ}
+    {S : RunObsRel} :
+    RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs ds @θ S →
+      Destructors.LevelEquiv ds ds' → Subst.LevelEquiv θ θ' →
+        RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs ds' @θ' S
+  | .nil, .nil, _ => .nil
+  | .recursive hi hrs hRΘ G hG, .cons _ _ _ hΘe _ hds, hθ =>
+    .recursive hi hrs (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ)) G
+      fun f => RunDesRel.levelEquiv ih (hG f) hds (hθ.snoc f)
+  | .cons hi hΘ hRΘ F R hB hF hR G hG hrs, .cons _ _ _ hΘe hBe hds, hθ =>
+    .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ))
+      F R
+      (fun ts hts =>
+        have ⟨_, hv⟩ := hB ts hts
+        have ⟨v', hv', _⟩ :=
+          Computes.levelEquiv hv (hBe.subst (Subst.LevelEquiv.append hθ (Subst.LevelEquiv.refl _)))
+        ⟨v', hv'⟩)
+      (fun ts hts _ hv' =>
+        have ⟨v, hv, hvv⟩ := Computes.levelEquiv hv'
+          (hBe.symm.subst (Subst.LevelEquiv.append (Subst.LevelEquiv.symm hθ)
+            (Subst.LevelEquiv.refl _)))
+        FieldRel.levelEquiv ih (hF ts hts v hv) hvv.symm)
+      (fun ts hts _ hv' =>
+        have ⟨v, hv, hvv⟩ := Computes.levelEquiv hv'
+          (hBe.symm.subst (Subst.LevelEquiv.append (Subst.LevelEquiv.symm hθ)
+            (Subst.LevelEquiv.refl _)))
+        RunFieldRel.levelEquiv ih (hR ts hts v hv) hvv.symm)
+      G (fun f hf => RunDesRel.levelEquiv ih (hG f hf) hds (hθ.snoc f)) hrs
+
+/-- The type of a field whose levels change for equal ones has the same relation of run time of its
+terms. -/
+theorem RunFieldRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {R : RunRel} :
+    RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v R → Term.LevelEquiv v v' →
+      RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v' R
+  | .univ h, hv => .univ (RunUnivRel.levelEquiv ih h hv)
+  | .univBelow m hm h, hv => .univBelow m hm ((ih m hm).run h hv)
+  | .prop h, hv => .prop (PropRel.levelEquiv ih h hv)
+  | .propBelow m hm h, hv => .propBelow m hm ((ih m hm).prop h hv)
+
+end
+
 /-- The relations of every level give the types whose levels change for equal ones. -/
 theorem levelRel_levelInvariant {sig : Signature} {ι : Interpretation} (n : Nat) :
     (levelRel sig ι n).LevelInvariant :=
   have ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
     fun m _ => levelRel_levelInvariant m
   { univ := fun h hv => levelRel_univ_iff.2 (UnivRel.levelEquiv ih (levelRel_univ_iff.1 h) hv)
-    prop := fun h hv => levelRel_prop_iff.2 (PropRel.levelEquiv ih (levelRel_prop_iff.1 h) hv) }
+    prop := fun h hv => levelRel_prop_iff.2 (PropRel.levelEquiv ih (levelRel_prop_iff.1 h) hv)
+    run := fun h hv => levelRel_run_iff.2 (RunUnivRel.levelEquiv ih (levelRel_run_iff.1 h) hv) }
 termination_by n
 decreasing_by all_goals assumption
 
