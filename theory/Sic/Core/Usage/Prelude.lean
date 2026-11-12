@@ -114,7 +114,7 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
     (gs := fun _ l => if l = 0 then g₀ else g₁) hpre.pair rfl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -141,6 +141,8 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   · intro _ ⟨T', hT', h2⟩
     rcases hT' with _ | ⟨_, ⟨⟩⟩
     exact absurd h2 (by decide)
+  · intro h
+    exact nomatch h
 
 -- ADE: `unitrecₘ`, in `Graded/Usage.agda`.
 /-- The recursor on a term of the unit uses the variables of its term `r` times and those of its
@@ -152,7 +154,7 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
       (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
     (gs := fun _ _ => Grade.zero) hpre.unit rfl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -176,6 +178,8 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
   · intro _ ⟨T', hT', h2⟩
     rcases hT' with _ | ⟨_, ⟨⟩⟩
     exact absurd h2 (by decide)
+  · intro h
+    exact nomatch h
 
 -- ADE: none.
 /-- The recursor on a term of the type of positions uses the variables of its term `r` times and
@@ -197,7 +201,7 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   have hl : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
   refine .recursor (decl := Prelude.step) (T := Prelude.stepType)
     (δs := fun i => if i = 0 then δ₀ else δ₁) (gs := fun i _ => if i = 0 then g₀ else g₁)
-    hpre.step rfl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_
+    hpre.step rfl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -223,6 +227,8 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     | 1, rfl => exact fun x => hl _ _ (hχ₁ x)
   · intro hm _
     exact hr hm
+  · intro h
+    exact nomatch h
 
 /-! ## Unpacking -/
 

@@ -145,7 +145,10 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   times the grade of the field at the instance, and `χ` the uses of each branch and of its recursive
   results; its motives, which are types, use no variable, checked in the mode `00ᵐ`; in the mode
   `11ᵐ`, a recursor on a block of which a type has two constructors or more uses its term at run
-  time, whose constructor chooses the branch.
+  time, whose constructor chooses the branch; a recursor on a block of propositions that has a
+  constructor, whose motives are then propositions, builds a proof from a proof, and is checked only
+  in a mode other than `11ᵐ`, as an observation whose result is a proof, since a proof is related to
+  no value at run time that a recursor could eliminate.
   RFC: `\mathsf{rec}_{▶}` -/
   | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -176,7 +179,9 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
         χ ≤ᶜ δs i +ᶜ Telescope.resultSum
           (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
           ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
-      (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne) :
+      (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
+      (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+        m ≠ .oneOne) :
       Usage sig ((r ·ᶜ γ) +ᶜ χ) m (.recursor r D qs ls ps as t Cs us)
   -- ADE: `_∘ₘ_`, `fstₘ` and `sndₘ`, in `Graded/Usage.agda`.
   /-- An observation uses the variables of its term once, the term checked in the mode `m`, and those

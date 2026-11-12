@@ -331,11 +331,11 @@ where
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (usageArgs hts hθ)
     | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hp hC ht hul hus hu hg
-        hχ hr, hθ => by
+        hχ hr hprop, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
       refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hp ?_
         (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_
-        (by rw [Branches.resultGrades_subst]; exact hg) ?_ hr
+        (by rw [Branches.resultGrades_subst]; exact hg) ?_ hr hprop
       · intro j n C hC'
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'
         have ih := usage (hC j n C₀ hC₀) (Subst.liftN_eta_of _ hθ)

@@ -212,7 +212,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     · cases ho with
       | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
     · exact nomatch ho
-  | .recursor (γ := γ₁) (χ := χ) (δs := δs) (r := r) _ _ _ _ ht hul hus hu _ hχ _, hx, ho => by
+  | .recursor (γ := γ₁) (χ := χ) (δs := δs) (r := r) _ _ _ _ ht hul hus hu _ hχ _ _, hx, ho => by
     have hx' : r * γ₁ x + χ x ∈ S := by
       simpa [GradeVector.add, GradeVector.smul] using hx
     simp only [Term.erase] at ho
