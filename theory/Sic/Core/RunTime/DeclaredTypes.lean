@@ -272,6 +272,88 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hP T hT).1⟩⟩
 
 -- ADE: none.
+/-- The converse of `RunsAs.ctor`: the arguments of the fields of a constructor of a meaningful
+declaration, which `(®_c)` relates to addresses at relations `X` of the recursive fields within
+`(®_μ)`, are related to them, each at the type of its entry, when its grade is used at run time,
+the recursive fields at the instances of the block, as the branches of a recursor read them. -/
+theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hv : ValidTypeDeclaration sig ι decl) (hT : T ∈ decl.dataTypes) (hc : con ∈ T.constructors)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      as.toSubst as.toSubst)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    {S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
+      RunFieldsRel}
+    (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
+      RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m)
+        (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+          fun D' => (X D').computed sig ι)
+        (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c))
+    (hU : ∀ T' ∈ decl.dataTypes,
+      RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
+        (DataType.runBlockRel sig decl.dataTypes S T'.name))
+    {X : Name → RunRel} (hX : ∀ D H t b, X D H t b → DataType.runBlockRel sig decl.dataTypes S D H t b)
+    {ts : Args 0 [] (con.params (.ofLists qs ps hq hp))}
+    (hts : EqSubst sig ι (Context.empty.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+      ts.toSubst ts.toSubst)
+    (g : Nat → Grade) (hg : ∀ l p, (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      g l ∉ Mode.oneOne.erased → p.usage ∉ Mode.oneOne.erased)
+    {H : Heap} {bs : List Nat} (h : S X con H ts.terms bs) :
+    RunsAsArgs sig ι P H g ts bs (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) := by
+  have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps as) (.inst D' qs ls ps as) :=
+    fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  have ihm : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
+  -- The fields at the values of the levels, which the meaning of the declaration gives.
+  have hls : ∀ i, Level.ofNat (ls.getFin hl i).closedValue ≈ ls.getFin hl i :=
+    fun i => Level.ofNat_closedValue _
+  have has' := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
+  have hn : (((decl.sort (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).level.closedValue)
+      = ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
+    Level.subst_equiv hls _ Fin.elim0
+  have hΘ : Telescope.LevelEquiv (((con.fields (.ofLists qs ps hq hp)).atLevels
+      fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
+      (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
+    (Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _)
+  have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
+  obtain ⟨S', h₁, -⟩ := hF.runTelRel hd P hs fun D' => (X D').computed sig ι
+  have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hΘ
+  have hS' := (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
+    (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 h
+  -- The recursive fields are the instances of the block, whose terms `(®_μ)` relates.
+  have hrec : ∀ j R, ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j).map
+        (fun D' => (X D').computed sig ι) = some R →
+      ∃ D', (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j = some D' ∧
+        ∀ t b, R H t b → RunsAs sig ι P H t b (((decl.blockInstance (.ofLists qs ps hq hp) D'
+          (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
+          as.toSubst) := fun j R hj => by
+    cases hr : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j with
+    | none => rw [hr] at hj; cases hj
+    | some D' =>
+      rw [hr] at hj
+      cases hj
+      refine ⟨D', rfl, fun t b ⟨v, hv, hXv⟩ => ?_⟩
+      obtain ⟨T', hT', rfl⟩ :=
+        TypeDeclaration.mem_names_of_dataTypes hT (Telescope.recursionAt_mem hr)
+      have hr' : RunsAs sig ι P H t b (.inst T'.name qs ls ps as) :=
+        ⟨_, hw _, .inr ⟨_, .univ _ (levelRel_run_iff.2 (hU T' hT')), v, hv, hX _ _ _ _ hXv⟩⟩
+      exact hr'.levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm
+  have hE : EqSubst sig ι (Context.empty.append (((con.fields (.ofLists qs ps hq hp)).atLevels
+      fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) ts.toSubst ts.toSubst :=
+    EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘ.symm) hts
+  exact (RunsAsArgs.of_runTelRel h₁ hF.recHeads hrec g hg ts hE bs hS').levelEquiv hΘ
+
+-- ADE: none.
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,
 applied to arguments of its fields valid at run time with the grades `γ`, is valid at run time at its
 instance with the grades `γ`, in a signature whose names are distinct: its erasure evaluates its
