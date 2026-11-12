@@ -1260,6 +1260,42 @@ theorem Red.beta_corec (hd : sig.Distinct) {Γ : Scope} {decl : TypeDeclaration}
   exact .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl hq hl hp
     (CorecBranches.get_subst σ hg) (Term.instantiateTerms₂_subst_append σ g _ _)
 
+/-- The type of the branch of a destructor, over the state of a corecursor, at the corecursor from the
+state, substituted by a closed substitution of the context followed by closed arguments of the state
+and of the destructor, is the type of the branch at the corecursor from the arguments of the state,
+at the arguments of the destructor. -/
+theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} {hq : qs.length = decl.sorts}
+    {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
+    {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ}
+    {d : Name} {p q : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
+    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership ps₁.length}
+    (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) (κ : Universe 0) (χ : Grade)
+    (σ : Subst 0 [] Γ) {ps' : List Parameter} (ss : Args 0 [] ps') (ts : Args 0 [] ps₁) :
+    (Term.branchResult decl.names B κ r χ
+        ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length))
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hpos.obsSubst ((Term.corecAt r T.name qs ls ps as Ss gs ps').observation T.name qs ls
+            ps (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst)))).subst
+      (Subst.append (Subst.append σ ss.toSubst) ts.toSubst) =
+    Term.branchResult decl.names B κ r χ (Ss.subst σ)
+      ((B.substLevels (ls.getFin hl)).subst (Subst.append
+        (hpos.obsSubst ((Term.corec r T.name qs ls ps (as.subst σ) ss.terms (Ss.subst σ)
+          (gs.subst σ)).observation T.name qs ls ps (as.subst σ)) (as.subst σ).toSubst)
+        ts.toSubst)) := by
+  have hc := fun (a : Scope.Entry) (x : Var Ξ a) =>
+    hpos.obsSubst_corecAt σ r T.name qs ls ps as Ss gs ss
+      (InstanceArgs.toSubst_rename_subst_append σ as ss) x
+  have hS : ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length)).subst
+      (Subst.append (Subst.append σ ss.toSubst) ts.toSubst) = Ss.subst σ := by
+    rw [States.subst_rename_of (α := Ren.weakenN ps₁.length)
+        (θ' := Subst.append σ ss.toSubst) (fun y => Subst.append_weakenN _ ts.toSubst y),
+      States.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ)
+        (fun y => Subst.append_weakenN σ ss.toSubst y)]
+  rw [Term.branchResult_subst, hS, ← Term.subst_append,
+    Term.subst_subst_of (Subst.liftN_subst_of _ (fun x => hc _ x)), Term.subst_append]
+
 -- ADE: none.
 /-- The branches of a destructor, as `(corec)` and `(corec_≡)` premise them, at equal substitutions
 of the context, equal closed arguments of the state and equal arguments of the telescope of the
@@ -1313,18 +1349,7 @@ theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : Typ
   have hτ := (EqSubst.append_append_iff (ctx.append S) _ _ _ _ _).2
     ⟨hstate, by rw [Telescope.subst_subst_of (fun x => hc _ x)]; exact hts⟩
   have hb := hgv.2 _ _ hτ
-  have hS : ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length)).subst
-      (Subst.append (Subst.append σ₁ ss₁.toSubst) ts.toSubst) = Ss.subst σ₁ := by
-    rw [States.subst_rename_of (α := Ren.weakenN ps₁.length)
-        (θ' := Subst.append σ₁ ss₁.toSubst) (fun y => Subst.append_weakenN _ ts.toSubst y),
-      States.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ₁)
-        (fun y => Subst.append_weakenN σ₁ ss₁.toSubst y)]
-  rw [Term.branchResult_subst, hS] at hb
-  conv at hb =>
-    arg 5
-    arg 7
-    rw [← Term.subst_append, Term.subst_subst_of (Subst.liftN_subst_of _ (fun x => hc _ x)),
-      Term.subst_append]
+  rw [Term.branchResult_corecAt] at hb
   exact hb
 
 -- ADE: none.
