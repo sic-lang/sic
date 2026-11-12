@@ -2,8 +2,6 @@ module
 
 public import Sic.Core.Evaluation.Heap
 import Sic.Core.Syntax.Signature
-import Sic.Core.Syntax.Terms
-import Sic.Math.List
 import Sic.Math.Relation
 
 /-!
