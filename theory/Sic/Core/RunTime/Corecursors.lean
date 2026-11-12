@@ -10,6 +10,7 @@ import Sic.Core.RunTime.DeclaredTypes
 import Sic.Core.RunTime.Levels
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Recursors
+import Sic.Core.RunTime.Substitution
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Rules
@@ -40,6 +41,13 @@ nested pairs of the arguments of the state, related to the addresses that the ev
 when the grade of the corecursor is used at run time, and whose entries have grades without use at
 run time otherwise, so that the evaluation does not read it; or a term already built, related to
 the address of its field.
+
+A corecursor is related to the address of the closure of its branches that its erasure allocates,
+by coinduction: the relations of `(®_ν)`, joined with the corecursors of the block from states
+related to the addresses of such closures, are consistent with the clauses of `(®_ν)`, since an
+observation by a destructor whose grade is used at run time runs its branch, valid at run time at
+the state and the arguments, and gives the observation, or a position that it resumes into a new
+closure of the same branches or into a term already built.
 -/
 
 @[expose] public section
@@ -684,6 +692,726 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
         show Prelude.doneGrade κ.quality ∉ Mode.oneOne.erased
         rw [hκ]
         decide)
+
+/-! ## Signatures -/
+
+/-- An entry that does not introduce the name `D` gives the case of no destructor of `D`. -/
+theorem Entry.destructorCase_of_not_mem {D d : Name} :
+    {e : Entry} → D ∉ e.names → Entry.destructorCase D d e = none
+  | .typeDeclaration decl, hD => by
+    simp only [Entry.destructorCase]
+    refine List.findIdx?_eq_none_iff.2 fun x hx => ?_
+    have hT := (TypeDeclaration.mem_casesFrom hx).1
+    cases h : (x.2.1.name == D) with
+    | false => rfl
+    | true => exact absurd (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT) hD
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- A signature none of whose entries introduces the name `D` gives the case of no destructor of
+`D`. -/
+theorem Signature.destructorCase_of_not_mem {D d : Name} :
+    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.destructorCase D d = none
+  | [], _ => rfl
+  | e :: sig, h => by
+    unfold Signature.destructorCase
+    rw [List.findSome?_cons_of_isNone
+      (by rw [Entry.destructorCase_of_not_mem (h e List.mem_cons_self)]; rfl)]
+    exact Signature.destructorCase_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
+
+/-- In a signature whose names are distinct, the case of a destructor of a codata type is its case in
+the block of its declaration. -/
+theorem Signature.Distinct.destructorCase {d : Name} : {sig : Signature} → sig.Distinct →
+    {D : Name} → {decl : TypeDeclaration} →
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasCodataType D decl T →
+    sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl)
+  | [], _, _, _, _, h => nomatch h.1
+  | e :: sig, ⟨hd, _, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩ => by
+    unfold Signature.destructorCase
+    rcases List.mem_cons.1 he with rfl | he'
+    · cases hc : Entry.destructorCase D d (.typeDeclaration decl) with
+      | some i => rw [List.findSome?_cons_of_isSome (by rw [hc]; rfl), hc]
+      | none =>
+        rw [List.findSome?_cons_of_isNone (by rw [hc]; rfl)]
+        exact Signature.destructorCase_of_not_mem fun e' he'' hDe =>
+          hfresh _ he'' D (hD ▸ TypeDeclaration.codata_name_mem_names hT) hDe
+    · have hDe : D ∉ e.names := fun hDe =>
+        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorCase_of_not_mem hDe]; rfl)]
+      exact hd.destructorCase ⟨he', hT, hD⟩
+
+/-- In a signature whose names are distinct, a case of the corecursors of a block is the case of its
+destructor. -/
+theorem Signature.Distinct.destructorCase_of_codataCases (hd : sig.Distinct)
+    {decl : TypeDeclaration} (hdecl : .typeDeclaration decl ∈ sig) {i j : Nat}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {d : Name}
+    (hi : decl.codataCases[i]? = some (j, T, d)) : sig.destructorCase T.name d = some i := by
+  have hT := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi)).1
+  rw [hd.destructorCase ⟨hdecl, hT, rfl⟩]
+  show decl.codataCases.findIdx? (fun x => x.2.1.name == T.name && x.2.2 == d) = some i
+  have hs := List.findIdx?_isSome_of_mem (p := fun x => x.2.1.name == T.name && x.2.2 == d)
+    (List.mem_of_getElem? hi) (by simp only [Bool.and_eq_true, beq_iff_eq, and_self])
+  cases h : decl.codataCases.findIdx? (fun x => x.2.1.name == T.name && x.2.2 == d) with
+  | none => rw [h] at hs; cases hs
+  | some i' =>
+    obtain ⟨x, hx, hpx⟩ := List.getElem?_of_findIdx?_eq_some h
+    simp only [Bool.and_eq_true, beq_iff_eq] at hpx
+    exact congrArg some (List.getElem?_inj_of_nodup_map (hd.codataCases_nodup hdecl) hx hi
+      (by rw [hpx.1, hpx.2]))
+
+/-- An entry that does not introduce the name `D` gives the types resumed by the destructors of no
+block of `D`. -/
+theorem Entry.resumedTypes_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.resumedTypes D qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
+    simp only [Entry.resumedTypes]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.map_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- In a signature whose names are distinct, the types resumed by the destructors of the cases of the
+block of a codata type are the positions of the types that their results name, at the instance. -/
+theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    sig.resumedTypes D qs ps = some (decl.codataCases.map fun x =>
+      ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind decl.names.idxOf?)
+  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+    unfold Signature.resumedTypes
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hg : Entry.resumedTypes D qs ps (.typeDeclaration decl) = some (decl.codataCases.map
+          fun x => ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind
+            decl.names.idxOf?) := by
+        simp only [Entry.resumedTypes, hq, hp, ↓reduceDIte, ← hD,
+          List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
+      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
+    · have hDe : D ∉ e.names := fun hDe =>
+        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.resumedTypes_of_not_mem hDe]; rfl)]
+      exact hd.resumedTypes ⟨he', hT, hD⟩ hq hp
+
+/-! ## Erasure -/
+
+/-- The branch at a position of the erased branches of a corecursor, without non-uniform
+parameters, is the erasure of the branch at this position, at the grade of its destructor, with the
+resumption at this position. -/
+theorem CorecBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
+    {Γ : Scope} (hΓ : Γ.FirstOrder) :
+    (gs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) → {i b c : Nat} →
+      {g : Term k ((Γ.extend b).extend c)} → gs.get i = some ⟨0, b, c, g⟩ → {p : Grade} →
+      ps[i]? = some p →
+      (gs.erase sig S hΓ ps ks).get i = some (ks.getD i .none, ⟨b, c, if p ∈ S then .erased else
+        Scope.length_extend_extend Γ b c ▸ g.erase sig S ((hΓ.extend b).extend c)⟩)
+  | .nil, _, _, _, _, _, _, h, _, _ => nomatch h
+  | .cons 0 _ _ _ _, _ :: _, ks, 0, _, _, _, h, _, hp => by
+    cases h
+    cases hp
+    cases ks <;> rfl
+  | .cons 0 _ _ _ _, [], _, 0, _, _, _, _, _, hp => nomatch hp
+  | .cons (_ + 1) _ _ _ _, _, _, 0, _, _, _, h, _, _ => by cases h
+  | .cons 0 _ _ _ vs, _ :: ps, ks, i + 1, _, _, _, h, _, hp => by
+    have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
+    rw [← e]
+    exact CorecBranches.get_erase S hΓ vs ps ks.tail h hp
+  | .cons 0 _ _ _ _, [], _, _ + 1, _, _, _, _, _, hp => nomatch hp
+  | .cons (_ + 1) _ _ _ vs, ps, ks, i + 1, _, _, _, h, p, hp => by
+    have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
+    have hp' : ps.tail[i]? = some p := by cases ps <;> simp_all
+    rw [← e]
+    exact CorecBranches.get_erase S hΓ vs ps.tail ks.tail h hp'
+
+/-- The erasure of terms at grades `r` times the grades `us` is their erasure at `us` when `r` is used
+at run time, since a grade times `r` is used at run time when the grade is. -/
+theorem Terms.erase_mul_of_not_erased {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {r : Grade}
+    (hr : r ∉ Mode.oneOne.erased) :
+    (ts : Terms k Γ) → (us : List Grade) →
+      ts.erase sig Mode.oneOne.erased hΓ (us.map (r * ·)) = ts.erase sig Mode.oneOne.erased hΓ us
+  | .nil, _ => rfl
+  | .cons _ _, [] => rfl
+  | .cons _ ts, u :: us => by
+    have hu := (by decide : ∀ r u : Grade, r ∉ Mode.oneOne.erased →
+      (r * u ∈ Mode.oneOne.erased ↔ u ∈ Mode.oneOne.erased)) r u hr
+    simp only [List.map_cons, Terms.erase, Terms.erase_mul_of_not_erased hΓ hr ts us, hu]
+
+/-- Arguments erased at grades that are all erased evaluate to `↯`, allocated one after the other,
+at as many addresses as arguments. -/
+theorem Args.evalAll_erased (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
+    (hΓ : Γ.FirstOrder) (E : List Nat) :
+    {ps : List Parameter} → (ts : Args k Γ ps) → (us : List Grade) → (∀ u ∈ us, u ∈ S) →
+      (H : Heap) → ∃ bs H', EvalAll P H E (ts.terms.erase sig S hΓ us) bs H' ∧ H.Extends H' ∧
+        bs.length = ps.length
+  | [], .nil, _, _, H => ⟨[], H, .nil, List.prefix_refl _, rfl⟩
+  | _ :: _, .cons _ ts, [], _, H => by
+    obtain ⟨bs, H', hev, hH, hl⟩ :=
+      Args.evalAll_erased S hΓ E ts [] (fun _ h => nomatch h) (H ++ [.erased])
+    exact ⟨H.length :: bs, H', .cons .erased hev, (List.prefix_append _ _).trans hH,
+      congrArg (· + 1) hl⟩
+  | _ :: _, .cons _ ts, u :: us, hu, H => by
+    obtain ⟨bs, H', hev, hH, hl⟩ := Args.evalAll_erased S hΓ E ts us
+      (fun u' h => hu u' (List.mem_cons_of_mem _ h)) (H ++ [.erased])
+    refine ⟨H.length :: bs, H', ?_, (List.prefix_append _ _).trans hH, congrArg (· + 1) hl⟩
+    simp only [Args.terms, Terms.erase, hu u List.mem_cons_self, ↓reduceIte]
+    exact .cons .erased hev
+
+/-! ## Corecursors -/
+
+/-- Observations whose results are equal, destructor by destructor, at equal arguments, and whose
+observations by each destructor whose grade is used at run time, at arguments related to addresses
+in a heap that extends `H`, evaluate to addresses to which they are related, are related to the
+address `a` by the relation of run time of the destructors, at instantiated levels: as terms of the
+result of each destructor that is not recursive, and by the relation `R` that `rsR` gives each
+recursive one, whose result is the instance of the block; the converse of `Destructors.Pos.run`. -/
+theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : Fin k' → Level 0) :
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {inst : Name → Term 0 Γ} →
+      {rs : Nat → Option Name} → {θ θ' : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs (ds.substLevels L) θ θ' →
+      {rsR : Nat → Option RunRel} → (∀ i, rs i = none → rsR i = none) →
+      (∀ i D, rs i = some D → ∃ R, rsR i = some R) → {D : Name} → {S : RunObsRel} →
+      RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D rsR
+        (ds.substLevels L) θ S →
+      {H : Heap} → {o : Observations} → {a : Nat} →
+      (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
+        (hpos : ds.Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps),
+        EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o θ)))
+          ts.toSubst us.toSubst → rs hpos.index = none →
+        ValidEqTerm₀ sig ι ((o d ps).subst ts.toSubst) ((o d ps).subst us.toSubst)
+          ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) →
+      (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
+        (hpos : ds.Pos d p q Ξ Θ B ψ) (i : Nat), p ∉ Mode.oneOne.erased →
+        sig.destructorCase D d = some i → ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps)
+        (bs : List Nat),
+        EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o θ)))
+          ts.toSubst ts.toSubst →
+        RunsAsArgs sig ι P H' (Parameter.grades ps) ts bs
+          ((Θ.substLevels L).subst (hpos.obsSubst o θ)) →
+        ∃ w H'', EvalObs P H' a i bs w H'' ∧
+          (rs hpos.index = none → RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
+            ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) ∧
+          ∀ D' R, rs hpos.index = some D' → rsR hpos.index = some R →
+            (B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst) =
+              (inst D').subst θ →
+            R H'' ((o d ps).subst ts.toSubst) w) →
+      S H o a
+  | _, _, .nil, _, _, _, _, _, _, _, _, _, _, h, _, _, _, _, _ => by
+    cases h
+    trivial
+  | _, _, .cons (d := d) (ps := ps) p q Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
+      a, hv, hr => by
+    have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
+      fun m _ => levelRel_isPer hd m
+    rw [Destructors.substLevels, ValidEqDestructors₀] at hm
+    obtain ⟨hΘm, hm⟩ := hm
+    have hsw : ∀ (f : Term 0 (Scope.extend [] ps.length)) D',
+        ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f) =
+          (inst D').subst θ := fun f D' => Term.subst_rename_of (fun _ => rfl) _
+    have hv' := fun d' p' q' ps' Ξ' Θ' B' ψ' (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ') =>
+      hv d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos)
+    have hrec : ∀ (d' : Name) (p' q' : Grade) (ps' : List Parameter) (Ξ' : Scope)
+        (Θ' : Telescope k' Ξ' ps') (B' : Term k' (Ξ'.extend ps'.length))
+        (ψ' : ResultOwnership ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ') (i : Nat),
+        p' ∉ Mode.oneOne.erased → sig.destructorCase D d' = some i → ∀ H', H.Extends H' →
+        ∀ (ts : Args 0 [] ps') (bs : List Nat),
+        EqSubst sig ι (Context.empty.append ((Θ'.substLevels L).subst
+          (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps))))) ts.toSubst
+          ts.toSubst →
+        RunsAsArgs sig ι P H' (Parameter.grades ps') ts bs ((Θ'.substLevels L).subst
+          (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)))) →
+        ∃ w H'', EvalObs P H' a i bs w H'' ∧
+          (rs (hpos.index + 1) = none → RunsAs sig ι P H'' ((o d' ps').subst ts.toSubst) w
+            ((B'.substLevels L).subst (Subst.append
+              (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps))) ts.toSubst))) ∧
+          ∀ D' R, rs (hpos.index + 1) = some D' → rsR (hpos.index + 1) = some R →
+            (B'.substLevels L).subst (Subst.append
+              (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps))) ts.toSubst) =
+              ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)) →
+            R H'' ((o d' ps').subst ts.toSubst) w :=
+      fun d' p' q' ps' Ξ' Θ' B' ψ' hpos i hp hi H' hH' ts bs hτ hbs => by
+        obtain ⟨w, H'', hev, h₁, h₂⟩ :=
+          hr d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos) i hp hi H' hH' ts bs hτ hbs
+        exact ⟨w, H'', hev, h₁, fun D' R hD' hR e => h₂ D' R hD' hR (e.trans (hsw _ D'))⟩
+    have hgr : ∀ l (p' : Parameter), ps[l]? = some p' → Parameter.grades ps l ∉ Mode.oneOne.erased →
+        p'.usage ∉ Mode.oneOne.erased := fun _ _ hl h => Parameter.grades_of_getElem? hl ▸ h
+    split at hm
+    · rename_i hr0
+      obtain ⟨-, hds⟩ := hm
+      cases h with
+      | recursive _ hrs => rw [hN 0 hr0] at hrs; cases hrs
+      | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
+        have hSp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
+        have hT := TelRel.eqSubst_iff hd hΘ
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+        have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
+          have htt := hSp.trans hts (hSp.symm hts)
+          obtain ⟨v, hv''⟩ := hB ts htt
+          exact (hF ts htt v hv'').of_validEqTerm hv'' (hv d p q ps _ Θ B ψ .here ts us
+            ((hT ts us).1 hts) hr0)
+        have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
+            τ₁ τ₂ → ValidEqTerm₀ sig ι ((o d ps).subst τ₁) ((o d ps).subst τ₂)
+              ((B.substLevels L).subst (Subst.append θ τ₁)) := fun τ₁ τ₂ hτ => by
+          obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
+            ⟨_, Subst.args_toSubst ps τ₁⟩
+          obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
+              @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
+            ⟨_, Subst.args_toSubst ps τ₂⟩
+          have hts := (hT ts us).2 hτ
+          have htt := hSp.trans hts (hSp.symm hts)
+          obtain ⟨v, hv''⟩ := hB ts htt
+          exact (hF ts htt v hv'').validEqTerm hd hv'' (hA ts us hts)
+        refine ⟨hA, fun hp H' hH' ts bs hts => ?_, RunDesRel.of_obs hd L ds (hds _ _ hcond)
+          (fun i => hN (i + 1)) (fun i => hS (i + 1)) (hG _ hA) hv' hrec⟩
+        have htt := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H'
+          ts.terms bs hts
+        have hτ := (hT ts ts).1 htt
+        have hbs := RunsAsArgs.of_runTelRel hRΘ
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
+          hgr ts hτ bs hts
+        obtain ⟨w, H'', hev, hw, -⟩ := hr d p q ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs
+        obtain ⟨v, hv''⟩ := hB ts htt
+        exact ⟨w, H'', hev, RunFieldRel.of_runsAs hd (hR ts htt v hv'') hv'' (hw hr0)⟩
+    · rename_i D' hr0
+      obtain ⟨hBD, hds⟩ := hm
+      obtain ⟨R, hR0⟩ := hS 0 D' hr0
+      cases h with
+      | cons _ _ _ _ _ _ _ _ _ _ hrs => rw [hR0] at hrs; cases hrs
+      | recursive hi hrs hRΘ G hG =>
+        rw [hR0] at hrs
+        cases hrs
+        obtain ⟨SΘ, hΘ₁, -⟩ := hΘm.telRel hd
+        have hT := TelRel.eqSubst_iff hd hΘ₁
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+        refine ⟨fun hp H' hH' ts bs hts => ?_, RunDesRel.of_obs hd L ds (hds (o d ps) (o d ps))
+          (fun i => hN (i + 1)) (fun i => hS (i + 1)) (hG _) hv' hrec⟩
+        have htt := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ₁ (fun _ => rfl) H'
+          ts.terms bs hts
+        have hτ := (hT ts ts).1 htt
+        have hbs := RunsAsArgs.of_runTelRel hRΘ
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
+          hgr ts hτ bs hts
+        obtain ⟨w, H'', hev, -, hw⟩ := hr d p q ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs
+        have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D').subst θ := by
+          rw [hBD, Term.subst_append_rename_weakenN]
+        exact ⟨w, H'', hev, hw D' R hr0 hR0 e⟩
+
+/-- The extension of a vector by the variables of a telescope at the grades of their entries times
+`r` is its extension by these grades times `r`, at their positions. -/
+theorem _root_.Sic.Grading.GradeVector.extendParams_eq_extendGrades {Γ : Scope} :
+    (γ : GradeVector Γ.length) → (r : Grade) → (ps : List Parameter) →
+    γ.extendParams r ps = γ.extendGrades (fun l => r * Parameter.grades ps l) ps
+  | _, _, [] => rfl
+  | γ, r, p :: ps => by
+    rw [GradeVector.extendParams, GradeVector.extendGrades,
+      extendParams_eq_extendGrades (Γ := .var :: Γ)]
+    rfl
+
+-- ADE: none.
+/-- The branches of a corecursor whose destructors have a grade used at run time are valid at run
+time with the grades `δs i` of the variables of the context, those of the entries of the state
+`r` times their grades and those of the arguments their grades, at the results of their
+destructors, as the usage of `(corec)` premises them in the mode `11ᵐ`: the premise that the Lean of
+`(corec)` at run time reads. -/
+def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
+    (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality)
+    (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : CorecBranches 0 Γ)
+    (δs : Nat → GradeVector Γ.length) : Prop :=
+  ∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps'') (p q : Grade)
+    (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+    (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+    (g : Term 0 ((Γ.extend ps''.length).extend ps₁.length)),
+    decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+    (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+    gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased →
+    RunValid sig ι P ((hΓ.extend _).extend _)
+      ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
+        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
+          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
+      (((δs i).extendParams (Mode.oneOne.grade * r) ps'').extendParams Mode.oneOne.grade ps₁) g
+      (Term.branchResult decl.names B
+        ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+        (ψ.constant.getD .unrestrictedUnrestricted)
+        ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
+        ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
+            ls ps (as.rename (Ren.weakenN ps''.length)))
+            (as.rename (Ren.weakenN ps''.length)).toSubst))))
+
+-- ADE: none.
+/-- `(corec)` at run time, closed: a corecursor of a codata type of `Σ`, whose type declaration is
+meaningful, from a closed state related to the addresses of a closure of its branches erased, at a
+substitution of the context of its branches for which addresses stand as the grades `δ` require, is
+related to the closure at its instance, in a signature whose names are distinct: the relations of the
+corecursors of the block from such states and closures, together with `(®_ν)`, are consistent with
+the clauses of `(®_ν)`, since an observation by a destructor whose grade is used at run time runs its
+branch, valid at run time, and resumes its position into such a closure or into a term already
+built. -/
+theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {hΓ : Γ.FirstOrder}
+    {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+      (i : Nat) (D' : Name),
+      decl.codataTypes[j]? = some T' ∧
+      (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+    {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ} {δ : GradeVector Γ.length}
+    {δs : Nat → GradeVector Γ.length}
+    (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+      ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hδ : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+      (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
+    {σ : Subst 0 [] Γ} {H : Heap} {E : List Nat} (hσ : EqSubst sig ι ctx σ σ)
+    (hE : RunsAsSubst sig ι P H ctx δ σ E) {j : Nat}
+    {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {ps'' : List Parameter}
+    {S' : Telescope 0 Γ ps''} (hj : decl.codataTypes[j]? = some T')
+    (hS' : Ss.get j = some ⟨0, ps'', S'⟩) {ts : Args 0 [] ps''} {bs : List Nat}
+    (hts : EqSubst sig ι (Context.empty.append (S'.subst σ)) ts.toSubst ts.toSubst)
+    (hbs : RunsAsArgs sig ι P H (fun l => r * Parameter.grades ps'' l) ts bs (S'.subst σ))
+    {a : Nat} (ha : H[a]? = some (.corec Γ.length E
+      (gs.erase sig Mode.oneOne.erased hΓ ((sig.destructorGrades D qs ps).getD [])
+        (((sig.resumedTypes D qs ps).getD []).map
+          fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity))) bs)) :
+    RunsAs sig ι P H (.corec r T'.name qs ls ps (as.subst σ) ts.terms (Ss.subst σ) (gs.subst σ)) a
+      (.inst T'.name qs ls ps (as.subst σ)) := by
+  obtain ⟨hdecl, hT, hD⟩ := id h
+  have hnd : decl.names.Nodup := hd.nodup hdecl
+  have hn := TypeDeclaration.codataTypes_nodup hnd
+  have hT' : T' ∈ decl.codataTypes := List.mem_of_getElem? hj
+  have hasσ := has.2 σ σ hσ
+  -- The levels without variables at which the declaration is meaningful.
+  let L := ls.getFin hl
+  let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
+  let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
+  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
+  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
+  have hθ := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) hasσ
+  have hmean : ∀ T₁ ∈ decl.codataTypes, _ := fun T₁ hT₁ =>
+    (hv.destructors I hadm hT₁ ρ).2 _ _ hθ
+  have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  cases hs : (decl.sort I).quality with
+  | prop =>
+    -- A proposition, whose proofs are related to every address.
+    obtain ⟨_, -, hPr⟩ := hv.codataPropRel hd hdecl hq hl hp hadm hasσ hs
+    exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hPr T' hT').1⟩⟩
+  | type =>
+    -- The relations of run time of the instances of the block.
+    obtain ⟨Sr, hU⟩ := hv.codataRunUnivRel hd hdecl hq hl hp hadm hasσ hs P
+    obtain ⟨n, S, hnS, hS, -⟩ := HasRun.codata hd (D := T'.name) ⟨hdecl, hT', rfl⟩ hq hl hp
+      (.univ _ (levelRel_run_iff.2 (hU T' hT').1)) hs
+    have hFR : ∀ T₁ ∈ decl.codataTypes, RunFieldRel sig ι P n (fun m _ => levelRel sig ι m)
+        (.inst T₁.name qs ls ps (as.subst σ))
+        ((CodataType.runBlockRel decl.codataTypes S T₁.name).computed sig ι) := fun T₁ hT₁ =>
+      .univ (.codata ⟨hdecl, hT₁, rfl⟩ hq hl hp rfl hs hnS S hS)
+    have hmono : ∀ X Y : Name → RunRel, (∀ D' H₁ v b, X D' H₁ v b → Y D' H₁ v b) →
+        ∀ T₁ ∈ decl.codataTypes, ∀ H₁ o b, S X T₁ H₁ o b → S Y T₁ H₁ o b :=
+      fun X Y hXY T₁ hT₁ H₁ => RunDesRel.mono hd (List.prefix_refl H₁) (hS X T₁ hT₁) _ _
+        (hS Y T₁ hT₁) (fun _ => Option.rel_map (fun D' H₂ _ _ => RunRel.computed_mono (hXY D' H₂)) _)
+    have e : ((decl.sort I).atLevels ρ).level.closedValue = n :=
+      (Level.closedValue_subst_equiv hls (decl.sort I).level).trans hnS
+    have hX : ∀ D', Term.LevelEquiv
+        (((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst (as.subst σ).toSubst)
+        (.inst D' qs ls ps (as.subst σ)) := fun D' =>
+      decl.blockInstance_atLevels_subst hq hl hp (as.subst σ) D'
+    -- The grades of the destructors and the resumptions that the erasure of the closure reads.
+    obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h hq hp
+    have hrt := hd.resumedTypes h hq hp
+    let ks : List Resumption := ((sig.resumedTypes D qs ps).getD []).map
+      fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity)
+    let Ps := gs.erase sig Mode.oneOne.erased hΓ ((sig.destructorGrades D qs ps).getD []) ks
+    -- The corecursors of the block from closed states related to the addresses of closures of the
+    -- branches, joined with `(®_ν)`.
+    let Clo : Name → RunRel := fun D' H₁ v b =>
+      ∃ (j₁ : Nat) (T₁ : CodataType decl.sorts decl.grades decl.levels decl.scope)
+        (ps₁ : List Parameter) (S₁ : Telescope 0 Γ ps₁) (ts₁ : Args 0 [] ps₁) (bs₁ : List Nat),
+        decl.codataTypes[j₁]? = some T₁ ∧ T₁.name = D' ∧ Ss.get j₁ = some ⟨0, ps₁, S₁⟩ ∧
+        EqSubst sig ι (Context.empty.append (S₁.subst σ)) ts₁.toSubst ts₁.toSubst ∧
+        H.Extends H₁ ∧
+        RunsAsArgs sig ι P H₁ (fun l => r * Parameter.grades ps₁ l) ts₁ bs₁ (S₁.subst σ) ∧
+        H₁[b]? = some (.corec Γ.length E Ps bs₁) ∧
+        v = .corec r D' qs ls ps (as.subst σ) ts₁.terms (Ss.subst σ) (gs.subst σ)
+    let X : Name → RunRel := fun D' H₁ v b =>
+      CodataType.runBlockRel decl.codataTypes S D' H₁ v b ∨ Clo D' H₁ v b
+    have hcons : ∀ T₁ ∈ decl.codataTypes, ∀ H₁ v b, X T₁.name H₁ v b →
+        runCorecRel T₁.name (S X T₁) H₁ v b := by
+      intro T₁ hT₁ H₁ v b hx
+      rcases hx with ⟨X', hX', hx'⟩ | ⟨j₁, T₂, ps₁, S₁, ts₁, bs₁, hj₁, hn₁, hS₁, hts₁, hH₁, hbs₁,
+        hb, rfl⟩
+      · exact runCorecRel_mono (fun o b' => hmono X' X (fun D' H₂ v' b'' h => .inl ⟨X', hX', h⟩)
+          T₁ hT₁ H₁ o b') (hX' T₁ hT₁ H₁ v b hx')
+      obtain rfl : T₂ = T₁ := List.eq_of_nodup_map hn (List.mem_of_getElem? hj₁) hT₁ hn₁
+      have h₀ : sig.HasCodataType T₂.name decl T₂ := ⟨hdecl, hT₁, rfl⟩
+      refine ⟨_, ⟨r, qs, ls, ps, _, as.subst σ, ts₁.terms, Ss.subst σ, gs.subst σ, rfl, rfl⟩, ?_⟩
+      have hSρ : RunDesRel sig ι P ((decl.sort I).atLevels ρ).level.closedValue
+          (fun m _ => levelRel sig ι m) T₂.name
+          (fun i => ((T₂.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
+          ((T₂.body I).substLevels Lρ) (as.subst σ).toSubst (S X T₂) := by
+        rw [e]
+        exact RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hS X T₂ hT₁)
+          (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+          (Subst.LevelEquiv.refl _)
+      -- The case of a destructor of the type and its branch.
+      have hcase : ∀ {d p q ps' Ξ} {Θ : Telescope decl.levels Ξ ps'}
+          {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length},
+          (T₂.body I).Pos d p q Ξ Θ B ψ → ∃ i g, decl.codataCases[i]? = some (j₁, T₂, d) ∧
+            gs.get i = some ⟨0, ps₁.length, ps'.length, g⟩ := fun {d p q ps' Ξ Θ B ψ} hpos => by
+        have hm := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj₁
+          hpos.mem
+        rw [Nat.zero_add] at hm
+        obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hm
+        obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ps' Ξ Θ B ψ hpos
+        exact ⟨i, g, hi, hg⟩
+      refine RunDesRel.of_obs hd Lρ (T₂.body I) (hmean T₂ hT₁) (fun i hi => by rw [hi]; rfl)
+        (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) hSρ ?_ ?_
+      · -- The observations by a destructor that is not recursive step to its branch, whose
+        -- premise makes it a term of the result of the destructor.
+        intro d p q ps' Ξ Θ B ψ hpos ts₂ us₂ hτ hr0
+        obtain ⟨i, g, hi, hg⟩ := hcase hpos
+        have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+          (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+            (Telescope.substLevels_levelEquiv hls Θ))) hτ
+        have hb := ValidEqTerm₀.corecBranch hpos
+          (hgv.2 i j₁ T₂ d ps₁ S₁ p q ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
+        have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
+          (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
+          (Ss := Ss) (r := r)
+        have hred₂ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ us₂
+          (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
+          (Ss := Ss) (r := r)
+        have hbn : B.blockName decl.names = none := by
+          rw [← hpos.recursionAt_index]
+          exact hr0
+        simp only [Term.branchResult, hbn] at hb
+        simp only [Term.observed, hbn] at hred₁ hred₂
+        rw [Term.observation_subst_args, Term.observation_subst_args]
+        exact (((ValidEqTerm₀.red_iff hd hred₂).2
+          ((ValidEqTerm₀.red_iff hd hred₁).2 hb).symm).symm).levelEquiv (Term.LevelEquiv.refl _)
+          (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+            (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+      · -- The observation by a destructor whose grade is used at run time runs its branch, valid
+        -- at run time, and resumes its value.
+        intro d p q ps' Ξ Θ B ψ hpos i' hpr hi' H₂ hH₂ ts₂ bs₂ hτ hbs₂
+        obtain ⟨i, g, hi, hg⟩ := hcase hpos
+        obtain rfl : i' = i :=
+          Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
+        have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+          (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+            (Telescope.substLevels_levelEquiv hls Θ))) hτ
+        have hbs₂' := hbs₂.levelEquiv (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+          (Telescope.substLevels_levelEquiv hls Θ))
+        -- The branch in the closure, at the grade of its destructor.
+        have hpg : ((sig.destructorGrades D qs ps).getD [])[i']? = some p := by
+          rw [hgrs]
+          exact hgrs' i' j₁ T₂ d hi p (hpos.grade (hd.destructors_nodup h₀))
+        have hget := CorecBranches.get_erase (sig := sig) Mode.oneOne.erased hΓ gs _ ks hg hpg
+        simp only [hpr, ↓reduceIte] at hget
+        -- The context of the branch, at the grades of its variables.
+        have hc := fun (a' : Scope.Entry) (x : Var Ξ a') =>
+          hpos.obsSubst_corecAt σ r T₂.name qs ls ps as Ss gs ts₁
+            (InstanceArgs.toSubst_rename_subst_append σ as ts₁) x
+        have hEq := (EqSubst.append_append_iff (ctx.append S₁) _ _ _ _ _).2
+          ⟨(EqSubst.append_append_iff ctx S₁ _ _ _ _).2 ⟨hσ, hts₁⟩,
+            by rw [Telescope.subst_subst_of (fun x => hc _ x)]; exact hτ'⟩
+        have hδi : RunsAsSubst sig ι P H₂ ctx (δs i') σ E :=
+          RunsAsSubst.of_counted ctx (fun x hx => (by decide : ∀ c p u : Grade, c ≤ p * u →
+            p ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased → c ∉ Mode.oneOne.erased) _ _ _
+            (hδ i' j₁ T₂ d p q ps' Ξ Θ B ψ hi hpos x) hpr hx) (hE.mono hd (hH₁.trans hH₂))
+        have hbs₁' : RunsAsArgs sig ι P H₂
+            (fun l => (Mode.oneOne.grade * r) * Parameter.grades ps₁ l) ts₁ bs₁ (S₁.subst σ) :=
+          RunsAsArgs.of_counted (fun l h' => (by decide : ∀ r u : Grade,
+            (Mode.oneOne.grade * r) * u ∉ Mode.oneOne.erased → r * u ∉ Mode.oneOne.erased) r _ h')
+            (hbs₁.mono hd hH₂)
+        have hbs₂'' := RunsAsArgs.of_counted (g' := fun l => Mode.oneOne.grade *
+          Parameter.grades ps' l) (fun l h' => (by decide : ∀ u : Grade,
+            Mode.oneOne.grade * u ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased) _ h') hbs₂'
+        have hσr := RunsAsSubst.append (ctx.append S₁) _ (RunsAsSubst.append ctx S₁ hδi hbs₁')
+          (by rw [Telescope.subst_subst_of (fun x => hc _ x)]; exact hbs₂'')
+        have hbr := hgr i' j₁ T₂ d ps₁ S₁ p q ps' Ξ Θ B ψ g hi hS₁ hpos hg hpr
+        rw [GradeVector.extendParams_eq_extendGrades,
+          GradeVector.extendParams_eq_extendGrades] at hbr
+        obtain ⟨w₀, H₃, hev, hH₃, hrun⟩ := hbr _ H₂ _ hEq hσr
+        rw [Term.branchResult_corecAt] at hrun
+        have hev' := (Eval.cast (Scope.length_extend_extend Γ ps₁.length ps'.length)).2 hev
+        rw [← List.append_assoc] at hev'
+        have hclo : H₂[b]? = some (.corec Γ.length E Ps bs₁) := hH₂.getElem? hb
+        have hlen₁ := RunsAsArgs.length hbs₁
+        have hlen₂ := RunsAsArgs.length hbs₂
+        have hred := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
+          (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
+          (Ss := Ss) (r := r)
+        have hrn := hpos.resultName decl.names (hd.destructors_nodup h₀)
+        rw [Term.observation_subst_args]
+        cases hbn : B.blockName decl.names with
+        | none =>
+          -- The branch gives the observation.
+          have hk : ks.getD i' .none = .none := by
+            simp only [ks, hrt, Option.getD_some, List.map_map, List.getD_eq_getElem?_getD,
+              List.getElem?_map, hi, Option.map_some, Function.comp_apply]
+            rw [hrn, hbn]
+            rfl
+          rw [hk] at hget
+          simp only [Term.branchResult, hbn] at hrun
+          simp only [Term.observed, hbn] at hred
+          refine ⟨w₀, H₃, .beta hclo hget hlen₁ hlen₂ hev' .none, fun _ => ?_, fun D' R hD' => ?_⟩
+          · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv
+              (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+                (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+          · simp only [hpos.recursionAt_index, hbn] at hD'
+            cases hD'
+        | some D₃ =>
+          -- The branch gives a position of the corecursor of the type of the result.
+          obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
+            (Term.blockName_mem hbn)
+          obtain ⟨j₃, hj₃⟩ := List.mem_iff_getElem?.1 hT₃
+          obtain ⟨ps₃, S₃, hS₃⟩ := hSs j₃ T₃ hj₃
+          have hpr : sig.HasPrelude := hpre ⟨j₁, T₂, hpos.index, T₃.name, hj₁,
+            by rw [hpos.recursionAt_index]; exact hbn⟩
+          have hst : (Ss.subst σ).stateOf decl.names T₃.name =
+              some ⟨ps₃, S₃.subst σ, Ss.sorts j₃⟩ := by
+            rw [States.stateOf_subst, States.stateOf_of_get hnd hj₃ hS₃]
+            rfl
+          have hk : ks.getD i' .none =
+              Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (some ps₃.length) := by
+            simp only [ks, hrt, Option.getD_some, List.map_map, List.getD_eq_getElem?_getD,
+              List.getElem?_map, hi, Option.map_some, Function.comp_apply]
+            rw [hrn, hbn]
+            simp only [Option.bind_some, TypeDeclaration.idxOf?_codataTypes hnd hj₃, States.arity,
+              hS₃]
+            rfl
+          rw [hk] at hget
+          have hb := ValidEqTerm₀.corecBranch hpos
+            (hgv.2 i' j₁ T₂ d ps₁ S₁ p q ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
+          simp only [Term.branchResult, hbn, hst] at hb hrun
+          simp only [Term.observed, hbn, hst] at hred
+          obtain ⟨v', H₄, hres, -, hnext | ⟨rfl, hdone⟩⟩ := RunsAs.resume hd hpr hs hb hrun
+            Γ.length E Ps T₃.name qs ls ps (as.subst σ) (Ss.subst σ) (gs.subst σ)
+          · -- A new state: a new closure of the branches.
+            obtain ⟨ts₃, bs₃, hred', hτ₃, hbs₃, rfl, rfl⟩ := hnext
+            refine ⟨_, _, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
+              fun D' R hD' hR _ => ?_⟩
+            · simp only [hpos.recursionAt_index, hbn] at hr0
+              cases hr0
+            · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
+              subst hD' hR
+              exact ⟨_, ⟨.step hred hred', .corec _ _ _ _ _ _ _ _ _⟩, .inr ⟨j₃, T₃, ps₃, S₃, ts₃,
+                bs₃, hj₃, rfl, hS₃, hτ₃, (hH₁.trans (hH₂.trans hH₃)).trans (List.prefix_append _ _),
+                hbs₃.mono hd (List.prefix_append _ _), by simp, rfl⟩⟩
+          · -- A term already built, related at the instance of the type of the result.
+            refine ⟨_, _, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
+              fun D' R hD' hR he => ?_⟩
+            · simp only [hpos.recursionAt_index, hbn] at hr0
+              cases hr0
+            · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
+              subst hD' hR
+              have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv
+                (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+                  (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+              rw [he] at h₁
+              exact RunRel.computed_mono (fun _ _ h => .inl h)
+                (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _) (h₁.levelEquiv (hX T₃.name)))
+    -- The corecursor is related to the closure.
+    exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
+      hnS S hS)), _, ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩, X, hcons,
+      .inr ⟨j, T', ps'', S', ts, bs, hj, rfl, hS', hts, List.prefix_refl _, hbs, ha, rfl⟩⟩⟩
+
+-- ADE: none.
+/-- `(corec)` at run time: a corecursor of a codata type of `Σ`, whose type declaration is
+meaningful, from a state valid at run time with the grades `γ` when its grade `r` is used at run
+time, with branches valid at run time with the grades `δs i`, which `δ` bounds, is valid at run time
+at its instance with the grades `r · γ + δ`, in a signature whose names are distinct: its erasure
+evaluates its state and allocates the closure of its branches, to which `RunsAs.corec` relates it. -/
+theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {hΓ : Γ.FirstOrder}
+    {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}
+    (has : ValidInstanceArgsΓ sig ι ctx as
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+      (i : Nat) (D' : Name),
+      decl.codataTypes[j]? = some T' ∧
+      (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+    {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ} {γ δ : GradeVector Γ.length}
+    {δs : Nat → GradeVector Γ.length} {h' : Nat} {ps' : List Parameter} {S : Telescope 0 Γ ps'}
+    {ss : Args 0 Γ ps'} (hh : decl.codataTypes[h']? = some T)
+    (hS : Ss.get h' = some ⟨0, ps', S⟩) (hss : ValidArgsΓ sig ι ctx ss S)
+    (hssr : r ∉ Mode.oneOne.erased → RunValidArgs sig ι P hΓ ctx γ ss S)
+    (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
+      ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hδ : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+      (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+      (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
+    RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ δ) (.corec r D qs ls ps as ss.terms Ss gs)
+      (.inst D qs ls ps as) := by
+  intro σ H E hσ hE
+  obtain ⟨hdecl, hT, rfl⟩ := id h
+  have hS₀ := Mode.erasesUncounted .oneOne
+  have hEδ : RunsAsSubst sig ι P H ctx δ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+    h (hS₀.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
+  -- The erasure evaluates the state, each entry at its grade times `r`.
+  have hst : (((sig.position T.name).bind Ss.get).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage)) =
+      (ps'.map (·.usage)).map (r * ·) := by
+    rw [hd.position h hh, Option.bind_some, hS, List.map_map]
+    rfl
+  obtain ⟨bs, H', hev, hH', hbs⟩ : ∃ bs H', EvalAll P H E (ss.terms.erase sig Mode.oneOne.erased hΓ
+      ((ps'.map (·.usage)).map (r * ·))) bs H' ∧ H.Extends H' ∧
+      RunsAsArgs sig ι P H' (fun l => r * Parameter.grades ps' l) (ss.subst σ) bs (S.subst σ) := by
+    by_cases hr : r ∈ Mode.oneOne.erased
+    · -- Every entry is erased.
+      have hrS := (by decide : ∀ r u : Grade, r ∈ Mode.oneOne.erased → r * u ∈ Mode.oneOne.erased)
+        r
+      obtain ⟨bs, H', hev, hH', hl⟩ := Args.evalAll_erased (sig := sig) (P := P)
+        Mode.oneOne.erased hΓ E ss _ (fun u hu => by
+          obtain ⟨u', -, rfl⟩ := List.mem_map.1 hu
+          exact hrS u' hr) H
+      exact ⟨bs, H', hev, hH', RunsAsArgs.of_erased (ss.subst σ) bs (S.subst σ)
+        (fun _ _ _ => hrS _ hr) hl⟩
+    · -- The state is valid at run time with the grades `γ`.
+      have hEγ : RunsAsSubst sig ι P H ctx γ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+        h ((by decide : ∀ r u : Grade, r ∉ Mode.oneOne.erased → r * u ∈ Mode.oneOne.erased →
+          u ∈ Mode.oneOne.erased) r _ hr (hS₀.add _ _ h'))) hE
+      obtain ⟨bs, H', hev, hH', hrs⟩ := hssr hr σ H E hσ hEγ
+      refine ⟨bs, H', ?_, hH', RunsAsArgs.of_counted (fun l h' => (by decide : ∀ r u : Grade,
+        r * u ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased) r _ h') hrs⟩
+      rw [Terms.erase_mul_of_not_erased hΓ hr]
+      exact hev
+  -- Then it allocates the closure of its branches, to which the corecursor is related.
+  refine ⟨H'.length, H' ++ [.corec Γ.length E (gs.erase sig Mode.oneOne.erased hΓ
+    ((sig.destructorGrades T.name qs ps).getD []) (((sig.resumedTypes T.name qs ps).getD []).map
+      fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity))) bs], ?_,
+    hH'.trans (List.prefix_append _ _), ?_⟩
+  · rw [Term.erase, hst]
+    exact .corec hev
+  · rw [Term.corec_subst]
+    exact RunsAs.corec hd h hv hq hl hp hadm has hpre hSs hgv hgr hδ hσ
+      ((hEδ.mono hd hH').mono hd (List.prefix_append _ _)) hh hS (hss.2 σ σ hσ)
+      (hbs.mono hd (List.prefix_append _ _)) (by simp)
 
 end
 
