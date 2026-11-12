@@ -220,7 +220,7 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     "## Modules",
     "",
     "The modules of each group import each other, and the modules of the other groups, as the graph of its section shows, a rounded box standing for the modules of another group.",
-    "The section lists the rules of the imports of the group after its graph: the check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it.",
+    "The section gives the rules of the imports of the group after its graph: the check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it.",
     ""]
   for (group, index) in rules.groups.zipIdx do
     let members := modules.filter (groupOf · == index)
@@ -251,15 +251,22 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
       lines := lines.push s!"  {source} --> {target}"
     lines := lines ++ #["```", ""]
     let groupRules := rules.rules.filter (·.modules.any (groupOf · == index))
-    unless groupRules.isEmpty do
+    -- The sentence of a rule.
+    let sentence (rule : Rule) : String :=
+      let names (ms : Array Name) := ", ".intercalate (ms.toList.map fun m => s!"`{m}`")
+      match rule.imports with
+      | .forbidden ms =>
+        s!"No module of {names rule.modules} imports a module of {names ms}: {rule.reason}."
+      | .allowed ms =>
+        s!"The modules of {names rule.modules} import only modules of {names ms}: {rule.reason}."
+    -- A single rule is a paragraph of its own, several a list.
+    match groupRules.toList with
+    | [] => pure ()
+    | [rule] => lines := lines ++ #[sentence rule, ""]
+    | _ =>
       lines := lines ++ #[s!"The imports of the group {group.name} follow these rules:", ""]
       for rule in groupRules do
-        let names (ms : Array Name) := ", ".intercalate (ms.toList.map fun m => s!"`{m}`")
-        lines := lines.push <| match rule.imports with
-          | .forbidden ms =>
-            s!"- No module of {names rule.modules} imports a module of {names ms}: {rule.reason}."
-          | .allowed ms =>
-            s!"- The modules of {names rule.modules} import only modules of {names ms}: {rule.reason}."
+        lines := lines.push s!"- {sentence rule}"
       lines := lines.push ""
   -- The empty line after the last list, which would end the page with two.
   if lines.back? == some "" then lines := lines.pop
