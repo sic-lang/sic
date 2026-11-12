@@ -9,14 +9,16 @@ A rule names modules, each with the modules below it, such as `Sic.Core.Usage.Re
 `Sic.Core.Usage`, and either the modules they must not import or the only modules they may import,
 and fails if one of them imports a module that it forbids or does not allow, directly or through
 other modules, which it shows by the path of the imports from the one to the other; a rule or a
-group that names no module fails too, so that renaming a module cannot leave a rule behind.
+group that names no module fails too, so that renaming a module cannot leave a rule behind, and so
+does a rule that names modules of several groups, since the page lists it in the section of its
+group.
 The imports are those of the modules as Lake builds them, so that the check reads the graph that
 Lean uses, not a parse of the sources.
 
 The page draws the direct imports of the library as Mermaid flowcharts, an arrow going up from each
 module or group to each one it imports, so that the foundations are at the top: one flowchart of
 the groups of `imports.toml`, then one for the modules of each group, with a node for each other
-group that they import; every module belongs to exactly one group.
+group that they import, and the rules of the group; every module belongs to exactly one group.
 Each flowchart omits the arrows that a path of its other arrows replaces, its transitive reduction,
 since a module brings the modules that it imports.
 
@@ -94,6 +96,10 @@ def readRules (file : System.FilePath) : IO Rules := do
 /-- Whether the module is `name` or below it. -/
 def Lean.Name.covers (name module : Name) : Bool := name.isPrefixOf module
 
+/-- The index of the group that holds the module, or every module below `name`, if there is one. -/
+def Rules.groupOf (rules : Rules) (name : Name) : Option Nat :=
+  rules.groups.findIdx? (·.modules.any (·.covers name))
+
 /-- The path of the imports from `start` to a module that `target` holds, through the modules of
 `graph`, if there is one: a breadth-first search, which gives a shortest path. -/
 def pathTo (graph : Std.HashMap Name (Array Name)) (start : Name) (target : Name → Bool) :
@@ -136,6 +142,9 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
     for name in rule.modules ++ rule.imports.names do
       unless modules.any name.covers do
         failures := failures.push s!"a rule names {name}, which is no module: {rule.reason}"
+    match (rule.modules.map rules.groupOf).toList.eraseDups with
+    | [some _] => pure ()
+    | _ => failures := failures.push s!"a rule names modules of several groups: {rule.reason}"
     for module in modules do
       unless rule.modules.any (·.covers module) do continue
       if let some path := pathTo graph module rule.imports.excludes then
@@ -177,13 +186,12 @@ def reduce (arrows : Array (String × String)) : Array (String × String) :=
     !arrows.any fun (source', next) => source' == source && next != target && reaches arrows next target
 
 /-- The page of the graphs: the imports between the groups as a Mermaid flowchart, then those of the
-modules of each group, each without the arrows that a path of other arrows replaces, then the
-rules. -/
+modules of each group, each without the arrows that a path of other arrows replaces, with the rules
+of the group. -/
 def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array Name)) : String :=
   Id.run do
   -- The index of the group of a module, which `checkRules` requires to be unique.
-  let groupOf (module : Name) : Nat :=
-    rules.groups.findIdx (·.modules.any (·.covers module))
+  let groupOf (module : Name) : Nat := (rules.groupOf module).getD rules.groups.size
   let id (module : Name) : String := s!"n{modules.idxOf module}"
   let flowchart := #["```mermaid", "flowchart BT"]
   let mut lines := #[
@@ -212,6 +220,7 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     "## Modules",
     "",
     "The modules of each group import each other, and the modules of the other groups, as the graph of its section shows, a rounded box standing for the modules of another group.",
+    "The section lists the rules of the imports of the group after its graph: the check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it.",
     ""]
   for (group, index) in rules.groups.zipIdx do
     let members := modules.filter (groupOf · == index)
@@ -241,18 +250,19 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     for (source, target) in reduce arrows do
       lines := lines.push s!"  {source} --> {target}"
     lines := lines ++ #["```", ""]
-  lines := lines ++ #[
-    "## Rules",
-    "",
-    "The check `imports` fails if a module imports, directly or through other modules, a module that a rule forbids it or does not allow it, each module standing for the modules below it:",
-    ""]
-  for rule in rules.rules do
-    let names (ms : Array Name) := ", ".intercalate (ms.toList.map fun m => s!"`{m}`")
-    lines := lines.push <| match rule.imports with
-      | .forbidden ms =>
-        s!"- No module of {names rule.modules} imports a module of {names ms}: {rule.reason}."
-      | .allowed ms =>
-        s!"- The modules of {names rule.modules} import only modules of {names ms}: {rule.reason}."
+    let groupRules := rules.rules.filter (·.modules.any (groupOf · == index))
+    unless groupRules.isEmpty do
+      lines := lines ++ #[s!"The imports of the group {group.name} follow these rules:", ""]
+      for rule in groupRules do
+        let names (ms : Array Name) := ", ".intercalate (ms.toList.map fun m => s!"`{m}`")
+        lines := lines.push <| match rule.imports with
+          | .forbidden ms =>
+            s!"- No module of {names rule.modules} imports a module of {names ms}: {rule.reason}."
+          | .allowed ms =>
+            s!"- The modules of {names rule.modules} import only modules of {names ms}: {rule.reason}."
+      lines := lines.push ""
+  -- The empty line after the last list, which would end the page with two.
+  if lines.back? == some "" then lines := lines.pop
   return "\n".intercalate lines.toList ++ "\n"
 
 def main : List String → IO UInt32

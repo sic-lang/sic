@@ -68,13 +68,23 @@ modules = ["Sic.Grading"]
 allowed = ["Sic.Grading", "Sic.Math"]
 
 [[rule]]
-reason = "the syntax and the substitution are defined before every judgment that reads them"
-modules = [
-  "Sic.Core.Level",
-  "Sic.Core.Substitution",
-  "Sic.Core.Syntax",
-  "Sic.Core.Universe",
+reason = "the syntax is defined before every judgment that reads it"
+modules = ["Sic.Core.Level", "Sic.Core.Syntax", "Sic.Core.Universe"]
+forbidden = [
+  "Sic.Core.Erasure",
+  "Sic.Core.Evaluation",
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
+  "Sic.Core.Soundness",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
 ]
+
+[[rule]]
+reason = "the substitution is defined before every judgment that reads it"
+modules = ["Sic.Core.Substitution"]
 forbidden = [
   "Sic.Core.Erasure",
   "Sic.Core.Evaluation",
@@ -128,8 +138,18 @@ forbidden = [
 ]
 
 [[rule]]
-reason = "the reduction and the meaning are defined on the terms alone, so that the meaning explains the judgments without reading them"
-modules = ["Sic.Core.Meaning", "Sic.Core.Reduction"]
+reason = "the reduction is defined on the terms alone, and reads no judgment"
+modules = ["Sic.Core.Reduction"]
+forbidden = [
+  "Sic.Core.Ownership",
+  "Sic.Core.RunTime",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the meaning is defined on the terms alone, so that it explains the judgments without reading them"
+modules = ["Sic.Core.Meaning"]
 forbidden = [
   "Sic.Core.Ownership",
   "Sic.Core.RunTime",
