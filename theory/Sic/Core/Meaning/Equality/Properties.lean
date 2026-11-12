@@ -1291,28 +1291,6 @@ theorem TelRel.block_mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd 
   TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
     (fun _ => Option.rel_map (fun D => hXY D) _) ts us
 
-/-- The relations of every level are partial equivalence relations, in a signature whose names are
-distinct. -/
-theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :
-    (levelRel sig ι n).IsPer :=
-  have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-  { univ_isPer := fun h => UnivRel.isPer hd ih (levelRel_univ_iff.1 h)
-    univ_unique := fun h h' =>
-      UnivRel.unique hd ih (levelRel_univ_iff.1 h) _ (levelRel_univ_iff.1 h')
-    prop_unique := fun h h' =>
-      PropRel.unique hd ih (levelRel_prop_iff.1 h) _ (levelRel_prop_iff.1 h') }
-termination_by n
-decreasing_by all_goals assumption
-
-/-- `eq(v)` is a partial equivalence relation, symmetric and transitive, in a signature whose names
-are distinct.
-RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`
-RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{trans}` -/
-theorem HasEq.isPer {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R : TermRel}
-    (hd : sig.Distinct) : HasEq sig ι v R → IsPer R
-  | .univ n h => (levelRel_isPer hd n).univ_isPer h
-  | .prop _ _ _ hR => ⟨fun h => (hR _ _).2 ((hR _ _).1 h), fun h _ => (hR _ _).2 ((hR _ _).1 h)⟩
-
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem HasEq.univ_not_prop {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n k : Nat}
     {R : TermRel} {b : Prop} (hd : sig.Distinct) (h : (levelRel sig ι n).univ v R)
@@ -1325,18 +1303,5 @@ theorem HasEq.univ_level {sig : Signature} {ι : Interpretation} {v : Term 0 []}
     (h' : (levelRel sig ι n').univ v R') : n = n' :=
   UnivRel.level hd (levelRel_univ_iff.1 h) (levelRel_univ_iff.1 h')
 
-/-- `eq(v)` is unique: two equalities of the terms of a type relate the same terms, in a signature
-whose names are distinct.
-RFC: `\mathsf{unique}_{\mathsf{eq}}` -/
-theorem HasEq.unique {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R R' : TermRel}
-    (hd : sig.Distinct) : HasEq sig ι v R → HasEq sig ι v R' → ∀ t u, R t u ↔ R' t u
-  | .univ n h, .univ _ h' => by
-    cases HasEq.univ_level hd h h'
-    exact (levelRel_isPer hd n).univ_unique h h'
-  | .univ _ h, .prop _ _ h' _ => (HasEq.univ_not_prop hd h h').elim
-  | .prop _ _ h _, .univ _ h' => (HasEq.univ_not_prop hd h' h).elim
-  | .prop k _ h hR, .prop _ _ h' hR' => by
-    cases PropRel.level hd (levelRel_prop_iff.1 h) (levelRel_prop_iff.1 h')
-    exact fun t u => (hR t u).trans (((levelRel_isPer hd k).prop_unique h h').trans (hR' t u).symm)
 
 end Sic.Core

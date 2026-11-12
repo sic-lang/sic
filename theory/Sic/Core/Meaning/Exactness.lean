@@ -1,7 +1,8 @@
 module
 
 public import Sic.Core.Meaning
-import Sic.Core.Meaning.Relations
+import Sic.Core.Meaning.Equality.Properties
+import Sic.Core.Meaning.Uniqueness
 
 /-!
 # Exactness of the Meaning

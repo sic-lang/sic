@@ -5,7 +5,7 @@ public import Sic.Core.Evaluation
 /-!
 # Heap
 
-The extension of the heaps of annex 20 of RFC 36: the evaluation only allocates, at the end of the
+The extension of the heaps of annex 17 of RFC 36: the evaluation only allocates, at the end of the
 heap, and never changes a value, so that a heap at a later point of a run extends the heap at an
 earlier point, `H ⊑ H'`, which keeps the value at each address of `H`.
 The relation of run time of the erasure relates a term to an address in a heap, and the values that

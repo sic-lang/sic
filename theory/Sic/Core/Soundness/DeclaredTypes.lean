@@ -1,13 +1,13 @@
 module
 
 public import Sic.Core.Soundness.Levels
+import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
-import Sic.Core.Meaning.Relations
+import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Core.Syntax.Terms
 
 /-!
 # Soundness of the Declared Types
