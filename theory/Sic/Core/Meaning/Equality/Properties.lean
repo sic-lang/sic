@@ -70,6 +70,11 @@ theorem LevelRel.IsPer.univ_eq {L : LevelRel} (hL : L.IsPer) {v : Term 0 []} {R 
     (h : L.univ v R) (h' : L.univ v R') : R = R' :=
   funext fun t => funext fun u => propext (hL.univ_unique h h' t u)
 
+/-- The relation of run time that `rt(U_n)` gives a type is unique. -/
+theorem LevelRel.IsPer.run_eq {L : LevelRel} (hL : L.IsPer) {P : Program} {v : Term 0 []}
+    {R R' : RunRel} (h : L.run P v R) (h' : L.run P v R') : R = R' :=
+  funext fun H => funext fun t => funext fun a => propext (hL.run_unique h h' H t a)
+
 /-- `ty(U_n)` at the level `n`, as the clauses of `UnivRel`. -/
 theorem levelRel_univ_iff {sig : Signature} {ι : Interpretation} {n : Nat} {v : Term 0 []}
     {R : TermRel} :
@@ -656,8 +661,11 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
     UnivRel sig ι n (fun m _ => levelRel sig ι m) v R → IsPer R
   | .univ (k := k) _ hk =>
     have hL := ih k (hk ▸ Nat.lt_succ_self k)
-    ⟨fun ⟨R', h₁, h₂⟩ => ⟨R', h₂, h₁⟩,
-      fun ⟨R₁, h₁, h₂⟩ ⟨_, h₂', h₃⟩ => ⟨R₁, h₁, hL.univ_eq h₂' h₂ ▸ h₃⟩⟩
+    ⟨fun ⟨⟨R', h₁, h₂⟩, hr⟩ => ⟨⟨R', h₂, h₁⟩, fun P => have ⟨Q, h₁, h₂⟩ := hr P; ⟨Q, h₂, h₁⟩⟩,
+      fun ⟨⟨R₁, h₁, h₂⟩, hr⟩ ⟨⟨_, h₂', h₃⟩, hr'⟩ => ⟨⟨R₁, h₁, hL.univ_eq h₂' h₂ ▸ h₃⟩, fun P =>
+        have ⟨Q₁, h₁, h₂⟩ := hr P
+        have ⟨_, h₂', h₃⟩ := hr' P
+        ⟨Q₁, h₁, hL.run_eq h₂' h₂ ▸ h₃⟩⟩⟩
   | .prop (k := k) _ hk =>
     have hL := ih k (hk ▸ Nat.lt_succ_self k)
     ⟨fun ⟨b₁, b₂, h₁, h₂, hb⟩ => ⟨b₂, b₁, h₂, h₁, hb.symm⟩,

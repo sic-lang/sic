@@ -11,8 +11,11 @@ under every pair of equal closed substitutions of the context.
 Each judgment of the typing has a meaning, with the same objects: the signatures and their entries,
 the contexts, the types, the terms, the arguments of the telescopes and of the instances, the
 telescopes in a sort and the destructors in a sort.
-The meaning ignores the grades, the modes and the ownerships, as the typing does outside the
-judgments of usage and of ownership that the rule of the constant definitions reads.
+The meaning ignores the modes and the ownerships, as the typing does outside the judgments of usage
+and of ownership that the rule of the constant definitions reads, and it reads the grades only
+through the relations of run time, which the equality of the types compares: two instances of a
+declared type at different grades have the same equality of their terms, but not the same
+relations of run time, and they are not equal types.
 Each entry is meaningful in the whole signature, and a closed judgment requires the names of its
 signature to be distinct, rather than its meaning, so that the soundness proves each entry
 meaningful in the whole signature from its typing in the signature before it.
@@ -82,9 +85,10 @@ The clauses of the closed judgments are stated without the meaning `⊨ Σ` of t
 they require, so that the meaning of the signatures is defined from them. -/
 
 /-- The clause of `(⊨_type≡)`: `A` and `B` compute to canonical types whose terms have the same
-equality. -/
+equality and, for each program, the same relations of run time. -/
 def EqTypeClause (sig : Signature) (ι : Interpretation) (A B : Term 0 []) : Prop :=
-  ∃ v w R, Computesι sig ι A v ∧ Computesι sig ι B w ∧ HasEq sig ι v R ∧ HasEq sig ι w R
+  ∃ v w R, Computesι sig ι A v ∧ Computesι sig ι B w ∧ HasEq sig ι v R ∧ HasEq sig ι w R ∧
+    ∀ P Q, HasRun sig ι P v Q ↔ HasRun sig ι P w Q
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` for the terms: `t` and `u` compute to equal canonical terms
 of the canonical form of `A`, or are equal proofs of it when it is a proposition. -/
@@ -513,7 +517,8 @@ structure IsPer {α : Type} (R : α → α → Prop) : Prop where
   trans {t u w : α} : R t u → R u w → R t w
 
 /-- The relations of the sorts of a level give each type they relate a unique equality of its terms,
-itself a partial equivalence relation, and each proposition a unique truth. -/
+itself a partial equivalence relation, each proposition a unique truth, and each type a unique
+relation of run time. -/
 structure LevelRel.IsPer (L : LevelRel) : Prop where
   /-- The equality of the terms of a type of `U_n` is a partial equivalence relation. -/
   univ_isPer {v : Term 0 []} {R : TermRel} : L.univ v R → _root_.Sic.Core.IsPer R
@@ -521,5 +526,8 @@ structure LevelRel.IsPer (L : LevelRel) : Prop where
   univ_unique {v : Term 0 []} {R R' : TermRel} : L.univ v R → L.univ v R' → ∀ t u, R t u ↔ R' t u
   /-- `ty(Ω_n)` gives a proposition a unique truth. -/
   prop_unique {v : Term 0 []} {b b' : Prop} : L.prop v b → L.prop v b' → (b ↔ b')
+  /-- `rt(U_n)` gives a type a unique relation of run time. -/
+  run_unique {P : Program} {v : Term 0 []} {R R' : RunRel} : L.run P v R → L.run P v R' →
+    ∀ H t a, R H t a ↔ R' H t a
 
 end Sic.Core

@@ -87,7 +87,7 @@ theorem HasEq.canonical {sig : Signature} {ι : Interpretation} {v w₁ w₂ : T
   | .univ _ h, _, hvw => by
     cases levelRel_univ_iff.1 h with
     | univ =>
-      obtain ⟨_, h₁, h₂⟩ := hvw
+      obtain ⟨⟨_, h₁, h₂⟩, -⟩ := hvw
       exact ⟨(levelRel_univ_iff.1 h₁).whnf, (levelRel_univ_iff.1 h₂).whnf⟩
     | prop =>
       obtain ⟨_, _, h₁, h₂, -⟩ := hvw
@@ -162,7 +162,8 @@ theorem HasEq.isProp_iff {sig : Signature} {ι : Interpretation} {v w t u : Term
 /-- The clause of `(⊨_type≡)` is symmetric. -/
 theorem EqTypeClause.symm {sig : Signature} {ι : Interpretation} {A B : Term 0 []} :
     EqTypeClause sig ι A B → EqTypeClause sig ι B A
-  | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀⟩ => ⟨B₀, A₀, R, hB, hA, hB₀, hA₀⟩
+  | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀, hr⟩ =>
+    ⟨B₀, A₀, R, hB, hA, hB₀, hA₀, fun P Q => (hr P Q).symm⟩
 
 -- ADE: `symEq`, in `Definition/LogicalRelation/Properties/Symmetry.agda`.
 /-- `Σ ⊨ A ≡ B` is symmetric. -/
@@ -174,11 +175,11 @@ theorem ValidEqType₀.symm {sig : Signature} {ι : Interpretation} {A B : Term 
 theorem EqTypeClause.trans {sig : Signature} {ι : Interpretation} {A B C : Term 0 []}
     (hd : sig.Distinct) :
     EqTypeClause sig ι A B → EqTypeClause sig ι B C → EqTypeClause sig ι A C
-  | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀⟩, ⟨B₁, C₀, R', hB', hC, hB₁, hC₀⟩ => by
+  | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀, hr⟩, ⟨B₁, C₀, R', hB', hC, hB₁, hC₀, hr'⟩ => by
     cases Computesι.det hd hB hB'
     have hRR' : R = R' := funext fun t => funext fun u => propext (hB₀.unique hd hB₁ t u)
     subst hRR'
-    exact ⟨A₀, C₀, R, hA, hC, hA₀, hC₀⟩
+    exact ⟨A₀, C₀, R, hA, hC, hA₀, hC₀, fun P Q => (hr P Q).trans (hr' P Q)⟩
 
 -- ADE: `transEq`, in `Definition/LogicalRelation/Properties/Transitivity.agda`.
 /-- `Σ ⊨ A ≡ B` is transitive. -/
@@ -248,7 +249,7 @@ theorem ValidEqTerm₀.right {sig : Signature} {ι : Interpretation} {t u A : Te
 theorem EqTermClause.conv {sig : Signature} {ι : Interpretation} {t u A B : Term 0 []}
     (hd : sig.Distinct) (h : EqTermClause sig ι t u A) (hAB : EqTypeClause sig ι A B) :
     EqTermClause sig ι t u B := by
-  obtain ⟨A₀, B₀, R, hA, hB, hA₀, hB₀⟩ := hAB
+  obtain ⟨A₀, B₀, R, hA, hB, hA₀, hB₀, -⟩ := hAB
   rcases hA₀.isProp_or hd with hpA₀ | hnA₀
   · have hpA : ComputesToProp sig ι A := ⟨A₀, hA, hpA₀⟩
     obtain ⟨A₁, R', hA', hR', htu⟩ := h.2 hpA
@@ -371,8 +372,10 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
   | univ n hn =>
     cases levelRel_univ_iff.1 hn with
     | univ =>
-      obtain ⟨R', h₁, h₂⟩ := hvw
-      exact ⟨hd, v, w, R', hv, hw, .univ _ h₁, .univ _ h₂⟩
+      obtain ⟨⟨R', h₁, h₂⟩, hr⟩ := hvw
+      exact ⟨hd, v, w, R', hv, hw, .univ _ h₁, .univ _ h₂, fun P =>
+        have ⟨_, h₁, h₂⟩ := hr P
+        HasRun.iff_of_common hd (.univ _ h₁) (.univ _ h₂)⟩
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
@@ -390,7 +393,8 @@ theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : T
     | prop =>
       obtain ⟨b₁, b₂, h₁, h₂, hb⟩ := hvw
       exact ⟨hd, v, w, fun _ _ => b₁, hv, hw, .prop _ b₁ h₁ fun _ _ => .rfl,
-        .prop _ b₂ h₂ fun _ _ => hb⟩
+        .prop _ b₂ h₂ fun _ _ => hb, fun _ Q =>
+          (HasRun.prop_iff hd h₁ Q).trans (HasRun.prop_iff hd h₂ Q).symm⟩
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
@@ -401,16 +405,16 @@ terms of the universe above the level of the first, in a signature whose names a
 theorem ValidEqTerm₀.sort {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
     {q : Quality} {l₁ l₂ : Level 0} (hl : l₁ ≈ l₂) :
     ValidEqTerm₀ sig ι (.sort ⟨q, l₁⟩) (.sort ⟨q, l₂⟩) (.sort ⟨.type, .succ l₁⟩) := by
-  have hU : HasEq sig ι (.sort ⟨.type, .succ l₁⟩)
-      (fun A B => ∃ R, (levelRel sig ι (l₁.closedValue + 1)).univ A R ∧
-        (levelRel sig ι (l₁.closedValue + 1)).univ B R) :=
-    .univ (l₁.closedValue + 2) (levelRel_univ_iff.2 (.univ (k := l₁.closedValue + 1) rfl rfl))
+  have hU := HasEq.univ (sig := sig) (ι := ι) (l₁.closedValue + 2)
+    (levelRel_univ_iff.2 (.univ (l := .succ l₁) (k := l₁.closedValue + 1) rfl rfl))
   have h₂ : l₂.closedValue = l₁.closedValue := (hl Fin.elim0).symm
-  refine ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU⟩,
+  refine ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU, fun _ _ => .rfl⟩,
     fun _ => ⟨_, _, _, _, Computes.sort _ _, Computes.sort _ _, Computes.sort _ _, hU, ?_⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
   cases q
-  · exact ⟨_, levelRel_univ_iff.2 (.univ rfl rfl), levelRel_univ_iff.2 (.univ h₂ rfl)⟩
-  · exact ⟨_, levelRel_univ_iff.2 (.prop rfl rfl), levelRel_univ_iff.2 (.prop h₂ rfl)⟩
+  · exact ⟨⟨_, levelRel_univ_iff.2 (.univ rfl rfl), levelRel_univ_iff.2 (.univ h₂ rfl)⟩,
+      fun _ => ⟨_, levelRel_run_iff.2 (.univ rfl rfl), levelRel_run_iff.2 (.univ h₂ rfl)⟩⟩
+  · exact ⟨⟨_, levelRel_univ_iff.2 (.prop rfl rfl), levelRel_univ_iff.2 (.prop h₂ rfl)⟩,
+      fun _ => ⟨_, levelRel_run_iff.2 (.prop rfl rfl), levelRel_run_iff.2 (.prop h₂ rfl)⟩⟩
 
 end Sic.Core

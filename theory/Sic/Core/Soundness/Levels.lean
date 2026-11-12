@@ -1388,8 +1388,10 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     {R : TermRel} {t u t' u' : Term 0 []} :
     UnivRel sig ι n (fun m _ => levelRel sig ι m) v R → R t u → Term.LevelEquiv t t' →
       Term.LevelEquiv u u' → R t' u'
-  | .univ (k := k) _ _, ⟨R', h₁, h₂⟩, ht, hu =>
-    ⟨R', (levelRel_levelInvariant k).univ h₁ ht, (levelRel_levelInvariant k).univ h₂ hu⟩
+  | .univ (k := k) _ _, ⟨⟨R', h₁, h₂⟩, hr⟩, ht, hu =>
+    ⟨⟨R', (levelRel_levelInvariant k).univ h₁ ht, (levelRel_levelInvariant k).univ h₂ hu⟩, fun P =>
+      have ⟨Q, h₁, h₂⟩ := hr P
+      ⟨Q, (levelRel_levelInvariant k).run h₁ ht, (levelRel_levelInvariant k).run h₂ hu⟩⟩
   | .prop (k := k) _ _, ⟨b₁, b₂, h₁, h₂, hb⟩, ht, hu =>
     ⟨b₁, b₂, (levelRel_levelInvariant k).prop h₁ ht, (levelRel_levelInvariant k).prop h₂ hu, hb⟩
   | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
@@ -1572,6 +1574,13 @@ theorem HasEq.levelEquiv {sig : Signature} {ι : Interpretation} {v v' : Term 0 
   | .univ n hn => .univ n ((levelRel_levelInvariant n).univ hn h)
   | .prop n b hn hR => .prop n b ((levelRel_levelInvariant n).prop hn h) hR
 
+/-- A canonical type whose levels change for equal ones has the same relation of run time. -/
+theorem HasRun.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {v v' : Term 0 []}
+    {R : RunRel} (hA : HasRun sig ι P v R) (h : Term.LevelEquiv v v') : HasRun sig ι P v' R :=
+  match hA with
+  | .univ n hn => .univ n ((levelRel_levelInvariant n).run hn h)
+  | .prop n b hn hR => .prop n b ((levelRel_levelInvariant n).prop hn h) hR
+
 /-- The equality of the terms of a canonical type relates the terms whose levels change for equal
 ones, in a signature whose names are distinct. -/
 theorem HasEq.rel_levelEquiv {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R : TermRel}
@@ -1602,10 +1611,12 @@ theorem ComputesToProp.levelEquiv {sig : Signature} {ι : Interpretation} {A A' 
 theorem EqTypeClause.levelEquiv {sig : Signature} {ι : Interpretation} {A B A' B' : Term 0 []}
     (hAB : EqTypeClause sig ι A B) (hA : Term.LevelEquiv A A') (hB : Term.LevelEquiv B B') :
     EqTypeClause sig ι A' B' :=
-  let ⟨_, _, R, hcA, hcB, hRA, hRB⟩ := hAB
+  let ⟨_, _, R, hcA, hcB, hRA, hRB, hr⟩ := hAB
   let ⟨_, hcA', hA₀⟩ := hcA.levelEquiv hA
   let ⟨_, hcB', hB₀⟩ := hcB.levelEquiv hB
-  ⟨_, _, R, hcA', hcB', hRA.levelEquiv hA₀, hRB.levelEquiv hB₀⟩
+  ⟨_, _, R, hcA', hcB', hRA.levelEquiv hA₀, hRB.levelEquiv hB₀, fun P Q =>
+    ⟨fun h => ((hr P Q).1 (h.levelEquiv hA₀.symm)).levelEquiv hB₀,
+      fun h => ((hr P Q).2 (h.levelEquiv hB₀.symm)).levelEquiv hA₀⟩⟩
 
 /-- The clauses of `(⊨_≡)` and `(⊨_≡Ω)` still hold when the levels of the terms and of the type
 change for equal ones, in a signature whose names are distinct. -/

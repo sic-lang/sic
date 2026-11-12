@@ -11,7 +11,8 @@ The equality of the canonical terms of the closed canonical types of annex 18 of
 graphs of the relations of the sorts of each level.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
 relation `eq(v)`, which the sorts, the data types and the codata types give: the universe `U_n` has
-the types of the level below it as terms, equal when they have the same equality of terms, the
+the types of the level below it as terms, equal when they have the same equality of terms and, for
+each program, the same relation of run time, the
 universe of propositions `Ω_n` has the propositions of the level below it, equal when they have the
 same truth, an instance of a data type has its constructors, equal when they are the same
 constructor with equal fields, and an instance of a codata type has its corecursors, equal when
@@ -194,12 +195,14 @@ types and of the codata types in `U_n`, given the relations `below` of the level
 inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Term 0 [] → TermRel → Prop where
   /-- `(ty_U)`: the universe `U_k`, if `k + 1 = n`, whose terms are equal when they are types of `U_k`
-  with the same equality.
+  with the same equality and, for each program, the same relation of run time.
   RFC: `\mathsf{ty}_U` -/
   | univ {l : Level 0} {k : Nat} (hl : l.closedValue = k) (hk : k + 1 = n) :
       UnivRel sig ι n below (.sort ⟨.type, l⟩) fun A B =>
-        ∃ R, (below k (hk ▸ Nat.lt_succ_self k)).univ A R ∧
-          (below k (hk ▸ Nat.lt_succ_self k)).univ B R
+        (∃ R, (below k (hk ▸ Nat.lt_succ_self k)).univ A R ∧
+          (below k (hk ▸ Nat.lt_succ_self k)).univ B R) ∧
+        ∀ P, ∃ Q, (below k (hk ▸ Nat.lt_succ_self k)).run P A Q ∧
+          (below k (hk ▸ Nat.lt_succ_self k)).run P B Q
   /-- `(ty_Ω)`: the universe of propositions `Ω_k`, if `k + 1 = n`, whose terms are equal when they
   are propositions of `Ω_k` with the same truth.
   RFC: `\mathsf{ty}_\Omega` -/

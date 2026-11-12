@@ -277,6 +277,33 @@ theorem TypeDeclaration.mem_casesFrom_of {α β : Type} {f : α → List β} :
     rw [he]
     exact List.mem_append_right _ (TypeDeclaration.mem_casesFrom_of h hc)
 
+/-- Each destructor of a codata type that an entry of the signature declares has a case. -/
+theorem Signature.destructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {d : Name}
+    (hdecl : .typeDeclaration decl ∈ sig) (hT : T ∈ decl.codataTypes) (hdm : d ∈ T.destructors) :
+    ∃ i, sig.destructorCase T.name d = some i := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
+  have hc := TypeDeclaration.mem_casesFrom_of (i := 0) (f := CodataType.destructors) hj hdm
+  have he : (Entry.destructorCase T.name d (.typeDeclaration decl)).isSome := by
+    simp only [Entry.destructorCase, List.findIdx?_isSome, List.any_eq_true]
+    exact ⟨_, hc, show (T.name == T.name && d == d) = true by
+      rw [show (T.name == T.name) = true from decide_eq_true rfl,
+        show (d == d) = true from decide_eq_true rfl]; rfl⟩
+  clear hc hj
+  induction sig with
+  | nil => nomatch hdecl
+  | cons e sig ih =>
+    show ∃ i, (e :: sig).findSome? (Entry.destructorCase T.name d) = some i
+    cases he' : Entry.destructorCase T.name d e with
+    | some i => exact ⟨i, by rw [List.findSome?_cons, he']⟩
+    | none =>
+      rw [List.findSome?_cons, he']
+      rcases List.mem_cons.1 hdecl with h | h
+      · subst h
+        rw [he'] at he
+        nomatch he
+      · exact ih h
+
 /-- The cases of types with distinct names, whose elements have distinct names, have distinct
 names of types and of elements. -/
 theorem TypeDeclaration.casesFrom_nodup {α β : Type} {f : α → List β} {nα : α → Name}

@@ -11,6 +11,9 @@ equality of the terms of a type is a partial equivalence relation, and it is uni
 truth of a proposition and the relation of run time of a type, given those of the levels below it,
 which `Sic.Core.Meaning.Equality.Properties` and `Sic.Core.Meaning.RunTime.Properties` prove on the
 graphs of a level.
+The equality of the terms of a universe compares the relations of run time of the level below it,
+so that its transitivity needs their uniqueness, which the induction gives with the partial
+equivalence relations.
 -/
 
 @[expose] public section
@@ -19,8 +22,8 @@ namespace Sic.Core
 
 open Sic.Grading
 
-/-- The relations of every level are partial equivalence relations, in a signature whose names are
-distinct. -/
+/-- The relations of every level are partial equivalence relations, and their relations of run time
+unique, in a signature whose names are distinct. -/
 theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :
     (levelRel sig ι n).IsPer :=
   have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
@@ -28,7 +31,10 @@ theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinc
     univ_unique := fun h h' =>
       UnivRel.unique hd ih (levelRel_univ_iff.1 h) _ (levelRel_univ_iff.1 h')
     prop_unique := fun h h' =>
-      PropRel.unique hd ih (levelRel_prop_iff.1 h) _ (levelRel_prop_iff.1 h') }
+      PropRel.unique hd ih (levelRel_prop_iff.1 h) _ (levelRel_prop_iff.1 h')
+    run_unique := fun h h' =>
+      RunUnivRel.congr hd ih (fun m hm => (ih m hm).run_unique) (levelRel_run_iff.1 h) _
+        (levelRel_run_iff.1 h') }
 termination_by n
 decreasing_by all_goals assumption
 
@@ -59,10 +65,7 @@ theorem HasEq.unique {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R 
 distinct. -/
 theorem levelRel_run_unique {sig : Signature} {ι : Interpretation} {P : Program}
     (hd : sig.Distinct) (n : Nat) : RunLevelRel.Unique ((levelRel sig ι n).run P) :=
-  have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
-  fun h h' => RunUnivRel.congr hd (fun m _ => levelRel_isPer hd m) ih (levelRel_run_iff.1 h) _ (levelRel_run_iff.1 h')
-termination_by n
-decreasing_by all_goals assumption
+  (levelRel_isPer hd n).run_unique
 
 -- ADE: `irrelevanceTerm`, in `Graded/Erasure/LogicalRelation/Irrelevance.agda`.
 /-- `®(v)` is unique: two relations of run time of a type relate the same terms to the same
@@ -79,5 +82,26 @@ theorem HasRun.unique {sig : Signature} {ι : Interpretation} {P : Program} {v :
   | .prop _ _ h _, .univ _ h' => (RunUnivRel.not_prop hd (levelRel_run_iff.1 h')
       (levelRel_prop_iff.1 h)).elim
   | .prop _ _ _ hR, .prop _ _ _ hR' => fun H t a => ⟨fun _ => hR' H t a, fun _ => hR H t a⟩
+
+/-- `®(v)` is unique as a relation, in a signature whose names are distinct. -/
+theorem HasRun.eq {sig : Signature} {ι : Interpretation} {P : Program} {v : Term 0 []}
+    {R R' : RunRel} (hd : sig.Distinct) (h : HasRun sig ι P v R) (h' : HasRun sig ι P v R') :
+    R = R' :=
+  funext fun H => funext fun t => funext fun a => propext (h.unique hd h' H t a)
+
+/-- Two types with a common relation of run time have the same relations of run time, in a signature
+whose names are distinct. -/
+theorem HasRun.iff_of_common {sig : Signature} {ι : Interpretation} {P : Program}
+    {v w : Term 0 []} {R : RunRel} (hd : sig.Distinct) (hv : HasRun sig ι P v R)
+    (hw : HasRun sig ι P w R) (R' : RunRel) : HasRun sig ι P v R' ↔ HasRun sig ι P w R' :=
+  ⟨fun h => h.eq hd hv ▸ hw, fun h => h.eq hd hw ▸ hv⟩
+
+/-- The relations of run time of a proposition are those that relate every term to every address,
+in a signature whose names are distinct. -/
+theorem HasRun.prop_iff {sig : Signature} {ι : Interpretation} {P : Program} {v : Term 0 []}
+    {k : Nat} {b : Prop} (hd : sig.Distinct) (hp : (levelRel sig ι k).prop v b) (R : RunRel) :
+    HasRun sig ι P v R ↔ ∀ H t a, R H t a :=
+  ⟨fun h => (h.eq hd (.prop k b hp fun _ _ _ => trivial)) ▸ fun _ _ _ => trivial,
+    fun hR => .prop k b hp hR⟩
 
 end Sic.Core
