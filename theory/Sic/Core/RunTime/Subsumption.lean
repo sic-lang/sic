@@ -30,6 +30,19 @@ theorem RunsAsSubst.of_counted {sig : Signature} {ι : Interpretation} {P : Prog
     exact ⟨a, E', hE, RunsAsSubst.of_counted ctx (fun x => hc x.succ) hs, fun hγ => hx (hc 0 hγ)⟩
   | _, .secondOrder .., _, _, _, _, _, h => h
 
+-- ADE: none.
+/-- Arguments related to addresses at a telescope as the grades `g` require are related to them as
+any grades `g'` require that count at run time only positions that `g` counts. -/
+theorem RunsAsArgs.of_counted {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
+    {ps : List Parameter} → {g g' : Nat → Grade} → {ts : Args 0 [] ps} → {bs : List Nat} →
+      {Θ : Telescope 0 [] ps} → (∀ l, g' l ∉ Mode.oneOne.erased → g l ∉ Mode.oneOne.erased) →
+      RunsAsArgs sig ι P H g ts bs Θ → RunsAsArgs sig ι P H g' ts bs Θ
+  | [], _, _, .nil, [], .nil, _, h => h
+  | [], _, _, .nil, _ :: _, .nil, _, h => (h : False).elim
+  | _ :: _, _, _, .cons _ _, [], .cons _ _ _ _, _, h => (h : False).elim
+  | _ :: _, _, _, .cons _ _, _ :: _, .cons _ _ _ _, hg, h =>
+    ⟨fun hg' => h.1 (hg 0 hg'), RunsAsArgs.of_counted (fun l => hg (l + 1)) h.2⟩
+
 -- ADE: none, a step of `subsumption-▸⊩ʳ∷[]-≤`.
 /-- Addresses that stand for a substitution as the grades `δ` require stand for it as any grades
 `γ` above `δ` require. -/

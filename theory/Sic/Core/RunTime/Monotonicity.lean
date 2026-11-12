@@ -66,6 +66,20 @@ theorem DataType.runBlockRel_fold {j g k : Nat} {Δ : Scope} {sig : Signature}
   fun X hX => hX T hT H v a (DataType.runCtorRel_mono (List.prefix_refl H)
     (fun c hc ts as => hmono _ X (fun _ _ _ _ h => h X hX) T hT c hc H ts as) h)
 
+/-- `(®_μ)` relates only what its clauses relate, when the relation of the terms of the fields
+grows with the relations of the recursive fields: the converse of `DataType.runBlockRel_fold`. -/
+theorem DataType.runBlockRel_unfold {j g k : Nat} {Δ : Scope} {sig : Signature}
+    {Ts : List (DataType j g k Δ)} {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
+    (hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
+      ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as)
+    {D : Name} {H : Heap} {v : Term 0 []} {a : Nat} (h : DataType.runBlockRel sig Ts S D H v a) :
+    ∃ T ∈ Ts, T.name = D ∧ T.runCtorRel sig T.name (S (DataType.runBlockRel sig Ts S)) H v a :=
+  h (fun D H v a => ∃ T ∈ Ts, T.name = D ∧
+      T.runCtorRel sig T.name (S (DataType.runBlockRel sig Ts S)) H v a)
+    fun T hT H _ _ hc => ⟨T, hT, rfl, DataType.runCtorRel_mono (List.prefix_refl H)
+      (fun c hc' ts as => hmono _ _ (fun _ _ _ _ ⟨_, hT', hD, hr⟩ =>
+        hD ▸ DataType.runBlockRel_fold hmono hT' hr) T hT c hc' H ts as) hc⟩
+
 /-! ## Monotonicity in the Heap
 
 A relation of run time relates a term to an address in each heap that extends a heap in which it

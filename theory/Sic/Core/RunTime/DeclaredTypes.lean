@@ -216,6 +216,70 @@ theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       cases eq_of_heq has
       exact ⟨n, S, hn, hS, rfl⟩
 
+/-- A closed term of an instance of a data type of a type, whose constructors have no recursive
+field, related to an address, computes to a constructor whose fields the meaning relates to
+themselves and are related to the fields of a value of its case at the address, each at the type of
+its entry, in a signature whose names are distinct. -/
+theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasDataType D decl T)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    (hnr : ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors, ∀ i,
+      (c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i = none)
+    {as : InstanceArgs 0 [] decl.scope} {H : Heap} {t : Term 0 []} {a : Nat}
+    (htv : ValidTerm₀ sig ι t (.inst D qs ls ps as)) (ht : RunsAs sig ι P H t a (.inst D qs ls ps as)) :
+    ∃ T' ∈ decl.dataTypes, T'.name = D ∧ ∃ con ∈ T'.constructors,
+      ∃ (ts : Args 0 [] (con.params (.ofLists qs ps hq hp))) (i : Nat) (bs : List Nat),
+        (∃ (qs' : List Quality) (ls' : List (Level 0)) (ps' : List Grade) (Δ' : Scope)
+          (as' : InstanceArgs 0 [] Δ'),
+          Computesι sig ι t (.ctor D qs' ls' ps' as' con.name ts.terms)) ∧
+        sig.constructorCase D con.name = some i ∧ H[a]? = some (.ctor i bs) ∧
+        EqSubst sig ι (Context.empty.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+          ts.toSubst ts.toSubst ∧
+        RunsAsArgs sig ι P H (Parameter.grades (con.params (.ofLists qs ps hq hp))) ts bs
+          (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) := by
+  obtain ⟨T', hT', hn, con, hc, ts, ts₂, ⟨qs', ls', ps', Δ', as', hct⟩,
+    ⟨qs₂, ls₂, ps₂, Δ₂, as₂, hct₂⟩, hts⟩ := ValidEqTerm₀.ctor_inv h hq hl hp hs hnr htv
+  have he : ts.terms = ts₂.terms := by
+    have e := Computesι.det hd hct hct₂
+    injection e
+  have e₀ := Args.terms_inj he
+  subst e₀
+  have hw : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
+    ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨v, hcv, hor⟩ := ht
+  cases Computesι.det hd hw hcv
+  rcases hor with ⟨k, b, hk⟩ | ⟨R, hR, w, htw, hrel⟩
+  · cases levelRel_prop_iff.1 hk with
+    | data h' _ _ _ hv' hs' =>
+      obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj hv'
+      subst hD hqs hls hps
+      obtain ⟨rfl, -⟩ := hd.hasDataType_unique h h'
+      exact nomatch hs.symm.trans hs'
+    | codata hc' _ _ _ hv' => exact (hd.inst_data_codata h hc' hv').elim
+  obtain ⟨n, S, hS, rfl⟩ := HasRun.data hd h hq hl hp hR hs
+  cases Computesι.det hd htw hct
+  have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
+      ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
+    fun X Y hXY T hT c hc H =>
+      RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m) (List.prefix_refl H) (hS X T hT c hc)
+        _ _ (hS Y T hT c hc)
+        (fun _ => Option.rel_map (fun D' _ _ => RunRel.computed_mono (hXY D' H)) _)
+  obtain ⟨T'', hT'', hn'', c, hc', i, fs, bs, hIs, hi, ha, hSc⟩ :=
+    DataType.runBlockRel_unfold hmono hrel
+  have e₁ : T'' = T' := List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup h.1))
+    hT'' hT' (hn''.trans hn.symm)
+  subst e₁
+  obtain ⟨-, hcn, rfl⟩ := hIs.inj ⟨_, _, _, _, _, rfl⟩
+  have e₂ : c = con := List.eq_of_nodup_map (hd.constructors_nodup ⟨h.1, hT', hn⟩) hc' hc hcn
+  subst e₂
+  exact ⟨T'', hT', hn, c, hc, ts, i, bs, ⟨_, _, _, _, _, hct⟩, hn ▸ hi, ha, hts,
+    RunsAsArgs.of_runTelRel (hS _ T'' hT' c hc)
+      (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
+      (fun j R hj => by rw [hnr T'' hT' c hc j] at hj; cases hj) _
+      (fun _ _ hl' hgl => (Parameter.grades_of_getElem? hl') ▸ hgl) ts hts bs hSc⟩
+
 -- ADE: none.
 /-- `(c)` at run time, closed: a constructor of a data type of `Σ`, whose type declaration is
 meaningful, applied to arguments of its fields that the meaning relates to themselves, is related at

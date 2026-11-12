@@ -675,6 +675,39 @@ def Term.Packs (sig : Signature) (ι : Interpretation) : Term 0 [] → Terms 0 [
       Computesι sig ι x (.ctor "Pair" qs ls ps as "mk" (.cons t (.cons y .nil))) ∧
         Term.Packs sig ι y ts
 
+/-- A closed term computes to the nested pairs of one list of terms at most, in a signature whose
+names are distinct. -/
+theorem Term.Packs.det (hd : sig.Distinct) :
+    {x : Term 0 []} → {ts us : Terms 0 []} → Term.Packs sig ι x ts → Term.Packs sig ι x us →
+      ts = us
+  | _, .nil, .nil, _, _ => rfl
+  | _, .nil, .cons _ _, h₁, h₂ => by
+    simp only [Term.Packs] at h₁ h₂
+    obtain ⟨_, _, _, _, _, h₁⟩ := h₁
+    obtain ⟨_, _, _, _, _, _, h₂, _⟩ := h₂
+    have e := Computesι.det hd h₁ h₂
+    injection e
+    contradiction
+  | _, .cons _ _, .nil, h₁, h₂ => by
+    simp only [Term.Packs] at h₁ h₂
+    obtain ⟨_, _, _, _, _, _, h₁, _⟩ := h₁
+    obtain ⟨_, _, _, _, _, h₂⟩ := h₂
+    have e := Computesι.det hd h₁ h₂
+    injection e
+    contradiction
+  | _, .cons _ _, .cons _ _, h₁, h₂ => by
+    simp only [Term.Packs] at h₁ h₂
+    obtain ⟨_, _, _, _, _, _, h₁, hp₁⟩ := h₁
+    obtain ⟨_, _, _, _, _, _, h₂, hp₂⟩ := h₂
+    have e := congrArg (fun v : Term 0 [] => match v with
+      | .ctor _ _ _ _ _ _ ts => ts
+      | _ => Terms.nil) (Computesι.det hd h₁ h₂)
+    dsimp only at e
+    obtain ⟨ht, hys⟩ := Terms.cons.inj e
+    obtain ⟨hy, -⟩ := Terms.cons.inj hys
+    subst ht hy
+    rw [Term.Packs.det hd hp₁ hp₂]
+
 -- ADE: none.
 /-- Two equal closed terms of the packing of a closed telescope compute to the nested pairs of
 equal arguments of the telescope: the constructors of the pair and of the unit, which have no
