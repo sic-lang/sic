@@ -190,6 +190,7 @@ modules = [
   "Sic.Core.RunTime.Relation",
   "Sic.Core.RunTime.Rules",
   "Sic.Core.RunTime.Skeleton",
+  "Sic.Core.RunTime.Substitution",
   "Sic.Core.RunTime.Subsumption",
 ]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
