@@ -6,14 +6,19 @@ public import Sic.Core.Erasure
 # Evaluation
 
 The evaluation of annex 17 of RFC 36, which runs the target language of the erasure by the calling
-convention of Sic: `P; H; E ⊢ M ⇓ a; H'` evaluates the term `M` of the target language, in the
-environment `E` of the addresses of its variables and the heap `H`, to the address `a` of its value
-in the heap `H'`, the constants being those of the program `P`, the erasure of a signature.
+convention of Sic: `P; H; E ⊢ M ⇓ a; H'; R` evaluates the term `M` of the target language, in the
+environment `E` of the addresses of the cells of its variables and the heap `H`, to the address `a`
+of its value in the heap `H'`, reading the cells `R`, the constants being those of the program `P`,
+the erasure of a signature.
 
 The convention is the call by value, everywhere: the fields of a constructor, the arguments of an
 observation, the entries of the state of a corecursor and the recursive results of a branch of a
 recursor are evaluated before they are bound, so that a variable is bound to the address of a value,
 and an access to a variable reads it, without computing anything.
+Each binding allocates a cell for each of its variables, `bind_π(ℓ)`, which holds the address `ℓ` of
+its value and the multiplicity `π` of its binder, and an access to the variable reads its cell, which
+the evaluation records, so that the cells read by a run count the uses at run time of each binding,
+while the heap stays immutable.
 The values are `↯`, the constructors applied to the addresses of their fields, and the closures of
 the corecursors, which hold their environment, their branches and the addresses of their state: a
 corecursor computes nothing until it is observed, and each observation runs the branch of its
@@ -36,7 +41,8 @@ the prelude, each the case `0` of its block, or into the term already built that
 
 [Eriksson, Abel and Danielsson](https://doi.org/10.1145/3828677) run a machine with a heap, an
 environment and a stack, by the call by name, to prove the resource correctness of their usage;
-the evaluation here is by value, without a stack, and counts nothing yet.
+the evaluation here is by value, without a stack, and records the reads of the cells instead of
+updating the grades of the heap.
 -/
 
 @[expose] public section
@@ -47,9 +53,9 @@ open Sic.Grading Sic.Math
 
 -- ADE: none.
 /-- A value at run time: `↯`, the constructor of the case `i` of its block applied to the addresses
-of its fields, or the closure of a corecursor, with the addresses `E` of the `n` variables of its
-scope, its branches `P̄` and the addresses of its state; the cases and the addresses are counted
-from `0`, while the RFC counts them from `1`.
+of its fields, the closure of a corecursor, with the addresses `E` of the cells of the `n` variables
+of its scope, its branches `P̄` and the addresses of its state, or the cell of a variable; the cases
+and the addresses are counted from `0`, while the RFC counts them from `1`.
 RFC: `\mathsf{syntax}_V` -/
 inductive Value where
   /-- `↯`. -/
@@ -58,9 +64,28 @@ inductive Value where
   | ctor (i : Nat) (as : List Nat)
   /-- `⟨E; P̄; ℓ̄⟩`. -/
   | corec (n : Nat) (E : List Nat) (Ps : TargetCorecBranches n) (as : List Nat)
+  /-- `bind_π(ℓ)`: the cell of a variable bound to the address `ℓ` by a binder of multiplicity
+  `π`. -/
+  | cell (π : Multiplicity) (a : Nat)
 
 /-- `H`: the heap, the value at each address, the first one at `0`. -/
 abbrev Heap : Type := List Value
+
+-- ADE: none.
+/-- `(H, bind_π̄(ℓ̄))`: the heap `H` followed by a cell for each address of `ℓ̄`, of the multiplicity
+at its position in `π̄`, which a binder allocates for its variables, at the addresses from `|H|`.
+RFC: `\mathsf{bind}_H` -/
+def Heap.bind (H : Heap) (πs : List Multiplicity) (as : List Nat) : Heap :=
+  H ++ List.zipWith Value.cell πs as
+
+-- ADE: none.
+/-- `H ⊢ E ↦ ℓ̄`: the addresses `E` are cells of the heap `H` that bind the addresses `ℓ̄`, one by
+one.
+RFC: `\mapsto_H` -/
+def Heap.Binds (H : Heap) : List Nat → List Nat → Prop
+  | [], [] => True
+  | c :: E, a :: as => (∃ π, H[c]? = some (.cell π a)) ∧ Heap.Binds H E as
+  | _, _ => False
 
 /-- A program of the target language: the body of each constant at each instance of its qualities
 and of its grades, a closed term, when the program defines it. -/
@@ -150,106 +175,116 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
 mutual
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ M ⇓ a; H'`: the term `M` of the target language evaluates, in the environment `E`
-of the addresses of its variables, the last one first, and the heap `H`, to the address `a` of its
-value in the heap `H'`. -/
-inductive Eval (P : Program) : {n : Nat} → Heap → List Nat → Target n → Nat → Heap → Prop where
-  /-- A variable is the address that the environment gives it.
+/-- `𝒫; H; E ⊢ M ⇓ a; H'; R`: the term `M` of the target language evaluates, in the environment `E`
+of the addresses of the cells of its variables, the last one first, and the heap `H`, to the address
+`a` of its value in the heap `H'`, reading the cells `R`, in order, one for each access to a
+variable. -/
+inductive Eval (P : Program) : {n : Nat} → Heap → List Nat → Target n → Nat → Heap → List Nat →
+    Prop where
+  /-- A variable reads its cell, which gives the address of its value.
   RFC: `\mathsf{eval}_x` -/
-  | var {n : Nat} {H : Heap} {E : List Nat} {x : Fin n} {a : Nat} (h : E[(x : Nat)]? = some a) :
-      Eval P H E (.var x) a H
+  | var {n : Nat} {H : Heap} {E : List Nat} {x : Fin n} {c : Nat} {π : Multiplicity} {a : Nat}
+      (h : E[(x : Nat)]? = some c) (hc : H[c]? = some (.cell π a)) : Eval P H E (.var x) a H [c]
   /-- A constant evaluates its body in the program, a closed term.
   RFC: `\mathsf{eval}_f` -/
   | const {n : Nat} {H H' : Heap} {E : List Nat} {f : Name} {qs : List Quality} {ps : List Grade}
-      {M : Target 0} {a : Nat} (h : P f qs ps = some M) (hM : Eval P H [] M a H') :
-      Eval P (n := n) H E (.const f qs ps) a H'
+      {M : Target 0} {a : Nat} {R : List Nat} (h : P f qs ps = some M) (hM : Eval P H [] M a H' R) :
+      Eval P (n := n) H E (.const f qs ps) a H' R
   /-- `↯` allocates itself.
   RFC: `\mathsf{eval}_{\text{↯}}` -/
   | erased {n : Nat} {H : Heap} {E : List Nat} :
-      Eval P (n := n) H E .erased H.length (H ++ [.erased])
+      Eval P (n := n) H E .erased H.length (H ++ [.erased]) []
   /-- A constructor evaluates its fields, in order, and allocates itself with their addresses.
   RFC: `\mathsf{eval}_c` -/
   | ctor {n : Nat} {H H' : Heap} {E : List Nat} {i : Nat} {Ms : Targets n} {as : List Nat}
-      (hs : EvalAll P H E Ms as H') : Eval P H E (.ctor i Ms) H'.length (H' ++ [.ctor i as])
+      {R : List Nat} (hs : EvalAll P H E Ms as H' R) :
+      Eval P H E (.ctor i Ms) H'.length (H' ++ [.ctor i as]) R
   /-- A recursor evaluates its term, then eliminates its value.
   RFC: `\mathsf{eval}_{\mathsf{rec}}` -/
   | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n} {Ns : TargetBranches n}
-      {a b : Nat} (h : Eval P H₁ E M a H₂) (hr : EvalRec P H₂ E Ns a b H₃) :
-      Eval P H₁ E (.recursor M Ns) b H₃
+      {a b : Nat} {R₁ R₂ : List Nat} (h : Eval P H₁ E M a H₂ R₁) (hr : EvalRec P H₂ E Ns a b H₃ R₂) :
+      Eval P H₁ E (.recursor M Ns) b H₃ (R₁ ++ R₂)
   /-- An observation evaluates its term, then its arguments, in order, then observes the value of
   its term.
   RFC: `\mathsf{eval}_d` -/
   | obs {n : Nat} {H₁ H₂ H₃ H₄ : Heap} {E : List Nat} {M : Target n} {i : Nat} {Ms : Targets n}
-      {a b : Nat} {bs : List Nat} (h : Eval P H₁ E M a H₂) (hs : EvalAll P H₂ E Ms bs H₃)
-      (ho : EvalObs P H₃ a i bs b H₄) : Eval P H₁ E (.obs M i Ms) b H₄
+      {a b : Nat} {bs : List Nat} {R₁ R₂ R₃ : List Nat} (h : Eval P H₁ E M a H₂ R₁)
+      (hs : EvalAll P H₂ E Ms bs H₃ R₂) (ho : EvalObs P H₃ a i bs b H₄ R₃) :
+      Eval P H₁ E (.obs M i Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
   /-- A corecursor evaluates its state, in order, and allocates its closure.
   RFC: `\mathsf{eval}_{\mathsf{corec}}` -/
   | corec {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n} {Ps : TargetCorecBranches n}
-      {as : List Nat} (hs : EvalAll P H E Ms as H') :
-      Eval P H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps as])
+      {as : List Nat} {R : List Nat} (hs : EvalAll P H E Ms as H' R) :
+      Eval P H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps as]) R
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ M̄ ⇓ ā; H'`: the terms evaluate, the first one first, to the addresses `ā`. -/
+/-- `𝒫; H; E ⊢ M̄ ⇓ ā; H'; R`: the terms evaluate, the first one first, to the addresses `ā`. -/
 inductive EvalAll (P : Program) : {n : Nat} → Heap → List Nat → Targets n → List Nat → Heap →
-    Prop where
+    List Nat → Prop where
   /-- No term.
   RFC: `\mathsf{eval}_{\bar M}.\varepsilon` -/
-  | nil {n : Nat} {H : Heap} {E : List Nat} : EvalAll P (n := n) H E .nil [] H
+  | nil {n : Nat} {H : Heap} {E : List Nat} : EvalAll P (n := n) H E .nil [] H []
   /-- The first term, then the others.
   RFC: `\mathsf{eval}_{\bar M}.{,}` -/
   | cons {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n} {Ms : Targets n} {a : Nat}
-      {as : List Nat} (h : Eval P H₁ E M a H₂) (hs : EvalAll P H₂ E Ms as H₃) :
-      EvalAll P H₁ E (.cons M Ms) (a :: as) H₃
+      {as : List Nat} {R₁ R₂ : List Nat} (h : Eval P H₁ E M a H₂ R₁)
+      (hs : EvalAll P H₂ E Ms as H₃ R₂) : EvalAll P H₁ E (.cons M Ms) (a :: as) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ rec a with N̄ ⇓ b; H'`: the recursor with the branches `N̄`, in the environment `E`,
-eliminates the value at the address `a`, a constructor: the branch of its case evaluates, with its
-fields and its recursive results, each the recursor on its field, or `↯` when it is erased. -/
+/-- `𝒫; H; E ⊢ rec a with N̄ ⇓ b; H'; R`: the recursor with the branches `N̄`, in the environment
+`E`, eliminates the value at the address `a`, a constructor: the branch of its case evaluates, with
+cells for its fields and its recursive results, each the recursor on its field, or `↯` when it is
+erased, at the multiplicities of its binders. -/
 inductive EvalRec (P : Program) : {n : Nat} → Heap → List Nat → TargetBranches n → Nat → Nat →
-    Heap → Prop where
+    Heap → List Nat → Prop where
   /-- RFC: `\iota_\Downarrow` -/
   | iota {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {Ns : TargetBranches n} {a v : Nat} {i : Nat}
       {as : List Nat} {a' b : Nat} {πs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity}
-      {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat}
+      {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat} {R₁ R₂ : List Nat}
       (h : H₁[a]? = some (.ctor i as)) (hN : Ns.get i = some ⟨a', b, πs, πs', ks, N⟩)
-      (ha : as.length = a') (hr : EvalResults P H₁ E Ns as (List.ofFn ks) rs H₂)
-      (hv : Eval P H₂ (rs.reverse ++ as.reverse ++ E) N v H₃) : EvalRec P H₁ E Ns a v H₃
+      (ha : as.length = a') (hr : EvalResults P H₁ E Ns as (List.ofFn ks) rs H₂ R₁)
+      (hv : Eval P (H₂.bind (List.ofFn πs ++ List.ofFn πs') (as ++ rs))
+        ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
+      EvalRec P H₁ E Ns a v H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ rec ā with N̄ ← k̄ ⇓ b̄; H'`: the recursive results of a branch, in order, each the
+/-- `𝒫; H; E ⊢ rec ā with N̄ ← k̄ ⇓ b̄; H'; R`: the recursive results of a branch, in order, each the
 recursor on the field at its position in `ā`, or `↯` when it is erased. -/
 inductive EvalResults (P : Program) : {n : Nat} → Heap → List Nat → TargetBranches n →
-    List Nat → List (Option Nat) → List Nat → Heap → Prop where
+    List Nat → List (Option Nat) → List Nat → Heap → List Nat → Prop where
   /-- No result.
   RFC: `\mathsf{results}_\Downarrow.\varepsilon` -/
   | nil {n : Nat} {H : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat} :
-      EvalResults P H E Ns as [] [] H
+      EvalResults P H E Ns as [] [] H []
   /-- An erased result, `↯`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\text{↯}` -/
   | erased {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat}
-      {ks : List (Option Nat)} {rs : List Nat}
-      (hs : EvalResults P (H₁ ++ [.erased]) E Ns as ks rs H₂) :
-      EvalResults P H₁ E Ns as (none :: ks) (H₁.length :: rs) H₂
+      {ks : List (Option Nat)} {rs : List Nat} {R : List Nat}
+      (hs : EvalResults P (H₁ ++ [.erased]) E Ns as ks rs H₂ R) :
+      EvalResults P H₁ E Ns as (none :: ks) (H₁.length :: rs) H₂ R
   /-- The recursor on the field at the position `j`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\mathsf{rec}` -/
   | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat}
-      {j a r : Nat} {ks : List (Option Nat)} {rs : List Nat} (hj : as[j]? = some a)
-      (h : EvalRec P H₁ E Ns a r H₂) (hs : EvalResults P H₂ E Ns as ks rs H₃) :
-      EvalResults P H₁ E Ns as (some j :: ks) (r :: rs) H₃
+      {j a r : Nat} {ks : List (Option Nat)} {rs : List Nat} {R₁ R₂ : List Nat}
+      (hj : as[j]? = some a) (h : EvalRec P H₁ E Ns a r H₂ R₁)
+      (hs : EvalResults P H₂ E Ns as ks rs H₃ R₂) :
+      EvalResults P H₁ E Ns as (some j :: ks) (r :: rs) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H ⊢ a.dᵢ(b̄) ⇓ c; H'`: the observation by the destructor of the case `i`, applied to the
+/-- `𝒫; H ⊢ a.dᵢ(b̄) ⇓ c; H'; R`: the observation by the destructor of the case `i`, applied to the
 arguments at the addresses `b̄`, of the value at the address `a`, a closure: the branch of the case
-evaluates in the environment of the closure, with its state and the arguments, and its value is
-resumed when the branch resumes a state. -/
-inductive EvalObs (P : Program) : Heap → Nat → Nat → List Nat → Nat → Heap → Prop where
+evaluates in the environment of the closure, with cells for its state and the arguments, at the
+multiplicities of its binders, and its value is resumed when the branch resumes a state. -/
+inductive EvalObs (P : Program) : Heap → Nat → Nat → List Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\beta_\Downarrow` -/
   | beta {H₁ H₂ H₃ : Heap} {a i : Nat} {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat}
       {Ps : TargetCorecBranches n} {ss : List Nat} {o : Resumption} {b c : Nat}
       {πs : Fin b → Multiplicity} {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))}
-      (h : H₁[a]? = some (.corec n E Ps ss)) (hP : Ps.get i = some (o, ⟨b, c, πs, πs', N⟩)) (hb : ss.length = b) (hc : bs.length = c)
-      (hw : Eval P H₁ (bs.reverse ++ ss.reverse ++ E) N w H₂)
-      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P H₁ a i bs v H₃
+      {R : List Nat} (h : H₁[a]? = some (.corec n E Ps ss))
+      (hP : Ps.get i = some (o, ⟨b, c, πs, πs', N⟩)) (hb : ss.length = b) (hc : bs.length = c)
+      (hw : Eval P (H₁.bind (List.ofFn πs ++ List.ofFn πs') (ss ++ bs))
+        ((List.range' H₁.length (ss ++ bs).length).reverse ++ E) N w H₂ R)
+      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P H₁ a i bs v H₃ R
 
 end
 
@@ -291,95 +326,104 @@ theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : Targe
 mutual
 
 -- ADE: none.
-/-- The evaluation is deterministic: a term evaluates to one address, in one heap.
+/-- The evaluation is deterministic: a term evaluates to one address, in one heap, reading the same
+cells.
 RFC: `\mathsf{det}_\Downarrow` -/
 theorem Eval.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat} {M : Target n}
-    {a₁ a₂ : Nat} (h₁ : Eval P H E M a₁ H₁) (h₂ : Eval P H E M a₂ H₂) :
-    a₁ = a₂ ∧ H₁ = H₂ :=
+    {a₁ a₂ : Nat} {R₁ R₂ : List Nat} (h₁ : Eval P H E M a₁ H₁ R₁) (h₂ : Eval P H E M a₂ H₂ R₂) :
+    a₁ = a₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .var h, .var h' => by
+  | .var h hc, .var h' hc' => by
     rw [h] at h'
     cases h'
-    exact ⟨rfl, rfl⟩
+    rw [hc] at hc'
+    cases hc'
+    exact ⟨rfl, rfl, rfl⟩
   | .const h hM, .const h' hM' => by
     rw [h] at h'
     cases h'
     exact Eval.det hM hM'
-  | .erased, .erased => ⟨rfl, rfl⟩
+  | .erased, .erased => ⟨rfl, rfl, rfl⟩
   | .ctor hs, .ctor hs' => by
-    obtain ⟨rfl, rfl⟩ := EvalAll.det hs hs'
-    exact ⟨rfl, rfl⟩
+    obtain ⟨rfl, rfl, rfl⟩ := EvalAll.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
   | .recursor h hr, .recursor h' hr' => by
-    obtain ⟨rfl, rfl⟩ := Eval.det h h'
-    exact EvalRec.det hr hr'
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det h h'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalRec.det hr hr'
+    exact ⟨rfl, rfl, rfl⟩
   | .obs h hs ho, .obs h' hs' ho' => by
-    obtain ⟨rfl, rfl⟩ := Eval.det h h'
-    obtain ⟨rfl, rfl⟩ := EvalAll.det hs hs'
-    exact EvalObs.det ho ho'
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det h h'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalAll.det hs hs'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalObs.det ho ho'
+    exact ⟨rfl, rfl, rfl⟩
   | .corec hs, .corec hs' => by
-    obtain ⟨rfl, rfl⟩ := EvalAll.det hs hs'
-    exact ⟨rfl, rfl⟩
+    obtain ⟨rfl, rfl, rfl⟩ := EvalAll.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
 -- ADE: none.
 /-- The evaluation of terms is deterministic. -/
 theorem EvalAll.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat} {Ms : Targets n}
-    {as₁ as₂ : List Nat} (h₁ : EvalAll P H E Ms as₁ H₁) (h₂ : EvalAll P H E Ms as₂ H₂) :
-    as₁ = as₂ ∧ H₁ = H₂ :=
+    {as₁ as₂ : List Nat} {R₁ R₂ : List Nat} (h₁ : EvalAll P H E Ms as₁ H₁ R₁)
+    (h₂ : EvalAll P H E Ms as₂ H₂ R₂) : as₁ = as₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .nil, .nil => ⟨rfl, rfl⟩
+  | .nil, .nil => ⟨rfl, rfl, rfl⟩
   | .cons h hs, .cons h' hs' => by
-    obtain ⟨rfl, rfl⟩ := Eval.det h h'
-    obtain ⟨rfl, rfl⟩ := EvalAll.det hs hs'
-    exact ⟨rfl, rfl⟩
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det h h'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalAll.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
 -- ADE: none.
 /-- The elimination of a value by a recursor is deterministic. -/
 theorem EvalRec.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
-    {Ns : TargetBranches n} {a v₁ v₂ : Nat}
-    (h₁ : EvalRec P H E Ns a v₁ H₁) (h₂ : EvalRec P H E Ns a v₂ H₂) : v₁ = v₂ ∧ H₁ = H₂ :=
+    {Ns : TargetBranches n} {a v₁ v₂ : Nat} {R₁ R₂ : List Nat}
+    (h₁ : EvalRec P H E Ns a v₁ H₁ R₁) (h₂ : EvalRec P H E Ns a v₂ H₂ R₂) :
+    v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .iota h hN _ hr hv, .iota h' hN' _ hr' hv' => by
     rw [h] at h'
     cases h'
     rw [hN] at hN'
     cases hN'
-    obtain ⟨rfl, rfl⟩ := EvalResults.det hr hr'
-    exact Eval.det hv hv'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalResults.det hr hr'
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det hv hv'
+    exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
 -- ADE: none.
 /-- The evaluation of the recursive results of a branch is deterministic. -/
 theorem EvalResults.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {rs₁ rs₂ : List Nat}
-    (h₁ : EvalResults P H E Ns as ks rs₁ H₁) (h₂ : EvalResults P H E Ns as ks rs₂ H₂) :
-    rs₁ = rs₂ ∧ H₁ = H₂ :=
+    {R₁ R₂ : List Nat} (h₁ : EvalResults P H E Ns as ks rs₁ H₁ R₁)
+    (h₂ : EvalResults P H E Ns as ks rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .nil, .nil => ⟨rfl, rfl⟩
+  | .nil, .nil => ⟨rfl, rfl, rfl⟩
   | .erased hs, .erased hs' => by
-    obtain ⟨rfl, rfl⟩ := EvalResults.det hs hs'
-    exact ⟨rfl, rfl⟩
+    obtain ⟨rfl, rfl, rfl⟩ := EvalResults.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
   | .recursor hj h hs, .recursor hj' h' hs' => by
     rw [hj] at hj'
     cases hj'
-    obtain ⟨rfl, rfl⟩ := EvalRec.det h h'
-    obtain ⟨rfl, rfl⟩ := EvalResults.det hs hs'
-    exact ⟨rfl, rfl⟩
+    obtain ⟨rfl, rfl, rfl⟩ := EvalRec.det h h'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalResults.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
 -- ADE: none.
 /-- The observation of a value is deterministic. -/
 theorem EvalObs.det {P : Program} {H H₁ H₂ : Heap} {a i : Nat} {bs : List Nat} {v₁ v₂ : Nat}
-    (h₁ : EvalObs P H a i bs v₁ H₁) (h₂ : EvalObs P H a i bs v₂ H₂) : v₁ = v₂ ∧ H₁ = H₂ :=
+    {R₁ R₂ : List Nat} (h₁ : EvalObs P H a i bs v₁ H₁ R₁) (h₂ : EvalObs P H a i bs v₂ H₂ R₂) :
+    v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .beta h hP _ _ hw hr, .beta h' hP' _ _ hw' hr' => by
     rw [h] at h'
     cases h'
     rw [hP] at hP'
     cases hP'
-    obtain ⟨rfl, rfl⟩ := Eval.det hw hw'
-    exact EvalResume.det hr hr'
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det hw hw'
+    obtain ⟨rfl, rfl⟩ := EvalResume.det hr hr'
+    exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
 end

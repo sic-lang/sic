@@ -18,6 +18,8 @@ ADE run their target language by reduction, without heap, so that they have no e
 
 namespace Sic.Core
 
+open Sic.Grading
+
 -- ADE: none.
 /-- `H ⊑ H'`: the heap `H'` extends the heap `H`, with the same value at each address of `H`, as
 the list `H` is a prefix of `H'`.
@@ -44,8 +46,8 @@ mutual
 /-- The evaluation extends the heap: it allocates new values and changes none.
 RFC: `\mathsf{ext}_\Downarrow` -/
 theorem Eval.extends {P : Program} {n : Nat} {H H' : Heap} {E : List Nat} {M : Target n}
-    {a : Nat} : Eval P H E M a H' → H.Extends H'
-  | .var _ => List.prefix_refl _
+    {a : Nat} {R : List Nat} : Eval P H E M a H' R → H.Extends H'
+  | .var _ _ => List.prefix_refl _
   | .const _ hM => hM.extends
   | .erased => List.prefix_append _ _
   | .ctor hs => hs.extends.trans (List.prefix_append _ _)
@@ -55,28 +57,84 @@ theorem Eval.extends {P : Program} {n : Nat} {H H' : Heap} {E : List Nat} {M : T
 
 /-- The evaluation of terms extends the heap. -/
 theorem EvalAll.extends {P : Program} {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n}
-    {as : List Nat} : EvalAll P H E Ms as H' → H.Extends H'
+    {as : List Nat} {R : List Nat} : EvalAll P H E Ms as H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .cons h hs => h.extends.trans hs.extends
 
 /-- The elimination of a value by a recursor extends the heap. -/
 theorem EvalRec.extends {P : Program} {n : Nat} {H H' : Heap} {E : List Nat}
-    {Ns : TargetBranches n} {a v : Nat} : EvalRec P H E Ns a v H' → H.Extends H'
-  | .iota _ _ _ hr hv => hr.extends.trans hv.extends
+    {Ns : TargetBranches n} {a v : Nat} {R : List Nat} : EvalRec P H E Ns a v H' R → H.Extends H'
+  | .iota _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
 
 /-- The evaluation of the recursive results of a branch extends the heap. -/
 theorem EvalResults.extends {P : Program} {n : Nat} {H H' : Heap} {E : List Nat}
-    {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {rs : List Nat} :
-    EvalResults P H E Ns as ks rs H' → H.Extends H'
+    {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {rs : List Nat}
+    {R : List Nat} : EvalResults P H E Ns as ks rs H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .erased hs => (List.prefix_append _ _).trans hs.extends
   | .recursor _ h hs => h.extends.trans hs.extends
 
 /-- The observation of a value extends the heap. -/
-theorem EvalObs.extends {P : Program} {H H' : Heap} {a i : Nat} {bs : List Nat} {v : Nat} :
-    EvalObs P H a i bs v H' → H.Extends H'
-  | .beta _ _ _ _ hw hr => hw.extends.trans hr.extends
+theorem EvalObs.extends {P : Program} {H H' : Heap} {a i : Nat} {bs : List Nat} {v : Nat}
+    {R : List Nat} : EvalObs P H a i bs v H' R → H.Extends H'
+  | .beta _ _ _ _ hw hr => (List.prefix_append _ _).trans (hw.extends.trans hr.extends)
 
 end
+
+/-! ## Cells -/
+
+-- ADE: none.
+/-- The cells that bind addresses in a heap bind them in each heap that extends it. -/
+theorem Heap.Binds.mono {H H' : Heap} (hH : H.Extends H') :
+    {E as : List Nat} → H.Binds E as → H'.Binds E as
+  | [], [], _ => trivial
+  | _ :: _, _ :: _, ⟨⟨π, hc⟩, hE⟩ => ⟨⟨π, hH.getElem? hc⟩, Heap.Binds.mono hH hE⟩
+
+-- ADE: none.
+/-- The cell at a position of addresses that bind others binds the address at this position. -/
+theorem Heap.Binds.getElem? {H : Heap} :
+    {E as : List Nat} → H.Binds E as → {i a : Nat} → as[i]? = some a →
+      ∃ c π, E[i]? = some c ∧ H[c]? = some (.cell π a)
+  | _ :: _, _ :: _, ⟨⟨π, hc⟩, _⟩, 0, _, ha => by
+    cases ha
+    exact ⟨_, π, rfl, hc⟩
+  | _ :: _, _ :: _, ⟨_, hE⟩, _ + 1, _, ha => Heap.Binds.getElem? hE ha
+  | [], [], _, _, _, ha => nomatch ha
+
+-- ADE: none.
+/-- Cells that bind two lists of addresses bind the two lists joined. -/
+theorem Heap.Binds.append {H : Heap} :
+    {E₁ as₁ : List Nat} → {E₂ as₂ : List Nat} → H.Binds E₁ as₁ → H.Binds E₂ as₂ →
+      H.Binds (E₁ ++ E₂) (as₁ ++ as₂)
+  | [], [], _, _, _, h => h
+  | _ :: _, _ :: _, _, _, ⟨hc, hE⟩, h => ⟨hc, Heap.Binds.append hE h⟩
+
+-- ADE: none.
+/-- Cells that bind addresses bind them in the reverse order when they are reversed. -/
+theorem Heap.Binds.reverse {H : Heap} :
+    {E as : List Nat} → H.Binds E as → H.Binds E.reverse as.reverse
+  | [], [], _ => trivial
+  | _ :: _, _ :: _, ⟨hc, hE⟩ => by
+    rw [List.reverse_cons, List.reverse_cons]
+    exact Heap.Binds.append (Heap.Binds.reverse hE) ⟨hc, trivial⟩
+
+-- ADE: none.
+/-- The cells that a binder allocates, at the addresses from `|H|`, bind the addresses of its
+variables, given as many multiplicities. -/
+theorem Heap.binds_bind (H : Heap) {πs : List Multiplicity} {as : List Nat}
+    (h : πs.length = as.length) :
+    (H.bind πs as).Binds (List.range' H.length as.length) as := by
+  induction as generalizing H πs with
+  | nil => trivial
+  | cons a as ih =>
+    cases πs with
+    | nil => cases h
+    | cons π πs =>
+      refine ⟨⟨π, ?_⟩, ?_⟩
+      · simp [Heap.bind]
+      · have ih' := ih (H ++ [.cell π a]) (πs := πs) (Nat.succ.inj h)
+        simp only [Heap.bind, List.append_assoc, List.length_append, List.length_cons,
+          List.length_nil] at ih' ⊢
+        simpa [List.range'_succ] using ih'
 
 end Sic.Core

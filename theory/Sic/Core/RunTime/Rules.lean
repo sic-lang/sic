@@ -60,10 +60,10 @@ theorem RunValid.erased {sig : Signature} {ι : Interpretation} {P : Program} {�
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t : Term 0 Γ}
     {κ : Universe 0} (ht : ValidTermΓ sig ι ctx t (.sort κ))
     (he : t.erase sig Mode.oneOne.erased hΓ = .erased) : RunValid sig ι P hΓ ctx γ t (.sort κ) := by
-  intro σ H E hσ _
+  intro σ H E _ hσ _ _
   obtain ⟨-, hcl, -⟩ := ht.2 σ σ hσ
   obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
-  refine ⟨H.length, H ++ [.erased], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
+  refine ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
 
 /-! ## Variables -/
 
@@ -91,15 +91,16 @@ theorem RunsAsSubst.varIn {sig : Signature} {ι : Interpretation} {P : Program} 
 
 -- ADE: `fundamental′`, the case `var`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- `(var)` at run time: the variable `x : A ∈ Γ`, whose grade in `γ` is not in `S^{11ᵐ}`, is valid
-at run time with the grades `γ`: its erasure is the variable, which evaluates to the address that
-the environment gives it, to which its closed term is related. -/
+at run time with the grades `γ`: its erasure is the variable, which reads the cell that the
+environment gives it, whose address its closed term is related to. -/
 theorem RunValid.var {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {x : Var Γ .var}
     {A : Term 0 Γ} (hx : ctx.VarIn x A) (hγ : γ x.toFin ∉ Mode.oneOne.erased) :
     RunValid sig ι P hΓ ctx γ (.var₀ x) A := by
-  intro σ H E _ hE
-  obtain ⟨a, ha, hrun⟩ := hE.varIn hx hγ
-  exact ⟨a, H, .var ha, List.prefix_refl H, hrun⟩
+  intro σ H E V _ hEV hV
+  obtain ⟨a, ha, hrun⟩ := hV.varIn hx hγ
+  obtain ⟨c, π, hc, hcell⟩ := hEV.getElem? ha
+  exact ⟨a, H, [c], .var hc hcell, List.prefix_refl H, hrun⟩
 
 /-! ## Constants -/
 
@@ -112,16 +113,16 @@ theorem RunValid.const {sig : Signature} {ι : Interpretation} {P : Program} {Γ
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} {γ₀ : GradeVector 0}
     {A : Term 0 []} (h : RunValid sig ι P .nil .empty γ₀ (.const f qs ls ps) A) :
     RunValid sig ι P hΓ ctx γ (.const f qs ls ps) A.weakenClosed := by
-  intro σ H E _ _
+  intro σ H E _ _ _ _
   let σ₀ : Subst 0 [] [] := fun x => nomatch x
   have hσ₀ : ∀ t : Term 0 [], t.subst σ₀ = t := fun t => by
     have h := Term.subst_weakenClosed σ₀ t
     rwa [Term.weakenClosed_nil] at h
-  obtain ⟨a, H', hev, hH, ht⟩ := h σ₀ H [] (by rw [EqSubst]; trivial) rfl
+  obtain ⟨a, H', R, hev, hH, ht⟩ := h σ₀ H [] [] (by rw [EqSubst]; trivial) trivial rfl
   rw [hσ₀, hσ₀] at ht
   cases hev with
   | const hP hM =>
-    refine ⟨a, H', .const hP hM, hH, ?_⟩
+    refine ⟨a, H', R, .const hP hM, hH, ?_⟩
     rw [Term.subst_weakenClosed]
     exact ht
 
@@ -136,7 +137,7 @@ valid at run time with the grades that they use, which the grades of the argumen
 theorem RunValidArgs.nil {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} :
     RunValidArgs sig ι P hΓ ctx 𝟘ᶜ (.nil : Args 0 Γ []) .nil :=
-  fun _ H _ _ _ => ⟨[], H, .nil, List.prefix_refl H, trivial⟩
+  fun _ H _ _ _ _ _ => ⟨[], H, [], .nil, List.prefix_refl H, trivial⟩
 
 -- ADE: none.
 /-- `(tel_,▶)` at run time: the arguments `t, t̄` of the telescope `x : A ▶ p, Θ` are valid at run
@@ -151,26 +152,27 @@ theorem RunValidArgs.cons {sig : Signature} {ι : Interpretation} {P : Program} 
     (ht : p.usage ∉ Mode.oneOne.erased → RunValid sig ι P hΓ ctx δ t A)
     (hts : RunValidArgs sig ι P hΓ ctx δ' ts (Θ.subst₀ (Subst₀.single t))) :
     RunValidArgs sig ι P hΓ ctx ((p.usage ·ᶜ δ) +ᶜ δ') (.cons t ts) (.cons q p A Θ) := by
-  intro σ H E hσ hE
+  intro σ H E V hσ hEV hE
   have hS := Mode.erasesUncounted .oneOne
-  have hE' : RunsAsSubst sig ι P H ctx δ' σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+  have hE' : RunsAsSubst sig ι P H ctx δ' σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
   have hΘ := Telescope.subst_subst₀_of (Subst₀.Swaps.single t σ) Θ
   by_cases hp : p.usage ∈ Mode.oneOne.erased
-  · obtain ⟨bs, H', hevs, hH', hruns⟩ := hts σ (H ++ [.erased]) E hσ
-      (hE'.mono hd (List.prefix_append _ _))
-    refine ⟨H.length :: bs, H', ?_, (List.prefix_append _ _).trans hH', fun h => absurd hp h, ?_⟩
-    · show EvalAll P H E (.cons (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _
+  · obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hts σ (H ++ [.erased]) E V hσ
+      (hEV.mono (List.prefix_append _ _)) (hE'.mono hd (List.prefix_append _ _))
+    refine ⟨H.length :: bs, H', [] ++ R, ?_, (List.prefix_append _ _).trans hH',
+      fun h => absurd hp h, ?_⟩
+    · show EvalAll P H E (.cons (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
       rw [ite_eq_left hp]
       exact .cons .erased hevs
     · rw [← hΘ]
       exact hruns
-  · have hδ : RunsAsSubst sig ι P H ctx δ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+  · have hδ : RunsAsSubst sig ι P H ctx δ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
       h (hS.mul _ _ hp (hS.add _ _ h'))) hE
-    obtain ⟨a, H₁, hev, hH₁, hrun⟩ := ht hp σ H E hσ hδ
-    obtain ⟨bs, H', hevs, hH', hruns⟩ := hts σ H₁ E hσ (hE'.mono hd hH₁)
-    refine ⟨a :: bs, H', ?_, hH₁.trans hH', fun _ => hrun.mono hd hH', ?_⟩
-    · show EvalAll P H E (.cons (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _
+    obtain ⟨a, H₁, R₁, hev, hH₁, hrun⟩ := ht hp σ H E V hσ hEV hδ
+    obtain ⟨bs, H', R₂, hevs, hH', hruns⟩ := hts σ H₁ E V hσ (hEV.mono hH₁) (hE'.mono hd hH₁)
+    refine ⟨a :: bs, H', R₁ ++ R₂, ?_, hH₁.trans hH', fun _ => hrun.mono hd hH', ?_⟩
+    · show EvalAll P H E (.cons (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
       rw [ite_eq_right hp]
       exact .cons hev hevs
     · rw [← hΘ]
@@ -185,9 +187,9 @@ theorem RunValid.conv {sig : Signature} {ι : Interpretation} {P : Program} {Γ 
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A B : Term 0 Γ}
     (ht : ValidTermΓ sig ι ctx t A) (hAB : ValidEqTypeΓ sig ι ctx A B)
     (h : RunValid sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx γ t B := by
-  intro σ H E hσ hE
-  obtain ⟨a, H', hev, hH, hrun⟩ := h σ H E hσ hE
+  intro σ H E V hσ hEV hE
+  obtain ⟨a, H', R, hev, hH, hrun⟩ := h σ H E V hσ hEV hE
   obtain ⟨hd, hAB'⟩ := hAB.2 σ σ hσ
-  exact ⟨a, H', hev, hH, hrun.conv hd (ht.2 σ σ hσ).2 hAB'⟩
+  exact ⟨a, H', R, hev, hH, hrun.conv hd (ht.2 σ σ hσ).2 hAB'⟩
 
 end Sic.Core

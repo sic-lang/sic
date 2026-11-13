@@ -132,13 +132,16 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         have hf := fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hent hrest
           (ht (.ofLists qs ps hq hp)) (hm ▸ hus (.ofLists qs ps hq hp))
           fun i => (ls.getFin hl i).closedValue
-        intro σ H E hσ hE
-        obtain ⟨a, H', hev, hH, hr⟩ := hf σ H E hσ hE
-        cases (hE : E = [])
+        intro σ H E V hσ hEV hE
+        obtain ⟨a, H', R, hev, hH, hr⟩ := hf σ H E V hσ hEV hE
+        cases (hE : V = [])
+        cases E with
+        | cons => exact hEV.elim
+        | nil =>
         have hσ₀ : ∀ t : Term 0 [], t.subst σ = t := fun t => by
           have h := Term.subst_weakenClosed σ t
           rwa [Term.weakenClosed_nil] at h
-        refine ⟨a, H', .const (hP.constantDefinition hd (hs.subset hc) hq hp) ?_, hH, ?_⟩
+        refine ⟨a, H', R, .const (hP.constantDefinition hd (hs.subset hc) hq hp) ?_, hH, ?_⟩
         · rw [Term.atLevels, Term.erase_substLevels] at hev
           exact hev
         · rw [hσ₀, hσ₀] at hr

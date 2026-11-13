@@ -115,11 +115,11 @@ theorem RunAbstractionRel.congr {P : Program} {ps : List Parameter} {i : Nat}
     RunAbstractionRel P i SΘ F f H a ↔ RunAbstractionRel P i SΘ' F' f H a :=
   ⟨fun h H' hH ts bs hts =>
       have hts' := (hS H' ts.terms bs).2 hts
-      have ⟨w, H'', he, hr⟩ := h H' hH ts bs hts'
-      ⟨w, H'', he, (hF H' ts bs hts' H'' _ w).1 hr⟩,
+      have ⟨w, H'', R, he, hr⟩ := h H' hH ts bs hts'
+      ⟨w, H'', R, he, (hF H' ts bs hts' H'' _ w).1 hr⟩,
     fun h H' hH ts bs hts =>
-      have ⟨w, H'', he, hr⟩ := h H' hH ts bs ((hS H' ts.terms bs).1 hts)
-      ⟨w, H'', he, (hF H' ts bs hts H'' _ w).2 hr⟩⟩
+      have ⟨w, H'', R, he, hr⟩ := h H' hH ts bs ((hS H' ts.terms bs).1 hts)
+      ⟨w, H'', R, he, (hF H' ts bs hts H'' _ w).2 hr⟩⟩
 
 /-! ## A Type Has One Level and One Sort -/
 

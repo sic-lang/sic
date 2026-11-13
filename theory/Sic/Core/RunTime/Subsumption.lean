@@ -59,6 +59,6 @@ RFC: `\mathsf{sub}^{\circledR}` -/
 theorem RunValid.sub {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ δ : GradeVector Γ.length} {t A : Term 0 Γ}
     (hle : δ ≤ᶜ γ) (h : RunValid sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx δ t A :=
-  fun σ H E hσ hE => h σ H E hσ (RunsAsSubst.of_le ctx hle hE)
+  fun σ H E V hσ hEV hV => h σ H E V hσ hEV (RunsAsSubst.of_le ctx hle hV)
 
 end Sic.Core

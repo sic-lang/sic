@@ -142,9 +142,10 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
 mutual
 
 -- ADE: none.
-/-- A skeleton evaluates, in every environment and heap, to a value in a heap that extends it. -/
+/-- A skeleton evaluates, in every environment and heap, to a value in a heap that extends it,
+reading no cell. -/
 theorem Target.IsSkeleton.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsSkeleton)
-    (H : Heap) (E : List Nat) : ∃ a H', Eval P H E M a H' ∧ H.Extends H' :=
+    (H : Heap) (E : List Nat) : ∃ a H', Eval P H E M a H' [] ∧ H.Extends H' :=
   match h with
   | .erased => ⟨_, _, .erased, List.prefix_append _ _⟩
   | .ctor hs =>
@@ -152,9 +153,10 @@ theorem Target.IsSkeleton.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsS
     ⟨_, _, .ctor hM, hH.trans (List.prefix_append _ _)⟩
 
 -- ADE: none.
-/-- Skeletons evaluate, in every environment and heap, to values in a heap that extends it. -/
+/-- Skeletons evaluate, in every environment and heap, to values in a heap that extends it, reading
+no cell. -/
 theorem Targets.IsSkeleton.eval (P : Program) {n : Nat} {Ms : Targets n} (h : Ms.IsSkeleton)
-    (H : Heap) (E : List Nat) : ∃ as H', EvalAll P H E Ms as H' ∧ H.Extends H' :=
+    (H : Heap) (E : List Nat) : ∃ as H', EvalAll P H E Ms as H' [] ∧ H.Extends H' :=
   match h with
   | .nil => ⟨_, _, .nil, List.prefix_refl _⟩
   | .cons hM hs =>

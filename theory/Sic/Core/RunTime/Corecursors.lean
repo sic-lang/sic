@@ -85,7 +85,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => none)
           (Θ.subst (hpos.obsSubst o θ)) RΘ ∧
         ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), RΘ H' ts.terms bs →
-          ∃ w H'', EvalObs P H' a i bs w H'' ∧
+          ∃ w H'' tr, EvalObs P H' a i bs w H'' tr ∧
             RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
               (B.subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))
   | _, _, _, _, _, _, _, .here, _, _, _, hv, _, hN, hR, _, _, hS, _, _, _, ho, hp => by
@@ -98,11 +98,11 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
       | cons hi hΘ hRΘ _ _ hB _ hRv _ _ _ =>
         obtain ⟨-, hrun, -⟩ := ho
         refine ⟨_, _, hi, hRΘ, fun H' hH' ts bs hts => ?_⟩
-        obtain ⟨w, H'', hev, hw⟩ := hrun hp H' hH' ts bs hts
+        obtain ⟨w, H'', tr, hev, hw⟩ := hrun hp H' hH' ts bs hts
         have htt := RunTelRel.fieldsRel hd (fun m _ => levelRel_isPer hd m) hRΘ (fun _ => rfl) _ _
           hΘ (fun _ => rfl) H' ts.terms bs hts
         obtain ⟨v, hv'⟩ := hB ts htt
-        exact ⟨w, H'', hev, (hRv ts htt v hv').runsAs hv' hw⟩
+        exact ⟨w, H'', tr, hev, (hRv ts htt v hv').runsAs hv' hw⟩
     · rename_i D' hr
       obtain ⟨rfl, -⟩ := hv
       obtain ⟨R, hR0, hRr⟩ := hR 0 D' hr
@@ -113,8 +113,8 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         cases hrs
         obtain ⟨hrun, -⟩ := ho
         refine ⟨_, _, hi, hRΘ, fun H' hH' ts bs hts => ?_⟩
-        obtain ⟨w, H'', hev, hw⟩ := hrun hp H' hH' ts bs hts
-        refine ⟨w, H'', hev, ?_⟩
+        obtain ⟨w, H'', tr, hev, hw⟩ := hrun hp H' hH' ts bs hts
+        refine ⟨w, H'', tr, hev, ?_⟩
         rw [Term.subst_append_rename_weakenN]
         exact hRr _ _ _ hw
   | _, _, _, _, _, _, _, .there (ps' := ps') (ψ' := ψ') h, inst, rs, θ, hv, rsR, hN, hR, _, _,
@@ -254,7 +254,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (hbs : RunsAsArgs sig ι P H' (Parameter.grades ps') ts bs
       ((Θ.substLevels (ls.getFin hl)).subst
         (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
-    ∃ i w H'', sig.destructorCase D d = some i ∧ EvalObs P H' a i bs w H'' ∧ H'.Extends H'' ∧
+    ∃ i w H'' tr, sig.destructorCase D d = some i ∧ EvalObs P H' a i bs w H'' tr ∧ H'.Extends H'' ∧
       RunsAs sig ι P H'' (.obs D qs ls ps as t d ts.terms) w
         ((B.substLevels (ls.getFin hl)).subst
           (Subst.append (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst)) := by
@@ -422,8 +422,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (fun m _ => levelRel_run_unique hd m) h₂ _ _ hRΘ
     (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H' ts.terms bs).1 hS'
   -- The observation evaluates to an address to which the observation of the corecursor is related.
-  obtain ⟨w, H'', hev, hw⟩ := hobsR H' hH' ts bs hRΘts
-  refine ⟨i, w, H'', hD ▸ hi, hev, hev.extends, ?_⟩
+  obtain ⟨w, H'', tr, hev, hw⟩ := hobsR H' hH' ts bs hRΘts
+  refine ⟨i, w, H'', tr, hD ▸ hi, hev, hev.extends, ?_⟩
   -- The observation of the term computes as that of the corecursor.
   have hcomp : ∀ w', Computesι sig ι ((o' d ps').subst ts.toSubst) w' ↔
       Computesι sig ι (.obs D qs ls ps as t d ts.terms) w' := by
@@ -479,11 +479,11 @@ theorem RunValid.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx
       (((B.substLevels (ls.getFin hl)).subst
         (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate
           bs) := by
-  intro σ H E hσ hE
+  intro σ H E V hσ hEV hE
   have hS := Mode.erasesUncounted .oneOne
-  have hEγ : RunsAsSubst sig ι P H ctx γ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+  have hEγ : RunsAsSubst sig ι P H ctx γ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS.add _ _ h')) hE
-  have hEδ : RunsAsSubst sig ι P H ctx δ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+  have hEδ : RunsAsSubst sig ι P H ctx δ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
   -- The scope of the destructor, substituted, is that of the observations of the term substituted.
   have hc : ∀ {a} (x : Var Ξ a),
@@ -506,19 +506,19 @@ theorem RunValid.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _ hc),
       Term.instantiate_eq_subst, Term.subst_append]
   -- The term, then the arguments, then the observation.
-  obtain ⟨a, H₁, hev, hH₁, hta⟩ := htr σ H E hσ hEγ
-  obtain ⟨bs', H₂, hevs, hH₂, hruns⟩ := hbr σ H₁ E hσ (hEδ.mono hd hH₁ ctx)
+  obtain ⟨a, H₁, tr₁, hev, hH₁, hta⟩ := htr σ H E V hσ hEV hEγ
+  obtain ⟨bs', H₂, tr₂, hevs, hH₂, hruns⟩ := hbr σ H₁ E V hσ (hEV.mono hH₁) (hEδ.mono hd hH₁ ctx)
   rw [hΘ] at hruns
   have hbsσ := hbs.2 σ σ hσ
   rw [hΘ] at hbsσ
-  obtain ⟨i, w, H₃, hi, hevo, hH₃, hrun⟩ := RunsAs.obs hd h hv hq hl hp hadm (has.2 σ σ hσ) hpos
+  obtain ⟨i, w, H₃, tr₃, hi, hevo, hH₃, hrun⟩ := RunsAs.obs hd h hv hq hl hp hadm (has.2 σ σ hσ) hpos
     hpr hprop (ht.2 σ σ hσ) hta hH₂ hbsσ hruns
   have he : (Term.obs D qs ls ps as t d bs.terms).erase sig Mode.oneOne.erased hΓ =
       .obs (t.erase sig Mode.oneOne.erased hΓ) i
         (bs.terms.erase sig Mode.oneOne.erased hΓ (ps'.map (·.usage))) := by
     rw [Term.erase, hi, hd.argumentGrades h hq hp hpos]
     rfl
-  refine ⟨w, H₃, he ▸ .obs hev hevs hevo, hH₁.trans (hH₂.trans hH₃), ?_⟩
+  refine ⟨w, H₃, tr₁ ++ (tr₂ ++ tr₃), he ▸ .obs hev hevs hevo, hH₁.trans (hH₂.trans hH₃), ?_⟩
   rw [hA]
   simp only [Term.subst, ← Args.terms_subst]
   exact hrun
@@ -810,29 +810,26 @@ theorem CorecBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] 
       (πs : List (List Multiplicity × List Multiplicity)) → {i b c : Nat} →
       {g : Term k ((Γ.extend b).extend c)} → gs.get i = some ⟨0, b, c, g⟩ → {p : Grade} →
       ps[i]? = some p →
-      (gs.erase sig S hΓ ps ks πs).get i = some (ks.getD i .none, ⟨b, c,
-        fun j => ((πs.getD i ([], [])).1[(j : Nat)]?).getD .omega,
-        fun j => ((πs.getD i ([], [])).2[(j : Nat)]?).getD .omega,
-        if p ∈ S then .erased else
-          Scope.length_extend_extend Γ b c ▸ g.erase sig S ((hΓ.extend b).extend c)⟩)
+      ∃ (πs₁ : Fin b → Multiplicity) (πs₂ : Fin c → Multiplicity),
+        (gs.erase sig S hΓ ps ks πs).get i = some (ks.getD i .none, ⟨b, c, πs₁, πs₂,
+          if p ∈ S then .erased else
+            Scope.length_extend_extend Γ b c ▸ g.erase sig S ((hΓ.extend b).extend c)⟩)
   | .nil, _, _, _, _, _, _, _, h, _, _ => nomatch h
   | .cons 0 _ _ _ _, _ :: _, ks, πs, 0, _, _, _, h, _, hp => by
     cases h
     cases hp
-    cases ks <;> cases πs <;> rfl
+    exact ⟨_, _, by cases ks <;> rfl⟩
   | .cons 0 _ _ _ _, [], _, _, 0, _, _, _, _, _, hp => nomatch hp
   | .cons (_ + 1) _ _ _ _, _, _, _, 0, _, _, _, h, _, _ => by cases h
   | .cons 0 _ _ _ vs, _ :: ps, ks, πs, i + 1, _, _, _, h, _, hp => by
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
-    have e' : πs.tail.getD i ([], []) = πs.getD (i + 1) ([], []) := by cases πs <;> simp
-    rw [← e, ← e']
+    rw [← e]
     exact CorecBranches.get_erase S hΓ vs ps ks.tail πs.tail h hp
   | .cons 0 _ _ _ _, [], _, _, _ + 1, _, _, _, _, _, hp => nomatch hp
   | .cons (_ + 1) _ _ _ vs, ps, ks, πs, i + 1, _, _, _, h, p, hp => by
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
-    have e' : πs.tail.getD i ([], []) = πs.getD (i + 1) ([], []) := by cases πs <;> simp
     have hp' : ps.tail[i]? = some p := by cases ps <;> simp_all
-    rw [← e, ← e']
+    rw [← e]
     exact CorecBranches.get_erase S hΓ vs ps.tail ks.tail πs.tail h hp'
 
 /-- The erasure of terms at grades `r` times the grades `us` is their erasure at `us` when `r` is used
@@ -849,11 +846,11 @@ theorem Terms.erase_mul_of_not_erased {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrde
     simp only [List.map_cons, Terms.erase, Terms.erase_mul_of_not_erased hΓ hr ts us, hu]
 
 /-- Arguments erased at grades that are all erased evaluate to `↯`, allocated one after the other,
-at as many addresses as arguments. -/
+at as many addresses as arguments, reading no cell. -/
 theorem Args.evalAll_erased (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) (E : List Nat) :
     {ps : List Parameter} → (ts : Args k Γ ps) → (us : List Grade) → (∀ u ∈ us, u ∈ S) →
-      (H : Heap) → ∃ bs H', EvalAll P H E (ts.terms.erase sig S hΓ us) bs H' ∧ H.Extends H' ∧
+      (H : Heap) → ∃ bs H', EvalAll P H E (ts.terms.erase sig S hΓ us) bs H' [] ∧ H.Extends H' ∧
         bs.length = ps.length
   | [], .nil, _, _, H => ⟨[], H, .nil, List.prefix_refl _, rfl⟩
   | _ :: _, .cons _ ts, [], _, H => by
@@ -901,7 +898,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           ts.toSubst ts.toSubst →
         RunsAsArgs sig ι P H' (Parameter.grades ps) ts bs
           ((Θ.substLevels L).subst (hpos.obsSubst o θ)) →
-        ∃ w H'', EvalObs P H' a i bs w H'' ∧
+        ∃ w H'' tr, EvalObs P H' a i bs w H'' tr ∧
           (rs hpos.index = none → RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
             ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) ∧
           ∀ D' R, rs hpos.index = some D' → rsR hpos.index = some R →
@@ -933,7 +930,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           ts.toSubst →
         RunsAsArgs sig ι P H' (Parameter.grades ps') ts bs ((Θ'.substLevels L).subst
           (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)))) →
-        ∃ w H'', EvalObs P H' a i bs w H'' ∧
+        ∃ w H'' tr, EvalObs P H' a i bs w H'' tr ∧
           (rs (hpos.index + 1) = none → RunsAs sig ι P H'' ((o d' ps').subst ts.toSubst) w
             ((B'.substLevels L).subst (Subst.append
               (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps))) ts.toSubst))) ∧
@@ -943,9 +940,9 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
               ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)) →
             R H'' ((o d' ps').subst ts.toSubst) w :=
       fun d' p' q' ps' Ξ' Θ' B' ψ' hpos i hp hi H' hH' ts bs hτ hbs => by
-        obtain ⟨w, H'', hev, h₁, h₂⟩ :=
+        obtain ⟨w, H'', tr, hev, h₁, h₂⟩ :=
           hr d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos) i hp hi H' hH' ts bs hτ hbs
-        exact ⟨w, H'', hev, h₁, fun D' R hD' hR e => h₂ D' R hD' hR (e.trans (hsw _ D'))⟩
+        exact ⟨w, H'', tr, hev, h₁, fun D' R hD' hR e => h₂ D' R hD' hR (e.trans (hsw _ D'))⟩
     have hgr : ∀ l (p' : Parameter), ps[l]? = some p' → Parameter.grades ps l ∉ Mode.oneOne.erased →
         p'.usage ∉ Mode.oneOne.erased := fun _ _ hl h => Parameter.grades_of_getElem? hl ▸ h
     split at hm
@@ -983,9 +980,9 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         have hbs := RunsAsArgs.of_runTelRel hRΘ
           (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
           hgr ts hτ bs hts
-        obtain ⟨w, H'', hev, hw, -⟩ := hr d p q ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs
+        obtain ⟨w, H'', tr, hev, hw, -⟩ := hr d p q ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs
         obtain ⟨v, hv''⟩ := hB ts htt
-        exact ⟨w, H'', hev, RunFieldRel.of_runsAs hd (hR ts htt v hv'') hv'' (hw hr0)⟩
+        exact ⟨w, H'', tr, hev, RunFieldRel.of_runsAs hd (hR ts htt v hv'') hv'' (hw hr0)⟩
     · rename_i D' hr0
       obtain ⟨hBD, hds⟩ := hm
       obtain ⟨R, hR0⟩ := hS 0 D' hr0
@@ -1005,10 +1002,10 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         have hbs := RunsAsArgs.of_runTelRel hRΘ
           (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
           hgr ts hτ bs hts
-        obtain ⟨w, H'', hev, -, hw⟩ := hr d p q ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs
+        obtain ⟨w, H'', tr, hev, -, hw⟩ := hr d p q ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs
         have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D').subst θ := by
           rw [hBD, Term.subst_append_rename_weakenN]
-        exact ⟨w, H'', hev, hw D' R hr0 hR0 e⟩
+        exact ⟨w, H'', tr, hev, hw D' R hr0 hR0 e⟩
 
 /-- The extension of a vector by the variables of a telescope at the grades of their entries times
 `r` is its extension by these grades times `r`, at their positions. -/
@@ -1086,8 +1083,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
       (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
-    {σ : Subst 0 [] Γ} {H : Heap} {E : List Nat} (hσ : EqSubst sig ι ctx σ σ)
-    (hE : RunsAsSubst sig ι P H ctx δ σ E) {j : Nat}
+    {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat} (hσ : EqSubst sig ι ctx σ σ)
+    (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx δ σ V) {j : Nat}
     {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {ps'' : List Parameter}
     {S' : Telescope 0 Γ ps''} (hj : decl.codataTypes[j]? = some T')
     (hS' : Ss.get j = some ⟨0, ps'', S'⟩) {ts : Args 0 [] ps''} {bs : List Nat}
@@ -1236,7 +1233,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hpg : ((sig.destructorGrades D qs ps).getD [])[i']? = some p := by
           rw [hgrs]
           exact hgrs' i' j₁ T₂ d hi p (hpos.grade (hd.destructors_nodup h₀))
-        have hget := CorecBranches.get_erase (sig := sig) Mode.oneOne.erased hΓ gs _ ks πs hg hpg
+        obtain ⟨πs₁, πs₂, hget⟩ :=
+          CorecBranches.get_erase (sig := sig) Mode.oneOne.erased hΓ gs _ ks πs hg hpg
         simp only [hpr, ↓reduceIte] at hget
         -- The context of the branch, at the grades of its variables.
         have hc := fun (a' : Scope.Entry) (x : Var Ξ a') =>
@@ -1245,7 +1243,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hEq := (EqSubst.append_append_iff (ctx.append S₁) _ _ _ _ _).2
           ⟨(EqSubst.append_append_iff ctx S₁ _ _ _ _).2 ⟨hσ, hts₁⟩,
             by rw [Telescope.subst_subst_of (fun x => hc _ x)]; exact hτ'⟩
-        have hδi : RunsAsSubst sig ι P H₂ ctx (δs i') σ E :=
+        have hδi : RunsAsSubst sig ι P H₂ ctx (δs i') σ V :=
           RunsAsSubst.of_counted ctx (fun x hx => (by decide : ∀ c p u : Grade, c ≤ p * u →
             p ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased → c ∉ Mode.oneOne.erased) _ _ _
             (hδ i' j₁ T₂ d p q ps' Ξ Θ B ψ hi hpos x) hpr hx) (hE.mono hd (hH₁.trans hH₂))
@@ -1262,13 +1260,22 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hbr := hgr i' j₁ T₂ d ps₁ S₁ p q ps' Ξ Θ B ψ g hi hS₁ hpos hg hpr
         rw [GradeVector.extendParams_eq_extendGrades,
           GradeVector.extendParams_eq_extendGrades] at hbr
-        obtain ⟨w₀, H₃, hev, hH₃, hrun⟩ := hbr _ H₂ _ hEq hσr
-        rw [Term.branchResult_corecAt] at hrun
-        have hev' := (Eval.cast (Scope.length_extend_extend Γ ps₁.length ps'.length)).2 hev
-        rw [← List.append_assoc] at hev'
-        have hclo : H₂[b]? = some (.corec Γ.length E Ps bs₁) := hH₂.getElem? hb
+        -- The branch binds its variables to cells, at the multiplicities of its binders.
         have hlen₁ := RunsAsArgs.length hbs₁
         have hlen₂ := RunsAsArgs.length hbs₂
+        have hlen : (List.ofFn πs₁ ++ List.ofFn πs₂).length = (bs₁ ++ bs₂).length := by
+          simp only [List.length_append, List.length_ofFn, hlen₁, hlen₂]
+        let H₂' := H₂.bind (List.ofFn πs₁ ++ List.ofFn πs₂) (bs₁ ++ bs₂)
+        have hH₂' : H₂.Extends H₂' := List.prefix_append _ _
+        have hB : H₂'.Binds ((List.range' H₂.length (bs₁ ++ bs₂).length).reverse ++ E)
+            (bs₂.reverse ++ (bs₁.reverse ++ V)) := by
+          have h' := (Heap.binds_bind H₂ hlen).reverse.append
+            (hEV.mono (hH₁.trans (hH₂.trans hH₂')))
+          rwa [List.reverse_append, List.append_assoc] at h'
+        obtain ⟨w₀, H₃, tr, hev, hH₃, hrun⟩ := hbr _ H₂' _ _ hEq hB (hσr.mono hd hH₂')
+        rw [Term.branchResult_corecAt] at hrun
+        have hev' := (Eval.cast (Scope.length_extend_extend Γ ps₁.length ps'.length)).2 hev
+        have hclo : H₂[b]? = some (.corec Γ.length E Ps bs₁) := hH₂.getElem? hb
         have hred := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
           (Ss := Ss) (r := r)
@@ -1285,7 +1292,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           rw [hk] at hget
           simp only [Term.branchResult, hbn] at hrun
           simp only [Term.observed, hbn] at hred
-          refine ⟨w₀, H₃, .beta hclo hget hlen₁ hlen₂ hev' .none, fun _ => ?_, fun D' R hD' => ?_⟩
+          refine ⟨w₀, H₃, tr, .beta hclo hget hlen₁ hlen₂ hev' .none, fun _ => ?_,
+            fun D' R hD' => ?_⟩
           · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv
               (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
                 (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
@@ -1320,17 +1328,18 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             Γ.length E Ps T₃.name qs ls ps (as.subst σ) (Ss.subst σ) (gs.subst σ)
           · -- A new state: a new closure of the branches.
             obtain ⟨ts₃, bs₃, hred', hτ₃, hbs₃, rfl, rfl⟩ := hnext
-            refine ⟨_, _, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
+            refine ⟨_, _, tr, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
               fun D' R hD' hR _ => ?_⟩
             · simp only [hpos.recursionAt_index, hbn] at hr0
               cases hr0
             · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
               subst hD' hR
               exact ⟨_, ⟨.step hred hred', .corec _ _ _ _ _ _ _ _ _⟩, .inr ⟨j₃, T₃, ps₃, S₃, ts₃,
-                bs₃, hj₃, rfl, hS₃, hτ₃, (hH₁.trans (hH₂.trans hH₃)).trans (List.prefix_append _ _),
+                bs₃, hj₃, rfl, hS₃, hτ₃, (hH₁.trans (hH₂.trans (hH₂'.trans hH₃))).trans
+                  (List.prefix_append _ _),
                 hbs₃.mono hd (List.prefix_append _ _), by simp, rfl⟩⟩
           · -- A term already built, related at the instance of the type of the result.
-            refine ⟨_, _, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
+            refine ⟨_, _, tr, .beta hclo hget hlen₁ hlen₂ hev' hres, fun hr0 => ?_,
               fun D' R hD' hR he => ?_⟩
             · simp only [hpos.recursionAt_index, hbn] at hr0
               cases hr0
@@ -1381,18 +1390,19 @@ theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
     RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ δ) (.corec r D qs ls ps as ss.terms Ss gs)
       (.inst D qs ls ps as) := by
-  intro σ H E hσ hE
+  intro σ H E V hσ hEV hE
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hS₀ := Mode.erasesUncounted .oneOne
-  have hEδ : RunsAsSubst sig ι P H ctx δ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+  have hEδ : RunsAsSubst sig ι P H ctx δ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS₀.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
   -- The erasure evaluates the state, each entry at its grade times `r`.
   have hst : (((sig.position T.name).bind Ss.get).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage)) =
       (ps'.map (·.usage)).map (r * ·) := by
     rw [hd.position h hh, Option.bind_some, hS, List.map_map]
     rfl
-  obtain ⟨bs, H', hev, hH', hbs⟩ : ∃ bs H', EvalAll P H E (ss.terms.erase sig Mode.oneOne.erased hΓ
-      ((ps'.map (·.usage)).map (r * ·))) bs H' ∧ H.Extends H' ∧
+  obtain ⟨bs, H', tr, hev, hH', hbs⟩ : ∃ bs H' tr, EvalAll P H E
+      (ss.terms.erase sig Mode.oneOne.erased hΓ ((ps'.map (·.usage)).map (r * ·))) bs H' tr ∧
+      H.Extends H' ∧
       RunsAsArgs sig ι P H' (fun l => r * Parameter.grades ps' l) (ss.subst σ) bs (S.subst σ) := by
     by_cases hr : r ∈ Mode.oneOne.erased
     · -- Every entry is erased.
@@ -1402,14 +1412,14 @@ theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         Mode.oneOne.erased hΓ E ss _ (fun u hu => by
           obtain ⟨u', -, rfl⟩ := List.mem_map.1 hu
           exact hrS u' hr) H
-      exact ⟨bs, H', hev, hH', RunsAsArgs.of_erased (ss.subst σ) bs (S.subst σ)
+      exact ⟨bs, H', [], hev, hH', RunsAsArgs.of_erased (ss.subst σ) bs (S.subst σ)
         (fun _ _ _ => hrS _ hr) hl⟩
     · -- The state is valid at run time with the grades `γ`.
-      have hEγ : RunsAsSubst sig ι P H ctx γ σ E := RunsAsSubst.of_counted ctx (fun x h h' =>
+      have hEγ : RunsAsSubst sig ι P H ctx γ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
         h ((by decide : ∀ r u : Grade, r ∉ Mode.oneOne.erased → r * u ∈ Mode.oneOne.erased →
           u ∈ Mode.oneOne.erased) r _ hr (hS₀.add _ _ h'))) hE
-      obtain ⟨bs, H', hev, hH', hrs⟩ := hssr hr σ H E hσ hEγ
-      refine ⟨bs, H', ?_, hH', RunsAsArgs.of_counted (fun l h' => (by decide : ∀ r u : Grade,
+      obtain ⟨bs, H', tr, hev, hH', hrs⟩ := hssr hr σ H E V hσ hEV hEγ
+      refine ⟨bs, H', tr, ?_, hH', RunsAsArgs.of_counted (fun l h' => (by decide : ∀ r u : Grade,
         r * u ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased) r _ h') hrs⟩
       rw [Terms.erase_mul_of_not_erased hΓ hr]
       exact hev
@@ -1419,12 +1429,13 @@ theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity))
     (((sig.destructorArguments T.name qs ps).getD []).map fun ⟨j, as⟩ =>
       ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run,
-        as.map (·.run)))) bs], ?_,
+        as.map (·.run)))) bs], tr, ?_,
     hH'.trans (List.prefix_append _ _), ?_⟩
   · rw [Term.erase, hst]
     exact .corec hev
   · rw [Term.corec_subst]
     exact RunsAs.corec hd h hv hq hl hp hadm has hpre hSs hgv hgr hδ hσ
+      ((hEV.mono hH').mono (List.prefix_append _ _))
       ((hEδ.mono hd hH').mono hd (List.prefix_append _ _)) hh hS (hss.2 σ σ hσ)
       (hbs.mono hd (List.prefix_append _ _)) (by simp)
 

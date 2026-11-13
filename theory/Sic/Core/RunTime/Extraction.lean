@@ -36,13 +36,13 @@ theorem extraction {ι : Interpretation} {P : Program} {sig : Signature} {k : Na
     {t A : Term k []} {γ : GradeVector ([] : Scope).length} (hι : ValidInterpretation ι sig)
     (hP : ValidProgram ι P sig) (hu : UsageSig sig) (h : HasType sig .empty t A)
     (hut : Usage sig γ .oneOne t) (ρ : Fin k → Nat) :
-    ∃ a H, Eval P [] [] ((t.atLevels ρ).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) a H ∧
+    ∃ a H R, Eval P [] [] ((t.atLevels ρ).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) a H R ∧
       RunsAs sig ι P H (t.atLevels ρ) a (A.atLevels ρ) := by
-  obtain ⟨a, H, he, -, hr⟩ :=
-    fundamental.hasType (hΓ := Scope.FirstOrder.nil) hι hP hu h hut ρ (fun x => nomatch x) [] []
-      ((EqSubst.empty_iff _ _).2 trivial) rfl
+  obtain ⟨a, H, R, he, -, hr⟩ :=
+    fundamental.hasType (hΓ := Scope.FirstOrder.nil) hι hP hu h hut ρ (fun x => nomatch x) [] [] []
+      ((EqSubst.empty_iff _ _).2 trivial) trivial rfl
   rw [Term.subst_empty, Term.subst_empty] at hr
-  exact ⟨a, H, he, hr⟩
+  exact ⟨a, H, R, he, hr⟩
 
 -- ADE: `soundness-ℕ`, in `Graded/Erasure/Consequences/Soundness.agda`.
 /-- The erasure by `S^{11ᵐ}` of a closed term typed and used in the mode `11ᵐ`, whose type computes,
@@ -58,12 +58,12 @@ theorem extraction_ctor {ι : Interpretation} {P : Program} {sig : Signature} {k
     (h : HasType sig .empty t A) (hut : Usage sig γ .oneOne t) (ρ : Fin k → Nat)
     (hD : sig.HasDataType D decl T) (hA : Computesι sig ι (A.atLevels ρ) (.inst D qs ls ps as))
     (hp : ¬ IsProp sig ι (.inst D qs ls ps as)) :
-    ∃ a H v c ts i bs,
-      Eval P [] [] ((t.atLevels ρ).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) a H ∧
+    ∃ a H R v c ts i bs,
+      Eval P [] [] ((t.atLevels ρ).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) a H R ∧
         Computesι sig ι (t.atLevels ρ) v ∧ v.IsCtor D c ts ∧ sig.constructorCase D c = some i ∧
           H[a]? = some (.ctor i bs) := by
   have hd := (presuppositions.hasType h).distinct
-  obtain ⟨a, H, he, v', hA', hr⟩ := extraction hι hP hu h hut ρ
+  obtain ⟨a, H, R₀, he, v', hA', hr⟩ := extraction hι hP hu h hut ρ
   cases Computesι.det hd hA hA'
   obtain hr | ⟨R, hR, w, hw, hR'⟩ := hr
   · exact absurd hr hp
@@ -77,7 +77,7 @@ theorem extraction_ctor {ι : Interpretation} {P : Program} {sig : Signature} {k
       obtain ⟨-, rfl, -, -, -, -⟩ := Term.inst.inj hv
       refine hR' (fun D' H v a => ∃ c ts i bs, v.IsCtor D' c ts ∧ sig.constructorCase D' c = some i ∧
         H[a]? = some (.ctor i bs)) ?_ |>.elim fun c ⟨ts, i, bs, hc, hi, ha⟩ =>
-          ⟨a, H, w, c, ts, i, bs, he, hw, hc, hi, ha⟩
+          ⟨a, H, R₀, w, c, ts, i, bs, he, hw, hc, hi, ha⟩
       intro T' _ H v a ⟨c, _, i, ts, bs, hc, hi, ha, _⟩
       exact ⟨c.name, ts, i, bs, hc, hi, ha⟩
 
