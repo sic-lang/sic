@@ -103,8 +103,8 @@ theorem RunAbstractionRel.levelEquiv {P : Program} {ps : List Parameter} {i : Na
     {f f' : Term 0 (Scope.extend [] ps.length)} {H : Heap} {a : Nat}
     (h : RunAbstractionRel P i SΘ F f H a) (hf : Term.LevelEquiv f f') :
     RunAbstractionRel P i SΘ F f' H a :=
-  fun H₁ hH ts bs hts κ =>
-    have ⟨w, H₂, R, he, hr⟩ := h H₁ hH ts bs hts κ
+  fun H₁ hH ts bs hts ϖ =>
+    have ⟨w, H₂, R, he, hr⟩ := h H₁ hH ts bs hts ϖ
     ⟨w, H₂, R, he, hF H₁ ts bs hts hr (hf.subst (Subst.LevelEquiv.refl _))⟩
 
 mutual
@@ -273,8 +273,8 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ihu hRΘ _ _ hRΘ'
           TelRel.none_rel
         exact fun H o o' a ⟨h₁, h₂⟩ e =>
-          ⟨fun hp H₁ hH₁ ts bs hts κ =>
-            have ⟨w, H₂, R, he, hw⟩ := h₁ hp H₁ hH₁ ts bs ((hRΘΘ _ _ _).2 hts) κ
+          ⟨fun hp H₁ hH₁ ts bs hts ϖ =>
+            have ⟨w, H₂, R, he, hw⟩ := h₁ hp H₁ hH₁ ts bs ((hRΘΘ _ _ _).2 hts) ϖ
             ⟨w, H₂, R, he, hr _ _ _ _ hw ((e d ps).subst (Subst.LevelEquiv.refl _))⟩,
             RunDesRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _
               (hG' (.sort ⟨.type, .zero⟩)) (fun i => hRs (i + 1)) H o o' a h₂ e⟩

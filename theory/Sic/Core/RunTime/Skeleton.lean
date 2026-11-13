@@ -146,25 +146,25 @@ mutual
 /-- A skeleton evaluates, at every weight, in every environment and heap, to a value in a heap that
 extends it, reading no cell. -/
 theorem Target.IsSkeleton.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsSkeleton)
-    (κ : Multiplicity) (H : Heap) (E : List Nat) :
-    ∃ a H', Eval P κ H E M a H' [] ∧ H.Extends H' :=
+    (ϖ : Multiplicity) (H : Heap) (E : List Nat) :
+    ∃ a H', Eval P ϖ H E M a H' [] ∧ H.Extends H' :=
   match h with
   | .erased => ⟨_, _, .erased, List.prefix_append _ _⟩
   | .ctor hs =>
-    have ⟨_, _, hM, hH⟩ := Targets.IsSkeleton.eval P hs κ H E
+    have ⟨_, _, hM, hH⟩ := Targets.IsSkeleton.eval P hs ϖ H E
     ⟨_, _, .ctor hM, hH.trans (List.prefix_append _ _)⟩
 
 -- ADE: none.
 /-- Skeletons evaluate, at every weight, in every environment and heap, to values in a heap that
 extends it, reading no cell. -/
 theorem Targets.IsSkeleton.eval (P : Program) {n : Nat} {Ms : Targets n} (h : Ms.IsSkeleton)
-    (κ : Multiplicity) (H : Heap) (E : List Nat) :
-    ∃ as H', EvalAll P κ H E Ms as H' [] ∧ H.Extends H' :=
+    (ϖ : Multiplicity) (H : Heap) (E : List Nat) :
+    ∃ as H', EvalAll P ϖ H E Ms as H' [] ∧ H.Extends H' :=
   match h with
   | .nil => ⟨_, _, .nil, List.prefix_refl _⟩
   | .cons (π := π) hM hs =>
-    have ⟨_, H₁, hM', hH₁⟩ := Target.IsSkeleton.eval P hM (κ * π) H E
-    have ⟨_, _, hs', hH₂⟩ := Targets.IsSkeleton.eval P hs κ H₁ E
+    have ⟨_, H₁, hM', hH₁⟩ := Target.IsSkeleton.eval P hM (ϖ * π) H E
+    have ⟨_, _, hs', hH₂⟩ := Targets.IsSkeleton.eval P hs ϖ H₁ E
     ⟨_, _, .cons hM' hs', hH₁.trans hH₂⟩
 
 end

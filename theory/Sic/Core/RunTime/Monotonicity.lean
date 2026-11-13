@@ -137,8 +137,8 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
       | some hr =>
         have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' TelRel.none_rel
         exact fun o a ⟨h₁, h₂⟩ =>
-          ⟨fun hp H'' hH'' ts bs hts κ =>
-            have ⟨w, H''', R, he, hw⟩ := h₁ hp H'' (hH.trans hH'') ts bs ((hRΘΘ _ _ _).2 hts) κ
+          ⟨fun hp H'' hH'' ts bs hts ϖ =>
+            have ⟨w, H''', R, he, hw⟩ := h₁ hp H'' (hH.trans hH'') ts bs ((hRΘΘ _ _ _).2 hts) ϖ
             ⟨w, H''', R, he, hr _ _ _ hw⟩,
             RunDesRel.mono hd hH (hG (.sort ⟨.type, .zero⟩)) _ _ (hG' (.sort ⟨.type, .zero⟩))
               (fun i => hRs (i + 1)) o a h₂⟩

@@ -211,10 +211,10 @@ theorem mul_le_mul_right' :
 
 /-- A multiplicity other than `0` times another is below it: the uses of a value at a weight other
 than `0` include those of the value. -/
-theorem mul_le_self : ∀ κ π : Multiplicity, κ ≠ .zero → κ * π ≤ π := by decide
+theorem mul_le_self : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → ϖ * π ≤ π := by decide
 
 /-- A product of multiplicities other than `0` is other than `0`. -/
-theorem mul_ne_zero : ∀ κ π : Multiplicity, κ ≠ .zero → π ≠ .zero → κ * π ≠ .zero := by decide
+theorem mul_ne_zero : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → π ≠ .zero → ϖ * π ≠ .zero := by decide
 
 end Multiplicity
 

@@ -45,8 +45,8 @@ mutual
 -- ADE: none.
 /-- The evaluation extends the heap: it allocates new values and changes none.
 RFC: `\mathsf{ext}_\Downarrow` -/
-theorem Eval.extends {P : Program} {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
-    {M : Target n} {a : Nat} {R : List Nat} : Eval P κ H E M a H' R → H.Extends H'
+theorem Eval.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
+    {M : Target n} {a : Nat} {R : List Nat} : Eval P ϖ H E M a H' R → H.Extends H'
   | .var _ _ => List.prefix_refl _
   | .const _ hM => hM.extends
   | .erased => List.prefix_append _ _
@@ -56,30 +56,30 @@ theorem Eval.extends {P : Program} {κ : Multiplicity} {n : Nat} {H H' : Heap} {
   | .corec hs => hs.extends.trans (List.prefix_append _ _)
 
 /-- The evaluation of terms extends the heap. -/
-theorem EvalAll.extends {P : Program} {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
-    {Ms : Targets n} {as : List Nat} {R : List Nat} : EvalAll P κ H E Ms as H' R → H.Extends H'
+theorem EvalAll.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
+    {Ms : Targets n} {as : List Nat} {R : List Nat} : EvalAll P ϖ H E Ms as H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .cons h hs => h.extends.trans hs.extends
 
 /-- The elimination of a value by a recursor extends the heap. -/
-theorem EvalRec.extends {P : Program} {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
+theorem EvalRec.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
     {ρ : Multiplicity} {Ns : TargetBranches n} {a v : Nat} {R : List Nat} :
-    EvalRec P κ H E ρ Ns a v H' R → H.Extends H'
+    EvalRec P ϖ H E ρ Ns a v H' R → H.Extends H'
   | .iota _ _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
 
 /-- The evaluation of the recursive results of a branch extends the heap. -/
-theorem EvalResults.extends {P : Program} {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
+theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
     {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
     {πs' : List Multiplicity} {rs : List Nat} {R : List Nat} :
-    EvalResults P κ H E ρ Ns as ks πs' rs H' R → H.Extends H'
+    EvalResults P ϖ H E ρ Ns as ks πs' rs H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .erased hs => (List.prefix_append _ _).trans hs.extends
   | .recursor _ h hs => h.extends.trans hs.extends
 
 /-- The observation of a value extends the heap. -/
-theorem EvalObs.extends {P : Program} {κ : Multiplicity} {H H' : Heap} {a i : Nat}
+theorem EvalObs.extends {P : Program} {ϖ : Multiplicity} {H H' : Heap} {a i : Nat}
     {πs : List Multiplicity} {bs : List Nat} {v : Nat} {R : List Nat} :
-    EvalObs P κ H a i πs bs v H' R → H.Extends H'
+    EvalObs P ϖ H a i πs bs v H' R → H.Extends H'
   | .beta _ _ _ _ _ _ hw hr => (List.prefix_append _ _).trans (hw.extends.trans hr.extends)
 
 end

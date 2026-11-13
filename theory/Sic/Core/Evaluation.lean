@@ -216,7 +216,7 @@ def recursionsAt : List (Option Nat) → List Multiplicity → Nat → Multiplic
 mutual
 
 -- ADE: `∣ S ∣≡ q`, in `Graded/Heap/Reduction.agda`, for the weight.
-/-- `𝒫; κ; H; E ⊢ M ⇓ a; H'; R`: the term `M` of the target language evaluates, at the weight `κ`,
+/-- `𝒫; ϖ; H; E ⊢ M ⇓ a; H'; R`: the term `M` of the target language evaluates, at the weight `ϖ`,
 in the environment `E` of the addresses of the cells of its variables, the last one first, and the
 heap `H`, to the address `a` of its value in the heap `H'`, reading the cells `R`, in order, one for
 each access to a variable; the weight is the multiplicity of the uses of the value, so that each
@@ -225,67 +225,67 @@ inductive Eval (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat 
     List Nat → Prop where
   /-- A variable reads its cell, which gives the address of its value.
   RFC: `\mathsf{eval}_x` -/
-  | var {κ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} {x : Fin n} {c : Nat}
+  | var {ϖ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} {x : Fin n} {c : Nat}
       {π : Multiplicity} {a : Nat} (h : E[(x : Nat)]? = some c) (hc : H[c]? = some (.cell π a)) :
-      Eval P κ H E (.var x) a H [c]
+      Eval P ϖ H E (.var x) a H [c]
   /-- A constant evaluates its body in the program, a closed term.
   RFC: `\mathsf{eval}_f` -/
-  | const {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {f : Name}
+  | const {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {f : Name}
       {qs : List Quality} {ps : List Grade} {M : Target 0} {a : Nat} {R : List Nat}
-      (h : P f qs ps = some M) (hM : Eval P κ H [] M a H' R) :
-      Eval P (n := n) κ H E (.const f qs ps) a H' R
+      (h : P f qs ps = some M) (hM : Eval P ϖ H [] M a H' R) :
+      Eval P (n := n) ϖ H E (.const f qs ps) a H' R
   /-- `↯` allocates itself.
   RFC: `\mathsf{eval}_{\text{↯}}` -/
-  | erased {κ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} :
-      Eval P (n := n) κ H E .erased H.length (H ++ [.erased]) []
+  | erased {ϖ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} :
+      Eval P (n := n) ϖ H E .erased H.length (H ++ [.erased]) []
   /-- A constructor evaluates its fields, in order, each at the weight times its multiplicity, and
   allocates itself with their addresses, at their multiplicities.
   RFC: `\mathsf{eval}_c` -/
-  | ctor {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {i : Nat} {Ms : Targets n}
-      {as : List Nat} {R : List Nat} (hs : EvalAll P κ H E Ms as H' R) :
-      Eval P κ H E (.ctor i Ms) H'.length (H' ++ [.ctor i Ms.multiplicities as]) R
+  | ctor {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {i : Nat} {Ms : Targets n}
+      {as : List Nat} {R : List Nat} (hs : EvalAll P ϖ H E Ms as H' R) :
+      Eval P ϖ H E (.ctor i Ms) H'.length (H' ++ [.ctor i Ms.multiplicities as]) R
   /-- A recursor evaluates its term, at the weight times its multiplicity, then eliminates its
   value.
   RFC: `\mathsf{eval}_{\mathsf{rec}}` -/
-  | recursor {κ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
+  | recursor {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
       {M : Target n} {Ns : TargetBranches n} {a b : Nat} {R₁ R₂ : List Nat}
-      (h : Eval P (κ * ρ) H₁ E M a H₂ R₁) (hr : EvalRec P κ H₂ E ρ Ns a b H₃ R₂) :
-      Eval P κ H₁ E (.recursor ρ M Ns) b H₃ (R₁ ++ R₂)
+      (h : Eval P (ϖ * ρ) H₁ E M a H₂ R₁) (hr : EvalRec P ϖ H₂ E ρ Ns a b H₃ R₂) :
+      Eval P ϖ H₁ E (.recursor ρ M Ns) b H₃ (R₁ ++ R₂)
   /-- An observation evaluates its term, then its arguments, in order, each at the weight times
   its multiplicity, then observes the value of its term, with the multiplicities of the arguments.
   RFC: `\mathsf{eval}_d` -/
-  | obs {κ : Multiplicity} {n : Nat} {H₁ H₂ H₃ H₄ : Heap} {E : List Nat} {M : Target n} {i : Nat}
+  | obs {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ H₄ : Heap} {E : List Nat} {M : Target n} {i : Nat}
       {Ms : Targets n} {a b : Nat} {bs : List Nat} {R₁ R₂ R₃ : List Nat}
-      (h : Eval P κ H₁ E M a H₂ R₁) (hs : EvalAll P κ H₂ E Ms bs H₃ R₂)
-      (ho : EvalObs P κ H₃ a i Ms.multiplicities bs b H₄ R₃) :
-      Eval P κ H₁ E (.obs M i Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
+      (h : Eval P ϖ H₁ E M a H₂ R₁) (hs : EvalAll P ϖ H₂ E Ms bs H₃ R₂)
+      (ho : EvalObs P ϖ H₃ a i Ms.multiplicities bs b H₄ R₃) :
+      Eval P ϖ H₁ E (.obs M i Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
   /-- A corecursor evaluates its state, in order, each entry at the weight times its multiplicity,
   and allocates its closure, with the multiplicities of the entries.
   RFC: `\mathsf{eval}_{\mathsf{corec}}` -/
-  | corec {κ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n}
+  | corec {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n}
       {Ps : TargetCorecBranches n} {as : List Nat} {R : List Nat}
-      (hs : EvalAll P κ H E Ms as H' R) :
-      Eval P κ H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps Ms.multiplicities as]) R
+      (hs : EvalAll P ϖ H E Ms as H' R) :
+      Eval P ϖ H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps Ms.multiplicities as]) R
 
 -- ADE: none.
-/-- `𝒫; κ; H; E ⊢ M̄ ⇓ ā; H'; R`: the terms evaluate, the first one first, to the addresses `ā`,
-each at the weight `κ` times its multiplicity. -/
+/-- `𝒫; ϖ; H; E ⊢ M̄ ⇓ ā; H'; R`: the terms evaluate, the first one first, to the addresses `ā`,
+each at the weight `ϖ` times its multiplicity. -/
 inductive EvalAll (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Targets n →
     List Nat → Heap → List Nat → Prop where
   /-- No term.
   RFC: `\mathsf{eval}_{\bar M}.\varepsilon` -/
-  | nil {κ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} :
-      EvalAll P (n := n) κ H E .nil [] H []
+  | nil {ϖ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} :
+      EvalAll P (n := n) ϖ H E .nil [] H []
   /-- The first term, then the others.
   RFC: `\mathsf{eval}_{\bar M}.{,}` -/
-  | cons {κ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n}
+  | cons {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n}
       {Ms : Targets n} {a : Nat} {as : List Nat} {R₁ R₂ : List Nat} {π : Multiplicity}
-      (h : Eval P (κ * π) H₁ E M a H₂ R₁) (hs : EvalAll P κ H₂ E Ms as H₃ R₂) :
-      EvalAll P κ H₁ E (.cons π M Ms) (a :: as) H₃ (R₁ ++ R₂)
+      (h : Eval P (ϖ * π) H₁ E M a H₂ R₁) (hs : EvalAll P ϖ H₂ E Ms as H₃ R₂) :
+      EvalAll P ϖ H₁ E (.cons π M Ms) (a :: as) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; κ; H; E ⊢ rec_ρ a with N̄ ⇓ b; H'; R`: the recursor of the multiplicity `ρ` with the
-branches `N̄`, in the environment `E`, at the weight `κ`, eliminates the value at the address `a`, a
+/-- `𝒫; ϖ; H; E ⊢ rec_ρ a with N̄ ⇓ b; H'; R`: the recursor of the multiplicity `ρ` with the
+branches `N̄`, in the environment `E`, at the weight `ϖ`, eliminates the value at the address `a`, a
 constructor: the branch of its case evaluates, with cells for its fields and its recursive results,
 each the recursor on its field, at the weight times the multiplicity of its binder, or `↯` when it
 is erased, at the multiplicities of its binders times the weight; the uses that the branch makes of
@@ -294,7 +294,7 @@ allows, `ρ` times the multiplicity of the field, and the evaluation is stuck ot
 inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Multiplicity →
     TargetBranches n → Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\iota_\Downarrow` -/
-  | iota {κ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
+  | iota {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
       {Ns : TargetBranches n} {a v : Nat} {i : Nat} {πs₀ : List Multiplicity} {as : List Nat}
       {a' b : Nat} {πs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity}
       {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat} {R₁ R₂ : List Nat}
@@ -302,41 +302,41 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
       (ha : as.length = a')
       (hπ : ∀ l : Fin a', ∃ π₀, πs₀[(l : Nat)]? = some π₀ ∧
         ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l)
-      (hr : EvalResults P κ H₁ E ρ Ns as (List.ofFn ks) (List.ofFn πs') rs H₂ R₁)
-      (hv : Eval P κ (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (κ * ·)) (as ++ rs))
+      (hr : EvalResults P ϖ H₁ E ρ Ns as (List.ofFn ks) (List.ofFn πs') rs H₂ R₁)
+      (hv : Eval P ϖ (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
-      EvalRec P κ H₁ E ρ Ns a v H₃ (R₁ ++ R₂)
+      EvalRec P ϖ H₁ E ρ Ns a v H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; κ; H; E ⊢ rec_ρ ā with N̄ ← k̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
-order, each the recursor on the field at its position in `ā`, at the weight `κ` times the
+/-- `𝒫; ϖ; H; E ⊢ rec_ρ ā with N̄ ← k̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
+order, each the recursor on the field at its position in `ā`, at the weight `ϖ` times the
 multiplicity of its binder in `π̄'`, or `↯` when it is erased. -/
 inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Multiplicity →
     TargetBranches n → List Nat → List (Option Nat) → List Multiplicity → List Nat → Heap →
     List Nat → Prop where
   /-- No result.
   RFC: `\mathsf{results}_\Downarrow.\varepsilon` -/
-  | nil {κ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} {ρ : Multiplicity}
-      {Ns : TargetBranches n} {as : List Nat} : EvalResults P κ H E ρ Ns as [] [] [] H []
+  | nil {ϖ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} {ρ : Multiplicity}
+      {Ns : TargetBranches n} {as : List Nat} : EvalResults P ϖ H E ρ Ns as [] [] [] H []
   /-- An erased result, `↯`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\text{↯}` -/
-  | erased {κ : Multiplicity} {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {ρ : Multiplicity}
+  | erased {ϖ : Multiplicity} {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {ρ : Multiplicity}
       {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {π : Multiplicity}
       {πs : List Multiplicity} {rs : List Nat} {R : List Nat}
-      (hs : EvalResults P κ (H₁ ++ [.erased]) E ρ Ns as ks πs rs H₂ R) :
-      EvalResults P κ H₁ E ρ Ns as (none :: ks) (π :: πs) (H₁.length :: rs) H₂ R
+      (hs : EvalResults P ϖ (H₁ ++ [.erased]) E ρ Ns as ks πs rs H₂ R) :
+      EvalResults P ϖ H₁ E ρ Ns as (none :: ks) (π :: πs) (H₁.length :: rs) H₂ R
   /-- The recursor on the field at the position `j`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\mathsf{rec}` -/
-  | recursor {κ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
+  | recursor {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity}
       {Ns : TargetBranches n} {as : List Nat} {j a r : Nat} {ks : List (Option Nat)}
       {π : Multiplicity} {πs : List Multiplicity} {rs : List Nat} {R₁ R₂ : List Nat}
-      (hj : as[j]? = some a) (h : EvalRec P (κ * π) H₁ E ρ Ns a r H₂ R₁)
-      (hs : EvalResults P κ H₂ E ρ Ns as ks πs rs H₃ R₂) :
-      EvalResults P κ H₁ E ρ Ns as (some j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
+      (hj : as[j]? = some a) (h : EvalRec P (ϖ * π) H₁ E ρ Ns a r H₂ R₁)
+      (hs : EvalResults P ϖ H₂ E ρ Ns as ks πs rs H₃ R₂) :
+      EvalResults P ϖ H₁ E ρ Ns as (some j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; κ; H ⊢ a.dᵢ(b̄ ▶ π̄) ⇓ c; H'; R`: the observation by the destructor of the case `i`, at the
-weight `κ`, applied to the arguments at the addresses `b̄`, at the multiplicities `π̄`, of the value
+/-- `𝒫; ϖ; H ⊢ a.dᵢ(b̄ ▶ π̄) ⇓ c; H'; R`: the observation by the destructor of the case `i`, at the
+weight `ϖ`, applied to the arguments at the addresses `b̄`, at the multiplicities `π̄`, of the value
 at the address `a`, a closure: the branch of the case evaluates in the environment of the closure,
 with cells for its state and the arguments, at the multiplicities of its binders times the weight,
 and its value is resumed when the branch resumes a state; the uses that the branch makes of each
@@ -345,7 +345,7 @@ the observation allows, and the evaluation is stuck otherwise. -/
 inductive EvalObs (P : Program) : Multiplicity → Heap → Nat → Nat → List Multiplicity → List Nat →
     Nat → Heap → List Nat → Prop where
   /-- RFC: `\beta_\Downarrow` -/
-  | beta {κ : Multiplicity} {H₁ H₂ H₃ : Heap} {a i : Nat} {πs₁ πs₂ : List Multiplicity}
+  | beta {ϖ : Multiplicity} {H₁ H₂ H₃ : Heap} {a i : Nat} {πs₁ πs₂ : List Multiplicity}
       {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
       {ss : List Nat} {o : Resumption} {b c : Nat} {πs : Fin b → Multiplicity}
       {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))} {R : List Nat}
@@ -353,9 +353,9 @@ inductive EvalObs (P : Program) : Multiplicity → Heap → Nat → Nat → List
       (hP : Ps.get i = some (o, ⟨b, c, πs, πs', N⟩)) (hb : ss.length = b) (hc : bs.length = c)
       (hπ₁ : ∀ j : Fin b, ∃ π₁, πs₁[(j : Nat)]? = some π₁ ∧ π₁ ≤ πs j)
       (hπ₂ : ∀ j : Fin c, ∃ π₂, πs₂[(j : Nat)]? = some π₂ ∧ π₂ ≤ πs' j)
-      (hw : Eval P κ (H₁.bind ((List.ofFn πs ++ List.ofFn πs').map (κ * ·)) (ss ++ bs))
+      (hw : Eval P ϖ (H₁.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (ss ++ bs))
         ((List.range' H₁.length (ss ++ bs).length).reverse ++ E) N w H₂ R)
-      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P κ H₁ a i πs₂ bs v H₃ R
+      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P ϖ H₁ a i πs₂ bs v H₃ R
 
 end
 
@@ -401,9 +401,9 @@ mutual
 /-- The evaluation is deterministic: a term evaluates to one address, in one heap, reading the same
 cells.
 RFC: `\mathsf{det}_\Downarrow` -/
-theorem Eval.det {P : Program} {κ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
-    {M : Target n} {a₁ a₂ : Nat} {R₁ R₂ : List Nat} (h₁ : Eval P κ H E M a₁ H₁ R₁)
-    (h₂ : Eval P κ H E M a₂ H₂ R₂) :
+theorem Eval.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
+    {M : Target n} {a₁ a₂ : Nat} {R₁ R₂ : List Nat} (h₁ : Eval P ϖ H E M a₁ H₁ R₁)
+    (h₂ : Eval P ϖ H E M a₂ H₂ R₂) :
     a₁ = a₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .var h hc, .var h' hc' => by
@@ -436,9 +436,9 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The evaluation of terms is deterministic. -/
-theorem EvalAll.det {P : Program} {κ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
-    {Ms : Targets n} {as₁ as₂ : List Nat} {R₁ R₂ : List Nat} (h₁ : EvalAll P κ H E Ms as₁ H₁ R₁)
-    (h₂ : EvalAll P κ H E Ms as₂ H₂ R₂) : as₁ = as₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+theorem EvalAll.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
+    {Ms : Targets n} {as₁ as₂ : List Nat} {R₁ R₂ : List Nat} (h₁ : EvalAll P ϖ H E Ms as₁ H₁ R₁)
+    (h₂ : EvalAll P ϖ H E Ms as₂ H₂ R₂) : as₁ = as₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .nil, .nil => ⟨rfl, rfl, rfl⟩
   | .cons h hs, .cons h' hs' => by
@@ -449,9 +449,9 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The elimination of a value by a recursor is deterministic. -/
-theorem EvalRec.det {P : Program} {κ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
+theorem EvalRec.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {ρ : Multiplicity} {Ns : TargetBranches n} {a v₁ v₂ : Nat} {R₁ R₂ : List Nat}
-    (h₁ : EvalRec P κ H E ρ Ns a v₁ H₁ R₁) (h₂ : EvalRec P κ H E ρ Ns a v₂ H₂ R₂) :
+    (h₁ : EvalRec P ϖ H E ρ Ns a v₁ H₁ R₁) (h₂ : EvalRec P ϖ H E ρ Ns a v₂ H₂ R₂) :
     v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .iota h hN _ _ hr hv, .iota h' hN' _ _ hr' hv' => by
@@ -466,11 +466,11 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The evaluation of the recursive results of a branch is deterministic. -/
-theorem EvalResults.det {P : Program} {κ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
+theorem EvalResults.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
     {πs' : List Multiplicity} {rs₁ rs₂ : List Nat} {R₁ R₂ : List Nat}
-    (h₁ : EvalResults P κ H E ρ Ns as ks πs' rs₁ H₁ R₁)
-    (h₂ : EvalResults P κ H E ρ Ns as ks πs' rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+    (h₁ : EvalResults P ϖ H E ρ Ns as ks πs' rs₁ H₁ R₁)
+    (h₂ : EvalResults P ϖ H E ρ Ns as ks πs' rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .nil, .nil => ⟨rfl, rfl, rfl⟩
   | .erased hs, .erased hs' => by
@@ -486,10 +486,10 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The observation of a value is deterministic. -/
-theorem EvalObs.det {P : Program} {κ : Multiplicity} {H H₁ H₂ : Heap} {a i : Nat}
+theorem EvalObs.det {P : Program} {ϖ : Multiplicity} {H H₁ H₂ : Heap} {a i : Nat}
     {πs : List Multiplicity} {bs : List Nat} {v₁ v₂ : Nat} {R₁ R₂ : List Nat}
-    (h₁ : EvalObs P κ H a i πs bs v₁ H₁ R₁)
-    (h₂ : EvalObs P κ H a i πs bs v₂ H₂ R₂) : v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+    (h₁ : EvalObs P ϖ H a i πs bs v₁ H₁ R₁)
+    (h₂ : EvalObs P ϖ H a i πs bs v₂ H₂ R₂) : v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .beta h hP _ _ _ _ hw hr, .beta h' hP' _ _ _ _ hw' hr' => by
     rw [h] at h'
