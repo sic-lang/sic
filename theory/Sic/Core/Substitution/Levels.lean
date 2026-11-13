@@ -721,6 +721,15 @@ theorem Signature.instanceType_substLevels {k k' k'' j g : Nat} {Γ : Scope}
   rw [Signature.instanceType, Signature.instanceType, Term.weakenClosed, Term.weakenClosed,
     Term.substLevels_rename, Term.substLevels_substLevels]
 
+-- ADE: none.
+/-- The states at a position of states instantiated are the states at the position, instantiated. -/
+theorem States.get_substLevels_eq {k k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    (Ss : States k Γ) → (j : Nat) →
+      (Ss.substLevels ls').get j = (Ss.get j).map fun x => ⟨x.1, x.2.1, x.2.2.substLevels ls'⟩
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ Ss, j + 1 => States.get_substLevels_eq ls' Ss j
+
 /-! ## Entries of Contexts -/
 
 /-- A variable declared in a context is declared, with its type instantiated, in the context
