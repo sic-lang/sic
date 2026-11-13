@@ -132,6 +132,31 @@ theorem Signature.Distinct.nodup : {sig : Signature} → sig.Distinct → {e : E
     · exact hn
     · exact h.nodup he
 
+/-- In a signature whose names are distinct, a constant has one entry, whose variables, mode,
+ownership and type are unique. -/
+theorem Signature.Distinct.hasConstant_unique {sig : Signature} (hd : sig.Distinct) {f : Name}
+    {j₁ k₁ g₁ j₂ k₂ g₂ : Nat} {m₁ m₂ : Mode} {p₁ p₂ : Grade} {A₁ : Instance j₁ g₁ → Term k₁ []}
+    {A₂ : Instance j₂ g₂ → Term k₂ []} (h₁ : sig.HasConstant f j₁ k₁ g₁ m₁ p₁ A₁)
+    (h₂ : sig.HasConstant f j₂ k₂ g₂ m₂ p₂ A₂) :
+    j₁ = j₂ ∧ k₁ = k₂ ∧ g₁ = g₂ ∧ m₁ = m₂ ∧ p₁ = p₂ ∧ HEq A₁ A₂ := by
+  cases h₁ with
+  | constantDefinition hm₁ =>
+    generalize hf : ConstantDefinition.name _ = f at h₂
+    cases h₂ with
+    | constantDefinition hm₂ =>
+      cases hd.entry_unique hm₁ hm₂ (List.mem_singleton_self _) (hf ▸ List.mem_singleton_self _)
+      exact ⟨rfl, rfl, rfl, rfl, rfl, HEq.rfl⟩
+    | constantDeclaration hm₂ =>
+      nomatch hd.entry_unique hm₁ hm₂ (List.mem_singleton_self _) (hf ▸ List.mem_singleton_self _)
+  | constantDeclaration hm₁ =>
+    generalize hf : ConstantDeclaration.name _ = f at h₂
+    cases h₂ with
+    | constantDefinition hm₂ =>
+      nomatch hd.entry_unique hm₁ hm₂ (List.mem_singleton_self _) (hf ▸ List.mem_singleton_self _)
+    | constantDeclaration hm₂ =>
+      cases hd.entry_unique hm₁ hm₂ (List.mem_singleton_self _) (hf ▸ List.mem_singleton_self _)
+      exact ⟨rfl, rfl, rfl, rfl, rfl, HEq.rfl⟩
+
 /-- In a signature whose names are distinct, a declared type is one data type of one type
 declaration. -/
 theorem Signature.Distinct.hasDataType_unique {sig : Signature} (hd : sig.Distinct) {D : Name}
@@ -561,6 +586,25 @@ theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Para
     have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
     simp only [Destructors.grade, hne, ↓reduceIte]
     exact h.grade (List.nodup_cons.1 hn).2
+
+/-- Destructors with distinct names give the destructor at a position one grade and one telescope
+of parameters. -/
+theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ p₂ q₂ : Grade}
+    {ps₁ ps₂ : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ₁ Ξ₂ : Scope} →
+      {Θ₁ : Telescope k Ξ₁ ps₁} → {B₁ : Term k (Ξ₁.extend ps₁.length)} →
+      {ψ₁ : ResultOwnership ps₁.length} → {Θ₂ : Telescope k Ξ₂ ps₂} →
+      {B₂ : Term k (Ξ₂.extend ps₂.length)} → {ψ₂ : ResultOwnership ps₂.length} → ns.Nodup →
+      Destructors.Pos d p₁ q₁ ds Ξ₁ Θ₁ B₁ ψ₁ → Destructors.Pos d p₂ q₂ ds Ξ₂ Θ₂ B₂ ψ₂ →
+        p₁ = p₂ ∧ ps₁ = ps₂
+  | _, _, _, _, _, _, _, _, _, _, _, hn, .here, h₂ => by
+    cases h₂ with
+    | here => exact ⟨rfl, rfl⟩
+    | there h => exact absurd h.mem (List.nodup_cons.1 hn).1
+  | _, _, _, _, _, _, _, _, _, _, _, hn, .there h₁, h₂ => by
+    cases h₂ with
+    | here => exact absurd h₁.mem (List.nodup_cons.1 hn).1
+    | there h₂ => exact h₁.params_unique (List.nodup_cons.1 hn).2 h₂
 
 /-- The destructor at a position of destructors whose names are distinct has the result there. -/
 theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter}
