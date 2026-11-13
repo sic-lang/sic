@@ -123,9 +123,9 @@ where
         rw [Branches.grades_subst]
         exact ownership (hu i j T' con u₀ hi hu₀) (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendResults_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
-    | .obs h hq hp hd ht hbs hv, hθ, hφ => by
+    | .obs h hq hp hd ht hbs hv hf, hθ, hφ => by
       rw [Term.obs_subst]
-      exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv
+      exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf
     | .corec (Ss := Ss) (gs := gs) h hq hp hh hS hss hSl hSs hgl hgs hgo hgr, hθ, hφ => by
       rw [Term.corec_subst]
       refine .corec h hq hp hh (States.get_subst _ hS) (ownershipArgs hss hθ hφ)

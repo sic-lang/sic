@@ -26,23 +26,6 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- `ψ'`: the ownership `ψ` of the result of a second-order variable without the factor of the first
-variable of its telescope, over the variables after it. -/
-def ResultOwnership.tail {α : Type} {n : Nat} (ψ : ResultOwnership α (n + 1)) : ResultOwnership α n :=
-  ⟨ψ.constant, fun i => ψ.coefficient i.succ⟩
-
--- ADE: none.
-/-- `ψ[ō / x̄]`: the value of the ownership `ψ` of the result of a second-order variable, given the
-ownerships `os` of its arguments: the meet of its constant `ψ` and of the ownership `oⱼ` of each
-argument scaled by the coefficient `χⱼ` of its variable, over the factors present, and none if no
-factor is.
-RFC: `\mathsf{value}_\psi` -/
-def ResultOwnership.value {α : Type} [Mul α] [Min α] : {n : Nat} → ResultOwnership α n → List α →
-    Option α
-  | _ + 1, ψ, o :: os => Option.merge (· ⊓ ·) ((ψ.coefficient 0).map (o * ·)) (ψ.tail.value os)
-  | _, ψ, _ => ψ.constant
-
--- ADE: none.
 /-- `φ, x̄ ◀ o · r̄ · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
 ownership `o · rᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are
 `ps`, the first one first, `rᵢ` being the requirement of the entry and `qᵢ` its grade: the value
@@ -159,7 +142,9 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   the result of its destructor, given the ownerships of its arguments, which satisfy the requirements
   of the entries of the telescope of the destructor, as the arguments of a telescope do: the result
   of a value owned alone has the ownership that its destructor gives it, and the result of a shared
-  value is shared, since an other owner of the value may observe it.
+  value is shared, since an other owner of the value may observe it; each argument on whose variable
+  `ψ` has a factor is checked in the mode `m` of the observation, so that the value of `ψ` reads only
+  ownerships that the mode counts, as the usage counts only the uses of these arguments.
   RFC: `d_{◀}` -/
   | obs {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -170,7 +155,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
       (ht : Ownership sig φ m o t) {bs : Args k Γ ps'} (hbs : OwnershipArgs sig φ m bs os)
-      (hv : ψ.value os = some v) :
+      (hv : ψ.value os = some v)
+      (hf : ∀ i : Fin ps'.length, (ψ.coefficient i).isSome → m ⊙ ps'[i].usage = m) :
       Ownership sig φ m (o * v) (.obs D qs ls ps as t d bs.terms)
   /-- A corecursor builds a new value, which has the ownership `11ᵖ`, whatever its state, whose terms
   satisfy the requirements of the entries of the state of its type, as the arguments of a telescope
