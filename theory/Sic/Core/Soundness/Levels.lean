@@ -274,6 +274,12 @@ theorem CorecBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
 
 end
 
+theorem Destructors.LevelEquiv.refl {k : Nat} {Γ : Scope} {ns : List Name} :
+    (ds : Destructors k Γ ns) → Destructors.LevelEquiv ds ds
+  | .nil => .nil
+  | .cons p q Θ B ψ ds =>
+    .cons p q ψ (Telescope.LevelEquiv.refl Θ) (Term.LevelEquiv.refl B) (Destructors.LevelEquiv.refl ds)
+
 mutual
 
 theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
@@ -736,11 +742,12 @@ theorem InstanceArgs.LevelEquiv.toSubst {k : Nat} {Γ : Scope} :
 theorem Subst.LevelEquiv.refl {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) : Subst.LevelEquiv θ θ :=
   fun x => Term.LevelEquiv.refl (θ x)
 
-/-- Substitutions equal up to their levels stay so when each is followed by the same abstraction. -/
+/-- Substitutions equal up to their levels stay so when each is followed by an abstraction, the two
+equal up to their levels. -/
 theorem Subst.LevelEquiv.snoc {k : Nat} {Γ : Scope} {e : Scope.Entry} {θ₁ θ₂ : Subst k [] Γ}
-    (h : Subst.LevelEquiv θ₁ θ₂) (f : Term k (Scope.extend [] e.params.length)) :
-    Subst.LevelEquiv (Subst.snoc (e := e) θ₁ f) (Subst.snoc θ₂ f)
-  | _, .zero => Term.LevelEquiv.refl _
+    (h : Subst.LevelEquiv θ₁ θ₂) {f₁ f₂ : Term k (Scope.extend [] e.params.length)}
+    (hf : Term.LevelEquiv f₁ f₂) : Subst.LevelEquiv (Subst.snoc (e := e) θ₁ f₁) (Subst.snoc θ₂ f₂)
+  | _, .zero => hf
   | _, .succ x => h x
 
 /-- Pairs of closed substitutions equal up to their levels are equal up to their levels. -/
@@ -1243,7 +1250,7 @@ theorem DesRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .nil, .nil, _ => .nil
   | .recursive hrs hΘ G hG, .cons _ _ _ hΘe _ hds, hθ =>
     .recursive hrs (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) G
-      fun f => DesRel.levelEquiv ih (hG f) hds (hθ.snoc f)
+      fun f => DesRel.levelEquiv ih (hG f) hds (hθ.snoc (Term.LevelEquiv.refl f))
   | .cons hΘ F hB hF hBresp G hG hresp hrs, .cons _ _ _ hΘe hBe hds, hθ =>
     .cons (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) F
       (fun ts hts =>
@@ -1256,7 +1263,7 @@ theorem DesRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
           (hBe.symm.subst (Subst.LevelEquiv.append (Subst.LevelEquiv.symm hθ)
             (Subst.LevelEquiv.refl _)))
         FieldRel.levelEquiv ih (hF ts hts v hv) hvv.symm)
-      hBresp G (fun f hf => DesRel.levelEquiv ih (hG f hf) hds (hθ.snoc f)) hresp hrs
+      hBresp G (fun f hf => DesRel.levelEquiv ih (hG f hf) hds (hθ.snoc (Term.LevelEquiv.refl f))) hresp hrs
 
 /-- The type of a field whose levels change for equal ones has the same equality of its terms. -/
 theorem FieldRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
@@ -1334,7 +1341,7 @@ theorem RunDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progra
   | .nil, .nil, _ => .nil
   | .recursive hi hrs hRΘ G hG, .cons _ _ _ hΘe _ hds, hθ =>
     .recursive hi hrs (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ)) G
-      fun f => RunDesRel.levelEquiv ih (hG f) hds (hθ.snoc f)
+      fun f => RunDesRel.levelEquiv ih (hG f) hds (hθ.snoc (Term.LevelEquiv.refl f))
   | .cons hi hΘ hRΘ F R hB hF hR G hG hrs, .cons _ _ _ hΘe hBe hds, hθ =>
     .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ))
       F R
@@ -1353,7 +1360,7 @@ theorem RunDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progra
           (hBe.symm.subst (Subst.LevelEquiv.append (Subst.LevelEquiv.symm hθ)
             (Subst.LevelEquiv.refl _)))
         RunFieldRel.levelEquiv ih (hR ts hts v hv) hvv.symm)
-      G (fun f hf => RunDesRel.levelEquiv ih (hG f hf) hds (hθ.snoc f)) hrs
+      G (fun f hf => RunDesRel.levelEquiv ih (hG f hf) hds (hθ.snoc (Term.LevelEquiv.refl f))) hrs
 
 /-- The type of a field whose levels change for equal ones has the same relation of run time of its
 terms. -/
