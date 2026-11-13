@@ -159,7 +159,7 @@ theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : T
 /-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
 instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
 arguments. -/
-theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {ψ : ResultOwnership ps.length}
+theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {ψ : ResultOwnership Grade ps.length}
     {X : Var Γ (.secondOrder ps ψ)}
     {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
     {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
@@ -205,7 +205,7 @@ theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ 
 telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
 substitutions of `Θ[σ₁]`, it gives equal closed types. -/
 theorem Context.SecondOrderIn.validEqType {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
-    {ψ : ResultOwnership ps.length} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
+    {ψ : ResultOwnership Grade ps.length} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
     {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A) :
     ValidCtx₀ sig ι ctx → ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
@@ -243,7 +243,7 @@ variable equal abstractions, whose instances by the equal substitutions that the
 telescope are equal terms of its type.
 The type at the arguments `t̄` substituted by `σ₁` and by `σ₂` is the type at `t̄[σ₁]` and at
 `ū[σ₂]`, then at `ū[σ₂]` and at `t̄[σ₂]`, both equal by the meaning of the entry. -/
-theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
     {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
     {A : Term 0 (Γ.extend ps.length)} {ts us : Args 0 Γ ps} (hctx : ValidCtx₀ sig ι ctx)
     (hX : ctx.SecondOrderIn X Θ A) (hts : ValidEqArgsΓ sig ι ctx ts us Θ) :
@@ -396,7 +396,7 @@ second-order variable, and equal abstractions for it, under the variables of its
 the first ones instantiate, are equal substitutions of the parameters; the abstractions at equal
 substitutions of the telescope are the abstractions at equal substitutions of the context extended
 by it. -/
-theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
     {ctx : Context 0 Γ} {as₁ as₂ : InstanceArgs 0 Γ Δ} {params : Context 0 Δ}
     {Θ : Telescope 0 Δ ps} {A : Term 0 (Δ.extend ps.length)} {B₁ B₂ : Term 0 (Γ.extend ps.length)}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂ params)
@@ -573,7 +573,7 @@ theorem ValidDestructorsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} {inst : Name �
 context extended by it. -/
 theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
     {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} (hr : rs 0 = none)
     (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
     (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
@@ -592,7 +592,7 @@ theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : L
 /-- `(⊨d̄_κrec)`, in a context: the destructors after a recursive destructor, which do not depend on
 it, are in the same context. -/
 theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership ps.length}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership Grade ps.length}
     {ds : Destructors 0 Γ ns} {κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name}
     {D : Name} (hr : rs 0 = some D) (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
     (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) ds κ) :

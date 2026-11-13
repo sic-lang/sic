@@ -60,7 +60,7 @@ structure Subst.Liftable (sig : Signature)
   /-- The image of a second-order variable is the abstraction of a variable declared with its
   telescope and its type, substituted. -/
   secondOrderIn : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
-    {ps : List Parameter} {ψ : ResultOwnership ps.length} {X : Var Δ (.secondOrder ps ψ)}
+    {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length} {X : Var Δ (.secondOrder ps ψ)}
     {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
     Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A →
       ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ))
@@ -85,7 +85,7 @@ theorem Subst.Lifted.append {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k 
 /-- The image of a second-order variable by a lifted substitution is the abstraction of a variable
 declared with its telescope and its type, substituted. -/
 theorem Subst.Lifted.secondOrderIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
-    {ctx : Context k Δ} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+    {ctx : Context k Δ} {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
     {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} :
     Lifted @Base ctx' @θ ctx → Subst.Liftable sig @Base → ctx.SecondOrderIn X Θ A →
       ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ))

@@ -278,7 +278,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
   RFC: `\mathsf{rt}_{\bar d|}` -/
   | cons {D : Name} {rs : Nat → Option RunRel} {Γ : Scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q : Grade}
-      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
       (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ)
@@ -306,7 +306,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
   RFC: `\mathsf{rt}_{\bar d\mathsf{rec}}` -/
   | recursive {D : Name} {rs : Nat → Option RunRel} {Γ : Scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q : Grade}
-      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {RΘ : RunFieldsRel}
       {R : RunRel} {i : Nat} (hi : sig.destructorCase D d = some i) (hrs : rs 0 = some R)
       (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ) (G : RunObsRel)

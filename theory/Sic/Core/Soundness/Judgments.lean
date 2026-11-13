@@ -125,7 +125,7 @@ variables, is the scope of the destructor at the corecursor at these levels. -/
 theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat)
     {d : Name} {p q : Grade} {ps₁ : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns}
     {Ξ : Scope} {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)}
-    {ψ : ResultOwnership ps₁.length} (hpos : ds.Pos d p q Ξ Θ B ψ) (r : Grade) (D : Name)
+    {ψ : ResultOwnership Grade ps₁.length} (hpos : ds.Pos d p q Ξ Θ B ψ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
     (Ss : States k Γ) (gs : CorecBranches k Γ) (ps' : List Parameter) :
     ∀ {a} (x : Var Ξ a),
@@ -153,13 +153,13 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
       (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
       ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
         gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
@@ -214,12 +214,12 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
       (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
       ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →

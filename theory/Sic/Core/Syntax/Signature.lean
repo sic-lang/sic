@@ -581,7 +581,7 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
 theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → d ∈ ns
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → d ∈ ns
   | _, _, _, _, _, _, _, .here => List.mem_cons_self
   | _, _, _, _, _, _, _, .there h => List.mem_cons_of_mem _ h.mem
 
@@ -590,7 +590,7 @@ arguments. -/
 theorem Destructors.Pos.arguments {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
         ds.arguments d = some ps
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.arguments]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -606,7 +606,7 @@ theorem Entry.argumentGrades_of_mem {decl : TypeDeclaration}
     (hc : T.destructors.Nodup) {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades) {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-    {ψ : ResultOwnership ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) :
+    {ψ : ResultOwnership Grade ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) :
     Entry.argumentGrades T.name d qs ps (.typeDeclaration decl) = some (ps'.map (·.usage)) := by
   simp only [Entry.argumentGrades]
   split
@@ -640,7 +640,7 @@ theorem Signature.Distinct.argumentGrades : {sig : Signature} → sig.Distinct �
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) → {d : Name} → {p q : Grade} →
     {ps' : List Parameter} → {Ξ : Scope} → {Θ : Telescope decl.levels Ξ ps'} →
-    {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership ps'.length} →
+    {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
     (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
     sig.argumentGrades D d qs ps = some (ps'.map (·.usage))
   | [], _, _, _, _, h, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch h.1
@@ -661,7 +661,7 @@ theorem Signature.Distinct.argumentGrades : {sig : Signature} → sig.Distinct �
 theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
         ds.grade d = some p
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.grade]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -675,8 +675,8 @@ theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ p₂ q₂ 
     {ps₁ ps₂ : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ₁ Ξ₂ : Scope} →
       {Θ₁ : Telescope k Ξ₁ ps₁} → {B₁ : Term k (Ξ₁.extend ps₁.length)} →
-      {ψ₁ : ResultOwnership ps₁.length} → {Θ₂ : Telescope k Ξ₂ ps₂} →
-      {B₂ : Term k (Ξ₂.extend ps₂.length)} → {ψ₂ : ResultOwnership ps₂.length} → ns.Nodup →
+      {ψ₁ : ResultOwnership Grade ps₁.length} → {Θ₂ : Telescope k Ξ₂ ps₂} →
+      {B₂ : Term k (Ξ₂.extend ps₂.length)} → {ψ₂ : ResultOwnership Grade ps₂.length} → ns.Nodup →
       Destructors.Pos d p₁ q₁ ds Ξ₁ Θ₁ B₁ ψ₁ → Destructors.Pos d p₂ q₂ ds Ξ₂ Θ₂ B₂ ψ₂ →
         p₁ = p₂ ∧ ps₁ = ps₂
   | _, _, _, _, _, _, _, _, _, _, _, hn, .here, h₂ => by
@@ -693,7 +693,7 @@ theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q : Grade} {ps : List
     (names : List Name) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
         ds.resultName names d = B.blockName names
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultName]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -706,7 +706,7 @@ result there. -/
 theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
         ds.resultConstant d = ψ.constant
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultConstant]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -720,7 +720,7 @@ theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q : Grade} {ps
     (names : List Name) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
         ds.recursionAt names hpos.index = B.blockName names
   | _, _, _, _, _, _, _, .here => by
     simp [Destructors.Pos.index, Destructors.recursionAt, Destructors.recursion]
@@ -733,7 +733,7 @@ theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q : Grade} {ps
 theorem Destructors.exists_pos {k : Nat} {d : Name} :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) → d ∈ ns →
       ∃ (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k Ξ ps)
-        (B : Term k (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length),
+        (B : Term k (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length),
         Nonempty (Destructors.Pos d p q ds Ξ Θ B ψ)
   | _, _, .nil, h => nomatch h
   | _, d' :: _, .cons p q Θ B ψ ds, h => by

@@ -99,7 +99,7 @@ inductive WfCtx : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → 
       (h : WfType sig ctx A) : WfCtx sig (ctx.var A)
   /-- A second-order variable, whose type is a type in the context extended by its telescope.
   RFC: `\mathsf{ctx}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       (h : WfType sig (ctx.append Θ) A) : WfCtx sig (ctx.secondOrder Θ A ψ)
 
@@ -154,7 +154,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   /-- An application of a second-order variable to arguments of its telescope has its type, in
   which the arguments are substituted for the variables of the telescope.
   RFC: `\mathsf{var}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} {ts : Args k Γ ps}
       (hX : ctx.SecondOrderIn X Θ A) (hts : HasArgs sig ctx ts Θ) :
       HasType sig ctx (.var X ts) (A.instantiate ts)
@@ -257,7 +257,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
       {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-      {ψ : ResultOwnership ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
+      {ψ : ResultOwnership Grade ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
       (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
@@ -305,12 +305,12 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
         (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
@@ -361,7 +361,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hA : HasType sig ctx A (.sort ⟨.prop, l⟩)) : EqTerm sig ctx t u A
   /-- Equal arguments give equal applications of a second-order variable.
   RFC: `\mathsf{var}_{X\equiv}` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       {ts us : Args k Γ ps} (hX : ctx.SecondOrderIn X Θ A) (hts : EqArgs sig ctx ts us Θ) :
       EqTerm sig ctx (.var X ts) (.var X us) (A.instantiate ts)
@@ -481,7 +481,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {t₁ t₂ : Term k Γ} {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-      {ψ : ResultOwnership ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
+      {ψ : ResultOwnership Grade ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
@@ -537,13 +537,13 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
         ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
         (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
         ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
           gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps'') (p q : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
         (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
@@ -660,7 +660,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {d : Name} {p q : Grade} {ps₀ : List Parameter}
       {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
-      {ψ₀ : ResultOwnership ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
+      {ψ₀ : ResultOwnership Grade ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
       {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
@@ -687,12 +687,12 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
         (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
@@ -737,7 +737,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
       (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-        (ψ : ResultOwnership ps'.length) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
+        (ψ : ResultOwnership Grade ps'.length) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
         EqTerm sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
           (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')
@@ -794,7 +794,7 @@ inductive HasInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Cont
   /-- The arguments of the parameters before a second-order variable, and the abstraction for it, a
   term of its type under the variables of its telescope, which they instantiate.
   RFC: `\mathsf{arg}_X` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ}
       {as : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B : Term k (Γ.extend ps.length)}
@@ -822,7 +822,7 @@ inductive EqInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Conte
   /-- Equal arguments of the parameters before a second-order variable, and equal abstractions for
   it, under the variables of its telescope, which the first ones instantiate.
   RFC: `\mathsf{arg}_{X\equiv}` -/
-  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ}
       {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B₁ B₂ : Term k (Γ.extend ps.length)}
@@ -977,7 +977,7 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {ctx : Context decl.levels Γ} {p q : Grade}
       {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
-      {ψ : ResultOwnership ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
+      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
       {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
@@ -992,7 +992,7 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
   | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {ctx : Context decl.levels Γ} {p q : Grade}
-      {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership ps.length} {D : Name}
+      {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership Grade ps.length} {D : Name}
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hp : κ.quality = .prop → p.mode ≠ .oneOne)

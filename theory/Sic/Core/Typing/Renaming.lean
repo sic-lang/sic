@@ -35,7 +35,7 @@ structure TypedRen (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx' : Context k
   /-- The image of a variable is declared with its type, renamed. -/
   varIn : ∀ {x : Var Δ .var} {A : Term k Δ}, ctx.VarIn x A → ctx'.VarIn (α x) (A.rename α)
   /-- The image of a second-order variable is declared with its telescope and its type, renamed. -/
-  secondOrderIn : ∀ {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  secondOrderIn : ∀ {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
     {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
     ctx.SecondOrderIn X Θ A → ctx'.SecondOrderIn (α X) (Θ.rename α) (A.rename (Ren.liftN _ α))
 

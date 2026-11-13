@@ -306,7 +306,7 @@ theorem EqSubst.var_iff {Γ : Scope} (ctx : Context 0 Γ) (A : Term 0 Γ)
 
 /-- `(eq_X)`. -/
 theorem EqSubst.secondOrder_iff {Γ : Scope} {ps : List Parameter} (ctx : Context 0 Γ)
-    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (ψ : ResultOwnership ps.length)
+    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
     (σ₁ σ₂ : Subst 0 [] (.secondOrder ps ψ :: Γ)) :
     EqSubst sig ι (ctx.secondOrder Θ A ψ) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst (Subst.tail σ₁))) τ₁ τ₂ →

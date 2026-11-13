@@ -66,13 +66,15 @@ structure Parameter where
 variable whose telescope has `n` entries, the meet of its constant `χ₀` and of a factor `xⱼ · χⱼ`
 for some variables `xⱼ` of the telescope, the constant and each factor being optional.
 A function from the variables of the telescope gives each one factor at most, in their order.
+The constant and the coefficients are elements of `α`: grades in a term, and their multiplicities at
+run time in the target language of the erasure.
 RFC: `\mathsf{syntax}_\psi`
 -/
-structure ResultOwnership (n : Nat) where
+structure ResultOwnership (α : Type) (n : Nat) where
   /-- The constant `χ₀`, if any. -/
-  constant : Option Grade
+  constant : Option α
   /-- The coefficient `χⱼ` of the variable `xⱼ`, if it has a factor. -/
-  coefficient : Fin n → Option Grade
+  coefficient : Fin n → Option α
 
 /-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
 its telescope and the ownership of its result. -/
@@ -81,7 +83,7 @@ inductive Scope.Entry where
   | var
   /-- A second-order variable `X : (Θ ⊢ A ◀ ψ)`, whose telescope has the parameters `ps`, and the
   ownership `ψ` of its result. -/
-  | secondOrder (ps : List Parameter) (ψ : ResultOwnership ps.length)
+  | secondOrder (ps : List Parameter) (ψ : ResultOwnership Grade ps.length)
 
 /-- The parameters of the telescope of an entry, none for a variable. -/
 @[reducible] def Scope.Entry.params : Scope.Entry → List Parameter
@@ -371,7 +373,7 @@ inductive Context (k : Nat) : Scope → Type where
   /-- `Γ, X : (Θ ⊢ A ◀ ψ)`, a second-order variable, whose telescope has the parameters `ps`, and the
   ownership of whose result is `ψ`. -/
   | secondOrder {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ) (Θ : Telescope k Γ ps)
-      (A : Term k (Γ.extend ps.length)) (ψ : ResultOwnership ps.length) :
+      (A : Term k (Γ.extend ps.length)) (ψ : ResultOwnership Grade ps.length) :
       Context k (.secondOrder ps ψ :: Γ)
 
 /-! ## Signatures
@@ -468,7 +470,7 @@ inductive Destructors (k : Nat) : Scope → List Name → Type where
   | nil {Γ : Scope} : Destructors k Γ []
   /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q`, followed by the destructors after it. -/
   | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q : Grade)
-      (Θ : Telescope k Γ ps) (B : Term k (Γ.extend ps.length)) (ψ : ResultOwnership ps.length)
+      (Θ : Telescope k Γ ps) (B : Term k (Γ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
       (ds : Destructors k (.secondOrder ps ψ :: Γ) ns) : Destructors k Γ (d :: ns)
 
 -- ADE: none.
@@ -482,16 +484,16 @@ destructors before it is defined on it.
 -/
 inductive Destructors.Pos {k : Nat} (d : Name) (p q : Grade) {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → (Ξ : Scope) → Telescope k Ξ ps →
-      Term k (Ξ.extend ps.length) → ResultOwnership ps.length → Type where
+      Term k (Ξ.extend ps.length) → ResultOwnership Grade ps.length → Type where
   /-- `d̄ = (d : (Θ ⊢ B ◀ ψ) ▶ p; q | d̄₂)`: the first destructor. -/
   | here {Γ : Scope} {ns : List Name} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
-      {ψ : ResultOwnership ps.length} {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} :
+      {ψ : ResultOwnership Grade ps.length} {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} :
       Destructors.Pos d p q (.cons (d := d) p q Θ B ψ ds) Γ Θ B ψ
   /-- `d̄ = (d' : (Θ' ⊢ B' ◀ ψ') ▶ p'; q' | d̄')`, where `d` is in `d̄'`. -/
   | there {Γ : Scope} {d' : Name} {ns : List Name} {ps' : List Parameter} {p' q' : Grade}
-      {Θ' : Telescope k Γ ps'} {B' : Term k (Γ.extend ps'.length)} {ψ' : ResultOwnership ps'.length}
+      {Θ' : Telescope k Γ ps'} {B' : Term k (Γ.extend ps'.length)} {ψ' : ResultOwnership Grade ps'.length}
       {ds : Destructors k (.secondOrder ps' ψ' :: Γ) ns} {Ξ : Scope} {Θ : Telescope k Ξ ps}
-      {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       (h : Destructors.Pos d p q ds Ξ Θ B ψ) :
       Destructors.Pos d p q (.cons (d := d') p' q' Θ' B' ψ' ds) Ξ Θ B ψ
 
@@ -947,7 +949,7 @@ def Signature.destructorArguments (sig : Signature) (D : Name) (qs : List Qualit
 def Destructors.Pos.index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Nat
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Nat
   | _, _, _, _, _, _, _, .here => 0
   | _, _, _, _, _, _, _, .there h => h.index + 1
 

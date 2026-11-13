@@ -188,7 +188,7 @@ inductive Destructors.LevelEquiv {k : Nat} :
   /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q`, then the destructors after it. -/
   | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q : Grade)
       {Θ₁ Θ₂ : Telescope k Γ ps} {B₁ B₂ : Term k (Γ.extend ps.length)}
-      (ψ : ResultOwnership ps.length) {ds₁ ds₂ : Destructors k (.secondOrder ps ψ :: Γ) ns}
+      (ψ : ResultOwnership Grade ps.length) {ds₁ ds₂ : Destructors k (.secondOrder ps ψ :: Γ) ns}
       (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) (hB : Term.LevelEquiv B₁ B₂)
       (hds : Destructors.LevelEquiv ds₁ ds₂) :
       Destructors.LevelEquiv (.cons (d := d) p q Θ₁ B₁ ψ ds₁) (.cons p q Θ₂ B₂ ψ ds₂)
@@ -1671,7 +1671,7 @@ inductive Context.LevelEquiv {k : Nat} : {Γ : Scope} → Context k Γ → Conte
       (hA : Term.LevelEquiv A₁ A₂) : Context.LevelEquiv (ctx₁.var A₁) (ctx₂.var A₂)
   /-- `Γ, X : (Θ ⊢ A ◀ ψ)`. -/
   | secondOrder {Γ : Scope} {ps : List Parameter} {ctx₁ ctx₂ : Context k Γ}
-      {Θ₁ Θ₂ : Telescope k Γ ps} {A₁ A₂ : Term k (Γ.extend ps.length)} (ψ : ResultOwnership ps.length)
+      {Θ₁ Θ₂ : Telescope k Γ ps} {A₁ A₂ : Term k (Γ.extend ps.length)} (ψ : ResultOwnership Grade ps.length)
       (h : Context.LevelEquiv ctx₁ ctx₂) (hΘ : Telescope.LevelEquiv Θ₁ Θ₂)
       (hA : Term.LevelEquiv A₁ A₂) :
       Context.LevelEquiv (ctx₁.secondOrder Θ₁ A₁ ψ) (ctx₂.secondOrder Θ₂ A₂ ψ)

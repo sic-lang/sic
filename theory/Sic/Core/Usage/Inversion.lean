@@ -102,7 +102,7 @@ theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scop
     {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades) {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-    {ψ : ResultOwnership ps'.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {t : Term k Γ} {bs : Args k Γ ps'} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {u : Term k Γ}, Usage sig γ m u →
       u = .obs D qs ls ps as t d bs.terms →
@@ -194,7 +194,7 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
         UsageArgs sig γ' (m ⊙ r) ss ∧
         (∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
           (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
           (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
           decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
           (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
@@ -203,11 +203,11 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
             (m ⊙ p) g) ∧
         (∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
-          (ψ : ResultOwnership ps₁.length), decl.codataCases[i]? = some (j, T', d) →
+          (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
           (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
         (∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
-          (ψ : ResultOwnership ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
+          (ψ : ResultOwnership Grade ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
           (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → B.blockName decl.names = some D' →
           δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ))
   | _, _, .corec (ss := ss') h₁ _ _ hh₁ hS₁ hSu hss _ _ _ _ hgu hδ hδr, he => by

@@ -744,7 +744,7 @@ theorem Context.VarIn.substLevels {k k' : Nat} (ls' : Fin k → Level k') {Γ : 
 /-- A second-order variable declared in a context is declared, with its telescope and its type
 instantiated, in the context instantiated. -/
 theorem Context.SecondOrderIn.substLevels {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope}
-    {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)}
+    {ps : List Parameter} {ψ : ResultOwnership Grade ps.length} {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)}
     {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} :
     ctx.SecondOrderIn X Θ A →
       (ctx.substLevels ls').SecondOrderIn X (Θ.substLevels ls') (A.substLevels ls')

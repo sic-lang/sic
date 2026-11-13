@@ -474,7 +474,7 @@ def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q : Grade}
     {ps : List Parameter} (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Subst k Γ' Γ →
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Subst k Γ' Γ →
         Subst k Γ' Ξ
   | _, _, _, _, _, _, _, .here, θ => θ
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') h, θ =>
@@ -635,7 +635,7 @@ inductive Context.VarIn {k : Nat} : {Γ : Scope} → Context k Γ → Var Γ .va
       VarIn (ctx.var B) x.succ (A.rename Ren.weaken)
   /-- An entry before a second-order variable.
   RFC: `\in_\Gamma.x,Y` -/
-  | succSecondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
+  | succSecondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length} {ctx : Context k Γ}
       {x : Var Γ .var} {A : Term k Γ} {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)}
       (h : VarIn ctx x A) : VarIn (ctx.secondOrder Θ B ψ) x.succ (A.rename Ren.weaken)
 
@@ -644,23 +644,23 @@ type `A` in the context, by the cases of the last entry; the empty context, whic
 second-order variable, has no constructor, and the telescope and the type are weakened to the scope
 of the context. -/
 inductive Context.SecondOrderIn {k : Nat} : {Γ : Scope} → {ps : List Parameter} →
-    {ψ : ResultOwnership ps.length} → Context k Γ → Var Γ (.secondOrder ps ψ) → Telescope k Γ ps →
+    {ψ : ResultOwnership Grade ps.length} → Context k Γ → Var Γ (.secondOrder ps ψ) → Telescope k Γ ps →
     Term k (Γ.extend ps.length) → Prop where
   /-- The last entry.
   RFC: `\in_\Gamma.X` -/
-  | zero {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
+  | zero {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length} {ctx : Context k Γ}
       {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} :
       SecondOrderIn (ctx.secondOrder Θ A ψ) .zero (Θ.rename Ren.weaken)
         (A.rename (Ren.liftN _ Ren.weaken))
   /-- An entry before a variable.
   RFC: `\in_\Gamma.X,y` -/
-  | succVar {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership ps.length} {ctx : Context k Γ}
+  | succVar {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length} {ctx : Context k Γ}
       {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       {B : Term k Γ} (h : SecondOrderIn ctx X Θ A) :
       SecondOrderIn (ctx.var B) X.succ (Θ.rename Ren.weaken) (A.rename (Ren.liftN _ Ren.weaken))
   /-- An entry before a second-order variable.
   RFC: `\in_\Gamma.X,Y` -/
-  | succSecondOrder {Γ : Scope} {ps qs : List Parameter} {ψ : ResultOwnership ps.length} {ψ' : ResultOwnership qs.length}
+  | succSecondOrder {Γ : Scope} {ps qs : List Parameter} {ψ : ResultOwnership Grade ps.length} {ψ' : ResultOwnership Grade qs.length}
       {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps}
       {A : Term k (Γ.extend ps.length)} {Θ' : Telescope k Γ qs} {B : Term k (Γ.extend qs.length)}
       (h : SecondOrderIn ctx X Θ A) :

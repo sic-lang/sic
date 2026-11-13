@@ -51,7 +51,7 @@ def Prelude.unit : TypeDeclaration where
 
 /-- The ownership of the result of the second parameter `X` of the pair, a type, which states
 nothing. -/
-def Prelude.pairOwnership : ResultOwnership 1 := ⟨some .unrestrictedUnrestricted, fun _ => none⟩
+def Prelude.pairOwnership : ResultOwnership Grade 1 := ⟨some .unrestrictedUnrestricted, fun _ => none⟩
 
 /-- The scope of the parameters of the pair, `A` and `X`, the last one first: `X` is a second-order
 variable over a variable `x : A`, whose uses in `X` its grade `ωωᵖ` does not bound, since the scope

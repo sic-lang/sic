@@ -363,7 +363,7 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
   RFC: `\mathsf{ty}_{\bar d|}` -/
   | cons {s : Quality} {rs : Nat → Option TermRel} {Γ : Scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q : Grade}
-      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
       (hB : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
@@ -384,7 +384,7 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
   RFC: `\mathsf{ty}_{\bar d\mathsf{rec}}` -/
   | recursive {s : Quality} {rs : Nat → Option TermRel} {Γ : Scope} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q : Grade}
-      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       {R : TermRel} (hrs : rs 0 = some R)
       (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (G : ObsRel)

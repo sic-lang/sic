@@ -64,7 +64,7 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
     (hT : sig.HasCodataType D decl T) {I : Instance decl.sorts decl.grades}
     (hI : decl.constraint I) {d : Name} {p q : Grade} {ps : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps} {B : Term decl.levels (Ξ.extend ps.length)}
-    {ψ : ResultOwnership ps.length} (hpos : (T.body I).Pos d p q Ξ Θ B ψ) :
+    {ψ : ResultOwnership Grade ps.length} (hpos : (T.body I).Pos d p q Ξ Θ B ψ) :
     (decl.sort I).quality = .prop → p.mode ≠ .oneOne := by
   obtain ⟨_, hdecl⟩ := h.wfTypeDeclaration hT.1
   cases hdecl with

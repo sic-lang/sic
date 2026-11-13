@@ -44,7 +44,7 @@ structure TypedSubst (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx' : Context
   /-- The term of a variable has its type, substituted. -/
   varIn : ∀ {x : Var Δ .var} {A : Term k Δ}, ctx.VarIn x A → HasType sig ctx' (σ x).eta (A.subst₀ σ)
   /-- A second-order variable is a variable declared with its telescope and its type, substituted. -/
-  secondOrderIn : ∀ {ps : List Parameter} {ψ : ResultOwnership ps.length}
+  secondOrderIn : ∀ {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
     {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
     ctx.SecondOrderIn X Θ A →
       ∃ Y, σ X = .var Y ∧ ctx'.SecondOrderIn Y (Θ.subst₀ σ) (A.subst₀ (Subst₀.liftN _ σ))

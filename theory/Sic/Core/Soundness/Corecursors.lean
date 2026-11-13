@@ -119,7 +119,7 @@ result at equal arguments, and the equality of the destructors after `d`, with `
 them. -/
 theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Option TermRel}
     {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
-    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
     {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {S : ObsRel}
     (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs (.cons (d := d) p q Θ B ψ ds) @θ S)
     (hr : rs 0 = none) {o₁ o₂ f₁ f₂ : Observations} (hS : S o₁ o₂)
@@ -172,7 +172,7 @@ and `f₂` that compute as them are, for `d`, related by `R` at equal arguments,
 the destructors after `d`, at any abstraction for `d`, relates them. -/
 theorem DesRel.headRec (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Option TermRel}
     {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
-    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership ps.length}
+    {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
     {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {S : ObsRel}
     (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs (.cons (d := d) p q Θ B ψ ds) @θ S)
     {R : TermRel} (hr : rs 0 = some R) {v : Term 0 []}
@@ -215,7 +215,7 @@ theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
       {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ₁ θ₂ : Subst 0 [] Γ} →
       ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ → {rsR : Nat → Option TermRel} →
       (∀ i, rs i = none → rsR i = none) →
@@ -384,7 +384,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {d : Name} {p q : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
-    {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
+    {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {a₁ a₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
@@ -565,7 +565,7 @@ theorem ValidEqTermΓ.obs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {d : Name} {p q : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
-    {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership ps'.length}
+    {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
@@ -858,14 +858,14 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
       DesRel sig ι n (fun m _ => levelRel sig ι m) s rsR (ds.substLevels L) @θ S →
       {o₁ o₂ : Observations} →
       (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
-        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
         (hpos : ds.Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps),
         EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o₁ θ)))
           ts.toSubst us.toSubst → rs hpos.index = none →
         ValidEqTerm₀ sig ι ((o₁ d ps).subst ts.toSubst) ((o₂ d ps).subst us.toSubst)
           ((B.substLevels L).subst (Subst.append (hpos.obsSubst o₁ θ) ts.toSubst))) →
       (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
-        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
         (hpos : ds.Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps),
         EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o₁ θ)))
           ts.toSubst us.toSubst → ∀ D R, rs hpos.index = some D → rsR hpos.index = some R →
@@ -886,7 +886,7 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
           (inst D).subst θ := fun f D => Term.subst_rename_of (fun _ => rfl) _
     have hv' : ∀ (d' : Name) (p' q' : Grade) (ps' : List Parameter) (Ξ' : Scope)
         (Θ' : Telescope k' Ξ' ps') (B' : Term k' (Ξ'.extend ps'.length))
-        (ψ' : ResultOwnership ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ')
+        (ψ' : ResultOwnership Grade ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ')
         (ts us : Args 0 [] ps'),
         EqSubst sig ι (Context.empty.append ((Θ'.substLevels L).subst
           (hpos.obsSubst o₁ (Subst.snoc (e := .secondOrder ps ψ) θ (o₁ d ps))))) ts.toSubst
@@ -898,7 +898,7 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
         hv d' p' q' ps' Ξ' Θ' B' ψ' (.there hpos) ts us hτ
     have hr' : ∀ (d' : Name) (p' q' : Grade) (ps' : List Parameter) (Ξ' : Scope)
         (Θ' : Telescope k' Ξ' ps') (B' : Term k' (Ξ'.extend ps'.length))
-        (ψ' : ResultOwnership ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ')
+        (ψ' : ResultOwnership Grade ps'.length) (hpos : ds.Pos d' p' q' Ξ' Θ' B' ψ')
         (ts us : Args 0 [] ps'),
         EqSubst sig ι (Context.empty.append ((Θ'.substLevels L).subst
           (hpos.obsSubst o₁ (Subst.snoc (e := .secondOrder ps ψ) θ (o₁ d ps))))) ts.toSubst
@@ -978,7 +978,7 @@ theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe
       DesRel sig ι n (fun m _ => levelRel sig ι m) s rsR (ds.substLevels L) @θ S →
       {o₁ o₂ : Observations} →
       (∀ (d : Name) (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
-        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership ps.length)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
         (hpos : ds.Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps),
         EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o₁ θ)))
           ts.toSubst us.toSubst →
@@ -1018,7 +1018,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         v = .corec r₁ T.name qs ls ps a₁ ss₁ Ss₁ gs₁ ∧ w = .corec r₂ T.name qs ls ps a₂ ss₂ Ss₂ gs₂ ∧
         ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-          (ψ : ResultOwnership ps'.length)
+          (ψ : ResultOwnership Grade ps'.length)
           (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps'),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
             (hpos.obsSubst (v.observation T.name qs ls ps a₁) a₁.toSubst))) ts.toSubst us.toSubst →
@@ -1069,7 +1069,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         v = .corec r₁ T'.name qs ls ps a₁ ss₁ Ss₁ gs₁ ∧ w = .corec r₂ T'.name qs ls ps a₂ ss₂ Ss₂ gs₂ ∧
         ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-          (ψ : ResultOwnership ps'.length)
+          (ψ : ResultOwnership Grade ps'.length)
           (hpos : (T'.body I).Pos d p q Ξ Θ B ψ) (ts us : Args 0 [] ps'),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
             (hpos.obsSubst (v.observation T'.name qs ls ps a₁) a₁.toSubst))) ts.toSubst us.toSubst →
@@ -1199,7 +1199,7 @@ substituted by a closed substitution of the context followed by closed arguments
 the scope of the destructor at the corecursor from these arguments. -/
 theorem Destructors.Pos.obsSubst_corecAt {k' : Nat} {Γ Δ : Scope} {d : Name} {p q : Grade}
     {ps₁ : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope}
-    {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)} {ψ : ResultOwnership ps₁.length}
+    {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hpos : ds.Pos d p q Ξ Θ B ψ) (σ : Subst 0 [] Γ) (r : Grade) (D : Name) (qs : List Quality)
     (ls : List (Level 0)) (ps : List Grade) (as : InstanceArgs 0 Γ Δ) (Ss : States 0 Γ)
     (gs : CorecBranches 0 Γ) {ps' : List Parameter} (ss : Args 0 [] ps')
@@ -1243,7 +1243,7 @@ theorem Red.beta_corec (hd : sig.Distinct) {Γ : Scope} {decl : TypeDeclaration}
     {Ss : States 0 Γ} {gs : CorecBranches 0 Γ} {h' i : Nat} {d : Name}
     (hi : decl.codataCases[i]? = some (h', T, d)) {p q : Grade} {ps₁ : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-    {ψ : ResultOwnership ps₁.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+    {ψ : ResultOwnership Grade ps₁.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {ps' : List Parameter} {g : Term 0 ((Γ.extend ps'.length).extend ps₁.length)}
     (hg : gs.get i = some ⟨0, ps'.length, ps₁.length, g⟩) (σ : Subst 0 [] Γ)
     (ss : Args 0 [] ps') (ts : Args 0 [] ps₁) {Δ' : Scope} {D' : Name} {qs' : List Quality}
@@ -1270,7 +1270,7 @@ theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
     {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ}
     {d : Name} {p q : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
-    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership ps₁.length}
+    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) (κ : Universe 0) (χ : Grade)
     (σ : Subst 0 [] Γ) {ps' : List Parameter} (ss : Args 0 [] ps') (ts : Args 0 [] ps₁) :
     (Term.branchResult decl.names B κ r χ
@@ -1308,7 +1308,7 @@ theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : Typ
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ}
     {ps' : List Parameter} {S : Telescope 0 Γ ps'} {d : Name} {p q : Grade}
     {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
-    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership ps₁.length}
+    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
     {g₁ g₂ : Term 0 ((Γ.extend ps'.length).extend ps₁.length)}
     (hgv : ValidEqTermΓ sig ι ((ctx.append S).append ((Θ.substLevels (ls.getFin hl)).subst
@@ -1364,13 +1364,13 @@ def CorecBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (c
   (∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps''),
     decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
     ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length),
+      (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
     (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
     ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
       gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩) ∧
   ∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps'') (p q : Grade)
     (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-    (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership ps₁.length)
+    (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
     (g₁ g₂ : Term 0 ((Γ.extend ps''.length).extend ps₁.length)),
     decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
     (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
@@ -1576,7 +1576,7 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {r : Grade} {Ss : States 0 Γ} {gs : CorecBranches 0 Γ} {h' i : Nat} {ps' : List Parameter}
     {S : Telescope 0 Γ ps'} {ss : Args 0 Γ ps'} {d : Name} {p q : Grade} {ps₀ : List Parameter}
     {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
-    {ψ₀ : ResultOwnership ps₀.length} {g : Term 0 ((Γ.extend ps'.length).extend ps₀.length)}
+    {ψ₀ : ResultOwnership Grade ps₀.length} {g : Term 0 ((Γ.extend ps'.length).extend ps₀.length)}
     {bs : Args 0 Γ ps₀} (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
     (hss : ValidArgsΓ sig ι ctx ss S) (hi : decl.codataCases[i]? = some (h', T, d))
     (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ₀ Θ₀ B₀ ψ₀)
@@ -1698,7 +1698,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     (ht : ValidTerm₀ sig ι t (.inst D qs ls ps as)) (hu : ValidTerm₀ sig ι u (.inst D qs ls ps as))
     (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-      (ψ : ResultOwnership ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (ψ : ResultOwnership Grade ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
       (ts us : Args 0 [] ps'),
       EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
         (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) ts.toSubst us.toSubst →
@@ -1730,7 +1730,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
   -- The observations at the levels without variables.
   have hobs' : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-      (ψ : ResultOwnership ps'.length) (hpos : (T.body I).Pos d p q Ξ Θ B ψ)
+      (ψ : ResultOwnership Grade ps'.length) (hpos : (T.body I).Pos d p q Ξ Θ B ψ)
       (ts us : Args 0 [] ps'),
       EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
         (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) ts.toSubst us.toSubst →
@@ -1850,7 +1850,7 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
     (hu : ValidTermΓ sig ι ctx u (.inst D qs ls ps as))
     (hobs : ∀ (d : Name) (p q : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-      (ψ : ResultOwnership ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
+      (ψ : ResultOwnership Grade ps'.length) (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ),
       ValidEqTermΓ sig ι (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
         (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))
         (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')

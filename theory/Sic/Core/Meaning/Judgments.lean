@@ -59,7 +59,7 @@ theorem validCtx₀_var {sig : Signature} {ι : Interpretation} {Γ : Scope} (ct
 RFC: `{\vDash}\mathsf{ctx}_X` -/
 theorem validCtx₀_secondOrder {sig : Signature} {ι : Interpretation} {Γ : Scope}
     {ps : List Parameter} (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length))
-    (ψ : ResultOwnership ps.length) : ValidCtx₀ sig ι (ctx.secondOrder Θ A ψ) ↔ ValidTypeΓ sig ι (ctx.append Θ) A := by
+    (ψ : ResultOwnership Grade ps.length) : ValidCtx₀ sig ι (ctx.secondOrder Θ A ψ) ↔ ValidTypeΓ sig ι (ctx.append Θ) A := by
   rw [ValidCtx₀]; rfl
 
 /-! ## Signatures and Entries -/
