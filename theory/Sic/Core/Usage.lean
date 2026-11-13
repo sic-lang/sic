@@ -52,15 +52,18 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   RFC: `\kappa_{▶}` -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)
   -- ADE: none.
-  /-- An instance of a declared type uses the variables of its arguments as many times as the type
-  uses its parameters, as the grades `ζ` of the type at the instance say.
+  /-- An instance of a declared type, a type, which the run time erases, is a position of the grade
+  `01ᵖ`: it uses the variables of its arguments as many times as the type uses its parameters, as
+  the grades `ζ` of the type at the instance say, checked in the mode `m ⊙ 01ᵖ` and counted `01ᵖ`
+  times, so that a type uses no variable at run time.
   RFC: `D_{▶}` -/
   | inst {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
       {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl ζ) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (has : UsageInstanceArgs sig δ m (ζ (.ofLists qs ps hq hp)) as) :
-      Usage sig δ m (.inst D qs ls ps as)
+      (hp : ps.length = decl.grades)
+      (has : UsageInstanceArgs sig δ (m ⊙ .noneLinear) (ζ (.ofLists qs ps hq hp)) as) :
+      Usage sig (.noneLinear ·ᶜ δ) m (.inst D qs ls ps as)
   -- ADE: none.
   /-- A constructor uses the variables of the terms of its fields, each checked in the mode of the
   grade of its field and counted with this grade, as the arguments of its telescope do; the

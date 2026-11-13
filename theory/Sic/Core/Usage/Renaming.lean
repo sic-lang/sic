@@ -326,7 +326,8 @@ where
       exact .var (usageArgs hts hθ)
     | .const h hm, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .const h hm
     | .sort, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .sort
-    | .inst h hq hp has, hθ => .inst h hq hp (usageInstanceArgs has hθ)
+    | .inst h hq hp has, hθ => by
+      rw [GradeVector.rename_commutes.rename_smul]; exact .inst h hq hp (usageInstanceArgs has hθ)
     | .ctor h hc hq hp hts, hθ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (usageArgs hts hθ)
