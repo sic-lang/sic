@@ -5,7 +5,6 @@ public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
 import Sic.Core.RunTime.Corecursors
 import Sic.Core.RunTime.Recursors
-import Sic.Core.RunTime.Skeleton
 import Sic.Core.Syntax.Signature
 import Sic.Core.Usage.Absence
 
@@ -148,10 +147,10 @@ theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_le_run {Γ : Scope}
 /-! ## Recursive Fields -/
 
 /-- The first element of a list from a position is its element at this position. -/
-theorem List.headD_drop_of_getElem? {α : Type} {d x : α} : {l : List α} → {i : Nat} →
+theorem _root_.List.headD_drop_of_getElem? {α : Type} {d x : α} : {l : List α} → {i : Nat} →
     l[i]? = some x → (l.drop i).headD d = x
   | _ :: _, 0, h => by simpa using h
-  | _ :: l, i + 1, h => List.headD_drop_of_getElem? (l := l) (i := i) (by simpa using h)
+  | _ :: l, i + 1, h => headD_drop_of_getElem? (l := l) (i := i) (by simpa using h)
 
 /-- The positions of the recursive fields from the position `o` are at `o` or after it. -/
 theorem Telescope.le_of_mem_positions {y : Nat} : (rs : List (Option Name)) → (o : Nat) →
@@ -175,10 +174,14 @@ theorem Telescope.resultGrades_eq_idxOf : (rs : List (Option Name)) → (es : Li
       fun j => es[j]?).getD Grade.zero = Telescope.resultGrades rs es l
   | [], _, _, _ => rfl
   | some _ :: rs, es, o, 0 => by
-    cases es <;> simp [List.zipIdx_cons, List.idxOf?_cons, Telescope.resultGrades]
+    have hself : (o == o + 0) = true := decide_eq_true rfl
+    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.idxOf?_cons, hself,
+      ↓reduceIte, Option.bind_some]
+    cases es <;> rfl
   | some _ :: rs, es, o, l + 1 => by
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.idxOf?_cons,
-      beq_iff_eq, show o ≠ o + (l + 1) by omega, ↓reduceIte]
+    have hne : (o == o + (l + 1)) = false := beq_false_of_ne (by omega)
+    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.idxOf?_cons, hne,
+      Bool.false_eq_true, ↓reduceIte]
     have ih := Telescope.resultGrades_eq_idxOf rs es.tail (o + 1) l
     rw [show o + 1 + l = o + (l + 1) by omega] at ih
     cases es with
@@ -189,8 +192,13 @@ theorem Telescope.resultGrades_eq_idxOf : (rs : List (Option Name)) → (es : Li
     | cons e es =>
       cases h : List.idxOf? (o + (l + 1))
           ((rs.zipIdx (o + 1)).filterMap fun z => z.1.map fun _ => z.2) with
-      | none => rw [h] at ih; simpa [Telescope.resultGrades] using ih
-      | some j => rw [h] at ih; simpa [Telescope.resultGrades] using ih
+      | none =>
+        simp only [h, Option.map_none, Option.bind_none, Option.getD_none] at ih ⊢
+        exact ih
+      | some j =>
+        simp only [h, Option.map_some, Option.bind_some, List.getElem?_cons_succ,
+          List.tail_cons] at ih ⊢
+        exact ih
   | none :: rs, es, o, 0 => by
     have hn : o ∉ (rs.zipIdx (o + 1)).filterMap (fun z => z.1.map fun _ => z.2) :=
       fun h => by have := Telescope.le_of_mem_positions rs (o + 1) h; omega
