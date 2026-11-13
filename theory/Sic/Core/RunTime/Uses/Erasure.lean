@@ -146,49 +146,37 @@ theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_le_run {Γ : Scope}
 
 /-! ## Recursive Fields -/
 
-/-- A grade is below `1` at run time when it has a use at run time, and `0` otherwise. -/
-theorem _root_.Sic.Grading.Grade.run_le_indicator :
-    ∀ e : Grade, e.run ≤ (if e ∈ Mode.oneOne.erased then .zero else .one) := by
-  decide
-
 /-- The sum of the grades of the recursive results of a branch has, at run time, a multiplicity
-below that of the recursions that the branch runs, one for each result whose grade has a use at
-run time. -/
+below the sum of multiplicities above those of their grades. -/
 theorem Telescope.run_resultSum_le : (rs : List (Option Name)) → (ps : List Parameter) →
     rs.length = ps.length → (es : List Grade) → es.length = (Telescope.resultParams rs ps).length →
-    (ks : Fin (Telescope.resultParams rs ps).length → Option Nat) →
+    (πs : Fin (Telescope.resultParams rs ps).length → Multiplicity) →
     (∀ (j : Fin (Telescope.resultParams rs ps).length) (e : Grade), es[(j : Nat)]? = some e →
-      ((ks j).isSome ↔ e ∉ Mode.oneOne.erased)) →
-    (Telescope.resultSum (Telescope.resultGrades rs es) rs).run ≤ recursions ks
+      e.run ≤ πs j) →
+    (Telescope.resultSum (Telescope.resultGrades rs es) rs).run ≤ Multiplicity.sum πs
   | [], [], _, _, _, _, _ => by
     show Multiplicity.zero ≤ Multiplicity.zero
     decide
-  | none :: rs, _ :: ps, hl, es, he, ks, hk => by
+  | none :: rs, _ :: ps, hl, es, he, πs, hk => by
     show (Telescope.resultSum (fun l => Telescope.resultGrades (none :: rs) es (l + 1)) rs).run ≤ _
-    exact Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es he ks hk
+    exact Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es he πs hk
   | some _ :: rs, _ :: ps, hl, [], he, _, _ => nomatch he
-  | some _ :: rs, _ :: ps, hl, e :: es, he, ks, hk => by
+  | some _ :: rs, _ :: ps, hl, e :: es, he, πs, hk => by
     let j₀ : Fin (Telescope.resultParams rs ps).length.succ := ⟨0, Nat.zero_lt_succ _⟩
-    have hr : recursions ks = (if (ks j₀).isSome then Multiplicity.one else .zero) +
-        recursions fun j => ks j.succ := rfl
-    rw [hr]
-    show (e + Telescope.resultSum (fun l => Telescope.resultGrades rs es l) rs).run ≤ _
-    have ih := Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es (Nat.succ.inj he)
-      (fun j => ks j.succ) fun j e' h => hk j.succ e' (by simpa using h)
-    have h₀ : e.run ≤ (if (ks j₀).isSome then Multiplicity.one else .zero) := by
-      have := hk j₀ e rfl
-      by_cases hs : (ks j₀).isSome
-      · simpa [hs, this.1 hs] using Grade.run_le_indicator e
-      · have he' : e ∈ Mode.oneOne.erased := Decidable.of_not_not fun h => hs (this.2 h)
-        simpa [hs, he'] using Grade.run_le_indicator e
-    exact Multiplicity.add_le_add' _ _ _ _ h₀ ih
+    show (e + Telescope.resultSum (fun l => Telescope.resultGrades rs es l) rs).run ≤
+      πs j₀ + Multiplicity.sum fun j => πs j.succ
+    rw [(Grade.run_op _ _).1]
+    exact Multiplicity.add_le_add' _ _ _ _ (hk j₀ e rfl)
+      (Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es (Nat.succ.inj he)
+        (fun j => πs j.succ) fun j e' h => hk j.succ e' (by simpa using h))
 
 /-! ## Branches -/
 
 /-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
 the erasure of each branch reads them as some `δ` allows, and its new variables as the
-multiplicities that the erasure gives their binders allow, and `χ` bounds `δ` plus `χ` for each
-recursive result that the branch computes. -/
+multiplicities that the erasure gives their binders allow, `χ` bounds `δ` plus `χ` times the
+multiplicity of each recursive result, and a result that the branch computes at the multiplicity
+`0` leaves `χ` without linear variable. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
     (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Grade)) →
@@ -200,14 +188,15 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
               ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
             (fun (j : Fin b) => gs[j].run))
           (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b)) ∧
-        χ ≤ᶜ δ +ᶜ (recursions (fun (j : Fin b) =>
-          if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?) ·ᶜ χ)) →
+        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) => gs[j].run) ·ᶜ χ) ∧
+        ∀ j : Fin b, gs[j] ∉ S → gs[j].run = .zero → χ ≤ᶜ 𝟘ᵛ) →
     TargetBranches.Usage χ (us.erase sig S hΓ r es fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
-    obtain ⟨δ, hu, hχ⟩ := h 0 a b gs u rfl rfl
+    obtain ⟨δ, hu, hχ, hk⟩ := h 0 a b gs u rfl rfl
     simp only [List.drop_zero] at hu hχ
-    refine .cons hu hχ (Branches.erase_usage hΓ r χ us es.tail fs.tail
+    refine .cons hu hχ (fun j hj => hk j fun hs => by simp [show gs[(j : Nat)] ∈ S from hs] at hj)
+      (Branches.erase_usage hΓ r χ us es.tail fs.tail
       fun i a' b' gs' u' hg hgs => ?_)
     have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
     have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
@@ -333,7 +322,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
             gs'.toList := by
         rw [Branches.resultGrades, hgs']
       have hlr := Telescope.length_recursion decl.names (con.fields (.ofLists qs ps hq hp))
-      refine ⟨(δs i).run, ?_, ?_⟩
+      refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => absurd ((Mode.erased_values.1 _).2 h0) hj⟩
       · -- The erased branch reads the new variables below the grades that its usage gives them.
         have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm
           (hu i j T' con u' hc hu')
@@ -368,29 +357,22 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         refine MultiplicityVector.le_trans hχi (MultiplicityVector.add_le_add'
           (MultiplicityVector.le_refl _) fun x => Multiplicity.mul_le_mul_right' _ _ _ ?_)
         refine Telescope.run_resultSum_le _ _ hlr _ (by simp) _ fun j' e he => ?_
-        have hpos := Telescope.length_positions
-          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) hlr 0
         rw [List.getElem?_eq_getElem (by simp), _root_.Vector.getElem_toList] at he
         cases Option.some.inj he
-        have hj : (j' : Nat) < (((con.fields (.ofLists qs ps hq hp)).recursion
-            decl.names).zipIdx.filterMap fun y => y.1.map fun _ => y.2).length := by
-          rw [hpos]
-          exact j'.2
-        by_cases hs : gs'[(j' : Nat)] ∈ Mode.oneOne.erased
-        · simp [hs]
-        · simp [hs, List.getElem?_eq_getElem hj]
+        exact (Multiplicity.modality.meet.meet_idem _).symm
     simp only [Term.erase]
     rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul]
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
+      refine .sub (.recursor (sig.skeleton_isSkeleton _ _ _).usage
+        (fun _ => MultiplicityVector.le_refl _) hbr) (MultiplicityVector.le_of_eq ?_)
       rw [(Mode.erased_values.1 r).1 hr,
+        (MultiplicityVector.module Multiplicity.modality).zero_smul,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      exact .recursor (sig.skeleton_isSkeleton _ _ _).usage hbr
     · simp only [hr, ↓reduceIte]
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
-      exact .sub (.recursor (Usage.erase_usage hd hΓ hm' ht) hbr)
-        (MultiplicityVector.add_le_add' (MultiplicityVector.smul_le_of_not_erased hr _)
-          (MultiplicityVector.le_refl _))
+      exact .recursor (Usage.erase_usage hd hΓ hm' ht)
+        (fun h0 => absurd ((Mode.erased_values.1 r).2 h0) hr) hbr
   | .obs (d := d) h hq hp hpos ht hbs _ => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
@@ -499,14 +481,15 @@ theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {�
     rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul]
     by_cases hp : p.usage ∈ Mode.oneOne.erased
     · simp only [hp, ↓reduceIte]
-      rw [(Mode.erased_values.1 p.usage).1 hp]
-      rw [show Multiplicity.zero ·ᶜ GradeVector.run _ = 𝟘ᵛ from
-        (MultiplicityVector.module Multiplicity.modality).zero_smul _]
-      exact .cons .erased (UsageArgs.erase_usage hd hΓ hm hts)
+      rw [(Mode.erased_values.1 p.usage).1 hp,
+        (MultiplicityVector.module Multiplicity.modality).zero_smul]
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => MultiplicityVector.le_refl _)
+        (UsageArgs.erase_usage hd hΓ hm hts)
+      rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hp, ↓reduceIte]
       have hm' : m ⊙ p.usage = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hp
-      exact .cons (.sub (Usage.erase_usage hd hΓ hm' ht)
-          (MultiplicityVector.smul_le_of_not_erased hp _))
+      exact .cons (Usage.erase_usage hd hΓ hm' ht)
+        (fun h0 => absurd ((Mode.erased_values.1 _).2 h0) hp)
         (UsageArgs.erase_usage hd hΓ hm hts)
 
 -- ADE: none.
@@ -531,13 +514,15 @@ theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct) {k : Nat
     · simp only [hrp, ↓reduceIte]
       rw [(Mode.erased_values.1 _).1 hrp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      exact .cons .erased (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => MultiplicityVector.le_refl _)
+        (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
+      rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hrp, ↓reduceIte]
       have hmp : m' ⊙ p.usage = .oneOne := by
         rw [← hm', hm]
         exact Mode.oneOne_odot_mul _ _ hrp
-      exact .cons (.sub (Usage.erase_usage hd hΓ hmp ht)
-          (MultiplicityVector.smul_le_of_not_erased hrp _))
+      exact .cons (Usage.erase_usage hd hΓ hmp ht)
+        (fun h0 => absurd ((Mode.erased_values.1 _).2 h0) hrp)
         (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
 
 end
