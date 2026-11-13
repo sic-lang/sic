@@ -180,4 +180,9 @@ theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where
   factor := by revert m; decide
   mode := fun _ h => Decidable.of_not_not h
 
+/-- A product of grades with a use at run time keeps the mode `11ᵐ`, factor by factor. -/
+theorem Mode.oneOne_odot_mul :
+    ∀ r p : Grade, r * p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ r) ⊙ p = .oneOne := by
+  decide
+
 end Sic.Grading

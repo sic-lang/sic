@@ -44,14 +44,6 @@ theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (
       obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ r us es.tail fs.tail h
       exact ⟨i + 1, a', b', u', hu, ho⟩
 
-/-- The branch at a position of branches is before their end. -/
-theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
-    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k ((Γ.extend n).extend m)} →
-      us.get i = some a → i < us.length
-  | .nil, _, _, h => nomatch h
-  | .cons .., 0, _, _ => Nat.zero_lt_succ _
-  | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
-
 /-- The grades extended by the variables of a telescope give each old variable its grade. -/
 theorem _root_.Sic.Grading.GradeVector.extendParams_addNat {Γ : Scope} (γ : GradeVector Γ.length) (r : Grade) :
     (ps : List Parameter) → (x : Fin Γ.length) →

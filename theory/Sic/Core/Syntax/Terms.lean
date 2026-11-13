@@ -110,4 +110,12 @@ theorem Scope.length_extend_extend_extend (Γ : Scope) (a b c : Nat) :
   rw [Scope.length_extend, Scope.length_extend, Scope.length_extend]
   omega
 
+/-- The branch at a position of branches is before their end. -/
+theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
+    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k ((Γ.extend n).extend m)} →
+      us.get i = some a → i < us.length
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, _ => Nat.zero_lt_succ _
+  | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
+
 end Sic.Core

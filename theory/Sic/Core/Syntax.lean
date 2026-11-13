@@ -83,6 +83,23 @@ def ResultOwnership.map {α β : Type} {n : Nat} (f : α → β) (ψ : ResultOwn
     ResultOwnership β n :=
   ⟨ψ.constant.map f, fun j => (ψ.coefficient j).map f⟩
 
+-- ADE: none.
+/-- `ψ'`: the ownership `ψ` of the result of a second-order variable without the factor of the first
+variable of its telescope, over the variables after it. -/
+def ResultOwnership.tail {α : Type} {n : Nat} (ψ : ResultOwnership α (n + 1)) : ResultOwnership α n :=
+  ⟨ψ.constant, fun i => ψ.coefficient i.succ⟩
+
+-- ADE: none.
+/-- `ψ[ō / x̄]`: the value of the ownership `ψ` of the result of a second-order variable, given the
+ownerships `os` of its arguments: the meet of its constant `ψ` and of the ownership `oⱼ` of each
+argument scaled by the coefficient `χⱼ` of its variable, over the factors present, and none if no
+factor is.
+RFC: `\mathsf{value}_\psi` -/
+def ResultOwnership.value {α : Type} [Mul α] [Min α] : {n : Nat} → ResultOwnership α n → List α →
+    Option α
+  | _ + 1, ψ, o :: os => Option.merge (· ⊓ ·) ((ψ.coefficient 0).map (o * ·)) (ψ.tail.value os)
+  | _, ψ, _ => ψ.constant
+
 /-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
 its telescope and the ownership of its result. -/
 inductive Scope.Entry where

@@ -211,3 +211,8 @@ forbidden = ["Sic.Core.Ownership"]
 reason = "the uses at run time read the usage, the erasure, the evaluation and the relation of run time, and neither the typing nor the ownership"
 modules = ["Sic.Core.RunTime.Uses"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
+
+[[rule]]
+reason = "the ownership at run time reads the ownership, the erasure, the evaluation and the relation of run time, and neither the typing nor the usage"
+modules = ["Sic.Core.RunTime.Ownership"]
+forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]

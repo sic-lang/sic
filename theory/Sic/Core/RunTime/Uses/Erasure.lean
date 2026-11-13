@@ -241,11 +241,6 @@ theorem CorecBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePr
       rw [e₂] at hu₁
       exact ⟨b₁, c₁, v₁, p₁, hg₁, hp₁, δ₁, hu₁, hδ₁, hr₁⟩
 
-/-- A product of grades with a use at run time keeps the mode `11ᵐ`, factor by factor. -/
-theorem Mode.oneOne_odot_mul :
-    ∀ r p : Grade, r * p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ r) ⊙ p = .oneOne := by
-  decide
-
 /-- The grade of the mode of a destructor without use at run time has no use at run time. -/
 theorem Mode.grade_odot_mul_of_erased :
     ∀ p q : Grade, p ∈ Mode.oneOne.erased → ((Mode.oneOne ⊙ p).grade * q).run = .zero := by
