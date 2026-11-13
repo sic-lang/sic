@@ -447,7 +447,8 @@ def Signature.skeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality
 recursor of grade `r`, whose recursive result, when the field has one, has the grade `e`: the uses
 at run time of the field that the recursor gives, `run(r · p)`, minus those of the recursion on the
 field, `run(e · r)`, the least multiplicity that the usage allows the variable; a field without
-grade, in a term that no declaration types, has `ω`, which states nothing. -/
+grade, in a term that no declaration types, has `ω`, which states nothing.
+RFC: `\mathsf{erase}_{\bar u}.\pi` -/
 def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) : Option Grade → Option Grade → Multiplicity
   | some p, e => (r * p).run - ((e.getD .zero) * r).run
   | none, _ => .omega
