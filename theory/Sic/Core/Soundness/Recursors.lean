@@ -221,29 +221,25 @@ theorem ValidEqTerm₀.prop_any (hd : sig.Distinct) {t u t' u' A : Term 0 []}
   obtain ⟨w, R, hw, hR, hrel⟩ := h.2.2 hA
   exact ⟨h.1, fun hn => absurd hA hn, fun _ => ⟨w, R, hw, hR, hR.prop_any hd (hA.isProp hd hw) hrel⟩⟩
 
--- ADE: `natrec-congᵛ`, `prodrec-congᵛ`, `unitrec-congᵛ` and `emptyrec-congᵛ`, in
--- `Definition/LogicalRelation/Substitution/Introductions/`.
-/-- `(rec_≡)` keeps the meaning, and `(rec)` with it: at equal substitutions of the context, the
-recursors on the canonical terms that `(eq_μ)` relates are equal terms of the motive, by induction on
-`(eq_μ)`, the least relations closed under its clauses: the relations of the canonical terms that
-`(eq_μ)` relates and on which the recursors are equal are closed, since the recursors on two
-constructors step to their branches, at equal arguments of the fields and at recursive results that
-these relations make equal. On a proposition, the truths of its instances whose motives are true at
-every proof are closed likewise, so that the motive at the term is true. -/
-theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+-- ADE: none.
+/-- `(rec_≡)` at closed terms, for each type of the block: at equal substitutions `σ₁` and `σ₂` of the
+context, the recursors on equal closed terms `t₁` and `t₂` of the instance of a type `T` of the
+block are equal terms of its motive at `t₁`, the motive and the branches substituted, by induction
+on `(eq_μ)` or on `(true_μ)`, which relate the terms of all the types of the block together: the
+statement for the type of the term of `(rec_≡)`, and for the other types, which the recursors on
+their recursive fields reach. -/
+theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
-    (h : sigT.HasDataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {T₀ : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDataType D decl T₀) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
     (hp : ps.length = decl.grades)
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ : InstanceArgs 0 Γ decl.scope} {Δ₂ : Scope}
-    {as₂ : InstanceArgs 0 Γ Δ₂} {r : Grade} {t₁ t₂ : Term 0 Γ} {Cs₁ Cs₂ : Motives 0 Γ}
-    {us₁ us₂ : Branches 0 Γ} {κ : Universe 0} {h' : Nat} {C₁ : Term 0 (.var :: Γ)}
-    {as₁' : InstanceArgs 0 Γ decl.scope}
+    {as₂ : InstanceArgs 0 Γ Δ₂} {r : Grade} {Cs₁ Cs₂ : Motives 0 Γ}
+    {us₁ us₂ : Branches 0 Γ} {κ : Universe 0} {as₁' : InstanceArgs 0 Γ decl.scope}
+    (hctx : ValidCtx₀ sig ι ctx)
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₁'
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
-    (ht : ValidEqTermΓ sig ι ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.dataTypes[h']? = some T)
-    (hC : Cs₁.get h' = some ⟨0, C₁⟩)
     (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
     (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs₁.get j = some ⟨0, C'⟩ →
       ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls₁ ps as₁)) C' (.sort κ))
@@ -264,16 +260,20 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
         ((C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))).rename
           (Ren.weakenN _)))
     (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
-      κ.quality = .prop) :
-    ValidEqTermΓ sig ι ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
-      (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁)) := by
+      κ.quality = .prop)
+    {σ₁ σ₂ : Subst 0 [] Γ} (hσ : EqSubst sig ι ctx σ₁ σ₂) {h' : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} {C₁ : Term 0 (.var :: Γ)}
+    (hh : decl.dataTypes[h']? = some T) (hC : Cs₁.get h' = some ⟨0, C₁⟩) {t₁ t₂ : Term 0 []}
+    (ht' : ValidEqTerm₀ sig ι t₁ t₂ (.inst T.name qs ls₁ ps (as₁.subst σ₁))) :
+    ValidEqTerm₀ sig ι
+      (.recursor r T.name qs ls₁ ps (as₁.subst σ₁) t₁ (Cs₁.subst σ₁) (us₁.subst σ₁))
+      (.recursor r T.name qs ls₂ ps (as₂.subst σ₂) t₂ (Cs₂.subst σ₂) (us₂.subst σ₂))
+      ((C₁.subst (Subst.lift σ₁)).subst₀ (Subst₀.single t₁)) := by
   obtain ⟨hsig, hv⟩ := hent.hasDataType h
-  obtain ⟨hdecl, hT, hD⟩ := id hsig
-  subst hD
-  have hctx := ht.1.1
+  obtain ⟨hdecl, -, -⟩ := id hsig
+  have hT : T ∈ decl.dataTypes := List.mem_of_getElem? hh
   have hd := hctx.distinct
   have hnd : decl.names.Nodup := hd.nodup hdecl
-  have ht₁ := ht.trans ht.symm
   have hCv₀ := hCv h' T C₁ hh hC
   have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
     fun _ _ hj => TypeDeclaration.idxOf_dataTypes hnd hj
@@ -292,10 +292,6 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
       rwa [Nat.zero_add] at this
     obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
     exact ⟨i, j, hi, hj⟩
-  refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
-  · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
-      Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
-    exact hCv₀.motive hσ (ht₁.2 σ₁ σ₂ hσ)
   -- The motive of a type of the block in the motives substituted is its motive, substituted.
   have hK : ∀ τ : Subst 0 [] Γ, ∀ D' ∈ decl.names, ∀ C,
       (Cs₁.subst τ).get (decl.names.idxOf D') = some ⟨0, C⟩ → ∃ j T' C',
@@ -351,16 +347,12 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
     have hsig' : sig.HasDataType T'.name decl T' := ⟨hdecl, hT', rfl⟩
     exact ⟨_, _, hb, Red.iota_subst hsig' hi τ₁ hq hp ts₁ hu₁,
       Red.iota_subst hsig' hi τ₂ hq hp ts₂ hu₂⟩
-  have ht' := ht.2 σ₁ σ₂ hσ
   have hσ₁ := hσ.left hctx
-  rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls₁ ps (as₁.subst σ₁))
       (.inst D' qs ls₁ ps (as₁.subst σ₁)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
-  obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht'.1.2
-  cases Computesι.det hd hcv (hI T.name)
   have hasσ := has.2 σ₁ σ₁ hσ₁
-  have htσ : ValidEqTerm₀ sig ι (t₁.subst σ₁) (t₁.subst σ₁)
-      (.inst T.name qs ls₁ ps (as₁.subst σ₁)) := ht'.trans ht'.symm
+  have htσ : ValidEqTerm₀ sig ι t₁ t₁ (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+    ht'.trans ht'.symm
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · -- An instance in a universe: induction on `(eq_μ)`.
     obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl₁ hp hadm hasσ hs
@@ -420,7 +412,7 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
     cases Computesι.det hd (hI _) hv'
     have hrel' := (HasEq.unique hd hR' (.univ _ hU') w₁ w₂).1 hrel
     have hP := (hrel' X hclosed).2 C₁ ((hidx h' T hh).symm ▸ hC)
-    have hwt : ValidEqTerm₀ sig ι w₁ (t₁.subst σ₁) (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
+    have hwt : ValidEqTerm₀ sig ι w₁ t₁ (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
       (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htσ
     have hP' := hP.conv (hCv₀.motive hσ₁ hwt)
     exact (ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₁.1)).2
@@ -481,6 +473,66 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
       exact (hb.conv (hCj.motive hσ₁ hca)).prop_any hd (hCj.motive_prop hσ₁ ha)
     exact ((htrue B hclosed).2 C₁ ((hidx h' T hh).symm ▸ hC) _ htσ).prop_any hd
       (hCv₀.motive_prop hσ₁ htσ)
+
+
+-- ADE: `natrec-congᵛ`, `prodrec-congᵛ`, `unitrec-congᵛ` and `emptyrec-congᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/`.
+/-- `(rec_≡)` keeps the meaning, and `(rec)` with it: at equal substitutions of the context, the
+recursors on the canonical terms that `(eq_μ)` relates are equal terms of the motive, by induction on
+`(eq_μ)`, the least relations closed under its clauses: the relations of the canonical terms that
+`(eq_μ)` relates and on which the recursors are equal are closed, since the recursors on two
+constructors step to their branches, at equal arguments of the fields and at recursive results that
+these relations make equal. On a proposition, the truths of its instances whose motives are true at
+every proof are closed likewise, so that the motive at the term is true. -/
+theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
+    (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {as₁ : InstanceArgs 0 Γ decl.scope} {Δ₂ : Scope}
+    {as₂ : InstanceArgs 0 Γ Δ₂} {r : Grade} {t₁ t₂ : Term 0 Γ} {Cs₁ Cs₂ : Motives 0 Γ}
+    {us₁ us₂ : Branches 0 Γ} {κ : Universe 0} {h' : Nat} {C₁ : Term 0 (.var :: Γ)}
+    {as₁' : InstanceArgs 0 Γ decl.scope}
+    (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₁'
+      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+    (ht : ValidEqTermΓ sig ι ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.dataTypes[h']? = some T)
+    (hC : Cs₁.get h' = some ⟨0, C₁⟩)
+    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
+    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs₁.get j = some ⟨0, C'⟩ →
+      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls₁ ps as₁)) C' (.sort κ))
+    (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hut : ∀ i j T' con C' R u₁ u₂, decl.cases[i]? = some (j, T', con) →
+      Cs₁.get j = some ⟨0, C'⟩ → con.results (.ofLists qs ps hq hp) decl.names Cs₁ = some R →
+      us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
+      us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+        (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
+      ValidEqTermΓ sig ι
+        ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)).append R) u₁ u₂
+        ((C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))).rename
+          (Ren.weakenN _)))
+    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      κ.quality = .prop) :
+    ValidEqTermΓ sig ι ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
+      (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁)) := by
+  obtain ⟨hsig, -⟩ := hent.hasDataType h
+  obtain ⟨-, -, hD⟩ := id hsig
+  subst hD
+  have hctx := ht.1.1
+  have ht₁ := ht.trans ht.symm
+  refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
+  · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
+      Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+    exact (hCv h' T C₁ hh hC).motive hσ (ht₁.2 σ₁ σ₂ hσ)
+  rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
+  exact ValidEqTerm₀.recursor_block hent h hq hl₁ hp hadm hctx has hCs hCv hus₁ hus₂ hut hκ hσ hh hC
+    (ht.2 σ₁ σ₂ hσ)
 
 -- ADE: `natrec-zeroᵛ`, `natrec-sucᵛ`, `prodrec-βᵛ` and `unitrec-βᵛ`, in
 -- `Definition/LogicalRelation/Substitution/Introductions/`.
