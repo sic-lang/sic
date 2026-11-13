@@ -501,8 +501,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
         (((sig.resumedTypes D qs ps).getD []).map
           fun h => Resumption.ofArity (decide (r ∈ S)) (h.bind Ss.arity))
         (((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
-          ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run,
-            as.map (·.run))))
+          ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage), as)))
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
@@ -538,27 +537,30 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
       (us.erase sig S hΓ r es.tail fs.tail)
 
 -- ADE: none.
-/-- `⌊ḡ⌋_{S, p̄, k̄, π̄̄}`: the erasure of the branches of a corecursor, under their new variables,
-each at the grade of its destructor in `ps`, with its resumption in `ks` and the multiplicities of
-the variables of its state and of its arguments in `πs`, `ω` for a variable whose multiplicity is
-not given, in a term that no declaration types; a branch without grade, or with non-uniform
-parameters, which the corecursors do not have yet, is erased.
+/-- `⌊ḡ⌋_{S, p̄, k̄, q̄̄}`: the erasure of the branches of a corecursor, under their new variables,
+each at the grade `p` of its destructor in `ps`, with its resumption in `ks`; the variable of an
+entry of its state or of an argument whose grade is `q` in `pss` has the multiplicity
+`run(⌜11ᵐ ⊙ p⌝ · q)`, the grade that the usage gives it at run time, which is `0` when `p` has no use
+at run time, since no observation then runs the branch, and `ω` when `q` is not given, in a term
+that no declaration types; a branch without grade, or with non-uniform parameters, which the
+corecursors do not have yet, is erased, and its variables have the multiplicity `ω`.
 RFC: `\mathsf{erase}_{\bar g}` -/
 def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    CorecBranches k Γ → List Grade → List Resumption →
-      List (List Multiplicity × List Multiplicity) → TargetCorecBranches Γ.length
+    CorecBranches k Γ → List Grade → List Resumption → List (List Grade × List Grade) →
+      TargetCorecBranches Γ.length
   | .nil, _, _, _ => .nil
-  | .cons 0 b c v vs, p :: ps, ks, πs =>
-    .cons (ks.headD .none) b c (fun j => ((πs.headD ([], [])).1[(j : Nat)]?).getD .omega)
-      (fun j => ((πs.headD ([], [])).2[(j : Nat)]?).getD .omega)
+  | .cons 0 b c v vs, p :: ps, ks, pss =>
+    .cons (ks.headD .none) b c
+      (fun j => (((pss.headD ([], [])).1[(j : Nat)]?).map
+        fun q => ((Mode.oneOne ⊙ p).grade * q).run).getD .omega)
+      (fun j => (((pss.headD ([], [])).2[(j : Nat)]?).map
+        fun q => ((Mode.oneOne ⊙ p).grade * q).run).getD .omega)
       (if p ∈ S then .erased else Scope.length_extend_extend Γ b c ▸
         v.erase sig S ((hΓ.extend b).extend c))
-      (vs.erase sig S hΓ ps ks.tail πs.tail)
-  | .cons _ b c _ vs, ps, ks, πs => .cons (ks.headD .none) b c
-      (fun j => ((πs.headD ([], [])).1[(j : Nat)]?).getD .omega)
-      (fun j => ((πs.headD ([], [])).2[(j : Nat)]?).getD .omega) .erased
-      (vs.erase sig S hΓ ps.tail ks.tail πs.tail)
+      (vs.erase sig S hΓ ps ks.tail pss.tail)
+  | .cons _ b c _ vs, ps, ks, pss => .cons (ks.headD .none) b c (fun _ => .omega)
+      (fun _ => .omega) .erased (vs.erase sig S hΓ ps.tail ks.tail pss.tail)
 
 end
 
@@ -716,25 +718,25 @@ resumptions, is less defined. -/
 theorem CorecBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : (vs : CorecBranches k Γ) → (ps : List Grade) →
-      (πs : List (List Multiplicity × List Multiplicity)) → (ks₁ ks₂ : List Resumption) →
+      (pss : List (List Grade × List Grade)) → (ks₁ ks₂ : List Resumption) →
       (∀ i, Resumption.LessDefined (ks₂.getD i .none) (ks₁.getD i .none)) →
-      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ πs)
-        (vs.erase sig S₁ hΓ ps ks₁ πs)
+      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ pss)
+        (vs.erase sig S₁ hΓ ps ks₁ pss)
   | .nil, _, _, _, _, _ => .nil
-  | .cons 0 b c v vs, p :: ps, πs, ks₁, ks₂, hk => by
+  | .cons 0 b c v vs, p :: ps, pss, ks₁, ks₂, hk => by
     simp only [CorecBranches.erase]
     refine .cons (Resumption.headD_lessDefined hk) ?_
-      (CorecBranches.erase_lessDefined sig h hΓ vs ps πs.tail ks₁.tail ks₂.tail
+      (CorecBranches.erase_lessDefined sig h hΓ vs ps pss.tail ks₁.tail ks₂.tail
         (Resumption.tail_lessDefined hk))
     by_cases h₂ : p ∈ S₂
     · simp only [h₂, ↓reduceIte]; exact .erased
     · have h₁ : p ∉ S₁ := fun h₁ => h₂ (h p h₁)
       simp only [h₂, h₁, ↓reduceIte]
       exact Target.LessDefined.cast _ (Term.erase_lessDefined sig h ((hΓ.extend b).extend c) v)
-  | .cons 0 _ _ _ vs, [], πs, ks₁, ks₂, hk | .cons (_ + 1) _ _ _ vs, _, πs, ks₁, ks₂, hk => by
+  | .cons 0 _ _ _ vs, [], pss, ks₁, ks₂, hk | .cons (_ + 1) _ _ _ vs, _, pss, ks₁, ks₂, hk => by
     simp only [CorecBranches.erase]
     exact .cons (Resumption.headD_lessDefined hk) .erased
-      (CorecBranches.erase_lessDefined sig h hΓ vs _ πs.tail ks₁.tail ks₂.tail
+      (CorecBranches.erase_lessDefined sig h hΓ vs _ pss.tail ks₁.tail ks₂.tail
         (Resumption.tail_lessDefined hk))
 
 end

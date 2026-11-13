@@ -73,12 +73,12 @@ branch. -/
 theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (πs : List (List Multiplicity × List Multiplicity)) → (vs.erase sig S hΓ ps ks πs).Occurs x →
+      (pss : List (List Grade × List Grade)) → (vs.erase sig S hΓ ps ks pss).Occurs x →
         ∃ i b c v p, vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
           (v.erase sig S ((hΓ.extend b).extend c)).Occurs
             ((x.addNat (b + c)).cast (Scope.length_extend_extend Γ b c).symm)
   | .nil, _, _, _, h => nomatch h
-  | .cons 0 b c v vs, p :: ps, ks, πs, h => by
+  | .cons 0 b c v vs, p :: ps, ks, pss, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h =>
@@ -89,22 +89,22 @@ theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidableP
         exact ⟨0, b, c, v, p, rfl, rfl, hp, Target.occurs_cast _ _ _ h⟩
     | tail h =>
       obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
-        CorecBranches.occurs_erase hΓ vs ps ks.tail πs.tail h
+        CorecBranches.occurs_erase hΓ vs ps ks.tail pss.tail h
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
-  | .cons 0 _ _ _ vs, [], ks, πs, h => by
+  | .cons 0 _ _ _ vs, [], ks, pss, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
-      obtain ⟨_, _, _, _, _, _, hp, _⟩ := CorecBranches.occurs_erase hΓ vs [] ks.tail πs.tail h
+      obtain ⟨_, _, _, _, _, _, hp, _⟩ := CorecBranches.occurs_erase hΓ vs [] ks.tail pss.tail h
       simp at hp
-  | .cons (_ + 1) _ _ _ vs, ps, ks, πs, h => by
+  | .cons (_ + 1) _ _ _ vs, ps, ks, pss, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
       obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
-        CorecBranches.occurs_erase hΓ vs _ ks.tail πs.tail h
+        CorecBranches.occurs_erase hΓ vs _ ks.tail pss.tail h
       rw [List.getElem?_tail] at hp
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
 

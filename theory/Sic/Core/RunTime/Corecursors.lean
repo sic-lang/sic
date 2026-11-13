@@ -807,30 +807,30 @@ resumption at this position. -/
 theorem CorecBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (gs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (πs : List (List Multiplicity × List Multiplicity)) → {i b c : Nat} →
+      (pss : List (List Grade × List Grade)) → {i b c : Nat} →
       {g : Term k ((Γ.extend b).extend c)} → gs.get i = some ⟨0, b, c, g⟩ → {p : Grade} →
       ps[i]? = some p →
       ∃ (πs₁ : Fin b → Multiplicity) (πs₂ : Fin c → Multiplicity),
-        (gs.erase sig S hΓ ps ks πs).get i = some (ks.getD i .none, ⟨b, c, πs₁, πs₂,
+        (gs.erase sig S hΓ ps ks pss).get i = some (ks.getD i .none, ⟨b, c, πs₁, πs₂,
           if p ∈ S then .erased else
             Scope.length_extend_extend Γ b c ▸ g.erase sig S ((hΓ.extend b).extend c)⟩)
   | .nil, _, _, _, _, _, _, _, h, _, _ => nomatch h
-  | .cons 0 _ _ _ _, _ :: _, ks, πs, 0, _, _, _, h, _, hp => by
+  | .cons 0 _ _ _ _, _ :: _, ks, pss, 0, _, _, _, h, _, hp => by
     cases h
     cases hp
     exact ⟨_, _, by cases ks <;> rfl⟩
   | .cons 0 _ _ _ _, [], _, _, 0, _, _, _, _, _, hp => nomatch hp
   | .cons (_ + 1) _ _ _ _, _, _, _, 0, _, _, _, h, _, _ => by cases h
-  | .cons 0 _ _ _ vs, _ :: ps, ks, πs, i + 1, _, _, _, h, _, hp => by
+  | .cons 0 _ _ _ vs, _ :: ps, ks, pss, i + 1, _, _, _, h, _, hp => by
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
     rw [← e]
-    exact CorecBranches.get_erase S hΓ vs ps ks.tail πs.tail h hp
+    exact CorecBranches.get_erase S hΓ vs ps ks.tail pss.tail h hp
   | .cons 0 _ _ _ _, [], _, _, _ + 1, _, _, _, _, _, hp => nomatch hp
-  | .cons (_ + 1) _ _ _ vs, ps, ks, πs, i + 1, _, _, _, h, p, hp => by
+  | .cons (_ + 1) _ _ _ vs, ps, ks, pss, i + 1, _, _, _, h, p, hp => by
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
     have hp' : ps.tail[i]? = some p := by cases ps <;> simp_all
     rw [← e]
-    exact CorecBranches.get_erase S hΓ vs ps.tail ks.tail πs.tail h hp'
+    exact CorecBranches.get_erase S hΓ vs ps.tail ks.tail pss.tail h hp'
 
 /-- The erasure of terms at grades `r` times the grades `us` is their erasure at `us` when `r` is used
 at run time, since a grade times `r` is used at run time when the grade is. -/
@@ -1095,8 +1095,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (((sig.resumedTypes D qs ps).getD []).map
           fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity))
         (((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
-          ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run,
-            as.map (·.run)))) bs)) :
+          ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage), as))) bs)) :
     RunsAs sig ι P H (.corec r T'.name qs ls ps (as.subst σ) ts.terms (Ss.subst σ) (gs.subst σ)) a
       (.inst T'.name qs ls ps (as.subst σ)) := by
   obtain ⟨hdecl, hT, hD⟩ := id h
@@ -1145,10 +1144,10 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hrt := hd.resumedTypes h hq hp
     let ks : List Resumption := ((sig.resumedTypes D qs ps).getD []).map
       fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity)
-    let πs : List (List Multiplicity × List Multiplicity) :=
+    let pss : List (List Grade × List Grade) :=
       ((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
-        ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run, as.map (·.run))
-    let Ps := gs.erase sig Mode.oneOne.erased hΓ ((sig.destructorGrades D qs ps).getD []) ks πs
+        ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage), as)
+    let Ps := gs.erase sig Mode.oneOne.erased hΓ ((sig.destructorGrades D qs ps).getD []) ks pss
     -- The corecursors of the block from closed states related to the addresses of closures of the
     -- branches, joined with `(®_ν)`.
     let Clo : Name → RunRel := fun D' H₁ v b =>
@@ -1234,7 +1233,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           rw [hgrs]
           exact hgrs' i' j₁ T₂ d hi p (hpos.grade (hd.destructors_nodup h₀))
         obtain ⟨πs₁, πs₂, hget⟩ :=
-          CorecBranches.get_erase (sig := sig) Mode.oneOne.erased hΓ gs _ ks πs hg hpg
+          CorecBranches.get_erase (sig := sig) Mode.oneOne.erased hΓ gs _ ks pss hg hpg
         simp only [hpr, ↓reduceIte] at hget
         -- The context of the branch, at the grades of its variables.
         have hc := fun (a' : Scope.Entry) (x : Var Ξ a') =>
@@ -1428,8 +1427,7 @@ theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     ((sig.destructorGrades T.name qs ps).getD []) (((sig.resumedTypes T.name qs ps).getD []).map
       fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity))
     (((sig.destructorArguments T.name qs ps).getD []).map fun ⟨j, as⟩ =>
-      ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run,
-        as.map (·.run)))) bs], tr, ?_,
+      ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map (r * ·.usage), as))) bs], tr, ?_,
     hH'.trans (List.prefix_append _ _), ?_⟩
   · rw [Term.erase, hst]
     exact .corec hev

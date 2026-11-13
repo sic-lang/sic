@@ -68,8 +68,8 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
     rw [States.get_substLevels_elim ls' Ss _ [] fun ps => ps.map _]
     simp only [States.get_substLevels_eq]
     have h : ∀ j, ((Ss.get j).map fun x => (⟨x.1, x.2.1, x.2.2.substLevels ls'⟩ :
-        Σ n ps, Telescope k' (Γ.extend n) ps)).elim [] (fun x => x.2.1.map fun p => (r * p.usage).run)
-        = (Ss.get j).elim [] fun x => x.2.1.map fun p => (r * p.usage).run := fun j => by
+        Σ n ps, Telescope k' (Γ.extend n) ps)).elim [] (fun x => x.2.1.map (r * ·.usage))
+        = (Ss.get j).elim [] fun x => x.2.1.map (r * ·.usage) := fun j => by
       cases Ss.get j <;> rfl
     simp only [h]
 
@@ -102,19 +102,19 @@ theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidableP
 theorem CorecBranches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (πs : List (List Multiplicity × List Multiplicity)) →
-      (vs.substLevels ls').erase sig S hΓ ps ks πs = vs.erase sig S hΓ ps ks πs
+      (pss : List (List Grade × List Grade)) →
+      (vs.substLevels ls').erase sig S hΓ ps ks pss = vs.erase sig S hΓ ps ks pss
   | .nil, _, _, _ => rfl
-  | .cons 0 b c v vs, _ :: ps, ks, πs => by
+  | .cons 0 b c v vs, _ :: ps, ks, pss => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs ps ks.tail πs.tail]
+      CorecBranches.erase_substLevels sig S ls' hΓ vs ps ks.tail pss.tail]
     erw [Term.erase_substLevels sig S ls' ((hΓ.extend b).extend c) v]
-  | .cons 0 _ _ _ vs, [], ks, πs => by
+  | .cons 0 _ _ _ vs, [], ks, pss => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail πs.tail]
-  | .cons (_ + 1) _ _ _ vs, ps, ks, πs => by
+      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail pss.tail]
+  | .cons (_ + 1) _ _ _ vs, ps, ks, pss => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail πs.tail]
+      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail pss.tail]
 
 end
 
