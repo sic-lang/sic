@@ -193,6 +193,29 @@ theorem sub_best :
 
 theorem le_antisymm : ∀ π₁ π₂ : Multiplicity, π₁ ≤ π₂ → π₂ ≤ π₁ → π₁ = π₂ := by decide
 
+/-- The order of the multiplicities is reflexive. -/
+theorem le_refl' : ∀ π : Multiplicity, π ≤ π := by decide
+
+/-- The order of the multiplicities is transitive. -/
+theorem le_trans' : ∀ π₁ π₂ π₃ : Multiplicity, π₁ ≤ π₂ → π₂ ≤ π₃ → π₁ ≤ π₃ := by decide
+
+/-- The addition of the multiplicities is monotone. -/
+theorem add_le_add' :
+    ∀ π₁ π₂ π₃ π₄ : Multiplicity, π₁ ≤ π₂ → π₃ ≤ π₄ → π₁ + π₃ ≤ π₂ + π₄ := by
+  decide
+
+/-- The multiplication of the multiplicities is monotone in its first factor. -/
+theorem mul_le_mul_right' :
+    ∀ π₁ π₂ π : Multiplicity, π₁ ≤ π₂ → π₁ * π ≤ π₂ * π := by
+  decide
+
+/-- A multiplicity other than `0` times another is below it: the uses of a value at a weight other
+than `0` include those of the value. -/
+theorem mul_le_self : ∀ κ π : Multiplicity, κ ≠ .zero → κ * π ≤ π := by decide
+
+/-- A product of multiplicities other than `0` is other than `0`. -/
+theorem mul_ne_zero : ∀ κ π : Multiplicity, κ ≠ .zero → π ≠ .zero → κ * π ≠ .zero := by decide
+
 end Multiplicity
 
 end Sic.Grading

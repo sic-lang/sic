@@ -50,16 +50,6 @@ theorem _root_.Sic.Grading.GradeVector.run_smul_of_erased {n : Nat} {p : Grade}
     (hp : p ∈ Mode.oneOne.erased) (γ : GradeVector n) : GradeVector.run (p ·ᶜ γ) = 𝟘ᵛ :=
   funext fun x => Grade.run_mul_of_erased p (γ x) hp
 
-/-- The addition of the multiplicities is monotone. -/
-theorem _root_.Sic.Grading.Multiplicity.add_le_add' :
-    ∀ π₁ π₂ π₃ π₄ : Multiplicity, π₁ ≤ π₂ → π₃ ≤ π₄ → π₁ + π₃ ≤ π₂ + π₄ := by
-  decide
-
-/-- The multiplication of the multiplicities is monotone in its first factor. -/
-theorem _root_.Sic.Grading.Multiplicity.mul_le_mul_right' :
-    ∀ π₁ π₂ π : Multiplicity, π₁ ≤ π₂ → π₁ * π ≤ π₂ * π := by
-  decide
-
 /-! ## Transports -/
 
 /-- A term of the target language and a vector transported along the same equality of sizes keep
