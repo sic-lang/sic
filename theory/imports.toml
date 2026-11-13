@@ -199,6 +199,10 @@ modules = [
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
 
 [[rule]]
-reason = "the fundamental lemma of the run time reads the typing, the usage, the soundness of the typing and the relation of run time, and not the ownership"
-modules = ["Sic.Core.RunTime.Fundamental", "Sic.Core.RunTime.Signature"]
+reason = "the fundamental lemma of the run time and the soundness of the extraction read the typing, the usage, the soundness of the typing and the relation of run time, and not the ownership"
+modules = [
+  "Sic.Core.RunTime.Extraction",
+  "Sic.Core.RunTime.Fundamental",
+  "Sic.Core.RunTime.Signature",
+]
 forbidden = ["Sic.Core.Ownership"]
