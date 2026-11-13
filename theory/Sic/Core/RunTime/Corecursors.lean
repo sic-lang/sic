@@ -550,7 +550,7 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
         Unpack H ps.length a (ps.map (·.usage.run)) as ∧
         RunsAsArgs sig ι P H (Parameter.grades ps) ts as Θ
   | [], .nil, _, l, _, _, hx, hr => by
-    obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, -, -, -, -⟩ := RunsAs.ctor_inv hd hpre.unit
+    obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, -, ha, -, hruns⟩ := RunsAs.ctor_inv hd hpre.unit
       (qs := []) (ls := [l]) (ps := []) rfl rfl rfl rfl
       (fun T' hT' c hc i => by
         obtain rfl := List.mem_singleton.1 hT'
@@ -558,9 +558,11 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
         rfl) hx hr
     obtain rfl := List.mem_singleton.1 hT'
     rcases hc with _ | ⟨_, ⟨⟩⟩
-    match ts with
-    | .nil =>
-      refine ⟨.nil, [], ?_, (EqSubst.empty_iff _ _).2 trivial, .zero, trivial⟩
+    match ts, bs, hruns with
+    | .nil, [], _ =>
+      -- The unit stores no field.
+      refine ⟨.nil, [], ?_, (EqSubst.empty_iff _ _).2 trivial,
+        .zero (ha : H[_]? = some (Value.ctor i [] [])), trivial⟩
       simp only [Args.terms, Term.Packs]
       exact hct
   | _ :: _, .cons q p A Θ, κs, l, _, _, hx, hr => by
@@ -690,7 +692,10 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
               ((by decide : ∀ r u : Grade, r ∈ Mode.oneOne.erased → r * u ∈ Mode.oneOne.erased)
                 r p.usage hrS)⟩
         rw [hz]
-        exact .erased ha
+        -- The field of `next` has the multiplicity at run time of `r`, erased.
+        have ha' : H[w]? = some (.ctor 0 [r.run] [b]) := ha
+        rw [(Mode.erased_values.1 _).1 hrS] at ha'
+        exact .erased ha'
       · -- The state is used, and the new closure unpacks it.
         obtain ⟨ts', bs', hp', hτ, hu, hrs⟩ := RunsAs.unpack hd hpre S κs _ hx (hruns.1 hrS)
         refine ⟨_, _, ?_, List.prefix_append _ _, .inl ⟨ts', bs', hred ts' hp', hτ,

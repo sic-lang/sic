@@ -156,11 +156,13 @@ def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
 -- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄ ▶ π̄`: the addresses of the `k` entries that the value at the address `x`
 packs, the first fields of `k` nested pairs, at the multiplicities at which the pairs store them,
-each times those of the second fields that hold its pair. -/
+each times those of the second fields that hold its pair, the pairs ending with a constructor
+without field. -/
 inductive Unpack : Heap → Nat → Nat → List Multiplicity → List Nat → Prop where
-  /-- No entry.
+  /-- No entry: the end of the pairs, a constructor without field, the unit of the prelude, whose
+  value is never read, so that it must hold nothing; the evaluation is stuck otherwise.
   RFC: `\mathsf{unpack}_\Downarrow.0` -/
-  | zero {H : Heap} {x : Nat} : Unpack H 0 x [] []
+  | zero {H : Heap} {x i : Nat} (h : H[x]? = some (.ctor i [] [])) : Unpack H 0 x [] []
   /-- A pair of an entry and of the others.
   RFC: `\mathsf{unpack}_\Downarrow.{,}` -/
   | pair {H : Heap} {k x y z : Nat} {π π' : Multiplicity} {πs : List Multiplicity}
@@ -186,10 +188,11 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       (hs : Unpack H k x πs ss) :
       EvalResume H n E Ps (.unpack k) w H.length (H ++ [.corec n E Ps (πs.map (π * ·)) ss])
   /-- `next(x)`, for an erased state: a new closure whose `k` entries stand at the address `x`,
-  which is not read, at the multiplicity `0`.
+  which is not read, at the multiplicity `0`, the multiplicity of the field of `next`, so that the
+  state is never used; the evaluation is stuck otherwise.
   RFC: `\mathsf{resume}_\Downarrow.\text{↯}` -/
-  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
-      {πs : List Multiplicity} {k w x : Nat} (h : H[w]? = some (.ctor 0 πs [x])) :
+  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
+      (h : H[w]? = some (.ctor 0 [.zero] [x])) :
       EvalResume H n E Ps (.erased k) w H.length
         (H ++ [.corec n E Ps (List.replicate k .zero) (List.replicate k x)])
   /-- `done(x)`: the term already built `x`.
@@ -359,7 +362,7 @@ end
 /-- The unpacking of a value is unique. -/
 theorem Unpack.det {H : Heap} {k x : Nat} {πs₁ πs₂ : List Multiplicity} {ss₁ ss₂ : List Nat} :
     Unpack H k x πs₁ ss₁ → Unpack H k x πs₂ ss₂ → πs₁ = πs₂ ∧ ss₁ = ss₂
-  | .zero, .zero => ⟨rfl, rfl⟩
+  | .zero _, .zero _ => ⟨rfl, rfl⟩
   | .pair h hs, .pair h' hs' => by
     rw [h] at h'
     cases h'
