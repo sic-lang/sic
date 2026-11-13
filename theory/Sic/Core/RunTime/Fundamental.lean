@@ -1,8 +1,6 @@
 module
 
 public import Sic.Core.RunTime.Corecursors
-public import Sic.Core.RunTime.Relation
-public import Sic.Core.Soundness.Signature
 public import Sic.Core.Typing
 public import Sic.Core.Usage
 import Sic.Core.RunTime.DeclaredTypes
