@@ -104,9 +104,9 @@ where
     | .var (x := x), hθ, hφ => by
       rw [Term.var_subst_of (hθ x), ← hφ x]
       exact .var
-    | .secondOrder (X := X) hts hp, hθ, hφ => by
+    | .secondOrder (X := X) hts hp hf, hθ, hφ => by
       rw [Term.var_subst_of (hθ X)]
-      exact .secondOrder (ownershipArgs hts hθ hφ) hp
+      exact .secondOrder (ownershipArgs hts hθ hφ) hp hf
     | .const h, _, _ => .const h
     | .sort, _, _ => .sort
     | .inst, _, _ => .inst

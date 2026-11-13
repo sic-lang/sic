@@ -80,11 +80,14 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   | var {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {x : Var Γ .var} :
       Ownership sig φ m (φ x) (.var₀ x : Term k Γ)
   /-- The application `X[t̄]` of a second-order variable has the value of the ownership of its
-  result, when it is defined, given the ownerships `os` of its arguments.
+  result, when it is defined, given the ownerships `os` of its arguments; each argument on whose
+  variable `ψ` has a factor is checked in the mode `m` of the application, so that the value of `ψ`
+  reads only ownerships that the mode counts, as for an observation.
   RFC: `\mathsf{var}_{X◀}` -/
   | secondOrder {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {ps : List Parameter}
       {ψ : ResultOwnership Grade ps.length} {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps} {os : List Grade}
-      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : ψ.value os = some p) :
+      {p : Grade} (hts : OwnershipArgs sig φ m ts os) (hp : ψ.value os = some p)
+      (hf : ∀ i : Fin ps.length, (ψ.coefficient i).isSome → m ⊙ ps[i].usage = m) :
       Ownership sig φ m p (.var X ts)
   /-- A constant, defined or declared, has the ownership `p` of its entry, in every mode.
   RFC: `f_{◀}` -/
