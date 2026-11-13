@@ -6,6 +6,7 @@ import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.RunTime.Computation
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Subsumption
+import Sic.Core.Soundness.Substitution
 
 /-!
 # Validity at Run Time of the Rules
@@ -63,6 +64,42 @@ theorem RunValid.erased {sig : Signature} {ι : Interpretation} {P : Program} {�
   obtain ⟨-, hcl, -⟩ := ht.2 σ σ hσ
   obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
   refine ⟨H.length, H ++ [.erased], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
+
+/-! ## Variables -/
+
+-- ADE: `®∷→®∷◂`, the substitutions at a variable, in `Graded/Erasure/LogicalRelation.agda`.
+/-- The addresses `E` that stand for the closed substitution `σ` as the grades `γ` require give the
+variable `x : A ∈ Γ`, when its grade is not in `S^{11ᵐ}`, an address to which `σ(x)` is related at
+`A[σ]`. -/
+theorem RunsAsSubst.varIn {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
+    {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ} (hx : ctx.VarIn x A) :
+    ∀ {γ : GradeVector Γ.length} {σ : Subst 0 [] Γ} {E : List Nat},
+      RunsAsSubst sig ι P H ctx γ σ E → γ x.toFin ∉ Mode.oneOne.erased →
+        ∃ a, E[(x.toFin : Nat)]? = some a ∧ RunsAs sig ι P H (σ x) a (A.subst σ) := by
+  induction hx with
+  | @zero _ ctx A =>
+    intro γ σ E hE hγ
+    obtain ⟨a, E', rfl, -, ha⟩ := hE
+    rw [Term.subst_weaken]
+    exact ⟨a, rfl, ha hγ⟩
+  | @succVar _ ctx x A B _ ih =>
+    intro γ σ E hE hγ
+    obtain ⟨a, E', rfl, hE', -⟩ := hE
+    rw [Term.subst_weaken]
+    exact ih hE' hγ
+  | succSecondOrder => intro _ _ _ hE; exact hE.elim
+
+-- ADE: `fundamental′`, the case `var`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
+/-- `(var)` at run time: the variable `x : A ∈ Γ`, whose grade in `γ` is not in `S^{11ᵐ}`, is valid
+at run time with the grades `γ`: its erasure is the variable, which evaluates to the address that
+the environment gives it, to which its closed term is related. -/
+theorem RunValid.var {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+    {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {x : Var Γ .var}
+    {A : Term 0 Γ} (hx : ctx.VarIn x A) (hγ : γ x.toFin ∉ Mode.oneOne.erased) :
+    RunValid sig ι P hΓ ctx γ (.var₀ x) A := by
+  intro σ H E _ hE
+  obtain ⟨a, ha, hrun⟩ := hE.varIn hx hγ
+  exact ⟨a, H, .var ha, List.prefix_refl H, hrun⟩
 
 /-! ## Constants -/
 
