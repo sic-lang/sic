@@ -131,6 +131,14 @@ theorem Branches.grades_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
   | .cons .., 0 => rfl
   | .cons _ _ _ _ us, i + 1 => Branches.grades_subst θ us i
 
+/-- The grades of the recursive results of a branch of branches whose levels are instantiated are
+those of the branch. -/
+theorem Branches.grades_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (us : Branches k Γ) → (i : Nat) → (us.substLevels ls').grades i = us.grades i
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ _ us, i + 1 => Branches.grades_substLevels ls' us i
+
 /-- The state at a position of states substituted is the state substituted, under its
 variables. -/
 theorem States.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
