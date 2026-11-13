@@ -62,6 +62,22 @@ def meet : Multiplicity → Multiplicity → Multiplicity
 
 instance : Min Multiplicity := ⟨meet⟩
 
+-- ADE: `_-_≡_`, in `Graded/Modality/Properties/Subtraction.agda`, a relation, with the cases of
+-- `supports-subtraction`, in `Graded/Modality/Instances/Zero-one-many.agda`.
+/-- The subtraction of the multiplicities: `π₁ - π₂` counts the uses left of `π₁` uses once `π₂` of
+them are taken, none when they are all taken, `0` being absorbing on the left and neutral on the
+right.
+RFC: `\mathsf{op}_\pi.{-}` -/
+def sub : Multiplicity → Multiplicity → Multiplicity
+  | zero, _ => zero
+  | π, zero => π
+  | one, one => zero
+  | _, _ => omega
+
+instance : Sub Multiplicity := ⟨sub⟩
+
+theorem sub_def (π₁ π₂ : Multiplicity) : π₁ - π₂ = sub π₁ π₂ := rfl
+
 theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π₂ := rfl
 
 /-- The order of the multiplicities, `π₁ ≤ π₂` when `π₁ = π₁ ⊓ π₂`, as in ADE. -/
@@ -111,6 +127,15 @@ theorem meet_table :
     [[zero, omega, omega], [omega, one, omega], [omega, omega, omega]] := by
   decide
 
+/-- The table of the subtraction, whose rows give the left operand.
+RFC: `\mathsf{table}_\pi.{-}` -/
+theorem sub_table :
+    [[zero - zero, zero - one, zero - omega],
+    [one - zero, one - one, one - omega],
+    [omega - zero, omega - one, omega - omega]] =
+    [[zero, zero, zero], [one, zero, omega], [omega, omega, omega]] := by
+  decide
+
 /-- `ω` is below `0` and below `1`, while `0` and `1` are not comparable.
 RFC: `\mathsf{compare}_\pi` -/
 theorem order_table :
@@ -148,6 +173,16 @@ theorem modality : IsModality Multiplicity zero one where
     add_eq_zero := by decide
     meet_eq_zero := by decide
     mul_eq_zero := by decide }
+
+-- ADE: `-≡-monotoneˡ` and `supports-subtraction`, in
+-- `Graded/Modality/Properties/Subtraction.agda` and `Graded/Modality/Instances/Zero-one-many.agda`.
+/-- The subtraction leaves the least multiplicity `π` such that `π₁ ≤ π + π₂`, when one does: below
+each of them, and one of them itself.
+RFC: `\mathsf{least}_\pi.{-}` -/
+theorem sub_best :
+    (∀ π₁ π₂ π : Multiplicity, π₁ ≤ π + π₂ → π₁ - π₂ ≤ π) ∧
+      ∀ π₁ π₂ π : Multiplicity, π₁ ≤ π + π₂ → π₁ ≤ (π₁ - π₂) + π₂ := by
+  decide
 
 theorem le_antisymm : ∀ π₁ π₂ : Multiplicity, π₁ ≤ π₂ → π₂ ≤ π₁ → π₁ = π₂ := by decide
 

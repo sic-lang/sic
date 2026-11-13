@@ -147,6 +147,33 @@ theorem meet_isBest (π₁ π₂ : Multiplicity) : IsBest (uses π₁ ∪ uses �
         have h2 := H' 2
         simp at h0 h1 h2
 
+/-- The subtraction is the best abstraction of the subtraction of numbers, which leaves `0` when
+more is taken than there is.
+RFC: `-_\pi` -/
+theorem sub_isBest (π₁ π₂ : Multiplicity) :
+    IsBest { n | ∃ n₁ n₂, n₁ ∈ uses π₁ ∧ n₂ ∈ uses π₂ ∧ n = n₁ - n₂ } (π₁ - π₂) := by
+  refine ⟨?_, ?_⟩
+  · intro c ⟨a, b, ha, hb, hc⟩
+    cases π₁ <;> cases π₂ <;> simp_all [sub_def, sub]
+  · intro π₃ H
+    have H' : ∀ a b, a ∈ uses π₁ → b ∈ uses π₂ → a - b ∈ uses π₃ :=
+      fun a b ha hb => H (a - b) ⟨a, b, ha, hb, rfl⟩
+    cases π₁ <;> cases π₂ <;> cases π₃ <;>
+      simp only [Set.subset_def, mem_uses_zero, mem_uses_one, mem_uses_omega, true_implies,
+        sub_def, sub] at H' ⊢ <;>
+    first
+      | (intros; assumption)
+      | (intros; trivial)
+      | exfalso
+        have h00 := H' 0 0
+        have h01 := H' 0 1
+        have h10 := H' 1 0
+        have h11 := H' 1 1
+        have h20 := H' 2 0
+        have h21 := H' 2 1
+        have h31 := H' 3 1
+        simp at h00 h01 h10 h11 h20 h21 h31
+
 end Multiplicity
 
 end Sic.Grading
