@@ -188,6 +188,15 @@ theorem Destructors.recursion_rename {Γ Δ : Scope} (names : List Name) :
     rw [Destructors.rename, Destructors.recursion, Destructors.recursion, Term.blockName_rename,
       Destructors.recursion_rename names (Ren.lift α) ds]
 
+/-- Renamed destructors give each destructor the same grade. -/
+theorem Destructors.grade_rename {Γ Δ : Scope} (d : Name) :
+    {ns : List Name} → (α : Ren Γ Δ) → (ds : Destructors k Δ ns) →
+      (ds.rename α).grade d = ds.grade d
+  | _, _, .nil => rfl
+  | _, α, .cons _ _ _ _ _ ds => by
+    rw [Destructors.rename, Destructors.grade, Destructors.grade,
+      Destructors.grade_rename d (Ren.lift α) ds]
+
 /-! ## Substitutions of the First Order -/
 
 /-- What a substitution of the first order gives a variable whose entry is `e`: a variable with the
