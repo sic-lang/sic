@@ -14,6 +14,9 @@ extends a vector, as the de Bruijn indices number the entries of a context, the 
 ADE define their vectors as sequences, extended one element at a time; here a vector is the function
 that gives each index its element, so that the laws of the operations follow from those of the
 modality at each index.
+The operations and their laws hold whatever the set of the indices, finite or not, so that they are
+stated on the functions from any type of indices, of which the vectors are those from the numbers
+below `n`: the demands of annex 17, which give each address of a heap a multiplicity, use them.
 The core of Lean declares at its root a `Vector`, an array of a fixed size ordered
 lexicographically, so that this one is always written with its full name, `Sic.Math.Vector`, outside
 its namespace.
@@ -30,44 +33,44 @@ abbrev Vector (α : Type) (n : Nat) : Type := Fin n → α
 
 namespace Vector
 
-variable {α : Type} {n : Nat}
+variable {α ι : Type} {n : Nat}
 
 -- ADE: `_≈ᶜ_`, in `Graded/Context.agda`.
 /-- Two vectors are equal when they give each index the same element.
 RFC: `\mathsf{equal}_\mu` -/
-theorem eq_iff {μ₁ μ₂ : Vector α n} : μ₁ = μ₂ ↔ ∀ i, μ₁ i = μ₂ i :=
+theorem eq_iff {μ₁ μ₂ : ι → α} : μ₁ = μ₂ ↔ ∀ i, μ₁ i = μ₂ i :=
   ⟨fun h _ => h ▸ rfl, funext⟩
 
 -- ADE: `𝟘ᶜ`, in `Graded/Context.agda`.
 /-- The zero vector, which gives each index the element `zero`, the zero of the modality.
 RFC: `\mathsf{op}_\mu.0` -/
-def zero (zero : α) : Vector α n := fun _ => zero
+def zero (zero : α) : ι → α := fun _ => zero
 
 -- ADE: `_+ᶜ_`, in `Graded/Context.agda`.
 /-- `μ₁ +ᶜ μ₂`, the addition at each index.
 RFC: `\mathsf{op}_\mu.{+}` -/
-def add [Add α] (μ₁ μ₂ : Vector α n) : Vector α n := fun i => μ₁ i + μ₂ i
+def add [Add α] (μ₁ μ₂ : ι → α) : ι → α := fun i => μ₁ i + μ₂ i
 
 @[inherit_doc] infixl:65 " +ᶜ " => add
 
 -- ADE: `_·ᶜ_`, in `Graded/Context.agda`.
 /-- `ξ ·ᶜ μ`, the multiplication of the element at each index by the element `ξ`.
 RFC: `\mathsf{op}_\mu.{\cdot}` -/
-def smul [Mul α] (ξ : α) (μ : Vector α n) : Vector α n := fun i => ξ * μ i
+def smul [Mul α] (ξ : α) (μ : ι → α) : ι → α := fun i => ξ * μ i
 
 @[inherit_doc] infixr:70 " ·ᶜ " => smul
 
 -- ADE: `_∧ᶜ_`, in `Graded/Context.agda`.
 /-- `μ₁ ⊓ᶜ μ₂`, the meet at each index, written `⊓ᶜ` since `∧` is the conjunction of Lean.
 RFC: `\mathsf{op}_\mu.{\wedge}` -/
-def meet [Min α] (μ₁ μ₂ : Vector α n) : Vector α n := fun i => μ₁ i ⊓ μ₂ i
+def meet [Min α] (μ₁ μ₂ : ι → α) : ι → α := fun i => μ₁ i ⊓ μ₂ i
 
 @[inherit_doc] infixl:69 " ⊓ᶜ " => meet
 
 -- ADE: `_≤ᶜ_`, in `Graded/Context.agda`.
 /-- `μ₁ ≤ᶜ μ₂`, the order of the modality at each index.
 RFC: `\mathsf{order}_\mu` -/
-def Le [Min α] (μ₁ μ₂ : Vector α n) : Prop := ∀ i, order (μ₁ i) (μ₂ i)
+def Le [Min α] (μ₁ μ₂ : ι → α) : Prop := ∀ i, order (μ₁ i) (μ₂ i)
 
 @[inherit_doc] infix:50 " ≤ᶜ " => Le
 
@@ -106,7 +109,7 @@ RFC: `\mathsf{module}_\mu.\mathsf{unit}_{\cdot}`
 RFC: `\mathsf{module}_\mu.\mathsf{lzero}_{\cdot}`
 RFC: `\mathsf{module}_\mu.\mathsf{rzero}_{\cdot}` -/
 theorem module (h : IsModality α zero one) :
-    IsModule α (Vector α n) zero one (Vector.zero zero) add smul where
+    IsModule α (ι → α) zero one (Vector.zero zero) add smul where
   add_assoc μ₁ μ₂ μ₃ := funext fun i => h.semiring.add_assoc (μ₁ i) (μ₂ i) (μ₃ i)
   add_comm μ₁ μ₂ := funext fun i => h.semiring.add_comm (μ₁ i) (μ₂ i)
   zero_add μ := funext fun i => h.semiring.zero_add (μ i)
@@ -120,14 +123,14 @@ theorem module (h : IsModality α zero one) :
 -- ADE: `∧ᶜ-comm`, in `Graded/Context/Properties/Meet.agda`.
 /-- The meet is commutative.
 RFC: `\mathsf{meet}_\mu` -/
-theorem meet_comm (h : IsModality α zero one) (μ₁ μ₂ : Vector α n) : μ₁ ⊓ᶜ μ₂ = μ₂ ⊓ᶜ μ₁ :=
+theorem meet_comm (h : IsModality α zero one) (μ₁ μ₂ : ι → α) : μ₁ ⊓ᶜ μ₂ = μ₂ ⊓ᶜ μ₁ :=
   funext fun i => h.meet.meet_comm (μ₁ i) (μ₂ i)
 
 -- ADE: `≤ᶜ-preorder`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order is a preorder.
 RFC: `\mathsf{preorder}_\mu.\mathsf{refl}`
 RFC: `\mathsf{preorder}_\mu.\mathsf{trans}` -/
-theorem preorder (h : IsModality α zero one) : IsPreorder (α := Vector α n) (· ≤ᶜ ·) where
+theorem preorder (h : IsModality α zero one) : IsPreorder (α := ι → α) (· ≤ᶜ ·) where
   refl μ i := (h.meet.meet_idem (μ i)).symm
   trans h₁ h₂ i := by
     unfold order
@@ -136,14 +139,14 @@ theorem preorder (h : IsModality α zero one) : IsPreorder (α := Vector α n) (
 -- ADE: `≤ᶜ-antisym`, in `Graded/Context/Properties/PartialOrder.agda`.
 /-- The order is antisymmetric.
 RFC: `\mathsf{antisymmetry}_\mu` -/
-theorem le_antisymm (h : IsModality α zero one) {μ₁ μ₂ : Vector α n} (h₁ : μ₁ ≤ᶜ μ₂)
+theorem le_antisymm (h : IsModality α zero one) {μ₁ μ₂ : ι → α} (h₁ : μ₁ ≤ᶜ μ₂)
     (h₂ : μ₂ ≤ᶜ μ₁) : μ₁ = μ₂ :=
   funext fun i => (h₁ i).trans ((h.meet.meet_comm _ _).trans (h₂ i).symm)
 
 -- ADE: `+ᶜ-monotone`, in `Graded/Context/Properties/Addition.agda`.
 /-- The addition is monotone.
 RFC: `{+}{\le}_\mu` -/
-theorem add_le_add (h : IsModality α zero one) {μ₁ μ₂ ν₁ ν₂ : Vector α n} (hμ : μ₁ ≤ᶜ μ₂)
+theorem add_le_add (h : IsModality α zero one) {μ₁ μ₂ ν₁ ν₂ : ι → α} (hμ : μ₁ ≤ᶜ μ₂)
     (hν : ν₁ ≤ᶜ ν₂) : μ₁ +ᶜ ν₁ ≤ᶜ μ₂ +ᶜ ν₂ :=
   (preorder h).trans (b := μ₂ +ᶜ ν₁) (fun i => h.add_le _ _ _ (hμ i)) fun i => by
     show order (μ₂ i + ν₁ i) (μ₂ i + ν₂ i)
@@ -153,7 +156,7 @@ theorem add_le_add (h : IsModality α zero one) {μ₁ μ₂ ν₁ ν₂ : Vecto
 -- ADE: `·ᶜ-monotoneʳ`, in `Graded/Context/Properties/Multiplication.agda`.
 /-- The multiplication by an element is monotone.
 RFC: `{\cdot}{\le}_\mu` -/
-theorem smul_le_smul (h : IsModality α zero one) {μ₁ μ₂ : Vector α n} (ξ : α) (hμ : μ₁ ≤ᶜ μ₂) :
+theorem smul_le_smul (h : IsModality α zero one) {μ₁ μ₂ : ι → α} (ξ : α) (hμ : μ₁ ≤ᶜ μ₂) :
     ξ ·ᶜ μ₁ ≤ᶜ ξ ·ᶜ μ₂ :=
   fun i => by
     show ξ * μ₁ i = ξ * μ₁ i ⊓ ξ * μ₂ i
@@ -163,7 +166,7 @@ theorem smul_le_smul (h : IsModality α zero one) {μ₁ μ₂ : Vector α n} (�
 -- `Graded/Context/Properties/Meet.agda`.
 /-- The meet is the greatest lower bound of two vectors.
 RFC: `{\wedge}{\le}_\mu` -/
-theorem le_meet_iff (h : IsModality α zero one) (μ₁ μ₂ μ₃ : Vector α n) :
+theorem le_meet_iff (h : IsModality α zero one) (μ₁ μ₂ μ₃ : ι → α) :
     μ₃ ≤ᶜ μ₁ ∧ μ₃ ≤ᶜ μ₂ ↔ μ₃ ≤ᶜ μ₁ ⊓ᶜ μ₂ :=
   ⟨fun ⟨h₁, h₂⟩ i => (h.le_meet_iff _ _ _).mp ⟨h₁ i, h₂ i⟩,
     fun h' => ⟨fun i => ((h.le_meet_iff _ _ _).mpr (h' i)).1,

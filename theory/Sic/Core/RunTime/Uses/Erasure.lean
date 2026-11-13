@@ -365,7 +365,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
       refine .sub (.recursor (sig.skeleton_isSkeleton _ _ _).usage
-        (fun _ => rfl) hbr) (MultiplicityVector.le_of_eq ?_)
+        (fun _ => sig.skeleton_isSkeleton _ _ _) hbr) (MultiplicityVector.le_of_eq ?_)
       rw [(Mode.erased_values.1 r).1 hr,
         (MultiplicityVector.module Multiplicity.modality).zero_smul,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
@@ -483,7 +483,7 @@ theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {�
     · simp only [hp, ↓reduceIte]
       rw [(Mode.erased_values.1 p.usage).1 hp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => rfl)
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => .erased)
         (UsageArgs.erase_usage hd hΓ hm hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hp, ↓reduceIte]
@@ -514,7 +514,7 @@ theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct) {k : Nat
     · simp only [hrp, ↓reduceIte]
       rw [(Mode.erased_values.1 _).1 hrp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => rfl)
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => .erased)
         (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hrp, ↓reduceIte]
