@@ -57,8 +57,9 @@ variable {sig : Signature} {ι : Interpretation} {P : Program}
 /-! ## Evaluation -/
 
 /-- A cast of the number of variables of a term of the target language keeps its evaluations. -/
-theorem Eval.cast {n m : Nat} (h : n = m) {H H' : Heap} {E : List Nat} {M : Target n} {a : Nat}
-    {R : List Nat} : Eval P H E (h ▸ M) a H' R ↔ Eval P H E M a H' R := by
+theorem Eval.cast {n m : Nat} (h : n = m) {κ : Multiplicity} {H H' : Heap} {E : List Nat}
+    {M : Target n} {a : Nat} {R : List Nat} :
+    Eval P κ H E (h ▸ M) a H' R ↔ Eval P κ H E M a H' R := by
   subst h
   rfl
 
@@ -438,9 +439,10 @@ theorem RunTelRel.recAt {n : Nat} {below : LevelRel.Below n} {Q : Name → Term 
 
 /-- The recursive results of a branch at run time, by induction on the fields: from the addresses
 `bs` of the fields, the last of the addresses `bsAll` from the position `o`, the recursive results
-evaluate, in each heap that extends `H₀`, to addresses related to the results `f D t` at the
-motives at their fields, each at its grade in `es`, when the recursor on each recursive field `t` of
-the type `D` whose result is used evaluates, in each such heap, to such an address. -/
+evaluate, at each weight and in each heap that extends `H₀`, to addresses related to the results
+`f D t` at the motives at their fields, each at its grade in `es`, when the recursor on each
+recursive field `t` of the type `D` whose result is used evaluates, at each weight and in each such
+heap, to such an address. -/
 theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ : Multiplicity} {Ns : TargetBranches m}
     {E : List Nat}
     {f : Name → Term 0 [] → Term 0 []} {names : List Name} {Cs : Motives 0 []} {H₀ : Heap}
@@ -449,36 +451,37 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ : Multiplicity} {Ns :
     (ts : Args 0 [] ps) → (o : Nat) → (bs : List Nat) → bsAll.drop o = bs →
     bs.length = ps.length → (es : List Grade) →
     es.length = (Telescope.resultParams rsN ps).length →
-    Terms.RecAt (fun D t b => ∀ H', H₀.Extends H' → ∃ v H₂ tr, EvalRec P H' E ρ Ns b v H₂ tr ∧
+    Terms.RecAt (fun D t b => ∀ κ H', H₀.Extends H' → ∃ v H₂ tr, EvalRec P κ H' E ρ Ns b v H₂ tr ∧
       H'.Extends H₂ ∧ ∀ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ →
         RunsAs sig ι P H₂ (f D t) v (C.subst₀ (Subst₀.single t))) rsN es ts.terms bs →
     {R : Telescope 0 [] (Telescope.resultParams rsN ps)} →
     Motives.results names Cs rsN ts.terms = some R →
-    ∀ H', H₀.Extends H' → ∃ vs H₂ tr, EvalResults P H' E ρ Ns bsAll
+    ∀ κ H', H₀.Extends H' → ∃ vs H₂ tr, EvalResults P κ H' E ρ Ns bsAll
       (List.zipWith (fun e l => if e ∈ Mode.oneOne.erased then none else some l) es
-        ((rsN.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) vs H₂ tr ∧ H'.Extends H₂ ∧
+        ((rsN.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) (es.map Grade.run) vs H₂ tr ∧
+      H'.Extends H₂ ∧
       RunsAsArgs sig ι P H₂ (fun j => es.getD j Grade.zero) (ts.results f rsN) vs R
-  | [], rsN, hlen, .nil, _, _, _, _, es, _, _, R, hR, H', _ => by
+  | [], rsN, hlen, .nil, _, _, _, _, es, hes, _, R, hR, κ, H', _ => by
     cases rsN with
     | cons _ _ => cases hlen
     | nil =>
       unfold Motives.results at hR
       cases hR
       refine ⟨[], H', [], ?_, List.prefix_refl H', trivial⟩
-      show EvalResults P H' E ρ Ns bsAll (List.zipWith _ es []) [] H' []
-      rw [List.zipWith_nil_right]
+      have hes' : es = [] := List.eq_nil_of_length_eq_zero hes
+      subst hes'
       exact .nil
-  | _ :: _, [], hlen, _, _, _, _, _, _, _, _, _, _, _, _ => by cases hlen
-  | _ :: _, _ :: _, _, .cons _ _, _, [], _, hbl, _, _, _, _, _, _, _ => by cases hbl
-  | p :: ps, none :: rsN, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, H',
+  | _ :: _, [], hlen, _, _, _, _, _, _, _, _, _, _, _, _, _ => by cases hlen
+  | _ :: _, _ :: _, _, .cons _ _, _, [], _, hbl, _, _, _, _, _, _, _, _ => by cases hbl
+  | p :: ps, none :: rsN, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, κ, H',
       hH' => by
     have hdrop' : bsAll.drop (o + 1) = bs := by
       rw [List.drop_add_one_eq_tail_drop, hdrop]
       rfl
     unfold Motives.results at hR
     exact Args.evalResults hd rsN (Nat.succ.inj hlen) ts (o + 1) bs hdrop' (Nat.succ.inj hbl) es
-      hes hQ hR H' hH'
-  | p :: ps, some D :: rsN, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, H',
+      hes hQ hR κ H' hH'
+  | p :: ps, some D :: rsN, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, κ, H',
       hH' => by
     cases es with
     | nil => cases hes
@@ -518,44 +521,45 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ : Multiplicity} {Ns :
     by_cases he : e ∈ Mode.oneOne.erased
     · have hH'' : H'.Extends (H' ++ [.erased]) := List.prefix_append _ _
       obtain ⟨vs, H₂, R₂, hevs, hH₂, hruns⟩ := Args.evalResults hd rsN hlen' ts (o + 1) bs hdrop'
-        hbl' es hes' hQ' hR'' _ (hH'.trans hH'')
+        hbl' es hes' hQ' hR'' κ _ (hH'.trans hH'')
       refine ⟨H'.length :: vs, H₂, R₂, ?_, hH''.trans hH₂, fun h => (h he).elim, hruns⟩
-      show EvalResults P H' E ρ Ns bsAll
-        ((if e ∈ Mode.oneOne.erased then none else some o) :: _) _ H₂ _
+      show EvalResults P κ H' E ρ Ns bsAll
+        ((if e ∈ Mode.oneOne.erased then none else some o) :: _) (e.run :: _) _ H₂ _
       rw [ite_eq_left_of_eq_true _ _ (eq_true he)]
       exact .erased hevs
-    · obtain ⟨v, H₂, R₁, hev, hH₂, hrun⟩ := hQt he H' hH'
+    · obtain ⟨v, H₂, R₁, hev, hH₂, hrun⟩ := hQt he (κ * e.run) H' hH'
       obtain ⟨vs, H₃, R₂, hevs, hH₃, hruns⟩ := Args.evalResults hd rsN hlen' ts (o + 1) bs hdrop'
-        hbl' es hes' hQ' hR'' _ (hH'.trans hH₂)
+        hbl' es hes' hQ' hR'' κ _ (hH'.trans hH₂)
       refine ⟨v :: vs, H₃, R₁ ++ R₂, ?_, hH₂.trans hH₃, fun _ => (hrun C hC).mono hd hH₃, hruns⟩
-      show EvalResults P H' E ρ Ns bsAll
-        ((if e ∈ Mode.oneOne.erased then none else some o) :: _) _ H₃ _
+      show EvalResults P κ H' E ρ Ns bsAll
+        ((if e ∈ Mode.oneOne.erased then none else some o) :: _) (e.run :: _) _ H₃ _
       rw [ite_eq_right_of_eq_false _ _ (eq_false he)]
       exact .recursor hbo hev hevs
 
 /-- Terms of a list evaluate to as many addresses. -/
-theorem EvalAll.length_ofList {n : Nat} {H H' : Heap} {E : List Nat} :
+theorem EvalAll.length_ofList {n : Nat} {κ : Multiplicity} {H H' : Heap} {E : List Nat} :
     (Ms : List (Multiplicity × Target n)) → {as : List Nat} → {R : List Nat} →
-      EvalAll P H E (Targets.ofList Ms) as H' R → as.length = Ms.length
+      EvalAll P κ H E (Targets.ofList Ms) as H' R → as.length = Ms.length
   | [], _, _, .nil => rfl
   | _ :: Ms, _, _, .cons _ hs => congrArg (· + 1) (EvalAll.length_ofList Ms hs)
 
 /-- The fields of arguments related at the recursive fields by `V`, at the addresses to which the
 terms `G (some D)` of their types `D` evaluate, satisfy `Q`, when `Q D` holds of each term of a
-recursive field that `V D` relates, at each address to which `G (some D)` evaluates in a heap that
-extends `H₀`, to a heap that `Hf` extends. -/
-theorem EvalAll.recAt {n : Nat} {E : List Nat} {G : Option Name → Multiplicity × Target n}
+recursive field that `V D` relates, at each address to which `G (some D)` evaluates, at some weight,
+in a heap that extends `H₀`, to a heap that `Hf` extends. -/
+theorem EvalAll.recAt {n : Nat} {κ : Multiplicity} {E : List Nat}
+    {G : Option Name → Multiplicity × Target n}
     {V : Name → TermRel} {Q : Name → Term 0 [] → Nat → Prop} {H₀ Hf : Heap} :
     {ps : List Parameter} → (rs : List (Option Name)) →
-    (∀ D, some D ∈ rs → ∀ t u, V D t u → ∀ Ha b Hb R, H₀.Extends Ha →
-      Eval P Ha E (G (some D)).2 b Hb R → Hb.Extends Hf → Q D t b) →
+    (∀ D, some D ∈ rs → ∀ t u, V D t u → ∀ κ' Ha b Hb R, H₀.Extends Ha →
+      Eval P κ' Ha E (G (some D)).2 b Hb R → Hb.Extends Hf → Q D t b) →
     rs.length = ps.length → (es : List Grade) → (ts us : Args 0 [] ps) → {H₁ : Heap} →
     {as : List Nat} → {R : List Nat} → H₀.Extends H₁ →
-    EvalAll P H₁ E (Targets.ofList (rs.map G)) as Hf R →
+    EvalAll P κ H₁ E (Targets.ofList (rs.map G)) as Hf R →
     Terms.RecRel V rs ts.terms us.terms → Terms.RecAt Q rs es ts.terms as
   | [], [], _, _, _, .nil, .nil, _, _, _, _, _, _ => trivial
   | _ :: _, some D :: rs, hG, hl, _ :: es, .cons t ts, .cons u us, _, _, _, hH, .cons h hs, hV =>
-    ⟨fun _ => hG D (List.mem_cons_self ..) t u hV.1 _ _ _ _ hH h hs.extends,
+    ⟨fun _ => hG D (List.mem_cons_self ..) t u hV.1 _ _ _ _ _ hH h hs.extends,
       EvalAll.recAt rs (fun D hD => hG D (List.mem_cons_of_mem _ hD)) (Nat.succ.inj hl) es ts us
         (hH.trans h.extends) hs hV.2⟩
   | _ :: _, some _ :: _, _, _, [], .cons _ _, .cons _ _, _, _, _, _, _, _ => trivial
@@ -685,7 +689,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hi : decl.cases[i]? = some (j, T', con)) {fs : Terms 0 []} {w : Term 0 []}
     (hw : w.IsCtor T'.name con.name fs)
     (hwv : ValidTerm₀ sig ι w (.inst T'.name qs ls ps (as.subst σ))) {H' : Heap}
-    (hH' : H.Extends H') {a : Nat} {πv : List Multiplicity} {bs : List Nat}
+    (hH' : H.Extends H') (κ₀ : Multiplicity) {a : Nat} {πv : List Multiplicity} {bs : List Nat}
     (ha : H'[a]? = some (.ctor i πv bs))
     (hπv : ∀ (l : Nat) (p : Parameter), (con.params (.ofLists qs ps hq hp))[l]? = some p →
       ∃ π₀, πv[l]? = some π₀ ∧ r.run * π₀ ≤ r.run * p.usage.run)
@@ -696,15 +700,15 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ts.terms ts.terms →
       RunsAsArgs sig ι P H' (gs i) ts bs
         (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) (as.subst σ)) ∧
-      Terms.RecAt (fun D' t b => ∀ H'', H'.Extends H'' → ∃ v H₂ tr,
-        EvalRec P H'' E r.run (us.erase sig Mode.oneOne.erased hΓ r
+      Terms.RecAt (fun D' t b => ∀ κ' H'', H'.Extends H'' → ∃ v H₂ tr,
+        EvalRec P κ' H'' E r.run (us.erase sig Mode.oneOne.erased hΓ r
           ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) b v H₂
           tr ∧ H''.Extends H₂ ∧
         ∀ C, (Cs.subst σ).get (decl.names.idxOf D') = some ⟨0, C⟩ →
           RunsAs sig ι P H₂ (.recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) v
             (C.subst₀ (Subst₀.single t)))
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (us.grades i) ts.terms bs) :
-    ∃ v H₃ tr, EvalRec P H' E r.run (us.erase sig Mode.oneOne.erased hΓ r
+    ∃ v H₃ tr, EvalRec P κ₀ H' E r.run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a v H₃ tr ∧
       H'.Extends H₃ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
@@ -769,7 +773,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   obtain ⟨vs, H₂, tr₁, hevs, hH₂, hruns⟩ := Args.evalResults hd
     ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (Telescope.length_recursion _ _)
     ts 0 bs List.drop_zero (RunsAsArgs.length hfa) gs₀.toList gs₀.length_toList hQ
-    (Constructor.results_subst_append hRt σ ts) H' (List.prefix_refl _)
+    (Constructor.results_subst_append hRt σ ts) κ₀ H' (List.prefix_refl _)
   -- The branch, at the substitution of its context by `σ`, the fields and the results.
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
@@ -801,15 +805,16 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       ((((rfs.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs₀.toList[j]?)
   let πs₀' : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length → Multiplicity :=
     fun j => gs₀[j].run
-  have hlen : (List.ofFn πs₀ ++ List.ofFn πs₀').length = (bs ++ vs).length := by
-    simp only [List.length_append, List.length_ofFn, RunsAsArgs.length hfa, RunsAsArgs.length hruns]
-  let H₂' := H₂.bind (List.ofFn πs₀ ++ List.ofFn πs₀') (bs ++ vs)
+  have hlen : ((List.ofFn πs₀ ++ List.ofFn πs₀').map (κ₀ * ·)).length = (bs ++ vs).length := by
+    simp only [List.length_map, List.length_append, List.length_ofFn, RunsAsArgs.length hfa,
+      RunsAsArgs.length hruns]
+  let H₂' := H₂.bind ((List.ofFn πs₀ ++ List.ofFn πs₀').map (κ₀ * ·)) (bs ++ vs)
   have hH₂' : H₂.Extends H₂' := List.prefix_append _ _
   have hB : H₂'.Binds ((List.range' H₂.length (bs ++ vs).length).reverse ++ E)
       (vs.reverse ++ (bs.reverse ++ V)) := by
     have h' := (Heap.binds_bind H₂ hlen).reverse.append (hEV.mono (hH'.trans (hH₂.trans hH₂')))
     rwa [List.reverse_append, List.append_assoc] at h'
-  obtain ⟨v, H₃, tr₂, hev, hH₃, hrun⟩ := hbr _ H₂' _ _ hEqbr hB (hσr.mono hd hH₂')
+  obtain ⟨v, H₃, tr₂, hev, hH₃, hrun⟩ := hbr κ₀ _ H₂' _ _ hEqbr hB (hσr.mono hd hH₂')
   -- The erased recursor steps to the erased branch.
   have hks : List.ofFn (fun j : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length =>
         if gs₀[j] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j : Nat)]?) =
@@ -819,6 +824,9 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     rw [hpos]
     exact List.ofFn_ite_getElem? _ gs₀ _
       (Telescope.length_positions _ (Telescope.length_recursion _ _) 0)
+  have hπs' : List.ofFn πs₀' = gs₀.toList.map Grade.run := by
+    apply List.ext_getElem <;> simp [πs₀']
+  rw [← hπs'] at hevs
   -- The uses of each field by the branch are within those that the constructor allows.
   have hπ : ∀ l : Fin (con.params (.ofLists qs ps hq hp)).length,
       ∃ π₀, πv[(l : Nat)]? = some π₀ ∧ r.run * π₀ ≤ πs₀ l + r.run * recursionsAt
@@ -855,8 +863,6 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     have hr := Telescope.recursionsAt_positions Mode.oneOne.erased (by decide)
       ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) gs₀.toList 0 l
     rw [Nat.zero_add] at he hr
-    have hπs' : List.ofFn πs₀' = gs₀.toList.map Grade.run := by
-      apply List.ext_getElem <;> simp [πs₀']
     rw [hks, hπs', hr]
     simp only [πs₀, hfs, Grade.fieldMultiplicity, hpos, he]
     exact Grade.run_mul_le_fieldMultiplicity π₀ r p'.usage _ _ hle hgl
@@ -914,10 +920,10 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hr : r ∉ Mode.oneOne.erased) {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat}
     (hσ : EqSubst sig ι ctx σ σ) (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx χ σ V)
     {H₁ : Heap}
-    (hH₁ : H.Extends H₁) {t : Term 0 []} {a : Nat}
+    (hH₁ : H.Extends H₁) (κ₀ : Multiplicity) {t : Term 0 []} {a : Nat}
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ))
     (ht : RunsAs sig ι P H₁ t a ((Term.inst D qs ls ps as).subst σ)) :
-    ∃ b H₂ tr, EvalRec P H₁ E r.run (us.erase sig Mode.oneOne.erased hΓ r
+    ∃ b H₂ tr, EvalRec P κ₀ H₁ E r.run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a b H₂ tr ∧
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
@@ -947,17 +953,17 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   -- recursor evaluates, in each heap that extends `H`, to the address of a value related to the
   -- recursor at the motive.
   let X : Name → RunRel := fun D' H₀ w a => DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S D' H₀ w a ∧
-    ∀ H', H₀.Extends H' → H.Extends H' →
+    ∀ κ' H', H₀.Extends H' → H.Extends H' →
       ValidTerm₀ sig ι w (.inst D' qs ls ps (as.subst σ)) →
       ∀ C' : Term 0 (.var :: Γ), Cs.get (decl.names.idxOf D') = some ⟨0, C'⟩ →
-        ∃ b H₂ tr, EvalRec P H' E r.run Ns a b H₂ tr ∧ H'.Extends H₂ ∧
+        ∃ b H₂ tr, EvalRec P κ' H' E r.run Ns a b H₂ tr ∧ H'.Extends H₂ ∧
           RunsAs sig ι P H₂ (f D' w) b ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single w))
   have hclosed : ∀ T' ∈ decl.dataTypes, ∀ H₀ w a, T'.runCtorRel sig (.ofLists qs ps hq hp) T'.name (S X) H₀ w a →
       X T'.name H₀ w a := by
     intro T' hT' H₀ w a hc
     have hcb := DataType.runCtorRel_mono (List.prefix_refl H₀)
       (fun c hc' ts bs => hmono X _ (fun _ _ _ _ h => h.1) T' hT' c hc' H₀ ts bs) hc
-    refine ⟨DataType.runBlockRel_fold hmono hT' hcb, fun H' hH' hHH' hwv C' hC' => ?_⟩
+    refine ⟨DataType.runBlockRel_fold hmono hT' hcb, fun κ' H' hH' hHH' hwv C' hC' => ?_⟩
     obtain ⟨con, hcon, i, fs, bs, hw, hi, ha, hSX⟩ := hc
     -- The case of the constructor.
     obtain ⟨j₀, hij⟩ := hd.cases_of_constructorCase ⟨hdecl, hT', rfl⟩ hcon hi
@@ -965,7 +971,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     obtain rfl : i = i' := List.getElem?_inj_of_nodup_map (hd.cases_nodup hdecl) hij hi' rfl
     rw [hidx j T' hj] at hC'
     obtain ⟨v, H₃, tr, hev, hH₃, hrun⟩ := RunsAs.recursor_ctor hd ⟨hdecl, hT, rfl⟩ hv hadm has hCs
-      hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi' hw hwv hHH' (hH'.getElem? ha)
+      hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi' hw hwv hHH' κ' (hH'.getElem? ha)
       (fun l p hlp => ⟨_, by rw [List.getElem?_map, hlp]; rfl,
         (by decide : ∀ π π' : Multiplicity, π * π' ≤ π * π') _ _⟩)
       fun ts hfs hts hrecV => by
@@ -1007,7 +1013,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
           | some x =>
             simp only [hx, Option.join_some] at hr'
             rw [hr']
-        refine ⟨D, hD, fun t b ⟨v, hcv, hXv⟩ hVt H'' hH'' => ?_⟩
+        refine ⟨D, hD, fun t b ⟨v, hcv, hXv⟩ hVt κ'' H'' hH'' => ?_⟩
         have hDn := Telescope.recursionAt_mem hr'
         obtain ⟨C₃, hC₃⟩ := Motives.get_idxOf hT hnd hCs hDn
         obtain ⟨j₃, T₃, C₃', hj₃, rfl, hC₃', -⟩ :=
@@ -1015,7 +1021,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         rw [hidx j₃ T₃ hj₃, hC₃'] at hC₃
         cases hC₃
         have hvv := (ValidEqTerm₀.redStar_iff hd hcv.1).1 hVt
-        obtain ⟨b', H₃, tr', hev, hH₃, hrun⟩ := hXv.2 H'' (hH'.trans hH'') (hHH'.trans hH'')
+        obtain ⟨b', H₃, tr', hev, hH₃, hrun⟩ := hXv.2 κ'' H'' (hH'.trans hH'') (hHH'.trans hH'')
           (hvv.trans hvv.symm) C₃ ((hidx j₃ T₃ hj₃).symm ▸ hC₃')
         refine ⟨b', H₃, tr', hev, hH₃, fun C hC => ?_⟩
         obtain ⟨j₄, T₄, C₄, hj₄, hT₄, hC₄, rfl⟩ := Motives.get_subst_idxOf hT hnd hCs σ hDn hC
@@ -1036,7 +1042,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     have hwv := (ValidEqTerm₀.redStar_iff hd htw.1).1 htv
     have hC₀ : Cs.get (decl.names.idxOf T.name) = some ⟨0, C⟩ := (hidx h' T hh).symm ▸ hC
     obtain ⟨b, H₂, tr, hev, hH₂, hrun⟩ :=
-      (hRw X hclosed).2 H₁ (List.prefix_refl _) hH₁ (hwv.trans hwv.symm) C hC₀
+      (hRw X hclosed).2 κ₀ H₁ (List.prefix_refl _) hH₁ (hwv.trans hwv.symm) C hC₀
     exact ⟨b, H₂, tr, hev, hH₂, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC htw.1 htv hrun⟩
 
 /-- `r ∈ S`, by induction on `(eq_μ)`: the skeleton of the instance evaluates to an address that the
@@ -1076,10 +1082,10 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat}
     (hσ : EqSubst sig ι ctx σ σ) (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx χ σ V)
     {H₁ : Heap}
-    (hH₁ : H.Extends H₁) {t : Term 0 []}
+    (hH₁ : H.Extends H₁) (κ₀ : Multiplicity) {t : Term 0 []}
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ)) :
-    ∃ a H₂ b H₃ tr, Eval P H₁ E (sig.skeleton D qs ps : Target Γ.length) a H₂ [] ∧
-      EvalRec P H₂ E r.run (us.erase sig Mode.oneOne.erased hΓ r
+    ∃ a H₂ b H₃ tr, Eval P (κ₀ * r.run) H₁ E (sig.skeleton D qs ps : Target Γ.length) a H₂ [] ∧
+      EvalRec P κ₀ H₂ E r.run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a b H₃
         tr ∧ H₁.Extends H₃ ∧
       RunsAs sig ι P H₃ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
@@ -1108,10 +1114,10 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   -- recursor on `v` at the motive.
   let Pk : Name → Term 0 [] → Prop := fun D' v => ∀ (A : List Name) (d : Nat), A.Nodup →
     (∀ X ∈ A, X ∈ decl.names) → (∀ X ∈ A, Relation.TransGen (decl.Below I) D' X) →
-    d + A.length = decl.names.length → ∀ H₂ a H₃ tr₀, H.Extends H₂ →
-    Eval P H₂ E (decl.skeleton I d D' : Target Γ.length) a H₃ tr₀ →
-    ValidTerm₀ sig ι v (.inst D' qs ls ps (as.subst σ)) → ∀ H', H₃.Extends H' →
-    ∃ b H₄ tr, EvalRec P H' E r.run Ns a b H₄ tr ∧ H'.Extends H₄ ∧
+    d + A.length = decl.names.length → ∀ κ' H₂ a H₃ tr₀, H.Extends H₂ →
+    Eval P κ' H₂ E (decl.skeleton I d D' : Target Γ.length) a H₃ tr₀ →
+    ValidTerm₀ sig ι v (.inst D' qs ls ps (as.subst σ)) → ∀ κ'' H', H₃.Extends H' →
+    ∃ b H₄ tr, EvalRec P κ'' H' E r.run Ns a b H₄ tr ∧ H'.Extends H₄ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get (decl.names.idxOf D') = some ⟨0, C'⟩ →
         RunsAs sig ι P H₄ (f D' v) b ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single v))
   -- The relations of the canonical terms that `(eq_μ)` relates, whose type is accessible for `≺`,
@@ -1137,7 +1143,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       exact hX₁.2.1
     refine ⟨DataType.blockRel_closed hmonoM hT'
       ⟨con, hcon, ts.terms, us'.terms, hvc, hwc, hSX'⟩, hacc, ?_⟩
-    intro A d hA hAn hAD hdA H₂ a H₃ _ hH₂ hev hvv H' hH'
+    intro A d hA hAn hAD hdA _ H₂ a H₃ _ hH₂ hev hvv κ'' H' hH'
     -- The depth is not reached, since the ancestors are fewer than the types of the block.
     have hlt := TypeDeclaration.length_ancestors_lt hacc (TypeDeclaration.name_mem_names hT') hA
       hAn hAD
@@ -1147,7 +1153,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     rw [TypeDeclaration.skeleton_succ hnd I hT' rfl hcons
       (Entry.constructorCase_of_cases (hd.cases_nodup hdecl) hi)] at hev
     cases hev with
-    | @ctor _ _ H₂₀ _ _ _ bs _ hall =>
+    | @ctor _ _ _ H₂₀ _ _ _ bs _ hall =>
     have hH₂₀ : H₂₀.Extends H' := (List.prefix_append H₂₀ _).trans hH'
     have hHH' : H.Extends H' := hH₂.trans (hall.extends.trans hH₂₀)
     have hbl : bs.length = (con.params I).length := by
@@ -1170,7 +1176,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       simp only [Function.comp_apply]
       split <;> rfl
     obtain ⟨b, H₄, tr, hevr, hH₄, hrun⟩ := RunsAs.recursor_ctor hd ⟨hdecl, hT, rfl⟩ hv hadm has
-      hCs hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH'
+      hCs hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH' κ''
       (hH'.getElem? List.getElem?_concat_length) hπv
       fun ts' hfs _ _ => by
         rw [hfs]
@@ -1179,8 +1185,9 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
           r ∈ Mode.oneOne.erased → r * p ≤ g + x * r → g ∈ Mode.oneOne.erased) r p.usage
           (gs i l) _ hr (hg i j T' con l p hi hl')) hbl, ?_⟩
         -- The recursive results used at run time, on the skeletons of the recursive fields.
-        refine EvalAll.recAt _ (fun D'' hD'' t u ⟨v₁, w₁, hcv, hcw, hX₁⟩ Ha b' Hb Rb hHa hevb hHb
-          H'' hH'' => ?_) (Telescope.length_recursion _ _) _ ts us' (List.prefix_refl _) hall hrX
+        refine EvalAll.recAt _ (fun D'' hD'' t u ⟨v₁, w₁, hcv, hcw, hX₁⟩ κa Ha b' Hb Rb hHa hevb
+          hHb κb H'' hH'' => ?_) (Telescope.length_recursion _ _) _ ts us' (List.prefix_refl _)
+          hall hrX
         have hDn := Telescope.mem_recursion hD''
         obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hDn
         have htu := hval T₃ hT₃ t u ⟨v₁, w₁, hcv, hcw, hX₁.1⟩
@@ -1197,8 +1204,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
             rcases List.mem_cons.1 hX with rfl | hX
             · exact .single hb
             · exact .trans (.single hb) (hAD X hX))
-          (by simp only [List.length_cons]; omega) Ha b' Hb Rb (hH₂.trans hHa) hevb
-          (hvv₁.trans hvv₁.symm) H'' (hHb.trans (hH₂₀.trans hH''))
+          (by simp only [List.length_cons]; omega) κa Ha b' Hb Rb (hH₂.trans hHa) hevb
+          (hvv₁.trans hvv₁.symm) κb H'' (hHb.trans (hH₂₀.trans hH''))
         refine ⟨b'', H₅, tr', hev', hH₅, fun C₄ hC₄ => ?_⟩
         obtain ⟨j₄, T₄, C₄', hj₄, hT₄, hC₄', rfl⟩ :=
           Motives.get_subst_idxOf hT hnd hCs σ hDn hC₄
@@ -1217,9 +1224,11 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   have hX := ((HasEq.unique hd hR' (.univ _ (levelRel_univ_iff.2 (hUM T hT).1)) _ _).1 hrel) X
     hclosed
   have hww := (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htv
-  obtain ⟨a, H₂, hev, hH₂⟩ := (decl.skeleton_isSkeleton I decl.names.length T.name).eval P H₁ E
+  obtain ⟨a, H₂, hev, hH₂⟩ :=
+    (decl.skeleton_isSkeleton I decl.names.length T.name).eval P (κ₀ * r.run) H₁ E
   obtain ⟨b, H₃, tr, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
-    (fun _ h => nomatch h) rfl H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) H₂ (List.prefix_refl _)
+    (fun _ h => nomatch h) rfl _ H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) κ₀ H₂
+    (List.prefix_refl _)
   refine ⟨a, H₂, b, H₃, tr, ?_, hevr, hH₂.trans hH₃, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC
     hw₁.1 htv (hrun C ((hidx h' T hh).symm ▸ hC))⟩
   rw [hd.skeleton ⟨hdecl, hT, rfl⟩ hq hp]
@@ -1266,7 +1275,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases = []) :
     RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ χ) (.recursor r D qs ls ps as t Cs us)
       (C.subst₀ (Subst₀.single t)) := by
-  intro σ H E V hσ hEV hE
+  intro w σ H E V hσ hEV hE
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hS := Mode.erasesUncounted .oneOne
   have hEχ : RunsAsSubst sig ι P H ctx χ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
@@ -1309,19 +1318,19 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         exact (by decide : ∀ r : Grade, r ∈ Mode.oneOne.erased → r.mode ≠ .oneOne) r hrS
           (hr ⟨T', hT', h2⟩)
       obtain ⟨a, H₂, b, H₃, tr, hev, hevr, hH₃, hrun⟩ := RunsAs.recursor_skeleton hd h hv hadm
-        has hh hC hCs hCv hus hrec husr hg' hχ hs hrS h1 hσ hEV hEχ (List.prefix_refl H) htσ
+        has hh hC hCs hCv hus hrec husr hg' hχ hs hrS h1 hσ hEV hEχ (List.prefix_refl H) w htσ
       refine ⟨b, H₃, [] ++ tr, ?_, hH₃, hrun⟩
-      show Eval P H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _) _) b H₃ _
+      show Eval P w H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _) _) b H₃ _
       rw [ite_eq_left hrS]
       exact .recursor hev hevr
     · -- The term evaluates to the address of its value.
       have hγ : RunsAsSubst sig ι P H ctx γ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
         h (hS.mul _ _ hrS (hS.add _ _ h'))) hE
-      obtain ⟨a, H₁, tr₁, hev, hH₁, hta⟩ := htr hrS σ H E V hσ hEV hγ
+      obtain ⟨a, H₁, tr₁, hev, hH₁, hta⟩ := htr hrS (w * r.run) σ H E V hσ hEV hγ
       obtain ⟨b, H₂, tr₂, hevr, hH₂, hrun⟩ := RunsAs.recursor hd h hv hadm has hh hC hCs hCv hus
-        hrec husr hg' hχ hs hrS hσ hEV hEχ hH₁ htσ hta
+        hrec husr hg' hχ hs hrS hσ hEV hEχ hH₁ w htσ hta
       refine ⟨b, H₂, tr₁ ++ tr₂, ?_, hH₁.trans hH₂, hrun⟩
-      show Eval P H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _) _) b H₂ _
+      show Eval P w H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _) _) b H₂ _
       rw [ite_eq_right hrS]
       exact .recursor hev hevr
 

@@ -79,27 +79,28 @@ def RunsAsSubst (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap)
 /-- `Σ; γ; Γ ⊨® t : A`, at levels without variables: for each closed substitution `σ` of the
 first-order context `Γ` that the meaning relates to itself, and each heap `H` in which the cells `E`
 bind the addresses `V` that stand for `σ` as `γ` requires, the erasure of `t` by `S^{11ᵐ}` evaluates,
-in `E` and `H`, to an address `a` in a heap `H'` that extends `H`, reading the cells `R`, and `t[σ]`
-is related to `a` at `A[σ]`.
+at each weight `κ`, in `E` and `H`, to an address `a` in a heap `H'` that extends `H`, reading the
+cells `R`, and `t[σ]` is related to `a` at `A[σ]`.
 RFC: `{\vDash}^{\circledR}` -/
 def RunValid (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope} (hΓ : Γ.FirstOrder)
     (ctx : Context 0 Γ) (γ : GradeVector Γ.length) (t A : Term 0 Γ) : Prop :=
-  ∀ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
-    ∃ a H' R, Eval P H E (t.erase sig Mode.oneOne.erased hΓ) a H' R ∧ H.Extends H' ∧
+  ∀ κ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
+    ∃ a H' R, Eval P κ H E (t.erase sig Mode.oneOne.erased hΓ) a H' R ∧ H.Extends H' ∧
       RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
 
 -- ADE: none.
 /-- `Σ; γ; Γ ⊨® t̄ : Θ`, at levels without variables: for each closed substitution `σ` of the
 first-order context `Γ` that the meaning relates to itself, and each heap `H` in which the cells `E`
 bind the addresses `V` that stand for `σ` as `γ` requires, the erasure of the arguments `t̄` at the
-grades of the entries of `Θ` evaluates, in `E` and `H`, to addresses `b̄` in a heap `H'` that extends
-`H`, reading the cells `R`, and `t̄[σ]` are related to `b̄` at `Θ[σ]`.
+grades of the entries of `Θ` evaluates, at each weight `κ`, in `E` and `H`, to addresses `b̄` in a
+heap `H'` that extends `H`, reading the cells `R`, and `t̄[σ]` are related to `b̄` at `Θ[σ]`.
 RFC: `{\vDash}^{\circledR}_{\bar t}` -/
 def RunValidArgs (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) {ps : List Parameter}
     (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
-  ∀ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
-    ∃ bs H' R, EvalAll P H E (ts.terms.erase sig Mode.oneOne.erased hΓ (ps.map (·.usage))) bs H' R ∧
+  ∀ κ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
+    ∃ bs H' R,
+      EvalAll P κ H E (ts.terms.erase sig Mode.oneOne.erased hΓ (ps.map (·.usage))) bs H' R ∧
       H.Extends H' ∧ RunsAsArgs sig ι P H' (Parameter.grades ps) (ts.subst σ) bs (Θ.subst σ)
 
 end Sic.Core

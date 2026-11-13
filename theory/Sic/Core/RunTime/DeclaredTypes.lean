@@ -476,7 +476,7 @@ theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ct
     (hrun : RunValidArgs sig ι P hΓ ctx γ ts
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
     RunValid sig ι P hΓ ctx γ (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as) := by
-  intro σ H E V hσ hEV hE
+  intro w σ H E V hσ hEV hE
   have hfg := hd.fieldGrades h hc hq hp
   obtain ⟨hdecl, hT, rfl⟩ := h
   obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem hdecl hT hc
@@ -485,7 +485,7 @@ theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ct
         ((con.params (.ofLists qs ps hq hp)).map (·.usage))) := by
     rw [Term.erase, hi, hfg]
     rfl
-  obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hrun σ H E V hσ hEV hE
+  obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hrun w σ H E V hσ hEV hE
   have hπ := Args.multiplicities_erase sig Mode.oneOne.erased hΓ ts
   have hH'' : H'.Extends
       (H' ++ [.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run)) bs]) :=

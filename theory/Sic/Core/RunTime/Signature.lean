@@ -132,8 +132,8 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         have hf := fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hent hrest
           (ht (.ofLists qs ps hq hp)) (hm ▸ hus (.ofLists qs ps hq hp))
           fun i => (ls.getFin hl i).closedValue
-        intro σ H E V hσ hEV hE
-        obtain ⟨a, H', R, hev, hH, hr⟩ := hf σ H E V hσ hEV hE
+        intro w σ H E V hσ hEV hE
+        obtain ⟨a, H', R, hev, hH, hr⟩ := hf w σ H E V hσ hEV hE
         cases (hE : V = [])
         cases E with
         | cons => exact hEV.elim

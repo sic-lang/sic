@@ -134,15 +134,15 @@ def CodataType.runBlockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g
 /-- `(®_x̄)`: the closed abstraction `x̄. B` for the destructor of the case `i`, whose arguments
 `ps` have the relation of run time `SΘ`, and the value at the address `a`: in each heap `H'` that
 extends `H`, at arguments `t̄` that `SΘ` relates to addresses `b̄`, the observation of the value at
-`a` by the destructor, applied to `b̄` at the multiplicities at run time of the grades of the
-arguments, gives a value, reading some cells, that the relation `F t̄` of the result type relates to
-`B[t̄ / x̄]`.
+`a` by the destructor, at each weight `κ`, applied to `b̄` at the multiplicities at run time of the
+grades of the arguments, gives a value, reading some cells, that the relation `F t̄` of the result
+type relates to `B[t̄ / x̄]`.
 RFC: `\circledR_{\bar x}` -/
 def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat) (SΘ : RunFieldsRel)
     (F : Terms 0 [] → RunRel) (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) :
     Prop :=
   ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), SΘ H' ts.terms bs →
-    ∃ w H'' R, EvalObs P H' a i (ps.map (·.usage.run)) bs w H'' R ∧
+    ∀ κ, ∃ w H'' R, EvalObs P κ H' a i (ps.map (·.usage.run)) bs w H'' R ∧
       F ts.terms H'' (f.subst ts.toSubst) w
 
 /-! ## Graph of the Relations of Run Time -/
