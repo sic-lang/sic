@@ -713,12 +713,15 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
       have hne : Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (some ps'.length) ≠
           .none := by
         cases decide (r ∈ Mode.oneOne.erased) <;> intro h <;> cases h
-      refine ⟨b, H, .done hne ha, List.prefix_refl _, .inr ⟨rfl, ?_⟩⟩
-      rw [RunsAs.redStar_iff hd (RedStar.resume_done hpre hct.1)]
-      exact hruns.1 (by
-        show Prelude.doneGrade κ.quality ∉ Mode.oneOne.erased
+      -- The field of `done` has the multiplicity at run time of its grade, used at run time.
+      have hq : Prelude.doneGrade κ.quality ∉ Mode.oneOne.erased := by
         rw [hκ]
-        decide)
+        decide
+      have ha' : H[w]? = some (.ctor 1 [(Prelude.doneGrade κ.quality).run] [b]) := ha
+      refine ⟨b, H, .done hne ha' fun h0 => hq ((Mode.erased_values.1 _).2 h0), List.prefix_refl _,
+        .inr ⟨rfl, ?_⟩⟩
+      rw [RunsAs.redStar_iff hd (RedStar.resume_done hpre hct.1)]
+      exact hruns.1 hq
 
 /-! ## Signatures -/
 

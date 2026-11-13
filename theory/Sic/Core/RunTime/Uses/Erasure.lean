@@ -175,8 +175,8 @@ theorem Telescope.run_resultSum_le : (rs : List (Option Name)) → (ps : List Pa
 /-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
 the erasure of each branch reads them as some `δ` allows, and its new variables as the
 multiplicities that the erasure gives their binders allow, `χ` bounds `δ` plus `χ` times the
-multiplicity of each recursive result, and a result that the branch computes has a multiplicity
-other than `0`. -/
+multiplicity of each recursive result that the branch computes, and a result that the branch
+computes has a multiplicity other than `0`. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
     (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Grade)) →
@@ -188,7 +188,9 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
               ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
             (fun (j : Fin b) => gs[j].run))
           (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b)) ∧
-        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) => gs[j].run) ·ᶜ χ) ∧
+        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) =>
+          if (if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?).isSome then gs[j].run
+          else .zero) ·ᶜ χ) ∧
         ∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) →
     TargetBranches.Usage χ (us.erase sig S hΓ r es fs)
   | .nil, _, _, _ => .nil
@@ -359,7 +361,19 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         refine Telescope.run_resultSum_le _ _ hlr _ (by simp) _ fun j' e he => ?_
         rw [List.getElem?_eq_getElem (by simp), _root_.Vector.getElem_toList] at he
         cases Option.some.inj he
-        exact (Multiplicity.modality.meet.meet_idem _).symm
+        have hpl := Telescope.length_positions _ hlr 0
+        split
+        · -- An erased result runs no recursion, and has no use at run time.
+          rename_i hS
+          simp only [Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
+          have hz : gs'[(j' : Nat)].run = .zero := (Mode.erased_values.1 _).1 hS
+          show _ = _ ⊓ _
+          rw [hz]
+          rfl
+        · -- A computed result is at the position of its recursive field.
+          rw [List.getElem?_eq_getElem (by rw [hpl]; exact j'.2)]
+          simp only [Option.isSome_some, ↓reduceIte]
+          exact (Multiplicity.modality.meet.meet_idem _).symm
     simp only [Term.erase]
     rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul]
     by_cases hr : r ∈ Mode.oneOne.erased

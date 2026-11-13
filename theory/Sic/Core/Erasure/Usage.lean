@@ -96,9 +96,10 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
 /-- `χ ⊢ N̄ ▶`: the branches `N̄` of a recursor read the variables of the scope as `χ` allows: each
 branch reads them as `δ` allows and its new variables as their binders allow, and each recursive
 result that it computes runs the recursor again, which reads them as `χ` allows again, and is read
-as its binder allows, so that `χ` bounds `δ` plus `χ` times the multiplicity of each binder of the
-results; a result that the branch computes has a multiplicity other than `0`, since the recursion
-that computes it reads the field, whose uses a result never read would not count. -/
+as its binder allows, so that `χ` bounds `δ` plus `χ` times the multiplicity of the binder of each
+result that the branch computes, an erased result running no recursion; a result that the branch
+computes has a multiplicity other than `0`, since the recursion that computes it reads the field,
+whose uses a result never read would not count. -/
 inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar N}.\varepsilon` -/
@@ -108,7 +109,7 @@ inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBr
   | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs : Fin a → Multiplicity}
       {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
-      (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum πs' ·ᶜ χ))
+      (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ))
       (hk : ∀ j, (ks j).isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
       TargetBranches.Usage χ (.cons a b πs πs' ks N Ns)
 

@@ -50,23 +50,23 @@ structure ValidProgram (ι : Interpretation) (P : Program) (sig : Signature) : P
         (Signature.instanceType c.type (.ofLists qs ps hq hp) (ls.getFin hl))
 
 -- ADE: none.
-/-- The program of a signature whose names are distinct gives a constant that the signature defines
-the erasure of its body. -/
+/-- The program of a signature whose names are distinct gives a constant of the mode `11ᵐ` that the
+signature defines the erasure of its body. -/
 theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· ∈ S)]
     {sigE : Signature} {qs : List Quality} {ps : List Grade} :
     {sig : Signature} → sig.Distinct → {d : ConstantDefinition} → .constantDefinition d ∈ sig →
-      (hq : qs.length = d.sorts) → (hp : ps.length = d.grades) →
+      d.mode = .oneOne → (hq : qs.length = d.sorts) → (hp : ps.length = d.grades) →
         sig.findSome? (Entry.compile sigE S d.name qs ps)
           = some ((d.body (.ofLists qs ps hq hp)).erase sigE S Scope.FirstOrder.nil)
-  | e :: sig, hd, d, h, hq, hp => by
+  | e :: sig, hd, d, h, hm, hq, hp => by
     have hself : Entry.compile sigE S d.name qs ps (.constantDefinition d)
         = some ((d.body (.ofLists qs ps hq hp)).erase sigE S Scope.FirstOrder.nil) := by
-      simp only [Entry.compile, hq, hp, ↓reduceDIte, ↓reduceIte]
+      simp only [Entry.compile, hm, hq, hp, and_self, ↓reduceDIte, ↓reduceIte]
     rw [List.findSome?_cons]
     rcases List.mem_cons.1 h with rfl | h'
     · rw [hself]
     · cases hc : Entry.compile sigE S d.name qs ps e with
-      | none => exact Signature.Distinct.findSome?_compile hd.1 h' hq hp
+      | none => exact Signature.Distinct.findSome?_compile hd.1 h' hm hq hp
       | some x =>
         have he : e = .constantDefinition d := by
           cases e with
@@ -74,7 +74,8 @@ theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· 
             have hn : d'.name = d.name := by
               simp only [Entry.compile] at hc
               split at hc
-              · assumption
+              · rename_i hn
+                exact hn.1
               · exact nomatch hc
             exact Signature.Distinct.entry_unique hd List.mem_cons_self (List.mem_cons_of_mem _ h') (n := d.name)
               (by simp [Entry.names, hn]) (by simp [Entry.names])
@@ -85,15 +86,15 @@ theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· 
         rfl
 
 -- ADE: none.
-/-- A program that holds the erasure of a signature whose names are distinct gives a constant that
-the signature defines the erasure of its body. -/
+/-- A program that holds the erasure of a signature whose names are distinct gives a constant of the
+mode `11ᵐ` that the signature defines the erasure of its body. -/
 theorem ValidProgram.constantDefinition {ι : Interpretation} {P : Program} {sig : Signature}
     (hP : ValidProgram ι P sig) (hd : sig.Distinct) {d : ConstantDefinition}
-    (h : .constantDefinition d ∈ sig) {qs : List Quality} {ps : List Grade}
+    (h : .constantDefinition d ∈ sig) (hm : d.mode = .oneOne) {qs : List Quality} {ps : List Grade}
     (hq : qs.length = d.sorts) (hp : ps.length = d.grades) :
     P d.name qs ps
       = some ((d.body (.ofLists qs ps hq hp)).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) :=
-  hP.compile _ _ _ _ (hd.findSome?_compile h hq hp)
+  hP.compile _ _ _ _ (hd.findSome?_compile h hm hq hp)
 
 -- ADE: the case `defn` of `fundamental′`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- A program that realizes a signature `Σ` whose names are distinct realizes the constants of the
@@ -141,7 +142,8 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         have hσ₀ : ∀ t : Term 0 [], t.subst σ = t := fun t => by
           have h := Term.subst_weakenClosed σ t
           rwa [Term.weakenClosed_nil] at h
-        refine ⟨a, H', R, .const (hP.constantDefinition hd (hs.subset hc) hq hp) ?_, hH, ?_⟩
+        refine ⟨a, H', R, .const (hP.constantDefinition hd (hs.subset hc) hm.symm hq hp) ?_, hH,
+          ?_⟩
         · rw [Term.atLevels, Term.erase_substLevels] at hev
           exact hev
         · rw [hσ₀, hσ₀] at hr

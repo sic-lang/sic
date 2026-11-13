@@ -37,7 +37,7 @@ theorem Heap.Extends.getElem? {H H' : Heap} {a : Nat} {v : Value} (h : H.Extends
 /-- The resumption of a value extends the heap. -/
 theorem EvalResume.extends {H H' : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
     {o : Resumption} {w v : Nat} : EvalResume H n E Ps o w v H' → H.Extends H'
-  | .none | .done _ _ => List.prefix_refl _
+  | .none | .done _ _ _ => List.prefix_refl _
   | .next _ _ | .erased _ => List.prefix_append _ _
 
 mutual

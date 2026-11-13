@@ -116,11 +116,12 @@ theorem Scope.FirstOrder.nil : Scope.FirstOrder [] := fun _ h => nomatch h
 
 -- ADE: none.
 /-- The body of the constant `f` at the instance of the qualities `qs` and of the grades `ps`, erased
-by `S`, when the entry defines it. -/
+by `S`, when the entry defines it in the mode `11ᵐ`, the only constants that a term of this mode
+refers to. -/
 def Entry.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] (f : Name)
     (qs : List Quality) (ps : List Grade) : Entry → Option (Target 0)
   | .constantDefinition d =>
-    if d.name = f then
+    if d.name = f ∧ d.mode = .oneOne then
       if hq : qs.length = d.sorts then
         if hp : ps.length = d.grades then
           some ((d.body (.ofLists qs ps hq hp)).erase sig S Scope.FirstOrder.nil)
@@ -132,7 +133,7 @@ def Entry.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] (
 -- ADE: none.
 /-- `⌊Σ⌋_S`: the program of the signature `sig`, erased by the set of grades `S`, which gives the
 constant `f.{s̄; p̄}` the erasure of the body of `f` at this instance, in the last entry of `sig`
-that defines it.
+that defines it in the mode `11ᵐ`.
 RFC: `\mathsf{erase}_\Sigma` -/
 def Signature.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] : Program :=
   fun f qs ps => sig.findSome? (Entry.compile sig S f qs ps)
@@ -195,11 +196,12 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       (h : H[w]? = some (.ctor 0 [.zero] [x])) :
       EvalResume H n E Ps (.erased k) w H.length
         (H ++ [.corec n E Ps (List.replicate k .zero) (List.replicate k x)])
-  /-- `done(x)`: the term already built `x`.
+  /-- `done(x)`: the term already built `x`, whose field has a multiplicity other than `0`, so that
+  the value that it gives is one that it may use; the evaluation is stuck otherwise.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{done}` -/
-  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
-      {πs : List Multiplicity} {o : Resumption} {w x : Nat} (ho : o ≠ .none)
-      (h : H[w]? = some (.ctor 1 πs [x])) : EvalResume H n E Ps o w x H
+  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {π : Multiplicity}
+      {o : Resumption} {w x : Nat} (ho : o ≠ .none) (h : H[w]? = some (.ctor 1 [π] [x]))
+      (hπ : π ≠ .zero) : EvalResume H n E Ps o w x H
 
 -- ADE: none.
 /-- `recursions_{k̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
@@ -374,7 +376,7 @@ theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : Targe
     {o : Resumption} {w v₁ v₂ : Nat} :
     EvalResume H n E Ps o w v₁ H₁ → EvalResume H n E Ps o w v₂ H₂ → v₁ = v₂ ∧ H₁ = H₂
   | .none, .none => ⟨rfl, rfl⟩
-  | .none, .done ho _ | .done ho _, .none => (ho rfl).elim
+  | .none, .done ho _ _ | .done ho _ _, .none => (ho rfl).elim
   | .next h hs, .next h' hs' => by
     rw [h] at h'
     cases h'
@@ -384,11 +386,11 @@ theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : Targe
     rw [h] at h'
     cases h'
     exact ⟨rfl, rfl⟩
-  | .next h _, .done _ h' | .done _ h, .next h' _ | .erased h, .done _ h'
-  | .done _ h, .erased h' => by
+  | .next h _, .done _ h' _ | .done _ h _, .next h' _ | .erased h, .done _ h' _
+  | .done _ h _, .erased h' => by
     rw [h] at h'
     cases h'
-  | .done _ h, .done _ h' => by
+  | .done _ h _, .done _ h' _ => by
     rw [h] at h'
     cases h'
     exact ⟨rfl, rfl⟩
