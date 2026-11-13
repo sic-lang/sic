@@ -67,10 +67,11 @@ theorem RunFieldsRel.cons_congr {F F' : RunRel} {G G' : Term 0 [] → RunFieldsR
 
 /-- `(®_c)` relates the same terms and addresses for relations of the terms of the fields that
 do. -/
-theorem DataType.runCtorRel_congr {j g k : Nat} {Δ : Scope} {sig : Signature} {D : Name}
+theorem DataType.runCtorRel_congr {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
+    {D : Name}
     {T : DataType j g k Δ} {S S' : Constructor j g k Δ → RunFieldsRel}
     (h : ∀ c ∈ T.constructors, ∀ H ts as, S c H ts as ↔ S' c H ts as) :
-    ∀ H v a, T.runCtorRel sig D S H v a ↔ T.runCtorRel sig D S' H v a :=
+    ∀ H v a, T.runCtorRel sig I D S H v a ↔ T.runCtorRel sig I D S' H v a :=
   fun H _ _ =>
     ⟨fun ⟨c, hc, i, ts, as, hv, hi, ha, hs⟩ => ⟨c, hc, i, ts, as, hv, hi, ha, (h c hc H ts as).1 hs⟩,
       fun ⟨c, hc, i, ts, as, hv, hi, ha, hs⟩ =>
@@ -78,10 +79,11 @@ theorem DataType.runCtorRel_congr {j g k : Nat} {Δ : Scope} {sig : Signature} {
 
 /-- `(®_μ)` relates the same terms and addresses for relations of the terms of the fields that
 do. -/
-theorem DataType.runBlockRel_congr {j g k : Nat} {Δ : Scope} {sig : Signature}
+theorem DataType.runBlockRel_congr {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
     {Ts : List (DataType j g k Δ)} {S S' : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
     (h : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as ↔ S' X c H ts as)
-    (D : Name) : ∀ H v a, DataType.runBlockRel sig Ts S D H v a ↔ DataType.runBlockRel sig Ts S' D H v a :=
+    (D : Name) :
+    ∀ H v a, DataType.runBlockRel sig I Ts S D H v a ↔ DataType.runBlockRel sig I Ts S' D H v a :=
   fun _ _ _ => ⟨fun hr X hX => hr X fun T hT H v a hc =>
       hX T hT H v a ((DataType.runCtorRel_congr (h X T hT) H v a).1 hc),
     fun hr X hX => hr X fun T hT H v a hc =>

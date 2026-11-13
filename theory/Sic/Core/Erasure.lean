@@ -127,25 +127,28 @@ inductive Target : Nat → Type where
   /-- `↯`, what was erased. -/
   | erased {n : Nat} : Target n
   /-- `cᵢ(M̄)`: the constructor of the case `i` of its block applied to a term for each of its
-  fields. -/
+  fields, each at the multiplicity of its field. -/
   | ctor {n : Nat} (i : Nat) (Ms : Targets n) : Target n
-  /-- `rec M with N̄`: the recursor on `M`, with a branch for each constructor, in order. -/
-  | recursor {n : Nat} (M : Target n) (Ns : TargetBranches n) : Target n
+  /-- `rec_ρ M with N̄`: the recursor of the multiplicity `ρ` on `M`, with a branch for each
+  constructor, in order. -/
+  | recursor {n : Nat} (ρ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
   /-- `M.dᵢ(M̄)`: the observation of `M` by the destructor of the case `i` of its block, applied to
-  a term for each of its arguments. -/
+  a term for each of its arguments, each at the multiplicity of its argument. -/
   | obs {n : Nat} (M : Target n) (i : Nat) (Ms : Targets n) : Target n
-  /-- `corec from M̄ with P̄`: the corecursor from the state `M̄`, with a branch for each
-  destructor, in order. -/
+  /-- `corec from M̄ with P̄`: the corecursor from the state `M̄`, each entry at the multiplicity of
+  its entry, with a branch for each destructor, in order. -/
   | corec {n : Nat} (Ms : Targets n) (Ns : TargetCorecBranches n) : Target n
 
 -- ADE: none.
-/-- `M̄ = (M₁, …, Mₐ)`: terms of the target language, the first one first.
+/-- `M̄ = (M₁ ▶ π₁, …, Mₐ ▶ πₐ)`: terms of the target language, the first one first, each stored at
+the multiplicity `π` of the position that holds its value, a field, an argument or an entry of a
+state, which bounds the uses of the value through this position.
 RFC: `\mathsf{syntax}_{\bar M}` -/
 inductive Targets : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : Targets n
-  /-- `(M, M̄)`. -/
-  | cons {n : Nat} (M : Target n) (Ms : Targets n) : Targets n
+  /-- `(M ▶ π, M̄)`. -/
+  | cons {n : Nat} (π : Multiplicity) (M : Target n) (Ms : Targets n) : Targets n
 
 -- ADE: none.
 /-- `N̄`: the branches of a recursor of the target language, in order; the branch
@@ -191,12 +194,12 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
       Target.Occurs x (.ctor i Ms)
   /-- In the term of a recursor.
   RFC: `\mathsf{occurs}_M.\mathsf{rec}` -/
-  | recursor {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n} (h : Target.Occurs x M) :
-      Target.Occurs x (.recursor M Ns)
+  | recursor {n : Nat} {x : Fin n} {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
+      (h : Target.Occurs x M) : Target.Occurs x (.recursor ρ M Ns)
   /-- In a branch of a recursor.
   RFC: `\mathsf{occurs}_M.\mathsf{with}` -/
-  | branch {n : Nat} {x : Fin n} {M : Target n} {Ns : TargetBranches n}
-      (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor M Ns)
+  | branch {n : Nat} {x : Fin n} {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
+      (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor ρ M Ns)
   /-- In the term of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{obs}` -/
   | obs {n : Nat} {x : Fin n} {M : Target n} {i : Nat} {Ms : Targets n} (h : Target.Occurs x M) :
@@ -219,12 +222,12 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
 inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
   /-- In the first term.
   RFC: `\mathsf{occurs}_{\bar M}.M` -/
-  | head {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Target.Occurs x M) :
-      Targets.Occurs x (.cons M Ms)
+  | head {n : Nat} {x : Fin n} {π : Multiplicity} {M : Target n} {Ms : Targets n}
+      (h : Target.Occurs x M) : Targets.Occurs x (.cons π M Ms)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar M}.\bar M` -/
-  | tail {n : Nat} {x : Fin n} {M : Target n} {Ms : Targets n} (h : Targets.Occurs x Ms) :
-      Targets.Occurs x (.cons M Ms)
+  | tail {n : Nat} {x : Fin n} {π : Multiplicity} {M : Target n} {Ms : Targets n}
+      (h : Targets.Occurs x Ms) : Targets.Occurs x (.cons π M Ms)
 
 -- ADE: none.
 /-- The variable `x` occurs in one of the branches, under their new variables, which shift it. -/
@@ -279,8 +282,8 @@ inductive Targets.IsSkeleton : {n : Nat} → Targets n → Prop where
   | nil {n : Nat} : Targets.IsSkeleton (n := n) .nil
   /-- `(M, M̄)`.
   RFC: `\mathsf{skeleton}_{\bar M}.{,}` -/
-  | cons {n : Nat} {M : Target n} {Ms : Targets n} (h : Target.IsSkeleton M)
-      (hs : Targets.IsSkeleton Ms) : Targets.IsSkeleton (.cons M Ms)
+  | cons {n : Nat} {π : Multiplicity} {M : Target n} {Ms : Targets n} (h : Target.IsSkeleton M)
+      (hs : Targets.IsSkeleton Ms) : Targets.IsSkeleton (.cons π M Ms)
 
 end
 
@@ -305,13 +308,15 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
       Target.LessDefined (.ctor i Ms) (.ctor i Ns)
   /-- A recursor is less defined than a recursor of a more defined term and branches.
   RFC: `{\sqsubseteq}.\mathsf{rec}` -/
-  | recursor {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.LessDefined M N)
-      (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
+  | recursor {n : Nat} {ρ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
+      (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
+      Target.LessDefined (.recursor ρ M Ms) (.recursor ρ N Ns)
   /-- A recursor on a skeleton is less defined than a recursor on any term, of more defined
   branches: the skeleton holds nothing but what the type of the term already gives.
   RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{skeleton}}` -/
-  | skeleton {n : Nat} {M N : Target n} {Ms Ns : TargetBranches n} (h : Target.IsSkeleton M)
-      (hs : TargetBranches.LessDefined Ms Ns) : Target.LessDefined (.recursor M Ms) (.recursor N Ns)
+  | skeleton {n : Nat} {ρ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
+      (h : Target.IsSkeleton M) (hs : TargetBranches.LessDefined Ms Ns) :
+      Target.LessDefined (.recursor ρ M Ms) (.recursor ρ N Ns)
   /-- An observation is less defined than the same observation of a more defined term and
   arguments.
   RFC: `{\sqsubseteq}.d` -/
@@ -329,10 +334,11 @@ inductive Targets.LessDefined : {n : Nat} → Targets n → Targets n → Prop w
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar M}.\varepsilon` -/
   | nil {n : Nat} : Targets.LessDefined (n := n) .nil .nil
-  /-- `(M, M̄) ⊑ (N, N̄)`.
+  /-- `(M ▶ π, M̄) ⊑ (N ▶ π, N̄)`.
   RFC: `{\sqsubseteq}_{\bar M}.{,}` -/
-  | cons {n : Nat} {M N : Target n} {Ms Ns : Targets n} (h : Target.LessDefined M N)
-      (hs : Targets.LessDefined Ms Ns) : Targets.LessDefined (.cons M Ms) (.cons N Ns)
+  | cons {n : Nat} {π : Multiplicity} {M N : Target n} {Ms Ns : Targets n}
+      (h : Target.LessDefined M N) (hs : Targets.LessDefined Ms Ns) :
+      Targets.LessDefined (.cons π M Ms) (.cons π N Ns)
 
 -- ADE: none.
 /-- The branches are less defined, one by one. -/
@@ -388,15 +394,24 @@ def States.arity {k : Nat} {Γ : Scope} (Ss : States k Γ) (j : Nat) : Option Na
   | _ => none
 
 -- ADE: none.
-/-- The terms `(M₁, …, Mₐ)` of a list, the first one first. -/
-def Targets.ofList {n : Nat} : List (Target n) → Targets n
+/-- The terms `(M₁ ▶ π₁, …, Mₐ ▶ πₐ)` of a list of terms and of their multiplicities, the first
+one first. -/
+def Targets.ofList {n : Nat} : List (Multiplicity × Target n) → Targets n
   | [] => .nil
-  | M :: Ms => .cons M (Targets.ofList Ms)
+  | (π, M) :: Ms => .cons π M (Targets.ofList Ms)
+
+-- ADE: none.
+/-- `π̄(M̄)`: the multiplicities at which the terms are stored, the first one first.
+RFC: `\mathsf{multiplicities}_{\bar M}` -/
+def Targets.multiplicities {n : Nat} : Targets n → List Multiplicity
+  | .nil => []
+  | .cons π _ Ms => π :: Ms.multiplicities
 
 -- ADE: none.
 /-- The skeleton of the data type `D` of the block of the type declaration `decl`, at the instance
 `I`, within the depth `d`: the constructor of its case applied to `↯` for each field that is not
-recursive and to the skeleton of the type of each recursive field, when `D` has exactly one
+recursive and to the skeleton of the type of each recursive field, each at the multiplicity `0`,
+since a skeleton holds no value that a use at run time reads, when `D` has exactly one
 constructor, and `↯` when it has none or several, or when the depth is reached. -/
 def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades)
     {n : Nat} : Nat → Name → Target n
@@ -408,8 +423,8 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
       | [con] =>
         match decl.cases.findIdx? (fun x => x.2.1.name == D && x.2.2.name == con.name) with
         | some i => .ctor i (Targets.ofList (((con.fields I).recursion decl.names).map fun
-            | some D' => decl.skeleton I d D'
-            | none => .erased))
+            | some D' => (.zero, decl.skeleton I d D')
+            | none => (.zero, .erased)))
         | none => .erased
       | _ => .erased
     | none => .erased
@@ -460,8 +475,9 @@ mutual
 `⌊t⌋_S`: the erasure of a term of a scope of variables, which replaces by `↯` the positions whose
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
 `f.{s̄; l̄; p̄}` keeps its qualities and its grades, `f.{s̄; p̄}`, a constructor keeps its case and its
-fields, each at the grade of its field, a recursor keeps its term, at its grade, or the skeleton of its type when its grade
-is erased, and its branches, without its instance and its motives, an observation keeps its term, the case of its destructor and
+fields, each at the grade of its field, a recursor keeps the multiplicity at run time of its grade,
+its term, at its grade, or the skeleton of its type when its grade is erased, and its branches,
+without its instance and its motives, an observation keeps its term, the case of its destructor and
 its arguments, each at the grade of its argument, and a corecursor keeps its state, each entry at
 its grade times the grade of the corecursor, and its branches, without its instance and its
 states; a second-order variable has no erasure, since the scope has none.
@@ -486,7 +502,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     | some i => .ctor i (ts.erase sig S hΓ ((sig.fieldGrades D c qs ps).getD []))
     | none => .erased
   | .recursor r D qs _ ps _ t _ us =>
-    .recursor (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
+    .recursor r.run (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
       (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
         ((sig.caseFieldGrades D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>
@@ -505,14 +521,15 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
-or of the state of a corecursor, each at its grade in `ps`, a term without grade being erased.
+or of the state of a corecursor, each at its grade `p` in `ps`, stored at the multiplicity
+`run(p)`; a term without grade is erased, and stored at `ω`, which states nothing.
 RFC: `\mathsf{erase}_{\bar t}` -/
 def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : Terms k Γ → List Grade → Targets Γ.length
   | .nil, _ => .nil
-  | .cons _ ts, [] => .cons .erased (ts.erase sig S hΓ [])
+  | .cons _ ts, [] => .cons .omega .erased (ts.erase sig S hΓ [])
   | .cons t ts, p :: ps =>
-    .cons (if p ∈ S then .erased else t.erase sig S hΓ) (ts.erase sig S hΓ ps)
+    .cons p.run (if p ∈ S then .erased else t.erase sig S hΓ) (ts.erase sig S hΓ ps)
 
 -- ADE: none.
 /-- `⌊ū⌋_{S, r, ē̄, p̄̄}`: the erasure of the branches of a recursor of grade `r`, under their new
@@ -574,12 +591,41 @@ theorem Target.LessDefined.cast {n n' : Nat} (h : n = n') {M N : Target n} (hMN 
   exact hMN
 
 -- ADE: none.
+/-- The terms of a list are stored at the multiplicities of the list. -/
+theorem Targets.multiplicities_ofList {n : Nat} :
+    (Ms : List (Multiplicity × Target n)) → (Targets.ofList Ms).multiplicities = Ms.map (·.1)
+  | [] => rfl
+  | _ :: Ms => congrArg (_ :: ·) (Targets.multiplicities_ofList Ms)
+
+-- ADE: none.
+/-- The erasure of the arguments of parameters, each at the grade of its parameter, stores each at
+the multiplicity at run time of this grade. -/
+theorem Args.multiplicities_erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
+    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
+    {ps : List Parameter} → (ts : Args k Γ ps) →
+      (ts.terms.erase sig S hΓ (ps.map (·.usage))).multiplicities = ps.map (·.usage.run)
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.multiplicities_erase sig S hΓ ts)
+
+-- ADE: none.
+/-- The erasure of the arguments of parameters, each at the image by `f` of the grade of its
+parameter, stores each at the multiplicity at run time of this image. -/
+theorem Args.multiplicities_erase_map (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
+    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (f : Grade → Grade) :
+    {ps : List Parameter} → (ts : Args k Γ ps) →
+      (ts.terms.erase sig S hΓ (ps.map fun p => f p.usage)).multiplicities =
+        ps.map fun p => (f p.usage).run
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.multiplicities_erase_map sig S hΓ f ts)
+
+-- ADE: none.
 /-- The terms of a list of skeletons are skeletons. -/
 theorem Targets.isSkeleton_ofList {n : Nat} :
-    (Ms : List (Target n)) → (∀ M ∈ Ms, M.IsSkeleton) → (Targets.ofList Ms).IsSkeleton
+    (Ms : List (Multiplicity × Target n)) → (∀ πM ∈ Ms, πM.2.IsSkeleton) →
+      (Targets.ofList Ms).IsSkeleton
   | [], _ => .nil
-  | M :: Ms, h => .cons (h M List.mem_cons_self)
-      (Targets.isSkeleton_ofList Ms fun M' hM' => h M' (List.mem_cons_of_mem _ hM'))
+  | πM :: Ms, h => .cons (h πM List.mem_cons_self)
+      (Targets.isSkeleton_ofList Ms fun πM' hM' => h πM' (List.mem_cons_of_mem _ hM'))
 
 -- ADE: none.
 /-- The skeleton of a data type of a block is a skeleton. -/

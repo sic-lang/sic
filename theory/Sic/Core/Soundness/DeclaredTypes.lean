@@ -890,10 +890,10 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
       ∀ T ∈ decl.dataTypes,
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
-          (DataType.runBlockRel sig decl.dataTypes S T.name) ∧
+          (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) ∧
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
-          (DataType.runBlockRel sig decl.dataTypes S T.name) := by
+          (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) := by
   have hls : ∀ i, Level.ofNat (ls.getFin hl i).closedValue ≈ ls.getFin hl i :=
     fun i => Level.ofNat_closedValue _
   have has' := EqSubst.levelEquiv

@@ -132,7 +132,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         (List.prefix_refl H) (hS X T hT c hc) _ _ (hS Y T hT c hc)
         (fun _ => Option.rel_map (fun D' _ _ => RunRel.computed_mono (hXY D' H)) _)
     exact h (fun D H w a => ∀ w', Term.LevelEquiv w w' →
-        DataType.runBlockRel sig decl.dataTypes S D H w' a)
+        DataType.runBlockRel sig _ decl.dataTypes S D H w' a)
       (fun T hT H w a ⟨c, hc, i, ts, as, hw, hi, ha, hs⟩ w' hww => by
         obtain ⟨_, _, _, _, _, rfl⟩ := hw
         cases hww with

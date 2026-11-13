@@ -63,9 +63,9 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
       (hMs : Targets.Usage ν Ms) : Target.Usage ν (.ctor i Ms)
   /-- A recursor reads the variables of its term once, and those of its branches as `χ` allows.
   RFC: `\mathsf{usage}_M.\mathsf{rec}` -/
-  | recursor {n : Nat} {ν χ : MultiplicityVector n} {M : Target n} {Ns : TargetBranches n}
-      (hM : Target.Usage ν M) (hNs : TargetBranches.Usage χ Ns) :
-      Target.Usage (ν +ᶜ χ) (.recursor M Ns)
+  | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ : Multiplicity} {M : Target n}
+      {Ns : TargetBranches n} (hM : Target.Usage ν M) (hNs : TargetBranches.Usage χ Ns) :
+      Target.Usage (ν +ᶜ χ) (.recursor ρ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
   | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i : Nat} {Ms : Targets n}
@@ -89,9 +89,9 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
   | nil {n : Nat} : Targets.Usage 𝟘ᵛ (.nil : Targets n)
   /-- The first term and the others.
   RFC: `\mathsf{usage}_{\bar M}.{,}` -/
-  | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {Ms : Targets n}
-      (hM : Target.Usage ν₁ M) (hMs : Targets.Usage ν₂ Ms) :
-      Targets.Usage (ν₁ +ᶜ ν₂) (.cons M Ms)
+  | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {π : Multiplicity} {M : Target n}
+      {Ms : Targets n} (hM : Target.Usage ν₁ M) (hMs : Targets.Usage ν₂ Ms) :
+      Targets.Usage (ν₁ +ᶜ ν₂) (.cons π M Ms)
 
 -- ADE: `natrec-no-nrₘ`, in `Graded/Usage.agda`, for the bound of the uses of the branches.
 /-- `χ ⊢ N̄ ▶`: the branches `N̄` of a recursor read the variables of the scope as `χ` allows: each
@@ -146,8 +146,8 @@ theorem Target.IsSkeleton.usage {n : Nat} {M : Target n} : M.IsSkeleton → Targ
 theorem Targets.IsSkeleton.usage {n : Nat} {Ms : Targets n} : Ms.IsSkeleton → Targets.Usage 𝟘ᵛ Ms
   | .nil => .nil
   | .cons hM hMs => by
-    have h := Targets.Usage.cons hM.usage hMs.usage
-    rwa [(MultiplicityVector.module Multiplicity.modality).zero_add] at h
+    rw [← (MultiplicityVector.module Multiplicity.modality).zero_add 𝟘ᵛ]
+    exact .cons hM.usage hMs.usage
 
 end
 

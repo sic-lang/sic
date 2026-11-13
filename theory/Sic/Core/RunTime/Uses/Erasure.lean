@@ -146,70 +146,6 @@ theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_le_run {Γ : Scope}
 
 /-! ## Recursive Fields -/
 
-/-- The first element of a list from a position is its element at this position. -/
-theorem _root_.List.headD_drop_of_getElem? {α : Type} {d x : α} : {l : List α} → {i : Nat} →
-    l[i]? = some x → (l.drop i).headD d = x
-  | _ :: _, 0, h => by simpa using h
-  | _ :: l, i + 1, h => headD_drop_of_getElem? (l := l) (i := i) (by simpa using h)
-
-/-- The positions of the recursive fields from the position `o` are at `o` or after it. -/
-theorem Telescope.le_of_mem_positions {y : Nat} : (rs : List (Option Name)) → (o : Nat) →
-    y ∈ (rs.zipIdx o).filterMap (fun z => z.1.map fun _ => z.2) → o ≤ y
-  | [], _, h => nomatch h
-  | some _ :: rs, o, h => by
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.mem_cons] at h
-    rcases h with rfl | h
-    · exact Nat.le_refl _
-    · exact Nat.le_of_succ_le (Telescope.le_of_mem_positions rs (o + 1) h)
-  | none :: rs, o, h => by
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_none] at h
-    exact Nat.le_of_succ_le (Telescope.le_of_mem_positions rs (o + 1) h)
-
-/-- The grade of the recursive result of the field at a position, read from the grades `es` of the
-recursive results in order, is the grade at the index of this position in the positions of the
-recursive fields, or `0` when the field is not recursive. -/
-theorem Telescope.resultGrades_eq_idxOf : (rs : List (Option Name)) → (es : List Grade) →
-    (o l : Nat) →
-    ((((rs.zipIdx o).filterMap fun z => z.1.map fun _ => z.2).idxOf? (o + l)).bind
-      fun j => es[j]?).getD Grade.zero = Telescope.resultGrades rs es l
-  | [], _, _, _ => rfl
-  | some _ :: rs, es, o, 0 => by
-    have hself : (o == o + 0) = true := decide_eq_true rfl
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.idxOf?_cons, hself,
-      ↓reduceIte, Option.bind_some]
-    cases es <;> rfl
-  | some _ :: rs, es, o, l + 1 => by
-    have hne : (o == o + (l + 1)) = false := beq_false_of_ne (by omega)
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.idxOf?_cons, hne,
-      Bool.false_eq_true, ↓reduceIte]
-    have ih := Telescope.resultGrades_eq_idxOf rs es.tail (o + 1) l
-    rw [show o + 1 + l = o + (l + 1) by omega] at ih
-    cases es with
-    | nil =>
-      simp only [List.getElem?_nil] at ih ⊢
-      cases h : List.idxOf? (o + (l + 1))
-          ((rs.zipIdx (o + 1)).filterMap fun z => z.1.map fun _ => z.2) <;> rfl
-    | cons e es =>
-      cases h : List.idxOf? (o + (l + 1))
-          ((rs.zipIdx (o + 1)).filterMap fun z => z.1.map fun _ => z.2) with
-      | none =>
-        simp only [h, Option.map_none, Option.bind_none, Option.getD_none] at ih ⊢
-        exact ih
-      | some j =>
-        simp only [h, Option.map_some, Option.bind_some, List.getElem?_cons_succ,
-          List.tail_cons] at ih ⊢
-        exact ih
-  | none :: rs, es, o, 0 => by
-    have hn : o ∉ (rs.zipIdx (o + 1)).filterMap (fun z => z.1.map fun _ => z.2) :=
-      fun h => by have := Telescope.le_of_mem_positions rs (o + 1) h; omega
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_none, Nat.add_zero,
-      List.idxOf?_eq_none_iff.2 hn, Option.bind_none, Option.getD_none]
-    rfl
-  | none :: rs, es, o, l + 1 => by
-    simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_none]
-    rw [show o + (l + 1) = o + 1 + l by omega]
-    exact Telescope.resultGrades_eq_idxOf rs es (o + 1) l
-
 /-- A grade is below `1` at run time when it has a use at run time, and `0` otherwise. -/
 theorem _root_.Sic.Grading.Grade.run_le_indicator :
     ∀ e : Grade, e.run ≤ (if e ∈ Mode.oneOne.erased then .zero else .one) := by
@@ -330,11 +266,6 @@ theorem Mode.oneOne_odot_mul :
 /-- The grade of the mode of a destructor without use at run time has no use at run time. -/
 theorem Mode.grade_odot_mul_of_erased :
     ∀ p q : Grade, p ∈ Mode.oneOne.erased → ((Mode.oneOne ⊙ p).grade * q).run = .zero := by
-  decide
-
-/-- The grade of the mode of a destructor with a use at run time is `1`. -/
-theorem Mode.grade_odot_of_not_erased :
-    ∀ p : Grade, p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ p).grade = Grade.one := by
   decide
 
 mutual

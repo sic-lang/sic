@@ -58,10 +58,10 @@ theorem extraction_ctor {ι : Interpretation} {P : Program} {sig : Signature} {k
     (h : HasType sig .empty t A) (hut : Usage sig γ .oneOne t) (ρ : Fin k → Nat)
     (hD : sig.HasDataType D decl T) (hA : Computesι sig ι (A.atLevels ρ) (.inst D qs ls ps as))
     (hp : ¬ IsProp sig ι (.inst D qs ls ps as)) :
-    ∃ a H R v c ts i bs,
+    ∃ a H R v c ts i πs bs,
       Eval P [] [] ((t.atLevels ρ).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) a H R ∧
         Computesι sig ι (t.atLevels ρ) v ∧ v.IsCtor D c ts ∧ sig.constructorCase D c = some i ∧
-          H[a]? = some (.ctor i bs) := by
+          H[a]? = some (.ctor i πs bs) := by
   have hd := (presuppositions.hasType h).distinct
   obtain ⟨a, H, R₀, he, v', hA', hr⟩ := extraction hι hP hu h hut ρ
   cases Computesι.det hd hA hA'
@@ -75,10 +75,11 @@ theorem extraction_ctor {ι : Interpretation} {P : Program} {sig : Signature} {k
     | codata h' _ _ _ hv => exact (hd.inst_data_codata hD h' hv).elim
     | data h' _ _ _ hv _ _ S _ =>
       obtain ⟨-, rfl, -, -, -, -⟩ := Term.inst.inj hv
-      refine hR' (fun D' H v a => ∃ c ts i bs, v.IsCtor D' c ts ∧ sig.constructorCase D' c = some i ∧
-        H[a]? = some (.ctor i bs)) ?_ |>.elim fun c ⟨ts, i, bs, hc, hi, ha⟩ =>
-          ⟨a, H, R₀, w, c, ts, i, bs, he, hw, hc, hi, ha⟩
+      refine hR' (fun D' H v a => ∃ c ts i πs bs, v.IsCtor D' c ts ∧
+        sig.constructorCase D' c = some i ∧ H[a]? = some (.ctor i πs bs)) ?_
+          |>.elim fun c ⟨ts, i, πs, bs, hc, hi, ha⟩ =>
+            ⟨a, H, R₀, w, c, ts, i, πs, bs, he, hw, hc, hi, ha⟩
       intro T' _ H v a ⟨c, _, i, ts, bs, hc, hi, ha, _⟩
-      exact ⟨c.name, ts, i, bs, hc, hi, ha⟩
+      exact ⟨c.name, ts, i, _, bs, hc, hi, ha⟩
 
 end Sic.Core

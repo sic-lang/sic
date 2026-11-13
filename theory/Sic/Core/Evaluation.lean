@@ -19,6 +19,13 @@ Each binding allocates a cell for each of its variables, `bind_π(ℓ)`, which h
 its value and the multiplicity `π` of its binder, and an access to the variable reads its cell, which
 the evaluation records, so that the cells read by a run count the uses at run time of each binding,
 while the heap stays immutable.
+A value stores each address that it holds, a field of a constructor, an entry of the state of a
+closure, at the multiplicity of its position, and an observation passes its arguments at theirs:
+these multiplicities bound the uses of a value through the position, which a closure observed again
+would otherwise exceed.
+The recursor and the observation check that the binders of the branch they run are within these
+multiplicities, the recursor of the multiplicity `ρ` reading each field `ρ` times its multiplicity,
+and the evaluation is stuck otherwise.
 The values are `↯`, the constructors applied to the addresses of their fields, and the closures of
 the corecursors, which hold their environment, their branches and the addresses of their state: a
 corecursor computes nothing until it is observed, and each observation runs the branch of its
@@ -42,7 +49,9 @@ the prelude, each the case `0` of its block, or into the term already built that
 [Eriksson, Abel and Danielsson](https://doi.org/10.1145/3828677) run a machine with a heap, an
 environment and a stack, by the call by name, to prove the resource correctness of their usage;
 the evaluation here is by value, without a stack, and records the reads of the cells instead of
-updating the grades of the heap.
+updating the grades of the heap; their machine likewise eliminates a pair only by a continuation of
+the same grade, `prodʷₕ` in `Graded/Heap/Reduction.agda`, as the recursor and the observation check
+the multiplicities here.
 -/
 
 @[expose] public section
@@ -53,17 +62,20 @@ open Sic.Grading Sic.Math
 
 -- ADE: none.
 /-- A value at run time: `↯`, the constructor of the case `i` of its block applied to the addresses
-of its fields, the closure of a corecursor, with the addresses `E` of the cells of the `n` variables
-of its scope, its branches `P̄` and the addresses of its state, or the cell of a variable; the cases
-and the addresses are counted from `0`, while the RFC counts them from `1`.
+of its fields, each at the multiplicity of its field, the closure of a corecursor, with the addresses
+`E` of the cells of the `n` variables of its scope, its branches `P̄` and the addresses of its state,
+each at the multiplicity of its entry, or the cell of a variable; the multiplicities bound the uses
+of the values through these positions; the cases and the addresses are counted from `0`, while the
+RFC counts them from `1`.
 RFC: `\mathsf{syntax}_V` -/
 inductive Value where
   /-- `↯`. -/
   | erased
-  /-- `cᵢ(ℓ̄)`. -/
-  | ctor (i : Nat) (as : List Nat)
-  /-- `⟨E; P̄; ℓ̄⟩`. -/
-  | corec (n : Nat) (E : List Nat) (Ps : TargetCorecBranches n) (as : List Nat)
+  /-- `cᵢ(ℓ̄ ▶ π̄)`. -/
+  | ctor (i : Nat) (πs : List Multiplicity) (as : List Nat)
+  /-- `⟨E; P̄; ℓ̄ ▶ π̄⟩`. -/
+  | corec (n : Nat) (E : List Nat) (Ps : TargetCorecBranches n) (πs : List Multiplicity)
+      (as : List Nat)
   /-- `bind_π(ℓ)`: the cell of a variable bound to the address `ℓ` by a binder of multiplicity
   `π`. -/
   | cell (π : Multiplicity) (a : Nat)
@@ -134,22 +146,25 @@ def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
   | .cons _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 -- ADE: none.
-/-- `H ⊢ unpack_k(x) = ℓ̄`: the addresses of the `k` entries that the value at the address `x`
-packs, the first fields of `k` nested pairs. -/
-inductive Unpack : Heap → Nat → Nat → List Nat → Prop where
+/-- `H ⊢ unpack_k(x) = ℓ̄ ▶ π̄`: the addresses of the `k` entries that the value at the address `x`
+packs, the first fields of `k` nested pairs, at the multiplicities at which the pairs store them,
+each times those of the second fields that hold its pair. -/
+inductive Unpack : Heap → Nat → Nat → List Multiplicity → List Nat → Prop where
   /-- No entry.
   RFC: `\mathsf{unpack}_\Downarrow.0` -/
-  | zero {H : Heap} {x : Nat} : Unpack H 0 x []
+  | zero {H : Heap} {x : Nat} : Unpack H 0 x [] []
   /-- A pair of an entry and of the others.
   RFC: `\mathsf{unpack}_\Downarrow.{,}` -/
-  | pair {H : Heap} {k x y z : Nat} {ss : List Nat} (h : H[x]? = some (.ctor 0 [y, z]))
-      (hs : Unpack H k z ss) : Unpack H (k + 1) x (y :: ss)
+  | pair {H : Heap} {k x y z : Nat} {π π' : Multiplicity} {πs : List Multiplicity}
+      {ss : List Nat} (h : H[x]? = some (.ctor 0 [π, π'] [y, z])) (hs : Unpack H k z πs ss) :
+      Unpack H (k + 1) x (π :: πs.map (π' * ·)) (y :: ss)
 
 -- ADE: none.
 /-- `H ⊢ ⟨E; P̄⟩ ↻_k w ⇓ v; H'`: the value at the address `w` that the branch of a destructor gives,
 resumed: itself when the branch resumes no state, a new closure of the same branches from the state
-of `k` entries that `next` packs, or from `k` erased entries, which stand at the address of the new
-state without reading it, or the term already built that `done` holds. -/
+of `k` entries that `next` packs, each at the multiplicity at which the pack stores it, times that
+of the field of `next`, or from `k` erased entries, which stand at the address of the new state
+without reading it, at the multiplicity `0`, or the term already built that `done` holds. -/
 inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n → Resumption → Nat →
     Nat → Heap → Prop where
   /-- The branch resumes no state.
@@ -158,19 +173,30 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       EvalResume H n E Ps .none w w H
   /-- `next(x)`: a new closure from the state that `x` packs.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{next}` -/
-  | next {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
-      {ss : List Nat} (h : H[w]? = some (.ctor 0 [x])) (hs : Unpack H k x ss) :
-      EvalResume H n E Ps (.unpack k) w H.length (H ++ [.corec n E Ps ss])
+  | next {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {π : Multiplicity}
+      {πs : List Multiplicity} {k w x : Nat} {ss : List Nat} (h : H[w]? = some (.ctor 0 [π] [x]))
+      (hs : Unpack H k x πs ss) :
+      EvalResume H n E Ps (.unpack k) w H.length (H ++ [.corec n E Ps (πs.map (π * ·)) ss])
   /-- `next(x)`, for an erased state: a new closure whose `k` entries stand at the address `x`,
-  which is not read.
+  which is not read, at the multiplicity `0`.
   RFC: `\mathsf{resume}_\Downarrow.\text{↯}` -/
-  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {k w x : Nat}
-      (h : H[w]? = some (.ctor 0 [x])) :
-      EvalResume H n E Ps (.erased k) w H.length (H ++ [.corec n E Ps (List.replicate k x)])
+  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
+      {πs : List Multiplicity} {k w x : Nat} (h : H[w]? = some (.ctor 0 πs [x])) :
+      EvalResume H n E Ps (.erased k) w H.length
+        (H ++ [.corec n E Ps (List.replicate k .zero) (List.replicate k x)])
   /-- `done(x)`: the term already built `x`.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{done}` -/
-  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {o : Resumption}
-      {w x : Nat} (ho : o ≠ .none) (h : H[w]? = some (.ctor 1 [x])) : EvalResume H n E Ps o w x H
+  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
+      {πs : List Multiplicity} {o : Resumption} {w x : Nat} (ho : o ≠ .none)
+      (h : H[w]? = some (.ctor 1 πs [x])) : EvalResume H n E Ps o w x H
+
+-- ADE: none.
+/-- `recursions_k̄(l)`: the multiplicity of the recursions that a branch of a recursor runs on its
+field at the position `l`, `1` for each recursive result whose field in `k̄` is `l`.
+RFC: `\mathsf{recursions}_{\bar k, l}` -/
+def recursionsAt : List (Option Nat) → Nat → Multiplicity
+  | [], _ => .zero
+  | k :: ks, l => (if k = some l then .one else .zero) + recursionsAt ks l
 
 mutual
 
@@ -194,28 +220,30 @@ inductive Eval (P : Program) : {n : Nat} → Heap → List Nat → Target n → 
   RFC: `\mathsf{eval}_{\text{↯}}` -/
   | erased {n : Nat} {H : Heap} {E : List Nat} :
       Eval P (n := n) H E .erased H.length (H ++ [.erased]) []
-  /-- A constructor evaluates its fields, in order, and allocates itself with their addresses.
+  /-- A constructor evaluates its fields, in order, and allocates itself with their addresses, at
+  their multiplicities.
   RFC: `\mathsf{eval}_c` -/
   | ctor {n : Nat} {H H' : Heap} {E : List Nat} {i : Nat} {Ms : Targets n} {as : List Nat}
       {R : List Nat} (hs : EvalAll P H E Ms as H' R) :
-      Eval P H E (.ctor i Ms) H'.length (H' ++ [.ctor i as]) R
+      Eval P H E (.ctor i Ms) H'.length (H' ++ [.ctor i Ms.multiplicities as]) R
   /-- A recursor evaluates its term, then eliminates its value.
   RFC: `\mathsf{eval}_{\mathsf{rec}}` -/
-  | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n} {Ns : TargetBranches n}
-      {a b : Nat} {R₁ R₂ : List Nat} (h : Eval P H₁ E M a H₂ R₁) (hr : EvalRec P H₂ E Ns a b H₃ R₂) :
-      Eval P H₁ E (.recursor M Ns) b H₃ (R₁ ++ R₂)
+  | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity} {M : Target n}
+      {Ns : TargetBranches n} {a b : Nat} {R₁ R₂ : List Nat} (h : Eval P H₁ E M a H₂ R₁)
+      (hr : EvalRec P H₂ E ρ Ns a b H₃ R₂) : Eval P H₁ E (.recursor ρ M Ns) b H₃ (R₁ ++ R₂)
   /-- An observation evaluates its term, then its arguments, in order, then observes the value of
-  its term.
+  its term, with the multiplicities of the arguments.
   RFC: `\mathsf{eval}_d` -/
   | obs {n : Nat} {H₁ H₂ H₃ H₄ : Heap} {E : List Nat} {M : Target n} {i : Nat} {Ms : Targets n}
       {a b : Nat} {bs : List Nat} {R₁ R₂ R₃ : List Nat} (h : Eval P H₁ E M a H₂ R₁)
-      (hs : EvalAll P H₂ E Ms bs H₃ R₂) (ho : EvalObs P H₃ a i bs b H₄ R₃) :
+      (hs : EvalAll P H₂ E Ms bs H₃ R₂) (ho : EvalObs P H₃ a i Ms.multiplicities bs b H₄ R₃) :
       Eval P H₁ E (.obs M i Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
-  /-- A corecursor evaluates its state, in order, and allocates its closure.
+  /-- A corecursor evaluates its state, in order, and allocates its closure, with the multiplicities
+  of the entries.
   RFC: `\mathsf{eval}_{\mathsf{corec}}` -/
   | corec {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n} {Ps : TargetCorecBranches n}
       {as : List Nat} {R : List Nat} (hs : EvalAll P H E Ms as H' R) :
-      Eval P H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps as]) R
+      Eval P H E (.corec Ms Ps) H'.length (H' ++ [.corec n E Ps Ms.multiplicities as]) R
 
 -- ADE: none.
 /-- `𝒫; H; E ⊢ M̄ ⇓ ā; H'; R`: the terms evaluate, the first one first, to the addresses `ā`. -/
@@ -228,76 +256,91 @@ inductive EvalAll (P : Program) : {n : Nat} → Heap → List Nat → Targets n 
   RFC: `\mathsf{eval}_{\bar M}.{,}` -/
   | cons {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {M : Target n} {Ms : Targets n} {a : Nat}
       {as : List Nat} {R₁ R₂ : List Nat} (h : Eval P H₁ E M a H₂ R₁)
-      (hs : EvalAll P H₂ E Ms as H₃ R₂) : EvalAll P H₁ E (.cons M Ms) (a :: as) H₃ (R₁ ++ R₂)
+      {π : Multiplicity} (hs : EvalAll P H₂ E Ms as H₃ R₂) :
+      EvalAll P H₁ E (.cons π M Ms) (a :: as) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ rec a with N̄ ⇓ b; H'; R`: the recursor with the branches `N̄`, in the environment
-`E`, eliminates the value at the address `a`, a constructor: the branch of its case evaluates, with
-cells for its fields and its recursive results, each the recursor on its field, or `↯` when it is
-erased, at the multiplicities of its binders. -/
-inductive EvalRec (P : Program) : {n : Nat} → Heap → List Nat → TargetBranches n → Nat → Nat →
-    Heap → List Nat → Prop where
+/-- `𝒫; H; E ⊢ rec_ρ a with N̄ ⇓ b; H'; R`: the recursor of the multiplicity `ρ` with the branches
+`N̄`, in the environment `E`, eliminates the value at the address `a`, a constructor: the branch of
+its case evaluates, with cells for its fields and its recursive results, each the recursor on its
+field, or `↯` when it is erased, at the multiplicities of its binders; the uses that the branch
+makes of each field, by its cell and by the recursions on it, must be within the uses that the
+constructor allows, `ρ` times the multiplicity of the field, and the evaluation is stuck otherwise.
+-/
+inductive EvalRec (P : Program) : {n : Nat} → Heap → List Nat → Multiplicity → TargetBranches n →
+    Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\iota_\Downarrow` -/
-  | iota {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {Ns : TargetBranches n} {a v : Nat} {i : Nat}
-      {as : List Nat} {a' b : Nat} {πs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity}
-      {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat} {R₁ R₂ : List Nat}
-      (h : H₁[a]? = some (.ctor i as)) (hN : Ns.get i = some ⟨a', b, πs, πs', ks, N⟩)
-      (ha : as.length = a') (hr : EvalResults P H₁ E Ns as (List.ofFn ks) rs H₂ R₁)
+  | iota {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
+      {a v : Nat} {i : Nat} {πs₀ : List Multiplicity} {as : List Nat} {a' b : Nat}
+      {πs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat}
+      {N : Target (n + (a' + b))} {rs : List Nat} {R₁ R₂ : List Nat}
+      (h : H₁[a]? = some (.ctor i πs₀ as)) (hN : Ns.get i = some ⟨a', b, πs, πs', ks, N⟩)
+      (ha : as.length = a')
+      (hπ : ∀ l : Fin a', ∃ π₀, πs₀[(l : Nat)]? = some π₀ ∧
+        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) l)
+      (hr : EvalResults P H₁ E ρ Ns as (List.ofFn ks) rs H₂ R₁)
       (hv : Eval P (H₂.bind (List.ofFn πs ++ List.ofFn πs') (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
-      EvalRec P H₁ E Ns a v H₃ (R₁ ++ R₂)
+      EvalRec P H₁ E ρ Ns a v H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H; E ⊢ rec ā with N̄ ← k̄ ⇓ b̄; H'; R`: the recursive results of a branch, in order, each the
-recursor on the field at its position in `ā`, or `↯` when it is erased. -/
-inductive EvalResults (P : Program) : {n : Nat} → Heap → List Nat → TargetBranches n →
-    List Nat → List (Option Nat) → List Nat → Heap → List Nat → Prop where
+/-- `𝒫; H; E ⊢ rec_ρ ā with N̄ ← k̄ ⇓ b̄; H'; R`: the recursive results of a branch, in order, each
+the recursor on the field at its position in `ā`, or `↯` when it is erased. -/
+inductive EvalResults (P : Program) : {n : Nat} → Heap → List Nat → Multiplicity →
+    TargetBranches n → List Nat → List (Option Nat) → List Nat → Heap → List Nat → Prop where
   /-- No result.
   RFC: `\mathsf{results}_\Downarrow.\varepsilon` -/
-  | nil {n : Nat} {H : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat} :
-      EvalResults P H E Ns as [] [] H []
+  | nil {n : Nat} {H : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
+      {as : List Nat} : EvalResults P H E ρ Ns as [] [] H []
   /-- An erased result, `↯`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\text{↯}` -/
-  | erased {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat}
-      {ks : List (Option Nat)} {rs : List Nat} {R : List Nat}
-      (hs : EvalResults P (H₁ ++ [.erased]) E Ns as ks rs H₂ R) :
-      EvalResults P H₁ E Ns as (none :: ks) (H₁.length :: rs) H₂ R
+  | erased {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
+      {as : List Nat} {ks : List (Option Nat)} {rs : List Nat} {R : List Nat}
+      (hs : EvalResults P (H₁ ++ [.erased]) E ρ Ns as ks rs H₂ R) :
+      EvalResults P H₁ E ρ Ns as (none :: ks) (H₁.length :: rs) H₂ R
   /-- The recursor on the field at the position `j`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\mathsf{rec}` -/
-  | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {Ns : TargetBranches n} {as : List Nat}
-      {j a r : Nat} {ks : List (Option Nat)} {rs : List Nat} {R₁ R₂ : List Nat}
-      (hj : as[j]? = some a) (h : EvalRec P H₁ E Ns a r H₂ R₁)
-      (hs : EvalResults P H₂ E Ns as ks rs H₃ R₂) :
-      EvalResults P H₁ E Ns as (some j :: ks) (r :: rs) H₃ (R₁ ++ R₂)
+  | recursor {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
+      {as : List Nat} {j a r : Nat} {ks : List (Option Nat)} {rs : List Nat} {R₁ R₂ : List Nat}
+      (hj : as[j]? = some a) (h : EvalRec P H₁ E ρ Ns a r H₂ R₁)
+      (hs : EvalResults P H₂ E ρ Ns as ks rs H₃ R₂) :
+      EvalResults P H₁ E ρ Ns as (some j :: ks) (r :: rs) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; H ⊢ a.dᵢ(b̄) ⇓ c; H'; R`: the observation by the destructor of the case `i`, applied to the
-arguments at the addresses `b̄`, of the value at the address `a`, a closure: the branch of the case
-evaluates in the environment of the closure, with cells for its state and the arguments, at the
-multiplicities of its binders, and its value is resumed when the branch resumes a state. -/
-inductive EvalObs (P : Program) : Heap → Nat → Nat → List Nat → Nat → Heap → List Nat → Prop where
+/-- `𝒫; H ⊢ a.dᵢ(b̄ ▶ π̄) ⇓ c; H'; R`: the observation by the destructor of the case `i`, applied to
+the arguments at the addresses `b̄`, at the multiplicities `π̄`, of the value at the address `a`, a
+closure: the branch of the case evaluates in the environment of the closure, with cells for its
+state and the arguments, at the multiplicities of its binders, and its value is resumed when the
+branch resumes a state; the uses that the branch makes of each entry of the state and of each
+argument, by its cell, must be within the uses that the closure or the observation allows, and the
+evaluation is stuck otherwise. -/
+inductive EvalObs (P : Program) : Heap → Nat → Nat → List Multiplicity → List Nat → Nat → Heap →
+    List Nat → Prop where
   /-- RFC: `\beta_\Downarrow` -/
-  | beta {H₁ H₂ H₃ : Heap} {a i : Nat} {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat}
-      {Ps : TargetCorecBranches n} {ss : List Nat} {o : Resumption} {b c : Nat}
-      {πs : Fin b → Multiplicity} {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))}
-      {R : List Nat} (h : H₁[a]? = some (.corec n E Ps ss))
+  | beta {H₁ H₂ H₃ : Heap} {a i : Nat} {πs₁ πs₂ : List Multiplicity} {bs : List Nat} {v w : Nat}
+      {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {ss : List Nat} {o : Resumption}
+      {b c : Nat} {πs : Fin b → Multiplicity} {πs' : Fin c → Multiplicity}
+      {N : Target (n + (b + c))} {R : List Nat} (h : H₁[a]? = some (.corec n E Ps πs₁ ss))
       (hP : Ps.get i = some (o, ⟨b, c, πs, πs', N⟩)) (hb : ss.length = b) (hc : bs.length = c)
+      (hπ₁ : ∀ j : Fin b, ∃ π₁, πs₁[(j : Nat)]? = some π₁ ∧ π₁ ≤ πs j)
+      (hπ₂ : ∀ j : Fin c, ∃ π₂, πs₂[(j : Nat)]? = some π₂ ∧ π₂ ≤ πs' j)
       (hw : Eval P (H₁.bind (List.ofFn πs ++ List.ofFn πs') (ss ++ bs))
         ((List.range' H₁.length (ss ++ bs).length).reverse ++ E) N w H₂ R)
-      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P H₁ a i bs v H₃ R
+      (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P H₁ a i πs₂ bs v H₃ R
 
 end
 
 /-! ## Determinism -/
 
 /-- The unpacking of a value is unique. -/
-theorem Unpack.det {H : Heap} {k x : Nat} {ss₁ ss₂ : List Nat} :
-    Unpack H k x ss₁ → Unpack H k x ss₂ → ss₁ = ss₂
-  | .zero, .zero => rfl
+theorem Unpack.det {H : Heap} {k x : Nat} {πs₁ πs₂ : List Multiplicity} {ss₁ ss₂ : List Nat} :
+    Unpack H k x πs₁ ss₁ → Unpack H k x πs₂ ss₂ → πs₁ = πs₂ ∧ ss₁ = ss₂
+  | .zero, .zero => ⟨rfl, rfl⟩
   | .pair h hs, .pair h' hs' => by
     rw [h] at h'
     cases h'
-    rw [Unpack.det hs hs']
+    obtain ⟨rfl, rfl⟩ := Unpack.det hs hs'
+    exact ⟨rfl, rfl⟩
 
 /-- The resumption of a value is unique. -/
 theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
@@ -308,7 +351,7 @@ theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : Targe
   | .next h hs, .next h' hs' => by
     rw [h] at h'
     cases h'
-    cases Unpack.det hs hs'
+    obtain ⟨rfl, rfl⟩ := Unpack.det hs hs'
     exact ⟨rfl, rfl⟩
   | .erased h, .erased h' => by
     rw [h] at h'
@@ -376,12 +419,12 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The elimination of a value by a recursor is deterministic. -/
-theorem EvalRec.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
+theorem EvalRec.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat} {ρ : Multiplicity}
     {Ns : TargetBranches n} {a v₁ v₂ : Nat} {R₁ R₂ : List Nat}
-    (h₁ : EvalRec P H E Ns a v₁ H₁ R₁) (h₂ : EvalRec P H E Ns a v₂ H₂ R₂) :
+    (h₁ : EvalRec P H E ρ Ns a v₁ H₁ R₁) (h₂ : EvalRec P H E ρ Ns a v₂ H₂ R₂) :
     v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .iota h hN _ hr hv, .iota h' hN' _ hr' hv' => by
+  | .iota h hN _ _ hr hv, .iota h' hN' _ _ hr' hv' => by
     rw [h] at h'
     cases h'
     rw [hN] at hN'
@@ -394,9 +437,9 @@ termination_by structural h₁
 -- ADE: none.
 /-- The evaluation of the recursive results of a branch is deterministic. -/
 theorem EvalResults.det {P : Program} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
-    {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {rs₁ rs₂ : List Nat}
-    {R₁ R₂ : List Nat} (h₁ : EvalResults P H E Ns as ks rs₁ H₁ R₁)
-    (h₂ : EvalResults P H E Ns as ks rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+    {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
+    {rs₁ rs₂ : List Nat} {R₁ R₂ : List Nat} (h₁ : EvalResults P H E ρ Ns as ks rs₁ H₁ R₁)
+    (h₂ : EvalResults P H E ρ Ns as ks rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
   | .nil, .nil => ⟨rfl, rfl, rfl⟩
   | .erased hs, .erased hs' => by
@@ -412,11 +455,11 @@ termination_by structural h₁
 
 -- ADE: none.
 /-- The observation of a value is deterministic. -/
-theorem EvalObs.det {P : Program} {H H₁ H₂ : Heap} {a i : Nat} {bs : List Nat} {v₁ v₂ : Nat}
-    {R₁ R₂ : List Nat} (h₁ : EvalObs P H a i bs v₁ H₁ R₁) (h₂ : EvalObs P H a i bs v₂ H₂ R₂) :
-    v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+theorem EvalObs.det {P : Program} {H H₁ H₂ : Heap} {a i : Nat} {πs : List Multiplicity}
+    {bs : List Nat} {v₁ v₂ : Nat} {R₁ R₂ : List Nat} (h₁ : EvalObs P H a i πs bs v₁ H₁ R₁)
+    (h₂ : EvalObs P H a i πs bs v₂ H₂ R₂) : v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .beta h hP _ _ hw hr, .beta h' hP' _ _ hw' hr' => by
+  | .beta h hP _ _ _ _ hw hr, .beta h' hP' _ _ _ _ hw' hr' => by
     rw [h] at h'
     cases h'
     rw [hP] at hP'

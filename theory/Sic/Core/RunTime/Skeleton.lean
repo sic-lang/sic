@@ -120,7 +120,8 @@ theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → si
 -- ADE: none.
 /-- The skeleton of a data type `D` with exactly one constructor `c`, of the case `i` of its block,
 within the depth `d + 1`: the constructor of the case `i` applied to the skeleton of the type of each
-recursive field within the depth `d`, and to `↯` for each other field. -/
+recursive field within the depth `d`, and to `↯` for each other field, each at the multiplicity
+`0`. -/
 theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.Nodup)
     (I : Instance decl.sorts decl.grades) {n d : Nat} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
@@ -129,8 +130,8 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
     (hi : Entry.constructorCase D c.name (.typeDeclaration decl) = some i) :
     (decl.skeleton I (d + 1) D : Target n) =
       .ctor i (Targets.ofList (((c.fields I).recursion decl.names).map fun
-        | some D' => decl.skeleton I d D'
-        | none => .erased)) := by
+        | some D' => (.zero, decl.skeleton I d D')
+        | none => (.zero, .erased))) := by
   subst hD
   simp only [Entry.constructorCase] at hi
   simp only [TypeDeclaration.skeleton,

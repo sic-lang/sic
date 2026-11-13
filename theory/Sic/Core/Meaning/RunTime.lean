@@ -87,14 +87,16 @@ def RunFieldsRel.cons (F : RunRel) (G : Term 0 [] → RunFieldsRel) : RunFieldsR
   | _, _, _ => False
 
 -- ADE: none.
-/-- `(®_c)`: the relation of run time of the canonical terms of an instance of the data type `T`,
-named `D`, which relates a constructor of `D` to a constructor of the target language of its case,
-whose fields the relation `S c` of the fields of the constructor `c` relates.
+/-- `(®_c)`: the relation of run time of the canonical terms of the instance `I` of the data type
+`T`, named `D`, which relates a constructor of `D` to a constructor of the target language of its
+case, whose fields are at the multiplicities at run time of their grades at the instance, and whose
+fields the relation `S c` of the fields of the constructor `c` relates.
 RFC: `\circledR_c` -/
-def DataType.runCtorRel {j g k : Nat} {Δ : Scope} (sig : Signature) (D : Name)
+def DataType.runCtorRel {j g k : Nat} {Δ : Scope} (sig : Signature) (I : Instance j g) (D : Name)
     (T : DataType j g k Δ) (S : Constructor j g k Δ → RunFieldsRel) : RunRel :=
   fun H v a => ∃ c ∈ T.constructors, ∃ i ts as, v.IsCtor D c.name ts ∧
-    sig.constructorCase D c.name = some i ∧ H[a]? = some (.ctor i as) ∧ S c H ts as
+    sig.constructorCase D c.name = some i ∧
+      H[a]? = some (.ctor i ((c.params I).map (·.usage.run)) as) ∧ S c H ts as
 
 -- ADE: none.
 /-- `(®_μ)`: the relations of run time of the canonical terms of the instances of the data types
@@ -102,10 +104,11 @@ def DataType.runCtorRel {j g k : Nat} {Δ : Scope} (sig : Signature) (D : Name)
 relation `S X c` of the fields of each constructor `c` relates its recursive fields by the relations
 `X`: a term and an address are related by every relations `X` closed under these clauses.
 RFC: `\circledR_\mu` -/
-def DataType.runBlockRel {j g k : Nat} {Δ : Scope} (sig : Signature) (Ts : List (DataType j g k Δ))
-    (S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel) (D : Name) : RunRel :=
+def DataType.runBlockRel {j g k : Nat} {Δ : Scope} (sig : Signature) (I : Instance j g)
+    (Ts : List (DataType j g k Δ)) (S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel)
+    (D : Name) : RunRel :=
   fun H v a => ∀ X : Name → RunRel,
-    (∀ T ∈ Ts, ∀ H v a, T.runCtorRel sig T.name (S X) H v a → X T.name H v a) → X D H v a
+    (∀ T ∈ Ts, ∀ H v a, T.runCtorRel sig I T.name (S X) H v a → X T.name H v a) → X D H v a
 
 -- ADE: none.
 /-- `(®_d)`: the relation of run time of the canonical terms of an instance of the codata type
@@ -129,16 +132,18 @@ def CodataType.runBlockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g
 
 -- ADE: none.
 /-- `(®_x̄)`: the closed abstraction `x̄. B` for the destructor of the case `i`, whose arguments
-have the relation of run time `SΘ`, and the value at the address `a`: in each heap `H'` that extends
-`H`, at arguments `t̄` that `SΘ` relates to addresses `b̄`, the observation of the value at `a` by the
-destructor, applied to `b̄`, gives a value, reading some cells, that the relation `F t̄` of the
-result type relates to `B[t̄ / x̄]`.
+`ps` have the relation of run time `SΘ`, and the value at the address `a`: in each heap `H'` that
+extends `H`, at arguments `t̄` that `SΘ` relates to addresses `b̄`, the observation of the value at
+`a` by the destructor, applied to `b̄` at the multiplicities at run time of the grades of the
+arguments, gives a value, reading some cells, that the relation `F t̄` of the result type relates to
+`B[t̄ / x̄]`.
 RFC: `\circledR_{\bar x}` -/
 def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat) (SΘ : RunFieldsRel)
     (F : Terms 0 [] → RunRel) (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) :
     Prop :=
   ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), SΘ H' ts.terms bs →
-    ∃ w H'' R, EvalObs P H' a i bs w H'' R ∧ F ts.terms H'' (f.subst ts.toSubst) w
+    ∃ w H'' R, EvalObs P H' a i (ps.map (·.usage.run)) bs w H'' R ∧
+      F ts.terms H'' (f.subst ts.toSubst) w
 
 /-! ## Graph of the Relations of Run Time -/
 
@@ -180,7 +185,8 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
           (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
             fun D' => (X D').computed sig ι)
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
-      RunUnivRel sig ι P n below v (DataType.runBlockRel sig decl.dataTypes S D)
+      RunUnivRel sig ι P n below v
+        (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S D)
   /-- `(rt_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
   block has types whose destructors are of run time in `U_n` at the arguments `ā`, whatever the
   relations `X` of the instances of the types of the block at their recursive destructors, and whose

@@ -48,34 +48,34 @@ theorem RunFieldsRel.cons_mono {F F' : RunRel} {G G' : Term 0 [] → RunFieldsRe
 
 /-- `(®_c)` relates in a heap `H'` that extends `H` what it relates in `H`, at relations of the
 terms of the fields that do so. -/
-theorem DataType.runCtorRel_mono {j g k : Nat} {Δ : Scope} {sig : Signature} {D : Name}
-    {T : DataType j g k Δ} {S S' : Constructor j g k Δ → RunFieldsRel} {H H' : Heap}
+theorem DataType.runCtorRel_mono {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
+    {D : Name} {T : DataType j g k Δ} {S S' : Constructor j g k Δ → RunFieldsRel} {H H' : Heap}
     (hH : H.Extends H') (h : ∀ c ∈ T.constructors, ∀ ts as, S c H ts as → S' c H' ts as)
-    {v : Term 0 []} {a : Nat} : T.runCtorRel sig D S H v a → T.runCtorRel sig D S' H' v a :=
+    {v : Term 0 []} {a : Nat} : T.runCtorRel sig I D S H v a → T.runCtorRel sig I D S' H' v a :=
   fun ⟨c, hc, i, ts, as, hv, hi, ha, hs⟩ => ⟨c, hc, i, ts, as, hv, hi, hH.getElem? ha, h c hc ts as hs⟩
 
 /-- `(®_μ)` is closed under the clauses of the constructors, when the relation of the terms of the
 fields grows with the relations of the recursive fields. -/
-theorem DataType.runBlockRel_fold {j g k : Nat} {Δ : Scope} {sig : Signature}
+theorem DataType.runBlockRel_fold {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
     {Ts : List (DataType j g k Δ)} {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
     (hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
       ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as)
     {T : DataType j g k Δ} (hT : T ∈ Ts) {H : Heap} {v : Term 0 []} {a : Nat}
-    (h : T.runCtorRel sig T.name (S (DataType.runBlockRel sig Ts S)) H v a) :
-    DataType.runBlockRel sig Ts S T.name H v a :=
+    (h : T.runCtorRel sig I T.name (S (DataType.runBlockRel sig I Ts S)) H v a) :
+    DataType.runBlockRel sig I Ts S T.name H v a :=
   fun X hX => hX T hT H v a (DataType.runCtorRel_mono (List.prefix_refl H)
     (fun c hc ts as => hmono _ X (fun _ _ _ _ h => h X hX) T hT c hc H ts as) h)
 
 /-- `(®_μ)` relates only what its clauses relate, when the relation of the terms of the fields
 grows with the relations of the recursive fields: the converse of `DataType.runBlockRel_fold`. -/
-theorem DataType.runBlockRel_unfold {j g k : Nat} {Δ : Scope} {sig : Signature}
+theorem DataType.runBlockRel_unfold {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
     {Ts : List (DataType j g k Δ)} {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
     (hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
       ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as)
-    {D : Name} {H : Heap} {v : Term 0 []} {a : Nat} (h : DataType.runBlockRel sig Ts S D H v a) :
-    ∃ T ∈ Ts, T.name = D ∧ T.runCtorRel sig T.name (S (DataType.runBlockRel sig Ts S)) H v a :=
+    {D : Name} {H : Heap} {v : Term 0 []} {a : Nat} (h : DataType.runBlockRel sig I Ts S D H v a) :
+    ∃ T ∈ Ts, T.name = D ∧ T.runCtorRel sig I T.name (S (DataType.runBlockRel sig I Ts S)) H v a :=
   h (fun D H v a => ∃ T ∈ Ts, T.name = D ∧
-      T.runCtorRel sig T.name (S (DataType.runBlockRel sig Ts S)) H v a)
+      T.runCtorRel sig I T.name (S (DataType.runBlockRel sig I Ts S)) H v a)
     fun T hT H _ _ hc => ⟨T, hT, rfl, DataType.runCtorRel_mono (List.prefix_refl H)
       (fun c hc' ts as => hmono _ _ (fun _ _ _ _ ⟨_, hT', hD, hr⟩ =>
         hD ▸ DataType.runBlockRel_fold hmono hT' hr) T hT c hc' H ts as) hc⟩
@@ -163,7 +163,7 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
       fun X Y hXY T hT c hc H =>
         hstep X Y (List.prefix_refl H) (fun D t a => hXY D H t a) T hT c hc
-    exact h (fun (D : Name) (H : Heap) (t : Term 0 []) (a : Nat) => ∀ H', H.Extends H' → DataType.runBlockRel sig decl.dataTypes S D H' t a)
+    exact h (fun (D : Name) (H : Heap) (t : Term 0 []) (a : Nat) => ∀ H', H.Extends H' → DataType.runBlockRel sig _ decl.dataTypes S D H' t a)
       (fun T hT H t a hc H' hH' => DataType.runBlockRel_fold hmono hT
         (DataType.runCtorRel_mono hH' (fun c hc ts as => hstep _ _ hH'
           (fun _ _ _ h => h H' hH') T hT c hc ts as) hc)) _ hH
