@@ -206,3 +206,8 @@ modules = [
   "Sic.Core.RunTime.Signature",
 ]
 forbidden = ["Sic.Core.Ownership"]
+
+[[rule]]
+reason = "the uses at run time read the usage, the erasure, the evaluation and the relation of run time, and neither the typing nor the ownership"
+modules = ["Sic.Core.RunTime.Uses"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
