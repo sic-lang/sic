@@ -891,6 +891,58 @@ def Signature.resumedTypes (sig : Signature) (D : Name) (qs : List Quality) (ps 
     Option (List (Option Nat)) :=
   sig.findSome? (Entry.resumedTypes D qs ps)
 
+-- ADE: none.
+/-- The grades of the fields of each constructor of the block of the data type `D`, at the instance
+of the qualities `qs` and of the grades `ps`, in the order of the declaration, when the entry
+declares them. -/
+def Entry.caseFieldGrades (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List (List Grade))
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.dataTypes.find? (·.name == D)).map fun _ =>
+          decl.cases.map fun x => (x.2.2.params (.ofLists qs ps hq hp)).map (·.usage)
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The grades of the fields of each constructor of the block of the data type `D`, at the instance
+of the qualities `qs` and of the grades `ps`, in the order of the declaration, which is that of the
+branches of a recursor, in the last entry of the signature that declares them, which the erasure of
+a recursor reads to give the variables of the fields their multiplicities.
+RFC: `\mathsf{grades}_{\bar u}` -/
+def Signature.caseFieldGrades (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List (List Grade)) :=
+  sig.findSome? (Entry.caseFieldGrades D qs ps)
+
+-- ADE: none.
+/-- The position in the block of the type of each destructor of the block of the codata type `D`,
+and the grades of its arguments, at the instance of the qualities `qs` and of the grades `ps`, in
+the order of the declaration, when the entry declares them. -/
+def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List (Nat × List Grade))
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.codataTypes.find? (·.name == D)).map fun _ =>
+          decl.codataCases.map fun x =>
+            (x.1, (((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD []).map (·.usage))
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- The position in the block of the type of each destructor of the block of the codata type `D`,
+whose state the branch of the destructor binds, and the grades of its arguments, at the instance of
+the qualities `qs` and of the grades `ps`, in the order of the declaration, which is that of the
+branches of a corecursor, in the last entry of the signature that declares them, which the erasure
+of a corecursor reads to give the variables of the branches their multiplicities.
+RFC: `\mathsf{arguments}_{\bar g}` -/
+def Signature.destructorArguments (sig : Signature) (D : Name) (qs : List Quality)
+    (ps : List Grade) : Option (List (Nat × List Grade)) :=
+  sig.findSome? (Entry.destructorArguments D qs ps)
+
 /-- The position of a destructor in the destructors, as a number, the first one at `0`. -/
 def Destructors.Pos.index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →

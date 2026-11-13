@@ -148,29 +148,32 @@ inductive Targets : Nat → Type where
   | cons {n : Nat} (M : Target n) (Ms : Targets n) : Targets n
 
 -- ADE: none.
-/-- `N̄`: the branches of a recursor of the target language, in order; the branch `(x̄; ȳ ← k̄). N`
-is a term over a new variable for each of the `a` fields and of the `b` recursive results, and
-`k̄` gives, for each recursive result, the position of its field, or `none`, the RFC's `⊥`, when
-the result is erased; the positions are counted from `0`, while the RFC counts them from `1`.
+/-- `N̄`: the branches of a recursor of the target language, in order; the branch
+`(x̄ ▶ π̄; ȳ ▶ π̄' ← k̄). N` is a term over a new variable for each of the `a` fields and of the `b`
+recursive results, of the multiplicities `π̄` and `π̄'` at run time, and `k̄` gives, for each
+recursive result, the position of its field, or `none`, the RFC's `⊥`, when the result is erased;
+the positions are counted from `0`, while the RFC counts them from `1`.
 RFC: `\mathsf{syntax}_{\bar N}` -/
 inductive TargetBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetBranches n
-  /-- `((x̄; ȳ ← k̄). N, N̄)`. -/
-  | cons {n : Nat} (a b : Nat) (ks : Fin b → Option Nat) (N : Target (n + (a + b)))
-      (Ns : TargetBranches n) : TargetBranches n
+  /-- `((x̄ ▶ π̄; ȳ ▶ π̄' ← k̄). N, N̄)`. -/
+  | cons {n : Nat} (a b : Nat) (πs : Fin a → Multiplicity) (πs' : Fin b → Multiplicity)
+      (ks : Fin b → Option Nat) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
+      TargetBranches n
 
 -- ADE: none.
 /-- `P̄`: the branches of a corecursor of the target language, in order; the branch
-`(ȳ; z̄ ↻ k). P` is a term over a new variable for each of the `b` entries of the state and of the
-`c` arguments, and `k` is its resumption.
+`(ȳ ▶ π̄; z̄ ▶ π̄' ↻ k). P` is a term over a new variable for each of the `b` entries of the state and
+of the `c` arguments, of the multiplicities `π̄` and `π̄'` at run time, and `k` is its resumption.
 RFC: `\mathsf{syntax}_{\bar P}` -/
 inductive TargetCorecBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetCorecBranches n
-  /-- `((ȳ; z̄ ↻ k). P, P̄)`. -/
-  | cons {n : Nat} (o : Resumption) (b c : Nat) (N : Target (n + (b + c)))
-      (Ns : TargetCorecBranches n) : TargetCorecBranches n
+  /-- `((ȳ ▶ π̄; z̄ ▶ π̄' ↻ k). P, P̄)`. -/
+  | cons {n : Nat} (o : Resumption) (b c : Nat) (πs : Fin b → Multiplicity)
+      (πs' : Fin c → Multiplicity) (N : Target (n + (b + c))) (Ns : TargetCorecBranches n) :
+      TargetCorecBranches n
 
 end
 
@@ -228,14 +231,14 @@ inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
 inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → Prop where
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar N}.N` -/
-  | head {n : Nat} {x : Fin n} {a b : Nat} {ks : Fin b → Option Nat}
-      {N : Target (n + (a + b))} {Ns : TargetBranches n} (h : Target.Occurs (x.addNat (a + b)) N) :
-      TargetBranches.Occurs x (.cons a b ks N Ns)
+  | head {n : Nat} {x : Fin n} {a b : Nat} {πs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity}
+      {ks : Fin b → Option Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
+      (h : Target.Occurs (x.addNat (a + b)) N) : TargetBranches.Occurs x (.cons a b πs πs' ks N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar N}.\bar N` -/
-  | tail {n : Nat} {x : Fin n} {a b : Nat} {ks : Fin b → Option Nat}
-      {N : Target (n + (a + b))} {Ns : TargetBranches n} (h : TargetBranches.Occurs x Ns) :
-      TargetBranches.Occurs x (.cons a b ks N Ns)
+  | tail {n : Nat} {x : Fin n} {a b : Nat} {πs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity}
+      {ks : Fin b → Option Nat} {N : Target (n + (a + b))} {Ns : TargetBranches n}
+      (h : TargetBranches.Occurs x Ns) : TargetBranches.Occurs x (.cons a b πs πs' ks N Ns)
 
 -- ADE: none.
 /-- The variable `x` occurs in one of the branches of a corecursor, under their new variables,
@@ -243,14 +246,14 @@ which shift it. -/
 inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranches n → Prop where
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar P}.P` -/
-  | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {N : Target (n + (b + c))}
-      {Ns : TargetCorecBranches n} (h : Target.Occurs (x.addNat (b + c)) N) :
-      TargetCorecBranches.Occurs x (.cons o b c N Ns)
+  | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs : Fin b → Multiplicity}
+      {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
+      (h : Target.Occurs (x.addNat (b + c)) N) : TargetCorecBranches.Occurs x (.cons o b c πs πs' N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar P}.\bar P` -/
-  | tail {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {N : Target (n + (b + c))}
-      {Ns : TargetCorecBranches n} (h : TargetCorecBranches.Occurs x Ns) :
-      TargetCorecBranches.Occurs x (.cons o b c N Ns)
+  | tail {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs : Fin b → Multiplicity}
+      {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
+      (h : TargetCorecBranches.Occurs x Ns) : TargetCorecBranches.Occurs x (.cons o b c πs πs' N Ns)
 
 end
 
@@ -337,13 +340,14 @@ inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → Target
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar N}.\varepsilon` -/
   | nil {n : Nat} : TargetBranches.LessDefined (n := n) .nil .nil
-  /-- `((x̄; ȳ ← k̄₁). M, M̄) ⊑ ((x̄; ȳ ← k̄₂). N, N̄)`, where each recursive result of `k̄₁` is not
-  computed or has the field it has in `k̄₂`.
+  /-- `((x̄ ▶ π̄; ȳ ▶ π̄' ← k̄₁). M, M̄) ⊑ ((x̄ ▶ π̄; ȳ ▶ π̄' ← k̄₂). N, N̄)`, where each recursive
+  result of `k̄₁` is not computed or has the field it has in `k̄₂`.
   RFC: `{\sqsubseteq}_{\bar N}.{,}` -/
-  | cons {n a b : Nat} {ks₁ ks₂ : Fin b → Option Nat} {M N : Target (n + (a + b))}
+  | cons {n a b : Nat} {πs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity}
+      {ks₁ ks₂ : Fin b → Option Nat} {M N : Target (n + (a + b))}
       {Ms Ns : TargetBranches n} (hk : ∀ j : Fin b, ks₁ j = none ∨ ks₁ j = ks₂ j)
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
-      TargetBranches.LessDefined (.cons a b ks₁ M Ms) (.cons a b ks₂ N Ns)
+      TargetBranches.LessDefined (.cons a b πs πs' ks₁ M Ms) (.cons a b πs πs' ks₂ N Ns)
 
 -- ADE: none.
 /-- The branches of a corecursor are less defined, one by one. -/
@@ -352,12 +356,13 @@ inductive TargetCorecBranches.LessDefined :
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar P}.\varepsilon` -/
   | nil {n : Nat} : TargetCorecBranches.LessDefined (n := n) .nil .nil
-  /-- `((ȳ; z̄ ↻ k₁). P₁, P̄₁) ⊑ ((ȳ; z̄ ↻ k₂). P₂, P̄₂)`.
+  /-- `((ȳ ▶ π̄; z̄ ▶ π̄' ↻ k₁). P₁, P̄₁) ⊑ ((ȳ ▶ π̄; z̄ ▶ π̄' ↻ k₂). P₂, P̄₂)`.
   RFC: `{\sqsubseteq}_{\bar P}.{,}` -/
-  | cons {n : Nat} {o₁ o₂ : Resumption} {b c : Nat} {M N : Target (n + (b + c))}
+  | cons {n : Nat} {o₁ o₂ : Resumption} {b c : Nat} {πs : Fin b → Multiplicity}
+      {πs' : Fin c → Multiplicity} {M N : Target (n + (b + c))}
       {Ms Ns : TargetCorecBranches n} (ho : Resumption.LessDefined o₁ o₂)
       (h : Target.LessDefined M N) (hs : TargetCorecBranches.LessDefined Ms Ns) :
-      TargetCorecBranches.LessDefined (.cons o₁ b c M Ms) (.cons o₂ b c N Ns)
+      TargetCorecBranches.LessDefined (.cons o₁ b c πs πs' M Ms) (.cons o₂ b c πs πs' N Ns)
 
 end
 
@@ -437,6 +442,16 @@ def Signature.skeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality
     (ps : List Grade) : Target n :=
   (sig.findSome? (Entry.skeleton D qs ps)).getD .erased
 
+-- ADE: none.
+/-- `π_l`: the multiplicity at run time of the variable of a field of grade `p` in a branch of a
+recursor of grade `r`, whose recursive result, when the field has one, has the grade `e`: the uses
+at run time of the field that the recursor gives, `run(r · p)`, minus those of the recursion on the
+field, `run(e · r)`, the least multiplicity that the usage allows the variable; a field without
+grade, in a term that no declaration types, has `ω`, which states nothing. -/
+def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) : Option Grade → Option Grade → Multiplicity
+  | some p, e => (r * p).run - ((e.getD .zero) * r).run
+  | none, _ => .omega
+
 mutual
 
 -- ADE: `erase′`, in `Graded/Erasure/Extraction.agda`.
@@ -471,7 +486,8 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     | none => .erased
   | .recursor r D qs _ ps _ t _ us =>
     .recursor (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
-      (us.erase sig S hΓ ((sig.recursiveFields D qs ps).getD []))
+      (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
+        ((sig.caseFieldGrades D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>
     match sig.destructorCase D d with
     | some i =>
@@ -482,7 +498,10 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
       fun ⟨_, ps, _⟩ => ps.map (r * ·.usage)))
       (vs.erase sig S hΓ ((sig.destructorGrades D qs ps).getD [])
         (((sig.resumedTypes D qs ps).getD []).map
-          fun h => Resumption.ofArity (decide (r ∈ S)) (h.bind Ss.arity)))
+          fun h => Resumption.ofArity (decide (r ∈ S)) (h.bind Ss.arity))
+        (((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
+          ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => (r * p.usage).run,
+            as.map (·.run))))
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
@@ -496,32 +515,49 @@ def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k 
     .cons (if p ∈ S then .erased else t.erase sig S hΓ) (ts.erase sig S hΓ ps)
 
 -- ADE: none.
-/-- `⌊ū⌋_{S, ē̄}`: the erasure of the branches of a recursor, under their new variables, each with
-the field of each of its recursive results, in the positions `es` of the recursive fields of its
-constructor, or `none` when the grade of the result is in `S`, so that the result is not computed.
+/-- `⌊ū⌋_{S, r, ē̄, p̄̄}`: the erasure of the branches of a recursor of grade `r`, under their new
+variables, each with the field of each of its recursive results, in the positions `es` of the
+recursive fields of its constructor, or `none` when the grade of the result is in `S`, so that the
+result is not computed; the variable of a field of grade `p`, in the grades `fs` of the fields of
+its constructor, has the multiplicity `run(r · p) - run(e · r)`, where `e` is the grade of its
+recursive result, or `0` when it has none, and the variable of a recursive result of grade `e` the
+multiplicity `run(e)`.
 RFC: `\mathsf{erase}_{\bar u}` -/
 def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) : Branches k Γ → List (List Nat) → TargetBranches Γ.length
-  | .nil, _ => .nil
-  | .cons a b gs u us, es =>
-    .cons a b (fun j => if gs[j] ∈ S then none else (es.headD [])[(j : Nat)]?)
+    (hΓ : Γ.FirstOrder) (r : Grade) :
+    Branches k Γ → List (List Nat) → List (List Grade) → TargetBranches Γ.length
+  | .nil, _, _ => .nil
+  | .cons a b gs u us, es, fs =>
+    .cons a b
+      (fun l => r.fieldMultiplicity (fs.headD [])[(l : Nat)]?
+        (((es.headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
+      (fun j => gs[j].run)
+      (fun j => if gs[j] ∈ S then none else (es.headD [])[(j : Nat)]?)
       (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
-      (us.erase sig S hΓ es.tail)
+      (us.erase sig S hΓ r es.tail fs.tail)
 
 -- ADE: none.
-/-- `⌊ḡ⌋_{S, p̄, k̄}`: the erasure of the branches of a corecursor, under their new variables, each
-at the grade of its destructor in `ps`, with its resumption in `ks`; a branch without grade, or with
-non-uniform parameters, which the corecursors do not have yet, is erased.
+/-- `⌊ḡ⌋_{S, p̄, k̄, π̄̄}`: the erasure of the branches of a corecursor, under their new variables,
+each at the grade of its destructor in `ps`, with its resumption in `ks` and the multiplicities of
+the variables of its state and of its arguments in `πs`, `ω` for a variable whose multiplicity is
+not given, in a term that no declaration types; a branch without grade, or with non-uniform
+parameters, which the corecursors do not have yet, is erased.
 RFC: `\mathsf{erase}_{\bar g}` -/
 def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    CorecBranches k Γ → List Grade → List Resumption → TargetCorecBranches Γ.length
-  | .nil, _, _ => .nil
-  | .cons 0 b c v vs, p :: ps, ks =>
-    .cons (ks.headD .none) b c (if p ∈ S then .erased else Scope.length_extend_extend Γ b c ▸
-      v.erase sig S ((hΓ.extend b).extend c))
-      (vs.erase sig S hΓ ps ks.tail)
-  | .cons _ b c _ vs, ps, ks => .cons (ks.headD .none) b c .erased (vs.erase sig S hΓ ps.tail ks.tail)
+    CorecBranches k Γ → List Grade → List Resumption →
+      List (List Multiplicity × List Multiplicity) → TargetCorecBranches Γ.length
+  | .nil, _, _, _ => .nil
+  | .cons 0 b c v vs, p :: ps, ks, πs =>
+    .cons (ks.headD .none) b c (fun j => ((πs.headD ([], [])).1[(j : Nat)]?).getD .omega)
+      (fun j => ((πs.headD ([], [])).2[(j : Nat)]?).getD .omega)
+      (if p ∈ S then .erased else Scope.length_extend_extend Γ b c ▸
+        v.erase sig S ((hΓ.extend b).extend c))
+      (vs.erase sig S hΓ ps ks.tail πs.tail)
+  | .cons _ b c _ vs, ps, ks, πs => .cons (ks.headD .none) b c
+      (fun j => ((πs.headD ([], [])).1[(j : Nat)]?).getD .omega)
+      (fun j => ((πs.headD ([], [])).2[(j : Nat)]?).getD .omega) .erased
+      (vs.erase sig S hΓ ps.tail ks.tail πs.tail)
 
 end
 
@@ -626,17 +662,17 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     simp only [Term.erase]
     by_cases h₂ : r ∈ S₂
     · simp only [h₂, ↓reduceIte]
-      exact .skeleton (sig.skeleton_isSkeleton _ _ _) (Branches.erase_lessDefined sig h hΓ us _)
+      exact .skeleton (sig.skeleton_isSkeleton _ _ _) (Branches.erase_lessDefined sig h hΓ _ us _ _)
     · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
       simp only [h₂, h₁, ↓reduceIte]
-      exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ us _)
+      exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ _ us _ _)
   | .obs D _ _ _ _ t d bs => by
     simp only [Term.erase]
     cases sig.destructorCase D d with
     | some _ => exact .obs (Term.erase_lessDefined sig h hΓ t) (Terms.erase_lessDefined sig h hΓ bs _)
     | none => exact .erased
   | .corec r _ _ _ _ _ ss _ vs => .corec (Terms.erase_lessDefined sig h hΓ ss _)
-      (CorecBranches.erase_lessDefined sig h hΓ vs _ _ _
+      (CorecBranches.erase_lessDefined sig h hΓ vs _ _ _ _
         (Resumption.map_ofArity_lessDefined
           (fun h₁ => decide_eq_true (h r (of_decide_eq_true h₁))) _ _))
 
@@ -661,16 +697,17 @@ theorem Terms.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decid
 /-- The erasure of branches by a larger set of grades is less defined. -/
 theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) : (us : Branches k Γ) → (es : List (List Nat)) →
-      TargetBranches.LessDefined (us.erase sig S₂ hΓ es) (us.erase sig S₁ hΓ es)
-  | .nil, _ => .nil
-  | .cons a b gs u us, es => .cons (fun j => by
+    (hΓ : Γ.FirstOrder) (r : Grade) : (us : Branches k Γ) → (es : List (List Nat)) →
+      (fs : List (List Grade)) →
+      TargetBranches.LessDefined (us.erase sig S₂ hΓ r es fs) (us.erase sig S₁ hΓ r es fs)
+  | .nil, _, _ => .nil
+  | .cons a b gs u us, es, fs => .cons (fun j => by
       by_cases h₂ : gs[j] ∈ S₂
       · exact .inl (by simp only [h₂, ↓reduceIte])
       · have h₁ : gs[j] ∉ S₁ := fun h₁ => h₂ (h _ h₁)
         exact .inr (by simp only [h₁, h₂, ↓reduceIte]))
       (Target.LessDefined.cast _ (Term.erase_lessDefined sig h ((hΓ.extend a).extend b) u))
-      (Branches.erase_lessDefined sig h hΓ us es.tail)
+      (Branches.erase_lessDefined sig h hΓ r us es.tail fs.tail)
 
 -- ADE: none.
 /-- The erasure of the branches of a corecursor by a larger set of grades, at less defined
@@ -678,24 +715,25 @@ resumptions, is less defined. -/
 theorem CorecBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : (vs : CorecBranches k Γ) → (ps : List Grade) →
-      (ks₁ ks₂ : List Resumption) →
+      (πs : List (List Multiplicity × List Multiplicity)) → (ks₁ ks₂ : List Resumption) →
       (∀ i, Resumption.LessDefined (ks₂.getD i .none) (ks₁.getD i .none)) →
-      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂) (vs.erase sig S₁ hΓ ps ks₁)
-  | .nil, _, _, _, _ => .nil
-  | .cons 0 b c v vs, p :: ps, ks₁, ks₂, hk => by
+      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ πs)
+        (vs.erase sig S₁ hΓ ps ks₁ πs)
+  | .nil, _, _, _, _, _ => .nil
+  | .cons 0 b c v vs, p :: ps, πs, ks₁, ks₂, hk => by
     simp only [CorecBranches.erase]
     refine .cons (Resumption.headD_lessDefined hk) ?_
-      (CorecBranches.erase_lessDefined sig h hΓ vs ps ks₁.tail ks₂.tail
+      (CorecBranches.erase_lessDefined sig h hΓ vs ps πs.tail ks₁.tail ks₂.tail
         (Resumption.tail_lessDefined hk))
     by_cases h₂ : p ∈ S₂
     · simp only [h₂, ↓reduceIte]; exact .erased
     · have h₁ : p ∉ S₁ := fun h₁ => h₂ (h p h₁)
       simp only [h₂, h₁, ↓reduceIte]
       exact Target.LessDefined.cast _ (Term.erase_lessDefined sig h ((hΓ.extend b).extend c) v)
-  | .cons 0 _ _ _ vs, [], ks₁, ks₂, hk | .cons (_ + 1) _ _ _ vs, _, ks₁, ks₂, hk => by
+  | .cons 0 _ _ _ vs, [], πs, ks₁, ks₂, hk | .cons (_ + 1) _ _ _ vs, _, πs, ks₁, ks₂, hk => by
     simp only [CorecBranches.erase]
     exact .cons (Resumption.headD_lessDefined hk) .erased
-      (CorecBranches.erase_lessDefined sig h hΓ vs _ ks₁.tail ks₂.tail
+      (CorecBranches.erase_lessDefined sig h hΓ vs _ πs.tail ks₁.tail ks₂.tail
         (Resumption.tail_lessDefined hk))
 
 end

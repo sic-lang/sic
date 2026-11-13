@@ -31,16 +31,17 @@ theorem Target.occurs_cast {n n' : Nat} (h : n = n') (M : Target n) (y : Fin n')
 /-- A variable occurs in the erasure of branches when it occurs, as an old variable of the scope
 of a branch, in the erasure of the term of this branch. -/
 theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
-    {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} : (us : Branches k Γ) →
-      (es : List (List Nat)) → (us.erase sig S hΓ es).Occurs x → ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
-        (u.erase sig S ((hΓ.extend a).extend b)).Occurs
-          ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
-  | .nil, _, h => nomatch h
-  | .cons a b _ u us, es, h => by
+    {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} (r : Grade) : (us : Branches k Γ) →
+      (es : List (List Nat)) → (fs : List (List Grade)) → (us.erase sig S hΓ r es fs).Occurs x →
+        ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
+          (u.erase sig S ((hΓ.extend a).extend b)).Occurs
+            ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
+  | .nil, _, _, h => nomatch h
+  | .cons a b _ u us, es, fs, h => by
     cases h with
     | head h => exact ⟨0, a, b, u, rfl, Target.occurs_cast _ _ _ h⟩
     | tail h =>
-      obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ us es.tail h
+      obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ r us es.tail fs.tail h
       exact ⟨i + 1, a', b', u', hu, ho⟩
 
 /-- The branch at a position of branches is before their end. -/
@@ -72,12 +73,12 @@ branch. -/
 theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (vs.erase sig S hΓ ps ks).Occurs x →
+      (πs : List (List Multiplicity × List Multiplicity)) → (vs.erase sig S hΓ ps ks πs).Occurs x →
         ∃ i b c v p, vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
           (v.erase sig S ((hΓ.extend b).extend c)).Occurs
             ((x.addNat (b + c)).cast (Scope.length_extend_extend Γ b c).symm)
-  | .nil, _, _, h => nomatch h
-  | .cons 0 b c v vs, p :: ps, ks, h => by
+  | .nil, _, _, _, h => nomatch h
+  | .cons 0 b c v vs, p :: ps, ks, πs, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h =>
@@ -87,21 +88,23 @@ theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidableP
       · simp only [hp, ↓reduceIte] at h
         exact ⟨0, b, c, v, p, rfl, rfl, hp, Target.occurs_cast _ _ _ h⟩
     | tail h =>
-      obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ := CorecBranches.occurs_erase hΓ vs ps ks.tail h
+      obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
+        CorecBranches.occurs_erase hΓ vs ps ks.tail πs.tail h
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
-  | .cons 0 _ _ _ vs, [], ks, h => by
+  | .cons 0 _ _ _ vs, [], ks, πs, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
-      obtain ⟨_, _, _, _, _, _, hp, _⟩ := CorecBranches.occurs_erase hΓ vs [] ks.tail h
+      obtain ⟨_, _, _, _, _, _, hp, _⟩ := CorecBranches.occurs_erase hΓ vs [] ks.tail πs.tail h
       simp at hp
-  | .cons (_ + 1) _ _ _ vs, ps, ks, h => by
+  | .cons (_ + 1) _ _ _ vs, ps, ks, πs, h => by
     simp only [CorecBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
-      obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ := CorecBranches.occurs_erase hΓ vs _ ks.tail h
+      obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
+        CorecBranches.occurs_erase hΓ vs _ ks.tail πs.tail h
       rw [List.getElem?_tail] at hp
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
 
@@ -225,7 +228,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
         have hS' : ErasesUncounted (m ⊙ r) S := (hS.mode _ hr).symm ▸ hS
         exact Usage.absent hd hS' hΓ ht (hS.mul _ _ hr (hS.add _ _ hx')) ho
     | branch ho =>
-      obtain ⟨i, a, b, u, hget, ho⟩ := Branches.occurs_erase hΓ _ _ ho
+      obtain ⟨i, a, b, u, hget, ho⟩ := Branches.occurs_erase hΓ _ _ _ _ ho
       have hi : i < _ := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
       obtain ⟨u', hu'⟩ := hus i j T' con hc
@@ -259,7 +262,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     cases ho with
     | corec ho => exact UsageArgs.absent_mul hd hS hΓ rfl hss (hS.add _ _ hx') ho
     | cobranch ho =>
-      obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := CorecBranches.occurs_erase hΓ _ _ _ ho
+      obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := CorecBranches.occurs_erase hΓ _ _ _ _ ho
       have hi : i < _ := hgl ▸ CorecBranches.lt_length_of_get hget
       obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
       have hcm := List.mem_of_getElem? hc

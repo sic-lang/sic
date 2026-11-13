@@ -57,15 +57,21 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
     simp only [Term.substLevels, Term.erase, Terms.erase_substLevels sig S ls' hΓ ts]
   | .recursor _ _ _ _ _ _ t _ us => by
     simp only [Term.substLevels, Term.erase, Term.erase_substLevels sig S ls' hΓ t,
-      Branches.erase_substLevels sig S ls' hΓ us]
+      Branches.erase_substLevels sig S ls' hΓ _ us]
   | .obs _ _ _ _ _ t _ bs => by
     simp only [Term.substLevels, Term.erase, Term.erase_substLevels sig S ls' hΓ t,
       Terms.erase_substLevels sig S ls' hΓ bs]
-  | .corec _ _ _ _ _ _ ss Ss vs => by
+  | .corec r _ _ _ _ _ ss Ss vs => by
     simp only [Term.substLevels, Term.erase, Terms.erase_substLevels sig S ls' hΓ ss,
       CorecBranches.erase_substLevels sig S ls' hΓ vs,
       show (Ss.substLevels ls').arity = Ss.arity from funext (States.arity_substLevels ls' Ss)]
     rw [States.get_substLevels_elim ls' Ss _ [] fun ps => ps.map _]
+    simp only [States.get_substLevels_eq]
+    have h : ∀ j, ((Ss.get j).map fun x => (⟨x.1, x.2.1, x.2.2.substLevels ls'⟩ :
+        Σ n ps, Telescope k' (Γ.extend n) ps)).elim [] (fun x => x.2.1.map fun p => (r * p.usage).run)
+        = (Ss.get j).elim [] fun x => x.2.1.map fun p => (r * p.usage).run := fun j => by
+      cases Ss.get j <;> rfl
+    simp only [h]
 
 -- ADE: none.
 /-- Fields instantiated at other levels have the same erasure. -/
@@ -82,32 +88,33 @@ theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred
 -- ADE: none.
 /-- Branches of a recursor instantiated at other levels have the same erasure. -/
 theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
-    {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    (us : Branches k Γ) → (es : List (List Nat)) →
-      (us.substLevels ls').erase sig S hΓ es = us.erase sig S hΓ es
-  | .nil, _ => rfl
-  | .cons a b _ u us, es => by
+    {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) :
+    (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Grade)) →
+      (us.substLevels ls').erase sig S hΓ r es fs = us.erase sig S hΓ r es fs
+  | .nil, _, _ => rfl
+  | .cons a b _ u us, es, fs => by
     simp only [Branches.substLevels, Branches.erase,
       Term.erase_substLevels sig S ls' ((hΓ.extend a).extend b) u,
-      Branches.erase_substLevels sig S ls' hΓ us es.tail]
+      Branches.erase_substLevels sig S ls' hΓ r us es.tail fs.tail]
 
 -- ADE: none.
 /-- Branches of a corecursor instantiated at other levels have the same erasure. -/
 theorem CorecBranches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (vs.substLevels ls').erase sig S hΓ ps ks = vs.erase sig S hΓ ps ks
-  | .nil, _, _ => rfl
-  | .cons 0 b c v vs, _ :: ps, ks => by
+      (πs : List (List Multiplicity × List Multiplicity)) →
+      (vs.substLevels ls').erase sig S hΓ ps ks πs = vs.erase sig S hΓ ps ks πs
+  | .nil, _, _, _ => rfl
+  | .cons 0 b c v vs, _ :: ps, ks, πs => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs ps ks.tail]
+      CorecBranches.erase_substLevels sig S ls' hΓ vs ps ks.tail πs.tail]
     erw [Term.erase_substLevels sig S ls' ((hΓ.extend b).extend c) v]
-  | .cons 0 _ _ _ vs, [], ks => by
+  | .cons 0 _ _ _ vs, [], ks, πs => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail]
-  | .cons (_ + 1) _ _ _ vs, ps, ks => by
+      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail πs.tail]
+  | .cons (_ + 1) _ _ _ vs, ps, ks, πs => by
     simp only [CorecBranches.substLevels, CorecBranches.erase,
-      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail]
+      CorecBranches.erase_substLevels sig S ls' hΓ vs _ ks.tail πs.tail]
 
 end
 

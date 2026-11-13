@@ -93,18 +93,20 @@ def Signature.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S
   fun f qs ps => sig.findSome? (Entry.compile sig S f qs ps)
 
 /-- The branch at a position of the branches of a recursor of the target language. -/
-def TargetBranches.get {n : Nat} :
-    TargetBranches n → Nat → Option (Σ a b, (Fin b → Option Nat) × Target (n + (a + b)))
+def TargetBranches.get {n : Nat} : TargetBranches n → Nat →
+    Option (Σ a b, (Fin a → Multiplicity) × (Fin b → Multiplicity) × (Fin b → Option Nat) ×
+      Target (n + (a + b)))
   | .nil, _ => none
-  | .cons a b ks N _, 0 => some ⟨a, b, ks, N⟩
-  | .cons _ _ _ _ Ns, i + 1 => Ns.get i
+  | .cons a b πs πs' ks N _, 0 => some ⟨a, b, πs, πs', ks, N⟩
+  | .cons _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 /-- The branch at a position of the branches of a corecursor of the target language. -/
-def TargetCorecBranches.get {n : Nat} :
-    TargetCorecBranches n → Nat → Option (Resumption × Σ b c, Target (n + (b + c)))
+def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
+    Option (Resumption × Σ b c, (Fin b → Multiplicity) × (Fin c → Multiplicity) ×
+      Target (n + (b + c)))
   | .nil, _ => none
-  | .cons o b c N _, 0 => some (o, ⟨b, c, N⟩)
-  | .cons _ _ _ _ Ns, i + 1 => Ns.get i
+  | .cons o b c πs πs' N _, 0 => some (o, ⟨b, c, πs, πs', N⟩)
+  | .cons _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 -- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄`: the addresses of the `k` entries that the value at the address `x`
@@ -207,8 +209,9 @@ inductive EvalRec (P : Program) : {n : Nat} → Heap → List Nat → TargetBran
     Heap → Prop where
   /-- RFC: `\iota_\Downarrow` -/
   | iota {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {Ns : TargetBranches n} {a v : Nat} {i : Nat}
-      {as : List Nat} {a' b : Nat} {ks : Fin b → Option Nat} {N : Target (n + (a' + b))}
-      {rs : List Nat} (h : H₁[a]? = some (.ctor i as)) (hN : Ns.get i = some ⟨a', b, ks, N⟩)
+      {as : List Nat} {a' b : Nat} {πs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity}
+      {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat}
+      (h : H₁[a]? = some (.ctor i as)) (hN : Ns.get i = some ⟨a', b, πs, πs', ks, N⟩)
       (ha : as.length = a') (hr : EvalResults P H₁ E Ns as (List.ofFn ks) rs H₂)
       (hv : Eval P H₂ (rs.reverse ++ as.reverse ++ E) N v H₃) : EvalRec P H₁ E Ns a v H₃
 
@@ -243,8 +246,8 @@ inductive EvalObs (P : Program) : Heap → Nat → Nat → List Nat → Nat → 
   /-- RFC: `\beta_\Downarrow` -/
   | beta {H₁ H₂ H₃ : Heap} {a i : Nat} {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat}
       {Ps : TargetCorecBranches n} {ss : List Nat} {o : Resumption} {b c : Nat}
-      {N : Target (n + (b + c))} (h : H₁[a]? = some (.corec n E Ps ss))
-      (hP : Ps.get i = some (o, ⟨b, c, N⟩)) (hb : ss.length = b) (hc : bs.length = c)
+      {πs : Fin b → Multiplicity} {πs' : Fin c → Multiplicity} {N : Target (n + (b + c))}
+      (h : H₁[a]? = some (.corec n E Ps ss)) (hP : Ps.get i = some (o, ⟨b, c, πs, πs', N⟩)) (hb : ss.length = b) (hc : bs.length = c)
       (hw : Eval P H₁ (bs.reverse ++ ss.reverse ++ E) N w H₂)
       (hr : EvalResume H₂ n E Ps o w v H₃) : EvalObs P H₁ a i bs v H₃
 

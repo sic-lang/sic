@@ -125,22 +125,31 @@ theorem Entry.constructorCase_of_cases {decl : TypeDeclaration}
 this position, with the positions of its recursive fields that the erasure gives, each `none` when
 the grade of its result is erased. -/
 theorem Branches.get_erase (sig : Signature) (S : Math.Set Grade) [DecidablePred (· ∈ S)]
-    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) : (us : Branches k Γ) → (es : List (List Nat)) →
+    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) : (us : Branches k Γ) →
+    (es : List (List Nat)) → (fs : List (List Grade)) →
     {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} → us.get i = some ⟨n, m, u⟩ →
-    ∃ gs : Vector Grade m, us.grades i = gs.toList ∧ (us.erase sig S hΓ es).get i =
-      some ⟨n, m, fun j => if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?,
+    ∃ gs : Vector Grade m, us.grades i = gs.toList ∧ (us.erase sig S hΓ r es fs).get i =
+      some ⟨n, m,
+        fun l => r.fieldMultiplicity ((fs.drop i).headD [])[(l : Nat)]?
+          ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?),
+        fun j => gs[j].run,
+        fun j => if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?,
         Scope.length_extend_extend Γ n m ▸ u.erase sig S ((hΓ.extend n).extend m)⟩
-  | .nil, _, _, _, _, _, h => nomatch h
-  | .cons _ _ gs _ _, _, 0, _, _, _, h => by
+  | .nil, _, _, _, _, _, _, h => nomatch h
+  | .cons _ _ gs _ _, _, _, 0, _, _, _, h => by
     cases h
     exact ⟨gs, rfl, rfl⟩
-  | .cons _ _ _ _ us, es, i + 1, _, _, _, h => by
-    obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ us es.tail h
+  | .cons _ _ _ _ us, es, fs, i + 1, _, _, _, h => by
+    obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ r us es.tail fs.tail h
     have he : es.drop (i + 1) = es.tail.drop i := by
       cases es
       · exact List.drop_nil.trans List.drop_nil.symm
       · rfl
-    exact ⟨gs, h₁, he ▸ h₂⟩
+    have hf : fs.drop (i + 1) = fs.tail.drop i := by
+      cases fs
+      · exact List.drop_nil.trans List.drop_nil.symm
+      · rfl
+    exact ⟨gs, h₁, he ▸ hf ▸ h₂⟩
 
 /-- The positions of the recursive fields that the types `rs` of the block mark, from the position
 `o`, are as many as the recursive results. -/
@@ -529,14 +538,14 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       RunsAsArgs sig ι P H' (gs i) ts bs
         (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) (as.subst σ)) ∧
       Terms.RecAt (fun D' t b => ∀ H'', H'.Extends H'' → ∃ v H₂,
-        EvalRec P H'' E (us.erase sig Mode.oneOne.erased hΓ
-          ((sig.recursiveFields D qs ps).getD [])) b v H₂ ∧ H''.Extends H₂ ∧
+        EvalRec P H'' E (us.erase sig Mode.oneOne.erased hΓ r
+          ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) b v H₂ ∧ H''.Extends H₂ ∧
         ∀ C, (Cs.subst σ).get (decl.names.idxOf D') = some ⟨0, C⟩ →
           RunsAs sig ι P H₂ (.recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) v
             (C.subst₀ (Subst₀.single t)))
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (us.grades i) ts.terms bs) :
-    ∃ v H₃, EvalRec P H' E (us.erase sig Mode.oneOne.erased hΓ
-        ((sig.recursiveFields D qs ps).getD [])) a v H₃ ∧ H'.Extends H₃ ∧
+    ∃ v H₃, EvalRec P H' E (us.erase sig Mode.oneOne.erased hΓ r
+        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a v H₃ ∧ H'.Extends H₃ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
         RunsAs sig ι P H₃ (.recursor r T'.name qs ls ps (as.subst σ) w (Cs.subst σ) (us.subst σ))
           v ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single w)) := by
@@ -581,8 +590,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   obtain ⟨u, hu⟩ := hus i j T' con hi
   obtain ⟨Rt, hRt⟩ := Constructor.results_isSome con (.ofLists qs ps hq hp)
     (fun _ hD' => Motives.get_idxOf hT hnd hCs hD')
-  obtain ⟨gs₀, hgs, hget⟩ := Branches.get_erase sig Mode.oneOne.erased hΓ us
-    ((sig.recursiveFields T.name qs ps).getD []) hu
+  obtain ⟨gs₀, hgs, hget⟩ := Branches.get_erase sig Mode.oneOne.erased hΓ r us
+    ((sig.recursiveFields T.name qs ps).getD []) ((sig.caseFieldGrades T.name qs ps).getD []) hu
   -- The positions of the recursive fields of each case.
   let rfs : List (List Nat) := decl.cases.map fun x =>
     ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
@@ -690,8 +699,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hH₁ : H.Extends H₁) {t : Term 0 []} {a : Nat}
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ))
     (ht : RunsAs sig ι P H₁ t a ((Term.inst D qs ls ps as).subst σ)) :
-    ∃ b H₂, EvalRec P H₁ E (us.erase sig Mode.oneOne.erased hΓ
-        ((sig.recursiveFields D qs ps).getD [])) a b H₂ ∧ H₁.Extends H₂ ∧
+    ∃ b H₂, EvalRec P H₁ E (us.erase sig Mode.oneOne.erased hΓ r
+        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a b H₂ ∧ H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
   obtain ⟨hdecl, hT, rfl⟩ := id h
@@ -711,7 +720,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     fun X Y hXY T hT c hc H =>
       RunTelRel.mono hd ihmono (List.prefix_refl H) (hS X T hT c hc) _ _ (hS Y T hT c hc)
         (fun _ => Option.rel_map (fun D' _ _ => RunRel.computed_mono (hXY D' H)) _)
-  let Ns := us.erase sig Mode.oneOne.erased hΓ ((sig.recursiveFields T.name qs ps).getD [])
+  let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
+    ((sig.caseFieldGrades T.name qs ps).getD [])
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
   -- The relations of the canonical terms that `(®_μ)` relates and on whose addresses the erased
@@ -847,8 +857,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     (hH₁ : H.Extends H₁) {t : Term 0 []}
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ)) :
     ∃ a H₂ b H₃, Eval P H₁ E (sig.skeleton D qs ps : Target Γ.length) a H₂ ∧
-      EvalRec P H₂ E (us.erase sig Mode.oneOne.erased hΓ
-        ((sig.recursiveFields D qs ps).getD [])) a b H₃ ∧ H₁.Extends H₃ ∧
+      EvalRec P H₂ E (us.erase sig Mode.oneOne.erased hΓ r
+        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldGrades D qs ps).getD [])) a b H₃ ∧ H₁.Extends H₃ ∧
       RunsAs sig ι P H₃ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
   obtain ⟨hdecl, hT, rfl⟩ := id h
@@ -865,7 +875,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
         ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
     fun T' hT' _ _ hab => (FieldRel.univ rfl (hUM T' hT').1).validEqTerm hd (hI _) hab
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  let Ns := us.erase sig Mode.oneOne.erased hΓ ((sig.recursiveFields T.name qs ps).getD [])
+  let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
+    ((sig.caseFieldGrades T.name qs ps).getD [])
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
   -- The erased recursor on a skeleton of the type `D'` of a canonical term `v`, within the depth of
