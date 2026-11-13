@@ -76,6 +76,13 @@ structure ResultOwnership (α : Type) (n : Nat) where
   /-- The coefficient `χⱼ` of the variable `xⱼ`, if it has a factor. -/
   coefficient : Fin n → Option α
 
+-- ADE: none.
+/-- The ownership `ψ` of a result whose constant and coefficients are mapped by `f`, such as the
+multiplicities at run time of grades. -/
+def ResultOwnership.map {α β : Type} {n : Nat} (f : α → β) (ψ : ResultOwnership α n) :
+    ResultOwnership β n :=
+  ⟨ψ.constant.map f, fun j => (ψ.coefficient j).map f⟩
+
 /-- An entry of a scope: a variable, or a second-order variable with the parameters of the entries of
 its telescope and the ownership of its result. -/
 inductive Scope.Entry where
@@ -696,57 +703,60 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
   ⟨qs.getFin hq, ps.getFin hp⟩
 
 -- ADE: none.
-/-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
-the qualities `qs` and of the grades `ps`, when the entry declares them. -/
-def Entry.fieldGrades (D c : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List Grade)
+/-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
+declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry
+declares them. -/
+def Entry.fieldParams (D c : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List Parameter)
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).bind fun T =>
-          (T.constructors.find? (·.name == c)).map fun con =>
-            (con.params (.ofLists qs ps hq hp)).map (·.usage)
+          (T.constructors.find? (·.name == c)).map fun con => con.params (.ofLists qs ps hq hp)
       else none
     else none
   | _ => none
 
 -- ADE: none.
-/-- The grades `p` of the fields of the constructor `c` of the declared type `D` at the instance of
-the qualities `qs` and of the grades `ps`, in the last entry of the signature that declares them,
-which the erasure of a constructor reads.
-RFC: `\mathsf{grades}_c` -/
-def Signature.fieldGrades (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
-    Option (List Grade) :=
-  sig.findSome? (Entry.fieldGrades D c qs ps)
+/-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
+declared type `D` at the instance of the qualities `qs` and of the grades `ps`, in the last entry of
+the signature that declares them, which the erasure of a constructor reads.
+RFC: `\mathsf{parameters}_c` -/
+def Signature.fieldParams (sig : Signature) (D c : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List Parameter) :=
+  sig.findSome? (Entry.fieldParams D c qs ps)
 
-/-- The parameters of the arguments of the destructor `d`, when the destructors have one. -/
+/-- The parameters of the arguments of the destructor `d` and the ownership of its result, when the
+destructors have one. -/
 def Destructors.arguments {k : Nat} : {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Name →
-    Option (List Parameter)
+    Option (Σ ps : List Parameter, ResultOwnership Grade ps.length)
   | _, [], .nil, _ => none
-  | _, d' :: _, .cons (ps := ps) _ _ _ _ _ ds, d => if d' = d then some ps else ds.arguments d
+  | _, d' :: _, .cons (ps := ps) _ _ _ _ ψ ds, d => if d' = d then some ⟨ps, ψ⟩ else ds.arguments d
 
 -- ADE: none.
-/-- The grades `p` of the arguments of the destructor `d` of the declared type `D` at the instance
-of the qualities `qs` and of the grades `ps`, when the entry declares them. -/
-def Entry.argumentGrades (D d : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List Grade)
+/-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
+declared type `D` at the instance of the qualities `qs` and of the grades `ps`, and the ownership `ψ`
+of its result, when the entry declares them. -/
+def Entry.argumentParams (D d : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (Σ ps : List Parameter, ResultOwnership Grade ps.length)
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).bind fun T =>
-          ((T.body (.ofLists qs ps hq hp)).arguments d).map fun ps' => ps'.map (·.usage)
+          (T.body (.ofLists qs ps hq hp)).arguments d
       else none
     else none
   | _ => none
 
 -- ADE: none.
-/-- The grades `p` of the arguments of the destructor `d` of the declared type `D` at the instance
-of the qualities `qs` and of the grades `ps`, in the last entry of the signature that declares
-them, which the erasure of an observation reads.
-RFC: `\mathsf{grades}_d` -/
-def Signature.argumentGrades (sig : Signature) (D d : Name) (qs : List Quality) (ps : List Grade) :
-    Option (List Grade) :=
-  sig.findSome? (Entry.argumentGrades D d qs ps)
+/-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
+declared type `D` at the instance of the qualities `qs` and of the grades `ps`, and the ownership `ψ`
+of its result, in the last entry of the signature that declares them, which the erasure of an
+observation reads.
+RFC: `\mathsf{parameters}_d` -/
+def Signature.argumentParams (sig : Signature) (D d : Name) (qs : List Quality) (ps : List Grade) :
+    Option (Σ ps : List Parameter, ResultOwnership Grade ps.length) :=
+  sig.findSome? (Entry.argumentParams D d qs ps)
 
 /-- The grade `p` of the destructor `d`, when the destructors have one. -/
 def Destructors.grade {k : Nat} : {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Name →
@@ -894,55 +904,57 @@ def Signature.resumedTypes (sig : Signature) (D : Name) (qs : List Quality) (ps 
   sig.findSome? (Entry.resumedTypes D qs ps)
 
 -- ADE: none.
-/-- The grades of the fields of each constructor of the block of the data type `D`, at the instance
-of the qualities `qs` and of the grades `ps`, in the order of the declaration, when the entry
-declares them. -/
-def Entry.caseFieldGrades (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (List Grade))
+/-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
+type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
+declaration, when the entry declares them. -/
+def Entry.caseFieldParams (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option (List (List Parameter))
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.cases.map fun x => (x.2.2.params (.ofLists qs ps hq hp)).map (·.usage)
+          decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)
       else none
     else none
   | _ => none
 
 -- ADE: none.
-/-- The grades of the fields of each constructor of the block of the data type `D`, at the instance
-of the qualities `qs` and of the grades `ps`, in the order of the declaration, which is that of the
-branches of a recursor, in the last entry of the signature that declares them, which the erasure of
-a recursor reads to give the variables of the fields their multiplicities.
-RFC: `\mathsf{grades}_{\bar u}` -/
-def Signature.caseFieldGrades (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
-    Option (List (List Grade)) :=
-  sig.findSome? (Entry.caseFieldGrades D qs ps)
+/-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
+type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
+declaration, which is that of the branches of a recursor, in the last entry of the signature that
+declares them, which the erasure of a recursor reads to give the variables of the fields their
+multiplicities and their coefficients of ownership.
+RFC: `\mathsf{parameters}_{\bar u}` -/
+def Signature.caseFieldParams (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
+    Option (List (List Parameter)) :=
+  sig.findSome? (Entry.caseFieldParams D qs ps)
 
 -- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,
-and the grades of its arguments, at the instance of the qualities `qs` and of the grades `ps`, in
-the order of the declaration, when the entry declares them. -/
+the parameters of its arguments and the ownership of its result, at the instance of the qualities
+`qs` and of the grades `ps`, in the order of the declaration, when the entry declares them. -/
 def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (Nat × List Grade))
+    Entry → Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length))
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).map fun _ =>
           decl.codataCases.map fun x =>
-            (x.1, (((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD []).map (·.usage))
+            (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD ⟨[], ⟨none, fun _ => none⟩⟩)
       else none
     else none
   | _ => none
 
 -- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,
-whose state the branch of the destructor binds, and the grades of its arguments, at the instance of
-the qualities `qs` and of the grades `ps`, in the order of the declaration, which is that of the
-branches of a corecursor, in the last entry of the signature that declares them, which the erasure
-of a corecursor reads to give the variables of the branches their multiplicities.
+whose state the branch of the destructor binds, the parameters of its arguments and the ownership of
+its result, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
+declaration, which is that of the branches of a corecursor, in the last entry of the signature that
+declares them, which the erasure of a corecursor reads to give the variables of the branches their
+multiplicities and their ownerships.
 RFC: `\mathsf{arguments}_{\bar g}` -/
 def Signature.destructorArguments (sig : Signature) (D : Name) (qs : List Quality)
-    (ps : List Grade) : Option (List (Nat × List Grade)) :=
+    (ps : List Grade) : Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length)) :=
   sig.findSome? (Entry.destructorArguments D qs ps)
 
 /-- The position of a destructor in the destructors, as a number, the first one at `0`. -/

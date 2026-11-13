@@ -56,8 +56,8 @@ inductive Heap.IsData (H : Heap) : Nat → Prop where
   | erased {ℓ : Nat} (h : H[ℓ]? = some .erased) : Heap.IsData H ℓ
   /-- A constructor whose fields hold no closure.
   RFC: `\mathsf{data}_\ell.c` -/
-  | ctor {ℓ i : Nat} {πs : List Multiplicity} {as : List Nat}
-      (h : H[ℓ]? = some (.ctor i πs as)) (hs : ∀ a ∈ as, Heap.IsData H a) : Heap.IsData H ℓ
+  | ctor {ℓ i : Nat} {πs ϱs : List Multiplicity} {as : List Nat}
+      (h : H[ℓ]? = some (.ctor i πs ϱs as)) (hs : ∀ a ∈ as, Heap.IsData H a) : Heap.IsData H ℓ
 
 /-! ## Demands -/
 
@@ -310,8 +310,8 @@ theorem recursor_inv {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n} 
 
 -- ADE: none.
 /-- An observation reads the variables of its term and of its arguments. -/
-theorem obs_inv {M : Target n} {i : Nat} {Ms : Targets n} :
-    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .obs M i Ms →
+theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c} {Ms : Targets n} :
+    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .obs M i ψ Ms →
       ∃ ν₁ ν₂, ν ≤ᶜ ν₁ +ᶜ ν₂ ∧ Target.Usage ν₁ M ∧ Targets.Usage ν₂ Ms
   | _, _, .obs hM hMs, h => by
     cases h
@@ -451,8 +451,8 @@ theorem Demand.values_concat (bs : List (Multiplicity × Nat × Demand))
 /-! ## Inversions of the Demands of the Values -/
 
 /-- The demand of a constructor is that of its fields. -/
-theorem Heap.ValueDemand.ctor_inv {H : Heap} {ℓ i : Nat} {πs : List Multiplicity} {as : List Nat}
-    {D : Demand} (hℓ : H[ℓ]? = some (.ctor i πs as)) :
+theorem Heap.ValueDemand.ctor_inv {H : Heap} {ℓ i : Nat} {πs ϱs : List Multiplicity}
+    {as : List Nat} {D : Demand} (hℓ : H[ℓ]? = some (.ctor i πs ϱs as)) :
     Heap.ValueDemand H ℓ D → Heap.PositionsDemand H πs as D
   | .erased h | .corec h _ _ _ => by
     rw [hℓ] at h
@@ -465,8 +465,8 @@ theorem Heap.ValueDemand.ctor_inv {H : Heap} {ℓ i : Nat} {πs : List Multiplic
 /-- The demand of a closure is that of its environment, for the reads of its branches, and that of
 its state. -/
 theorem Heap.ValueDemand.corec_inv {H : Heap} {ℓ n : Nat} {E : List Nat}
-    {Ps : TargetCorecBranches n} {πs : List Multiplicity} {as : List Nat} {D : Demand}
-    (hℓ : H[ℓ]? = some (.corec n E Ps πs as)) :
+    {Ps : TargetCorecBranches n} {πs ϱs : List Multiplicity} {as : List Nat} {D : Demand}
+    (hℓ : H[ℓ]? = some (.corec n E Ps πs ϱs as)) :
     Heap.ValueDemand H ℓ D → ∃ δ D₁ D₂, TargetCorecBranches.Usage δ Ps ∧
       Heap.EnvDemand H E δ D₁ ∧ Heap.PositionsDemand H πs as D₂ ∧ D = D₁ +ᶜ D₂
   | .erased h | .ctor h _ => by
@@ -480,14 +480,14 @@ theorem Heap.ValueDemand.corec_inv {H : Heap} {ℓ n : Nat} {E : List Nat}
 /-- The demand of a value that the pairs of a state pack is the sum of the demands of the entries,
 each at the multiplicity at which the pairs store it: the end of the pairs, without field, has none.
 -/
-theorem Unpack.demand {H : Heap} : {k x : Nat} → {πs : List Multiplicity} → {ss : List Nat} →
-    Unpack H k x πs ss → {D : Demand} → Heap.ValueDemand H x D →
+theorem Unpack.demand {H : Heap} : {k x : Nat} → {πs ϱs : List Multiplicity} → {ss : List Nat} →
+    Unpack H k x πs ϱs ss → {D : Demand} → Heap.ValueDemand H x D →
       ∃ Ds, Heap.ValueDemands H ss Ds ∧ D = Demand.positions πs Ds
-  | _, _, _, _, .zero h, _, hD => by
+  | _, _, _, _, _, .zero h, _, hD => by
     obtain ⟨Ds, hDs, rfl, -⟩ := (hD.ctor_inv h).inv
     cases hDs
     exact ⟨[], .nil, rfl⟩
-  | _, _, _, _, .pair (π := π) (π' := π') (πs := πs) h hs, _, hD => by
+  | _, _, _, _, _, .pair (π := π) (π' := π') (πs := πs) h hs, _, hD => by
     obtain ⟨Ds, hDs, rfl, -⟩ := (hD.ctor_inv h).inv
     obtain _ | ⟨hy, hDs⟩ := hDs
     obtain _ | ⟨hz, hDs⟩ := hDs
@@ -501,30 +501,33 @@ theorem Unpack.demand {H : Heap} : {k x : Nat} → {πs : List Multiplicity} →
 /-- The usage of the branches of a recursor gives that of each branch. -/
 theorem TargetBranches.Usage.get {n : Nat} {χ : MultiplicityVector n} :
     {Ns : TargetBranches n} → TargetBranches.Usage χ Ns → (i : Nat) → {a b : Nat} →
-      {πs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} → {ks : Fin b → Option Nat} →
-      {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, πs', ks, N⟩ →
+      {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} →
+      {ks : Fin b → Option Nat} →
+      {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       ∃ δ : MultiplicityVector n, Target.Usage (δ.extendBinders πs πs') N ∧
         χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ) ∧
         ∀ j, (ks j).isSome → πs' j ≠ .zero
-  | _, .nil, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hN hχ hk _, 0, _, _, _, _, _, _, h => by
+  | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
+  | _, .cons hN hχ hk _, 0, _, _, _, _, _, _, _, h => by
     cases h
     exact ⟨_, hN, hχ, hk⟩
-  | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
+  | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
 
 /-- The usage of the branches of a corecursor gives that of each branch. -/
 theorem TargetCorecBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :
     {Ps : TargetCorecBranches n} → TargetCorecBranches.Usage δ Ps → (i : Nat) →
-      {o : Resumption} → {b c : Nat} → {πs : Fin b → Multiplicity} →
-      {πs' : Fin c → Multiplicity} → {P : Target (n + (b + c))} →
-      Ps.get i = some (o, ⟨b, c, πs, πs', P⟩) →
+      {o : Resumption} → {b c : Nat} → {πs ϱs : Fin b → Multiplicity} →
+      {πs' ϱs' : Fin c → Multiplicity} → {ψ : ResultOwnership Multiplicity c} →
+      {P : Target (n + (b + c))} →
+      Ps.get i = some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, P⟩) →
       ∃ δᵢ : MultiplicityVector n, Target.Usage (δᵢ.extendBinders πs πs') P ∧ δ ≤ᶜ δᵢ ∧
         (o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ)
-  | _, .nil, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hP hδ hr _, 0, _, _, _, _, _, _, h => by
+  | _, .nil, _, _, _, _, _, _, _, _, _, _, h => nomatch h
+  | _, .cons hP hδ hr _, 0, _, _, _, _, _, _, _, _, _, h => by
     cases h
     exact ⟨_, hP, hδ, hr⟩
-  | _, .cons _ _ _ hPs, i + 1, _, _, _, _, _, _, h => TargetCorecBranches.Usage.get hPs i h
+  | _, .cons _ _ _ hPs, i + 1, _, _, _, _, _, _, _, _, _, h =>
+    TargetCorecBranches.Usage.get hPs i h
 
 /-! ## Binders -/
 
@@ -710,10 +713,10 @@ theorem Heap.ValueDemands.mem {H : Heap} :
     · exact hs.mem b hb
 
 /-- The unpacking of a state gives as many multiplicities as entries. -/
-theorem Unpack.length {H : Heap} : {k x : Nat} → {πs : List Multiplicity} → {ss : List Nat} →
-    Unpack H k x πs ss → πs.length = ss.length
-  | _, _, _, _, .zero _ => rfl
-  | _, _, _, _, .pair _ hs => by simp [hs.length]
+theorem Unpack.length {H : Heap} : {k x : Nat} → {πs ϱs : List Multiplicity} → {ss : List Nat} →
+    Unpack H k x πs ϱs ss → πs.length = ss.length
+  | _, _, _, _, _, .zero _ => rfl
+  | _, _, _, _, _, .pair _ hs => by simp [hs.length]
 
 /-- The cells that a binder allocates hold its addresses, at its multiplicities. -/
 theorem Heap.bind_getElem? (H : Heap) : (πs : List Multiplicity) → (as : List Nat) →
@@ -1150,7 +1153,7 @@ theorem Eval.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ
     obtain ⟨D', hD', hE'⟩ := hE.le hle
     obtain ⟨D₁, Dδ, rfl, hE₁, hEδ⟩ := hE'.split
     obtain ⟨Ds, hvs, hDs⟩ := EvalAll.conserve hP hϖ hs hMs hE₁
-    have hH : H₁.Extends (H₁ ++ [Value.corec _ E Ps Ms.multiplicities as]) :=
+    have hH : H₁.Extends (H₁ ++ [Value.corec _ E Ps Ms.multiplicities Ms.requirements as]) :=
       List.prefix_append _ _
     refine ⟨Dδ +ᶜ Ds, .corec List.getElem?_concat_length hPs ((hEδ.mono hs.extends).mono hH)
       (hvs.mono hH), ?_⟩
@@ -1230,7 +1233,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
       ϖ ·ᶜ (Dχ +ᶜ ρ ·ᶜ Da) +ᶜ Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ D :=
   match h with
   | .iota (H₂ := H₂) (πs₀ := πs₀) (as := as) (a' := a') (b := b) (πs := πs) (πs' := πs')
-      (ks := ks) (N := N) (rs := rs) (R₁ := R₁) (R₂ := R₂) hca hN hla hπ hres hv => by
+      (ks := ks) (N := N) (rs := rs) (R₁ := R₁) (R₂ := R₂) hca hN hla hπ _ hres hv => by
     obtain ⟨Ds, hDs, rfl, hl₀⟩ := (ha.ctor_inv hca).inv
     obtain ⟨δ, hNu, hχ, hk⟩ := hNs.get _ hN
     obtain ⟨D', hD', hE'⟩ := hE.le hχ
@@ -1372,15 +1375,16 @@ termination_by structural h
 /-- The invariant of an observation: the demand of the closure and of the arguments pay the reads
 of the run and the demand of its value. -/
 theorem EvalObs.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
-    {H H' : Heap} {a i : Nat} {πb : List Multiplicity} {bs : List Nat} {v : Nat} {R : List Nat}
-    (h : EvalObs P ϖ H a i πb bs v H' R) {Da Db : Demand} (ha : H.ValueDemand a Da)
+    {H H' : Heap} {a i c₀ : Nat} {ψ₀ : ResultOwnership Multiplicity c₀} {πb ϱb : List Multiplicity}
+    {bs : List Nat} {v : Nat} {R : List Nat}
+    (h : EvalObs P ϖ H a i ψ₀ πb ϱb bs v H' R) {Da Db : Demand} (ha : H.ValueDemand a Da)
     (hb : H.PositionsDemand πb bs Db) :
     ∃ D, H'.ValueDemand v D ∧
       ϖ ·ᶜ (Da +ᶜ Db) +ᶜ Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ D :=
   match h with
   | .beta (H₂ := H₂) (w := w) (n := n) (E := E) (Ps := Ps) (πs₁ := πs₁) (ss := ss) (o := o)
-      (b := b) (c := c) (πs := πs) (πs' := πs') (N := N) (R := R) hclo hget hlb hlc hπ₁ hπ₂ hw
-      hr => by
+      (b := b) (c := c) (πs := πs) (πs' := πs') (N := N) (R := R) hclo hget hlb hlc hπ₁ hπ₂ _ _ _
+      hw hr => by
     obtain ⟨δ, Dδ, Dss, hPs, hEδ, hss, rfl⟩ := ha.corec_inv hclo
     obtain ⟨δᵢ, hN, hδ, hres⟩ := hPs.get i hget
     obtain ⟨Dsl, hDsl, rfl, hlss⟩ := hss.inv
@@ -1424,7 +1428,7 @@ theorem EvalObs.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
       obtain ⟨Dw, hvw, hDw⟩ := key Di 𝟘ᵛ hEi (by rwa [Demand.add_zero])
       rw [Demand.add_zero] at hDw
       exact ⟨Dw, hvw, by rw [Demand.add_assoc] at hDw; rwa [Demand.add_assoc]⟩
-    | done _ hwv hπd =>
+    | done _ hwv hπd _ =>
       obtain ⟨Di, hDi, hEi⟩ := hEδ.le hδ
       obtain ⟨Dw, hvw, hDw⟩ := key Di 𝟘ᵛ hEi (by rwa [Demand.add_zero])
       obtain ⟨Ds, hDs, rfl, -⟩ := (hvw.ctor_inv hwv).inv

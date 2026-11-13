@@ -235,7 +235,8 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (as' : InstanceArgs 0 [] Δ'),
           Computesι sig ι t (.ctor D qs' ls' ps' as' con.name ts.terms)) ∧
         sig.constructorCase D con.name = some i ∧
-        H[a]? = some (.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run)) bs) ∧
+        H[a]? = some (.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run))
+          ((con.params (.ofLists qs ps hq hp)).map (·.requirement.run)) bs) ∧
         EqSubst sig ι (Context.empty.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
           ts.toSubst ts.toSubst ∧
         RunsAsArgs sig ι P H (Parameter.grades (con.params (.ofLists qs ps hq hp))) ts bs
@@ -300,7 +301,8 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (hts : EqSubst sig ι (Context.empty.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
       ts.toSubst ts.toSubst)
     {i : Nat} (hi : sig.constructorCase D con.name = some i) {H : Heap} {a : Nat} {bs : List Nat}
-    (ha : H[a]? = some (.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run)) bs))
+    (ha : H[a]? = some (.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run))
+      ((con.params (.ofLists qs ps hq hp)).map (·.requirement.run)) bs))
     (hbs : RunsAsArgs sig ι P H (Parameter.grades (con.params (.ofLists qs ps hq hp))) ts bs
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
     RunsAs sig ι P H (.ctor D qs ls ps as con.name ts.terms) a (.inst D qs ls ps as) := by
@@ -477,20 +479,21 @@ theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ct
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
     RunValid sig ι P hΓ ctx γ (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as) := by
   intro w σ H E V hσ hEV hE
-  have hfg := hd.fieldGrades h hc hq hp
+  have hfg := hd.fieldParams h hc hq hp
   obtain ⟨hdecl, hT, rfl⟩ := h
   obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem hdecl hT hc
   have he : (Term.ctor T.name qs ls ps as con.name ts.terms).erase sig Mode.oneOne.erased hΓ =
-      .ctor i (ts.terms.erase sig Mode.oneOne.erased hΓ
-        ((con.params (.ofLists qs ps hq hp)).map (·.usage))) := by
+      .ctor i (ts.terms.erase sig Mode.oneOne.erased hΓ (con.params (.ofLists qs ps hq hp))) := by
     rw [Term.erase, hi, hfg]
     rfl
   obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hrun w σ H E V hσ hEV hE
   have hπ := Args.multiplicities_erase sig Mode.oneOne.erased hΓ ts
+  have hϱ := Args.requirements_erase sig Mode.oneOne.erased hΓ ts
   have hH'' : H'.Extends
-      (H' ++ [.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run)) bs]) :=
+      (H' ++ [.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run))
+        ((con.params (.ofLists qs ps hq hp)).map (·.requirement.run)) bs]) :=
     List.prefix_append _ _
-  refine ⟨H'.length, _, R, he ▸ hπ ▸ .ctor hevs, hH'.trans hH'', ?_⟩
+  refine ⟨H'.length, _, R, he ▸ hπ ▸ hϱ ▸ .ctor hevs, hH'.trans hH'', ?_⟩
   have hts' := hts.2 σ σ hσ
   rw [Constructor.fieldsAt_subst] at hts' hruns
   have hc' := RunsAs.ctor hd ⟨hdecl, hT, rfl⟩ hv hc hq hl hp hadm (has.2 σ σ hσ) hts' hi

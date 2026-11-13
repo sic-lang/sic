@@ -89,14 +89,16 @@ def RunFieldsRel.cons (F : RunRel) (G : Term 0 [] → RunFieldsRel) : RunFieldsR
 -- ADE: none.
 /-- `(®_c)`: the relation of run time of the canonical terms of the instance `I` of the data type
 `T`, named `D`, which relates a constructor of `D` to a constructor of the target language of its
-case, whose fields are at the multiplicities at run time of their grades at the instance, and whose
-fields the relation `S c` of the fields of the constructor `c` relates.
+case, whose fields are at the multiplicities at run time of their grades and at the requirements at
+run time of their requirements at the instance, and whose fields the relation `S c` of the fields
+of the constructor `c` relates.
 RFC: `\circledR_c` -/
 def DataType.runCtorRel {j g k : Nat} {Δ : Scope} (sig : Signature) (I : Instance j g) (D : Name)
     (T : DataType j g k Δ) (S : Constructor j g k Δ → RunFieldsRel) : RunRel :=
   fun H v a => ∃ c ∈ T.constructors, ∃ i ts as, v.IsCtor D c.name ts ∧
     sig.constructorCase D c.name = some i ∧
-      H[a]? = some (.ctor i ((c.params I).map (·.usage.run)) as) ∧ S c H ts as
+      H[a]? = some (.ctor i ((c.params I).map (·.usage.run)) ((c.params I).map (·.requirement.run))
+        as) ∧ S c H ts as
 
 -- ADE: none.
 /-- `(®_μ)`: the relations of run time of the canonical terms of the instances of the data types
@@ -132,18 +134,19 @@ def CodataType.runBlockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g
 
 -- ADE: none.
 /-- `(®_x̄)`: the closed abstraction `x̄. B` for the destructor of the case `i`, whose arguments
-`ps` have the relation of run time `SΘ`, and the value at the address `a`: in each heap `H'` that
-extends `H`, at arguments `t̄` that `SΘ` relates to addresses `b̄`, the observation of the value at
-`a` by the destructor, at each weight `ϖ`, applied to `b̄` at the multiplicities at run time of the
-grades of the arguments, gives a value, reading some cells, that the relation `F t̄` of the result
-type relates to `B[t̄ / x̄]`.
+`ps` have the relation of run time `SΘ` and whose result has the ownership `ψ`, and the value at the
+address `a`: in each heap `H'` that extends `H`, at arguments `t̄` that `SΘ` relates to addresses
+`b̄`, the observation of the value at `a` by the destructor, at each weight `ϖ`, applied to `b̄` at
+the multiplicities and the requirements at run time of the grades and of the requirements of the
+arguments, with the ownership at run time of the result, gives a value, reading some cells, that
+the relation `F t̄` of the result type relates to `B[t̄ / x̄]`.
 RFC: `\circledR_{\bar x}` -/
-def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat) (SΘ : RunFieldsRel)
-    (F : Terms 0 [] → RunRel) (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) :
-    Prop :=
+def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat)
+    (ψ : ResultOwnership Grade ps.length) (SΘ : RunFieldsRel) (F : Terms 0 [] → RunRel)
+    (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) : Prop :=
   ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), SΘ H' ts.terms bs →
-    ∀ ϖ, ∃ w H'' R, EvalObs P ϖ H' a i (ps.map (·.usage.run)) bs w H'' R ∧
-      F ts.terms H'' (f.subst ts.toSubst) w
+    ∀ ϖ, ∃ w H'' R, EvalObs P ϖ H' a i (ψ.map Grade.run) (ps.map (·.usage.run))
+      (ps.map (·.requirement.run)) bs w H'' R ∧ F ts.terms H'' (f.subst ts.toSubst) w
 
 /-! ## Graph of the Relations of Run Time -/
 
@@ -298,7 +301,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       (hrs : rs 0 = none) :
       RunDesRel sig ι P n below D rs (.cons (d := d) p q Θ B ψ ds) @θ fun H o a =>
         AbstractionRel SΘ F (o d ps) (o d ps) ∧
-          (p ∉ Mode.oneOne.erased → RunAbstractionRel P i RΘ R (o d ps) H a) ∧ G (o d ps) H o a
+          (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ RΘ R (o d ps) H a) ∧ G (o d ps) H o a
   /-- `(rt_d̄rec)`: a recursive destructor `d : (Θ ⊢ B ◀ ψ) ▶ p`, whose arguments `Θ[θ]` are a
   telescope of run time in `U_n` with the relation `RΘ`, whose results are related by the relation
   `R` that `rs` gives it, by `(®_x̄)` at the case `i` of `d`, when `p` is used at run time, and the destructors after it, the same, with
@@ -312,7 +315,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ) (G : RunObsRel)
       (hG : ∀ f, RunDesRel sig ι P n below D (fun i => rs (i + 1)) ds (Subst.snoc θ f) G) :
       RunDesRel sig ι P n below D rs (.cons (d := d) p q Θ B ψ ds) @θ fun H o a =>
-        (p ∉ Mode.oneOne.erased → RunAbstractionRel P i RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
+        (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
 
 -- ADE: none.
 /--

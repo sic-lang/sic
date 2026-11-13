@@ -98,11 +98,11 @@ theorem RunFieldsRel.cons_levelEquiv {F F' : RunRel} {G G' : Term 0 [] → RunFi
 /-- `(®_x̄)` relates the value at an address to an abstraction whose levels change for equal ones,
 when the relations of the result types relate the terms whose levels change for equal ones. -/
 theorem RunAbstractionRel.levelEquiv {P : Program} {ps : List Parameter} {i : Nat}
-    {SΘ : RunFieldsRel} {F : Terms 0 [] → RunRel}
+    {ψ : ResultOwnership Grade ps.length} {SΘ : RunFieldsRel} {F : Terms 0 [] → RunRel}
     (hF : ∀ H (ts : Args 0 [] ps) bs, SΘ H ts.terms bs → (F ts.terms).LevelInvariant)
     {f f' : Term 0 (Scope.extend [] ps.length)} {H : Heap} {a : Nat}
-    (h : RunAbstractionRel P i SΘ F f H a) (hf : Term.LevelEquiv f f') :
-    RunAbstractionRel P i SΘ F f' H a :=
+    (h : RunAbstractionRel P i ψ SΘ F f H a) (hf : Term.LevelEquiv f f') :
+    RunAbstractionRel P i ψ SΘ F f' H a :=
   fun H₁ hH ts bs hts ϖ =>
     have ⟨w, H₂, R, he, hr⟩ := h H₁ hH ts bs hts ϖ
     ⟨w, H₂, R, he, hF H₁ ts bs hts hr (hf.subst (Subst.LevelEquiv.refl _))⟩
@@ -215,7 +215,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
           (rs₁ i) (rs₂ i)) →
         ∀ H o o' a, S₁ H o a → (∀ d ps, Term.LevelEquiv (o d ps) (o' d ps)) → S₂ H o' a
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ _ _ _ => trivial
-  | .cons (d := d) (ps := ps) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hΘ hRΘ F R hB hF hR _ hG hrs, _, _,
+  | .cons (d := d) (ps := ps) (ψ := ψ) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hΘ hRΘ F R hB hF hR _ hG hrs, _, _,
       h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
@@ -241,7 +241,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
         fun H ts bs hts =>
           RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (f := f)
+      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (f := f)
         (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := hfields H ts bs hts
           have ⟨_, hv⟩ := hB ts hts'

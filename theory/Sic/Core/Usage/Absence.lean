@@ -32,7 +32,7 @@ theorem Target.occurs_cast {n n' : Nat} (h : n = n') (M : Target n) (y : Fin n')
 of a branch, in the erasure of the term of this branch. -/
 theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} (r : Grade) : (us : Branches k Γ) →
-      (es : List (List Nat)) → (fs : List (List Grade)) → (us.erase sig S hΓ r es fs).Occurs x →
+      (es : List (List Nat)) → (fs : List (List Parameter)) → (us.erase sig S hΓ r es fs).Occurs x →
         ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
           (u.erase sig S ((hΓ.extend a).extend b)).Occurs
             ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
@@ -73,7 +73,8 @@ branch. -/
 theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (pss : List (List Grade × List Grade)) → (vs.erase sig S hΓ ps ks pss).Occurs x →
+      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length)) →
+      (vs.erase sig S hΓ ps ks pss).Occurs x →
         ∃ i b c v p, vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
           (v.erase sig S ((hΓ.extend b).extend c)).Occurs
             ((x.addNat (b + c)).cast (Scope.length_extend_extend Γ b c).symm)
@@ -210,7 +211,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
   | .const .., _, ho => nomatch ho
   | .sort, _, ho => nomatch ho
   | .ctor h hc hq hp hts, hx, ho => by
-    simp only [Term.erase, hd.fieldGrades h hc hq hp, Option.getD_some] at ho
+    simp only [Term.erase, hd.fieldParams h hc hq hp, Option.getD_some] at ho
     split at ho
     · cases ho with
       | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
@@ -243,7 +244,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
   | .obs (γ := γ₁) (δ := δ) h hq hp hpos ht hbs _, hx, ho => by
     have hx' : γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add] using hx
-    simp only [Term.erase, hd.argumentGrades h hq hp hpos, Option.getD_some] at ho
+    simp only [Term.erase, hd.argumentParams h hq hp hpos, Option.getD_some] at ho
     split at ho
     · cases ho with
       | obs ho => exact Usage.absent hd hS hΓ ht (hS.add _ _ hx') ho
@@ -293,17 +294,18 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
 
 -- ADE: none.
 /-- A variable whose grade is in `S` does not occur in the erasure by `S` of the arguments of a
-telescope checked in a mode `m` whose uses `S` does not erase, each at the grade of its entry. -/
+telescope checked in a mode `m` whose uses `S` does not erase, each at the parameter of its
+entry. -/
 theorem UsageArgs.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
     {m : Mode} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
     (hΓ : Γ.FirstOrder) {x : Fin Γ.length} {ps : List Parameter} {γ : GradeVector Γ.length}
     {ts : Args k Γ ps} :
-    UsageArgs sig γ m ts → γ x ∈ S → ¬ (ts.terms.erase sig S hΓ (ps.map (·.usage))).Occurs x
+    UsageArgs sig γ m ts → γ x ∈ S → ¬ (ts.terms.erase sig S hΓ ps).Occurs x
   | .nil, _, ho => nomatch ho
   | .cons (p := p) (γ := γ₁) (δ := δ) ht hts, hx, ho => by
     have hx' : p.usage * γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add, GradeVector.smul] using hx
-    simp only [Args.terms, List.map_cons, Terms.erase] at ho
+    simp only [Args.terms, Terms.erase] at ho
     cases ho with
     | head ho =>
       by_cases hp : p.usage ∈ S
@@ -319,13 +321,14 @@ theorem UsageArgs.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : S
 -- ADE: none.
 /-- A variable whose grade, times `r`, is in `S` does not occur in the erasure by `S` of the
 arguments of a telescope checked in the mode `m ⊙ r`, where `S` does not erase the uses of the mode
-`m`, each at the grade of its entry times `r`: the state of a corecursor. -/
+`m`, each at the parameter of its entry whose grade is multiplied by `r`: the state of a
+corecursor. -/
 theorem UsageArgs.absent_mul {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
     {m m' : Mode} {S : Set Grade} [DecidablePred (· ∈ S)] (hS : ErasesUncounted m S)
     (hΓ : Γ.FirstOrder) {x : Fin Γ.length} {r : Grade} (hm : m ⊙ r = m') {ps : List Parameter}
     {γ : GradeVector Γ.length} {ts : Args k Γ ps} :
     UsageArgs sig γ m' ts → r * γ x ∈ S →
-      ¬ (ts.terms.erase sig S hΓ (ps.map (r * ·.usage))).Occurs x
+      ¬ (ts.terms.erase sig S hΓ (ps.map fun p => ⟨r * p.usage, p.requirement⟩)).Occurs x
   | .nil, _, ho => nomatch ho
   | .cons (p := p) (γ := γ₁) (δ := δ) ht hts, hx, ho => by
     have hx' : r * (p.usage * γ₁ x + δ x) ∈ S := by

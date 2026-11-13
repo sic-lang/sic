@@ -64,15 +64,15 @@ inductive Heap.ValueDemand (H : Heap) : Nat → Demand → Prop where
   | erased {ℓ : Nat} (h : H[ℓ]? = some .erased) : Heap.ValueDemand H ℓ 𝟘ᵛ
   /-- A constructor reads the cells as its fields allow, each as many times as its multiplicity.
   RFC: `\mathsf{demand}_\ell.c` -/
-  | ctor {ℓ i : Nat} {πs : List Multiplicity} {as : List Nat} {D : Demand}
-      (h : H[ℓ]? = some (.ctor i πs as)) (hs : Heap.PositionsDemand H πs as D) :
+  | ctor {ℓ i : Nat} {πs ϱs : List Multiplicity} {as : List Nat} {D : Demand}
+      (h : H[ℓ]? = some (.ctor i πs ϱs as)) (hs : Heap.PositionsDemand H πs as D) :
       Heap.ValueDemand H ℓ D
   /-- A closure reads the cells as its branches allow, which read the variables of its scope as
   `δ` allows, and as its state allows, each entry as many times as its multiplicity.
   RFC: `\mathsf{demand}_\ell.\mathsf{corec}` -/
-  | corec {ℓ n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {πs : List Multiplicity}
+  | corec {ℓ n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {πs ϱs : List Multiplicity}
       {as : List Nat} {δ : MultiplicityVector n} {D₁ D₂ : Demand}
-      (h : H[ℓ]? = some (.corec n E Ps πs as)) (hPs : TargetCorecBranches.Usage δ Ps)
+      (h : H[ℓ]? = some (.corec n E Ps πs ϱs as)) (hPs : TargetCorecBranches.Usage δ Ps)
       (hE : Heap.EnvDemand H E δ D₁) (hs : Heap.PositionsDemand H πs as D₂) :
       Heap.ValueDemand H ℓ (D₁ +ᶜ D₂)
 

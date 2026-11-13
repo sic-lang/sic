@@ -68,16 +68,18 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
     rw [States.get_substLevels_elim ls' Ss _ [] fun ps => ps.map _]
     simp only [States.get_substLevels_eq]
     have h : ∀ j, ((Ss.get j).map fun x => (⟨x.1, x.2.1, x.2.2.substLevels ls'⟩ :
-        Σ n ps, Telescope k' (Γ.extend n) ps)).elim [] (fun x => x.2.1.map (r * ·.usage))
-        = (Ss.get j).elim [] fun x => x.2.1.map (r * ·.usage) := fun j => by
-      cases Ss.get j <;> rfl
+        Σ n ps, Telescope k' (Γ.extend n) ps)).elim []
+          (fun x => x.2.1.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter))
+        = (Ss.get j).elim [] fun x => x.2.1.map fun p => ⟨r * p.usage, p.requirement⟩ :=
+      fun j => by cases Ss.get j <;> rfl
     simp only [h]
 
 -- ADE: none.
 /-- Fields instantiated at other levels have the same erasure. -/
 theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    (ts : Terms k Γ) → (ps : List Grade) → (ts.substLevels ls').erase sig S hΓ ps = ts.erase sig S hΓ ps
+    (ts : Terms k Γ) → (ps : List Parameter) →
+      (ts.substLevels ls').erase sig S hΓ ps = ts.erase sig S hΓ ps
   | .nil, _ => rfl
   | .cons _ ts, [] => by
     simp only [Terms.substLevels, Terms.erase, Terms.erase_substLevels sig S ls' hΓ ts]
@@ -89,7 +91,7 @@ theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred
 /-- Branches of a recursor instantiated at other levels have the same erasure. -/
 theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) :
-    (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Grade)) →
+    (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Parameter)) →
       (us.substLevels ls').erase sig S hΓ r es fs = us.erase sig S hΓ r es fs
   | .nil, _, _ => rfl
   | .cons a b _ u us, es, fs => by
@@ -102,7 +104,7 @@ theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidableP
 theorem CorecBranches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (pss : List (List Grade × List Grade)) →
+      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length)) →
       (vs.substLevels ls').erase sig S hΓ ps ks pss = vs.erase sig S hΓ ps ks pss
   | .nil, _, _, _ => rfl
   | .cons 0 b c v vs, _ :: ps, ks, pss => by

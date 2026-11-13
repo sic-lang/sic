@@ -36,8 +36,9 @@ theorem Heap.Extends.getElem? {H H' : Heap} {a : Nat} {v : Value} (h : H.Extends
 
 /-- The resumption of a value extends the heap. -/
 theorem EvalResume.extends {H H' : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
-    {o : Resumption} {w v : Nat} : EvalResume H n E Ps o w v H' → H.Extends H'
-  | .none | .done _ _ _ => List.prefix_refl _
+    {o : Resumption} {c : Nat} {ψ : ResultOwnership Multiplicity c} {w v : Nat} :
+    EvalResume H n E Ps o ψ w v H' → H.Extends H'
+  | .none | .done _ _ _ _ => List.prefix_refl _
   | .next _ _ | .erased _ => List.prefix_append _ _
 
 mutual
@@ -65,7 +66,7 @@ theorem EvalAll.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap
 theorem EvalRec.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
     {ρ : Multiplicity} {Ns : TargetBranches n} {a v : Nat} {R : List Nat} :
     EvalRec P ϖ H E ρ Ns a v H' R → H.Extends H'
-  | .iota _ _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
+  | .iota _ _ _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
 
 /-- The evaluation of the recursive results of a branch extends the heap. -/
 theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
@@ -77,10 +78,10 @@ theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : 
   | .recursor _ h hs => h.extends.trans hs.extends
 
 /-- The observation of a value extends the heap. -/
-theorem EvalObs.extends {P : Program} {ϖ : Multiplicity} {H H' : Heap} {a i : Nat}
-    {πs : List Multiplicity} {bs : List Nat} {v : Nat} {R : List Nat} :
-    EvalObs P ϖ H a i πs bs v H' R → H.Extends H'
-  | .beta _ _ _ _ _ _ hw hr => (List.prefix_append _ _).trans (hw.extends.trans hr.extends)
+theorem EvalObs.extends {P : Program} {ϖ : Multiplicity} {H H' : Heap} {a i c : Nat}
+    {ψ : ResultOwnership Multiplicity c} {πs ϱs : List Multiplicity} {bs : List Nat} {v : Nat}
+    {R : List Nat} : EvalObs P ϖ H a i ψ πs ϱs bs v H' R → H.Extends H'
+  | .beta _ _ _ _ _ _ _ _ _ hw hr => (List.prefix_append _ _).trans (hw.extends.trans hr.extends)
 
 end
 

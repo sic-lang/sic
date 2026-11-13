@@ -8,7 +8,7 @@ import Sic.Core.Syntax.Terms
 
 Properties of the signatures of annex 08 of RFC 36: the names of the type declarations, the entries,
 the types, the constructors and the destructors of a signature whose names are distinct are unique,
-and so are the grades of the fields of a constructor, of the arguments of a destructor and the
+and so are the parameters of the fields of a constructor, of the arguments of a destructor and the
 position of a declared type.
 
 ADE have no signatures: their definitions are in their contexts.
@@ -396,18 +396,18 @@ theorem Signature.Distinct.codataCases_nodup {sig : Signature} (hd : sig.Distinc
   TypeDeclaration.casesFrom_nodup (nβ := id) (TypeDeclaration.codataTypes_nodup (hd.nodup h))
     fun _ hT => by rw [List.map_id]; exact hd.destructors_nodup ⟨h, hT, rfl⟩
 
-/-- A type declaration gives the grades of the fields of a constructor of one of its types, whose
+/-- A type declaration gives the parameters of the fields of a constructor of one of its types, whose
 types and constructors have distinct names, at the instance. -/
-theorem Entry.fieldGrades_of_mem {decl : TypeDeclaration}
+theorem Entry.fieldParams_of_mem {decl : TypeDeclaration}
     (hn : (decl.dataTypes.map (·.name)).Nodup)
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
     (hc : (T.constructors.map (·.name)).Nodup)
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope} (hcon : con ∈ T.constructors)
     {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades) :
-    Entry.fieldGrades T.name con.name qs ps (.typeDeclaration decl) =
-      some ((con.params (.ofLists qs ps hq hp)).map (·.usage)) := by
-  simp only [Entry.fieldGrades]
+    Entry.fieldParams T.name con.name qs ps (.typeDeclaration decl) =
+      some (con.params (.ofLists qs ps hq hp)) := by
+  simp only [Entry.fieldParams]
   split
   · try split
     all_goals first
@@ -416,14 +416,14 @@ theorem Entry.fieldGrades_of_mem {decl : TypeDeclaration}
           Option.map_some]
   · contradiction
 
-/-- An entry that does not introduce the name `D` gives the grades of the fields of no constructor
+/-- An entry that does not introduce the name `D` gives the parameters of the fields of no constructor
 of `D`. -/
-theorem Entry.fieldGrades_of_not_mem {D c : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.fieldGrades D c qs ps e = none
+theorem Entry.fieldParams_of_not_mem {D c : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.fieldParams D c qs ps e = none
   | .typeDeclaration decl, hD => by
     have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
       hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.fieldGrades]
+    simp only [Entry.fieldParams]
     split
     · try split
       all_goals first
@@ -433,25 +433,25 @@ theorem Entry.fieldGrades_of_not_mem {D c : Name} {qs : List Quality} {ps : List
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
-/-- In a signature whose names are distinct, the grades of the fields of a constructor of a declared
+/-- In a signature whose names are distinct, the parameters of the fields of a constructor of a declared
 type are those of its telescope at the instance. -/
-theorem Signature.Distinct.fieldGrades : {sig : Signature} → sig.Distinct → {D : Name} →
+theorem Signature.Distinct.fieldParams : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
     con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
-    sig.fieldGrades D con.name qs ps = some ((con.params (.ofLists qs ps hq hp)).map (·.usage))
+    sig.fieldParams D con.name qs ps = some (con.params (.ofLists qs ps hq hp))
   | [], _, _, _, _, h, _, _, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, con, hcon, qs, ps, hq, hp => by
-    unfold Signature.fieldGrades
+    unfold Signature.fieldParams
     rcases List.mem_cons.1 he with rfl | he'
-    · have hg := Entry.fieldGrades_of_mem (TypeDeclaration.dataTypes_nodup hn) hT (hc.1 T hT) hcon
+    · have hg := Entry.fieldParams_of_mem (TypeDeclaration.dataTypes_nodup hn) hT (hc.1 T hT) hcon
         hq hp
       rw [hD] at hg
       rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldGrades_of_not_mem hDe]; rfl)]
-      exact hd.fieldGrades ⟨he', hT, hD⟩ hcon hq hp
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldParams_of_not_mem hDe]; rfl)]
+      exact hd.fieldParams ⟨he', hT, hD⟩ hcon hq hp
 
 /-- An entry that does not introduce the name `D` gives the recursive fields of no data type named
 `D`. -/
@@ -495,14 +495,14 @@ theorem Signature.Distinct.recursiveFields : {sig : Signature} → sig.Distinct 
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveFields_of_not_mem hDe]; rfl)]
       exact hd.recursiveFields ⟨he', hT, hD⟩ hq hp
 
-/-- An entry that does not introduce the name `D` gives the grades of the fields of the cases of no
+/-- An entry that does not introduce the name `D` gives the parameters of the fields of the cases of no
 data type named `D`. -/
-theorem Entry.caseFieldGrades_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.caseFieldGrades D qs ps e = none
+theorem Entry.caseFieldParams_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.caseFieldParams D qs ps e = none
   | .typeDeclaration decl, hD => by
     have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
       hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.caseFieldGrades]
+    simp only [Entry.caseFieldParams]
     split
     · try split
       all_goals first
@@ -513,26 +513,26 @@ theorem Entry.caseFieldGrades_of_not_mem {D : Name} {qs : List Quality} {ps : Li
   | .constantDeclaration _, _ => rfl
 
 -- ADE: none.
-/-- In a signature whose names are distinct, the grades of the fields of the constructors of the
+/-- In a signature whose names are distinct, the parameters of the fields of the constructors of the
 cases of the block of a data type are those of their telescopes at the instance. -/
-theorem Signature.Distinct.caseFieldGrades : {sig : Signature} → sig.Distinct → {D : Name} →
+theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
-    sig.caseFieldGrades D qs ps = some (decl.cases.map fun x =>
-      (x.2.2.params (.ofLists qs ps hq hp)).map (·.usage))
+    sig.caseFieldParams D qs ps = some (decl.cases.map fun x =>
+      x.2.2.params (.ofLists qs ps hq hp))
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
-    unfold Signature.caseFieldGrades
+    unfold Signature.caseFieldParams
     rcases List.mem_cons.1 he with rfl | he'
-    · have hs : Entry.caseFieldGrades D qs ps (.typeDeclaration decl) =
-          some (decl.cases.map fun x => (x.2.2.params (.ofLists qs ps hq hp)).map (·.usage)) := by
-        simp only [Entry.caseFieldGrades, hq, hp, ↓reduceDIte, ← hD,
+    · have hs : Entry.caseFieldParams D qs ps (.typeDeclaration decl) =
+          some (decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)) := by
+        simp only [Entry.caseFieldParams, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.caseFieldGrades_of_not_mem hDe]; rfl)]
-      exact hd.caseFieldGrades ⟨he', hT, hD⟩ hq hp
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.caseFieldParams_of_not_mem hDe]; rfl)]
+      exact hd.caseFieldParams ⟨he', hT, hD⟩ hq hp
 
 /-- An entry that does not introduce the name `D` gives the arguments of the destructors of no
 codata type named `D`. -/
@@ -553,22 +553,22 @@ theorem Entry.destructorArguments_of_not_mem {D : Name} {qs : List Quality} {ps 
 
 -- ADE: none.
 /-- In a signature whose names are distinct, the arguments of the destructors of the cases of the
-block of a codata type are the positions of their types and the grades of their arguments at the
-instance. -/
+block of a codata type are the positions of their types, the parameters of their arguments and the
+ownerships of their results at the instance. -/
 theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
     sig.destructorArguments D qs ps = some (decl.codataCases.map fun x =>
-      (x.1, (((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD []).map (·.usage)))
+      (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD ⟨[], ⟨none, fun _ => none⟩⟩))
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
     unfold Signature.destructorArguments
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.destructorArguments D qs ps (.typeDeclaration decl) =
           some (decl.codataCases.map fun x =>
-            (x.1, (((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD []).map
-              (·.usage))) := by
+            (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD
+              ⟨[], ⟨none, fun _ => none⟩⟩)) := by
         simp only [Entry.destructorArguments, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
@@ -586,44 +586,44 @@ theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q : Grade} {ps : List Parame
   | _, _, _, _, _, _, _, .there h => List.mem_cons_of_mem _ h.mem
 
 /-- Destructors with distinct names give the destructor at a position the parameters of its
-arguments. -/
+arguments and the ownership of its result. -/
 theorem Destructors.Pos.arguments {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
       {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
-        ds.arguments d = some ps
+        ds.arguments d = some ⟨ps, ψ⟩
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.arguments]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
     have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
     simp only [Destructors.arguments, hne, ↓reduceIte]
     exact h.arguments (List.nodup_cons.1 hn).2
 
-/-- A type declaration gives the grades of the arguments of a destructor of one of its codata types,
+/-- A type declaration gives the parameters of the arguments of a destructor of one of its codata types,
 whose types and destructors have distinct names, at the instance. -/
-theorem Entry.argumentGrades_of_mem {decl : TypeDeclaration}
+theorem Entry.argumentParams_of_mem {decl : TypeDeclaration}
     (hn : (decl.codataTypes.map (·.name)).Nodup)
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes)
     (hc : T.destructors.Nodup) {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades) {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) :
-    Entry.argumentGrades T.name d qs ps (.typeDeclaration decl) = some (ps'.map (·.usage)) := by
-  simp only [Entry.argumentGrades]
+    Entry.argumentParams T.name d qs ps (.typeDeclaration decl) = some ⟨ps', ψ⟩ := by
+  simp only [Entry.argumentParams]
   split
   · try split
     all_goals first
       | contradiction
-      | rw [List.find?_of_nodup_map hn hT, Option.bind_some, hd.arguments hc, Option.map_some]
+      | rw [List.find?_of_nodup_map hn hT, Option.bind_some, hd.arguments hc]
   · contradiction
 
-/-- An entry that does not introduce the name `D` gives the grades of the arguments of no destructor
+/-- An entry that does not introduce the name `D` gives the parameters of the arguments of no destructor
 of `D`. -/
-theorem Entry.argumentGrades_of_not_mem {D d : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.argumentGrades D d qs ps e = none
+theorem Entry.argumentParams_of_not_mem {D d : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.argumentParams D d qs ps e = none
   | .typeDeclaration decl, hD => by
     have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
       hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
-    simp only [Entry.argumentGrades]
+    simp only [Entry.argumentParams]
     split
     · try split
       all_goals first
@@ -633,29 +633,29 @@ theorem Entry.argumentGrades_of_not_mem {D d : Name} {qs : List Quality} {ps : L
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
-/-- In a signature whose names are distinct, the grades of the arguments of a destructor of a
-declared type are those of its telescope at the instance. -/
-theorem Signature.Distinct.argumentGrades : {sig : Signature} → sig.Distinct → {D : Name} →
+/-- In a signature whose names are distinct, the parameters of the arguments of a destructor of a
+declared type and the ownership of its result are those of its telescope at the instance. -/
+theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) → {d : Name} → {p q : Grade} →
     {ps' : List Parameter} → {Ξ : Scope} → {Θ : Telescope decl.levels Ξ ps'} →
     {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
     (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
-    sig.argumentGrades D d qs ps = some (ps'.map (·.usage))
+    sig.argumentParams D d qs ps = some ⟨ps', ψ⟩
   | [], _, _, _, _, h, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp, _, _, _, _, _, _, _,
       _, hpos => by
-    unfold Signature.argumentGrades
+    unfold Signature.argumentParams
     rcases List.mem_cons.1 he with rfl | he'
-    · have hg := Entry.argumentGrades_of_mem (TypeDeclaration.codataTypes_nodup hn) hT
+    · have hg := Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup hn) hT
         (hc.2 T hT) hq hp hpos
       rw [hD] at hg
       rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
     · have hDe : D ∉ e.names := fun hDe =>
         hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.argumentGrades_of_not_mem hDe]; rfl)]
-      exact hd.argumentGrades ⟨he', hT, hD⟩ hq hp hpos
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.argumentParams_of_not_mem hDe]; rfl)]
+      exact hd.argumentParams ⟨he', hT, hD⟩ hq hp hpos
 
 /-- Destructors with distinct names give the destructor at a position its grade. -/
 theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :

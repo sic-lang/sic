@@ -162,7 +162,7 @@ theorem RunValidArgs.cons {sig : Signature} {ι : Interpretation} {P : Program} 
       (hEV.mono (List.prefix_append _ _)) (hE'.mono hd (List.prefix_append _ _))
     refine ⟨H.length :: bs, H', [] ++ R, ?_, (List.prefix_append _ _).trans hH',
       fun h => absurd hp h, ?_⟩
-    · show EvalAll P w H E (.cons _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
+    · show EvalAll P w H E (.cons _ _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
       rw [ite_eq_left hp]
       exact .cons .erased hevs
     · rw [← hΘ]
@@ -172,7 +172,7 @@ theorem RunValidArgs.cons {sig : Signature} {ι : Interpretation} {P : Program} 
     obtain ⟨a, H₁, R₁, hev, hH₁, hrun⟩ := ht hp _ σ H E V hσ hEV hδ
     obtain ⟨bs, H', R₂, hevs, hH', hruns⟩ := hts w σ H₁ E V hσ (hEV.mono hH₁) (hE'.mono hd hH₁)
     refine ⟨a :: bs, H', R₁ ++ R₂, ?_, hH₁.trans hH', fun _ => hrun.mono hd hH', ?_⟩
-    · show EvalAll P w H E (.cons _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
+    · show EvalAll P w H E (.cons _ _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
       rw [ite_eq_right hp]
       exact .cons hev hevs
     · rw [← hΘ]

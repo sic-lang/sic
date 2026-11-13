@@ -66,9 +66,9 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
       (hNs : TargetBranches.Usage χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
-  | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i : Nat} {Ms : Targets n}
-      (hM : Target.Usage ν₁ M) (hMs : Targets.Usage ν₂ Ms) :
-      Target.Usage (ν₁ +ᶜ ν₂) (.obs M i Ms)
+  | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i c : Nat}
+      {ψ : ResultOwnership Multiplicity c} {Ms : Targets n} (hM : Target.Usage ν₁ M)
+      (hMs : Targets.Usage ν₂ Ms) : Target.Usage (ν₁ +ᶜ ν₂) (.obs M i ψ Ms)
   /-- A corecursor reads the variables of its state once, and those of its branches as `δ` allows.
   RFC: `\mathsf{usage}_M.\mathsf{corec}` -/
   | corec {n : Nat} {ν δ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetCorecBranches n}
@@ -88,9 +88,9 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
   /-- The first term, read as its multiplicity `π` allows, and the others; a term of the
   multiplicity `0` is a skeleton.
   RFC: `\mathsf{usage}_{\bar M}.{,}` -/
-  | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {π : Multiplicity} {M : Target n}
+  | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {π ϱ : Multiplicity} {M : Target n}
       {Ms : Targets n} (hM : Target.Usage ν₁ M) (hz : π = .zero → M.IsSkeleton)
-      (hMs : Targets.Usage ν₂ Ms) : Targets.Usage ((π ·ᶜ ν₁) +ᶜ ν₂) (.cons π M Ms)
+      (hMs : Targets.Usage ν₂ Ms) : Targets.Usage ((π ·ᶜ ν₁) +ᶜ ν₂) (.cons π ϱ M Ms)
 
 -- ADE: `natrec-no-nrₘ`, in `Graded/Usage.agda`, for the bound of the uses of the branches.
 /-- `χ ⊢ N̄ ▶`: the branches `N̄` of a recursor read the variables of the scope as `χ` allows: each
@@ -106,12 +106,12 @@ inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBr
   | nil {n : Nat} {χ : MultiplicityVector n} : TargetBranches.Usage χ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{usage}_{\bar N}.{,}` -/
-  | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs : Fin a → Multiplicity}
+  | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs κs : Fin a → Multiplicity}
       {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
       (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ))
       (hk : ∀ j, (ks j).isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
-      TargetBranches.Usage χ (.cons a b πs πs' ks N Ns)
+      TargetBranches.Usage χ (.cons a b πs κs πs' ks N Ns)
 
 -- ADE: none.
 /-- `δ ⊢ P̄ ▶`: the branches `P̄` of a corecursor, which its closure captures with the scope, read
@@ -126,11 +126,12 @@ inductive TargetCorecBranches.Usage : {n : Nat} → MultiplicityVector n → Tar
   | nil {n : Nat} {δ : MultiplicityVector n} : TargetCorecBranches.Usage δ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{usage}_{\bar P}.{,}` -/
-  | cons {n b c : Nat} {δ δᵢ : MultiplicityVector n} {o : Resumption} {πs : Fin b → Multiplicity}
-      {πs' : Fin c → Multiplicity} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
+  | cons {n b c : Nat} {δ δᵢ : MultiplicityVector n} {o : Resumption}
+      {πs ϱs : Fin b → Multiplicity} {πs' ϱs' : Fin c → Multiplicity}
+      {ψ : ResultOwnership Multiplicity c} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
       (hP : Target.Usage (δᵢ.extendBinders πs πs') P) (hδ : δ ≤ᶜ δᵢ)
       (hr : o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ) (hPs : TargetCorecBranches.Usage δ Ps) :
-      TargetCorecBranches.Usage δ (.cons o b c πs πs' P Ps)
+      TargetCorecBranches.Usage δ (.cons o b c πs ϱs πs' ϱs' ψ P Ps)
 
 end
 
@@ -148,8 +149,8 @@ theorem Target.IsSkeleton.usage {n : Nat} {M : Target n} : M.IsSkeleton → Targ
 /-- Skeletons read no variable. -/
 theorem Targets.IsSkeleton.usage {n : Nat} {Ms : Targets n} : Ms.IsSkeleton → Targets.Usage 𝟘ᵛ Ms
   | .nil => .nil
-  | .cons (π := π) hM hMs => by
-    have h := Targets.Usage.cons (π := π) hM.usage (fun _ => hM) hMs.usage
+  | .cons (π := π) (ϱ := ϱ) hM hMs => by
+    have h := Targets.Usage.cons (π := π) (ϱ := ϱ) hM.usage (fun _ => hM) hMs.usage
     rwa [(MultiplicityVector.module Multiplicity.modality).smul_zero,
       (MultiplicityVector.module Multiplicity.modality).zero_add] at h
 
