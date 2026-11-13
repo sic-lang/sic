@@ -191,12 +191,14 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       (h : H[w]? = some (.ctor 1 πs [x])) : EvalResume H n E Ps o w x H
 
 -- ADE: none.
-/-- `recursions_k̄(l)`: the multiplicity of the recursions that a branch of a recursor runs on its
-field at the position `l`, `1` for each recursive result whose field in `k̄` is `l`.
-RFC: `\mathsf{recursions}_{\bar k, l}` -/
-def recursionsAt : List (Option Nat) → Nat → Multiplicity
-  | [], _ => .zero
-  | k :: ks, l => (if k = some l then .one else .zero) + recursionsAt ks l
+/-- `recursions_{k̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
+its field at the position `l`, the multiplicity in `π̄'` of the binder of each recursive result
+whose field in `k̄` is `l`: the recursion runs once, but its result is read as its binder allows,
+each read using the value that the recursion builds from the field.
+RFC: `\mathsf{recursions}_{\bar k, \bar\pi', l}` -/
+def recursionsAt : List (Option Nat) → List Multiplicity → Nat → Multiplicity
+  | k :: ks, π :: πs, l => (if k = some l then π else .zero) + recursionsAt ks πs l
+  | _, _, _ => .zero
 
 mutual
 
@@ -277,7 +279,7 @@ inductive EvalRec (P : Program) : {n : Nat} → Heap → List Nat → Multiplici
       (h : H₁[a]? = some (.ctor i πs₀ as)) (hN : Ns.get i = some ⟨a', b, πs, πs', ks, N⟩)
       (ha : as.length = a')
       (hπ : ∀ l : Fin a', ∃ π₀, πs₀[(l : Nat)]? = some π₀ ∧
-        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) l)
+        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l)
       (hr : EvalResults P H₁ E ρ Ns as (List.ofFn ks) rs H₂ R₁)
       (hv : Eval P (H₂.bind (List.ofFn πs ++ List.ofFn πs') (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :

@@ -12,7 +12,8 @@ it, so that the conservation of the bindings of the multiplicity `1` is stated o
 Each binder and each position carries its multiplicity, so that the rules read them; a position
 is evaluated once, and its value is then read as its multiplicity allows, so that the position
 counts the reads of its term that many times, and a position of the multiplicity `0`, whose value
-is never read, reads no linear variable, which a closure that it holds would never release.
+is never read, reads no variable: a closure that it holds would never release a linear variable,
+and the multiplicity `0` would hide the reads of the others.
 A recursor evaluates its term once and runs a branch, whose recursive results each run the
 recursor again, and a corecursor evaluates its state once and captures its scope in a closure, each
 observation of which runs a branch, and a resumption captures it again.
@@ -57,10 +58,10 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   | ctor {n : Nat} {ν : MultiplicityVector n} {i : Nat} {Ms : Targets n}
       (hMs : Targets.Usage ν Ms) : Target.Usage ν (.ctor i Ms)
   /-- A recursor reads the variables of its term as its multiplicity `ρ` allows, and those of its
-  branches as `χ` allows; a term of the multiplicity `0` reads no linear variable.
+  branches as `χ` allows; a term of the multiplicity `0` reads no variable.
   RFC: `\mathsf{usage}_M.\mathsf{rec}` -/
   | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ : Multiplicity} {M : Target n}
-      {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → ν ≤ᶜ 𝟘ᵛ)
+      {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → ν = 𝟘ᵛ)
       (hNs : TargetBranches.Usage χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
@@ -84,10 +85,10 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
   RFC: `\mathsf{usage}_{\bar M}.\varepsilon` -/
   | nil {n : Nat} : Targets.Usage 𝟘ᵛ (.nil : Targets n)
   /-- The first term, read as its multiplicity `π` allows, and the others; a term of the
-  multiplicity `0` reads no linear variable.
+  multiplicity `0` reads no variable.
   RFC: `\mathsf{usage}_{\bar M}.{,}` -/
   | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {π : Multiplicity} {M : Target n}
-      {Ms : Targets n} (hM : Target.Usage ν₁ M) (hz : π = .zero → ν₁ ≤ᶜ 𝟘ᵛ)
+      {Ms : Targets n} (hM : Target.Usage ν₁ M) (hz : π = .zero → ν₁ = 𝟘ᵛ)
       (hMs : Targets.Usage ν₂ Ms) : Targets.Usage ((π ·ᶜ ν₁) +ᶜ ν₂) (.cons π M Ms)
 
 -- ADE: `natrec-no-nrₘ`, in `Graded/Usage.agda`, for the bound of the uses of the branches.
@@ -95,7 +96,8 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
 branch reads them as `δ` allows and its new variables as their binders allow, and each recursive
 result that it computes runs the recursor again, which reads them as `χ` allows again, and is read
 as its binder allows, so that `χ` bounds `δ` plus `χ` times the multiplicity of each binder of the
-results; a result of the multiplicity `0` that the branch computes reads no linear variable. -/
+results; a result that the branch computes has a multiplicity other than `0`, since the recursion
+that computes it reads the field, whose uses a result never read would not count. -/
 inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar N}.\varepsilon` -/
@@ -106,7 +108,7 @@ inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBr
       {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
       (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum πs' ·ᶜ χ))
-      (hk : ∀ j, (ks j).isSome → πs' j = .zero → χ ≤ᶜ 𝟘ᵛ) (hNs : TargetBranches.Usage χ Ns) :
+      (hk : ∀ j, (ks j).isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
       TargetBranches.Usage χ (.cons a b πs πs' ks N Ns)
 
 -- ADE: none.
@@ -145,7 +147,7 @@ theorem Target.IsSkeleton.usage {n : Nat} {M : Target n} : M.IsSkeleton → Targ
 theorem Targets.IsSkeleton.usage {n : Nat} {Ms : Targets n} : Ms.IsSkeleton → Targets.Usage 𝟘ᵛ Ms
   | .nil => .nil
   | .cons (π := π) hM hMs => by
-    have h := Targets.Usage.cons (π := π) hM.usage (fun _ => MultiplicityVector.le_refl _)
+    have h := Targets.Usage.cons (π := π) hM.usage (fun _ => rfl)
       hMs.usage
     rwa [(MultiplicityVector.module Multiplicity.modality).smul_zero,
       (MultiplicityVector.module Multiplicity.modality).zero_add] at h

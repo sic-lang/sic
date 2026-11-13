@@ -175,8 +175,8 @@ theorem Telescope.run_resultSum_le : (rs : List (Option Name)) → (ps : List Pa
 /-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
 the erasure of each branch reads them as some `δ` allows, and its new variables as the
 multiplicities that the erasure gives their binders allow, `χ` bounds `δ` plus `χ` times the
-multiplicity of each recursive result, and a result that the branch computes at the multiplicity
-`0` leaves `χ` without linear variable. -/
+multiplicity of each recursive result, and a result that the branch computes has a multiplicity
+other than `0`. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
     (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Grade)) →
@@ -189,7 +189,7 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
             (fun (j : Fin b) => gs[j].run))
           (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b)) ∧
         χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) => gs[j].run) ·ᶜ χ) ∧
-        ∀ j : Fin b, gs[j] ∉ S → gs[j].run = .zero → χ ≤ᶜ 𝟘ᵛ) →
+        ∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) →
     TargetBranches.Usage χ (us.erase sig S hΓ r es fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
@@ -322,7 +322,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
             gs'.toList := by
         rw [Branches.resultGrades, hgs']
       have hlr := Telescope.length_recursion decl.names (con.fields (.ofLists qs ps hq hp))
-      refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => absurd ((Mode.erased_values.1 _).2 h0) hj⟩
+      refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => hj ((Mode.erased_values.1 _).2 h0)⟩
       · -- The erased branch reads the new variables below the grades that its usage gives them.
         have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm
           (hu i j T' con u' hc hu')
@@ -365,7 +365,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
       refine .sub (.recursor (sig.skeleton_isSkeleton _ _ _).usage
-        (fun _ => MultiplicityVector.le_refl _) hbr) (MultiplicityVector.le_of_eq ?_)
+        (fun _ => rfl) hbr) (MultiplicityVector.le_of_eq ?_)
       rw [(Mode.erased_values.1 r).1 hr,
         (MultiplicityVector.module Multiplicity.modality).zero_smul,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
@@ -483,7 +483,7 @@ theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {�
     · simp only [hp, ↓reduceIte]
       rw [(Mode.erased_values.1 p.usage).1 hp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => MultiplicityVector.le_refl _)
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => rfl)
         (UsageArgs.erase_usage hd hΓ hm hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hp, ↓reduceIte]
@@ -514,7 +514,7 @@ theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct) {k : Nat
     · simp only [hrp, ↓reduceIte]
       rw [(Mode.erased_values.1 _).1 hrp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
-      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => MultiplicityVector.le_refl _)
+      have h := Targets.Usage.cons (π := .zero) .erased (fun _ => rfl)
         (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hrp, ↓reduceIte]

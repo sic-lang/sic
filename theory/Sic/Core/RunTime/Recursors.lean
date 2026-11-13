@@ -242,12 +242,12 @@ theorem Telescope.resultGrades_eq_idxOf : (rs : List (Option Name)) → (es : Li
 theorem Telescope.recursionsAt_lt (S : Math.Set Grade) [DecidablePred (· ∈ S)] {o' : Nat} :
     (rs : List (Option Name)) → (es : List Grade) → (o : Nat) → o' < o →
     recursionsAt (List.zipWith (fun e l => if e ∈ S then none else some l) es
-      ((rs.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) o' = .zero
+      ((rs.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) (es.map Grade.run) o' = .zero
   | [], es, _, _ => by cases es <;> rfl
   | some _ :: _, [], _, _ => rfl
   | some _ :: rs, e :: es, o, h => by
     simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.zipWith_cons_cons,
-      recursionsAt]
+      List.map_cons, recursionsAt]
     rw [Telescope.recursionsAt_lt S rs es (o + 1) (Nat.lt_succ_of_lt h)]
     have hne : (if e ∈ S then none else some o) ≠ some o' := by
       split
@@ -259,13 +259,13 @@ theorem Telescope.recursionsAt_lt (S : Math.Set Grade) [DecidablePred (· ∈ S)
     simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_none]
     exact Telescope.recursionsAt_lt S rs es (o + 1) (Nat.lt_succ_of_lt h)
 
-/-- The recursions that a branch runs on its field at a position: one when the field is recursive
-and the grade of its result is not in `S`, none otherwise. -/
+/-- The recursions that a branch runs on its field at a position: the multiplicity of the grade of
+its result when the field is recursive and this grade is not in `S`, none otherwise. -/
 theorem Telescope.recursionsAt_positions (S : Math.Set Grade) [DecidablePred (· ∈ S)]
     (h0 : Grade.zero ∈ S) : (rs : List (Option Name)) → (es : List Grade) → (o l : Nat) →
     recursionsAt (List.zipWith (fun e l => if e ∈ S then none else some l) es
-      ((rs.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) (o + l) =
-      if Telescope.resultGrades rs es l ∈ S then .zero else .one
+      ((rs.zipIdx o).filterMap fun y => y.1.map fun _ => y.2)) (es.map Grade.run) (o + l) =
+      if Telescope.resultGrades rs es l ∈ S then .zero else (Telescope.resultGrades rs es l).run
   | [], es, _, l => by
     have h : Telescope.resultGrades [] es l ∈ S := h0
     simp only [h, ↓reduceIte]
@@ -278,17 +278,17 @@ theorem Telescope.recursionsAt_positions (S : Math.Set Grade) [DecidablePred (·
     rfl
   | some _ :: rs, e :: es, o, 0 => by
     simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.zipWith_cons_cons,
-      recursionsAt, Nat.add_zero]
+      List.map_cons, recursionsAt, Nat.add_zero]
     rw [Telescope.recursionsAt_lt S rs es (o + 1) (Nat.lt_succ_self o)]
-    show _ = if e ∈ S then _ else _
+    show _ = if e ∈ S then _ else e.run
     by_cases he : e ∈ S
     · simp only [he, ↓reduceIte]
       rfl
     · simp only [he, ↓reduceIte]
-      rfl
+      cases e.run <;> rfl
   | some _ :: rs, e :: es, o, l + 1 => by
     simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_some, List.zipWith_cons_cons,
-      recursionsAt]
+      List.map_cons, recursionsAt]
     have hne : (if e ∈ S then none else some o) ≠ some (o + (l + 1)) := by
       split
       · exact nofun
@@ -296,8 +296,10 @@ theorem Telescope.recursionsAt_positions (S : Math.Set Grade) [DecidablePred (·
     simp only [hne, ↓reduceIte]
     rw [show o + (l + 1) = o + 1 + l by omega,
       Telescope.recursionsAt_positions S h0 rs es (o + 1) l]
-    show _ = if Telescope.resultGrades rs es l ∈ S then _ else _
-    split <;> rfl
+    show _ = if Telescope.resultGrades rs es l ∈ S then _ else (Telescope.resultGrades rs es l).run
+    split
+    · rfl
+    · cases (Telescope.resultGrades rs es l).run <;> rfl
   | none :: rs, es, o, 0 => by
     simp only [List.zipIdx_cons, List.filterMap_cons, Option.map_none, Nat.add_zero]
     rw [Telescope.recursionsAt_lt S rs es (o + 1) (Nat.lt_succ_self o)]
@@ -311,11 +313,11 @@ theorem Telescope.recursionsAt_positions (S : Math.Set Grade) [DecidablePred (·
 /-- The uses at run time of a field of the grade `p`, stored at a multiplicity `π` within it, that
 a recursor of the grade `r` gives are within those that the branch makes of it, when its usage
 bounds them by the grade `g` of its variable and the grade `e` of its recursive result: by the
-variable of the field, at the multiplicity that the erasure gives it, and by the recursion on it
-when its result has a use at run time. -/
+variable of the field, at the multiplicity that the erasure gives it, and by the recursion on it,
+as many times as its result is read, when it has a use at run time. -/
 theorem _root_.Sic.Grading.Grade.run_mul_le_fieldMultiplicity : ∀ (π : Multiplicity) (r p e g : Grade),
     r.run * π ≤ r.run * p.run → r * p ≤ g + e * r → r.run * π ≤ ((r * p).run - (e * r).run) +
-      r.run * (if e ∈ Mode.oneOne.erased then .zero else .one) := by
+      r.run * (if e ∈ Mode.oneOne.erased then .zero else e.run) := by
   decide
 
 /-- Arguments related to addresses are as many as the addresses. -/
@@ -821,7 +823,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   have hπ : ∀ l : Fin (con.params (.ofLists qs ps hq hp)).length,
       ∃ π₀, πv[(l : Nat)]? = some π₀ ∧ r.run * π₀ ≤ πs₀ l + r.run * recursionsAt
       (List.ofFn fun j : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length =>
-        if gs₀[j] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j : Nat)]?) l := by
+        if gs₀[j] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j : Nat)]?)
+      (List.ofFn πs₀') l := by
     intro l
     obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
       ⟨_, List.getElem?_eq_getElem l.2⟩
@@ -852,7 +855,9 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     have hr := Telescope.recursionsAt_positions Mode.oneOne.erased (by decide)
       ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) gs₀.toList 0 l
     rw [Nat.zero_add] at he hr
-    rw [hks, hr]
+    have hπs' : List.ofFn πs₀' = gs₀.toList.map Grade.run := by
+      apply List.ext_getElem <;> simp [πs₀']
+    rw [hks, hπs', hr]
     simp only [πs₀, hfs, Grade.fieldMultiplicity, hpos, he]
     exact Grade.run_mul_le_fieldMultiplicity π₀ r p'.usage _ _ hle hgl
   refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha hget (RunsAsArgs.length hfa) hπ (hks ▸ hevs)
