@@ -46,7 +46,9 @@ of their values in the heap `H`, one for each entry, the first one first, at the
 grade `p l` of the argument at each position `l`: each argument whose grade is not in `S^{11ᵐ}`, so
 that the erasure keeps it, is related to its address at the type of its entry, in which the
 arguments before it are substituted. The grades are those of the entries for the fields of a
-constructor, and those of the variables of a branch for its fields and its recursive results. -/
+constructor, and those of the variables of a branch for its fields and its recursive results.
+RFC: `\circledR_{\bar t\varepsilon}`
+RFC: `\circledR_{\bar t,}` -/
 def RunsAsArgs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) :
     {ps : List Parameter} → (Nat → Grade) → Args 0 [] ps → List Nat → Telescope 0 [] ps → Prop
   | [], _, .nil, [], .nil => True
@@ -89,7 +91,8 @@ def RunValid (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope} 
 first-order context `Γ` that the meaning relates to itself, and each heap `H` in which the addresses
 `E` stand for `σ` as `γ` requires, the erasure of the arguments `t̄` at the grades of the entries of
 `Θ` evaluates, in `E` and `H`, to addresses `b̄` in a heap `H'` that extends `H`, to which `t̄[σ]`
-are related at `Θ[σ]`. -/
+are related at `Θ[σ]`.
+RFC: `{\vDash}^{\circledR}_{\bar t}` -/
 def RunValidArgs (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) {ps : List Parameter}
     (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
