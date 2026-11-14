@@ -49,12 +49,14 @@ inductive Target.Ownership (Ω : Name → Multiplicity) :
   | ctor {n : Nat} {φ : MultiplicityVector n} {i : Nat} {Ms : Targets n} {os : List Multiplicity}
       (hMs : Targets.Ownership Ω φ os Ms) : Target.Ownership Ω φ .one (.ctor i Ms)
   /-- A recursor has the ownership `o'` of its branches, each checked with the ownership `o` of its
-  term times the coefficient of each variable of a field, and `o'` times the multiplicity of each
+  term times the requirement `ϱ` of the recursion of its block, which every level of the recursion
+  has, times the coefficient of each variable of a field, and `o'` times the multiplicity of each
   variable of a recursive result.
   RFC: `\mathsf{own}_M.\mathsf{rec}` -/
-  | recursor {n : Nat} {φ : MultiplicityVector n} {ρ o o' : Multiplicity} {M : Target n}
+  | recursor {n : Nat} {φ : MultiplicityVector n} {ρ ϱ o o' : Multiplicity} {M : Target n}
       {Ns : TargetBranches n} (hM : Target.Ownership Ω φ o M)
-      (hNs : TargetBranches.Ownership Ω φ o o' Ns) : Target.Ownership Ω φ o' (.recursor ρ M Ns)
+      (hNs : TargetBranches.Ownership Ω φ (o * ϱ) o' Ns) :
+      Target.Ownership Ω φ o' (.recursor ρ ϱ M Ns)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships `os` of its arguments, which satisfy the
   requirements of their positions, and `o` satisfies the requirement `ς` of the destructor on the

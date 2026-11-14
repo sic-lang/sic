@@ -627,6 +627,30 @@ def TypeDeclaration.codataCases (decl : TypeDeclaration) :
     List (Nat × CodataType decl.sorts decl.grades decl.levels decl.scope × Name) :=
   TypeDeclaration.casesFrom CodataType.destructors 0 decl.codataTypes
 
+/-- The positions of the recursive fields of each constructor of the block, the first field at `0`,
+at the instance `I`, in the order of the cases. -/
+def TypeDeclaration.recursivePositions (decl : TypeDeclaration)
+    (I : Instance decl.sorts decl.grades) : List (List Nat) :=
+  decl.cases.map fun x =>
+    ((x.2.2.fields I).recursion decl.names).zipIdx.filterMap fun y => y.1.map fun _ => y.2
+
+-- ADE: none.
+/-- `r̂`: the requirement of the recursion of a block whose constructors have, in order, the
+recursive fields at the positions `es` and the parameters `fs` of their fields, the meet of `11ᵖ`
+and of the requirements of the entries of the recursive fields, a field without parameter, in a
+term that no declaration types, requiring `ωωᵖ`, which states nothing: each recursion of a recursor
+eliminates a recursive field, whose ownership is the ownership of its value times the requirement of
+its entry, so that the branches, which run at each level of the recursion, see the term of the
+recursor at its ownership times `r̂`, which every level has, since the grades are idempotent. -/
+def Parameter.recursion (es : List (List Nat)) (fs : List (List Parameter)) : Grade :=
+  ((List.zipWith (fun e f => e.map fun l => ((f[l]?).map (·.requirement)).getD
+    .unrestrictedUnrestricted) es fs).flatten).foldr (· ⊓ ·) .linearLinear
+
+/-- `r̂`: the requirement of the recursion of the block at the instance `I`. -/
+def TypeDeclaration.recursionRequirement (decl : TypeDeclaration)
+    (I : Instance decl.sorts decl.grades) : Grade :=
+  Parameter.recursion (decl.recursivePositions I) (decl.cases.map fun x => x.2.2.params I)
+
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
 inductive Entry where
@@ -877,9 +901,7 @@ def Entry.recursiveFields (D : Name) (qs : List Quality) (ps : List Grade) :
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.cases.map fun x =>
-            ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-              fun y => y.1.map fun _ => y.2
+          decl.recursivePositions (.ofLists qs ps hq hp)
       else none
     else none
   | _ => none
@@ -948,6 +970,15 @@ RFC: `\mathsf{parameters}_{\bar u}` -/
 def Signature.caseFieldParams (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
     Option (List (List Parameter)) :=
   sig.findSome? (Entry.caseFieldParams D qs ps)
+
+-- ADE: none.
+/-- `recursion_Σ(T)`: the requirement `r̂` of the recursion of the block of the data type `D`, at
+the instance of the qualities `qs` and of the grades `ps`, read from its recursive fields and the
+parameters of their entries in the signature, which the erasure of a recursor keeps at run time.
+RFC: `\mathsf{recursion}_c` -/
+def Signature.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality)
+    (ps : List Grade) : Grade :=
+  Parameter.recursion ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])
 
 -- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,

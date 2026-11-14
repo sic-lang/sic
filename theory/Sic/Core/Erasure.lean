@@ -129,9 +129,9 @@ inductive Target : Nat → Type where
   /-- `cᵢ(M̄)`: the constructor of the case `i` of its block applied to a term for each of its
   fields, each at the multiplicity of its field. -/
   | ctor {n : Nat} (i : Nat) (Ms : Targets n) : Target n
-  /-- `rec_ρ M with N̄`: the recursor of the multiplicity `ρ` on `M`, with a branch for each
-  constructor, in order. -/
-  | recursor {n : Nat} (ρ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
+  /-- `rec_ρ M ◀ ϱ with N̄`: the recursor of the multiplicity `ρ` on `M`, with the requirement `ϱ`
+  of the recursion of its block at run time, with a branch for each constructor, in order. -/
+  | recursor {n : Nat} (ρ ϱ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
   /-- `M.dᵢ(M̄) ◀ ψ ◀ ς`: the observation of `M` by the destructor of the case `i` of its block,
   applied to a term for each of its `c` arguments, each at the multiplicity and the requirement of
   its argument, with the ownership `ψ` of the result of the destructor and the ownership `ς` that the
@@ -203,12 +203,12 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
       Target.Occurs x (.ctor i Ms)
   /-- In the term of a recursor.
   RFC: `\mathsf{occurs}_M.\mathsf{rec}` -/
-  | recursor {n : Nat} {x : Fin n} {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
-      (h : Target.Occurs x M) : Target.Occurs x (.recursor ρ M Ns)
+  | recursor {n : Nat} {x : Fin n} {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
+      (h : Target.Occurs x M) : Target.Occurs x (.recursor ρ ϱ M Ns)
   /-- In a branch of a recursor.
   RFC: `\mathsf{occurs}_M.\mathsf{with}` -/
-  | branch {n : Nat} {x : Fin n} {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
-      (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor ρ M Ns)
+  | branch {n : Nat} {x : Fin n} {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n}
+      (h : TargetBranches.Occurs x Ns) : Target.Occurs x (.recursor ρ ϱ M Ns)
   /-- In the term of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{obs}` -/
   | obs {n : Nat} {x : Fin n} {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
@@ -325,15 +325,16 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
       Target.LessDefined (.ctor i Ms) (.ctor i Ns)
   /-- A recursor is less defined than a recursor of a more defined term and branches.
   RFC: `{\sqsubseteq}.\mathsf{rec}` -/
-  | recursor {n : Nat} {ρ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
+  | recursor {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
-      Target.LessDefined (.recursor ρ M Ms) (.recursor ρ N Ns)
-  /-- A recursor on a skeleton is less defined than a recursor on any term, of more defined
-  branches: the skeleton holds nothing but what the type of the term already gives.
+      Target.LessDefined (.recursor ρ ϱ M Ms) (.recursor ρ ϱ N Ns)
+  /-- A recursor on a skeleton, of the requirement `ω`, which states nothing, is less defined than a
+  recursor on any term, of more defined branches: the skeleton holds nothing but what the type of
+  the term already gives.
   RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{skeleton}}` -/
-  | skeleton {n : Nat} {ρ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
+  | skeleton {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
       (h : Target.IsSkeleton M) (hs : TargetBranches.LessDefined Ms Ns) :
-      Target.LessDefined (.recursor ρ M Ms) (.recursor ρ N Ns)
+      Target.LessDefined (.recursor ρ .omega M Ms) (.recursor ρ ϱ N Ns)
   /-- An observation is less defined than the same observation of a more defined term and
   arguments.
   RFC: `{\sqsubseteq}.d` -/
@@ -531,7 +532,8 @@ mutual
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
 `f.{s̄; l̄; p̄}` keeps its qualities and its grades, `f.{s̄; p̄}`, a constructor keeps its case and its
 fields, each at the parameter of its field, a recursor keeps the multiplicity at run time of its
-grade, its term, at its grade, or the skeleton of its type when its grade is erased, and its
+grade, the requirement at run time `run(r̂)` of the recursion of its block, its term, at its grade,
+or, when its grade is erased, `ω`, which states nothing, and the skeleton of its type, and its
 branches, without its instance and its motives, an observation keeps its term, the case of its
 destructor, the ownership at run time of its result and its arguments, each at the parameter of its
 argument, and a corecursor keeps its state, each entry at its grade times the grade of the
@@ -558,7 +560,9 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     | some i => .ctor i (ts.erase sig S hΓ ((sig.fieldParams D c qs ps).getD []))
     | none => .erased
   | .recursor r D qs _ ps _ t _ us =>
-    .recursor r.run (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
+    .recursor r.run
+      (if r ∈ S then .omega else (sig.recursionRequirement D qs ps).run)
+      (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
       (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
         ((sig.caseFieldParams D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>

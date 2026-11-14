@@ -227,10 +227,11 @@ theorem Multiplicity.mul_fieldCoefficient :
   decide
 
 /-- The variable of a field of the term of a recursor of a grade without use at run time has the
-ownership `0` at run time, whatever the ownership of the term. -/
+ownership `0` at run time, whatever the ownership of the term and the requirement of the recursion,
+`ω` at run time. -/
 theorem Multiplicity.mul_fieldCoefficient_zero :
-    ∀ o q u : Multiplicity, Multiplicity.one * (q * (.zero * u)) =
-      o * q * (Multiplicity.one * .zero * u) := by
+    ∀ o r q u : Multiplicity, Multiplicity.one * .omega * (q * (.zero * u)) =
+      o * r * q * (Multiplicity.one * .zero * u) := by
   decide
 
 /-- The erasure of the branches of a corecursor has its ownership when each branch, without
@@ -375,12 +376,15 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (us := us) (o := o)
       (p := p) h hq hp ht hul hus hu => by
     -- The branches, whose variables have the run-time multiplicities of their ownerships.
-    have hbr : ∀ o', (r ∉ Mode.oneOne.erased → o' = o.run) → (r ∈ Mode.oneOne.erased → o' = .one) →
+    have hbr : ∀ o',
+        (r ∉ Mode.oneOne.erased → o' = o.run * (sig.recursionRequirement D qs ps).run) →
+        (r ∈ Mode.oneOne.erased → o' = .one * .omega) →
         TargetBranches.Ownership Ω φ' o' p.run (us.erase sig Mode.oneOne.erased hΓ r
           ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
       intro o' ho₁ ho₂
+      rw [Signature.recursionRequirement] at ho₁
       rw [hd.recursiveFields h hq hp, hd.caseFieldParams h hq hp, Option.getD_some,
-        Option.getD_some]
+        Option.getD_some] at ho₁ ⊢
       refine Branches.erase_ownership hΓ r φ' o' p.run us _ _ fun i a b gs' u hget hgs' => ?_
       have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -396,7 +400,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             (fun l => o' * r.fieldCoefficient (con.params (.ofLists qs ps hq hp))[(l : Nat)]?)
             (fun (j : Fin _) => p.run * gs'[j].run)
             (x.cast (Scope.length_extend_extend Γ _ _)))
-          (Ownership.extendResults (Ownership.extendFields φ o (m.grade * r)
+          (Ownership.extendResults (Ownership.extendFields φ
+            (o * decl.recursionRequirement (.ofLists qs ps hq hp)) (m.grade * r)
             (con.params (.ofLists qs ps hq hp))) p (us.grades i)
             (con.resultParams (.ofLists qs ps hq hp) decl.names).length) := by
         rw [Ownership.extendResults_eq, Ownership.extendFields_eq]
@@ -406,7 +411,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             Grade.fieldCoefficient, (Grade.run_op _ _).2.1, hm, Mode.oneOne_grade]
           by_cases hr : r ∈ Mode.oneOne.erased
           · rw [ho₂ hr, (Mode.erased_values.1 r).1 hr]
-            exact Multiplicity.mul_fieldCoefficient_zero _ _ _
+            exact Multiplicity.mul_fieldCoefficient_zero _ _ _ _
           · rw [ho₁ hr]
             exact Multiplicity.mul_fieldCoefficient _ _ _ _
         · -- The variable of a recursive result.
@@ -418,12 +423,12 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     simp only [Term.erase]
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
-      exact .recursor (sig.skeleton_ownership _ _ _) (hbr .one (fun h' => absurd hr h')
+      exact .recursor (sig.skeleton_ownership _ _ _) (hbr _ (fun h' => absurd hr h')
         fun _ => rfl)
     · simp only [hr, ↓reduceIte]
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       exact .recursor (Ownership.erase_ownership hd hΩ hΓ hφ hm' ht)
-        (hbr o.run (fun _ => rfl) fun h' => absurd h' hr)
+        (hbr _ (fun _ => rfl) fun h' => absurd h' hr)
   | .obs (ψ := ψ) (os := os) h hq hp hpos ht hbs hv hf hς => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi

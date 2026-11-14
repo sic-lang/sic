@@ -300,11 +300,10 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
       have hfs := List.headD_drop_of_getElem? (d := []) (l := decl.cases.map fun x =>
         x.2.2.params (.ofLists qs ps hq hp)) (i := i)
         (x := con.params (.ofLists qs ps hq hp)) (by simp [hc])
-      have hes := List.headD_drop_of_getElem? (d := []) (l := decl.cases.map fun x =>
-        ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-          fun y => y.1.map fun _ => y.2) (i := i)
+      have hes := List.headD_drop_of_getElem? (d := [])
+        (l := decl.recursivePositions (.ofLists qs ps hq hp)) (i := i)
         (x := ((con.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-          fun y => y.1.map fun _ => y.2) (by simp [hc])
+          fun y => y.1.map fun _ => y.2) (by simp [TypeDeclaration.recursivePositions, hc])
       rw [hfs, hes]
       have hrg : us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) =
           Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)

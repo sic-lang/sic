@@ -61,9 +61,9 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   /-- A recursor reads the variables of its term as its multiplicity `ρ` allows, and those of its
   branches as `χ` allows; a term of the multiplicity `0` is a skeleton.
   RFC: `\mathsf{usage}_M.\mathsf{rec}` -/
-  | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ : Multiplicity} {M : Target n}
+  | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ ϱ : Multiplicity} {M : Target n}
       {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → M.IsSkeleton)
-      (hNs : TargetBranches.Usage χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ M Ns)
+      (hNs : TargetBranches.Usage χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ ϱ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
   | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i c : Nat}

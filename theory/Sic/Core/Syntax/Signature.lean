@@ -477,23 +477,58 @@ theorem Signature.Distinct.recursiveFields : {sig : Signature} → sig.Distinct 
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
-    sig.recursiveFields D qs ps = some (decl.cases.map fun x =>
-      ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-        fun y => y.1.map fun _ => y.2)
+    sig.recursiveFields D qs ps = some (decl.recursivePositions (.ofLists qs ps hq hp))
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
     unfold Signature.recursiveFields
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursiveFields D qs ps (.typeDeclaration decl) =
-          some (decl.cases.map fun x =>
-            ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-              fun y => y.1.map fun _ => y.2) := by
+          some (decl.recursivePositions (.ofLists qs ps hq hp)) := by
         simp only [Entry.recursiveFields, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveFields_of_not_mem hDe]; rfl)]
       exact hd.recursiveFields ⟨he', hT, hD⟩ hq hp
+
+/-- The meet of grades is below each of them, from a grade `a`. -/
+theorem Grade.foldr_meet_le {x : Grade} : {xs : List Grade} → x ∈ xs → (a : Grade) →
+    xs.foldr (· ⊓ ·) a ≤ x
+  | y :: ys, h, a => by
+    rcases List.mem_cons.1 h with rfl | h
+    · exact (by decide : ∀ x z : Grade, x ⊓ z ≤ x) _ _
+    · exact (by decide : ∀ y z x : Grade, z ≤ x → y ⊓ z ≤ x) _ _ _ (Grade.foldr_meet_le h a)
+
+-- ADE: none.
+/-- The requirement of the recursion of a block is below the requirement of the entry of each
+recursive field of each of its constructors. -/
+theorem Parameter.recursion_le {es : List (List Nat)} {fs : List (List Parameter)} {i l : Nat}
+    {e : List Nat} {f : List Parameter} {p : Parameter} (he : es[i]? = some e)
+    (hf : fs[i]? = some f) (hl : l ∈ e) (hp : f[l]? = some p) :
+    Parameter.recursion es fs ≤ p.requirement := by
+  have hx : (fun l => ((f[l]?).map (·.requirement)).getD Grade.unrestrictedUnrestricted) l =
+      p.requirement := by simp only [hp, Option.map_some, Option.getD_some]
+  unfold Parameter.recursion
+  rw [← hx]
+  apply Grade.foldr_meet_le
+  refine List.mem_flatten.2 ⟨e.map fun l =>
+    ((f[l]?).map (·.requirement)).getD Grade.unrestrictedUnrestricted,
+    List.mem_of_getElem? (i := i) ?_, List.mem_map_of_mem hl⟩
+  rw [List.getElem?_zipWith, he, hf]
+
+-- ADE: none.
+/-- The requirement of the recursion of a block is below the requirement of the entry of each
+recursive field of each of its constructors, at each instance. -/
+theorem TypeDeclaration.recursionRequirement_le {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {i j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hi : decl.cases[i]? = some (j, T, con)) {l : Nat}
+    (hl : l ∈ ((con.fields I).recursion decl.names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2))
+    {p : Parameter} (hp : (con.params I)[l]? = some p) :
+    decl.recursionRequirement I ≤ p.requirement :=
+  Parameter.recursion_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
+    (by rw [List.getElem?_map, hi]; rfl) hl hp
 
 /-- An entry that does not introduce the name `D` gives the parameters of the fields of the cases of no
 data type named `D`. -/

@@ -64,15 +64,15 @@ theorem EvalAll.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap
 
 /-- The elimination of a value by a recursor extends the heap. -/
 theorem EvalRec.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
-    {ρ : Multiplicity} {Ns : TargetBranches n} {a v : Nat} {R : List Nat} :
-    EvalRec P ϖ H E ρ Ns a v H' R → H.Extends H'
-  | .iota _ _ _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
+    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {a v : Nat} {R : List Nat} :
+    EvalRec P ϖ H E ρ ϱ Ns a v H' R → H.Extends H'
+  | .iota _ _ _ _ _ _ hr hv => hr.extends.trans ((List.prefix_append _ _).trans hv.extends)
 
 /-- The evaluation of the recursive results of a branch extends the heap. -/
 theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
-    {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
+    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
     {πs' : List Multiplicity} {rs : List Nat} {R : List Nat} :
-    EvalResults P ϖ H E ρ Ns as ks πs' rs H' R → H.Extends H'
+    EvalResults P ϖ H E ρ ϱ Ns as ks πs' rs H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .erased hs => (List.prefix_append _ _).trans hs.extends
   | .recursor _ h hs => h.extends.trans hs.extends

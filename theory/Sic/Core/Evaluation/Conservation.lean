@@ -295,8 +295,8 @@ theorem ctor_inv {i : Nat} {Ms : Targets n} :
 -- ADE: none.
 /-- A recursor reads the variables of its term as its multiplicity allows, and those of its
 branches. -/
-theorem recursor_inv {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
-    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .recursor ρ M Ns →
+theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
+    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .recursor ρ ϱ M Ns →
       ∃ ν₁ χ, ν ≤ᶜ (ρ ·ᶜ ν₁) +ᶜ χ ∧ Target.Usage ν₁ M ∧ (ρ = .zero → M.IsSkeleton) ∧
         TargetBranches.Usage χ Ns
   | _, _, .recursor hM hz hNs, h => by
@@ -998,18 +998,18 @@ theorem Demand.positions_le_add (ρ : Multiplicity) : (πs₀ πs ρs : List Mul
 
 /-- The recursive results of a branch are as many as their fields and their binders. -/
 theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
-    {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
+    {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
     {ks : List (Option Nat)} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
-      EvalResults P ϖ H E ρ Ns as ks πs rs H' R → rs.length = ks.length ∧ πs.length = ks.length
+      EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R → rs.length = ks.length ∧ πs.length = ks.length
   | _, _, _, _, .nil => ⟨rfl, rfl⟩
   | _, _, _, _, .erased hs | _, _, _, _, .recursor _ _ hs =>
     ⟨congrArg (· + 1) hs.length.1, congrArg (· + 1) hs.length.2⟩
 
 /-- The recursive results of a branch are on its fields. -/
 theorem EvalResults.lt {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
-    {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
+    {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
     {ks : List (Option Nat)} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
-      EvalResults P ϖ H E ρ Ns as ks πs rs H' R →
+      EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R →
         ∀ (j : Nat) l, ks[j]? = some (some l) → l < as.length
   | _, _, _, _, .nil, _, _, h => nomatch h
   | _, _, _, _, .erased hs, j + 1, l, h => hs.lt j l h
@@ -1226,15 +1226,15 @@ termination_by structural h
 reads of the branches, and `ρ` times that of the value pay the reads of the run and the demand of
 its value. -/
 theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
-    {n : Nat} {H H' : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
-    {a v : Nat} {R : List Nat} (h : EvalRec P ϖ H E ρ Ns a v H' R)
+    {n : Nat} {H H' : Heap} {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n}
+    {a v : Nat} {R : List Nat} (h : EvalRec P ϖ H E ρ ϱ Ns a v H' R)
     {χ : MultiplicityVector n} {Dχ Da : Demand} (hNs : TargetBranches.Usage χ Ns)
     (hE : H.EnvDemand E χ Dχ) (ha : H.ValueDemand a Da) :
     ∃ D, H'.ValueDemand v D ∧
       ϖ ·ᶜ (Dχ +ᶜ ρ ·ᶜ Da) +ᶜ Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ D :=
   match h with
   | .iota (H₂ := H₂) (πs₀ := πs₀) (as := as) (a' := a') (b := b) (πs := πs) (πs' := πs')
-      (ks := ks) (N := N) (rs := rs) (R₁ := R₁) (R₂ := R₂) hca hN hla hπ _ hres hv => by
+      (ks := ks) (N := N) (rs := rs) (R₁ := R₁) (R₂ := R₂) hca hN hla hπ _ _ hres hv => by
     obtain ⟨Ds, hDs, rfl, hl₀⟩ := (ha.ctor_inv hca).inv
     obtain ⟨δ, hNu, hχ, hk⟩ := hNs.get _ hN
     obtain ⟨D', hD', hE'⟩ := hE.le hχ
@@ -1310,9 +1310,9 @@ the multiplicities of the binders of the computed results, and `ρ` times the de
 that the recursions use, pay the reads of the runs and the demands of the results, each as many
 times as the multiplicity of its binder. -/
 theorem EvalResults.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
-    {n : Nat} {H H' : Heap} {E : List Nat} {ρ : Multiplicity} {Ns : TargetBranches n}
+    {n : Nat} {H H' : Heap} {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n}
     {as : List Nat} {ks : List (Option Nat)} {πs : List Multiplicity} {rs : List Nat}
-    {R : List Nat} (h : EvalResults P ϖ H E ρ Ns as ks πs rs H' R) {χ : MultiplicityVector n}
+    {R : List Nat} (h : EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R) {χ : MultiplicityVector n}
     {Dχ : Demand} {Ds : List Demand} (hNs : TargetBranches.Usage χ Ns)
     (hE : H.EnvDemand E χ Dχ) (hDs : H.ValueDemands as Ds)
     (hk : ∀ (j l : Nat) π, ks[j]? = some (some l) → πs[j]? = some π → π ≠ .zero) :
