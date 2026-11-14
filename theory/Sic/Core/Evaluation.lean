@@ -30,13 +30,15 @@ closure, at the multiplicity of its position, and an observation passes its argu
 these multiplicities bound the uses of a value through the position, which a closure observed again
 would otherwise exceed.
 A value also stores with each address the requirement at run time of its position on the ownership
-of the value, and an observation passes the requirements of its arguments and the ownership at run
-time of the result of its destructor.
+of the value, and an observation passes the requirements of its arguments, the ownership at run time
+of the result of its destructor and the ownership at run time that its destructor requires of the
+value that it observes.
 The recursor and the observation check that the binders of the branch they run are within these
 multiplicities, the recursor of the multiplicity `ρ` reading each field `ρ` times its multiplicity,
 that the ownerships that the branch gives its variables are within those that the requirements
-allow, and that the ownership of the result is the one that the observation expects, and the
-evaluation is stuck otherwise.
+allow, that the ownership of the result is the one that the observation expects, and that the
+ownership that the branch assumes of the value that it observes is within the one that the
+observation requires, and the evaluation is stuck otherwise.
 The values are `↯`, the constructors applied to the addresses of their fields, and the closures of
 the corecursors, which hold their environment, their branches and the addresses of their state: a
 corecursor computes nothing until it is observed, and each observation runs the branch of its
@@ -156,10 +158,10 @@ def TargetBranches.get {n : Nat} : TargetBranches n → Nat →
 def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
     Option (Resumption × Σ b c, (Fin b → Multiplicity) × (Fin b → Multiplicity) ×
       (Fin c → Multiplicity) × (Fin c → Multiplicity) × ResultOwnership Multiplicity c ×
-      Target (n + (b + c)))
+      Multiplicity × Target (n + (b + c)))
   | .nil, _ => none
-  | .cons o b c πs ϱs πs' ϱs' ψ N _, 0 => some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, N⟩)
-  | .cons _ _ _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
+  | .cons o b c πs ϱs πs' ϱs' ψ χ N _, 0 => some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, χ, N⟩)
+  | .cons _ _ _ _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 -- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄ ▶ π̄ ◀ ϱ̄`: the addresses of the `k` entries that the value at the address
@@ -270,13 +272,15 @@ inductive Eval (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat 
       Eval P ϖ H₁ E (.recursor ρ M Ns) b H₃ (R₁ ++ R₂)
   /-- An observation evaluates its term, then its arguments, in order, each at the weight times
   its multiplicity, then observes the value of its term, with the multiplicities and the
-  requirements of the arguments and the ownership of the result.
+  requirements of the arguments, the ownership of the result and the ownership that the destructor
+  requires of the value.
   RFC: `\mathsf{eval}_d` -/
   | obs {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ H₄ : Heap} {E : List Nat} {M : Target n} {i c : Nat}
-      {ψ : ResultOwnership Multiplicity c} {Ms : Targets n} {a b : Nat} {bs : List Nat}
-      {R₁ R₂ R₃ : List Nat} (h : Eval P ϖ H₁ E M a H₂ R₁) (hs : EvalAll P ϖ H₂ E Ms bs H₃ R₂)
-      (ho : EvalObs P ϖ H₃ a i ψ Ms.multiplicities Ms.requirements bs b H₄ R₃) :
-      Eval P ϖ H₁ E (.obs M i ψ Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
+      {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity} {Ms : Targets n} {a b : Nat}
+      {bs : List Nat} {R₁ R₂ R₃ : List Nat} (h : Eval P ϖ H₁ E M a H₂ R₁)
+      (hs : EvalAll P ϖ H₂ E Ms bs H₃ R₂)
+      (ho : EvalObs P ϖ H₃ a i ψ χ Ms.multiplicities Ms.requirements bs b H₄ R₃) :
+      Eval P ϖ H₁ E (.obs M i ψ χ Ms) b H₄ (R₁ ++ (R₂ ++ R₃))
   /-- A corecursor evaluates its state, in order, each entry at the weight times its multiplicity,
   and allocates its closure, with the multiplicities of the entries.
   RFC: `\mathsf{eval}_{\mathsf{corec}}` -/
@@ -358,38 +362,40 @@ inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → Li
       EvalResults P ϖ H₁ E ρ Ns as (some j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; ϖ; H ⊢ a.dᵢ(b̄ ▶ π̄ ◀ ϱ̄) ◀ ψ ⇓ c; H'; R`: the observation by the destructor of the case `i`,
-of the ownership at run time `ψ` of its result, at the weight `ϖ`, applied to the arguments at the
+/-- `𝒫; ϖ; H ⊢ a.dᵢ(b̄ ▶ π̄ ◀ ϱ̄) ◀ ψ ◀ χ ⇓ c; H'; R`: the observation by the destructor of the case
+`i`, of the ownership at run time `ψ` of its result and requiring the ownership at run time `χ` of
+the value that it observes, at the weight `ϖ`, applied to the arguments at the
 addresses `b̄`, at the multiplicities `π̄` and the requirements `ϱ̄`, of the value at the address `a`,
 a closure: the branch of the case evaluates in the environment of the closure, with cells for its
 state and the arguments, at the multiplicities of its binders times the weight, and its value is
 resumed when the branch resumes a state; the uses that the branch makes of each entry of the state
 and of each argument, by its cell, must be within the uses that the closure or the observation
 allows, the ownership that it gives each entry of the state within the requirement of the entry,
-the requirement that it assumes of each argument within the one that the observation passes, and
-the ownership of its result the one that the observation expects, and the evaluation is stuck
-otherwise. -/
+the requirement that it assumes of each argument within the one that the observation passes, the
+ownership of its result the one that the observation expects, and the ownership that it assumes of
+the value within the one that the observation requires, and the evaluation is stuck otherwise. -/
 inductive EvalObs (P : Program) : Multiplicity → Heap → Nat → Nat → {c : Nat} →
-    ResultOwnership Multiplicity c → List Multiplicity → List Multiplicity → List Nat → Nat → Heap →
-    List Nat → Prop where
+    ResultOwnership Multiplicity c → Multiplicity → List Multiplicity → List Multiplicity →
+    List Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\beta_\Downarrow` -/
   | beta {ϖ : Multiplicity} {H₁ H₂ H₃ : Heap} {a i c₀ : Nat}
-      {ψ₀ : ResultOwnership Multiplicity c₀} {πs₁ ϱs₁ πs₂ ϱs₂ : List Multiplicity}
+      {ψ₀ : ResultOwnership Multiplicity c₀} {χ₀ : Multiplicity}
+      {πs₁ ϱs₁ πs₂ ϱs₂ : List Multiplicity}
       {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
       {ss : List Nat} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
       {N : Target (n + (b + c))} {R : List Nat}
       (h : H₁[a]? = some (.corec n E Ps πs₁ ϱs₁ ss))
-      (hP : Ps.get i = some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, N⟩)) (hb : ss.length = b)
+      (hP : Ps.get i = some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, χ, N⟩)) (hb : ss.length = b)
       (hc : bs.length = c)
       (hπ₁ : ∀ j : Fin b, ∃ π₁, πs₁[(j : Nat)]? = some π₁ ∧ π₁ ≤ πs j)
       (hπ₂ : ∀ j : Fin c, ∃ π₂, πs₂[(j : Nat)]? = some π₂ ∧ π₂ ≤ πs' j)
       (hϱ₁ : ∀ j : Fin b, ∃ ϱ₁, ϱs₁[(j : Nat)]? = some ϱ₁ ∧ ϱs j * πs j ≤ ϱ₁ * πs j)
       (hϱ₂ : ∀ j : Fin c, ∃ ϱ₂, ϱs₂[(j : Nat)]? = some ϱ₂ ∧ ϱs' j ≤ ϱ₂)
-      (hψ : (⟨c₀, ψ₀⟩ : Σ c, ResultOwnership Multiplicity c) = ⟨c, ψ⟩)
+      (hψ : (⟨c₀, ψ₀⟩ : Σ c, ResultOwnership Multiplicity c) = ⟨c, ψ⟩) (hχ : χ ≤ χ₀)
       (hw : Eval P ϖ (H₁.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (ss ++ bs))
         ((List.range' H₁.length (ss ++ bs).length).reverse ++ E) N w H₂ R)
-      (hr : EvalResume H₂ n E Ps o ψ w v H₃) : EvalObs P ϖ H₁ a i ψ₀ πs₂ ϱs₂ bs v H₃ R
+      (hr : EvalResume H₂ n E Ps o ψ w v H₃) : EvalObs P ϖ H₁ a i ψ₀ χ₀ πs₂ ϱs₂ bs v H₃ R
 
 end
 
@@ -522,11 +528,12 @@ termination_by structural h₁
 -- ADE: none.
 /-- The observation of a value is deterministic. -/
 theorem EvalObs.det {P : Program} {ϖ : Multiplicity} {H H₁ H₂ : Heap} {a i c : Nat}
-    {ψ : ResultOwnership Multiplicity c} {πs ϱs : List Multiplicity} {bs : List Nat}
-    {v₁ v₂ : Nat} {R₁ R₂ : List Nat} (h₁ : EvalObs P ϖ H a i ψ πs ϱs bs v₁ H₁ R₁)
-    (h₂ : EvalObs P ϖ H a i ψ πs ϱs bs v₂ H₂ R₂) : v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
+    {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity} {πs ϱs : List Multiplicity}
+    {bs : List Nat} {v₁ v₂ : Nat} {R₁ R₂ : List Nat}
+    (h₁ : EvalObs P ϖ H a i ψ χ πs ϱs bs v₁ H₁ R₁) (h₂ : EvalObs P ϖ H a i ψ χ πs ϱs bs v₂ H₂ R₂) :
+    v₁ = v₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
   match h₁, h₂ with
-  | .beta h hP _ _ _ _ _ _ _ hw hr, .beta h' hP' _ _ _ _ _ _ _ hw' hr' => by
+  | .beta h hP _ _ _ _ _ _ _ _ hw hr, .beta h' hP' _ _ _ _ _ _ _ _ hw' hr' => by
     rw [h] at h'
     cases h'
     rw [hP] at hP'

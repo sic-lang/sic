@@ -64,12 +64,12 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
     {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs : CorecBranches k Γ} {δs : Nat → GradeVector Γ.length}
-    (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+    (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q χ : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) →
+      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ) →
       gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased → ∀ ρ,
       RunValid sig ι P ((hΓ.extend _).extend _)
         (((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
@@ -91,10 +91,10 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) δs := by
-  intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr
+  intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr
   obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
   obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels _ hg
-  have hb := hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ hpr ρ
+  have hb := hgt i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ hpr ρ
   have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
     hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
   simp only [Context.atLevels, Context.substLevels_append,
@@ -355,13 +355,13 @@ where
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
-          (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
-            soundnessIn.hasType hd hι (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+          (fun i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
+            soundnessIn.hasType hd hι (hgt i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
         (RunValidCorecBranches.atLevels hq hl hp
-          (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
-            hasType hd hι hP (hgt i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)
+          (fun i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
+            hasType hd hι hP (hgt i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg)
               ((Mode.erasesUncounted .oneOne).mode _ hpr ▸
-                hgu i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+                hgu i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
         hδ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact RunValid.sub hγ hc

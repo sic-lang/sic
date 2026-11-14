@@ -10,8 +10,9 @@ The ownership of the target language of annex 16 of RFC 36, `Ω; φ ⊢ M ◀ o`
 the ownership `Ω` of each constant.
 It follows the ownership of annex 13 on the run-time components that the target language keeps: the
 requirements of the positions, the coefficients of the variables of the fields of the branches of
-the recursors, the requirements of the variables of the branches of the corecursors and the
-ownerships of the results of the destructors, so that the uniqueness at run time is stated on it.
+the recursors, the requirements of the variables of the branches of the corecursors, the ownerships
+of the results of the destructors and the requirements of the destructors on the values that they
+observe, so that the uniqueness at run time is stated on it.
 `↯`, which the evaluation never reads, has every ownership, and a position satisfies its requirement
 in every case: the erasure stores no position whose requirement the source does not check and whose
 ownership a result reads.
@@ -56,12 +57,13 @@ inductive Target.Ownership (Ω : Name → Multiplicity) :
       (hNs : TargetBranches.Ownership Ω φ o o' Ns) : Target.Ownership Ω φ o' (.recursor ρ M Ns)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships `os` of its arguments, which satisfy the
-  requirements of their positions.
+  requirements of their positions, and `o` satisfies the requirement `χ` of the destructor on the
+  value that it observes.
   RFC: `\mathsf{own}_M.d` -/
   | obs {n : Nat} {φ : MultiplicityVector n} {M : Target n} {i c : Nat}
-      {ψ : ResultOwnership Multiplicity c} {Ms : Targets n} {o v : Multiplicity}
+      {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity} {Ms : Targets n} {o v : Multiplicity}
       {os : List Multiplicity} (hM : Target.Ownership Ω φ o M) (hMs : Targets.Ownership Ω φ os Ms)
-      (hv : ψ.value os = some v) : Target.Ownership Ω φ (o * v) (.obs M i ψ Ms)
+      (hv : ψ.value os = some v) (hχ : χ ≤ o) : Target.Ownership Ω φ (o * v) (.obs M i ψ χ Ms)
   /-- A corecursor builds a new value, of the ownership `1`, whose state satisfies the requirements of
   its positions, and whose branches have the ownerships of the results of their destructors.
   RFC: `\mathsf{own}_M.\mathsf{corec}` -/
@@ -110,8 +112,9 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
 -- ADE: none.
 /-- `Ω; φ ⊢ P̄ ◀`: each branch of a corecursor has, for all the ownerships `ō` of its arguments that
 satisfy their requirements, the value of the ownership `ψ` of the result of its destructor at `ō`,
-or the ownership `1` of a new value when it resumes the corecursor, given the ownership `ϱ · π` of
-the variable of each entry of the state, of the requirement `ϱ` and the multiplicity `π`, and
+or the ownership `1` of a new value when it resumes the corecursor, given the ownership `χ · ϱ · π`
+of the variable of each entry of the state, of the requirement `χ` of the destructor on the value
+that it observes, of the requirement `ϱ` and of the multiplicity `π`, and
 `o · π'` of the variable of each argument, of the ownership `o` and the multiplicity `π'`. -/
 inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
     {n : Nat} → MultiplicityVector n → TargetCorecBranches n → Prop where
@@ -122,12 +125,14 @@ inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
   RFC: `\mathsf{own}_{\bar P}.{,}` -/
   | cons {n b c : Nat} {φ : MultiplicityVector n} {k : Resumption}
       {πs ϱs : Fin b → Multiplicity} {πs' ϱs' : Fin c → Multiplicity}
-      {ψ : ResultOwnership Multiplicity c} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
+      {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity} {P : Target (n + (b + c))}
+      {Ps : TargetCorecBranches n}
       (hP : ∀ (os : Fin c → Multiplicity) (v : Multiplicity), (∀ l, ϱs' l ≤ os l) →
         (k = .none ∧ ψ.value (List.ofFn os) = some v ∨ k ≠ .none ∧ v = .one) →
-        Target.Ownership Ω (φ.extendBinders (fun l => ϱs l * πs l) (fun l => os l * πs' l)) v P)
+        Target.Ownership Ω
+          (φ.extendBinders (fun l => χ * ϱs l * πs l) (fun l => os l * πs' l)) v P)
       (hPs : TargetCorecBranches.Ownership Ω φ Ps) :
-      TargetCorecBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ P Ps)
+      TargetCorecBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ χ P Ps)
 
 end
 

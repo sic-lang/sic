@@ -30,9 +30,9 @@ theorem Destructors.recursionAt_mem {k : Nat} {names : List Name} {D : Name} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {i : Nat} →
       ds.recursionAt names i = some D → D ∈ names
   | _, _, .nil, _, h => by simp [Destructors.recursionAt, Destructors.recursion] at h
-  | _, _, .cons _ _ _ B _ _, 0, h => Term.blockName_mem (A := B) (by
+  | _, _, .cons _ _ _ _ B _ _, 0, h => Term.blockName_mem (A := B) (by
       simpa [Destructors.recursionAt, Destructors.recursion] using h)
-  | _, _, .cons _ _ _ _ _ ds, i + 1, h => Destructors.recursionAt_mem (ds := ds) (i := i)
+  | _, _, .cons _ _ _ _ _ _ ds, i + 1, h => Destructors.recursionAt_mem (ds := ds) (i := i)
       (by simpa [Destructors.recursionAt, Destructors.recursion] using h)
 
 /-- A data type of the signature is one of its declared types. -/
@@ -553,14 +553,16 @@ theorem Entry.destructorArguments_of_not_mem {D : Name} {qs : List Quality} {ps 
 
 -- ADE: none.
 /-- In a signature whose names are distinct, the arguments of the destructors of the cases of the
-block of a codata type are the positions of their types, the parameters of their arguments and the
-ownerships of their results at the instance. -/
+block of a codata type are the positions of their types, the parameters of their arguments, the
+ownerships of their results and the ownerships that they require of the values that they observe at
+the instance. -/
 theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
     sig.destructorArguments D qs ps = some (decl.codataCases.map fun x =>
-      (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD ⟨[], ⟨none, fun _ => none⟩⟩))
+      (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD
+        ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩))
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
     unfold Signature.destructorArguments
@@ -568,7 +570,7 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
     · have hs : Entry.destructorArguments D qs ps (.typeDeclaration decl) =
           some (decl.codataCases.map fun x =>
             (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD
-              ⟨[], ⟨none, fun _ => none⟩⟩)) := by
+              ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) := by
         simp only [Entry.destructorArguments, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
@@ -578,20 +580,21 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
       exact hd.destructorArguments ⟨he', hT, hD⟩ hq hp
 
 /-- The destructor at a position in destructors is named by them. -/
-theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → d ∈ ns
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q χ ds Ξ Θ B ψ → d ∈ ns
   | _, _, _, _, _, _, _, .here => List.mem_cons_self
   | _, _, _, _, _, _, _, .there h => List.mem_cons_of_mem _ h.mem
 
 /-- Destructors with distinct names give the destructor at a position the parameters of its
-arguments and the ownership of its result. -/
-theorem Destructors.Pos.arguments {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+arguments, the ownership of its result and the ownership that it requires of the value that it
+observes. -/
+theorem Destructors.Pos.arguments {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
-        ds.arguments d = some ⟨ps, ψ⟩
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q χ ds Ξ Θ B ψ →
+        ds.arguments d = some ⟨ps, ψ, χ⟩
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.arguments]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
     have hne : d' ≠ d := fun he => (List.nodup_cons.1 hn).1 (he ▸ h.mem)
@@ -604,10 +607,10 @@ theorem Entry.argumentParams_of_mem {decl : TypeDeclaration}
     (hn : (decl.codataTypes.map (·.name)).Nodup)
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.codataTypes)
     (hc : T.destructors.Nodup) {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+    (hp : ps.length = decl.grades) {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-    {ψ : ResultOwnership Grade ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ) :
-    Entry.argumentParams T.name d qs ps (.typeDeclaration decl) = some ⟨ps', ψ⟩ := by
+    {ψ : ResultOwnership Grade ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ) :
+    Entry.argumentParams T.name d qs ps (.typeDeclaration decl) = some ⟨ps', ψ, χ⟩ := by
   simp only [Entry.argumentParams]
   split
   · try split
@@ -634,18 +637,19 @@ theorem Entry.argumentParams_of_not_mem {D d : Name} {qs : List Quality} {ps : L
   | .constantDeclaration _, _ => rfl
 
 /-- In a signature whose names are distinct, the parameters of the arguments of a destructor of a
-declared type and the ownership of its result are those of its telescope at the instance. -/
+declared type, the ownership of its result and the ownership that it requires of the value that it
+observes are those of its declaration at the instance. -/
 theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) → {d : Name} → {p q : Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) → {d : Name} → {p q χ : Grade} →
     {ps' : List Parameter} → {Ξ : Scope} → {Θ : Telescope decl.levels Ξ ps'} →
     {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
-    (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
-    sig.argumentParams D d qs ps = some ⟨ps', ψ⟩
-  | [], _, _, _, _, h, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch h.1
+    (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
+    sig.argumentParams D d qs ps = some ⟨ps', ψ, χ⟩
+  | [], _, _, _, _, h, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp, _, _, _, _, _, _, _,
-      _, hpos => by
+      _, _, hpos => by
     unfold Signature.argumentParams
     rcases List.mem_cons.1 he with rfl | he'
     · have hg := Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup hn) hT
@@ -658,10 +662,10 @@ theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct �
       exact hd.argumentParams ⟨he', hT, hD⟩ hq hp hpos
 
 /-- Destructors with distinct names give the destructor at a position its grade. -/
-theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q χ ds Ξ Θ B ψ →
         ds.grade d = some p
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.grade]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -671,13 +675,13 @@ theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q : Grade} {ps : List Para
 
 /-- Destructors with distinct names give the destructor at a position one grade and one telescope
 of parameters. -/
-theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ p₂ q₂ : Grade}
+theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ χ₁ p₂ q₂ χ₂ : Grade}
     {ps₁ ps₂ : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ₁ Ξ₂ : Scope} →
       {Θ₁ : Telescope k Ξ₁ ps₁} → {B₁ : Term k (Ξ₁.extend ps₁.length)} →
       {ψ₁ : ResultOwnership Grade ps₁.length} → {Θ₂ : Telescope k Ξ₂ ps₂} →
       {B₂ : Term k (Ξ₂.extend ps₂.length)} → {ψ₂ : ResultOwnership Grade ps₂.length} → ns.Nodup →
-      Destructors.Pos d p₁ q₁ ds Ξ₁ Θ₁ B₁ ψ₁ → Destructors.Pos d p₂ q₂ ds Ξ₂ Θ₂ B₂ ψ₂ →
+      Destructors.Pos d p₁ q₁ χ₁ ds Ξ₁ Θ₁ B₁ ψ₁ → Destructors.Pos d p₂ q₂ χ₂ ds Ξ₂ Θ₂ B₂ ψ₂ →
         p₁ = p₂ ∧ ps₁ = ps₂
   | _, _, _, _, _, _, _, _, _, _, _, hn, .here, h₂ => by
     cases h₂ with
@@ -689,11 +693,11 @@ theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ p₂ q₂ 
     | there h₂ => exact h₁.params_unique (List.nodup_cons.1 hn).2 h₂
 
 /-- The destructor at a position of destructors whose names are distinct has the result there. -/
-theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter}
+theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter}
     (names : List Name) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q χ ds Ξ Θ B ψ →
         ds.resultName names d = B.blockName names
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultName]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -703,10 +707,10 @@ theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q : Grade} {ps : List
 
 /-- The destructor at a position of destructors whose names are distinct has the ownership of its
 result there. -/
-theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter} :
+theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q ds Ξ Θ B ψ →
+      {ψ : ResultOwnership Grade ps.length} → ns.Nodup → Destructors.Pos d p q χ ds Ξ Θ B ψ →
         ds.resultConstant d = ψ.constant
   | _, _, _, _, _, _, _, _, .here => by simp [Destructors.resultConstant]
   | _, d' :: _, _, _, _, _, _, hn, .there h => by
@@ -716,11 +720,11 @@ theorem Destructors.Pos.resultConstant {k : Nat} {d : Name} {p q : Grade} {ps : 
 
 /-- The destructor at a position is recursive, of the type of the block that its result names, at
 the number of the position. -/
-theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q : Grade} {ps : List Parameter}
+theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q χ : Grade} {ps : List Parameter}
     (names : List Name) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
         ds.recursionAt names hpos.index = B.blockName names
   | _, _, _, _, _, _, _, .here => by
     simp [Destructors.Pos.index, Destructors.recursionAt, Destructors.recursion]
@@ -732,23 +736,23 @@ theorem Destructors.Pos.recursionAt_index {k : Nat} {d : Name} {p q : Grade} {ps
 /-- A destructor named by destructors has a position in them. -/
 theorem Destructors.exists_pos {k : Nat} {d : Name} :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) → d ∈ ns →
-      ∃ (p q : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k Ξ ps)
+      ∃ (p q χ : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k Ξ ps)
         (B : Term k (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length),
-        Nonempty (Destructors.Pos d p q ds Ξ Θ B ψ)
+        Nonempty (Destructors.Pos d p q χ ds Ξ Θ B ψ)
   | _, _, .nil, h => nomatch h
-  | _, d' :: _, .cons p q Θ B ψ ds, h => by
+  | _, d' :: _, .cons p q χ Θ B ψ ds, h => by
     by_cases he : d' = d
     · subst he
-      exact ⟨p, q, _, _, Θ, B, ψ, ⟨.here⟩⟩
+      exact ⟨p, q, χ, _, _, Θ, B, ψ, ⟨.here⟩⟩
     · have h' : d ∈ _ := (List.mem_cons.1 h).resolve_left fun h'' => he h''.symm
-      obtain ⟨p', q', ps', Ξ, Θ', B', ψ', ⟨hpos⟩⟩ := Destructors.exists_pos ds h'
-      exact ⟨p', q', ps', Ξ, Θ', B', ψ', ⟨.there hpos⟩⟩
+      obtain ⟨p', q', χ', ps', Ξ, Θ', B', ψ', ⟨hpos⟩⟩ := Destructors.exists_pos ds h'
+      exact ⟨p', q', χ', ps', Ξ, Θ', B', ψ', ⟨.there hpos⟩⟩
 
 /-- Destructors with distinct names, at their names, all have a grade. -/
 theorem Destructors.isSome_grade {k : Nat} :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) → ns.Nodup → ∀ d ∈ ns,
       ∃ p, ds.grade d = some p := fun ds hn d hd => by
-  obtain ⟨p, q, ps, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos ds hd
+  obtain ⟨p, q, χ, ps, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos ds hd
   exact ⟨p, hpos.grade hn⟩
 
 /-- A type declaration gives the grades of the destructors of the cases of its block, whose types

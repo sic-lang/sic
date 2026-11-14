@@ -132,11 +132,12 @@ inductive Target : Nat → Type where
   /-- `rec_ρ M with N̄`: the recursor of the multiplicity `ρ` on `M`, with a branch for each
   constructor, in order. -/
   | recursor {n : Nat} (ρ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
-  /-- `M.dᵢ(M̄) ◀ ψ`: the observation of `M` by the destructor of the case `i` of its block, applied
-  to a term for each of its `c` arguments, each at the multiplicity and the requirement of its
-  argument, with the ownership `ψ` of the result of the destructor, at run time. -/
+  /-- `M.dᵢ(M̄) ◀ ψ ◀ χ`: the observation of `M` by the destructor of the case `i` of its block,
+  applied to a term for each of its `c` arguments, each at the multiplicity and the requirement of
+  its argument, with the ownership `ψ` of the result of the destructor and the ownership `χ` that the
+  destructor requires of the value that it observes, at run time. -/
   | obs {n : Nat} (M : Target n) (i : Nat) {c : Nat} (ψ : ResultOwnership Multiplicity c)
-      (Ms : Targets n) : Target n
+      (χ : Multiplicity) (Ms : Targets n) : Target n
   /-- `corec from M̄ with P̄`: the corecursor from the state `M̄`, each entry at the multiplicity of
   its entry, with a branch for each destructor, in order. -/
   | corec {n : Nat} (Ms : Targets n) (Ns : TargetCorecBranches n) : Target n
@@ -172,17 +173,18 @@ inductive TargetBranches : Nat → Type where
 
 -- ADE: none.
 /-- `P̄`: the branches of a corecursor of the target language, in order; the branch
-`(ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ). P` is a term over a new variable for each of the `b` entries
-of the state and of the `c` arguments, of the multiplicities `π̄` and `π̄'` and of the requirements
-`ϱ̄` and `ϱ̄'` of their entries at run time, `k` is its resumption and `ψ` the ownership of the result
-of its destructor, at run time.
+`(ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ χ). P` is a term over a new variable for each of the `b`
+entries of the state and of the `c` arguments, of the multiplicities `π̄` and `π̄'` and of the
+requirements `ϱ̄` and `ϱ̄'` of their entries at run time, `k` is its resumption, `ψ` the ownership of
+the result of its destructor and `χ` the ownership that its destructor requires of the value that it
+observes, at run time.
 RFC: `\mathsf{syntax}_{\bar P}` -/
 inductive TargetCorecBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetCorecBranches n
-  /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ). P, P̄)`. -/
+  /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ χ). P, P̄)`. -/
   | cons {n : Nat} (o : Resumption) (b c : Nat) (πs ϱs : Fin b → Multiplicity)
-      (πs' ϱs' : Fin c → Multiplicity) (ψ : ResultOwnership Multiplicity c)
+      (πs' ϱs' : Fin c → Multiplicity) (ψ : ResultOwnership Multiplicity c) (χ : Multiplicity)
       (N : Target (n + (b + c))) (Ns : TargetCorecBranches n) : TargetCorecBranches n
 
 end
@@ -210,11 +212,13 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   /-- In the term of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{obs}` -/
   | obs {n : Nat} {x : Fin n} {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {Ms : Targets n} (h : Target.Occurs x M) : Target.Occurs x (.obs M i ψ Ms)
+      {χ : Multiplicity} {Ms : Targets n} (h : Target.Occurs x M) :
+      Target.Occurs x (.obs M i ψ χ Ms)
   /-- In an argument of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{args}` -/
   | arg {n : Nat} {x : Fin n} {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {Ms : Targets n} (h : Targets.Occurs x Ms) : Target.Occurs x (.obs M i ψ Ms)
+      {χ : Multiplicity} {Ms : Targets n} (h : Targets.Occurs x Ms) :
+      Target.Occurs x (.obs M i ψ χ Ms)
   /-- In the state of a corecursor.
   RFC: `\mathsf{occurs}_M.\mathsf{from}` -/
   | corec {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
@@ -259,17 +263,17 @@ inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranch
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar P}.P` -/
   | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
       {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
       (h : Target.Occurs (x.addNat (b + c)) N) :
-      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ N Ns)
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ χ N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar P}.\bar P` -/
   | tail {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
       {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
       (h : TargetCorecBranches.Occurs x Ns) :
-      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ N Ns)
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ χ N Ns)
 
 end
 
@@ -334,8 +338,9 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   arguments.
   RFC: `{\sqsubseteq}.d` -/
   | obs {n : Nat} {M N : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {Ms Ns : Targets n} (h : Target.LessDefined M N) (hs : Targets.LessDefined Ms Ns) :
-      Target.LessDefined (.obs M i ψ Ms) (.obs N i ψ Ns)
+      {χ : Multiplicity} {Ms Ns : Targets n} (h : Target.LessDefined M N)
+      (hs : Targets.LessDefined Ms Ns) :
+      Target.LessDefined (.obs M i ψ χ Ms) (.obs N i ψ χ Ns)
   /-- A corecursor is less defined than a corecursor of a more defined state and branches.
   RFC: `{\sqsubseteq}.\mathsf{corec}` -/
   | corec {n : Nat} {Ms Ns : Targets n} {Ms' Ns' : TargetCorecBranches n}
@@ -379,12 +384,12 @@ inductive TargetCorecBranches.LessDefined :
   /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₁ ◀ ψ). P₁, P̄₁) ⊑ ((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₂ ◀ ψ). P₂, P̄₂)`.
   RFC: `{\sqsubseteq}_{\bar P}.{,}` -/
   | cons {n : Nat} {o₁ o₂ : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
       {M N : Target (n + (b + c))} {Ms Ns : TargetCorecBranches n}
       (ho : Resumption.LessDefined o₁ o₂) (h : Target.LessDefined M N)
       (hs : TargetCorecBranches.LessDefined Ms Ns) :
-      TargetCorecBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ M Ms)
-        (.cons o₂ b c πs ϱs πs' ϱs' ψ N Ns)
+      TargetCorecBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ χ M Ms)
+        (.cons o₂ b c πs ϱs πs' ϱs' ψ χ N Ns)
 
 end
 
@@ -511,10 +516,12 @@ def ResultOwnership.toArity {α : Type} {n : Nat} (ψ : ResultOwnership α n) (c
     ResultOwnership α c :=
   ⟨ψ.constant, fun j => if h : (j : Nat) < n then ψ.coefficient ⟨j, h⟩ else none⟩
 
-/-- The parameters of no argument, and the ownership of a result that has no constant and no factor,
-which a destructor that the signature does not give has. -/
-def ResultOwnership.noArguments : Σ ps : List Parameter, ResultOwnership Grade ps.length :=
-  ⟨[], ⟨none, fun _ => none⟩⟩
+/-- The parameters of no argument, the ownership of a result that has no constant and no factor,
+and the requirement `ωω` on the value observed, which states nothing, which a destructor that the
+signature does not give has. -/
+def ResultOwnership.noArguments :
+    Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade :=
+  ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩
 
 mutual
 
@@ -558,7 +565,8 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     match sig.destructorCase D d with
     | some i =>
       .obs (t.erase sig S hΓ) i
-        (((sig.argumentParams D d qs ps).getD ResultOwnership.noArguments).2.map Grade.run)
+        (((sig.argumentParams D d qs ps).getD ResultOwnership.noArguments).2.1.map Grade.run)
+        ((sig.argumentParams D d qs ps).getD ResultOwnership.noArguments).2.2.run
         (bs.erase sig S hΓ ((sig.argumentParams D d qs ps).getD ResultOwnership.noArguments).1)
     | none => .erased
   | .corec r D qs _ ps _ ss Ss vs =>
@@ -616,15 +624,16 @@ entry of its state or of an argument whose parameter in `pss` has the grade `q` 
 `run(⌜11ᵐ ⊙ p⌝ · q)`, the grade that the usage gives it at run time, which is `0` when `p` has no use
 at run time, since no observation then runs the branch, and the requirement at run time of its
 parameter, and `ω` for both when the parameter is not given, in a term that no declaration types;
-the branch has the ownership at run time of the result of its destructor in `pss`; a branch without
-grade, or with non-uniform parameters, which the corecursors do not have yet, is erased, and its
-variables have the multiplicity and the requirement `ω`, and its result an ownership without
-constant and without factor.
+the branch has the ownership at run time of the result of its destructor in `pss` and the ownership
+at run time that its destructor requires of the value that it observes; a branch without grade, or
+with non-uniform parameters, which the corecursors do not have yet, is erased, its variables have
+the multiplicity and the requirement `ω`, its result an ownership without constant and without
+factor, and it requires `ω`, which states nothing.
 RFC: `\mathsf{erase}_{\bar g}` -/
 def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
     CorecBranches k Γ → List Grade → List Resumption →
-      List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length) →
+      List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) →
       TargetCorecBranches Γ.length
   | .nil, _, _, _ => .nil
   | .cons 0 b c v vs, p :: ps, ks, pss =>
@@ -637,12 +646,13 @@ def CorecBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈
         fun q => ((Mode.oneOne ⊙ p).grade * q.usage).run).getD .omega)
       (fun j => (((pss.headD ([], ResultOwnership.noArguments)).2.1[(j : Nat)]?).map
         (·.requirement.run)).getD .omega)
-      (((pss.headD ([], ResultOwnership.noArguments)).2.2.toArity c).map Grade.run)
+      (((pss.headD ([], ResultOwnership.noArguments)).2.2.1.toArity c).map Grade.run)
+      (pss.headD ([], ResultOwnership.noArguments)).2.2.2.run
       (if p ∈ S then .erased else Scope.length_extend_extend Γ b c ▸
         v.erase sig S ((hΓ.extend b).extend c))
       (vs.erase sig S hΓ ps ks.tail pss.tail)
   | .cons _ b c _ vs, ps, ks, pss => .cons (ks.headD .none) b c (fun _ => .omega)
-      (fun _ => .omega) (fun _ => .omega) (fun _ => .omega) ⟨none, fun _ => none⟩ .erased
+      (fun _ => .omega) (fun _ => .omega) (fun _ => .omega) ⟨none, fun _ => none⟩ .omega .erased
       (vs.erase sig S hΓ ps.tail ks.tail pss.tail)
 
 end
@@ -866,7 +876,7 @@ resumptions, is less defined. -/
 theorem CorecBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) : (vs : CorecBranches k Γ) → (ps : List Grade) →
-      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length)) →
+      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
       (ks₁ ks₂ : List Resumption) →
       (∀ i, Resumption.LessDefined (ks₂.getD i .none) (ks₁.getD i .none)) →
       TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ pss)

@@ -135,11 +135,11 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   | obs {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
-      {d : Name} {p q : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {m : Mode} {γ δ : GradeVector Γ.length}
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ)
+      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ)
       (ht : Usage sig γ m t) {bs : Args k Γ ps'} (hbs : UsageArgs sig δ m bs)
       (hm : m ·ᵐ p.mode = m) :
       Usage sig (γ +ᶜ δ) m (.obs D qs ls ps as t d bs.terms)
@@ -173,27 +173,27 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
         ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        ∀ (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        ∀ (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
-      (hgu : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q : Grade)
+      (hgu : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q χ : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
         Usage sig (((δs i).extendParams ((m ⊙ p).grade * r) ps'').extendParams (m ⊙ p).grade ps₁)
           (m ⊙ p) g)
-      (hδ : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+      (hδ : ∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
-      (hδr : ∀ i j T' d (p q : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
+      (hδr : ∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership Grade ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q Ξ Θ B ψ → B.blockName decl.names = some D' →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → B.blockName decl.names = some D' →
         δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ)) :
       Usage sig ((r ·ᶜ γ) +ᶜ δ) m (.corec r D qs ls ps as ss.terms Ss gs)
   -- ADE: `sub`, in `Graded/Usage.agda`.
@@ -287,9 +287,9 @@ inductive UsageConstructors (sig : Signature) {j g k : Nat} {Δ : Scope} (ι : I
 
 -- ADE: `ΠΣₘ`, in `Graded/Usage.agda`, once for each destructor.
 /-- `Σ; γ ⊢ d̄ ▶ m`: checked in the mode `m`, the destructors `d̄` of a codata type use the
-variables of their scope as `γ` allows, each destructor `d : (Θ ⊢ B ◀ ψ) ▶ p; q` counting the uses
-of its arguments and of its result `p` times, its result using each argument as the types after the
-argument do, and the destructors after it using `d` as `q` allows. -/
+variables of their scope as `γ` allows, each destructor `d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ χ` counting the
+uses of its arguments and of its result `p` times, its result using each argument as the types after
+the argument do, and the destructors after it using `d` as `q` allows. -/
 inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : List Name} →
     GradeVector Γ.length → Mode → Destructors k Γ ns → Prop where
   /-- No destructor uses no variable.
@@ -299,13 +299,13 @@ inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : 
   result using each argument `xᵢ` as `⌜m'⌝ · qᵢ` allows, and the destructors after it, which use it
   as `⌜m⌝ · q` allows.
   RFC: `\bar d_{|▶}` -/
-  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q : Grade}
+  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} {p q χ : Grade}
       {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} {m : Mode} {γ δ η : GradeVector Γ.length}
       (hΘ : UsageTelescope sig γ (m ⊙ p) Θ)
       (hB : Usage sig (δ.extendTelescope (m ⊙ p).grade Θ) (m ⊙ p) B)
       (hds : UsageDestructors sig (Γ := .secondOrder ps ψ :: Γ) (η ∙ (m.grade * q)) m ds) :
-      UsageDestructors sig ((p ·ᶜ (γ +ᶜ δ)) +ᶜ η) m (.cons (d := d) p q Θ B ψ ds)
+      UsageDestructors sig ((p ·ᶜ (γ +ᶜ δ)) +ᶜ η) m (.cons (d := d) p q χ Θ B ψ ds)
   /-- Destructors may be given grades lower than their uses.
   RFC: `\mathsf{sub}_{\bar d▶}` -/
   | sub {Γ : Scope} {ns : List Name} {ds : Destructors k Γ ns} {m : Mode}

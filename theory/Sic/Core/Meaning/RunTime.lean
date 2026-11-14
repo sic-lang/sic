@@ -134,18 +134,20 @@ def CodataType.runBlockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g
 
 -- ADE: none.
 /-- `(®_x̄)`: the closed abstraction `x̄. B` for the destructor of the case `i`, whose arguments
-`ps` have the relation of run time `SΘ` and whose result has the ownership `ψ`, and the value at the
-address `a`: in each heap `H'` that extends `H`, at arguments `t̄` that `SΘ` relates to addresses
-`b̄`, the observation of the value at `a` by the destructor, at each weight `ϖ`, applied to `b̄` at
-the multiplicities and the requirements at run time of the grades and of the requirements of the
-arguments, with the ownership at run time of the result, gives a value, reading some cells, that
-the relation `F t̄` of the result type relates to `B[t̄ / x̄]`.
+`ps` have the relation of run time `SΘ`, whose result has the ownership `ψ` and which requires the
+ownership `χ` of the value that it observes, and the value at the address `a`: in each heap `H'`
+that extends `H`, at arguments `t̄` that `SΘ` relates to addresses `b̄`, the observation of the value
+at `a` by the destructor, at each weight `ϖ`, applied to `b̄` at the multiplicities and the
+requirements at run time of the grades and of the requirements of the arguments, with the ownership
+at run time of the result and the requirement at run time on the value, gives a value, reading some
+cells, that the relation `F t̄` of the result type relates to `B[t̄ / x̄]`.
 RFC: `\circledR_{\bar x}` -/
 def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat)
-    (ψ : ResultOwnership Grade ps.length) (SΘ : RunFieldsRel) (F : Terms 0 [] → RunRel)
-    (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) : Prop :=
+    (ψ : ResultOwnership Grade ps.length) (χ : Grade) (SΘ : RunFieldsRel)
+    (F : Terms 0 [] → RunRel) (f : Term 0 (Scope.extend [] ps.length)) (H : Heap) (a : Nat) :
+    Prop :=
   ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), SΘ H' ts.terms bs →
-    ∀ ϖ, ∃ w H'' R, EvalObs P ϖ H' a i (ψ.map Grade.run) (ps.map (·.usage.run))
+    ∀ ϖ, ∃ w H'' R, EvalObs P ϖ H' a i (ψ.map Grade.run) χ.run (ps.map (·.usage.run))
       (ps.map (·.requirement.run)) bs w H'' R ∧ F ts.terms H'' (f.subst ts.toSubst) w
 
 /-! ## Graph of the Relations of Run Time -/
@@ -280,7 +282,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
   with the relation `G f`.
   RFC: `\mathsf{rt}_{\bar d|}` -/
   | cons {D : Name} {rs : Nat → Option RunRel} {Γ : Scope} {d : Name} {ns : List Name}
-      {ps : List Parameter} {p q : Grade}
+      {ps : List Parameter} {p q χ : Grade}
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
@@ -299,23 +301,23 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       (hG : ∀ f, AbstractionRel SΘ F f f →
         RunDesRel sig ι P n below D (fun i => rs (i + 1)) ds (Subst.snoc θ f) (G f))
       (hrs : rs 0 = none) :
-      RunDesRel sig ι P n below D rs (.cons (d := d) p q Θ B ψ ds) @θ fun H o a =>
+      RunDesRel sig ι P n below D rs (.cons (d := d) p q χ Θ B ψ ds) @θ fun H o a =>
         AbstractionRel SΘ F (o d ps) (o d ps) ∧
-          (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ RΘ R (o d ps) H a) ∧ G (o d ps) H o a
+          (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ χ RΘ R (o d ps) H a) ∧ G (o d ps) H o a
   /-- `(rt_d̄rec)`: a recursive destructor `d : (Θ ⊢ B ◀ ψ) ▶ p`, whose arguments `Θ[θ]` are a
   telescope of run time in `U_n` with the relation `RΘ`, whose results are related by the relation
   `R` that `rs` gives it, by `(®_x̄)` at the case `i` of `d`, when `p` is used at run time, and the destructors after it, the same, with
   the same relation, for every abstraction for it.
   RFC: `\mathsf{rt}_{\bar d\mathsf{rec}}` -/
   | recursive {D : Name} {rs : Nat → Option RunRel} {Γ : Scope} {d : Name} {ns : List Name}
-      {ps : List Parameter} {p q : Grade}
+      {ps : List Parameter} {p q χ : Grade}
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {RΘ : RunFieldsRel}
       {R : RunRel} {i : Nat} (hi : sig.destructorCase D d = some i) (hrs : rs 0 = some R)
       (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ) (G : RunObsRel)
       (hG : ∀ f, RunDesRel sig ι P n below D (fun i => rs (i + 1)) ds (Subst.snoc θ f) G) :
-      RunDesRel sig ι P n below D rs (.cons (d := d) p q Θ B ψ ds) @θ fun H o a =>
-        (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
+      RunDesRel sig ι P n below D rs (.cons (d := d) p q χ Θ B ψ ds) @θ fun H o a =>
+        (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ χ RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
 
 -- ADE: none.
 /--

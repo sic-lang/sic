@@ -104,7 +104,7 @@ theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidableP
 theorem CorecBranches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length)) →
+      (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
       (vs.substLevels ls').erase sig S hΓ ps ks pss = vs.erase sig S hΓ ps ks pss
   | .nil, _, _, _ => rfl
   | .cons 0 b c v vs, _ :: ps, ks, pss => by

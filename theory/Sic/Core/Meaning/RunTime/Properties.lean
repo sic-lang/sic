@@ -110,12 +110,12 @@ theorem CodataType.runBlockRel_congr {j g k : Nat} {Δ : Scope} {Ts : List (Coda
 the same arguments, and relations of the results that relate the same terms at the arguments that
 they relate. -/
 theorem RunAbstractionRel.congr {P : Program} {ps : List Parameter} {i : Nat}
-    {ψ : ResultOwnership Grade ps.length}
+    {ψ : ResultOwnership Grade ps.length} {χ : Grade}
     {SΘ SΘ' : RunFieldsRel} {F F' : Terms 0 [] → RunRel}
     (hS : ∀ H ts bs, SΘ H ts bs ↔ SΘ' H ts bs)
     (hF : ∀ H (ts : Args 0 [] ps) bs, SΘ H ts.terms bs → ∀ H' t w, F ts.terms H' t w ↔ F' ts.terms H' t w)
     {f : Term 0 (Scope.extend [] ps.length)} {H : Heap} {a : Nat} :
-    RunAbstractionRel P i ψ SΘ F f H a ↔ RunAbstractionRel P i ψ SΘ' F' f H a :=
+    RunAbstractionRel P i ψ χ SΘ F f H a ↔ RunAbstractionRel P i ψ χ SΘ' F' f H a :=
   ⟨fun h H' hH ts bs hts ϖ =>
       have hts' := (hS H' ts.terms bs).2 hts
       have ⟨w, H'', R, he, hr⟩ := h H' hH ts bs hts' ϖ
@@ -322,7 +322,8 @@ theorem RunDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
         (∀ i, Option.Rel (fun x y => ∀ H t a, x H t a ↔ y H t a) (rs₁ i) (rs₂ i)) →
         ∀ H o a, S₁ H o a ↔ S₂ H o a
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ => .rfl
-  | .cons (ps := ps) (ψ := ψ) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR _ hG hrs, _, _, h', hRs => by
+  | .cons (ps := ps) (ψ := ψ) (χ := χ) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
+      _ hG hrs, _, _, h', hRs => by
     have hSΘp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
@@ -334,7 +335,8 @@ theorem RunDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
         FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (f := f) (H := H)
+      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (χ := χ)
+        (f := f) (H := H)
         (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
           have ⟨_, hv⟩ := hB ts hts'

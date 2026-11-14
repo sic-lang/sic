@@ -247,14 +247,14 @@ where
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         rw [States.sorts_subst]
         exact wfTelescopeSorts (hSt j T' ps'' S₀ hj hS₀) hθ
-      · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
+      · intro i j T' d ps'' S' hi hS' p q χ ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
+        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q χ ps₁ Ξ Θ B ψ hd
         exact ⟨_, CorecBranches.get_subst _ hg⟩
-      · intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hS' hd hg
+      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
-        have ih := hasType (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
+        have ih := hasType (hgt i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
         rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
@@ -358,15 +358,15 @@ where
         obtain ⟨S₂₀, hS₂₀, rfl⟩ := States.get_subst_inv θ h₂
         rw [States.sorts_subst]
         exact eqTelescope (hSe j T' ps'' S₁₀ S₂₀ hj hS₁₀ hS₂₀) hθ
-      · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
+      · intro i j T' d ps'' S' hi hS' p q χ ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
-        obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
+        obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q χ ps₁ Ξ Θ B ψ hd
         exact ⟨_, _, CorecBranches.get_subst θ hg₁, CorecBranches.get_subst θ hg₂⟩
-      · intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂
+      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g₁₀, hg₁₀, rfl⟩ := CorecBranches.get_subst_inv θ hg₁
         obtain ⟨g₂₀, hg₂₀, rfl⟩ := CorecBranches.get_subst_inv θ hg₂
-        have ih := eqTerm (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hd hg₁₀ hg₂₀)
+        have ih := eqTerm (hgt i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hd hg₁₀ hg₂₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
         rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
@@ -460,14 +460,14 @@ where
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         rw [States.sorts_subst]
         exact wfTelescopeSorts (hSt j T' ps'' S₀ hj hS₀) hθ
-      · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
+      · intro i j T' d ps'' S' hi hS' p q χ ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
-        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
+        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q χ ps₁ Ξ Θ B ψ hd
         exact ⟨_, CorecBranches.get_subst θ hg⟩
-      · intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hS' hd hg
+      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv θ hg
-        have ih := hasType (hgt i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
+        have ih := hasType (hgt i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
         rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
@@ -479,8 +479,8 @@ where
     | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp
         hadm hr has ht hu hobs, hθ => by
       refine .etaObs h hq hl hp hadm hr (hasInstanceArgs has hθ) (hasType ht hθ) (hasType hu hθ) ?_
-      intro d p q ps' Ξ Θ B ψ hd
-      have ih := eqTerm (hobs d p q ps' Ξ Θ B ψ hd) (hθ.append _)
+      intro d p q χ ps' Ξ Θ B ψ hd
+      have ih := eqTerm (hobs d p q χ ps' Ξ Θ B ψ hd) (hθ.append _)
       rw [Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t),
         Term.observation_subst θ D qs ls ps as t, Term.observation_subst θ D qs ls ps as u,
         Term.subst_subst_of (Subst.liftN_subst_of _

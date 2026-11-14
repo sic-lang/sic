@@ -123,9 +123,9 @@ where
         rw [Branches.grades_subst]
         exact ownership (hu i j T' con u₀ hi hu₀) (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendResults_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
-    | .obs h hq hp hd ht hbs hv hf, hθ, hφ => by
+    | .obs h hq hp hd ht hbs hv hf hχ, hθ, hφ => by
       rw [Term.obs_subst]
-      exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf
+      exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf hχ
     | .corec (Ss := Ss) (gs := gs) h hq hp hh hS hss hSl hSs hgl hgs hgo hgr, hθ, hφ => by
       rw [Term.corec_subst]
       refine .corec h hq hp hh (States.get_subst _ hS) (ownershipArgs hss hθ hφ)
@@ -134,20 +134,20 @@ where
       · intro j T' hj
         obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
         exact ⟨ps'', _, States.get_subst _ hS'⟩
-      · intro i j T' d ps'' S' hi hS' p q ps₁ Ξ Θ B ψ hd
+      · intro i j T' d ps'' S' hi hS' p q χ ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ps₁ Ξ Θ B ψ hd
+        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q χ ps₁ Ξ Θ B ψ hd
         exact ⟨_, CorecBranches.get_subst _ hg⟩
-      · intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hS' hd hg hn os' v hos hv
+      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg hn os' v hos hv
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
-        exact ownership (hgo i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀ hn os' v hos hv)
+        exact ownership (hgo i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀ hn os' v hos hv)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
-      · intro i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g D' hi hS' hd hg hn os' hos
+      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g D' hi hS' hd hg hn os' hos
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
-        exact ownership (hgr i j T' d ps'' S₀ p q ps₁ Ξ Θ B ψ g₀ D' hi hS₀ hd hg₀ hn os' hos)
+        exact ownership (hgr i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ D' hi hS₀ hd hg₀ hn os' hos)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
     | .sub h hle, hθ, hφ => .sub (ownership h hθ hφ) hle

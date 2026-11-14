@@ -78,8 +78,8 @@ where
     | .corec h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr =>
       .corec ⟨hs h.1, h.2⟩ hq hp hh hS (fun j ps'' S' hS' => usageTelescope hs (hSu j ps'' S' hS'))
         (usageArgs hs hss) hgl hSl hSs hgs
-        (fun i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hS' hd hg =>
-          usage hs (hgu i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hi hS' hd hg)) hδ hδr
+        (fun i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg =>
+          usage hs (hgu i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg)) hδ hδr
     | .sub h hle => .sub (usage hs h) hle
   usageArgs {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {γ : GradeVector Γ.length} {m : Mode} {ts : Args k Γ ps} (hs : sig ⊆ sig') :

@@ -176,15 +176,15 @@ before it, and the result under its arguments. -/
 def Destructors.rename {Γ Δ : Scope} (α : Ren Γ Δ) :
     {ns : List Name} → Destructors k Δ ns → Destructors k Γ ns
   | _, .nil => .nil
-  | _, .cons p q Θ B ψ ds =>
-    .cons p q (Θ.rename α) (B.rename (Ren.liftN _ α)) ψ (ds.rename (Ren.lift α))
+  | _, .cons p q χ Θ B ψ ds =>
+    .cons p q χ (Θ.rename α) (B.rename (Ren.liftN _ α)) ψ (ds.rename (Ren.lift α))
 
 /-- Renamed destructors have their recursive destructors at the same positions. -/
 theorem Destructors.recursion_rename {Γ Δ : Scope} (names : List Name) :
     {ns : List Name} → (α : Ren Γ Δ) → (ds : Destructors k Δ ns) →
       (ds.rename α).recursion names = ds.recursion names
   | _, _, .nil => rfl
-  | _, α, .cons _ _ _ B _ ds => by
+  | _, α, .cons _ _ _ _ B _ ds => by
     rw [Destructors.rename, Destructors.recursion, Destructors.recursion, Term.blockName_rename,
       Destructors.recursion_rename names (Ren.lift α) ds]
 
@@ -193,7 +193,7 @@ theorem Destructors.grade_rename {Γ Δ : Scope} (d : Name) :
     {ns : List Name} → (α : Ren Γ Δ) → (ds : Destructors k Δ ns) →
       (ds.rename α).grade d = ds.grade d
   | _, _, .nil => rfl
-  | _, α, .cons _ _ _ _ _ ds => by
+  | _, α, .cons _ _ _ _ _ _ ds => by
     rw [Destructors.rename, Destructors.grade, Destructors.grade,
       Destructors.grade_rename d (Ren.lift α) ds]
 
@@ -470,11 +470,11 @@ of the scope `Δ`, the substitution `θ = [ā / Δ]` of the scope, followed by t
 `o d' = x̄. t.(T.d')(x̄)` of a term for each destructor `d'` of `d̄₁`, in the scope of the telescope
 and of the result of `d`.
 RFC: `\mathsf{obs}_\theta` -/
-def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q : Grade}
+def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q χ : Grade}
     {ps : List Parameter} (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ds Ξ Θ B ψ → Subst k Γ' Γ →
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q χ ds Ξ Θ B ψ → Subst k Γ' Γ →
         Subst k Γ' Ξ
   | _, _, _, _, _, _, _, .here, θ => θ
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') h, θ =>
@@ -613,8 +613,8 @@ RFC: `\mathsf{inst}_l.\bar d` -/
 def Destructors.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     {ns : List Name} → Destructors k Γ ns → Destructors k' Γ ns
   | _, .nil => .nil
-  | _, .cons p q Θ B ψ ds =>
-    .cons p q (Θ.substLevels ls') (B.substLevels ls') ψ (ds.substLevels ls')
+  | _, .cons p q χ Θ B ψ ds =>
+    .cons p q χ (Θ.substLevels ls') (B.substLevels ls') ψ (ds.substLevels ls')
 
 /-- A closed term in the scope `Γ`, which it does not use. -/
 def Term.weakenClosed {Γ : Scope} (t : Term k []) : Term k Γ := t.rename fun x => by cases x

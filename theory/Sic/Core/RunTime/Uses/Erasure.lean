@@ -202,7 +202,7 @@ its new variables as the multiplicities that the erasure gives their binders all
 theorem CorecBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (δ : MultiplicityVector Γ.length) :
     (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
-    (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length)) →
+    (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
     (∀ i, i < vs.length → ∃ (b c : Nat) (v : Term k ((Γ.extend b).extend c)) (p : Grade),
       vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧
       ∃ δᵢ : MultiplicityVector Γ.length,
@@ -398,18 +398,18 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
       have := (TypeDeclaration.getElem?_of_mem_casesFrom hcm).2
       rwa [Nat.sub_zero] at this
     obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-    obtain ⟨p, q, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
+    obtain ⟨p, q, χ, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
     have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
     have hpg := hgri i j T' d hc p (hpos.grade hnd)
-    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ps₁ Ξ Θ B ψ hpos
+    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q χ ps₁ Ξ Θ B ψ hpos
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_of_getElem?
-        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ⟩))
+        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, χ⟩))
         (by simp [hc, hSj, hpos.arguments hnd]),
       List.headD_drop_of_getElem? (x := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
         (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
         (by simp [hc, hpos.resultName decl.names hnd])]
-    have hδp := GradeVector.run_commutes.run_le (hδ i j T' d p q ps₁ Ξ Θ B ψ hc hpos)
+    have hδp := GradeVector.run_commutes.run_le (hδ i j T' d p q χ ps₁ Ξ Θ B ψ hc hpos)
     rw [GradeVector.run_commutes.run_smul] at hδp
     by_cases hpS : p ∈ Mode.oneOne.erased
     · -- No observation runs the branch, whose variables have the multiplicity `0`.
@@ -434,7 +434,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     · simp only [hpS, ↓reduceIte]
       have hm' : m ⊙ p = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hpS
       have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm'
-        (hgu i j T' d ps'' S' p q ps₁ Ξ Θ B ψ g hc hSj hpos hg)
+        (hgu i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hc hSj hpos hg)
       rw [GradeVector.extendParams_eq_extendGrades, GradeVector.extendParams_eq_extendGrades,
         hm'] at ih
       refine ⟨(δs i).run, .sub (Target.Usage.cast _ ih)
@@ -456,7 +456,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         | none => simp [hbn, Resumption.ofArity] at hk
         | some D' =>
           have h₂ := GradeVector.run_commutes.run_le
-            (hδr i j T' d p q ps₁ Ξ Θ B ψ D' hc hpos hbn)
+            (hδr i j T' d p q χ ps₁ Ξ Θ B ψ D' hc hpos hbn)
           rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul,
             GradeVector.run_commutes.run_smul] at h₂
           exact MultiplicityVector.le_trans h₂ (MultiplicityVector.add_le_add'

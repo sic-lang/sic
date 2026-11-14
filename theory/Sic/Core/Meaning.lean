@@ -316,7 +316,7 @@ def ValidEqDestructors₀ (sig : Signature) (ι : Interpretation) (κ : Universe
       Destructors 0 Γ ns → Subst 0 [] Γ → Subst 0 [] Γ → Prop
   /- `(⊨d̄_κε)`. -/
   | _, _, _, _, .nil, _, _ => sig.Distinct
-  | _, _ :: _, inst, rs, .cons (ps := ps) _ _ Θ B ψ ds, θ₁, θ₂ =>
+  | _, _ :: _, inst, rs, .cons (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂ =>
     ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) ∧
     match rs 0 with
     /- `(⊨d̄_κ|)`. -/
