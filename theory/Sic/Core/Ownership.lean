@@ -117,14 +117,15 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
-  times the requirement `r̂` of the recursion of the block, times the requirement of the entry of
-  each field, times the grade `⌜m⌝ · r · q` with which the branch uses the field of grade `q`, for
-  the variable of the field, and with the ownership `p` of the recursor times the grade `e` that the
-  branch gives each recursive result, for its variable: a field of a unique value has the ownership
-  its entry requires, a field of a shared value is shared, a recursive result is a result of the
-  recursor, and a variable used more than once is shared; the branches run at each level of the
-  recursion, on a recursive field, whose ownership is that of its value times the requirement of
-  its entry, so that they see the term at the ownership `o · r̂`, which every level has.
+  times the requirement `r̂` of its recursion, times the requirement of the entry of each field,
+  times the grade `⌜m⌝ · r · q` with which the branch uses the field of grade `q`, for the variable
+  of the field, and with the ownership `p` of the recursor times the grade `e` that the branch gives
+  each recursive result, for its variable: a field of a unique value has the ownership its entry
+  requires, a field of a shared value is shared, a recursive result is a result of the recursor, and
+  a variable used more than once is shared; the branches run at each level of the recursion, on a
+  recursive field, and a recursion is a use of its field, whose ownership is that of its value
+  times the coefficient of the variable of the field, the requirement of its entry times the grade
+  `⌜m⌝ · r · q`, so that they see the term at the ownership `o · r̂`, which every level has.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -140,7 +141,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields φ
-          (o * decl.recursionRequirement (.ofLists qs ps hq hp)) (m.grade * r)
+          (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
           (con.params (.ofLists qs ps hq hp))) p (us.grades i)
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
       Ownership sig φ m p (.recursor r D qs ls ps as t Cs us)

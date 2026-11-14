@@ -231,6 +231,21 @@ def recursionsAt : List (Option Nat) → List Multiplicity → Nat → Multiplic
   | k :: ks, π :: πs, l => (if k = some l then π else .zero) + recursionsAt ks πs l
   | _, _, _ => .zero
 
+/-- A field on which a recursive result of a multiplicity other than `0` recurses has recursions. -/
+theorem recursionsAt_ne_zero {l : Nat} {π : Multiplicity} (hπ : π ≠ .zero) :
+    {ks : List (Option Nat)} → {πs : List Multiplicity} → {j : Nat} → ks[j]? = some (some l) →
+      πs[j]? = some π → recursionsAt ks πs l ≠ .zero
+  | k :: ks, π' :: πs, 0, hk, hπ' => by
+    cases hk
+    cases hπ'
+    simp only [recursionsAt, ↓reduceIte]
+    exact (by decide : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .zero) _ _ hπ
+  | k :: ks, π' :: πs, j + 1, hk, hπ' => by
+    simp only [recursionsAt]
+    exact (by decide : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero) _ _
+      (recursionsAt_ne_zero hπ (ks := ks) (πs := πs) (j := j) (by simpa using hk)
+        (by simpa using hπ'))
+
 mutual
 
 -- ADE: `∣ S ∣≡ q`, in `Graded/Heap/Reduction.agda`, for the weight.
@@ -315,8 +330,9 @@ is erased, at the multiplicities of its binders times the weight; the uses that 
 each field, by its cell and by the recursions on it, must be within the uses that the constructor
 allows, `ρ` times the multiplicity of the field, the coefficient of the ownership that the branch
 gives the variable of each field within the requirement of the field times these uses, and the
-requirement of each field on which a recursive result recurses within `ϱ`, which the branches
-assume of the term of each level of the recursion, and the evaluation is stuck otherwise. -/
+requirement `ϱ`, which the branches assume of the term of each level of the recursion, within the
+requirement times these uses of each field on which a recursive result recurses, a recursion being
+a use of the field, and the evaluation is stuck otherwise. -/
 inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Multiplicity →
     Multiplicity → TargetBranches n → Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\iota_\Downarrow` -/
@@ -330,7 +346,8 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
         ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l)
       (hκ : ∀ l : Fin a', ∃ π₀ ϱ₀, πs₀[(l : Nat)]? = some π₀ ∧ ϱs₀[(l : Nat)]? = some ϱ₀ ∧
         κs l ≤ ϱ₀ * (ρ * π₀))
-      (hϱ : ∀ (j : Fin b) (l : Nat), ks j = some l → ∃ ϱ₀, ϱs₀[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀)
+      (hϱ : ∀ (j : Fin b) (l : Nat), ks j = some l → ∃ π₀ ϱ₀, πs₀[l]? = some π₀ ∧
+        ϱs₀[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀ * (ρ * π₀))
       (hr : EvalResults P ϖ H₁ E ρ ϱ Ns as (List.ofFn ks) (List.ofFn πs') rs H₂ R₁)
       (hv : Eval P ϖ (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :

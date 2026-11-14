@@ -384,7 +384,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       (p := p) h hq hp ht hul hus hu => by
     -- The branches, whose variables have the run-time multiplicities of their ownerships.
     have hbr : ∀ o',
-        (r ∉ Mode.oneOne.erased → o' = o.run * (sig.recursionRequirement D qs ps).run) →
+        (r ∉ Mode.oneOne.erased → o' = o.run * (sig.recursionRequirement D qs ps r).run) →
         (r ∈ Mode.oneOne.erased → o' = .one * .omega) →
         TargetBranches.Ownership Ω φ' o' p.run (us.erase sig Mode.oneOne.erased hΓ r
           ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
@@ -408,7 +408,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             (fun (j : Fin _) => p.run * gs'[j].run)
             (x.cast (Scope.length_extend_extend Γ _ _)))
           (Ownership.extendResults (Ownership.extendFields φ
-            (o * decl.recursionRequirement (.ofLists qs ps hq hp)) (m.grade * r)
+            (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
             (con.params (.ofLists qs ps hq hp))) p (us.grades i)
             (con.resultParams (.ofLists qs ps hq hp) decl.names).length) := by
         rw [Ownership.extendResults_eq, Ownership.extendFields_eq]
@@ -419,7 +419,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           by_cases hr : r ∈ Mode.oneOne.erased
           · rw [ho₂ hr, (Mode.erased_values.1 r).1 hr]
             exact Multiplicity.mul_fieldCoefficient_zero _ _ _ _
-          · rw [ho₁ hr]
+          · rw [ho₁ hr, Grade.modality.semiring.one_mul]
             exact Multiplicity.mul_fieldCoefficient _ _ _ _
         · -- The variable of a recursive result.
           rw [hgs', (Grade.run_op _ _).2.1, List.getD_eq_getElem?_getD,

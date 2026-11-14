@@ -717,7 +717,9 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         (p.requirement * (r * p.usage)).run ≤ ϱ₀ * (r.run * π₀))
     {ϱ : Multiplicity}
     (hϱv : ∀ l ∈ ((con.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-        (fun y => y.1.map fun _ => y.2), ∃ ϱ₀, ϱv[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀)
+        (fun y => y.1.map fun _ => y.2), ∃ π₀ ϱ₀, πv[l]? = some π₀ ∧ ϱv[l]? = some ϱ₀ ∧
+          (r.run * π₀ ≠ .zero → ϱ ≤ ϱ₀ * (r.run * π₀)))
+    (hϱ0 : r.run = .zero → ϱ = .omega)
     (hfr : ∀ ts : Args 0 [] (con.params (.ofLists qs ps hq hp)), ts.terms = fs →
       EqSubst sig ι (Context.empty.append
         (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) (as.subst σ))) ts.toSubst ts.toSubst →
@@ -903,15 +905,36 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     refine ⟨π₀, ϱ₀, hπ₀, hϱ₀, ?_⟩
     rw [hfs l p' hp']
     exact hle
-  -- Each field on which a recursive result recurses meets the requirement of the recursion.
+  -- The requirement of the recursion is within the requirement times the uses of each field on
+  -- which a recursive result recurses: such a field has recursions, so that the constructor
+  -- allows uses of it unless the grade of the recursor has none at run time.
   have hϱ : ∀ (j' : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length) (l : Nat),
       (if gs₀[j'] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j' : Nat)]?) =
-        some l → ∃ ϱ₀, ϱv[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀ := by
+        some l → ∃ π₀ ϱ₀, πv[l]? = some π₀ ∧ ϱv[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀ * (r.run * π₀) := by
     intro j' l hl
+    have hl₀ := hl
     split at hl
     · cases hl
-    · rw [hpos] at hl
-      exact hϱv l (List.mem_of_getElem? hl)
+    · rename_i hg'
+      rw [hpos] at hl
+      obtain ⟨π₀, ϱ₀, hπ₀, hϱ₀, hle⟩ := hϱv l (List.mem_of_getElem? hl)
+      refine ⟨π₀, ϱ₀, hπ₀, hϱ₀, ?_⟩
+      have hlt := Telescope.lt_of_mem_positions _ 0 (List.mem_of_getElem? hl)
+      rw [Telescope.length_recursion, Nat.zero_add] at hlt
+      obtain ⟨π₁, hπ₁, hle₁⟩ := hπ ⟨l, hlt⟩
+      cases hπ₀.symm.trans hπ₁
+      have hne := recursionsAt_ne_zero (l := l) (π := πs₀' j')
+        ((by decide : ∀ g : Grade, g ∉ Mode.oneOne.erased → g.run ≠ .zero) _ hg')
+        (ks := List.ofFn fun j : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length =>
+          if gs₀[j] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j : Nat)]?)
+        (πs := List.ofFn πs₀') (j := j')
+        (by rw [List.getElem?_eq_getElem (by simp), List.getElem_ofFn]; exact congrArg some hl₀)
+        (by rw [List.getElem?_eq_getElem (by simp), List.getElem_ofFn])
+      by_cases hz : r.run * π₀ = .zero
+      · rw [hϱ0 ((by decide : ∀ ρ π₀ π x : Multiplicity, ρ * π₀ ≤ π + ρ * x → x ≠ .zero →
+          ρ * π₀ = .zero → ρ = .zero) _ _ _ _ hle₁ hne hz)]
+        exact (by decide : ∀ x : Multiplicity, .omega ≤ x) _
+      · exact hle hz
   refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha hget (RunsAsArgs.length hfa) hπ hκ hϱ (hks ▸ hevs)
     ((Eval.cast _).2 hev), hH₂.trans (hH₂'.trans hH₃), fun C'' hC'' => ?_⟩
   rw [hC'] at hC''
@@ -970,7 +993,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ))
     (ht : RunsAs sig ι P H₁ t a ((Term.inst D qs ls ps as).subst σ)) :
     ∃ b H₂ tr, EvalRec P ϖ₀ H₁ E r.run
-        (sig.recursionRequirement D qs ps).run (us.erase sig Mode.oneOne.erased hΓ r
+        (sig.recursionRequirement D qs ps r).run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₂ tr ∧
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
@@ -994,7 +1017,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         (fun _ => Option.rel_map (fun D' _ _ => RunRel.computed_mono (hXY D' H)) _)
   let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
     ((sig.caseFieldParams T.name qs ps).getD [])
-  let ϱ := (sig.recursionRequirement T.name qs ps).run
+  let ϱ := (sig.recursionRequirement T.name qs ps r).run
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
   -- The relations of the canonical terms that `(®_μ)` relates and on whose addresses the erased
@@ -1027,15 +1050,18 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         by rw [List.getElem?_map, hlp]; rfl,
         (by decide : ∀ a r q : Grade, (a * (r * q)).run ≤ a.run * (r.run * q.run)) _ _ _⟩)
       (fun l hl => by
-        -- The field meets the requirement of the recursion, below the requirement of its entry.
+        -- The requirement of the recursion is below the coefficient of the field.
         have hlt := Telescope.lt_of_mem_positions _ 0 hl
         rw [Telescope.length_recursion, Nat.zero_add] at hlt
-        refine ⟨_, by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl, ?_⟩
-        show (sig.recursionRequirement T.name qs ps).run ≤ _
+        refine ⟨_, _, by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl,
+          by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl, fun hne => ?_⟩
+        show (sig.recursionRequirement T.name qs ps r).run ≤ _
         rw [Signature.recursionRequirement, hd.recursiveFields ⟨hdecl, hT, rfl⟩ hq hp,
           hd.caseFieldParams ⟨hdecl, hT, rfl⟩ hq hp, Option.getD_some, Option.getD_some]
-        exact (by decide : ∀ p q : Grade, p ≤ q → p.run ≤ q.run) _ _
-          (TypeDeclaration.recursionRequirement_le hi' hl (List.getElem?_eq_getElem hlt)))
+        have hle := TypeDeclaration.recursionRequirement_run_le (c := r) hi' hl
+          (List.getElem?_eq_getElem hlt) (by rwa [(Grade.run_op _ _).2.1])
+        rwa [(Grade.run_op _ _).2.1] at hle)
+      (fun h0 => absurd ((by decide : ∀ g : Grade, g.run = .zero → g ∈ Mode.oneOne.erased) r h0) hr)
       fun ts hfs hts hrecV => by
         subst hfs
         -- The fields, related at their types.
@@ -1259,13 +1285,14 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       hCs hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH' ϖ''
       (hH'.getElem? List.getElem?_concat_length) hπv hκv
       (fun l hl => by
-        -- The fields of the skeleton meet the requirement `ω` of its recursion.
+        -- The fields of the skeleton, which the recursor does not use, state nothing of the
+        -- requirement of its recursion.
         have hlt := Telescope.lt_of_mem_positions _ 0 hl
-        rw [Nat.zero_add] at hlt
-        refine ⟨.omega, ?_, Multiplicity.le_refl' _⟩
-        rw [Targets.requirements_ofList, List.getElem?_map,
-          List.getElem?_eq_getElem (by simpa using hlt)]
-        rfl)
+        rw [Telescope.length_recursion, Nat.zero_add] at hlt
+        obtain ⟨π₀, ϱ₀, hπ₀, hϱ₀, -⟩ := hκv l _ (List.getElem?_eq_getElem hlt)
+        exact ⟨π₀, ϱ₀, hπ₀, hϱ₀, fun hne => absurd ((by decide : ∀ (g : Grade) (π : Multiplicity),
+          g ∈ Mode.oneOne.erased → g.run * π = .zero) r π₀ hr) hne⟩)
+      (fun _ => rfl)
       fun ts' hfs _ _ => by
         rw [hfs]
         -- The fields are erased, at grades erased since the grade of the recursor is.

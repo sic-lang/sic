@@ -84,7 +84,7 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.pair.recursionRequirement _ = Grade.one from rfl,
+      rw [show Prelude.pair.recursionRequirement _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu
 
@@ -102,7 +102,7 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.unit.recursionRequirement _ = Grade.one from rfl,
+      rw [show Prelude.unit.recursionRequirement _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu
 
@@ -127,11 +127,11 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.step.recursionRequirement _ = Grade.one from rfl,
+      rw [show Prelude.step.recursionRequirement _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu₀
     | 1, rfl, rfl =>
-      rw [show Prelude.step.recursionRequirement _ = Grade.one from rfl,
+      rw [show Prelude.step.recursionRequirement _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu₁
 

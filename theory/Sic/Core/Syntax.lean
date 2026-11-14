@@ -635,21 +635,49 @@ def TypeDeclaration.recursivePositions (decl : TypeDeclaration)
     ((x.2.2.fields I).recursion decl.names).zipIdx.filterMap fun y => y.1.map fun _ => y.2
 
 -- ADE: none.
-/-- `r̂`: the requirement of the recursion of a block whose constructors have, in order, the
-recursive fields at the positions `es` and the parameters `fs` of their fields, the meet of `11ᵖ`
-and of the requirements of the entries of the recursive fields, a field without parameter, in a
-term that no declaration types, requiring `ωωᵖ`, which states nothing: each recursion of a recursor
-eliminates a recursive field, whose ownership is the ownership of its value times the requirement of
-its entry, so that the branches, which run at each level of the recursion, see the term of the
-recursor at its ownership times `r̂`, which every level has, since the grades are idempotent. -/
-def Parameter.recursion (es : List (List Nat)) (fs : List (List Parameter)) : Grade :=
-  ((List.zipWith (fun e f => e.map fun l => ((f[l]?).map (·.requirement)).getD
-    .unrestrictedUnrestricted) es fs).flatten).foldr (· ⊓ ·) .linearLinear
+/-- The requirement of the recursion on one axis, the uses at run time or all the uses: the meet of
+`1` and of the coefficient `ϱ · π` of each recursive field of the requirement `ϱ` that the recursor
+uses with the multiplicity `π`, on this axis, other than `0`, a field that it does not use being
+eliminated by no recursion. -/
+def Parameter.recursionAxis : List (Multiplicity × Multiplicity) → Multiplicity
+  | [] => .one
+  | (ϱ, π) :: xs =>
+    if π = .zero then Parameter.recursionAxis xs else (ϱ * π) ⊓ Parameter.recursionAxis xs
 
-/-- `r̂`: the requirement of the recursion of the block at the instance `I`. -/
+/-- The requirement of the recursion on an axis is never `0`. -/
+theorem Parameter.recursionAxis_ne_zero :
+    (xs : List (Multiplicity × Multiplicity)) → Parameter.recursionAxis xs ≠ .zero
+  | [] => by decide
+  | (ϱ, π) :: xs => by
+    have ih := Parameter.recursionAxis_ne_zero xs
+    simp only [Parameter.recursionAxis]
+    split
+    · exact ih
+    · exact (by decide : ∀ x y : Multiplicity, y ≠ .zero → x ⊓ y ≠ .zero) _ _ ih
+
+-- ADE: none.
+/-- `r̂`: the requirement of the recursion of a recursor that uses its term with the grade `c`, on
+a block whose constructors have, in order, the recursive fields at the positions `es` and the
+parameters `fs` of their fields: the meet, on each axis, of `11ᵖ` and of the coefficient
+`r · (c · q)` of each recursive field of the requirement `r` and of the grade `q` that the recursor
+uses on this axis, the coefficient of the variable of the field, a field without parameter, in a
+term that no declaration types, having the coefficient `ωωᵖ`, which states nothing: each recursion
+of a recursor is a use of a recursive field, whose ownership is the ownership of its value times
+this coefficient, so that the branches, which run at each level of the recursion, see the term of
+the recursor at its ownership times `r̂`, which every level has, since the grades are idempotent. -/
+def Parameter.recursion (c : Grade) (es : List (List Nat)) (fs : List (List Parameter)) : Grade :=
+  let xs : List (Grade × Grade) := (List.zipWith (fun e f => e.map fun l =>
+    ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
+      (.unrestrictedUnrestricted, .linearLinear)) es fs).flatten
+  { run := Parameter.recursionAxis (xs.map fun x => (x.1.run, x.2.run))
+    total := Parameter.recursionAxis (xs.map fun x => (x.1.total, x.2.total))
+    run_zero := fun h => absurd h (Parameter.recursionAxis_ne_zero _) }
+
+/-- `r̂`: the requirement of the recursion of a recursor that uses its term with the grade `c`, on
+the block at the instance `I`. -/
 def TypeDeclaration.recursionRequirement (decl : TypeDeclaration)
-    (I : Instance decl.sorts decl.grades) : Grade :=
-  Parameter.recursion (decl.recursivePositions I) (decl.cases.map fun x => x.2.2.params I)
+    (I : Instance decl.sorts decl.grades) (c : Grade) : Grade :=
+  Parameter.recursion c (decl.recursivePositions I) (decl.cases.map fun x => x.2.2.params I)
 
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
@@ -972,13 +1000,15 @@ def Signature.caseFieldParams (sig : Signature) (D : Name) (qs : List Quality) (
   sig.findSome? (Entry.caseFieldParams D qs ps)
 
 -- ADE: none.
-/-- `recursion_Σ(T)`: the requirement `r̂` of the recursion of the block of the data type `D`, at
-the instance of the qualities `qs` and of the grades `ps`, read from its recursive fields and the
-parameters of their entries in the signature, which the erasure of a recursor keeps at run time.
+/-- `recursion_Σ(T, r)`: the requirement `r̂` of the recursion of a recursor of the grade `r` on
+the block of the data type `D`, at the instance of the qualities `qs` and of the grades `ps`, read
+from its recursive fields and the parameters of their entries in the signature, which the erasure of
+the recursor keeps at run time.
 RFC: `\mathsf{recursion}_c` -/
 def Signature.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality)
-    (ps : List Grade) : Grade :=
-  Parameter.recursion ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])
+    (ps : List Grade) (r : Grade) : Grade :=
+  Parameter.recursion r ((sig.recursiveFields D qs ps).getD [])
+    ((sig.caseFieldParams D qs ps).getD [])
 
 -- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,

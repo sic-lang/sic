@@ -130,7 +130,7 @@ inductive Target : Nat → Type where
   fields, each at the multiplicity of its field. -/
   | ctor {n : Nat} (i : Nat) (Ms : Targets n) : Target n
   /-- `rec_ρ M ◀ ϱ with N̄`: the recursor of the multiplicity `ρ` on `M`, with the requirement `ϱ`
-  of the recursion of its block at run time, with a branch for each constructor, in order. -/
+  of its recursion at run time, with a branch for each constructor, in order. -/
   | recursor {n : Nat} (ρ ϱ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
   /-- `M.dᵢ(M̄) ◀ ψ ◀ ς`: the observation of `M` by the destructor of the case `i` of its block,
   applied to a term for each of its `c` arguments, each at the multiplicity and the requirement of
@@ -532,7 +532,7 @@ mutual
 grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is kept, a constant
 `f.{s̄; l̄; p̄}` keeps its qualities and its grades, `f.{s̄; p̄}`, a constructor keeps its case and its
 fields, each at the parameter of its field, a recursor keeps the multiplicity at run time of its
-grade, the requirement at run time `run(r̂)` of the recursion of its block, its term, at its grade,
+grade, the requirement at run time `run(r̂)` of its recursion on its block, its term, at its grade,
 or, when its grade is erased, `ω`, which states nothing, and the skeleton of its type, and its
 branches, without its instance and its motives, an observation keeps its term, the case of its
 destructor, the ownership at run time of its result and its arguments, each at the parameter of its
@@ -561,7 +561,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     | none => .erased
   | .recursor r D qs _ ps _ t _ us =>
     .recursor r.run
-      (if r ∈ S then .omega else (sig.recursionRequirement D qs ps).run)
+      (if r ∈ S then .omega else (sig.recursionRequirement D qs ps r).run)
       (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
       (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
         ((sig.caseFieldParams D qs ps).getD []))

@@ -491,44 +491,53 @@ theorem Signature.Distinct.recursiveFields : {sig : Signature} → sig.Distinct 
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveFields_of_not_mem hDe]; rfl)]
       exact hd.recursiveFields ⟨he', hT, hD⟩ hq hp
 
-/-- The meet of grades is below each of them, from a grade `a`. -/
-theorem Grade.foldr_meet_le {x : Grade} : {xs : List Grade} → x ∈ xs → (a : Grade) →
-    xs.foldr (· ⊓ ·) a ≤ x
-  | y :: ys, h, a => by
-    rcases List.mem_cons.1 h with rfl | h
-    · exact (by decide : ∀ x z : Grade, x ⊓ z ≤ x) _ _
-    · exact (by decide : ∀ y z x : Grade, z ≤ x → y ⊓ z ≤ x) _ _ _ (Grade.foldr_meet_le h a)
+/-- The requirement of the recursion on an axis is below the coefficient of each field that the
+recursor uses on this axis. -/
+theorem Parameter.recursionAxis_le {ϱ π : Multiplicity} (hπ : π ≠ .zero) :
+    {xs : List (Multiplicity × Multiplicity)} → (ϱ, π) ∈ xs → Parameter.recursionAxis xs ≤ ϱ * π
+  | (ϱ', π') :: xs, h => by
+    simp only [Parameter.recursionAxis]
+    rcases List.mem_cons.1 h with h | h
+    · cases h
+      simp only [hπ, ↓reduceIte]
+      exact (by decide : ∀ x z : Multiplicity, x ⊓ z ≤ x) _ _
+    · have ih := Parameter.recursionAxis_le hπ h
+      split
+      · exact ih
+      · exact (by decide : ∀ y z x : Multiplicity, z ≤ x → y ⊓ z ≤ x) _ _ _ ih
 
 -- ADE: none.
-/-- The requirement of the recursion of a block is below the requirement of the entry of each
-recursive field of each of its constructors. -/
-theorem Parameter.recursion_le {es : List (List Nat)} {fs : List (List Parameter)} {i l : Nat}
-    {e : List Nat} {f : List Parameter} {p : Parameter} (he : es[i]? = some e)
-    (hf : fs[i]? = some f) (hl : l ∈ e) (hp : f[l]? = some p) :
-    Parameter.recursion es fs ≤ p.requirement := by
-  have hx : (fun l => ((f[l]?).map (·.requirement)).getD Grade.unrestrictedUnrestricted) l =
-      p.requirement := by simp only [hp, Option.map_some, Option.getD_some]
-  unfold Parameter.recursion
+/-- The requirement of the recursion of a recursor that uses its term with the grade `c` is below,
+at run time, the coefficient of each recursive field of each constructor of the block that the
+recursor uses at run time. -/
+theorem Parameter.recursion_run_le {c : Grade} {es : List (List Nat)} {fs : List (List Parameter)}
+    {i l : Nat} {e : List Nat} {f : List Parameter} {p : Parameter} (he : es[i]? = some e)
+    (hf : fs[i]? = some f) (hl : l ∈ e) (hp : f[l]? = some p) (hc : (c * p.usage).run ≠ .zero) :
+    (Parameter.recursion c es fs).run ≤ p.requirement.run * (c * p.usage).run := by
+  refine Parameter.recursionAxis_le hc (List.mem_map.2 ⟨(p.requirement, c * p.usage), ?_, rfl⟩)
+  have hx : (fun l => ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
+      (Grade.unrestrictedUnrestricted, Grade.linearLinear)) l = (p.requirement, c * p.usage) := by
+    simp only [hp, Option.map_some, Option.getD_some]
   rw [← hx]
-  apply Grade.foldr_meet_le
-  refine List.mem_flatten.2 ⟨e.map fun l =>
-    ((f[l]?).map (·.requirement)).getD Grade.unrestrictedUnrestricted,
+  refine List.mem_flatten.2 ⟨e.map fun l => ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
+    (Grade.unrestrictedUnrestricted, Grade.linearLinear),
     List.mem_of_getElem? (i := i) ?_, List.mem_map_of_mem hl⟩
   rw [List.getElem?_zipWith, he, hf]
 
 -- ADE: none.
-/-- The requirement of the recursion of a block is below the requirement of the entry of each
-recursive field of each of its constructors, at each instance. -/
-theorem TypeDeclaration.recursionRequirement_le {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {i j : Nat}
+/-- The requirement of the recursion of a recursor on a block is below, at run time, the coefficient
+of each recursive field of each of its constructors that the recursor uses at run time, at each
+instance. -/
+theorem TypeDeclaration.recursionRequirement_run_le {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {c : Grade} {i j : Nat}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (hi : decl.cases[i]? = some (j, T, con)) {l : Nat}
     (hl : l ∈ ((con.fields I).recursion decl.names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2))
-    {p : Parameter} (hp : (con.params I)[l]? = some p) :
-    decl.recursionRequirement I ≤ p.requirement :=
-  Parameter.recursion_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
-    (by rw [List.getElem?_map, hi]; rfl) hl hp
+    {p : Parameter} (hp : (con.params I)[l]? = some p) (hc : (c * p.usage).run ≠ .zero) :
+    (decl.recursionRequirement I c).run ≤ p.requirement.run * (c * p.usage).run :=
+  Parameter.recursion_run_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
+    (by rw [List.getElem?_map, hi]; rfl) hl hp hc
 
 /-- An entry that does not introduce the name `D` gives the parameters of the fields of the cases of no
 data type named `D`. -/
