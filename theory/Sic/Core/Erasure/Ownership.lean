@@ -118,7 +118,8 @@ or the ownership `1` of a new value when it resumes the corecursor, given the ow
 of each variable `x` of the scope, `ς` times its own, the ownership `ς · ϱ · π` of the variable of
 each entry of the state, of the requirement `ς` of the destructor on the value that it observes, of
 the requirement `ϱ` and of the multiplicity `π`, and `o · π'` of the variable of each argument, of the
-ownership `o` and the multiplicity `π'`. -/
+ownership `o` and the multiplicity `π'`; the ownership `ψ` of the result of a destructor whose branch
+resumes the corecursor is a constant, which the term already built of its position requires. -/
 inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
     {n : Nat} → MultiplicityVector n → TargetCorecBranches n → Prop where
   /-- No branch.
@@ -134,6 +135,7 @@ inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
         (k = .none ∧ ψ.value (List.ofFn os) = some v ∨ k ≠ .none ∧ v = .one) →
         Target.Ownership Ω
           (MultiplicityVector.extendBinders (ς ·ᶜ φ) (fun l => ς * ϱs l * πs l) (fun l => os l * πs' l)) v P)
+      (hψ : k ≠ .none → ∃ χ, ψ = ⟨some χ, fun _ => none⟩)
       (hPs : TargetCorecBranches.Ownership Ω φ Ps) :
       TargetCorecBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ ς P Ps)
 

@@ -250,10 +250,10 @@ end
 /--
 `⊢ Σ ◀`: the values of the entries of the signature have their ownerships: at each instance of its
 sort and grade variables, the value of the body of a constant definition has the ownership of the
-definition, in its mode, without variable; at each instance that the constraint of a block of codata
-types admits, the ownership `ψ` of the result of each recursive destructor is a constant `χ`, which
-the ownerships of its arguments do not change, below the ownership `11ᵖ` of a new value, which an
-observation that resumes the corecursor gives.
+definition, in its mode, without variable; the ownership `ψ` of the result of each recursive
+destructor of a block of codata types is a constant `χ`, which the ownerships of its arguments do not
+change, at each instance, and below the ownership `11ᵖ` of a new value, which an observation that
+resumes the corecursor gives, at each instance that the constraint of the block admits.
 -/
 inductive OwnershipSig : Signature → Prop where
   /-- The empty signature.
@@ -274,15 +274,16 @@ inductive OwnershipSig : Signature → Prop where
       {Ts : List (DataType decl.sorts decl.grades decl.levels decl.scope)} (h : OwnershipSig sig)
       (hb : decl.body = .data Ts) : OwnershipSig (.typeDeclaration decl :: sig)
   /-- A block of codata types, the ownership of the result of each recursive destructor a constant
-  `χ ≤ 11ᵖ` at each instance.
+  `χ` at each instance, and `χ ≤ 11ᵖ` at each instance that its constraint admits.
   RFC: `\mathsf{sig}_{\mathsf{codata}◀}` -/
   | codata {sig : Signature} {decl : TypeDeclaration}
       {Ts : List (CodataType decl.sorts decl.grades decl.levels decl.scope)} (h : OwnershipSig sig)
       (hb : decl.body = .codata Ts)
-      (hψ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ d p q ς ps Ξ
+      (hψ : ∀ ι, ∀ T ∈ decl.codataTypes, ∀ d p q ς ps Ξ
         (Θ : Telescope decl.levels Ξ ps) (B : Term decl.levels (Ξ.extend ps.length))
         (ψ : ResultOwnership Grade ps.length), (T.body ι).Pos d p q ς Ξ Θ B ψ →
-        B.blockName decl.names ≠ none → ∃ χ, χ ≤ Grade.one ∧ ψ = ⟨some χ, fun _ => none⟩) :
+        B.blockName decl.names ≠ none →
+          ∃ χ, ψ = ⟨some χ, fun _ => none⟩ ∧ (decl.constraint ι → χ ≤ Grade.one)) :
       OwnershipSig (.typeDeclaration decl :: sig)
 
 end Sic.Core

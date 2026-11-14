@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Erasure.Ownership
 public import Sic.Core.Ownership
+import Sic.Core.Ownership.Signature
 public import Sic.Grading.GradeSet
 import Sic.Core.RunTime.Corecursors
 import Sic.Core.RunTime.Recursors
@@ -238,7 +239,8 @@ theorem Multiplicity.mul_fieldCoefficient_zero :
 non-uniform parameters and with a grade, has, for all the ownerships of its arguments that satisfy
 their requirements, the ownership of the result of its destructor at them, or `1` when it resumes the
 corecursor, given the requirement of its destructor on the observed value times that of each entry of
-the state and times the ownership of each variable of the scope. -/
+the state and times the ownership of each variable of the scope, and when the ownership of the result
+of the destructor of each branch that resumes the corecursor is a constant. -/
 theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {Ω : Name → Multiplicity} {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder)
     (φ' : MultiplicityVector Γ.length) :
@@ -246,7 +248,7 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
     (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
     (∀ i, i < vs.length → ∃ (b c : Nat) (v : Term k ((Γ.extend b).extend c)) (p : Grade),
       vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧
-      ∀ (os : Fin c → Multiplicity) (w : Multiplicity),
+      (∀ (os : Fin c → Multiplicity) (w : Multiplicity),
         (∀ l : Fin c, ((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.1[(l : Nat)]?).map
           (·.requirement.run)).getD .omega ≤ os l) →
         ((ks.drop i).headD .none = .none ∧
@@ -265,7 +267,10 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
               ((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.1[(l : Nat)]?).map
                 fun q => ((Mode.oneOne ⊙ p).grade * q.usage).run).getD .omega)) w
           (if p ∈ S then .erased else
-            Scope.length_extend_extend Γ b c ▸ v.erase sig S ((hΓ.extend b).extend c))) →
+            Scope.length_extend_extend Γ b c ▸ v.erase sig S ((hΓ.extend b).extend c))) ∧
+      ((ks.drop i).headD .none ≠ .none → ∃ χ,
+        ((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.1.toArity c).map
+          Grade.run) = ⟨some χ, fun _ => none⟩)) →
     TargetCorecBranches.Ownership Ω φ' (vs.erase sig S hΓ ps ks pss)
   | .nil, _, _, _, _ => .nil
   | .cons n b c v vs, ps, ks, pss, h => by
@@ -282,7 +287,7 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
     | cons p' ps =>
       cases hp
       simp only [List.drop_zero] at hP
-      refine .cons (fun os w hr hk => hP os w hr hk)
+      refine .cons (fun os w hr hk => hP.1 os w hr hk) hP.2
         (CorecBranches.erase_ownership hΓ φ' vs ps ks.tail pss.tail fun i hi => ?_)
       obtain ⟨b₁, c₁, v₁, p₁, hg₁, hp₁, hP₁⟩ := h (i + 1) (Nat.succ_lt_succ hi)
       have e₁ : ks.drop (i + 1) = ks.tail.drop i := by cases ks <;> simp
@@ -343,12 +348,14 @@ The erasure at run time of a term checked in the mode `11ᵐ` has, in the owners
 language, the run-time multiplicity of its ownership, given the run-time multiplicities `φ'` of the
 ownerships `φ` of its variables and those `Ω` of the ownerships of the constants, in a signature
 whose names are distinct, so that the ownership and the erasure read the parameters of the fields,
-of the arguments and of the branches in the same declaration; the mode is a premise `m = 11ᵐ`, so
+of the arguments and of the branches in the same declaration, and whose entries have their
+ownerships, so that the result of each recursive destructor has a constant ownership; the mode is a premise `m = 11ᵐ`, so
 that the positions of the term, which the ownership checks in the mode `m ⊙ p`, are checked by the
 same theorem.
 RFC: `\mathsf{erase}_{◀}`
 -/
 theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
+    (hs : OwnershipSig sig)
     {Ω : Name → Multiplicity}
     (hΩ : ∀ f j k' g m p A, sig.HasConstant f j k' g m p A → Ω f = p.run) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) {φ : Var Γ .var → Grade} {φ' : MultiplicityVector Γ.length}
@@ -369,7 +376,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
-    obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hΩ hΓ hφ id
+    obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
       (Mode.oneOne_odot_of_not_erased hm) hts
     rw [Parameter.map_eta] at hos
     exact .ctor hos
@@ -418,7 +425,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           rw [hgs', (Grade.run_op _ _).2.1, List.getD_eq_getElem?_getD,
             List.getElem?_eq_getElem (by simp), Option.getD_some, _root_.Vector.getElem_toList]
           rfl
-      exact Target.Ownership.cast _ (Ownership.erase_ownership hd hΩ ((hΓ.extend _).extend _)
+      exact Target.Ownership.cast _ (Ownership.erase_ownership hd hs hΩ ((hΓ.extend _).extend _)
           hag hm (hu i j T' con u' hc hu'))
     simp only [Term.erase]
     by_cases hr : r ∈ Mode.oneOne.erased
@@ -427,7 +434,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         fun _ => rfl)
     · simp only [hr, ↓reduceIte]
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
-      exact .recursor (Ownership.erase_ownership hd hΩ hΓ hφ hm' ht)
+      exact .recursor (Ownership.erase_ownership hd hs hΩ hΓ hφ hm' ht)
         (hbr _ (fun _ => rfl) fun h' => absurd h' hr)
   | .obs (ψ := ψ) (os := os) h hq hp hpos ht hbs hv hf hς => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
@@ -437,11 +444,11 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     rw [hd.argumentParams h hq hp hpos] at hA
     subst hA
     simp only [Option.getD_some]
-    obtain ⟨os', hos, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hΩ hΓ hφ id
+    obtain ⟨os', hos, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
       (Mode.oneOne_odot_of_not_erased hm) hbs
     rw [Parameter.map_eta] at hos
     rw [(Grade.run_op _ _).2.1]
-    refine .obs (Ownership.erase_ownership hd hΩ hΓ hφ hm ht) hos ?_ (Grade.run_le hς)
+    refine .obs (Ownership.erase_ownership hd hs hΩ hΓ hφ hm ht) hos ?_ (Grade.run_le hς)
     rw [ResultOwnership.value_map_run ψ os os' hl fun i hi => ha i _
       (List.getElem?_eq_getElem i.2) (Mode.not_erased_of_odot hm (hf i hi)), hv]
     rfl
@@ -450,7 +457,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim, hgrs,
       Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
-    obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hΩ hΓ hφ (r * ·)
+    obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ (r * ·)
       (fun u hu => by rw [hm]; exact Mode.oneOne_odot_mul _ _ hu) hss
     refine .corec hos (CorecBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
@@ -474,6 +481,16 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       List.headD_drop_of_getElem? (x := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
         (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
         (by simp [hc, hpos.resultName decl.names hnd])]
+    refine ⟨?_, fun hk => ?_⟩
+    rotate_left
+    · -- A branch that resumes the corecursor: its destructor is recursive, of a constant result.
+      have hbn : B.blockName decl.names ≠ none := fun hbn => hk (by
+        simp [hbn, Resumption.ofArity])
+      obtain ⟨χ, hχ⟩ := hs.recursiveResult h.1 _ hT' hpos hbn
+      refine ⟨χ.run, ?_⟩
+      dsimp only
+      rw [ResultOwnership.toArity_self, hχ]
+      rfl
     intro os w hreq hk
     dsimp only at hreq hk ⊢
     rw [ResultOwnership.toArity_self] at hk
@@ -536,7 +553,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             have := congrArg (·[(l : Nat)]?) hgs
             simpa using this.symm)] at hw
         obtain ⟨val, hval, rfl⟩ := Option.map_eq_some_iff.1 hw
-        exact Target.Ownership.cast _ (Ownership.erase_ownership hd hΩ ((hΓ.extend _).extend _)
+        exact Target.Ownership.cast _ (Ownership.erase_ownership hd hs hΩ ((hΓ.extend _).extend _)
           (hag _ fun _ => rfl) hm'
           (hgo i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hc hSj hpos hg hbn gs val hal hval))
       · exact absurd hk0 hne
@@ -558,10 +575,10 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         split <;> simp
       rcases hk with ⟨h0, -⟩ | ⟨-, rfl⟩
       · exact absurd h0 hk0
-      · exact Target.Ownership.cast _ (Ownership.erase_ownership hd hΩ ((hΓ.extend _).extend _)
+      · exact Target.Ownership.cast _ (Ownership.erase_ownership hd hs hΩ ((hΓ.extend _).extend _)
           (hag _ fun _ => rfl) hm'
           (hgr i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hc hSj hpos hg hbn gs hal))
-  | .sub h hle => .sub (Ownership.erase_ownership hd hΩ hΓ hφ hm h) (Grade.run_le hle)
+  | .sub h hle => .sub (Ownership.erase_ownership hd hs hΩ hΓ hφ hm h) (Grade.run_le hle)
 
 -- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in a mode `m'`, each at the
@@ -571,6 +588,7 @@ in the mode `11ᵐ` each argument whose mapped grade has a use at run time: the 
 constructor or of an observation, `f` the identity, and the state of a corecursor, `f` the product
 by its grade. -/
 theorem OwnershipArgs.erase_ownership_map {sig : Signature} (hd : sig.Distinct)
+    (hs : OwnershipSig sig)
     {Ω : Name → Multiplicity}
     (hΩ : ∀ f j k' g m p A, sig.HasConstant f j k' g m p A → Ω f = p.run) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) {φ : Var Γ .var → Grade} {φ' : MultiplicityVector Γ.length}
@@ -585,7 +603,7 @@ theorem OwnershipArgs.erase_ownership_map {sig : Signature} (hd : sig.Distinct)
         os'[i]? = os[i]?.map Grade.run
   | .nil => ⟨[], .nil, rfl, fun _ _ h => nomatch h⟩
   | .cons (p := q) (o := o) ht hr hts => by
-    obtain ⟨os', h, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hΩ hΓ hφ f hm' hts
+    obtain ⟨os', h, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ f hm' hts
     simp only [Args.terms, List.map_cons, Terms.erase]
     by_cases hq : f q.usage ∈ Mode.oneOne.erased
     · simp only [hq, ↓reduceIte]
@@ -596,7 +614,7 @@ theorem OwnershipArgs.erase_ownership_map {sig : Signature} (hd : sig.Distinct)
       | succ i => simpa using ha i q' (by simpa using hi) hk
     · simp only [hq, ↓reduceIte]
       have hmq := hm' _ hq
-      refine ⟨o.run :: os', .cons (Ownership.erase_ownership hd hΩ hΓ hφ hmq ht)
+      refine ⟨o.run :: os', .cons (Ownership.erase_ownership hd hs hΩ hΓ hφ hmq ht)
         (Grade.run_le (hr (by rw [hmq]; decide))) h, by simp [hl], fun i q' hi hk => ?_⟩
       cases i with
       | zero => rfl
