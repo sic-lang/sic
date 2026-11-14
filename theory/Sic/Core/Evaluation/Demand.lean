@@ -18,6 +18,9 @@ The demand of an environment, `H ⊢ E ▶_ν D`, bounds the reads of a term tha
 `ν` allows: `ν(x)` reads of the cell of `x`, each using its value.
 A value may have several demands, one for each `δ` of each closure that it reaches, so that the
 properties split the demand of an environment rather than add two of them, whose choices may differ.
+The conservation also reads the multiplicities of the cells that a run allocates, `new_H(H, H')`,
+the usage of a program, `⊢ 𝒫 ▶`, whose bodies each have a usage, and the values that hold no
+closure, `H ⊢ ℓ data`.
 
 The demands are the functions from the addresses to the multiplicities, with the operations and the
 order of the vectors of `Sic/Math/Vector.lean` at each address.
@@ -106,6 +109,36 @@ inductive Heap.EnvDemand (H : Heap) : {n : Nat} → List Nat → MultiplicityVec
       Heap.EnvDemand H (c :: E) ν ((ν 0 ·ᶜ (Demand.unit c +ᶜ D₁)) +ᶜ D₂)
 
 end
+
+-- ADE: none.
+/-- `new_H(H, H')`: the multiplicities of the cells that a run from the heap `H` to the heap `H'`
+allocates, `0` at every other address.
+RFC: `\mathsf{new}_H` -/
+def Demand.allocated (H H' : Heap) : Demand := fun c =>
+  if H.length ≤ c then
+    match H'[c]? with
+    | some (.cell π _) => π
+    | _ => .zero
+  else .zero
+
+-- ADE: none.
+/-- `⊢ 𝒫 ▶`: each body of the program reads no variable, and its binders as their multiplicities
+allow.
+RFC: `\mathsf{usage}_{\mathcal{P}}` -/
+def Program.Usage (P : Program) : Prop :=
+  ∀ f qs ps M, P f qs ps = some M → Target.Usage (𝟘ᵛ : MultiplicityVector 0) M
+
+-- ADE: none.
+/-- `data_H(ℓ)`: the value at the address `ℓ` holds no closure, `↯` or a constructor whose fields
+are such values. -/
+inductive Heap.IsData (H : Heap) : Nat → Prop where
+  /-- `↯`.
+  RFC: `\mathsf{data}_\ell.\text{↯}` -/
+  | erased {ℓ : Nat} (h : H[ℓ]? = some .erased) : Heap.IsData H ℓ
+  /-- A constructor whose fields hold no closure.
+  RFC: `\mathsf{data}_\ell.c` -/
+  | ctor {ℓ i : Nat} {πs ϱs : List Multiplicity} {as : List Nat}
+      (h : H[ℓ]? = some (.ctor i πs ϱs as)) (hs : ∀ a ∈ as, Heap.IsData H a) : Heap.IsData H ℓ
 
 /-! ## Properties -/
 

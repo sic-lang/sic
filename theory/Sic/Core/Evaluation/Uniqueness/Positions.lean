@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Evaluation.Conservation
+public import Sic.Core.Evaluation.Conservation.Positions
 public import Sic.Core.Evaluation.Paths
 
 /-!

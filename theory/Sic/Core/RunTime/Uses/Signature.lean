@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Evaluation.Conservation
+public import Sic.Core.Evaluation.Demand
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
 import Sic.Core.RunTime.Uses.Erasure

@@ -1,7 +1,8 @@
 module
 
 public import Sic.Core.Evaluation.Claims
-public import Sic.Core.Evaluation.Conservation
+public import Sic.Core.Evaluation.Conservation.Positions
+import Sic.Core.Evaluation.Conservation.Demands
 import Sic.Core.Evaluation.Uniqueness.Positions
 
 /-!

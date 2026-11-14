@@ -427,6 +427,21 @@ theorem EvalAll.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
   | _, _, _, .nil => rfl
   | _, _, _, .cons _ hs => congrArg (· + 1) hs.length
 
+/-- The unpacking of a state gives as many multiplicities as entries. -/
+theorem Unpack.length {H : Heap} : {k x : Nat} → {πs ϱs : List Multiplicity} → {ss : List Nat} →
+    Unpack H k x πs ϱs ss → πs.length = ss.length
+  | _, _, _, _, _, .zero _ => rfl
+  | _, _, _, _, _, .pair _ hs => by simp [hs.length]
+
+/-- The recursive results of a branch are as many as their fields and their binders. -/
+theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
+    {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
+    {ks : List (Option Nat)} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
+      EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R → rs.length = ks.length ∧ πs.length = ks.length
+  | _, _, _, _, .nil => ⟨rfl, rfl⟩
+  | _, _, _, _, .erased hs | _, _, _, _, .recursor _ _ hs =>
+    ⟨congrArg (· + 1) hs.length.1, congrArg (· + 1) hs.length.2⟩
+
 /-! ## Determinism -/
 
 /-- The unpacking of a value is unique. -/
