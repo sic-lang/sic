@@ -253,8 +253,8 @@ where
     | .recursive _ hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .data _ ⟨_, hadm⟩ hΔ _ _ => wfCtx (hΔ _ hadm)
-    | .codata _ ⟨_, hadm⟩ hΔ _ _ => wfCtx (hΔ _ hadm)
+    | .data _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
+    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
@@ -431,11 +431,11 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
         | typeDeclaration hdecl _ _ => cases hdecl with
-          | data hb _ _ _ hc =>
+          | data hb _ _ _ _ hc =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
             nomatch hT
-          | codata hb _ _ _ hc =>
+          | codata hb _ _ _ _ hc =>
             refine ⟨fun T hT => ?_, hc⟩
             simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT

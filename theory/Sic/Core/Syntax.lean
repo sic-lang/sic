@@ -470,13 +470,17 @@ abbrev Constructor.resultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g
   Telescope.resultParams ((c.fields I).recursion names) (c.params I)
 
 -- ADE: none.
-/-- `D ▶ ζ ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it uses
-the parameters `Δ`, and its constructors, in order. -/
+/-- `D ▶ ζ ⊕ P ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it
+uses the parameters `Δ`, those `P` of the parameters in which it is strictly positive, and its
+constructors, in order. -/
 structure DataType (j g k : Nat) (Δ : Scope) where
   /-- The name `D`. -/
   name : Name
   /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
   usage : Instance j g → GradeVector Δ.length
+  /-- The parameters `P` in which the type is strictly positive, by their positions in `Δ`, the
+  first parameter at `0`. -/
+  positive : Nat → Prop
   /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
   constructors : List (Constructor j g k Δ)
 
@@ -538,13 +542,17 @@ def Destructors.recursionAt {k : Nat} {Γ : Scope} {ns : List Name} (names : Lis
   fun i => ((ds.recursion names)[i]?).join
 
 -- ADE: none.
-/-- `D ▶ ζ ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it uses
-the parameters `Δ`, and its destructors, in order. -/
+/-- `D ▶ ζ ⊕ P ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it
+uses the parameters `Δ`, those `P` of the parameters in which it is strictly positive, and its
+destructors, in order. -/
 structure CodataType (j g k : Nat) (Δ : Scope) where
   /-- The name `D`. -/
   name : Name
   /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
   usage : Instance j g → GradeVector Δ.length
+  /-- The parameters `P` in which the type is strictly positive, by their positions in `Δ`, the
+  first parameter at `0`. -/
+  positive : Nat → Prop
   /-- The names `d₁, …, dₙ` of the destructors. -/
   destructors : List Name
   /-- The destructors `d₁ : …, …, dₙ : …`, for each instance, since their grades may be grade

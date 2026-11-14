@@ -18,6 +18,10 @@ name = "Substitution"
 modules = ["Sic.Core.Substitution"]
 
 [[group]]
+name = "Positivity"
+modules = ["Sic.Core.Positivity"]
+
+[[group]]
 name = "Typing"
 modules = ["Sic.Core.Typing"]
 
@@ -95,6 +99,19 @@ forbidden = [
   "Sic.Core.Soundness",
   "Sic.Core.Typing",
   "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the strict positivity reads the syntax and the parameters that the declared types declare, and no judgment, so that the meaning may use it"
+modules = ["Sic.Core.Positivity"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Positivity",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
 ]
 
 [[rule]]

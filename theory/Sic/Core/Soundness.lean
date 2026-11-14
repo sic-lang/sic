@@ -825,12 +825,12 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data hb _ _ hΘ _ => by
+    | .data hb _ _ hΘ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT c hc =>
         wfFields hd hι (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
-    | .codata hb _ _ hds _ => by
+    | .codata hb _ _ hds _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT =>

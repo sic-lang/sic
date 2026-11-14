@@ -55,6 +55,10 @@ theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       obtain _ | ⟨_, ⟨⟩⟩ := hc
       exact .nil (.empty h))
+    (fun _ _ T hT _ _ hx => by
+      simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      exact hx.elim)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
@@ -89,6 +93,16 @@ theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
         (.cons rfl hB ⟨fun h => (by cases h), fun _ => (by simp [Prelude.pair, Level.value]; omega)⟩
           (.nil (.var (WfType.ofSort hB))) nofun)
         hι)
+    (fun _ _ T hT _ x _ c hc => by
+      simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hc
+      match x with
+      | .zero =>
+        exact .cons (.absent ⟨.var₀ .zero, rfl⟩) (.cons (.var ⟨.cons (.var₀ .zero) .nil, rfl⟩) .nil)
+      | .succ .zero =>
+        exact .cons (.var ⟨.nil, rfl⟩)
+          (.cons (.absent ⟨.var (.succ .zero) (.cons (.var₀ .zero) .nil), rfl⟩) .nil))
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
@@ -121,6 +135,16 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
           .var hctx .zero
         exact .cons rfl hT ⟨fun h => (by cases h), fun _ => (by simp [Prelude.step, Level.value]; omega)⟩
           (.nil (.var (WfType.ofSort hT))) hι)
+    (fun _ _ T hT _ x _ c hc => by
+      simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
+      obtain _ | ⟨_, ⟨⟩⟩ := hT
+      obtain _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩ := hc
+      · match x with
+        | .zero => exact .cons (.absent ⟨.var₀ .zero, rfl⟩) .nil
+        | .succ .zero => exact .cons (.var ⟨.nil, rfl⟩) .nil
+      · match x with
+        | .zero => exact .cons (.var ⟨.nil, rfl⟩) .nil
+        | .succ .zero => exact .cons (.absent ⟨.var₀ .zero, rfl⟩) .nil)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
