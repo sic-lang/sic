@@ -322,8 +322,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- Two instances of a constant at equal levels are equal.
   RFC: `f_\equiv` -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
-      {m : Mode} {A : Instance j g → Term k' []} {qs : List Quality} {ls₁ ls₂ : List (Level k)}
-      {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
+      {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality}
+      {ls₁ ls₂ : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
       (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k') (hp : ps.length = g)
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)

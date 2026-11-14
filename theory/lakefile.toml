@@ -6,11 +6,13 @@ name = "Sic"
 # Every module of Sic/, so that none of them depends on a root module that imports them all.
 globs = ["Sic.+"]
 # Every public definition, type, constructor and field has a doc string: for modules, Lean checks
-# that `@[inherit_doc]` finds one only in the language server, never in a build.
-leanOptions = { linter.missingDocs = true }
+# that `@[inherit_doc]` finds one only in the language server, never in a build. Every variable is
+# bound explicitly: an unbound name is an error, rather than a new implicit argument, placed first,
+# that a statement would then quantify over without saying so.
+leanOptions = { linter.missingDocs = true, autoImplicit = false }
 
 [[lean_lib]]
 name = "SicExample"
 # Every module of SicExample/, as for Sic/.
 globs = ["SicExample.+"]
-leanOptions = { linter.missingDocs = true }
+leanOptions = { linter.missingDocs = true, autoImplicit = false }
