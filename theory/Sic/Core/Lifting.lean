@@ -140,7 +140,7 @@ structure Lifting.Variables (k : Nat) where
   ownership : Grade
 
 -- ADE: none.
-/-- `F^S`: the name of the lifting of the type `F` at its parameters at the positions `S`, in
+/-- `F^Π`: the name of the lifting of the type `F` at the set `Π` of its parameters at the positions `S`, in
 order, a name of the
 signature that `F` and `S` determine. -/
 def Lifting.name (F : Name) (S : List Nat) : Name := F ++ "^" ++ toString S
@@ -175,8 +175,8 @@ inductive Term.Lifts (v : Lifting.Variables k) :
 
 -- ADE: none.
 /--
-`ā ↑ = (S; ā')`: the arguments `ā'` are the arguments `ā` of an instance lifted, and `S` the
-positions of the parameters whose arguments are lifted, in order: the argument of such a parameter is
+`ā ↑ = (Π'; ā')`: the arguments `ā'` are the arguments `ā` of an instance lifted, and `S` the
+positions of the parameters `Π'` whose arguments are lifted, in order: the argument of such a parameter is
 followed by its motive, the argument lifted at a term of its own, and the others are kept.
 -/
 inductive InstanceArgs.Lifts (v : Lifting.Variables k) :
@@ -213,12 +213,14 @@ more, by the recursor of the grade `r`, and its requirement is kept. -/
 def Parameter.scale (r : Grade) (p : Parameter) : Parameter := ⟨r * p.usage, p.requirement⟩
 
 -- ADE: none.
-/-- `r · Θ`: the telescope `Θ` whose entries are used `r` times more.
+/-- `r · Θ`: the telescope `Θ` whose entries are used `r` times more, and whose variables the types
+after them use with the least grade, which states nothing: the result of a destructor of a lifting
+uses its arguments more than the result that it lifts.
 RFC: `\mathsf{scale}_\Theta` -/
 def Telescope.scale (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps →
     Telescope k Γ (ps.map (Parameter.scale r))
   | _, _, .nil => .nil
-  | _, _, .cons q p A Θ => .cons q (p.scale r) A (Θ.scale r)
+  | _, _, .cons _ p A Θ => .cons .unrestrictedUnrestricted (p.scale r) A (Θ.scale r)
 
 -- ADE: none.
 /-- `p'`: the grade of the result of a destructor of a lifting whose motives have the quality `s`,
@@ -378,7 +380,7 @@ def TypeDeclaration.liftedObservation (decl : TypeDeclaration) (F : Name)
 
 -- ADE: none.
 /--
-`F^S`: the lifting of the type `F` of the type declaration `decl` at its parameters at the positions
+`F^Π`: the lifting of the type `F` of the type declaration `decl` at its parameters at the positions
 `S`, with the destructors `d̄'`, whose names are `ns`: a block of one codata type, over the
 variables of `decl`, the quality `s_C` and the level `l_C` of the sort of the motives, and the
 grades `r`, `ς` and `χ`, with the constraint of `decl`; its parameters are those of `decl`, each
@@ -429,7 +431,7 @@ def TypeDeclaration.Lifts (decl : TypeDeclaration) (F : Name) (S : List Nat) {ns
         ((T.body I.lifted).substLevels Level.lifted) (body I)
 
 -- ADE: none.
-/-- `F^S ∈ Σ`: the signature holds the lifting of its codata type `F` at its parameters at the
+/-- `F^Π ∈ Σ`: the signature holds the lifting of its codata type `F` at its parameters at the
 positions `S`.
 RFC: `\in_{\uparrow}` -/
 def Signature.HasLifting (sig : Signature) (F : Name) (S : List Nat) : Prop :=

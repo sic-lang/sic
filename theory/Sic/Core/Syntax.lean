@@ -470,15 +470,15 @@ abbrev Constructor.resultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g
   Telescope.resultParams ((c.fields I).recursion names) (c.params I)
 
 -- ADE: none.
-/-- `D ▶ ζ ⊕ P ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it
-uses the parameters `Δ`, those `P` of the parameters in which it is strictly positive, and its
+/-- `D ▶ ζ ⊕ Π ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it
+uses the parameters `Δ`, those `Π` of the parameters in which it is strictly positive, and its
 constructors, in order. -/
 structure DataType (j g k : Nat) (Δ : Scope) where
   /-- The name `D`. -/
   name : Name
   /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
   usage : Instance j g → GradeVector Δ.length
-  /-- The parameters `P` in which the type is strictly positive, by their positions in `Δ`, the
+  /-- The parameters `Π` in which the type is strictly positive, by their positions in `Δ`, the
   first parameter at `0`. -/
   positive : Nat → Prop
   /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
@@ -542,15 +542,15 @@ def Destructors.recursionAt {k : Nat} {Γ : Scope} {ns : List Name} (names : Lis
   fun i => ((ds.recursion names)[i]?).join
 
 -- ADE: none.
-/-- `D ▶ ζ ⊕ P ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it
-uses the parameters `Δ`, those `P` of the parameters in which it is strictly positive, and its
+/-- `D ▶ ζ ⊕ Π ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it
+uses the parameters `Δ`, those `Π` of the parameters in which it is strictly positive, and its
 destructors, in order. -/
 structure CodataType (j g k : Nat) (Δ : Scope) where
   /-- The name `D`. -/
   name : Name
   /-- The grades `ζ` with which the type uses the parameters, for each instance. -/
   usage : Instance j g → GradeVector Δ.length
-  /-- The parameters `P` in which the type is strictly positive, by their positions in `Δ`, the
+  /-- The parameters `Π` in which the type is strictly positive, by their positions in `Δ`, the
   first parameter at `0`. -/
   positive : Nat → Prop
   /-- The names `d₁, …, dₙ` of the destructors. -/
