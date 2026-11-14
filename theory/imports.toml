@@ -216,3 +216,8 @@ forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
 reason = "the ownership at run time reads the ownership, the erasure, the evaluation and the relation of run time, and neither the typing nor the usage"
 modules = ["Sic.Core.RunTime.Ownership"]
 forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the uniqueness of the extraction reads the usage, the ownership, the erasure and the evaluation, and not the typing"
+modules = ["Sic.Core.RunTime.Uniqueness"]
+forbidden = ["Sic.Core.Typing"]

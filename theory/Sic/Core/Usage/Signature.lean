@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Usage
+import Sic.Core.Syntax.Signature
 
 /-!
 # Usage Along the Signatures
@@ -22,13 +23,6 @@ ADE have no signatures.
 namespace Sic.Core
 
 open Sic.Grading
-
-/-- A signature with every entry of another has its constants. -/
-theorem Signature.HasConstant.mono {sig sig' : Signature} (hs : sig ⊆ sig') {f : Name}
-    {j k g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k []} :
-    sig.HasConstant f j k g m p A → sig'.HasConstant f j k g m p A
-  | .constantDefinition h => .constantDefinition (hs h)
-  | .constantDeclaration h => .constantDeclaration (hs h)
 
 -- ADE: none.
 /-- The judgments of usage hold in every signature that has the entries of theirs. -/

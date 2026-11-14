@@ -25,6 +25,13 @@ open Sic.Grading
 An entry of the signature has sort, level and grade variables, the qualities and the grades of an
 instance being given to its type, its body, its parameters and its sort. -/
 
+/-- A signature with every entry of another has its constants. -/
+theorem Signature.HasConstant.mono {sig sig' : Signature} (hs : sig ⊆ sig') {f : Name}
+    {j k g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k []} :
+    sig.HasConstant f j k g m p A → sig'.HasConstant f j k g m p A
+  | .constantDefinition h => .constantDefinition (hs h)
+  | .constantDeclaration h => .constantDeclaration (hs h)
+
 /-- The type of the result of a recursive destructor is a type of the block. -/
 theorem Destructors.recursionAt_mem {k : Nat} {names : List Name} {D : Name} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {i : Nat} →

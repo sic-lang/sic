@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Ownership
+import Sic.Core.Syntax.Signature
 
 /-!
 # Ownership of a Signature
@@ -9,6 +10,16 @@ The judgment `⊢ Σ ◀` of annex 13 of RFC 36 holds of each declaration of the
 ownership of the result of each recursive destructor of a block of codata types of the signature is
 a constant, at each instance, which the erasure keeps, so that the ownership of the target language
 reads it in the branches of the corecursors.
+
+The judgments of ownership hold in every signature that has the entries of theirs: the ownership
+reads its signature only by the entries that it has, the constants, the data types and the codata
+types, so that a signature with more entries gives the same premises.
+The judgment `⊢ Σ ◀` checks the body of each constant definition in the signature before it, while
+the program of a signature erases it in the whole signature, which has more entries.
+The proof is by mutual structural recursion on the derivations, in the clause `where` of the
+theorem.
+
+ADE have no signatures, and no ownership.
 -/
 
 @[expose] public section
@@ -49,5 +60,70 @@ theorem OwnershipSig.recursiveResult {sig : Signature} (hs : OwnershipSig sig)
       obtain ⟨χ, hχ, -⟩ := hψ ι T hT d p q ς ps Ξ Θ B ψ hpos hB
       exact ⟨χ, hχ⟩
     · exact ih h
+
+-- ADE: none.
+/-- The judgments of ownership hold in every signature that has the entries of theirs. -/
+structure OwnershipStableUnderExtension : Prop where
+  /-- The value of a term has the same ownership in a signature with more entries.
+  RFC: `\mathsf{ext}_{◀}.t` -/
+  ownership : ∀ {sig sig' : Signature} {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode}
+    {p : Grade} {t : Term k Γ}, sig ⊆ sig' → Ownership sig φ m p t → Ownership sig' φ m p t
+  /-- Arguments of a telescope have the same ownerships in a signature with more entries.
+  RFC: `\mathsf{ext}_{◀}.\bar t` -/
+  ownershipArgs : ∀ {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+    {φ : Var Γ .var → Grade} {m : Mode} {ts : Args k Γ ps} {os : List Grade},
+    sig ⊆ sig' → OwnershipArgs sig φ m ts os → OwnershipArgs sig' φ m ts os
+
+-- ADE: none.
+/-- The judgments of ownership hold in every signature that has the entries of theirs.
+RFC: `\mathsf{ext}_{◀}.t`
+RFC: `\mathsf{ext}_{◀}.\bar t` -/
+theorem ownershipStableUnderExtension : OwnershipStableUnderExtension :=
+  ⟨ownership, ownershipArgs⟩
+where
+  ownership {sig sig' : Signature} {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode}
+      {p : Grade} {t : Term k Γ} (hs : sig ⊆ sig') : Ownership sig φ m p t → Ownership sig' φ m p t
+    | .var => .var
+    | .secondOrder hts hp hf => .secondOrder (ownershipArgs hs hts) hp hf
+    | .const h => .const (h.mono hs)
+    | .sort => .sort
+    | .inst => .inst
+    | .ctor h hc hq hp hts => .ctor ⟨hs h.1, h.2⟩ hc hq hp (ownershipArgs hs hts)
+    | .recursor h hq hp ht hul hus hu =>
+      .recursor ⟨hs h.1, h.2⟩ hq hp (ownership hs ht) hul hus
+        (fun i j T' con u hi hu' => ownership hs (hu i j T' con u hi hu'))
+    | .obs h hq hp hd ht hbs hv hf hς =>
+      .obs ⟨hs h.1, h.2⟩ hq hp hd (ownership hs ht) (ownershipArgs hs hbs) hv hf hς
+    | .corec h hq hp hh hS hss hSl hSs hgl hgs hgo hgr =>
+      .corec ⟨hs h.1, h.2⟩ hq hp hh hS (ownershipArgs hs hss) hSl hSs hgl hgs
+        (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hB os' v hA hv =>
+          ownership hs (hgo i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hB os' v hA hv))
+        (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hi hS' hd hg hB os' hA =>
+          ownership hs (hgr i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hi hS' hd hg hB os' hA))
+    | .sub h hle => .sub (ownership hs h) hle
+  ownershipArgs {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
+      {φ : Var Γ .var → Grade} {m : Mode} {ts : Args k Γ ps} {os : List Grade} (hs : sig ⊆ sig') :
+      OwnershipArgs sig φ m ts os → OwnershipArgs sig' φ m ts os
+    | .nil => .nil
+    | .cons ht hr hts => .cons (ownership hs ht) hr (ownershipArgs hs hts)
+
+/-- The value of the body of each constant definition of a signature whose entries have their
+ownerships has the ownership of the definition, in its mode, without variable, in the whole
+signature, which has the entries of the signature before it. -/
+theorem OwnershipSig.constantDefinition_ownership {sig : Signature} (hs : OwnershipSig sig)
+    {d : ConstantDefinition} (hd : .constantDefinition d ∈ sig)
+    (ι : Instance d.sorts d.grades) :
+    Ownership sig (fun x : Var [] .var => nomatch x) d.mode d.ownership (d.body ι) := by
+  induction hs with
+  | empty => exact nomatch hd
+  | constantDefinition _ ho ih =>
+    rcases List.mem_cons.1 hd with he | hd'
+    · cases he
+      exact ownershipStableUnderExtension.ownership (List.subset_cons_self _ _) (ho ι)
+    · exact ownershipStableUnderExtension.ownership (List.subset_cons_self _ _) (ih hd')
+  | constantDeclaration _ ih | data _ _ ih | codata _ _ _ ih =>
+    rcases List.mem_cons.1 hd with he | hd'
+    · exact nomatch he
+    · exact ownershipStableUnderExtension.ownership (List.subset_cons_self _ _) (ih hd')
 
 end Sic.Core
