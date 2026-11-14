@@ -46,8 +46,19 @@ open Sic.Grading
 
 /-! ## Terms -/
 
-/-- The name of an entry of the signature, or of a type that a declaration declares. -/
-abbrev Name : Type := String
+/-- The name of an entry of the signature, or of a type that a declaration declares: a name that
+a declaration gives, or the name of the lifting of a type at positions of its parameters, which
+this type and these positions determine and which no declaration gives. -/
+inductive Name : Type where
+  /-- A name that a declaration gives. -/
+  | base (s : String)
+  /-- `D^Π`: the name of the lifting of the type `D` at the set `Π` of its parameters at the
+  positions `S`, in order. -/
+  | lifting (D : Name) (S : List Nat)
+  deriving DecidableEq
+
+/-- A string is the name that a declaration gives. -/
+instance : Coe String Name := ⟨.base⟩
 
 -- ADE: none.
 /--

@@ -143,10 +143,17 @@ structure Lifting.Variables where
   ownership : Grade
 
 -- ADE: none.
-/-- `F^Π`: the name of the lifting of the type `F` at the set `Π` of its parameters at the positions `S`, in
-order, a name of the
-signature that `F` and `S` determine. -/
-def Lifting.name (F : Name) (S : List Nat) : Name := F ++ "^" ++ toString S
+/-- `F^Π`: the name of the lifting of the type `F` at the set `Π` of its parameters at the positions
+`S`, in order, a name of the signature that `F` and `S` determine. -/
+def Lifting.name (F : Name) (S : List Nat) : Name := .lifting F S
+
+-- ADE: none.
+/-- The name of a lifting determines the type that it lifts and the positions of the parameters at
+which it lifts it. -/
+theorem Lifting.name_inj {D F : Name} {S' S : List Nat}
+    (h : Lifting.name D S' = Lifting.name F S) : D = F ∧ S' = S := by
+  cases h
+  exact ⟨rfl, rfl⟩
 
 -- ADE: none.
 /-- `l ⊔ ⨆ l̄`: the level `l` joined to each of the levels `l̄`.
