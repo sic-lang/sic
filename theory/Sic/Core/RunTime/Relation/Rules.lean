@@ -3,8 +3,8 @@ module
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.RunTime.Properties
-import Sic.Core.RunTime.Computation
 import Sic.Core.RunTime.Monotonicity
+import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Substitution
 

@@ -4,11 +4,11 @@ public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
-import Sic.Core.RunTime.Computation
-import Sic.Core.RunTime.DeclaredTypes
 import Sic.Core.RunTime.Monotonicity
-import Sic.Core.RunTime.Skeleton
-import Sic.Core.RunTime.Substitution
+import Sic.Core.RunTime.Relation.Computation
+import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Skeleton
+import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors

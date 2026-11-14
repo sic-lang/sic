@@ -1,10 +1,10 @@
 module
 
 public import Sic.Core.RunTime.Fundamental
-public import Sic.Core.Soundness.Judgments
+public import Sic.Core.Soundness
 import Sic.Core.Erasure.Levels
-import Sic.Core.RunTime.Computation
-import Sic.Core.RunTime.Levels
+import Sic.Core.RunTime.Relation.Computation
+import Sic.Core.RunTime.Relation.Levels
 import Sic.Core.Soundness.Closed
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Presuppositions

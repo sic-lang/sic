@@ -2,10 +2,10 @@ module
 
 public import Sic.Core.Erasure.Ownership
 public import Sic.Core.Ownership
-import Sic.Core.Ownership.Signature
 public import Sic.Grading.GradeSet
-import Sic.Core.RunTime.Corecursors
-import Sic.Core.RunTime.Recursors
+import Sic.Core.Ownership.Signature
+import Sic.Core.RunTime.Relation.Corecursors
+import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.Syntax.Signature
 
 /-!

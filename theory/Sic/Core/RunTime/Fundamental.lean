@@ -1,13 +1,13 @@
 module
 
-public import Sic.Core.RunTime.Corecursors
+public import Sic.Core.RunTime.Relation.Corecursors
 public import Sic.Core.Typing
 public import Sic.Core.Usage
-import Sic.Core.RunTime.DeclaredTypes
-import Sic.Core.RunTime.Recursors
-import Sic.Core.RunTime.Rules
+import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Recursors
+import Sic.Core.RunTime.Relation.Rules
 import Sic.Core.RunTime.Subsumption
-import Sic.Core.Soundness.Judgments
+import Sic.Core.Soundness
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature

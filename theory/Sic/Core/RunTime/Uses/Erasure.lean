@@ -3,8 +3,8 @@ module
 public import Sic.Core.Erasure.Usage
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
-import Sic.Core.RunTime.Corecursors
-import Sic.Core.RunTime.Recursors
+import Sic.Core.RunTime.Relation.Corecursors
+import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.Syntax.Signature
 import Sic.Core.Usage.Absence
 
