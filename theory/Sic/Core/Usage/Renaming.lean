@@ -376,24 +376,24 @@ where
       · intro j T' hj
         obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
         exact ⟨ps'', _, States.get_subst _ hS'⟩
-      · intro i j T' d ps'' S' hi hS' p q χ ps₁ Ξ Θ B ψ hd
+      · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q χ ps₁ Ξ Θ B ψ hd
+        obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
         exact ⟨_, CorecBranches.get_subst _ hg⟩
-      · intro i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hi hS' hd hg
+      · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
-        have ih := usage (hgu i j T' d ps'' S₀ p q χ ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
+        have ih := usage (hgu i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
         rw [GradeVector.rename_extendParams _ _ ps₁ (Ren.liftN ps''.length α),
           GradeVector.rename_extendParams _ _ ps'' α] at ih
         exact ih
-      · intro i j T' d p q χ ps₁ Ξ Θ B ψ hi hd
-        have := GradeVector.rename_commutes.rename_le α (hδ i j T' d p q χ ps₁ Ξ Θ B ψ hi hd)
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        have := GradeVector.rename_commutes.rename_le α (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
         rw [GradeVector.rename_commutes.rename_smul] at this
         exact this
-      · intro i j T' d p q χ ps₁ Ξ Θ B ψ D' hi hd hn
-        have := GradeVector.rename_commutes.rename_le α (hδr i j T' d p q χ ps₁ Ξ Θ B ψ D' hi hd hn)
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ D' hi hd hn
+        have := GradeVector.rename_commutes.rename_le α (hδr i j T' d p q ς ps₁ Ξ Θ B ψ D' hi hd hn)
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul,
           GradeVector.rename_commutes.rename_smul] at this
         exact this

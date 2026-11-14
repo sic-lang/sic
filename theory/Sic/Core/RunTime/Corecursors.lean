@@ -68,11 +68,11 @@ the relation of run time of its telescope, in a heap that extends that of the va
 observation evaluates to an address to which the observation of the term is related at the result
 of the destructor; the relations of the recursive destructors relate only terms related at their
 instances. -/
-theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p q χ : Grade}
+theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p q ς : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
       {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ : Subst 0 [] Γ} →
       ValidEqDestructors₀ sig ι κ inst rs ds θ θ → {rsR : Nat → Option RunRel} →
       (∀ i, rs i = none → rsR i = none) →
@@ -85,7 +85,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => none)
           (Θ.subst (hpos.obsSubst o θ)) RΘ ∧
         ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), RΘ H' ts.terms bs →
-          ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) χ.run (ps.map (·.usage.run))
+          ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) ς.run (ps.map (·.usage.run))
             (ps.map (·.requirement.run)) bs w H'' tr ∧
             RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
               (B.subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))
@@ -164,18 +164,18 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
 result of the destructor are equal at two observations whose abstractions the destructors before it
 relate, at equal arguments, as terms of their results; the result of a recursive destructor being an
 instance of the block, equal at both substitutions. -/
-theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q χ : Grade} {ps : List Parameter} :
+theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
       {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ₁ θ₂ : Subst 0 [] Γ} →
       ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ →
       (∀ i D, rs i = some D → ∃ κ₁,
         ValidEqTerm₀ sig ι ((inst D).subst θ₁) ((inst D).subst θ₂) (.sort κ₁)) →
       {f₁ f₂ : Observations} →
-      (∀ (d' : Name) (p' q' χ' : Grade) (ps' : List Parameter) (Ξ' : Scope)
+      (∀ (d' : Name) (p' q' ς' : Grade) (ps' : List Parameter) (Ξ' : Scope)
         (Θ' : Telescope 0 Ξ' ps') (B' : Term 0 (Ξ'.extend ps'.length))
-        (ψ' : ResultOwnership Grade ps'.length) (hpos' : ds.Pos d' p' q' χ' Ξ' Θ' B' ψ')
+        (ψ' : ResultOwnership Grade ps'.length) (hpos' : ds.Pos d' p' q' ς' Ξ' Θ' B' ψ')
         (ts us : Args 0 [] ps'),
         EqSubst sig ι (Context.empty.append (Θ'.subst (hpos'.obsSubst f₁ θ₁))) ts.toSubst
           us.toSubst →
@@ -211,8 +211,8 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q χ : Grade} {p
         (.sort κ₁) := fun i D hi => by
       rw [Term.subst_rename_of (fun _ => rfl), Term.subst_rename_of (fun _ => rfl)]
       exact hI (i + 1) D hi
-    have hobs' := fun d'' p' q' χ' ps'' Ξ' Θ' B' ψ' (hpos' : Destructors.Pos d'' p' q' χ' _ Ξ' Θ' B' ψ')
-      => hobs d'' p' q' χ' ps'' Ξ' Θ' B' ψ' (.there hpos')
+    have hobs' := fun d'' p' q' ς' ps'' Ξ' Θ' B' ψ' (hpos' : Destructors.Pos d'' p' q' ς' _ Ξ' Θ' B' ψ')
+      => hobs d'' p' q' ς' ps'' Ξ' Θ' B' ψ' (.there hpos')
     split at hv
     · obtain ⟨-, hds⟩ := hv
       refine h.validEq (hds _ _ fun τ₁ τ₂ hτ => ?_) hI' hobs'
@@ -241,10 +241,10 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {as : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as.toSubst as.toSubst)
-    {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
+    {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length}
-    (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ) (hpr : p ∉ Mode.oneOne.erased)
+    (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (hpr : p ∉ Mode.oneOne.erased)
     (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → p.mode ≠ .oneOne)
     {H : Heap} {t : Term 0 []} {a : Nat}
     (htv : ValidTerm₀ sig ι t (.inst D qs ls ps as))
@@ -256,7 +256,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ((Θ.substLevels (ls.getFin hl)).subst
         (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
     ∃ i w H'' tr, sig.destructorCase D d = some i ∧
-      EvalObs P ϖ₀ H' a i (ψ.map Grade.run) χ.run (ps'.map (·.usage.run))
+      EvalObs P ϖ₀ H' a i (ψ.map Grade.run) ς.run (ps'.map (·.usage.run))
         (ps'.map (·.requirement.run)) bs w H'' tr ∧ H'.Extends H'' ∧
       RunsAs sig ι P H'' (.obs D qs ls ps as t d ts.terms) w
         ((B.substLevels (ls.getFin hl)).subst
@@ -467,10 +467,10 @@ theorem RunValid.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
-    {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
+    {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length}
-    (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ) (hpr : p ∉ Mode.oneOne.erased)
+    (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (hpr : p ∉ Mode.oneOne.erased)
     (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → p.mode ≠ .oneOne)
     {t : Term 0 Γ} (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
     (htr : RunValid sig ι P hΓ ctx γ t (.inst D qs ls ps as)) {bs : Args 0 Γ ps'}
@@ -517,7 +517,7 @@ theorem RunValid.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx
   obtain ⟨i, w, H₃, tr₃, hi, hevo, hH₃, hrun⟩ := RunsAs.obs hd h hv hq hl hp hadm (has.2 σ σ hσ) hpos
     hpr hprop (ht.2 σ σ hσ) hta hH₂ ϖ₀ hbsσ hruns
   have he : (Term.obs D qs ls ps as t d bs.terms).erase sig Mode.oneOne.erased hΓ =
-      .obs (t.erase sig Mode.oneOne.erased hΓ) i (ψ.map Grade.run) χ.run
+      .obs (t.erase sig Mode.oneOne.erased hΓ) i (ψ.map Grade.run) ς.run
         (bs.terms.erase sig Mode.oneOne.erased hΓ ps') := by
     rw [Term.erase, hi, hd.argumentParams h hq hp hpos]
     rfl
@@ -967,23 +967,23 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
       RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D rsR
         (ds.substLevels L) θ S →
       {H : Heap} → {o : Observations} → {a : Nat} →
-      (∀ (d : Name) (p q χ : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+      (∀ (d : Name) (p q ς : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
         (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
-        (hpos : ds.Pos d p q χ Ξ Θ B ψ) (ts us : Args 0 [] ps),
+        (hpos : ds.Pos d p q ς Ξ Θ B ψ) (ts us : Args 0 [] ps),
         EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o θ)))
           ts.toSubst us.toSubst → rs hpos.index = none →
         ValidEqTerm₀ sig ι ((o d ps).subst ts.toSubst) ((o d ps).subst us.toSubst)
           ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) →
-      (∀ (d : Name) (p q χ : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+      (∀ (d : Name) (p q ς : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
         (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
-        (hpos : ds.Pos d p q χ Ξ Θ B ψ) (i : Nat), p ∉ Mode.oneOne.erased →
+        (hpos : ds.Pos d p q ς Ξ Θ B ψ) (i : Nat), p ∉ Mode.oneOne.erased →
         sig.destructorCase D d = some i → ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps)
         (bs : List Nat),
         EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst (hpos.obsSubst o θ)))
           ts.toSubst ts.toSubst →
         RunsAsArgs sig ι P H' (Parameter.grades ps) ts bs
           ((Θ.substLevels L).subst (hpos.obsSubst o θ)) →
-        ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) χ.run (ps.map (·.usage.run))
+        ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) ς.run (ps.map (·.usage.run))
           (ps.map (·.requirement.run)) bs w H'' tr ∧
           (rs hpos.index = none → RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
             ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) ∧
@@ -995,7 +995,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
   | _, _, .nil, _, _, _, _, _, _, _, _, _, _, h, _, _, _, _, _ => by
     cases h
     trivial
-  | _, _, .cons (d := d) (ps := ps) p q χ Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
+  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
       a, hv, hr => by
     have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
@@ -1004,11 +1004,11 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
     have hsw : ∀ (f : Term 0 (Scope.extend [] ps.length)) D',
         ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f) =
           (inst D').subst θ := fun f D' => Term.subst_rename_of (fun _ => rfl) _
-    have hv' := fun d' p' q' χ' ps' Ξ' Θ' B' ψ' (hpos : ds.Pos d' p' q' χ' Ξ' Θ' B' ψ') =>
-      hv d' p' q' χ' ps' Ξ' Θ' B' ψ' (.there hpos)
-    have hrec : ∀ (d' : Name) (p' q' χ' : Grade) (ps' : List Parameter) (Ξ' : Scope)
+    have hv' := fun d' p' q' ς' ps' Ξ' Θ' B' ψ' (hpos : ds.Pos d' p' q' ς' Ξ' Θ' B' ψ') =>
+      hv d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos)
+    have hrec : ∀ (d' : Name) (p' q' ς' : Grade) (ps' : List Parameter) (Ξ' : Scope)
         (Θ' : Telescope k' Ξ' ps') (B' : Term k' (Ξ'.extend ps'.length))
-        (ψ' : ResultOwnership Grade ps'.length) (hpos : ds.Pos d' p' q' χ' Ξ' Θ' B' ψ') (i : Nat),
+        (ψ' : ResultOwnership Grade ps'.length) (hpos : ds.Pos d' p' q' ς' Ξ' Θ' B' ψ') (i : Nat),
         p' ∉ Mode.oneOne.erased → sig.destructorCase D d' = some i → ∀ H', H.Extends H' →
         ∀ (ts : Args 0 [] ps') (bs : List Nat),
         EqSubst sig ι (Context.empty.append ((Θ'.substLevels L).subst
@@ -1016,7 +1016,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           ts.toSubst →
         RunsAsArgs sig ι P H' (Parameter.grades ps') ts bs ((Θ'.substLevels L).subst
           (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)))) →
-        ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ'.map Grade.run) χ'.run (ps'.map (·.usage.run))
+        ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ'.map Grade.run) ς'.run (ps'.map (·.usage.run))
           (ps'.map (·.requirement.run)) bs w H'' tr ∧
           (rs (hpos.index + 1) = none → RunsAs sig ι P H'' ((o d' ps').subst ts.toSubst) w
             ((B'.substLevels L).subst (Subst.append
@@ -1026,9 +1026,9 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
               (hpos.obsSubst o (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps))) ts.toSubst) =
               ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ (o d ps)) →
             R H'' ((o d' ps').subst ts.toSubst) w :=
-      fun d' p' q' χ' ps' Ξ' Θ' B' ψ' hpos i hp hi H' hH' ts bs hτ hbs ϖ' => by
+      fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos i hp hi H' hH' ts bs hτ hbs ϖ' => by
         obtain ⟨w, H'', tr, hev, h₁, h₂⟩ :=
-          hr d' p' q' χ' ps' Ξ' Θ' B' ψ' (.there hpos) i hp hi H' hH' ts bs hτ hbs ϖ'
+          hr d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos) i hp hi H' hH' ts bs hτ hbs ϖ'
         exact ⟨w, H'', tr, hev, h₁, fun D' R hD' hR e => h₂ D' R hD' hR (e.trans (hsw _ D'))⟩
     have hgr : ∀ l (p' : Parameter), ps[l]? = some p' → Parameter.grades ps l ∉ Mode.oneOne.erased →
         p'.usage ∉ Mode.oneOne.erased := fun _ _ hl h => Parameter.grades_of_getElem? hl ▸ h
@@ -1044,7 +1044,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
           have htt := hSp.trans hts (hSp.symm hts)
           obtain ⟨v, hv''⟩ := hB ts htt
-          exact (hF ts htt v hv'').of_validEqTerm hv'' (hv d p q χ ps _ Θ B ψ .here ts us
+          exact (hF ts htt v hv'').of_validEqTerm hv'' (hv d p q ς ps _ Θ B ψ .here ts us
             ((hT ts us).1 hts) hr0)
         have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
             τ₁ τ₂ → ValidEqTerm₀ sig ι ((o d ps).subst τ₁) ((o d ps).subst τ₂)
@@ -1068,7 +1068,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
           hgr ts hτ bs hts
         obtain ⟨w, H'', tr, hev, hw, -⟩ :=
-          hr d p q χ ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs ϖ'
+          hr d p q ς ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs ϖ'
         obtain ⟨v, hv''⟩ := hB ts htt
         exact ⟨w, H'', tr, hev, RunFieldRel.of_runsAs hd (hR ts htt v hv'') hv'' (hw hr0)⟩
     · rename_i D' hr0
@@ -1091,7 +1091,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
           hgr ts hτ bs hts
         obtain ⟨w, H'', tr, hev, -, hw⟩ :=
-          hr d p q χ ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs ϖ'
+          hr d p q ς ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs ϖ'
         have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D').subst θ := by
           rw [hBD, Term.subst_append_rename_weakenN]
         exact ⟨w, H'', tr, hev, hw D' R hr0 hR0 e⟩
@@ -1119,12 +1119,12 @@ def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) 
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : CorecBranches 0 Γ)
     (δs : Nat → GradeVector Γ.length) : Prop :=
-  ∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps'') (p q χ : Grade)
+  ∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps'') (p q ς : Grade)
     (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
     (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
     (g : Term 0 ((Γ.extend ps''.length).extend ps₁.length)),
     decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-    (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ) →
+    (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
     gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased →
     RunValid sig ι P ((hΓ.extend _).extend _)
       ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
@@ -1168,10 +1168,10 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
     (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
     (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
-    (hδ : ∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+    (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
     {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat} (hσ : EqSubst sig ι ctx σ σ)
     (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx δ σ V) {j : Nat}
     {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {ps'' : List Parameter}
@@ -1274,27 +1274,27 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
           (Subst.LevelEquiv.refl _)
       -- The case of a destructor of the type and its branch.
-      have hcase : ∀ {d p q χ ps' Ξ} {Θ : Telescope decl.levels Ξ ps'}
+      have hcase : ∀ {d p q ς ps' Ξ} {Θ : Telescope decl.levels Ξ ps'}
           {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length},
-          (T₂.body I).Pos d p q χ Ξ Θ B ψ → ∃ i g, decl.codataCases[i]? = some (j₁, T₂, d) ∧
-            gs.get i = some ⟨0, ps₁.length, ps'.length, g⟩ := fun {d p q χ ps' Ξ Θ B ψ} hpos => by
+          (T₂.body I).Pos d p q ς Ξ Θ B ψ → ∃ i g, decl.codataCases[i]? = some (j₁, T₂, d) ∧
+            gs.get i = some ⟨0, ps₁.length, ps'.length, g⟩ := fun {d p q ς ps' Ξ Θ B ψ} hpos => by
         have hm := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj₁
           hpos.mem
         rw [Nat.zero_add] at hm
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hm
-        obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q χ ps' Ξ Θ B ψ hpos
+        obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ς ps' Ξ Θ B ψ hpos
         exact ⟨i, g, hi, hg⟩
       refine RunDesRel.of_obs hd Lρ (T₂.body I) (hmean T₂ hT₁) (fun i hi => by rw [hi]; rfl)
         (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) hSρ ?_ ?_
       · -- The observations by a destructor that is not recursive step to its branch, whose
         -- premise makes it a term of the result of the destructor.
-        intro d p q χ ps' Ξ Θ B ψ hpos ts₂ us₂ hτ hr0
+        intro d p q ς ps' Ξ Θ B ψ hpos ts₂ us₂ hτ hr0
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
         have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
             (Telescope.substLevels_levelEquiv hls Θ))) hτ
         have hb := ValidEqTerm₀.corecBranch hpos
-          (hgv.2 i j₁ T₂ d ps₁ S₁ p q χ ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
+          (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
         have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
           (Ss := Ss) (r := r)
@@ -1313,7 +1313,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
       · -- The observation by a destructor whose grade is used at run time runs its branch, valid
         -- at run time, and resumes its value.
-        intro d p q χ ps' Ξ Θ B ψ hpos i' hpr hi' H₂ hH₂ ts₂ bs₂ hτ hbs₂ ϖ₀
+        intro d p q ς ps' Ξ Θ B ψ hpos i' hpr hi' H₂ hH₂ ts₂ bs₂ hτ hbs₂ ϖ₀
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
         obtain rfl : i' = i :=
           Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
@@ -1332,7 +1332,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         -- The parameters of the entries of the state and of the arguments of the branch, and the
         -- ownership of its result.
         have hpss : (pss.drop i').headD ([], ResultOwnership.noArguments) =
-            (ps₁.map fun p => ⟨r * p.usage, p.requirement⟩, ⟨ps', ψ, χ⟩) :=
+            (ps₁.map fun p => ⟨r * p.usage, p.requirement⟩, ⟨ps', ψ, ς⟩) :=
           List.headD_drop_of_getElem? (by
             simp [pss, hd.destructorArguments h hq hp, hi, hS₁]
             rw [hpos.arguments (hd.destructors_nodup h₀)]
@@ -1400,7 +1400,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hδi : RunsAsSubst sig ι P H₂ ctx (δs i') σ V :=
           RunsAsSubst.of_counted ctx (fun x hx => (by decide : ∀ c p u : Grade, c ≤ p * u →
             p ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased → c ∉ Mode.oneOne.erased) _ _ _
-            (hδ i' j₁ T₂ d p q χ ps' Ξ Θ B ψ hi hpos x) hpr hx) (hE.mono hd (hH₁.trans hH₂))
+            (hδ i' j₁ T₂ d p q ς ps' Ξ Θ B ψ hi hpos x) hpr hx) (hE.mono hd (hH₁.trans hH₂))
         have hbs₁' : RunsAsArgs sig ι P H₂
             (fun l => (Mode.oneOne.grade * r) * Parameter.grades ps₁ l) ts₁ bs₁ (S₁.subst σ) :=
           RunsAsArgs.of_counted (fun l h' => (by decide : ∀ r u : Grade,
@@ -1411,7 +1411,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             Mode.oneOne.grade * u ∉ Mode.oneOne.erased → u ∉ Mode.oneOne.erased) _ h') hbs₂'
         have hσr := RunsAsSubst.append (ctx.append S₁) _ (RunsAsSubst.append ctx S₁ hδi hbs₁')
           (by rw [Telescope.subst_subst_of (fun x => hc _ x)]; exact hbs₂'')
-        have hbr := hgr i' j₁ T₂ d ps₁ S₁ p q χ ps' Ξ Θ B ψ g hi hS₁ hpos hg hpr
+        have hbr := hgr i' j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g hi hS₁ hpos hg hpr
         rw [GradeVector.extendParams_eq_extendGrades,
           GradeVector.extendParams_eq_extendGrades] at hbr
         -- The branch binds its variables to cells, at the multiplicities of its binders.
@@ -1485,7 +1485,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             rfl
           rw [hk] at hget
           have hb := ValidEqTerm₀.corecBranch hpos
-            (hgv.2 i' j₁ T₂ d ps₁ S₁ p q χ ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
+            (hgv.2 i' j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
           simp only [Term.branchResult, hbn, hst] at hb hrun
           simp only [Term.observed, hbn, hst] at hred
           obtain ⟨v', H₄, hres, -, hnext | ⟨rfl, hdone⟩⟩ := RunsAs.resume hd hpr hs hb hrun
@@ -1552,10 +1552,10 @@ theorem RunValid.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
     (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
     (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
-    (hδ : ∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+    (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
     RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ δ) (.corec r D qs ls ps as ss.terms Ss gs)
       (.inst D qs ls ps as) := by
   intro ϖ₀ σ H E V hσ hEV hE

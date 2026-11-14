@@ -574,13 +574,13 @@ context extended by it. -/
 theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
     {ψ : ResultOwnership Grade ps.length}
-    {χ : Grade} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {ς : Grade} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
     {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} (hr : rs 0 = none)
     (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
     (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
     (hds : ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) (fun D => (inst D).rename Ren.weaken)
       (fun i => rs (i + 1)) ds κ) :
-    ValidDestructorsΓ sig ι ctx inst rs (.cons (d := d) p q χ Θ B ψ ds) κ := by
+    ValidDestructorsΓ sig ι ctx inst rs (.cons (d := d) p q ς Θ B ψ ds) κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
   rw [ValidEqDestructors₀, hr]
   refine ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
@@ -594,12 +594,12 @@ theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : L
 it, are in the same context. -/
 theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership Grade ps.length}
-    {χ : Grade}
+    {ς : Grade}
     {ds : Destructors 0 Γ ns} {κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name}
     {D : Name} (hr : rs 0 = some D) (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
     (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) ds κ) :
     ValidDestructorsΓ sig ι ctx inst rs
-      (.cons (d := d) p q χ Θ ((inst D).rename (Ren.weakenN ps.length)) ψ (ds.rename Ren.weaken))
+      (.cons (d := d) p q ς Θ ((inst D).rename (Ren.weakenN ps.length)) ψ (ds.rename Ren.weaken))
       κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
   rw [ValidEqDestructors₀, hr]

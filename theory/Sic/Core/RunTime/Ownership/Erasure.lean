@@ -423,7 +423,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       exact .recursor (Ownership.erase_ownership hd hΩ hΓ hφ hm' ht)
         (hbr o.run (fun _ => rfl) fun h' => absurd h' hr)
-  | .obs (ψ := ψ) (os := os) h hq hp hpos ht hbs hv hf hχ => by
+  | .obs (ψ := ψ) (os := os) h hq hp hpos ht hbs hv hf hς => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
     simp only [Term.erase, hi]
@@ -435,7 +435,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       (Mode.oneOne_odot_of_not_erased hm) hbs
     rw [Parameter.map_eta] at hos
     rw [(Grade.run_op _ _).2.1]
-    refine .obs (Ownership.erase_ownership hd hΩ hΓ hφ hm ht) hos ?_ (Grade.run_le hχ)
+    refine .obs (Ownership.erase_ownership hd hΩ hΓ hφ hm ht) hos ?_ (Grade.run_le hς)
     rw [ResultOwnership.value_map_run ψ os os' hl fun i hi => ha i _
       (List.getElem?_eq_getElem i.2) (Mode.not_erased_of_odot hm (hf i hi)), hv]
     rfl
@@ -457,13 +457,13 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       have := (TypeDeclaration.getElem?_of_mem_casesFrom hcm).2
       rwa [Nat.sub_zero] at this
     obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-    obtain ⟨p, q, χ, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
+    obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
     have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
     have hpg := hgri i j T' d hc p (hpos.grade hnd)
-    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q χ ps₁ Ξ Θ B ψ hpos
+    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_of_getElem?
-        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, χ⟩))
+        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
         (by simp [hc, hSj, hpos.arguments hnd]),
       List.headD_drop_of_getElem? (x := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
         (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
@@ -492,7 +492,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             .zero) →
         Ownership.RunAgree
           (fun x => φ'.extendBinders
-            (fun (l : Fin ps''.length) => χ.run *
+            (fun (l : Fin ps''.length) => ς.run *
               (((ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter))[(l : Nat)]?).map
                 (·.requirement.run)).getD .omega *
               (((ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter))[(l : Nat)]?).map
@@ -501,7 +501,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
               (((ps₁[(l : Nat)]?).map
                 fun q => ((Mode.oneOne ⊙ p).grade * q.usage).run).getD .omega))
             (x.cast (Scope.length_extend_extend Γ _ _)))
-          (Ownership.extendArgs (Ownership.extendFields φ χ
+          (Ownership.extendArgs (Ownership.extendFields φ ς
             ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ gs) := by
       intro v hv
       rw [Ownership.extendArgs_eq, Ownership.extendFields_eq, hm]
@@ -530,7 +530,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         obtain ⟨val, hval, rfl⟩ := Option.map_eq_some_iff.1 hw
         exact Target.Ownership.cast _ (Ownership.erase_ownership hd hΩ ((hΓ.extend _).extend _)
           (hag _ fun _ => rfl) hm'
-          (hgo i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hc hSj hpos hg hbn gs val hal hval))
+          (hgo i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hc hSj hpos hg hbn gs val hal hval))
       · exact absurd hk0 hne
     | some D' =>
       -- The branch resumes the corecursor: a new value.
@@ -552,7 +552,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       · exact absurd h0 hk0
       · exact Target.Ownership.cast _ (Ownership.erase_ownership hd hΩ ((hΓ.extend _).extend _)
           (hag _ fun _ => rfl) hm'
-          (hgr i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g D' hc hSj hpos hg hbn gs hal))
+          (hgr i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hc hSj hpos hg hbn gs hal))
   | .sub h hle => .sub (Ownership.erase_ownership hd hΩ hΓ hφ hm h) (Grade.run_le hle)
 
 -- ADE: none.

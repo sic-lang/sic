@@ -79,8 +79,8 @@ theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : 
 
 /-- The observation of a value extends the heap. -/
 theorem EvalObs.extends {P : Program} {ϖ : Multiplicity} {H H' : Heap} {a i c : Nat}
-    {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity} {πs ϱs : List Multiplicity}
-    {bs : List Nat} {v : Nat} {R : List Nat} : EvalObs P ϖ H a i ψ χ πs ϱs bs v H' R → H.Extends H'
+    {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity} {πs ϱs : List Multiplicity}
+    {bs : List Nat} {v : Nat} {R : List Nat} : EvalObs P ϖ H a i ψ ς πs ϱs bs v H' R → H.Extends H'
   | .beta _ _ _ _ _ _ _ _ _ _ hw hr => (List.prefix_append _ _).trans (hw.extends.trans hr.extends)
 
 end

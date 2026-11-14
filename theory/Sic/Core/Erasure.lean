@@ -132,12 +132,12 @@ inductive Target : Nat → Type where
   /-- `rec_ρ M with N̄`: the recursor of the multiplicity `ρ` on `M`, with a branch for each
   constructor, in order. -/
   | recursor {n : Nat} (ρ : Multiplicity) (M : Target n) (Ns : TargetBranches n) : Target n
-  /-- `M.dᵢ(M̄) ◀ ψ ◀ χ`: the observation of `M` by the destructor of the case `i` of its block,
+  /-- `M.dᵢ(M̄) ◀ ψ ◀ ς`: the observation of `M` by the destructor of the case `i` of its block,
   applied to a term for each of its `c` arguments, each at the multiplicity and the requirement of
-  its argument, with the ownership `ψ` of the result of the destructor and the ownership `χ` that the
+  its argument, with the ownership `ψ` of the result of the destructor and the ownership `ς` that the
   destructor requires of the value that it observes, at run time. -/
   | obs {n : Nat} (M : Target n) (i : Nat) {c : Nat} (ψ : ResultOwnership Multiplicity c)
-      (χ : Multiplicity) (Ms : Targets n) : Target n
+      (ς : Multiplicity) (Ms : Targets n) : Target n
   /-- `corec from M̄ with P̄`: the corecursor from the state `M̄`, each entry at the multiplicity of
   its entry, with a branch for each destructor, in order. -/
   | corec {n : Nat} (Ms : Targets n) (Ns : TargetCorecBranches n) : Target n
@@ -173,18 +173,18 @@ inductive TargetBranches : Nat → Type where
 
 -- ADE: none.
 /-- `P̄`: the branches of a corecursor of the target language, in order; the branch
-`(ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ χ). P` is a term over a new variable for each of the `b`
+`(ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ ς). P` is a term over a new variable for each of the `b`
 entries of the state and of the `c` arguments, of the multiplicities `π̄` and `π̄'` and of the
 requirements `ϱ̄` and `ϱ̄'` of their entries at run time, `k` is its resumption, `ψ` the ownership of
-the result of its destructor and `χ` the ownership that its destructor requires of the value that it
+the result of its destructor and `ς` the ownership that its destructor requires of the value that it
 observes, at run time.
 RFC: `\mathsf{syntax}_{\bar P}` -/
 inductive TargetCorecBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetCorecBranches n
-  /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ χ). P, P̄)`. -/
+  /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ ς). P, P̄)`. -/
   | cons {n : Nat} (o : Resumption) (b c : Nat) (πs ϱs : Fin b → Multiplicity)
-      (πs' ϱs' : Fin c → Multiplicity) (ψ : ResultOwnership Multiplicity c) (χ : Multiplicity)
+      (πs' ϱs' : Fin c → Multiplicity) (ψ : ResultOwnership Multiplicity c) (ς : Multiplicity)
       (N : Target (n + (b + c))) (Ns : TargetCorecBranches n) : TargetCorecBranches n
 
 end
@@ -212,13 +212,13 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   /-- In the term of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{obs}` -/
   | obs {n : Nat} {x : Fin n} {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {χ : Multiplicity} {Ms : Targets n} (h : Target.Occurs x M) :
-      Target.Occurs x (.obs M i ψ χ Ms)
+      {ς : Multiplicity} {Ms : Targets n} (h : Target.Occurs x M) :
+      Target.Occurs x (.obs M i ψ ς Ms)
   /-- In an argument of an observation.
   RFC: `\mathsf{occurs}_M.\mathsf{args}` -/
   | arg {n : Nat} {x : Fin n} {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {χ : Multiplicity} {Ms : Targets n} (h : Targets.Occurs x Ms) :
-      Target.Occurs x (.obs M i ψ χ Ms)
+      {ς : Multiplicity} {Ms : Targets n} (h : Targets.Occurs x Ms) :
+      Target.Occurs x (.obs M i ψ ς Ms)
   /-- In the state of a corecursor.
   RFC: `\mathsf{occurs}_M.\mathsf{from}` -/
   | corec {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
@@ -263,17 +263,17 @@ inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranch
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar P}.P` -/
   | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
       {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
       (h : Target.Occurs (x.addNat (b + c)) N) :
-      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ χ N Ns)
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar P}.\bar P` -/
   | tail {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
       {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
       (h : TargetCorecBranches.Occurs x Ns) :
-      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ χ N Ns)
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
 
 end
 
@@ -338,9 +338,9 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   arguments.
   RFC: `{\sqsubseteq}.d` -/
   | obs {n : Nat} {M N : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-      {χ : Multiplicity} {Ms Ns : Targets n} (h : Target.LessDefined M N)
+      {ς : Multiplicity} {Ms Ns : Targets n} (h : Target.LessDefined M N)
       (hs : Targets.LessDefined Ms Ns) :
-      Target.LessDefined (.obs M i ψ χ Ms) (.obs N i ψ χ Ns)
+      Target.LessDefined (.obs M i ψ ς Ms) (.obs N i ψ ς Ns)
   /-- A corecursor is less defined than a corecursor of a more defined state and branches.
   RFC: `{\sqsubseteq}.\mathsf{corec}` -/
   | corec {n : Nat} {Ms Ns : Targets n} {Ms' Ns' : TargetCorecBranches n}
@@ -384,12 +384,12 @@ inductive TargetCorecBranches.LessDefined :
   /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₁ ◀ ψ). P₁, P̄₁) ⊑ ((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₂ ◀ ψ). P₂, P̄₂)`.
   RFC: `{\sqsubseteq}_{\bar P}.{,}` -/
   | cons {n : Nat} {o₁ o₂ : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
-      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {χ : Multiplicity}
+      {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
       {M N : Target (n + (b + c))} {Ms Ns : TargetCorecBranches n}
       (ho : Resumption.LessDefined o₁ o₂) (h : Target.LessDefined M N)
       (hs : TargetCorecBranches.LessDefined Ms Ns) :
-      TargetCorecBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ χ M Ms)
-        (.cons o₂ b c πs ϱs πs' ϱs' ψ χ N Ns)
+      TargetCorecBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ ς M Ms)
+        (.cons o₂ b c πs ϱs πs' ϱs' ψ ς N Ns)
 
 end
 

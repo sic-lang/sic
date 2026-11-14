@@ -100,9 +100,9 @@ theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scop
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
+    (hp : ps.length = decl.grades) {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ)
+    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
     {t : Term k Γ} {bs : Args k Γ ps'} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {u : Term k Γ}, Usage sig γ m u →
       u = .obs D qs ls ps as t d bs.terms →
@@ -192,23 +192,23 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
         (∀ j (ps'' : List Parameter) (S' : Telescope k Γ ps''),
           Ss.get j = some ⟨0, ps'', S'⟩ → UsageTelescope sig 𝟘ᶜ .zeroZero S') ∧
         UsageArgs sig γ' (m ⊙ r) ss ∧
-        (∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q χ : Grade)
+        (∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
           (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
           (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
           decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
+          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
           gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
           Usage sig (((δs i).extendParams ((m ⊙ p).grade * r) ps'').extendParams (m ⊙ p).grade ps₁)
             (m ⊙ p) g) ∧
-        (∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+        (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
-        (∀ i j T' d (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
+        (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ → B.blockName decl.names = some D' →
+          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → B.blockName decl.names = some D' →
           δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ))
   | _, _, .corec (ss := ss') h₁ _ _ hh₁ hS₁ hSu hss _ _ _ _ hgu hδ hδr, he => by
     injection he with _ hΔ hr' hD hqs hls hps has hss' hSs hgs

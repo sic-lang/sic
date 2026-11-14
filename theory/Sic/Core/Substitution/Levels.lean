@@ -138,7 +138,7 @@ theorem Destructors.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k �
     {ns : List Name} → (ds : Destructors k Δ ns) →
       (ds.rename α).substLevels ls' = (ds.substLevels ls').rename α
   | _, .nil => rfl
-  | _, .cons p q χ Θ B ψ ds => by
+  | _, .cons p q ς Θ B ψ ds => by
     rw [Destructors.rename, Destructors.substLevels, Destructors.substLevels, Destructors.rename,
       Destructors.substLevels_rename ls' (Ren.lift α) ds, Telescope.substLevels_rename,
       Term.substLevels_rename]

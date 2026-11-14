@@ -264,13 +264,13 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
         have := (TypeDeclaration.getElem?_of_mem_casesFrom hcm).2
         rwa [Nat.sub_zero] at this
       obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-      obtain ⟨p, q, χ, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
+      obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
       have hpg := hgri i j T' d hc p (hpos.grade (hd.destructors_nodup ⟨h.1, hT', rfl⟩))
       rw [Option.some.inj (hgi.symm.trans hpg)] at hpS
-      obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q χ ps₁ Ξ Θ B ψ hpos
+      obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
       cases Option.some.inj (hget.symm.trans hg)
       have hδx : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
-      have hpδ : p * δs i x ∈ S := hS.le _ _ (hδ i j T' d p q χ ps₁ Ξ Θ B ψ hc hpos x) hδx
+      have hpδ : p * δs i x ∈ S := hS.le _ _ (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hc hpos x) hδx
       have hS' : ErasesUncounted (m ⊙ p) S := (hS.mode _ hpS).symm ▸ hS
       have hidx : ((x.addNat (ps''.length + ps₁.length)).cast
           (Scope.length_extend_extend Γ ps''.length ps₁.length).symm :
@@ -279,7 +279,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
             (Scope.length_extend_extend_extend Γ 0 ps''.length ps₁.length).symm :=
         Fin.ext (by simp)
       rw [hidx] at ho
-      exact Usage.absent hd hS' _ (hgu i j T' d ps'' S' p q χ ps₁ Ξ Θ B ψ g hc hSj hpos hg)
+      exact Usage.absent hd hS' _ (hgu i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hc hSj hpos hg)
         ((GradeVector.extendParams_extendParams_addNat (δs i) _ _ ps'' ps₁ x).symm ▸
           hS.mul _ _ hpS hpδ) ho
   | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho

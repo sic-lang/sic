@@ -148,28 +148,28 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   value is shared, since an other owner of the value may observe it; each argument on whose variable
   `ψ` has a factor is checked in the mode `m` of the observation, so that the value of `ψ` reads only
   ownerships that the mode counts, as the usage counts only the uses of these arguments; the
-  ownership of the term satisfies the requirement `χ` of the destructor on the value that it
+  ownership of the term satisfies the requirement `ς` of the destructor on the value that it
   observes, in every mode, since the branch of the destructor gives the entries of the state the
-  ownerships that a value of the ownership `χ` holds.
+  ownerships that a value of the ownership `ς` holds.
   RFC: `d_{◀}` -/
   | obs {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
-      {d : Name} {p q χ : Grade} {ps' : List Parameter} {Ξ : Scope}
+      {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {o v : Grade} {os : List Grade}
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ)
+      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
       (ht : Ownership sig φ m o t) {bs : Args k Γ ps'} (hbs : OwnershipArgs sig φ m bs os)
       (hv : ψ.value os = some v)
       (hf : ∀ i : Fin ps'.length, (ψ.coefficient i).isSome → m ⊙ ps'[i].usage = m)
-      (hχ : χ ≤ o) : Ownership sig φ m (o * v) (.obs D qs ls ps as t d bs.terms)
+      (hς : ς ≤ o) : Ownership sig φ m (o * v) (.obs D qs ls ps as t d bs.terms)
   /-- A corecursor builds a new value, which has the ownership `11ᵖ`, whatever its state, whose terms
   satisfy the requirements of the entries of the state of its type, as the arguments of a telescope
   do, checked in the mode `m ⊙ r`; the branch of each destructor, checked in the mode `m ⊙ p` of its
-  grade `p`, with the requirement `χ` of the destructor on the value that it observes times the
+  grade `p`, with the requirement `ς` of the destructor on the value that it observes times the
   requirement of its entry for the variable of each entry of the state, which a value of the
-  ownership `χ` holds, and the ownership `oᵢ` of each argument, each times the grade with
+  ownership `ς` holds, and the ownership `oᵢ` of each argument, each times the grade with
   which the branch uses the variable, so that a variable used more than once is shared, has the
   ownership `ψ[ō / x̄]` of the result of the destructor for every ownerships `ō` of its arguments
   that satisfy the requirements of their entries, since an observation reads `ψ` at the ownerships
@@ -191,29 +191,29 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (hgl : gs.length = decl.codataCases.length)
       (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        ∀ (p q χ : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
-      (hgo : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q χ : Grade)
+      (hgo : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = none →
         ∀ os' v, Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
-        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ χ
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ ς
           ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) v g)
-      (hgr : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q χ : Grade)
+      (hgr : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)) (D' : Name),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q χ Ξ Θ B ψ →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = some D' →
         ∀ os', Parameter.Allow (m ⊙ p) ps₁ os' →
-        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ χ
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ ς
           ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) .linearLinear g) :
       Ownership sig φ m .linearLinear (.corec r D qs ls ps as ss.terms Ss gs)
   /-- A term may be given an ownership lower than its own, which states less.
@@ -274,9 +274,9 @@ inductive OwnershipSig : Signature → Prop where
   | codata {sig : Signature} {decl : TypeDeclaration}
       {Ts : List (CodataType decl.sorts decl.grades decl.levels decl.scope)} (h : OwnershipSig sig)
       (hb : decl.body = .codata Ts)
-      (hψ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ d p q χ ps Ξ
+      (hψ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ d p q ς ps Ξ
         (Θ : Telescope decl.levels Ξ ps) (B : Term decl.levels (Ξ.extend ps.length))
-        (ψ : ResultOwnership Grade ps.length), (T.body ι).Pos d p q χ Ξ Θ B ψ →
+        (ψ : ResultOwnership Grade ps.length), (T.body ι).Pos d p q ς Ξ Θ B ψ →
         B.blockName decl.names ≠ none → ∃ χ, χ ≤ Grade.one ∧ ψ = ⟨some χ, fun _ => none⟩) :
       OwnershipSig (.typeDeclaration decl :: sig)
 

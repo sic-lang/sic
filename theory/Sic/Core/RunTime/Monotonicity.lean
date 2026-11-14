@@ -100,7 +100,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
         (∀ i, Option.Rel (fun x y => ∀ H t a, x H t a → y H t a) (rs₁ i) (rs₂ i)) →
         ∀ o a, S₁ H o a → S₂ H' o a
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
-  | .cons (ps := ps) (ψ := ψ) (χ := χ) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
+  | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
       _ hG hrs, _, _, h', hRs => by
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
     have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
@@ -115,7 +115,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
         FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' TelRel.none_rel
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (χ := χ)
+      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
         (f := f) (H := H)
         (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := RunTelRel.fieldsRel hd (fun m _ => levelRel_isPer hd m) hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts

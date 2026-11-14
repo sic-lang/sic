@@ -642,12 +642,12 @@ theorem Term.observation_instantiate {Γ Δ : Scope} (D : Name) (qs : List Quali
     Term.subst₀_id, ← Args.terms_subst₀, Args.bound_toSubst₀]
 
 /-- A position of a destructor in destructors, at instantiated levels. -/
-def Destructors.Pos.substLevels {k' : Nat} (ls' : Fin k → Level k') {d : Name} {p q χ : Grade}
+def Destructors.Pos.substLevels {k' : Nat} (ls' : Fin k → Level k') {d : Name} {p q ς : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q χ ds Ξ Θ B ψ →
-        Destructors.Pos d p q χ (ds.substLevels ls') Ξ (Θ.substLevels ls') (B.substLevels ls') ψ
+      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ς ds Ξ Θ B ψ →
+        Destructors.Pos d p q ς (ds.substLevels ls') Ξ (Θ.substLevels ls') (B.substLevels ls') ψ
   | _, _, _, _, _, _, _, .here => .here
   | _, _, _, _, _, _, _, .there h => .there (h.substLevels ls')
 
@@ -655,11 +655,11 @@ def Destructors.Pos.substLevels {k' : Nat} (ls' : Fin k → Level k') {d : Name}
 it reads only the scopes. -/
 theorem Destructors.Pos.obsSubst_posSubstLevels {k' k'' : Nat} {Γ' : Scope}
     (ls' : Fin k' → Level k'')
-    (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) {d : Name} {p q χ : Grade}
+    (o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) {d : Name} {p q ς : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
       (θ : Subst k Γ' Γ) → ∀ {a} (x : Var Ξ a),
         (hd.substLevels ls').obsSubst o θ x = hd.obsSubst o θ x
   | _, _, _, _, _, _, _, .here, _, _, _ => rfl
@@ -682,11 +682,11 @@ observations commute with `σ`. -/
 theorem Destructors.Pos.obsSubst_subst {k' : Nat} {Γ' Γ'' : Scope} (σ : Subst k Γ'' Γ')
     {o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)}
     {o' : Name → (ps' : List Parameter) → Term k (Γ''.extend ps'.length)}
-    (ho : ∀ d ps', (o d ps').subst (Subst.liftN ps'.length σ) = o' d ps') {d : Name} {p q χ : Grade}
+    (ho : ∀ d ps', (o d ps').subst (Subst.liftN ps'.length σ) = o' d ps') {d : Name} {p q ς : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
       {θ : Subst k Γ' Γ} → {θ' : Subst k Γ'' Γ} →
       (∀ {a} (x : Var Γ a), (θ x).subst (Subst.liftN a.params.length σ) = θ' x) →
       ∀ {a} (x : Var Ξ a),
@@ -703,11 +703,11 @@ substitution of the scope and the observations commute with the instantiation. -
 theorem Destructors.Pos.obsSubst_substLevels {k' k'' : Nat} {Γ' : Scope} (ls' : Fin k → Level k'')
     {o : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)}
     {o' : Name → (ps' : List Parameter) → Term k'' (Γ'.extend ps'.length)}
-    (ho : ∀ d ps', (o d ps').substLevels ls' = o' d ps') {d : Name} {p q χ : Grade}
+    (ho : ∀ d ps', (o d ps').substLevels ls' = o' d ps') {d : Name} {p q ς : Grade}
     {ps : List Parameter} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
       {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q χ ds Ξ Θ B ψ) →
+      {ψ : ResultOwnership Grade ps.length} → (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
       {θ : Subst k Γ' Γ} → {θ' : Subst k'' Γ' Γ} →
       (∀ {a} (x : Var Γ a), (θ x).substLevels ls' = θ' x) →
       ∀ {a} (x : Var Ξ a), ((hd.obsSubst o θ) x).substLevels ls' = hd.obsSubst o' θ' x
@@ -721,10 +721,10 @@ theorem Destructors.Pos.obsSubst_substLevels {k' k'' : Nat} {Γ' : Scope} (ls' :
 is the substitution by the observations of the term substituted, at the arguments substituted. -/
 theorem Destructors.Pos.obsSubst_observation_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     (σ : Subst k Γ'' Γ') (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
-    (as : InstanceArgs k Γ' Δ) (t : Term k Γ') {d : Name} {p q χ : Grade} {ps' : List Parameter}
+    (as : InstanceArgs k Γ' Δ) (t : Term k Γ') {d : Name} {p q ς : Grade} {ps' : List Parameter}
     {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
-    (hd : Destructors.Pos d p q χ ds Ξ Θ B ψ) :
+    (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
       ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).subst
           (Subst.liftN a.params.length σ) =
@@ -809,10 +809,10 @@ corecursor substituted. -/
 theorem Destructors.Pos.obsSubst_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     (σ : Subst k Γ'' Γ') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
     (ps : List Grade) (as : InstanceArgs k Γ' Δ) (Ss : States k Γ') (gs : CorecBranches k Γ')
-    (ps'' : List Parameter) {d : Name} {p q χ : Grade} {ps' : List Parameter} {ns : List Name}
+    (ps'' : List Parameter) {d : Name} {p q ς : Grade} {ps' : List Parameter} {ns : List Name}
     {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
-    (hd : Destructors.Pos d p q χ ds Ξ Θ B ψ) :
+    (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
       ((hd.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps'').observation D qs ls ps
           (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst) x).subst

@@ -68,8 +68,8 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   RFC: `\mathsf{usage}_M.d` -/
   | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i c : Nat}
       {ψ : ResultOwnership Multiplicity c}
-      {χ : Multiplicity} {Ms : Targets n} (hM : Target.Usage ν₁ M)
-      (hMs : Targets.Usage ν₂ Ms) : Target.Usage (ν₁ +ᶜ ν₂) (.obs M i ψ χ Ms)
+      {ς : Multiplicity} {Ms : Targets n} (hM : Target.Usage ν₁ M)
+      (hMs : Targets.Usage ν₂ Ms) : Target.Usage (ν₁ +ᶜ ν₂) (.obs M i ψ ς Ms)
   /-- A corecursor reads the variables of its state once, and those of its branches as `δ` allows.
   RFC: `\mathsf{usage}_M.\mathsf{corec}` -/
   | corec {n : Nat} {ν δ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetCorecBranches n}
@@ -130,10 +130,10 @@ inductive TargetCorecBranches.Usage : {n : Nat} → MultiplicityVector n → Tar
   | cons {n b c : Nat} {δ δᵢ : MultiplicityVector n} {o : Resumption}
       {πs ϱs : Fin b → Multiplicity} {πs' ϱs' : Fin c → Multiplicity}
       {ψ : ResultOwnership Multiplicity c}
-      {χ : Multiplicity} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
+      {ς : Multiplicity} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
       (hP : Target.Usage (δᵢ.extendBinders πs πs') P) (hδ : δ ≤ᶜ δᵢ)
       (hr : o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ) (hPs : TargetCorecBranches.Usage δ Ps) :
-      TargetCorecBranches.Usage δ (.cons o b c πs ϱs πs' ϱs' ψ χ P Ps)
+      TargetCorecBranches.Usage δ (.cons o b c πs ϱs πs' ϱs' ψ ς P Ps)
 
 end
 

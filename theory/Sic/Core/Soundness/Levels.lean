@@ -185,13 +185,13 @@ inductive Destructors.LevelEquiv {k : Nat} :
     {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Destructors k Γ ns → Prop where
   /-- No destructor. -/
   | nil {Γ : Scope} : Destructors.LevelEquiv (Γ := Γ) .nil .nil
-  /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ χ`, then the destructors after it. -/
-  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q χ : Grade)
+  /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς`, then the destructors after it. -/
+  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q ς : Grade)
       {Θ₁ Θ₂ : Telescope k Γ ps} {B₁ B₂ : Term k (Γ.extend ps.length)}
       (ψ : ResultOwnership Grade ps.length) {ds₁ ds₂ : Destructors k (.secondOrder ps ψ :: Γ) ns}
       (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) (hB : Term.LevelEquiv B₁ B₂)
       (hds : Destructors.LevelEquiv ds₁ ds₂) :
-      Destructors.LevelEquiv (.cons (d := d) p q χ Θ₁ B₁ ψ ds₁) (.cons p q χ Θ₂ B₂ ψ ds₂)
+      Destructors.LevelEquiv (.cons (d := d) p q ς Θ₁ B₁ ψ ds₁) (.cons p q ς Θ₂ B₂ ψ ds₂)
 
 /-! ## Equivalence -/
 
@@ -277,8 +277,8 @@ end
 theorem Destructors.LevelEquiv.refl {k : Nat} {Γ : Scope} {ns : List Name} :
     (ds : Destructors k Γ ns) → Destructors.LevelEquiv ds ds
   | .nil => .nil
-  | .cons p q χ Θ B ψ ds =>
-    .cons p q χ ψ (Telescope.LevelEquiv.refl Θ) (Term.LevelEquiv.refl B) (Destructors.LevelEquiv.refl ds)
+  | .cons p q ς Θ B ψ ds =>
+    .cons p q ς ψ (Telescope.LevelEquiv.refl Θ) (Term.LevelEquiv.refl B) (Destructors.LevelEquiv.refl ds)
 
 mutual
 
@@ -510,8 +510,8 @@ theorem Destructors.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k →
     (h : ∀ i, ls₁ i ≈ ls₂ i) : {Γ : Scope} → {ns : List Name} → (ds : Destructors k Γ ns) →
       Destructors.LevelEquiv (ds.substLevels ls₁) (ds.substLevels ls₂)
   | _, _, .nil => .nil
-  | _, _, .cons p q χ Θ B ψ ds =>
-    .cons p q χ ψ (Telescope.substLevels_levelEquiv h Θ) (Term.substLevels_levelEquiv h B)
+  | _, _, .cons p q ς Θ B ψ ds =>
+    .cons p q ς ψ (Telescope.substLevels_levelEquiv h Θ) (Term.substLevels_levelEquiv h B)
       (Destructors.substLevels_levelEquiv h ds)
 
 /-- Two lists of equal levels have the same length. -/

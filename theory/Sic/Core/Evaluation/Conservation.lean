@@ -311,8 +311,8 @@ theorem recursor_inv {ρ : Multiplicity} {M : Target n} {Ns : TargetBranches n} 
 -- ADE: none.
 /-- An observation reads the variables of its term and of its arguments. -/
 theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
-    {χ : Multiplicity} {Ms : Targets n} :
-    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .obs M i ψ χ Ms →
+    {ς : Multiplicity} {Ms : Targets n} :
+    {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .obs M i ψ ς Ms →
       ∃ ν₁ ν₂, ν ≤ᶜ ν₁ +ᶜ ν₂ ∧ Target.Usage ν₁ M ∧ Targets.Usage ν₂ Ms
   | _, _, .obs hM hMs, h => by
     cases h
@@ -519,8 +519,8 @@ theorem TargetCorecBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :
     {Ps : TargetCorecBranches n} → TargetCorecBranches.Usage δ Ps → (i : Nat) →
       {o : Resumption} → {b c : Nat} → {πs ϱs : Fin b → Multiplicity} →
       {πs' ϱs' : Fin c → Multiplicity} → {ψ : ResultOwnership Multiplicity c} →
-      {χ : Multiplicity} → {P : Target (n + (b + c))} →
-      Ps.get i = some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, χ, P⟩) →
+      {ς : Multiplicity} → {P : Target (n + (b + c))} →
+      Ps.get i = some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, ς, P⟩) →
       ∃ δᵢ : MultiplicityVector n, Target.Usage (δᵢ.extendBinders πs πs') P ∧ δ ≤ᶜ δᵢ ∧
         (o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ)
   | _, .nil, _, _, _, _, _, _, _, _, _, _, _, h => nomatch h
@@ -1376,9 +1376,9 @@ termination_by structural h
 /-- The invariant of an observation: the demand of the closure and of the arguments pay the reads
 of the run and the demand of its value. -/
 theorem EvalObs.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
-    {H H' : Heap} {a i c₀ : Nat} {ψ₀ : ResultOwnership Multiplicity c₀} {χ₀ : Multiplicity}
+    {H H' : Heap} {a i c₀ : Nat} {ψ₀ : ResultOwnership Multiplicity c₀} {ς₀ : Multiplicity}
     {πb ϱb : List Multiplicity} {bs : List Nat} {v : Nat} {R : List Nat}
-    (h : EvalObs P ϖ H a i ψ₀ χ₀ πb ϱb bs v H' R) {Da Db : Demand} (ha : H.ValueDemand a Da)
+    (h : EvalObs P ϖ H a i ψ₀ ς₀ πb ϱb bs v H' R) {Da Db : Demand} (ha : H.ValueDemand a Da)
     (hb : H.PositionsDemand πb bs Db) :
     ∃ D, H'.ValueDemand v D ∧
       ϖ ·ᶜ (Da +ᶜ Db) +ᶜ Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ D :=
