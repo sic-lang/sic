@@ -11,7 +11,7 @@ import Sic.Core.Soundness.Substitution
 /-!
 # Validity at Run Time of the Rules
 
-The cases of the fundamental lemma of annex 20 of RFC 36 that need no induction on a declaration:
+The cases of the fundamental lemma of annex 21 of RFC 36 that need no induction on a declaration:
 each lemma states that a term of the form of a rule of the typing is valid at run time,
 `Σ; γ; Γ ⊨^® t : A`, from the meaning of its premises and from the validity at run time of its
 subterms, so that the fundamental lemma, which reads the judgments, only puts them together.

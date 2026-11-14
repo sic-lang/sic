@@ -16,7 +16,7 @@ import Sic.Core.Usage.Inversion
 /-!
 # Fundamental Lemma of the Run Time
 
-The fundamental lemma of annex 20 of RFC 36: a term typed and used in the mode `11ᵐ` of run time, in
+The fundamental lemma of annex 21 of RFC 36: a term typed and used in the mode `11ᵐ` of run time, in
 a context whose variables are all of the first order, is valid at run time with its grades,
 `Σ; γ; Γ ⊨^® t : A`, at every value of its level variables, when the program `𝒫` realizes the
 constants of the mode `11ᵐ` of the signature, `(hyp_𝒫)`.

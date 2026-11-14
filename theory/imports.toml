@@ -22,6 +22,10 @@ name = "Positivity"
 modules = ["Sic.Core.Positivity"]
 
 [[group]]
+name = "Lifting"
+modules = ["Sic.Core.Lifting"]
+
+[[group]]
 name = "Typing"
 modules = ["Sic.Core.Typing"]
 
@@ -106,6 +110,20 @@ reason = "the strict positivity reads the syntax and the parameters that the dec
 modules = ["Sic.Core.Positivity"]
 allowed = [
   "Sic.Core.Level",
+  "Sic.Core.Positivity",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
+]
+
+[[rule]]
+reason = "the liftings are declared from the syntax and from the variables that occur in a term, and read no judgment, so that each judgment proves its properties on them"
+modules = ["Sic.Core.Lifting"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Lifting",
   "Sic.Core.Positivity",
   "Sic.Core.Substitution",
   "Sic.Core.Syntax",

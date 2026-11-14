@@ -7,7 +7,7 @@ import Sic.Core.Meaning.Uniqueness
 /-!
 # Monotonicity of the Relation of Run Time
 
-The relation of run time of annex 20 of RFC 36 is monotone in the heap: a term related to an address
+The relation of run time of annex 21 of RFC 36 is monotone in the heap: a term related to an address
 in a heap stays related to it in each heap that extends it, since the relations of the data types
 read only values that the heap keeps, by induction on their least fixed points, and those of the
 codata types are stated in each heap that extends it.

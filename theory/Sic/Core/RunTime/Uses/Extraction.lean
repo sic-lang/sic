@@ -10,7 +10,7 @@ import Sic.Core.RunTime.Uses.Signature
 /-!
 # Uses of the Extraction
 
-The conservation of the bindings by the extraction, of annex 20 of RFC 36: the erasure by
+The conservation of the bindings by the extraction, of annex 21 of RFC 36: the erasure by
 `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, run under the program of a well-used signature
 whose names are distinct, reads each cell of its heap as the multiplicity of the cell allows, once
 the reads that its value can still do are counted, `(cons_⌊⌋)`; when its value holds no closure,

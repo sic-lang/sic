@@ -13,7 +13,7 @@ import Sic.Core.RunTime.Uses.Signature
 /-!
 # Uniqueness of the Extraction
 
-The uniqueness of what the value of the extraction owns alone, of annex 20 of RFC 36: the erasure by
+The uniqueness of what the value of the extraction owns alone, of annex 21 of RFC 36: the erasure by
 `S^{11ᵐ}` of a closed term used in the mode `11ᵐ` and owned alone at run time, run under the
 program of a signature whose names are distinct and whose entries have their usages and their
 ownerships, has a value whose reach refers once at most to each address that it claims,
