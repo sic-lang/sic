@@ -237,7 +237,7 @@ theorem Multiplicity.mul_fieldCoefficient_zero :
 non-uniform parameters and with a grade, has, for all the ownerships of its arguments that satisfy
 their requirements, the ownership of the result of its destructor at them, or `1` when it resumes the
 corecursor, given the requirement of its destructor on the observed value times that of each entry of
-the state. -/
+the state and times the ownership of each variable of the scope. -/
 theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {Ω : Name → Multiplicity} {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder)
     (φ' : MultiplicityVector Γ.length) :
@@ -252,7 +252,8 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
             (((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.1.toArity c).map
               Grade.run).value (List.ofFn os) = some w) ∨
           (ks.drop i).headD .none ≠ .none ∧ w = .one) →
-        Target.Ownership Ω (φ'.extendBinders
+        Target.Ownership Ω (MultiplicityVector.extendBinders
+              (((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.2.run ·ᶜ φ')
             (fun (l : Fin b) =>
               ((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.2.run *
               ((((pss.drop i).headD ([], ResultOwnership.noArguments)).1[(l : Nat)]?).map
@@ -491,7 +492,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           gs.getD l .unrestrictedUnrestricted * ((m ⊙ p).grade * q'.usage)).getD
             .zero) →
         Ownership.RunAgree
-          (fun x => φ'.extendBinders
+          (fun x => MultiplicityVector.extendBinders (ς.run ·ᶜ φ')
             (fun (l : Fin ps''.length) => ς.run *
               (((ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter))[(l : Nat)]?).map
                 (·.requirement.run)).getD .omega *
@@ -501,11 +502,13 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
               (((ps₁[(l : Nat)]?).map
                 fun q => ((Mode.oneOne ⊙ p).grade * q.usage).run).getD .omega))
             (x.cast (Scope.length_extend_extend Γ _ _)))
-          (Ownership.extendArgs (Ownership.extendFields φ ς
+          (Ownership.extendArgs (Ownership.extendFields (fun x => ς * φ x) ς
             ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ gs) := by
       intro v hv
       rw [Ownership.extendArgs_eq, Ownership.extendFields_eq, hm]
-      refine Ownership.RunAgree.extendBinders hφ _ _ _ _ (fun l => ?_) (fun l => ?_)
+      refine Ownership.RunAgree.extendBinders (fun x => by
+        show ς.run * φ' x.toFin = _
+        rw [hφ x, (Grade.run_op _ _).2.1]) _ _ _ _ (fun l => ?_) (fun l => ?_)
       · simp only [List.getElem?_map, List.getElem?_eq_getElem l.2, Option.map_some,
           Option.getD_some, hgp, (Grade.run_op _ _).2.1]
         exact (Multiplicity.mul_stateCoefficient _ _ _ _).symm

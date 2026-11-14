@@ -143,13 +143,13 @@ where
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
         exact ownership (hgo i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀ hn os' v hos hv)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
+          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN (fun x => congrArg (ς * ·) (hφ x)) _ _ _) _ _ _)
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hi hS' hd hg hn os' hos
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
         exact ownership (hgr i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ D' hi hS₀ hd hg₀ hn os' hos)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
-          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
+          (Ownership.extendArgs_liftN (Ownership.extendFields_liftN (fun x => congrArg (ς * ·) (hφ x)) _ _ _) _ _ _)
     | .sub h hle, hθ, hφ => .sub (ownership h hθ hφ) hle
   ownershipArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {θ : Subst k Γ Δ} {α : Ren Γ Δ}
       {ps : List Parameter} {φ' : Var Γ .var → Grade} {φ : Var Δ .var → Grade} {m : Mode}

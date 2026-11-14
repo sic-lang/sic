@@ -112,10 +112,11 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
 -- ADE: none.
 /-- `Ω; φ ⊢ P̄ ◀`: each branch of a corecursor has, for all the ownerships `ō` of its arguments that
 satisfy their requirements, the value of the ownership `ψ` of the result of its destructor at `ō`,
-or the ownership `1` of a new value when it resumes the corecursor, given the ownership `ς · ϱ · π`
-of the variable of each entry of the state, of the requirement `ς` of the destructor on the value
-that it observes, of the requirement `ϱ` and of the multiplicity `π`, and
-`o · π'` of the variable of each argument, of the ownership `o` and the multiplicity `π'`. -/
+or the ownership `1` of a new value when it resumes the corecursor, given the ownership `ς · φ(x)`
+of each variable `x` of the scope, `ς` times its own, the ownership `ς · ϱ · π` of the variable of
+each entry of the state, of the requirement `ς` of the destructor on the value that it observes, of
+the requirement `ϱ` and of the multiplicity `π`, and `o · π'` of the variable of each argument, of the
+ownership `o` and the multiplicity `π'`. -/
 inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
     {n : Nat} → MultiplicityVector n → TargetCorecBranches n → Prop where
   /-- No branch.
@@ -130,7 +131,7 @@ inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
       (hP : ∀ (os : Fin c → Multiplicity) (v : Multiplicity), (∀ l, ϱs' l ≤ os l) →
         (k = .none ∧ ψ.value (List.ofFn os) = some v ∨ k ≠ .none ∧ v = .one) →
         Target.Ownership Ω
-          (φ.extendBinders (fun l => ς * ϱs l * πs l) (fun l => os l * πs' l)) v P)
+          (MultiplicityVector.extendBinders (ς ·ᶜ φ) (fun l => ς * ϱs l * πs l) (fun l => os l * πs' l)) v P)
       (hPs : TargetCorecBranches.Ownership Ω φ Ps) :
       TargetCorecBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ ς P Ps)
 

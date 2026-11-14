@@ -149,8 +149,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   `ψ` has a factor is checked in the mode `m` of the observation, so that the value of `ψ` reads only
   ownerships that the mode counts, as the usage counts only the uses of these arguments; the
   ownership of the term satisfies the requirement `ς` of the destructor on the value that it
-  observes, in every mode, since the branch of the destructor gives the entries of the state the
-  ownerships that a value of the ownership `ς` holds.
+  observes, in every mode, since the branch of the destructor gives the entries of the state and the
+  variables of its scope the ownerships that a value of the ownership `ς` holds.
   RFC: `d_{◀}` -/
   | obs {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -169,13 +169,15 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   do, checked in the mode `m ⊙ r`; the branch of each destructor, checked in the mode `m ⊙ p` of its
   grade `p`, with the requirement `ς` of the destructor on the value that it observes times the
   requirement of its entry for the variable of each entry of the state, which a value of the
-  ownership `ς` holds, and the ownership `oᵢ` of each argument, each times the grade with
-  which the branch uses the variable, so that a variable used more than once is shared, has the
-  ownership `ψ[ō / x̄]` of the result of the destructor for every ownerships `ō` of its arguments
-  that satisfy the requirements of their entries, since an observation reads `ψ` at the ownerships
-  of its arguments; the branch of a recursive destructor has the ownership `11ᵖ` of a new value
-  instead, since its position is resumed by a recursor, which gives the term already built of a
-  position the ownership `χ` that the position requires of it only when the position is owned alone.
+  ownership `ς` holds, `ς` times its ownership for each variable of the scope, which such a value
+  captures, since the evaluation shares a value among the uses of its position, and the ownership
+  `oᵢ` of each argument, each times the grade with which the branch uses the variable, so that a
+  variable used more than once is shared, has the ownership `ψ[ō / x̄]` of the result of the
+  destructor for every ownerships `ō` of its arguments that satisfy the requirements of their
+  entries, since an observation reads `ψ` at the ownerships of its arguments; the branch of a
+  recursive destructor has the ownership `11ᵖ` of a new value instead, since its position is
+  resumed by a recursor, which gives the term already built of a position the ownership `χ` that
+  the position requires of it only when the position is owned alone.
   RFC: `\mathsf{corec}_{◀}` -/
   | corec {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -203,7 +205,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = none →
         ∀ os' v, Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
-        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ ς
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields (fun x => ς * φ x) ς
           ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) v g)
       (hgr : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
@@ -213,7 +215,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = some D' →
         ∀ os', Parameter.Allow (m ⊙ p) ps₁ os' →
-        Ownership sig (Ownership.extendArgs (Ownership.extendFields φ ς
+        Ownership sig (Ownership.extendArgs (Ownership.extendFields (fun x => ς * φ x) ς
           ((m ⊙ p).grade * r) ps'') (m ⊙ p).grade ps₁ os') (m ⊙ p) .linearLinear g) :
       Ownership sig φ m .linearLinear (.corec r D qs ls ps as ss.terms Ss gs)
   /-- A term may be given an ownership lower than its own, which states less.
