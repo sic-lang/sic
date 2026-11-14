@@ -219,36 +219,50 @@ end
 
 /-! ## Inversions of the Demands of the Environments -/
 
--- ADE: none.
-/-- The demand of an environment for a vector of `0`s is `0`. -/
-theorem Heap.EnvDemand.eq_zero {H : Heap} : {n : Nat} → {E : List Nat} →
-    {ν : MultiplicityVector n} → {D : Demand} → Heap.EnvDemand H E ν D → (∀ x, ν x = .zero) →
+/-- The sum over an environment for a vector of `0`s is `0`. -/
+theorem Heap.EnvSum.eq_zero {H : Heap} {R : Nat → Demand → Prop} : {n : Nat} → {E : List Nat} →
+    {ν : MultiplicityVector n} → {D : Demand} → Heap.EnvSum H R E ν D → (∀ x, ν x = .zero) →
       D = 𝟘ᵛ
   | _, _, _, _, .nil, _ => rfl
   | _, _, ν, _, .cons _ _ hE, hν => by
-    rw [Heap.EnvDemand.eq_zero hE fun x => hν x.succ, hν 0, Demand.zero_smul, Demand.zero_add]
+    rw [Heap.EnvSum.eq_zero hE fun x => hν x.succ, hν 0, Demand.zero_smul, Demand.zero_add]
 
--- ADE: none.
-/-- The demand of an environment for the vector of one read of the variable `x` is that of one read
-of its cell, and of a use of its value. -/
-theorem Heap.EnvDemand.var_inv {H : Heap} : {n : Nat} → {E : List Nat} →
-    {ν : MultiplicityVector n} → {D : Demand} → Heap.EnvDemand H E ν D → (x : Fin n) →
+/-- The sum over an environment for the vector of one read of the variable `x` is one read of its
+cell, and what `R` gives its value. -/
+theorem Heap.EnvSum.var_inv {H : Heap} {R : Nat → Demand → Prop} : {n : Nat} → {E : List Nat} →
+    {ν : MultiplicityVector n} → {D : Demand} → Heap.EnvSum H R E ν D → (x : Fin n) →
       ν x = .one → (∀ y, y ≠ x → ν y = .zero) →
       ∃ c π ℓ Dx, E[(x : Nat)]? = some c ∧ H[c]? = some (.cell π ℓ) ∧
-        Heap.ValueDemand H ℓ Dx ∧ D = Demand.unit c +ᶜ Dx
+        R ℓ Dx ∧ D = Demand.unit c +ᶜ Dx
   | _, _, _, _, .nil, x, _, _ => x.elim0
   | _, c :: E, ν, _, .cons (D₁ := D₁) hc hv hE, x, hx, hy => by
     cases x using Fin.cases with
     | zero =>
       refine ⟨c, _, _, D₁, rfl, hc, hv, ?_⟩
-      rw [Heap.EnvDemand.eq_zero hE fun y => hy y.succ (Fin.succ_ne_zero y), hx,
+      rw [Heap.EnvSum.eq_zero hE fun y => hy y.succ (Fin.succ_ne_zero y), hx,
         Demand.add_zero]
       exact (Sic.Math.Vector.module Multiplicity.modality).one_smul _
     | succ x =>
-      obtain ⟨c', π, ℓ, Dx, hx', hc', hv', rfl⟩ := Heap.EnvDemand.var_inv hE x hx
+      obtain ⟨c', π, ℓ, Dx, hx', hc', hv', rfl⟩ := Heap.EnvSum.var_inv hE x hx
         fun y hyx => hy y.succ fun h => hyx (Fin.succ_inj.1 h)
       refine ⟨c', π, ℓ, Dx, hx', hc', hv', ?_⟩
       rw [hy 0 (Fin.succ_ne_zero x).symm, Demand.zero_smul, Demand.zero_add]
+
+-- ADE: none.
+/-- The demand of an environment for a vector of `0`s is `0`. -/
+theorem Heap.EnvDemand.eq_zero {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} (h : Heap.EnvDemand H E ν D) (hν : ∀ x, ν x = .zero) : D = 𝟘ᵛ :=
+  h.toEnvSum.eq_zero hν
+
+-- ADE: none.
+/-- The demand of an environment for the vector of one read of the variable `x` is that of one read
+of its cell, and of a use of its value. -/
+theorem Heap.EnvDemand.var_inv {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} (h : Heap.EnvDemand H E ν D) (x : Fin n) (hx : ν x = .one)
+    (hy : ∀ y, y ≠ x → ν y = .zero) :
+    ∃ c π ℓ Dx, E[(x : Nat)]? = some c ∧ H[c]? = some (.cell π ℓ) ∧
+      Heap.ValueDemand H ℓ Dx ∧ D = Demand.unit c +ᶜ Dx :=
+  h.toEnvSum.var_inv x hx hy
 
 /-! ## Inversions of the Usage -/
 
@@ -737,21 +751,50 @@ theorem MultiplicityVector.extendBinders_spec {n a b : Nat} (ν : MultiplicityVe
       show ¬ ((i : Nat) + (a + b) < a + b) by omega, ↓reduceDIte]
     exact congrArg ν (Fin.ext (by simp only; omega))
 
+/-- The cells that a binder allocates from the address `c` are not read before it. -/
+theorem Demand.cells_lt : (c : Nat) → (bs : List (Multiplicity × Nat × Demand)) → ∀ b, b < c →
+    Demand.cells c bs b = .zero
+  | _, [], _, _ => rfl
+  | c, x :: bs, b, hb => by
+    show x.1 * Demand.unit c b + Demand.cells (c + 1) bs b = _
+    rw [Demand.cells_lt (c + 1) bs b (Nat.lt_succ_of_lt hb),
+      show Demand.unit c b = .zero by simp [Demand.unit, Nat.ne_of_lt hb]]
+    cases x.1 <;> rfl
+
+/-- The cell that a binder allocates for its variable at a position is read as many times as the
+multiplicity of the variable. -/
+theorem Demand.cells_get : (c : Nat) → (bs : List (Multiplicity × Nat × Demand)) → (j : Nat) →
+    (x : Multiplicity × Nat × Demand) → bs[j]? = some x → Demand.cells c bs (c + j) = x.1
+  | c, x :: bs, 0, _, h => by
+    cases h
+    show x.1 * Demand.unit c (c + 0) + Demand.cells (c + 1) bs (c + 0) = _
+    rw [Demand.cells_lt (c + 1) bs (c + 0) (by omega),
+      show Demand.unit c (c + 0) = .one by simp [Demand.unit]]
+    cases x.1 <;> rfl
+  | c, x :: bs, j + 1, y, h => by
+    show x.1 * Demand.unit c (c + (j + 1)) + Demand.cells (c + 1) bs (c + (j + 1)) = _
+    rw [show c + (j + 1) = c + 1 + j by omega, Demand.cells_get (c + 1) bs j y (by simpa using h),
+      show Demand.unit c (c + 1 + j) = .zero by simp [Demand.unit]; omega]
+    cases x.1 <;> cases y.1 <;> rfl
+
 /-- The cells that a branch allocates for its `a + b` variables, at the multiplicities of its
-binders times the weight, give the environment of the branch a demand for the extended vector: that
-of the scope, the reads of the new cells, and the uses of their values. -/
-theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {E : List Nat}
+binders times the weight, give the environment of the branch a sum for the extended vector: that of
+the scope, the reads `C` of the new cells, each the multiplicity of its binder at its address, and
+what `R` gives their values, each as many times as the multiplicity of its binder. -/
+theorem Heap.EnvSum.bindBranch {H : Heap} {R : Nat → Demand → Prop} (ϖ : Multiplicity) {n a b : Nat} {E : List Nat}
     {δ : MultiplicityVector n} {D : Demand} (πs : Fin a → Multiplicity) (πs' : Fin b → Multiplicity)
     {vs₁ vs₂ : List Nat} {Ds₁ Ds₂ : List Demand}
-    (hE : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).EnvDemand E δ D)
-    (h₁ : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).ValueDemands vs₁ Ds₁)
-    (h₂ : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).ValueDemands vs₂ Ds₂)
+    (hE : Heap.EnvSum (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)) R E δ D)
+    (h₁ : List.Pointwise R vs₁ Ds₁)
+    (h₂ : List.Pointwise R vs₂ Ds₂)
     (hl₁ : vs₁.length = a) (hl₂ : vs₂.length = b) :
-    ∃ C, (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).EnvDemand
+    ∃ C, Heap.EnvSum (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)) R
         ((List.range' H.length (vs₁ ++ vs₂).length).reverse ++ E) (δ.extendBinders πs πs')
         (D +ᶜ C +ᶜ (Demand.positions (List.ofFn πs) Ds₁ +ᶜ Demand.positions (List.ofFn πs') Ds₂)) ∧
       Demand.allocated H (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)) =
-        ϖ ·ᶜ C := by
+        ϖ ·ᶜ C ∧ (∀ c, c < H.length → C c = .zero) ∧
+      ∀ (j : Nat) (π : Multiplicity), (List.ofFn πs ++ List.ofFn πs')[j]? = some π →
+        C (H.length + j) = π := by
   have hd₁ := h₁.length
   have hd₂ := h₂.length
   let bs := (List.ofFn πs ++ List.ofFn πs').zip ((vs₁ ++ vs₂).zip (Ds₁ ++ Ds₂))
@@ -768,8 +811,8 @@ theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {
     rw [show (fun x : Multiplicity × Nat × Demand => x.2.1) = Prod.fst ∘ Prod.snd from rfl,
       ← List.map_map, hsnd, List.map_fst_zip (by simp; omega)]
   have hbl : bs.length = a + b := by simp [bs]; omega
-  refine ⟨Demand.cells H.length bs, ?_, ?_⟩
-  · have hb := (Heap.EnvSum.bindAll hE.toEnvSum H.length (a + b) bs hbl
+  refine ⟨Demand.cells H.length bs, ?_, ?_, Demand.cells_lt _ _, fun j π hπ => ?_⟩
+  · have hb := Heap.EnvSum.bindAll hE H.length (a + b) bs hbl
       (fun l x hx => by
         obtain ⟨hx₁, hx₂⟩ := List.getElem?_zip_eq_some.1 hx
         obtain ⟨hx₂, -⟩ := List.getElem?_zip_eq_some.1 hx₂
@@ -781,14 +824,34 @@ theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {
         exact (h₁.append h₂).mem x.2 hx)
       _ (fun i hi => by
         rw [(MultiplicityVector.extendBinders_spec δ πs πs').1 i hi, ← hfst, List.getElem?_map])
-      (MultiplicityVector.extendBinders_spec δ πs πs').2).toEnvDemand
+      (MultiplicityVector.extendBinders_spec δ πs πs').2
     rw [show (vs₁ ++ vs₂).length = a + b by simp; omega]
     rw [Demand.values_zip _ _ _ hlen hlen'] at hb
     rwa [show Demand.positions (List.ofFn πs ++ List.ofFn πs') (Ds₁ ++ Ds₂) =
       Demand.positions (List.ofFn πs) Ds₁ +ᶜ Demand.positions (List.ofFn πs') Ds₂ from
       Demand.positions_append _ _ _ _ (by simp; omega)] at hb
   · rw [← Demand.allocated_bind ϖ H bs, hm₁, hm₂]
+  · rw [← hfst, List.getElem?_map] at hπ
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.1 hπ
+    exact Demand.cells_get _ _ j x hx
 
+/-- The cells that a branch allocates for its `a + b` variables, at the multiplicities of its
+binders times the weight, give the environment of the branch a demand for the extended vector: that
+of the scope, the reads of the new cells, and the uses of their values. -/
+theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {E : List Nat}
+    {δ : MultiplicityVector n} {D : Demand} (πs : Fin a → Multiplicity) (πs' : Fin b → Multiplicity)
+    {vs₁ vs₂ : List Nat} {Ds₁ Ds₂ : List Demand}
+    (hE : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).EnvDemand E δ D)
+    (h₁ : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).ValueDemands vs₁ Ds₁)
+    (h₂ : (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).ValueDemands vs₂ Ds₂)
+    (hl₁ : vs₁.length = a) (hl₂ : vs₂.length = b) :
+    ∃ C, (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)).EnvDemand
+        ((List.range' H.length (vs₁ ++ vs₂).length).reverse ++ E) (δ.extendBinders πs πs')
+        (D +ᶜ C +ᶜ (Demand.positions (List.ofFn πs) Ds₁ +ᶜ Demand.positions (List.ofFn πs') Ds₂)) ∧
+      Demand.allocated H (H.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (vs₁ ++ vs₂)) =
+        ϖ ·ᶜ C := by
+  obtain ⟨C, hC, hal, -, -⟩ := Heap.EnvSum.bindBranch ϖ πs πs' hE.toEnvSum h₁ h₂ hl₁ hl₂
+  exact ⟨C, hC.toEnvDemand, hal⟩
 
 /-- Demands at multiplicities below those of a binder sum to a demand below the sum at those of the
 binder. -/
