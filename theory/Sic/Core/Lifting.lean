@@ -269,7 +269,7 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
   /-- No destructor.
   RFC: `\uparrow_{\bar d\varepsilon}` -/
   | nil {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} :
-      Destructors.Lifts sig v o ρ θ .nil .nil
+      Destructors.Lifts sig v o ρ @θ .nil .nil
   /-- A destructor whose result is lifted at the observation of `y` by it: the lifting has it, at
   its arguments, used `r` times more, with this result, of the ownership `χ`, and the requirement
   `ς`, and no destructor after it depends on it.
@@ -285,7 +285,7 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
       (hB : Term.Lifts sig v (ρ.liftN ps.length) ((o d ps).rename (Ren.liftN ps.length ρ.ren))
         (B.subst (Subst.liftN ps.length θ)) B' l)
       (hds : Destructors.Lifts sig v o ρ.weaken (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
-      Destructors.Lifts sig v o ρ θ (.cons (d := d) p q ς Θ B ψ ds)
+      Destructors.Lifts sig v o ρ @θ (.cons (d := d) p q ς Θ B ψ ds)
         (.cons (d := d) (Lifting.resultGrade v.quality p) .zero v.requirement
           (((Θ.subst θ).rename ρ.ren).scale v.recursion)
           ((List.length_map (Parameter.scale v.recursion)).symm ▸ B')
@@ -298,7 +298,7 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
       {ds : Destructors k (.secondOrder ps ψ :: Ξ) ns} {ds' : Destructors k Γ' ns'}
       (hB : (B.subst (Subst.liftN ps.length θ)).AvoidsLifted (ρ.liftN ps.length))
       (hds : Destructors.Lifts sig v o ρ (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
-      Destructors.Lifts sig v o ρ θ (.cons (d := d) p q ς Θ B ψ ds) ds'
+      Destructors.Lifts sig v o ρ @θ (.cons (d := d) p q ς Θ B ψ ds) ds'
 
 /-! ## Parameters of a Lifting -/
 
