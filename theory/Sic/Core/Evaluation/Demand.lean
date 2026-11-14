@@ -159,29 +159,58 @@ theorem Heap.EnvDemand.mono {H H' : Heap} (hH : H.Extends H') {n : Nat} {E : Lis
 
 end
 
+/-! ## Sums over an Environment
+
+The demand of an environment and its reach, in `Sic/Core/Evaluation/Paths.lean`, have the same
+shape: `ν(x)` reads of the cell of each variable `x`, each read counting the cell and what a
+judgment `R` gives the value that the cell binds; their properties along the operations of the
+vectors are proved once, on this shape. -/
+
 -- ADE: none.
-/-- An environment that has a demand for a vector has the demand `0` for the vector `0`, whose term
-reads no variable.
-RFC: `\mathsf{demand}_E.0` -/
-theorem Heap.EnvDemand.zero {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
-    {D : Demand} : Heap.EnvDemand H E ν D →
-      Heap.EnvDemand H E (𝟘ᵛ : MultiplicityVector n) (𝟘ᵛ : Demand)
+/-- The sum over the environment `E` of `ν(x)` times the read of the cell of `x` and what `R` gives
+the value that it binds, the last variable first. -/
+inductive Heap.EnvSum (H : Heap) (R : Nat → Demand → Prop) :
+    {n : Nat} → List Nat → MultiplicityVector n → Demand → Prop where
+  /-- The empty environment. -/
+  | nil {ν : MultiplicityVector 0} : Heap.EnvSum H R [] ν 𝟘ᵛ
+  /-- The last variable and the others. -/
+  | cons {n : Nat} {c : Nat} {π : Multiplicity} {ℓ : Nat} {E : List Nat}
+      {ν : MultiplicityVector (n + 1)} {D₁ D₂ : Demand} (hc : H[c]? = some (.cell π ℓ))
+      (h : R ℓ D₁) (hE : Heap.EnvSum H R E (fun x => ν x.succ) D₂) :
+      Heap.EnvSum H R (c :: E) ν ((ν 0 ·ᶜ (Demand.unit c +ᶜ D₁)) +ᶜ D₂)
+
+/-- The demand of an environment is a sum of the demands of its values. -/
+theorem Heap.EnvDemand.toEnvSum {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} : Heap.EnvDemand H E ν D → Heap.EnvSum H (Heap.ValueDemand H) E ν D
+  | .nil => .nil
+  | .cons hc h hE => .cons hc h hE.toEnvSum
+
+/-- A sum of the demands of the values of an environment is a demand of the environment. -/
+theorem Heap.EnvSum.toEnvDemand {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} : Heap.EnvSum H (Heap.ValueDemand H) E ν D → Heap.EnvDemand H E ν D
+  | .nil => .nil
+  | .cons hc h hE => .cons hc h hE.toEnvDemand
+
+namespace Heap.EnvSum
+
+variable {H : Heap} {R : Nat → Demand → Prop}
+
+/-- A sum for a vector gives the sum `0` for the vector `0`. -/
+theorem zero {n : Nat} {E : List Nat} {ν : MultiplicityVector n} {D : Demand} :
+    Heap.EnvSum H R E ν D → Heap.EnvSum H R E (𝟘ᵛ : MultiplicityVector n) (𝟘ᵛ : Demand)
   | .nil => .nil
   | .cons (c := c) (D₁ := D₁) hc h hE => by
-    have h' := Heap.EnvDemand.cons (ν := 𝟘ᵛ) hc h hE.zero
+    have h' := Heap.EnvSum.cons (ν := 𝟘ᵛ) hc h hE.zero
     rwa [show ((𝟘ᵛ : MultiplicityVector (_ + 1)) 0 ·ᶜ (Demand.unit c +ᶜ D₁)) +ᶜ
         (𝟘ᵛ : Demand) = 𝟘ᵛ from funext fun _ => rfl] at h'
 
--- ADE: none.
-/-- The demand of an environment for a sum of vectors splits into a demand for each, with the same
-demands of the values.
-RFC: `\mathsf{demand}_E.{+}` -/
-theorem Heap.EnvDemand.split {H : Heap} {n : Nat} {E : List Nat} {ν₁ ν₂ : MultiplicityVector n}
-    {D : Demand} : Heap.EnvDemand H E (ν₁ +ᶜ ν₂) D →
-      ∃ D₁ D₂, D = D₁ +ᶜ D₂ ∧ Heap.EnvDemand H E ν₁ D₁ ∧ Heap.EnvDemand H E ν₂ D₂
+/-- A sum for a sum of vectors splits into a sum for each. -/
+theorem split {n : Nat} {E : List Nat} {ν₁ ν₂ : MultiplicityVector n} {D : Demand} :
+    Heap.EnvSum H R E (ν₁ +ᶜ ν₂) D →
+      ∃ D₁ D₂, D = D₁ +ᶜ D₂ ∧ Heap.EnvSum H R E ν₁ D₁ ∧ Heap.EnvSum H R E ν₂ D₂
   | .nil => ⟨_, _, funext fun _ => rfl, .nil, .nil⟩
   | .cons (c := c) (D₁ := D') hc h hE => by
-    obtain ⟨D₁, D₂, rfl, hE₁, hE₂⟩ := Heap.EnvDemand.split (ν₁ := fun x => ν₁ x.succ)
+    obtain ⟨D₁, D₂, rfl, hE₁, hE₂⟩ := Heap.EnvSum.split (ν₁ := fun x => ν₁ x.succ)
       (ν₂ := fun x => ν₂ x.succ) hE
     refine ⟨_, _, ?_, .cons hc h hE₁, .cons hc h hE₂⟩
     funext a
@@ -192,35 +221,68 @@ theorem Heap.EnvDemand.split {H : Heap} {n : Nat} {E : List Nat} {ν₁ ν₂ : 
     have hs := Multiplicity.modality.semiring
     rw [hs.add_assoc, hs.add_assoc, ← hs.add_assoc x₂, hs.add_comm x₂ (D₁ a), hs.add_assoc]
 
+/-- A sum for a vector multiplied by `π` is `π` times a sum for the vector. -/
+theorem unsmul {n : Nat} {E : List Nat} {π : Multiplicity} {ν : MultiplicityVector n}
+    {D : Demand} : Heap.EnvSum H R E (π ·ᶜ ν) D → ∃ D', D = π ·ᶜ D' ∧ Heap.EnvSum H R E ν D'
+  | .nil => ⟨_, funext fun _ => (Multiplicity.modality.semiring.mul_zero π).symm, .nil⟩
+  | .cons (c := c) (D₁ := D₁) hc h hE => by
+    obtain ⟨D₂, rfl, hE'⟩ := Heap.EnvSum.unsmul (ν := fun x => ν x.succ) hE
+    refine ⟨_, ?_, .cons hc h hE'⟩
+    funext a
+    simp only [Sic.Math.Vector.add, Sic.Math.Vector.smul]
+    rw [Multiplicity.modality.semiring.mul_assoc, ← Multiplicity.modality.mul_add.left]
+
+/-- A sum for a vector lower than another is lower than a sum for the other. -/
+theorem le : {n : Nat} → {E : List Nat} → {μ ν : MultiplicityVector n} → {D : Demand} →
+    Heap.EnvSum H R E μ D → μ ≤ᶜ ν → ∃ D', D ≤ᶜ D' ∧ Heap.EnvSum H R E ν D'
+  | _, _, _, _, _, .nil, _ => ⟨_, (Sic.Math.Vector.preorder Multiplicity.modality).refl _, .nil⟩
+  | _, _, μ, ν, _, .cons (c := c) (D₁ := D₁) hc h hE, hle => by
+    obtain ⟨D₂, hD, hE'⟩ := Heap.EnvSum.le (μ := fun x => μ x.succ) (ν := fun x => ν x.succ)
+      hE (fun x => hle x.succ)
+    refine ⟨_, Sic.Math.Vector.add_le_add Multiplicity.modality (fun a => ?_) hD, .cons hc h hE'⟩
+    show μ 0 * _ = μ 0 * _ ⊓ ν 0 * _
+    rw [← Multiplicity.modality.mul_meet.right, ← hle 0]
+
+end Heap.EnvSum
+
+-- ADE: none.
+/-- An environment that has a demand for a vector has the demand `0` for the vector `0`, whose term
+reads no variable.
+RFC: `\mathsf{demand}_E.0` -/
+theorem Heap.EnvDemand.zero {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} (h : Heap.EnvDemand H E ν D) :
+    Heap.EnvDemand H E (𝟘ᵛ : MultiplicityVector n) (𝟘ᵛ : Demand) :=
+  h.toEnvSum.zero.toEnvDemand
+
+-- ADE: none.
+/-- The demand of an environment for a sum of vectors splits into a demand for each, with the same
+demands of the values.
+RFC: `\mathsf{demand}_E.{+}` -/
+theorem Heap.EnvDemand.split {H : Heap} {n : Nat} {E : List Nat} {ν₁ ν₂ : MultiplicityVector n}
+    {D : Demand} (h : Heap.EnvDemand H E (ν₁ +ᶜ ν₂) D) :
+    ∃ D₁ D₂, D = D₁ +ᶜ D₂ ∧ Heap.EnvDemand H E ν₁ D₁ ∧ Heap.EnvDemand H E ν₂ D₂ := by
+  obtain ⟨D₁, D₂, hD, h₁, h₂⟩ := h.toEnvSum.split
+  exact ⟨D₁, D₂, hD, h₁.toEnvDemand, h₂.toEnvDemand⟩
+
 -- ADE: none.
 /-- The demand of an environment for a vector multiplied by `π` is `π` times a demand for the
 vector, with the same demands of the values.
 RFC: `\mathsf{demand}_E.{\cdot}` -/
 theorem Heap.EnvDemand.unsmul {H : Heap} {n : Nat} {E : List Nat} {π : Multiplicity}
-    {ν : MultiplicityVector n} {D : Demand} : Heap.EnvDemand H E (π ·ᶜ ν) D →
-      ∃ D', D = π ·ᶜ D' ∧ Heap.EnvDemand H E ν D'
-  | .nil => ⟨_, funext fun _ => (Multiplicity.modality.semiring.mul_zero π).symm, .nil⟩
-  | .cons (c := c) (D₁ := D₁) hc h hE => by
-    obtain ⟨D₂, rfl, hE'⟩ := Heap.EnvDemand.unsmul (ν := fun x => ν x.succ) hE
-    refine ⟨_, ?_, .cons hc h hE'⟩
-    funext a
-    simp only [Sic.Math.Vector.add, Sic.Math.Vector.smul]
-    rw [Multiplicity.modality.semiring.mul_assoc, ← Multiplicity.modality.mul_add.left]
+    {ν : MultiplicityVector n} {D : Demand} (h : Heap.EnvDemand H E (π ·ᶜ ν) D) :
+    ∃ D', D = π ·ᶜ D' ∧ Heap.EnvDemand H E ν D' := by
+  obtain ⟨D', hD, h'⟩ := h.toEnvSum.unsmul
+  exact ⟨D', hD, h'.toEnvDemand⟩
 
 -- ADE: none.
 /-- The demand of an environment for a vector lower than another is lower than a demand for the
 other, with the same demands of the values: a term given lower multiplicities than its reads is
 given a lower demand than they make.
 RFC: `\mathsf{demand}_E.{\le}` -/
-theorem Heap.EnvDemand.le {H : Heap} : {n : Nat} → {E : List Nat} →
-    {μ ν : MultiplicityVector n} → {D : Demand} → Heap.EnvDemand H E μ D → μ ≤ᶜ ν →
-      ∃ D', D ≤ᶜ D' ∧ Heap.EnvDemand H E ν D'
-  | _, _, _, _, _, .nil, _ => ⟨_, (Sic.Math.Vector.preorder Multiplicity.modality).refl _, .nil⟩
-  | _, _, μ, ν, _, .cons (c := c) (D₁ := D₁) hc h hE, hle => by
-    obtain ⟨D₂, hD, hE'⟩ := Heap.EnvDemand.le (μ := fun x => μ x.succ) (ν := fun x => ν x.succ)
-      hE (fun x => hle x.succ)
-    refine ⟨_, Sic.Math.Vector.add_le_add Multiplicity.modality (fun a => ?_) hD, .cons hc h hE'⟩
-    show μ 0 * _ = μ 0 * _ ⊓ ν 0 * _
-    rw [← Multiplicity.modality.mul_meet.right, ← hle 0]
+theorem Heap.EnvDemand.le {H : Heap} {n : Nat} {E : List Nat} {μ ν : MultiplicityVector n}
+    {D : Demand} (h : Heap.EnvDemand H E μ D) (hle : μ ≤ᶜ ν) :
+    ∃ D', D ≤ᶜ D' ∧ Heap.EnvDemand H E ν D' := by
+  obtain ⟨D', hD, h'⟩ := h.toEnvSum.le hle
+  exact ⟨D', hD, h'.toEnvDemand⟩
 
 end Sic.Core

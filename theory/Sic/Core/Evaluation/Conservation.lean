@@ -345,12 +345,8 @@ end Target.Usage
 
 -- ADE: none.
 /-- `H ⊢ ℓ̄ ▶ D̄`: the values at the addresses `ℓ̄` have the demands `D̄`, one by one. -/
-inductive Heap.ValueDemands (H : Heap) : List Nat → List Demand → Prop where
-  /-- No value. -/
-  | nil : Heap.ValueDemands H [] []
-  /-- The first value and the others. -/
-  | cons {ℓ : Nat} {as : List Nat} {D : Demand} {Ds : List Demand} (h : Heap.ValueDemand H ℓ D)
-      (hs : Heap.ValueDemands H as Ds) : Heap.ValueDemands H (ℓ :: as) (D :: Ds)
+abbrev Heap.ValueDemands (H : Heap) : List Nat → List Demand → Prop :=
+  List.Pointwise (Heap.ValueDemand H)
 
 -- ADE: none.
 /-- `Σ π̄ · D̄`: the demands `Ds`, each times the multiplicity at its position in `πs`. -/
@@ -568,18 +564,18 @@ theorem Demand.allocated_bind (ϖ : Multiplicity) :
       Demand.allocated_cell, Demand.allocated_bind ϖ _ bs, Demand.cells, Demand.smul_add,
       Demand.mul_smul, List.length_append, List.length_singleton]
 
-/-- The demand of an environment extended by the cells that a binder allocates from the address `c`,
+/-- The sum over an environment extended by the cells that a binder allocates from the address `c`,
 for the vector extended by the multiplicities of the binder, the last variable first, adds their
-reads and the uses of their values. -/
-theorem Heap.EnvDemand.bindAll {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
-    {D : Demand} (hE : Heap.EnvDemand H E ν D) (c : Nat) :
+reads and what `R` gives their values, each as many times as its multiplicity. -/
+theorem Heap.EnvSum.bindAll {H : Heap} {R : Nat → Demand → Prop} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
+    {D : Demand} (hE : Heap.EnvSum H R E ν D) (c : Nat) :
     (m : Nat) → (bs : List (Multiplicity × Nat × Demand)) → bs.length = m →
       (∀ l b, bs[l]? = some b → ∃ π, H[c + l]? = some (.cell π b.2.1)) →
-      (∀ b ∈ bs, Heap.ValueDemand H b.2.1 b.2.2) →
+      (∀ b ∈ bs, R b.2.1 b.2.2) →
       (μ : MultiplicityVector (n + m)) →
       (∀ i : Fin (n + m), (i : Nat) < m → some (μ i) = (bs[m - 1 - i]?).map (·.1)) →
       (∀ i : Fin n, μ ⟨i + m, by omega⟩ = ν i) →
-      Heap.EnvDemand H ((List.range' c m).reverse ++ E) μ
+      Heap.EnvSum H R ((List.range' c m).reverse ++ E) μ
         (D +ᶜ Demand.cells c bs +ᶜ Demand.values bs)
   | 0, [], _, _, _, μ, _, hμ => by
     have e : μ = ν := funext fun i => hμ i
@@ -592,7 +588,7 @@ theorem Heap.EnvDemand.bindAll {H : Heap} {n : Nat} {E : List Nat} {ν : Multipl
       | .inl h => by subst h; cases hl
       | .inr ⟨bs', b, h⟩ => ⟨bs', b, by rw [h, List.concat_eq_append]⟩
     have hl' : bs'.length = m := by simpa using hl
-    have ih := Heap.EnvDemand.bindAll hE c m bs' hl'
+    have ih := Heap.EnvSum.bindAll hE c m bs' hl'
       (fun l b' hb' => hc l b' (by
         rw [List.getElem?_append_left (List.getElem?_eq_some_iff.1 hb').1, hb']))
       (fun b' hb' => hv b' (List.mem_append_left _ hb'))
@@ -609,7 +605,7 @@ theorem Heap.EnvDemand.bindAll {H : Heap} {n : Nat} {E : List Nat} {ν : Multipl
       rw [List.getElem?_append_right (by omega), hl', Nat.sub_self]
       rfl
     obtain ⟨π, hπ⟩ := hc m b hbm
-    have hcons := Heap.EnvDemand.cons hπ
+    have hcons := Heap.EnvSum.cons hπ
       (hv b (List.mem_append_right _ (List.mem_singleton_self b))) ih
     have hμ0 : μ 0 = b.1 := by
       have h0 := hμ₁ 0 (by simp)
@@ -678,40 +674,9 @@ theorem Demand.add_le_of_le_zero {D₁ D₂ : Demand} (h : D₁ ≤ᶜ 𝟘ᵛ) 
 /-! ## Branches -/
 
 /-- The demands of values hold in each heap that extends their heap. -/
-theorem Heap.ValueDemands.mono {H H' : Heap} (hH : H.Extends H') :
-    {as : List Nat} → {Ds : List Demand} → Heap.ValueDemands H as Ds → Heap.ValueDemands H' as Ds
-  | _, _, .nil => .nil
-  | _, _, .cons h hs => .cons (h.mono hH) (hs.mono hH)
-
-/-- Values with demands have as many demands. -/
-theorem Heap.ValueDemands.length {H : Heap} :
-    {as : List Nat} → {Ds : List Demand} → Heap.ValueDemands H as Ds → as.length = Ds.length
-  | _, _, .nil => rfl
-  | _, _, .cons _ hs => congrArg (· + 1) hs.length
-
-/-- Values with demands joined have their demands joined. -/
-theorem Heap.ValueDemands.append {H : Heap} :
-    {as₁ : List Nat} → {Ds₁ : List Demand} → {as₂ : List Nat} → {Ds₂ : List Demand} →
-      Heap.ValueDemands H as₁ Ds₁ → Heap.ValueDemands H as₂ Ds₂ →
-        Heap.ValueDemands H (as₁ ++ as₂) (Ds₁ ++ Ds₂)
-  | _, _, _, _, .nil, h₂ => h₂
-  | _, _, _, _, .cons h hs, h₂ => .cons h (hs.append h₂)
-
-/-- The same value, as many times as wanted, has its demand as many times. -/
-theorem Heap.ValueDemands.replicate {H : Heap} {ℓ : Nat} {D : Demand} (h : Heap.ValueDemand H ℓ D) :
-    (k : Nat) → Heap.ValueDemands H (List.replicate k ℓ) (List.replicate k D)
-  | 0 => .nil
-  | k + 1 => .cons h (Heap.ValueDemands.replicate h k)
-
-/-- A value with demands has the demand at each of its positions. -/
-theorem Heap.ValueDemands.mem {H : Heap} :
-    {as : List Nat} → {Ds : List Demand} → Heap.ValueDemands H as Ds →
-      ∀ b ∈ as.zip Ds, Heap.ValueDemand H b.1 b.2
-  | _, _, .nil, _, h => nomatch h
-  | _, _, .cons h hs, b, hb => by
-    rcases List.mem_cons.1 hb with rfl | hb
-    · exact h
-    · exact hs.mem b hb
+theorem Heap.ValueDemands.mono {H H' : Heap} (hH : H.Extends H') {as : List Nat}
+    {Ds : List Demand} (h : Heap.ValueDemands H as Ds) : Heap.ValueDemands H' as Ds :=
+  List.Pointwise.imp (fun _ _ h => h.mono hH) h
 
 /-- The unpacking of a state gives as many multiplicities as entries. -/
 theorem Unpack.length {H : Heap} : {k x : Nat} → {πs ϱs : List Multiplicity} → {ss : List Nat} →
@@ -804,7 +769,7 @@ theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {
       ← List.map_map, hsnd, List.map_fst_zip (by simp; omega)]
   have hbl : bs.length = a + b := by simp [bs]; omega
   refine ⟨Demand.cells H.length bs, ?_, ?_⟩
-  · have hb := Heap.EnvDemand.bindAll hE H.length (a + b) bs hbl
+  · have hb := (Heap.EnvSum.bindAll hE.toEnvSum H.length (a + b) bs hbl
       (fun l x hx => by
         obtain ⟨hx₁, hx₂⟩ := List.getElem?_zip_eq_some.1 hx
         obtain ⟨hx₂, -⟩ := List.getElem?_zip_eq_some.1 hx₂
@@ -816,7 +781,7 @@ theorem Heap.EnvDemand.bindBranch {H : Heap} (ϖ : Multiplicity) {n a b : Nat} {
         exact (h₁.append h₂).mem x.2 hx)
       _ (fun i hi => by
         rw [(MultiplicityVector.extendBinders_spec δ πs πs').1 i hi, ← hfst, List.getElem?_map])
-      (MultiplicityVector.extendBinders_spec δ πs πs').2
+      (MultiplicityVector.extendBinders_spec δ πs πs').2).toEnvDemand
     rw [show (vs₁ ++ vs₂).length = a + b by simp; omega]
     rw [Demand.values_zip _ _ _ hlen hlen'] at hb
     rwa [show Demand.positions (List.ofFn πs ++ List.ofFn πs') (Ds₁ ++ Ds₂) =
@@ -1026,7 +991,7 @@ theorem Heap.ValueDemands.getElem? {H : Heap} :
   | _, _, .cons hv _, 0, _, h => by
     cases h
     exact hv
-  | _, _, .cons _ hs, j + 1, _, h => hs.getElem? j h
+  | _, _, .cons _ hs, j + 1, _, h => Heap.ValueDemands.getElem? hs j h
 
 /-- The order of the demands chains in a calculation. -/
 instance : Trans (α := Demand) (β := Demand) (γ := Demand) (· ≤ᶜ ·) (· ≤ᶜ ·) (· ≤ᶜ ·) :=
@@ -1465,7 +1430,7 @@ theorem EvalObs.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
       refine ⟨_, .corec List.getElem?_concat_length hPs
         ((hEr.mono (hH₁.trans hw.extends)).mono (List.prefix_append _ _))
           (Heap.PositionsDemand.of_forall₂
-            (Heap.ValueDemands.replicate (hx.mono (List.prefix_append _ _)) _) (by simp)), ?_⟩
+            (List.Pointwise.replicate (hx.mono (List.prefix_append _ _)) _) (by simp)), ?_⟩
       rw [Demand.allocated_trans (hH₁.trans hw.extends) (List.prefix_append _ _),
         Demand.allocated_append (fun _ _ h => Value.noConfusion h), Demand.add_zero]
       refine Demand.le_trans hDw (Demand.le_of_eq ?_)

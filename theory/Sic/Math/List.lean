@@ -7,7 +7,8 @@ Properties of the lists that Lean does not provide: the positions and the images
 a list whose images are distinct, the element at the position that `findIdx?` finds, the first
 element after a prefix, the pairs of the elements of two lists of the same length, the numbered
 elements of a list of a known length, the results of a function defined at every element of a list,
-and the length of a list whose distinct elements are all in another.
+the length of a list whose distinct elements are all in another, and the lists related element by
+element.
 -/
 
 @[expose] public section
@@ -251,3 +252,58 @@ theorem List.length_le_of_nodup_subset {α : Type} [BEq α] [LawfulBEq α] :
     have hl := hlen (h a List.mem_cons_self)
     simp only [List.length_cons]
     omega
+
+/-- Two lists of the same length whose elements are related by `R`, one by one. -/
+inductive List.Pointwise {α β : Type} (R : α → β → Prop) : List α → List β → Prop where
+  /-- The empty lists. -/
+  | nil : List.Pointwise R [] []
+  /-- The first elements and the others. -/
+  | cons {a : α} {b : β} {as : List α} {bs : List β} (h : R a b) (hs : List.Pointwise R as bs) :
+      List.Pointwise R (a :: as) (b :: bs)
+
+namespace List.Pointwise
+
+variable {α β : Type} {R : α → β → Prop}
+
+/-- Lists related by a relation are related by each relation that it implies. -/
+theorem imp {S : α → β → Prop} (hRS : ∀ a b, R a b → S a b) :
+    {as : List α} → {bs : List β} → List.Pointwise R as bs → List.Pointwise S as bs
+  | _, _, .nil => .nil
+  | _, _, .cons h hs => .cons (hRS _ _ h) (hs.imp hRS)
+
+/-- Lists related one by one have the same length. -/
+theorem length : {as : List α} → {bs : List β} → List.Pointwise R as bs → as.length = bs.length
+  | _, _, .nil => rfl
+  | _, _, .cons _ hs => congrArg (· + 1) hs.length
+
+/-- Lists related one by one, joined, are related one by one. -/
+theorem append : {as₁ : List α} → {bs₁ : List β} → {as₂ : List α} → {bs₂ : List β} →
+    List.Pointwise R as₁ bs₁ → List.Pointwise R as₂ bs₂ → List.Pointwise R (as₁ ++ as₂) (bs₁ ++ bs₂)
+  | _, _, _, _, .nil, h₂ => h₂
+  | _, _, _, _, .cons h hs, h₂ => .cons h (hs.append h₂)
+
+/-- Two related elements, as many times as wanted, are related one by one. -/
+theorem replicate {a : α} {b : β} (h : R a b) :
+    (k : Nat) → List.Pointwise R (List.replicate k a) (List.replicate k b)
+  | 0 => .nil
+  | k + 1 => .cons h (replicate h k)
+
+/-- The elements at the same position of lists related one by one are related. -/
+theorem mem : {as : List α} → {bs : List β} → List.Pointwise R as bs → ∀ x ∈ as.zip bs, R x.1 x.2
+  | _, _, .nil, _, h => nomatch h
+  | _, _, .cons h hs, x, hx => by
+    rcases List.mem_cons.1 hx with rfl | hx
+    · exact h
+    · exact hs.mem x hx
+
+/-- An element of the first of lists related one by one is related to the element at its position
+in the second. -/
+theorem getElem? : {as : List α} → {bs : List β} → List.Pointwise R as bs → {j : Nat} → {a : α} →
+    as[j]? = some a → ∃ b, bs[j]? = some b ∧ R a b
+  | _, _, .nil, _, _, h => nomatch h
+  | _, _, .cons hv _, 0, _, h => by
+    cases h
+    exact ⟨_, rfl, hv⟩
+  | _, _, .cons _ hs, j + 1, _, h => hs.getElem? (j := j) h
+
+end List.Pointwise
