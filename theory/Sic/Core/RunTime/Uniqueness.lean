@@ -1,9 +1,10 @@
 module
 
-public import Sic.Core.Evaluation.Uniqueness
+public import Sic.Core.Evaluation.Claims
 public import Sic.Core.Ownership
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
+import Sic.Core.Evaluation.Uniqueness
 import Sic.Core.RunTime.Ownership.Erasure
 import Sic.Core.RunTime.Ownership.Signature
 import Sic.Core.RunTime.Uses.Erasure

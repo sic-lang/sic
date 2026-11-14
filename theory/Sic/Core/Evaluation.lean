@@ -418,6 +418,15 @@ inductive EvalObs (P : Program) : Multiplicity → Heap → Nat → Nat → {c :
 
 end
 
+/-! ## Lengths -/
+
+/-- The evaluation of terms gives as many addresses. -/
+theorem EvalAll.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} :
+    {Ms : Targets n} → {as : List Nat} → {R : List Nat} → EvalAll P ϖ H E Ms as H' R →
+      Ms.multiplicities.length = as.length
+  | _, _, _, .nil => rfl
+  | _, _, _, .cons _ hs => congrArg (· + 1) hs.length
+
 /-! ## Determinism -/
 
 /-- The unpacking of a value is unique. -/

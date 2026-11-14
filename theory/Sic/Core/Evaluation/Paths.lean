@@ -207,4 +207,116 @@ theorem Heap.EnvReach.eq_zero {H : Heap} {g : Heap.Annotation} {n : Nat} {E : Li
 
 end
 
+mutual
+
+-- ADE: none.
+/-- The reach of a value is unique.
+RFC: `\mathsf{reach}_\ell.\mathsf{det}` -/
+theorem Heap.ValueReach.det {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U U' : Demand} :
+    Heap.ValueReach H g ℓ U → Heap.ValueReach H g ℓ U' → U = U'
+  | .erased _, .erased _ => rfl
+  | .ctor h hs, .ctor h' hs' => by
+    cases h.symm.trans h'
+    rw [hs.det hs']
+  | .corec h hE hs, .corec h' hE' hs' => by
+    cases h.symm.trans h'
+    rw [hE.det hE', hs.det hs']
+  | .erased h, .ctor h' _ | .erased h, .corec h' _ _ | .ctor h _, .erased h'
+  | .ctor h _, .corec h' _ _ | .corec h _ _, .erased h' | .corec h _ _, .ctor h' _ => by
+    cases h.symm.trans h'
+
+-- ADE: none.
+/-- The reach of positions is unique.
+RFC: `\mathsf{reach}_{\bar\ell}.\mathsf{det}` -/
+theorem Heap.PositionsReach.det {H : Heap} {g : Heap.Annotation} {πs : List Multiplicity}
+    {as : List Nat} {U U' : Demand} :
+    Heap.PositionsReach H g πs as U → Heap.PositionsReach H g πs as U' → U = U'
+  | .nil, .nil => rfl
+  | .cons h hs, .cons h' hs' => by rw [h.det h', hs.det hs']
+
+-- ADE: none.
+/-- The reach of an environment is unique.
+RFC: `\mathsf{reach}_E.\mathsf{det}` -/
+theorem Heap.EnvReach.det {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
+    {ν : MultiplicityVector n} {U U' : Demand} :
+    Heap.EnvReach H g E ν U → Heap.EnvReach H g E ν U' → U = U'
+  | .nil, .nil => rfl
+  | .cons hc h hE, .cons hc' h' hE' => by
+    cases hc.symm.trans hc'
+    rw [h.det h', hE.det hE']
+
+end
+
+/-- The reach of an environment is a sum of the reaches of its values. -/
+theorem Heap.EnvReach.toEnvSum {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
+    {ν : MultiplicityVector n} {U : Demand} :
+    Heap.EnvReach H g E ν U → Heap.EnvSum H (Heap.ValueReach H g) E ν U
+  | .nil => .nil
+  | .cons hc h hE => .cons hc h hE.toEnvSum
+
+/-- A sum of the reaches of the values of an environment is a reach of the environment. -/
+theorem Heap.EnvSum.toEnvReach {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
+    {ν : MultiplicityVector n} {U : Demand} :
+    Heap.EnvSum H (Heap.ValueReach H g) E ν U → Heap.EnvReach H g E ν U
+  | .nil => .nil
+  | .cons hc h hE => .cons hc h hE.toEnvReach
+
+/-- A value that refers to an address is at an address of its heap, as the address is. -/
+theorem Heap.ValueReach.lt {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U : Demand}
+    (h : Heap.ValueReach H g ℓ U) {b : Nat} (hb : U b ≠ .zero) : b < H.length :=
+  Nat.lt_of_not_le fun hle => hb (h.eq_zero b hle)
+
+/-- An environment that refers to an address refers to an address of its heap. -/
+theorem Heap.EnvReach.lt {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
+    {ν : MultiplicityVector n} {U : Demand} (h : Heap.EnvReach H g E ν U) {b : Nat}
+    (hb : U b ≠ .zero) : b < H.length :=
+  Nat.lt_of_not_le fun hle => hb (h.eq_zero b hle)
+
+/-- The value at a position has a reach. -/
+theorem Heap.PositionsReach.get {H : Heap} {g : Heap.Annotation} : {πs : List Multiplicity} →
+    {as : List Nat} → {U : Demand} → Heap.PositionsReach H g πs as U → {k a : Nat} →
+      as[k]? = some a → ∃ U', Heap.ValueReach H g a U'
+  | _, _, _, .cons h _, 0, _, ha => by cases ha; exact ⟨_, h⟩
+  | _, _, _, .cons _ hs, _ + 1, _, ha => hs.get (by simpa using ha)
+
+/-- The cell of a variable of an environment binds a value that has a reach. -/
+theorem Heap.EnvReach.get {H : Heap} {g : Heap.Annotation} : {n : Nat} → {E : List Nat} →
+    {ν : MultiplicityVector n} → {U : Demand} → Heap.EnvReach H g E ν U → (x : Fin n) → {c : Nat} →
+      E[(x : Nat)]? = some c → ∃ π a U', H[c]? = some (.cell π a) ∧ Heap.ValueReach H g a U'
+  | _, _, _, _, .cons hc h hE, x, c, hx => by
+    cases x using Fin.cases with
+    | zero => cases hx; exact ⟨_, _, _, hc, h⟩
+    | succ x => exact hE.get x (by simpa using hx)
+
+/-- Positions refer to what the value at one of them, of a multiplicity other than `0`, refers to. -/
+theorem Heap.PositionsReach.ne_zero {H : Heap} {g : Heap.Annotation} {b : Nat} :
+    {πs : List Multiplicity} → {as : List Nat} → {U : Demand} → Heap.PositionsReach H g πs as U →
+      {k a : Nat} → {π : Multiplicity} → as[k]? = some a → πs[k]? = some π → π ≠ .zero →
+      (∀ U', Heap.ValueReach H g a U' → U' b ≠ .zero) → U b ≠ .zero
+  | _, _, _, .cons (π := π') h _, 0, _, _, ha, hπ, hπ₀, hb => by
+    cases ha
+    cases hπ
+    refine Multiplicity.add_ne_zero_left _ _ ?_
+    show π'.references * _ ≠ _
+    exact Multiplicity.mul_ne_zero _ _ (by cases π' <;> simp_all [Multiplicity.references])
+      (hb _ h)
+  | _, _, _, .cons _ hs, _ + 1, _, _, ha, hπ, hπ₀, hb =>
+    Multiplicity.add_ne_zero_right _ _
+      (hs.ne_zero (by simpa using ha) (by simpa using hπ) hπ₀ hb)
+
+/-- An environment refers to what the cell of one of its variables, read at a multiplicity other
+than `0`, and the value that it binds refer to. -/
+theorem Heap.EnvReach.ne_zero {H : Heap} {g : Heap.Annotation} {b : Nat} : {n : Nat} →
+    {E : List Nat} → {ν : MultiplicityVector n} → {U : Demand} → Heap.EnvReach H g E ν U →
+      (x : Fin n) → {c : Nat} → E[(x : Nat)]? = some c → ν x ≠ .zero →
+      (∀ π a U', H[c]? = some (.cell π a) → Heap.ValueReach H g a U' →
+        (Demand.unit c +ᶜ U') b ≠ .zero) → U b ≠ .zero
+  | _, _, _, _, .cons hc h hE, x, c, hx, hν, hb => by
+    cases x using Fin.cases with
+    | zero =>
+      cases hx
+      exact Multiplicity.add_ne_zero_left _ _ (Multiplicity.mul_ne_zero _ _ hν (hb _ _ _ hc h))
+    | succ x =>
+      exact Multiplicity.add_ne_zero_right _ _ (hE.ne_zero x (by simpa using hx) hν hb)
+
 end Sic.Core

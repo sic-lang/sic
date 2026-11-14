@@ -216,6 +216,13 @@ theorem mul_le_self : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → ϖ * π ≤ π 
 /-- A product of multiplicities other than `0` is other than `0`. -/
 theorem mul_ne_zero : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → π ≠ .zero → ϖ * π ≠ .zero := by decide
 
+/-- A sum whose first operand is not `0` is not `0`. -/
+theorem add_ne_zero_left : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .zero := by decide
+
+/-- A sum whose second operand is not `0` is not `0`. -/
+theorem add_ne_zero_right : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero := by
+  decide
+
 end Multiplicity
 
 end Sic.Grading

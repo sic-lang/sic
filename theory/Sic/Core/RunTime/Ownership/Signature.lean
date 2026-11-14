@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Evaluation.Uniqueness
+public import Sic.Core.Evaluation.Claims
 public import Sic.Core.Ownership
 public import Sic.Grading.GradeSet
 import Sic.Core.Ownership.Signature
