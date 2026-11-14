@@ -123,7 +123,8 @@ theorem Multiplicity.mul_ne_zero : ∀ x y : Multiplicity, x ≠ .zero → y ≠
 mutual
 
 -- ADE: none.
-/-- The reach of a value is unique. -/
+/-- The reach of a value is unique.
+RFC: `\mathsf{reach}_\ell.\mathsf{det}` -/
 theorem Heap.ValueReach.det {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U U' : Demand} :
     Heap.ValueReach H g ℓ U → Heap.ValueReach H g ℓ U' → U = U'
   | .erased _, .erased _ => rfl
@@ -138,7 +139,8 @@ theorem Heap.ValueReach.det {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U U' :
     cases h.symm.trans h'
 
 -- ADE: none.
-/-- The reach of positions is unique. -/
+/-- The reach of positions is unique.
+RFC: `\mathsf{reach}_{\bar\ell}.\mathsf{det}` -/
 theorem Heap.PositionsReach.det {H : Heap} {g : Heap.Annotation} {πs : List Multiplicity}
     {as : List Nat} {U U' : Demand} :
     Heap.PositionsReach H g πs as U → Heap.PositionsReach H g πs as U' → U = U'
@@ -146,7 +148,8 @@ theorem Heap.PositionsReach.det {H : Heap} {g : Heap.Annotation} {πs : List Mul
   | .cons h hs, .cons h' hs' => by rw [h.det h', hs.det hs']
 
 -- ADE: none.
-/-- The reach of an environment is unique. -/
+/-- The reach of an environment is unique.
+RFC: `\mathsf{reach}_E.\mathsf{det}` -/
 theorem Heap.EnvReach.det {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
     {ν : MultiplicityVector n} {U U' : Demand} :
     Heap.EnvReach H g E ν U → Heap.EnvReach H g E ν U' → U = U'
@@ -271,7 +274,9 @@ theorem Heap.Claims.erased_inv {H : Heap} {g : Heap.Annotation} {ℓ b : Nat}
 
 -- ADE: none.
 /-- What a value claims is in its reach, and what a cell claims is the cell or in the reach of the
-value that it binds: each claim follows a reference that the reach counts. -/
+value that it binds: each claim follows a reference that the reach counts.
+RFC: `\mathsf{claim}.{⇝}`
+RFC: `\mathsf{claim}.\mathsf{bind}_{⇝}` -/
 theorem Heap.Claims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {ℓ b : Nat}
     (h : Heap.Claims H g ℓ b) :
     (∀ U, Heap.ValueReach H g ℓ U → U b ≠ .zero) ∧
@@ -315,7 +320,8 @@ theorem Heap.Claims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {ℓ b : Nat}
       exact Multiplicity.add_ne_zero_right _ _ (ih.1 U hU)
 
 -- ADE: none.
-/-- What a term claims through its environment is in the reach of the environment. -/
+/-- What a term claims through its environment is in the reach of the environment.
+RFC: `\mathsf{claim}_E.{⇝}` -/
 theorem Heap.EnvClaims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
     {φ ν : MultiplicityVector n} {b : Nat} (h : Heap.EnvClaims H g E φ ν b) {U : Demand}
     (hU : Heap.EnvReach H g E ν U) : U b ≠ .zero := by
@@ -324,7 +330,8 @@ theorem Heap.EnvClaims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {n : Nat} 
 
 -- ADE: none.
 /-- The claims of a value hold in each heap that extends its heap, annotated by an annotation that
-extends its annotation. -/
+extends its annotation.
+RFC: `\mathsf{claim}.{\sqsubseteq}` -/
 theorem Heap.Claims.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends H')
     (hg : Heap.Annotation.Extends H g g') {ℓ b : Nat} (h : Heap.Claims H g ℓ b) :
     Heap.Claims H' g' ℓ b := by
@@ -341,7 +348,8 @@ theorem Heap.Claims.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends 
 -- ADE: none.
 /-- A value that has a reach in a heap, or a cell that binds one, claims in a heap that extends it,
 annotated by an annotation that extends its annotation, only what it claims in the heap: its paths
-stay in the heap. -/
+stay in the heap.
+RFC: `\mathsf{claim}.{\sqsupseteq}` -/
 theorem Heap.Claims.of_extends {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends H')
     (hg : Heap.Annotation.Extends H g g') {ℓ b : Nat} (h : Heap.Claims H' g' ℓ b) :
     ((∃ U, Heap.ValueReach H g ℓ U) ∨
@@ -383,7 +391,8 @@ theorem Heap.Claims.of_extends {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Ex
 
 -- ADE: none.
 /-- A term claims through an environment that has a reach in a heap, in a heap that extends it,
-only what it claims in the heap. -/
+only what it claims in the heap.
+RFC: `\mathsf{claim}_E.{\sqsupseteq}` -/
 theorem Heap.EnvClaims.of_extends {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends H')
     (hg : Heap.Annotation.Extends H g g') {n : Nat} {E : List Nat} {φ ν : MultiplicityVector n}
     {b : Nat} (h : Heap.EnvClaims H' g' E φ ν b) {U : Demand} (hU : Heap.EnvReach H g E ν U) :
@@ -1077,7 +1086,8 @@ extends that of the heap and is valid for the heap of its end, which refers to n
 heap that the environment does not refer to, and, when the term is owned alone, each address that
 its value claims is referred to once at most by its value and a frame `F` of the heap, when each
 address that the term claims through its environment is referred to once at most by the
-environment and the frame. -/
+environment and the frame.
+RFC: `\mathsf{reach}_\Downarrow` -/
 theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership Ω) (hP : P.Usage)
     {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {M : Target n} {a : Nat}
     {R : List Nat} (h : Eval P ϖ H E M a H' R) {φ ν : MultiplicityVector n} {o : Multiplicity}
@@ -2368,7 +2378,8 @@ end
 -- ADE: none.
 /-- `uniq_⇓`: the value of a term owned alone is referred to by no frame of the heap: a frame that
 refers once at most, with the environment, to each address that the term claims through its
-environment does not refer to the address of the value of the term. -/
+environment does not refer to the address of the value of the term.
+RFC: `\mathsf{uniq}_\Downarrow` -/
 theorem Eval.uniqueness {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership Ω)
     (hP : P.Usage) {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {M : Target n}
     {a : Nat} {R : List Nat} (h : Eval P ϖ H E M a H' R) {φ ν : MultiplicityVector n}

@@ -664,7 +664,8 @@ uses on this axis, the coefficient of the variable of the field, a field without
 term that no declaration types, having the coefficient `ωωᵖ`, which states nothing: each recursion
 of a recursor is a use of a recursive field, whose ownership is the ownership of its value times
 this coefficient, so that the branches, which run at each level of the recursion, see the term of
-the recursor at its ownership times `r̂`, which every level has, since the grades are idempotent. -/
+the recursor at its ownership times `r̂`, which every level has, since the grades are idempotent.
+RFC: `\mathsf{recursion}_p` -/
 def Parameter.recursion (c : Grade) (es : List (List Nat)) (fs : List (List Parameter)) : Grade :=
   let xs : List (Grade × Grade) := (List.zipWith (fun e f => e.map fun l =>
     ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
