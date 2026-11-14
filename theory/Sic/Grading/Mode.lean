@@ -1,6 +1,6 @@
 module
 
-public import Sic.Grade
+public import Sic.Grading.Grade
 
 /-!
 # Modes
@@ -13,7 +13,9 @@ an erased term still counts all its uses.
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Grading
+
+open Sic.Math
 
 -- ADE: `Mode`, in `Graded/Mode.agda`, which has the modes `𝟘ᵐ` and `𝟙ᵐ` only.
 /--
@@ -230,13 +232,20 @@ namespace Mode
 
 -- ADE: `Zero-one-isMode`, in `Graded/Mode/Instances/Zero-one.agda`.
 /-- The modes form a mode structure over the grades.
-RFC: `\mathsf{structure}_m.\mathsf{assoc}`, `\mathsf{structure}_m.\mathsf{comm}`
-RFC: `\mathsf{structure}_m.\mathsf{idem}`, `\mathsf{structure}_m.\mathsf{unit}`
-RFC: `\mathsf{structure}_m.\mathsf{zero}`, `\mathsf{structure}_m.\mathsf{grade}_{00}`
-RFC: `\mathsf{structure}_m.\mathsf{section}`, `\mathsf{structure}_m.\mathsf{grade}_{\cdot}`
-RFC: `\mathsf{structure}_m.\mathsf{mode}_{\cdot}`, `\mathsf{structure}_m.\mathsf{runit}`
-RFC: `\mathsf{structure}_m.\mathsf{lunit}`, `\mathsf{structure}_m.\mathsf{order}`
-RFC: `\mathsf{structure}_m.\mathsf{mode}_{+}`, `\mathsf{structure}_m.\mathsf{mode}_{\wedge}` -/
+RFC: `\mathsf{structure}_m.\mathsf{assoc}`
+RFC: `\mathsf{structure}_m.\mathsf{comm}`
+RFC: `\mathsf{structure}_m.\mathsf{idem}`
+RFC: `\mathsf{structure}_m.\mathsf{unit}`
+RFC: `\mathsf{structure}_m.\mathsf{zero}`
+RFC: `\mathsf{structure}_m.\mathsf{grade}_{00}`
+RFC: `\mathsf{structure}_m.\mathsf{section}`
+RFC: `\mathsf{structure}_m.\mathsf{grade}_{\cdot}`
+RFC: `\mathsf{structure}_m.\mathsf{mode}_{\cdot}`
+RFC: `\mathsf{structure}_m.\mathsf{runit}`
+RFC: `\mathsf{structure}_m.\mathsf{lunit}`
+RFC: `\mathsf{structure}_m.\mathsf{order}`
+RFC: `\mathsf{structure}_m.\mathsf{mode}_{+}`
+RFC: `\mathsf{structure}_m.\mathsf{mode}_{\wedge}` -/
 theorem modeStructure : IsModeStructure where
   mul_assoc := by decide
   mul_comm := by decide
@@ -263,4 +272,4 @@ theorem run_odot :
 
 end Mode
 
-end Sic
+end Sic.Grading

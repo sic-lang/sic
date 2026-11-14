@@ -158,17 +158,17 @@ def sourceOf (decl : Name) (file : System.FilePath) : CoreM String := do
     | throwError "the signature of {decl} has no position"
   return (String.Pos.Raw.extract text 0 stop).trimAsciiEnd.toString
 
-/-- The names of the RFCs that a doc string gives: the code spans of its lines that start with
-`RFC:`. -/
-def namesOfDoc (doc : String) : Array String := Id.run do
+/-- The names of the RFCs that a doc string gives, one on each of its lines that start with `RFC:`,
+as the only code span of the line; a line that gives a name otherwise is an error, since its name
+would not count as formalized. -/
+def namesOfDoc (doc : String) : Except String (Array String) := do
   let mut names := #[]
   for line in doc.splitOn "\n" do
     let line := line.trimAscii.toString
     unless line.startsWith "RFC:" do continue
-    -- The parts between backticks are the odd ones.
-    let parts := line.splitOn "`"
-    for i in [0:parts.length] do
-      if i % 2 == 1 then names := names.push parts[i]!
+    match line.splitOn "`" with
+    | ["RFC: ", name, ""] => names := names.push name
+    | _ => throw s!"the line `{line}` does not give exactly one name, in a code span"
   return names
 
 /-- The declarations of the libraries in `dirs`, from their roots, that formalize each name. -/
@@ -184,7 +184,9 @@ def declarationsOf (dirs : List (Name × System.FilePath)) :
     let module := env.header.moduleNames[idx.toNat]!
     let some (root, dir) := dirs.find? (·.1.isPrefixOf module) | continue
     let some doc ← findDocString? env decl | continue
-    let names := namesOfDoc doc
+    let names ← match namesOfDoc doc with
+      | .ok names => pure names
+      | .error message => throwError "the doc string of {decl}: {message}"
     if names.isEmpty then continue
     let path := (module.components.drop root.components.length).map (·.toString)
     let file := (path.foldl (· / ·) dir).addExtension "lean"

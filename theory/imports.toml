@@ -2,71 +2,112 @@
 # and draws: a name stands for the module and for the modules below it.
 
 [[group]]
-name = "Grades"
-modules = [
-  "Sic.Core.GradeVector",
-  "Sic.Grade",
-  "Sic.Modality",
-  "Sic.Mode",
-  "Sic.Multiplicity",
-  "Sic.Order",
-  "Sic.Set",
-]
+name = "Mathematics"
+modules = ["Sic.Math"]
+
+[[group]]
+name = "Grading"
+modules = ["Sic.Grading"]
 
 [[group]]
 name = "Syntax"
-modules = [
-  "Sic.Core.Level",
-  "Sic.Core.Substitution",
-  "Sic.Core.Syntax",
-  "Sic.Core.Universe",
-]
+modules = ["Sic.Core.Level", "Sic.Core.Syntax", "Sic.Core.Universe"]
 
 [[group]]
-name = "Judgments"
-modules = [
-  "Sic.Core.Independence",
-  "Sic.Core.Ownership",
-  "Sic.Core.Typing",
-  "Sic.Core.Usage",
-]
+name = "Substitution"
+modules = ["Sic.Core.Substitution"]
 
 [[group]]
-name = "Reduction and erasure"
-modules = ["Sic.Core.Erasure", "Sic.Core.Reduction"]
+name = "Typing"
+modules = ["Sic.Core.Typing"]
 
 [[group]]
-name = "Meaning and soundness"
-modules = ["Sic.Core.Meaning", "Sic.Core.Soundness"]
+name = "Usage"
+modules = ["Sic.Core.Usage"]
+
+[[group]]
+name = "Ownership"
+modules = ["Sic.Core.Ownership"]
+
+[[group]]
+name = "Prelude"
+modules = ["Sic.Core.Prelude"]
+
+[[group]]
+name = "Reduction"
+modules = ["Sic.Core.Reduction"]
+
+[[group]]
+name = "Erasure"
+modules = ["Sic.Core.Erasure"]
+
+[[group]]
+name = "Evaluation"
+modules = ["Sic.Core.Evaluation"]
+
+[[group]]
+name = "Meaning"
+modules = ["Sic.Core.Meaning"]
+
+[[group]]
+name = "Soundness"
+modules = ["Sic.Core.Soundness"]
+
+[[group]]
+name = "Run Time"
+modules = ["Sic.Core.RunTime"]
+
+[[rule]]
+reason = "the mathematics are generic, and know nothing of Sic"
+modules = ["Sic.Math"]
+allowed = ["Sic.Math"]
 
 [[rule]]
 reason = "the grades, the multiplicities and the modes are an algebra that knows nothing of the core"
-modules = [
-  "Sic.Grade",
-  "Sic.Modality",
-  "Sic.Mode",
-  "Sic.Multiplicity",
-  "Sic.Order",
-  "Sic.Set",
-]
-forbidden = ["Sic.Core"]
+modules = ["Sic.Grading"]
+allowed = ["Sic.Grading", "Sic.Math"]
 
 [[rule]]
-reason = "the syntax and the substitution are defined before every judgment that reads them"
-modules = [
-  "Sic.Core.Level",
-  "Sic.Core.Substitution",
-  "Sic.Core.Syntax",
-  "Sic.Core.Universe",
-]
+reason = "the syntax is defined before every judgment that reads it"
+modules = ["Sic.Core.Level", "Sic.Core.Syntax", "Sic.Core.Universe"]
 forbidden = [
   "Sic.Core.Erasure",
+  "Sic.Core.Evaluation",
   "Sic.Core.Meaning",
   "Sic.Core.Ownership",
   "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
   "Sic.Core.Soundness",
   "Sic.Core.Typing",
   "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the substitution is defined before every judgment that reads it"
+modules = ["Sic.Core.Substitution"]
+forbidden = [
+  "Sic.Core.Erasure",
+  "Sic.Core.Evaluation",
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
+  "Sic.Core.Soundness",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the prelude is defined on the syntax alone, and each judgment proves its properties on it"
+modules = ["Sic.Core.Prelude"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Prelude",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
 ]
 
 [[rule]]
@@ -80,6 +121,98 @@ modules = ["Sic.Core.Ownership"]
 forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]
 
 [[rule]]
-reason = "the erasure is untyped, and reads the grades of the syntax and the usage only"
+reason = "the erasure is untyped and reads the grades of the syntax, and no judgment"
 modules = ["Sic.Core.Erasure"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the evaluation runs the untyped target language of the erasure, by the calling convention, on the terms alone, and reads no judgment"
+modules = ["Sic.Core.Evaluation"]
+forbidden = [
+  "Sic.Core.Meaning",
+  "Sic.Core.Ownership",
+  "Sic.Core.Reduction",
+  "Sic.Core.RunTime",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the reduction is defined on the terms alone, and reads no judgment"
+modules = ["Sic.Core.Reduction"]
+forbidden = [
+  "Sic.Core.Ownership",
+  "Sic.Core.RunTime",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the meaning is defined on the terms alone, so that it explains the judgments without reading them"
+modules = ["Sic.Core.Meaning"]
+forbidden = [
+  "Sic.Core.Ownership",
+  "Sic.Core.RunTime",
+  "Sic.Core.Typing",
+  "Sic.Core.Usage",
+]
+
+[[rule]]
+reason = "the typing is a judgment of its own, with no premise of the usage or of the ownership, the signature included"
+modules = ["Sic.Core.Typing"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the soundness of the typing reads the typing and the meaning only"
+modules = ["Sic.Core.Soundness"]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the properties of the meaning of the substitutions, of the levels, of the declared types and of the rules read no typing, so that the relation of run time uses them"
+modules = [
+  "Sic.Core.Soundness.Closed",
+  "Sic.Core.Soundness.Corecursors",
+  "Sic.Core.Soundness.DeclaredTypes",
+  "Sic.Core.Soundness.Levels",
+  "Sic.Core.Soundness.Recursors",
+  "Sic.Core.Soundness.Rules",
+  "Sic.Core.Soundness.Signature",
+  "Sic.Core.Soundness.Substitution",
+]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the relation of run time and its properties read the meaning and the evaluation, and none of the judgments that its fundamental lemma relates to it"
+modules = [
+  "Sic.Core.RunTime.Computation",
+  "Sic.Core.RunTime.Corecursors",
+  "Sic.Core.RunTime.DeclaredTypes",
+  "Sic.Core.RunTime.Levels",
+  "Sic.Core.RunTime.Monotonicity",
+  "Sic.Core.RunTime.Recursors",
+  "Sic.Core.RunTime.Relation",
+  "Sic.Core.RunTime.Rules",
+  "Sic.Core.RunTime.Skeleton",
+  "Sic.Core.RunTime.Substitution",
+  "Sic.Core.RunTime.Subsumption",
+]
+forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
+
+[[rule]]
+reason = "the fundamental lemma of the run time and the soundness of the extraction read the typing, the usage, the soundness of the typing and the relation of run time, and not the ownership"
+modules = [
+  "Sic.Core.RunTime.Extraction",
+  "Sic.Core.RunTime.Fundamental",
+  "Sic.Core.RunTime.Signature",
+]
+forbidden = ["Sic.Core.Ownership"]
+
+[[rule]]
+reason = "the uses at run time read the usage, the erasure, the evaluation and the relation of run time, and neither the typing nor the ownership"
+modules = ["Sic.Core.RunTime.Uses"]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing"]
+
+[[rule]]
+reason = "the ownership at run time reads the ownership, the erasure, the evaluation and the relation of run time, and neither the typing nor the usage"
+modules = ["Sic.Core.RunTime.Ownership"]
+forbidden = ["Sic.Core.Typing", "Sic.Core.Usage"]

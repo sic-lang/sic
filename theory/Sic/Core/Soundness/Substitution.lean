@@ -1,6 +1,8 @@
 module
 
-public import Sic.Core.Soundness.Closed
+public import Sic.Core.Meaning
+import Sic.Core.Meaning.Judgments
+import Sic.Core.Soundness.Closed
 
 /-!
 # Equal Substitutions
@@ -28,6 +30,8 @@ the first order only, so that no telescope occurs there.
 @[expose] public section
 
 namespace Sic.Core
+
+open Sic.Grading
 
 variable {k : Nat}
 
@@ -58,6 +62,54 @@ theorem Term.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (t.subst (Subst.liftN n σ)).subst τ = t.subst (Subst.append σ τ) :=
   Term.subst_subst_of (fun x => (Subst.append_eq_liftN σ τ x).symm) t
 
+/-- `t̄[σ⇑][τ] = t̄[σ, τ]`. -/
+theorem Args.subst_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) {ps : List Parameter} (ts : Args k (Γ.extend n) ps) :
+    (ts.subst (Subst.liftN n σ)).subst τ = ts.subst (Subst.append σ τ) :=
+  Args.subst_subst_of (fun x => (Subst.append_eq_liftN σ τ x).symm) ts
+
+/-- The variables of a telescope, substituted by closed arguments of it, are these arguments. -/
+theorem Args.bound_subst_toSubst :
+    {ps : List Parameter} → (ts : Args k [] ps) → (Args.bound (Γ := []) ps).subst ts.toSubst = ts
+  | [], .nil => rfl
+  | _ :: ps, .cons t ts => by
+    show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).subst
+        (Subst.append (Subst.closedSingle t) ts.toSubst))
+      ((Args.bound (Γ := [.var]) ps).subst (Subst.append (Subst.closedSingle t) ts.toSubst)) = _
+    rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst ts]
+    congr 1
+    show (Subst.append (Subst.closedSingle t) ts.toSubst (Var.weakenN ps.length .zero)).instantiate
+      .nil = t
+    rw [Subst.append_weakenN]
+    rfl
+
+/-- The variables of a telescope, substituted by a closed substitution `σ` of its context followed by
+closed arguments of it, are these arguments. -/
+theorem Args.bound_subst_append {Γ : Scope} (σ : Subst k [] Γ) {ps : List Parameter}
+    (ts : Args k [] ps) : (Args.bound (Γ := Γ) ps).subst (Subst.append σ ts.toSubst) = ts := by
+  rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst]
+
+/-- The recursive results of the fields of a constructor, substituted by a closed substitution `σ` of
+the context followed by closed arguments of the fields, are those of the arguments, at the motives
+substituted by `σ`. -/
+theorem Constructor.results_subst_append {j g k' : Nat} {Δ Γ : Scope}
+    {c : Constructor j g k' Δ} {I : Instance j g} {names : List Name} {Cs : Motives k Γ}
+    {R : Telescope k (Γ.extend (c.params I).length) (c.resultParams I names)}
+    (h : c.results I names Cs = some R) (σ : Subst k [] Γ) (ts : Args k [] (c.params I)) :
+    Motives.results names (Cs.subst σ) ((c.fields I).recursion names) ts.terms =
+      some (R.subst (Subst.append σ ts.toSubst)) := by
+  have h' := Motives.results_subst names (Subst.append σ ts.toSubst) _ h
+  rwa [Motives.subst_rename_of (α := Ren.weakenN (c.params I).length) (θ' := σ)
+      (fun x => Subst.append_weakenN σ _ x), ← Args.terms_subst,
+    Args.bound_subst_append] at h'
+
+/-- A term renamed under `n` new variables, substituted by `σ` followed by a substitution of them,
+is the term substituted by `σ`. -/
+theorem Term.subst_append_rename_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
+    (τ : Subst k [] (Scope.extend [] n)) (t : Term k Γ) :
+    (t.rename (Ren.weakenN n)).subst (Subst.append σ τ) = t.subst σ :=
+  Term.subst_rename_of (fun x => Subst.append_weakenN σ τ x) t
+
 /-- `(σ, τ)` gives the variables of `Γ` what `σ` gives them. -/
 theorem Subst.dropN_append {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (τ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var Γ a) :
@@ -80,7 +132,7 @@ theorem Subst.dropN_append_succ {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
     (Subst.append_eq_liftN (n := n + 1) σ τ (Var.weakenN (Γ := .var :: Γ) n x)).symm
   show _ = (Subst.liftN n (Subst.lift σ) (x.weakenN n)).subst (Subst.liftN a.params.length τ)
   rw [Subst.liftN_weakenN, Term.subst_rename_of (Subst.liftN_rename_of a.params.length
-    (ξ := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
+    (α := Ren.weakenN n) (θ' := Subst.dropN n τ) fun _ => rfl)]
 
 /-- `(σ, τ)` gives the first new variable what `τ` gives it. -/
 theorem Subst.dropN_append_zero {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
@@ -101,7 +153,138 @@ theorem Subst.topN_topN {Γ : Scope} {n : Nat} (σ : Subst k [] (Scope.extend (.
     @Eq (Subst k [] (Scope.extend [] n)) (Subst.topN n (Subst.topN (Γ := Γ) (n + 1) σ))
       (Subst.topN n σ) :=
   Subst.ext fun x => congrArg (fun y => σ y)
-    (Ren.liftN_comp_of n (ξ₃ := Ren.empty) (fun y => by cases y) x)
+    (Ren.liftN_comp_of n (α₃ := Ren.empty) (fun y => by cases y) x)
+
+/-- The arguments of a telescope that a closed substitution of its variables gives them, the first
+one first. -/
+def Subst.args : (ps : List Parameter) → Subst k [] (Scope.extend [] ps.length) → Args k [] ps
+  | [], _ => .nil
+  | _ :: ps, τ =>
+    .cons (Subst.dropN (Γ := [.var]) ps.length τ .zero) (Subst.args ps (Subst.topN ps.length τ))
+
+/-- A closed substitution of the variables of a telescope is the substitution of its arguments. -/
+theorem Subst.args_toSubst : (ps : List Parameter) → (τ : Subst k [] (Scope.extend [] ps.length)) →
+    @Eq (Subst k [] (Scope.extend [] ps.length)) (Subst.args ps τ).toSubst τ
+  | [], _ => Subst.ext fun x => nomatch x
+  | _ :: ps, τ => Subst.ext fun x => by
+    show Subst.append (Subst.closedSingle _) (Subst.args ps _).toSubst x = τ x
+    rcases Var.cases_extend (Γ := [.var]) ps.length x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+    · rw [Subst.append_weakenN]
+      cases y with
+      | zero => rfl
+      | succ y => nomatch y
+    · rw [Subst.append_liftN_empty]
+      exact congrArg (fun θ : Subst k [] (Scope.extend [] ps.length) => θ z)
+        (Subst.args_toSubst ps (Subst.topN ps.length τ))
+
+/-! ## Corecursors at Closed States -/
+
+/-- The terms of renamed arguments are their terms renamed. -/
+theorem Args.terms_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
+    {ps : List Parameter} → (ts : Args k Δ ps) → (ts.rename α).terms = ts.terms.rename α
+  | [], .nil => rfl
+  | _ :: _, .cons _ ts => congrArg _ (Args.terms_rename α ts)
+
+/-- `(corec_r T from ȳ return Θ̄ with ḡ)[σ, t̄ / ȳ] = corec_r T[σ] from t̄ return Θ̄[σ] with ḡ[σ]`: the
+corecursor at the variables of a state, substituted by `σ` followed by closed arguments of the
+state, is the corecursor substituted by `σ`, from these arguments. -/
+theorem Term.corecAt_subst_append {Γ Δ : Scope} (σ : Subst k [] Γ) (r : Grade) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
+    (Ss : States k Γ) (gs : CorecBranches k Γ) {ps' : List Parameter} (ss : Args k [] ps') :
+    (Term.corecAt r D qs ls ps as Ss gs ps').subst (Subst.append σ ss.toSubst) =
+      .corec r D qs ls ps (as.subst σ) ss.terms (Ss.subst σ) (gs.subst σ) := by
+  rw [← Term.subst_append, Term.corecAt_subst, ← Term.instantiate_eq_subst,
+    Term.corecAt_instantiate]
+
+/-- Closed arguments renamed under the variables of a state, then substituted by closed arguments
+of the state, are themselves. -/
+theorem Args.rename_weakenN_subst {ps ps' : List Parameter} (ts : Args k [] ps)
+    (ss : Args k [] ps') : (ts.rename (Ren.weakenN ps'.length)).subst ss.toSubst = ts :=
+  (Args.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) ts).trans
+    (Args.subst_id_of (fun _ => rfl) ts)
+
+/-- The motive at a position of motives renamed is the motive renamed, under its variables. -/
+theorem Motives.get_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
+    {Cs : Motives k Δ} → {j n : Nat} → {C : Term k (Δ.extend (n + 1))} → Cs.get j = some ⟨n, C⟩ →
+      (Cs.rename α).get j = some ⟨n, C.rename (Ren.liftN (n + 1) α)⟩
+  | .nil, _, _, _, h => nomatch h
+  | .cons .., 0, _, _, h => by cases h; rfl
+  | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_rename α (Cs := Cs) h
+
+/-- Fields have recursive results when the motives have a motive without non-uniform parameters for
+each type of the block. -/
+theorem Motives.results_isSome (names : List Name) :
+    {Δ : Scope} → {Cs : Motives k Δ} →
+      (∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) → (rs : List (Option Name)) →
+      {ps : List Parameter} → (xs : Args k Δ ps) → rs.length = ps.length →
+      (∀ D, some D ∈ rs → D ∈ names) →
+        ∃ R, Motives.results names Cs rs (ps := ps) xs.terms = some R
+  | _, Cs, hCs, some D :: rs, p :: ps, .cons x xs, hl, hrs => by
+    obtain ⟨C, hC⟩ := hCs D (hrs D (List.mem_cons_self ..))
+    obtain ⟨R, hR⟩ := Motives.results_isSome names (Cs := Cs.rename Ren.weaken)
+      (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩) rs (xs.rename Ren.weaken)
+      (Nat.succ.inj hl) (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
+    rw [Args.terms_rename] at hR
+    refine ⟨.cons Grade.zero p (C.subst₀ (Subst₀.single x)) R, ?_⟩
+    unfold Motives.results
+    simp only [Args.terms, hC, hR]
+    rfl
+  | _, Cs, hCs, none :: rs, _ :: ps, .cons _ xs, hl, hrs => by
+    obtain ⟨R, hR⟩ := Motives.results_isSome names hCs rs xs (Nat.succ.inj hl)
+      (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
+    exact ⟨R, by unfold Motives.results; exact hR⟩
+  | _, _, _, [], _, _, _, _ => ⟨.nil, by unfold Motives.results; rfl⟩
+  | _, _, _, _ :: _, [], .nil, hl, _ => nomatch hl
+
+/-- A constructor has recursive results when the motives have a motive without non-uniform
+parameters for each type of the block. -/
+theorem Constructor.results_isSome {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ)
+    (I : Instance j g) {names : List Name} {Cs : Motives k Γ}
+    (hCs : ∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) :
+    ∃ R, c.results I names Cs = some R :=
+  Motives.results_isSome names (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩)
+    _ (Args.bound (c.params I)) (Telescope.length_recursion names _)
+    (fun _ hD => Telescope.mem_recursion hD)
+
+/-- `g[σ⇑⇑][t̄ / z̄][s̄ / ȳ] = g[σ, s̄, t̄]`: a branch of a corecursor, substituted by a closed
+substitution `σ` under the variables `ȳ` of its state and `z̄` of its arguments, instantiated by
+closed arguments `t̄`, renamed under `ȳ`, then by closed arguments `s̄` of the state, is substituted
+by `σ` followed by `s̄` and `t̄`. -/
+theorem Term.instantiate_instantiate_subst {Γ : Scope} (σ : Subst k [] Γ) {ps' ps₁ : List Parameter}
+    (g : Term k ((Γ.extend ps'.length).extend ps₁.length)) (ss : Args k [] ps')
+    (ts : Args k [] ps₁) :
+    ((g.subst (Subst.liftN ps₁.length (Subst.liftN ps'.length σ))).instantiate
+        (ts.rename (Ren.weakenN ps'.length))).instantiate ss =
+      g.subst (Subst.append (Subst.append σ ss.toSubst) ts.toSubst) := by
+  rw [Term.instantiate_eq_subst, Term.instantiate_subst, Args.rename_weakenN_subst,
+    Term.instantiate_eq_subst,
+    Term.subst_subst_of (Subst.liftN_subst_of ps₁.length
+      (fun x => (Subst.append_eq_liftN σ ss.toSubst x).symm)),
+    Term.subst_append]
+
+/-- `(β_⟶)` substitutes the closed arguments of the state and of the destructor in a branch
+substituted by a closed substitution `σ`: `g[σ⇑⇑][s̄ / ȳ, t̄ / z̄] = g[σ, s̄, t̄]`. -/
+theorem Term.instantiateTerms₂_subst_append {Γ : Scope} (σ : Subst k [] Γ)
+    {ps' ps₁ : List Parameter} (g : Term k ((Γ.extend ps'.length).extend ps₁.length))
+    (ss : Args k [] ps') (ts : Args k [] ps₁) :
+    (g.subst (Subst.liftN ps₁.length (Subst.liftN ps'.length σ))).instantiateTerms₂ ss.terms
+        ts.terms = some (g.subst (Subst.append (Subst.append σ ss.toSubst) ts.toSubst)) := by
+  rw [Term.instantiateTerms₂, ← Args.terms_rename, Term.instantiateTerms_terms, Option.bind_some,
+    Term.instantiateTerms_terms, Term.instantiate_instantiate_subst]
+
+/-- `g[t̄ / z̄][s̄ / ȳ][σ] = g[σ, s̄[σ], t̄[σ]]`: a branch of a corecursor instantiated by arguments `t̄`,
+renamed under the variables `ȳ` of its state, then by arguments `s̄` of the state, substituted by a
+closed substitution `σ`, is substituted by `σ` followed by the arguments substituted. -/
+theorem Term.instantiate_instantiate_subst_closed {Γ : Scope} (σ : Subst k [] Γ)
+    {ps' ps₁ : List Parameter} (g : Term k ((Γ.extend ps'.length).extend ps₁.length))
+    (ss : Args k Γ ps') (ts : Args k Γ ps₁) :
+    ((g.instantiate (ts.rename (Ren.weakenN ps'.length))).instantiate ss).subst σ =
+      g.subst (Subst.append (Subst.append σ (ss.subst σ).toSubst) (ts.subst σ).toSubst) := by
+  have h : (ts.rename (Ren.weakenN ps'.length)).subst (Subst.liftN ps'.length σ) =
+      (ts.subst σ).rename (Ren.weakenN ps'.length) :=
+    (Args.subst_rename_of (fun x => Subst.liftN_weakenN _ σ x) ts).trans
+      (Args.rename_subst_of (fun _ => rfl) ts).symm
+  rw [Term.instantiate_subst, Term.instantiate_subst, h, Term.instantiate_instantiate_subst]
 
 /-! ## Equal Substitutions -/
 
@@ -123,9 +306,9 @@ theorem EqSubst.var_iff {Γ : Scope} (ctx : Context 0 Γ) (A : Term 0 Γ)
 
 /-- `(eq_X)`. -/
 theorem EqSubst.secondOrder_iff {Γ : Scope} {ps : List Parameter} (ctx : Context 0 Γ)
-    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (χ₀ : Option Grade)
-    (σ₁ σ₂ : Subst 0 [] (.secondOrder ps χ₀ :: Γ)) :
-    EqSubst sig ι (ctx.secondOrder Θ A χ₀) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
+    (Θ : Telescope 0 Γ ps) (A : Term 0 (Γ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
+    (σ₁ σ₂ : Subst 0 [] (.secondOrder ps ψ :: Γ)) :
+    EqSubst sig ι (ctx.secondOrder Θ A ψ) σ₁ σ₂ ↔ EqSubst sig ι ctx (Subst.tail σ₁) (Subst.tail σ₂) ∧
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst (Subst.tail σ₁))) τ₁ τ₂ →
         ValidEqTerm₀ sig ι ((σ₁ .zero).subst τ₁) ((σ₂ .zero).subst τ₂)
           ((A.subst (Subst.liftN _ (Subst.tail σ₁))).subst τ₁) := by
@@ -161,7 +344,7 @@ theorem EqSubst.append_iff :
       | zero => exact Subst.dropN_topN_zero σ₁
       | succ y =>
         show ((Subst.dropN (ps.length + 1) σ₁ y).rename (Ren.liftN _ Ren.weaken)).subst _ = _
-        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (ξ := Ren.weaken)
+        rw [Term.subst_rename_of (Subst.liftN_rename_of _ (α := Ren.weaken)
           (θ' := Subst.tail (Subst.dropN ps.length (Subst.topN (Γ := Γ) (ps.length + 1) σ₁)))
           fun _ => rfl)]
         exact Term.subst_liftN_empty _ _
@@ -279,8 +462,8 @@ theorem EqSubst.isPer : {Γ : Scope} → (ctx : Context 0 Γ) → ValidCtx₀ si
       obtain ⟨hσ₂₃, hv₂₃⟩ := (EqSubst.var_iff ctx A σ₂ σ₃).1 h₂₃
       exact (EqSubst.var_iff ctx A σ₁ σ₃).2
         ⟨transΓ _ _ _ hσ₁₂ hσ₂₃, hv₁₂.trans (hv₂₃.conv (hA _ _ hσ₁₂).symm)⟩
-  | _, .secondOrder (ps := ps) ctx Θ A χ₀, hV => by
-    obtain ⟨hΘ, hA⟩ := (validCtx₀_secondOrder ctx Θ A χ₀).1 hV
+  | _, .secondOrder (ps := ps) ctx Θ A ψ, hV => by
+    obtain ⟨hΘ, hA⟩ := (validCtx₀_secondOrder ctx Θ A ψ).1 hV
     obtain ⟨symmΓ, transΓ⟩ := EqSubst.isPer ctx (ValidCtx₀.append_left hΘ)
     obtain ⟨symmΓΘ, transΓΘ⟩ := EqSubst.isPer (ctx.append Θ) hΘ
     have app := fun {σ₁ σ₂ τ₁ τ₂} h hτ =>
@@ -377,6 +560,29 @@ theorem Telescope.subst₀_single_subst {Γ : Scope} {ps : List Parameter} (Θ :
       exact (Term.subst₀_id _).trans ((Subst.dropN_append_zero σ τ).trans ht)
     | succ x => cases e
 
+/-- Closed arguments of a closed telescope `x : A, Θ` are equal when their first terms are equal
+terms of `A` and the rest are equal arguments of `Θ` at the first term of the first ones. -/
+theorem EqSubst.args_cons_iff {ps : List Parameter} {q : Grade} {p : Parameter} {A : Term 0 []}
+    {Θ : Telescope 0 [.var] ps} {t u : Term 0 []} {ts us : Args 0 [] ps} :
+    EqSubst sig ι (Context.empty.append (.cons q p A Θ)) (Args.cons t ts).toSubst
+        (Args.cons u us).toSubst ↔
+      ValidEqTerm₀ sig ι t u A ∧
+        EqSubst sig ι (Context.empty.append (Θ.subst₀ (Subst₀.single t))) ts.toSubst us.toSubst := by
+  let σ : Subst 0 [] [] := fun x => nomatch x
+  have hc : Telescope.subst σ (.cons q p A Θ) = .cons q p A Θ :=
+    Telescope.subst_id_of (fun x => by cases x) _
+  have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle t) ts.toSubst) .zero = t :=
+    Subst.dropN_append _ _ .zero
+  have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle u) us.toSubst) .zero = u :=
+    Subst.dropN_append _ _ .zero
+  show EqSubst sig ι (Context.empty.append (.cons q p A Θ))
+    (Subst.append (Subst.closedSingle t) ts.toSubst)
+    (Subst.append (Subst.closedSingle u) us.toSubst) ↔ _
+  rw [← hc, EqSubst.telescope_cons_iff, d₁, d₂, Term.subst_empty,
+    Telescope.subst₀_single_subst Θ t σ _ (d₁.trans (Term.subst_empty σ t).symm),
+    Telescope.subst_id_of (fun x => by cases x),
+    EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
+
 /-! ## Entries of a Context under Equal Substitutions -/
 
 /-- `A[↑][σ] = A[σ without its last entry]`: a type weakened past the last entry of a context, at a
@@ -398,98 +604,6 @@ at a substitution of that context. -/
 theorem Telescope.subst_weaken {Γ : Scope} {e : Scope.Entry} {qs : List Parameter} (σ : Subst k [] (e :: Γ))
     (Θ : Telescope k Γ qs) : (Θ.rename Ren.weaken).subst σ = Θ.subst (Subst.tail σ) :=
   Telescope.subst_rename_of (fun _ => rfl) Θ
-
--- ADE: the substitutions in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
-/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the variable `x : A ∈ Γ` equal closed terms of the type `A[σ₁]`. -/
-theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
-    (hx : ctx.VarIn x A) {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
-    ValidEqTerm₀ sig ι (σ₁ x) (σ₂ x) (A.subst σ₁) := by
-  induction hx with
-  | @zero _ ctx A =>
-    rw [Term.subst_weaken]
-    exact ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).2
-  | @succVar _ ctx _ A B _ ih =>
-    rw [Term.subst_weaken]
-    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
-    rw [Term.subst_weaken]
-    exact ih ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
-
--- ADE: none.
-/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
-instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
-arguments. -/
-theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {χ₀ : Option Grade}
-    {X : Var Γ (.secondOrder ps χ₀)}
-    {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
-    {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
-    ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι ((σ₁ X).subst τ₁) ((σ₂ X).subst τ₂)
-        ((A.subst (Subst.liftN _ σ₁)).subst τ₁) := by
-  induction hX with
-  | @zero _ _ _ ctx Θ A =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).2
-  | @succVar _ _ _ ctx _ Θ A B _ ih =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
-    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
-    exact ih ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1
-
-
--- ADE: the type in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
-/-- The type of the variable `x : A ∈ Γ` is a type in the context, when `Σ ⊨ Γ`. -/
-theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
-    (hx : ctx.VarIn x A) : ValidCtx₀ sig ι ctx → ValidTypeΓ sig ι ctx A := by
-  induction hx with
-  | @zero _ ctx A =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact ((validCtx₀_var ctx A).1 hctx).2 _ _ ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).1
-  | @succVar _ ctx _ A B _ ih =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact (ih ((validCtx₀_var ctx B).1 hctx).1).2 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
-  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
-    intro hctx
-    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
-    rw [Term.subst_weaken, Term.subst_weaken]
-    exact (ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ B _).1 hctx).1)).2 _ _
-      ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
-
--- ADE: none.
-/-- The type of the second-order variable `X : (Θ ⊢ A) ∈ Γ` is a type in the context extended by its
-telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
-substitutions of `Θ[σ₁]`, it gives equal closed types. -/
-theorem Context.SecondOrderIn.validEqType {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
-    {χ₀ : Option Grade} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope 0 Γ ps}
-    {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A) :
-    ValidCtx₀ sig ι ctx → ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
-      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
-        ValidEqType₀ sig ι ((A.subst (Subst.liftN _ σ₁)).subst τ₁)
-          ((A.subst (Subst.liftN _ σ₂)).subst τ₂) := by
-  induction hX with
-  | @zero _ _ _ ctx Θ A =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken, Term.subst_append, Term.subst_append]
-    exact ((validCtx₀_secondOrder ctx Θ A _).1 hctx).2 _ _
-      ((EqSubst.append_append_iff ctx Θ _ _ τ₁ τ₂).2
-        ⟨((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).1, hτ⟩)
-  | @succVar _ _ _ ctx _ Θ A B _ ih =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
-    exact ih ((validCtx₀_var ctx B).1 hctx).1 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
-  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
-    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
-    rw [Telescope.subst_weaken] at hτ
-    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
-    exact ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ' B _).1 hctx).1) _ _
-      ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
 
 end
 

@@ -4,15 +4,15 @@ module
 # Sets
 
 The sets of numbers of uses, or of pairs of numbers of uses, by which annexes 03 and 04 of RFC 36
-give a meaning to the multiplicities and to the grades, and the sets of grades whose positions the
-erasure of annex 15 replaces.
+give a meaning to the multiplicities and to the grades, and the sets of grades of annex 11, whose
+positions the erasure replaces.
 Lean does not provide sets, and this package depends on no library that does, so a set is the
 predicate that tells which elements belong to it.
 -/
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Math
 
 /-- A set of elements of `α`, given by the predicate that tells which elements belong to it. -/
 def Set (α : Type) : Type := α → Prop
@@ -29,7 +29,7 @@ def ofPred {α : Type} (p : α → Prop) : Set α := p
 syntax "{ " ident " | " term " }" : term
 
 macro_rules
-  | `({ $a:ident | $p }) => `(Sic.Set.ofPred fun $a => $p)
+  | `({ $a:ident | $p }) => `(Sic.Math.Set.ofPred fun $a => $p)
 
 @[simp] theorem mem_ofPred {α : Type} {p : α → Prop} {a : α} : a ∈ ofPred p ↔ p a := Iff.rfl
 
@@ -45,4 +45,4 @@ instance {α : Type} : Union (Set α) where
 
 end Set
 
-end Sic
+end Sic.Math

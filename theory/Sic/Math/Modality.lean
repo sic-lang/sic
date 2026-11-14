@@ -14,7 +14,7 @@ ADE state the laws of the modalities as the fields of their record `Modality`, i
 
 @[expose] public section
 
-namespace Sic
+namespace Sic.Math
 
 /-- The meet, written as in Mathlib, on which this package does not depend. -/
 infixl:69 " ⊓ " => min
@@ -66,11 +66,13 @@ structure IsMeetSemilattice (α : Type) [Min α] : Prop where
 /-- The operation `mul` of `α` distributes over its operation `add`, on both sides. -/
 structure DistributesOver {α : Type} (mul add : α → α → α) : Prop where
   /-- `mul` distributes on the left.
-  RFC: `{\cdot}{+}_\xi.\mathsf{left}`, `{\cdot}{\wedge}_\xi.\mathsf{left}`
+  RFC: `{\cdot}{+}_\xi.\mathsf{left}`
+  RFC: `{\cdot}{\wedge}_\xi.\mathsf{left}`
   RFC: `{+}{\wedge}_\xi.\mathsf{left}` -/
   left : ∀ a b c : α, mul a (add b c) = add (mul a b) (mul a c)
   /-- `mul` distributes on the right.
-  RFC: `{\cdot}{+}_\xi.\mathsf{right}`, `{\cdot}{\wedge}_\xi.\mathsf{right}`
+  RFC: `{\cdot}{+}_\xi.\mathsf{right}`
+  RFC: `{\cdot}{\wedge}_\xi.\mathsf{right}`
   RFC: `{+}{\wedge}_\xi.\mathsf{right}` -/
   right : ∀ a b c : α, mul (add b c) a = add (mul b a) (mul c a)
 
@@ -82,31 +84,31 @@ operations that are not the instances of `V`. -/
 structure IsModule (R V : Type) [Add R] [Mul R] (zero one : R)
     (zeroV : V) (addV : V → V → V) (smulV : R → V → V) : Prop where
   /-- The addition is associative.
-  RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{assoc}_{+}` -/
   add_assoc : ∀ a b c : V, addV (addV a b) c = addV a (addV b c)
   /-- The addition is commutative.
-  RFC: `\mathsf{module}_\gamma.\mathsf{comm}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{comm}_{+}` -/
   add_comm : ∀ a b : V, addV a b = addV b a
   /-- The zero is neutral for the addition.
-  RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{unit}_{+}` -/
   zero_add : ∀ a : V, addV zeroV a = a
   /-- The multiplication distributes over the addition of `V`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+^{\gamma}}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{distrib}_{+^{\mu}}` -/
   smul_add : ∀ (p : R) (a b : V), smulV p (addV a b) = addV (smulV p a) (smulV p b)
   /-- The multiplication distributes over the addition of `R`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{distrib}_{+}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{distrib}_{+}` -/
   add_smul : ∀ (p q : R) (a : V), smulV (p + q) a = addV (smulV p a) (smulV q a)
   /-- The multiplication by a product is the multiplication by each of its factors.
-  RFC: `\mathsf{module}_\gamma.\mathsf{assoc}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{assoc}_{\cdot}` -/
   mul_smul : ∀ (p q : R) (a : V), smulV (p * q) a = smulV p (smulV q a)
   /-- The unit of `R` is neutral for the multiplication.
-  RFC: `\mathsf{module}_\gamma.\mathsf{unit}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{unit}_{\cdot}` -/
   one_smul : ∀ a : V, smulV one a = a
   /-- The zero of `R` multiplies every element into the zero of `V`.
-  RFC: `\mathsf{module}_\gamma.\mathsf{lzero}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{lzero}_{\cdot}` -/
   zero_smul : ∀ a : V, smulV zero a = zeroV
   /-- Every element of `R` multiplies the zero of `V` into itself.
-  RFC: `\mathsf{module}_\gamma.\mathsf{rzero}_{\cdot}` -/
+  RFC: `\mathsf{module}_\mu.\mathsf{rzero}_{\cdot}` -/
   smul_zero : ∀ p : R, smulV p zeroV = zeroV
 
 -- ADE: `Has-well-behaved-zero`, in `Graded/Modality.agda`.
@@ -131,6 +133,9 @@ take as their order.
 RFC: `\mathsf{order}_\xi` -/
 def order {α : Type} [Min α] (a b : α) : Prop :=
   a = a ⊓ b
+
+instance {α : Type} [Min α] [DecidableEq α] (a b : α) : Decidable (order a b) :=
+  inferInstanceAs (Decidable (a = a ⊓ b))
 
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- `α` is a modality, whose zero is `zero` and whose unit is `one`: a semiring whose addition and
@@ -175,4 +180,4 @@ theorem le_meet_iff (h : IsModality α zero one) (a b c : α) :
 
 end IsModality
 
-end Sic
+end Sic.Math
