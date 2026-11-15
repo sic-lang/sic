@@ -32,6 +32,15 @@ theorem Signature.HasConstant.mono {sig sig' : Signature} (hs : sig ⊆ sig') {f
   | .constantDefinition h => .constantDefinition (hs h)
   | .constantDeclaration h => .constantDeclaration (hs h)
 
+/-- Destructors none of which is recursive have no recursive destructor at any position. -/
+theorem Destructors.recursionAt_eq_none {k : Nat} {names : List Name} {Γ : Scope} {ns : List Name}
+    {ds : Destructors k Γ ns} (h : ∀ r ∈ ds.recursion names, r = none) (i : Nat) :
+    ds.recursionAt names i = none := by
+  unfold Destructors.recursionAt
+  cases hi : (ds.recursion names)[i]? with
+  | none => rfl
+  | some r => rw [h r (List.mem_of_getElem? hi)]; rfl
+
 /-- The type of the result of a recursive destructor is a type of the block. -/
 theorem Destructors.recursionAt_mem {k : Nat} {names : List Name} {D : Name} :
     {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {i : Nat} →

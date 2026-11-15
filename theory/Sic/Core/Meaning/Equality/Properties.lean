@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Nesting.Relation
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -10,6 +11,9 @@ The relations of annex 18 of RFC 36 are partial equivalence relations, and each 
 relations built from others, the least fixed points of the data types and the greatest fixed points
 of the codata types, and the relations of a level, by mutual recursion on the graph, which gives a
 type a single level and a single sort.
+The graph of the nestings is in the same recursion: its relations grow with those that the nestings
+hold, invert them and compose them, as the relations of the telescopes and of the destructors do
+with those of their recursive positions.
 
 ADE prove the symmetry, the transitivity and the irrelevance of the derivations of their logical
 relation, in `Definition/LogicalRelation/Properties/`, for their universes and without data or codata
@@ -479,6 +483,35 @@ theorem CodataType.blockRel_fold
         exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T hT) _ _ hab,
     .inr ⟨rfl, h⟩⟩
 
+/-- `(eq_ν)` relates in the other order the terms that `(eq_ν)` relates for another equality of the
+destructors, when the second one inverts the first one, at relations of the recursive destructors
+that do so. -/
+theorem CodataType.blockRel_symm {S' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S' Y T o₂ o₁)
+    (D : Name) {v w : Term 0 []} :
+    CodataType.blockRel Ts S D v w → CodataType.blockRel Ts S' D w v :=
+  fun ⟨X, hX, h⟩ => ⟨fun D v w => X D w v, fun T hT v w hvw =>
+    have ⟨o₁, o₂, hw, hv, hs⟩ := hX T hT w v hvw
+    ⟨o₂, o₁, hv, hw, hsymm X _ (fun _ _ _ h => h) T hT o₁ o₂ hs⟩, h⟩
+
+/-- `(eq_ν)` relates the terms that `(eq_ν)` relates in a chain for two other equalities of the
+destructors, when the third one composes the two others, at relations of the recursive destructors
+that do so. -/
+theorem CodataType.blockRel_trans {S' S'' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
+      ∀ o₁ o₂ o₃, S X T o₁ o₂ → S' Y T o₂ o₃ → S'' Z T o₁ o₃)
+    (D : Name) {u v w : Term 0 []} :
+    CodataType.blockRel Ts S D u v → CodataType.blockRel Ts S' D v w →
+      CodataType.blockRel Ts S'' D u w :=
+  fun ⟨X, hX, h⟩ ⟨Y, hY, h'⟩ => ⟨fun D u w => ∃ v, X D u v ∧ Y D v w,
+    fun T hT u w ⟨v, huv, hvw⟩ => by
+      obtain ⟨o₁, o₂, hu, hv, hs⟩ := hX T hT u v huv
+      obtain ⟨o₂', o₃, hv', hw, hs'⟩ := hY T hT v w hvw
+      rw [← hv.unique hv'] at hs'
+      exact ⟨o₁, o₃, hu, hw, htrans X Y _ (fun _ _ _ _ h₁ h₂ => ⟨_, h₁, h₂⟩) T hT o₁ o₂ o₃ hs hs'⟩,
+    _, h, h'⟩
+
 /-- `(eq_ν)` is a partial equivalence relation, when the equality of the destructors inverts and
 composes the relations of the recursive destructors. -/
 theorem CodataType.blockRel_isPer
@@ -487,16 +520,8 @@ theorem CodataType.blockRel_isPer
     (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
       ∀ o₁ o₂ o₃, S X T o₁ o₂ → S Y T o₂ o₃ → S Z T o₁ o₃)
     (D : Name) : IsPer (CodataType.blockRel Ts S D) where
-  symm := fun ⟨X, hX, h⟩ => ⟨fun D v w => X D w v, fun T hT v w hvw =>
-      have ⟨o₁, o₂, hw, hv, hs⟩ := hX T hT w v hvw
-      ⟨o₂, o₁, hv, hw, hsymm X _ (fun _ _ _ h => h) T hT o₁ o₂ hs⟩, h⟩
-  trans := fun ⟨X, hX, h⟩ ⟨Y, hY, h'⟩ => ⟨fun D u w => ∃ v, X D u v ∧ Y D v w,
-      fun T hT u w ⟨v, huv, hvw⟩ => by
-        obtain ⟨o₁, o₂, hu, hv, hs⟩ := hX T hT u v huv
-        obtain ⟨o₂', o₃, hv', hw, hs'⟩ := hY T hT v w hvw
-        rw [← hv.unique hv'] at hs'
-        exact ⟨o₁, o₃, hu, hw, htrans X Y _ (fun _ _ _ _ h₁ h₂ => ⟨_, h₁, h₂⟩) T hT o₁ o₂ o₃ hs hs'⟩,
-      _, h, h'⟩
+  symm := CodataType.blockRel_symm hsymm D
+  trans := CodataType.blockRel_trans htrans D
 
 /-- `(true_ν)` is consistent with the clauses of the destructors, when the equality of the
 destructors grows with the truths of the recursive destructors. -/
@@ -527,26 +552,38 @@ theorem CodataType.blockTruth_fold {S' : (Name → Prop) → CodataType j g k Δ
 
 end GreatestFixedPoints
 
+/-- `(eq_ν)` relates the terms that it relates for an equality of the destructors that relates
+fewer abstractions. -/
+theorem CodataType.blockRel_mono {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S S' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+    (h : ∀ X, ∀ T ∈ Ts, ∀ o₁ o₂, S X T o₁ o₂ → S' X T o₁ o₂) (D : Name) {v w : Term 0 []} :
+    CodataType.blockRel Ts S D v w → CodataType.blockRel Ts S' D v w :=
+  fun ⟨X, hX, hv⟩ => ⟨X, fun T hT v w hx => corecRel_mono (h X T hT) _ _ (hX T hT v w hx), hv⟩
+
 /-- `(eq_ν)` relates the same terms for equalities of the destructors that relate the same
 abstractions. -/
 theorem CodataType.blockRel_congr {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
     {S S' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
     (h : ∀ X, ∀ T ∈ Ts, ∀ o₁ o₂, S X T o₁ o₂ ↔ S' X T o₁ o₂) (D : Name) :
     ∀ v w, CodataType.blockRel Ts S D v w ↔ CodataType.blockRel Ts S' D v w :=
-  fun _ _ => ⟨fun ⟨X, hX, hv⟩ => ⟨X, fun T hT v w hx =>
-      corecRel_mono (fun o₁ o₂ => (h X T hT o₁ o₂).1) _ _ (hX T hT v w hx), hv⟩,
-    fun ⟨X, hX, hv⟩ => ⟨X, fun T hT v w hx =>
-      corecRel_mono (fun o₁ o₂ => (h X T hT o₁ o₂).2) _ _ (hX T hT v w hx), hv⟩⟩
+  fun _ _ => ⟨CodataType.blockRel_mono (fun X T hT o₁ o₂ => (h X T hT o₁ o₂).1) D,
+    CodataType.blockRel_mono (fun X T hT o₁ o₂ => (h X T hT o₁ o₂).2) D⟩
+
+/-- `(true_ν)` holds when it holds for an equality of the destructors whose truth implies that of
+the other. -/
+theorem CodataType.blockTruth_mono {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
+    (h : ∀ B, ∀ T ∈ Ts, (S B T).truth → (S' B T).truth) (D : Name) :
+    CodataType.blockTruth Ts S D → CodataType.blockTruth Ts S' D :=
+  fun ⟨B, hB, hb⟩ => ⟨B, fun T hT h' => h B T hT (hB T hT h'), hb⟩
 
 /-- `(true_ν)` is the same for equalities of the destructors that relate the same abstractions. -/
 theorem CodataType.blockTruth_congr {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
     {S S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
     (h : ∀ B, ∀ T ∈ Ts, ∀ o₁ o₂, S B T o₁ o₂ ↔ S' B T o₁ o₂) (D : Name) :
     CodataType.blockTruth Ts S D ↔ CodataType.blockTruth Ts S' D :=
-  ⟨fun ⟨B, hB, hb⟩ => ⟨B, fun T hT h' => ObsRel.truth_mono (fun o₁ o₂ => (h B T hT o₁ o₂).1)
-      (hB T hT h'), hb⟩,
-    fun ⟨B, hB, hb⟩ => ⟨B, fun T hT h' => ObsRel.truth_mono (fun o₁ o₂ => (h B T hT o₁ o₂).2)
-      (hB T hT h'), hb⟩⟩
+  ⟨CodataType.blockTruth_mono (fun B T hT => ObsRel.truth_mono fun o₁ o₂ => (h B T hT o₁ o₂).1) D,
+    CodataType.blockTruth_mono (fun B T hT => ObsRel.truth_mono fun o₁ o₂ => (h B T hT o₁ o₂).2) D⟩
 
 /-! ### A Type Has One Level and One Sort -/
 
@@ -650,7 +687,11 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
 The partial equivalence and the uniqueness are proved together, since the equality `(eq_μ)` of a
 block is a partial equivalence relation by the transfer of the equalities of the fields between
 relations of the recursive fields, which identifies the equalities of the fields that are not
-recursive by their uniqueness. -/
+recursive by their uniqueness.
+The transfer between the relations that nestings hold compares nestings with the same positions,
+`Nest.Rel` and `Nest.Rel₃`; a chain of three asks that the third relation of a position relate the
+terms that the first one relates, since the truth of a proposition nested at a position reads its
+relations at one term, which a chain of two relations does not give. -/
 
 mutual
 
@@ -1187,6 +1228,545 @@ theorem FieldRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
       exact fun _ _ => (ih m hm).prop_unique h h'
 termination_by structural h _ _ _ => h
 
+/-- The equality that the graph of the nestings gives the terms of a type relates the terms that the
+equality of the same type relates, at positions whose relations relate more terms. -/
+theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {τ₁ : Nest NestLeaf}
+    {A : Term 0 []} {F₁ : TermRel} :
+    NestRel sig ι n (fun m _ => levelRel sig ι m) s₁ τ₁ A F₁ →
+      ∀ (s₂ : Quality) (τ₂ : Nest NestLeaf) (F₂ : TermRel),
+        NestRel sig ι n (fun m _ => levelRel sig ι m) s₂ τ₂ A F₂ →
+        Nest.Rel (fun x y => ∀ t u, x.2 t u → y.2 t u) τ₁ τ₂ →
+        ∀ t u, F₁ t u → F₂ t u
+  | .plain hA hF, _, _, _, h', hR => by
+    cases hR
+    cases h' with
+    | plain hA' hF' =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      have hFp := FieldRel.isPer hd ih hF
+      exact fun t u h => (hFF t u).1 h
+  | .direct, _, _, _, h', hR => by
+    cases hR with
+    | direct hr =>
+      cases h' with
+      | direct => exact hr
+  | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact fun _ _ => TermRel.computed_mono fun _ _ =>
+          CodataType.blockRel_mono (fun _ T' hT' =>
+            NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+      | codataProp h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact fun _ _ => CodataType.blockTruth_mono (fun _ T' hT' =>
+          ObsRel.truth_mono (NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS' T' hT')
+            (Nesting.ofArgs_rel₃ hνs))) _
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality that the graph of the nestings gives the terms of a type relates in the other order
+the terms that the equality of the same type relates, at positions whose relations do so. -/
+theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {τ₁ : Nest NestLeaf}
+    {A : Term 0 []} {F₁ : TermRel} :
+    NestRel sig ι n (fun m _ => levelRel sig ι m) s₁ τ₁ A F₁ →
+      ∀ (s₂ : Quality) (τ₂ : Nest NestLeaf) (F₂ : TermRel),
+        NestRel sig ι n (fun m _ => levelRel sig ι m) s₂ τ₂ A F₂ →
+        Nest.Rel (fun x y => ∀ t u, x.2 t u → y.2 u t) τ₁ τ₂ →
+        ∀ t u, F₁ t u → F₂ u t
+  | .plain hA hF, _, _, _, h', hR => by
+    cases hR
+    cases h' with
+    | plain hA' hF' =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      have hFp := FieldRel.isPer hd ih hF
+      exact fun t u h => (hFF u t).1 (hFp.symm h)
+  | .direct, _, _, _, h', hR => by
+    cases hR with
+    | direct hr =>
+      cases h' with
+      | direct => exact hr
+  | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact fun _ _ => TermRel.computed_symm fun _ _ =>
+          CodataType.blockRel_symm (fun _ _ _ T' hT' =>
+            NestDesRel.symm_of hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+      | codataProp h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact fun _ _ => CodataType.blockTruth_mono (fun _ T' hT' ⟨o, ho⟩ =>
+          ⟨o, NestDesRel.symm_of hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs) o o
+            ho⟩) _
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equalities that the graph of the nestings gives the terms of a type relate the same terms,
+at positions whose relations relate the same terms. -/
+theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {τ₁ : Nest NestLeaf}
+    {A : Term 0 []} {F₁ : TermRel} :
+    NestRel sig ι n (fun m _ => levelRel sig ι m) s₁ τ₁ A F₁ →
+      ∀ (s₂ : Quality) (τ₂ : Nest NestLeaf) (F₂ : TermRel),
+        NestRel sig ι n (fun m _ => levelRel sig ι m) s₂ τ₂ A F₂ →
+        Nest.Rel (fun x y => ∀ t u, x.2 t u ↔ y.2 t u) τ₁ τ₂ →
+        ∀ t u, F₁ t u ↔ F₂ t u
+  | .plain hA hF, _, _, _, h', hR => by
+    cases hR
+    cases h' with
+    | plain hA' hF' =>
+      cases Computesι.det hd hA hA'
+      have hFF := FieldRel.unique hd ih hF _ _ hF'
+      have hFp := FieldRel.isPer hd ih hF
+      exact hFF
+  | .direct, _, _, _, h', hR => by
+    cases hR with
+    | direct hr =>
+      cases h' with
+      | direct => exact hr
+  | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact TermRel.computed_congr (CodataType.blockRel_congr (fun _ T' hT' =>
+          NestDesRel.congr hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _)
+      | codataProp h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact fun _ _ => CodataType.blockTruth_congr (fun _ T' hT' =>
+          NestDesRel.congr hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality that the graph of the nestings gives the terms of a type relates the terms that two
+equalities of the same type relate in a chain, at positions whose relations do so and whose third
+relation relates the terms that the first one relates: the truth of a proposition reads the
+relations of its positions at one term, which a chain does not give. -/
+theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {τ₁ : Nest NestLeaf}
+    {A : Term 0 []} {F₁ : TermRel} :
+    NestRel sig ι n (fun m _ => levelRel sig ι m) s₁ τ₁ A F₁ →
+      ∀ (s₂ : Quality) (τ₂ : Nest NestLeaf) (F₂ : TermRel),
+        NestRel sig ι n (fun m _ => levelRel sig ι m) s₂ τ₂ A F₂ →
+      ∀ (s₃ : Quality) (τ₃ : Nest NestLeaf) (F₃ : TermRel),
+        NestRel sig ι n (fun m _ => levelRel sig ι m) s₃ τ₃ A F₃ →
+        Nest.Rel₃ (fun x y z => (∀ t u w, x.2 t u → y.2 u w → z.2 t w) ∧ ∀ t u, x.2 t u → z.2 t u)
+          τ₁ τ₂ τ₃ →
+        ∀ t u w, F₁ t u → F₂ u w → F₃ t w
+  | .plain hA hF, _, _, _, h', _, _, _, h'', hR => by
+    cases hR
+    cases h' with
+    | plain hA' hF' =>
+      cases h'' with
+      | plain hA'' hF'' =>
+        cases Computesι.det hd hA hA'
+        cases Computesι.det hd hA hA''
+        have hFF' := FieldRel.unique hd ih hF _ _ hF'
+        have hFF'' := FieldRel.unique hd ih hF _ _ hF''
+        have hFp := FieldRel.isPer hd ih hF
+        exact fun t u w h₁ h₂ => (hFF'' t w).1 (hFp.trans h₁ ((hFF' u w).2 h₂))
+  | .direct, _, _, _, h', _, _, _, h'', hR => by
+    cases hR with
+    | direct hr =>
+      cases h' with
+      | direct =>
+        cases h'' with
+        | direct => exact hr.1
+  | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', _, _, _, h'', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        cases h'' with
+        | codata h'' _ _ _ hA'' _ _ _ _ _ hS'' =>
+          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
+          subst hD hqs hls hps
+          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
+          cases hT
+          cases has
+          exact fun _ _ _ => TermRel.computed_trans hd (R₁ := CodataType.blockRel _ _ _)
+            (R₂ := CodataType.blockRel _ _ _) (R₃ := CodataType.blockRel _ _ _) fun _ _ _ =>
+              CodataType.blockRel_trans (fun _ _ _ _ T' hT' =>
+                NestDesRel.trans_of hd ih (hS T' hT') _ _ _ (hS' T' hT') _ _ _ (hS'' T' hT')
+                  (Nesting.ofArgs_rel₃ hνs)) _
+        | codataProp h'' _ _ _ hA'' hκ'' =>
+          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
+          subst hD hqs hls hps
+          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
+          exact nomatch hκ.symm.trans hκ''
+      | codataProp h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', _, _, _, h'', hR => by
+    cases hR with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp h' _ _ _ hA' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        cases h'' with
+        | codata h'' _ _ _ hA'' _ hκ'' =>
+          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
+          subst hD hqs hls hps
+          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
+          exact nomatch hκ.symm.trans hκ''
+        | codataProp h'' _ _ _ hA'' _ _ _ _ hS'' =>
+          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
+          subst hD hqs hls hps
+          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
+          cases hT
+          cases has
+          exact fun _ _ _ h₁ _ => CodataType.blockTruth_mono (fun _ T' hT' =>
+            ObsRel.truth_mono (NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS'' T' hT')
+              (Nesting.ofArgs_rel₃ (hνs.outer fun _ _ _ hr => hr.2)))) _ h₁
+termination_by structural h _ _ _ _ _ _ _ _ _ => h
+
+/-- The equality of the abstractions for destructors read at nestings relates the abstractions that
+the equality of the same destructors relates, at positions whose relations relate more terms. -/
+theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {Γ : Scope}
+    {ν₁ : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S₁ : ObsRel} :
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₁ @ν₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (ν₂ : Nesting NestLeaf Γ) (S₂ : ObsRel),
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₂ @ν₂ ds @θ S₂ →
+        Nesting.Rel (fun x y => ∀ t u, x.2 t u → y.2 t u) @ν₁ @ν₂ →
+        ∀ o₁ o₂, S₁ o₁ o₂ → S₂ o₁ o₂
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
+  | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
+      ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
+        fun h h' => NestRel.trans_of hd ih (hF ts hts) _ _ _ (hF ts hts) _ _ _ (hF ts hts) .plain
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp hFp hBresp
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons _ hΘ' F' hF' _ _ hG' hresp' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        have hf := hEp.trans h₁ (hEp.symm h₁)
+        ⟨(hEE _ _).1 h₁, NestDesRel.mono hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
+            (Nesting.lift_rel₃ hR) _ _ h₂⟩
+    | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested _ hΘ' F' hF' hBresp' _ hG' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        ⟨fun ts us hts =>
+          have hts' := (hSS _ _).2 hts
+          have htt := hSΘp.trans hts' (hSΘp.symm hts')
+          NestRel.mono hd ih (hF ts htt) _ _ _ (hF' ts ((hSS _ _).1 htt)) hB _ _ (h₁ ts us hts'),
+          NestDesRel.mono hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+            (Nesting.lift_rel₃ hR) _ _ h₂⟩
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality of the abstractions for destructors read at nestings relates in the other order the
+abstractions that the equality of the same destructors relates, at positions whose relations do
+so. -/
+theorem NestDesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {Γ : Scope}
+    {ν₁ : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S₁ : ObsRel} :
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₁ @ν₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (ν₂ : Nesting NestLeaf Γ) (S₂ : ObsRel),
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₂ @ν₂ ds @θ S₂ →
+        Nesting.Rel (fun x y => ∀ t u, x.2 t u → y.2 u t) @ν₁ @ν₂ →
+        ∀ o₁ o₂, S₁ o₁ o₂ → S₂ o₂ o₁
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
+  | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
+      ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
+        fun h h' => NestRel.trans_of hd ih (hF ts hts) _ _ _ (hF ts hts) _ _ _ (hF ts hts) .plain
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp hFp hBresp
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons _ hΘ' F' hF' _ _ hG' hresp' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        have hf := hEp.trans h₁ (hEp.symm h₁)
+        ⟨(hEE _ _).1 (hEp.symm h₁), (hresp' _ _ ((hEE _ _).1 h₁) _ _).1
+          (NestDesRel.symm_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
+            (Nesting.lift_rel₃ hR) _ _ h₂)⟩
+    | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested _ hΘ' F' hF' hBresp' _ hG' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
+        ⟨fun ts us hts =>
+          have hts' := (hSS _ _).2 hts
+          have hst := hSΘp.symm hts'
+          have huu := hSΘp.trans hst hts'
+          (hBresp' _ _ ((hSS _ _).1 hst) _ _).1
+            (NestRel.symm_of hd ih (hF us huu) _ _ _ (hF' us ((hSS _ _).1 huu)) hB _ _
+              (h₁ us ts hst)),
+          NestDesRel.symm_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+            (Nesting.lift_rel₃ hR) _ _ h₂⟩
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equalities of the abstractions for destructors read at nestings relate the same
+abstractions, at positions whose relations relate the same terms. -/
+theorem NestDesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {Γ : Scope}
+    {ν₁ : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S₁ : ObsRel} :
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₁ @ν₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (ν₂ : Nesting NestLeaf Γ) (S₂ : ObsRel),
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₂ @ν₂ ds @θ S₂ →
+        Nesting.Rel (fun x y => ∀ t u, x.2 t u ↔ y.2 t u) @ν₁ @ν₂ →
+        ∀ o₁ o₂, S₁ o₁ o₂ ↔ S₂ o₁ o₂
+  | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
+  | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
+      ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
+        fun h h' => NestRel.trans_of hd ih (hF ts hts) _ _ _ (hF ts hts) _ _ _ (hF ts hts) .plain
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp hFp hBresp
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons _ hΘ' F' hF' _ _ hG' hresp' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      exact ObsRel.cons_congr hEp hEE fun f hf =>
+        NestDesRel.congr hd ih (hG f hf) _ _ _ (hG' f ((hEE f f).1 hf))
+            (Nesting.lift_rel₃ hR)
+    | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested _ hΘ' F' hF' hBresp' _ hG' =>
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      exact fun o₁ o₂ => and_congr
+        (AbstractionRel.congr hSΘp hSS (fun ts hts =>
+          NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) hB) _ _)
+        (NestDesRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+            (Nesting.lift_rel₃ hR) o₁ o₂)
+termination_by structural h _ _ _ _ _ => h
+
+/-- The equality of the abstractions for destructors read at nestings relates the abstractions that
+two equalities of the same destructors relate in a chain, at positions whose relations do so and
+whose third relation relates the terms that the first one relates. -/
+theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality} {Γ : Scope}
+    {ν₁ : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S₁ : ObsRel} :
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₁ @ν₁ ds @θ S₁ →
+      ∀ (s₂ : Quality) (ν₂ : Nesting NestLeaf Γ) (S₂ : ObsRel),
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₂ @ν₂ ds @θ S₂ →
+      ∀ (s₃ : Quality) (ν₃ : Nesting NestLeaf Γ) (S₃ : ObsRel),
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₃ @ν₃ ds @θ S₃ →
+        Nesting.Rel₃
+          (fun x y z => (∀ t u w, x.2 t u → y.2 u w → z.2 t w) ∧ ∀ t u, x.2 t u → z.2 t u)
+          @ν₁ @ν₂ @ν₃ →
+        ∀ o₁ o₂ o₃, S₁ o₁ o₂ → S₂ o₂ o₃ → S₃ o₁ o₃
+  | .nil, _, _, _, h', _, _, _, h'', _ => by
+    cases h'; cases h''; exact fun _ _ _ _ _ => trivial
+  | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', _, _, _, h'',
+      hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
+      ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
+        fun h h' => NestRel.trans_of hd ih (hF ts hts) _ _ _ (hF ts hts) _ _ _ (hF ts hts) .plain
+          _ _ _ h h'⟩
+    have hEp := AbstractionRel.isPer hSΘp hFp hBresp
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons _ hΘ' F' hF' _ _ hG' hresp' =>
+      cases h'' with
+      | cons _ hΘ'' F'' hF'' _ _ hG'' _ =>
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        have hFF' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+            F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+          NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS' _ _).1 hts)) .plain
+        have hFF'' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+            F ts.terms t u ↔ F'' ts.terms t u := fun ts hts =>
+          NestRel.congr hd ih (hF ts hts) _ _ _ (hF'' ts ((hSS'' _ _).1 hts)) .plain
+        have hEE' := AbstractionRel.congr hSΘp hSS' hFF'
+        have hEE'' := AbstractionRel.congr hSΘp hSS'' hFF''
+        exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
+          have hf := hEp.trans h₁ (hEp.symm h₁)
+          ⟨(hEE'' _ _).1 (hEp.trans h₁ ((hEE' _ _).2 h₁')),
+            NestDesRel.trans_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE' _ _).1 hf)) _ _ _
+              (hG'' _ ((hEE'' _ _).1 hf)) (Nesting.lift_rel₃ hR) _ _ _ h₂
+              ((hresp' _ _ ((hEE' _ _).1 h₁) _ _).2 h₂')⟩
+      | nested hν'' => exact absurd (hB.eq_plain.2.2 hν) hν''
+    | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', _, _, _, h'',
+      hR => by
+    have hSΘp : IsPer SΘ :=
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+          _ _ _ h h'⟩
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
+    cases h' with
+    | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested _ hΘ' F' hF' hBresp' _ hG' =>
+      cases h'' with
+      | cons hν'' => exact absurd (hB.eq_plain.2.1 hν'') hν
+      | nested _ hΘ'' F'' hF'' _ _ hG'' =>
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
+          ⟨fun ts us hts =>
+            have hts' := (hSS'' _ _).2 hts
+            have htt := hSΘp.trans hts' (hSΘp.symm hts')
+            have huu := hSΘp.trans (hSΘp.symm hts') hts'
+            NestRel.trans_of hd ih (hF ts htt) _ _ _ (hF' ts ((hSS' _ _).1 htt)) _ _ _
+              (hF'' ts ((hSS'' _ _).1 htt)) hB _ _ _ (h₁ ts us hts')
+              ((hBresp' _ _ ((hSS' _ _).1 hts') _ _).2 (h₁' us us ((hSS' _ _).1 huu))),
+            NestDesRel.trans_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _
+              (hG' (.sort ⟨.type, .zero⟩)) _ _ _ (hG'' (.sort ⟨.type, .zero⟩))
+              (Nesting.lift_rel₃ hR) _ _ _ h₂ h₂'⟩
+termination_by structural h _ _ _ _ _ _ _ _ _ => h
+
 end
 
 /-- The equality of the terms of the fields of a telescope is a partial equivalence relation, at
@@ -1281,6 +1861,48 @@ theorem DesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.
         exact fun o₁ o₂ ⟨h₁, h₂⟩ => ⟨fun ts us hts => hr _ _ (h₁ ts us ((hSS _ _).2 hts)),
           DesRel.mono hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
             (fun i => hR (i + 1)) _ _ h₂⟩
+
+/-- The equality that the graph of the nestings gives the terms of a type is a partial equivalence
+relation, at positions whose relations are. -/
+theorem NestRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {τ : Nest NestLeaf}
+    (hτ : Nest.All (fun x => IsPer x.2) τ) {A : Term 0 []} {F : TermRel}
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F) : IsPer F where
+  symm h' := NestRel.symm_of hd ih h _ _ _ h (hτ.rel₃ fun _ hx _ _ => hx.symm) _ _ h'
+  trans h₁ h₂ := NestRel.trans_of hd ih h _ _ _ h _ _ _ h
+    (hτ.rel₃ fun _ hx => ⟨fun _ _ _ => hx.trans, fun _ _ h => h⟩) _ _ _ h₁ h₂
+
+/-- A type has a unique equality of its terms by the graph of the nestings, at a given nesting. -/
+theorem NestRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {τ : Nest NestLeaf}
+    {A : Term 0 []} {F : TermRel}
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F) (s' : Quality) (F' : TermRel)
+    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' τ A F') : ∀ t u, F t u ↔ F' t u :=
+  NestRel.congr hd ih h _ _ _ h' (Nest.rel₃_refl (fun _ _ _ => .rfl) τ)
+
+/-- The equality of the abstractions for destructors read at nestings is a partial equivalence
+relation, at positions whose relations are. -/
+theorem NestDesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope}
+    {ν : Nesting NestLeaf Γ} (hν : Nesting.All (fun x => IsPer x.2) @ν) {ns : List Name}
+    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : ObsRel}
+    (h : NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν ds @θ S) : IsPer S where
+  symm h' := NestDesRel.symm_of hd ih h _ _ _ h
+    (fun e x => Nest.All.rel₃ (fun _ hx _ _ => hx.symm) (hν e x)) _ _ h'
+  trans h₁ h₂ := NestDesRel.trans_of hd ih h _ _ _ h _ _ _ h
+    (fun e x => Nest.All.rel₃ (fun _ hx => ⟨fun _ _ _ => hx.trans, fun _ _ h => h⟩) (hν e x))
+    _ _ _ h₁ h₂
+
+/-- Destructors read at nestings have a unique equality of the abstractions for them, at given
+nestings of their variables. -/
+theorem NestDesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {Γ : Scope}
+    {ν : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S : ObsRel} (h : NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν ds @θ S)
+    (s' : Quality) (S' : ObsRel)
+    (h' : NestDesRel sig ι n (fun m _ => levelRel sig ι m) s' @ν ds @θ S') :
+    ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂ :=
+  NestDesRel.congr hd ih h _ _ _ h' fun _ x => Nest.rel₃_refl (fun _ _ _ => .rfl) (ν x)
 
 /-- The equality of the terms of the fields of the constructors of a block, at relations `F X D` of
 its recursive fields of the type `D`, grows with `X` when they do: the premise of the properties of

@@ -1,7 +1,9 @@
 module
 
 public import Sic.Core.Meaning.RunTime.Properties
+import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
+public import Sic.Core.Nesting.Relation
 
 /-!
 # Uniqueness of the Relations of the Levels
@@ -11,6 +13,8 @@ equality of the terms of a type is a partial equivalence relation, and it is uni
 truth of a proposition and the relation of run time of a type, given those of the levels below it,
 which `Sic.Core.Meaning.Equality.Properties` and `Sic.Core.Meaning.RunTime.Properties` prove on the
 graphs of a level.
+The graph of the nestings of a level has the same properties, at the relations that a nesting
+holds, and agrees with the graph of the types, which `Sic.Core.Meaning.Equality.Nesting` proves.
 The equality of the terms of a universe compares the relations of run time of the level below it,
 so that its transitivity needs their uniqueness, which the induction gives with the partial
 equivalence relations.
@@ -60,6 +64,36 @@ theorem HasEq.unique {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R 
   | .prop k _ h hR, .prop _ _ h' hR' => by
     cases PropRel.level hd (levelRel_prop_iff.1 h) (levelRel_prop_iff.1 h')
     exact fun t u => (hR t u).trans (((levelRel_isPer hd k).prop_unique h h').trans (hR' t u).symm)
+
+/-- `ty(s_n)[λ]` gives a type a partial equivalence relation, symmetric and transitive, when the
+relations that the nesting holds are, in a signature whose names are distinct.
+RFC: `\mathsf{per}_\lambda.\mathsf{symm}`
+RFC: `\mathsf{per}_\lambda.\mathsf{trans}` -/
+theorem levelRel_nest_isPer {sig : Signature} {ι : Interpretation} {n : Nat} {s : Quality}
+    {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} (hd : sig.Distinct)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (hτ : Nest.All (fun x => IsPer x.2) τ) : IsPer F :=
+  NestRel.isPer hd (fun m _ => levelRel_isPer hd m) hτ h
+
+/-- `ty(s_n)[λ]` gives a type a unique equality of its terms: two equalities of a type at a nesting
+relate the same terms, in a signature whose names are distinct.
+RFC: `\mathsf{unique}_\lambda` -/
+theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat} {s s' : Quality}
+    {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' τ A F') : ∀ t u, F t u ↔ F' t u :=
+  NestRel.unique hd (fun m _ => levelRel_isPer hd m) h _ _ h'
+
+/-- `ty(s_n)[λ]` agrees with the graph of the types: when each position of the nesting holds a type
+with the equality of its terms, the equality that it gives a type is the one that the type has
+without position, if it has one, in a signature whose names are distinct.
+RFC: `\mathsf{agree}_\lambda` -/
+theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {s s' : Quality}
+    {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (hτ : Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ)
+    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F') : ∀ t u, F t u ↔ F' t u :=
+  NestRel.agree hd (fun m _ => levelRel_isPer hd m) h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
 distinct. -/
