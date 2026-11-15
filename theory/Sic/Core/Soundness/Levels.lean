@@ -999,7 +999,7 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
         exact .codata hD hq hl' hp rfl hs hκ
-          ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hrec S
+          ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (NestDesRel.levelEquiv ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
   | .codataProp hD hq hl hp hA hκ hn hrec S hS, h, hτ => by
@@ -1011,7 +1011,7 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
         exact .codataProp hD hq hl' hp rfl hκ
-          ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hrec S
+          ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (NestDesRel.levelEquiv ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
 
@@ -1174,7 +1174,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
         exact .codata hD hq hl' hp rfl hκ
-          ((Level.closedValue_subst_equiv hls' _).symm.trans hn) hrec S
+          ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (RunNestDesRel.levelEquiv ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
   | .codataProp hD hq hl hp hA hκ hn, h, hτ => by
@@ -1186,7 +1186,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
         exact .codataProp hD hq hl' hp rfl hκ
-          ((Level.closedValue_subst_equiv hls' _).symm.trans hn)
+          ((Level.closedValue_subst_equiv hls' _) ▸ hn)
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for
 equal ones, have, at nestings, the same relation of run time of the observations by them, at

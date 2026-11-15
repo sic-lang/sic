@@ -25,6 +25,9 @@ module and that the agreement takes as a premise, and the clauses of an instance
 are those of the graph of run time, where the block has no recursive destructor.
 The second reads the equality of the observations of a term from the equality of the term, which
 gives the equality that the graph of run time asks of each observation.
+An instance of a codata type may live below the level of the graph of the nestings that reads it,
+as for the equality, and the graphs of run time of a level relate what those of a level below
+relate, which the first section proves.
 
 ADE have no declared types, and no nesting.
 -/
@@ -35,30 +38,106 @@ namespace Sic.Core
 
 open Sic.Grading
 
-/-- An instance of a codata type in `U_n` has a relation of run time by the clauses of `rt(U_n)`
-alone. -/
+/-! ## The Graph at a Higher Level -/
+
+/-- A type of a field of a sort that `U_m` bounds is one of a sort that `U_n` bounds, at a level
+`n` above `m`, with the same relation of run time. -/
+theorem RunFieldRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program} {m n : Nat}
+    (hmn : m ≤ n) {v : Term 0 []} {R : RunRel}
+    (h : RunFieldRel sig ι P m (fun k _ => levelRel sig ι k) v R) :
+    RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v R := by
+  rcases Nat.eq_or_lt_of_le hmn with rfl | hlt
+  · exact h
+  · cases h with
+    | univ hu => exact .univBelow m hlt (levelRel_run_iff.2 hu)
+    | univBelow k hk hu => exact .univBelow k (Nat.lt_trans hk hlt) hu
+    | prop hu => exact .propBelow m hlt (levelRel_prop_iff.2 hu)
+    | propBelow k hk hu => exact .propBelow k (Nat.lt_trans hk hlt) hu
+
+mutual
+
+/-- A telescope of run time in `U_m` is one in `U_n`, at a level `n` above `m`, with the same
+relation. -/
+theorem RunTelRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program} {m n : Nat}
+    (hmn : m ≤ n) {rs : Nat → Nest RunNestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S : RunFieldsRel} :
+    RunTelRel sig ι P m (fun k _ => levelRel sig ι k) rs Θ S →
+      RunTelRel sig ι P n (fun k _ => levelRel sig ι k) rs Θ S
+  | .nil => .nil
+  | .cons hA hF hR G hG hrs =>
+    .cons hA (hF.levelLe hmn) (hR.levelLe hmn) G (fun a ha => RunTelRel.levelLe hmn (hG a ha)) hrs
+  | .nested hrs hR G hG =>
+    .nested hrs (RunNestRel.levelLe hmn hR) G fun a => RunTelRel.levelLe hmn (hG a)
+termination_by structural h => h
+
+/-- A type that the graph of the nestings of run time reads at the level `m` is read at a level
+`n` above `m`, with the same relation. -/
+theorem RunNestRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program} {m n : Nat}
+    (hmn : m ≤ n) {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
+    RunNestRel sig ι P m (fun k _ => levelRel sig ι k) τ A R →
+      RunNestRel sig ι P n (fun k _ => levelRel sig ι k) τ A R
+  | .plain hA hR => .plain hA (hR.levelLe hmn)
+  | .direct hA => .direct hA
+  | .codata h hq hl hp hA hκ hn hrec S hS =>
+    .codata h hq hl hp hA hκ (Nat.le_trans hn hmn) hrec S (RunNestDesRel.levelLe hmn hS)
+  | .codataProp h hq hl hp hA hκ hn => .codataProp h hq hl hp hA hκ (Nat.le_trans hn hmn)
+termination_by structural h => h
+
+/-- Destructors that the graph of the nestings of run time reads at the level `m` are read at a
+level `n` above `m`, with the same relation. -/
+theorem RunNestDesRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program} {m n : Nat}
+    (hmn : m ≤ n) {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {ns : List Name}
+    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : RunObsRel} :
+    RunNestDesRel sig ι P m (fun k _ => levelRel sig ι k) D @ν ds @θ S →
+      RunNestDesRel sig ι P n (fun k _ => levelRel sig ι k) D @ν ds @θ S
+  | .nil => .nil
+  | .cons hi hν hΘ hRΘ F R hF hR G hG =>
+    .cons hi hν (hΘ.levelLe hmn) (RunTelRel.levelLe hmn hRΘ) F R
+      (fun ts hts => (hF ts hts).levelLe hmn) (fun ts hts => RunNestRel.levelLe hmn (hR ts hts)) G
+      fun f hf => RunNestDesRel.levelLe hmn (hG f hf)
+  | .nested hi hν hΘ hRΘ R hR G hG =>
+    .nested hi hν (hΘ.levelLe hmn) (RunTelRel.levelLe hmn hRΘ) R
+      (fun ts hts => RunNestRel.levelLe hmn (hR ts hts)) G
+      fun f => RunNestDesRel.levelLe hmn (hG f)
+termination_by structural h => h
+
+end
+
+/-- Destructors of run time in `U_m` are of run time in `U_n`, at a level `n` above `m`, with the
+same relation. -/
+theorem RunDesRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program} {m n : Nat}
+    (hmn : m ≤ n) {D : Name} {rs : Nat → Option RunRel} {Γ : Scope} {ns : List Name}
+    {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : RunObsRel} :
+    RunDesRel sig ι P m (fun k _ => levelRel sig ι k) D rs ds @θ S →
+      RunDesRel sig ι P n (fun k _ => levelRel sig ι k) D rs ds @θ S
+  | .nil => .nil
+  | .cons hi hΘ hRΘ F R hB hF hR G hG hrs =>
+    .cons hi (hΘ.levelLe hmn) (hRΘ.levelLe hmn) F R hB
+      (fun ts hts v hv => (hF ts hts v hv).levelLe hmn)
+      (fun ts hts v hv => (hR ts hts v hv).levelLe hmn) G
+      (fun f hf => RunDesRel.levelLe hmn (hG f hf)) hrs
+  | .recursive hi hrs hRΘ G hG =>
+    .recursive hi hrs (hRΘ.levelLe hmn) G fun f => RunDesRel.levelLe hmn (hG f)
+
+/-! ## Instances of Codata Types -/
+
+/-- An instance of a codata type in a universe has a relation of run time by the clauses of
+`rt(U_m)`, at its level `m`, which the level of the field bounds. -/
 theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades)
     (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
-    (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
     {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
-    ∃ R₀, RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R₀ ∧
-      R = R₀.computed sig ι := by
+    ∃ m, m ≤ n ∧ ∃ R₀,
+      RunUnivRel sig ι P m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R₀ ∧
+        R = R₀.computed sig ι := by
   cases hR with
-  | univ hu => exact ⟨_, hu, rfl⟩
-  | univBelow m hm hu =>
-    cases levelRel_run_iff.1 hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' _ hn' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact absurd (hn.symm.trans hn') (by omega)
+  | univ hu => exact ⟨n, Nat.le_refl n, _, hu, rfl⟩
+  | univBelow m hm hu => exact ⟨m, Nat.le_of_lt hm, _, levelRel_run_iff.1 hu, rfl⟩
   | prop hu =>
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -137,7 +216,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
       cases h' with
       | plain hA' hR' =>
         cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
-        obtain ⟨_, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hl hp hκ hn hR'
+        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
         | codata h' _ _ _ hv' _ _ _ hS' =>
@@ -152,7 +231,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
               have hS'' := hS' X _ h.2.1
               simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
               rw [hTn] at hS''
-              exact hS'') H o a) (hTn ▸ hX _ h.2.1 H v a (hTn ▸ hx))⟩
+              exact hS''.levelLe hm) H o a) (hTn ▸ hX _ h.2.1 H v a (hTn ▸ hx))⟩
   | .codataProp _ _ _ _ _ _ _, _, _, _ => fun _ _ _ _ => trivial
 termination_by structural h _ _ _ => h
 
@@ -256,11 +335,11 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
       cases h' with
       | plain hA' hR' =>
         cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
-        obtain ⟨_, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hl hp hκ hn hR'
+        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
         cases hE with
         | plain hA'' hF =>
           cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA''
-          obtain ⟨_, hue, rfl⟩ := FieldRel.codata_type hd h hq hl hp hκ hn hF
+          obtain ⟨m', hm', _, hue, rfl⟩ := FieldRel.codata_type hd h hq hp hκ hF
           cases hu with
           | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
           | codata h' _ _ _ hv' _ _ _ hS' =>
@@ -299,10 +378,10 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
                           N = D ∧ runCorecRel D S H v a ∧ XE N v v) _ hT
                         simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
                         rw [hTn] at hS''
-                        exact hS'') _ _ (by
+                        exact hS''.levelLe hm) _ _ (by
                         have hSE'' := hSE XE _ hT
                         simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hSE''
-                        exact hSE'') H o a hse hs⟩,
+                        exact hSE''.levelLe hm') H o a hse hs⟩,
                   rfl, hx, hxe⟩
   | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq _ hp hA hκ _, hτ, _, h',
       _, _, _ => by

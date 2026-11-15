@@ -449,10 +449,13 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   RFC: `\mathsf{ty}_{\lambda T}` -/
   | direct {s : Quality} {T A : Term 0 []} {R : TermRel} (hA : Term.LevelEquiv T A) :
       NestRel sig ι n below s (.direct (T, R)) A R
-  /-- `(ty_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, none of
-  whose destructors is recursive, and whose destructors are in `U_n` at the arguments `ā`, which
-  have the nestings `λ̄`: its canonical terms are equal by `(eq_d)`, since no relation of the block
-  changes the equality of its destructors.
+  /-- `(ty_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in a universe that
+  `U_n` bounds, none of whose destructors is recursive, and whose destructors are in `U_n` at the
+  arguments `ā`, which have the nestings `λ̄`: its canonical terms are equal by `(eq_d)`, since no
+  relation of the block changes the equality of its destructors.
+  The instance may live below `U_n`, when no result of its destructors holds the parameters whose
+  arguments have positions, and its destructors are then read in `U_n`, which bounds what its own
+  universe bounds.
   The clause reads the destructors of the type alone, and not those of the other types of its block,
   which need not be strictly positive in the parameters whose arguments have positions.
   RFC: `\mathsf{ty}_{\lambda D}` -/
@@ -463,15 +466,15 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as) (hs : s = .type)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
-      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n)
       (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
       (S : ObsRel)
       (hS : NestDesRel sig ι n below .type (Nesting.ofArgs νs)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
       NestRel sig ι n below s (.inst νs) A ((corecRel D S).computed sig ι)
-  /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, none of
-  whose destructors is recursive, and whose destructors are in `Ω_n` at the arguments `ā`, which
-  have the nestings `λ̄`: its truth is `(true_d)`.
+  /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in a universe of
+  propositions that `Ω_n` bounds, none of whose destructors is recursive, and whose destructors are
+  in `Ω_n` at the arguments `ā`, which have the nestings `λ̄`: its truth is `(true_d)`.
   RFC: `\mathsf{ty}_{\lambda D\Omega}` -/
   | codataProp {s : Quality} {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -480,7 +483,7 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
-      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n)
       (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
       (S : ObsRel)
       (hS : NestDesRel sig ι n below .prop (Nesting.ofArgs νs)
