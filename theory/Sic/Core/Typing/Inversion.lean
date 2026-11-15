@@ -1,6 +1,8 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Presuppositions
 
 /-!
 # Inversion
@@ -13,6 +15,9 @@ The proof is by structural recursion on the derivation, through the premise of `
 
 The type of the typing is left out: it is the type that the rule gives or a type equal to it, which
 nothing reads so far.
+
+The type declaration of the premises of `(D)` is the one of the signature that declares the name of
+the instance, since the names of a well-formed signature are distinct.
 
 ADE prove the inversion of each of their rules, with the equality of the type to the one that the
 rule gives.
@@ -92,5 +97,28 @@ where
     | _, _, .recursor .., e => by cases e
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
+
+-- ADE: none.
+/-- An instance of a type of a type declaration of the signature, which has a type, has the
+premises of the rule `(D)` at this type declaration, the only one that declares its name. -/
+theorem HasType.inst_inv_of_mem {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {D : Name}
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
+    {B : Term k Γ} (h : HasType sig ctx (.inst D qs ls ps as) B)
+    (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) :
+    ∃ (ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length)
+        (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
+      sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+        HasInstanceArgs sig ctx as
+          ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
+  obtain ⟨decl', ζ, hΔ, hq, hl, hp, hD', hadm, has⟩ := h.inst_inv
+  have hm : D ∈ decl'.names := by
+    rcases hD'.2 with ⟨T, hT, rfl, -⟩ | ⟨T, hT, rfl, -⟩
+    · exact TypeDeclaration.name_mem_names hT
+    · exact TypeDeclaration.codata_name_mem_names hT
+  have he := (presuppositions.wfCtx (contextPresuppositions.hasType h)).distinct.entry_unique
+    hD'.1 hd (n := D) hm hD
+  injection he with he
+  subst he
+  exact ⟨ζ, hq, hl, hp, hD', hadm, has⟩
 
 end Sic.Core

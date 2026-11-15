@@ -1362,6 +1362,40 @@ theorem InstanceArgs.toSubst_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
   | _, .snoc _ _, _, .zero => rfl
   | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_subst θ as x
 
+/-- A term renamed and then substituted is the term substituted and then renamed, when the
+substitutions give a variable and its image the same term, renamed. -/
+theorem Term.subst_rename_comm_of {Γ Δ Ξ Ψ : Scope} {θ₁ : Subst k Γ Δ} {α₁ : Ren Δ Ξ}
+    {θ₂ : Subst k Ψ Ξ} {α₂ : Ren Γ Ψ}
+    (h : ∀ {a} (x : Var Ξ a), θ₁ (α₁ x) = (θ₂ x).rename (Ren.liftN a.params.length α₂))
+    (t : Term k Ξ) : (t.rename α₁).subst θ₁ = (t.subst θ₂).rename α₂ :=
+  (Term.subst_rename_of (θ' := fun x => θ₁ (α₁ x)) (fun _ => rfl) t).trans
+    (Term.rename_subst_of (fun x => (h x).symm) t).symm
+
+/-- A telescope renamed and then substituted is the telescope substituted and then renamed, when the
+substitutions give a variable and its image the same term, renamed. -/
+theorem Telescope.subst_rename_comm_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter}
+    {θ₁ : Subst k Γ Δ} {α₁ : Ren Δ Ξ} {θ₂ : Subst k Ψ Ξ} {α₂ : Ren Γ Ψ}
+    (h : ∀ {a} (x : Var Ξ a), θ₁ (α₁ x) = (θ₂ x).rename (Ren.liftN a.params.length α₂))
+    (Θ : Telescope k Ξ ps) : (Θ.rename α₁).subst θ₁ = (Θ.subst θ₂).rename α₂ :=
+  (Telescope.subst_rename_of (θ' := fun x => θ₁ (α₁ x)) (fun _ => rfl) Θ).trans
+    (Telescope.rename_subst_of (fun x => (h x).symm) Θ).symm
+
+/-- A sort, at arguments, is the sort. -/
+theorem Term.sort_instantiate {Γ : Scope} (κ : Universe k) :
+    {ps : List Parameter} → (ts : Args k Γ ps) → (Term.sort κ).instantiate ts = .sort κ
+  | [], .nil => rfl
+  | _ :: ps, .cons _ ts => Term.sort_instantiate (ps := ps) κ ts
+
+-- ADE: none.
+/-- `[ā / Δ]` renamed is `[ā[α] / Δ]`: the substitution of the arguments of an instance, renamed by
+`α`, is the substitution of the arguments renamed by `α`, each under the variables of its
+abstraction. -/
+theorem InstanceArgs.toSubst_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
+    {Ψ : Scope} → (as : InstanceArgs k Δ Ψ) → ∀ {a} (x : Var Ψ a),
+      (as.toSubst x).rename (Ren.liftN a.params.length α) = (as.rename α).toSubst x
+  | _, .snoc _ _, _, .zero => rfl
+  | _, .snoc as _, _, .succ x => InstanceArgs.toSubst_rename α as x
+
 /-! ### Identity and Telescopes -/
 
 theorem Subst.lift_id_of {Γ : Scope} {b : Scope.Entry} {θ : Subst k Γ Γ}

@@ -148,6 +148,20 @@ theorem List.ofFn_getFin {α : Type} :
     rw [List.ofFn_succ]
     exact congrArg (a :: ·) (List.ofFn_getFin l rfl)
 
+/-- The first numbered elements of two lists appended are those of the first list. -/
+theorem List.getFin_append_castAdd {α : Type} (l₁ l₂ : List α) {n m : Nat} (h₁ : l₁.length = n)
+    (h : (l₁ ++ l₂).length = n + m) (i : Fin n) :
+    (l₁ ++ l₂).getFin h (i.castAdd m) = l₁.getFin h₁ i := by
+  subst h₁
+  simp [List.getFin]
+
+/-- The last numbered elements of two lists appended are those of the second list. -/
+theorem List.getFin_append_natAdd {α : Type} (l₁ l₂ : List α) {n m : Nat} (h₁ : l₁.length = n)
+    (h₂ : l₂.length = m) (h : (l₁ ++ l₂).length = n + m) (i : Fin m) :
+    (l₁ ++ l₂).getFin h (i.natAdd n) = l₂.getFin h₂ i := by
+  subst h₁ h₂
+  simp [List.getFin]
+
 /-- An element of a list whose images by `f` are distinct is the first one with its image. -/
 theorem List.find?_of_nodup_map {α β : Type} [BEq β] [LawfulBEq β] {f : α → β} :
     {l : List α} → (l.map f).Nodup → {a : α} → a ∈ l → l.find? (f · == f a) = some a

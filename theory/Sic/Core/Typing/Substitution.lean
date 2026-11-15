@@ -23,6 +23,10 @@ The substitution of the first order gives each second-order variable a variable,
 application of it stays one, whose type the rule `(var_X)` gives.
 The substitutions of the second order, which give abstractions to these variables, are not typed,
 since no rule needs them yet.
+
+The instantiation of the variables of a telescope by arguments of it is the substitution of each
+argument in turn, under the variables after its own, so that a term of a type in a context extended
+by a telescope, at arguments of the telescope, is a term of the type at these arguments.
 -/
 
 @[expose] public section
@@ -247,5 +251,41 @@ theorem stableUnderSubstitution : StableUnderSubstitution :=
     fun h hσ => by
       rw [Telescope.subst₀_eq_subst, Telescope.subst₀_eq_subst]
       exact TypedSubst.liftable.stable.eqTelescope h (.base ⟨_, hσ, rfl⟩)⟩
+
+/-! ## Instantiation of a Telescope -/
+
+-- ADE: `subst-⊢∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`, at a substitution
+-- lifted.
+/-- A term of a type, both in a context extended by a variable and then by a telescope, in which a
+term of the type of the variable is substituted for it, is a term of the type substituted. -/
+theorem HasType.subst₀_single_liftN {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {A t : Term k Γ} {Θ : Telescope k (.var :: Γ) ps}
+    {B T : Term k (Scope.extend (.var :: Γ) ps.length)}
+    (h : HasType sig ((ctx.var A).append Θ) B T) (ht : HasType sig ctx t A) :
+    HasType sig (ctx.append (Θ.subst₀ (Subst₀.single t)))
+      (B.subst₀ (Subst₀.liftN ps.length (Subst₀.single t)))
+      (T.subst₀ (Subst₀.liftN ps.length (Subst₀.single t))) := by
+  have hθ := Subst.Lifted.append (Base := @TypedSubst.Base sig k) Θ
+    (.base ⟨_, TypedSubst.single ht, rfl⟩)
+  rw [Telescope.subst₀_eq_subst, Term.subst₀_liftN_eq_subst, Term.subst₀_liftN_eq_subst]
+  exact TypedSubst.liftable.stable.hasType h hθ
+
+-- ADE: `substTerm`, in `Definition/Typed/Substitution/Primitive.agda`, for one variable.
+/-- A term of a type, both in a context extended by a telescope, at arguments of the telescope, is a
+term of the type at these arguments. -/
+theorem HasType.instantiate {Γ : Scope} :
+    {ps : List Parameter} → {ctx : Context k Γ} → {Θ : Telescope k Γ ps} → {ts : Args k Γ ps} →
+      {B T : Term k (Γ.extend ps.length)} → HasType sig (ctx.append Θ) B T →
+        HasArgs sig ctx ts Θ → HasType sig ctx (B.instantiate ts) (T.instantiate ts)
+  | [], _, .nil, .nil, _, _, h, _ => h
+  | _ :: ps, _, .cons _ _ _ _, .cons _ _, _, _, h, .cons ht hts =>
+    HasType.instantiate (ps := ps) (HasType.subst₀_single_liftN h ht) hts
+
+/-- A type in a context extended by a telescope, at arguments of the telescope, is a type. -/
+theorem WfType.instantiate {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+    {Θ : Telescope k Γ ps} {ts : Args k Γ ps} {B : Term k (Γ.extend ps.length)}
+    (hts : HasArgs sig ctx ts Θ) : WfType sig (ctx.append Θ) B → WfType sig ctx (B.instantiate ts)
+  | .univType h => .univType (Term.sort_instantiate _ ts ▸ h.instantiate hts)
+  | .propType h => .propType (Term.sort_instantiate _ ts ▸ h.instantiate hts)
 
 end Sic.Core
