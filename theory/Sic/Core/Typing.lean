@@ -1012,8 +1012,9 @@ declares that it is; the constructors of each type have distinct names.
 The fields may be recursive, as the judgment of the fields allows.
 A block of codata types likewise, with the destructors of each type in place of its constructors,
 which may be recursive, as the judgment of the destructors allows.
-The strict positivity reads the parameters that the types of the signature declare, and those that
-the types of the block itself declare, for its recursive fields and destructors.
+The strict positivity reads the parameters that the types of the block itself declare, for its
+recursive fields and destructors, and those that the codata types of the signature without recursive
+destructor declare.
 -/
 inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
   /-- A block of data types.
@@ -1025,7 +1026,7 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
         WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
       (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ {e : Scope.Entry}
         (x : Var decl.scope e), T.positive x.level → ∀ c ∈ T.constructors,
-          (c.fields ι).Positive (Signature.Positive (.typeDeclaration decl :: sig)) x)
+          (c.fields ι).Positive (sig.PositiveIn decl) x)
       (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
       WfTypeDeclaration sig decl
   /-- A block of codata types.
@@ -1037,7 +1038,7 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
         WfDestructors sig decl ι (.identity decl.scope) (decl.params ι) (T.body ι) (decl.sort ι))
       (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ {e : Scope.Entry}
         (x : Var decl.scope e), T.positive x.level →
-          (T.body ι).Positive (Signature.Positive (.typeDeclaration decl :: sig)) x)
+          (T.body ι).Positive (sig.PositiveIn decl) x)
       (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
       WfTypeDeclaration sig decl
 

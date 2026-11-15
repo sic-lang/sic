@@ -12,8 +12,12 @@ Each type of a type declaration declares the parameters in which it is strictly 
 formation of the declaration checks on its fields or on its destructors, as it checks the grades
 with which the type uses its parameters.
 
-The judgment reads the syntax alone: the positions that the declared types of the signature and of
-the block declare, and no typing, so that the meaning of the instances may use it.
+The judgment reads the syntax alone: the positions that the types of the block declare, and those
+that the codata types of the signature without recursive destructor declare, and no typing, so that
+the meaning of the instances may use it.
+A type declared before is read only if it is such a codata type, the types through which the
+meaning of a nested field goes, and so are the types below which its own destructors nest a
+parameter, since the strict positivity of their declaration read the same types.
 
 The RFC names the variables, and says that a variable does not occur in a term; with de Bruijn
 indices, a term in which a variable does not occur is a term of the scope without this variable,
@@ -136,21 +140,33 @@ inductive Telescope.Positive (marks : Name → Nat → Prop) :
       Telescope.Positive marks x (.cons q p A Θ)
 
 -- ADE: none.
-/-- `Σ ⊢ d̄ ⊕ X`: the destructors `d̄` of a codata type are strictly positive in the variable `X`,
+/-- `Σ; 𝒟 ⊢ d̄ ⊕ X`: the destructors `d̄` of a codata type are strictly positive in the variable `X`,
 which does not occur in the arguments of any of them, and in which the result of each of them is
-strictly positive. -/
+strictly positive; no destructor after a destructor in whose result `X` occurs depends on it, as
+none depends on a recursive destructor, so that it does not extend their scope. -/
 inductive Destructors.Positive (marks : Name → Nat → Prop) :
     {Γ : Scope} → {e : Scope.Entry} → Var Γ e → {ns : List Name} → Destructors k Γ ns → Prop where
   /-- No destructor.
   RFC: `\oplus_{\bar d\varepsilon}` -/
   | nil {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} : Destructors.Positive marks x .nil
-  /-- A destructor, followed by the destructors after it.
+  /-- A destructor whose result is strictly positive in the variable, followed by the destructors
+  after it, which do not depend on it.
   RFC: `\oplus_{\bar d|}` -/
   | cons {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Γ ps}
       {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
-      {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} (hΘ : Θ.Avoids x)
+      {ds : Destructors k Γ ns} (hΘ : Θ.Avoids x)
       (hB : Term.Positive marks (x.weakenN ps.length) B)
+      (hds : Destructors.Positive marks x ds) :
+      Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken))
+  /-- A destructor in whose result the variable does not occur, followed by the destructors after
+  it, which may depend on it.
+  RFC: `\oplus_{\bar d\notin}` -/
+  | absent {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Γ ps}
+      {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+      {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} (hΘ : Θ.Avoids x)
+      (hB : B.Avoids (x.weakenN ps.length))
       (hds : Destructors.Positive marks (.succ x) ds) :
       Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ ds)
 
@@ -163,10 +179,15 @@ def TypeDeclaration.Positive (decl : TypeDeclaration) (D : Name) (i : Nat) : Pro
     ∃ T ∈ decl.codataTypes, T.name = D ∧ T.positive i
 
 -- ADE: none.
-/-- `D ⊕ X ∈ Σ`: a type declaration of the signature declares that its type `D` is strictly
-positive in its parameter at the position `i`.
-RFC: `\in_\oplus` -/
-def Signature.Positive (sig : Signature) (D : Name) (i : Nat) : Prop :=
-  ∃ decl, .typeDeclaration decl ∈ sig ∧ decl.Positive D i
+/-- `D ⊕ X ∈ Σ; 𝒟`: the strict positivity of the block `𝒟` in the signature `Σ` reads that the type
+`D` is strictly positive in its parameter at the position `i`: a type of the block declares it,
+for its recursive fields and destructors, or a codata type of the signature does, none of whose
+destructors is recursive, at any instance, below which the types of a block may be nested.
+RFC: `\in_{\oplus\mathcal{D}}` -/
+def Signature.PositiveIn (sig : Signature) (decl : TypeDeclaration) (D : Name) (i : Nat) : Prop :=
+  decl.Positive D i ∨
+    ∃ (decl' : TypeDeclaration) (T : CodataType decl'.sorts decl'.grades decl'.levels decl'.scope),
+      sig.HasCodataType D decl' T ∧ T.positive i ∧
+        ∀ I, ∀ r ∈ (T.body I).recursion decl'.names, r = none
 
 end Sic.Core
