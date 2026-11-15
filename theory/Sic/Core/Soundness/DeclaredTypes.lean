@@ -714,7 +714,6 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         as₁.toSubst, Rf D))
       (g := fun D => (.inst D qs ls ps as₁, Rf D)) (h := fun D => (.inst D qs ls ps as₁, Rf D))
       (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₁ D, rfl⟩) _)
-    (fun _ => Nest.ofOption_ne_inst _)
   have h₂' := hn ▸ TelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
     (fun _ => Nest.ofOption_rel₃
       (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
@@ -723,7 +722,6 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         as₂.toSubst, Rf D))
       (g := fun D => (.inst D qs ls ps as₂, Rf D)) (h := fun D => (.inst D qs ls ps as₂, Rf D))
       (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₂ D, rfl⟩) _)
-    (fun _ => Nest.ofOption_ne_inst _)
   have hS : S Rf c = S' := funext fun ts => funext fun us => propext
     ⟨fun ⟨_, h', hs⟩ => (TelRel.unique hd ih h' _ _ h₁' ts us).1 hs, fun hs => ⟨S', h₁', hs⟩⟩
   rw [hS]
@@ -1015,7 +1013,6 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         (g := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
         (h := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
         (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₁ D, rfl⟩) _)
-      (fun _ => Nest.ofOption_ne_inst _)
     have h₂' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
       (fun _ => Nest.ofOption_rel₃
         (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
@@ -1025,7 +1022,6 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         (g := fun D => (.inst D qs ls ps as₂, (X D).computed sig ι))
         (h := fun D => (.inst D qs ls ps as₂, (X D).computed sig ι))
         (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₂ D, rfl⟩) _)
-      (fun _ => Nest.ofOption_ne_inst _)
     have hSS : S X c = S' := funext fun H => funext fun ts => funext fun bs => propext
       ⟨fun ⟨_, h', hs⟩ => (RunTelRel.congr hd ihm ih h' _ _ h₁'
           (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts bs).1 hs,

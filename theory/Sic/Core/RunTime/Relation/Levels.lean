@@ -6,6 +6,7 @@ import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.Soundness.Levels
+import Sic.Core.Syntax.Signature
 
 /-!
 # Levels of the Relation of Run Time
@@ -130,8 +131,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         (fun _ => Nest.ofOption_rel₃
           (r := fun (x y _ : RunNestLeaf) => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' →
             y.2 H t' a)
-          (fun D' H _ _ _ => RunRel.computed_levelEquiv (hXY D' H)) _)
-        (fun _ => Nest.ofOption_ne_inst _) H
+          (fun D' H _ _ _ => RunRel.computed_levelEquiv (hXY D' H)) _) H
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
       fun X Y hXY T hT c hc H => RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m)
@@ -164,8 +164,7 @@ termination_by structural h => h
 
 /-- The relation of run time of the terms of the fields of a telescope relates terms whose levels
 change for equal ones to the addresses that another relation of the same telescope relates the terms
-to, at positions whose relations do so.
-The positions are those of recursive fields only, as the fields of a constructor have today. -/
+to, at positions whose relations do so. -/
 theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.LevelInvariant ((levelRel sig ι m).run P))
     {rs₁ : Nat → Nest RunNestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
@@ -175,13 +174,12 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs₂ Θ S₂ →
         (∀ i, Nest.Rel (fun x y => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' → y.2 H t' a)
           (rs₁ i) (rs₂ i)) →
-        (∀ i νs, rs₁ i ≠ .inst νs) →
         ∀ H ts ts' as, S₁ H ts as → Terms.LevelEquiv ts ts' → S₂ H ts' as
-  | .nil, _, _, h', _, _ => by
+  | .nil, _, _, h', _ => by
     cases h'
     exact fun _ ts ts' as h hts => match ts, ts', as, h, hts with
       | .nil, .nil, [], _, _ => trivial
-  | .cons hA hF hR _ hG hrs, _, _, h', hRs, hni => by
+  | .cons hA hF hR _ hG hrs, _, _, h', hRs => by
     cases h' with
     | cons hA' hF' hR' _ hG' _ =>
       cases Computesι.det hd hA hA'
@@ -196,31 +194,168 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         fun t t' _ ⟨htt, _⟩ ht => RunTelRel.rel_levelEquiv hd ih (hG t htt) _ _
           (RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hG' t' (hFt t t' htt ht))
             ((Telescope.LevelEquiv.refl _).subst₀ (Subst₀.LevelEquiv.single ht.symm))
-            (fun _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
-            (fun i => ((hRs (i + 1)).ne_inst (hni (i + 1))).2))
-          (fun i => hRs (i + 1)) (fun i => hni (i + 1)) H
+            (fun _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
+          (fun i => hRs (i + 1)) H
     | nested hrs' _ _ _ => exact absurd ((hRs 0).eq_plain.1.2 hrs) hrs'
-  | .nested hrs hR _ hG, rs₂, _, h', hRs, hni => by
+  | .nested hrs hR _ hG, _, _, h', hRs => by
     cases h' with
     | cons _ _ _ _ _ hrs' => exact absurd ((hRs 0).eq_plain.1.1 hrs') hrs
     | nested hrs' hR' _ hG' =>
-      have hrest := fun t => RunTelRel.rel_levelEquiv hd ih (hG t) _ _ (hG' t)
-        (fun i => hRs (i + 1)) (fun i => hni (i + 1))
-      have h0 := hRs 0
-      have hn0 := hni 0
-      generalize rs₂ 0 = τ₂ at hR' h0
-      generalize rs₁ 0 = τ₁ at hrs hR h0 hn0
-      cases hR with
-      | plain _ _ => exact absurd rfl hrs
-      | direct _ =>
-        cases h0 with
-        | direct hr =>
-          cases hR' with
-          | direct _ =>
-            exact fun H => RunFieldsRel.cons_levelEquiv
-              (fun t t' a h ht hp => hr H t t' a (h hp) ht) fun t _ _ _ _ => hrest t H
-      | codata => exact absurd rfl (hn0 _)
-      | codataProp => exact absurd rfl (hn0 _)
+      exact fun H => RunFieldsRel.cons_levelEquiv
+        (fun t t' a h ht hp =>
+          RunNestRel.rel_levelEquiv hd ih hR _ _ hR' (hRs 0) H t t' a (h hp) ht)
+        fun t _ _ _ _ => RunTelRel.rel_levelEquiv hd ih (hG t) _ _ (hG' t)
+          (fun i => hRs (i + 1)) H
+termination_by structural h _ _ _ _ => h
+
+/-- The relation of run time that the graph of the nestings gives the terms of a type relates a term
+whose levels change for equal ones to the addresses that another relation of the same type relates
+the term to, at positions whose relations do so. -/
+theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.LevelInvariant ((levelRel sig ι m).run P))
+    {τ₁ : Nest RunNestLeaf} {A : Term 0 []} {R₁ : RunRel} :
+    RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₁ A R₁ →
+      ∀ (τ₂ : Nest RunNestLeaf) (R₂ : RunRel),
+        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₂ A R₂ →
+        Nest.Rel (fun x y => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' → y.2 H t' a) τ₁ τ₂ →
+        ∀ H t t' a, R₁ H t a → Term.LevelEquiv t t' → R₂ H t' a
+  | .plain hA hR, _, _, h', hτ => by
+    cases hτ
+    cases h' with
+    | plain hA' hR' =>
+      cases Computesι.det hd hA hA'
+      have hRR := RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m)
+        (fun m _ => levelRel_run_unique hd m) hR _ hR'
+      exact fun H t t' a h ht => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR h ht)
+  | .direct _, _, _, h', hτ => by
+    cases hτ with
+    | direct hr =>
+      cases h' with
+      | direct _ => exact hr
+  | .codata hD _ _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
+    cases hτ with
+    | inst hνs =>
+      cases h' with
+      | codata hD' _ _ _ hA' _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hDD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
+        cases hT
+        cases has
+        refine fun H _ _ _ => RunRel.computed_levelEquiv fun v v' a hv hvv => ?_
+        obtain ⟨o, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩, ho⟩ := hv
+        cases hvv with
+        | corec _ _ _ _ hl has hss hSs hgs =>
+          refine ⟨_, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩,
+            RunNestDesRel.rel_levelEquiv hd ih hS _ _ hS' (Nesting.ofArgs_rel₃ hνs) H _ _ a ho
+              fun d _ => ?_⟩
+          exact .obs _ _ _ d hl (has.rename _)
+            (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _)
+      | codataProp hD' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hDD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp hD _ _ _ hA hκ _, _, _, h', hτ => by
+    cases hτ with
+    | inst hνs =>
+      cases h' with
+      | codata hD' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hDD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp => exact fun _ _ _ _ _ _ => trivial
+termination_by structural h _ _ _ _ => h
+
+/-- The relation of run time of the observations by destructors read at nestings relates
+observations whose levels change for equal ones to the addresses that another relation of the same
+destructors relates the observations to, at positions whose relations do so. -/
+theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Program}
+    {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → RunLevelRel.LevelInvariant ((levelRel sig ι m).run P)) {D : Name}
+    {Γ : Scope} {ν₁ : Nesting RunNestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns}
+    {θ : Subst 0 [] Γ} {S₁ : RunObsRel} :
+    RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₁ ds @θ S₁ →
+      ∀ (ν₂ : Nesting RunNestLeaf Γ) (S₂ : RunObsRel),
+        RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₂ ds @θ S₂ →
+        Nesting.Rel (fun x y => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' → y.2 H t' a)
+          @ν₁ @ν₂ →
+        ∀ H o o' a, S₁ H o a → (∀ d ps, Term.LevelEquiv (o d ps) (o' d ps)) → S₂ H o' a
+  | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ _ _ _ => trivial
+  | .cons (d := d) (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ
+      hRΘ F R hF hR _ hG, _, _, h', hRs => by
+    have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
+      fun m _ => levelRel_run_unique hd m
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
+    cases h' with
+    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' =>
+      obtain rfl := Option.some.inj (hi.symm.trans hi')
+      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
+          AbstractionRel (ps := ps) SΘ F f' f' :=
+        fun _ _ h ef ts us hts =>
+          have hts' := hSΘp.trans hts (hSΘp.symm hts)
+          NestRel.rel_levelEquiv hd (fun m _ => levelRel_relInvariant hd m) (hF ts hts') _ _ _
+            (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
+            (ef.subst (Subst.LevelEquiv.refl _))
+      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
+      have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
+        fun H ts bs hts =>
+          RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
+        (f := f)
+        (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
+          have hts' := hfields H ts bs hts
+          RunNestRel.unique hd ihm ihu (hR ts hts') _ (hR' ts ((hSS _ _).1 hts'))
+      have hRinv : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → (R ts.terms).LevelInvariant :=
+        fun H ts bs hts =>
+          have hts' := hfields H ts bs hts
+          fun h ht => RunNestRel.rel_levelEquiv hd ih (hR ts hts') _ _ (hR ts hts') .plain _ _ _ _
+            h ht
+      exact fun H o o' a ⟨h₁, h₂, h₃⟩ e =>
+        have h₁' := hE _ _ h₁ (e d ps)
+        ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
+          RunNestDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
+            (RunNestDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+              (hG' _ ((hEE _ _).1 h₁')) (Destructors.LevelEquiv.refl _)
+              (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm)
+              (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
+            (Nesting.lift_rel₃ hRs) H o o' a h₃ e⟩
+    | nested _ hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (d := d) (ps := ps) (B := B) (SΘ := SΘ) (RΘ := RΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h',
+      hRs => by
+    have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
+      fun m _ => levelRel_run_unique hd m
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
+    cases h' with
+    | cons _ hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested hi' _ hΘ' hRΘ' R' hR' _ hG' =>
+      obtain rfl := Option.some.inj (hi.symm.trans hi')
+      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
+      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
+      have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
+        fun H ts bs hts =>
+          RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+      exact fun H o o' a ⟨h₁, h₂⟩ e =>
+        ⟨fun hp H₁ hH₁ ts bs hts ϖ =>
+          have hts' := (hRΘΘ _ _ _).2 hts
+          have htt := hfields _ ts bs hts'
+          have ⟨w, H₂, Rr, he, hw⟩ := h₁ hp H₁ hH₁ ts bs hts' ϖ
+          ⟨w, H₂, Rr, he, RunNestRel.rel_levelEquiv hd ih (hR ts htt) _ _
+            (hR' ts ((hSS _ _).1 htt)) hB _ _ _ _ hw ((e d ps).subst (Subst.LevelEquiv.refl _))⟩,
+          RunNestDesRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _
+            (hG' (.sort ⟨.type, .zero⟩)) (Nesting.lift_rel₃ hRs) H o o' a h₂ e⟩
 termination_by structural h _ _ _ _ => h
 
 /-- The relation of run time of the observations by destructors relates observations whose levels

@@ -364,7 +364,6 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (g := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
         (h := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
         (fun D' => ⟨decl.blockInstance_atLevels_subst hq hl hp as D', rfl⟩) _)
-      (fun _ => Nest.ofOption_ne_inst _)
     -- The recursive fields are the instances of the block, whose terms `(®_μ)` relates.
     have hrec : ∀ j (x : RunNestLeaf), Nest.ofOption
           (((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j).map fun D' =>
@@ -464,7 +463,6 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (g := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
       (h := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
       (fun D' => ⟨decl.blockInstance_atLevels_subst hq hl hp as D', rfl⟩) _)
-    (fun _ => Nest.ofOption_ne_inst _)
   have hS' := (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
     (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 h
   -- The recursive fields are the instances of the block, whose terms `(®_μ)` relates.
