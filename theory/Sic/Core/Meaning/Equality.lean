@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Evaluation
 public import Sic.Core.Meaning.Interpretation
+public import Sic.Core.Nesting
 public import Sic.Core.Substitution.Closed
 
 /-!
@@ -36,6 +37,11 @@ to its body, so that the sorts and the instances are related by the values of th
 Each level also gives each of its types a relation of run time, which `Sic.Core.Meaning.RunTime`
 defines on the graph of the same level, so that the relations of a level, `LevelRel`, gather the
 three of them.
+
+A type below which the types of a block are nested, such as a type of functions to a type of the
+block, has no equality before the block does: its equality is given from the relations of these
+types, by the graph of the nestings, which follows the nesting of the type, read once on the
+declaration, and takes the given relations at its positions.
 -/
 
 @[expose] public section
@@ -55,6 +61,10 @@ abbrev FieldsRel : Type := Terms 0 [] → Terms 0 [] → Prop
 /-- A relation of run time, between a closed term of the source and the address of a value in a
 heap. -/
 abbrev RunRel : Type := Heap → Term 0 [] → Nat → Prop
+
+/-- The closed instance of a type of a block and the relation given for its terms, which a nesting
+holds at each of its positions. -/
+abbrev NestLeaf : Type := Term 0 [] × TermRel
 
 /-- The relations of the sorts of one level `n`, given by their graphs: the equality of the terms of
 its types, the truth of its propositions and the relations of run time of its types. -/
@@ -415,6 +425,103 @@ inductive FieldRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Le
   /-- A proposition of `Ω_m`, for `m < n`. -/
   | propBelow {s : Quality} {v : Term 0 []} {b : Prop} (m : Nat) (hm : m < n) (h : (below m hm).prop v b) :
       FieldRel sig ι n below s v fun _ _ => b
+
+-- ADE: none.
+/--
+`ty(s_n)[λ]`: the closed type `A`, whose nesting is `λ`, is a type of a sort that the sort of the
+quality `s` at the level `n` bounds, whose closed terms are equal by `F`, where the nesting gives,
+at each of its positions, the closed instance of a type of a block and the relation of its terms,
+given rather than computed.
+-/
+inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Quality → Nest NestLeaf → Term 0 [] → TermRel → Prop where
+  /-- `(ty_λ⊥)`: a type without position, which computes to a type of a sort that `s_n` bounds.
+  RFC: `\mathsf{ty}_{\lambda\bot}` -/
+  | plain {s : Quality} {A v : Term 0 []} {F : TermRel} (hA : Computesι sig ι A v)
+      (hF : FieldRel sig ι n below s v F) : NestRel sig ι n below s .plain A F
+  /-- `(ty_λT)`: the instance `T` of a type of the block, whose terms are equal by the relation `R`
+  that the nesting gives it.
+  RFC: `\mathsf{ty}_{\lambda T}` -/
+  | direct {s : Quality} {T : Term 0 []} {R : TermRel} :
+      NestRel sig ι n below s (.direct (T, R)) T R
+  /-- `(ty_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, whose
+  block has no recursive destructor and has types whose destructors are in `U_n` at the arguments
+  `ā`, which have the nestings `λ̄`, and whose canonical terms are equal by `(eq_ν)`.
+  RFC: `\mathsf{ty}_{\lambda D}` -/
+  | codata {s : Quality} {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
+      {A : Term 0 []} {νs : List (Nest NestLeaf)}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as) (hs : s = .type)
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hrec : ∀ T' ∈ decl.codataTypes,
+        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
+      (hS : ∀ T' ∈ decl.codataTypes,
+        NestDesRel sig ι n below .type (Nesting.ofArgs νs)
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
+      NestRel sig ι n below s (.inst νs) A
+        ((CodataType.blockRel decl.codataTypes (fun _ => S) D).computed sig ι)
+  /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, whose
+  block has no recursive destructor and has types whose destructors are in `Ω_n` at the arguments
+  `ā`, which have the nestings `λ̄`, and whose truth is `(true_ν)`.
+  RFC: `\mathsf{ty}_{\lambda D\Omega}` -/
+  | codataProp {s : Quality} {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
+      {A : Term 0 []} {νs : List (Nest NestLeaf)}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hrec : ∀ T' ∈ decl.codataTypes,
+        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
+      (hS : ∀ T' ∈ decl.codataTypes,
+        NestDesRel sig ι n below .prop (Nesting.ofArgs νs)
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
+      NestRel sig ι n below s (.inst νs) A
+        fun _ _ => CodataType.blockTruth decl.codataTypes (fun _ => S) D
+
+-- ADE: none.
+/--
+`ty(s_n)[Λ]` for the destructors: the destructors `d̄`, none of which is recursive, at the closed
+substitution `θ` of their scope, are in the sort of the quality `s` at the level `n`, and the
+abstractions for them are equal by `S`, where `ν` gives the nestings of the variables of their
+scope, those of the arguments of the parameters: the result of each destructor is read by the graph
+of the nestings, at its nesting.
+-/
+inductive NestDesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
+    Quality → {Γ : Scope} → Nesting NestLeaf Γ → {ns : List Name} → Destructors 0 Γ ns →
+      Subst 0 [] Γ → ObsRel → Prop where
+  /-- `(ty_λε)`: no destructor.
+  RFC: `\mathsf{ty}_{\lambda\varepsilon}` -/
+  | nil {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {θ : Subst 0 [] Γ} :
+      NestDesRel sig ι n below s @ν .nil @θ fun _ _ => True
+  /-- `(ty_λ|)`: a destructor `d : (Θ ⊢ B ◀ ψ)`, whose arguments `Θ[θ]` are a telescope in `U_n`
+  with the equality `SΘ`, whose result type `B[θ, t̄]` is, at equal arguments `t̄` and at the nesting
+  of `B`, a type of a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same for
+  equal arguments, and the destructors after it, which are for each abstraction `f` for `d` with
+  the equality `G f`, the same for equal abstractions.
+  RFC: `\mathsf{ty}_{\lambda|}` -/
+  | cons {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+      {ς : Grade}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
+      (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        NestRel sig ι n below s (B.nest (fun _ => none) (Nesting.liftN ps.length @ν))
+          (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
+      (hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u)
+      (G : Term 0 (Scope.extend [] ps.length) → ObsRel)
+      (hG : ∀ f, AbstractionRel SΘ F f f →
+        NestDesRel sig ι n below s (Nesting.lift @ν) ds (Subst.snoc θ f) (G f))
+      (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
+      NestDesRel sig ι n below s @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun o₁ o₂ =>
+        AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂
 
 end
 

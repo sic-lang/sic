@@ -22,6 +22,10 @@ name = "Positivity"
 modules = ["Sic.Core.Positivity"]
 
 [[group]]
+name = "Nesting"
+modules = ["Sic.Core.Nesting"]
+
+[[group]]
 name = "Lifting"
 modules = ["Sic.Core.Lifting"]
 
@@ -112,6 +116,18 @@ allowed = [
   "Sic.Core.Level",
   "Sic.Core.Positivity",
   "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
+]
+
+[[rule]]
+reason = "the nesting reads the instances of the syntax alone, and no judgment, so that the meaning may use it"
+modules = ["Sic.Core.Nesting"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Nesting",
   "Sic.Core.Syntax",
   "Sic.Core.Universe",
   "Sic.Grading",
