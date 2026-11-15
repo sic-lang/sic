@@ -433,6 +433,28 @@ theorem corecRel_mono {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂
     ∀ v w, corecRel D S v w → corecRel D S' v w :=
   fun _ _ ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₁, o₂, hv, hw, h _ _ hS⟩
 
+/-- `(eq_d)` relates in the other order the terms that it relates for an equality of the
+destructors whose related abstractions the other equality relates in the other order. -/
+theorem corecRel_symm {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ → S' o₂ o₁) :
+    ∀ v w, corecRel D S v w → corecRel D S' w v :=
+  fun _ _ ⟨o₁, o₂, hv, hw, hS⟩ => ⟨o₂, o₁, hw, hv, h _ _ hS⟩
+
+/-- `(eq_d)` relates the terms that it relates in a chain for two equalities of the destructors,
+when the third equality relates the abstractions that they relate in a chain. -/
+theorem corecRel_trans {D : Name} {S S' S'' : ObsRel}
+    (h : ∀ o₁ o₂ o₃, S o₁ o₂ → S' o₂ o₃ → S'' o₁ o₃) :
+    ∀ u v w, corecRel D S u v → corecRel D S' v w → corecRel D S'' u w :=
+  fun _ _ _ ⟨o₁, o₂, hu, hv, hS⟩ ⟨o₂', o₃, hv', hw, hS'⟩ => by
+    cases hv.unique hv'
+    exact ⟨o₁, o₃, hu, hw, h _ _ _ hS hS'⟩
+
+/-- `(eq_d)` relates the same terms for equalities of the destructors that relate the same
+abstractions. -/
+theorem corecRel_congr {D : Name} {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂) :
+    ∀ v w, corecRel D S v w ↔ corecRel D S' v w :=
+  fun _ _ => ⟨corecRel_mono (fun o₁ o₂ => (h o₁ o₂).1) _ _,
+    corecRel_mono (fun o₁ o₂ => (h o₁ o₂).2) _ _⟩
+
 /-- `(true_d)` holds when it holds for an equality of the destructors that relates fewer
 abstractions. -/
 theorem ObsRel.truth_mono {S S' : ObsRel} (h : ∀ o₁ o₂, S o₁ o₂ → S' o₁ o₂) :
@@ -583,6 +605,30 @@ theorem CodataType.blockTruth_congr {j g k : Nat} {Δ : Scope} {Ts : List (Codat
     CodataType.blockTruth Ts S D ↔ CodataType.blockTruth Ts S' D :=
   ⟨CodataType.blockTruth_mono (fun B T hT => ObsRel.truth_mono fun o₁ o₂ => (h B T hT o₁ o₂).1) D,
     CodataType.blockTruth_mono (fun B T hT => ObsRel.truth_mono fun o₁ o₂ => (h B T hT o₁ o₂).2) D⟩
+
+/-- `(eq_ν)` is `(eq_d)` for a type whose equality of the destructors reads no relation of the block,
+as that of a type without recursive destructor: the types of the block have distinct names. -/
+theorem CodataType.blockRel_iff_corecRel {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S : (Name → TermRel) → CodataType j g k Δ → ObsRel} (hn : (Ts.map (·.name)).Nodup)
+    {T : CodataType j g k Δ} (hT : T ∈ Ts) {S₀ : ObsRel}
+    (h : ∀ X o₁ o₂, S X T o₁ o₂ ↔ S₀ o₁ o₂) :
+    ∀ v w, CodataType.blockRel Ts S T.name v w ↔ corecRel T.name S₀ v w :=
+  fun v w => ⟨fun ⟨X, hX, hv⟩ => corecRel_mono (fun o₁ o₂ => (h X o₁ o₂).1) _ _ (hX T hT v w hv),
+    fun hc => ⟨fun D a b => D = T.name ∧ corecRel T.name S₀ a b, fun T' hT' a b ⟨hD, hab⟩ => by
+      cases List.eq_of_nodup_map hn hT hT' hD.symm
+      exact corecRel_mono (fun o₁ o₂ => (h _ o₁ o₂).2) _ _ hab, rfl, hc⟩⟩
+
+/-- `(true_ν)` is `(true_d)` for a type whose equality of the destructors reads no truth of the
+block, as that of a type without recursive destructor. -/
+theorem CodataType.blockTruth_iff_truth {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
+    {S : (Name → Prop) → CodataType j g k Δ → ObsRel} (hn : (Ts.map (·.name)).Nodup)
+    {T : CodataType j g k Δ} (hT : T ∈ Ts) {S₀ : ObsRel}
+    (h : ∀ B o₁ o₂, S B T o₁ o₂ ↔ S₀ o₁ o₂) :
+    CodataType.blockTruth Ts S T.name ↔ S₀.truth :=
+  ⟨fun ⟨B, hB, hb⟩ => ObsRel.truth_mono (fun o₁ o₂ => (h B o₁ o₂).1) (hB T hT hb),
+    fun hc => ⟨fun D => D = T.name ∧ S₀.truth, fun T' hT' ⟨hD, hb⟩ => by
+      cases List.eq_of_nodup_map hn hT hT' hD.symm
+      exact ObsRel.truth_mono (fun o₁ o₂ => (h _ o₁ o₂).2) hb, rfl, hc⟩⟩
 
 /-! ### A Type Has One Level and One Sort -/
 
@@ -1234,9 +1280,8 @@ theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun _ _ => TermRel.computed_mono fun _ _ =>
-          CodataType.blockRel_mono (fun _ T' hT' =>
-            NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+        exact fun _ _ => TermRel.computed_mono
+          (corecRel_mono (NestDesRel.mono hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1260,9 +1305,8 @@ theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun _ _ => CodataType.blockTruth_mono (fun _ T' hT' =>
-          ObsRel.truth_mono (NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS' T' hT')
-            (Nesting.ofArgs_rel₃ hνs))) _
+        exact fun _ _ => ObsRel.truth_mono (NestDesRel.mono hd ih hS _ _ _ hS'
+          (Nesting.ofArgs_rel₃ hνs))
 termination_by structural h _ _ _ _ _ => h
 
 /-- The equality that the graph of the nestings gives the terms of a type relates in the other order
@@ -1299,9 +1343,8 @@ theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun _ _ => TermRel.computed_symm fun _ _ =>
-          CodataType.blockRel_symm (fun _ _ _ T' hT' =>
-            NestDesRel.symm_of hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+        exact fun _ _ => TermRel.computed_symm
+          (corecRel_symm (NestDesRel.symm_of hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1325,9 +1368,8 @@ theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun _ _ => CodataType.blockTruth_mono (fun _ T' hT' ⟨o, ho⟩ =>
-          ⟨o, NestDesRel.symm_of hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs) o o
-            ho⟩) _
+        exact fun _ _ ⟨o, ho⟩ =>
+          ⟨o, NestDesRel.symm_of hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs) o o ho⟩
 termination_by structural h _ _ _ _ _ => h
 
 /-- The equalities that the graph of the nestings gives the terms of a type relate the same terms,
@@ -1364,8 +1406,8 @@ theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact TermRel.computed_congr (CodataType.blockRel_congr (fun _ T' hT' =>
-          NestDesRel.congr hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _)
+        exact TermRel.computed_congr (corecRel_congr
+          (NestDesRel.congr hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1389,8 +1431,9 @@ theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun _ _ => CodataType.blockTruth_congr (fun _ T' hT' =>
-          NestDesRel.congr hd ih (hS T' hT') _ _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _
+        have hc := NestDesRel.congr hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)
+        exact fun _ _ => ⟨ObsRel.truth_mono fun o₁ o₂ => (hc o₁ o₂).1,
+          ObsRel.truth_mono fun o₁ o₂ => (hc o₁ o₂).2⟩
 termination_by structural h _ _ _ _ _ => h
 
 /-- The equality that the graph of the nestings gives the terms of a type relates the terms that two
@@ -1445,11 +1488,8 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
           obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
           cases hT
           cases has
-          exact fun _ _ _ => TermRel.computed_trans hd (R₁ := CodataType.blockRel _ _ _)
-            (R₂ := CodataType.blockRel _ _ _) (R₃ := CodataType.blockRel _ _ _) fun _ _ _ =>
-              CodataType.blockRel_trans (fun _ _ _ _ T' hT' =>
-                NestDesRel.trans_of hd ih (hS T' hT') _ _ _ (hS' T' hT') _ _ _ (hS'' T' hT')
-                  (Nesting.ofArgs_rel₃ hνs)) _
+          exact fun _ _ _ => TermRel.computed_trans hd (corecRel_trans
+            (NestDesRel.trans_of hd ih hS _ _ _ hS' _ _ _ hS'' (Nesting.ofArgs_rel₃ hνs)))
         | codataProp h'' _ _ _ hA'' hκ'' =>
           obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
           subst hD hqs hls hps
@@ -1490,9 +1530,8 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
           obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
           cases hT
           cases has
-          exact fun _ _ _ h₁ _ => CodataType.blockTruth_mono (fun _ T' hT' =>
-            ObsRel.truth_mono (NestDesRel.mono hd ih (hS T' hT') _ _ _ (hS'' T' hT')
-              (Nesting.ofArgs_rel₃ (hνs.outer fun _ _ _ hr => hr.2)))) _ h₁
+          exact fun _ _ _ h₁ _ => ObsRel.truth_mono (NestDesRel.mono hd ih hS _ _ _ hS''
+            (Nesting.ofArgs_rel₃ (hνs.outer fun _ _ _ hr => hr.2))) h₁
 termination_by structural h _ _ _ _ _ _ _ _ _ => h
 
 /-- The equality of the abstractions for destructors read at nestings relates the abstractions that

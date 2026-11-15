@@ -280,13 +280,8 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact fun H _ hH _ _ => RunRel.computed_mono fun _ _ ⟨X, hX, hx⟩ =>
-          ⟨fun (D : Name) (H' : Heap) (t : Term 0 []) (a : Nat) => ∃ H₀ : Heap, K H₀ H' ∧ X D H₀ t a,
-            fun T' hT' H' t a ⟨H₀, hH₀, hx⟩ => runCorecRel_mono
-              (RunNestDesRel.mono hd ih hK hKr (hS T' hT') _ _ (hS' T' hT')
-                (Nesting.ofArgs_rel₃ hνs) H₀ H' hH₀)
-              (hX T' hT' H₀ t a hx),
-            H, hH, hx⟩
+        exact fun H _ hH _ _ => RunRel.computed_mono fun _ _ => runCorecRel_mono
+          (RunNestDesRel.mono hd ih hK hKr hS _ _ hS' (Nesting.ofArgs_rel₃ hνs) H _ hH)
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'

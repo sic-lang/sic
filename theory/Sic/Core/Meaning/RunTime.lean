@@ -378,9 +378,10 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
   RFC: `\mathsf{rt}_{\lambda T}` -/
   | direct {T A : Term 0 []} {Q : RunRel} (hA : Term.LevelEquiv T A) :
       RunNestRel sig ι P n below (.direct (T, Q)) A Q
-  /-- `(rt_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, whose
-  block has no recursive destructor and has types whose destructors are of run time in `U_n` at the
-  arguments `ā`, which have the nestings `λ̄`, and whose canonical terms are related by `(®_ν)`.
+  /-- `(rt_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, none of
+  whose destructors is recursive, and whose destructors are of run time in `U_n` at the arguments
+  `ā`, which have the nestings `λ̄`: its canonical terms are related by `(®_d)`, and the clause
+  reads the destructors of the type alone, as `(ty_λD)` does.
   RFC: `\mathsf{rt}_{\lambda D}` -/
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -390,14 +391,11 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (hrec : ∀ T' ∈ decl.codataTypes,
-        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
-      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → RunObsRel)
-      (hS : ∀ T' ∈ decl.codataTypes,
-        RunNestDesRel sig ι P n below T'.name (Nesting.ofArgs νs)
-          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
-      RunNestRel sig ι P n below (.inst νs) A
-        ((CodataType.runBlockRel decl.codataTypes (fun _ => S) D).computed sig ι)
+      (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : RunObsRel)
+      (hS : RunNestDesRel sig ι P n below D (Nesting.ofArgs νs)
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
+      RunNestRel sig ι P n below (.inst νs) A ((runCorecRel D S).computed sig ι)
   /-- `(rt_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, whose
   terms, proofs, are erased.
   RFC: `\mathsf{rt}_{\lambda D\Omega}` -/

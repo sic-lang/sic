@@ -146,12 +146,13 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
           obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
           cases hT
           cases has
-          exact fun H _ _ ⟨v, ht, X, hX, hx⟩ => ⟨v, ht, X, fun T' hT' H v a hx =>
-            runCorecRel_mono (fun o a =>
-              RunNestDesRel.of_plain hd ihm ih hinv (hS T' hT') (Nesting.ofArgs_rel₃ hνs) _ (by
-                have hS'' := hS' X T' hT'
-                simp only [Destructors.recursionAt_eq_none (hrec T' hT'), Option.map_none] at hS''
-                exact hS'') H o a) (hX T' hT' H v a hx), hx⟩
+          have hTn := h.2.2
+          exact fun H _ a ⟨v, ht, X, hX, hx⟩ => ⟨v, ht, runCorecRel_mono (fun o a =>
+            RunNestDesRel.of_plain hd ihm ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ (by
+              have hS'' := hS' X _ h.2.1
+              simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
+              rw [hTn] at hS''
+              exact hS'') H o a) (hTn ▸ hX _ h.2.1 H v a (hTn ▸ hx))⟩
   | .codataProp _ _ _ _ _ _ _, _, _, _ => fun _ _ _ _ => trivial
 termination_by structural h _ _ _ => h
 
@@ -247,8 +248,8 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
     cases hτ with
     | direct hT =>
       exact fun H t a _ => (RunNestRel.unique hd ihm ih (hinv _ _ _ hT hA) _ h' H t a).1
-  | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec _ hS,
-      hτ, _, h', _, _, hE => by
+  | .codata (D := D) (T := T) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec
+      S hS, hτ, _, h', _, _, hE => by
     cases hτ with
     | inst hνs =>
       subst hA
@@ -276,27 +277,33 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
               obtain ⟨rfl, hT'⟩ := hd.hasCodataType_unique h h''
               cases hT'
               cases has'
-              exact fun H t a ⟨v, w, hv, hw, XE, hXE, hxe⟩ ⟨v', hv', X, hX, hx⟩ => by
+              have hTn := h.2.2
+              have hT := h.2.1
+              have hnd := TypeDeclaration.codataTypes_nodup (hd.nodup h.1)
+              exact fun H t a ⟨v, w, hv, hw, XE, hXE, hxe⟩ ⟨v', hv', hx⟩ => by
                 cases Computesι.det hd hv hw
                 cases Computesι.det hd hv hv'
                 exact ⟨v, hv,
-                  fun (N : Name) (H : Heap) (v : Term 0 []) (a : Nat) => X N H v a ∧ XE N v v,
-                  fun T' hT' H v a ⟨hx, hxe⟩ => by
-                    obtain ⟨o, ho, hs⟩ := hX T' hT' H v a hx
-                    obtain ⟨o₁, o₂, ho₁, ho₂, hse⟩ := hXE T' hT' v v hxe
+                  fun (N : Name) (H : Heap) (v : Term 0 []) (a : Nat) =>
+                    N = D ∧ runCorecRel D S H v a ∧ XE N v v,
+                  fun T' hT' H v a ⟨hN, hx, hxe⟩ => by
+                    cases List.eq_of_nodup_map hnd hT hT' (hTn.trans hN.symm)
+                    obtain ⟨o, ho, hs⟩ := hx
+                    obtain ⟨o₁, o₂, ho₁, ho₂, hse⟩ := hXE _ hT v v hxe
                     cases ho.unique ho₁
                     cases ho.unique ho₂
-                    exact ⟨o, ho, RunNestDesRel.to_plain hd ihm ih hinv (hS T' hT')
+                    rw [hTn]
+                    exact ⟨o, ho, RunNestDesRel.to_plain hd ihm ih hinv hS
                       (Nesting.ofArgs_rel₃ hνs) _ (by
-                        have hS'' := hS' (fun N H v a => X N H v a ∧ XE N v v) T' hT'
-                        simp only [Destructors.recursionAt_eq_none (hrec T' hT'),
-                          Option.map_none] at hS''
+                        have hS'' := hS' (fun N H v a =>
+                          N = D ∧ runCorecRel D S H v a ∧ XE N v v) _ hT
+                        simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
+                        rw [hTn] at hS''
                         exact hS'') _ _ (by
-                        have hSE'' := hSE XE T' hT'
-                        simp only [Destructors.recursionAt_eq_none (hrec T' hT'),
-                          Option.map_none] at hSE''
+                        have hSE'' := hSE XE _ hT
+                        simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hSE''
                         exact hSE'') H o a hse hs⟩,
-                  hx, hxe⟩
+                  rfl, hx, hxe⟩
   | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq _ hp hA hκ _, hτ, _, h',
       _, _, _ => by
     subst hA

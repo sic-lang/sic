@@ -443,8 +443,9 @@ theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         cases hT
         cases has
-        exact RunRel.computed_congr (CodataType.runBlockRel_congr (fun _ T' hT' =>
-          RunNestDesRel.congr hd ihm ih (hS T' hT') _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _)
+        have hc := RunNestDesRel.congr hd ihm ih hS _ _ hS' (Nesting.ofArgs_rel₃ hνs)
+        exact RunRel.computed_congr fun H _ _ =>
+          ⟨runCorecRel_mono fun o a => (hc H o a).1, runCorecRel_mono fun o a => (hc H o a).2⟩
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'

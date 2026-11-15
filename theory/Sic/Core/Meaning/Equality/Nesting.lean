@@ -147,11 +147,13 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
           obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
           cases hT
           cases has
-          exact TermRel.computed_congr (CodataType.blockRel_congr (fun X T' hT' =>
-            NestDesRel.agree hd ih hinv (hS T' hT') (Nesting.ofArgs_rel₃ hνs) _ _ (by
-              have hS'' := hS' X T' hT'
-              simp only [Destructors.recursionAt_eq_none (hrec T' hT'), Option.map_none] at hS''
-              exact hS'')) _)
+          obtain ⟨hdecl, hT, rfl⟩ := h
+          exact TermRel.computed_congr fun v w => ((CodataType.blockRel_iff_corecRel
+            (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun X o₁ o₂ =>
+              (NestDesRel.agree hd ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
+                have hS'' := hS' X _ hT
+                simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
+                exact hS'') o₁ o₂).symm) v w).symm
   | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec _ hS,
       hτ, _, _, h' => by
     cases hτ with
@@ -169,11 +171,13 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
           obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
           cases hT
           cases has
-          exact fun _ _ => CodataType.blockTruth_congr (fun B T' hT' =>
-            NestDesRel.agree hd ih hinv (hS T' hT') (Nesting.ofArgs_rel₃ hνs) _ _ (by
-              have hS'' := hS' B T' hT'
-              simp only [Destructors.recursionAt_eq_none (hrec T' hT'), Option.map_none] at hS''
-              exact hS'')) _
+          obtain ⟨hdecl, hT, rfl⟩ := h
+          exact fun _ _ => (CodataType.blockTruth_iff_truth
+            (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun B o₁ o₂ =>
+              (NestDesRel.agree hd ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
+                have hS'' := hS' B _ hT
+                simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
+                exact hS'') o₁ o₂).symm).symm
 termination_by structural h _ _ _ _ => h
 
 /-- The graph of the nestings gives destructors the equality that the graph of the destructors

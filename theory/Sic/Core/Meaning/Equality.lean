@@ -451,9 +451,12 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   RFC: `\mathsf{ty}_{\lambda T}` -/
   | direct {s : Quality} {T A : Term 0 []} {R : TermRel} (hA : Term.LevelEquiv T A) :
       NestRel sig ι n below s (.direct (T, R)) A R
-  /-- `(ty_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, whose
-  block has no recursive destructor and has types whose destructors are in `U_n` at the arguments
-  `ā`, which have the nestings `λ̄`, and whose canonical terms are equal by `(eq_ν)`.
+  /-- `(ty_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, none of
+  whose destructors is recursive, and whose destructors are in `U_n` at the arguments `ā`, which
+  have the nestings `λ̄`: its canonical terms are equal by `(eq_d)`, since no relation of the block
+  changes the equality of its destructors.
+  The clause reads the destructors of the type alone, and not those of the other types of its block,
+  which need not be strictly positive in the parameters whose arguments have positions.
   RFC: `\mathsf{ty}_{\lambda D}` -/
   | codata {s : Quality} {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -463,17 +466,14 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as) (hs : s = .type)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (hrec : ∀ T' ∈ decl.codataTypes,
-        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
-      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
-      (hS : ∀ T' ∈ decl.codataTypes,
-        NestDesRel sig ι n below .type (Nesting.ofArgs νs)
-          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
-      NestRel sig ι n below s (.inst νs) A
-        ((CodataType.blockRel decl.codataTypes (fun _ => S) D).computed sig ι)
-  /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, whose
-  block has no recursive destructor and has types whose destructors are in `Ω_n` at the arguments
-  `ā`, which have the nestings `λ̄`, and whose truth is `(true_ν)`.
+      (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : ObsRel)
+      (hS : NestDesRel sig ι n below .type (Nesting.ofArgs νs)
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
+      NestRel sig ι n below s (.inst νs) A ((corecRel D S).computed sig ι)
+  /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, none of
+  whose destructors is recursive, and whose destructors are in `Ω_n` at the arguments `ā`, which
+  have the nestings `λ̄`: its truth is `(true_d)`.
   RFC: `\mathsf{ty}_{\lambda D\Omega}` -/
   | codataProp {s : Quality} {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -483,14 +483,11 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
-      (hrec : ∀ T' ∈ decl.codataTypes,
-        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
-      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
-      (hS : ∀ T' ∈ decl.codataTypes,
-        NestDesRel sig ι n below .prop (Nesting.ofArgs νs)
-          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
-      NestRel sig ι n below s (.inst νs) A
-        fun _ _ => CodataType.blockTruth decl.codataTypes (fun _ => S) D
+      (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : ObsRel)
+      (hS : NestDesRel sig ι n below .prop (Nesting.ofArgs νs)
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
+      NestRel sig ι n below s (.inst νs) A fun _ _ => S.truth
 
 -- ADE: none.
 /--
