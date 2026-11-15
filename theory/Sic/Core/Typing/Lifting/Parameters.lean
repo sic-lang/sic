@@ -4,7 +4,6 @@ public import Sic.Core.Typing.Lifting.Context
 public import Sic.Core.Typing.Lifting.Types
 import Sic.Core.Lifting.Substitution
 import Sic.Core.Substitution.Composition
-import Sic.Core.Typing.Extension
 import Sic.Core.Typing.Identity
 import Sic.Core.Typing.Levels
 import Sic.Core.Typing.Prelude
@@ -177,12 +176,7 @@ theorem TypeDeclaration.lifting_typed {decl : TypeDeclaration} {F : Name}
       (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift
       (((decl.params I.lifted).substLevels (Level.lifted S.length)).var
         (decl.liftedInstance F S.length I.lifted (.identity decl.scope))) := by
-  obtain ⟨sig', hs, hdecl⟩ := hsig.wfTypeDeclaration hT.1
-  have hΔ : WfCtx sig (decl.params I.lifted) := by
-    cases hdecl with
-    | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs hsig (hΔ _ hadm)
-    | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs hsig (hΔ _ hadm)
-  have hP := stableUnderLevels.wfCtx (Level.lifted S.length) hΔ
+  have hP := stableUnderLevels.wfCtx (Level.lifted S.length) (hsig.wfCtx_params hT.1 hadm)
   have hq : (List.ofFn I.lifted.sorts).length = decl.sorts := List.length_ofFn
   have hl : (List.ofFn (Level.lifted (k := decl.levels) S.length)).length = decl.levels :=
     List.length_ofFn

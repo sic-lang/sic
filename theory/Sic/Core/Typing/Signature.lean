@@ -2,14 +2,16 @@ module
 
 public import Sic.Core.Typing
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Extension
 import Sic.Core.Typing.Presuppositions
 
 /-!
 # Well-Formed Signatures
 
 Properties of the well-formed signatures of annex 14 of RFC 36: each type declaration of a
-well-formed signature is well formed in the signature before it, so that a destructor of a block of
-propositions has a grade without use at run time, as the rules `(d̄_κ|)` and `(d̄_κrec)` premise.
+well-formed signature is well formed in the signature before it, so that its parameters form a
+context of the signature, at each instance that its constraint admits, and a destructor of a block
+of propositions has a grade without use at run time, as the rules `(d̄_κ|)` and `(d̄_κrec)` premise.
 
 ADE have no type declarations: their types are built in.
 -/
@@ -35,6 +37,17 @@ theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
     · obtain ⟨sig', hs, hdecl⟩ :=
         (Presuppositions.tail presuppositions h).wfTypeDeclaration he
       exact ⟨sig', List.subset_cons_of_subset _ hs, hdecl⟩
+
+-- ADE: none.
+/-- The parameters of a type declaration of a well-formed signature, at an instance that its
+constraint admits, form a context of the signature. -/
+theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
+    (hd : .typeDeclaration decl ∈ sig) {I : Instance decl.sorts decl.grades}
+    (hI : decl.constraint I) : WfCtx sig (decl.params I) := by
+  obtain ⟨_, hs, hdecl⟩ := h.wfTypeDeclaration hd
+  cases hdecl with
+  | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs h (hΔ _ hI)
+  | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs h (hΔ _ hI)
 
 -- ADE: none.
 /-- A destructor of destructors that live in a sort of propositions has a grade whose mode is not
