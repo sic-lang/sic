@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Lifting
 public import Sic.Core.Syntax.Grades
 
 /-!
@@ -14,6 +15,8 @@ its scope gives.
 The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
 parameters, which the declaration gives and its formation checks against the usage of the telescopes
 of its constructors or of its destructors, defined here.
+The usage of a signature does not check the destructors of a lifting of annex 20, which uses its
+parameters with the least grades.
 ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/
 
@@ -319,7 +322,8 @@ its sort and grade variables, the body of a constant definition uses no variable
 definition; at each instance that the constraint of a type declaration admits, the constructors or
 the destructors of each of its types use the parameters as the grades `ζ` of the type allow, the
 uses of all of them added, in the signature extended by the declaration, which gives the grades of
-its types.
+its types; the destructors of the lifting of a type of the signature are not checked, since the
+lifting uses its parameters with the least grades, which state nothing.
 -/
 inductive UsageSig : Signature → Prop where
   /-- The empty signature.
@@ -350,5 +354,12 @@ inductive UsageSig : Signature → Prop where
       (hu : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∃ γ,
         UsageDestructors (.typeDeclaration decl :: sig) γ .oneOne (T.body ι) ∧ T.usage ι ≤ᶜ γ) :
       UsageSig (.typeDeclaration decl :: sig)
+  /-- The lifting of a codata type of a block of the signature, whose destructors are not checked.
+  RFC: `\mathsf{sig}_{\mathsf{lift}▶}` -/
+  | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
+      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      (h : UsageSig sig) (hd : .typeDeclaration decl ∈ sig) (hl : decl.Lifts sig F S body) :
+      UsageSig (.typeDeclaration (decl.lifting F S ns body) :: sig)
 
 end Sic.Core

@@ -109,7 +109,7 @@ theorem UsageSig.constantDefinition_usage {sig : Signature} (hu : UsageSig sig) 
     · cases he
       exact usageStableUnderExtension.usage (List.subset_cons_self _ _) (hb ι)
     · exact usageStableUnderExtension.usage (List.subset_cons_self _ _) (ih hd')
-  | constantDeclaration _ ih | data _ _ _ ih | codata _ _ _ ih =>
+  | constantDeclaration _ ih | data _ _ _ ih | codata _ _ _ ih | lifting _ _ _ ih =>
     rcases List.mem_cons.1 hd with he | hd'
     · exact nomatch he
     · exact usageStableUnderExtension.usage (List.subset_cons_self _ _) (ih hd')
