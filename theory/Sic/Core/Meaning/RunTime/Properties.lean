@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Syntax.Signature
 
@@ -533,18 +532,6 @@ theorem RunNestRel.unique {sig : Signature} {ι : Interpretation} {P : Program} 
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
     ∀ H t a, R H t a ↔ R' H t a :=
   RunNestRel.congr hd ihm ih h _ _ h' (Nest.rel₃_refl (fun _ _ _ _ => .rfl) τ)
-
-/-- A type read at a nesting that is neither no position nor that of an instance is read at a
-position, which holds its relation of run time and the type up to the values of its levels. -/
-theorem RunNestRel.eq_direct {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    {below : LevelRel.Below n} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel}
-    (h : RunNestRel sig ι P n below τ A R) (hp : τ ≠ .plain) (hi : ∀ νs, τ ≠ .inst νs) :
-    ∃ T, τ = .direct (T, R) ∧ Term.LevelEquiv T A := by
-  cases h with
-  | plain _ _ => exact absurd rfl hp
-  | direct hA => exact ⟨_, rfl, hA⟩
-  | codata => exact absurd rfl (hi _)
-  | codataProp => exact absurd rfl (hi _)
 
 /-- Destructors read at nestings have a unique relation of run time of the observations by them, at
 given nestings of their variables. -/

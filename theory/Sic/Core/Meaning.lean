@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning.RunTime
+public import Sic.Core.Nesting.Relation
 
 /-!
 # Meaning
@@ -345,38 +346,60 @@ def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ns 
   ValidCtx₀ sig ι ctx ∧ ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqDestructors₀ sig ι κ inst rs ds σ₁ σ₂
 
 -- ADE: none.
-/-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors, whose recursive fields `rs` gives: the
-fields that are not recursive are equal types of a sort that `κ` bounds, the recursive fields of the
-type `D` are the instances `inst₁ D` and `inst₂ D` of the block, and the rest of them are equal for
-every pair of equal terms of the fields that are not recursive, and for every pair of terms of the
-recursive ones, on which they do not depend; the meaning ignores their grades.
+/-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors, whose nestings `rs` gives: the fields
+without position are equal types of a sort that `κ` bounds, the recursive fields of the type `D`,
+whose nesting is the position that holds `D`, are the instances `inst₁ D` and `inst₂ D` of the
+block, and the nested fields, whose nesting is that of an instance, have one equality of their
+terms by the graph of the nestings of the sort `κ`, whatever the relations `R` given at their
+positions for the instances of the block, and one relation of run time, for each program and
+whatever the relations `Q` given at their positions, if `κ` is a universe, and are equal types of a
+sort that `κ` bounds when the instances of the block at their positions are equal types of `κ`; the
+rest of them are equal for every pair of equal terms of the fields without position, and for every
+pair of terms of the others, on which they do not depend; the meaning ignores their grades.
 RFC: `{\vDash}\mathsf{fields}_\varepsilon`
 RFC: `{\vDash}\mathsf{fields}_{,}`
-RFC: `{\vDash}\mathsf{fields}_{\mathsf{rec}}` -/
+RFC: `{\vDash}\mathsf{fields}_{\mathsf{rec}}`
+RFC: `{\vDash}\mathsf{fields}_\lambda` -/
 def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0)
     (inst₁ inst₂ : Name → Term 0 []) :
-    {ps : List Parameter} → (Nat → Option Name) → Telescope 0 [] ps → Telescope 0 [] ps → Prop
+    {ps : List Parameter} → (Nat → Nest Name) → Telescope 0 [] ps → Telescope 0 [] ps → Prop
   /- `(⊨fields_ε)`. -/
   | [], _, .nil, .nil => sig.Distinct
   | _ :: _, rs, .cons _ _ A₁ Θ₁, .cons _ _ A₂ Θ₂ =>
     match rs 0 with
     /- `(⊨fields_,)`. -/
-    | none => (∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
+    | .plain => (∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
       ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ A₁ →
         ValidEqFields₀ sig ι κ inst₁ inst₂ (fun i => rs (i + 1)) (Θ₁.subst₀ (Subst₀.single v₁))
           (Θ₂.subst₀ (Subst₀.single v₂))
     /- `(⊨fields_rec)`. -/
-    | some D => A₁ = inst₁ D ∧ A₂ = inst₂ D ∧
+    | .direct D => A₁ = inst₁ D ∧ A₂ = inst₂ D ∧
+      ∀ v₁ v₂, ValidEqFields₀ sig ι κ inst₁ inst₂ (fun i => rs (i + 1))
+        (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
+    /- `(⊨fields_λ)`. -/
+    | .inst νs =>
+      (∀ R : Name → TermRel, ∃ F,
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Nest.map (fun D => (inst₁ D, R D)) (.inst νs)) A₁ F ∧
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Nest.map (fun D => (inst₂ D, R D)) (.inst νs)) A₂ F) ∧
+      (κ.quality = .type → ∀ (P : Program) (Q : Name → RunRel), ∃ R,
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => (inst₁ D, Q D)) (.inst νs)) A₁ R ∧
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => (inst₂ D, Q D)) (.inst νs)) A₂ R) ∧
+      (Nest.All (fun D => ValidEqTerm₀ sig ι (inst₁ D) (inst₂ D) (.sort κ)) (.inst νs) →
+        ∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) ∧
       ∀ v₁ v₂, ValidEqFields₀ sig ι κ inst₁ inst₂ (fun i => rs (i + 1))
         (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
 
 -- ADE: none.
-/-- `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, whose recursive fields `rs` gives, of the
-instances `inst D` of the block, at levels without variables: the fields substituted by two equal
-closed substitutions of the context give equal closed fields in the sort `κ`.
+/-- `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, whose nestings `rs` gives, of the instances
+`inst D` of the block, at levels without variables: the fields substituted by two equal closed
+substitutions of the context give equal closed fields in the sort `κ`.
 RFC: `{\vDash}\Gamma_{\mathsf{fields}}` -/
 def ValidFieldsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List Parameter}
-    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Option Name) (Θ : Telescope 0 Γ ps)
+    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Nest Name) (Θ : Telescope 0 Γ ps)
     (κ : Universe 0) : Prop :=
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqFields₀ sig ι κ (fun D => (inst D).subst σ₁)
@@ -463,7 +486,7 @@ def ValidDestructors (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Sco
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, for every value of the level variables.
 RFC: `\vDash_\rho` -/
 def ValidFields (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {ps : List Parameter}
-    (ctx : Context k Γ) (inst : Name → Term k Γ) (rs : Nat → Option Name) (Θ : Telescope k Γ ps)
+    (ctx : Context k Γ) (inst : Name → Term k Γ) (rs : Nat → Nest Name) (Θ : Telescope k Γ ps)
     (κ : Universe k) : Prop :=
   ∀ ρ, ValidFieldsΓ sig ι (ctx.atLevels ρ) (fun D => (inst D).atLevels ρ) rs (Θ.atLevels ρ)
     (κ.atLevels ρ)
@@ -474,8 +497,8 @@ def ValidFields (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {
 /-- `Σ ⊨ D`: the type declaration `D` is meaningful in the signature `Σ`.
 `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
 grade variables that `C` admits, the fields of each constructor are fields in the sort `κ`, in the
-context of the parameters, at each value of the level variables, whose recursive fields are the
-types of the block at the parameters themselves.
+context of the parameters, at each value of the level variables, whose nestings are read on the
+declaration, the instances of the block being its types at the parameters themselves.
 `(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort
 and grade variables that `C` admits, the destructors of each type are in the sort `κ`, in the
 context of the parameters, at each value of the level variables, whose recursive destructors have
@@ -488,7 +511,7 @@ def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDec
   match decl.body with
   | .data Ts => ∀ I, decl.constraint I → ∀ T ∈ Ts, ∀ c ∈ T.constructors,
       ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
-        ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I)
+        ((c.fields I).nestAt decl.names) (c.fields I) (decl.sort I)
   | .codata Ts => ∀ I, decl.constraint I → ∀ T ∈ Ts,
       ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
         ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I)

@@ -188,8 +188,8 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       RunUnivRel sig ι P n below (.sort ⟨.prop, l⟩) fun _ _ _ => True
   /-- `(rt_D)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `U_n`, whose
   block has types whose constructors have fields that are telescopes of run time in `U_n`, whatever
-  the relations `X` of the instances of the types of the block at their recursive fields, and whose
-  relation of run time is `(®_μ)`.
+  the relations `X` of the instances of the types of the block at the positions of the nestings of
+  their fields, read on the declaration, and whose relation of run time is `(®_μ)`.
   RFC: `\mathsf{rt}_D` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -202,9 +202,8 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
         RunFieldsRel)
       (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         RunTelRel sig ι P n below
-          (fun i => Nest.ofOption
-            (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-              fun D' => (.inst D' qs ls ps as, (X D').computed sig ι)))
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
+            fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
       RunUnivRel sig ι P n below v
         (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S D)

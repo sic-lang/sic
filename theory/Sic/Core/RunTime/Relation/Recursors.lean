@@ -405,27 +405,27 @@ def Terms.RecAt (Q : Name → Term 0 [] → Nat → Prop) :
   | _, _, _, _ => True
 
 /-- The fields that the relation of run time of a telescope relates to their addresses in the heap
-`H₀` satisfy `Q` at each recursive field whose result is used at run time, when the relation of each
-recursive field, at its type `D`, implies `Q` on the terms that `V D` holds of, and when the field of
-each result used at run time is used too.
-The positions are those of recursive fields only, as the fields of a constructor have today. -/
+`H₀` satisfy `Q` at each recursive field whose result is used at run time, when the relation that
+the position of each recursive field holds, at its type `D`, implies `Q` on the terms that `V D`
+holds of, and when the field of each result used at run time is used too.
+A nested field has no recursive result, as a field without position. -/
 theorem RunTelRel.recAt {n : Nat} {below : LevelRel.Below n} {Q : Name → Term 0 [] → Nat → Prop}
     {V : Name → Term 0 [] → Prop} {H₀ : Heap} :
     {rs' : Nat → Nest RunNestLeaf} → {ps : List Parameter} → {Θ : Telescope 0 [] ps} →
     {S : RunFieldsRel} → RunTelRel sig ι P n below rs' Θ S → (rsN : List (Option Name)) →
-    rsN.length = ps.length → (∀ i, rs' i = .plain → ∀ D, rsN[i]? ≠ some (some D)) →
-    (∀ i x, rs' i = .direct x → ∃ D, rsN[i]? = some (some D) ∧
+    rsN.length = ps.length →
+    (∀ i D, rsN[i]? = some (some D) → ∃ x, rs' i = .direct x ∧
       ∀ t b, x.2 H₀ t b → V D t → Q D t b) →
-    (∀ i νs, rs' i ≠ .inst νs) → (ts : Args 0 [] ps) → (bs : List Nat) → S H₀ ts.terms bs →
+    (ts : Args 0 [] ps) → (bs : List Nat) → S H₀ ts.terms bs →
     Terms.RecRel (fun D t _ => V D t) rsN ts.terms ts.terms → (es : List Grade) →
     (∀ l (p : Parameter), ps[l]? = some p → Telescope.resultGrades rsN es l ∉ Mode.oneOne.erased →
       p.usage ∉ Mode.oneOne.erased) →
     Terms.RecAt Q rsN es ts.terms bs
-  | _, [], .nil, _, .nil, rsN, hlen, _, _, _, .nil, _, _, _, _, _ => by
+  | _, [], .nil, _, .nil, rsN, hlen, _, .nil, _, _, _, _, _ => by
     cases rsN with
     | nil => trivial
     | cons => cases hlen
-  | _, p :: ps, .cons _ _ _ Θ, _, .cons _ _ _ G hG hrs0, rsN, hlen, hnone, hrs, hni,
+  | _, p :: ps, .cons _ _ _ Θ, _, .cons _ _ _ G hG hrs0, rsN, hlen, hrs,
       .cons t ts, bs, hS, hV, es, hg => by
     cases bs with
     | nil => exact (hS : False).elim
@@ -435,29 +435,37 @@ theorem RunTelRel.recAt {n : Nat} {below : LevelRel.Below n} {Q : Name → Term 
     | nil => cases hlen
     | cons x rsN =>
     cases x with
-    | some D => exact (hnone 0 hrs0 D rfl).elim
+    | some D =>
+      obtain ⟨_, h, -⟩ := hrs 0 D rfl
+      exact nomatch h.symm.trans hrs0
     | none =>
-    exact RunTelRel.recAt (hG t hFt) rsN (Nat.succ.inj hlen) (fun i => hnone (i + 1))
-      (fun i => hrs (i + 1)) (fun i => hni (i + 1)) ts bs hGt hV es (fun l => hg (l + 1))
-  | _, p :: ps, .cons _ _ _ Θ, _, .nested hrs0 hRn G hG, rsN, hlen, hnone, hrs, hni,
+    exact RunTelRel.recAt (hG t hFt) rsN (Nat.succ.inj hlen) (fun i => hrs (i + 1)) ts bs hGt hV
+      es (fun l => hg (l + 1))
+  | _, p :: ps, .cons _ _ _ Θ, _, .nested hrs0 hRn G hG, rsN, hlen, hrs,
       .cons t ts, bs, hS, hV, es, hg => by
     cases bs with
     | nil => exact (hS : False).elim
     | cons b bs =>
     obtain ⟨hb, hGt⟩ := hS
-    obtain ⟨_, hτ, -⟩ := hRn.eq_direct hrs0 (hni 0)
-    obtain ⟨D, hD, hQ⟩ := hrs 0 _ hτ
     cases rsN with
-    | nil => cases hD
+    | nil => cases hlen
     | cons x rsN =>
-    cases hD
+    cases x with
+    | none =>
+      exact RunTelRel.recAt (hG t) rsN (Nat.succ.inj hlen) (fun i => hrs (i + 1)) ts bs hGt hV
+        es (fun l => hg (l + 1))
+    | some D =>
+    obtain ⟨⟨_, _⟩, hτ, hQ⟩ := hrs 0 D rfl
+    rw [hτ] at hRn
+    cases hRn with
+    | direct _ =>
     cases es with
     | nil => trivial
     | cons e es =>
     obtain ⟨hVt, hV'⟩ := hV
     exact ⟨fun he => hQ t b (hb (hg 0 p rfl he)) hVt,
-      RunTelRel.recAt (hG t) rsN (Nat.succ.inj hlen) (fun i => hnone (i + 1))
-        (fun i => hrs (i + 1)) (fun i => hni (i + 1)) ts bs hGt hV' es (fun l => hg (l + 1))⟩
+      RunTelRel.recAt (hG t) rsN (Nat.succ.inj hlen) (fun i => hrs (i + 1)) ts bs hGt hV' es
+        (fun l => hg (l + 1))⟩
 
 /-- The recursive results of a branch at run time, by induction on the fields: from the addresses
 `bs` of the fields, the last of the addresses `bsAll` from the position `o`, the recursive results
@@ -1018,7 +1026,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     fun X Y hXY T hT c hc H =>
       RunTelRel.mono hd ihmono (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl)
         (hS X T hT c hc) _ _ (hS Y T hT c hc)
-        (fun _ => Nest.ofOption_rel₃
+        (fun _ => Nest.map_rel₃
           (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
   let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
     ((sig.caseFieldParams T.name qs ps).getD [])
@@ -1070,18 +1078,14 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       fun ts hfs hts hrecV => by
         subst hfs
         -- The fields, related at their types.
-        refine ⟨(RunsAsArgs.of_fields hd hv hT' hcon hq hl hp hadm hasσ hs hS
+        refine ⟨(RunsAsArgs.of_fields hd hdecl hv hT' hcon hq hl hp hadm hasσ hs hS
           (fun T' hT' => (hU T' hT').1) (fun _ _ _ _ h => h.1) hts (gs i)
           (fun l p hl' hgl => (by decide : ∀ r p g x : Grade, r ∉ Mode.oneOne.erased →
             r * p ≤ g + x * r → g ∉ Mode.oneOne.erased → p ∉ Mode.oneOne.erased) r p.usage
             (gs i l) _ hr (hg i j T' con l p hi' hl') hgl) hSX).mono hd hH', ?_⟩
         -- The recursive results used at run time, of fields that `X` relates.
         refine RunTelRel.recAt (hS X T' hT' con hcon) _ (Telescope.length_recursion _ _)
-          (fun l hl D hD => by
-            simp only [Telescope.recursionAt, hD, Option.join_some, Option.map_some,
-              Nest.ofOption] at hl
-            cases hl)
-          (fun l R hR => ?_) (fun _ => Nest.ofOption_ne_inst _) ts bs hSX hrecV _
+          (fun l D hD => ?_) ts bs hSX hrecV _
           (fun l p hl' he => by
             cases hrA : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l with
             | none =>
@@ -1094,20 +1098,10 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
               exact (by decide : ∀ r p g e : Grade, r ∉ Mode.oneOne.erased →
                 r * p ≤ g + e * r → e ∉ Mode.oneOne.erased → p ∉ Mode.oneOne.erased)
                 r p.usage _ _ hr h₁ he)
-        cases hr' : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l with
-        | none => simp only [hr', Option.map_none, Nest.ofOption] at hR; cases hR
-        | some D =>
-        simp only [hr', Option.map_some, Nest.ofOption] at hR
-        cases hR
-        have hD : ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)[l]? =
-            some (some D) := by
-          simp only [Telescope.recursionAt] at hr'
-          cases hx : ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)[l]? with
-          | none => simp only [hx, Option.join_none] at hr'; cases hr'
-          | some x =>
-            simp only [hx, Option.join_some] at hr'
-            rw [hr']
-        refine ⟨D, hD, fun t b ⟨v, hcv, hXv⟩ hVt ϖ'' H'' hH'' => ?_⟩
+        have hr' : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l = some D := by
+          simp only [Telescope.recursionAt, hD, Option.join_some]
+        refine ⟨(_, (X D).computed sig ι), by rw [(Telescope.nestAt_eq_direct _ l).2 hr']; rfl,
+          fun t b ⟨v, hcv, hXv⟩ hVt ϖ'' H'' hH'' => ?_⟩
         have hDn := Telescope.recursionAt_mem hr'
         obtain ⟨C₃, hC₃⟩ := Motives.get_idxOf hT hnd hCs hDn
         obtain ⟨j₃, T₃, C₃', hj₃, rfl, hC₃', -⟩ :=

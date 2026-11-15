@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Nesting.Relation
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -760,13 +759,13 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
   | .data h _ _ _ _ _ _ _ hS =>
     DataType.blockRel_isPer
       (fun X Y hXY T hT c hc ts us hs => TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
-        (fun _ => Nest.ofOption_rel₃ (fun D _ _ => TermRel.computed_mono (hXY D)) _) ts us hs)
+        (fun _ => Nest.map_rel₃ (fun D _ _ => TermRel.computed_mono (hXY D)) _) ts us hs)
       (fun X Y hXY T hT c hc ts us hs => TelRel.symm_of hd ih (hS X T hT c hc) _ _ _
         (hS Y T hT c hc)
-        (fun _ => Nest.ofOption_rel₃ (fun D _ _ => TermRel.computed_symm (hXY D)) _) ts us hs)
+        (fun _ => Nest.map_rel₃ (fun D _ _ => TermRel.computed_symm (hXY D)) _) ts us hs)
       (fun X Y Z hXYZ hXZ T hT c hc ts us vs hs hs' => TelRel.trans_of hd ih (hS X T hT c hc) _ _ _
         (hS Y T hT c hc) _ _ _ (hS Z T hT c hc)
-        (fun _ => Nest.ofOption_rel₃ (fun D =>
+        (fun _ => Nest.map_rel₃ (fun D =>
           ⟨fun _ _ _ => TermRel.computed_trans hd (hXYZ D),
             fun _ _ => TermRel.computed_mono (hXZ D)⟩) _)
         ts us vs hs hs')
@@ -1913,21 +1912,21 @@ theorem NestDesRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd 
   NestDesRel.congr hd ih h _ _ _ h' fun _ x => Nest.rel₃_refl (fun _ _ _ => .rfl) (ν x)
 
 /-- The equality of the terms of the fields of the constructors of a block, at relations `F X D` of
-its recursive fields of the type `D`, grows with `X` when they do: the premise of the properties of
-`(eq_μ)` and `(true_μ)`. -/
+the instances of its types `D` at the positions of the nestings of its fields, grows with `X` when
+they do: the premise of the properties of `(eq_μ)` and `(true_μ)`. -/
 theorem TelRel.block_mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {j g k : Nat} {Δ : Scope} {α : Type}
     {Ts : List (DataType j g k Δ)} {s : Quality}
-    {rec : Constructor j g k Δ → Nat → Option Name}
+    {rec : Constructor j g k Δ → Nat → Nest Name}
     {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps}
     {F : α → Name → NestLeaf} {S : α → Constructor j g k Δ → FieldsRel}
     (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, TelRel sig ι n (fun m _ => levelRel sig ι m) s
-      (fun i => Nest.ofOption ((rec c i).map (F X))) (Θ c).2 (S X c))
+      (fun i => (rec c i).map (F X)) (Θ c).2 (S X c))
     (X Y : α) (hXY : ∀ D t u, (F X D).2 t u → (F Y D).2 t u) (T : DataType j g k Δ)
     (hT : T ∈ Ts) (c : Constructor j g k Δ) (hc : c ∈ T.constructors) (ts us : Terms 0 []) :
     S X c ts us → S Y c ts us :=
   TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
-    (fun _ => Nest.ofOption_rel₃ (fun D => hXY D) _) ts us
+    (fun _ => Nest.map_rel₃ (fun D => hXY D) _) ts us
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem HasEq.univ_not_prop {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n k : Nat}

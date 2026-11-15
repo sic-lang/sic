@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
@@ -128,7 +127,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
           Terms.LevelEquiv ts ts' → S Y c H ts' as :=
       fun X Y hXY T hT c hc H => RunTelRel.rel_levelEquiv hd ih (hS X T hT c hc) _ _
         (hS Y T hT c hc)
-        (fun _ => Nest.ofOption_rel₃
+        (fun _ => Nest.map_rel₃
           (r := fun (x y _ : RunNestLeaf) => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' →
             y.2 H t' a)
           (fun D' H _ _ _ => RunRel.computed_levelEquiv (hXY D' H)) _) H
@@ -137,7 +136,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
       fun X Y hXY T hT c hc H => RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m)
         (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl) (hS X T hT c hc) _ _
         (hS Y T hT c hc)
-        (fun _ => Nest.ofOption_rel₃
+        (fun _ => Nest.map_rel₃
           (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
     exact h (fun D H w a => ∀ w', Term.LevelEquiv w w' →
         DataType.runBlockRel sig _ decl.dataTypes S D H w' a)

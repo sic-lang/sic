@@ -448,18 +448,18 @@ theorem ValidEqTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Contex
 -- ADE: none.
 /-- `(fields_ε)` keeps the meaning: no field. -/
 theorem ValidFieldsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
-    {inst : Name → Term 0 Γ} {rs : Nat → Option Name} {κ : Universe 0} :
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {κ : Universe 0} :
     ValidFieldsΓ sig ι ctx inst rs .nil κ :=
   ⟨hctx, fun _ _ _ => hctx.distinct⟩
 
 -- ADE: none.
-/-- `(fields_,)` keeps the meaning: a first field that is not recursive, whose type is a type of the
+/-- `(fields_,)` keeps the meaning: a first field without position, whose type is a type of the
 sort `κ₁`, which `κ` bounds, and the rest at equal terms of it, which are the fields at equal
 substitutions of the context extended by it, at which the instances of the block are the same. -/
 theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
     {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 (.var :: Γ) ps} {κ₁ κ : Universe 0}
-    {inst : Name → Term 0 Γ} {rs : Nat → Option Name} (hA : ValidTermΓ sig ι ctx A (.sort κ₁))
-    (hκ : κ₁ ≼ κ) (hr : rs 0 = none)
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} (hA : ValidTermΓ sig ι ctx A (.sort κ₁))
+    (hκ : κ₁ ≼ κ) (hr : rs 0 = .plain)
     (hΘ : ValidFieldsΓ sig ι (ctx.var A) (fun D => (inst D).rename Ren.weaken)
       (fun i => rs (i + 1)) Θ κ) :
     ValidFieldsΓ sig ι ctx inst rs (.cons q p A Θ) κ := by
@@ -484,7 +484,7 @@ theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 �
 block, and the rest, which does not depend on it, at any terms of it. -/
 theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
     {p : Parameter} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {inst : Name → Term 0 Γ}
-    {rs : Nat → Option Name} {D : Name} (hr : rs 0 = some D)
+    {rs : Nat → Nest Name} {D : Name} (hr : rs 0 = .direct D)
     (hΘ : ValidFieldsΓ sig ι ctx inst (fun i => rs (i + 1)) Θ κ) :
     ValidFieldsΓ sig ι ctx inst rs (.cons q p (inst D) (Θ.rename Ren.weaken)) κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩

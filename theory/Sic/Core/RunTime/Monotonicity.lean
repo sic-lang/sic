@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
@@ -173,7 +172,7 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
             ∀ c ∈ T.constructors, ∀ H H', K H H' → ∀ ts as, S X c H ts as → S Y c H' ts as :=
       fun K hK hKr X Y hXY T hT c hc =>
         RunTelRel.mono hd ih hK hKr (hS X T hT c hc) _ _ (hS Y T hT c hc)
-          (fun _ => Nest.ofOption_rel₃
+          (fun _ => Nest.map_rel₃
             (fun D' H H' hH _ _ => RunRel.computed_mono (hXY D' H H' hH)) _)
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=

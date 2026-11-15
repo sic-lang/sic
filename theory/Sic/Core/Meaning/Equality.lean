@@ -223,8 +223,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
           (below k (hk ▸ Nat.lt_succ_self k)).prop Q b₂ ∧ (b₁ ↔ b₂)
   /-- `(ty_D)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `U_n`, whose
   block has types whose constructors have fields that are telescopes in `U_n`, whatever the
-  relations `X` of the instances of the types of the block at their recursive fields, and whose
-  canonical terms are equal by `(eq_μ)`.
+  relations `X` of the instances of the types of the block at the positions of the nestings of
+  their fields, read on the declaration, and whose canonical terms are equal by `(eq_μ)`.
   RFC: `\mathsf{ty}_D` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -236,9 +236,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         TelRel sig ι n below .type
-          (fun i => Nest.ofOption
-            (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-              fun D' => (.inst D' qs ls ps as, (X D').computed sig ι)))
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
+            fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
       UnivRel sig ι n below v (DataType.blockRel decl.dataTypes S D)
   /-- `(ty_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
@@ -271,8 +270,8 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
     Term 0 [] → Prop → Prop where
   /-- `(ty_DΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a data type `T` of the signature in `Ω_n`, whose
   block has types whose constructors have fields that are telescopes in `Ω_n`, whatever the truths
-  `B` of the instances of the types of the block at their recursive fields, and whose truth is
-  `(true_μ)`.
+  `B` of the instances of the types of the block at the positions of the nestings of their fields,
+  read on the declaration, and whose truth is `(true_μ)`.
   RFC: `\mathsf{ty}_{D\Omega}` -/
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -284,9 +283,8 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ B, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         TelRel sig ι n below .prop
-          (fun i => Nest.ofOption
-            (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-              fun D' => (.inst D' qs ls ps as, fun _ _ => B D')))
+          (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
+            fun D' => (.inst D' qs ls ps as, fun _ _ => B D'))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S B c)) :
       PropRel sig ι n below v (DataType.blockTruth decl.dataTypes S D)
   /-- `(ty_dΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `Ω_n`, whose

@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Nesting
 public import Sic.Core.Positivity
 public import Sic.Core.Prelude
 public import Sic.Core.Substitution.Levels
@@ -905,9 +906,9 @@ themselves.
 A field whose type is an instance of a type of the block is recursive: its type is this type at the
 instance of the block, at its level variables and at the parameters themselves, and no field after
 it depends on it, so that it does not extend the context.
-The type of a field that is not recursive lives in a sort that `κ` bounds, with a grade without use
-at run time if it is a proposition, in the signature `Σ`, which the block does not extend, so that no
-type of the block occurs in it.
+The type of a field that is not recursive has a nesting without position, and lives in a sort that
+`κ` bounds, with a grade without use at run time if it is a proposition, in the signature `Σ`, which
+the block does not extend, so that no type of the block occurs in it.
 The RFC writes the parameters themselves as the variables `x̄_Δ`, the same under every field; the
 Lean carries them as the arguments `ā` of the parameters in the scope of the fields, the identity
 renamed under the fields before, since de Bruijn indices shift under each field.
@@ -921,14 +922,14 @@ inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.so
   | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {κ : Universe decl.levels}
       (hctx : WfCtx sig ctx) : WfFields sig decl ι as ctx .nil κ
-  /-- A first field that is not recursive, whose type lives in a sort that `κ` bounds, and the
+  /-- A first field whose type has no position and lives in a sort that `κ` bounds, and the
   others, in the context extended by it.
   RFC: `\mathsf{fields}_{,}` -/
   | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
       {q : Grade} {p : Parameter} {A : Term decl.levels Γ}
       {Θ : Telescope decl.levels (.var :: Γ) ps} {κ₁ κ : Universe decl.levels}
-      (hn : A.blockName decl.names = none) (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hn : A.blockNest decl.names = .plain) (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ)
       (hΘ : WfFields sig decl ι (as.rename Ren.weaken) (ctx.var A) Θ κ)
       (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfFields sig decl ι as ctx (.cons q p A Θ) κ

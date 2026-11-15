@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Substitution
@@ -911,7 +910,7 @@ theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
-          (fun _ => Nest.ofOption_rel₃
+          (fun _ => Nest.map_rel₃
             (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
             (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
@@ -937,7 +936,7 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
-          (fun _ => Nest.ofOption_rel₃
+          (fun _ => Nest.map_rel₃
             (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
             (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
@@ -1111,7 +1110,7 @@ theorem RunUnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm =>
           RunTelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
-            (fun _ => Nest.ofOption_rel₃
+            (fun _ => Nest.map_rel₃
               (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
               (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
@@ -1317,7 +1316,7 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         exact DataType.blockRel_closed hmono hT ⟨c, hcm, _, _, ⟨_, _, _, _, _, rfl⟩,
           ⟨_, _, _, _, _, rfl⟩, TelRel.rel_levelEquiv hd ih (hS _ T hT c hcm) _ _ _
             (hS _ T hT c hcm)
-            (fun _ => Nest.ofOption_rel₃
+            (fun _ => Nest.map_rel₃
               (r := fun (x y _ : NestLeaf) => ∀ t u t' u', x.2 t u → Term.LevelEquiv t t' →
                 Term.LevelEquiv u u' → y.2 t' u')
               (fun D _ _ _ _ h ht hu => by

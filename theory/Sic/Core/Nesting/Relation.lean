@@ -9,8 +9,10 @@ Nestings with the same positions, whose objects are related: the properties of t
 nestings of annex 18 of RFC 36 compare the relations that the graph gives at related positions, of
 two nestings for its growth and its symmetry, and of three for its transitivity.
 The relation of three nestings is the only one defined, and those of two nestings and of one are
-read from it, so that each lemma is proved once: the nesting of a type, and the nestings of the
-variables under new variables or at the arguments of an instance, keep the relation.
+read from it, so that each lemma is proved once: the nesting of a type, the nestings of the
+variables under new variables or at the arguments of an instance, and the nestings that functions
+give from one nesting, keep the relation, and the positions of the nestings of the fields of a
+block hold types of the block.
 
 ADE have no declared types, and no nesting.
 -/
@@ -182,18 +184,46 @@ theorem Nest.ofArgs_rel₃ {r : α → β → γ → Prop} {ns : List (Nest α)}
   · exact .plain
   · exact .inst h
 
-/-- The nestings of fields that are recursive together are related, when what their positions hold
-is. -/
-theorem Nest.ofOption_rel₃ {δ : Type} {r : α → β → γ → Prop} {f : δ → α} {g : δ → β} {h : δ → γ}
-    (hr : ∀ x, r (f x) (g x) (h x)) :
-    (o : Option δ) →
-      Nest.Rel₃ r (Nest.ofOption (o.map f)) (Nest.ofOption (o.map g)) (Nest.ofOption (o.map h))
-  | none => .plain
-  | some x => .direct (hr x)
+mutual
 
-/-- The nesting of a field that is recursive or not is not that of an instance. -/
-theorem Nest.ofOption_ne_inst (o : Option α) (ns : List (Nest α)) : Nest.ofOption o ≠ .inst ns := by
-  cases o <;> exact fun h => nomatch h
+/-- The nestings that three functions give from a nesting whose objects all satisfy `p` are
+related, when what the functions give for an object that satisfies `p` is. -/
+theorem Nest.All.map_rel₃ {δ : Type} {p : δ → Prop} {r : α → β → γ → Prop} {f : δ → α}
+    {g : δ → β} {h : δ → γ} (hr : ∀ x, p x → r (f x) (g x) (h x)) :
+    {n : Nest δ} → Nest.All p n → Nest.Rel₃ r (n.map f) (n.map g) (n.map h)
+  | _, .plain => .plain
+  | _, .direct hx => .direct (hr _ hx)
+  | _, .inst hs => .inst (Nest.ListRel₃.mapList hr hs)
+
+/-- The nestings of arguments that three functions give from nestings whose objects all satisfy
+`p` are related, when what the functions give for an object that satisfies `p` is. -/
+theorem Nest.ListRel₃.mapList {δ : Type} {p : δ → Prop} {r : α → β → γ → Prop} {f : δ → α}
+    {g : δ → β} {h : δ → γ} (hr : ∀ x, p x → r (f x) (g x) (h x)) :
+    {ns : List (Nest δ)} → Nest.ListRel₃ (fun a _ _ => p a) ns ns ns →
+      Nest.ListRel₃ r (Nest.mapList f ns) (Nest.mapList g ns) (Nest.mapList h ns)
+  | _, .nil => .nil
+  | _, .cons hn hs => .cons (Nest.All.map_rel₃ hr hn) (Nest.ListRel₃.mapList hr hs)
+
+end
+
+/-- The nestings that three functions give from a nesting are related, when what the functions give
+for each object is. -/
+theorem Nest.map_rel₃ {δ : Type} {r : α → β → γ → Prop} {f : δ → α} {g : δ → β} {h : δ → γ}
+    (hr : ∀ x, r (f x) (g x) (h x)) (n : Nest δ) :
+    Nest.Rel₃ r (n.map f) (n.map g) (n.map h) :=
+  Nest.All.map_rel₃ (p := fun _ => True) (fun x _ => hr x) (Nest.rel₃_refl (fun _ => trivial) n)
+
+/-- A nesting has a position when the nesting that a function gives from it has one. -/
+theorem Nest.map_eq_plain {f : α → β} {n : Nest α} : n.map f = .plain ↔ n = .plain := by
+  cases n <;> simp [Nest.map]
+
+/-- A nesting is that of an instance when the nesting that a function gives from it is. -/
+theorem Nest.map_eq_inst {f : α → β} {n : Nest α} {ms : List (Nest β)} (h : n.map f = .inst ms) :
+    ∃ ns, n = .inst ns := by
+  cases n with
+  | plain => exact nomatch h
+  | direct _ => exact nomatch h
+  | inst ns => exact ⟨ns, rfl⟩
 
 /-- The nestings of the variables stay related under a new entry. -/
 theorem Nesting.lift_rel₃ {Γ : Scope} {e₀ : Scope.Entry} {r : α → β → γ → Prop}
@@ -252,5 +282,58 @@ theorem InstanceArgs.nest_rel₃ {r : α → β → γ → Prop} :
     .cons (Term.nest_rel₃ (Nesting.liftN_rel₃ _ h) B) (InstanceArgs.nest_rel₃ h as)
 
 end
+
+/-! ## Objects of the Nesting of a Type -/
+
+mutual
+
+/-- The objects at the positions of the nesting of a type all satisfy `p`, when those that the
+types of the block are given and those of the nestings of the variables do. -/
+theorem Term.nest_all {p : α → Prop} {mark : Name → Option α}
+    (hm : ∀ D a, mark D = some a → p a) :
+    {Γ : Scope} → {ν : Nesting α Γ} → Nesting.All p @ν → (B : Term k Γ) →
+      Nest.All p (B.nest mark @ν)
+  | _, _, h, .var x _ => h _ x
+  | _, _, h, .inst D _ _ _ as => by
+    rw [Term.nest]
+    split
+    · rename_i a ha
+      exact .direct (hm D a ha)
+    · exact Nest.ofArgs_rel₃ (InstanceArgs.nest_all hm h as)
+  | _, _, _, .sort _ => .plain
+  | _, _, _, .const _ _ _ _ => .plain
+  | _, _, _, .ctor _ _ _ _ _ _ _ => .plain
+  | _, _, _, .recursor _ _ _ _ _ _ _ _ _ => .plain
+  | _, _, _, .obs _ _ _ _ _ _ _ _ => .plain
+  | _, _, _, .corec _ _ _ _ _ _ _ _ _ => .plain
+
+/-- The objects at the positions of the nestings of the arguments of an instance all satisfy `p`,
+when those that the types of the block are given and those of the nestings of the variables do. -/
+theorem InstanceArgs.nest_all {p : α → Prop} {mark : Name → Option α}
+    (hm : ∀ D a, mark D = some a → p a) :
+    {Γ Δ : Scope} → {ν : Nesting α Γ} → Nesting.All p @ν → (as : InstanceArgs k Γ Δ) →
+      Nest.ListRel₃ (fun a _ _ => p a) (as.nest mark @ν) (as.nest mark @ν) (as.nest mark @ν)
+  | _, _, _, _, .nil => .nil
+  | _, _, _, h, .snoc as B =>
+    .cons (Term.nest_all hm (Nesting.liftN_rel₃ _ h) B) (InstanceArgs.nest_all hm h as)
+
+end
+
+/-- The positions of the nesting of the type of a field hold types of the block. -/
+theorem Term.blockNest_all {Γ : Scope} (names : List Name) (A : Term k Γ) :
+    Nest.All (· ∈ names) (A.blockNest names) :=
+  Term.nest_all (fun D a h => by
+    split at h
+    · cases h
+      assumption
+    · cases h) (fun _ _ => .plain) A
+
+/-- The positions of the nesting of each entry of a telescope hold types of the block. -/
+theorem Telescope.nestAt_all {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (i : Nat) →
+      Nest.All (· ∈ names) (Θ.nestAt names i)
+  | [], .nil, _ => .plain
+  | _ :: _, .cons _ _ A _, 0 => Term.blockNest_all names A
+  | _ :: _, .cons _ _ _ Θ, i + 1 => Telescope.nestAt_all names Θ i
 
 end Sic.Core

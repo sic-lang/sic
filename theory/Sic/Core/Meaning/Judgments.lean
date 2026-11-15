@@ -72,7 +72,7 @@ theorem ValidTypeDeclaration.fields {sig : Signature} {ι : Interpretation} {dec
     (hT : T ∈ decl.dataTypes)
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope} (hc : c ∈ T.constructors) :
     ValidFields sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
-      ((c.fields I).recursionAt decl.names) (c.fields I) (decl.sort I) := by
+      ((c.fields I).nestAt decl.names) (c.fields I) (decl.sort I) := by
   unfold ValidTypeDeclaration at h
   unfold TypeDeclaration.dataTypes at hT
   split at h <;> rename_i heq <;> rw [heq] at hT
