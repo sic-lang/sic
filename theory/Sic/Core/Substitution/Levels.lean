@@ -481,6 +481,52 @@ theorem Universe.substLevels_bounded {k' : Nat} (ls' : Fin k → Level k') {κ�
     (h : κ₁ ≼ κ₂) : κ₁.substLevels ls' ≼ κ₂.substLevels ls' :=
   ⟨h.1, Level.subst_le ls' h.2⟩
 
+/-- The levels of a list, instantiated, are the levels at its positions, instantiated. -/
+theorem Level.getFin_map_subst {k' n : Nat} (ls' : Fin k → Level k') (ls : List (Level k))
+    (hl : ls.length = n) :
+    (ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl) =
+      fun i => (ls.getFin hl i).subst ls' :=
+  List.getFin_map _ _ _
+
+/-- Lists of levels equal position by position are so once the same levels replace their
+variables. -/
+theorem Level.getFin_map_subst_equal {k' n : Nat} (ls' : Fin k → Level k') {ls₁ ls₂ : List (Level k)}
+    {hl₁ : ls₁.length = n} {hl₂ : ls₂.length = n} (h : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+    (i : Fin n) :
+    (ls₁.map (Level.subst ls')).getFin ((List.length_map _).trans hl₁) i ≈
+      (ls₂.map (Level.subst ls')).getFin ((List.length_map _).trans hl₂) i := by
+  rw [Level.getFin_map_subst ls' ls₁ hl₁, Level.getFin_map_subst ls' ls₂ hl₂]
+  exact Level.subst_equal ls' (h i)
+
+/-- A sort at the levels of a list, instantiated, is the sort at the levels instantiated. -/
+theorem Universe.substLevels_substLevels_getFin {k' n : Nat} (ls' : Fin k → Level k')
+    (κ : Universe n) (ls : List (Level k)) (hl : ls.length = n) :
+    (κ.substLevels (ls.getFin hl)).substLevels ls' =
+      κ.substLevels ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) := by
+  rw [Universe.substLevels_substLevels, Level.getFin_map_subst]
+
+/-- A term at the levels of a list, instantiated, is the term at the levels instantiated. -/
+theorem Term.substLevels_substLevels_getFin {k' n : Nat} {Γ : Scope} (ls' : Fin k → Level k')
+    (t : Term n Γ) (ls : List (Level k)) (hl : ls.length = n) :
+    (t.substLevels (ls.getFin hl)).substLevels ls' =
+      t.substLevels ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) := by
+  rw [Term.substLevels_substLevels, Level.getFin_map_subst]
+
+/-- A telescope at the levels of a list, instantiated, is the telescope at the levels
+instantiated. -/
+theorem Telescope.substLevels_substLevels_getFin {k' n : Nat} {Γ : Scope} {ps : List Parameter}
+    (ls' : Fin k → Level k') (Θ : Telescope n Γ ps) (ls : List (Level k)) (hl : ls.length = n) :
+    (Θ.substLevels (ls.getFin hl)).substLevels ls' =
+      Θ.substLevels ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) := by
+  rw [Telescope.substLevels_substLevels, Level.getFin_map_subst]
+
+/-- A context at the levels of a list, instantiated, is the context at the levels instantiated. -/
+theorem Context.substLevels_substLevels_getFin {k' n : Nat} {Γ : Scope} (ls' : Fin k → Level k')
+    (ctx : Context n Γ) (ls : List (Level k)) (hl : ls.length = n) :
+    (ctx.substLevels (ls.getFin hl)).substLevels ls' =
+      ctx.substLevels ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) := by
+  rw [Context.substLevels_substLevels, Level.getFin_map_subst]
+
 /-- The new variables of a scope have no level to instantiate. -/
 theorem Args.substLevels_bound {k' : Nat} (ls' : Fin k → Level k') :
     {Γ : Scope} → (ps : List Parameter) →
@@ -685,6 +731,38 @@ theorem Args.terms_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k'
     {ps : List Parameter} → (ts : Args k Γ ps) → (ts.substLevels ls').terms = ts.terms.substLevels ls'
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg _ (Args.terms_substLevels ls' ts)
+
+/-- A constructor applied to arguments, at instantiated levels, is the constructor applied to the
+arguments at these levels. -/
+theorem Term.ctor_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k') (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Ξ) (c : Name)
+    {ps' : List Parameter} (ts : Args k Γ ps') :
+    (Term.ctor D qs ls ps as c ts.terms).substLevels ls' =
+      .ctor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c (ts.substLevels ls').terms := by
+  rw [Args.terms_substLevels]
+  rfl
+
+/-- An observation applied to arguments, at instantiated levels, is the observation of the term
+applied to the arguments at these levels. -/
+theorem Term.obs_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k') (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Ξ)
+    (t : Term k Γ) (d : Name) {ps' : List Parameter} (bs : Args k Γ ps') :
+    (Term.obs D qs ls ps as t d bs.terms).substLevels ls' =
+      .obs D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls') d
+        (bs.substLevels ls').terms := by
+  rw [Args.terms_substLevels]
+  rfl
+
+/-- A corecursor from a state, at instantiated levels, is the corecursor from the state at these
+levels. -/
+theorem Term.corec_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k') (r : Grade)
+    (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Ξ)
+    {ps' : List Parameter} (ss : Args k Γ ps') (Ss : States k Γ) (gs : CorecBranches k Γ) :
+    (Term.corec r D qs ls ps as ss.terms Ss gs).substLevels ls' =
+      .corec r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (ss.substLevels ls').terms
+        (Ss.substLevels ls') (gs.substLevels ls') := by
+  rw [Args.terms_substLevels]
+  rfl
 
 /-- The fields of a constructor at arguments of an instance, substituted, are its fields at the
 arguments substituted. -/
