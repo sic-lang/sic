@@ -1,14 +1,13 @@
 module
 
-public import Sic.Core.Typing.Lifting.Observations
 public import Sic.Core.Lifting.Recursion
 public import Sic.Core.Typing.Lifting.Types
 import Sic.Core.Substitution.Closed
-import Sic.Core.Substitution.Composition
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Identity
 import Sic.Core.Typing.Levels
 import Sic.Core.Typing.Lifting.Context
+import Sic.Core.Typing.Lifting.Observations
 import Sic.Core.Typing.Prelude
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature
