@@ -30,6 +30,14 @@ may be computed after the closure is: the relation of the codata types is stated
 extends `H`, while those of the data types read only the values of `H`, which every heap that
 extends `H` keeps.
 
+A type below which the types of a block are nested has no relation of run time before the block
+does: its relation is given from the relations of these types, by the graph of the nestings of run
+time, which follows the nesting of the type as the graph of the nestings of the equality does, and
+takes the given relations at its positions.
+A position holds no equality: the relation of run time reads the equality of a field or of an
+observation for what depends on it, and nothing depends on a field or on a result whose nesting has
+a position.
+
 The program `P` gives the constants of the target language their bodies, the erasure of the
 signature, and the interpretation `ι` the constants of the source, as in the equality, so that the
 relation holds for the programs that realize the declared constants as `ι` interprets them.
@@ -59,6 +67,10 @@ abbrev RunObsRel : Type := Heap → Observations → Nat → Prop
 /-- The relations of run time of the types of a level, given by their graph. -/
 abbrev RunLevelRel : Type := Term 0 [] → RunRel → Prop
 
+
+/-- What a position of a nesting holds at run time: the closed instance of a type of a block, and
+the relation of run time of its terms. -/
+abbrev RunNestLeaf : Type := Term 0 [] × RunRel
 
 -- ADE: none.
 /-- `®⇓(R)`: a closed term that computes to a canonical term that `R` relates to the address.
@@ -340,6 +352,128 @@ inductive RunFieldRel (sig : Signature) (ι : Interpretation) (P : Program) (n :
   /-- A proposition of `Ω_m`, for `m < n`. -/
   | propBelow {v : Term 0 []} {b : Prop} (m : Nat) (hm : m < n) (h : (below m hm).prop v b) :
       RunFieldRel sig ι P n below v fun _ _ _ => True
+
+-- ADE: none.
+/--
+`rt(U_n)[λ]`: the closed type `A`, whose nesting is `λ`, is a type of a sort that `U_n` bounds,
+whose closed terms are related at run time by `R`, where the nesting gives, at each of its
+positions, the closed instance of a type of a block and the relation of run time of its terms,
+given rather than computed.
+-/
+inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
+    (below : LevelRel.Below n) : Nest RunNestLeaf → Term 0 [] → RunRel → Prop where
+  /-- `(rt_λ⊥)`: a type without position, which computes to a type of a sort that `U_n` bounds.
+  RFC: `\mathsf{rt}_{\lambda\bot}` -/
+  | plain {A v : Term 0 []} {R : RunRel} (hA : Computesι sig ι A v)
+      (hR : RunFieldRel sig ι P n below v R) : RunNestRel sig ι P n below .plain A R
+  /-- `(rt_λT)`: the instance `T` of a type of the block, whose terms are related by the relation
+  `Q` that the nesting gives it; the levels of the RFC are equal when their values are, so that the
+  type is `T` up to the values of its levels.
+  RFC: `\mathsf{rt}_{\lambda T}` -/
+  | direct {T A : Term 0 []} {Q : RunRel} (hA : Term.LevelEquiv T A) :
+      RunNestRel sig ι P n below (.direct (T, Q)) A Q
+  /-- `(rt_λD)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `U_n`, whose
+  block has no recursive destructor and has types whose destructors are of run time in `U_n` at the
+  arguments `ā`, which have the nestings `λ̄`, and whose canonical terms are related by `(®_ν)`.
+  RFC: `\mathsf{rt}_{\lambda D}` -/
+  | codata {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
+      {A : Term 0 []} {νs : List (Nest RunNestLeaf)}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n)
+      (hrec : ∀ T' ∈ decl.codataTypes,
+        ∀ r ∈ (T'.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (S : CodataType decl.sorts decl.grades decl.levels decl.scope → RunObsRel)
+      (hS : ∀ T' ∈ decl.codataTypes,
+        RunNestDesRel sig ι P n below T'.name (Nesting.ofArgs νs)
+          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S T')) :
+      RunNestRel sig ι P n below (.inst νs) A
+        ((CodataType.runBlockRel decl.codataTypes (fun _ => S) D).computed sig ι)
+  /-- `(rt_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in `Ω_n`, whose
+  terms, proofs, are erased.
+  RFC: `\mathsf{rt}_{\lambda D\Omega}` -/
+  | codataProp {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
+      {A : Term 0 []} {νs : List (Nest RunNestLeaf)}
+      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+      (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n) :
+      RunNestRel sig ι P n below (.inst νs) A fun _ _ _ => True
+
+-- ADE: none.
+/--
+`rt_D(U_n)[Λ]` for the destructors: the destructors `d̄` of the codata type `D`, none of which is
+recursive, at the closed substitution `θ` of their scope, are of run time in `U_n`, and the
+observations of a term and an address are related by `S`, where `ν` gives the nestings of the
+variables of their scope, those of the arguments of the parameters: the result of each destructor
+is read by the graph of the nestings, at its nesting.
+The destructors after a destructor whose result has a position do not depend on it, as those after
+a recursive destructor, and the relation does not read the equality of its observation, which the
+equality of the result, given at the positions, does not relate to itself.
+-/
+inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
+    (below : LevelRel.Below n) :
+    Name → {Γ : Scope} → Nesting RunNestLeaf Γ → {ns : List Name} → Destructors 0 Γ ns →
+      Subst 0 [] Γ → RunObsRel → Prop where
+  /-- `(rt_λε)`: no destructor.
+  RFC: `\mathsf{rt}_{\lambda\varepsilon}` -/
+  | nil {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {θ : Subst 0 [] Γ} :
+      RunNestDesRel sig ι P n below D @ν .nil @θ fun _ _ _ => True
+  /-- `(rt_λ|)`: a destructor `d : (Θ ⊢ B ◀ ψ) ▶ p` whose result has no position, whose arguments
+  `Θ[θ]` are a telescope in `U_n` with the equality `SΘ` and of run time with the relation `RΘ`,
+  whose result type `B[θ, t̄]` is, at the arguments `t̄` that the equality gives, a type of a sort
+  that `U_n` bounds, with the equality `F t̄` and the relation of run time `R t̄`, so that the
+  observation of a term is one that the equality gives to `d`, related by `(®_x̄)` at the case `i`
+  of `d` when `p` is used at run time, and the destructors after it, of run time for each
+  abstraction `f` that the equality gives to `d`, with the relation `G f`.
+  RFC: `\mathsf{rt}_{\lambda|}` -/
+  | cons {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q ς : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
+      (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
+      (F : Terms 0 [] → TermRel) (R : Terms 0 [] → RunRel)
+      (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        NestRel sig ι n below .type .plain (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
+      (hR : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        RunNestRel sig ι P n below .plain (B.subst (Subst.append θ ts.toSubst)) (R ts.terms))
+      (G : Term 0 (Scope.extend [] ps.length) → RunObsRel)
+      (hG : ∀ f, AbstractionRel SΘ F f f →
+        RunNestDesRel sig ι P n below D (Nesting.lift @ν) ds (Subst.snoc θ f) (G f)) :
+      RunNestDesRel sig ι P n below D @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun H o a =>
+        AbstractionRel SΘ F (o d ps) (o d ps) ∧
+          (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ ς RΘ R (o d ps) H a) ∧ G (o d ps) H o a
+  /-- `(rt_λ|λ)`: a destructor `d : (Θ ⊢ B ◀ ψ) ▶ p` whose result has a position, whose arguments
+  `Θ[θ]` are a telescope in `U_n` with the equality `SΘ` and of run time with the relation `RΘ`,
+  whose result type `B[θ, t̄]` is, at the arguments `t̄` that the equality gives and at the nesting
+  of `B`, a type of a sort that `U_n` bounds, with the relation of run time `R t̄`, so that the
+  observation of a term is related by `(®_x̄)` at the case `i` of `d` when `p` is used at run time,
+  and the destructors after it, the same, with the same relation, for every abstraction for it.
+  RFC: `\mathsf{rt}_{\lambda|\lambda}` -/
+  | nested {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q ς : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
+      (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
+      (R : Terms 0 [] → RunRel)
+      (hR : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        RunNestRel sig ι P n below (B.nest (fun _ => none) (Nesting.liftN ps.length @ν))
+          (B.subst (Subst.append θ ts.toSubst)) (R ts.terms))
+      (G : RunObsRel)
+      (hG : ∀ f, RunNestDesRel sig ι P n below D (Nesting.lift @ν) ds (Subst.snoc θ f) G) :
+      RunNestDesRel sig ι P n below D @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun H o a =>
+        (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ ς RΘ R (o d ps) H a) ∧ G H o a
 
 end
 
