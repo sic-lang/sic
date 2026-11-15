@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Typing.Renaming
 import Sic.Core.Substitution.Closed
-import Sic.Core.Substitution.Composition
 import Sic.Core.Typing.Lifting.Context
 import Sic.Core.Typing.Presuppositions
 
