@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Syntax.Signature
 
@@ -13,6 +14,8 @@ graph, as the equality proves its uniqueness, of which it reads the equality of 
 field and of each result.
 The uniqueness of a level follows from that of the levels below it, which `Sic.Core.Meaning.Uniqueness`
 proves by induction on the level.
+The graph of the nestings of run time is unique in the same way, at positions whose relations
+relate the same terms to the same addresses.
 
 ADE prove the irrelevance of the derivations of their relation, in
 `Graded/Erasure/LogicalRelation/Irrelevance.agda`; their target language has no heap.
@@ -406,5 +409,148 @@ theorem RunFieldRel.congr {sig : Signature} {ι : Interpretation} {P : Program} 
 termination_by structural h _ _ => h
 
 end
+
+/-! ## Uniqueness at a Nesting
+
+A type has one relation of run time at a nesting, at given relations of its positions, by mutual
+recursion on the graph of the nestings: the clause of a type without position is unique as the
+relation of the type of a field is, a position gives its relation, and the relations of the
+destructors of an instance of a codata type are unique by recursion. -/
+
+mutual
+
+/-- The relations of run time that the graph of the nestings gives a type relate the same terms and
+addresses, at positions whose relations do. -/
+theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+    (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P))
+    {τ₁ : Nest RunNestLeaf} {A : Term 0 []} {R₁ : RunRel} :
+    RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₁ A R₁ →
+      ∀ (τ₂ : Nest RunNestLeaf) (R₂ : RunRel),
+        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₂ A R₂ →
+        Nest.Rel (fun x y => ∀ H t a, x.2 H t a ↔ y.2 H t a) τ₁ τ₂ →
+        ∀ H t a, R₁ H t a ↔ R₂ H t a
+  | .plain hA hR, _, _, h', hτ => by
+    cases hτ
+    cases h' with
+    | plain hA' hR' =>
+      cases Computesι.det hd hA hA'
+      exact RunFieldRel.congr hd ihm ih hR _ hR'
+  | .direct _, _, _, h', hτ => by
+    cases hτ with
+    | direct hr =>
+      cases h' with
+      | direct _ => exact hr
+  | .codata h _ _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
+    cases hτ with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' _ _ _ _ hS' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        cases hT
+        cases has
+        exact RunRel.computed_congr (CodataType.runBlockRel_congr (fun _ T' hT' =>
+          RunNestDesRel.congr hd ihm ih (hS T' hT') _ _ (hS' T' hT') (Nesting.ofArgs_rel₃ hνs)) _)
+      | codataProp h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+  | .codataProp h _ _ _ hA hκ _, _, _, h', hτ => by
+    cases hτ with
+    | inst hνs =>
+      cases h' with
+      | codata h' _ _ _ hA' hκ' =>
+        subst hA
+        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
+        subst hD hqs hls hps
+        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
+        exact nomatch hκ.symm.trans hκ'
+      | codataProp => exact fun _ _ _ => .rfl
+termination_by structural h _ _ _ _ => h
+
+/-- The relations of run time of the observations by destructors read at nestings relate the same
+observations and addresses, at positions whose relations do. -/
+theorem RunNestDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+    (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {D : Name} {Γ : Scope}
+    {ν₁ : Nesting RunNestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S₁ : RunObsRel} :
+    RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₁ ds @θ S₁ →
+      ∀ (ν₂ : Nesting RunNestLeaf Γ) (S₂ : RunObsRel),
+        RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₂ ds @θ S₂ →
+        Nesting.Rel (fun x y => ∀ H t a, x.2 H t a ↔ y.2 H t a) @ν₁ @ν₂ →
+        ∀ H o a, S₁ H o a ↔ S₂ H o a
+  | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ => .rfl
+  | .cons (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hν hΘ hRΘ F R hF hR _ hG,
+      _, _, h', hτ => by
+    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
+    cases h' with
+    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' =>
+      obtain rfl := Option.some.inj (hi.symm.trans hi')
+      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
+      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
+          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
+        NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
+      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
+        (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
+          have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+          RunNestRel.congr hd ihm ih (hR ts hts') _ _ (hR' ts ((hSS _ _).1 hts')) .plain
+      exact fun H o a =>
+        ⟨fun ⟨h₁, h₂, h₃⟩ => ⟨(hEE _ _).1 h₁, fun hp => (hAA _ H a).1 (h₂ hp),
+            (RunNestDesRel.congr hd ihm ih (hG _ h₁) _ _ (hG' _ ((hEE _ _).1 h₁))
+              (Nesting.lift_rel₃ hτ) H o a).1 h₃⟩,
+          fun ⟨h₁, h₂, h₃⟩ =>
+            have h₁' := (hEE _ _).2 h₁
+            ⟨h₁', fun hp => (hAA _ H a).2 (h₂ hp),
+              (RunNestDesRel.congr hd ihm ih (hG _ h₁') _ _ (hG' _ h₁) (Nesting.lift_rel₃ hτ)
+                H o a).2 h₃⟩⟩
+    | nested _ hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
+  | .nested (ps := ps) (B := B) (SΘ := SΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h', hτ => by
+    have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
+    cases h' with
+    | cons _ hν' => exact absurd (hB.eq_plain.1.1 hν') hν
+    | nested hi' _ hΘ' hRΘ' R' hR' _ hG' =>
+      obtain rfl := Option.some.inj (hi.symm.trans hi')
+      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hGG := RunNestDesRel.congr hd ihm ih (hG (.sort ⟨.type, .zero⟩)) _ _
+        (hG' (.sort ⟨.type, .zero⟩)) (Nesting.lift_rel₃ hτ)
+      exact fun H o a => and_congr
+        (imp_congr_right fun _ => RunAbstractionRel.congr hRΘΘ fun H ts bs hts =>
+          have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+          RunNestRel.congr hd ihm ih (hR ts hts') _ _ (hR' ts ((hSS _ _).1 hts')) hB)
+        (hGG H o a)
+termination_by structural h _ _ _ _ => h
+
+end
+
+/-- A type has a unique relation of run time by the graph of the nestings, at a given nesting. -/
+theorem RunNestRel.unique {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+    (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {τ : Nest RunNestLeaf}
+    {A : Term 0 []} {R : RunRel}
+    (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R) (R' : RunRel)
+    (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
+    ∀ H t a, R H t a ↔ R' H t a :=
+  RunNestRel.congr hd ihm ih h _ _ h' (Nest.rel₃_refl (fun _ _ _ _ => .rfl) τ)
+
+/-- Destructors read at nestings have a unique relation of run time of the observations by them, at
+given nestings of their variables. -/
+theorem RunNestDesRel.unique {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+    (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {D : Name} {Γ : Scope}
+    {ν : Nesting RunNestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
+    {S : RunObsRel} (h : RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν ds @θ S)
+    (S' : RunObsRel) (h' : RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν ds @θ S') :
+    ∀ H o a, S H o a ↔ S' H o a :=
+  RunNestDesRel.congr hd ihm ih h _ _ h' fun _ x => Nest.rel₃_refl (fun _ _ _ _ => .rfl) (ν x)
 
 end Sic.Core

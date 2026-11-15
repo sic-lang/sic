@@ -3,7 +3,6 @@ module
 public import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
-public import Sic.Core.Nesting.Relation
 
 /-!
 # Uniqueness of the Relations of the Levels
@@ -15,6 +14,8 @@ which `Sic.Core.Meaning.Equality.Properties` and `Sic.Core.Meaning.RunTime.Prope
 graphs of a level.
 The graph of the nestings of a level has the same properties, at the relations that a nesting
 holds, and agrees with the graph of the types, which `Sic.Core.Meaning.Equality.Nesting` proves.
+The graph of the nestings of run time of a level gives a type a unique relation too, at the
+relations that a nesting holds.
 The equality of the terms of a universe compares the relations of run time of the level below it,
 so that its transitivity needs their uniqueness, which the induction gives with the partial
 equivalence relations.
@@ -106,6 +107,17 @@ distinct. -/
 theorem levelRel_run_unique {sig : Signature} {ι : Interpretation} {P : Program}
     (hd : sig.Distinct) (n : Nat) : RunLevelRel.Unique ((levelRel sig ι n).run P) :=
   (levelRel_isPer hd n).run_unique
+
+/-- `rt(U_n)[λ]` gives a type a unique relation of run time: two relations of run time of a type at
+a nesting relate the same terms to the same addresses in each heap, in a signature whose names are
+distinct.
+RFC: `\mathsf{unique}_{\circledR\lambda}` -/
+theorem levelRel_runNest_unique {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    {τ : Nest RunNestLeaf} {A : Term 0 []} {R R' : RunRel} (hd : sig.Distinct)
+    (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
+    (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
+    ∀ H t a, R H t a ↔ R' H t a :=
+  RunNestRel.unique hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m) h _ h'
 
 -- ADE: `irrelevanceTerm`, in `Graded/Erasure/LogicalRelation/Irrelevance.agda`.
 /-- `®(v)` is unique: two relations of run time of a type relate the same terms to the same
