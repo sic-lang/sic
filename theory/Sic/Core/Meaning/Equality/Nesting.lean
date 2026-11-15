@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Syntax.Signature
 

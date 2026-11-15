@@ -107,7 +107,8 @@ structure SoundnessIn : Prop where
     {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
     {κ : Universe decl.levels},
       sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.nestAt decl.names) Θ κ
+        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
+          (Θ.nestAt decl.names) Θ κ
   /-- The destructors of a codata type in a sort. -/
   wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
@@ -759,7 +760,8 @@ where
       {ps : List Parameter} {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx (fun D => decl.blockInstance I D as) (Θ.nestAt decl.names) Θ κ
+        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
+          (Θ.nestAt decl.names) Θ κ
     | .nil hctx => fun ρ => ValidFieldsΓ.nil (wfCtx hd hι hctx ρ)
     | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
       have hΘ' := wfFields hd hι hΘ ρ
@@ -770,7 +772,7 @@ where
         hn hΘ'
     | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
       have hΘ' := wfFields hd hι hΘ ρ
-      show ValidFieldsΓ sigM ι _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
+      show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
         ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
       refine ValidFieldsΓ.recursive (D := D)

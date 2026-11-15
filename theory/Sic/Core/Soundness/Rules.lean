@@ -448,8 +448,8 @@ theorem ValidEqTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Contex
 -- ADE: none.
 /-- `(fields_ε)` keeps the meaning: no field. -/
 theorem ValidFieldsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
-    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {κ : Universe 0} :
-    ValidFieldsΓ sig ι ctx inst rs .nil κ :=
+    {names : List Name} {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {κ : Universe 0} :
+    ValidFieldsΓ sig ι ctx names inst rs .nil κ :=
   ⟨hctx, fun _ _ _ => hctx.distinct⟩
 
 -- ADE: none.
@@ -458,11 +458,11 @@ sort `κ₁`, which `κ` bounds, and the rest at equal terms of it, which are th
 substitutions of the context extended by it, at which the instances of the block are the same. -/
 theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
     {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 (.var :: Γ) ps} {κ₁ κ : Universe 0}
-    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} (hA : ValidTermΓ sig ι ctx A (.sort κ₁))
+    {names : List Name} {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} (hA : ValidTermΓ sig ι ctx A (.sort κ₁))
     (hκ : κ₁ ≼ κ) (hr : rs 0 = .plain)
-    (hΘ : ValidFieldsΓ sig ι (ctx.var A) (fun D => (inst D).rename Ren.weaken)
+    (hΘ : ValidFieldsΓ sig ι (ctx.var A) names (fun D => (inst D).rename Ren.weaken)
       (fun i => rs (i + 1)) Θ κ) :
-    ValidFieldsΓ sig ι ctx inst rs (.cons q p A Θ) κ := by
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p A Θ) κ := by
   refine ⟨hA.1.1, fun σ₁ σ₂ h => ?_⟩
   rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
   refine ⟨⟨κ₁, hκ, hA.2 σ₁ σ₂ h⟩, fun v₁ v₂ hv => ?_⟩
@@ -483,10 +483,10 @@ theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 �
 /-- `(fields_rec)` keeps the meaning: a first field that is recursive, the instance of a type of the
 block, and the rest, which does not depend on it, at any terms of it. -/
 theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
-    {p : Parameter} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {inst : Name → Term 0 Γ}
-    {rs : Nat → Nest Name} {D : Name} (hr : rs 0 = .direct D)
-    (hΘ : ValidFieldsΓ sig ι ctx inst (fun i => rs (i + 1)) Θ κ) :
-    ValidFieldsΓ sig ι ctx inst rs (.cons q p (inst D) (Θ.rename Ren.weaken)) κ := by
+    {p : Parameter} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {names : List Name}
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {D : Name} (hr : rs 0 = .direct D)
+    (hΘ : ValidFieldsΓ sig ι ctx names inst (fun i => rs (i + 1)) Θ κ) :
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p (inst D) (Θ.rename Ren.weaken)) κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
   rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
   refine ⟨rfl, rfl, fun v₁ v₂ => ?_⟩
