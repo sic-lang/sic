@@ -258,18 +258,20 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
     {ps : List Parameter} → {rs : Nat → Option Name} → {Θ₁ Θ₂ : Telescope 0 [] ps} →
       ValidEqFields₀ sig ι κ inst₁ inst₂ rs Θ₁ Θ₂ →
       ∃ S, RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-          (fun i => (rs i).map Rf) Θ₁ S ∧
+          (fun i => Nest.ofOption ((rs i).map fun D => (inst₁ D, Rf D))) Θ₁ S ∧
         RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-          (fun i => (rs i).map Rf) Θ₂ S
+          (fun i => Nest.ofOption ((rs i).map fun D => (inst₂ D, Rf D))) Θ₂ S
   | [], _, .nil, .nil, _ => ⟨RunFieldsRel.nil, .nil, .nil⟩
   | _ :: _, rs, .cons _ _ A₁ Θ₁, .cons _ _ A₂ Θ₂, h => by
     have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
-    have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)
-        ((rs (i + 1)).map Rf) ((rs (i + 1)).map Rf) :=
-      fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _
+    have hrr : ∀ (inst : Name → Term 0 []) i,
+        Nest.Rel (fun x y : RunNestLeaf => ∀ H t a, x.2 H t a ↔ y.2 H t a)
+          (Nest.ofOption ((rs (i + 1)).map fun D => (inst D, Rf D)))
+          (Nest.ofOption ((rs (i + 1)).map fun D => (inst D, Rf D))) :=
+      fun _ _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _
     rw [ValidEqFields₀] at h
     split at h
     · rename_i hr
@@ -281,20 +283,27 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
       rw [hs] at hF₁ hF₂
       have hcommon : ∀ a₁ a₂, F a₁ a₂ → ∃ S,
           RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-            (fun i => (rs (i + 1)).map Rf) (Θ₁.subst₀ (Subst₀.single a₁)) S ∧
+            (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₁ D, Rf D)))
+            (Θ₁.subst₀ (Subst₀.single a₁)) S ∧
           RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-            (fun i => (rs (i + 1)).map Rf) (Θ₂.subst₀ (Subst₀.single a₂)) S :=
+            (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₂ D, Rf D)))
+            (Θ₂.subst₀ (Subst₀.single a₂)) S :=
         fun a₁ a₂ ha => ValidEqFields₀.runTelRel hd P hs Rf (hΘ a₁ a₂ (hFv a₁ a₂ ha))
       let G : Term 0 [] → RunFieldsRel := fun a H ts bs => ∃ S,
         RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-          (fun i => (rs (i + 1)).map Rf) (Θ₁.subst₀ (Subst₀.single a)) S ∧ S H ts bs
+          (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₁ D, Rf D)))
+            (Θ₁.subst₀ (Subst₀.single a)) S ∧ S H ts bs
       have hG : ∀ a S, RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-          (fun i => (rs (i + 1)).map Rf) (Θ₁.subst₀ (Subst₀.single a)) S → G a = S :=
+          (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₁ D, Rf D)))
+            (Θ₁.subst₀ (Subst₀.single a)) S → G a = S :=
         fun a S hS => funext fun H => funext fun ts => funext fun bs => propext
-          ⟨fun ⟨_, hS', hs⟩ => (RunTelRel.congr hd ihm ih hS' _ _ hS hrr H ts bs).1 hs,
+          ⟨fun ⟨_, hS', hs⟩ => (RunTelRel.congr hd ihm ih hS' _ _ hS (hrr inst₁) H ts bs).1 hs,
             fun hs => ⟨S, hS, hs⟩⟩
-      have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
-      refine ⟨_, .cons hc₁ hF₁ hR₁ G (fun a ha => ?_) hr', .cons hc₂ hF₂ hR₂ G (fun a ha => ?_) hr'⟩
+      refine ⟨_,
+        .cons hc₁ hF₁ hR₁ G (fun a ha => ?_)
+          (by show Nest.ofOption ((rs 0).map _) = _; rw [hr]; rfl),
+        .cons hc₂ hF₂ hR₂ G (fun a ha => ?_)
+          (by show Nest.ofOption ((rs 0).map _) = _; rw [hr]; rfl)⟩
       · obtain ⟨S, h₁, -⟩ := hcommon a a ha
         rw [hG a S h₁]
         exact h₁
@@ -302,24 +311,35 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
         rw [hG a S h₁]
         exact h₂
     · rename_i D hr
-      obtain ⟨-, -, hΘ⟩ := h
+      obtain ⟨hA₁, hA₂, hΘ⟩ := h
       let a₀ : Term 0 [] := .sort ⟨.type, .zero⟩
       have hcommon : ∀ a₁ a₂, ∃ S,
           RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-            (fun i => (rs (i + 1)).map Rf) (Θ₁.subst₀ (Subst₀.single a₁)) S ∧
+            (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₁ D, Rf D)))
+            (Θ₁.subst₀ (Subst₀.single a₁)) S ∧
           RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
-            (fun i => (rs (i + 1)).map Rf) (Θ₂.subst₀ (Subst₀.single a₂)) S :=
+            (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₂ D, Rf D)))
+            (Θ₂.subst₀ (Subst₀.single a₂)) S :=
         fun a₁ a₂ => ValidEqFields₀.runTelRel hd P hs Rf (hΘ a₁ a₂)
       obtain ⟨G, h₀₁, h₀₂⟩ := hcommon a₀ a₀
-      have hr' : (rs 0).map Rf = some (Rf D) := by rw [hr]; rfl
-      refine ⟨_, .recursive hr' G fun a => ?_, .recursive hr' G fun a => ?_⟩
+      refine ⟨RunFieldsRel.cons (RunRel.atGrade _ (Rf D)) fun _ => G,
+        .nested (by show Nest.ofOption ((rs 0).map _) ≠ _; rw [hr]; exact fun h => nomatch h)
+          (by
+            show RunNestRel _ _ _ _ _ (Nest.ofOption ((rs 0).map _)) _ _
+            rw [hr, hA₁]
+            exact .direct (Term.LevelEquiv.refl _)) G fun a => ?_,
+        .nested (by show Nest.ofOption ((rs 0).map _) ≠ _; rw [hr]; exact fun h => nomatch h)
+          (by
+            show RunNestRel _ _ _ _ _ (Nest.ofOption ((rs 0).map _)) _ _
+            rw [hr, hA₂]
+            exact .direct (Term.LevelEquiv.refl _)) G fun a => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := hcommon a a₀
         have hSG : S = G := funext fun H => funext fun ts => funext fun bs => propext
-          (RunTelRel.congr hd ihm ih h₂ _ _ h₀₂ hrr H ts bs)
+          (RunTelRel.congr hd ihm ih h₂ _ _ h₀₂ (hrr inst₂) H ts bs)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := hcommon a₀ a
         have hSG : S = G := funext fun H => funext fun ts => funext fun bs => propext
-          (RunTelRel.congr hd ihm ih h₁ _ _ h₀₁ hrr H ts bs)
+          (RunTelRel.congr hd ihm ih h₁ _ _ h₀₁ (hrr inst₁) H ts bs)
         exact hSG ▸ h₂
 
 /-- Two closed telescopes equal in a sort `κ` of types are telescopes of the graph of run time of
@@ -328,8 +348,10 @@ each program `P`, in a signature whose names are distinct. -/
 theorem ValidEqTelescope₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Universe 0}
     (hs : κ.quality = .type) {ps : List Parameter} {Θ₁ Θ₂ : Telescope 0 [] ps}
     (h : ValidEqTelescope₀ sig ι κ Θ₁ Θ₂) :
-    ∃ S, RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => none) Θ₁ S ∧
-      RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => none) Θ₂ S :=
+    ∃ S, RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ₁
+        S ∧
+      RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ₂
+        S :=
   ValidEqFields₀.runTelRel hd P hs (fun _ _ _ _ => False)
     (h.toFields (fun _ => .sort ⟨.type, .zero⟩) (fun _ => .sort ⟨.type, .zero⟩))
 
@@ -933,8 +955,9 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
       (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
         RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m)
-          (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-            fun D' => (X D').computed sig ι)
+          (fun i => Nest.ofOption
+            (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+              fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι)))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S X c)) ∧
       ∀ T ∈ decl.dataTypes,
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
@@ -964,27 +987,48 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
       RunFieldsRel := fun X c H ts bs =>
     ∃ S', RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
       (fun m _ => levelRel sig ι m)
-      (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-        fun D' => (X D').computed sig ι)
+      (fun i => Nest.ofOption
+        (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+          fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι)))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' H ts bs
   have hS : ∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
       RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
         (fun m _ => levelRel sig ι m)
-        (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-          fun D' => (X D').computed sig ι)
+        (fun i => Nest.ofOption
+          (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι)))
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S X c) ∧
       RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
         (fun m _ => levelRel sig ι m)
-        (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-          fun D' => (X D').computed sig ι)
+        (fun i => Nest.ofOption
+          (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+            fun D' => (.inst D' qs ls ps as₂, (X D').computed sig ι)))
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S X c) := fun X T hT c hc => by
     have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
     obtain ⟨S', h₁, h₂⟩ := hF.runTelRel hd P hs fun D' => (X D').computed sig ι
     have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ (hΘ c as₁)
+      (fun _ => Nest.ofOption_rel₃
+        (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
+        (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
+          (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
+          as₁.toSubst, (X D).computed sig ι))
+        (g := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
+        (h := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
+        (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₁ D, rfl⟩) _)
+      (fun _ => Nest.ofOption_ne_inst _)
     have h₂' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
+      (fun _ => Nest.ofOption_rel₃
+        (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
+        (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
+          (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
+          as₂.toSubst, (X D).computed sig ι))
+        (g := fun D => (.inst D qs ls ps as₂, (X D).computed sig ι))
+        (h := fun D => (.inst D qs ls ps as₂, (X D).computed sig ι))
+        (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₂ D, rfl⟩) _)
+      (fun _ => Nest.ofOption_ne_inst _)
     have hSS : S X c = S' := funext fun H => funext fun ts => funext fun bs => propext
       ⟨fun ⟨_, h', hs⟩ => (RunTelRel.congr hd ihm ih h' _ _ h₁'
-          (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H ts bs).1 hs,
+          (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts bs).1 hs,
         fun hs => ⟨S', h₁', hs⟩⟩
     rw [hSS]
     exact ⟨h₁', h₂'⟩

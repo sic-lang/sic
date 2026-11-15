@@ -247,12 +247,6 @@ theorem Option.rel_map₃ {α β : Type} {r : β → β → β → Prop} {f g h 
   | none => .inl ⟨rfl, rfl, rfl⟩
   | some x => .inr ⟨_, _, _, rfl, rfl, rfl, hr x⟩
 
-/-- A telescope that is not the fields of a constructor relates its recursive fields as any
-other. -/
-theorem TelRel.none_rel {α β : Type} {r : α → β → Prop} (i : Nat) :
-    Option.Rel r ((fun _ => none : Nat → Option α) i) ((fun _ => none : Nat → Option β) i) :=
-  .none
-
 /-- The same values at the recursive fields are related, when each one is related to itself. -/
 theorem Option.rel_refl {α : Type} {r : α → α → Prop} (h : ∀ x, r x x) :
     (o : Option α) → Option.Rel r o o

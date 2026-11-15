@@ -90,7 +90,14 @@ A relation of run time relates a term to an address in each heap that extends a 
 relates them: the relations of the data types read the values of the heap, which every heap that
 extends it keeps, by induction on their least fixed points, and those of the codata types relate
 the observations in each heap that extends the heap of the closure, which a later heap extends
-too. -/
+too.
+The relation that the graph of the nestings gives a type, which the fields of a telescope read at
+their nestings, is monotone when the relations of its positions are.
+An observation of a value of a codata type reads the relation of its result in the heap that the
+observation gives, which is not the heap of the value, so that the relations of the positions are
+compared at each pair of heaps of a relation `K` between heaps, contained in the extension and
+reflexive: the extension itself for the monotonicity, and the equality of the heaps for the growth
+of the relation with those of the positions. -/
 
 /-- The relation of run time of the observations by destructors relates in a heap `H'` that extends
 `H` what another relation of the same destructors relates in `H`, at relations of the recursive
@@ -118,7 +125,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
         have ⟨_, hv⟩ := hB ts hts
         FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
         (f := f) (H := H)
         (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
@@ -141,7 +148,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' TelRel.none_rel
+        have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' fun _ => .plain
         exact fun o a ⟨h₁, h₂⟩ =>
           ⟨fun hp H'' hH'' ts bs hts ϖ =>
             have ⟨w, H''', R, he, hw⟩ := h₁ hp H'' (hH.trans hH'') ts bs ((hRΘΘ _ _ _).2 hts) ϖ
@@ -160,19 +167,23 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
   | .univ _ _ => fun _ {_ _} _ => trivial
   | .prop _ _ => fun _ {_ _} _ => trivial
   | .data (decl := decl) _ _ _ _ _ _ _ S hS => fun hH {_ _} h => by
-    have hstep : ∀ (X Y : Name → RunRel) {H H' : Heap}, H.Extends H' →
-        (∀ D t a, X D H t a → Y D H' t a) → ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts as,
-          S X c H ts as → S Y c H' ts as :=
-      fun X Y {_ _} hH hXY T hT c hc => RunTelRel.mono hd ih hH (hS X T hT c hc) _ _ (hS Y T hT c hc)
-        (fun _ => Option.rel_map (fun D' _ _ => RunRel.computed_mono (hXY D')) _)
+    have hstep : ∀ (K : Heap → Heap → Prop), (∀ {H H' : Heap}, K H H' → H.Extends H') →
+        (∀ H, K H H) → ∀ (X Y : Name → RunRel),
+          (∀ D H H', K H H' → ∀ t a, X D H t a → Y D H' t a) → ∀ T ∈ decl.dataTypes,
+            ∀ c ∈ T.constructors, ∀ H H', K H H' → ∀ ts as, S X c H ts as → S Y c H' ts as :=
+      fun K hK hKr X Y hXY T hT c hc =>
+        RunTelRel.mono hd ih hK hKr (hS X T hT c hc) _ _ (hS Y T hT c hc)
+          (fun _ => Nest.ofOption_rel₃
+            (fun D' H H' hH _ _ => RunRel.computed_mono (hXY D' H H' hH)) _)
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
       fun X Y hXY T hT c hc H =>
-        hstep X Y (List.prefix_refl H) (fun D t a => hXY D H t a) T hT c hc
+        hstep Eq (fun e => e ▸ List.prefix_refl _) (fun _ => rfl) X Y
+          (fun D H _ e t a => e ▸ hXY D H t a) T hT c hc H H rfl
     exact h (fun (D : Name) (H : Heap) (t : Term 0 []) (a : Nat) => ∀ H', H.Extends H' → DataType.runBlockRel sig _ decl.dataTypes S D H' t a)
       (fun T hT H t a hc H' hH' => DataType.runBlockRel_fold hmono hT
-        (DataType.runCtorRel_mono hH' (fun c hc ts as => hstep _ _ hH'
-          (fun _ _ _ h => h H' hH') T hT c hc ts as) hc)) _ hH
+        (DataType.runCtorRel_mono hH' (fun c hc ts as => hstep Heap.Extends id List.prefix_refl
+          _ _ (fun _ _ H₂ hH₂ _ _ h => h H₂ hH₂) T hT c hc H H' hH' ts as) hc)) _ hH
   | .codata (decl := decl) _ _ _ _ _ _ _ S hS => fun hH {_ _} ⟨X, hX, hx⟩ =>
     ⟨fun (D : Name) (H' : Heap) (t : Term 0 []) (a : Nat) => ∃ H : Heap, H.Extends H' ∧ X D H t a,
       fun T hT H' t a ⟨H, hH, hx⟩ => runCorecRel_mono
@@ -183,43 +194,44 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
       _, hH, hx⟩
 termination_by structural h => h
 
-/-- The relation of run time of the terms of the fields of a telescope relates in a heap `H'` that
-extends `H` what another relation of the same telescope relates in `H`, at relations of the
-recursive fields that do so. -/
+/-- The relation of run time of the terms of the fields of a telescope relates in a heap `H'` what
+another relation of the same telescope relates in a heap `H`, for the heaps that `K` relates, at
+nestings of the fields whose positions have relations that do so. -/
 theorem RunTelRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P)) {H H' : Heap}
-    (hH : H.Extends H') {rs₁ : Nat → Option RunRel} {ps : List Parameter}
-    {Θ : Telescope 0 [] ps} {S₁ : RunFieldsRel} :
+    (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P))
+    {K : Heap → Heap → Prop} (hK : ∀ {H H' : Heap}, K H H' → H.Extends H') (hKr : ∀ H, K H H)
+    {rs₁ : Nat → Nest RunNestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {S₁ : RunFieldsRel} :
     RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs₁ Θ S₁ →
-      ∀ (rs₂ : Nat → Option RunRel) (S₂ : RunFieldsRel),
+      ∀ (rs₂ : Nat → Nest RunNestLeaf) (S₂ : RunFieldsRel),
         RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun x y => ∀ t a, x H t a → y H' t a) (rs₁ i) (rs₂ i)) →
-        ∀ ts as, S₁ H ts as → S₂ H' ts as
+        (∀ i, Nest.Rel (fun x y => ∀ H H', K H H' → ∀ t a, x.2 H t a → y.2 H' t a)
+          (rs₁ i) (rs₂ i)) →
+        ∀ H H', K H H' → ∀ ts as, S₁ H ts as → S₂ H' ts as
   | .nil, _, _, h', _ => by
     cases h'
-    exact fun ts as h => match ts, as, h with
+    exact fun _ _ _ ts as h => match ts, as, h with
       | .nil, [], _ => trivial
   | .cons hA hF hR _ hG hrs, _, _, h', hRs => by
     cases h' with
     | cons hA' hF' hR' _ hG' _ =>
       cases Computesι.det hd hA hA'
       have hFF := FieldRel.unique hd (fun m _ => levelRel_isPer hd m) hF _ _ hF'
-      have hRR := RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m) hR _ hR'
-      exact RunFieldsRel.cons_mono
-        (fun t a ⟨htt, hr⟩ => ⟨(hFF t t).1 htt, fun hp => (hRR H' t a).1 (RunFieldRel.mono hd ih hR hH (hr hp))⟩)
-        fun t _ ⟨htt, _⟩ => RunTelRel.mono hd ih hH (hG t htt) _ _ (hG' t ((hFF t t).1 htt))
-          (fun i => hRs (i + 1))
-    | recursive hrs' _ _ => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, h', hRs => by
+      have hRR := RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m)
+        (fun m _ => levelRel_run_unique hd m) hR _ hR'
+      exact fun H H' hH => RunFieldsRel.cons_mono
+        (fun t a ⟨htt, hr⟩ => ⟨(hFF t t).1 htt,
+          fun hp => (hRR H' t a).1 (RunFieldRel.mono hd ih hR (hK hH) (hr hp))⟩)
+        fun t _ ⟨htt, _⟩ => RunTelRel.mono hd ih hK hKr (hG t htt) _ _ (hG' t ((hFF t t).1 htt))
+          (fun i => hRs (i + 1)) H H' hH
+    | nested hrs' _ _ _ => exact absurd ((hRs 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hR _ hG, _, _, h', hRs => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
-      have h0 := hRs 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        exact RunFieldsRel.cons_mono (fun t a h hp => hr t a (h hp))
-          fun t _ _ => RunTelRel.mono hd ih hH (hG t) _ _ (hG' t) (fun i => hRs (i + 1))
+    | cons _ _ _ _ _ hrs' => exact absurd ((hRs 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hR' _ hG' =>
+      exact fun H H' hH => RunFieldsRel.cons_mono
+        (fun t a h hp => RunNestRel.mono hd ih hK hKr hR _ _ hR' (hRs 0) H H' hH t a (h hp))
+        fun t _ _ => RunTelRel.mono hd ih hK hKr (hG t) _ _ (hG' t) (fun i => hRs (i + 1)) H H' hH
 termination_by structural h _ _ _ _ => h
 
 /-- The relation of run time of the type of a field is monotone in the heap. -/
@@ -231,29 +243,6 @@ theorem RunFieldRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {
   | .prop _ => fun _ {_ _} _ => trivial
   | .propBelow _ _ _ => fun _ {_ _} _ => trivial
 termination_by structural h => h
-
-end
-
-/-- The relations of run time of every level are monotone in the heap, in a signature whose names
-are distinct. -/
-theorem levelRel_run_mono {sig : Signature} {ι : Interpretation} {P : Program}
-    (hd : sig.Distinct) (n : Nat) : RunLevelRel.Monotone ((levelRel sig ι n).run P) :=
-  have ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P) := fun m _ => levelRel_run_mono hd m
-  fun h => RunUnivRel.mono hd ih (levelRel_run_iff.1 h)
-termination_by n
-decreasing_by all_goals assumption
-
-/-! ## Monotonicity at a Nesting
-
-The relation of run time that the graph of the nestings gives a type is monotone in the heap when
-the relations of its positions are.
-An observation of a value of a codata type reads the relation of its result in the heap that the
-observation gives, which is not the heap of the value, so that the relations of the positions are
-compared at each pair of heaps of a relation `K` between heaps, contained in the extension and
-reflexive: the extension itself for the monotonicity, and the equality of the heaps for the growth
-of the relation with those of the positions. -/
-
-mutual
 
 /-- The relation of run time that the graph of the nestings gives a type relates in a heap `H'`
 what another relation of the same type relates in a heap `H`, for the heaps that `K` relates, at
@@ -346,7 +335,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
         (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
@@ -367,7 +356,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
     | nested hi' _ hΘ' hRΘ' R' hR' _ hG' =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       exact fun H H' hH o a ⟨h₁, h₂⟩ =>
         ⟨fun hp H₁ hH₁ ts bs hts ϖ =>
           have hts₁ := (hRΘΘ _ _ _).2 hts
@@ -381,6 +370,20 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
 termination_by structural h _ _ _ _ => h
 
 end
+
+/-- The relations of run time of every level are monotone in the heap, in a signature whose names
+are distinct. -/
+theorem levelRel_run_mono {sig : Signature} {ι : Interpretation} {P : Program}
+    (hd : sig.Distinct) (n : Nat) : RunLevelRel.Monotone ((levelRel sig ι n).run P) :=
+  have ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P) := fun m _ => levelRel_run_mono hd m
+  fun h => RunUnivRel.mono hd ih (levelRel_run_iff.1 h)
+termination_by n
+decreasing_by all_goals assumption
+
+/-! ## Monotonicity at a Nesting
+
+The relation of run time that the graph of the nestings gives a type is monotone in the heap when
+the relations of its positions are, the relation `K` being the extension of the heaps. -/
 
 /-- The relation of run time that the graph of the nestings gives a type is monotone in the heap, at
 positions whose relations are. -/

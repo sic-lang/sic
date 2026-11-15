@@ -192,13 +192,14 @@ theorem RunUnivRel.not_prop {sig : Signature} {ι : Interpretation} {P : Program
 
 /-! ## The Relation of Run Time Reads the Equality -/
 
-/-- The relation of run time of the terms of the fields of a telescope without recursive fields
-relates only terms that the equality gives to its fields, in a signature whose names are distinct,
+/-- The relation of run time of the terms of the fields of a telescope none of whose fields has a
+position relates only terms that the equality gives to its fields, in a signature whose names are distinct,
 if the relations of the levels below `n` are partial equivalence relations. -/
 theorem RunTelRel.fieldsRel {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
-    {rs : Nat → Option RunRel} {ps : List Parameter} {Θ : Telescope 0 [] ps} {RΘ : RunFieldsRel} :
-    RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ RΘ → (∀ i, rs i = none) →
+    {rs : Nat → Nest RunNestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {RΘ : RunFieldsRel} :
+    RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ RΘ → (∀ i, rs i = .plain) →
       ∀ (rs' : Nat → Nest NestLeaf) (SΘ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) .type rs' Θ SΘ → (∀ i, rs' i = .plain) →
         ∀ H ts bs, RΘ H ts bs → SΘ ts ts
@@ -216,14 +217,18 @@ theorem RunTelRel.fieldsRel {sig : Signature} {ι : Interpretation} {P : Program
         exact ⟨(hFF t t).1 htt, RunTelRel.fieldsRel hd ihm (hG t htt) (fun i => hn (i + 1)) _ _
           (hG' t ((hFF t t).1 htt)) (fun i => hn' (i + 1)) H ts bs hg⟩
     | nested hrs' _ _ _ => exact absurd (hn' 0) hrs'
-  | .recursive hrs _ _, hn, _, _, _, _, _, _, _, _ => by rw [hn 0] at hrs; cases hrs
+  | .nested hrs _ _ _, hn, _, _, _, _, _, _, _, _ => absurd (hn 0) hrs
 termination_by structural h _ _ _ _ _ _ _ _ _ => h
 
 /-! ## Uniqueness
 
 A type has one relation of run time, by mutual recursion on the graph: the relations of the fields,
 of the arguments and of the results of the destructors are unique, those of the equality by its own
-uniqueness, and those of run time by recursion. -/
+uniqueness, and those of run time by recursion.
+A type has one relation of run time at a nesting, at given relations of its positions: the clause
+of a type without position is unique as the relation of the type of a field is, a position gives
+its relation, and the relations of the destructors of an instance of a codata type are unique by
+recursion. -/
 
 mutual
 
@@ -258,7 +263,7 @@ theorem RunUnivRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
       cases hT
       cases has
       exact DataType.runBlockRel_congr (fun X T hT c hc => RunTelRel.congr hd ihm ih (hS X T hT c hc)
-        _ _ (hS' X T hT c hc) fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) _
+        _ _ (hS' X T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     cases h' with
@@ -277,16 +282,16 @@ theorem RunUnivRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
 termination_by structural h _ _ => h
 
 /-- The relations of run time of the terms of the fields of a telescope relate the same terms and
-addresses, at relations of the recursive fields that do. -/
+addresses, at nestings of the fields whose positions have relations that do. -/
 theorem RunTelRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P))
-    {rs₁ : Nat → Option RunRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs₁ : Nat → Nest RunNestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S₁ : RunFieldsRel} :
     RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs₁ Θ S₁ →
-      ∀ (rs₂ : Nat → Option RunRel) (S₂ : RunFieldsRel),
+      ∀ (rs₂ : Nat → Nest RunNestLeaf) (S₂ : RunFieldsRel),
         RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun x y => ∀ H t a, x H t a ↔ y H t a) (rs₁ i) (rs₂ i)) →
+        (∀ i, Nest.Rel (fun x y => ∀ H t a, x.2 H t a ↔ y.2 H t a) (rs₁ i) (rs₂ i)) →
         ∀ H ts as, S₁ H ts as ↔ S₂ H ts as
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ => .rfl
   | .cons hA hF hR _ hG hrs, _, _, h', hRs => by
@@ -299,17 +304,14 @@ theorem RunTelRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
         (fun t a => and_congr (hFF t t) (RunRel.atGrade_congr (hRR H t a)))
         fun t _ ⟨htt, _⟩ => RunTelRel.congr hd ihm ih (hG t htt) _ _ (hG' t ((hFF t t).1 htt))
           (fun i => hRs (i + 1)) H
-    | recursive hrs' _ _ => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, h', hRs => by
+    | nested hrs' _ _ _ => exact absurd ((hRs 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hR _ hG, _, _, h', hRs => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
-      have h0 := hRs 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        exact fun H => RunFieldsRel.cons_congr (fun t a => RunRel.atGrade_congr (hr H t a))
-          fun t _ _ => RunTelRel.congr hd ihm ih (hG t) _ _ (hG' t) (fun i => hRs (i + 1)) H
+    | cons _ _ _ _ _ hrs' => exact absurd ((hRs 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hR' _ hG' =>
+      have hRR := RunNestRel.congr hd ihm ih hR _ _ hR' (hRs 0)
+      exact fun H => RunFieldsRel.cons_congr (fun t a => RunRel.atGrade_congr (hRR H t a))
+        fun t _ _ => RunTelRel.congr hd ihm ih (hG t) _ _ (hG' t) (fun i => hRs (i + 1)) H
 termination_by structural h _ _ _ _ => h
 
 /-- The relations of run time of the observations by destructors relate the same observations and
@@ -337,7 +339,7 @@ theorem RunDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
         have ⟨_, hv⟩ := hB ts hts
         FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
         (f := f) (H := H)
         (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
@@ -362,7 +364,7 @@ theorem RunDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         have hGG := RunDesRel.congr hd ihm ih (hG (.sort ⟨.type, .zero⟩)) _ _
           (hG' (.sort ⟨.type, .zero⟩)) (fun i => hRs (i + 1))
         exact fun H o a => and_congr
@@ -407,17 +409,6 @@ theorem RunFieldRel.congr {sig : Signature} {ι : Interpretation} {P : Program} 
     | prop => exact fun _ _ _ => .rfl
     | propBelow => exact fun _ _ _ => .rfl
 termination_by structural h _ _ => h
-
-end
-
-/-! ## Uniqueness at a Nesting
-
-A type has one relation of run time at a nesting, at given relations of its positions, by mutual
-recursion on the graph of the nestings: the clause of a type without position is unique as the
-relation of the type of a field is, a position gives its relation, and the relations of the
-destructors of an instance of a codata type are unique by recursion. -/
-
-mutual
 
 /-- The relations of run time that the graph of the nestings gives a type relate the same terms and
 addresses, at positions whose relations do. -/
@@ -498,7 +489,7 @@ theorem RunNestDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
         (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
@@ -520,7 +511,7 @@ theorem RunNestDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program
     | nested hi' _ hΘ' hRΘ' R' hR' _ hG' =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hGG := RunNestDesRel.congr hd ihm ih (hG (.sort ⟨.type, .zero⟩)) _ _
         (hG' (.sort ⟨.type, .zero⟩)) (Nesting.lift_rel₃ hτ)
       exact fun H o a => and_congr
@@ -541,6 +532,18 @@ theorem RunNestRel.unique {sig : Signature} {ι : Interpretation} {P : Program} 
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
     ∀ H t a, R H t a ↔ R' H t a :=
   RunNestRel.congr hd ihm ih h _ _ h' (Nest.rel₃_refl (fun _ _ _ _ => .rfl) τ)
+
+/-- A type read at a nesting that is neither no position nor that of an instance is read at a
+position, which holds its relation of run time and the type up to the values of its levels. -/
+theorem RunNestRel.eq_direct {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    {below : LevelRel.Below n} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel}
+    (h : RunNestRel sig ι P n below τ A R) (hp : τ ≠ .plain) (hi : ∀ νs, τ ≠ .inst νs) :
+    ∃ T, τ = .direct (T, R) ∧ Term.LevelEquiv T A := by
+  cases h with
+  | plain _ _ => exact absurd rfl hp
+  | direct hA => exact ⟨_, rfl, hA⟩
+  | codata => exact absurd rfl (hi _)
+  | codataProp => exact absurd rfl (hi _)
 
 /-- Destructors read at nestings have a unique relation of run time of the observations by them, at
 given nestings of their variables. -/

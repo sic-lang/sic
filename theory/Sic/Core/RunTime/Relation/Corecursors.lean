@@ -83,7 +83,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
       RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D rsR ds θ S →
       {H : Heap} → {o : Observations} → {a : Nat} → S H o a → p ∉ Mode.oneOne.erased →
       ∃ i RΘ, sig.destructorCase D d = some i ∧
-        RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => none)
+        RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) (fun _ => .plain)
           (Θ.subst (hpos.obsSubst o θ)) RΘ ∧
         ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), RΘ H' ts.terms bs →
           ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) ς.run (ps.map (·.usage.run))
@@ -421,11 +421,12 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hbsρ := hbs.levelEquiv hΘE.symm
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
   have hS' := RunTelRel.of_runsAsArgs hd h₁
-    (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
+    (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+    (fun _ _ h => nomatch h) _
     (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts htsρ bs hbsρ
   have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (fun m _ => levelRel_isPer hd m)
     (fun m _ => levelRel_run_unique hd m) h₂ _ _ hRΘ
-    (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H' ts.terms bs).1 hS'
+    (fun _ => .plain) H' ts.terms bs).1 hS'
   -- The observation evaluates to an address to which the observation of the corecursor is related.
   obtain ⟨w, H'', tr, hev, hw⟩ := hobsR H' hH' ts bs hRΘts ϖ₀
   refine ⟨i, w, H'', tr, hD ▸ hi, hev, hev.extends, ?_⟩
@@ -1068,8 +1069,8 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           ts.terms bs hts
         have hτ := (hT ts ts).1 htt
         have hbs := RunsAsArgs.of_runTelRel hRΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
-          hgr ts hτ bs hts
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h) _ hgr ts hτ bs hts
         obtain ⟨w, H'', tr, hev, hw, -⟩ :=
           hr d p q ς ps _ Θ B ψ .here i hp hi H' hH' ts bs hτ hbs ϖ'
         obtain ⟨v, hv''⟩ := hB ts htt
@@ -1092,8 +1093,8 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           ts.terms bs hts
         have hτ := (hT ts ts).1 htt
         have hbs := RunsAsArgs.of_runTelRel hRΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h) _
-          hgr ts hτ bs hts
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h) _ hgr ts hτ bs hts
         obtain ⟨w, H'', tr, hev, -, hw⟩ :=
           hr d p q ς ps _ Θ B ψ .here _ hp hi H' hH' ts bs hτ hbs ϖ'
         have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D').subst θ := by

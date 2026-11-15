@@ -162,6 +162,15 @@ theorem Nest.Rel₃.eq_plain {r : α → β → γ → Prop} {n : Nest α} {m : 
     (h : Nest.Rel₃ r n m o) : (m = .plain ↔ n = .plain) ∧ (o = .plain ↔ n = .plain) := by
   cases h <;> simp
 
+/-- A nesting is not that of an instance when a nesting related to it is not. -/
+theorem Nest.Rel₃.ne_inst {r : α → β → γ → Prop} {n : Nest α} {m : Nest β} {o : Nest γ}
+    (h : Nest.Rel₃ r n m o) (hn : ∀ ns, n ≠ .inst ns) :
+    (∀ ms, m ≠ .inst ms) ∧ (∀ os, o ≠ .inst os) := by
+  cases h with
+  | plain => exact ⟨fun _ h => (nomatch h), fun _ h => (nomatch h)⟩
+  | direct => exact ⟨fun _ h => (nomatch h), fun _ h => (nomatch h)⟩
+  | inst => exact absurd rfl (hn _)
+
 /-- Related nestings of arguments have a position together. -/
 theorem Nest.ListRel₃.all_isPlain {r : α → β → γ → Prop} {ns : List (Nest α)}
     {ms : List (Nest β)} {os : List (Nest γ)} :

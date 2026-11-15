@@ -1024,6 +1024,10 @@ theorem RunUnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm =>
           RunTelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+            (fun _ => Nest.ofOption_rel₃
+              (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
+              (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
+            (fun _ => Nest.ofOption_ne_inst _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
@@ -1035,22 +1039,43 @@ theorem RunUnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
           (Destructors.substLevels_levelEquiv hls' _) has.toSubst
 
 /-- A telescope whose levels change for equal ones has the same relation of run time of the terms
-of its fields. -/
+of its fields, at positions that hold the same relations and types whose levels change for equal
+ones.
+The positions are those of recursive fields only, as the fields of a constructor have today. -/
 theorem RunTelRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {rs : Nat → Option RunRel}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {rs rs' : Nat → Nest RunNestLeaf}
     {ps : List Parameter} {Θ Θ' : Telescope 0 [] ps} {S : RunFieldsRel} :
     RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Telescope.LevelEquiv Θ Θ' →
-      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ' S
-  | .nil, .nil => .nil
-  | .cons hA hF hR G hG hrs, .cons _ _ h hΘ =>
+      (∀ i, Nest.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) (rs i) (rs' i)) →
+      (∀ i νs, rs i ≠ .inst νs) →
+      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs' Θ' S
+  | .nil, .nil, _, _ => .nil
+  | .cons hA hF hR G hG hrs, .cons _ _ h hΘ, hRs, hni =>
     have ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
     .cons hA' (FieldRel.levelEquiv ih hF hv) (RunFieldRel.levelEquiv ih hR hv) G
       (fun a ha => RunTelRel.levelEquiv ih (hG a ha)
-        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a))))
-      hrs
-  | .recursive hrs G hG, .cons _ _ _ hΘ =>
-    .recursive hrs G fun a => RunTelRel.levelEquiv ih (hG a)
+        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
+        (fun i => hRs (i + 1)) (fun i => hni (i + 1)))
+      ((hRs 0).eq_plain.1.2 hrs)
+  | .nested hrs hR G hG, .cons _ _ hA hΘ, hRs, hni => by
+    have hG' := fun a => RunTelRel.levelEquiv ih (hG a)
       (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
+      (fun i => hRs (i + 1)) (fun i => hni (i + 1))
+    have h0 := hRs 0
+    have hn0 := hni 0
+    generalize hτ' : rs' 0 = τ' at h0
+    generalize rs 0 = τ at hrs hR h0 hn0
+    cases hR with
+    | plain _ _ => exact absurd rfl hrs
+    | direct hT =>
+      cases h0 with
+      | direct hr =>
+        obtain ⟨hTT', rfl⟩ := hr
+        exact .nested (by rw [hτ']; exact fun h => nomatch h)
+          (hτ' ▸ .direct ((hTT'.symm.trans hT).trans hA)) G hG'
+    | codata => exact absurd rfl (hn0 _)
+    | codataProp => exact absurd rfl (hn0 _)
+termination_by structural h _ _ _ => h
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for
 equal ones, have the same relation of run time of the observations by them. -/
@@ -1063,10 +1088,12 @@ theorem RunDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progra
         RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs ds' @θ' S
   | .nil, .nil, _ => .nil
   | .recursive hi hrs hRΘ G hG, .cons _ _ _ _ hΘe _ hds, hθ =>
-    .recursive hi hrs (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ)) G
+    .recursive hi hrs
+      (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h)) G
       fun f => RunDesRel.levelEquiv ih (hG f) hds (hθ.snoc (Term.LevelEquiv.refl f))
   | .cons hi hΘ hRΘ F R hB hF hR G hG hrs, .cons _ _ _ _ hΘe hBe hds, hθ =>
-    .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h)) (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ))
+    .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h))
+      (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h))
       F R
       (fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts

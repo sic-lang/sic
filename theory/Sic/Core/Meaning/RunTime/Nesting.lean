@@ -186,7 +186,7 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
         have ⟨_, hv⟩ := hB' ts hts'
         NestRel.unique hd ihm (hF ts hts) _ _ (.plain hv (hF' ts hts' _ hv))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
         (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
           have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
@@ -204,7 +204,7 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
     | cons hi' hΘ' hRΘ' F' R' hB' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       exact fun H o a ⟨h₁, h₂, h₃⟩ =>
         ⟨fun hp H₁ hH₁ ts bs hts ϖ =>
           have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H₁ _ bs
@@ -348,7 +348,7 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
           have ⟨_, hv⟩ := hBE ts hts'
           NestRel.unique hd ihm (hF ts hts) _ _ (.plain hv (hFE ts hts' _ hv))
         have hEEE := AbstractionRel.congr hSΘp hSE hFE
-        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
           (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
             have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs
@@ -374,7 +374,7 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
         have hEE := AbstractionRel.congr hSΘEp hSSE fun ts hts =>
           have ⟨_, hv⟩ := hBE ts hts
           FieldRel.unique hd ihm (hFE ts hts _ hv) _ _ (hF' ts ((hSSE _ _).1 hts) _ hv)
-        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' TelRel.none_rel
+        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         exact fun H o a ⟨e₁, e₂⟩ ⟨h₁, h₂⟩ =>
           have e₁' := (hEE _ _).1 e₁
           ⟨e₁', fun hp H₁ hH₁ ts bs hts ϖ =>

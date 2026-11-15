@@ -34,6 +34,9 @@ A type below which the types of a block are nested has no relation of run time b
 does: its relation is given from the relations of these types, by the graph of the nestings of run
 time, which follows the nesting of the type as the graph of the nestings of the equality does, and
 takes the given relations at its positions.
+The fields of a telescope are read at their nestings: the fields of a constructor have a position
+at each recursive field, which holds the instance of its type and the relation given for this type,
+and a telescope that is not the fields of a constructor has no position.
 A position holds no equality: the relation of run time reads the equality of a field or of an
 observation for what depends on it, and nothing depends on a field or on a result whose nesting has
 a position.
@@ -199,8 +202,9 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
         RunFieldsRel)
       (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         RunTelRel sig ι P n below
-          (fun i => ((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-            fun D' => (X D').computed sig ι)
+          (fun i => Nest.ofOption
+            (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+              fun D' => (.inst D' qs ls ps as, (X D').computed sig ι)))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
       RunUnivRel sig ι P n below v
         (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S D)
@@ -227,39 +231,41 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
 -- ADE: none.
 /--
 `rt(U_n)` for the telescopes: `Θ` is a closed telescope in `U_n`, whose terms of the entries are
-related to addresses by `S` at run time; the relation of the rest of the telescope is given for each
-term that the equality gives to the first entry, which the rest depends on even when it is erased.
-The entries at the positions `i` where `rs i` is `R` are recursive fields, related by `R`, given
-rather than computed, and on which the rest does not depend; a telescope that is not the fields of a
-constructor has none, `rs` being `fun _ => none`.
+related to addresses by `S` at run time, where `rs` gives the nesting of each entry; the relation of
+the rest of the telescope is given for each term that the equality gives to the first entry, which
+the rest depends on even when it is erased.
+An entry whose nesting has a position is read by the graph of the nestings, and the rest does not
+depend on it; a telescope that is not the fields of a constructor has none, `rs` being
+`fun _ => .plain`.
 -/
 inductive RunTelRel (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
     (below : LevelRel.Below n) :
-    (Nat → Option RunRel) → {ps : List Parameter} → Telescope 0 [] ps → RunFieldsRel → Prop where
+    (Nat → Nest RunNestLeaf) → {ps : List Parameter} → Telescope 0 [] ps → RunFieldsRel →
+      Prop where
   /-- `(rt_Θε)`: the empty telescope.
   RFC: `\mathsf{rt}_{\Theta\varepsilon}` -/
-  | nil {rs : Nat → Option RunRel} : RunTelRel sig ι P n below rs .nil RunFieldsRel.nil
-  /-- `(rt_Θ,)`: a first type `A ▶ p`, not a recursive field, that computes to a type of a sort that
+  | nil {rs : Nat → Nest RunNestLeaf} : RunTelRel sig ι P n below rs .nil RunFieldsRel.nil
+  /-- `(rt_Θ,)`: a first type `A ▶ p` without position, that computes to a type of a sort that
   `U_n` bounds, whose terms are equal by `F` and related by `R` at run time, so that
   the first term is one that the equality gives to `A`, related by `R` when `p` is used at run time,
   and a rest that is a telescope of run time for each term that the equality gives to `A`.
   RFC: `\mathsf{rt}_{\Theta,}` -/
-  | cons {rs : Nat → Option RunRel} {q : Grade} {p : Parameter} {ps : List Parameter}
+  | cons {rs : Nat → Nest RunNestLeaf} {q : Grade} {p : Parameter} {ps : List Parameter}
       {A v : Term 0 []} {Θ : Telescope 0 [.var] ps} {F : TermRel} {R : RunRel}
       (hA : Computesι sig ι A v) (hF : FieldRel sig ι n below .type v F)
       (hR : RunFieldRel sig ι P n below v R) (G : Term 0 [] → RunFieldsRel)
       (hG : ∀ a, F a a →
         RunTelRel sig ι P n below (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a)) (G a))
-      (hrs : rs 0 = none) :
+      (hrs : rs 0 = .plain) :
       RunTelRel sig ι P n below rs (.cons q p A Θ)
         (RunFieldsRel.cons (fun H t a => F t t ∧ RunRel.atGrade p.usage R H t a) G)
-  /-- `(rt_Θrec)`: a first type `A ▶ p` that is a recursive field, whose terms are related by the
-  relation `R` that `rs` gives it when `p` is used at run time, and a rest that is the same telescope,
-  with the same relation, for every term.
-  RFC: `\mathsf{rt}_{\Theta\mathsf{rec}}` -/
-  | recursive {rs : Nat → Option RunRel} {q : Grade} {p : Parameter} {ps : List Parameter}
-      {A : Term 0 []} {Θ : Telescope 0 [.var] ps} {R : RunRel} (hrs : rs 0 = some R)
-      (G : RunFieldsRel)
+  /-- `(rt_Θλ)`: a first type `A ▶ p` whose nesting has a position, which is, at this nesting, a
+  type of a sort that `U_n` bounds, whose terms are related by `R` at run time when `p` is used at
+  run time, and a rest that is the same telescope, with the same relation, for every term.
+  RFC: `\mathsf{rt}_{\Theta\lambda}` -/
+  | nested {rs : Nat → Nest RunNestLeaf} {q : Grade} {p : Parameter} {ps : List Parameter}
+      {A : Term 0 []} {Θ : Telescope 0 [.var] ps} {R : RunRel} (hrs : rs 0 ≠ .plain)
+      (hR : RunNestRel sig ι P n below (rs 0) A R) (G : RunFieldsRel)
       (hG : ∀ a, RunTelRel sig ι P n below (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a)) G) :
       RunTelRel sig ι P n below rs (.cons q p A Θ)
         (RunFieldsRel.cons (RunRel.atGrade p.usage R) fun _ => G)
@@ -299,7 +305,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
       (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
-      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => .plain) (Θ.subst θ) RΘ)
       (F : Terms 0 [] → TermRel) (R : Terms 0 [] → RunRel)
       (hB : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         ∃ v, Computesι sig ι (B.subst (Subst.append θ ts.toSubst)) v)
@@ -326,7 +332,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {RΘ : RunFieldsRel}
       {R : RunRel} {i : Nat} (hi : sig.destructorCase D d = some i) (hrs : rs 0 = some R)
-      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ) (G : RunObsRel)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => .plain) (Θ.subst θ) RΘ) (G : RunObsRel)
       (hG : ∀ f, RunDesRel sig ι P n below D (fun i => rs (i + 1)) ds (Subst.snoc θ f) G) :
       RunDesRel sig ι P n below D rs (.cons (d := d) p q ς Θ B ψ ds) @θ fun H o a =>
         (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ ς RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
@@ -439,7 +445,7 @@ inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
       (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
       (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
-      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => .plain) (Θ.subst θ) RΘ)
       (F : Terms 0 [] → TermRel) (R : Terms 0 [] → RunRel)
       (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         NestRel sig ι n below .type .plain (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
@@ -465,7 +471,7 @@ inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
       (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
       (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
-      (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
+      (hRΘ : RunTelRel sig ι P n below (fun _ => .plain) (Θ.subst θ) RΘ)
       (R : Terms 0 [] → RunRel)
       (hR : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         RunNestRel sig ι P n below (B.nest (fun _ => none) (Nesting.liftN ps.length @ν))
