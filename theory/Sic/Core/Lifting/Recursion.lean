@@ -153,15 +153,16 @@ theorem Term.Lifts.blockName {sig : Signature} {v : Lifting.Variables} {Γ' Γ :
 neutral, have no destructor whose result is an instance of a lifting of a type `F` of their
 block. -/
 theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifting.Variables}
+    {κ : Universe k}
     {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)}
     (ho : ∀ d ps, Term.Neutral ps.length (o d ps)) {names : List Name} {F : Name} (hF : F ∈ names)
     (S : List Nat) :
     {Γ' : Scope} → {ρ : Lifting k Γ' Γ₀} → {Ξ : Scope} → {θ : Subst k Γ₀ Ξ} → {ns : List Name} →
       {ds : Destructors k Ξ ns} → {ns' : List Name} → {ds' : Destructors k Γ' ns'} →
-      Destructors.Lifts sig v o ρ @θ ds ds' → Subst.Neutral θ →
+      Destructors.Lifts sig v κ o ρ @θ ds ds' → Subst.Neutral θ →
       (∀ r ∈ ds.recursion names, r = none) → ∀ r ∈ ds'.recursion [Lifting.name F S], r = none
   | _, _, _, _, _, _, _, _, .nil, _, _ => fun _ hr => nomatch hr
-  | _, _, _, _, _, _, _, _, .lifted hB h, hθ, hds => fun r hr => by
+  | _, _, _, _, _, _, _, _, .lifted hB _ h, hθ, hds => fun r hr => by
     rcases List.mem_cons.1 hr with rfl | hr
     · rw [Term.blockName_cast]
       exact hB.blockName hF (Term.blockName_subst_neutral (hθ.liftN _) names _

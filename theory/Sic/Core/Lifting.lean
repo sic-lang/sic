@@ -258,21 +258,21 @@ def Lifting.resultGrade (s : Quality) (p : Grade) : Grade :=
 -- ADE: none.
 /--
 `Σ ⊢ d̄ ↑ y = d̄'`: the destructors `d̄'` are the destructors `d̄` of a codata type lifted at the term
-`y` of this type, where `o` gives the observation of `y` by each destructor, `θ` these observations
-for the destructors before `d̄`, on which `d̄` depend, and `ρ` the variables lifted and their
-motives.
+`y` of this type, where `κ` is the sort of the lifting, `o` gives the observation of `y` by each
+destructor, `θ` these observations for the destructors before `d̄`, on which `d̄` depend, and `ρ` the
+variables lifted and their motives.
 -/
-inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Variables)
+inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Variables) (κ : Universe k)
     (o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)) :
     {Γ' : Scope} → Lifting k Γ' Γ₀ → {Ξ : Scope} → Subst k Γ₀ Ξ → {ns : List Name} →
       Destructors k Ξ ns → {ns' : List Name} → Destructors k Γ' ns' → Prop where
   /-- No destructor.
   RFC: `\uparrow_{\bar d\varepsilon}` -/
   | nil {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} :
-      Destructors.Lifts sig v o ρ @θ .nil .nil
-  /-- A destructor whose result is lifted at the observation of `y` by it: the lifting has it, at
-  its arguments, used `r` times more, with this result, of the ownership `χ`, and the requirement
-  `ς`, and no destructor after it depends on it.
+      Destructors.Lifts sig v κ o ρ @θ .nil .nil
+  /-- A destructor whose result is lifted at the observation of `y` by it, in a sort that the sort
+  of the lifting bounds: the lifting has it, at its arguments, used `r` times more, with this
+  result, of the ownership `χ`, and the requirement `ς`, and no destructor after it depends on it.
   RFC: `\uparrow_{\bar d|}` -/
   | lifted {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} {d : Name}
       {ns ns' : List Name} {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Ξ ps}
@@ -284,8 +284,9 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
           (Lifting.resultOwnership v.ownership _) :: Γ') ns'}
       (hB : Term.Lifts sig v (ρ.liftN ps.length) ((o d ps).rename (Ren.liftN ps.length ρ.ren))
         (B.subst (Subst.liftN ps.length θ)) B' l)
-      (hds : Destructors.Lifts sig v o ρ.weaken (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
-      Destructors.Lifts sig v o ρ @θ (.cons (d := d) p q ς Θ B ψ ds)
+      (hκ : (⟨v.quality, l⟩ : Universe k) ≼ κ)
+      (hds : Destructors.Lifts sig v κ o ρ.weaken (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
+      Destructors.Lifts sig v κ o ρ @θ (.cons (d := d) p q ς Θ B ψ ds)
         (.cons (d := d) (Lifting.resultGrade v.quality p) .zero v.requirement
           (((Θ.subst θ).rename ρ.ren).scale v.recursion)
           ((List.length_map (Parameter.scale v.recursion)).symm ▸ B')
@@ -297,8 +298,8 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
       {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors k (.secondOrder ps ψ :: Ξ) ns} {ds' : Destructors k Γ' ns'}
       (hB : (B.subst (Subst.liftN ps.length θ)).AvoidsLifted (ρ.liftN ps.length))
-      (hds : Destructors.Lifts sig v o ρ (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
-      Destructors.Lifts sig v o ρ @θ (.cons (d := d) p q ς Θ B ψ ds) ds'
+      (hds : Destructors.Lifts sig v κ o ρ (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
+      Destructors.Lifts sig v κ o ρ @θ (.cons (d := d) p q ς Θ B ψ ds) ds'
 
 /-! ## Parameters of a Lifting -/
 
@@ -410,6 +411,15 @@ def TypeDeclaration.liftedObservation (decl : TypeDeclaration) (F : Name) (n : N
   Term.observation F (List.ofFn I.sorts) (List.ofFn (Level.lifted n)) (List.ofFn I.grades)
     ((InstanceArgs.identity decl.scope).rename Ren.weaken) (.var₀ .zero) d ps
 
+/-- The sort of the lifting of a type of the type declaration `decl` at its parameters at the
+positions `S`, at an instance of its variables: the quality `s_C` of the sorts of the motives, and
+the level of `decl` joined to the levels of the motives. -/
+def TypeDeclaration.liftingSort (decl : TypeDeclaration) (S : List Nat)
+    (I : Instance (decl.sorts + 1) (decl.grades + 3)) : Universe (decl.levels + S.length) :=
+  ⟨I.sorts (Fin.last decl.sorts),
+    ((decl.sort I.lifted).level.subst (Level.lifted S.length)).joins
+      (List.ofFn fun i : Fin S.length => .var (Fin.natAdd decl.levels i))⟩
+
 -- ADE: none.
 /--
 `F^Π`: the lifting of the type `F` of the type declaration `decl` at its parameters at the positions
@@ -438,10 +448,7 @@ def TypeDeclaration.lifting (decl : TypeDeclaration) (F : Name) (S : List Nat) (
       (decl.liftedInstance F S.length I.lifted
         ((InstanceArgs.identity decl.scope).rename
           (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).ren))
-  sort := fun I =>
-    ⟨I.sorts (Fin.last decl.sorts),
-      ((decl.sort I.lifted).level.subst (Level.lifted S.length)).joins
-        (List.ofFn fun i : Fin S.length => .var (Fin.natAdd decl.levels i))⟩
+  sort := decl.liftingSort S
   body := .codata [{
     name := Lifting.name F S
     usage := fun _ _ => .unrestrictedUnrestricted
@@ -452,8 +459,8 @@ def TypeDeclaration.lifting (decl : TypeDeclaration) (F : Name) (S : List Nat) (
 
 -- ADE: none.
 /-- `Σ; 𝒟 ⊢ D ↑_Π d̄'`: the destructors `d̄'` are those of the lifting of the type `F` of the type
-declaration `decl` at its parameters at the positions `S`: at each instance, they are the destructors of `F` lifted at the
-parameter `y`.
+declaration `decl` at its parameters at the positions `S`: at each instance, they are the
+destructors of `F` lifted at the parameter `y`, in the sort of the lifting.
 RFC: `\uparrow_{\mathcal{D}}` -/
 def TypeDeclaration.Lifts (sig : Signature) (decl : TypeDeclaration) (F : Name) (S : List Nat)
     {ns : List Name}
@@ -461,7 +468,8 @@ def TypeDeclaration.Lifts (sig : Signature) (decl : TypeDeclaration) (F : Name) 
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns) : Prop :=
   ∃ T ∈ decl.codataTypes, T.name = F ∧
     ∀ I : Instance (decl.sorts + 1) (decl.grades + 3),
-      Destructors.Lifts sig I.liftingVariables (decl.liftedObservation F S.length I.lifted)
+      Destructors.Lifts sig I.liftingVariables (decl.liftingSort S I)
+        (decl.liftedObservation F S.length I.lifted)
         (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift
         ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst
         ((T.body I.lifted).substLevels (Level.lifted S.length)) (body I)
