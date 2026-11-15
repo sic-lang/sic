@@ -492,6 +492,10 @@ substitution `θ` of their scope, are in the sort of the quality `s` at the leve
 abstractions for them are equal by `S`, where `ν` gives the nestings of the variables of their
 scope, those of the arguments of the parameters: the result of each destructor is read by the graph
 of the nestings, at its nesting.
+The destructors after a destructor whose result has a position do not depend on it, as those after
+a recursive destructor: the relations given at the positions are any relations, so that an
+abstraction that the equality of the result relates to another need not be related to itself, and
+the destructors after it would have no equality at it.
 -/
 inductive NestDesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Quality → {Γ : Scope} → Nesting NestLeaf Γ → {ns : List Name} → Destructors 0 Γ ns →
@@ -500,21 +504,21 @@ inductive NestDesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : 
   RFC: `\mathsf{ty}_{\lambda\varepsilon}` -/
   | nil {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {θ : Subst 0 [] Γ} :
       NestDesRel sig ι n below s @ν .nil @θ fun _ _ => True
-  /-- `(ty_λ|)`: a destructor `d : (Θ ⊢ B ◀ ψ)`, whose arguments `Θ[θ]` are a telescope in `U_n`
-  with the equality `SΘ`, whose result type `B[θ, t̄]` is, at equal arguments `t̄` and at the nesting
-  of `B`, a type of a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same for
-  equal arguments, and the destructors after it, which are for each abstraction `f` for `d` with
-  the equality `G f`, the same for equal abstractions.
+  /-- `(ty_λ|)`: a destructor `d : (Θ ⊢ B ◀ ψ)` whose result has no position, whose arguments `Θ[θ]`
+  are a telescope in `U_n` with the equality `SΘ`, whose result type `B[θ, t̄]` is, at equal
+  arguments `t̄`, a type of a sort that `s_n` bounds, with the equality `F t̄` of its terms, the same
+  for equal arguments, and the destructors after it, which are for each abstraction `f` for `d`
+  with the equality `G f`, the same for equal abstractions.
   RFC: `\mathsf{ty}_{\lambda|}` -/
   | cons {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q : Grade}
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ς : Grade}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
       (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
       (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
-        NestRel sig ι n below s (B.nest (fun _ => none) (Nesting.liftN ps.length @ν))
-          (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
+        NestRel sig ι n below s .plain (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
       (hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u)
       (G : Term 0 (Scope.extend [] ps.length) → ObsRel)
       (hG : ∀ f, AbstractionRel SΘ F f f →
@@ -522,6 +526,26 @@ inductive NestDesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : 
       (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
       NestDesRel sig ι n below s @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun o₁ o₂ =>
         AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂
+  /-- `(ty_λ|λ)`: a destructor `d : (Θ ⊢ B ◀ ψ)` whose result has a position, whose arguments `Θ[θ]`
+  are a telescope in `U_n` with the equality `SΘ`, whose result type `B[θ, t̄]` is, at equal
+  arguments `t̄` and at the nesting of `B`, a type of a sort that `s_n` bounds, with the equality
+  `F t̄` of its terms, the same for equal arguments, and the destructors after it, the same, with
+  the same equality, for every abstraction for it.
+  RFC: `\mathsf{ty}_{\lambda|\lambda}` -/
+  | nested {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {d : Name} {ns : List Name}
+      {ps : List Parameter} {p q : Grade}
+      {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+      {ς : Grade}
+      {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
+      (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ) (F : Terms 0 [] → TermRel)
+      (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+        NestRel sig ι n below s (B.nest (fun _ => none) (Nesting.liftN ps.length @ν))
+          (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
+      (hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u) (G : ObsRel)
+      (hG : ∀ f, NestDesRel sig ι n below s (Nesting.lift @ν) ds (Subst.snoc θ f) G) :
+      NestDesRel sig ι n below s @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun o₁ o₂ =>
+        AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) ∧ G o₁ o₂
 
 end
 
