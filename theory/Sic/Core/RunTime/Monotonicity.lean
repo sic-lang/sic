@@ -104,7 +104,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
       _ hG hrs, _, _, h', hRs => by
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
     have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSΘp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
+    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')

@@ -7,6 +7,7 @@ import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Levels
+import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 

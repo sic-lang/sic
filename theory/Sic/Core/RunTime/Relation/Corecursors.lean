@@ -13,6 +13,7 @@ import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
@@ -137,7 +138,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
       | recursive _ hrs => rw [hN 0 hr] at hrs; cases hrs
       | cons _ hΘ _ _ _ hB hF _ _ hG _ =>
         obtain ⟨hA, -, hGo⟩ := ho
-        have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) (fun _ _ h => by cases h) hΘ
+        have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) (fun _ => .plain) hΘ
         refine h.run hd (hds _ _ fun τ₁ τ₂ hτ => ?_) hN' (hR' _) (hG _ hA) hGo hp
         obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
             @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
@@ -146,7 +147,8 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
             @Eq (Subst 0 [] (Scope.extend [] ps'.length)) us.toSubst @τ₂ :=
           ⟨_, Subst.args_toSubst ps' τ₂⟩
         have hts := (TelRel.eqSubst_iff hd hΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
           ts us).2 hτ
         have htt := hSp.trans hts (hSp.symm hts)
         obtain ⟨v, hv'⟩ := hB ts htt
@@ -1038,9 +1040,10 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
       cases h with
       | recursive _ hrs => rw [hN 0 hr0] at hrs; cases hrs
       | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
-        have hSp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
+        have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
         have hT := TelRel.eqSubst_iff hd hΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
         have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
           have htt := hSp.trans hts (hSp.symm hts)
           obtain ⟨v, hv''⟩ := hB ts htt
@@ -1081,7 +1084,8 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         cases hrs
         obtain ⟨SΘ, hΘ₁, -⟩ := hΘm.telRel hd
         have hT := TelRel.eqSubst_iff hd hΘ₁
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
         refine ⟨fun hp H' hH' ts bs hts ϖ' => ?_, RunDesRel.of_obs hd L ds (hds (o d ps) (o d ps))
           (fun i => hN (i + 1)) (fun i => hS (i + 1)) (hG _) hv' hrec⟩
         have htt := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ₁ (fun _ => rfl) H'

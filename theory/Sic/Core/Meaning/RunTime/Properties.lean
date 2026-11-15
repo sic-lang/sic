@@ -196,8 +196,8 @@ theorem RunTelRel.fieldsRel {sig : Signature} {ι : Interpretation} {P : Program
     (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     {rs : Nat → Option RunRel} {ps : List Parameter} {Θ : Telescope 0 [] ps} {RΘ : RunFieldsRel} :
     RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ RΘ → (∀ i, rs i = none) →
-      ∀ (rs' : Nat → Option TermRel) (SΘ : FieldsRel),
-        TelRel sig ι n (fun m _ => levelRel sig ι m) .type rs' Θ SΘ → (∀ i, rs' i = none) →
+      ∀ (rs' : Nat → Nest NestLeaf) (SΘ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) .type rs' Θ SΘ → (∀ i, rs' i = .plain) →
         ∀ H ts bs, RΘ H ts bs → SΘ ts ts
   | .nil, _, _, _, h', _, _, ts, bs, hr => by
     cases h'
@@ -212,7 +212,7 @@ theorem RunTelRel.fieldsRel {sig : Signature} {ι : Interpretation} {P : Program
       | .cons t ts, _ :: bs, ⟨⟨htt, _⟩, hg⟩ =>
         exact ⟨(hFF t t).1 htt, RunTelRel.fieldsRel hd ihm (hG t htt) (fun i => hn (i + 1)) _ _
           (hG' t ((hFF t t).1 htt)) (fun i => hn' (i + 1)) H ts bs hg⟩
-    | recursive hrs' _ _ => rw [hn' 0] at hrs'; cases hrs'
+    | nested hrs' _ _ _ => exact absurd (hn' 0) hrs'
   | .recursive hrs _ _, hn, _, _, _, _, _, _, _, _ => by rw [hn 0] at hrs; cases hrs
 termination_by structural h _ _ _ _ _ _ _ _ _ => h
 
@@ -324,7 +324,7 @@ theorem RunDesRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {n
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ => .rfl
   | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
       _ hG hrs, _, _, h', hRs => by
-    have hSΘp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
+    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')

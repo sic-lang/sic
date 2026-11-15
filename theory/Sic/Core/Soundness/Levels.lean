@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Substitution
@@ -31,313 +32,6 @@ the levels of Sic are not terms, and no counterpart is needed there.
 namespace Sic.Core
 
 open Sic.Grading
-
-/-! ## Terms Equal up to the Values of Their Levels -/
-
-/-- Two lists of levels whose levels are equal one by one. -/
-inductive Level.ListEquiv {k : Nat} : List (Level k) → List (Level k) → Prop where
-  /-- No level. -/
-  | nil : ListEquiv [] []
-  /-- Two equal levels, then equal lists. -/
-  | cons {l₁ l₂ : Level k} {ls₁ ls₂ : List (Level k)} (h : l₁ ≈ l₂) (hs : ListEquiv ls₁ ls₂) :
-      ListEquiv (l₁ :: ls₁) (l₂ :: ls₂)
-
-/-- Lists of sorts with the same qualities, at levels equal one by one. -/
-inductive Universe.ListEquiv {k : Nat} : List (Universe k) → List (Universe k) → Prop where
-  /-- No sort. -/
-  | nil : ListEquiv [] []
-  /-- Two sorts of the same quality at equal levels, then the others. -/
-  | cons (s : Quality) {l₁ l₂ : Level k} {κs₁ κs₂ : List (Universe k)} (h : l₁ ≈ l₂)
-      (hs : ListEquiv κs₁ κs₂) : ListEquiv (⟨s, l₁⟩ :: κs₁) (⟨s, l₂⟩ :: κs₂)
-
-mutual
-
--- ADE: none.
-/-- `t` and `t'` are the same term, but for their levels, which are equal one by one. -/
-inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ → Prop where
-  /-- A variable, applied to arguments equal up to their levels. -/
-  | var {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) {ts₁ ts₂ : Args k Γ e.params}
-      (h : Args.LevelEquiv ts₁ ts₂) : Term.LevelEquiv (.var x ts₁) (.var x ts₂)
-  /-- Two sorts of the same quality at equal levels. -/
-  | sort {Γ : Scope} (s : Quality) {l₁ l₂ : Level k} (h : l₁ ≈ l₂) :
-      Term.LevelEquiv (Γ := Γ) (.sort ⟨s, l₁⟩) (.sort ⟨s, l₂⟩)
-  /-- A constant, at equal levels. -/
-  | const {Γ : Scope} (f : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-      (h : Level.ListEquiv ls₁ ls₂) : Term.LevelEquiv (Γ := Γ) (.const f qs ls₁ ps) (.const f qs ls₂ ps)
-  /-- An instance of a declared type, at equal levels, with arguments equal up to their levels. -/
-  | inst {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-      {as₁ as₂ : InstanceArgs k Γ Δ} (h : Level.ListEquiv ls₁ ls₂)
-      (has : InstanceArgs.LevelEquiv as₁ as₂) :
-      Term.LevelEquiv (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
-  /-- A constructor of an instance at equal levels, with arguments and fields equal up to their
-  levels. -/
-  | ctor {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-      {as₁ as₂ : InstanceArgs k Γ Δ} (c : Name) {ts₁ ts₂ : Terms k Γ} (h : Level.ListEquiv ls₁ ls₂)
-      (has : InstanceArgs.LevelEquiv as₁ as₂) (hts : Terms.LevelEquiv ts₁ ts₂) :
-      Term.LevelEquiv (.ctor D qs ls₁ ps as₁ c ts₁) (.ctor D qs ls₂ ps as₂ c ts₂)
-  /-- A recursor of an instance at equal levels, with arguments, a term, motives and branches
-  equal up to their levels. -/
-  | recursor {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
-      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ}
-      {us₁ us₂ : Branches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
-      (has : InstanceArgs.LevelEquiv as₁ as₂) (h : Term.LevelEquiv t₁ t₂)
-      (hCs : Motives.LevelEquiv Cs₁ Cs₂) (hus : Branches.LevelEquiv us₁ us₂) :
-      Term.LevelEquiv (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
-        (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂)
-  /-- An observation of a term of an instance at equal levels, with arguments of the instance, a
-  term and arguments of the destructor equal up to their levels. -/
-  | obs {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-      {as₁ as₂ : InstanceArgs k Γ Δ} {t₁ t₂ : Term k Γ} (d : Name) {bs₁ bs₂ : Terms k Γ}
-      (hl : Level.ListEquiv ls₁ ls₂) (has : InstanceArgs.LevelEquiv as₁ as₂)
-      (h : Term.LevelEquiv t₁ t₂) (hbs : Terms.LevelEquiv bs₁ bs₂) :
-      Term.LevelEquiv (.obs D qs ls₁ ps as₁ t₁ d bs₁) (.obs D qs ls₂ ps as₂ t₂ d bs₂)
-  /-- A corecursor of an instance at equal levels, with arguments, a state, states and branches
-  equal up to their levels. -/
-  | corec {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
-      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {ss₁ ss₂ : Terms k Γ}
-      {Ss₁ Ss₂ : States k Γ} {vs₁ vs₂ : CorecBranches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
-      (has : InstanceArgs.LevelEquiv as₁ as₂) (hss : Terms.LevelEquiv ss₁ ss₂)
-      (hSs : States.LevelEquiv Ss₁ Ss₂) (hvs : CorecBranches.LevelEquiv vs₁ vs₂) :
-      Term.LevelEquiv (.corec r D qs ls₁ ps as₁ ss₁ Ss₁ vs₁) (.corec r D qs ls₂ ps as₂ ss₂ Ss₂ vs₂)
-
-/-- The arguments of a telescope, equal up to their levels one by one. -/
-inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
-    Args k Γ ps → Prop where
-  /-- No argument. -/
-  | nil {Γ : Scope} : Args.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two arguments equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {p : Parameter} {ps : List Parameter} {t₁ t₂ : Term k Γ} {ts₁ ts₂ : Args k Γ ps}
-      (h : Term.LevelEquiv t₁ t₂) (hs : Args.LevelEquiv ts₁ ts₂) :
-      Args.LevelEquiv (Args.cons (p := p) t₁ ts₁) (.cons t₂ ts₂)
-
-/-- The arguments of an instance, equal up to their levels one by one. -/
-inductive InstanceArgs.LevelEquiv {k : Nat} : {Γ Δ : Scope} → InstanceArgs k Γ Δ →
-    InstanceArgs k Γ Δ → Prop where
-  /-- No argument. -/
-  | nil {Γ : Scope} : InstanceArgs.LevelEquiv (Γ := Γ) .nil .nil
-  /-- The arguments before the last one, then two last ones equal up to their levels. -/
-  | snoc {Γ Δ : Scope} {e : Scope.Entry} {as₁ as₂ : InstanceArgs k Γ Δ}
-      {B₁ B₂ : Term k (Γ.extend e.params.length)} (has : InstanceArgs.LevelEquiv as₁ as₂)
-      (h : Term.LevelEquiv B₁ B₂) : InstanceArgs.LevelEquiv (InstanceArgs.snoc (e := e) as₁ B₁) (.snoc as₂ B₂)
-
-/-- The fields of a constructor, equal up to their levels one by one. -/
-inductive Terms.LevelEquiv {k : Nat} : {Γ : Scope} → Terms k Γ → Terms k Γ → Prop where
-  /-- No field. -/
-  | nil {Γ : Scope} : Terms.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two fields equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {t₁ t₂ : Term k Γ} {ts₁ ts₂ : Terms k Γ} (h : Term.LevelEquiv t₁ t₂)
-      (hs : Terms.LevelEquiv ts₁ ts₂) : Terms.LevelEquiv (.cons t₁ ts₁) (.cons t₂ ts₂)
-
-/-- The motives of a recursor, equal up to their levels one by one. -/
-inductive Motives.LevelEquiv {k : Nat} : {Γ : Scope} → Motives k Γ → Motives k Γ → Prop where
-  /-- No motive. -/
-  | nil {Γ : Scope} : Motives.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two motives equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n : Nat} {C₁ C₂ : Term k (Γ.extend (n + 1))} {Cs₁ Cs₂ : Motives k Γ}
-      (h : Term.LevelEquiv C₁ C₂) (hs : Motives.LevelEquiv Cs₁ Cs₂) :
-      Motives.LevelEquiv (.cons n C₁ Cs₁) (.cons n C₂ Cs₂)
-
-/-- The branches of a recursor, equal up to their levels one by one. -/
-inductive Branches.LevelEquiv {k : Nat} : {Γ : Scope} → Branches k Γ → Branches k Γ → Prop where
-  /-- No branch. -/
-  | nil {Γ : Scope} : Branches.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two branches equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n m : Nat} {es : Vector Grade m} {u₁ u₂ : Term k ((Γ.extend n).extend m)} {us₁ us₂ : Branches k Γ}
-      (h : Term.LevelEquiv u₁ u₂) (hs : Branches.LevelEquiv us₁ us₂) :
-      Branches.LevelEquiv (.cons n m es u₁ us₁) (.cons n m es u₂ us₂)
-
-/-- Two telescopes whose types are equal up to their levels. -/
-inductive Telescope.LevelEquiv {k : Nat} :
-    {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → Telescope k Γ ps → Prop where
-  /-- `ε`. -/
-  | nil {Γ : Scope} : Telescope.LevelEquiv (Γ := Γ) .nil .nil
-  /-- `(x : A ▶ p; q ◀ r, Θ)`. -/
-  | cons {Γ : Scope} {ps : List Parameter} (q : Grade) (p : Parameter) {A₁ A₂ : Term k Γ}
-      {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps} (h : Term.LevelEquiv A₁ A₂)
-      (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) : Telescope.LevelEquiv (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂)
-
-/-- The states of a corecursor, equal up to their levels one by one. -/
-inductive States.LevelEquiv {k : Nat} : {Γ : Scope} → States k Γ → States k Γ → Prop where
-  /-- No state. -/
-  | nil {Γ : Scope} : States.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two states equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n : Nat} {ps : List Parameter} {S₁ S₂ : Telescope k (Γ.extend n) ps}
-      {κs₁ κs₂ : List (Universe k)} {Ss₁ Ss₂ : States k Γ} (h : Telescope.LevelEquiv S₁ S₂)
-      (hκ : Universe.ListEquiv κs₁ κs₂) (hs : States.LevelEquiv Ss₁ Ss₂) :
-      States.LevelEquiv (.cons n S₁ κs₁ Ss₁) (.cons n S₂ κs₂ Ss₂)
-
-/-- The branches of a corecursor, equal up to their levels one by one. -/
-inductive CorecBranches.LevelEquiv {k : Nat} :
-    {Γ : Scope} → CorecBranches k Γ → CorecBranches k Γ → Prop where
-  /-- No branch. -/
-  | nil {Γ : Scope} : CorecBranches.LevelEquiv (Γ := Γ) .nil .nil
-  /-- Two branches equal up to their levels, then the others. -/
-  | cons {Γ : Scope} {n m a : Nat} {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)}
-      {vs₁ vs₂ : CorecBranches k Γ} (h : Term.LevelEquiv v₁ v₂)
-      (hs : CorecBranches.LevelEquiv vs₁ vs₂) :
-      CorecBranches.LevelEquiv (.cons n m a v₁ vs₁) (.cons n m a v₂ vs₂)
-
-end
-
--- ADE: none.
-/-- The destructors of a codata type, equal up to their levels one by one. -/
-inductive Destructors.LevelEquiv {k : Nat} :
-    {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Destructors k Γ ns → Prop where
-  /-- No destructor. -/
-  | nil {Γ : Scope} : Destructors.LevelEquiv (Γ := Γ) .nil .nil
-  /-- `d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς`, then the destructors after it. -/
-  | cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter} (p q ς : Grade)
-      {Θ₁ Θ₂ : Telescope k Γ ps} {B₁ B₂ : Term k (Γ.extend ps.length)}
-      (ψ : ResultOwnership Grade ps.length) {ds₁ ds₂ : Destructors k (.secondOrder ps ψ :: Γ) ns}
-      (hΘ : Telescope.LevelEquiv Θ₁ Θ₂) (hB : Term.LevelEquiv B₁ B₂)
-      (hds : Destructors.LevelEquiv ds₁ ds₂) :
-      Destructors.LevelEquiv (.cons (d := d) p q ς Θ₁ B₁ ψ ds₁) (.cons p q ς Θ₂ B₂ ψ ds₂)
-
-/-! ## Equivalence -/
-
-theorem Level.ListEquiv.refl {k : Nat} : (ls : List (Level k)) → ListEquiv ls ls
-  | [] => .nil
-  | l :: ls => .cons (Level.equivalence.refl l) (ListEquiv.refl ls)
-
-theorem Level.ListEquiv.symm {k : Nat} {ls₁ ls₂ : List (Level k)} :
-    ListEquiv ls₁ ls₂ → ListEquiv ls₂ ls₁
-  | .nil => .nil
-  | .cons h hs => .cons (Level.equivalence.symm h) hs.symm
-
-theorem Universe.ListEquiv.refl {k : Nat} : (κs : List (Universe k)) → ListEquiv κs κs
-  | [] => .nil
-  | ⟨s, l⟩ :: κs => .cons s (Level.equivalence.refl l) (ListEquiv.refl κs)
-
-theorem Universe.ListEquiv.symm {k : Nat} {κs₁ κs₂ : List (Universe k)} :
-    ListEquiv κs₁ κs₂ → ListEquiv κs₂ κs₁
-  | .nil => .nil
-  | .cons s h hs => .cons s (Level.equivalence.symm h) hs.symm
-
-mutual
-
-theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.LevelEquiv t t
-  | .var x ts => .var x (Args.LevelEquiv.refl ts)
-  | .sort ⟨s, l⟩ => .sort s (Level.equivalence.refl l)
-  | .const f qs ls ps => .const f qs ps (Level.ListEquiv.refl ls)
-  | .inst D qs ls ps as => .inst D qs ps (Level.ListEquiv.refl ls) (InstanceArgs.LevelEquiv.refl as)
-  | .ctor D qs ls ps as c ts => .ctor D qs ps c (Level.ListEquiv.refl ls)
-      (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ts)
-  | .recursor r D qs ls ps as t Cs us => .recursor r D qs ps (Level.ListEquiv.refl ls)
-      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
-      (Branches.LevelEquiv.refl us)
-  | .obs D qs ls ps as t d bs => .obs D qs ps d (Level.ListEquiv.refl ls)
-      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl bs)
-  | .corec r D qs ls ps as ss Ss vs => .corec r D qs ps (Level.ListEquiv.refl ls)
-      (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ss) (States.LevelEquiv.refl Ss)
-      (CorecBranches.LevelEquiv.refl vs)
-
-theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
-    (ts : Args k Γ ps) → Args.LevelEquiv ts ts
-  | .nil => .nil
-  | .cons t ts => .cons (Term.LevelEquiv.refl t) (Args.LevelEquiv.refl ts)
-
-theorem InstanceArgs.LevelEquiv.refl {k : Nat} {Γ Δ : Scope} :
-    (as : InstanceArgs k Γ Δ) → InstanceArgs.LevelEquiv as as
-  | .nil => .nil
-  | .snoc as B => .snoc (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl B)
-
-theorem Terms.LevelEquiv.refl {k : Nat} {Γ : Scope} : (ts : Terms k Γ) → Terms.LevelEquiv ts ts
-  | .nil => .nil
-  | .cons t ts => .cons (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl ts)
-
-theorem Motives.LevelEquiv.refl {k : Nat} {Γ : Scope} :
-    (Cs : Motives k Γ) → Motives.LevelEquiv Cs Cs
-  | .nil => .nil
-  | .cons _ C Cs => .cons (Term.LevelEquiv.refl C) (Motives.LevelEquiv.refl Cs)
-
-theorem Branches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
-    (us : Branches k Γ) → Branches.LevelEquiv us us
-  | .nil => .nil
-  | .cons _ _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
-
-
-theorem Telescope.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
-    (Θ : Telescope k Γ ps) → Telescope.LevelEquiv Θ Θ
-  | .nil => .nil
-  | .cons q p A Θ => .cons q p (Term.LevelEquiv.refl A) (Telescope.LevelEquiv.refl Θ)
-
-theorem States.LevelEquiv.refl {k : Nat} {Γ : Scope} :
-    (Ss : States k Γ) → States.LevelEquiv Ss Ss
-  | .nil => .nil
-  | .cons _ S κs Ss =>
-    .cons (Telescope.LevelEquiv.refl S) (Universe.ListEquiv.refl κs) (States.LevelEquiv.refl Ss)
-
-theorem CorecBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
-    (vs : CorecBranches k Γ) → CorecBranches.LevelEquiv vs vs
-  | .nil => .nil
-  | .cons _ _ _ v vs => .cons (Term.LevelEquiv.refl v) (CorecBranches.LevelEquiv.refl vs)
-
-end
-
-theorem Destructors.LevelEquiv.refl {k : Nat} {Γ : Scope} {ns : List Name} :
-    (ds : Destructors k Γ ns) → Destructors.LevelEquiv ds ds
-  | .nil => .nil
-  | .cons p q ς Θ B ψ ds =>
-    .cons p q ς ψ (Telescope.LevelEquiv.refl Θ) (Term.LevelEquiv.refl B) (Destructors.LevelEquiv.refl ds)
-
-mutual
-
-theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
-    Term.LevelEquiv t₁ t₂ → Term.LevelEquiv t₂ t₁
-  | .var x h => .var x h.symm
-  | .sort s h => .sort s (Level.equivalence.symm h)
-  | .const f qs ps h => .const f qs ps h.symm
-  | .inst D qs ps h has => .inst D qs ps h.symm has.symm
-  | .ctor D qs ps c h has hts => .ctor D qs ps c h.symm has.symm hts.symm
-  | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl.symm has.symm h.symm hCs.symm hus.symm
-  | .obs D qs ps d hl has h hbs => .obs D qs ps d hl.symm has.symm h.symm hbs.symm
-  | .corec r D qs ps hl has hss hSs hvs =>
-    .corec r D qs ps hl.symm has.symm hss.symm hSs.symm hvs.symm
-
-theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
-    Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
-  | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
-
-theorem InstanceArgs.LevelEquiv.symm {k : Nat} {Γ Δ : Scope} {as₁ as₂ : InstanceArgs k Γ Δ} :
-    InstanceArgs.LevelEquiv as₁ as₂ → InstanceArgs.LevelEquiv as₂ as₁
-  | .nil => .nil
-  | .snoc has h => .snoc has.symm h.symm
-
-theorem Terms.LevelEquiv.symm {k : Nat} {Γ : Scope} {ts₁ ts₂ : Terms k Γ} :
-    Terms.LevelEquiv ts₁ ts₂ → Terms.LevelEquiv ts₂ ts₁
-  | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
-
-theorem Motives.LevelEquiv.symm {k : Nat} {Γ : Scope} {Cs₁ Cs₂ : Motives k Γ} :
-    Motives.LevelEquiv Cs₁ Cs₂ → Motives.LevelEquiv Cs₂ Cs₁
-  | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
-
-theorem Branches.LevelEquiv.symm {k : Nat} {Γ : Scope} {us₁ us₂ : Branches k Γ} :
-    Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv us₂ us₁
-  | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
-
-
-/-- Two telescopes equal up to their levels in the other order. -/
-theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}
-    {Θ₁ Θ₂ : Telescope k Γ ps} : Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv Θ₂ Θ₁
-  | .nil => .nil
-  | .cons q p h hΘ => .cons q p h.symm hΘ.symm
-
-theorem States.LevelEquiv.symm {k : Nat} {Γ : Scope} {Ss₁ Ss₂ : States k Γ} :
-    States.LevelEquiv Ss₁ Ss₂ → States.LevelEquiv Ss₂ Ss₁
-  | .nil => .nil
-  | .cons h hκ hs => .cons h.symm hκ.symm hs.symm
-
-theorem CorecBranches.LevelEquiv.symm {k : Nat} {Γ : Scope} {vs₁ vs₂ : CorecBranches k Γ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv vs₂ vs₁
-  | .nil => .nil
-  | .cons h hs => .cons h.symm hs.symm
-
-end
 
 /-! ## Renaming and Instantiation of the Level Variables -/
 
@@ -1188,6 +882,10 @@ theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+          (fun _ => Nest.ofOption_rel₃
+            (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
+            (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
+          (fun _ => Nest.ofOption_ne_inst _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
@@ -1211,6 +909,10 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       have hls' := hls.getFin hl hl'
       exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
+          (fun _ => Nest.ofOption_rel₃
+            (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
+            (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
+          (fun _ => Nest.ofOption_ne_inst _)
   | .codata hD hq hl hp hv hs hn S hS, h => by
     subst hv
     cases h with
@@ -1222,22 +924,43 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
           has.toSubst
 
 /-- A telescope whose levels change for equal ones has the same equality of the terms of its
-fields. -/
+fields, at positions that hold the same relations and types whose levels change for equal ones.
+The positions are those of recursive fields only, as the fields of a constructor have today. -/
 theorem TelRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality}
-    {rs : Nat → Option TermRel} {ps : List Parameter} {Θ Θ' : Telescope 0 [] ps} {S : FieldsRel} :
+    {rs rs' : Nat → Nest NestLeaf} {ps : List Parameter} {Θ Θ' : Telescope 0 [] ps}
+    {S : FieldsRel} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S → Telescope.LevelEquiv Θ Θ' →
-      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ' S
-  | .nil, .nil => .nil
-  | .cons hA hF G hG hresp hrs, .cons _ _ h hΘ =>
+      (∀ i, Nest.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) (rs i) (rs' i)) →
+      (∀ i νs, rs i ≠ .inst νs) →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs' Θ' S
+  | .nil, .nil, _, _ => .nil
+  | .cons hA hF G hG hresp hrs, .cons _ _ h hΘ, hR, hni =>
     have ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
     .cons hA' (FieldRel.levelEquiv ih hF hv) G
       (fun a ha => TelRel.levelEquiv ih (hG a ha)
-        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a))))
-      hresp hrs
-  | .recursive hrs G hG, .cons _ _ _ hΘ =>
-    .recursive hrs G fun a => TelRel.levelEquiv ih (hG a)
+        (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
+        (fun i => hR (i + 1)) (fun i => hni (i + 1)))
+      hresp ((hR 0).eq_plain.1.2 hrs)
+  | .nested hrs hF G hG, .cons _ _ hA hΘ, hR, hni => by
+    have hG' := fun a => TelRel.levelEquiv ih (hG a)
       (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl a)))
+      (fun i => hR (i + 1)) (fun i => hni (i + 1))
+    have h0 := hR 0
+    have hn0 := hni 0
+    generalize hτ' : rs' 0 = τ' at h0
+    generalize rs 0 = τ at hrs hF h0 hn0
+    cases hF with
+    | plain _ _ => exact absurd rfl hrs
+    | direct hT =>
+      cases h0 with
+      | direct hr =>
+        obtain ⟨hTT', rfl⟩ := hr
+        exact .nested (by rw [hτ']; exact fun h => nomatch h)
+          (hτ' ▸ .direct ((hTT'.symm.trans hT).trans hA)) G hG'
+    | codata => exact absurd rfl (hn0 _)
+    | codataProp => exact absurd rfl (hn0 _)
+termination_by structural h _ _ _ => h
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for
 equal ones, have the same equality of the abstractions for them. -/
@@ -1249,10 +972,10 @@ theorem DesRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       Subst.LevelEquiv θ θ' → DesRel sig ι n (fun m _ => levelRel sig ι m) s rs ds' @θ' S
   | .nil, .nil, _ => .nil
   | .recursive hrs hΘ G hG, .cons _ _ _ _ hΘe _ hds, hθ =>
-    .recursive hrs (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) G
+    .recursive hrs (TelRel.levelEquiv ih hΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h)) G
       fun f => DesRel.levelEquiv ih (hG f) hds (hθ.snoc (Term.LevelEquiv.refl f))
   | .cons hΘ F hB hF hBresp G hG hresp hrs, .cons _ _ _ _ hΘe hBe hds, hθ =>
-    .cons (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) F
+    .cons (TelRel.levelEquiv ih hΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h)) F
       (fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts
         have ⟨v', hv', _⟩ :=
@@ -1343,7 +1066,7 @@ theorem RunDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progra
     .recursive hi hrs (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ)) G
       fun f => RunDesRel.levelEquiv ih (hG f) hds (hθ.snoc (Term.LevelEquiv.refl f))
   | .cons hi hΘ hRΘ F R hB hF hR G hG hrs, .cons _ _ _ _ hΘe hBe hds, hθ =>
-    .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ)) (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ))
+    .cons hi (TelRel.levelEquiv ih hΘ (hΘe.subst hθ) (fun _ => .plain) (fun _ _ h => nomatch h)) (RunTelRel.levelEquiv ih hRΘ (hΘe.subst hθ))
       F R
       (fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts
@@ -1405,7 +1128,8 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hmono := fun (X Y : Name → TermRel) (hXY : ∀ D v w, X D v w → Y D v w) =>
       TelRel.block_mono hd hp (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
-        (F := fun X D => (X D).computed sig ι) hS X Y fun D _ _ => TermRel.computed_mono (hXY D)
+        (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
+        fun D _ _ => TermRel.computed_mono (hXY D)
     refine hR (fun D v w => ∀ v' w', Term.LevelEquiv v v' → Term.LevelEquiv w w' →
         DataType.blockRel _ S D v' w')
       (fun T hT v w ⟨c, hcm, ts, us, hv, hw, hcS⟩ v' w' hv' hw' => ?_) _ _ ht hu
@@ -1418,12 +1142,15 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         exact DataType.blockRel_closed hmono hT ⟨c, hcm, _, _, ⟨_, _, _, _, _, rfl⟩,
           ⟨_, _, _, _, _, rfl⟩, TelRel.rel_levelEquiv hd ih (hS _ T hT c hcm) _ _ _
             (hS _ T hT c hcm)
-            (fun _ => Option.rel_map (fun D _ _ _ _ h ht hu => by
+            (fun _ => Nest.ofOption_rel₃
+              (r := fun (x y _ : NestLeaf) => ∀ t u t' u', x.2 t u → Term.LevelEquiv t t' →
+                Term.LevelEquiv u u' → y.2 t' u')
+              (fun D _ _ _ _ h ht hu => by
               obtain ⟨v₁, w₁, hc₁, hc₂, hX⟩ := h
               obtain ⟨v₂, hc₁', hv₂⟩ := Computes.levelEquiv hc₁ ht
               obtain ⟨w₂, hc₂', hw₂⟩ := Computes.levelEquiv hc₂ hu
               exact ⟨v₂, w₂, hc₁', hc₂', hX _ _ hv₂ hw₂⟩) _)
-            hcS hts hus⟩
+            (fun _ => Nest.ofOption_ne_inst _) hcS hts hus⟩
   | .codata _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
     obtain ⟨X, hX, hx⟩ := hR
     refine ⟨fun D a b => ∃ a₀ b₀, X D a₀ b₀ ∧ Term.LevelEquiv a₀ a ∧ Term.LevelEquiv b₀ b,
@@ -1448,19 +1175,21 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
             ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
 
 /-- The equality of the terms of the fields of a telescope relates the terms whose levels change
-for equal ones, at relations of the recursive fields that do. -/
+for equal ones, at positions whose relations do.
+The positions are those of recursive fields only, as the fields of a constructor have today. -/
 theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s₁ : Quality}
-    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps} {S₁ : FieldsRel}
+    {rs₁ : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps} {S₁ : FieldsRel}
     {ts us ts' us' : Terms 0 []} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
-      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+      ∀ (s₂ : Quality) (rs₂ : Nat → Nest NestLeaf) (S₂ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun R₁ R₂ => ∀ t u t' u', R₁ t u → Term.LevelEquiv t t' →
-          Term.LevelEquiv u u' → R₂ t' u') (rs₁ i) (rs₂ i)) →
+        (∀ i, Nest.Rel (fun x y => ∀ t u t' u', x.2 t u → Term.LevelEquiv t t' →
+          Term.LevelEquiv u u' → y.2 t' u') (rs₁ i) (rs₂ i)) →
+        (∀ i νs, rs₁ i ≠ .inst νs) →
         S₁ ts us → Terms.LevelEquiv ts ts' → Terms.LevelEquiv us us' → S₂ ts' us'
-  | .nil, _, _, _, h', _, h, .nil, .nil => by cases h'; exact h
-  | .cons hA hF _ hG _ hrs, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
+  | .nil, _, _, _, h', _, _, h, .nil, .nil => by cases h'; exact h
+  | .cons hA hF _ hG _ hrs, _, _, _, h', hR, hni, h, .cons ht hts, .cons hu hus => by
     have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     cases h' with
     | cons hA' hF' _ hG' hresp' _ =>
@@ -1473,20 +1202,29 @@ theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       exact ⟨(hFF _ _).1 (FieldRel.rel_levelEquiv hd ih hF h₁ ht hu),
         (hresp' _ _ ((hFF _ _).1 htt') _ _).1
           (TelRel.rel_levelEquiv hd ih (hG _ htt) _ _ _ (hG' _ ((hFF _ _).1 htt))
-            (fun i => hR (i + 1)) h₂ hts hus)⟩
-    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
+            (fun i => hR (i + 1)) (fun i => hni (i + 1)) h₂ hts hus)⟩
+    | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hF _ hG, _, rs₂, _, h', hR, hni, h, .cons ht hts, .cons hu hus => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
+    | cons _ _ _ _ _ hrs' => exact absurd ((hR 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hF' _ hG' =>
+      obtain ⟨h₁, h₂⟩ := h
+      have hrest := TelRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _
+        (hG' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1)) (fun i => hni (i + 1)) h₂ hts hus
       have h0 := hR 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        obtain ⟨h₁, h₂⟩ := h
-        exact ⟨hr _ _ _ _ h₁ ht hu,
-          TelRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1)) h₂
-            hts hus⟩
+      have hn0 := hni 0
+      generalize rs₂ 0 = τ₂ at hF' h0
+      generalize rs₁ 0 = τ₁ at hrs hF h0 hn0
+      cases hF with
+      | plain _ _ => exact absurd rfl hrs
+      | direct _ =>
+        cases h0 with
+        | direct hr =>
+          cases hF' with
+          | direct _ => exact ⟨hr _ _ _ _ h₁ ht hu, hrest⟩
+      | codata => exact absurd rfl (hn0 _)
+      | codataProp => exact absurd rfl (hn0 _)
+termination_by structural h _ _ _ _ _ _ _ _ _ => h
 
 /-- The equality of the abstractions for destructors relates the observations whose levels change
 for equal ones, at relations of the recursive destructors that do. -/
@@ -1505,7 +1243,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .cons (d := d) (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR, ⟨h₁, h₂⟩,
       e₁, e₂ => by
     have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSp := TelRel.isPer hd hp (fun _ _ h => by cases h) hΘ
+    have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd hp (hF ts hts _ hv)) hBresp
     have hE : ∀ f₁ f₂ f₁' f₂', AbstractionRel (ps := ps) SΘ F f₁ f₂ → Term.LevelEquiv f₁ f₁' →

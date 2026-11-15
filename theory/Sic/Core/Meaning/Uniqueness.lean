@@ -87,13 +87,19 @@ theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat} {
 /-- `ty(s_n)[λ]` agrees with the graph of the types: when each position of the nesting holds a type
 with the equality of its terms, the equality that it gives a type is the one that the type has
 without position, if it has one, in a signature whose names are distinct.
+The premise `hinv`, that the graph of the types gives the types equal up to the values of their
+levels the same equality, is no premise of the RFC, whose levels are equal when their values are;
+the invariance of the graph by these levels is proved after this module.
 RFC: `\mathsf{agree}_\lambda` -/
 theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {s s' : Quality}
     {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
+    (hinv : ∀ (T A : Term 0 []) (R : TermRel),
+      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain T R → Term.LevelEquiv T A →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain A R)
     (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
     (hτ : Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ)
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F') : ∀ t u, F t u ↔ F' t u :=
-  NestRel.agree hd (fun m _ => levelRel_isPer hd m) h hτ _ _ h'
+  NestRel.agree hd (fun m _ => levelRel_isPer hd m) hinv h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
 distinct. -/

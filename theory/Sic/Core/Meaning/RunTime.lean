@@ -286,7 +286,7 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns} {θ : Subst 0 [] Γ} {SΘ : FieldsRel}
       {RΘ : RunFieldsRel} {i : Nat} (hi : sig.destructorCase D d = some i)
-      (hΘ : TelRel sig ι n below .type (fun _ => none) (Θ.subst θ) SΘ)
+      (hΘ : TelRel sig ι n below .type (fun _ => .plain) (Θ.subst θ) SΘ)
       (hRΘ : RunTelRel sig ι P n below (fun _ => none) (Θ.subst θ) RΘ)
       (F : Terms 0 [] → TermRel) (R : Terms 0 [] → RunRel)
       (hB : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →

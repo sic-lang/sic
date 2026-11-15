@@ -182,6 +182,19 @@ theorem Nest.ofArgs_rel₃ {r : α → β → γ → Prop} {ns : List (Nest α)}
   · exact .plain
   · exact .inst h
 
+/-- The nestings of fields that are recursive together are related, when what their positions hold
+is. -/
+theorem Nest.ofOption_rel₃ {δ : Type} {r : α → β → γ → Prop} {f : δ → α} {g : δ → β} {h : δ → γ}
+    (hr : ∀ x, r (f x) (g x) (h x)) :
+    (o : Option δ) →
+      Nest.Rel₃ r (Nest.ofOption (o.map f)) (Nest.ofOption (o.map g)) (Nest.ofOption (o.map h))
+  | none => .plain
+  | some x => .direct (hr x)
+
+/-- The nesting of a field that is recursive or not is not that of an instance. -/
+theorem Nest.ofOption_ne_inst (o : Option α) (ns : List (Nest α)) : Nest.ofOption o ≠ .inst ns := by
+  cases o <;> exact fun h => nomatch h
+
 /-- The nestings of the variables stay related under a new entry. -/
 theorem Nesting.lift_rel₃ {Γ : Scope} {e₀ : Scope.Entry} {r : α → β → γ → Prop}
     {ν₁ : Nesting α Γ} {ν₂ : Nesting β Γ} {ν₃ : Nesting γ Γ} (h : Nesting.Rel₃ r @ν₁ @ν₂ @ν₃) :

@@ -60,6 +60,11 @@ RFC: `\mathsf{nest}_{\bar\lambda}` -/
 def Nest.ofArgs (ns : List (Nest α)) : Nest α :=
   if ns.all Nest.isPlain then .plain else .inst ns
 
+/-- The nesting of a field that is recursive, a position that holds `a`, or is not, no position. -/
+def Nest.ofOption : Option α → Nest α
+  | none => .plain
+  | some a => .direct a
+
 /-- The nestings of the variables of the scope `Γ`. -/
 abbrev Nesting (α : Type) (Γ : Scope) : Type := ∀ {e : Scope.Entry}, Var Γ e → Nest α
 

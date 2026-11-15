@@ -1,10 +1,10 @@
 module
 
 public import Sic.Core.RunTime.Relation
-public import Sic.Core.Soundness.Levels
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
+import Sic.Core.Soundness.Levels
 
 /-!
 # Levels of the Relation of Run Time
@@ -222,7 +222,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
     have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSΘp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hΘ
+    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')

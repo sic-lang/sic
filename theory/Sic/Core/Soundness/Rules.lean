@@ -7,6 +7,7 @@ import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
+import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 
@@ -631,8 +632,9 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
       fun m _ => levelRel_isPer hd m
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => by cases h)
-    have hSp := TelRel.isPer hd ih (fun _ _ h => by cases h) hT₁
+      (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
+    have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
@@ -670,7 +672,8 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
         exact hF₂
       have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
         obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst hd
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => by cases h)
+          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
           _ _ hts
         have huu := hSp.trans (hSp.symm hts) hts
         obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
@@ -775,8 +778,9 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
     have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => by cases h)
-    have hSp := TelRel.isPer hd ihm (fun _ _ h => by cases h) hT₁
+      (fun _ _ h => nomatch h)
+          (fun _ _ h => nomatch h)
+    have hSp := TelRel.isPer hd ihm (fun _ => .plain) hT₁
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h

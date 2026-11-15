@@ -305,22 +305,27 @@ theorem DataType.blockRel_isPer
       ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
     (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts,
       ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c us ts)
-    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
+    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) →
+      (∀ D u v, X D u v → Z D u v) → ∀ T ∈ Ts,
       ∀ c ∈ T.constructors, ∀ ts us vs, S X c ts us → S Y c us vs → S Z c ts vs)
     (hn : (Ts.map (·.name)).Nodup) (hc : ∀ T ∈ Ts, (T.constructors.map (·.name)).Nodup)
     (D : Name) : IsPer (DataType.blockRel Ts S D) where
   symm h := h (fun D v w => DataType.blockRel Ts S D w v) fun T hT v w ⟨c, hcm, ts, us, hv, hw, hs⟩ =>
     DataType.blockRel_closed hmono hT
       ⟨c, hcm, us, ts, hw, hv, hsymm _ _ (fun _ _ _ h => h) T hT c hcm ts us hs⟩
-  trans h₁ h₂ := h₁ (fun D u v => ∀ w, DataType.blockRel Ts S D v w → DataType.blockRel Ts S D u w)
-    (fun T hT u v ⟨c, hcm, ts, us, hu, hv, hs⟩ w hw => by
-      obtain ⟨T', hT', hn', c', hcm', us', vs, hv', hw', hs'⟩ := DataType.blockRel_inv hmono hw
-      cases List.eq_of_nodup_map hn hT' hT hn'
-      obtain ⟨-, hcn, rfl⟩ := hv.inj hv'
-      cases List.eq_of_nodup_map (hc T hT) hcm hcm' hcn
-      exact DataType.blockRel_closed hmono hT
-        ⟨c, hcm, ts, vs, hu, hw', htrans _ _ _ (fun _ _ _ _ h₁ h₂ => h₁ _ h₂) T hT c hcm ts us vs hs hs'⟩)
-    _ h₂
+  trans h₁ h₂ := (h₁ (fun D u v => DataType.blockRel Ts S D u v ∧
+      ∀ w, DataType.blockRel Ts S D v w → DataType.blockRel Ts S D u w)
+    (fun T hT u v ⟨c, hcm, ts, us, hu, hv, hs⟩ =>
+      ⟨DataType.blockRel_closed hmono hT
+        ⟨c, hcm, ts, us, hu, hv, hmono _ _ (fun _ _ _ h => h.1) T hT c hcm ts us hs⟩,
+      fun w hw => by
+        obtain ⟨T', hT', hn', c', hcm', us', vs, hv', hw', hs'⟩ := DataType.blockRel_inv hmono hw
+        cases List.eq_of_nodup_map hn hT' hT hn'
+        obtain ⟨-, hcn, rfl⟩ := hv.inj hv'
+        cases List.eq_of_nodup_map (hc T hT) hcm hcm' hcn
+        exact DataType.blockRel_closed hmono hT
+          ⟨c, hcm, ts, vs, hu, hw', htrans _ _ _ (fun _ _ _ _ h₁ h₂ => h₁.2 _ h₂)
+            (fun _ _ _ h => h.1) T hT c hcm ts us vs hs hs'⟩⟩)).2 _ h₂
 
 /-- `(true_μ)` is closed under the clauses of the constructors, when the equality of the terms of
 the fields grows with the truths of the recursive fields. -/
@@ -715,17 +720,15 @@ theorem UnivRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
   | .data h _ _ _ _ _ _ _ hS =>
     DataType.blockRel_isPer
       (fun X Y hXY T hT c hc ts us hs => TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
-        (fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _) ts us hs)
+        (fun _ => Nest.ofOption_rel₃ (fun D _ _ => TermRel.computed_mono (hXY D)) _) ts us hs)
       (fun X Y hXY T hT c hc ts us hs => TelRel.symm_of hd ih (hS X T hT c hc) _ _ _
-        (hS Y T hT c hc) (fun _ => Option.rel_map (fun D _ _ => TermRel.computed_symm (hXY D)) _)
-        ts us hs)
-      (fun X Y Z hXYZ T hT c hc ts us vs hs hs' => TelRel.trans_of hd ih (hS X T hT c hc) _ _ _
+        (hS Y T hT c hc)
+        (fun _ => Nest.ofOption_rel₃ (fun D _ _ => TermRel.computed_symm (hXY D)) _) ts us hs)
+      (fun X Y Z hXYZ hXZ T hT c hc ts us vs hs hs' => TelRel.trans_of hd ih (hS X T hT c hc) _ _ _
         (hS Y T hT c hc) _ _ _ (hS Z T hT c hc)
-        (fun _ => Option.rel_map₃
-          (r := fun (x y z : TermRel) => ∀ t u w, x t u → y u w → z t w)
-          (f := fun D => (X D).computed sig ι) (g := fun D => (Y D).computed sig ι)
-          (h := fun D => (Z D).computed sig ι)
-          (fun D _ _ _ => TermRel.computed_trans hd (hXYZ D)) _)
+        (fun _ => Nest.ofOption_rel₃ (fun D =>
+          ⟨fun _ _ _ => TermRel.computed_trans hd (hXYZ D),
+            fun _ _ => TermRel.computed_mono (hXZ D)⟩) _)
         ts us vs hs hs')
       (TypeDeclaration.dataTypes_nodup (hd.nodup h.1))
       (fun _ hT => hd.constructors_nodup ⟨h.1, hT, rfl⟩) _
@@ -757,14 +760,14 @@ theorem DesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
   | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hEp := AbstractionRel.isPer hSΘp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
     cases h' with
     | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts
@@ -778,8 +781,8 @@ theorem DesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     cases h' with
     | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
@@ -788,7 +791,7 @@ theorem DesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
         exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
           ⟨fun ts us hts => hr _ _ (h₁ us ts (hSΘp.symm ((hSS _ _).2 hts))),
             DesRel.symm_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
@@ -813,8 +816,8 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
     cases h'; cases h''; exact fun _ _ _ _ _ => trivial
   | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', _, _, _, h'', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hEp := AbstractionRel.isPer hSΘp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
@@ -822,8 +825,8 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
     | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>
       cases h'' with
       | cons hΘ'' F'' _ hF'' _ _ hG'' _ _ =>
-        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
-        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' (fun _ => .plain)
         have hFF' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
             F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
           have ⟨_, hv⟩ := hB ts hts
@@ -850,8 +853,8 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
       · rw [hrs] at h0; cases h0
   | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', _, _, _, h'', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     cases h' with
     | cons _ _ _ _ _ _ _ _ hrs' =>
@@ -869,8 +872,8 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         · rw [hrs] at h0; cases h0
         · rw [hrs] at hx; rw [hrs'] at hy; rw [hrs''] at hz
           cases hx; cases hy; cases hz
-          have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
-          have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+          have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
+          have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' (fun _ => .plain)
           exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
             ⟨fun ts us hts =>
               have hts' := (hSS'' _ _).2 hts
@@ -893,14 +896,14 @@ theorem DesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
   | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hEp := AbstractionRel.isPer hSΘp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
     cases h' with
     | cons hΘ' F' _ hF' _ _ hG' _ _ =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         have ⟨_, hv⟩ := hB ts hts
@@ -911,8 +914,8 @@ theorem DesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
     | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive (SΘ := SΘ) hrs hΘ _ hG, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     cases h' with
     | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
@@ -921,7 +924,7 @@ theorem DesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+        have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
         have hGG := DesRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _
           (hG' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1))
         exact fun o₁ o₂ =>
@@ -939,15 +942,15 @@ theorem FieldRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
 termination_by structural h => h
 
 /-- The equality of the terms of the fields of a telescope relates the terms that the equality of
-the same telescope relates, at relations of the recursive fields that relate more terms. -/
+the same telescope relates, at positions whose relations relate more terms. -/
 theorem TelRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
-    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs₁ : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S₁ : FieldsRel} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
-      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+      ∀ (s₂ : Quality) (rs₂ : Nat → Nest NestLeaf) (S₂ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y t u) (rs₁ i) (rs₂ i)) →
+        (∀ i, Nest.Rel (fun x y => ∀ t u, x.2 t u → y.2 t u) (rs₁ i) (rs₂ i)) →
         ∀ ts us, S₁ ts us → S₂ ts us
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ h => h
   | .cons hA hF _ hG hresp hrs, _, _, _, h', hR => by
@@ -960,29 +963,25 @@ theorem TelRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.
       have htt := hFp.trans htu (hFp.symm htu)
       exact TelRel.mono hd ih (hG t htt) _ _ _ (hG' t ((hFF t t).1 htt)) (fun i => hR (i + 1))
         ts us hg
-    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, _, h', hR => by
+    | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hF _ hG, _, _, _, h', hR => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
-      have h0 := hR 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        exact FieldsRel.cons_mono hr fun t _ _ ts us hg =>
-          TelRel.mono hd ih (hG t) _ _ _ (hG' t) (fun i => hR (i + 1)) ts us hg
+    | cons _ _ _ _ _ hrs' => exact absurd ((hR 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hF' _ hG' =>
+      exact FieldsRel.cons_mono (NestRel.mono hd ih hF _ _ _ hF' (hR 0)) fun t _ _ ts us hg =>
+        TelRel.mono hd ih (hG t) _ _ _ (hG' t) (fun i => hR (i + 1)) ts us hg
 termination_by structural h _ _ _ _ _ => h
 
 /-- The equality of the terms of the fields of a telescope relates in the other order the terms that
-the equality of the same telescope relates, at relations of the recursive fields that do so. -/
+the equality of the same telescope relates, at positions whose relations do so. -/
 theorem TelRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
-    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs₁ : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S₁ : FieldsRel} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
-      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+      ∀ (s₂ : Quality) (rs₂ : Nat → Nest NestLeaf) (S₂ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun x y => ∀ t u, x t u → y u t) (rs₁ i) (rs₂ i)) →
+        (∀ i, Nest.Rel (fun x y => ∀ t u, x.2 t u → y.2 u t) (rs₁ i) (rs₂ i)) →
         ∀ ts us, S₁ ts us → S₂ us ts
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ h => FieldsRel.nil_isPer.symm h
   | .cons hA hF _ hG hresp hrs, _, _, _, h', hR => by
@@ -995,33 +994,30 @@ theorem TelRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       have huu := hFp.trans (hFp.symm htu) htu
       exact TelRel.symm_of hd ih (hG u huu) _ _ _ (hG' u ((hFF u u).1 huu)) (fun i => hR (i + 1))
         ts us ((hresp t u htu ts us).1 hg)
-    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, _, h', hR => by
+    | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hF _ hG, _, _, _, h', hR => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
-      have h0 := hR 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        exact FieldsRel.cons_symm hr fun _ u _ ts us hg =>
-          TelRel.symm_of hd ih (hG u) _ _ _ (hG' u) (fun i => hR (i + 1)) ts us hg
+    | cons _ _ _ _ _ hrs' => exact absurd ((hR 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hF' _ hG' =>
+      exact FieldsRel.cons_symm (NestRel.symm_of hd ih hF _ _ _ hF' (hR 0)) fun _ u _ ts us hg =>
+        TelRel.symm_of hd ih (hG u) _ _ _ (hG' u) (fun i => hR (i + 1)) ts us hg
 termination_by structural h _ _ _ _ _ => h
 
 /-- The equality of the terms of the fields of a telescope relates the terms that two equalities of
-the same telescope relate in a chain, at relations of the recursive fields that do so. -/
+the same telescope relate in a chain, at positions whose relations do so and whose third relation
+relates the terms that the first one relates. -/
 theorem TelRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
-    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs₁ : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S₁ : FieldsRel} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
-      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+      ∀ (s₂ : Quality) (rs₂ : Nat → Nest NestLeaf) (S₂ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
-      ∀ (s₃ : Quality) (rs₃ : Nat → Option TermRel) (S₃ : FieldsRel),
+      ∀ (s₃ : Quality) (rs₃ : Nat → Nest NestLeaf) (S₃ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₃ rs₃ Θ S₃ →
-        (∀ i, (rs₁ i = none ∧ rs₂ i = none ∧ rs₃ i = none) ∨
-          ∃ x y z, rs₁ i = some x ∧ rs₂ i = some y ∧ rs₃ i = some z ∧
-            ∀ t u w, x t u → y u w → z t w) →
+        (∀ i, Nest.Rel₃
+          (fun x y z => (∀ t u w, x.2 t u → y.2 u w → z.2 t w) ∧ ∀ t u, x.2 t u → z.2 t u)
+          (rs₁ i) (rs₂ i) (rs₃ i)) →
         ∀ ts us vs, S₁ ts us → S₂ us vs → S₃ ts vs
   | .nil, _, _, _, h', _, _, _, h'', _ => by
     cases h'; cases h''; exact fun _ _ _ h h' => FieldsRel.nil_isPer.trans h h'
@@ -1042,46 +1038,31 @@ theorem TelRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         exact TelRel.trans_of hd ih (hG t htt) _ _ _ (hG' t ((hFF' t t).1 htt)) _ _ _
           (hG'' t ((hFF'' t t).1 htt)) (fun i => hR (i + 1)) ts us vs hg
           ((hresp' t u ((hFF' t u).1 htu) us vs).2 hg')
-      | recursive hrs'' _ _ =>
-        rcases hR 0 with ⟨-, -, h0⟩ | ⟨_, _, _, h0, -⟩
-        · rw [hrs''] at h0; cases h0
-        · rw [hrs] at h0; cases h0
-    | recursive hrs' _ _ =>
-      rcases hR 0 with ⟨-, h0, -⟩ | ⟨_, _, _, h0, -⟩
-      · rw [hrs'] at h0; cases h0
-      · rw [hrs] at h0; cases h0
-  | .recursive hrs _ hG, _, _, _, h', _, _, _, h'', hR => by
+      | nested hrs'' _ _ _ => exact absurd ((hR 0).eq_plain.2.2 hrs) hrs''
+    | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hF _ hG, _, _, _, h', _, _, _, h'', hR => by
     cases h' with
-    | cons _ _ _ _ _ hrs' =>
-      rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, h0, -⟩
-      · rw [hrs] at h0; cases h0
-      · rw [hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
+    | cons _ _ _ _ _ hrs' => exact absurd ((hR 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hF' _ hG' =>
       cases h'' with
-      | cons _ _ _ _ _ hrs'' =>
-        rcases hR 0 with ⟨h0, -, -⟩ | ⟨_, _, _, -, -, h0, -⟩
-        · rw [hrs] at h0; cases h0
-        · rw [hrs''] at h0; cases h0
-      | recursive hrs'' _ hG'' =>
-        rcases hR 0 with ⟨h0, -, -⟩ | ⟨x, y, z, hx, hy, hz, hr⟩
-        · rw [hrs] at h0; cases h0
-        · rw [hrs] at hx; rw [hrs'] at hy; rw [hrs''] at hz
-          cases hx; cases hy; cases hz
-          exact FieldsRel.cons_trans hr fun t _ _ _ _ ts us vs hg hg' =>
+      | cons _ _ _ _ _ hrs'' => exact absurd ((hR 0).eq_plain.2.1 hrs'') hrs
+      | nested hrs'' hF'' _ hG'' =>
+        exact FieldsRel.cons_trans (NestRel.trans_of hd ih hF _ _ _ hF' _ _ _ hF'' (hR 0))
+          fun t _ _ _ _ ts us vs hg hg' =>
             TelRel.trans_of hd ih (hG t) _ _ _ (hG' t) _ _ _ (hG'' t) (fun i => hR (i + 1))
               ts us vs hg hg'
 termination_by structural h _ _ _ _ _ _ _ _ _ => h
 
-/-- The equalities of the terms of the fields of a telescope relate the same terms, at relations of
-the recursive fields that relate the same terms. -/
+/-- The equalities of the terms of the fields of a telescope relate the same terms, at positions
+whose relations relate the same terms. -/
 theorem TelRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s₁ : Quality}
-    {rs₁ : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs₁ : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S₁ : FieldsRel} :
     TelRel sig ι n (fun m _ => levelRel sig ι m) s₁ rs₁ Θ S₁ →
-      ∀ (s₂ : Quality) (rs₂ : Nat → Option TermRel) (S₂ : FieldsRel),
+      ∀ (s₂ : Quality) (rs₂ : Nat → Nest NestLeaf) (S₂ : FieldsRel),
         TelRel sig ι n (fun m _ => levelRel sig ι m) s₂ rs₂ Θ S₂ →
-        (∀ i, Option.Rel (fun x y => ∀ t u, x t u ↔ y t u) (rs₁ i) (rs₂ i)) →
+        (∀ i, Nest.Rel (fun x y => ∀ t u, x.2 t u ↔ y.2 t u) (rs₁ i) (rs₂ i)) →
         ∀ ts us, S₁ ts us ↔ S₂ ts us
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
   | .cons hA hF _ hG _ hrs, _, _, _, h', hR => by
@@ -1092,22 +1073,19 @@ theorem TelRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       exact FieldsRel.cons_congr hFp hFF fun a ha =>
         TelRel.congr hd ih (hG a ha) _ _ _ (hG' a ((hFF a a).1 ha)) (fun i => hR (i + 1))
-    | recursive hrs' _ _ => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-  | .recursive hrs _ hG, _, _, _, h', hR => by
+    | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
+  | .nested hrs hF _ hG, _, _, _, h', hR => by
     cases h' with
-    | cons _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
-    | recursive hrs' _ hG' =>
-      have h0 := hR 0
-      rw [hrs, hrs'] at h0
-      cases h0 with
-      | some hr =>
-        have hGG := TelRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
-          (fun i => hR (i + 1))
-        intro ts us
-        match ts, us with
-        | .nil, _ => exact .rfl
-        | .cons _ _, .nil => exact .rfl
-        | .cons t ts, .cons u us => exact and_congr (hr t u) (hGG ts us)
+    | cons _ _ _ _ _ hrs' => exact absurd ((hR 0).eq_plain.1.1 hrs') hrs
+    | nested hrs' hF' _ hG' =>
+      have hFF := NestRel.congr hd ih hF _ _ _ hF' (hR 0)
+      have hGG := TelRel.congr hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
+        (fun i => hR (i + 1))
+      intro ts us
+      match ts, us with
+      | .nil, _ => exact .rfl
+      | .cons _ _, .nil => exact .rfl
+      | .cons t ts, .cons u us => exact and_congr (hFF t u) (hGG ts us)
 termination_by structural h _ _ _ _ _ => h
 
 /-- A type of `U_n` has a unique equality of its terms, if the relations of the levels below `n` are
@@ -1139,7 +1117,7 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       cases hT
       cases has
       exact DataType.blockRel_congr (fun X T hT c hc => TelRel.congr hd ih (hS X T hT c hc) _ _ _
-        (hS' X T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
+        (hS' X T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     cases h' with
@@ -1172,7 +1150,7 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       cases hT
       cases has
       exact DataType.blockTruth_congr (fun B T hT c hc => TelRel.congr hd ih (hS B T hT c hc) _ _ _
-        (hS' B T hT c hc) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
+        (hS' B T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     cases h' with
@@ -1246,11 +1224,11 @@ theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       have hFp := FieldRel.isPer hd ih hF
       exact fun t u h => (hFF t u).1 h
-  | .direct, _, _, _, h', hR => by
+  | .direct _, _, _, _, h', hR => by
     cases hR with
     | direct hr =>
       cases h' with
-      | direct => exact hr
+      | direct _ => exact hr
   | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
@@ -1311,11 +1289,11 @@ theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       have hFp := FieldRel.isPer hd ih hF
       exact fun t u h => (hFF u t).1 (hFp.symm h)
-  | .direct, _, _, _, h', hR => by
+  | .direct _, _, _, _, h', hR => by
     cases hR with
     | direct hr =>
       cases h' with
-      | direct => exact hr
+      | direct _ => exact hr
   | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
@@ -1376,11 +1354,11 @@ theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       have hFp := FieldRel.isPer hd ih hF
       exact hFF
-  | .direct, _, _, _, h', hR => by
+  | .direct _, _, _, _, h', hR => by
     cases hR with
     | direct hr =>
       cases h' with
-      | direct => exact hr
+      | direct _ => exact hr
   | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
@@ -1448,13 +1426,13 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
         have hFF'' := FieldRel.unique hd ih hF _ _ hF''
         have hFp := FieldRel.isPer hd ih hF
         exact fun t u w h₁ h₂ => (hFF'' t w).1 (hFp.trans h₁ ((hFF' u w).2 h₂))
-  | .direct, _, _, _, h', _, _, _, h'', hR => by
+  | .direct _, _, _, _, h', _, _, _, h'', hR => by
     cases hR with
     | direct hr =>
       cases h' with
-      | direct =>
+      | direct _ =>
         cases h'' with
-        | direct => exact hr.1
+        | direct _ => exact hr.1
   | .codata h _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', _, _, _, h'', hR => by
     cases hR with
     | inst hνs =>
@@ -1537,8 +1515,8 @@ theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
   | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
       ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
@@ -1548,7 +1526,7 @@ theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons _ hΘ' F' hF' _ _ hG' hresp' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
@@ -1560,14 +1538,14 @@ theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
     | nested _ hΘ' F' hF' hBresp' _ hG' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
         ⟨fun ts us hts =>
           have hts' := (hSS _ _).2 hts
@@ -1592,8 +1570,8 @@ theorem NestDesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
   | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
       ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
@@ -1603,7 +1581,7 @@ theorem NestDesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons _ hΘ' F' hF' _ _ hG' hresp' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
@@ -1616,14 +1594,14 @@ theorem NestDesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
     | nested _ hΘ' F' hF' hBresp' _ hG' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
         ⟨fun ts us hts =>
           have hts' := (hSS _ _).2 hts
@@ -1650,8 +1628,8 @@ theorem NestDesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ => .rfl
   | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
       ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
@@ -1661,7 +1639,7 @@ theorem NestDesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons _ hΘ' F' hF' _ _ hG' hresp' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
@@ -1672,14 +1650,14 @@ theorem NestDesRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons hν' => exact absurd (hB.eq_plain.1.1 hν') hν
     | nested _ hΘ' F' hF' hBresp' _ hG' =>
-      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
+      have hSS := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
       exact fun o₁ o₂ => and_congr
         (AbstractionRel.congr hSΘp hSS (fun ts hts =>
           NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) hB) _ _)
@@ -1708,8 +1686,8 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
   | .cons (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', _, _, _, h'',
       hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hFp : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → IsPer (F ts.terms) := fun ts hts =>
       ⟨fun h => NestRel.symm_of hd ih (hF ts hts) _ _ _ (hF ts hts) .plain _ _ h,
@@ -1721,8 +1699,8 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
     | cons _ hΘ' F' hF' _ _ hG' hresp' =>
       cases h'' with
       | cons _ hΘ'' F'' hF'' _ _ hG'' _ =>
-        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
-        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' (fun _ => .plain)
         have hFF' : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
             F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
           NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS' _ _).1 hts)) .plain
@@ -1742,8 +1720,8 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG, _, _, _, h', _, _, _, h'',
       hR => by
     have hSΘp : IsPer SΘ :=
-      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ TelRel.none_rel _ _ h,
-        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .inl ⟨rfl, rfl, rfl⟩)
+      ⟨fun h => TelRel.symm_of hd ih hΘ _ _ _ hΘ (fun _ => .plain) _ _ h,
+        fun h h' => TelRel.trans_of hd ih hΘ _ _ _ hΘ _ _ _ hΘ (fun _ => .plain)
           _ _ _ h h'⟩
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
@@ -1752,8 +1730,8 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
       cases h'' with
       | cons hν'' => exact absurd (hB.eq_plain.2.1 hν'') hν
       | nested _ hΘ'' F'' hF'' _ _ hG'' =>
-        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' TelRel.none_rel
-        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' TelRel.none_rel
+        have hSS' := TelRel.congr hd ih hΘ _ _ _ hΘ' (fun _ => .plain)
+        have hSS'' := TelRel.congr hd ih hΘ _ _ _ hΘ'' (fun _ => .plain)
         exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
           ⟨fun ts us hts =>
             have hts' := (hSS'' _ _).2 hts
@@ -1770,30 +1748,27 @@ termination_by structural h _ _ _ _ _ _ _ _ _ => h
 end
 
 /-- The equality of the terms of the fields of a telescope is a partial equivalence relation, at
-relations of the recursive fields that are. -/
+positions whose relations are. -/
 theorem TelRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality}
-    {rs : Nat → Option TermRel} (hrs : ∀ i x, rs i = some x → IsPer x)
+    {rs : Nat → Nest NestLeaf} (hrs : ∀ i, Nest.All (fun x => IsPer x.2) (rs i))
     {ps : List Parameter} {Θ : Telescope 0 [] ps} {S : FieldsRel}
     (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S) : IsPer S where
-  symm h' := TelRel.symm_of hd ih h _ _ _ h (fun i => by
-    match hi : rs i with
-    | none => exact .none
-    | some x => exact .some fun _ _ => (hrs i x hi).symm) _ _ h'
-  trans h₁ h₂ := TelRel.trans_of hd ih h _ _ _ h _ _ _ h (fun i => by
-    match hi : rs i with
-    | none => exact .inl ⟨rfl, rfl, rfl⟩
-    | some x => exact .inr ⟨x, x, x, rfl, rfl, rfl, fun _ _ _ => (hrs i x hi).trans⟩) _ _ _ h₁ h₂
+  symm h' := TelRel.symm_of hd ih h _ _ _ h
+    (fun i => Nest.All.rel₃ (fun _ hx _ _ => hx.symm) (hrs i)) _ _ h'
+  trans h₁ h₂ := TelRel.trans_of hd ih h _ _ _ h _ _ _ h
+    (fun i => Nest.All.rel₃ (fun _ hx => ⟨fun _ _ _ => hx.trans, fun _ _ h => h⟩) (hrs i))
+    _ _ _ h₁ h₂
 
-/-- A telescope has a unique equality of the terms of its fields, at given relations of its
-recursive fields. -/
+/-- A telescope has a unique equality of the terms of its fields, at given nestings of its
+fields. -/
 theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality}
-    {rs : Nat → Option TermRel} {ps : List Parameter} {Θ : Telescope 0 [] ps}
+    {rs : Nat → Nest NestLeaf} {ps : List Parameter} {Θ : Telescope 0 [] ps}
     {S : FieldsRel} (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S) (s' : Quality)
     (S' : FieldsRel) (h' : TelRel sig ι n (fun m _ => levelRel sig ι m) s' rs Θ S') :
     ∀ ts us, S ts us ↔ S' ts us :=
-  TelRel.congr hd ih h _ _ _ h' fun _ => Option.rel_refl (fun _ _ _ => .rfl) _
+  TelRel.congr hd ih h _ _ _ h' fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _
 
 /-- The equality of the abstractions for destructors is a partial equivalence relation, at relations
 of the recursive destructors that are. -/
@@ -1833,7 +1808,7 @@ theorem DesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.
         ∀ o₁ o₂, S₁ o₁ o₂ → S₂ o₁ o₂
   | .nil, _, _, _, h', _ => by cases h'; exact fun _ _ _ => trivial
   | .cons (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR => by
-    have hSΘp := TelRel.isPer hd ih (fun _ _ h => by cases h) hΘ
+    have hSΘp := TelRel.isPer hd ih (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSΘp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd ih (hF ts hts _ hv)) hBresp
     cases h' with
@@ -1880,6 +1855,18 @@ theorem NestRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' τ A F') : ∀ t u, F t u ↔ F' t u :=
   NestRel.congr hd ih h _ _ _ h' (Nest.rel₃_refl (fun _ _ _ => .rfl) τ)
 
+/-- A type read at a nesting that is neither no position nor that of an instance is read at a
+position, which holds its relation and the type up to the values of its levels. -/
+theorem NestRel.eq_direct {sig : Signature} {ι : Interpretation} {n : Nat}
+    {below : LevelRel.Below n} {s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
+    (h : NestRel sig ι n below s τ A F) (hp : τ ≠ .plain) (hi : ∀ νs, τ ≠ .inst νs) :
+    ∃ T, τ = .direct (T, F) ∧ Term.LevelEquiv T A := by
+  cases h with
+  | plain _ _ => exact absurd rfl hp
+  | direct hA => exact ⟨_, rfl, hA⟩
+  | codata => exact absurd rfl (hi _)
+  | codataProp => exact absurd rfl (hi _)
+
 /-- The equality of the abstractions for destructors read at nestings is a partial equivalence
 relation, at positions whose relations are. -/
 theorem NestDesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
@@ -1912,14 +1899,14 @@ theorem TelRel.block_mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd 
     {Ts : List (DataType j g k Δ)} {s : Quality}
     {rec : Constructor j g k Δ → Nat → Option Name}
     {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps}
-    {F : α → Name → TermRel} {S : α → Constructor j g k Δ → FieldsRel}
+    {F : α → Name → NestLeaf} {S : α → Constructor j g k Δ → FieldsRel}
     (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, TelRel sig ι n (fun m _ => levelRel sig ι m) s
-      (fun i => (rec c i).map (F X)) (Θ c).2 (S X c))
-    (X Y : α) (hXY : ∀ D t u, F X D t u → F Y D t u) (T : DataType j g k Δ)
+      (fun i => Nest.ofOption ((rec c i).map (F X))) (Θ c).2 (S X c))
+    (X Y : α) (hXY : ∀ D t u, (F X D).2 t u → (F Y D).2 t u) (T : DataType j g k Δ)
     (hT : T ∈ Ts) (c : Constructor j g k Δ) (hc : c ∈ T.constructors) (ts us : Terms 0 []) :
     S X c ts us → S Y c ts us :=
   TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
-    (fun _ => Option.rel_map (fun D => hXY D) _) ts us
+    (fun _ => Nest.ofOption_rel₃ (fun D => hXY D) _) ts us
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem HasEq.univ_not_prop {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n k : Nat}
