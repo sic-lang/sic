@@ -139,6 +139,12 @@ theorem List.getFin_map {α β : Type} (f : α → β) (l : List α) {n : Nat}
   funext i
   simp [List.getFin]
 
+/-- The numbered elements of the list of the values of a function are these values. -/
+theorem List.getFin_ofFn {α : Type} {n : Nat} (f : Fin n → α) (h : (List.ofFn f).length = n) :
+    (List.ofFn f).getFin h = f := by
+  funext i
+  simp [List.getFin]
+
 /-- The numbered elements of a list are the list. -/
 theorem List.ofFn_getFin {α : Type} :
     (l : List α) → {n : Nat} → (h : l.length = n) → List.ofFn (l.getFin h) = l

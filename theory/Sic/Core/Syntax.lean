@@ -792,6 +792,14 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
     (hp : ps.length = g) : Instance j g :=
   ⟨qs.getFin hq, ps.getFin hp⟩
 
+/-- The instance that gives the variables the sorts and the grades of an instance is this
+instance. -/
+theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
+    (hq : (List.ofFn ι.sorts).length = j) (hp : (List.ofFn ι.grades).length = g) :
+    Instance.ofLists (List.ofFn ι.sorts) (List.ofFn ι.grades) hq hp = ι := by
+  unfold Instance.ofLists
+  rw [List.getFin_ofFn, List.getFin_ofFn]
+
 -- ADE: none.
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry

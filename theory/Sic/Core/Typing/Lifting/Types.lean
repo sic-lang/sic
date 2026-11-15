@@ -137,6 +137,26 @@ theorem Lifting.Typed.weaken {s : Quality} {Γ' Γ : Scope} {ctx' : Context k Γ
     rw [Lifting.motiveTelescope_weaken] at hy
     exact hy
 
+/-- A typed lifting in a context extended by a second-order variable. -/
+theorem Lifting.Typed.weakenSecondOrder {s : Quality} {Γ' Γ : Scope} {ps : List Parameter}
+    {ψ : ResultOwnership Grade ps.length} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ}
+    {ctx : Context k Γ} {Θ : Telescope k Γ' ps} {B : Term k (Γ'.extend ps.length)}
+    (h : Lifting.Typed sig s ctx' ρ ctx) (hB : WfCtx sig (ctx'.secondOrder Θ B ψ)) :
+    Lifting.Typed sig s (ctx'.secondOrder Θ B ψ) ρ.weaken ctx where
+  ren := (TypedRen.weakenSecondOrder hB).comp h.ren
+  var := fun {x y l} hx => by
+    obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
+    cases he
+    exact ⟨(h.var hx₀).1, .succSecondOrder (h.var hx₀).2⟩
+  secondOrder := fun {ps' ψ' X y l Θ' A} hx hX => by
+    obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
+    cases he
+    refine ⟨(h.secondOrder hx₀ hX).1, ?_⟩
+    have hy := Context.SecondOrderIn.succSecondOrder (Θ' := Θ) (B := B) (ψ' := ψ)
+      (h.secondOrder hx₀ hX).2
+    rw [Lifting.motiveTelescope_weaken] at hy
+    exact hy
+
 /-- A typed lifting under a variable, whose type is a type. -/
 theorem Lifting.Typed.lift {s : Quality} {Γ' Γ : Scope} {ctx' : Context k Γ'}
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {A : Term k Γ} (h : Lifting.Typed sig s ctx' ρ ctx)
@@ -160,6 +180,38 @@ theorem Lifting.Typed.lift {s : Quality} {Γ' Γ : Scope} {ctx' : Context k Γ'}
           exact this
         · have e : (Θ.rename (Ren.weaken (e := .var))).rename ρ.lift.ren = Θ.rename ρ.weaken.ren :=
             Telescope.rename_rename_of (fun _ => rfl) Θ
+          rw [e]
+          exact hw₂ }
+
+/-- A typed lifting under a second-order variable, whose type is a type in the context extended by
+its telescope. -/
+theorem Lifting.Typed.liftSecondOrder {s : Quality} {Γ' Γ : Scope} {ps : List Parameter}
+    {ψ : ResultOwnership Grade ps.length} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ}
+    {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
+    (h : Lifting.Typed sig s ctx' ρ ctx) (hA : WfType sig (ctx.append Θ) A) :
+    Lifting.Typed sig s
+      (ctx'.secondOrder (Θ.rename ρ.ren) (A.rename (Ren.liftN ps.length ρ.ren)) ψ) ρ.lift
+      (ctx.secondOrder Θ A ψ) :=
+  have hρ := h.ren.liftSecondOrder (ψ := ψ)
+    (stableUnderRenaming.wfType hA (h.ren.liftN (contextPresuppositions.wfType hA)))
+  have hw := h.weakenSecondOrder hρ.wfCtx
+  have hα := TypedRen.weakenSecondOrder (ψ := ψ) (.secondOrder hA)
+  { ren := hρ
+    var := fun {x y l} hx =>
+      match x, hx with
+      | .succ x, hx => ⟨stableUnderRenaming.wfType (hw.var hx).1 hα, (hw.var hx).2⟩
+    secondOrder := fun {ps' ψ' X y l Θ' A'} hx hX =>
+      match X, hX, hx with
+      | .succ X, .succSecondOrder (Θ := Θ₀) hX, hx => by
+        obtain ⟨hw₁, hw₂⟩ := hw.secondOrder hx hX
+        refine ⟨?_, ?_⟩
+        · have := stableUnderRenaming.wfType hw₁
+            (hα.liftN (contextPresuppositions.wfType hw₁))
+          rw [Var.eta_rename (e := .secondOrder ps' ψ')] at this
+          exact this
+        · have e : (Θ₀.rename (Ren.weaken (e := .secondOrder ps ψ))).rename ρ.lift.ren =
+              Θ₀.rename ρ.weaken.ren :=
+            Telescope.rename_rename_of (fun _ => rfl) Θ₀
           rw [e]
           exact hw₂ }
 
