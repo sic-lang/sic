@@ -110,10 +110,11 @@ forbidden = [
 ]
 
 [[rule]]
-reason = "the strict positivity reads the syntax and the parameters that the declared types declare, and no judgment, so that the meaning may use it"
+reason = "the strict positivity reads the syntax, its nesting and the parameters that the declared types declare, and no judgment, so that the meaning may use it"
 modules = ["Sic.Core.Positivity"]
 allowed = [
   "Sic.Core.Level",
+  "Sic.Core.Nesting",
   "Sic.Core.Positivity",
   "Sic.Core.Substitution",
   "Sic.Core.Syntax",

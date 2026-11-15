@@ -9,6 +9,7 @@ public import Sic.Core.Substitution
 A renaming keeps the nesting of a type of annex 14 of RFC 36, at the nestings of the variables that
 it renames, and so the nestings of the fields of a block, whose variables have no position: the
 fields after a recursive field, which do not depend on it, are renamed under it.
+A variable of a scope keeps its nesting under new variables, which have no position.
 
 ADE have no declared types, and no nesting.
 -/
@@ -36,6 +37,13 @@ theorem Nesting.liftN_rename :
         Nesting.liftN n @ν' (Ren.liftN n @ρ x) = Nesting.liftN n @ν x
   | _, _, 0, _, _, _, h => h
   | _, _, n + 1, _, _, _, h => Nesting.liftN_rename n (Nesting.lift_rename h)
+
+/-- A variable of a scope keeps its nesting under new variables. -/
+theorem Nesting.liftN_weakenN :
+    {Γ : Scope} → (n : Nat) → (ν : Nesting α Γ) → {e : Scope.Entry} → (x : Var Γ e) →
+      Nesting.liftN n @ν (x.weakenN n) = ν x
+  | _, 0, _, _, _ => rfl
+  | _, n + 1, ν, _, x => Nesting.liftN_weakenN n (Nesting.lift @ν) x.succ
 
 mutual
 
