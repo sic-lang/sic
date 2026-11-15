@@ -114,17 +114,17 @@ theorem TypedSubst.Base.varIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst 
 -- ADE: none.
 /-- The typed substitutions give what the stability of the typing asks of a family of
 substitutions. -/
-theorem TypedSubst.liftable : Subst.Liftable sig (@TypedSubst.Base sig k) where
-  wfCtx := fun ⟨_, h, _⟩ => h.wfCtx
-  secondOrderIn := fun ⟨σ, h, hθ⟩ hX => by
-    cases hθ
-    obtain ⟨Y, hY, hYin⟩ := h.secondOrderIn hX
-    refine ⟨Y, ?_, ?_⟩
-    · show (σ _).eta = _
-      rw [hY, Val.eta]
-    · rw [Telescope.subst₀_eq_subst, Term.subst₀_liftN_eq_subst] at hYin
-      exact hYin
-  varIn := TypedSubst.Base.varIn
+theorem TypedSubst.liftable : Subst.Liftable sig (@TypedSubst.Base sig k) :=
+  .ofSecondOrderIn (fun ⟨_, h, _⟩ => h.wfCtx)
+    (fun ⟨σ, h, hθ⟩ hX => by
+      cases hθ
+      obtain ⟨Y, hY, hYin⟩ := h.secondOrderIn hX
+      refine ⟨Y, ?_, ?_⟩
+      · show (σ _).eta = _
+        rw [hY, Val.eta]
+      · rw [Telescope.subst₀_eq_subst, Term.subst₀_liftN_eq_subst] at hYin
+        exact hYin)
+    TypedSubst.Base.varIn
 
 /-! ## Stability of the Typing -/
 

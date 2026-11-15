@@ -65,15 +65,15 @@ theorem TypedRen.Base.lifted {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k
 
 -- ADE: none.
 /-- The typed renamings give what the stability of the typing asks of a family of substitutions. -/
-theorem TypedRen.liftable : Subst.Liftable sig (@TypedRen.Base sig k) where
-  wfCtx := fun ⟨_, h, _⟩ => h.wfCtx
-  secondOrderIn := fun ⟨α, h, hθ⟩ hX => ⟨α _, hθ _, by
-    rw [← Telescope.rename_eq_subst_of hθ, ← Term.rename_eq_subst_of (Subst.liftN_eta_of _ hθ)]
-    exact h.secondOrderIn hX⟩
-  varIn := fun {_ _ _ _ _ x _} hθ hx hctx => by
-    obtain ⟨α, hθ, hv⟩ := TypedRen.Base.lifted hθ
-    rw [Term.var_subst_of (hθ x)]
-    exact .var hctx (hv hx)
+theorem TypedRen.liftable : Subst.Liftable sig (@TypedRen.Base sig k) :=
+  .ofSecondOrderIn (fun ⟨_, h, _⟩ => h.wfCtx)
+    (fun ⟨α, h, hθ⟩ hX => ⟨α _, hθ _, by
+      rw [← Telescope.rename_eq_subst_of hθ, ← Term.rename_eq_subst_of (Subst.liftN_eta_of _ hθ)]
+      exact h.secondOrderIn hX⟩)
+    (fun {_ _ _ _ _ x _} hθ hx hctx => by
+      obtain ⟨α, hθ, hv⟩ := TypedRen.Base.lifted hθ
+      rw [Term.var_subst_of (hθ x)]
+      exact .var hctx (hv hx))
 
 -- ADE: `step`, in `Definition/Typed/Weakening.agda`.
 /-- The renaming of a context in the context extended by a variable is typed, when the context

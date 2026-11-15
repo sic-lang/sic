@@ -13,8 +13,11 @@ The renamings and the substitutions of the first order are two such families, wh
 follows from this one, so that the proof by cases on the rules is written once.
 
 A family gives the context of each of its substitutions well formed, the image of each second-order
-variable a variable declared with its telescope and its type, substituted, and the image of each
-variable a term of its type, substituted, in the context lifted when it is well formed.
+variable, at arguments of its telescope, substituted, a term of its type, substituted, at these
+arguments, equal at equal arguments, and the image of each variable a term of its type, substituted,
+in the context lifted when it is well formed.
+A family whose substitutions give each second-order variable a variable declared with its telescope
+and its type, substituted, is one, by the rules `(var_X)` and `(var_X≡)`.
 The proof is by mutual structural recursion on the derivations, in the clause `where` of the
 theorem.
 Under the binders of a rule, the substitution is lifted, and the context extended by the type
@@ -57,13 +60,21 @@ structure Subst.Liftable (sig : Signature)
   /-- The context of a substitution of the family is well formed. -/
   wfCtx : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ},
     Base ctx' @θ ctx → WfCtx sig ctx'
-  /-- The image of a second-order variable is the abstraction of a variable declared with its
-  telescope and its type, substituted. -/
-  secondOrderIn : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
+  /-- The image of a second-order variable by a lifted substitution, at arguments of its telescope,
+  substituted, is a term of its type, substituted, at these arguments. -/
+  secondOrder : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
     {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length} {X : Var Δ (.secondOrder ps ψ)}
-    {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
-    Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A →
-      ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ))
+    {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} {ts : Args k Γ ps},
+    Subst.Lifted @Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A → HasArgs sig ctx' ts (Θ.subst θ) →
+      HasType sig ctx' ((θ X).instantiate ts) ((A.subst (Subst.liftN _ θ)).instantiate ts)
+  /-- The images of a second-order variable by a lifted substitution, at equal arguments of its
+  telescope, substituted, are equal at its type, substituted, at the first arguments. -/
+  eqSecondOrder : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
+    {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length} {X : Var Δ (.secondOrder ps ψ)}
+    {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} {ts us : Args k Γ ps},
+    Subst.Lifted @Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A → EqArgs sig ctx' ts us (Θ.subst θ) →
+      EqTerm sig ctx' ((θ X).instantiate ts) ((θ X).instantiate us)
+        ((A.subst (Subst.liftN _ θ)).instantiate ts)
   /-- The image of a variable by a lifted substitution is a term of its type, substituted, when the
   context of the substitution is well formed. -/
   varIn : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
@@ -83,15 +94,22 @@ theorem Subst.Lifted.append {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k 
 
 -- ADE: none.
 /-- The image of a second-order variable by a lifted substitution is the abstraction of a variable
-declared with its telescope and its type, substituted. -/
-theorem Subst.Lifted.secondOrderIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
+declared with its telescope and its type, substituted, when the substitutions of the family give
+such images. -/
+theorem Subst.Lifted.secondOrderIn
+    (hB : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
+      {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
+      {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
+      Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A →
+        ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ)))
+    {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
     {ctx : Context k Δ} {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
     {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} :
-    Lifted @Base ctx' @θ ctx → Subst.Liftable sig @Base → ctx.SecondOrderIn X Θ A →
+    Lifted @Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A →
       ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ))
-  | .base h, hB, hX => hB.secondOrderIn h hX
-  | .var B h, hB, .succVar hX => by
-    obtain ⟨Y, hY, hYin⟩ := h.secondOrderIn hB hX
+  | .base h, hX => hB h hX
+  | .var B h, .succVar hX => by
+    obtain ⟨Y, hY, hYin⟩ := Subst.Lifted.secondOrderIn hB h hX
     refine ⟨Y.succ, ?_, ?_⟩
     · show Term.rename _ _ = _
       dsimp only
@@ -99,6 +117,34 @@ theorem Subst.Lifted.secondOrderIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : S
       exact Var.eta_rename Ren.weaken Y
     · rw [Telescope.subst_lift_rename_weaken, Term.subst_liftN_lift_rename_weaken]
       exact .succVar hYin
+
+-- ADE: none.
+/-- A family gives what the stability of the typing asks when the image of each second-order
+variable by its substitutions is the abstraction of a variable declared with its telescope and its
+type, substituted: the rules `(var_X)` and `(var_X≡)` type the image at arguments. -/
+theorem Subst.Liftable.ofSecondOrderIn
+    (wfCtx : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ},
+      Base ctx' @θ ctx → WfCtx sig ctx')
+    (secondOrderIn : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
+      {ps : List Parameter} {ψ : ResultOwnership Grading.Grade ps.length}
+      {X : Var Δ (.secondOrder ps ψ)} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)},
+      Base ctx' @θ ctx → ctx.SecondOrderIn X Θ A →
+        ∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ)))
+    (varIn : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
+      {x : Var Δ .var} {A : Term k Δ},
+      Subst.Lifted @Base ctx' @θ ctx → ctx.VarIn x A → WfCtx sig ctx' →
+        HasType sig ctx' ((Term.var₀ x).subst θ) (A.subst θ)) :
+    Subst.Liftable sig @Base where
+  wfCtx := wfCtx
+  secondOrder := fun hθ hX hts => by
+    obtain ⟨Y, hY, hYin⟩ := hθ.secondOrderIn secondOrderIn hX
+    rw [hY, Var.eta_instantiate]
+    exact .secondOrder hYin hts
+  eqSecondOrder := fun hθ hX hts => by
+    obtain ⟨Y, hY, hYin⟩ := hθ.secondOrderIn secondOrderIn hX
+    rw [hY, Var.eta_instantiate, Var.eta_instantiate]
+    exact .secondOrder hYin hts
+  varIn := varIn
 
 -- ADE: `wk`, `wkEq`, `wkTerm` and `wkEqTerm`, in `Definition/Typed/Weakening.agda`, and `subst-⊢`,
 -- `subst-⊢≡`, `subst-⊢∷` and `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
@@ -190,9 +236,8 @@ where
         HasType sig ctx' (t.subst θ) (A.subst θ)
     | .var hctx hx, hθ => hB.varIn hθ hx (wfCtx hctx hθ)
     | .secondOrder hX hts, hθ => by
-      obtain ⟨Y, hY, hYin⟩ := hθ.secondOrderIn hB hX
-      rw [Term.var_subst_of hY, Term.instantiate_subst]
-      exact .secondOrder hYin (hasArgs hts hθ)
+      rw [Term.subst, Term.instantiate_subst]
+      exact hB.secondOrder hθ hX (hasArgs hts hθ)
     | .const hctx h hq hl hp, hθ => by
       rw [Signature.instanceType, Term.weakenClosed_subst]
       exact .const (wfCtx hctx hθ) h hq hl hp
@@ -275,9 +320,8 @@ where
     | .conv h hA, hθ => .conv (eqTerm h hθ) (eqType hA hθ)
     | .irr ht hu hA, hθ => .irr (hasType ht hθ) (hasType hu hθ) (hasType hA hθ)
     | .secondOrder hX hts, hθ => by
-      obtain ⟨Y, hY, hYin⟩ := hθ.secondOrderIn hB hX
-      rw [Term.var_subst_of hY, Term.var_subst_of hY, Term.instantiate_subst]
-      exact .secondOrder hYin (eqArgs hts hθ)
+      rw [Term.subst, Term.subst, Term.instantiate_subst]
+      exact hB.eqSecondOrder hθ hX (eqArgs hts hθ)
     | .delta hctx h hq hl hp, hθ => by
       rw [Signature.instanceType, Signature.instanceType, Term.weakenClosed_subst,
         Term.weakenClosed_subst]
