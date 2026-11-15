@@ -18,8 +18,9 @@ directories of the libraries, `Sic/` and `SicExample/`, whose modules it imports
 entries of the page of the progress and of the pages for the summary of the book.
 A name ends its line, which may break the formula after it: in the last column of a formula,
 `&&(…)`, or after the fraction of a rule, `\;(…)`, as the check `names` of the RFCs requires.
-The formula of a name is the part of its block of math between the separators `\\[1em]` that holds
-the line of the name, inside the environment of the block.
+The formula of a name is the part of its block of math between the separators, `\\[1em]` after a
+formula and `\\[2em]` after a rule, that holds the line of the name, inside the environment of the
+block.
 A doc string gives the names on a line that starts with `RFC:`, each in a code span, written exactly
 as the RFC writes it inside its parentheses, such as ``RFC: `\mathsf{op}_p.{+}`, `\mathsf{order}_p` ``.
 -/
@@ -43,7 +44,7 @@ structure RfcName where
 /-- The name that ends the line, after `&&(` or `\;(` and before `)`, if there is one. -/
 def nameOfLine (line : String) : Option String := Id.run do
   let mut rest := line.trimAsciiEnd.toString
-  for suffix in ["\\\\[1em]", "\\\\"] do
+  for suffix in ["\\\\[1em]", "\\\\[2em]", "\\\\"] do
     if rest.endsWith suffix then
       rest := (rest.dropEnd suffix.length).trimAsciiEnd.toString
       break
@@ -62,23 +63,24 @@ def anchorOf (heading : String) : String :=
     (String.ofList (heading.toLower.toList.filter fun c => c.isAlphanum || c == ' ' || c == '-' || c == '_'))
 
 /-- The names of a block of math, each with its formula: the part of the block between the
-separators `\\[1em]` that holds the line of the name, inside the environment of the block, such as
-`\begin{aligned}`, if it has one; it fails if a part holds several names. -/
+separators, `\\[1em]` after a formula and `\\[2em]` after a rule, that holds the line of the name,
+inside the environment of the block, such as `\begin{aligned}`, if it has one; it fails if a part
+holds several names. -/
 def namesOfMath (block : Array String) : Except String (Array (String × String)) := do
   let (start, body, stop) :=
     if block.size ≥ 2 && block[0]!.trimAsciiStart.startsWith "\\begin{" then
       (#[block[0]!], block.extract 1 (block.size - 1), #[block.back!])
     else (#[], block, #[])
-  let separator := "\\\\[1em]"
+  let separators := ["\\\\[1em]", "\\\\[2em]"]
   let mut parts : Array (Array String) := #[]
   let mut part := #[]
   for line in body do
     let line := line.trimAsciiEnd.toString
-    if line.endsWith separator then
+    match separators.find? (line.endsWith ·) with
+    | some separator =>
       parts := parts.push (part.push (line.dropEnd separator.length).trimAsciiEnd.toString)
       part := #[]
-    else
-      part := part.push line
+    | none => part := part.push line
   unless part.isEmpty do parts := parts.push part
   let mut names := #[]
   for lines in parts do
