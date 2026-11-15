@@ -162,6 +162,30 @@ theorem Context.lifted_typed (S : List Nat) (s : Quality) (lv : Nat → Level k)
 /-! ## Parameters of a Lifting -/
 
 -- ADE: none.
+/-- The instance of a codata type of a well-formed signature at its variables and at its parameters,
+among those of its lifting, of which the parameter `y` of the lifting is a term, is a type in these
+parameters, at an instance that the constraint of its type declaration admits. -/
+theorem TypeDeclaration.liftedInstance_wfType {decl : TypeDeclaration} {F : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hsig : WfSig sig)
+    (hT : sig.HasCodataType F decl T) (n : Nat) {ι : Instance decl.sorts decl.grades}
+    (hadm : decl.constraint ι) :
+    WfType sig ((decl.params ι).substLevels (Level.lifted n))
+      (decl.liftedInstance F n ι (.identity decl.scope)) := by
+  have hP := stableUnderLevels.wfCtx (Level.lifted n) (hsig.wfCtx_params hT.1 hadm)
+  have hq : (List.ofFn ι.sorts).length = decl.sorts := List.length_ofFn
+  have hl : (List.ofFn (Level.lifted (k := decl.levels) n)).length = decl.levels :=
+    List.length_ofFn
+  have hp : (List.ofFn ι.grades).length = decl.grades := List.length_ofFn
+  have has : HasInstanceArgs sig ((decl.params ι).substLevels (Level.lifted n))
+      (.identity decl.scope)
+      ((decl.params (.ofLists _ _ hq hp)).substLevels
+        ((List.ofFn (Level.lifted n)).getFin hl)) := by
+    rw [List.getFin_ofFn, Instance.ofLists_ofFn]
+    exact HasInstanceArgs.identity hP
+  exact .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hq hl hp
+    ((Instance.ofLists_ofFn ι hq hp).symm ▸ hadm) has)
+
+-- ADE: none.
 /-- The lifting of the parameters of a codata type of a well-formed signature, under the term `y`
 of the type at them, is typed in the parameters of the lifting of the type, at an instance that the
 constraint of its type declaration admits, when each parameter lifted is a type. -/
@@ -175,22 +199,9 @@ theorem TypeDeclaration.lifting_typed {decl : TypeDeclaration} {F : Name}
     Lifting.Typed sig (I.sorts (Fin.last decl.sorts)) ((decl.lifting F S ns body).params I)
       (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift
       (((decl.params I.lifted).substLevels (Level.lifted S.length)).var
-        (decl.liftedInstance F S.length I.lifted (.identity decl.scope))) := by
-  have hP := stableUnderLevels.wfCtx (Level.lifted S.length) (hsig.wfCtx_params hT.1 hadm)
-  have hq : (List.ofFn I.lifted.sorts).length = decl.sorts := List.length_ofFn
-  have hl : (List.ofFn (Level.lifted (k := decl.levels) S.length)).length = decl.levels :=
-    List.length_ofFn
-  have hp : (List.ofFn I.lifted.grades).length = decl.grades := List.length_ofFn
-  have has : HasInstanceArgs sig ((decl.params I.lifted).substLevels (Level.lifted S.length))
-      (.identity decl.scope)
-      ((decl.params (.ofLists _ _ hq hp)).substLevels
-        ((List.ofFn (Level.lifted S.length)).getFin hl)) := by
-    rw [List.getFin_ofFn, Instance.ofLists_ofFn]
-    exact HasInstanceArgs.identity hP
-  have hA : WfType sig ((decl.params I.lifted).substLevels (Level.lifted S.length))
-      (decl.liftedInstance F S.length I.lifted (.identity decl.scope)) :=
-    .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hq hl hp
-      ((Instance.ofLists_ofFn I.lifted hq hp).symm ▸ hadm) has)
-  exact (Context.lifted_typed S _ _ hP (hS.substLevels _)).lift hA
+        (decl.liftedInstance F S.length I.lifted (.identity decl.scope))) :=
+  (Context.lifted_typed S _ _
+    (stableUnderLevels.wfCtx (Level.lifted S.length) (hsig.wfCtx_params hT.1 hadm))
+    (hS.substLevels _)).lift (decl.liftedInstance_wfType hsig hT S.length hadm)
 
 end Sic.Core

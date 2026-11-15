@@ -125,6 +125,25 @@ theorem HasType.observation (hT : sig.HasCodataType D decl T)
     Term.instantiate_bound_rename] at h
   exact h
 
+/-! ## Sort and Names of a Lifting -/
+
+/-- A level below a level is below this level joined to others. -/
+theorem Level.le_joins {l' : Level k} :
+    (ls : List (Level k)) → (l : Level k) → l' ≤ l → l' ≤ l.joins ls
+  | [], _, h => h
+  | l₁ :: ls, l, h =>
+    Level.le_joins ls (.max l l₁) fun ρ => Nat.le_trans (h ρ) (Nat.le_max_left _ _)
+
+/-- The destructors lifted are among the destructors that are lifted, in their order. -/
+theorem Destructors.Lifts.sublist {Γ₀ : Scope} {v : Lifting.Variables} {κ : Universe k}
+    {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)} :
+    {Γ' : Scope} → {ρ : Lifting k Γ' Γ₀} → {Ξ : Scope} → {θ : Subst k Γ₀ Ξ} → {ns : List Name} →
+      {ds : Destructors k Ξ ns} → {ns' : List Name} → {ds' : Destructors k Γ' ns'} →
+      Destructors.Lifts sig v κ o ρ @θ ds ds' → ns'.Sublist ns
+  | _, _, _, _, _, _, _, _, .nil => .slnil
+  | _, _, _, _, _, _, _, _, .lifted _ _ h => (Destructors.Lifts.sublist h).cons_cons _
+  | _, _, _, _, _, _, _, _, .absent _ h => (Destructors.Lifts.sublist h).cons _
+
 /-! ## Typing of the Destructors Lifted -/
 
 /-- The grade of the result of a destructor of a lifting whose motives are propositions has no use
