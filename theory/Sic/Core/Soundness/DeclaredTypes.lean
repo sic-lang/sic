@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning
+public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
@@ -45,36 +46,37 @@ term of its first type: it is defined from the graph, as the relation that some 
 terms of the rest relates, rather than chosen among them, since the graph gives one at most.
 The instance at levels of the same values then follows as for the constants. -/
 
-/-- The type of the first field of two closed telescopes equal in the sort `κ`, as `(⊨tel_κ,)` gives
-it, computes to a type of a sort that `κ` bounds, whose terms are equal by `F`, and so does the
-other type, with the same `F`: the terms that `F` relates are equal terms of the type. -/
-theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ κ : Universe 0} (hκ : κ₁ ≼ κ)
+/-- Two equal closed terms of a sort `κ₁` that the sort of the quality `s` at the level `n` bounds,
+as `(⊨tel_κ,)` gives the types of the first fields of two equal closed telescopes, compute to types
+of the fields of this sort, whose terms are equal by the same `F`: the terms that `F` relates are
+equal terms of the first type. -/
+theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ : Universe 0} {n : Nat} {s : Quality}
+    (hκs : κ₁.quality ≤ s) (hκn : κ₁.level.closedValue ≤ n)
     (h : ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) :
     ∃ w₁ w₂ F, Computesι sig ι A₁ w₁ ∧ Computesι sig ι A₂ w₂ ∧
-      FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w₁ F ∧
-      FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w₂ F ∧
+      FieldRel sig ι n (fun m _ => levelRel sig ι m) s w₁ F ∧
+      FieldRel sig ι n (fun m _ => levelRel sig ι m) s w₂ F ∧
       ∀ a₁ a₂, F a₁ a₂ → ValidEqTerm₀ sig ι a₁ a₂ A₁ := by
   obtain ⟨s₁, l₁⟩ := κ₁
   have hd := h.1.1
-  have hm : l₁.closedValue ≤ κ.level.closedValue := hκ.2 Fin.elim0
+  have hm : l₁.closedValue ≤ n := hκn
   obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
   cases hc.sort_inv
   cases hR with
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
-  | univ n hn =>
-    cases levelRel_univ_iff.1 hn with
+  | univ k hk =>
+    cases levelRel_univ_iff.1 hk with
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
     | univ hl _ =>
       subst hl
       obtain ⟨⟨R', h₁, h₂⟩, -⟩ := hvw
-      have hs : κ.quality = .type := by
-        have := hκ.1
-        cases hq : κ.quality with
+      have hs : s = .type := by
+        cases hq : s with
         | type => rfl
-        | prop => exact nomatch this hq
+        | prop => exact nomatch hκs hq
       have hF : ∀ w, (levelRel sig ι l₁.closedValue).univ w R' →
-          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w
+          FieldRel sig ι n (fun m _ => levelRel sig ι m) s w
             (R'.computed sig ι) := fun w hw => by
         rcases Nat.lt_or_eq_of_le hm with hlt | heq
         · exact .univBelow hs _ hlt hw
@@ -90,7 +92,7 @@ theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ κ : Universe 0} 
       obtain ⟨b₁, b₂, h₁, h₂, hb⟩ := hvw
       cases propext hb
       have hF : ∀ w, (levelRel sig ι l₁.closedValue).prop w b₁ →
-          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w
+          FieldRel sig ι n (fun m _ => levelRel sig ι m) s w
             (fun _ _ => b₁) := fun w hw => by
         rcases Nat.lt_or_eq_of_le hm with hlt | heq
         · exact .propBelow _ hlt hw
@@ -99,22 +101,22 @@ theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ κ : Universe 0} 
         fun a₁ a₂ hb₁ => ⟨(ValidEqTerm₀.propType h).left, fun hn => absurd ⟨w₁, hw₁, _, _, h₁⟩ hn,
           fun _ => ⟨w₁, fun _ _ => b₁, hw₁, .prop _ b₁ h₁ fun _ _ => .rfl, hb₁⟩⟩⟩
 
-/-- The types of two closed terms equal in a sort `κ₁` that `κ` bounds compute to types with a common
-relation of run time `R` of the graph of `U_n`, at the level `n` of `κ`, for each program `P`: the
-relation that the equality of `U_n` gives them, or the one of the propositions. -/
-theorem ValidEqTerm₀.runFieldRel (P : Program) {A₁ A₂ : Term 0 []} {κ₁ κ : Universe 0}
-    (hκ : κ₁ ≼ κ) (h : ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) :
+/-- Two equal closed terms of a sort `κ₁` whose level the level `n` bounds compute to types with a
+common relation of run time `R` of the graph of `U_n`, for each program `P`: the relation that the
+equality of `U_n` gives them, or the one of the propositions. -/
+theorem ValidEqTerm₀.runFieldRel (P : Program) {A₁ A₂ : Term 0 []} {κ₁ : Universe 0} {n : Nat}
+    (hκn : κ₁.level.closedValue ≤ n) (h : ValidEqTerm₀ sig ι A₁ A₂ (.sort κ₁)) :
     ∃ w₁ w₂ R, Computesι sig ι A₁ w₁ ∧ Computesι sig ι A₂ w₂ ∧
-      RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w₁ R ∧
-      RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w₂ R := by
+      RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w₁ R ∧
+      RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w₂ R := by
   obtain ⟨s₁, l₁⟩ := κ₁
-  have hm : l₁.closedValue ≤ κ.level.closedValue := hκ.2 Fin.elim0
+  have hm : l₁.closedValue ≤ n := hκn
   obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
   cases hc.sort_inv
   cases hR with
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
-  | univ n hn =>
-    cases levelRel_univ_iff.1 hn with
+  | univ k hk =>
+    cases levelRel_univ_iff.1 hk with
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
     | univ hl _ =>
@@ -122,7 +124,7 @@ theorem ValidEqTerm₀.runFieldRel (P : Program) {A₁ A₂ : Term 0 []} {κ₁ 
       obtain ⟨-, hr⟩ := hvw
       obtain ⟨Q, h₁, h₂⟩ := hr P
       have hF : ∀ w, (levelRel sig ι l₁.closedValue).run P w Q →
-          RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w
+          RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w
             (Q.computed sig ι) := fun w hw => by
         rcases Nat.lt_or_eq_of_le hm with hlt | heq
         · exact .univBelow _ hlt hw
@@ -132,7 +134,7 @@ theorem ValidEqTerm₀.runFieldRel (P : Program) {A₁ A₂ : Term 0 []} {κ₁ 
       subst hl
       obtain ⟨b₁, b₂, h₁, h₂, -⟩ := hvw
       have hF : ∀ w b, (levelRel sig ι l₁.closedValue).prop w b →
-          RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w
+          RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w
             fun _ _ _ => True := fun w b hw => by
         rcases Nat.lt_or_eq_of_le hm with hlt | heq
         · exact .propBelow _ hlt hw
@@ -169,7 +171,7 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {inst₁ i
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hA⟩, hΘ⟩ := h
-      obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, hFv⟩ := hA.fieldRel hκ
+      obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, hFv⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
       have hcommon : ∀ a₁ a₂, F a₁ a₂ → ∃ S,
           TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
             (fun i => Nest.ofOption ((rs (i + 1)).map fun D => (inst₁ D, Rf D)))
@@ -276,8 +278,8 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hA⟩, hΘ⟩ := h
-      obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, hFv⟩ := hA.fieldRel hκ
-      obtain ⟨w₁', w₂', R, hc₁', hc₂', hR₁, hR₂⟩ := hA.runFieldRel P hκ
+      obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, hFv⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
+      obtain ⟨w₁', w₂', R, hc₁', hc₂', hR₁, hR₂⟩ := hA.runFieldRel P (hκ.2 Fin.elim0)
       cases Computesι.det hd hc₁ hc₁'
       cases Computesι.det hd hc₂ hc₂'
       rw [hs] at hF₁ hF₂
@@ -356,41 +358,27 @@ theorem ValidEqTelescope₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Un
     (h.toFields (fun _ => .sort ⟨.type, .zero⟩) (fun _ => .sort ⟨.type, .zero⟩))
 
 -- ADE: none.
-/-- The recursive fields of a closed telescope, at the positions where `rs` gives a type `D` of the
-block, are the instances `inst D`, the rest being so at every term of each field. -/
-def Telescope.RecHeads (sig : Signature) (ι : Interpretation) (inst : Name → Term 0 []) :
-    {ps : List Parameter} → (Nat → Option Name) → Telescope 0 [] ps → Prop
+/-- The types of the fields of a closed telescope at the positions that `nested` holds of, those
+whose nesting is that of an instance, are terms of a sort that the sort of the quality `s` at the
+level `n` bounds, the rest being so at every term of each field: the graph of the nestings does not
+tell that such a type is a type without position, which the meaning of a declaration does. -/
+def Telescope.NestHeads (sig : Signature) (ι : Interpretation) (n : Nat) (s : Quality) :
+    {ps : List Parameter} → (Nat → Prop) → Telescope 0 [] ps → Prop
   | [], _, .nil => True
-  | _ :: _, rs, .cons _ _ A Θ => (∀ D, rs 0 = some D → A = inst D) ∧
+  | _ :: _, nested, .cons _ _ A Θ =>
+    (nested 0 → ∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
+      ValidEqTerm₀ sig ι A A (.sort κ₁)) ∧
     ∀ a, ValidEqTerm₀ sig ι a a A →
-      Telescope.RecHeads sig ι inst (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a))
+      Telescope.NestHeads sig ι n s (fun i => nested (i + 1)) (Θ.subst₀ (Subst₀.single a))
 
-/-- A telescope without recursive fields has their instances everywhere. -/
-theorem Telescope.recHeads_none (inst : Name → Term 0 []) :
-    {ps : List Parameter} → (Θ : Telescope 0 [] ps) → Θ.RecHeads sig ι inst (fun _ => none)
-  | [], .nil => trivial
-  | _ :: _, .cons _ _ _ _ => by
-    rw [Telescope.RecHeads]
-    exact ⟨fun _ h => (by cases h), fun _ _ => Telescope.recHeads_none inst _⟩
-
-/-- The first of two equal closed fields has the instances `inst₁` at its recursive fields. -/
-theorem ValidEqFields₀.recHeads {κ : Universe 0} {inst₁ inst₂ : Name → Term 0 []} :
-    {ps : List Parameter} → {rs : Nat → Option Name} → {Θ₁ Θ₂ : Telescope 0 [] ps} →
-      ValidEqFields₀ sig ι κ inst₁ inst₂ rs Θ₁ Θ₂ → Θ₁.RecHeads sig ι inst₁ rs
-  | [], _, .nil, .nil, _ => trivial
-  | _ :: _, rs, .cons _ _ _ _, .cons _ _ _ _, h => by
-    rw [ValidEqFields₀] at h
-    rw [Telescope.RecHeads]
-    split at h
-    · rename_i hr
-      refine ⟨fun D hD => ?_, fun a ha => ValidEqFields₀.recHeads (h.2 a a ha)⟩
-      rw [hr] at hD
-      cases hD
-    · rename_i D hr
-      refine ⟨fun D' hD' => ?_, fun a _ => ValidEqFields₀.recHeads (h.2.2 a a)⟩
-      rw [hr] at hD'
-      cases hD'
-      exact h.1
+/-- A telescope none of whose positions is that of an instance has nothing to tell of them. -/
+theorem Telescope.nestHeads_of_not {n : Nat} {s : Quality} :
+    {ps : List Parameter} → {nested : Nat → Prop} → (Θ : Telescope 0 [] ps) →
+      (∀ i, ¬ nested i) → Θ.NestHeads sig ι n s nested
+  | [], _, .nil, _ => trivial
+  | _ :: _, _, .cons _ _ _ _, h => by
+    rw [Telescope.NestHeads]
+    exact ⟨fun h₀ => (h 0 h₀).elim, fun _ _ => Telescope.nestHeads_of_not _ fun i => h (i + 1)⟩
 
 /-- Equal closed terms of a type that computes to a type of a field, whose terms are equal by `F`,
 are related by `F`: the converse of the last property of `ValidEqTerm₀.fieldRel`. -/
@@ -415,34 +403,6 @@ theorem FieldRel.of_validEqTerm {n : Nat} {s : Quality} {A v t u : Term 0 []} {F
   | prop hP => exact hprop n _ (levelRel_prop_iff.2 hP)
   | propBelow m _ hP => exact hprop m _ hP
 
-/-- Equal closed arguments of a closed telescope of the graph of a sort, whose fields have the
-equality `S`, have terms related by `S`: the converse of `ValidEqTelescope₀.telRel`, for the
-arguments. -/
-theorem TelRel.of_eqSubst {n : Nat} {s : Quality} {inst : Name → Term 0 []} :
-    {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : FieldsRel} →
-      {rs' : Nat → Nest NestLeaf} → {rs : Nat → Option Name} →
-      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs' Θ S → Θ.RecHeads sig ι inst rs →
-      (∀ i x, rs' i = .direct x → ∃ D, rs i = some D ∧
-        ∀ t u, ValidEqTerm₀ sig ι t u (inst D) → x.2 t u) →
-      (∀ i νs, rs' i ≠ .inst νs) → (ts us : Args 0 [] ps) →
-      EqSubst sig ι (Context.empty.append Θ) ts.toSubst us.toSubst → S ts.terms us.terms
-  | [], .nil, _, _, _, .nil, _, _, _, .nil, .nil, _ => trivial
-  | _ :: ps, .cons q p A Θ, _, _, _, h', hH, hR, hni, .cons t ts, .cons u us, h => by
-    obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
-    have hd : sig.Distinct := ht.1.1
-    have htt := ht.trans ht.symm
-    cases h' with
-    | cons hA hF G hG _ _ =>
-      have hFtu := hF.of_validEqTerm hA ht
-      have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
-      exact ⟨hFtu, TelRel.of_eqSubst (hG t (hFp.trans hFtu (hFp.symm hFtu))) (hH.2 t htt)
-        (fun i R h => hR (i + 1) R h) (fun i => hni (i + 1)) ts us hts⟩
-    | nested hrs hF G hG =>
-      obtain ⟨_, hτ, -⟩ := hF.eq_direct hrs (hni 0)
-      obtain ⟨D, hD, hRD⟩ := hR 0 _ hτ
-      exact ⟨hRD t u (hH.1 D hD ▸ ht), TelRel.of_eqSubst (hG t) (hH.2 t htt)
-        (fun i R h => hR (i + 1) R h) (fun i => hni (i + 1)) ts us hts⟩
-
 /-- Two equal closed terms of the type of a field, whose terms are equal by `F`, are related by `F`:
 the converse of `FieldRel.of_validEqTerm`. -/
 theorem FieldRel.validEqTerm (hd : sig.Distinct) {n : Nat} {s : Quality} {A v t u : Term 0 []}
@@ -465,23 +425,92 @@ theorem FieldRel.validEqTerm (hd : sig.Distinct) {n : Nat} {s : Quality} {A v t 
   | prop hP => exact hprop n _ (levelRel_prop_iff.2 hP) htu
   | propBelow m _ hP => exact hprop m _ hP htu
 
-/-- Terms of the fields of a closed telescope of the graph of a sort, related by the equality `S` of
-its fields, are the terms of equal arguments of the telescope: the converse of
-`TelRel.of_eqSubst`. -/
-theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} {inst : Name → Term 0 []} :
+/-- A type that the graph of the nestings reads, at positions that hold types with the equality of
+their terms, is a type without position: the type of the block that a position holds, up to the
+values of its levels, and an instance of a declared type when it is a term of a sort that the sort
+of the quality `s` at the level `n` bounds. -/
+theorem NestRel.plain_of_leaves {n : Nat} {s : Quality} {τ : Nest NestLeaf} {A : Term 0 []}
+    {F : TermRel} (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (hτ : Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ)
+    (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
+      ValidEqTerm₀ sig ι A A (.sort κ₁)) :
+    ∃ s' F', NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F' := by
+  have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
+      ValidEqTerm₀ sig ι A A (.sort κ₁)) →
+      ∃ s' F', NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F' :=
+    fun ⟨_, hs, hn, hv⟩ =>
+      have ⟨_, _, F', hc, _, hF, _, _⟩ := hv.fieldRel hs hn
+      ⟨s, F', .plain hc hF⟩
+  cases h with
+  | plain hc hF => exact ⟨s, F, .plain hc hF⟩
+  | direct hT =>
+    cases hτ with
+    | direct hx =>
+      exact ⟨.type, _, NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hx hT .plain⟩
+  | codata => exact hsort (hA ⟨_, rfl⟩)
+  | codataProp => exact hsort (hA ⟨_, rfl⟩)
+
+/-- The equality that the graph of the nestings gives a type, at positions that hold types with the
+equality of their terms, relates the equal terms of the type, and only them, in a signature whose
+names are distinct, when the type is a term of a sort if it is an instance of a declared type. -/
+theorem NestRel.validEqTerm_iff (hd : sig.Distinct) {n : Nat} {s : Quality} {τ : Nest NestLeaf}
+    {A : Term 0 []} {F : TermRel} (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (hτ : Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ)
+    (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
+      ValidEqTerm₀ sig ι A A (.sort κ₁)) (t u : Term 0 []) :
+    F t u ↔ ValidEqTerm₀ sig ι t u A := by
+  obtain ⟨_, _, h'⟩ := h.plain_of_leaves hτ hA
+  refine (levelRel_nest_agree hd (fun _ _ _ hT hTA =>
+    NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain) h hτ h' t u).trans ?_
+  cases h' with
+  | plain hc hF => exact ⟨hF.validEqTerm hd hc, hF.of_validEqTerm hc⟩
+
+/-- Equal closed arguments of a closed telescope of the graph of a sort, whose fields have the
+equality `S`, have terms related by `S`, at positions that hold types with the equality of their
+terms: the converse of `ValidEqTelescope₀.telRel`, for the arguments. -/
+theorem TelRel.of_eqSubst {n : Nat} {s : Quality} :
     {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : FieldsRel} →
-      {rs' : Nat → Nest NestLeaf} → {rs : Nat → Option Name} →
-      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs' Θ S → Θ.RecHeads sig ι inst rs →
-      (∀ i x, rs' i = .direct x → ∃ D, rs i = some D ∧
-        ∀ t u, x.2 t u → ValidEqTerm₀ sig ι t u (inst D)) →
-      (∀ i νs, rs' i ≠ .inst νs) → (ts us : Terms 0 []) → S ts us →
+      {rs : Nat → Nest NestLeaf} →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S →
+      Θ.NestHeads sig ι n s (fun i => ∃ νs, rs i = .inst νs) →
+      (∀ i, Nest.All
+        (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) (rs i)) →
+      (ts us : Args 0 [] ps) →
+      EqSubst sig ι (Context.empty.append Θ) ts.toSubst us.toSubst → S ts.terms us.terms
+  | [], .nil, _, _, .nil, _, _, .nil, .nil, _ => trivial
+  | _ :: ps, .cons q p A Θ, _, _, h', hH, hτ, .cons t ts, .cons u us, h => by
+    obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
+    have hd : sig.Distinct := ht.1.1
+    have htt := ht.trans ht.symm
+    rw [Telescope.NestHeads] at hH
+    cases h' with
+    | cons hA hF G hG _ _ =>
+      have hFtu := hF.of_validEqTerm hA ht
+      have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
+      exact ⟨hFtu, TelRel.of_eqSubst (hG t (hFp.trans hFtu (hFp.symm hFtu))) (hH.2 t htt)
+        (fun i => hτ (i + 1)) ts us hts⟩
+    | nested hrs hF G hG =>
+      exact ⟨(hF.validEqTerm_iff hd (hτ 0) hH.1 t u).2 ht, TelRel.of_eqSubst (hG t) (hH.2 t htt)
+        (fun i => hτ (i + 1)) ts us hts⟩
+
+/-- Terms of the fields of a closed telescope of the graph of a sort, related by the equality `S` of
+its fields, are the terms of equal arguments of the telescope, at positions that hold types with
+the equality of their terms: the converse of `TelRel.of_eqSubst`. -/
+theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} :
+    {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : FieldsRel} →
+      {rs : Nat → Nest NestLeaf} →
+      TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S →
+      Θ.NestHeads sig ι n s (fun i => ∃ νs, rs i = .inst νs) →
+      (∀ i, Nest.All
+        (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) (rs i)) →
+      (ts us : Terms 0 []) → S ts us →
         ∃ ts' us' : Args 0 [] ps, ts'.terms = ts ∧ us'.terms = us ∧
           EqSubst sig ι (Context.empty.append Θ) ts'.toSubst us'.toSubst
-  | [], .nil, _, _, _, .nil, _, _, _, .nil, .nil, _ =>
+  | [], .nil, _, _, .nil, _, _, .nil, .nil, _ =>
     ⟨.nil, .nil, rfl, rfl, (EqSubst.empty_iff _ _).2 trivial⟩
-  | [], .nil, _, _, _, .nil, _, _, _, .nil, .cons .., h => nomatch h
-  | [], .nil, _, _, _, .nil, _, _, _, .cons .., _, h => nomatch h
-  | _ :: ps, .cons q p A Θ, _, _, _, h', hH, hR, hni, ts₀, us₀, hS => by
+  | [], .nil, _, _, .nil, _, _, .nil, .cons .., h => nomatch h
+  | [], .nil, _, _, .nil, _, _, .cons .., _, h => nomatch h
+  | _ :: ps, .cons q p A Θ, _, _, h', hH, hτ, ts₀, us₀, hS => by
     have key : ∀ t u (ts us : Terms 0 []) (htu : ValidEqTerm₀ sig ι t u A),
         (∃ ts' us' : Args 0 [] ps, ts'.terms = ts ∧ us'.terms = us ∧
           EqSubst sig ι (Context.empty.append (Θ.subst₀ (Subst₀.single t))) ts'.toSubst
@@ -491,6 +520,7 @@ theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} {inst : Na
       intro t u ts us htu ⟨ts', us', h₁, h₂, hτ⟩
       subst h₁ h₂
       exact ⟨.cons t ts', .cons u us', rfl, rfl, EqSubst.args_cons_iff.2 ⟨htu, hτ⟩⟩
+    rw [Telescope.NestHeads] at hH
     cases h' with
     | cons hA hF G hG _ _ =>
       match ts₀, us₀, hS with
@@ -500,18 +530,15 @@ theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} {inst : Na
         have hFp := FieldRel.isPer hd (fun m _ => levelRel_isPer hd m) hF
         have hv := hF.validEqTerm hd hA htu
         exact key t u ts us hv (TelRel.to_eqSubst hd (hG t (hFp.trans htu (hFp.symm htu)))
-          (hH.2 t (hv.trans hv.symm)) (fun i R h => hR (i + 1) R h) (fun i => hni (i + 1))
-          ts us hts)
+          (hH.2 t (hv.trans hv.symm)) (fun i => hτ (i + 1)) ts us hts)
     | nested hrs hF G hG =>
-      obtain ⟨_, hτ, -⟩ := hF.eq_direct hrs (hni 0)
-      obtain ⟨D, hD, hRD⟩ := hR 0 _ hτ
       match ts₀, us₀, hS with
       | .nil, _, h => exact h.elim
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
-        have hv : ValidEqTerm₀ sig ι t u A := hH.1 D hD ▸ hRD t u htu
+        have hv : ValidEqTerm₀ sig ι t u A := (hF.validEqTerm_iff hd (hτ 0) hH.1 t u).1 htu
         exact key t u ts us hv (TelRel.to_eqSubst hd (hG t) (hH.2 t (hv.trans hv.symm))
-          (fun i R h => hR (i + 1) R h) (fun i => hni (i + 1)) ts us hts)
+          (fun i => hτ (i + 1)) ts us hts)
 
 /-- The terms `ts₁` and `ts₂` of fields are related by `Q D` at each recursive field of the type `D`
 that the types `rs` of the block mark. -/
@@ -572,25 +599,21 @@ theorem TelRel.recRel (hd : sig.Distinct) {n : Nat} {s : Quality} {Rf : Name →
           | direct _ => exact ⟨htu, ih⟩
 
 /-- Arguments related by the equality of the fields of a closed telescope of the graph of a sort are
-equal arguments of the telescope, and conversely, when its recursive fields are instances whose
-equality is the relation of these fields. -/
+equal arguments of the telescope, and conversely, at positions that hold types with the equality of
+their terms. -/
 theorem TelRel.eqSubst_iff (hd : sig.Distinct) {n : Nat} {s : Quality} {ps : List Parameter}
-    {Θ : Telescope 0 [] ps} {S : FieldsRel} {rs' : Nat → Nest NestLeaf}
-    {rs : Nat → Option Name} {inst : Name → Term 0 []}
-    (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs' Θ S) (hH : Θ.RecHeads sig ι inst rs)
-    (hR : ∀ i x, rs' i = .direct x → ∃ D, rs i = some D ∧
-      ∀ t u, x.2 t u ↔ ValidEqTerm₀ sig ι t u (inst D))
-    (hni : ∀ i νs, rs' i ≠ .inst νs) (ts us : Args 0 [] ps) :
+    {Θ : Telescope 0 [] ps} {S : FieldsRel} {rs : Nat → Nest NestLeaf}
+    (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s rs Θ S)
+    (hH : Θ.NestHeads sig ι n s (fun i => ∃ νs, rs i = .inst νs))
+    (hτ : ∀ i, Nest.All
+      (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) (rs i))
+    (ts us : Args 0 [] ps) :
     S ts.terms us.terms ↔ EqSubst sig ι (Context.empty.append Θ) ts.toSubst us.toSubst :=
   ⟨fun hS => by
-    obtain ⟨ts', us', h₁, h₂, hτ⟩ := h.to_eqSubst hd hH (fun i R hi =>
-      have ⟨D, hD, hRD⟩ := hR i R hi
-      ⟨D, hD, fun t u => (hRD t u).1⟩) hni _ _ hS
-    rw [Args.terms_inj h₁, Args.terms_inj h₂] at hτ
-    exact hτ,
-  fun hτ => h.of_eqSubst hH (fun i R hi =>
-    have ⟨D, hD, hRD⟩ := hR i R hi
-    ⟨D, hD, fun t u => (hRD t u).2⟩) hni ts us hτ⟩
+    obtain ⟨ts', us', h₁, h₂, hE⟩ := h.to_eqSubst hd hH hτ _ _ hS
+    rw [Args.terms_inj h₁, Args.terms_inj h₂] at hE
+    exact hE,
+  h.of_eqSubst hH hτ ts us⟩
 
 /-- Two closed terms that compute to types of `U_l` with the same equality of their terms and, for each
 program, a common relation of run time are equal terms of `U_l`, in a signature whose names are
@@ -647,9 +670,9 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
 /-- At equal closed arguments of the parameters of a meaningful type declaration, the fields of each
 constructor of one of its types, at relations `Rf D` of its recursive fields of the type `D`, are
 telescopes of the graph of its sort with one equality `S Rf c` of their terms, defined from the graph
-rather than chosen, since the graph gives one at most; when the relations `Rf D` are the equalities
-of the instances of the types of the block, at the first arguments, the equality relates the terms
-of equal arguments of the fields, and only them. -/
+rather than chosen, since the graph gives one at most; when the instances of the types of the
+block, at the first arguments, are types of the graph whose equalities are the relations `Rf D`,
+the equality relates the terms of equal arguments of the fields, and only them. -/
 theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
@@ -671,7 +694,9 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
             (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map
               fun D => (.inst D qs ls ps as₂, Rf D)))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S Rf c) ∧
-        ((∀ D ∈ decl.names, ∀ t u, Rf D t u ↔ ValidEqTerm₀ sig ι t u (.inst D qs ls ps as₁)) →
+        ((∀ D ∈ decl.names, NestRel sig ι
+            ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+            (fun m _ => levelRel sig ι m) .type .plain (.inst D qs ls ps as₁) (Rf D)) →
           (∀ ts us : Args 0 [] (c.params (.ofLists qs ps hq hp)),
             S Rf c ts.terms us.terms ↔ EqSubst sig ι
               (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁))
@@ -726,28 +751,22 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
     ⟨fun ⟨_, h', hs⟩ => (TelRel.unique hd ih h' _ _ h₁' ts us).1 hs, fun hs => ⟨S', h₁', hs⟩⟩
   rw [hS]
   refine ⟨h₁', h₂', fun hRf => ?_⟩
-  have hH := hF.recHeads
-  have hinst : ∀ D t u, ValidEqTerm₀ sig ι t u (((decl.blockInstance (.ofLists qs ps hq hp) D
-        (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
-        as₁.toSubst) ↔ ValidEqTerm₀ sig ι t u (.inst D qs ls ps as₁) := fun D t u =>
-    have he := decl.blockInstance_atLevels_subst hq hl hp as₁ D
-    ⟨fun h => h.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) he,
-      fun h => h.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) he.symm⟩
-  have hR : ∀ i (x : NestLeaf), Nest.ofOption
-      (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map fun D =>
-        (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-          fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D)) = .direct x →
-      ∃ D, (c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i = some D ∧
-        ∀ t u, x.2 t u ↔ ValidEqTerm₀ sig ι t u (((decl.blockInstance (.ofLists qs ps hq hp) D
-          (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
-          as₁.toSubst) := fun i x hi => by
+  -- The recursive fields are the instances of the block, up to the values of their levels.
+  have hτ : ∀ i, Nest.All
+      (fun x : NestLeaf => NestRel sig ι
+        (((decl.sort (.ofLists qs ps hq hp)).atLevels
+          fun i => (ls.getFin hl i).closedValue).level.closedValue)
+        (fun m _ => levelRel sig ι m) .type .plain x.1 x.2)
+      (Nest.ofOption
+        (((c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i).map fun D =>
+          (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+            fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D))) := fun i => by
     cases hr : (c.fields (.ofLists qs ps hq hp)).recursionAt decl.names i with
-    | none => rw [hr] at hi; exact nomatch hi
+    | none => exact .plain
     | some D =>
-      rw [hr] at hi
-      cases hi
-      exact ⟨D, rfl, fun t u =>
-        (hRf D (Telescope.recursionAt_mem hr) t u).trans (hinst D t u).symm⟩
+      exact .direct (hn ▸ NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+        (hRf D (Telescope.recursionAt_mem hr))
+        (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm .plain)
   have hE : ∀ ts us : Args 0 [] (c.params (.ofLists qs ps hq hp)),
       EqSubst sig ι (Context.empty.append (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst)) ts.toSubst us.toSubst ↔
@@ -755,12 +774,12 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         ts.toSubst us.toSubst := fun _ _ =>
     ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hΘ c as₁)),
       EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hΘ c as₁).symm)⟩
-  refine ⟨fun ts us => (TelRel.eqSubst_iff hd h₁ hH hR (fun _ => Nest.ofOption_ne_inst _)
-    ts us).trans (hE ts us), fun fs₁ fs₂ hs => ?_⟩
-  obtain ⟨ts, us, rfl, rfl, hτ⟩ := TelRel.to_eqSubst hd h₁ hH (fun i R hi =>
-    have ⟨D, hD, hRD⟩ := hR i R hi
-    ⟨D, hD, fun t u => (hRD t u).1⟩) (fun _ => Nest.ofOption_ne_inst _) fs₁ fs₂ hs
-  exact ⟨ts, us, rfl, rfl, (hE ts us).1 hτ⟩
+  refine ⟨fun ts us => (TelRel.eqSubst_iff hd h₁
+    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h) hτ ts us).trans
+    (hE ts us), fun fs₁ fs₂ hs => ?_⟩
+  obtain ⟨ts, us, rfl, rfl, hts⟩ := TelRel.to_eqSubst hd h₁
+    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h) hτ fs₁ fs₂ hs
+  exact ⟨ts, us, rfl, rfl, (hE ts us).1 hts⟩
 
 -- ADE: none.
 /-- The instances of the types of a meaningful block of data types in a universe, at equal closed
@@ -832,12 +851,12 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
     .univ rfl (hU T hT).1
   refine ⟨S, hU, hmono, fun X T hT c hc ts us h =>
     TelRel.recRel hd (hS₀ _ T hT c hc).1 _ (fun _ => rfl) ts us h, fun T hT c hc => ?_⟩
-  have hRf : ∀ D ∈ decl.names, ∀ t u,
-      (DataType.blockRel decl.dataTypes S D).computed sig ι t u ↔
-        ValidEqTerm₀ sig ι t u (.inst D qs ls ps as₁) := fun D hD t u => by
+  have hRf : ∀ D ∈ decl.names, NestRel sig ι
+      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) .type .plain (.inst D qs ls ps as₁)
+      ((DataType.blockRel decl.dataTypes S D).computed sig ι) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
-    exact ⟨fun h => (hF T' hT').validEqTerm hd (hI _) h,
-      fun h => (hF T' hT').of_validEqTerm (hI _) h⟩
+    exact .plain (hI _) (hF T' hT')
   obtain ⟨-, -, hiff⟩ := hS₀ (fun D => (DataType.blockRel decl.dataTypes S D).computed sig ι) T hT c hc
   obtain ⟨hof, hto⟩ := hiff hRf
   refine ⟨hof, hto, fun fs₁ fs₂ h => ?_⟩
@@ -915,15 +934,12 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
     fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
   refine ⟨S, hP, hmono, fun B T hT c hc ts us h =>
     TelRel.recRel hd (hS₀ _ T hT c hc).1 _ (fun _ => rfl) ts us h, fun T hT c hc => ?_⟩
-  have hRf : ∀ D ∈ decl.names, ∀ t u,
-      DataType.blockTruth decl.dataTypes S D ↔ ValidEqTerm₀ sig ι t u (.inst D qs ls ps as₁) :=
-      fun D hD t u => by
+  have hRf : ∀ D ∈ decl.names, NestRel sig ι
+      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) .type .plain (.inst D qs ls ps as₁)
+      (fun _ _ => DataType.blockTruth decl.dataTypes S D) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
-    have hF : FieldRel sig ι
-        ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-        (fun m _ => levelRel sig ι m) .prop (.inst T'.name qs ls ps as₁)
-        (fun _ _ => DataType.blockTruth decl.dataTypes S T'.name) := .prop (hP T' hT').1
-    exact ⟨fun h => hF.validEqTerm hd (hI _) h, fun h => hF.of_validEqTerm (hI _) h⟩
+    exact .plain (hI _) (.prop (hP T' hT').1)
   obtain ⟨hof, hto⟩ := (hS₀ (fun D _ _ => DataType.blockTruth decl.dataTypes S D) T hT c hc).2.2 hRf
   have hper : IsPer (S (DataType.blockTruth decl.dataTypes S) c) :=
     TelRel.isPer hd ih (fun i => by
@@ -1218,9 +1234,8 @@ theorem ValidEqTerm₀.ctor_inv {decl : TypeDeclaration} {D : Name}
   obtain ⟨T', hT', hn, c, hc, fs₁, fs₂, ⟨qs₁, ls₁, ps₁, Δ₁, as₁, rfl⟩,
     ⟨qs₂, ls₂, ps₂, Δ₂, as₂, rfl⟩, hfs⟩ := DataType.blockRel_inv hmono hrel'
   obtain ⟨ts₁, ts₂, rfl, rfl, hts⟩ := (hS _ T' hT' c hc).to_eqSubst hd
-    (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-    (fun i R hi => by rw [hnr T' hT' c hc i] at hi; exact nomatch hi)
-    (fun _ => Nest.ofOption_ne_inst _) _ _ hfs
+    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h)
+    (fun i => by rw [hnr T' hT' c hc i]; exact .plain) _ _ hfs
   exact ⟨T', hT', hn, c, hc, ts₁, ts₂, ⟨_, _, _, _, _, hn ▸ hw₁⟩, ⟨_, _, _, _, _, hn ▸ hw₂⟩, hts⟩
 
 end

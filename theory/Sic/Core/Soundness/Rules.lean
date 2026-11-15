@@ -631,9 +631,8 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
     have ih : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h)
+    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+      (fun _ => .plain)
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
     split at h
     · rename_i hr
@@ -665,15 +664,15 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
           ∀ v, Computesι sig ι A v →
             FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
               (F ts.terms) := fun ts A hA => by
-        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ
+        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
         refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
         cases Computesι.det hd hw₂ hv
         rw [hFeq ts w₁ F₀ hw₁ hF₁]
         exact hF₂
       have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
         obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst hd
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h)
+          (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+          (fun _ => .plain)
           _ _ hts
         have huu := hSp.trans (hSp.symm hts) hts
         obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
@@ -726,7 +725,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
         (fun ts hts => (hres ts _ (hBB ts ts hts)).2) hBresp G (fun f hf => (hG f hf).1) hresp hr',
         .cons hT₂ F (fun ts hts => ?_) (fun ts hts => (hres ts _ (hB _ _ ((hT ts ts).1 hts))).2)
           hBresp G (fun f hf => (hG f hf).2) hresp hr'⟩
-      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ
+      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ.1 (hκ.2 Fin.elim0)
       exact ⟨w₂, hw₂⟩
     · rename_i D hr
       obtain ⟨-, hds⟩ := h
@@ -777,9 +776,8 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
     have hcase' := fun d' (hd' : d' ∈ _) => hcase d' (List.mem_cons_of_mem _ hd')
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h)
+    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+      (fun _ => .plain)
     have hSp := TelRel.isPer hd ihm (fun _ => .plain) hT₁
     split at h
     · rename_i hr
@@ -811,7 +809,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
           ∀ v, Computesι sig ι A v →
             FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
               (F ts.terms) := fun ts A hA => by
-        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ
+        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
         refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
         cases Computesι.det hd hw₂ hv
         rw [hFeq ts w₁ F₀ hw₁ hF₁]
@@ -836,7 +834,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
           ∀ v, Computesι sig ι A v →
             RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) v
               (R ts.terms) := fun ts A hA v hv => by
-        obtain ⟨w₁, w₂, R₀, hw₁, hw₂, hR₁, hR₂⟩ := hA.runFieldRel P hκ
+        obtain ⟨w₁, w₂, R₀, hw₁, hw₂, hR₁, hR₂⟩ := hA.runFieldRel P (hκ.2 Fin.elim0)
         cases Computesι.det hd hw₂ hv
         rw [hReq ts w₁ R₀ hw₁ hR₁]
         exact hR₂
@@ -882,7 +880,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
         .cons hi hT₂ hRT₂ F R (fun ts hts => ?_)
           (fun ts hts => hs ▸ (hres ts _ (hB _ _ ((hT ts ts).1 hts))).2)
           (fun ts hts => hrun ts _ (hB _ _ ((hT ts ts).1 hts))) G (fun f hf => (hG f hf).2) hr'⟩
-      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ
+      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ.1 (hκ.2 Fin.elim0)
       exact ⟨w₂, hw₂⟩
     · rename_i D' hr
       obtain ⟨-, hds⟩ := h

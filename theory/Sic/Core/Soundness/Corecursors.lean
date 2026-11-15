@@ -161,9 +161,8 @@ theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Op
         exact .inr ⟨h₁, fun _ _ => .rfl⟩)).2 ho₁
     refine ⟨fun ts us hτ => ?_, G (f₁ d ps), hG _ (hEp.trans hfo (hEp.symm hfo)),
       (hresp _ _ hfo o₁ o₂).2 hGo⟩
-    have hts := (TelRel.eqSubst_iff hd hΘ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h) ts us).2 hτ
+    have hts := (TelRel.eqSubst_iff hd hΘ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+      (fun _ => .plain) ts us).2 hτ
     have htt := hSp.trans hts (hSp.symm hts)
     obtain ⟨v, hv⟩ := hB ts htt
     exact (hF ts htt v hv).validEqTerm hd hv (hA' ts us hts)
@@ -196,9 +195,8 @@ theorem DesRel.headRec (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat →
         ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
       fun hf => hf.imp_right fun h τ w => h d ps τ w
     refine ⟨fun ts us hτ => ?_, fun f => ⟨G, hG f, hGo⟩⟩
-    have hts := (TelRel.eqSubst_iff hd hΘ (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h) ts us).2 hτ
+    have hts := (TelRel.eqSubst_iff hd hΘ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+      (fun _ => .plain) ts us).2 hτ
     refine (hR.congr_computes ?_).1 (hA ts us hts)
     rcases hc hf₁ with h₁ | h₁
     · exact .inl h₁
@@ -923,8 +921,8 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
           have ⟨v, hv'⟩ := hB ts hts
           FieldRel.isPer hd ih (hF ts hts v hv')) hBresp
         have hT := TelRel.eqSubst_iff hd hΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h)
+          (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+          (fun _ => .plain)
         have hA : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) := fun ts us hts => by
           have htt := hSp.trans hts (hSp.symm hts)
           obtain ⟨v, hv''⟩ := hB ts htt
@@ -955,8 +953,8 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
         rw [hR0] at hrs
         cases hrs
         have hT := TelRel.eqSubst_iff hd hΘ
-          (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _) (fun _ _ h => nomatch h)
-          (fun _ _ h => nomatch h)
+          (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+          (fun _ => .plain)
         refine ⟨fun ts us hts => ?_, DesRel.of_obsRel hd L ds (hds (o₁ d ps) (o₁ d ps))
           (fun i => hN (i + 1)) (fun i => hS (i + 1)) (hG _) hv' hr'⟩
         have e : (B.substLevels L).subst (Subst.append θ ts.toSubst) = (inst D).subst θ := by

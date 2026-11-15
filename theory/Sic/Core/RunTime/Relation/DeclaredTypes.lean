@@ -25,9 +25,10 @@ block, and the arguments that the relation of the fields relates to addresses ar
 their fields, which the recursors read.
 
 The relation of run time of the fields that the graph gives is that of the fields at the values of
-the levels, which the meaning of the declaration makes meaningful, and that the declaration tells
-the recursive fields of, so that the arguments are related at these fields, then at the fields at
-the levels of the instance, which differ from them only by levels of the same values.
+the levels, which the meaning of the declaration makes meaningful, and whose positions hold the
+instances of the block with the relations `(®_μ)`, their relations of run time, so that the
+arguments are related at these fields, then at the fields at the levels of the instance, which
+differ from them only by levels of the same values.
 
 ADE prove the validity of their constructors at run time in the modules of
 `Graded/Erasure/LogicalRelation/Fundamental/`, one module for each type.
@@ -62,29 +63,62 @@ theorem RunFieldRel.of_runsAs (hd : sig.Distinct) {n : Nat} {v A t : Term 0 []} 
   | prop _ => trivial
   | propBelow _ _ _ => trivial
 
+/-- A term related to an address at a type is related to it by the relation of run time that the
+graph of the nestings gives the type, at positions that hold types with their relations of run
+time, in a signature whose names are distinct, when the type is a term of a sort whose level the
+level `n` bounds if it is an instance of a declared type. -/
+theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLeaf}
+    {A t : Term 0 []} {R : RunRel} {H : Heap} {b : Nat}
+    (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
+    (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
+    (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧
+      κ₁.level.closedValue ≤ n ∧ ValidEqTerm₀ sig ι A A (.sort κ₁))
+    (hr : RunsAs sig ι P H t b A) : R H t b := by
+  have hinv : ∀ (T A : Term 0 []) (R : RunRel),
+      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
+        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
+    RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain
+  have hplain : ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' := by
+    have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧ κ₁.level.closedValue ≤ n ∧
+        ValidEqTerm₀ sig ι A A (.sort κ₁)) →
+        ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' :=
+      fun ⟨_, _, hn, hv⟩ =>
+        have ⟨_, _, R', hc, _, hR', _⟩ := hv.runFieldRel P hn
+        ⟨R', .plain hc hR'⟩
+    cases h with
+    | plain hc hR => exact ⟨R, .plain hc hR⟩
+    | direct hT =>
+      cases hτ with
+      | direct hx => exact ⟨_, hinv _ _ _ hx hT⟩
+    | codata => exact hsort (hA ⟨_, rfl⟩)
+    | codataProp => exact hsort (hA ⟨_, rfl⟩)
+  obtain ⟨R', h'⟩ := hplain
+  refine levelRel_runNest_agree_nest hd hinv h hτ h' H t b ?_
+  cases h' with
+  | plain hc hR' => exact hR'.of_runsAs hd hc hr
+
 /-- Arguments of a closed telescope of the graph of run time, which the meaning relates to
 themselves and which are related to addresses at its fields, are related to them by the relation of
-run time of the terms of its fields, when its recursive fields are instances whose terms are related
-by the relations of these fields.
-The positions are those of recursive fields only, as the fields of a constructor have today. -/
-theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {inst : Name → Term 0 []}
-    {H : Heap} :
+run time of the terms of its fields, at positions that hold types with their relations of run
+time. -/
+theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {H : Heap} :
     {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : RunFieldsRel} →
-      {rs : Nat → Nest RunNestLeaf} → {rsN : Nat → Option Name} →
-      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Θ.RecHeads sig ι inst rsN →
-      (∀ i x, rs i = .direct x → ∃ D, rsN i = some D ∧
-        ∀ t b, RunsAs sig ι P H t b (inst D) → x.2 H t b) →
-      (∀ i νs, rs i ≠ .inst νs) → (g : Nat → Grade) →
+      {rs : Nat → Nest RunNestLeaf} →
+      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S →
+      Θ.NestHeads sig ι n .type (fun i => ∃ νs, rs i = .inst νs) →
+      (∀ i, Nest.All
+        (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) (rs i)) →
+      (g : Nat → Grade) →
       (∀ l p, ps[l]? = some p → p.usage ∉ Mode.oneOne.erased → g l ∉ Mode.oneOne.erased) →
       (ts : Args 0 [] ps) → EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst →
       (bs : List Nat) → RunsAsArgs sig ι P H g ts bs Θ → S H ts.terms bs
-  | [], .nil, _, _, _, h', _, _, _, _, _, .nil, _, [], _ => by cases h'; trivial
-  | [], .nil, _, _, _, _, _, _, _, _, _, .nil, _, _ :: _, h => (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, _, _, _, _, _, _, .cons _ _, _, [], h => (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, hni, g, hg, .cons t ts, h, b :: bs, hargs => by
+  | [], .nil, _, _, h', _, _, _, _, .nil, _, [], _ => by cases h'; trivial
+  | [], .nil, _, _, _, _, _, _, _, .nil, _, _ :: _, h => (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, _, _, _, _, _, .cons _ _, _, [], h => (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, h', hH, hτ, g, hg, .cons t ts, h, b :: bs, hargs => by
     obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
     obtain ⟨hb, hbs⟩ := hargs
-    rw [Telescope.RecHeads] at hH
+    rw [Telescope.NestHeads] at hH
     have hg' : ∀ l (p : Parameter), _ → p.usage ∉ Mode.oneOne.erased →
         g (l + 1) ∉ Mode.oneOne.erased :=
       fun l p hl => hg (l + 1) p hl
@@ -92,14 +126,12 @@ theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {inst : Name → T
     | cons hA hF hRf G hG _ =>
       have hFtt := hF.of_validEqTerm hA ht
       exact And.intro ⟨hFtt, fun hp => hRf.of_runsAs hd hA (hb (hg 0 _ rfl hp))⟩
-        (RunTelRel.of_runsAsArgs hd (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h)
-          (fun i => hni (i + 1)) _ hg' ts hts bs hbs)
+        (RunTelRel.of_runsAsArgs hd (hG t hFtt) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts
+          bs hbs)
     | nested hrs hRn G hG =>
-      obtain ⟨_, hτ, -⟩ := hRn.eq_direct hrs (hni 0)
-      obtain ⟨D, hD, hRD⟩ := hR 0 _ hτ
-      exact And.intro (fun hp => hRD t b (hH.1 D hD ▸ hb (hg 0 _ rfl hp)))
-        (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h)
-          (fun i => hni (i + 1)) _ hg' ts hts bs hbs)
+      exact And.intro (fun hp => hRn.of_runsAs hd (hτ 0) hH.1 (hb (hg 0 _ rfl hp)))
+        (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs
+          hbs)
 
 /-- A term related to an address by the relation of run time of the type of a field is related to
 it at a type that computes to this type: the converse of `RunFieldRel.of_runsAs`. -/
@@ -112,28 +144,63 @@ theorem RunFieldRel.runsAs {n : Nat} {v A t : Term 0 []} {R : RunRel} {H : Heap}
   | prop h' => exact ⟨v, hA, .inl ⟨n, _, levelRel_prop_iff.2 h'⟩⟩
   | propBelow m _ h' => exact ⟨v, hA, .inl ⟨m, _, h'⟩⟩
 
+/-- A term that the meaning relates to itself and that the relation of run time that the graph of
+the nestings gives a type relates to an address is related to it at the type, at positions that
+hold types with their relations of run time, when the type is a term of a sort whose level the
+level `n` bounds if it is an instance of a declared type: the converse of `RunNestRel.of_runsAs`,
+for the terms that the equality of the type relates to themselves. -/
+theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R : RunRel}
+    {H : Heap} {b : Nat} (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
+    (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
+    (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧
+      κ₁.level.closedValue ≤ n ∧ ValidEqTerm₀ sig ι A A (.sort κ₁))
+    (ht : ValidEqTerm₀ sig ι t t A) (hr : R H t b) : RunsAs sig ι P H t b A := by
+  have hd : sig.Distinct := ht.1.1
+  have hinv : ∀ (T A : Term 0 []) (R : RunRel),
+      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
+        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
+    RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain
+  -- An instance of a declared type is a type without position, whose equality relates the term to
+  -- itself: the graph of run time then relates what the graph of the nestings does.
+  have hsort : (∃ νs, τ = .inst νs) → RunsAs sig ι P H t b A := fun hi => by
+    obtain ⟨_, hs, hn, hv⟩ := hA hi
+    obtain ⟨_, _, E, hc, _, hE, _, _⟩ := hv.fieldRel hs hn
+    obtain ⟨_, _, R', hc', _, hR', _⟩ := hv.runFieldRel P hn
+    cases Computesι.det hd hc hc'
+    exact hR'.runsAs hc (levelRel_runNest_agree_plain hd hinv h hτ (.plain hc hR') (.plain hc hE)
+      H t b (hE.of_validEqTerm hc ht) hr)
+  cases h with
+  | plain hc hR => exact hR.runsAs hc hr
+  | direct hT =>
+    cases hτ with
+    | direct hx =>
+      cases hinv _ _ _ hx hT with
+      | plain hc hR => exact hR.runsAs hc hr
+  | codata => exact hsort ⟨_, rfl⟩
+  | codataProp => exact hsort ⟨_, rfl⟩
+
 /-- Arguments of a closed telescope of the graph of run time, which the meaning relates to
 themselves and which its relation of run time relates to addresses, are related to them at its
-fields, when the relations of its recursive fields relate only terms related at their instances: the
-converse of `RunTelRel.of_runsAsArgs`.
-The positions are those of recursive fields only, as the fields of a constructor have today. -/
-theorem RunsAsArgs.of_runTelRel {n : Nat} {inst : Name → Term 0 []} {H : Heap} :
+fields, at positions that hold types with their relations of run time: the converse of
+`RunTelRel.of_runsAsArgs`. -/
+theorem RunsAsArgs.of_runTelRel {n : Nat} {H : Heap} :
     {ps : List Parameter} → {Θ : Telescope 0 [] ps} → {S : RunFieldsRel} →
-      {rs : Nat → Nest RunNestLeaf} → {rsN : Nat → Option Name} →
-      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S → Θ.RecHeads sig ι inst rsN →
-      (∀ i x, rs i = .direct x → ∃ D, rsN i = some D ∧
-        ∀ t b, x.2 H t b → RunsAs sig ι P H t b (inst D)) →
-      (∀ i νs, rs i ≠ .inst νs) → (g : Nat → Grade) →
+      {rs : Nat → Nest RunNestLeaf} →
+      RunTelRel sig ι P n (fun m _ => levelRel sig ι m) rs Θ S →
+      Θ.NestHeads sig ι n .type (fun i => ∃ νs, rs i = .inst νs) →
+      (∀ i, Nest.All
+        (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) (rs i)) →
+      (g : Nat → Grade) →
       (∀ l p, ps[l]? = some p → g l ∉ Mode.oneOne.erased → p.usage ∉ Mode.oneOne.erased) →
       (ts : Args 0 [] ps) → EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst →
       (bs : List Nat) → S H ts.terms bs → RunsAsArgs sig ι P H g ts bs Θ
-  | [], .nil, _, _, _, _, _, _, _, _, _, .nil, _, [], _ => trivial
-  | [], .nil, _, _, _, h', _, _, _, _, _, .nil, _, _ :: _, h => by cases h'; exact (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', _, _, _, _, _, .cons _ _, _, [], h => by
+  | [], .nil, _, _, _, _, _, _, _, .nil, _, [], _ => trivial
+  | [], .nil, _, _, h', _, _, _, _, .nil, _, _ :: _, h => by cases h'; exact (h : False).elim
+  | _ :: _, .cons _ _ _ _, _, _, h', _, _, _, _, .cons _ _, _, [], h => by
     cases h' <;> exact (h : False).elim
-  | _ :: _, .cons _ _ _ _, _, _, _, h', hH, hR, hni, g, hg, .cons t ts, h, b :: bs, hS => by
+  | _ :: _, .cons _ _ _ _, _, _, h', hH, hτ, g, hg, .cons t ts, h, b :: bs, hS => by
     obtain ⟨ht, hts⟩ := EqSubst.args_cons_iff.1 h
-    rw [Telescope.RecHeads] at hH
+    rw [Telescope.NestHeads] at hH
     have hg' : ∀ l (p : Parameter), _ → g (l + 1) ∉ Mode.oneOne.erased →
         p.usage ∉ Mode.oneOne.erased :=
       fun l p hl => hg (l + 1) p hl
@@ -141,15 +208,12 @@ theorem RunsAsArgs.of_runTelRel {n : Nat} {inst : Name → Term 0 []} {H : Heap}
     | cons hA _ hRf G hG _ =>
       obtain ⟨⟨hFtt, hb⟩, hbs⟩ := hS
       exact And.intro (fun hp => hRf.runsAs hA (hb (hg 0 _ rfl hp)))
-        (RunsAsArgs.of_runTelRel (hG t hFtt) (hH.2 t ht) (fun i R h => hR (i + 1) R h)
-          (fun i => hni (i + 1)) _ hg' ts hts bs hbs)
+        (RunsAsArgs.of_runTelRel (hG t hFtt) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs
+          hbs)
     | nested hrs hRn G hG =>
       obtain ⟨hb, hbs⟩ := hS
-      obtain ⟨_, hτ, -⟩ := hRn.eq_direct hrs (hni 0)
-      obtain ⟨D, hD, hRD⟩ := hR 0 _ hτ
-      exact And.intro (fun hp => hH.1 D hD ▸ hRD t b (hb (hg 0 _ rfl hp)))
-        (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i R h => hR (i + 1) R h)
-          (fun i => hni (i + 1)) _ hg' ts hts bs hbs)
+      exact And.intro (fun hp => hRn.runsAs (hτ 0) hH.1 ht (hb (hg 0 _ rfl hp)))
+        (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs hbs)
 
 /-- The relation of run time of an instance of a data type of a type is `(®_μ)` of its block, for
 relations of the fields that the graph of a level gives, in a signature whose names are distinct. -/
@@ -285,9 +349,8 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   subst e₂
   exact ⟨T'', hT', hn, c, hc, ts, i, bs, ⟨_, _, _, _, _, hct⟩, hn ▸ hi, ha, hts,
     RunsAsArgs.of_runTelRel (hS _ T'' hT' c hc)
-      (Telescope.recHeads_none (fun _ => .sort ⟨.type, .zero⟩) _)
-      (fun j R hj => by rw [hnr T'' hT' c hc j] at hj; exact nomatch hj)
-      (fun _ => Nest.ofOption_ne_inst _) _
+      (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h)
+      (fun j => by rw [hnr T'' hT' c hc j]; exact .plain) _
       (fun _ _ hl' hgl => (Parameter.grades_of_getElem? hl') ▸ hgl) ts hts bs hSc⟩
 
 -- ADE: none.
@@ -365,29 +428,29 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (h := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
         (fun D' => ⟨decl.blockInstance_atLevels_subst hq hl hp as D', rfl⟩) _)
     -- The recursive fields are the instances of the block, whose terms `(®_μ)` relates.
-    have hrec : ∀ j (x : RunNestLeaf), Nest.ofOption
+    have hτ : ∀ j, Nest.All
+        (fun x : RunNestLeaf => RunNestRel sig ι P
+          (((decl.sort (.ofLists qs ps hq hp)).atLevels
+            fun i => (ls.getFin hl i).closedValue).level.closedValue)
+          (fun m _ => levelRel sig ι m) .plain x.1 x.2)
+        (Nest.ofOption
           (((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j).map fun D' =>
             (((decl.blockInstance (.ofLists qs ps hq hp) D' (.identity decl.scope)).atLevels
               fun i => (ls.getFin hl i).closedValue).subst as.toSubst,
-              (X D').computed sig ι)) = .direct x →
-        ∃ D', (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j = some D' ∧
-          ∀ t b, RunsAs sig ι P H t b (((decl.blockInstance (.ofLists qs ps hq hp) D'
-            (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
-            as.toSubst) → x.2 H t b := fun j x hj => by
+              (X D').computed sig ι))) := fun j => by
       cases hr : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j with
-      | none => rw [hr] at hj; exact nomatch hj
+      | none => exact .plain
       | some D' =>
-        rw [hr] at hj
-        cases hj
-        refine ⟨D', rfl, fun t b htb => ?_⟩
         obtain ⟨T', hT', rfl⟩ :=
           TypeDeclaration.mem_names_of_dataTypes hT (Telescope.recursionAt_mem hr)
-        exact RunFieldRel.of_runsAs hd (.univ (hU T' hT').1) (hw _)
-          (htb.levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as T'.name))
+        exact .direct (hn ▸ RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+          (.plain (hw _) (.univ (hU T' hT').1))
+          (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm .plain)
     have hE : EqSubst sig ι (Context.empty.append (((con.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) ts.toSubst ts.toSubst :=
       EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘ.symm) hts
-    have hS' := RunTelRel.of_runsAsArgs hd h₁ hF.recHeads hrec (fun _ => Nest.ofOption_ne_inst _) _
+    have hS' := RunTelRel.of_runsAsArgs hd h₁
+      (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h) hτ _
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts hE bs
       (hbs.levelEquiv hΘ.symm)
     exact (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
@@ -453,44 +516,50 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
     (Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _)
   have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
-  obtain ⟨S', h₁, -⟩ := hF.runTelRel hd P hs fun D' => (X D').computed sig ι
+  -- The relations `(®_μ)` of the block relate the fields that the relations `X` within them do.
+  let Y : Name → RunRel := DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S
+  have hY : S Y con H ts.terms bs :=
+    RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m) (K := Eq)
+      (fun e => e ▸ List.prefix_refl _) (fun _ => rfl) (hS X T hT con hc) _ _ (hS Y T hT con hc)
+      (fun _ => Nest.ofOption_rel₃
+        (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hX D' H)) _) H H rfl _ _ h
+  obtain ⟨S', h₁, -⟩ := hF.runTelRel hd P hs fun D' => (Y D').computed sig ι
   have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hΘ
     (fun _ => Nest.ofOption_rel₃
       (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D' => (((decl.blockInstance (.ofLists qs ps hq hp) D'
         (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
-        as.toSubst, (X D').computed sig ι))
-      (g := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
-      (h := fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
+        as.toSubst, (Y D').computed sig ι))
+      (g := fun D' => (.inst D' qs ls ps as, (Y D').computed sig ι))
+      (h := fun D' => (.inst D' qs ls ps as, (Y D').computed sig ι))
       (fun D' => ⟨decl.blockInstance_atLevels_subst hq hl hp as D', rfl⟩) _)
-  have hS' := (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
-    (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 h
+  have hS' := (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS Y T hT con hc) _ _ h₁'
+    (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 hY
   -- The recursive fields are the instances of the block, whose terms `(®_μ)` relates.
-  have hrec : ∀ j (x : RunNestLeaf), Nest.ofOption
+  have hτ : ∀ j, Nest.All
+      (fun x : RunNestLeaf => RunNestRel sig ι P
+        (((decl.sort (.ofLists qs ps hq hp)).atLevels
+          fun i => (ls.getFin hl i).closedValue).level.closedValue)
+        (fun m _ => levelRel sig ι m) .plain x.1 x.2)
+      (Nest.ofOption
         (((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j).map fun D' =>
           (((decl.blockInstance (.ofLists qs ps hq hp) D' (.identity decl.scope)).atLevels
             fun i => (ls.getFin hl i).closedValue).subst as.toSubst,
-            (X D').computed sig ι)) = .direct x →
-      ∃ D', (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j = some D' ∧
-        ∀ t b, x.2 H t b → RunsAs sig ι P H t b (((decl.blockInstance (.ofLists qs ps hq hp) D'
-          (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
-          as.toSubst) := fun j x hj => by
+            (Y D').computed sig ι))) := fun j => by
     cases hr : (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names j with
-    | none => rw [hr] at hj; exact nomatch hj
+    | none => exact .plain
     | some D' =>
-      rw [hr] at hj
-      cases hj
-      refine ⟨D', rfl, fun t b ⟨v, hv, hXv⟩ => ?_⟩
       obtain ⟨T', hT', rfl⟩ :=
         TypeDeclaration.mem_names_of_dataTypes hT (Telescope.recursionAt_mem hr)
-      have hr' : RunsAs sig ι P H t b (.inst T'.name qs ls ps as) :=
-        ⟨_, hw _, .inr ⟨_, .univ _ (levelRel_run_iff.2 (hU T' hT')), v, hv, hX _ _ _ _ hXv⟩⟩
-      exact hr'.levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm
+      exact .direct (hn ▸ RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+        (.plain (hw _) (.univ (hU T' hT')))
+        (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm .plain)
   have hE : EqSubst sig ι (Context.empty.append (((con.fields (.ofLists qs ps hq hp)).atLevels
       fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) ts.toSubst ts.toSubst :=
     EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘ.symm) hts
-  exact (RunsAsArgs.of_runTelRel h₁ hF.recHeads hrec (fun _ => Nest.ofOption_ne_inst _) g hg ts hE
-    bs hS').levelEquiv hΘ
+  exact (RunsAsArgs.of_runTelRel h₁
+    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => Nest.ofOption_ne_inst _ _ h) hτ g hg ts hE bs
+    hS').levelEquiv hΘ
 
 -- ADE: none.
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,

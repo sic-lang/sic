@@ -1888,18 +1888,6 @@ theorem NestRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' τ A F') : ∀ t u, F t u ↔ F' t u :=
   NestRel.congr hd ih h _ _ _ h' (Nest.rel₃_refl (fun _ _ _ => .rfl) τ)
 
-/-- A type read at a nesting that is neither no position nor that of an instance is read at a
-position, which holds its relation and the type up to the values of its levels. -/
-theorem NestRel.eq_direct {sig : Signature} {ι : Interpretation} {n : Nat}
-    {below : LevelRel.Below n} {s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
-    (h : NestRel sig ι n below s τ A F) (hp : τ ≠ .plain) (hi : ∀ νs, τ ≠ .inst νs) :
-    ∃ T, τ = .direct (T, F) ∧ Term.LevelEquiv T A := by
-  cases h with
-  | plain _ _ => exact absurd rfl hp
-  | direct hA => exact ⟨_, rfl, hA⟩
-  | codata => exact absurd rfl (hi _)
-  | codataProp => exact absurd rfl (hi _)
-
 /-- The equality of the abstractions for destructors read at nestings is a partial equivalence
 relation, at positions whose relations are. -/
 theorem NestDesRel.isPer {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
