@@ -74,8 +74,8 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
       {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
-      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ θ → {rsR : Nat → Option RunRel} →
+      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ θ → {rsR : Nat → Option RunRel} →
       (∀ i, rs i = none → rsR i = none) →
       (∀ i D, rs i = some D → ∃ R, rsR i = some R ∧
         ∀ H t a, R H t a → RunsAs sig ι P H t a ((inst D).subst θ)) →
@@ -90,8 +90,8 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
             (ps.map (·.requirement.run)) bs w H'' tr ∧
             RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
               (B.subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))
-  | _, _, _, _, _, _, _, .here, _, _, _, hv, _, hN, hR, _, _, hS, _, _, _, ho, hp => by
-    rw [ValidEqDestructors₀] at hv
+  | _, _, _, _, _, _, _, .here, _, _, _, _, hv, _, hN, hR, _, _, hS, _, _, _, ho, hp => by
+    replace hv := hv.cons_inv
     obtain ⟨-, hv⟩ := hv
     split at hv
     · rename_i hr
@@ -119,9 +119,9 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         refine ⟨w, H'', tr, hev, ?_⟩
         rw [Term.subst_append_rename_weakenN]
         exact hRr _ _ _ hw
-  | _, _, _, _, _, _, _, .there (ps' := ps') (ψ' := ψ') h, inst, rs, θ, hv, rsR, hN, hR, _, _,
+  | _, _, _, _, _, _, _, .there (ps' := ps') (ψ' := ψ') h, inst, rs, _, θ, hv, rsR, hN, hR, _, _,
       hS, _, o, _, ho, hp => by
-    rw [ValidEqDestructors₀] at hv
+    replace hv := hv.cons_inv
     obtain ⟨-, hv⟩ := hv
     have hN' : ∀ i, rs (i + 1) = none → rsR (i + 1) = none := fun i => hN (i + 1)
     have hR' : ∀ (f : Term 0 (Scope.extend [] ps'.length)) i D, rs (i + 1) = some D → ∃ R,
@@ -170,8 +170,8 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {p
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
       {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
-      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ₁ θ₂ : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ →
+      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ →
       (∀ i D, rs i = some D → ∃ κ₁,
         ValidEqTerm₀ sig ι ((inst D).subst θ₁) ((inst D).subst θ₂) (.sort κ₁)) →
       {f₁ f₂ : Observations} →
@@ -190,8 +190,8 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {p
           us.toSubst →
         ∃ κ₁, ValidEqTerm₀ sig ι (B.subst (Subst.append (hpos.obsSubst f₁ θ₁) ts.toSubst))
           (B.subst (Subst.append (hpos.obsSubst f₂ θ₂) us.toSubst)) (.sort κ₁)
-  | _, _, _, _, _, _, _, .here, _, _, _, _, hv, hI, _, _, _ => by
-    rw [ValidEqDestructors₀] at hv
+  | _, _, _, _, _, _, _, .here, _, _, _, _, _, hv, hI, _, _, _ => by
+    replace hv := hv.cons_inv
     obtain ⟨hΘ, hv⟩ := hv
     refine ⟨hΘ, ?_⟩
     split at hv
@@ -203,9 +203,9 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {p
       refine fun ts us _ => ⟨κ₁, ?_⟩
       rw [Term.subst_append_rename_weakenN, Term.subst_append_rename_weakenN]
       exact hI0
-  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') (ψ' := ψ') h, inst, rs, θ₁, θ₂, hv, hI,
+  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') (ψ' := ψ') h, inst, rs, _, θ₁, θ₂, hv, hI,
       f₁, f₂, hobs => by
-    rw [ValidEqDestructors₀] at hv
+    replace hv := hv.cons_inv
     obtain ⟨-, hv⟩ := hv
     have hI' : ∀ i D, rs (i + 1) = some D → ∃ κ₁, ValidEqTerm₀ sig ι
         (((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ₁ (f₁ d' ps')))
@@ -963,8 +963,8 @@ result of each destructor that is not recursive, and by the relation `R` that `r
 recursive one, whose result is the instance of the block; the converse of `Destructors.Pos.run`. -/
 theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : Fin k' → Level 0) :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {inst : Name → Term 0 Γ} →
-      {rs : Nat → Option Name} → {θ θ' : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs (ds.substLevels L) θ θ' →
+      {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ θ' : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested (ds.substLevels L) θ θ' →
       {rsR : Nat → Option RunRel} → (∀ i, rs i = none → rsR i = none) →
       (∀ i D, rs i = some D → ∃ R, rsR i = some R) → {D : Name} → {S : RunObsRel} →
       RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D rsR
@@ -995,14 +995,15 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
               (inst D').subst θ →
             R H'' ((o d ps).subst ts.toSubst) w) →
       S H o a
-  | _, _, .nil, _, _, _, _, _, _, _, _, _, _, h, _, _, _, _, _ => by
+  | _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, h, _, _, _, _, _ => by
     cases h
     trivial
-  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
+  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, _, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
       a, hv, hr => by
     have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
-    rw [Destructors.substLevels, ValidEqDestructors₀] at hm
+    rw [Destructors.substLevels] at hm
+    replace hm := hm.cons_inv
     obtain ⟨hΘm, hm⟩ := hm
     have hsw : ∀ (f : Term 0 (Scope.extend [] ps.length)) D',
         ((inst D').rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f) =

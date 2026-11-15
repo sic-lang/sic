@@ -110,9 +110,9 @@ structure Presuppositions : Prop where
   /-- The destructors of a codata type in a sort are in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\bar d` -/
   wfDestructors : ∀ {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-    {Γ : Scope} {ns : List Name} {as : InstanceArgs decl.levels Γ decl.scope}
+    {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
     {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-    WfDestructors sig decl ι as ctx ds κ → WfSig sig
+    WfDestructors sig decl ι @ν as ctx ds κ → WfSig sig
   /-- A well-formed type declaration is in a well-formed signature.
   RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
   RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}` -/
@@ -245,11 +245,12 @@ where
     | .cons _ hA _ _ _ => hasType hA
     | .recursive _ hΘ _ => wfFields hΘ
   wfDestructors {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ns : List Name} {as : InstanceArgs decl.levels Γ decl.scope}
+      {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
       {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} :
-      WfDestructors sig decl ι as ctx ds κ → WfSig sig
+      WfDestructors sig decl ι @ν as ctx ds κ → WfSig sig
     | .nil hctx => wfCtx hctx
-    | .cons _ hΘ .. => wfTelescope hΘ
+    | .cons _ _ hΘ .. => wfTelescope hΘ
+    | .nested _ _ hΘ .. => wfTelescope hΘ
     | .recursive _ hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig

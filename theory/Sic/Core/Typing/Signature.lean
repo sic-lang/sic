@@ -54,18 +54,25 @@ theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclara
 `11ᵐ`. -/
 theorem WfDestructors.mode_of_grade {sig : Signature} {decl : TypeDeclaration}
     {I : Instance decl.sorts decl.grades} {d : Name} {p : Grade} :
-    {Γ : Scope} → {ns : List Name} → {as : InstanceArgs decl.levels Γ decl.scope} →
+    {Γ : Scope} → {ns : List Name} → {ν : Nesting Nat Γ} →
+      {as : InstanceArgs decl.levels Γ decl.scope} →
       {ctx : Context decl.levels Γ} → {ds : Destructors decl.levels Γ ns} →
-      {κ : Universe decl.levels} → WfDestructors sig decl I as ctx ds κ → ds.grade d = some p →
+      {κ : Universe decl.levels} → WfDestructors sig decl I @ν as ctx ds κ → ds.grade d = some p →
         κ.quality = .prop → p.mode ≠ .oneOne
-  | _, _, _, _, _, _, .nil _, hg, _ => nomatch hg
-  | _, d' :: _, _, _, _, _, .cons _ _ _ hκ hp hds, hg, hq => by
+  | _, _, _, _, _, _, _, .nil _, hg, _ => nomatch hg
+  | _, d' :: _, _, _, _, _, _, .cons _ _ _ _ hκ hp hds, hg, hq => by
     simp only [Destructors.grade] at hg
     split at hg
     · cases hg
       exact hp (hκ.1 hq)
     · exact hds.mode_of_grade hg hq
-  | _, d' :: _, _, _, _, _, .recursive _ _ hp hds, hg, hq => by
+  | _, d' :: _, _, _, _, _, _, .nested _ _ _ _ hκ hp hds, hg, hq => by
+    simp only [Destructors.grade, Destructors.grade_rename] at hg
+    split at hg
+    · cases hg
+      exact hp (hκ.1 hq)
+    · exact hds.mode_of_grade hg hq
+  | _, d' :: _, _, _, _, _, _, .recursive _ _ hp hds, hg, hq => by
     simp only [Destructors.grade, Destructors.grade_rename] at hg
     split at hg
     · cases hg

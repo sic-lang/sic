@@ -217,8 +217,8 @@ theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {
     {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
       {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
-      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {θ₁ θ₂ : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ → {rsR : Nat → Option TermRel} →
+      {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ → {rsR : Nat → Option TermRel} →
       (∀ i, rs i = none → rsR i = none) →
       (∀ i D, rs i = some D → ∃ R v, rsR i = some R ∧ Computesι sig ι ((inst D).subst θ₁) v ∧
         FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v R) →
@@ -238,9 +238,9 @@ theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {
           us.toSubst →
         ValidEqTerm₀ sig ι ((f₁ d ps).subst ts.toSubst) ((f₂ d ps).subst us.toSubst)
           (B.subst (Subst.append (hpos.obsSubst f₁ θ₁) ts.toSubst))
-  | _, _, _, _, _, B, _, .here, inst, rs, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, _, _, ho, hf₁,
+  | _, _, _, _, _, B, _, .here, inst, rs, _, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, _, _, ho, hf₁,
       hf₂ => by
-    rw [ValidEqDestructors₀] at hv
+    replace hv := hv.cons_inv
     obtain ⟨-, hv⟩ := hv
     split at hv
     · rename_i hr
@@ -257,8 +257,8 @@ theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {
       · rw [Term.subst_append_rename_weakenN]
         exact hFv.validEqTerm hd hcv (hhead ts us hτ)
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') (Θ' := Θ') (B' := B') (ψ' := ψ') h, inst,
-      rs, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, f₁, f₂, ho, hf₁, hf₂ => by
-    rw [ValidEqDestructors₀] at hv
+      rs, _, θ₁, θ₂, hv, rsR, hN, hR, hI, _, hS, _, _, f₁, f₂, ho, hf₁, hf₂ => by
+    replace hv := hv.cons_inv
     obtain ⟨-, hv⟩ := hv
     have hsw : ∀ (θ : Subst 0 [] _) (f : Term 0 (Scope.extend [] ps'.length)) D,
         ((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps' ψ') θ f) =
@@ -851,8 +851,8 @@ from the first one. -/
 theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe 0} {k' : Nat}
     (L : Fin k' → Level 0) :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {inst : Name → Term 0 Γ} →
-      {rs : Nat → Option Name} → {θ θ' : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs (ds.substLevels L) θ θ' →
+      {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ θ' : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested (ds.substLevels L) θ θ' →
       {rsR : Nat → Option TermRel} → (∀ i, rs i = none → rsR i = none) →
       (∀ i D, rs i = some D → ∃ R, rsR i = some R) →
       {S : ObsRel} →
@@ -874,13 +874,14 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
           (inst D).subst θ →
         R ((o₁ d ps).subst ts.toSubst) ((o₂ d ps).subst us.toSubst)) →
       S o₁ o₂
-  | _, _, .nil, _, _, _, _, _, _, _, _, _, h, _, _, _, _ => by
+  | _, _, .nil, _, _, _, _, _, _, _, _, _, _, h, _, _, _, _ => by
     cases h
     trivial
-  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, θ, θ', hm, rsR, hN, hS, _, h, o₁, o₂,
+  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, _, θ, θ', hm, rsR, hN, hS, _, h, o₁, o₂,
       hv, hr => by
     have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    rw [Destructors.substLevels, ValidEqDestructors₀] at hm
+    rw [Destructors.substLevels] at hm
+    replace hm := hm.cons_inv
     obtain ⟨-, hm⟩ := hm
     have hsw : ∀ (f : Term 0 (Scope.extend [] ps.length)) D,
         ((inst D).rename Ren.weaken).subst (Subst.snoc (e := .secondOrder ps ψ) θ f) =
@@ -972,8 +973,8 @@ instance. -/
 theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe 0} {k' : Nat}
     (L : Fin k' → Level 0) :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {inst : Name → Term 0 Γ} →
-      {rs : Nat → Option Name} → {θ θ' : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs (ds.substLevels L) θ θ' →
+      {rs : Nat → Option Name} → {nested : Nat → Bool} → {θ θ' : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested (ds.substLevels L) θ θ' →
       {rsR : Nat → Option TermRel} → (∀ i, rs i = none → rsR i = none) →
       (∀ i D, rs i = some D → ∃ R v, rsR i = some R ∧ Computesι sig ι ((inst D).subst θ) v ∧
         FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R) →
@@ -988,7 +989,7 @@ theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe
         ValidEqTerm₀ sig ι ((o₁ d ps).subst ts.toSubst) ((o₂ d ps).subst us.toSubst)
           ((B.substLevels L).subst (Subst.append (hpos.obsSubst o₁ θ) ts.toSubst))) →
       S o₁ o₂
-  | _, _, ds, _, _, _, _, hm, _, hN, hR, _, h, _, _, hv =>
+  | _, _, ds, _, _, _, _, _, hm, _, hN, hR, _, h, _, _, hv =>
     DesRel.of_obsRel hd L ds hm hN (fun i D hi => have ⟨R, _, hR', _⟩ := hR i D hi; ⟨R, hR'⟩) h
       (fun d p q ς ps Ξ Θ B ψ hpos ts us hτ _ => hv d p q ς ps Ξ Θ B ψ hpos ts us hτ)
       (fun d p q ς ps Ξ Θ B ψ hpos ts us hτ D R hD hRi e => by

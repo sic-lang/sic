@@ -946,11 +946,15 @@ inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.so
 
 -- ADE: none.
 /--
-`Σ; Γ ⊢_𝒟 d̄ : κ`: the destructors `d̄` of a codata type of the block `decl`, at the instance `ι` of
-its sort and grade variables, live in the sort `κ = s_l`, in the context `Γ` of the parameters
-extended by the destructors before them that are not recursive, where `ā` are the parameters
-themselves: the arguments of each destructor live in the universe `U_l`, and each destructor that is
-not recursive is a second-order variable of the context of the destructors after it.
+`Σ; Γ ⊢_{𝒟; Π} d̄ : κ`: the destructors `d̄` of a codata type of the block `decl`, at the instance
+`ι` of its sort and grade variables, live in the sort `κ = s_l`, in the context `Γ` of the
+parameters extended by the destructors before them that are not recursive and whose results have no
+position, where `ā` are the parameters themselves and `ν` gives the nestings of the variables,
+those of the parameters `Π` in which the type is strictly positive: the arguments of each
+destructor live in the universe `U_l`, and each destructor that is not recursive and whose result
+has no position is a second-order variable of the context of the destructors after it.
+The result of a destructor has a position when a parameter of `Π` occurs in it, below instances of
+declared types: no destructor after it depends on it, so that it does not extend the context.
 A destructor whose result is an instance of a type of the block is recursive: its result is this
 type at the instance of the block, at its level variables and at the parameters themselves, with a
 grade without use at run time if the block is a block of propositions, and no destructor after it
@@ -964,42 +968,63 @@ arguments `ā` of the parameters, renamed under the destructors before and under
 the fields.
 -/
 inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
-    {Γ : Scope} → {ns : List Name} → InstanceArgs decl.levels Γ decl.scope →
+    {Γ : Scope} → {ns : List Name} → Nesting Nat Γ → InstanceArgs decl.levels Γ decl.scope →
     Context decl.levels Γ → Destructors decl.levels Γ ns → Universe decl.levels → Prop where
   /-- No destructor lives in every sort.
   RFC: `\bar d_{\kappa\varepsilon}` -/
   | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
-      {κ : Universe decl.levels} (hctx : WfCtx sig ctx) : WfDestructors sig decl ι as ctx .nil κ
-  /-- A first destructor that is not recursive, whose arguments live in the universe of the level of
-  `κ` and whose result lives in a sort that `κ` bounds, with a grade without use at run time if it is
-  a proposition, and the others, in the context extended by it.
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
+      {ctx : Context decl.levels Γ} {κ : Universe decl.levels} (hctx : WfCtx sig ctx) :
+      WfDestructors sig decl ι @ν as ctx .nil κ
+  /-- A first destructor that is not recursive and whose result has no position, whose arguments
+  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
+  grade without use at run time if it is a proposition, and the others, in the context extended by
+  it.
   RFC: `\bar d_{\kappa|}` -/
   | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
-      {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
       {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
       {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
       {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
       (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig decl ι (as.rename Ren.weaken) (ctx.secondOrder Θ B ψ) ds κ) :
-      WfDestructors sig decl ι as ctx (.cons (d := d) p q ς Θ B ψ ds) κ
+      (hds : WfDestructors sig decl ι (Nesting.lift @ν) (as.rename Ren.weaken)
+        (ctx.secondOrder Θ B ψ) ds κ) :
+      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ ds) κ
+  /-- A first destructor that is not recursive and whose result has a position, whose arguments
+  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
+  grade without use at run time if it is a proposition, and the others, which do not depend on it,
+  in the same context.
+  RFC: `\bar d_{\kappa\lambda}` -/
+  | nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
+      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels Γ ns}
+      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
+      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken)) κ
   /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
   and whose result is a type `D` of the block at the instance of the block and at the parameters,
   with a grade without use at run time if the block is a block of propositions, and the others, which
   do not depend on it, in the same context.
   RFC: `\bar d_{\kappa\mathsf{rec}}` -/
   | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name} {ns : List Name}
-      {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
       {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership Grade ps.length} {D : Name}
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
       (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
       (hp : κ.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig decl ι as ctx ds κ) :
-      WfDestructors sig decl ι as ctx
+      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
+      WfDestructors sig decl ι @ν as ctx
         (.cons (d := d) p q ς Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)) κ
 
@@ -1036,7 +1061,8 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
       (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
       (hd : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes,
-        WfDestructors sig decl ι (.identity decl.scope) (decl.params ι) (T.body ι) (decl.sort ι))
+        WfDestructors sig decl ι (Nesting.ofPositive T.positive) (.identity decl.scope)
+          (decl.params ι) (T.body ι) (decl.sort ι))
       (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ {e : Scope.Entry}
         (x : Var decl.scope e), T.positive x.level →
           (T.body ι).Positive (sig.PositiveIn decl) x)

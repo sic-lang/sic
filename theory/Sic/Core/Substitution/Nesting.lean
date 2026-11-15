@@ -90,4 +90,16 @@ theorem Telescope.nest_rename {Γ Δ : Scope} (names : List Name) :
     rw [Telescope.rename, Telescope.nest, Telescope.nest, Term.blockNest_rename,
       Telescope.nest_rename names (Ren.lift ρ) Θ]
 
+/-- Renamed destructors have their results with a position at the same positions, at the nestings
+of the variables renamed. -/
+theorem Destructors.nested_rename :
+    {Γ Δ : Scope} → {ns : List Name} → (ρ : Ren Γ Δ) → {ν : Nesting α Δ} → {ν' : Nesting α Γ} →
+      (∀ (e : Scope.Entry) (x : Var Δ e), ν' (ρ x) = ν x) → (ds : Destructors k Δ ns) →
+      (ds.rename ρ).nested @ν' = ds.nested @ν
+  | _, _, _, _, _, _, _, .nil => rfl
+  | _, _, _, ρ, _, _, h, .cons (ps := ps) _ _ _ _ B _ ds => by
+    rw [Destructors.rename, Destructors.nested, Destructors.nested,
+      Term.nest_rename _ (Ren.liftN ps.length ρ) (Nesting.liftN_rename ps.length h) B,
+      Destructors.nested_rename (Ren.lift ρ) (Nesting.lift_rename h) ds]
+
 end Sic.Core

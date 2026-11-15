@@ -145,6 +145,12 @@ inductive Var : Scope → Scope.Entry → Type where
   /-- An entry before the last one. -/
   | succ {Γ : Scope} {e e' : Scope.Entry} (x : Var Γ e) : Var (e' :: Γ) e
 
+/-- The position of a variable in its scope, the first entry being `0`, by which a type declares
+the parameters in which it is strictly positive. -/
+def Var.level : {Γ : Scope} → {e : Scope.Entry} → Var Γ e → Nat
+  | _ :: Γ, _, .zero => Γ.length
+  | _, _, .succ x => x.level
+
 mutual
 
 -- ADE: `Term`, in `Definition/Untyped.agda`.
@@ -491,7 +497,7 @@ structure DataType (j g k : Nat) (Δ : Scope) where
   usage : Instance j g → GradeVector Δ.length
   /-- The parameters `Π` in which the type is strictly positive, by their positions in `Δ`, the
   first parameter at `0`. -/
-  positive : Nat → Prop
+  positive : Nat → Bool
   /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
   constructors : List (Constructor j g k Δ)
 
@@ -563,7 +569,7 @@ structure CodataType (j g k : Nat) (Δ : Scope) where
   usage : Instance j g → GradeVector Δ.length
   /-- The parameters `Π` in which the type is strictly positive, by their positions in `Δ`, the
   first parameter at `0`. -/
-  positive : Nat → Prop
+  positive : Nat → Bool
   /-- The names `d₁, …, dₙ` of the destructors. -/
   destructors : List Name
   /-- The destructors `d₁ : …, …, dₙ : …`, for each instance, since their grades may be grade

@@ -94,11 +94,11 @@ structure StableUnderExtension : Prop where
   entries.
   RFC: `\mathsf{ext}_\vdash.\bar d` -/
   wfDestructors : ∀ {sig sig' : Signature} {decl : TypeDeclaration}
-    {ι : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+    {ι : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
     {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
     {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-    sig ⊆ sig' → WfSig sig' → WfDestructors sig decl ι as ctx ds κ →
-      WfDestructors sig' decl ι as ctx ds κ
+    sig ⊆ sig' → WfSig sig' → WfDestructors sig decl ι @ν as ctx ds κ →
+      WfDestructors sig' decl ι @ν as ctx ds κ
 
 -- ADE: `defn-wk′`, `defn-wk″`, `defn-wkTerm`, `defn-wkEq` and `defn-wkEqTerm`, in
 -- `Definition/Typed/Weakening/Definition.agda`, for their judgments.
@@ -261,13 +261,16 @@ where
     | .nil hctx => .nil (wfCtx hs hw hctx)
     | .cons hA hκ hΘ hp => .cons (eqTerm hs hw hA) hκ (eqTelescope hs hw hΘ) hp
   wfDestructors {sig sig' : Signature} {decl : TypeDeclaration}
-      {ι : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+      {ι : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hs : sig ⊆ sig')
-      (hw : WfSig sig') : WfDestructors sig decl ι as ctx ds κ → WfDestructors sig' decl ι as ctx ds κ
+      (hw : WfSig sig') :
+      WfDestructors sig decl ι @ν as ctx ds κ → WfDestructors sig' decl ι @ν as ctx ds κ
     | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons hn hΘ hB hκ hp hds =>
-      .cons hn (wfTelescope hs hw hΘ) (hasType hs hw hB) hκ hp (wfDestructors hs hw hds)
+    | .cons hn hν hΘ hB hκ hp hds =>
+      .cons hn hν (wfTelescope hs hw hΘ) (hasType hs hw hB) hκ hp (wfDestructors hs hw hds)
+    | .nested hn hν hΘ hB hκ hp hds =>
+      .nested hn hν (wfTelescope hs hw hΘ) (hasType hs hw hB) hκ hp (wfDestructors hs hw hds)
     | .recursive hD hΘ hp hds =>
       .recursive hD (wfTelescope hs hw hΘ) hp (wfDestructors hs hw hds)
 

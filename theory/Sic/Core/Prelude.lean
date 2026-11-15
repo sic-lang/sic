@@ -33,7 +33,7 @@ def Prelude.unitMk : Constructor 0 0 1 [] := { name := "mk", params := fun _ => 
 
 /-- `Unit ≔ mk : ()`, the type of the unit, which uses no parameter. -/
 def Prelude.unitType : DataType 0 0 1 [] :=
-  { name := "Unit", usage := fun _ => 𝟘ᶜ, positive := fun _ => False, constructors := [Prelude.unitMk] }
+  { name := "Unit", usage := fun _ => 𝟘ᶜ, positive := fun _ => false, constructors := [Prelude.unitMk] }
 
 -- ADE: `Unitʷ` and `Unitˢ`, in `Definition/Untyped.agda`, as a declared type.
 /-- `data.{; l; | ⊤} ε : U_l where Unit ▶ 00ᵞ ≔ mk : ε`: the unit, at each level, with a single constructor
@@ -71,7 +71,7 @@ def Prelude.pairMk : Constructor 1 2 2 Prelude.pairScope where
 field and `X` once. -/
 def Prelude.pairType : DataType 1 2 2 Prelude.pairScope :=
   { name := "Pair", usage := fun ι => (𝟘ᶜ ∙ ι.grades 0) ∙ Grade.one,
-    positive := fun _ => True, constructors := [Prelude.pairMk] }
+    positive := fun _ => true, constructors := [Prelude.pairMk] }
 
 -- ADE: `Σʷ` and `Σˢ`, in `Definition/Untyped.agda`, as a declared type.
 /-- `data.{s; l₁, l₂; p, r | s = Ω → ⌞p⌟ ≠ 11ᵐ} (A : s_{l₁}, X : (x : A ▶ ωωᵖ; ωωᵖ ◀ ωωᵖ ⊢ U_{l₂} ◀ ωωᵖ))
@@ -114,7 +114,7 @@ def Prelude.stepDone : Constructor 1 3 2 Prelude.stepScope where
 `p` of its new states and `B` with the grade `q` of its terms already built. -/
 def Prelude.stepType : DataType 1 3 2 Prelude.stepScope :=
   { name := "Step", usage := fun ι => (𝟘ᶜ ∙ ι.grades 0) ∙ ι.grades 1,
-    positive := fun _ => True, constructors := [Prelude.stepNext, Prelude.stepDone] }
+    positive := fun _ => true, constructors := [Prelude.stepNext, Prelude.stepDone] }
 
 -- ADE: none.
 /-- `data.{s; l₁, l₂; p, q, r | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}

@@ -298,41 +298,53 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
 
 -- ADE: none.
 /-- `Σ ⊨ d̄[θ₁] ≡ d̄[θ₂] : κ` for the destructors of a codata type, whose recursive destructors `rs`
-gives, of the instances `inst D` of the block: the destructors at two closed substitutions `θ₁` and
-`θ₂` of their scope are equal in the sort `κ`; the arguments of each destructor are equal
-telescopes in the universe of the level of `κ`; the results of a destructor that is not recursive
-are equal types of a sort that `κ` bounds at equal arguments, and the destructors after it are equal
-for every pair of abstractions for it whose instances at equal arguments are equal terms of its
-result; the result of a recursive destructor of the type `D` is the instance `inst D` of the block,
+gives, of the instances `inst D` of the block, and the results with a position of whose other
+destructors `nested` gives: the destructors at two closed substitutions `θ₁` and `θ₂` of their
+scope are equal in the sort `κ`; the arguments of each destructor are equal telescopes in the
+universe of the level of `κ`; the results of a destructor that is not recursive are equal types of
+a sort that `κ` bounds at equal arguments, and the destructors after it are equal for every pair of
+abstractions for it whose instances at equal arguments are equal terms of its result, if its result
+has no position, and for every pair of abstractions for it, on which they do not depend, otherwise;
+the result of a recursive destructor of the type `D` is the instance `inst D` of the block,
 and the destructors after it are equal for every pair of abstractions for it, on which they do not
 depend.
 The Lean carries the closed substitutions of the scope of the destructors, as the equality of the
 abstractions for them does.
 RFC: `{\vDash}\bar d_{\kappa\varepsilon}`
 RFC: `{\vDash}\bar d_{\kappa|}`
+RFC: `{\vDash}\bar d_{\kappa\lambda}`
 RFC: `{\vDash}\bar d_{\kappa\mathsf{rec}}` -/
 def ValidEqDestructors₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) :
-    {Γ : Scope} → {ns : List Name} → (Name → Term 0 Γ) → (Nat → Option Name) →
+    {Γ : Scope} → {ns : List Name} → (Name → Term 0 Γ) → (Nat → Option Name) → (Nat → Bool) →
       Destructors 0 Γ ns → Subst 0 [] Γ → Subst 0 [] Γ → Prop
   /- `(⊨d̄_κε)`. -/
-  | _, _, _, _, .nil, _, _ => sig.Distinct
-  | _, _ :: _, inst, rs, .cons (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂ =>
+  | _, _, _, _, _, .nil, _, _ => sig.Distinct
+  | _, _ :: _, inst, rs, nested, .cons (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂ =>
     ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) ∧
-    match rs 0 with
+    match rs 0, nested 0 with
     /- `(⊨d̄_κ|)`. -/
-    | none =>
+    | none, false =>
       (∃ κ₁, κ₁ ≼ κ ∧ ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
         ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
           (.sort κ₁)) ∧
       ∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
           ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
-        ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken) (fun i => rs (i + 1)) ds
+        ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken) (fun i => rs (i + 1))
+          (fun i => nested (i + 1)) ds
           (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
-    /- `(⊨d̄_κrec)`. -/
-    | some D => B = (inst D).rename (Ren.weakenN ps.length) ∧
+    /- `(⊨d̄_κλ)`. -/
+    | none, true =>
+      (∃ κ₁, κ₁ ≼ κ ∧ ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+        ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
+          (.sort κ₁)) ∧
       ∀ f₁ f₂, ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken)
-        (fun i => rs (i + 1)) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁)
-        (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
+        (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds
+        (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
+    /- `(⊨d̄_κrec)`. -/
+    | some D, _ => B = (inst D).rename (Ren.weakenN ps.length) ∧
+      ∀ f₁ f₂, ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename Ren.weaken)
+        (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds
+        (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
 
 -- ADE: none.
 /-- `Σ; Γ ⊨_𝒟 d̄ : κ`, at levels without variables, for the destructors of a codata type, whose
@@ -340,9 +352,10 @@ recursive destructors `rs` gives, of the instances `inst D` of the block: the de
 equal closed substitutions of the context are equal in the sort `κ`.
 RFC: `{\vDash}\Gamma_{\bar d}` -/
 def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ns : List Name}
-    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Option Name)
+    (ctx : Context 0 Γ) (inst : Name → Term 0 Γ) (rs : Nat → Option Name) (nested : Nat → Bool)
     (ds : Destructors 0 Γ ns) (κ : Universe 0) : Prop :=
-  ValidCtx₀ sig ι ctx ∧ ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqDestructors₀ sig ι κ inst rs ds σ₁ σ₂
+  ValidCtx₀ sig ι ctx ∧
+    ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqDestructors₀ sig ι κ inst rs nested ds σ₁ σ₂
 
 -- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors of a block whose types are named `names`,
@@ -479,9 +492,9 @@ variables.
 RFC: `\vDash_\rho` -/
 def ValidDestructors (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope}
     {ns : List Name} (ctx : Context k Γ) (inst : Name → Term k Γ) (rs : Nat → Option Name)
-    (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
-  ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (fun D => (inst D).atLevels ρ) rs (ds.atLevels ρ)
-    (κ.atLevels ρ)
+    (nested : Nat → Bool) (ds : Destructors k Γ ns) (κ : Universe k) : Prop :=
+  ∀ ρ, ValidDestructorsΓ sig ι (ctx.atLevels ρ) (fun D => (inst D).atLevels ρ) rs nested
+    (ds.atLevels ρ) (κ.atLevels ρ)
 
 /-- `(⊨_ρ)`: `Σ; Γ ⊨ Θ : κ` for the fields of a constructor, for every value of the level variables.
 RFC: `\vDash_\rho` -/
@@ -502,7 +515,8 @@ declaration, the instances of the block being its types at the parameters themse
 `(⊨codata)`: `Σ ⊨ codata.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort
 and grade variables that `C` admits, the destructors of each type are in the sort `κ`, in the
 context of the parameters, at each value of the level variables, whose recursive destructors have
-the types of the block at the parameters themselves as results.
+the types of the block at the parameters themselves as results, and the results of whose other
+destructors are read at the nestings of the parameters in which the type is strictly positive.
 The meaning ignores the grades, and the names of the constructors and of the destructors, distinct,
 are those of the signature.
 RFC: `{\vDash}\mathsf{data}`
@@ -515,7 +529,8 @@ def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDec
         (c.fields I) (decl.sort I)
   | .codata Ts => ∀ I, decl.constraint I → ∀ T ∈ Ts,
       ValidDestructors sig ι (decl.params I) (fun D => decl.blockInstance I D (.identity decl.scope))
-        ((T.body I).recursionAt decl.names) (T.body I) (decl.sort I)
+        ((T.body I).recursionAt decl.names)
+        ((T.body I).nestedAt (Nesting.ofPositive T.positive)) (T.body I) (decl.sort I)
 
 -- ADE: none.
 /-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/

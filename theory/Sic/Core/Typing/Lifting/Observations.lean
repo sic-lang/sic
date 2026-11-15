@@ -221,9 +221,10 @@ ones, as `link` states. -/
 theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
     (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {ctx' : Context k Γ}
     {as : InstanceArgs k Γ decl.scope} {t : Term k Γ} {ι : Instance decl.sorts decl.grades} :
-    {Δ : Scope} → {ns : List Name} → {as₀ : InstanceArgs decl.levels Δ decl.scope} →
+    {Δ : Scope} → {ns : List Name} → {ν : Nesting Nat Δ} →
+      {as₀ : InstanceArgs decl.levels Δ decl.scope} →
       {ctx : Context decl.levels Δ} → {ds : Destructors decl.levels Δ ns} →
-      {κ : Universe decl.levels} → WfDestructors sig decl ι as₀ ctx ds κ →
+      {κ : Universe decl.levels} → WfDestructors sig decl ι @ν as₀ ctx ds κ →
       ∀ (Ξ₀ : Scope) (ds' : Destructors decl.levels Ξ₀ ns) (β : Ren Ξ₀ Δ), ds' = ds.rename β →
       ∀ (θ' : Subst k Γ Ξ₀) (θ : Subst k Γ Δ), (∀ {a} (x : Var Δ a), θ' (β x) = θ x) →
       Subst.Observes sig D T qs ls ps hq hl hp as t ctx' @θ (ctx.substLevels (ls.getFin hl)) →
@@ -247,13 +248,13 @@ theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
               ((B.substLevels (ls.getFin hl)).subst
                 (Subst.liftN _ (h.obsSubst (t.observation D qs ls ps as) @θ')))
               (.sort (κ₁.substLevels (ls.getFin hl))))
-  | _, _, _, _, _, _, .nil _ =>
+  | _, _, _, _, _, _, _, .nil _ =>
     fun Ξ₀ ds' β e θ' θ hβ hO link {d p q ς ps' Ξ Θ B ψ} h => by
     rw [Destructors.rename] at e
     subst e
     nomatch h
-  | _, _, _, ctx, _, κ, .cons (d := d₀) (ps := ps₀) (Θ := Θ₀) (B := B₀) (ψ := ψ₀) (ds := ds₀)
-      (κ₁ := κ₁) _ hΘ hB hκ _ hds =>
+  | _, _, _, _, ctx, _, κ, .cons (d := d₀) (ps := ps₀) (Θ := Θ₀) (B := B₀) (ψ := ψ₀) (ds := ds₀)
+      (κ₁ := κ₁) _ _ hΘ hB hκ _ hds =>
     fun Ξ₀ ds' β e θ' θ hβ hO link {d p q ς ps' Ξ Θ B ψ} h => by
     rw [Destructors.rename] at e
     subst e
@@ -293,7 +294,40 @@ theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
       · rw [Term.substLevels_rename]
         exact (Term.subst_rename_of
           (Subst.liftN_rename_of ps₀.length (fun x => (hθ (β x)).trans (hβ x))) _).symm
-  | _, _, _, ctx, _, κ, .recursive (d := d₀) (ps := ps₀) (Θ := Θ₀) (ψ := ψ₀) (ds := ds₀) hD hΘ _
+  | _, _, _, _, ctx, _, κ, .nested (d := d₀) (ps := ps₀) (Θ := Θ₀) (B := B₀) (ψ := ψ₀) (ds := ds₀)
+      (κ₁ := κ₁) _ _ hΘ hB hκ _ hds =>
+    fun Ξ₀ ds' β e θ' θ hβ hO link {d p q ς ps' Ξ Θ B ψ} h => by
+    rw [Destructors.rename,
+      Destructors.rename_rename_of (α₁ := Ren.lift β) (α₂ := Ren.weaken)
+        (α₃ := fun x => (β x).succ) (fun _ => rfl)] at e
+    subst e
+    have hΘ' : ((Θ₀.rename β).substLevels (ls.getFin hl)).subst @θ' =
+        (Θ₀.substLevels (ls.getFin hl)).subst @θ := by
+      rw [Telescope.substLevels_rename]
+      exact Telescope.subst_rename_of hβ _
+    have hB' : ((B₀.rename (Ren.liftN ps₀.length β)).substLevels (ls.getFin hl)).subst
+          (Subst.liftN ps₀.length @θ') =
+        (B₀.substLevels (ls.getFin hl)).subst (Subst.liftN ps₀.length @θ) := by
+      rw [Term.substLevels_rename]
+      exact Term.subst_rename_of (Subst.liftN_rename_of ps₀.length hβ) _
+    cases h with
+    | here =>
+      refine ⟨?_, fun _ => ⟨κ₁, hκ, ?_⟩⟩
+      · have h₁ := (Subst.Observes.liftable hT hadm).stable.wfTelescope
+          (stableUnderLevels.wfTelescope (ls.getFin hl) hΘ) (.base ⟨as, t, hO⟩)
+        rw [← hΘ'] at h₁
+        exact h₁
+      · have h₂ := stableUnderLevels.hasType (ls.getFin hl) hB
+        rw [Context.substLevels_append] at h₂
+        have h₃ := (Subst.Observes.liftable hT hadm).stable.hasType h₂
+          (Subst.Lifted.append (Θ₀.substLevels (ls.getFin hl)) (.base ⟨as, t, hO⟩))
+        rw [← hΘ', ← hB'] at h₃
+        exact h₃
+    | there h' =>
+      exact WfDestructors.observations hT hadm hds _ _ (fun x => (β x).succ) rfl
+        (Subst.snoc (e := .secondOrder ps₀ ψ₀) @θ' (t.observation D qs ls ps as d₀ ps₀)) @θ
+        (fun x => hβ x) hO (fun h'' => link (.there h'')) h'
+  | _, _, _, _, ctx, _, κ, .recursive (d := d₀) (ps := ps₀) (Θ := Θ₀) (ψ := ψ₀) (ds := ds₀) hD hΘ _
       hds =>
     fun Ξ₀ ds' β e θ' θ hβ hO link {d p q ς ps' Ξ Θ B ψ} h => by
     rw [Destructors.rename,

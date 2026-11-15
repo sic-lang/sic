@@ -138,6 +138,61 @@ def InstanceArgs.nest {Γ Δ : Scope} (mark : Name → Option α) (ν : Nesting 
 
 end
 
+/-- A nesting with a position is not plain. -/
+theorem Nest.isPlain_eq_false {n : Nest α} (h : n ≠ .plain) : n.isPlain = false := by
+  cases n with
+  | plain => exact absurd rfl h
+  | direct _ => rfl
+  | inst _ => rfl
+
+/-- Nestings without position stay so under a new entry. -/
+theorem Nesting.lift_plain {Γ : Scope} {e₀ : Scope.Entry} {ν : Nesting α Γ}
+    (h : ∀ (e : Scope.Entry) (x : Var Γ e), ν x = .plain) :
+    ∀ (e : Scope.Entry) (x : Var (e₀ :: Γ) e), Nesting.lift @ν x = .plain :=
+  fun _ x =>
+    match x with
+    | .zero => rfl
+    | .succ x => h _ x
+
+/-- Nestings without position stay so under new variables. -/
+theorem Nesting.liftN_plain :
+    {Γ : Scope} → (n : Nat) → {ν : Nesting α Γ} →
+      (∀ (e : Scope.Entry) (x : Var Γ e), ν x = .plain) →
+      ∀ (e : Scope.Entry) (x : Var (Γ.extend n) e), Nesting.liftN n @ν x = .plain
+  | _, 0, _, h => h
+  | _, n + 1, _, h => Nesting.liftN_plain n (Nesting.lift_plain h)
+
+mutual
+
+/-- A type has no position when no variable has one and no declared type holds one. -/
+theorem Term.nest_plain :
+    {Γ : Scope} → {ν : Nesting α Γ} → (∀ (e : Scope.Entry) (x : Var Γ e), ν x = .plain) →
+      (A : Term k Γ) → A.nest (fun _ => none) @ν = .plain
+  | _, _, h, .var x _ => h _ x
+  | _, _, h, .inst _ _ _ _ as => by
+    show Nest.ofArgs (as.nest (fun _ => none) _) = .plain
+    rw [Nest.ofArgs, InstanceArgs.nest_plain h as]
+    rfl
+  | _, _, _, .sort _ => rfl
+  | _, _, _, .const _ _ _ _ => rfl
+  | _, _, _, .ctor _ _ _ _ _ _ _ => rfl
+  | _, _, _, .recursor _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
+
+/-- The arguments of an instance have no position when no variable has one and no declared type
+holds one. -/
+theorem InstanceArgs.nest_plain :
+    {Γ Δ : Scope} → {ν : Nesting α Γ} → (∀ (e : Scope.Entry) (x : Var Γ e), ν x = .plain) →
+      (as : InstanceArgs k Γ Δ) → (as.nest (fun _ => none) @ν).all Nest.isPlain = true
+  | _, _, _, _, .nil => rfl
+  | _, _, _, h, .snoc as B => by
+    rw [InstanceArgs.nest, List.all_cons, Term.nest_plain (Nesting.liftN_plain _ h) B,
+      InstanceArgs.nest_plain h as]
+    rfl
+
+end
+
 /-! ## Nesting of the Fields of a Block -/
 
 -- ADE: none.
@@ -160,6 +215,39 @@ def Telescope.nest {Γ : Scope} (names : List Name) :
 def Telescope.nestAt {Γ : Scope} {ps : List Parameter} (names : List Name)
     (Θ : Telescope k Γ ps) : Nat → Nest Name :=
   fun i => ((Θ.nest names)[i]?).getD .plain
+
+/-! ## Nesting of the Destructors of a Block -/
+
+-- ADE: none.
+/-- `nest_Π`: the nestings of the variables of the scope of a type that is strictly positive in the
+parameters `positive`, by their positions: each of these parameters has a position that holds it,
+and the other variables have none.
+RFC: `\mathsf{nest}_\Pi` -/
+def Nesting.ofPositive {Γ : Scope} (positive : Nat → Bool) : Nesting Nat Γ := fun x =>
+  if positive x.level then .direct x.level else .plain
+
+-- ADE: none.
+/-- `nest_{𝒟; Π}(d̄)`: whether the result of each destructor has a position, in order, where `ν`
+gives the nestings of the variables of the scope of the destructors, those of the parameters in
+which their type is strictly positive; a destructor has no position, as the variables that the
+arguments of a destructor bind.
+The RFC gives in one list the type of the block of a recursive destructor and the nesting of the
+result of each other destructor; the Lean reads the first from `Destructors.recursion`, and keeps
+of the second whether it has a position, which is all that the rules read of it.
+RFC: `\mathsf{nest}_B`
+RFC: `\mathsf{nest}_{\bar d}` -/
+def Destructors.nested : {Γ : Scope} → Nesting α Γ → {ns : List Name} → Destructors k Γ ns →
+    List Bool
+  | _, _, _, .nil => []
+  | _, ν, _, .cons (ps := ps) _ _ _ _ B _ ds =>
+    (!(B.nest (fun _ => none) (Nesting.liftN ps.length @ν)).isPlain) ::
+      ds.nested (Nesting.lift @ν)
+
+/-- Whether the result of the destructor at each position of the destructors `d̄` has a position,
+the first destructor at `0`, and none after its destructors. -/
+def Destructors.nestedAt {Γ : Scope} {ns : List Name} (ν : Nesting α Γ)
+    (ds : Destructors k Γ ns) : Nat → Bool :=
+  fun i => ((ds.nested @ν)[i]?).getD false
 
 /-- The nesting of an instance is not a position. -/
 theorem Nest.ofArgs_ne_direct (ns : List (Nest α)) (a : α) : Nest.ofArgs ns ≠ .direct a := by

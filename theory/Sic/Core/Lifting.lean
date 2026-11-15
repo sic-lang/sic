@@ -312,7 +312,7 @@ def TypeDeclaration.lifting (decl : TypeDeclaration) (F : Name) (S : List Nat) (
   body := .codata [{
     name := Lifting.name F S
     usage := fun _ _ => .unrestrictedUnrestricted
-    positive := fun _ => False
+    positive := fun _ => false
     destructors := ns
     body := body
   }]

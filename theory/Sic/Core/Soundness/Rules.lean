@@ -514,13 +514,15 @@ theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (α : Ren Γ Δ) {θ
 destructors are, at the composed substitutions, with the instances of the block renamed. -/
 theorem ValidEqDestructors₀.rename {κ : Universe 0} :
     {Γ Δ : Scope} → {ns : List Name} → (α : Ren Γ Δ) → {inst : Name → Term 0 Δ} →
-      {rs : Nat → Option Name} → {ds : Destructors 0 Δ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      {rs : Nat → Option Name} → {nested : Nat → Bool} → {ds : Destructors 0 Δ ns} →
+      {θ₁ θ₂ : Subst 0 [] Γ} →
       {θ₁' θ₂' : Subst 0 [] Δ} → (∀ {a} (x : Var Δ a), θ₁ (α x) = θ₁' x) →
       (∀ {a} (x : Var Δ a), θ₂ (α x) = θ₂' x) →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ₁' θ₂' →
-      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename α) rs (ds.rename α) θ₁ θ₂
-  | _, _, _, _, _, _, .nil, _, _, _, _, _, _, h => h
-  | _, _, _, α, inst, rs, .cons (ps := ps) (ψ := ψ) _ _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂, h => by
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁' θ₂' →
+      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename α) rs nested (ds.rename α) θ₁ θ₂
+  | _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, h => h
+  | _, _, _, α, inst, rs, nested, .cons (ps := ps) (ψ := ψ) _ _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂,
+      h => by
     rw [ValidEqDestructors₀] at h
     rw [Destructors.rename, ValidEqDestructors₀, Telescope.subst_rename_of h₁,
       Telescope.subst_rename_of h₂]
@@ -552,7 +554,14 @@ theorem ValidEqDestructors₀.rename {κ : Universe 0} :
           (hds f₁ f₂ fun τ₁ τ₂ hτ => ?_)
         rw [← hB θ₁ θ₁' h₁]
         exact hf τ₁ τ₂ hτ
-    · rename_i D _
+    · obtain ⟨⟨κ₁, hκ, hBe⟩, hds⟩ := h
+      refine ⟨⟨κ₁, hκ, fun τ₁ τ₂ hτ => ?_⟩, fun f₁ f₂ => ?_⟩
+      · rw [hB θ₁ θ₁' h₁, hB θ₂ θ₂' h₂]
+        exact hBe τ₁ τ₂ hτ
+      · rw [hinst]
+        exact ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂)
+    · rename_i D _ _
       obtain ⟨hBD, hds⟩ := h
       refine ⟨?_, fun f₁ f₂ => ?_⟩
       · rw [hBD, Term.rename_rename_of (α₁ := Ren.liftN ps.length α)
@@ -566,24 +575,25 @@ theorem ValidEqDestructors₀.rename {κ : Universe 0} :
 
 /-- `(⊨d̄_κε)`, in a context. -/
 theorem ValidDestructorsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} {inst : Name → Term 0 Γ}
-    {rs : Nat → Option Name} {κ : Universe 0} (hctx : ValidCtx₀ sig ι ctx) :
-    ValidDestructorsΓ sig ι ctx inst rs .nil κ :=
+    {rs : Nat → Option Name} {nested : Nat → Bool} {κ : Universe 0} (hctx : ValidCtx₀ sig ι ctx) :
+    ValidDestructorsΓ sig ι ctx inst rs nested .nil κ :=
   ⟨hctx, fun _ _ _ => by rw [ValidEqDestructors₀]; exact hctx.distinct⟩
 
-/-- `(⊨d̄_κ|)`, in a context: the destructors after a destructor that is not recursive are in the
-context extended by it. -/
+/-- `(⊨d̄_κ|)`, in a context: the destructors after a destructor that is not recursive and whose
+result has no position are in the context extended by it. -/
 theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
     {ψ : ResultOwnership Grade ps.length}
     {ς : Grade} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} (hr : rs 0 = none)
+    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} {nested : Nat → Bool}
+    (hr : rs 0 = none) (hn : nested 0 = false)
     (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
     (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
     (hds : ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) (fun D => (inst D).rename Ren.weaken)
-      (fun i => rs (i + 1)) ds κ) :
-    ValidDestructorsΓ sig ι ctx inst rs (.cons (d := d) p q ς Θ B ψ ds) κ := by
+      (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested (.cons (d := d) p q ς Θ B ψ ds) κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
-  rw [ValidEqDestructors₀, hr]
+  rw [ValidEqDestructors₀, hr, hn]
   refine ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
     hB.2 _ _ ((EqSubst.append_append_iff ctx Θ σ₁ σ₂ τ₁ τ₂).2 ⟨h, hτ⟩)⟩, fun f₁ f₂ hf => ?_⟩
   refine hds.2 _ _ ((EqSubst.secondOrder_iff ctx Θ B ψ _ _).2 ⟨h, fun τ₁ τ₂ hτ => ?_⟩)
@@ -591,15 +601,35 @@ theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : L
   rw [Term.subst_append]
   exact hf τ₁ τ₂ hτ
 
+/-- `(⊨d̄_κλ)`, in a context: the destructors after a destructor that is not recursive and whose
+result has a position, which do not depend on it, are in the same context. -/
+theorem ValidDestructorsΓ.nested {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length} {ς : Grade} {ds : Destructors 0 Γ ns}
+    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} {nested : Nat → Bool}
+    (hr : rs 0 = none) (hn : nested 0 = true)
+    (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested
+      (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken)) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr, hn]
+  exact ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
+    hB.2 _ _ ((EqSubst.append_append_iff ctx Θ σ₁ σ₂ τ₁ τ₂).2 ⟨h, hτ⟩)⟩, fun f₁ f₂ =>
+    ValidEqDestructors₀.rename (θ₁' := σ₁) (θ₂' := σ₂) Ren.weaken (fun _ => rfl) (fun _ => rfl)
+      (hds.2 σ₁ σ₂ h)⟩
+
 /-- `(⊨d̄_κrec)`, in a context: the destructors after a recursive destructor, which do not depend on
 it, are in the same context. -/
 theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership Grade ps.length}
     {ς : Grade}
     {ds : Destructors 0 Γ ns} {κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name}
+    {nested : Nat → Bool}
     {D : Name} (hr : rs 0 = some D) (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
-    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) ds κ) :
-    ValidDestructorsΓ sig ι ctx inst rs
+    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested
       (.cons (d := d) p q ς Θ ((inst D).rename (Ren.weakenN ps.length)) ψ (ds.rename Ren.weaken))
       κ := by
   refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
@@ -617,16 +647,16 @@ the first substitution, rather than chosen, since the graph gives one at most, a
 destructors after it, at each abstraction for it; after a recursive destructor, on which they do not
 depend, it is the one at any abstraction. -/
 theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf : Name → TermRel) :
-    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} →
+    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} →
       {ds : Destructors 0 Γ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ →
       ∃ S, DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
           (fun i => (rs i).map Rf) ds @θ₁ S ∧
         DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
           (fun i => (rs i).map Rf) ds @θ₂ S
-  | _, _, _, _, .nil, _, _, _ => ⟨fun _ _ => True, .nil, .nil⟩
-  | _, _, _, rs, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
-    rw [ValidEqDestructors₀] at h
+  | _, _, _, _, _, .nil, _, _, _ => ⟨fun _ _ => True, .nil, .nil⟩
+  | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
+    replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
     have ih : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m
@@ -753,17 +783,17 @@ graph at the first substitution, and after a recursive destructor, on which they
 is the one at any abstraction. -/
 theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : Universe 0}
     (hs : κ.quality = .type) (D : Name) (Rf : Name → RunRel) :
-    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} →
+    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} →
       {ds : Destructors 0 Γ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
       (∀ d ∈ ns, ∃ i, sig.destructorCase D d = some i) →
-      ValidEqDestructors₀ sig ι κ inst rs ds θ₁ θ₂ →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ →
       ∃ S, RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
           (fun i => (rs i).map Rf) ds @θ₁ S ∧
         RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
           (fun i => (rs i).map Rf) ds @θ₂ S
-  | _, _, _, _, .nil, _, _, _, _ => ⟨fun _ _ _ => True, .nil, .nil⟩
-  | _, _, _, rs, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
-    rw [ValidEqDestructors₀] at h
+  | _, _, _, _, _, .nil, _, _, _, _ => ⟨fun _ _ _ => True, .nil, .nil⟩
+  | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
+    replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
     have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
       fun m _ => levelRel_isPer hd m

@@ -58,7 +58,7 @@ theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
     (fun _ _ T hT _ _ hx => by
       simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
-      exact hx.elim)
+      exact nomatch hx)
     (fun T hT => by
       simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT

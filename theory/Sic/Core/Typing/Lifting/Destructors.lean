@@ -181,7 +181,8 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
         (θ : Subst (decl.levels + S.length) Γ₀ Ξ) (ns' : List Name)
         (ds' : Destructors (decl.levels + S.length) Γ' ns')
         (ctx' : Context (decl.levels + S.length) Γ')
-        (as' : InstanceArgs (decl.levels + S.length) Γ' (.var :: decl.scope.lifted S)),
+        (as' : InstanceArgs (decl.levels + S.length) Γ' (.var :: decl.scope.lifted S))
+        (ν' : Nesting Nat Γ'), (∀ (e : Scope.Entry) (x : Var Γ' e), ν' x = .plain) →
         Destructors.Lifts sig v κ
           (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α)) ρ @θ
           (ds.substLevels (ls.getFin hl)) ds' →
@@ -196,17 +197,17 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
                 ((InstanceArgs.identity decl.scope).rename α).toSubst x =
               h.obsSubst
                 (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α)) @θ x) →
-        WfDestructors sig (decl.lifting D S ns₀ body) I as' ctx' ds' κ
-  | _, _, .nil => fun _ _ _ _ _ _ _ h hρ _ _ _ => by
+        WfDestructors sig (decl.lifting D S ns₀ body) I @ν' as' ctx' ds' κ
+  | _, _, .nil => fun _ _ _ _ _ _ _ _ _ h hρ _ _ _ => by
     cases h
     exact .nil hρ.ren.wfCtx
   | _, _, .cons (d := d) (ps := ps') p q ς Θ B ψ ds =>
-    fun Γ' ρ θ ns' ds' ctx' as' h hρ hθ hrec link => by
+    fun Γ' ρ θ ns' ds' ctx' as' ν' hν h hρ hθ hrec link => by
     have hrec' : ∀ r ∈ ds.recursion decl.names, r = none :=
       fun r hr => hrec r (List.mem_cons_of_mem _ hr)
     cases h with
     | absent _ hds =>
-      exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _ as' hds hρ
+      exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _ as' @ν' hν hds hρ
         (hθ.snoc (.obs ..)) hrec' (fun h' => link (.there h'))
     | lifted hB hκ' hds =>
       obtain ⟨hd, hx⟩ := link .here
@@ -228,7 +229,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
         (Term.Lifts.hasType (hρ.liftN hΘctx) hB hBσ (by rw [Lifting.liftN_ren]; exact he))
       have hκ₀ : (⟨.type, ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level⟩ :
           Universe (decl.levels + S.length)) ≼ ⟨.type, κ.level⟩ := ⟨fun h => h, hκ⟩
-      refine .cons ?_
+      refine .cons ?_ (Term.nest_plain (Nesting.liftN_plain _ hν) _)
         (((stableUnderRenaming.wfTelescope hΘ₀ hρ.ren).mono hκ₀).scale v.recursion)
         hB' hκ' (fun hs => ?_) ?_
       · exact (Term.blockName_cast [Lifting.name D S] _ _).trans
@@ -237,7 +238,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
               ((Term.blockName_substLevels decl.names _ B).trans hn)) S)
       · exact (show v.quality = .prop from hs) ▸ Lifting.resultGrade_prop_mode p
       · exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _
-          (as'.rename Ren.weaken) hds
+          (as'.rename Ren.weaken) (Nesting.lift @ν') (Nesting.lift_plain hν) hds
           (hρ.weakenSecondOrder (.secondOrder (.ofSort hB'))) (hθ.snoc (.obs ..)) hrec'
           (fun h' => link (.there h'))
 

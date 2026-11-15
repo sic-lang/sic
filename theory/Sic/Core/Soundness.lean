@@ -111,12 +111,12 @@ structure SoundnessIn : Prop where
           (Θ.nestAt decl.names) Θ κ
   /-- The destructors of a codata type in a sort. -/
   wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
     {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
     {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I as ctx ds κ →
+      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
-          (ds.recursionAt decl.names) ds κ
+          (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
   /-- A well-formed type declaration. -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
     sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
@@ -786,15 +786,43 @@ where
       rw [hr]
       exact hΘ'
   wfDestructors {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-      {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+      {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
-      WfDestructors sig decl I as ctx ds κ →
+      WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
-          (ds.recursionAt decl.names) ds κ
+          (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
     | .nil hctx => fun ρ => ValidDestructorsΓ.nil (wfCtx hd hι hctx ρ)
-    | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) hn hΘ hB hκ _ hds => fun ρ => by
+    | .nested (d := d) (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς)
+        hn hν hΘ hB hκ _ hds => fun ρ => by
+      have hB' := hasType hd hι hB ρ
+      simp only [Context.atLevels, Context.substLevels_append] at hB'
+      have hds' := wfDestructors hd hι hds ρ
+      show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
+        (B.substLevels fun i => .ofNat (ρ i)) ψ
+        ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
+      rw [Destructors.substLevels_rename]
+      refine ValidDestructorsΓ.nested
+        (by simp [Destructors.recursionAt, Destructors.recursion, hn])
+        (by simp [Destructors.nestedAt, Destructors.nested, Nest.isPlain_eq_false hν])
+        (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) ?_
+      have hr : (fun i => (Destructors.cons (d := d) p q ς Θ B ψ
+          (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
+        funext i
+        simp only [Destructors.recursionAt, Destructors.recursion, Destructors.recursion_rename,
+          List.getElem?_cons_succ]
+      have hr' : (fun i => (Destructors.cons (d := d) p q ς Θ B ψ
+          (ds.rename Ren.weaken)).nestedAt @ν (i + 1)) = ds.nestedAt @ν := by
+        funext i
+        simp only [Destructors.nestedAt, Destructors.nested,
+          Destructors.nested_rename Ren.weaken (ν := @ν)
+            (ν' := Nesting.lift (e := .secondOrder ps ψ) @ν)
+            (fun _ _ => rfl),
+          List.getElem?_cons_succ]
+      rw [hr, hr']
+      exact hds'
+    | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) hn hν hΘ hB hκ _ hds => fun ρ => by
       have hB' := hasType hd hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
       have hds' := wfDestructors hd hι hds ρ
@@ -803,11 +831,12 @@ where
         funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hds'
       exact ValidDestructorsΓ.cons
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
+        (by simp [Destructors.nestedAt, Destructors.nested, hν, Nest.isPlain])
         (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
     | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς) hD hΘ
         _ hds => fun ρ => by
       have hds' := wfDestructors hd hι hds ρ
-      show ValidDestructorsΓ sigM ι _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
+      show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
         ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
         ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Destructors.substLevels_rename,
@@ -823,7 +852,16 @@ where
         funext i
         simp only [Destructors.recursionAt, Destructors.recursion, Destructors.recursion_rename,
           List.getElem?_cons_succ]
-      rw [hr]
+      have hr' : (fun i => (Destructors.cons (d := d) p q ς Θ
+          (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
+          (ds.rename Ren.weaken)).nestedAt @ν (i + 1)) = ds.nestedAt @ν := by
+        funext i
+        simp only [Destructors.nestedAt, Destructors.nested,
+          Destructors.nested_rename Ren.weaken (ν := @ν)
+            (ν' := Nesting.lift (e := .secondOrder ps ψ) @ν)
+            (fun _ _ => rfl),
+          List.getElem?_cons_succ]
+      rw [hr, hr']
       exact hds'
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
@@ -954,12 +992,12 @@ structure Soundness : Prop where
   /-- The destructors of a codata type in a sort are meaningful.
   RFC: `\mathsf{sound}.\bar d` -/
   wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
     {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
     {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-      ValidInterpretation ι sig → WfDestructors sig decl I as ctx ds κ →
+      ValidInterpretation ι sig → WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sig ι ctx (fun D => decl.blockInstance I D as)
-          (ds.recursionAt decl.names) ds κ
+          (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
   -- ADE: none.
   /-- A well-formed type declaration is meaningful.
   RFC: `\mathsf{sound}.\mathsf{data}`

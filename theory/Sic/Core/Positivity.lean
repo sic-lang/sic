@@ -36,12 +36,6 @@ variable {k : Nat}
 
 /-! ## Variables That Do Not Occur -/
 
-/-- The position of a variable in its scope, the first entry being `0`, by which a type declares
-the parameters in which it is strictly positive. -/
-def Var.level : {Γ : Scope} → {e : Scope.Entry} → Var Γ e → Nat
-  | _ :: Γ, _, .zero => Γ.length
-  | _, _, .succ x => x.level
-
 /-- The scope `Γ` without its variable `x`. -/
 def Scope.remove : (Γ : Scope) → {e : Scope.Entry} → Var Γ e → Scope
   | _ :: Γ, _, .zero => Γ
@@ -142,31 +136,21 @@ inductive Telescope.Positive (marks : Name → Nat → Prop) :
 -- ADE: none.
 /-- `Σ; 𝒟 ⊢ d̄ ⊕ X`: the destructors `d̄` of a codata type are strictly positive in the variable `X`,
 which does not occur in the arguments of any of them, and in which the result of each of them is
-strictly positive; no destructor after a destructor in whose result `X` occurs depends on it, as
-none depends on a recursive destructor, so that it does not extend their scope. -/
+strictly positive; the formation of the destructors checks that no destructor depends on a
+destructor in whose result such a variable occurs. -/
 inductive Destructors.Positive (marks : Name → Nat → Prop) :
     {Γ : Scope} → {e : Scope.Entry} → Var Γ e → {ns : List Name} → Destructors k Γ ns → Prop where
   /-- No destructor.
   RFC: `\oplus_{\bar d\varepsilon}` -/
   | nil {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} : Destructors.Positive marks x .nil
   /-- A destructor whose result is strictly positive in the variable, followed by the destructors
-  after it, which do not depend on it.
+  after it.
   RFC: `\oplus_{\bar d|}` -/
   | cons {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Γ ps}
       {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
-      {ds : Destructors k Γ ns} (hΘ : Θ.Avoids x)
-      (hB : Term.Positive marks (x.weakenN ps.length) B)
-      (hds : Destructors.Positive marks x ds) :
-      Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken))
-  /-- A destructor in whose result the variable does not occur, followed by the destructors after
-  it, which may depend on it.
-  RFC: `\oplus_{\bar d\notin}` -/
-  | absent {Γ : Scope} {e : Scope.Entry} {x : Var Γ e} {d : Name} {ns : List Name}
-      {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Γ ps}
-      {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors k (.secondOrder ps ψ :: Γ) ns} (hΘ : Θ.Avoids x)
-      (hB : B.Avoids (x.weakenN ps.length))
+      (hB : Term.Positive marks (x.weakenN ps.length) B)
       (hds : Destructors.Positive marks (.succ x) ds) :
       Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ ds)
 
