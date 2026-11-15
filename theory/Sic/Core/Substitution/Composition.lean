@@ -1185,6 +1185,19 @@ theorem Term.subst_congr {Γ Δ : Scope} {θ θ' : Subst k Γ Δ}
     (h : ∀ {a} (x : Var Δ a), θ x = θ' x) (t : Term k Δ) : t.subst θ = t.subst θ' := by
   rw [← Term.subst_rename_of (α := fun x => x) h t, Term.rename_id]
 
+/-- Substitutions of the second order that agree on every variable agree on every variable under new
+variables. -/
+theorem Subst.liftN_congr {Γ Δ : Scope} (n : Nat) {θ θ' : Subst k Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), θ x = θ' x) {a : Scope.Entry} (x : Var (Δ.extend n) a) :
+    Subst.liftN n θ x = Subst.liftN n θ' x := by
+  have e := Subst.liftN_rename_of n (α := fun x => x) h x
+  rwa [Ren.liftN_id_of n (fun _ => rfl)] at e
+
+/-- Substitutions of the second order that agree on every variable agree on every telescope. -/
+theorem Telescope.subst_congr {Γ Δ : Scope} {ps : List Parameter} {θ θ' : Subst k Γ Δ}
+    (h : ∀ {a} (x : Var Δ a), θ x = θ' x) (Θ : Telescope k Δ ps) : Θ.subst θ = Θ.subst θ' := by
+  rw [← Telescope.subst_rename_of (α := fun x => x) h Θ, Telescope.rename_id_of (fun _ => rfl)]
+
 /-- A substitution of the second order under new variables gives an old variable what it gives it
 without them, under them. -/
 theorem Subst.liftN_weakenN {Γ Δ : Scope} {a : Scope.Entry} :

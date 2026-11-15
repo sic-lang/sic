@@ -270,6 +270,14 @@ theorem run_odot :
       ∀ (m : Mode) (p : Grade), (m ⊙ p).run = m.run.odot p.run := by
   decide
 
+/-- A grade without use at run time, used any number of times more, has no use at run time. -/
+theorem mul_mode_ne_oneOne : ∀ r p : Grade, p.mode ≠ .oneOne → (r * p).mode ≠ .oneOne := by
+  decide
+
+/-- The grade of the product of a mode by the mode `01ᵐ` has no use at run time. -/
+theorem mul_zeroOne_grade_mode_ne_oneOne : ∀ m : Mode, (m ·ᵐ .zeroOne).grade.mode ≠ .oneOne := by
+  decide
+
 end Mode
 
 end Sic.Grading
