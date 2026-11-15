@@ -760,6 +760,14 @@ end
 theorem Term.rename_id {Γ : Scope} (t : Term k Γ) : t.rename (fun x => x) = t :=
   Term.rename_id_of (fun _ => rfl) t
 
+/-- Renaming each variable to itself changes no destructor. -/
+theorem Destructors.rename_id_of : {Γ : Scope} → {ns : List Name} → {α : Ren Γ Γ} →
+    (∀ {a} (x : Var Γ a), α x = x) → (ds : Destructors k Γ ns) → ds.rename α = ds
+  | _, _, _, _, .nil => rfl
+  | _, _, _, h, .cons p q ς Θ B ψ ds => by
+    rw [Destructors.rename, Telescope.rename_id_of h Θ, Term.rename_id_of (Ren.liftN_id_of _ h) B,
+      Destructors.rename_id_of (Ren.lift_id_of h) ds]
+
 theorem Subst₀.lift_id_of {Γ : Scope} {b : Scope.Entry} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) :
     ∀ {a} (x : Var (b :: Γ) a), Subst₀.lift σ x = .var x

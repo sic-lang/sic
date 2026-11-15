@@ -21,17 +21,20 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- A type declaration of a well-formed signature is well formed in the signature before it. -/
+/-- A type declaration of a well-formed signature is well formed in the signature before it, whose
+entries the signature has. -/
 theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
     {sig : Signature} → WfSig sig → .typeDeclaration decl ∈ sig →
-      ∃ sig', WfTypeDeclaration sig' decl
+      ∃ sig', sig' ⊆ sig ∧ WfTypeDeclaration sig' decl
   | [], _, he => nomatch he
   | _ :: _, h, he => by
     rcases List.mem_cons.1 he with he | he
     · subst he
       cases h with
-      | typeDeclaration hdecl _ _ => exact ⟨_, hdecl⟩
-    · exact (Presuppositions.tail presuppositions h).wfTypeDeclaration he
+      | typeDeclaration hdecl _ _ => exact ⟨_, List.subset_cons_self _ _, hdecl⟩
+    · obtain ⟨sig', hs, hdecl⟩ :=
+        (Presuppositions.tail presuppositions h).wfTypeDeclaration he
+      exact ⟨sig', List.subset_cons_of_subset _ hs, hdecl⟩
 
 -- ADE: none.
 /-- A destructor of destructors that live in a sort of propositions has a grade whose mode is not
@@ -66,7 +69,7 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
     {Θ : Telescope decl.levels Ξ ps} {B : Term decl.levels (Ξ.extend ps.length)}
     {ψ : ResultOwnership Grade ps.length} (hpos : (T.body I).Pos d p q ς Ξ Θ B ψ) :
     (decl.sort I).quality = .prop → p.mode ≠ .oneOne := by
-  obtain ⟨_, hdecl⟩ := h.wfTypeDeclaration hT.1
+  obtain ⟨_, _, hdecl⟩ := h.wfTypeDeclaration hT.1
   cases hdecl with
   | data hb _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
   | codata hb _ _ hds _ _ =>

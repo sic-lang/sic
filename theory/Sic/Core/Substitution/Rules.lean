@@ -628,6 +628,17 @@ theorem Term.observation_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (D : Name
   rw [Term.subst_rename_of h, InstanceArgs.subst_rename_of h,
     Term.rename_subst_of (fun _ => rfl), InstanceArgs.rename_subst_of (fun _ => rfl)]
 
+/-- The observation of a term, renamed under the variables of its arguments, is the observation of
+the term renamed. -/
+theorem Term.observation_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (D : Name) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ) (t : Term k Δ) (d : Name)
+    (ps' : List Parameter) :
+    (t.observation D qs ls ps as d ps').rename (Ren.liftN ps'.length α) =
+      (t.rename α).observation D qs ls ps (as.rename α) d ps' := by
+  rw [Term.rename_eq_subst_of (θ := Subst.liftN ps'.length (Ren.toSubst α))
+      (Subst.liftN_eta_of ps'.length (fun _ => rfl)),
+    Term.observation_subst, ← Term.rename_eq_subst, ← InstanceArgs.rename_eq_subst]
+
 /-- The observation of a term, at arguments, is the observation by the destructor applied to them. -/
 theorem Term.observation_instantiate {Γ Δ : Scope} (D : Name) (qs : List Quality)
     (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ) (d : Name)
@@ -731,6 +742,22 @@ theorem Destructors.Pos.obsSubst_observation_subst {k' : Nat} {Γ' Γ'' Δ : Sco
         hd.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
   hd.obsSubst_subst σ (fun d ps' => Term.observation_subst σ D qs ls ps as t d ps')
     (InstanceArgs.toSubst_subst σ as)
+
+/-- The substitution of the destructors before a position by the observations of a term, renamed,
+is the substitution by the observations of the term renamed, at the arguments renamed. -/
+theorem Destructors.Pos.obsSubst_observation_rename {k' : Nat} {Γ' Γ'' Δ : Scope}
+    (α : Ren Γ'' Γ') (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Γ' Δ) (t : Term k Γ') {d : Name} {p q ς : Grade} {ps' : List Parameter}
+    {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
+    {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
+    (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) {a : Scope.Entry} (x : Var Ξ a) :
+    ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).rename
+        (Ren.liftN a.params.length α) =
+      hd.obsSubst ((t.rename α).observation D qs ls ps (as.rename α)) (as.rename α).toSubst x := by
+  rw [Term.rename_eq_subst_of (θ := Subst.liftN a.params.length (Ren.toSubst α))
+      (Subst.liftN_eta_of a.params.length (fun _ => rfl)),
+    hd.obsSubst_observation_subst (Ren.toSubst α) D qs ls ps as t x, ← Term.rename_eq_subst,
+    ← InstanceArgs.rename_eq_subst]
 
 /-! ## Corecursors at Their State -/
 

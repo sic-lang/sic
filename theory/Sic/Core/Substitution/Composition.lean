@@ -145,6 +145,16 @@ theorem CorecBranches.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {�
 
 end
 
+/-- Renaming destructors by `α₂` then by `α₁` is renaming them by their composition `α₃`. -/
+theorem Destructors.rename_rename_of : {Γ Δ Ξ : Scope} → {ns : List Name} → {α₁ : Ren Γ Δ} →
+    {α₂ : Ren Δ Ξ} → {α₃ : Ren Γ Ξ} → (∀ {a} (x : Var Ξ a), α₁ (α₂ x) = α₃ x) →
+      (ds : Destructors k Ξ ns) → (ds.rename α₂).rename α₁ = ds.rename α₃
+  | _, _, _, _, _, _, _, _, .nil => rfl
+  | _, _, _, _, _, _, _, h, .cons p q ς Θ B ψ ds => by
+    rw [Destructors.rename, Destructors.rename, Destructors.rename, Telescope.rename_rename_of h Θ,
+      Term.rename_rename_of (Ren.liftN_comp_of _ h) B,
+      Destructors.rename_rename_of (Ren.lift_comp_of h) ds]
+
 /-- Renaming a value by `α₂` then by `α₁` is renaming it by their composition `α₃`. -/
 theorem Val.rename_rename_of {Γ Δ Ξ : Scope} {a : Scope.Entry} {α₁ : Ren Γ Δ} {α₂ : Ren Δ Ξ}
     {α₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), α₁ (α₂ x) = α₃ x) :
@@ -1584,6 +1594,29 @@ theorem Term.subst_liftN_lift_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} (n
   (Term.subst_rename_of (Subst.liftN_rename_comm_of n (θ₁ := Subst.lift θ) (α₁ := Ren.weaken)
     (θ₂ := θ) (α₂ := Ren.weaken) fun _ => rfl) t).trans
     (Term.rename_subst_of (fun _ => rfl) t).symm
+
+/-- A term renamed under a new entry, substituted by a substitution followed by an abstraction for
+this entry, is the term substituted. -/
+theorem Term.subst_snoc_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} (θ : Subst k Γ Δ)
+    (B : Term k (Γ.extend e.params.length)) (t : Term k Δ) :
+    (t.rename (Ren.weaken (e := e))).subst (Subst.snoc θ B) = t.subst θ :=
+  Term.subst_rename_of (fun _ => rfl) t
+
+/-- A telescope renamed under a new entry, substituted by a substitution followed by an abstraction
+for this entry, is the telescope substituted. -/
+theorem Telescope.subst_snoc_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} {ps : List Parameter}
+    (θ : Subst k Γ Δ) (B : Term k (Γ.extend e.params.length)) (Θ : Telescope k Δ ps) :
+    (Θ.rename (Ren.weaken (e := e))).subst (Subst.snoc θ B) = Θ.subst θ :=
+  Telescope.subst_rename_of (fun _ => rfl) Θ
+
+/-- A term renamed under a new entry before `n` variables, substituted under them by a substitution
+followed by an abstraction for this entry, is the term substituted under them. -/
+theorem Term.subst_liftN_snoc_rename_weaken {Γ Δ : Scope} {e : Scope.Entry} (n : Nat)
+    (θ : Subst k Γ Δ) (B : Term k (Γ.extend e.params.length)) (t : Term k (Δ.extend n)) :
+    (t.rename (Ren.liftN n (Ren.weaken (e := e)))).subst (Subst.liftN n (Subst.snoc θ B)) =
+      t.subst (Subst.liftN n θ) :=
+  Term.subst_rename_of (Subst.liftN_rename_of n (θ := Subst.snoc θ B) (α := Ren.weaken)
+    (θ' := θ) fun _ => rfl) t
 
 /-- Motives renamed under a new variable, substituted under it, are the motives substituted, renamed
 under it. -/
