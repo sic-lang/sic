@@ -111,6 +111,41 @@ theorem InstanceArgs.Lifts.not_avoidsLifted :
 
 end
 
+/-! ## Liftings That Lift No Variable -/
+
+/-- No variable of a type is lifted by a lifting that lifts none, under new variables and in a scope
+extended by an entry. -/
+theorem Term.avoidsLifted_of_none {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (n : Nat) {e : Scope.Entry}
+    (B : Term k (Γ.extend n)) : B.AvoidsLifted ((ρ.liftN n).weaken (e := e)) := fun y hy => by
+  obtain ⟨x, -, hx⟩ := Lifting.isSome_of_liftN n ρ y (Lifting.isSome_of_weaken _ y hy)
+  rw [hρ x] at hx
+  exact nomatch hx
+
+/-- Liftings that lift no variable lift the same arguments of two instances of a declared type, at
+the same nestings: those whose nesting has a position. -/
+theorem InstanceArgs.Lifts.positions_eq {Γ₁' Γ₁ Γ₂' Γ₂ : Scope} {ρ₁ : Lifting k Γ₁' Γ₁}
+    {ρ₂ : Lifting k Γ₂' Γ₂} (hρ₁ : ∀ {a} (x : Var Γ₁ a), ρ₁.motive x = none)
+    (hρ₂ : ∀ {a} (x : Var Γ₂ a), ρ₂.motive x = none) :
+    {ns : List (Nest Name)} → {Δ : Scope} → {as₁ : InstanceArgs k Γ₁ Δ} →
+      {as₂ : InstanceArgs k Γ₂ Δ} → {S₁ S₂ : List Nat} → {ls₁ ls₂ : List (Level k)} →
+      {Δ₁' Δ₂' : Scope} → {as₁' : InstanceArgs k Γ₁' Δ₁'} → {as₂' : InstanceArgs k Γ₂' Δ₂'} →
+      InstanceArgs.Lifts sig v ρ₁ ns as₁ S₁ ls₁ as₁' →
+        InstanceArgs.Lifts sig v ρ₂ ns as₂ S₂ ls₂ as₂' → S₁ = S₂
+  | _, _, _, _, _, _, _, _, _, _, _, _, .nil, h₂ => by
+    cases h₂
+    rfl
+  | _, _, _, _, _, _, _, _, _, _, _, _, .lifted has₁ hB₁, h₂ => by
+    cases h₂ with
+    | lifted has₂ _ => rw [InstanceArgs.Lifts.positions_eq hρ₁ hρ₂ has₁ has₂]
+    | absent _ _ hn =>
+      exact (hB₁.not_avoidsLifted hn (Term.avoidsLifted_of_none hρ₁ _ _)).elim
+  | _, _, _, _, _, _, _, _, _, _, _, _, .absent has₁ _ hn, h₂ => by
+    cases h₂ with
+    | lifted _ hB₂ =>
+      exact (hB₂.not_avoidsLifted hn (Term.avoidsLifted_of_none hρ₂ _ _)).elim
+    | absent has₂ _ _ => exact InstanceArgs.Lifts.positions_eq hρ₁ hρ₂ has₁ has₂
+
 /-! ## Functionality -/
 
 mutual

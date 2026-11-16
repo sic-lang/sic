@@ -175,20 +175,43 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
       (fun r hr => hds r (List.mem_cons_of_mem _ hr))
 
 -- ADE: none.
-/-- The lifting of a codata type without recursive destructor has no recursive destructor. -/
+/-- The lifting of a codata type without recursive destructor at an instance has no recursive
+destructor at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
     {body : Instance (decl.sorts + 1) (decl.grades + 3) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    (h : decl.Lifts sig F S body)
-    (hF : ∀ ι, ∀ T ∈ decl.codataTypes, T.name = F → ∀ r ∈ (T.body ι).recursion decl.names, r = none)
-    (I : Instance (decl.sorts + 1) (decl.grades + 3)) :
+    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.grades + 3))
+    (hF : ∀ T ∈ decl.codataTypes, T.name = F →
+      ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none) :
     ∀ r ∈ (body I).recursion [Lifting.name F S], r = none := by
   obtain ⟨T, hT, hn, hb⟩ := h
   refine Destructors.Lifts.recursion (fun _ _ => .obs ..)
     (hn ▸ TypeDeclaration.codata_name_mem_names hT : F ∈ decl.names) S (hb I)
     (InstanceArgs.identity_rename_neutral _) ?_
   rw [Destructors.recursion_substLevels]
-  exact hF I.lifted T hT hn
+  exact hF T hT hn
+
+/-- The result of a destructor of the lifting of a codata type without recursive destructor at an
+instance is no instance of this lifting, at the instances that hold it. -/
+theorem TypeDeclaration.Lifts.blockName_pos {sig : Signature} {decl : TypeDeclaration} {F : Name}
+    {S : List Nat} {ns : List Name}
+    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.grades + 3))
+    (hF : ∀ T ∈ decl.codataTypes, T.name = F →
+      ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none)
+    {d : Name} {p q ς : Grade} {ps : List Parameter} {Ξ : Scope}
+    {Θ : Telescope (decl.levels + S.length) Ξ ps}
+    {B : Term (decl.levels + S.length) (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+    (hpos : (body I).Pos d p q ς Ξ Θ B ψ) : B.blockName [Lifting.name F S] = none := by
+  have hr : ((body I).recursion [Lifting.name F S])[hpos.index]?.join =
+      B.blockName [Lifting.name F S] := hpos.recursionAt_index [Lifting.name F S]
+  cases hi : ((body I).recursion [Lifting.name F S])[hpos.index]? with
+  | none => rw [← hr, hi]; rfl
+  | some r =>
+    cases h.recursion I hF r (List.mem_of_getElem? hi)
+    rw [← hr, hi]
+    rfl
 
 end Sic.Core

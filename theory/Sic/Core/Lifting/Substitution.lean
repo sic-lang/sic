@@ -74,6 +74,50 @@ theorem Telescope.substLevels_snoc {k' : Nat} {Γ : Scope} {p : Parameter} (q : 
 
 /-! ## Renaming of the Parameters -/
 
+/-- The renaming of a lifting under `n` new variables is its renaming under these variables. -/
+theorem Lifting.liftN_ren {Γ' Γ : Scope} (n : Nat) (ρ : Lifting k Γ' Γ) :
+    @Lifting.ren k _ _ (ρ.liftN n) = fun {_} x => Ren.liftN n ρ.ren x := by
+  funext a x
+  exact go n ρ x
+where
+  /-- The equality at a variable, by recursion on the number of the variables. -/
+  go {Γ' Γ : Scope} : (n : Nat) → (ρ : Lifting k Γ' Γ) →
+      ∀ {a} (x : Var (Γ.extend n) a), (ρ.liftN n).ren x = Ren.liftN n ρ.ren x
+    | 0, _, _, _ => rfl
+    | n + 1, ρ, _, x => go n ρ.lift x
+
+/-- Motives of a type of a block are equal when their instances and their motives are. -/
+theorem Lifting.BlockMotive.mk_congr {Γ' Γ : Scope} {T T' : Term k Γ} {C C' : Term k (.var :: Γ')}
+    (l : Level k) (hT : T = T') (hC : C = C') :
+    Lifting.BlockMotive.mk (Γ' := Γ') T C l = Lifting.BlockMotive.mk T' C' l := by
+  rw [hT, hC]
+
+/-- The motive of a type of a block, in a lifting under `n` new variables, is its motive in the
+lifting, renamed under these variables. -/
+theorem Lifting.liftN_block : (n : Nat) → {Γ' Γ : Scope} → (ρ : Lifting k Γ' Γ) → (D : Name) →
+    (ρ.liftN n).block D = (ρ.block D).map fun b =>
+      ⟨b.type.rename (Ren.weakenN n), b.motive.rename (Ren.lift (Ren.weakenN n)), b.level⟩
+  | 0, _, _, ρ, D => by
+    show ρ.block D = _
+    cases ρ.block D with
+    | none => rfl
+    | some b =>
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+        (Term.rename_id_of (fun _ => rfl) b.type).symm
+        (Term.rename_id_of (Ren.lift_id_of fun _ => rfl) b.motive).symm)
+  | n + 1, _, _, ρ, D => by
+    show (ρ.lift.liftN n).block D = _
+    rw [Lifting.liftN_block n ρ.lift D]
+    show ((ρ.block D).map Lifting.BlockMotive.lift).map _ = _
+    cases ρ.block D with
+    | none => rfl
+    | some b =>
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+        (Term.rename_rename_of (α₁ := Ren.weakenN n) (α₂ := Ren.weaken)
+          (α₃ := Ren.weakenN (n + 1)) (fun _ => rfl) b.type)
+        (Term.rename_rename_of (α₁ := Ren.lift (Ren.weakenN n)) (α₂ := Ren.lift Ren.weaken)
+          (α₃ := Ren.lift (Ren.weakenN (n + 1))) (fun x => by cases x <;> rfl) b.motive))
+
 /-- The renamings of two liftings extended by a parameter are the same when those of the liftings
 are, whatever the levels of the motives. -/
 theorem Lifting.cons_ren_congr {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry} (l : Level k)

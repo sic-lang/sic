@@ -2,7 +2,7 @@ module
 
 public import Sic.Core.Lifting.Substitution
 public import Sic.Core.Substitution.Composition
-import Sic.Core.Positivity.Nesting
+import Sic.Core.Lifting.Functionality
 
 /-!
 # Instantiation of the Liftings
@@ -182,6 +182,42 @@ theorem Lifting.Substitutes.ofWeaken {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Li
     rw [Term.subst_id_of (θ := Ren.toSubst fun x => x) (fun _ => rfl),
       Term.rename_eq_subst_of (θ := Subst.lift (Ren.toSubst Ren.weaken))
         (Subst.lift_eta_of fun _ => rfl) b.motive]
+
+/-- A lifting that lifts no variable, under new variables, substituted by substitutions that give
+each variable of the scopes itself, and that commute with the renamings of the liftings. -/
+theorem Lifting.Substitutes.ofLiftN {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (n : Nat) {τ : Subst k Γ (Γ.extend n)}
+    {τ' : Subst k Γ' (Γ'.extend n)} (hτ : ∀ {a} (x : Var Γ a), τ (x.weakenN n) = Var.eta x)
+    (hτ' : ∀ {a} (x : Var Γ' a), τ' (x.weakenN n) = Var.eta x)
+    (hren : ∀ {a} (x : Var (Γ.extend n) a),
+      τ' ((ρ.liftN n).ren x) = (τ x).rename (Ren.liftN a.params.length ρ.ren)) :
+    Lifting.Substitutes τ τ' (ρ.liftN n) ρ where
+  ren := hren
+  motive := fun x => by
+    cases h : (ρ.liftN n).motive x with
+    | none => rfl
+    | some _ =>
+      obtain ⟨y, -, hy⟩ := Lifting.isSome_of_liftN n ρ x (h ▸ rfl)
+      rw [hρ y] at hy
+      exact nomatch hy
+  motive' := hρ
+  block := fun D => by
+    rw [Lifting.liftN_block n ρ D]
+    cases ρ.block D with
+    | none => rfl
+    | some b =>
+      have key : ∀ {a} (x : Var (.var :: Γ') a),
+          Subst.lift τ' (Ren.lift (Ren.weakenN n) x) = Var.eta x
+        | _, .zero => rfl
+        | _, .succ x => by
+          show (τ' (x.weakenN n)).rename (Ren.liftN _ Ren.weaken) = _
+          rw [hτ' x]
+          exact Var.eta_rename Ren.weaken x
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+        ((Term.subst_rename_of (θ := τ) (α := Ren.weakenN n) (θ' := fun x => Var.eta x)
+          (fun x => hτ x) b.type).trans (Term.subst_id_of (fun _ => rfl) b.type)).symm
+        ((Term.subst_rename_of key b.motive).trans
+          (Term.subst_id_of (fun _ => rfl) b.motive)).symm)
 
 /-! ## Abstractions Lifted -/
 

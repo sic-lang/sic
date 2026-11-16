@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Lifting.Recursion
 public import Sic.Core.Typing.Lifting.Types
+import Sic.Core.Lifting.Substitution
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Identity
 import Sic.Core.Typing.Levels

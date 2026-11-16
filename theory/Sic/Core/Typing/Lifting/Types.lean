@@ -61,18 +61,6 @@ theorem HasType.append_snoc {Γ : Scope} {p : Parameter} {q : Grade} {κ : Unive
 
 /-! ## Typed Liftings -/
 
-/-- The renaming of a lifting under `n` new variables is its renaming under these variables. -/
-theorem Lifting.liftN_ren {Γ' Γ : Scope} (n : Nat) (ρ : Lifting k Γ' Γ) :
-    @Lifting.ren k _ _ (ρ.liftN n) = fun {_} x => Ren.liftN n ρ.ren x := by
-  funext a x
-  exact go n ρ x
-where
-  /-- The equality at a variable, by recursion on the number of the variables. -/
-  go {Γ' Γ : Scope} : (n : Nat) → (ρ : Lifting k Γ' Γ) →
-      ∀ {a} (x : Var (Γ.extend n) a), (ρ.liftN n).ren x = Ren.liftN n ρ.ren x
-    | 0, _, _, _ => rfl
-    | n + 1, ρ, _, x => go n ρ.lift x
-
 -- ADE: none.
 /-- `Σ; Γ' ⊢ ρ : Γ`: the lifting `ρ` of the scope `Γ` in the scope `Γ'` is typed, with motives in
 the sorts of the quality `s`: its renaming is typed, each variable lifted is a type, at the
