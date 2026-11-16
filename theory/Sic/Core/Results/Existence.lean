@@ -6,7 +6,7 @@ public import Sic.Core.Results
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Shape
-import Sic.Core.Substitution.Composition
+import Sic.Core.Results.Substitution
 import Sic.Core.Syntax.Signature
 import Sic.Core.Syntax.Terms
 
@@ -15,7 +15,8 @@ import Sic.Core.Syntax.Terms
 
 A term of a type that is lifted has a recursive result, in a signature whose names are distinct
 and that declares each lifting after the destructors that it lifts: the recursive results of the
-terms of fields exist when the types of these results do.
+terms of fields exist when the types of these results do, and so do those of the terms of the
+fields of a constructor.
 
 The result of a term of an instance of a codata type is a corecursor whose branches are the
 results of the observations of the term, at the variables of their arguments.
@@ -506,5 +507,44 @@ theorem Terms.ResultTypes.exists_resultTerms (hM : Signature.LiftingsHaveResults
     obtain ⟨e, he⟩ := hA.hasResult hM _ _ _ _ hs φ (x.subst θ)
     rw [Terms.subst, Terms.subst]
     exact ⟨_, .cons e rs, .nested he hr⟩
+
+/-- A lifting that lifts no variable and renames none, under the variables of a telescope,
+substituted by arguments of the telescope. -/
+theorem Lifting.Substitutes.args {Γ : Scope} {ρ : Lifting k Γ Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x)
+    {ps : List Parameter} (ts : Args k Γ ps) :
+    Lifting.Substitutes (Subst₀.toSubst ts.toSubst₀) (Subst₀.toSubst ts.toSubst₀)
+      (ρ.liftN ps.length) ρ :=
+  have hts : ∀ {a} (x : Var Γ a),
+      Subst₀.toSubst ts.toSubst₀ (x.weakenN ps.length) = Var.eta x :=
+    fun x => by
+      show (ts.toSubst₀ (x.weakenN ps.length)).eta = _
+      rw [Args.toSubst₀_weakenN]
+      rfl
+  Lifting.Substitutes.ofLiftN hρ ps.length hts hts fun x => by
+    rw [Lifting.liftN_ren]
+    show Subst₀.toSubst ts.toSubst₀ (Ren.liftN ps.length ρ.ren x) = _
+    rw [Ren.liftN_id_of ps.length hid x, Term.rename_id_of (Ren.liftN_id_of _ hid)]
+
+-- ADE: none.
+/-- The terms of the fields of a constructor whose recursive results have types have recursive
+results, in a signature whose names are distinct and that declares each lifting after the
+destructors that it lifts, where the lifting of the block lifts no variable and renames none,
+whatever the results of the terms of the types of the block are. -/
+theorem Constructor.ResultTypes.exists_resultTerms (hsig : sig.Distinct)
+    (hord : sig.LiftsInOrder) {j g k' : Nat} {Δ Γ : Scope} {c : Constructor j g k' Δ}
+    {I : Instance j g} {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Γ Δ}
+    {ρ : Lifting k Γ Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
+    (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x) {ps' : List Parameter}
+    {R : Telescope k (Γ.extend (c.params I).length) ps'}
+    (h : Constructor.ResultTypes sig v c I names ls as ρ R) (φ : Name → Term k (.var :: Γ))
+    (ts : Args k Γ (c.params I)) :
+    ∃ rs : Args k Γ ps', Constructor.ResultTerms sig v c I names ls as ρ φ ts rs := by
+  obtain ⟨ps'', rs, hr⟩ := Terms.ResultTypes.exists_resultTerms
+    (hord.liftingsHaveResults hsig sig [] rfl) h (Lifting.Substitutes.args hρ hid ts) φ
+  rw [← Terms.subst₀_eq_subst, ← Terms.subst₀_eq_subst, Telescope.types_toSubst₀,
+    ← Args.terms_subst₀, Args.bound_toSubst₀] at hr
+  obtain rfl : ps'' = ps' := hr.params_eq.trans h.params_eq.symm
+  exact ⟨rs, hr⟩
 
 end Sic.Core
