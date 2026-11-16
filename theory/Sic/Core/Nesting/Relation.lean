@@ -213,6 +213,26 @@ theorem Nest.map_rel₃ {δ : Type} {r : α → β → γ → Prop} {f : δ → 
     Nest.Rel₃ r (n.map f) (n.map g) (n.map h) :=
   Nest.All.map_rel₃ (p := fun _ => True) (fun x _ => hr x) (Nest.rel₃_refl (fun _ => trivial) n)
 
+mutual
+
+/-- A nesting and the nesting that a function gives from it are related, when each object and what
+the function gives for it are. -/
+theorem Nest.rel_map {r : α → β → Prop} {f : α → β} (hr : ∀ a, r a (f a)) :
+    (n : Nest α) → Nest.Rel r n (n.map f)
+  | .plain => .plain
+  | .direct a => .direct (hr a)
+  | .inst ns => .inst (Nest.listRel_mapList hr ns)
+
+/-- The nestings of arguments and those that a function gives from them are related, when each
+object and what the function gives for it are. -/
+theorem Nest.listRel_mapList {r : α → β → Prop} {f : α → β} (hr : ∀ a, r a (f a)) :
+    (ns : List (Nest α)) →
+      Nest.ListRel₃ (fun a b _ => r a b) ns (Nest.mapList f ns) (Nest.mapList f ns)
+  | [] => .nil
+  | n :: ns => .cons (Nest.rel_map hr n) (Nest.listRel_mapList hr ns)
+
+end
+
 /-- A nesting has a position when the nesting that a function gives from it has one. -/
 theorem Nest.map_eq_plain {f : α → β} {n : Nest α} : n.map f = .plain ↔ n = .plain := by
   cases n <;> simp [Nest.map]

@@ -583,6 +583,38 @@ theorem EqSubst.args_cons_iff {ps : List Parameter} {q : Grade} {p : Parameter} 
     Telescope.subst_id_of (fun x => by cases x),
     EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
 
+/-- `(σ, (t, t̄))` without the terms `t̄` is `σ` followed by `t`. -/
+theorem Subst.dropN_append_cons {Γ : Scope} {ps : List Parameter} (σ : Subst k [] Γ)
+    (t : Term k []) (ts : Args k [] ps) :
+    @Eq (Subst k [] (.var :: Γ))
+      (Subst.dropN ps.length
+        (Subst.append (n := ps.length + 1) σ (Subst.append (Subst.closedSingle t) ts.toSubst)))
+      (Subst.snoc (e := .var) σ t) :=
+  Subst.ext fun x => by
+    cases x with
+    | zero => exact (Subst.dropN_append_zero σ _).trans (Subst.dropN_append _ _ .zero)
+    | succ y => exact Subst.append_weakenN σ _ y
+
+/-- Closed arguments of a telescope `x : A, Θ`, at a closed substitution `σ` of its context, are
+equal when their first terms are equal terms of `A[σ]` and the rest are equal arguments of
+`Θ[σ, t]`, at the first term `t` of the first ones. -/
+theorem EqSubst.args_cons_subst_iff {Γ : Scope} {ps : List Parameter} {q : Grade} {p : Parameter}
+    {A : Term 0 Γ} {Θ : Telescope 0 (.var :: Γ) ps} (σ : Subst 0 [] Γ) {t u : Term 0 []}
+    {ts us : Args 0 [] ps} :
+    EqSubst sig ι (Context.empty.append ((Telescope.cons q p A Θ).subst σ)) (Args.cons t ts).toSubst
+        (Args.cons u us).toSubst ↔
+      ValidEqTerm₀ sig ι t u (A.subst σ) ∧
+        EqSubst sig ι (Context.empty.append (Θ.subst (Subst.snoc (e := .var) σ t))) ts.toSubst us.toSubst := by
+  have d₁ : Subst.dropN ps.length (Subst.append (Subst.closedSingle t) ts.toSubst) .zero = t :=
+    Subst.dropN_append _ _ .zero
+  have d₂ : Subst.dropN ps.length (Subst.append (Subst.closedSingle u) us.toSubst) .zero = u :=
+    Subst.dropN_append _ _ .zero
+  show EqSubst sig ι (Context.empty.append ((Telescope.cons q p A Θ).subst σ))
+    (Subst.append (Subst.closedSingle t) ts.toSubst)
+    (Subst.append (Subst.closedSingle u) us.toSubst) ↔ _
+  rw [EqSubst.telescope_cons_iff, d₁, d₂, Subst.dropN_append_cons,
+    EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
+
 /-! ## Entries of a Context under Equal Substitutions -/
 
 /-- `A[↑][σ] = A[σ without its last entry]`: a type weakened past the last entry of a context, at a

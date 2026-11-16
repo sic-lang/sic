@@ -63,6 +63,13 @@ inductive InstanceArgs.Similar :
 
 end
 
+-- ADE: none.
+/-- The types `Ā₁` and `Ā₂` of fields have the same shape, one by one, at the nestings `ns` of the
+fields. -/
+def Terms.Similar {Γ : Scope} : List (Nest Name) → Terms k Γ → Terms k Γ → Prop
+  | ν :: ns, .cons A₁ As₁, .cons A₂ As₂ => Term.Similar ν A₁ A₂ ∧ Terms.Similar ns As₁ As₂
+  | _, _, _ => True
+
 /-! ## Stability -/
 
 mutual
@@ -138,6 +145,16 @@ theorem InstanceArgs.Similar.subst₀ {Γ' : Scope} :
     exact .snoc (has.subst₀ σ₁ σ₂) (hB.subst₀ _ _)
 
 end
+
+/-- The types of fields of the same shape, each substituted by a substitution of the first order,
+have the same shape. -/
+theorem Terms.Similar.subst₀ {Γ' Γ : Scope} :
+    {ns : List (Nest Name)} → {As₁ As₂ : Terms k Γ} → Terms.Similar ns As₁ As₂ →
+      ∀ (σ₁ σ₂ : Subst₀ k Γ' Γ), Terms.Similar ns (As₁.subst₀ σ₁) (As₂.subst₀ σ₂)
+  | _ :: _, .cons _ _, .cons _ _, h, σ₁, σ₂ => ⟨h.1.subst₀ σ₁ σ₂, h.2.subst₀ σ₁ σ₂⟩
+  | [], _, _, _, _, _ => trivial
+  | _ :: _, .nil, _, _, _, _ => trivial
+  | _ :: _, .cons _ _, .nil, _, _, _ => trivial
 
 /-! ## A Type at Two Substitutions -/
 
