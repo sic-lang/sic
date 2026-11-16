@@ -612,6 +612,58 @@ theorem Constructor.results_substLevels_inv {k' : Nat} (ls' : Fin k → Level k'
     Args.terms_substLevels] at h
   exact Motives.results_substLevels_inv ls' names _ h
 
+/-! ## Recursors at a Variable -/
+
+-- ADE: none.
+/-- `z. rec_{r; ς; χ} T z return C̄ : κ with ū`: the recursor of the instance `T = D.{s̄; l̄; p̄} ā`
+on a new variable `z`, the recursive result `f(D, z)` of a term `z` of the type `D` of the block
+that the computation of a recursor gives. -/
+def Term.recursorAt {Γ Δ : Scope} (r ς χ : Grade) (qs : List Quality) (ls : List (Level k))
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (κ : Universe k) (Cs : Motives k Γ)
+    (us : Branches k Γ) (D : Name) : Term k (.var :: Γ) :=
+  .recursor r ς χ D qs ls ps (as.rename Ren.weaken) (.var .zero .nil) κ (Cs.rename Ren.weaken)
+    (us.rename Ren.weaken)
+
+/-- `(z. rec T z return C̄ with ū)[t / z] = rec T t return C̄ with ū`: the recursor on a variable,
+at a term, is the recursor on this term. -/
+theorem Term.recursorAt_subst₀ {Γ Δ : Scope} (r ς χ : Grade) (qs : List Quality)
+    (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (κ : Universe k)
+    (Cs : Motives k Γ) (us : Branches k Γ) (D : Name) (t : Term k Γ) :
+    (Term.recursorAt r ς χ qs ls ps as κ Cs us D).subst₀ (Subst₀.single t) =
+      .recursor r ς χ D qs ls ps as t κ Cs us := by
+  have h : ∀ {a} (y : Var Γ a), Subst₀.single t (Ren.weaken y) = Subst₀.id y := fun _ => rfl
+  rw [Term.recursorAt, Term.subst₀, InstanceArgs.subst₀_rename_of (σ' := Subst₀.id) h,
+    InstanceArgs.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
+    Motives.subst₀_rename_of (σ' := Subst₀.id) h,
+    Motives.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
+    Branches.subst₀_rename_of (σ' := Subst₀.id) h,
+    Branches.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl)]
+  rfl
+
+/-- The recursor on a variable, substituted under this variable, is the recursor substituted, on
+the variable. -/
+theorem Term.recursorAt_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (r ς χ : Grade)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
+    (κ : Universe k) (Cs : Motives k Δ) (us : Branches k Δ) (D : Name) :
+    (Term.recursorAt r ς χ qs ls ps as κ Cs us D).subst (Subst.lift θ) =
+      Term.recursorAt r ς χ qs ls ps (as.subst θ) κ (Cs.subst θ) (us.subst θ) D := by
+  rw [Term.recursorAt, Term.subst, InstanceArgs.subst_rename_of (fun _ => rfl),
+    Motives.subst_rename_of (fun _ => rfl), Branches.subst_rename_of (fun _ => rfl),
+    Term.recursorAt, InstanceArgs.rename_subst_of (fun _ => rfl),
+    Motives.rename_subst_of (fun _ => rfl), Branches.rename_subst_of (fun _ => rfl)]
+  rfl
+
+/-- The recursor on a variable, at instantiated levels, is the recursor at these levels, on the
+variable. -/
+theorem Term.recursorAt_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+    (r ς χ : Grade) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
+    (as : InstanceArgs k Γ Δ) (κ : Universe k) (Cs : Motives k Γ) (us : Branches k Γ) (D : Name) :
+    (Term.recursorAt r ς χ qs ls ps as κ Cs us D).substLevels ls' =
+      Term.recursorAt r ς χ qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
+        (κ.substLevels ls') (Cs.substLevels ls') (us.substLevels ls') D := by
+  simp only [Term.recursorAt, Term.substLevels, InstanceArgs.substLevels_rename,
+    Motives.substLevels_rename, Branches.substLevels_rename, Args.substLevels]
+
 /-! ## Observations -/
 
 /-- The observation of a term, substituted under the variables of its arguments, is the observation
