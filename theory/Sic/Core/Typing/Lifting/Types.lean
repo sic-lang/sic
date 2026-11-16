@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Lifting
 public import Sic.Core.Typing.Renaming
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Substitution

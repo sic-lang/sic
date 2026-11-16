@@ -260,7 +260,8 @@ where
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
-    | .typeDeclaration h _ => wfTypeDeclaration h
+    | .typeDeclaration h _ _ => wfTypeDeclaration h
+    | .lifting h _ _ => wfTypeDeclaration h
 
 -- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- Every judgment in a context holds in a well-formed context. -/
@@ -418,6 +419,14 @@ theorem WfTypeDeclaration.fresh {sig : Signature} {decl : TypeDeclaration} :
   | .codata _ _ _ _ _ _ h => h
 
 -- ADE: none.
+/-- The type declaration that ends a well-formed signature is well formed in the signature before
+it, and names each of its types once. -/
+theorem WfSig.typeDeclaration_inv {decl : TypeDeclaration} {sig : Signature} :
+    WfSig (.typeDeclaration decl :: sig) → WfTypeDeclaration sig decl ∧ decl.names.Nodup
+  | .typeDeclaration h hn _ => ⟨h, hn⟩
+  | .lifting h _ _ => ⟨h, List.pairwise_singleton _ _⟩
+
+-- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
 theorem WfSig.fresh {e : Entry} {sig : Signature} :
     WfSig (e :: sig) → ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
@@ -427,7 +436,8 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
   | .constantDeclaration _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
-  | .typeDeclaration h _, e', he', n, hn => h.fresh e' he' n hn
+  | .typeDeclaration h _ _, e', he', n, hn => h.fresh e' he' n hn
+  | .lifting h _ _, e', he', n, hn => h.fresh e' he' n hn
 
 -- ADE: none.
 /-- The names of a well-formed signature are distinct.
@@ -438,8 +448,10 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
       by cases h with
         | typeDeclaration _ hn => exact hn
         | _ => exact List.pairwise_singleton _ _, h.fresh,
-      by cases h with
-        | typeDeclaration hdecl _ => cases hdecl with
+      by
+        rename_i e _
+        cases e with
+        | typeDeclaration decl => cases h.typeDeclaration_inv.1 with
           | data hb _ _ _ _ hc _ =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT

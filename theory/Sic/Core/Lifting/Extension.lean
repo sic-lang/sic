@@ -1,0 +1,76 @@
+module
+
+public import Sic.Core.Lifting
+
+/-!
+# Liftings Along the Signatures
+
+The liftings of annex 20 of RFC 36 hold in every signature that has the entries of theirs: the
+relations read their signature only by the entries that it has, the declaration of the type of an
+instance and that of its lifting, so that a signature with more entries gives the same premises.
+
+A lifting is checked in the signature before it, while a later entry reads it in its own
+signature, which has more entries.
+
+ADE have no declared types, and no liftings.
+-/
+
+@[expose] public section
+
+namespace Sic.Core
+
+open Sic.Grading
+
+variable {k : Nat} {sig sig' : Signature} {v : Lifting.Variables}
+
+mutual
+
+-- ADE: none.
+/-- A type lifted is lifted likewise in a signature with more entries. -/
+theorem Term.Lifts.extend (hs : sig ⊆ sig') :
+    {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
+      {A' : Term k Γ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
+        Term.Lifts sig' v ρ n e A A' l
+  | _, _, _, _, _, _, _, _, .var hx hts => .var hx hts
+  | _, _, _, _, _, _, _, _, .block hD hT => .block hD hT
+  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL =>
+    .inst (hs h) hD hn hq hl hp (has.extend hs) hS (hs hL)
+
+-- ADE: none.
+/-- The arguments of an instance lifted are lifted likewise in a signature with more entries. -/
+theorem InstanceArgs.Lifts.extend (hs : sig ⊆ sig') :
+    {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
+      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} → {Δ' : Scope} →
+      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
+        InstanceArgs.Lifts sig' v ρ ns as S ls as'
+  | _, _, _, _, _, _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, _, _, _, _, _, .lifted has hB => .lifted (has.extend hs) (hB.extend hs)
+  | _, _, _, _, _, _, _, _, _, _, .absent has hB hn => .absent (has.extend hs) hB hn
+
+end
+
+-- ADE: none.
+/-- The destructors of a codata type lifted are lifted likewise in a signature with more
+entries. -/
+theorem Destructors.Lifts.extend (hs : sig ⊆ sig') {Γ₀ : Scope} {κ : Universe k}
+    {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)} {Γ' : Scope}
+    {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} {ns : List Name} {ds : Destructors k Ξ ns}
+    {ns' : List Name} {ds' : Destructors k Γ' ns'} (h : Destructors.Lifts sig v κ o ρ @θ ds ds') :
+    Destructors.Lifts sig' v κ o ρ @θ ds ds' := by
+  induction h with
+  | nil => exact .nil
+  | lifted hB hκ _ ih => exact .lifted (hB.extend hs) hκ ih
+  | absent hB _ ih => exact .absent hB ih
+
+-- ADE: none.
+/-- The destructors of the lifting of a type of a type declaration are those of this lifting in a
+signature with more entries. -/
+theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration} {F : Name}
+    {S : List Nat} {ns : List Name}
+    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (h : decl.Lifts sig F S body) : decl.Lifts sig' F S body :=
+  let ⟨T, hT, hn, hb⟩ := h
+  ⟨T, hT, hn, fun I => (hb I).extend hs⟩
+
+end Sic.Core

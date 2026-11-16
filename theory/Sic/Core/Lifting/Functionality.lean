@@ -190,4 +190,31 @@ theorem InstanceArgs.Lifts.unique (hd : sig.Distinct) :
 
 end
 
+/-! ## Declarations of Liftings -/
+
+/-- The destructors of the lifting of a type at parameters are those of its declaration. -/
+theorem TypeDeclaration.lifting_destructors {decl : TypeDeclaration} {F : Name} {S : List Nat}
+    {ns₁ ns₂ : List Name}
+    {body₁ : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₁}
+    {body₂ : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₂}
+    (h : decl.lifting F S ns₁ body₁ = decl.lifting F S ns₂ body₂) : ns₁ = ns₂ := by
+  have h' : [ns₁] = [ns₂] :=
+    congrArg (fun d : TypeDeclaration => d.codataTypes.map CodataType.destructors) h
+  exact (List.cons.inj h').1
+
+/-- The destructors of the lifting of a type at parameters, at each instance, are those of its
+declaration. -/
+theorem TypeDeclaration.lifting_body {decl : TypeDeclaration} {F : Name} {S : List Nat}
+    {ns : List Name}
+    {body₁ body₂ : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (h : decl.lifting F S ns body₁ = decl.lifting F S ns body₂) : body₁ = body₂ := by
+  unfold TypeDeclaration.lifting at h
+  injection h with _ _ _ _ _ _ _ hb
+  injection hb with hb
+  injection hb with hb
+  injection hb with _ _ _ _ hb
+
 end Sic.Core

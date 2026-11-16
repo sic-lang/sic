@@ -32,8 +32,7 @@ theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
   | _ :: _, h, he => by
     rcases List.mem_cons.1 he with he | he
     · subst he
-      cases h with
-      | typeDeclaration hdecl _ => exact ⟨_, List.suffix_refl _, hdecl⟩
+      exact ⟨_, List.suffix_refl _, h.typeDeclaration_inv.1⟩
     · obtain ⟨sig', hs, hdecl⟩ :=
         (Presuppositions.tail presuppositions h).wfTypeDeclaration he
       exact ⟨sig', hs.trans (List.suffix_cons _ _), hdecl⟩

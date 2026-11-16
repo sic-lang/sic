@@ -946,7 +946,9 @@ theorem WfSig.validEntries {ι : Interpretation} {sigM : Signature}
       cases h with
       | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hrest hdef
       | constantDeclaration _ _ => exact hι _ hmem
-      | typeDeclaration hdecl _ => exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
+      | typeDeclaration hdecl _ _ =>
+        exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
+      | lifting hdecl _ _ => exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
     · exact hrest e' he'
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a

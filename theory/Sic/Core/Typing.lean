@@ -1,7 +1,6 @@
 module
 
-public import Sic.Core.Nesting
-public import Sic.Core.Positivity
+public import Sic.Core.Lifting
 public import Sic.Core.Prelude
 public import Sic.Core.Substitution.Closed
 public import Sic.Core.Substitution.Levels
@@ -60,12 +59,23 @@ inductive WfSig : Signature → Prop where
   | constantDeclaration {sig : Signature} {c : ConstantDeclaration}
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
-  /-- A type declaration, whose names of types are distinct.
+  /-- A type declaration, whose names of types are distinct, and none of them the name of a
+  lifting.
   RFC: `\mathsf{sig}_{\mathsf{data}}`
   RFC: `\mathsf{sig}_{\mathsf{codata}}` -/
   | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
-      (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup) :
+      (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
+      (hL : ∀ F S, Lifting.name F S ∉ decl.names) :
       WfSig (.typeDeclaration decl :: sig)
+  /-- The lifting of a codata type of a block of the signature, with the destructors of this type
+  lifted.
+  RFC: `\mathsf{sig}_{\mathsf{lift}}` -/
+  | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
+      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      (h : WfTypeDeclaration sig (decl.lifting F S ns body)) (hd : .typeDeclaration decl ∈ sig)
+      (hl : decl.Lifts sig F S body) :
+      WfSig (.typeDeclaration (decl.lifting F S ns body) :: sig)
 
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a

@@ -52,18 +52,6 @@ theorem Terms.ResultTypes.unique (hd : sig.Distinct) :
       cases Terms.ResultTypes.unique hd h₁ h₂
       rfl
 
-/-- The destructors of the lifting of a type at parameters are those of its declaration. -/
-theorem TypeDeclaration.lifting_destructors {decl : TypeDeclaration} {F : Name} {S : List Nat}
-    {ns₁ ns₂ : List Name}
-    {body₁ : Instance (decl.sorts + 1) (decl.grades + 3) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₁}
-    {body₂ : Instance (decl.sorts + 1) (decl.grades + 3) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₂}
-    (h : decl.lifting F S ns₁ body₁ = decl.lifting F S ns₂ body₂) : ns₁ = ns₂ := by
-  have h' : [ns₁] = [ns₂] :=
-    congrArg (fun d : TypeDeclaration => d.codataTypes.map CodataType.destructors) h
-  exact (List.cons.inj h').1
-
 -- ADE: none.
 /-- A term has one recursive result at most, at its type and at its nesting, in a signature whose
 names are distinct. -/

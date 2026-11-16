@@ -160,10 +160,10 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig)
 RFC: `\mathsf{prelude}_{\vdash}` -/
 theorem WfSig.prelude : WfSig Signature.prelude :=
   have hu : WfSig [.typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.unit .empty nofun) (by decide)
+    .typeDeclaration (.unit .empty nofun) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
   have hp : WfSig [.typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.pair hu (by decide)) (by decide)
-  .typeDeclaration (.step hp (by decide)) (by decide)
+    .typeDeclaration (.pair hu (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
+  .typeDeclaration (.step hp (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
 
 /-! ## Packing -/
 

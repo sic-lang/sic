@@ -1,9 +1,13 @@
 module
 
 public import Sic.Core.Typing.Lifting.Context
+import Sic.Core.Lifting.Extension
+import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Substitution
+import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting.Destructors
 import Sic.Core.Typing.Lifting.Parameters
+import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature
 
 /-!
@@ -18,6 +22,10 @@ them is typed, and its destructors, those of the type lifted at the parameter `y
 of its sort, in the context of this typed lifting.
 The lifting declares no parameter in which it is strictly positive, and its destructors, which are
 among those of the type, have distinct names.
+
+A well-formed signature holds the liftings that it declares: the rule of the liftings is the only
+one that introduces the name of a lifting, and it asks for the destructors of the type lifted, in
+the signature before the lifting, of which the signature has the entries.
 
 ADE have no declared types, and no liftings.
 -/
@@ -98,5 +106,51 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
     exact nomatch hx
   · cases List.mem_singleton.1 hT''
     exact (Destructors.Lifts.sublist (hb ⟨fun _ => .type, fun _ => .unrestrictedUnrestricted⟩)).nodup hc
+
+-- ADE: none.
+/-- A type declaration of a well-formed signature one of whose types has the name of a lifting is
+the lifting of a type of a type declaration of the signature, with the destructors of this type
+lifted. -/
+theorem WfSig.lifting_inv {E : TypeDeclaration} {F : Name} {S : List Nat} :
+    {sig : Signature} → WfSig sig → .typeDeclaration E ∈ sig → Lifting.name F S ∈ E.names →
+      ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
+        (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+          Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
+        E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig ∧ decl.Lifts sig F' S' body
+  | [], _, he, _ => nomatch he
+  | _ :: sig, h, he, hn => by
+    rcases List.mem_cons.1 he with he | he
+    · subst he
+      cases h with
+      | typeDeclaration _ _ hL => exact absurd hn (hL F S)
+      | lifting _ hd hl =>
+        exact ⟨_, _, _, _, _, rfl, List.mem_cons_of_mem _ hd,
+          hl.extend (List.subset_cons_self _ _)⟩
+    · obtain ⟨decl, F', S', ns, body, rfl, hd, hl⟩ :=
+        WfSig.lifting_inv (Presuppositions.tail presuppositions h) he hn
+      exact ⟨decl, F', S', ns, body, rfl, List.mem_cons_of_mem _ hd,
+        hl.extend (List.subset_cons_self _ _)⟩
+
+-- ADE: none.
+/-- A well-formed signature holds the lifting that it declares of a type of one of its type
+declarations: the destructors with which it declares this lifting are those of the type lifted.
+RFC: `\mathsf{sig}_{\uparrow}` -/
+theorem WfSig.lifts {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
+    (hd : .typeDeclaration decl ∈ sig) {D : Name} (hD : D ∈ decl.names) {S : List Nat}
+    {ns : List Name}
+    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by
+  obtain ⟨decl', F', S', ns', body', he, hd', hl'⟩ :=
+    h.lifting_inv hL (F := D) (S := S) List.mem_cons_self
+  have hname : [Lifting.name D S] = [Lifting.name F' S'] :=
+    congrArg TypeDeclaration.names he
+  obtain ⟨rfl, rfl⟩ := Lifting.name_inj (List.cons.inj hname).1
+  obtain ⟨T, hT, hn, hb⟩ := hl'
+  cases Entry.typeDeclaration.inj (h.distinct.entry_unique hd hd' (n := D) hD
+    (hn ▸ TypeDeclaration.codata_name_mem_names hT))
+  obtain rfl := TypeDeclaration.lifting_destructors he
+  obtain rfl := TypeDeclaration.lifting_body he
+  exact ⟨T, hT, hn, hb⟩
 
 end Sic.Core
