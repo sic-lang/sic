@@ -6,7 +6,6 @@ public import Sic.Core.Results
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Recursors.Similar
 import Sic.Core.Lifting.Functionality
-import Sic.Core.Lifting.Instantiation
 import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
