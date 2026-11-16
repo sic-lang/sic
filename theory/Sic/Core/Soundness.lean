@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Soundness.Corecursors
+public import Sic.Core.Soundness.Nesting
 public import Sic.Core.Typing
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Soundness.Recursors
@@ -24,6 +25,9 @@ the same name in `Rules`, `Recursors` or `Corecursors`.
 A premise that is not a subterm of the derivation, such as the well-formed signature that
 `presuppositions` gives, would stop the recursion: the meaningful signature and context of a case
 come from the meaning of one of its premises.
+The type declarations, their fields and their destructors have a recursion of their own, after that
+of the judgments in a context: a nested field reads the soundness of the typing on derivations that
+are no subterms of its own, those of the types that it goes through.
 
 ADE prove the fundamental theorem for their judgments with a context of definitions and without
 levels, whose definitions have bodies, so that they need no interpretation.
@@ -101,26 +105,6 @@ structure SoundnessIn : Prop where
     {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
       sigM.Distinct → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
-  /-- The fields of a constructor in a sort. -/
-  wfFields : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
-    {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
-    {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
-          (Θ.nestAt decl.names) Θ κ
-  /-- The destructors of a codata type in a sort. -/
-  wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
-    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
-    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I @ν as ctx ds κ →
-        ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
-          (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
-  /-- A well-formed type declaration. -/
-  wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
-    sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
-      ValidTypeDeclaration sigM ι decl
 
 /-- The scope of a destructor at the corecursor from the variables of a state, at levels without
 variables, is the scope of the destructor at the corecursor at these levels. -/
@@ -256,7 +240,7 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn :=
   ⟨wfConstantDefinition, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs,
-    eqInstanceArgs, wfTelescope, eqTelescope, wfFields, wfDestructors, wfTypeDeclaration⟩
+    eqInstanceArgs, wfTelescope, eqTelescope⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
@@ -754,6 +738,50 @@ where
     | .cons hA hκ hΘ _ => fun ρ =>
       ValidEqTelescopeΓ.cons (eqTerm hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         (eqTelescope hd hι hΘ ρ)
+
+-- ADE: none.
+/-- The soundness of the typing, in the signatures whose entries a signature whose names are
+distinct gives their meaning. -/
+theorem soundnessIn.typingSound {ι : Interpretation} {sigM : Signature} (hd : sigM.Distinct) :
+    TypingSound sigM ι where
+  hasType hι h := soundnessIn.hasType hd hι h
+  wfTelescope hι h := soundnessIn.wfTelescope hd hι h
+  hasArgs hι h := soundnessIn.hasArgs hd hι h
+  hasInstanceArgs hι h := soundnessIn.hasInstanceArgs hd hι h
+
+/-! ## Type Declarations in a Signature That Gives Their Entries Their Meaning -/
+
+-- ADE: none.
+/-- Every type declaration typed in the signature `Σ_T` is meaningful in a signature `Σ` whose names
+are distinct and that gives the entries of `Σ_T` their meaning, as its fields and its destructors
+are. -/
+structure DeclarationSoundnessIn : Prop where
+  /-- The fields of a constructor in a sort. -/
+  wfFields : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
+    {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
+    {κ : Universe decl.levels},
+      sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
+        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
+          (Θ.nestAt decl.names) Θ κ
+  /-- The destructors of a codata type in a sort. -/
+  wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
+    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
+      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I @ν as ctx ds κ →
+        ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
+          (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
+  /-- A well-formed type declaration. -/
+  wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
+    sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
+      ValidTypeDeclaration sigM ι decl
+
+/-- Every type declaration typed in the signature `Σ_T` is meaningful in a signature `Σ` whose names
+are distinct and that gives the entries of `Σ_T` their meaning. -/
+theorem declarationSoundnessIn : DeclarationSoundnessIn :=
+  ⟨wfFields, wfDestructors, wfTypeDeclaration⟩
+where
   wfFields {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       {I : Instance decl.sorts decl.grades} {Γ : Scope}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
@@ -762,13 +790,13 @@ where
       WfFields sig decl I as ctx Θ κ →
         ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ
-    | .nil hctx => fun ρ => ValidFieldsΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidFieldsΓ.nil (soundnessIn.wfCtx hd hι hctx ρ)
     | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
       have hΘ' := wfFields hd hι hΘ ρ
       rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
           fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
         funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
-      exact ValidFieldsΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
+      exact ValidFieldsΓ.cons (soundnessIn.hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         hn hΘ'
     | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
       have hΘ' := wfFields hd hι hΘ ρ
@@ -793,10 +821,10 @@ where
       WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
           (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
-    | .nil hctx => fun ρ => ValidDestructorsΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidDestructorsΓ.nil (soundnessIn.wfCtx hd hι hctx ρ)
     | .nested (d := d) (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς)
         hn hν hΘ hB hκ _ hds => fun ρ => by
-      have hB' := hasType hd hι hB ρ
+      have hB' := soundnessIn.hasType hd hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
       have hds' := wfDestructors hd hι hds ρ
       show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
@@ -806,7 +834,7 @@ where
       refine ValidDestructorsΓ.nested
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (by simp [Destructors.nestedAt, Destructors.nested, Nest.isPlain_eq_false hν])
-        (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) ?_
+        (soundnessIn.wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) ?_
       have hr : (fun i => (Destructors.cons (d := d) p q ς Θ B ψ
           (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
         funext i
@@ -823,7 +851,7 @@ where
       rw [hr, hr']
       exact hds'
     | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) hn hν hΘ hB hκ _ hds => fun ρ => by
-      have hB' := hasType hd hι hB ρ
+      have hB' := soundnessIn.hasType hd hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
       have hds' := wfDestructors hd hι hds ρ
       rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
@@ -832,7 +860,7 @@ where
       exact ValidDestructorsΓ.cons
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (by simp [Destructors.nestedAt, Destructors.nested, hν, Nest.isPlain])
-        (wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
+        (soundnessIn.wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
     | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς) hD hΘ
         _ hds => fun ρ => by
       have hds' := wfDestructors hd hι hds ρ
@@ -845,7 +873,7 @@ where
         Term.substLevels_rename _ _ (decl.blockInstance I D as)]
       refine ValidDestructorsΓ.recursive (D := D)
         (by simp [Destructors.recursionAt, Destructors.recursion, TypeDeclaration.blockInstance,
-          Term.blockName, hD]) (wfTelescope hd hι hΘ ρ) ?_
+          Term.blockName, hD]) (soundnessIn.wfTelescope hd hι hΘ ρ) ?_
       have hr : (fun i => (Destructors.cons (d := d) p q ς Θ
           (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
@@ -898,7 +926,7 @@ theorem WfSig.validEntries {ι : Interpretation} {sigM : Signature}
       cases h with
       | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hrest hdef
       | constantDeclaration _ _ => exact hι _ hmem
-      | typeDeclaration hdecl _ => exact soundnessIn.wfTypeDeclaration hd hrest hdecl
+      | typeDeclaration hdecl _ => exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
     · exact hrest e' he'
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
@@ -1057,9 +1085,9 @@ theorem soundness : Soundness where
     soundnessIn.eqTelescope hs.1 hs.validEntries h
   wfDestructors hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfDestructors h)
-    soundnessIn.wfDestructors hs.1 hs.validEntries h
+    declarationSoundnessIn.wfDestructors hs.1 hs.validEntries h
   wfTypeDeclaration hι h :=
     have hs := soundness_wfSig hι (presuppositions.wfTypeDeclaration h)
-    soundnessIn.wfTypeDeclaration hs.1 hs.validEntries h
+    declarationSoundnessIn.wfTypeDeclaration hs.1 hs.validEntries h
 
 end Sic.Core
