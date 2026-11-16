@@ -752,6 +752,30 @@ theorem Destructors.Pos.params_unique {k : Nat} {d : Name} {p₁ q₁ ς₁ p₂
     | here => exact absurd h₁.mem (List.nodup_cons.1 hn).1
     | there h₂ => exact h₁.params_unique (List.nodup_cons.1 hn).2 h₂
 
+/-- What holds at a position of a destructor in destructors with distinct names holds at each of
+its positions there, which is this one. -/
+theorem Destructors.Pos.forall_of {k : Nat} {d : Name} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → ns.Nodup →
+      {motive : ∀ {p q ς : Grade} {ps : List Parameter} {Ξ : Scope} {Θ : Telescope k Ξ ps}
+        {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length},
+        Destructors.Pos d p q ς ds Ξ Θ B ψ → Prop} →
+      ∀ {p₁ q₁ ς₁ : Grade} {ps₁ : List Parameter} {Ξ₁ : Scope} {Θ₁ : Telescope k Ξ₁ ps₁}
+        {B₁ : Term k (Ξ₁.extend ps₁.length)} {ψ₁ : ResultOwnership Grade ps₁.length}
+        (h₁ : Destructors.Pos d p₁ q₁ ς₁ ds Ξ₁ Θ₁ B₁ ψ₁), motive h₁ →
+      ∀ {p₂ q₂ ς₂ : Grade} {ps₂ : List Parameter} {Ξ₂ : Scope} {Θ₂ : Telescope k Ξ₂ ps₂}
+        {B₂ : Term k (Ξ₂.extend ps₂.length)} {ψ₂ : ResultOwnership Grade ps₂.length}
+        (h₂ : Destructors.Pos d p₂ q₂ ς₂ ds Ξ₂ Θ₂ B₂ ψ₂), motive h₂
+  | _, _, _, hn, _, _, _, _, _, _, _, _, _, .here, hm, _, _, _, _, _, _, _, _, h₂ => by
+    cases h₂ with
+    | here => exact hm
+    | there h => exact absurd h.mem (List.nodup_cons.1 hn).1
+  | _, _, _, hn, motive, _, _, _, _, _, _, _, _, .there h₁, hm, _, _, _, _, _, _, _, _, h₂ => by
+    cases h₂ with
+    | here => exact absurd h₁.mem (List.nodup_cons.1 hn).1
+    | there h₂ =>
+      exact Destructors.Pos.forall_of (List.nodup_cons.1 hn).2
+        (motive := fun h => motive (.there h)) h₁ hm h₂
+
 /-- The destructor at a position of destructors whose names are distinct has the result there. -/
 theorem Destructors.Pos.resultName {k : Nat} {d : Name} {p q ς : Grade} {ps : List Parameter}
     (names : List Name) :

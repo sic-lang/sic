@@ -408,6 +408,61 @@ theorem Lifting.Substitutes.subst_rename₀ {Γ' Γ Δ' Δ : Scope} {θ : Subst 
     (t.rename ρ.ren).subst θ' = (t.subst θ).rename ρ'.ren :=
   h.subst_rename 0 t
 
+/-- A lifting substituted, and then substituted again, is the lifting substituted by the
+substitutions that give each variable what the first ones give it, substituted by the second
+ones. -/
+theorem Lifting.Substitutes.comp {Γ' Γ Δ' Δ Ξ' Ξ : Scope} {θ₁ : Subst k Δ Ξ}
+    {θ₁' : Subst k Δ' Ξ'} {θ₂ : Subst k Γ Δ} {θ₂' : Subst k Γ' Δ'} {ρ₁ : Lifting k Ξ' Ξ}
+    {ρ₂ : Lifting k Δ' Δ} {ρ₃ : Lifting k Γ' Γ} (h₁ : Lifting.Substitutes θ₁ θ₁' ρ₁ ρ₂)
+    (h₂ : Lifting.Substitutes θ₂ θ₂' ρ₂ ρ₃) :
+    Lifting.Substitutes (fun {a} x => (θ₁ x).subst (Subst.liftN a.params.length θ₂))
+      (fun {a} x => (θ₁' x).subst (Subst.liftN a.params.length θ₂')) ρ₁ ρ₃ where
+  ren := fun {a} x => by
+    rw [h₁.ren x]
+    exact h₂.subst_rename a.params.length (θ₁ x)
+  motive := h₁.motive
+  motive' := h₂.motive'
+  block := fun D => by
+    rw [h₂.block D, h₁.block D, Option.map_map]
+    refine congrArg (fun f => Option.map f (ρ₁.block D)) (funext fun b => ?_)
+    exact Lifting.BlockMotive.mk_congr b.level (Term.subst_subst_of (fun _ => rfl) b.type)
+      (Term.subst_subst_of (Subst.lift_subst_of fun _ => rfl) b.motive)
+
+/-- A lifting that lifts no variable is itself, substituted by the substitutions that give each
+variable itself. -/
+theorem Lifting.Substitutes.refl {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) :
+    Lifting.Substitutes (fun x => Var.eta x) (fun x => Var.eta x) ρ ρ where
+  ren := fun x => (Var.eta_rename ρ.ren x).symm
+  motive := hρ
+  motive' := hρ
+  block := fun D => by
+    cases ρ.block D with
+    | none => rfl
+    | some b =>
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+        (Term.subst_id_of (fun _ => rfl) b.type).symm
+        (Term.subst_id_of (Subst.lift_id_of fun _ => rfl) b.motive).symm)
+
+/-- A lifting substituted, in a scope extended by a new entry, which the substitution of this
+scope gives any abstraction. -/
+theorem Lifting.Substitutes.ofSnoc {Γ' Γ Δ' Δ : Scope} {e : Scope.Entry} {θ : Subst k Γ Δ}
+    {θ' : Subst k Γ' Δ'} {ρ : Lifting k Δ' Δ} {ρ' : Lifting k Γ' Γ}
+    (h : Lifting.Substitutes θ θ' ρ ρ') (u : Term k (Γ'.extend e.params.length)) :
+    Lifting.Substitutes θ (Subst.snoc (e := e) θ' u) ρ.weaken ρ' where
+  ren := fun x => h.ren x
+  motive := fun x => by
+    show (ρ.motive x).map _ = none
+    rw [h.motive x]
+    rfl
+  motive' := h.motive'
+  block := fun D => by
+    show ρ'.block D = ((ρ.block D).map _).map _
+    rw [h.block D, Option.map_map]
+    refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
+    exact Lifting.BlockMotive.mk_congr b.level rfl
+      (Term.subst_rename_of (fun x => by cases x <;> rfl) b.motive).symm
+
 /-- The motive of a parameter lifted, in the scope of its telescope followed by a term, substituted
 under this telescope, is this motive substituted under the telescope and under the term. -/
 theorem Term.subst_extend_snoc : {Γ Δ : Scope} → (ps : List Parameter) → (p : Parameter) →

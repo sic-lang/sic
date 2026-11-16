@@ -101,6 +101,23 @@ theorem CorecBranches.ext {k : Nat} {Γ : Scope} :
     rw [CorecBranches.ext (vs₁ := vs₁) (vs₂ := vs₂) (Nat.succ.inj hl) fun i hi =>
       h (i + 1) (Nat.succ_lt_succ hi)]
 
+/-- Branches of a corecursor exist, as many as a number, each of which has a property of its
+position, when a branch with this property exists for each position. -/
+theorem CorecBranches.exists_of_forall {k : Nat} {Γ : Scope} :
+    (n : Nat) →
+      (P : Nat → (Σ n m a, Term k (((Γ.extend n).extend m).extend a)) → Prop) →
+      (∀ i, i < n → ∃ b, P i b) →
+        ∃ vs : CorecBranches k Γ, vs.length = n ∧ ∀ i, i < n → ∃ b, vs.get i = some b ∧ P i b
+  | 0, _, _ => ⟨.nil, rfl, fun _ hi => nomatch hi⟩
+  | n + 1, P, h => by
+    obtain ⟨⟨n₀, m₀, a₀, v⟩, hb⟩ := h 0 (Nat.zero_lt_succ n)
+    obtain ⟨vs, hl, hvs⟩ := CorecBranches.exists_of_forall n (fun i => P (i + 1))
+      fun i hi => h (i + 1) (Nat.succ_lt_succ hi)
+    refine ⟨.cons n₀ m₀ a₀ v vs, congrArg Nat.succ hl, fun i hi => ?_⟩
+    cases i with
+    | zero => exact ⟨_, rfl, hb⟩
+    | succ i => exact hvs i (Nat.lt_of_succ_lt_succ hi)
+
 /-! ## Scopes -/
 
 /-- The length of the scope `Γ` extended by `a` variables. -/
