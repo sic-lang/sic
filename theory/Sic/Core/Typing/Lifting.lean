@@ -1,7 +1,7 @@
 module
 
+public import Sic.Core.Lifting.Extension
 public import Sic.Core.Typing.Lifting.Context
-import Sic.Core.Lifting.Extension
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Shape
 import Sic.Core.Lifting.Substitution
@@ -27,6 +27,7 @@ among those of the type, have distinct names.
 A well-formed signature holds the liftings that it declares: the rule of the liftings is the only
 one that introduces the name of a lifting, and it asks for the destructors of the type lifted, in
 the signature before the lifting, of which the signature has the entries.
+It thus declares its liftings in order, each after the destructors that it lifts.
 
 ADE have no declared types, and no liftings.
 -/
@@ -152,6 +153,44 @@ theorem WfSig.lifts {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
     (hn ▸ TypeDeclaration.codata_name_mem_names hT))
   obtain rfl := TypeDeclaration.lifting_destructors he
   obtain rfl := TypeDeclaration.lifting_body he
+  exact ⟨T, hT, hn, hb⟩
+
+-- ADE: none.
+/-- A type declaration of a well-formed signature one of whose types has the name of a lifting is
+the lifting of a type of a type declaration of the signature before it, with the destructors of
+this type lifted in the signature before it. -/
+theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
+    {sig₁ : Signature} :
+    (pre : Signature) → WfSig (pre ++ .typeDeclaration E :: sig₁) → Lifting.name F S ∈ E.names →
+      ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
+        (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+          Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
+        E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig₁ ∧
+          decl.Lifts sig₁ F' S' body
+  | [], h, hn => by
+    cases h with
+    | typeDeclaration _ _ hL => exact absurd hn (hL F S)
+    | lifting _ hd hl => exact ⟨_, _, _, _, _, rfl, hd, hl⟩
+  | _ :: pre, h, hn =>
+    WfSig.lifting_inv_before pre (Presuppositions.tail presuppositions h) hn
+
+-- ADE: none.
+/-- A well-formed signature declares each of its liftings after the destructors that it lifts: the
+rule of the liftings asks for these destructors, lifted in the signature before the lifting. -/
+theorem WfSig.liftsInOrder {sig : Signature} (h : WfSig sig) : sig.LiftsInOrder := by
+  intro pre sig₁ decl D S ns body he hd hD
+  subst he
+  obtain ⟨decl', F', S', ns', body', he', hd', hl'⟩ :=
+    WfSig.lifting_inv_before pre h (F := D) (S := S) List.mem_cons_self
+  have hname : [Lifting.name D S] = [Lifting.name F' S'] :=
+    congrArg TypeDeclaration.names he'
+  obtain ⟨rfl, rfl⟩ := Lifting.name_inj (List.cons.inj hname).1
+  obtain ⟨T, hT, hn, hb⟩ := hl'
+  cases Entry.typeDeclaration.inj (h.distinct.entry_unique hd
+    (List.mem_append_right pre (List.mem_cons_of_mem _ hd')) (n := D) hD
+    (hn ▸ TypeDeclaration.codata_name_mem_names hT))
+  obtain rfl := TypeDeclaration.lifting_destructors he'
+  obtain rfl := TypeDeclaration.lifting_body he'
   exact ⟨T, hT, hn, hb⟩
 
 end Sic.Core

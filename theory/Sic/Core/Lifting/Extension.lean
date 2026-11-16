@@ -12,6 +12,9 @@ more entries does, and as the signature of the meaning does, in which the consta
 
 A lifting is checked in the signature before it, while a later entry reads it in its own
 signature, which has more entries.
+A signature declares its liftings in order when the destructors of each are lifted in the signature
+before it: the proofs that follow the liftings that a lifting reads, as the existence of the
+recursive results, go by induction on the entries of such a signature.
 
 ADE have no declared types, and no liftings.
 -/
@@ -92,5 +95,18 @@ theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration
     (h : decl.Lifts sig F S body) : decl.Lifts sig' F S body :=
   let ⟨T, hT, hn, hb⟩ := h
   ⟨T, hT, hn, fun I => (hb I).extend hs⟩
+
+/-! ## Order of the Liftings -/
+
+-- ADE: none.
+/-- The signature declares each of its liftings after the destructors that it lifts: the lifting of
+a type of one of its type declarations has the destructors of this type, lifted in the signature
+before the lifting. -/
+def Signature.LiftsInOrder (sig : Signature) : Prop :=
+  ∀ (pre sig₁ : Signature) (decl : TypeDeclaration) (D : Name) (S : List Nat) (ns : List Name)
+    (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns),
+    sig = pre ++ .typeDeclaration (decl.lifting D S ns body) :: sig₁ →
+      .typeDeclaration decl ∈ sig → D ∈ decl.names → decl.Lifts sig₁ D S body
 
 end Sic.Core
