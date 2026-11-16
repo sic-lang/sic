@@ -759,7 +759,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
   -- The equality of the block at the arguments substituted.
-  obtain ⟨SM, hUM, hmonoM, hrecM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
+  obtain ⟨SM, hUM, hmonoM, hrecM, -, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
   have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
       (DataType.blockRel decl.dataTypes SM T'.name).computed sig ι a b →
         ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
@@ -1186,7 +1186,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
   -- The equality of the block at the arguments substituted.
-  obtain ⟨SM, hUM, hmonoM, hrecM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
+  obtain ⟨SM, hUM, hmonoM, hrecM, -, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
   have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
       (DataType.blockRel decl.dataTypes SM T'.name).computed sig ι a b →
         ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
@@ -1413,7 +1413,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   | prop =>
     -- No term of an instance of a block of propositions without constructor is true.
     have hasσ := has.2 σ σ hσ
-    obtain ⟨S, hP, hmono, -, -⟩ := hv.propRel hd hdecl hq hl hp hadm hasσ hs
+    obtain ⟨S, hP, hmono, -, -, -⟩ := hv.propRel hd hdecl hq hl hp hadm hasσ hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1
     have hI : Computesι sig ι (.inst T.name qs ls ps (as.subst σ))
         (.inst T.name qs ls ps (as.subst σ)) := ⟨.refl _, .inst _ _ _ _ _⟩

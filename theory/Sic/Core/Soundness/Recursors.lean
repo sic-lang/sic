@@ -358,7 +358,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     ht'.trans ht'.symm
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · -- An instance in a universe: induction on `(eq_μ)`.
-    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl₁ hp hadm hasσ hs
+    obtain ⟨S, hU, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl₁ hp hadm hasσ hs
     have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
         (DataType.blockRel decl.dataTypes S T'.name).computed sig ι a b →
           ValidEqTerm₀ sig ι a b (.inst T'.name qs ls₁ ps (as₁.subst σ₁)) :=
@@ -421,7 +421,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     exact (ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₁.1)).2
       ((ValidEqTerm₀.redStar_iff hd (RedStar.recursor hw₂.1)).2 hP'.symm).symm
   · -- A proposition: induction on `(true_μ)`.
-    obtain ⟨S, hP, hmono, hrec, hiff⟩ := hv.propRel hd hdecl hq hl₁ hp hadm hasσ hs
+    obtain ⟨S, hP, hmono, hrec, -, hiff⟩ := hv.propRel hd hdecl hq hl₁ hp hadm hasσ hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1
     have hprop : ComputesToProp sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
       ⟨_, hI _, _, _, hP'⟩
@@ -659,7 +659,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
   have hasσ := has.2 σ₁ σ₁ hσ₁
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · -- An instance in a universe: the term computes to the constructor, at both substitutions.
-    obtain ⟨S, hU, hmono, hrec, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
+    obtain ⟨S, hU, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
     have hU' := levelRel_univ_iff.2 (hU T hT).1
     have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls ps (as.subst σ₁)) :=
       fun ⟨v, hv, k, b, hk⟩ => by
