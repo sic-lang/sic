@@ -182,7 +182,7 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
   at least is lifted: the corecursor of the instance of the lifting of this type, as the lifting of
   the instance at the term gives it, without state, whose branch of each destructor `d` of the
   lifting, at the position `i`, is the result of the observation of the term by the destructor `d`
-  of the type, at the position `hd` in the destructors
+  of the type, which is one of its destructors, at the position `hd` in the destructors
   `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς | d̄₂)` of the type at the instance: the type of this
   observation is `B`, the destructors `d̄₁` before it being the observations of the term by them,
   and its nesting is that of `B`, where the parameters have the nestings of the arguments. -/
@@ -201,10 +201,10 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
       (hgl : gs.length = ns.length)
       (hgs : ∀ i d, ns[i]? = some d →
-        ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
-          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
-        ∃ g, gs.get i = some ⟨0, 0, ps₁.length, g⟩)
+        ∃ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
+          (_ : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (g : _),
+        gs.get i = some ⟨0, 0, ps₁.length, g⟩)
       (hgt : ∀ i d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership Grade ps₁.length) (g : Term k (Γ.extend ps₁.length)),

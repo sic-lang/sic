@@ -89,6 +89,18 @@ theorem CorecBranches.get_inj {k : Nat} {Γ : Scope} {vs : CorecBranches k Γ} {
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
+/-- Branches of corecursors are the same when they are as many and the same at each position. -/
+theorem CorecBranches.ext {k : Nat} {Γ : Scope} :
+    {vs₁ vs₂ : CorecBranches k Γ} → vs₁.length = vs₂.length →
+      (∀ i, i < vs₁.length → vs₁.get i = vs₂.get i) → vs₁ = vs₂
+  | .nil, .nil, _, _ => rfl
+  | .nil, .cons .., h, _ => nomatch h
+  | .cons .., .nil, h, _ => nomatch h
+  | .cons _ _ _ _ vs₁, .cons _ _ _ _ vs₂, hl, h => by
+    cases Option.some.inj (h 0 (Nat.zero_lt_succ _))
+    rw [CorecBranches.ext (vs₁ := vs₁) (vs₂ := vs₂) (Nat.succ.inj hl) fun i hi =>
+      h (i + 1) (Nat.succ_lt_succ hi)]
+
 /-! ## Scopes -/
 
 /-- The length of the scope `Γ` extended by `a` variables. -/
