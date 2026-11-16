@@ -1795,6 +1795,14 @@ theorem Args.subst₀_eq_subst {Γ Δ : Scope} {ps : List Parameter} (σ : Subst
   have h := Args.subst_subst₀_of (Subst₀.Swaps.toSubst σ) ts
   rwa [Args.subst_id_of fun _ => rfl, Args.subst₀_id_of (σ := Subst₀.id) fun _ => rfl] at h
 
+/-- Terms substituted by a substitution of the first order are the terms substituted by it as one
+of the second order. -/
+theorem Terms.subst₀_eq_subst {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) :
+    (ts : Terms k Δ) → ts.subst₀ σ = ts.subst σ.toSubst
+  | .nil => rfl
+  | .cons t ts => by
+    rw [Terms.subst₀, Terms.subst, Term.subst₀_eq_subst, Terms.subst₀_eq_subst σ ts]
+
 /-- Arguments of an instance substituted by a substitution of the first order are the arguments
 substituted by it as one of the second order. -/
 theorem InstanceArgs.subst₀_eq_subst {Γ Δ Ξ : Scope} (σ : Subst₀ k Γ Δ)

@@ -732,6 +732,17 @@ theorem Args.terms_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k'
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg _ (Args.terms_substLevels ls' ts)
 
+/-- The new variables, at instantiated levels, are themselves. -/
+theorem Args.bound_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    ∀ ps : List Parameter, (Args.bound (k := k) (Γ := Γ) ps).substLevels ls' = Args.bound ps
+  | [] => rfl
+  | _ :: ps => by
+    show Args.cons ((Term.var₀ (Var.weakenN ps.length .zero)).substLevels ls')
+        ((Args.bound (Γ := .var :: Γ) ps).substLevels ls') =
+      Args.cons (Term.var₀ (Var.weakenN ps.length .zero)) (Args.bound (Γ := .var :: Γ) ps)
+    rw [Args.bound_substLevels ls' ps]
+    rfl
+
 /-- A constructor applied to arguments, at instantiated levels, is the constructor applied to the
 arguments at these levels. -/
 theorem Term.ctor_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k') (D : Name)

@@ -2,7 +2,7 @@ module
 
 public import Sic.Core.Results
 public import Sic.Core.Lifting.Substitution
-import Sic.Core.Substitution.Composition
+public import Sic.Core.Substitution.Composition
 import Sic.Core.Substitution.Levels
 import Sic.Core.Substitution.Rules
 
@@ -15,6 +15,8 @@ changes the arguments that the types of the fields keep, the instances of the ty
 and their motives.
 They are those of the fields at instantiated levels in the same way, once levels replace their
 level variables.
+The recursive results of the fields of a constructor follow: the types of its fields, at the
+arguments of an instance substituted, are these types substituted under the fields.
 
 ADE have no declared types, and no recursive results of this form.
 -/
@@ -62,6 +64,61 @@ theorem Lifting.ofMotives_substitutes {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (n
         | succ => rfl
     · simp only [hD, ↓reduceIte]
       rfl
+
+/-! ## Types of the Fields -/
+
+/-- A term renamed under new variables, substituted under them by a substitution of the first
+order, is the term substituted, renamed under them. -/
+theorem Term.subst₀_liftN_rename_weakenN {Γ Δ : Scope} (n : Nat) (σ : Subst₀ k Γ Δ)
+    (t : Term k Δ) :
+    (t.rename (Ren.weakenN n)).subst₀ (Subst₀.liftN n σ) = (t.subst₀ σ).rename (Ren.weakenN n) :=
+  (Term.subst₀_rename_of (fun _ => rfl) t).trans
+    (Term.rename_subst₀_of (fun x => (Subst₀.liftN_weakenN n σ x).symm) t).symm
+
+/-- The types of the entries of a telescope substituted are the types of its entries, substituted
+under the entries. -/
+theorem Telescope.types_subst : {Γ Δ : Scope} → {ps : List Parameter} → (θ : Subst k Γ Δ) →
+    (Θ : Telescope k Δ ps) → (Θ.subst θ).types = Θ.types.subst (Subst.liftN ps.length θ)
+  | _, _, [], _, .nil => rfl
+  | _, _, _ :: ps, θ, .cons _ _ A Θ => by
+    show Terms.cons _ (Θ.subst (Subst.lift θ)).types = Terms.cons _ _
+    rw [Telescope.types_subst (Subst.lift θ) Θ]
+    exact congrArg (Terms.cons · _) (Term.subst_liftN_rename_weakenN (ps.length + 1) θ A).symm
+
+/-- The types of the entries of a telescope substituted by a substitution of the first order are
+the types of its entries, substituted under the entries. -/
+theorem Telescope.types_subst₀ : {Γ Δ : Scope} → {ps : List Parameter} → (σ : Subst₀ k Γ Δ) →
+    (Θ : Telescope k Δ ps) → (Θ.subst₀ σ).types = Θ.types.subst₀ (Subst₀.liftN ps.length σ)
+  | _, _, [], _, .nil => rfl
+  | _, _, _ :: ps, σ, .cons _ _ A Θ => by
+    show Terms.cons _ (Θ.subst₀ (Subst₀.lift σ)).types = Terms.cons _ _
+    rw [Telescope.types_subst₀ (Subst₀.lift σ) Θ]
+    exact congrArg (Terms.cons · _) (Term.subst₀_liftN_rename_weakenN (ps.length + 1) σ A).symm
+
+/-- The types of the entries of a telescope, at arguments of the telescope, are the types of its
+entries at these arguments. -/
+theorem Telescope.types_toSubst₀ : {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) →
+    (ts : Args k Γ ps) → Θ.types.subst₀ ts.toSubst₀ = Θ.typesAt ts
+  | _, [], .nil, .nil => rfl
+  | _, p :: ps, .cons _ _ A Θ, .cons t ts => by
+    have e₁ := Term.subst₀_rename_of (α := Ren.weakenN (ps.length + 1)) (σ' := Subst₀.id)
+      (fun x => Args.toSubst₀_weakenN (Args.cons (p := p) t ts) x) A
+    have e₂ : Terms.subst₀ (Δ := Scope.extend (.var :: _) ps.length) (Args.toSubst₀ (Args.cons (p := p) t ts))
+        Θ.types = (Θ.subst₀ (Subst₀.single t)).typesAt ts := by
+      rw [← Telescope.types_toSubst₀ (Θ.subst₀ (Subst₀.single t)) ts, Telescope.types_subst₀]
+      exact (Terms.subst₀_subst₀_of (fun _ => rfl) Θ.types).symm
+    exact (congrArg (Terms.cons · _) (e₁.trans (Term.subst₀_id A))).trans (congrArg _ e₂)
+
+/-- The types of the entries of a telescope at arguments, substituted, are the types of the
+entries of the telescope substituted, at the arguments substituted. -/
+theorem Telescope.typesAt_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {ps : List Parameter} → (Θ : Telescope k Δ ps) → (ts : Args k Δ ps) →
+      (Θ.typesAt ts).subst θ = (Θ.subst θ).typesAt (ts.subst θ)
+  | [], .nil, .nil => rfl
+  | _ :: _, .cons _ _ A Θ, .cons t ts => by
+    rw [Telescope.typesAt, Terms.subst, Telescope.typesAt_subst θ (Θ.subst₀ (Subst₀.single t)) ts,
+      Telescope.subst_subst₀_of (Subst₀.Swaps.single t θ) Θ]
+    rfl
 
 /-! ## Types of the Recursive Results -/
 
@@ -161,6 +218,41 @@ theorem Terms.ResultTerms.subst {Δ : Scope} {ρ : Lifting k Δ Δ}
     rw [Terms.subst, Terms.subst, Args.subst]
     exact .nested (he.subst hs) (h.subst hs)
 
+/-! ## Recursive Results of a Constructor -/
+
+section
+
+variable {j g k' : Nat} {Ξ Δ Γ : Scope} {c : Constructor j g k' Ξ} {I : Instance j g}
+  {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Δ Ξ} {ρ : Lifting k Δ Δ}
+  {ps' : List Parameter} {θ : Subst k Γ Δ} {ρ' : Lifting k Γ Γ}
+
+-- ADE: none.
+/-- The recursive results of the fields of a constructor, substituted under the fields, are those
+of its fields at the arguments substituted, at the lifting of the block substituted. -/
+theorem Constructor.ResultTypes.subst {R : Telescope k (Δ.extend (c.params I).length) ps'}
+    (h : Constructor.ResultTypes sig v c I names ls as ρ R) (hs : Lifting.Substitutes θ θ ρ ρ') :
+    Constructor.ResultTypes sig v c I names ls (as.subst θ) ρ'
+      (R.subst (Subst.liftN (c.params I).length θ)) := by
+  have h' := Terms.ResultTypes.subst h (hs.liftN (c.params I).length)
+  rw [← Telescope.types_subst, Constructor.fieldsAt_subst, ← Args.terms_subst,
+    Args.bound_subst] at h'
+  exact h'
+
+-- ADE: none.
+/-- The recursive results of the terms of the fields of a constructor, substituted, are those of
+the terms substituted, at the arguments substituted, at the lifting of the block substituted. -/
+theorem Constructor.ResultTerms.subst {φ : Name → Term k (.var :: Δ)}
+    {ts : Args k Δ (c.params I)} {rs : Args k Δ ps'}
+    (h : Constructor.ResultTerms sig v c I names ls as ρ φ ts rs)
+    (hs : Lifting.Substitutes θ θ ρ ρ') :
+    Constructor.ResultTerms sig v c I names ls (as.subst θ) ρ'
+      (fun E => (φ E).subst (Subst.lift θ)) (ts.subst θ) (rs.subst θ) := by
+  have h' := Terms.ResultTerms.subst hs h
+  rw [Telescope.typesAt_subst, Constructor.fieldsAt_subst, ← Args.terms_subst] at h'
+  exact h'
+
+end
+
 /-! ## Instantiated Levels -/
 
 /-- The lifting of the block of a recursor, at instantiated levels, is the lifting of the block at
@@ -195,6 +287,30 @@ theorem Lifting.ofMotives_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k �
         | succ => rfl
     · simp only [hD, ↓reduceIte]
       rfl
+
+/-- The types of the entries of a telescope at instantiated levels are the types of its entries at
+these levels. -/
+theorem Telescope.types_substLevels {k' : Nat} (ls' : Fin k → Level k') :
+    {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) →
+      (Θ.substLevels ls').types = Θ.types.substLevels ls'
+  | _, [], .nil => rfl
+  | _, _ :: _, .cons _ _ A Θ => by
+    show Terms.cons _ (Θ.substLevels ls').types = Terms.cons _ _
+    rw [Telescope.types_substLevels ls' Θ, Term.substLevels_rename]
+    rfl
+
+/-- The types of the entries of a telescope at arguments, at instantiated levels, are the types of
+the entries of the telescope at these levels, at the arguments at these levels. -/
+theorem Telescope.typesAt_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (ts : Args k Γ ps) →
+      (Θ.typesAt ts).substLevels ls' = (Θ.substLevels ls').typesAt (ts.substLevels ls')
+  | [], .nil, .nil => rfl
+  | _ :: _, .cons _ _ A Θ, .cons t ts => by
+    rw [Telescope.typesAt, Terms.substLevels,
+      Telescope.typesAt_substLevels ls' (Θ.subst₀ (Subst₀.single t)) ts,
+      Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
+        (fun y => by cases y <;> rfl) Θ]
+    rfl
 
 -- ADE: none.
 /-- The recursive results of fields, at instantiated levels, are those of the fields and of their
@@ -289,5 +405,42 @@ theorem Terms.ResultTerms.substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ 
   | _, _, _, _, _, _, .nested he h => by
     rw [Terms.substLevels, Terms.substLevels, Args.substLevels]
     exact .nested (he.substLevels ls') (h.substLevels ls')
+
+section
+
+variable {j g k' k'' : Nat} {Δ Γ : Scope} {c : Constructor j g k' Δ} {I : Instance j g}
+  {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Γ Δ} {ρ : Lifting k Γ Γ}
+  {ps' : List Parameter}
+
+-- ADE: none.
+/-- The recursive results of the fields of a constructor, at instantiated levels, are those of its
+fields at the levels and at the arguments at these levels, at the lifting of the block at these
+levels. -/
+theorem Constructor.ResultTypes.substLevels (ls' : Fin k → Level k'')
+    {R : Telescope k (Γ.extend (c.params I).length) ps'}
+    (h : Constructor.ResultTypes sig v c I names ls as ρ R) :
+    Constructor.ResultTypes sig v c I names (fun i => (ls i).subst ls') (as.substLevels ls')
+      (ρ.substLevels ls') (R.substLevels ls') := by
+  have h' := Terms.ResultTypes.substLevels ls' h
+  rw [Lifting.substLevels_liftN, ← Telescope.types_substLevels, Constructor.fieldsAt_substLevels,
+    ← Args.terms_substLevels, Args.bound_substLevels] at h'
+  exact h'
+
+-- ADE: none.
+/-- The recursive results of the terms of the fields of a constructor, at instantiated levels, are
+those of the terms at these levels, at the levels and at the arguments at these levels, at the
+lifting of the block at these levels. -/
+theorem Constructor.ResultTerms.substLevels (ls' : Fin k → Level k'')
+    {φ : Name → Term k (.var :: Γ)} {ts : Args k Γ (c.params I)} {rs : Args k Γ ps'}
+    (h : Constructor.ResultTerms sig v c I names ls as ρ φ ts rs) :
+    Constructor.ResultTerms sig v c I names (fun i => (ls i).subst ls') (as.substLevels ls')
+      (ρ.substLevels ls') (fun E => (φ E).substLevels ls') (ts.substLevels ls')
+      (rs.substLevels ls') := by
+  have h' := Terms.ResultTerms.substLevels ls' h
+  rw [Telescope.typesAt_substLevels, Constructor.fieldsAt_substLevels,
+    ← Args.terms_substLevels] at h'
+  exact h'
+
+end
 
 end Sic.Core
