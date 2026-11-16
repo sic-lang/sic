@@ -10,6 +10,8 @@ A renaming keeps the nesting of a type of annex 14 of RFC 36, at the nestings of
 it renames, and so the nestings of the fields of a block, whose variables have no position: the
 fields after a recursive field, which do not depend on it, are renamed under it.
 A variable of a scope keeps its nesting under new variables, which have no position.
+A type keeps its nesting when levels replace its level variables, since the nesting does not read
+the levels.
 
 ADE have no declared types, and no nesting.
 -/
@@ -101,5 +103,33 @@ theorem Destructors.nested_rename :
     rw [Destructors.rename, Destructors.nested, Destructors.nested,
       Term.nest_rename _ (Ren.liftN ps.length ρ) (Nesting.liftN_rename ps.length h) B,
       Destructors.nested_rename (Ren.lift ρ) (Nesting.lift_rename h) ds]
+
+mutual
+
+/-- A type keeps its nesting when levels replace its level variables. -/
+theorem Term.nest_substLevels {k' : Nat} (mark : Name → Option α) (ls' : Fin k → Level k') :
+    {Γ : Scope} → {ν : Nesting α Γ} → (A : Term k Γ) →
+      (A.substLevels ls').nest mark @ν = A.nest mark @ν
+  | _, _, .var _ _ => by rw [Term.substLevels, Term.nest, Term.nest]
+  | _, _, .inst _ _ _ _ as => by
+    rw [Term.substLevels, Term.nest, Term.nest, InstanceArgs.nest_substLevels mark ls' as]
+  | _, _, .sort _ => by rw [Term.substLevels]; rfl
+  | _, _, .const _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .ctor _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .recursor _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+
+/-- The arguments of an instance keep their nestings when levels replace their level variables. -/
+theorem InstanceArgs.nest_substLevels {k' : Nat} (mark : Name → Option α)
+    (ls' : Fin k → Level k') :
+    {Γ Δ : Scope} → {ν : Nesting α Γ} → (as : InstanceArgs k Γ Δ) →
+      (as.substLevels ls').nest mark @ν = as.nest mark @ν
+  | _, _, _, .nil => rfl
+  | _, _, _, .snoc as B => by
+    rw [InstanceArgs.substLevels, InstanceArgs.nest, InstanceArgs.nest,
+      Term.nest_substLevels mark ls' B, InstanceArgs.nest_substLevels mark ls' as]
+
+end
 
 end Sic.Core

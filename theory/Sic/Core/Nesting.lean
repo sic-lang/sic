@@ -193,6 +193,107 @@ theorem InstanceArgs.nest_plain :
 
 end
 
+/-- The nesting of an instance has no position when none of its arguments has one. -/
+theorem Nest.isPlain_ofArgs (ns : List (Nest α)) :
+    (Nest.ofArgs ns).isPlain = ns.all Nest.isPlain := by
+  unfold Nest.ofArgs
+  split
+  · rename_i h
+    rw [h]
+    rfl
+  · rename_i h
+    rw [Bool.not_eq_true] at h
+    rw [h]
+    rfl
+
+/-- Nestings that give a position to less variables than others still do under a new entry. -/
+theorem Nesting.lift_isPlain_mono {β : Type} {Γ : Scope} {e₀ : Scope.Entry} {ν : Nesting α Γ}
+    {ν' : Nesting β Γ}
+    (h : ∀ (e : Scope.Entry) (x : Var Γ e), (ν' x).isPlain = true → (ν x).isPlain = true) :
+    ∀ (e : Scope.Entry) (x : Var (e₀ :: Γ) e),
+      (Nesting.lift @ν' x).isPlain = true → (Nesting.lift @ν x).isPlain = true :=
+  fun _ x =>
+    match x with
+    | .zero => fun _ => rfl
+    | .succ x => h _ x
+
+/-- Nestings that give a position to less variables than others still do under new variables. -/
+theorem Nesting.liftN_isPlain_mono {β : Type} :
+    {Γ : Scope} → (n : Nat) → {ν : Nesting α Γ} → {ν' : Nesting β Γ} →
+      (∀ (e : Scope.Entry) (x : Var Γ e), (ν' x).isPlain = true → (ν x).isPlain = true) →
+      ∀ (e : Scope.Entry) (x : Var (Γ.extend n) e),
+        (Nesting.liftN n @ν' x).isPlain = true → (Nesting.liftN n @ν x).isPlain = true
+  | _, 0, _, _, h => h
+  | _, n + 1, _, _, h => Nesting.liftN_isPlain_mono n (Nesting.lift_isPlain_mono h)
+
+/-- Nestings that give a position to the same variables still do under new variables. -/
+theorem Nesting.liftN_isPlain_congr {β : Type} {Γ : Scope} (n : Nat) {ν : Nesting α Γ}
+    {ν' : Nesting β Γ}
+    (h : ∀ (e : Scope.Entry) (x : Var Γ e), (ν x).isPlain = (ν' x).isPlain) :
+    ∀ (e : Scope.Entry) (x : Var (Γ.extend n) e),
+      (Nesting.liftN n @ν x).isPlain = (Nesting.liftN n @ν' x).isPlain :=
+  fun e x => Bool.eq_iff_iff.2
+    ⟨Nesting.liftN_isPlain_mono n (fun e x hx => h e x ▸ hx) e x,
+      Nesting.liftN_isPlain_mono n (fun e x hx => (h e x).symm ▸ hx) e x⟩
+
+mutual
+
+/-- A type without position, where no declared type holds one, has none at nestings that give a
+position to less variables. -/
+theorem Term.nest_isPlain_mono {β : Type} :
+    {Γ : Scope} → {ν : Nesting α Γ} → {ν' : Nesting β Γ} →
+      (∀ (e : Scope.Entry) (x : Var Γ e), (ν' x).isPlain = true → (ν x).isPlain = true) →
+      (A : Term k Γ) → (A.nest (fun _ => none) @ν').isPlain = true →
+        (A.nest (fun _ => none) @ν).isPlain = true
+  | _, _, _, h, .var x _ => h _ x
+  | _, _, _, h, .inst _ _ _ _ as => fun hA => by
+    rw [Term.nest, Nest.isPlain_ofArgs] at hA ⊢
+    exact InstanceArgs.nest_isPlain_mono h as hA
+  | _, _, _, _, .sort _ => fun _ => rfl
+  | _, _, _, _, .const _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .ctor _ _ _ _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .obs _ _ _ _ _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => fun _ => rfl
+
+/-- The arguments of an instance without position, where no declared type holds one, have none at
+nestings that give a position to less variables. -/
+theorem InstanceArgs.nest_isPlain_mono {β : Type} :
+    {Γ Δ : Scope} → {ν : Nesting α Γ} → {ν' : Nesting β Γ} →
+      (∀ (e : Scope.Entry) (x : Var Γ e), (ν' x).isPlain = true → (ν x).isPlain = true) →
+      (as : InstanceArgs k Γ Δ) → (as.nest (fun _ => none) @ν').all Nest.isPlain = true →
+        (as.nest (fun _ => none) @ν).all Nest.isPlain = true
+  | _, _, _, _, _, .nil => fun _ => rfl
+  | _, _, _, _, h, .snoc as B => fun has => by
+    rw [InstanceArgs.nest, List.all_cons, Bool.and_eq_true] at has ⊢
+    exact ⟨Term.nest_isPlain_mono (Nesting.liftN_isPlain_mono _ h) B has.1,
+      InstanceArgs.nest_isPlain_mono h as has.2⟩
+
+end
+
+/-- A type has a position at nestings of its variables when it has one at nestings that give a
+position to the same variables, and no declared type holds one. -/
+theorem Term.nest_isPlain_congr {β : Type} {Γ : Scope} {ν : Nesting α Γ} {ν' : Nesting β Γ}
+    (h : ∀ (e : Scope.Entry) (x : Var Γ e), (ν x).isPlain = (ν' x).isPlain) (A : Term k Γ) :
+    (A.nest (fun _ => none) @ν).isPlain = (A.nest (fun _ => none) @ν').isPlain :=
+  Bool.eq_iff_iff.2 ⟨Term.nest_isPlain_mono (fun e x hx => (h e x).symm ▸ hx) A,
+    Term.nest_isPlain_mono (fun e x hx => h e x ▸ hx) A⟩
+
+/-- One of the arguments of an instance has a nesting with a position when not all of them have
+none. -/
+theorem InstanceArgs.exists_ofArgs (mark : Name → Option α) {Γ : Scope} {ν : Nesting α Γ} :
+    {Δ : Scope} → (as : InstanceArgs k Γ Δ) → (as.nest mark @ν).all Nest.isPlain = false →
+      ∃ (e : Scope.Entry) (y : Var Δ e), (Nesting.ofArgs (as.nest mark @ν) y).isPlain = false
+  | _, .nil, h => nomatch h
+  | _, .snoc as B, h => by
+    rw [InstanceArgs.nest, List.all_cons] at h
+    cases hB : (B.nest mark (Nesting.liftN _ @ν)).isPlain with
+    | false => exact ⟨_, .zero, hB⟩
+    | true =>
+      rw [hB, Bool.true_and] at h
+      obtain ⟨e, y, hy⟩ := InstanceArgs.exists_ofArgs mark as h
+      exact ⟨e, .succ y, hy⟩
+
 /-! ## Nesting of the Fields of a Block -/
 
 -- ADE: none.
