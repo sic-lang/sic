@@ -26,8 +26,10 @@ The declaration of a lifting, which reads the syntax only, is thus before the re
 
 The type of the recursive result of a field nested below a codata type is the type of the field
 lifted at the types of its block, each of which has the motive of the recursor: an instance of a
-type of the block is lifted to this motive, as a parameter lifted is, and the nesting of an argument
-tells whether it holds one.
+type of the block is lifted to this motive, as a parameter lifted is.
+The lifting follows the nesting of the field, which its declaration gives: the type of the field at
+an instance may hold the types of the block elsewhere, where the declaration has a parameter, and
+these are not positions of the block.
 
 The RFC names the variables, so that the motive of a parameter is found by its name, and a type of
 the declaration is a type of its lifting as it is; with de Bruijn indices, a lifting of scopes gives
@@ -159,11 +161,11 @@ def Args.AvoidsLifted {Γ' Γ : Scope} {ps : List Parameter} (ρ : Lifting k Γ'
     Prop :=
   ∀ {e : Scope.Entry} (x : Var Γ e), (ρ.motive x).isSome → ts.Avoids x
 
--- ADE: none.
-/-- The type `B` holds no type of the block lifted: its nesting, whose positions are the types that
-have a motive, has no position. -/
-def Term.AvoidsBlock {Γ' Γ : Scope} (ρ : Lifting k Γ' Γ) (B : Term k Γ) : Prop :=
-  B.nest (fun D => (ρ.block D).map fun _ => D) Nesting.plain = .plain
+/-- The nestings `λ̄` of the arguments of an instance whose nesting is `(λ̄)`, the last one first,
+and none for the other nestings, whose arguments have no position. -/
+def Nest.args {α : Type} : Nest α → List (Nest α)
+  | .inst ns => ns
+  | _ => []
 
 /-! ## Variables of a Lifting -/
 
@@ -363,80 +365,88 @@ mutual
 
 -- ADE: none.
 /--
-`Σ ⊢ A ↑ u = A' : (s_C)_l`: the type `A'`, of the level `l`, is the type `A` lifted at the term `e`
-of `A`, where `ρ` gives the variables and the types of the block lifted, their motives and the
-levels of these, and `v` the variables of the lifting.
+`Σ ⊢ A ↑_λ u = A' : (s_C)_l`: the type `A'`, of the level `l`, is the type `A`, whose nesting is
+`n`, lifted at the term `e` of `A`, where `ρ` gives the variables and the types of the block lifted,
+their motives and the levels of these, and `v` the variables of the lifting.
 -/
 inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
-    {Γ' Γ : Scope} → Lifting k Γ' Γ → Term k Γ' → Term k Γ → Term k Γ' → Level k → Prop where
-  /-- A variable lifted, applied to arguments in which no variable lifted occurs: its motive, at
-  these arguments and at the term, of the level of the motive.
+    {Γ' Γ : Scope} → Lifting k Γ' Γ → Nest Name → Term k Γ' → Term k Γ → Term k Γ' → Level k →
+      Prop where
+  /-- A variable lifted, applied to arguments in which no variable lifted occurs, without position:
+  its motive, at these arguments and at the term, of the level of the motive.
   RFC: `\uparrow_X` -/
   | var {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {a : Scope.Entry} {x : Var Γ a}
       {y : Var Γ' a.motive} {l : Level k} {ts : Args k Γ a.params}
       (hx : ρ.motive x = some (y, l)) (hts : ts.AvoidsLifted ρ) :
-      Term.Lifts sig v ρ e (.var x ts) (.var y ((ts.rename ρ.ren).snoc e)) l
-  /-- The instance of a type of the block lifted, the one that its motive is over: this motive at
-  the term, of the level of the motive.
+      Term.Lifts sig v ρ .plain e (.var x ts) (.var y ((ts.rename ρ.ren).snoc e)) l
+  /-- The instance of a type of the block lifted, at a position that holds this type, the one that
+  its motive is over: this motive at the term, of the level of the motive.
   RFC: `\uparrow_T` -/
   | block {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {Δ : Scope} {D : Name}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
       {b : Lifting.BlockMotive k Γ' Γ} (hD : ρ.block D = some b)
       (hT : b.type = .inst D qs ls ps as) :
-      Term.Lifts sig v ρ e (.inst D qs ls ps as) (b.motive.subst₀ (Subst₀.single e)) b.level
-  /-- An instance of a declared type that is not a type of the block lifted, of which an argument
-  at least is lifted: the instance of the lifting of this type at the parameters of these
-  arguments, which the signature declares, with some destructors, at the variables of the lifting,
-  at the levels of the arguments lifted, at these arguments and at the term, of the level of the
-  instance joined to these levels.
+      Term.Lifts sig v ρ (.direct D) e (.inst D qs ls ps as) (b.motive.subst₀ (Subst₀.single e))
+        b.level
+  /-- An instance of a declared type whose nesting is not a position, of which an argument at least
+  is lifted: the instance of the lifting of this type at the parameters of these arguments, which
+  the signature declares, with some destructors, at the variables of the lifting, at the levels of
+  the arguments lifted, at these arguments and at the term, of the level of the instance joined to
+  these levels.
   RFC: `\uparrow_D` -/
-  | inst {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {decl : TypeDeclaration} {Δ' : Scope}
+  | inst {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n : Nest Name} {e : Term k Γ'}
+      {decl : TypeDeclaration} {Δ' : Scope}
       {D : Name} {qs : List Quality} {ls ls' : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} {S : List Nat} {as' : InstanceArgs k Γ' Δ'}
       {ns : List Name}
       {body : Instance (decl.sorts + 1) (decl.grades + 3) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-      (h : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) (hb : ρ.block D = none)
+      (h : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) (hn : ∀ E, n ≠ .direct E)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (has : InstanceArgs.Lifts sig v ρ as S ls' as') (hS : S ≠ [])
+      (has : InstanceArgs.Lifts sig v ρ n.args as S ls' as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) :
-      Term.Lifts sig v ρ e (.inst D qs ls ps as)
+      Term.Lifts sig v ρ n e (.inst D qs ls ps as)
         (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
           (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' e))
         (((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).joins ls')
 
 -- ADE: none.
 /--
-`Σ ⊢ ā ↑ = (Π'; l̄; ā')`: the arguments `ā'` are the arguments `ā` of an instance lifted, `S` the
+`Σ ⊢ ā ↑_λ̄ = (Π'; l̄; ā')`: the arguments `ā'` are the arguments `ā` of an instance lifted, whose
+nestings are `ns`, the last one first, and none for the arguments after those of `ns`, `S` the
 positions of the parameters `Π'` whose arguments are lifted, in order, and `l̄` the levels of these
 arguments lifted: the argument of such a parameter is followed by its motive, the argument lifted
 at a term of its own, and the others, in which nothing is lifted, are kept.
 -/
 inductive InstanceArgs.Lifts (sig : Signature) (v : Lifting.Variables) :
-    {Γ' Γ : Scope} → Lifting k Γ' Γ → {Δ : Scope} → InstanceArgs k Γ Δ → List Nat →
-      List (Level k) → {Δ' : Scope} → InstanceArgs k Γ' Δ' → Prop where
+    {Γ' Γ : Scope} → Lifting k Γ' Γ → List (Nest Name) → {Δ : Scope} → InstanceArgs k Γ Δ →
+      List Nat → List (Level k) → {Δ' : Scope} → InstanceArgs k Γ' Δ' → Prop where
   /-- No argument.
   RFC: `\uparrow_{\bar a\varepsilon}` -/
-  | nil {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} : InstanceArgs.Lifts sig v ρ .nil [] [] .nil
+  | nil {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {ns : List (Nest Name)} :
+      InstanceArgs.Lifts sig v ρ ns .nil [] [] .nil
   /-- An argument that is lifted, followed by its motive.
   RFC: `\uparrow_{\bar a,}` -/
-  | lifted {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {Δ Δ' : Scope} {a : Scope.Entry}
+  | lifted {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {ns : List (Nest Name)} {Δ Δ' : Scope}
+      {a : Scope.Entry}
       {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)} {l : Level k}
       {as' : InstanceArgs k Γ' Δ'} {B : Term k (Γ.extend a.params.length)}
       {B' : Term k (.var :: Γ'.extend a.params.length)}
-      (has : InstanceArgs.Lifts sig v ρ as S ls as')
-      (hB : Term.Lifts sig v (ρ.liftN a.params.length).weaken (.var₀ .zero) B B' l) :
-      InstanceArgs.Lifts sig v ρ (.snoc as B) (S ++ [Δ.length]) (ls ++ [l])
+      (has : InstanceArgs.Lifts sig v ρ ns.tail as S ls as')
+      (hB : Term.Lifts sig v (ρ.liftN a.params.length).weaken (ns.headD .plain) (.var₀ .zero) B B'
+        l) :
+      InstanceArgs.Lifts sig v ρ ns (.snoc as B) (S ++ [Δ.length]) (ls ++ [l])
         (.snoc (e := a.motive) (.snoc as' (B.rename (Ren.liftN a.params.length ρ.ren)))
           (Scope.extend_snoc Γ' a.params Lifting.termParam ▸ B'))
-  /-- An argument in which no variable lifted occurs, and which holds no type of the block lifted.
+  /-- An argument in which no variable lifted occurs, and whose nesting has no position.
   RFC: `\uparrow_{\bar a\notin}` -/
-  | absent {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {Δ Δ' : Scope} {a : Scope.Entry}
+  | absent {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {ns : List (Nest Name)} {Δ Δ' : Scope}
+      {a : Scope.Entry}
       {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)} {as' : InstanceArgs k Γ' Δ'}
-      {B : Term k (Γ.extend a.params.length)} (has : InstanceArgs.Lifts sig v ρ as S ls as')
+      {B : Term k (Γ.extend a.params.length)} (has : InstanceArgs.Lifts sig v ρ ns.tail as S ls as')
       (hB : B.AvoidsLifted (ρ.liftN a.params.length))
-      (hn : B.AvoidsBlock (ρ.liftN a.params.length)) :
-      InstanceArgs.Lifts sig v ρ (.snoc as B) S ls
+      (hn : ns.headD .plain = .plain) :
+      InstanceArgs.Lifts sig v ρ ns (.snoc as B) S ls
         (.snoc as' (B.rename (Ren.liftN a.params.length ρ.ren)))
 
 end
@@ -495,7 +505,8 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
       {ds' : Destructors k
         (.secondOrder (ps.map (Parameter.scale v.recursion))
           (Lifting.resultOwnership v.ownership _) :: Γ') ns'}
-      (hB : Term.Lifts sig v (ρ.liftN ps.length) ((o d ps).rename (Ren.liftN ps.length ρ.ren))
+      (hB : Term.Lifts sig v (ρ.liftN ps.length) .plain
+        ((o d ps).rename (Ren.liftN ps.length ρ.ren))
         (B.subst (Subst.liftN ps.length θ)) B' l)
       (hκ : (⟨v.quality, l⟩ : Universe k) ≼ κ)
       (hds : Destructors.Lifts sig v κ o ρ.weaken (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :

@@ -156,7 +156,7 @@ theorem Lifting.resultGrade_prop_mode (p : Grade) :
 instance that its constraint admits, lifted at a term of this instance at variables that a typed
 renaming of its parameters gives, are destructors of the lifting of the type, in the sort of the
 lifting, whose level is above the level of the sort of the type, in the context of a typed lifting
-whose motives have the quality of the lifting, and which lifts no type of a block.
+whose motives have the quality of the lifting.
 The destructors are the last ones of the type `T`, at the observations of the term by those before
 them, as `link` states. -/
 theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
@@ -185,7 +185,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
         Destructors.Lifts sig v κ
           (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α)) ρ @θ
           (ds.substLevels (ls.getFin hl)) ds' →
-        Lifting.Typed sig v.quality ctx' ρ ctx₀ → (∀ D', ρ.block D' = none) → Subst.Neutral @θ →
+        Lifting.Typed sig v.quality ctx' ρ ctx₀ → Subst.Neutral @θ →
         (∀ r ∈ ds.recursion decl.names, r = none) →
         (∀ {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ' : Scope}
           {Θ : Telescope decl.levels Ξ' ps'} {B : Term decl.levels (Ξ'.extend ps'.length)}
@@ -197,17 +197,17 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
               h.obsSubst
                 (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α)) @θ x) →
         WfDestructors sig (decl.lifting D S ns₀ body) I @ν' as' ctx' ds' κ
-  | _, _, .nil => fun _ _ _ _ _ _ _ _ _ h hρ _ _ _ _ => by
+  | _, _, .nil => fun _ _ _ _ _ _ _ _ _ h hρ _ _ _ => by
     cases h
     exact .nil hρ.ren.wfCtx
   | _, _, .cons (d := d) (ps := ps') p q ς Θ B ψ ds =>
-    fun Γ' ρ θ ns' ds' ctx' as' ν' hν h hρ hρb hθ hrec link => by
+    fun Γ' ρ θ ns' ds' ctx' as' ν' hν h hρ hθ hrec link => by
     have hrec' : ∀ r ∈ ds.recursion decl.names, r = none :=
       fun r hr => hrec r (List.mem_cons_of_mem _ hr)
     cases h with
     | absent _ hds =>
       exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _ as' @ν' hν hds hρ
-        hρb (hθ.snoc (.obs ..)) hrec' (fun h' => link (.there h'))
+        (hθ.snoc (.obs ..)) hrec' (fun h' => link (.there h'))
     | lifted hB hκ' hds =>
       obtain ⟨hd, hx⟩ := link .here
       have hx : ∀ {a} (x : Var _ a),
@@ -232,14 +232,14 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
         (((stableUnderRenaming.wfTelescope hΘ₀ hρ.ren).mono hκ₀).scale v.recursion)
         hB' hκ' (fun hs => ?_) ?_
       · exact (Term.blockName_cast [Lifting.name D S] _ _).trans
-          (hB.blockName (Lifting.liftN_block _ hρb)
+          (hB.blockName
             (hT.2.2 ▸ TypeDeclaration.codata_name_mem_names hT.2.1)
             (Term.blockName_subst_neutral (hθ.liftN _) decl.names _
               ((Term.blockName_substLevels decl.names _ B).trans hn)) S)
       · exact (show v.quality = .prop from hs) ▸ Lifting.resultGrade_prop_mode p
       · exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _
           (as'.rename Ren.weaken) (Nesting.lift @ν') (Nesting.lift_plain hν) hds
-          (hρ.weakenSecondOrder (.secondOrder (.ofSort hB'))) (Lifting.weaken_block hρb)
+          (hρ.weakenSecondOrder (.secondOrder (.ofSort hB')))
           (hθ.snoc (.obs ..)) hrec'
           (fun h' => link (.there h'))
 

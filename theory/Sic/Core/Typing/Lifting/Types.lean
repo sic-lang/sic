@@ -280,9 +280,10 @@ telescope, and an instance of a declared type is in the sort of its type declara
 The variables lifted are those of a typed lifting, in any context. -/
 theorem Term.Lifts.wfType {s : Quality} {v : Lifting.Variables} {Γ'' Γ' Γ : Scope}
     {ctx' : Context k Γ'} {ρ' : Lifting k Γ' Γ} {ρ : Lifting k Γ'' Γ} {ctx : Context k Γ}
-    {e A' : Term k Γ''} {A T : Term k Γ} {l : Level k} (hρ : Lifting.Typed sig s ctx' ρ' ctx)
+    {n : Nest Name} {e A' : Term k Γ''} {A T : Term k Γ} {l : Level k}
+    (hρ : Lifting.Typed sig s ctx' ρ' ctx)
     (hm : ∀ {a} (x : Var Γ a), (ρ.motive x).isSome → (ρ'.motive x).isSome) :
-    Term.Lifts sig v ρ e A A' l → HasType sig ctx A T → WfType sig ctx A
+    Term.Lifts sig v ρ n e A A' l → HasType sig ctx A T → WfType sig ctx A
   | .var (a := .var) (x := x) (ts := .nil) hx _, _ => by
     obtain ⟨⟨y, l⟩, hx'⟩ := Option.isSome_iff_exists.1 (hm x (hx ▸ rfl))
     exact (hρ.var hx').1
@@ -302,9 +303,10 @@ theorem Term.Lifts.wfType {s : Quality} {v : Lifting.Variables} {Γ'' Γ' Γ : S
 /-! ## Arguments That Are Lifted -/
 
 /-- The positions of the arguments lifted are positions of the parameters. -/
-theorem InstanceArgs.Lifts.lt {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} :
+theorem InstanceArgs.Lifts.lt {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    {ns : List (Nest Name)} :
     {Δ : Scope} → {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} →
-      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ as S ls as' →
+      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
         ∀ i ∈ S, i < Δ.length
   | _, _, _, _, _, _, .nil, _, hi => nomatch hi
   | _, _, _, _, _, _, .lifted has _, i, hi => by
@@ -315,9 +317,10 @@ theorem InstanceArgs.Lifts.lt {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lif
   | _, _, _, _, _, _, .absent has _ _, i, hi => Nat.lt_succ_of_lt (has.lt i hi)
 
 /-- The arguments lifted have a level each. -/
-theorem InstanceArgs.Lifts.length_eq {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} :
+theorem InstanceArgs.Lifts.length_eq {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    {ns : List (Nest Name)} :
     {Δ : Scope} → {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} →
-      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ as S ls as' →
+      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
         ls.length = S.length
   | _, _, _, _, _, _, .nil => rfl
   | _, _, _, _, _, _, .lifted has _ => by
@@ -326,9 +329,10 @@ theorem InstanceArgs.Lifts.length_eq {v : Lifting.Variables} {Γ' Γ : Scope} {�
   | _, _, _, _, _, _, .absent has _ _ => has.length_eq
 
 /-- The positions of the arguments lifted are distinct. -/
-theorem InstanceArgs.Lifts.nodup {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} :
+theorem InstanceArgs.Lifts.nodup {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    {ns : List (Nest Name)} :
     {Δ : Scope} → {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} →
-      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ as S ls as' →
+      {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
         S.Nodup
   | _, _, _, _, _, _, .nil => List.nodup_nil
   | _, _, _, _, _, _, .lifted has _ =>
@@ -493,16 +497,16 @@ theorem HasInstanceArgs.liftedSecondOrder_true {s : Quality} {Γ' Γ Δ₁ Δ : 
 /-- A type lifted at a term of the type that it lifts, which is typed, is a type of the sort of its
 level, in the context of a typed lifting whose motives have the quality of the lifting. -/
 theorem Term.Lifts.hasType {v : Lifting.Variables} {Γ' Γ : Scope} {ctx' : Context k Γ'}
-    {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {e A' : Term k Γ'} {A T : Term k Γ} {l : Level k}
-    (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (h : Term.Lifts sig v ρ e A A' l)
+    {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ}
+    {l : Level k} (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (h : Term.Lifts sig v ρ n e A A' l)
     (hA : HasType sig ctx A T) (he : HasType sig ctx' e (A.rename ρ.ren)) :
     HasType sig ctx' A' (.sort ⟨v.quality, l⟩) :=
   type h hρ hA he
 where
   /-- The typing of a type lifted, by recursion on the relation. -/
   type {Γ' Γ : Scope} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ} {ctx : Context k Γ}
-      {e A' : Term k Γ'} {A T : Term k Γ} {l : Level k} :
-      Term.Lifts sig v ρ e A A' l → Lifting.Typed sig v.quality ctx' ρ ctx →
+      {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ} {l : Level k} :
+      Term.Lifts sig v ρ n e A A' l → Lifting.Typed sig v.quality ctx' ρ ctx →
         HasType sig ctx A T → HasType sig ctx' e (A.rename ρ.ren) →
           HasType sig ctx' A' (.sort ⟨v.quality, l⟩)
     | .var (a := .var) (ts := .nil) hx _, hρ, _, he =>
@@ -585,9 +589,9 @@ where
   the positions of the parameters, with motives at the levels that `lv` gives, those of the
   relation, and they give the image of a parameter its argument, renamed. -/
   args {Γ' Γ : Scope} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {Δ : Scope}
-      {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)} {Δ' : Scope}
-      {as' : InstanceArgs k Γ' Δ'} {params : Context k Δ} :
-      InstanceArgs.Lifts sig v ρ as S ls as' → Lifting.Typed sig v.quality ctx' ρ ctx →
+      {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)}
+      {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'} {params : Context k Δ} :
+      InstanceArgs.Lifts sig v ρ ns as S ls as' → Lifting.Typed sig v.quality ctx' ρ ctx →
         HasInstanceArgs sig ctx as params → ∀ (S₂ : List Nat) (lv : Nat → Level k),
           (∀ i, i < Δ.length → (i ∈ S₂ ↔ i ∈ S)) →
             (∀ j (h₁ : j < S.length) (h₂ : j < ls.length), lv S[j] = ls[j]) →
