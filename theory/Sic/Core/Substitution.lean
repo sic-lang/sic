@@ -157,6 +157,32 @@ def TypeDeclaration.blockInstance {Γ : Scope} (decl : TypeDeclaration)
     Term decl.levels Γ :=
   .inst D (List.ofFn ι.sorts) (List.ofFn Level.var) (List.ofFn ι.grades) as
 
+-- ADE: none.
+/-- `X̄ : κ`: the telescope of `n` type variables of the sort `κ`, which extends a context by one
+variable for each type of a block.
+A context ignores the grades and the parameters of the telescope that extends it, and nothing reads
+those of these entries: the Lean gives them the grade `00ᵖ`. -/
+def Telescope.sorts {Γ : Scope} (κ : Universe k) :
+    (n : Nat) → Telescope k Γ (List.replicate n ⟨.zero, .zero⟩)
+  | 0 => .nil
+  | n + 1 => .cons .zero ⟨.zero, .zero⟩ (.sort κ) (Telescope.sorts κ n)
+
+/-- The arguments that `f` gives for the names `names`, in order, for the telescope of as many
+type variables. -/
+def Args.ofNames {Γ : Scope} (f : Name → Term k Γ) :
+    (names : List Name) → Args k Γ (List.replicate names.length ⟨.zero, .zero⟩)
+  | [] => .nil
+  | D :: names => .cons (f D) (Args.ofNames f names)
+
+-- ADE: none.
+/-- `D̄ x̄_Δ`: the types of the block of the type declaration `decl`, in order, each at the instance
+`ι` of its sort and grade variables, at its level variables and at the arguments `ā`: the arguments
+of the telescope of the type variables of the block. -/
+def TypeDeclaration.blockArgs {Γ : Scope} (decl : TypeDeclaration)
+    (ι : Instance decl.sorts decl.grades) (as : InstanceArgs decl.levels Γ decl.scope) :
+    Args decl.levels Γ (List.replicate decl.names.length ⟨.zero, .zero⟩) :=
+  Args.ofNames (fun D => decl.blockInstance ι D as) decl.names
+
 /-- A renamed term is the instance of the same type of a block. -/
 theorem Term.blockName_rename {Γ Δ : Scope} (names : List Name) (α : Ren Γ Δ) :
     (A : Term k Δ) → (A.rename α).blockName names = A.blockName names
