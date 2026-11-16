@@ -244,6 +244,7 @@ where
     | .nil hctx => wfCtx hctx
     | .cons _ hA _ _ _ => hasType hA
     | .recursive _ hΘ _ => wfFields hΘ
+    | .nested _ _ _ _ _ _ hΘ _ => wfFields hΘ
   wfDestructors {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
       {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
       {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} :

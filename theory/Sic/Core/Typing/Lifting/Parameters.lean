@@ -3,7 +3,6 @@ module
 public import Sic.Core.Typing.Lifting.Context
 public import Sic.Core.Typing.Lifting.Types
 import Sic.Core.Lifting.Substitution
-import Sic.Core.Substitution.Composition
 import Sic.Core.Typing.Identity
 import Sic.Core.Typing.Levels
 import Sic.Core.Typing.Prelude

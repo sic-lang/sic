@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Typing.Renaming
-import Sic.Core.Substitution.Composition
 import Sic.Core.Typing.Extension
 import Sic.Core.Typing.Identity
 import Sic.Core.Typing.Levels

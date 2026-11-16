@@ -496,6 +496,40 @@ theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Contex
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
   exact hΘ.2 σ₁ σ₂ h
 
+-- ADE: none.
+/-- `(fields_λ)` keeps the meaning: a first field that is nested, which the graphs of the nestings
+read with one equality and with one relation of run time at equal substitutions of the context,
+and which is a type of a sort that `κ` bounds when the instances of the types of the block are types
+of `κ`, and the rest, which does not depend on it, at any terms of it. -/
+theorem ValidFieldsΓ.nested {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
+    {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {names : List Name}
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {νs : List (Nest Name)}
+    (hr : rs 0 = .inst νs)
+    (hA : ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      (∀ R : Name → TermRel, ∃ F,
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Nest.map (fun D => ((inst D).subst σ₁, R D)) (.inst νs)) (A.subst σ₁) F ∧
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (Nest.map (fun D => ((inst D).subst σ₂, R D)) (.inst νs)) (A.subst σ₂) F) ∧
+      (κ.quality = .type → ∀ (P : Program) (Q : Name → RunRel), ∃ R,
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => ((inst D).subst σ₁, Q D)) (.inst νs)) (A.subst σ₁) R ∧
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => ((inst D).subst σ₂, Q D)) (.inst νs)) (A.subst σ₂) R) ∧
+      ((∀ D ∈ names, ValidEqTerm₀ sig ι ((inst D).subst σ₁) ((inst D).subst σ₂) (.sort κ)) →
+        ∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι (A.subst σ₁) (A.subst σ₂) (.sort κ₁)))
+    (hΘ : ValidFieldsΓ sig ι ctx names inst (fun i => rs (i + 1)) Θ κ) :
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p A (Θ.rename Ren.weaken)) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
+  obtain ⟨h₁, h₂, h₃⟩ := hA σ₁ σ₂ h
+  refine ⟨h₁, h₂, h₃, fun v₁ v₂ => ?_⟩
+  have heq : ∀ (σ : Subst 0 [] Γ) (v : Term 0 []),
+      (Θ.rename Ren.weaken).subst (Subst.append (n := 1) σ (Subst.closedSingle v)) = Θ.subst σ :=
+    fun σ _ => Telescope.subst_rename_of (fun x => Subst.append_weakenN σ _ x) _
+  rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
+  exact hΘ.2 σ₁ σ₂ h
+
 /-! ## Destructors of a Block -/
 
 /-- A closed substitution followed by closed arguments gives a renamed variable under the arguments

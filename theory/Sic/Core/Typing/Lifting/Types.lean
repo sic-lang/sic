@@ -3,7 +3,6 @@ module
 public import Sic.Core.Lifting
 public import Sic.Core.Typing.Renaming
 import Sic.Core.Lifting.Substitution
-import Sic.Core.Substitution.Closed
 import Sic.Core.Typing.Inversion
 import Sic.Core.Typing.Lifting.Context
 import Sic.Core.Typing.Prelude

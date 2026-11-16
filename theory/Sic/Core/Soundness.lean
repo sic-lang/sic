@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Nesting
-public import Sic.Core.Typing
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Rules
@@ -761,8 +760,9 @@ structure DeclarationSoundnessIn : Prop where
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
     {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
     {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfFields sig decl I as ctx Θ κ →
-        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
+      sigM.Distinct → sigM.ValidEntries ι sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
+        WfFields sig decl I as ctx Θ κ →
+          ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ
   /-- The destructors of a codata type in a sort. -/
   wfDestructors : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
@@ -786,20 +786,21 @@ where
       {I : Instance decl.sorts decl.grades} {Γ : Scope}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
       {ps : List Parameter} {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
       WfFields sig decl I as ctx Θ κ →
         ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ
     | .nil hctx => fun ρ => ValidFieldsΓ.nil (soundnessIn.wfCtx hd hι hctx ρ)
     | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι hΘ ρ
+      have hΘ' := wfFields hd hι fresh hΘ ρ
       rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
           fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
         funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
       exact ValidFieldsΓ.cons (soundnessIn.hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
         hn hΘ'
     | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι hΘ ρ
+      have hΘ' := wfFields hd hι fresh hΘ ρ
       show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
         ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
@@ -813,6 +814,25 @@ where
           List.getElem?_cons_succ]
       rw [hr]
       exact hΘ'
+    | .nested (A₀ := A₀) (Θ := Θ') (q := q) (p := p) (νs := νs) hn hA₀ hκ hq hpos hpre hΘ _ =>
+      fun ρ => by
+      have hΘ' := wfFields hd hι fresh hΘ ρ
+      show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((A₀.instantiate (decl.blockArgs I as)).atLevels ρ)
+        ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
+      rw [Telescope.substLevels_rename]
+      refine ValidFieldsΓ.nested (νs := νs)
+        (by simp [Telescope.nestAt, Telescope.nest, hn]) (fun σ₁ σ₂ hσ => ?_) ?_
+      · have h := Term.validBlockNest (soundnessIn.typingSound hd) hd hι hpre fresh I as hA₀ hκ hq
+          hpos ρ hσ
+        rw [hn] at h
+        exact ⟨h.1, fun _ => h.2.1, h.2.2⟩
+      · have hr : (fun i => (Telescope.cons q p (A₀.instantiate (decl.blockArgs I as))
+            (Θ'.rename Ren.weaken)).nestAt decl.names (i + 1)) = Θ'.nestAt decl.names := by
+          funext i
+          simp only [Telescope.nestAt, Telescope.nest, Telescope.nest_rename,
+            List.getElem?_cons_succ]
+        rw [hr]
+        exact hΘ'
   wfDestructors {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
@@ -894,11 +914,11 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data hb _ _ hΘ _ _ _ => by
+    | .data hb _ _ hΘ _ _ fresh => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT c hc =>
-        wfFields hd hι (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
+        wfFields hd hι fresh (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
     | .codata hb _ _ hds _ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]

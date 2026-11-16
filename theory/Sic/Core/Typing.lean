@@ -3,6 +3,7 @@ module
 public import Sic.Core.Nesting
 public import Sic.Core.Positivity
 public import Sic.Core.Prelude
+public import Sic.Core.Substitution.Closed
 public import Sic.Core.Substitution.Levels
 
 /-!
@@ -906,7 +907,11 @@ themselves.
 A field whose type is an instance of a type of the block is recursive: its type is this type at the
 instance of the block, at its level variables and at the parameters themselves, and no field after
 it depends on it, so that it does not extend the context.
-The type of a field that is not recursive has a nesting without position, and lives in a sort that
+A field whose nesting is that of an instance is nested: its type is a type `A₀` at the types of the
+block, at the instance of the block, at its level variables and at the parameters themselves, in
+place of type variables `X̄ : κ`, one for each type of the block, in which `A₀` is strictly positive;
+`κ` is a universe, and no field after it depends on it.
+The type of a field that is neither recursive nor nested has a nesting without position, and lives in a sort that
 `κ` bounds, with a grade without use at run time if it is a proposition, in the signature `Σ`, which
 the block does not extend, so that no type of the block occurs in it.
 The RFC writes the parameters themselves as the variables `x̄_Δ`, the same under every field; the
@@ -943,6 +948,29 @@ inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.so
       {κ : Universe decl.levels} (hD : D ∈ decl.names) (hΘ : WfFields sig decl ι as ctx Θ κ)
       (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfFields sig decl ι as ctx (.cons q p (decl.blockInstance ι D as) (Θ.rename Ren.weaken)) κ
+  /-- A first field that is nested, the type `A₀` at the types of the block, at the instance of the
+  block and at the parameters, in place of its type variables `X̄`, one of the universe `κ` for each
+  type of the block: its nesting is that of an instance, `A₀` lives in a sort that `κ` bounds, in
+  the context extended by `X̄`, and is strictly positive in each of them, in a signature that holds
+  the prelude, with a grade without use at run time if it is a proposition, and the others, which do
+  not depend on it, in the same context.
+  RFC: `\mathsf{fields}_\lambda` -/
+  | nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter}
+      {A₀ : Term decl.levels
+        (Γ.extend (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length)}
+      {Θ : Telescope decl.levels Γ ps} {κ₁ κ : Universe decl.levels} {νs : List (Nest Name)}
+      (hn : (A₀.instantiate (decl.blockArgs ι as)).blockNest decl.names = .inst νs)
+      (hA₀ : HasType sig (ctx.append (Telescope.sorts κ decl.names.length)) A₀ (.sort κ₁))
+      (hκ : κ₁ ≼ κ) (hq : κ.quality = .type)
+      (hpos : ∀ z : Var (Scope.extend []
+          (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length) .var,
+        Term.Positive (sig.PositiveIn decl) (Ren.liftN _ Ren.empty z) A₀)
+      (hpre : sig.HasPrelude) (hΘ : WfFields sig decl ι as ctx Θ κ)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx
+        (.cons q p (A₀.instantiate (decl.blockArgs ι as)) (Θ.rename Ren.weaken)) κ
 
 -- ADE: none.
 /--
