@@ -136,11 +136,12 @@ allowed = [
 ]
 
 [[rule]]
-reason = "the liftings are declared from the syntax and from the variables that occur in a term, and read no judgment, so that each judgment proves its properties on them"
+reason = "the liftings are declared from the syntax, from the variables that occur in a term and from the nesting of a type, and read no judgment, so that each judgment proves its properties on them"
 modules = ["Sic.Core.Lifting"]
 allowed = [
   "Sic.Core.Level",
   "Sic.Core.Lifting",
+  "Sic.Core.Nesting",
   "Sic.Core.Positivity",
   "Sic.Core.Substitution",
   "Sic.Core.Syntax",

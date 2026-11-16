@@ -76,7 +76,8 @@ where
 /-- `Σ; Γ' ⊢ ρ : Γ`: the lifting `ρ` of the scope `Γ` in the scope `Γ'` is typed, with motives in
 the sorts of the quality `s`: its renaming is typed, each variable lifted is a type, at the
 variables of its telescope, and its motive is declared over this telescope followed by a term of the
-variable, in the sort of its level. -/
+variable, in the sort of its level, and the motive of each type of the block lifted is a type over a
+term of its instance. -/
 structure Lifting.Typed (sig : Signature) (s : Quality) {Γ' Γ : Scope} (ctx' : Context k Γ')
     (ρ : Lifting k Γ' Γ) (ctx : Context k Γ) : Prop where
   /-- The renaming of the lifting is typed. -/
@@ -89,6 +90,10 @@ structure Lifting.Typed (sig : Signature) (s : Quality) {Γ' Γ : Scope} (ctx' :
           (Telescope.snoc (p := Lifting.termParam) .unrestrictedUnrestricted .nil
             (.var₀ (ρ.ren x)))
           (.sort ⟨s, l⟩)
+  /-- The motive of a type of the block lifted is a type over a term of the instance of this type,
+  in the sort of its level. -/
+  block : ∀ {D : Name} {b : Lifting.BlockMotive k Γ' Γ}, ρ.block D = some b →
+    HasType sig (ctx'.var (b.type.rename ρ.ren)) b.motive (.sort ⟨s, b.level⟩)
   /-- A second-order variable lifted is a type, at the variables of its telescope, and its motive is
   declared over this telescope followed by a term of the variable at them. -/
   secondOrder : ∀ {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
@@ -128,6 +133,17 @@ theorem Lifting.Typed.weaken {s : Quality} {Γ' Γ : Scope} {ctx' : Context k Γ
     obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
     cases he
     exact ⟨(h.var hx₀).1, .succVar (h.var hx₀).2⟩
+  block := fun {D b} hD => by
+    obtain ⟨b₀, hD₀, rfl⟩ := Option.map_eq_some_iff.1 hD
+    have hC := h.block hD₀
+    have hT := match contextPresuppositions.hasType hC with | .var hT => hT
+    have hα := TypedRen.weaken hB
+    have e : (b₀.type.rename ρ.ren).rename (Ren.weaken (e := .var)) =
+        b₀.type.rename (ρ.weaken (e := .var)).ren :=
+      Term.rename_rename_of (fun _ => rfl) _
+    have := stableUnderRenaming.hasType hC (hα.lift (stableUnderRenaming.wfType hT hα))
+    rw [e] at this
+    exact this
   secondOrder := fun {ps ψ X y l Θ A} hx hX => by
     obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
     cases he
@@ -147,6 +163,17 @@ theorem Lifting.Typed.weakenSecondOrder {s : Quality} {Γ' Γ : Scope} {ps : Lis
     obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
     cases he
     exact ⟨(h.var hx₀).1, .succSecondOrder (h.var hx₀).2⟩
+  block := fun {D b} hD => by
+    obtain ⟨b₀, hD₀, rfl⟩ := Option.map_eq_some_iff.1 hD
+    have hC := h.block hD₀
+    have hT := match contextPresuppositions.hasType hC with | .var hT => hT
+    have hα := TypedRen.weakenSecondOrder hB
+    have e : (b₀.type.rename ρ.ren).rename (Ren.weaken (e := .secondOrder ps ψ)) =
+        b₀.type.rename (ρ.weaken (e := .secondOrder ps ψ)).ren :=
+      Term.rename_rename_of (fun _ => rfl) _
+    have := stableUnderRenaming.hasType hC (hα.lift (stableUnderRenaming.wfType hT hα))
+    rw [e] at this
+    exact this
   secondOrder := fun {ps' ψ' X y l Θ' A} hx hX => by
     obtain ⟨⟨y₀, l₀⟩, hx₀, he⟩ := Option.map_eq_some_iff.1 hx
     cases he
@@ -168,6 +195,16 @@ theorem Lifting.Typed.lift {s : Quality} {Γ' Γ : Scope} {ctx' : Context k Γ'}
       match x, hx with
       | .succ x, hx =>
         ⟨stableUnderRenaming.wfType (hw.var hx).1 (TypedRen.weaken (.var hA)), (hw.var hx).2⟩
+    block := fun {D b} hD => by
+      obtain ⟨b₀, hD₀, rfl⟩ := Option.map_eq_some_iff.1 hD
+      have hC := hw.block (b := b₀.weaken) (show Option.map _ (ρ.block D) = _ by rw [hD₀]; rfl)
+      have e : (b₀.type.rename (Ren.weaken (e := .var))).rename ρ.lift.ren =
+          b₀.type.rename ρ.weaken.ren :=
+        Term.rename_rename_of (fun _ => rfl) _
+      show HasType sig (Context.var _ ((b₀.type.rename (Ren.weaken (e := .var))).rename ρ.lift.ren))
+        _ _
+      rw [e]
+      exact hC
     secondOrder := fun {ps ψ X y l Θ A} hx hX =>
       match X, hX, hx with
       | .succ X, .succVar (Θ := Θ) hX, hx => by
@@ -199,6 +236,16 @@ theorem Lifting.Typed.liftSecondOrder {s : Quality} {Γ' Γ : Scope} {ps : List 
     var := fun {x y l} hx =>
       match x, hx with
       | .succ x, hx => ⟨stableUnderRenaming.wfType (hw.var hx).1 hα, (hw.var hx).2⟩
+    block := fun {D b} hD => by
+      obtain ⟨b₀, hD₀, rfl⟩ := Option.map_eq_some_iff.1 hD
+      have hC := hw.block (b := b₀.weaken) (show Option.map _ (ρ.block D) = _ by rw [hD₀]; rfl)
+      have e : (b₀.type.rename (Ren.weaken (e := .secondOrder ps ψ))).rename ρ.lift.ren =
+          b₀.type.rename ρ.weaken.ren :=
+        Term.rename_rename_of (fun _ => rfl) _
+      show HasType sig (Context.var _ ((b₀.type.rename (Ren.weaken (e := .secondOrder ps ψ))).rename ρ.lift.ren))
+        _ _
+      rw [e]
+      exact hC
     secondOrder := fun {ps' ψ' X y l Θ' A'} hx hX =>
       match X, hX, hx with
       | .succ X, .succSecondOrder (Θ := Θ₀) hX, hx => by
@@ -244,6 +291,10 @@ theorem Term.Lifts.wfType {s : Quality} {v : Lifting.Variables} {Γ'' Γ' Γ : S
     obtain ⟨Θ, A₀, hX, hts⟩ := hA.secondOrder_inv
     rw [← Var.eta_instantiate X ts]
     exact (hρ.secondOrder hx' hX).1.instantiate hts
+  | .block _ _, hA => by
+    obtain ⟨decl, ζ, hΔ, hq, hl, hp, hD, hadm, has⟩ := hA.inst_inv
+    subst hΔ
+    exact .ofSort (.inst hD hq hl hp hadm has)
   | .inst hd hD .., hA => by
     obtain ⟨ζ, hq, hl, hp, hD, hadm, has⟩ := hA.inst_inv_of_mem hd hD
     exact .ofSort (.inst hD hq hl hp hadm has)
@@ -261,7 +312,7 @@ theorem InstanceArgs.Lifts.lt {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lif
     · exact Nat.lt_succ_of_lt (has.lt i hi)
     · cases List.mem_singleton.1 hi
       exact Nat.lt_succ_self _
-  | _, _, _, _, _, _, .absent has _, i, hi => Nat.lt_succ_of_lt (has.lt i hi)
+  | _, _, _, _, _, _, .absent has _ _, i, hi => Nat.lt_succ_of_lt (has.lt i hi)
 
 /-- The arguments lifted have a level each. -/
 theorem InstanceArgs.Lifts.length_eq {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} :
@@ -272,7 +323,7 @@ theorem InstanceArgs.Lifts.length_eq {v : Lifting.Variables} {Γ' Γ : Scope} {�
   | _, _, _, _, _, _, .lifted has _ => by
     rw [List.length_append, List.length_append, has.length_eq]
     rfl
-  | _, _, _, _, _, _, .absent has _ => has.length_eq
+  | _, _, _, _, _, _, .absent has _ _ => has.length_eq
 
 /-- The positions of the arguments lifted are distinct. -/
 theorem InstanceArgs.Lifts.nodup {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} :
@@ -285,7 +336,7 @@ theorem InstanceArgs.Lifts.nodup {v : Lifting.Variables} {Γ' Γ : Scope} {ρ : 
       fun i hi j hj he => by
         cases List.mem_singleton.1 hj
         exact Nat.lt_irrefl _ (he ▸ has.lt i hi)⟩
-  | _, _, _, _, _, _, .absent has _ => has.nodup
+  | _, _, _, _, _, _, .absent has _ _ => has.nodup
 
 /-- The arguments of an instance lifted, followed by the argument of a variable that is not
 lifted, renamed. -/
@@ -464,8 +515,10 @@ where
         exact he
       exact Term.sort_instantiate _ _ ▸ HasType.secondOrder (hρ.secondOrder hx hX).2
         (HasArgs.snoc (stableUnderRenaming.hasArgs hts hρ.ren) he')
+    | .block hD hT, hρ, _, he =>
+      stableUnderSubstitution.hasType (hρ.block hD) (TypedSubst.single (hT ▸ he))
     | .inst (decl := decl) (D := D) (qs := qs) (ls := ls) (ls' := ls') (ps := ps) (as := as)
-        (S := S) (as' := as') (ns := ns) (body := body) hd hD hq hl hp has _ hL, hρ, hA, he => by
+        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL, hρ, hA, he => by
       obtain ⟨ζ, _, _, _, hDT, hadm, hargs⟩ := hA.inst_inv_of_mem hd hD
       have hlen := has.length_eq
       have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
@@ -544,14 +597,14 @@ where
                     (hΔ ▸ as').toSubst ((Lifting.base S₂ lv Δ).ren x) =
                       (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren)
     | .nil, hρ, .nil _, _, _, _, _ => ⟨rfl, .nil hρ.ren.wfCtx, fun x => nomatch x⟩
-    | .absent (a := .var) (Δ := Δ₀) has _, hρ, .var hps ha, S₂, lv, hS, hlv => by
+    | .absent (a := .var) (Δ := Δ₀) has _ _, hρ, .var hps ha, S₂, lv, hS, hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
         args has hρ hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
       subst hΔ
       exact HasInstanceArgs.liftedVar_false _ (lv Δ₀.length) hρ has' hc ha _
         (decide_eq_false fun h =>
           Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
-    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _, hρ, .secondOrder hps hb, S₂, lv, hS,
+    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _ _, hρ, .secondOrder hps hb, S₂, lv, hS,
         hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
         args has hρ hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv

@@ -133,14 +133,47 @@ theorem Term.blockName_cast {Γ : Scope} (names : List Name) {n m : Nat} (h : n 
   subst h
   rfl
 
-/-- The lifting of a type that is not an instance of a type of the block of `F` is not an instance
-of a lifting of `F`. -/
+/-- A lifting that lifts no type of a block lifts none in a scope extended by an entry. -/
+theorem Lifting.weaken_block {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Lifting k Γ' Γ}
+    (h : ∀ D, ρ.block D = none) (D : Name) : (ρ.weaken (e := e)).block D = none := by
+  show (ρ.block D).map _ = none
+  rw [h D]
+  rfl
+
+/-- A lifting that lifts no type of a block lifts none under a new entry. -/
+theorem Lifting.lift_block {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Lifting k Γ' Γ}
+    (h : ∀ D, ρ.block D = none) (D : Name) : (ρ.lift (e := e)).block D = none := by
+  show (ρ.block D).map _ = none
+  rw [h D]
+  rfl
+
+/-- A lifting that lifts no type of a block lifts none under new variables. -/
+theorem Lifting.liftN_block {Γ' Γ : Scope} :
+    (n : Nat) → {ρ : Lifting k Γ' Γ} → (∀ D, ρ.block D = none) → ∀ D, (ρ.liftN n).block D = none
+  | 0, _, h => h
+  | n + 1, _, h => Lifting.liftN_block n (Lifting.lift_block h)
+
+/-- The lifting of the parameters of a type declaration lifts no type of a block. -/
+theorem Lifting.base_block (S : List Nat) (lv : Nat → Level k) :
+    (Δ : Scope) → ∀ D, (Lifting.base S lv Δ).block D = none
+  | [], _ => rfl
+  | _ :: Δ, D => by
+    have ih := Lifting.base_block S lv Δ
+    show (Lifting.cons (lv Δ.length) (decide (Δ.length ∈ S)) (Lifting.base S lv Δ)).block D = none
+    cases decide (Δ.length ∈ S) with
+    | true => exact Lifting.weaken_block (Lifting.lift_block ih) D
+    | false => exact Lifting.lift_block ih D
+
+/-- The lifting of a type that is not an instance of a type of the block of `F`, which lifts no
+type of a block, is not an instance of a lifting of `F`. -/
 theorem Term.Lifts.blockName {sig : Signature} {v : Lifting.Variables} {Γ' Γ : Scope}
     {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {l : Level k}
-    (h : Term.Lifts sig v ρ e A A' l) {names : List Name} {F : Name} (hF : F ∈ names)
-    (hA : A.blockName names = none) (S : List Nat) : A'.blockName [Lifting.name F S] = none := by
+    (h : Term.Lifts sig v ρ e A A' l) (hρ : ∀ D, ρ.block D = none) {names : List Name} {F : Name}
+    (hF : F ∈ names) (hA : A.blockName names = none) (S : List Nat) :
+    A'.blockName [Lifting.name F S] = none := by
   cases h with
   | var => rfl
+  | block hD => exact nomatch (hρ _).symm.trans hD
   | @inst _ _ _ _ _ _ D _ _ _ _ _ S' =>
     show (if Lifting.name D S' ∈ [Lifting.name F S] then _ else _) = none
     split
@@ -150,8 +183,8 @@ theorem Term.Lifts.blockName {sig : Signature} {v : Lifting.Variables} {Γ' Γ :
     · rfl
 
 /-- Destructors lifted, none of which is recursive, at observations and at a substitution that are
-neutral, have no destructor whose result is an instance of a lifting of a type `F` of their
-block. -/
+neutral, by a lifting that lifts no type of a block, have no destructor whose result is an instance
+of a lifting of a type `F` of their block. -/
 theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifting.Variables}
     {κ : Universe k}
     {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)}
@@ -159,18 +192,18 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
     (S : List Nat) :
     {Γ' : Scope} → {ρ : Lifting k Γ' Γ₀} → {Ξ : Scope} → {θ : Subst k Γ₀ Ξ} → {ns : List Name} →
       {ds : Destructors k Ξ ns} → {ns' : List Name} → {ds' : Destructors k Γ' ns'} →
-      Destructors.Lifts sig v κ o ρ @θ ds ds' → Subst.Neutral θ →
+      Destructors.Lifts sig v κ o ρ @θ ds ds' → (∀ D, ρ.block D = none) → Subst.Neutral θ →
       (∀ r ∈ ds.recursion names, r = none) → ∀ r ∈ ds'.recursion [Lifting.name F S], r = none
-  | _, _, _, _, _, _, _, _, .nil, _, _ => fun _ hr => nomatch hr
-  | _, _, _, _, _, _, _, _, .lifted hB _ h, hθ, hds => fun r hr => by
+  | _, _, _, _, _, _, _, _, .nil, _, _, _ => fun _ hr => nomatch hr
+  | _, _, _, _, _, _, _, _, .lifted hB _ h, hρ, hθ, hds => fun r hr => by
     rcases List.mem_cons.1 hr with rfl | hr
     · rw [Term.blockName_cast]
-      exact hB.blockName hF (Term.blockName_subst_neutral (hθ.liftN _) names _
-        (hds _ List.mem_cons_self)) S
-    · exact Destructors.Lifts.recursion ho hF S h (hθ.snoc (ho _ _))
+      exact hB.blockName (Lifting.liftN_block _ hρ) hF
+        (Term.blockName_subst_neutral (hθ.liftN _) names _ (hds _ List.mem_cons_self)) S
+    · exact Destructors.Lifts.recursion ho hF S h (Lifting.weaken_block hρ) (hθ.snoc (ho _ _))
         (fun r hr => hds r (List.mem_cons_of_mem _ hr)) r hr
-  | _, _, _, _, _, _, _, _, .absent _ h, hθ, hds =>
-    Destructors.Lifts.recursion ho hF S h (hθ.snoc (ho _ _))
+  | _, _, _, _, _, _, _, _, .absent _ h, hρ, hθ, hds =>
+    Destructors.Lifts.recursion ho hF S h hρ (hθ.snoc (ho _ _))
       (fun r hr => hds r (List.mem_cons_of_mem _ hr))
 
 -- ADE: none.
@@ -186,7 +219,7 @@ theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaratio
   obtain ⟨T, hT, hn, hb⟩ := h
   refine Destructors.Lifts.recursion (fun _ _ => .obs ..)
     (hn ▸ TypeDeclaration.codata_name_mem_names hT : F ∈ decl.names) S (hb I)
-    (InstanceArgs.identity_rename_neutral _) ?_
+    (Lifting.lift_block (Lifting.base_block S _ _)) (InstanceArgs.identity_rename_neutral _) ?_
   rw [Destructors.recursion_substLevels]
   exact hF I.lifted T hT hn
 

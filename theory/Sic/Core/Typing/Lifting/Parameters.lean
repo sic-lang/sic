@@ -63,6 +63,9 @@ theorem Lifting.Typed.liftedVar {Δ' Δ : Scope} {ctx' : Context k Δ'} {ρ : Li
     have hρ := TypedRen.liftedVar s l h.ren hA true hx
     have hw := (h.lift hA).weakenSecondOrder hρ.wfCtx
     { ren := hρ
+      block := fun {D b} hD => by
+        rw [Lifting.cons_true_ren]
+        exact hw.block hD
       var := fun {x y l'} hm =>
         match x, hm with
         | .zero, hm => by
@@ -102,6 +105,9 @@ theorem Lifting.Typed.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
     have hρ := TypedRen.liftedSecondOrder s l h.ren hA true hx
     have hw := (h.liftSecondOrder (ψ := ψ) hA).weakenSecondOrder hρ.wfCtx
     { ren := hρ
+      block := fun {D b} hD => by
+        rw [Lifting.cons_true_ren]
+        exact hw.block hD
       var := fun {x y l'} hm =>
         match x, hm with
         | .succ x, hm => by
@@ -148,7 +154,7 @@ theorem Context.lifted_typed (S : List Nat) (s : Quality) (lv : Nat → Level k)
       Lifting.Typed sig s (ctx.lifted S s lv) (Lifting.base S lv Δ) ctx
   | _, .empty, h, _ =>
     ⟨⟨h, fun hx => (nomatch hx), fun hX => (nomatch hX)⟩, fun {x} => (nomatch x),
-      fun {_ _ X} => (nomatch X)⟩
+      fun hD => (nomatch hD), fun {_ _ X} => (nomatch X)⟩
   | _, .var _ _, .var hA, hS =>
     Lifting.Typed.liftedVar s _
       (Context.lifted_typed S s lv (contextPresuppositions.wfType hA) hS.1) hA _
