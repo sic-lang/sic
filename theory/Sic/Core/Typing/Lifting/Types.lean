@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Lifting
 public import Sic.Core.Typing.Renaming
+import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Substitution
 import Sic.Core.Typing.Inversion
 import Sic.Core.Typing.Lifting.Context
@@ -105,12 +106,6 @@ structure Lifting.Typed (sig : Signature) (s : Quality) {Γ' Γ : Scope} (ctx' :
           ((Θ.rename ρ.ren).snoc (p := Lifting.termParam) .unrestrictedUnrestricted
             (Var.eta (ρ.ren X)))
           (.sort ⟨s, l⟩)
-
-/-- A variable lifted by a lifting in a scope extended by an entry is lifted by the lifting. -/
-theorem Lifting.isSome_of_weaken {Γ' Γ : Scope} {e a : Scope.Entry} (ρ : Lifting k Γ' Γ)
-    (x : Var Γ a) (h : ((ρ.weaken (e := e)).motive x).isSome) : (ρ.motive x).isSome := by
-  rwa [show (ρ.weaken (e := e)).motive x = (ρ.motive x).map (Prod.map .succ id) from rfl,
-    Option.isSome_map] at h
 
 /-- The telescope of a motive, in a context extended by an entry, is the telescope of the motive of
 the variable in this context. -/
