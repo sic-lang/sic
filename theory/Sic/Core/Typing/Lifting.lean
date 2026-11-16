@@ -3,6 +3,7 @@ module
 public import Sic.Core.Typing.Lifting.Context
 import Sic.Core.Lifting.Extension
 import Sic.Core.Lifting.Functionality
+import Sic.Core.Lifting.Shape
 import Sic.Core.Lifting.Substitution
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting.Destructors

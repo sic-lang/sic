@@ -85,12 +85,6 @@ theorem HasType.eta {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Gra
 
 /-! ## Parameters Themselves -/
 
-/-- The parameters themselves, renamed, give each parameter the abstraction of its image. -/
-theorem InstanceArgs.identity_rename_toSubst {Γ Δ : Scope} (α : Ren Γ Δ) {a : Scope.Entry}
-    (x : Var Δ a) : ((InstanceArgs.identity (k := k) Δ).rename α).toSubst x = Var.eta (α x) := by
-  rw [InstanceArgs.rename_eq_subst, InstanceArgs.identity_subst]
-  rfl
-
 -- ADE: none.
 /-- The parameters of a well-formed context, themselves, are arguments of the context. -/
 theorem HasInstanceArgs.identity : {Δ : Scope} → {ctx : Context k Δ} → WfCtx sig ctx →

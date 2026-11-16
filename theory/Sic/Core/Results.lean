@@ -144,18 +144,6 @@ theorem Terms.ResultTypes.params_eq {sig : Signature} {v : Lifting.Variables} :
 
 /-! ## Terms of the Recursive Results -/
 
-/-- The nestings of the variables of the scope `Ξ` of a destructor, at its position in destructors
-of the scope `Γ`, whose variables have the nestings `ν`: the destructors before it have no
-position. -/
-def Destructors.Pos.nesting {α : Type} {k' : Nat} {d : Name} {p q ς : Grade}
-    {ps : List Parameter} :
-    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
-      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
-      {ψ : ResultOwnership Grade ps.length} → Destructors.Pos d p q ς ds Ξ Θ B ψ → Nesting α Γ →
-        Nesting α Ξ
-  | _, _, _, _, _, _, _, .here, ν => ν
-  | _, _, _, _, _, _, _, .there h, ν => h.nesting (Nesting.lift @ν)
-
 -- ADE: none.
 /--
 The recursive result `e` of the term `t` of the type `A`, whose nesting is `n`, in a signature,

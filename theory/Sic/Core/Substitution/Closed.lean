@@ -325,6 +325,12 @@ theorem InstanceArgs.identity_subst_toSubst {Γ Δ : Scope} (as : InstanceArgs k
     (InstanceArgs.identity Δ).subst as.toSubst = as :=
   InstanceArgs.toSubst_inj fun x => InstanceArgs.identity_subst as.toSubst x
 
+/-- The parameters themselves, renamed, give each parameter the abstraction of its image. -/
+theorem InstanceArgs.identity_rename_toSubst {Γ Δ : Scope} (α : Ren Γ Δ) {a : Scope.Entry}
+    (x : Var Δ a) : ((InstanceArgs.identity (k := k) Δ).rename α).toSubst x = Var.eta (α x) := by
+  rw [InstanceArgs.rename_eq_subst, InstanceArgs.identity_subst]
+  rfl
+
 /-- `(θ₁, θ₂)` gives the variables of `Γ` what `θ₁` gives them. -/
 theorem Subst.append_weakenN {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
     (θ₂ : Subst k [] (Scope.extend [] n)) {a : Scope.Entry} (y : Var Γ a) :

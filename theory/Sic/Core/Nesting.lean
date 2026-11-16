@@ -350,6 +350,18 @@ def Destructors.nestedAt {Γ : Scope} {ns : List Name} (ν : Nesting α Γ)
     (ds : Destructors k Γ ns) : Nat → Bool :=
   fun i => ((ds.nested @ν)[i]?).getD false
 
+/-- The nestings of the variables of the scope `Ξ` of a destructor, at its position in destructors
+of the scope `Γ`, whose variables have the nestings `ν`: the destructors before it have no
+position. -/
+def Destructors.Pos.nesting {α : Type} {k' : Nat} {d : Name} {p q ς : Grading.Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k' Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k' Ξ ps} → {B : Term k' (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership Grading.Grade ps.length} → Destructors.Pos d p q ς ds Ξ Θ B ψ →
+        Nesting α Γ → Nesting α Ξ
+  | _, _, _, _, _, _, _, .here, ν => ν
+  | _, _, _, _, _, _, _, .there h, ν => h.nesting (Nesting.lift @ν)
+
 /-- The nesting of an instance is not a position. -/
 theorem Nest.ofArgs_ne_direct (ns : List (Nest α)) (a : α) : Nest.ofArgs ns ≠ .direct a := by
   unfold Nest.ofArgs
