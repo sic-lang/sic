@@ -30,6 +30,10 @@ name = "Lifting"
 modules = ["Sic.Core.Lifting"]
 
 [[group]]
+name = "Results"
+modules = ["Sic.Core.Results"]
+
+[[group]]
 name = "Typing"
 modules = ["Sic.Core.Typing"]
 
@@ -143,6 +147,22 @@ allowed = [
   "Sic.Core.Lifting",
   "Sic.Core.Nesting",
   "Sic.Core.Positivity",
+  "Sic.Core.Substitution",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
+]
+
+[[rule]]
+reason = "the recursive results are defined from the syntax, from the nesting of the fields and from the liftings, and read no judgment, so that each judgment proves its properties on them"
+modules = ["Sic.Core.Results"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.Lifting",
+  "Sic.Core.Nesting",
+  "Sic.Core.Positivity",
+  "Sic.Core.Results",
   "Sic.Core.Substitution",
   "Sic.Core.Syntax",
   "Sic.Core.Universe",
