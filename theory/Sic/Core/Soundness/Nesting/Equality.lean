@@ -3,6 +3,7 @@ module
 public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
+import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
@@ -14,6 +15,9 @@ import Sic.Core.Syntax.Signature
 
 The graph of the nestings of the equality of annex 18 of RFC 36 is a reading of the nested types:
 it reads two closed types, each at its nesting, with the same equality of their terms.
+A position is read in a sort of the quality of the sort of the type it holds: the types given for
+the variables with a position are read where the types of a universe that stand for them are, and a
+type of a universe is not read as a proposition.
 A type that is strictly positive in variables is then read by the graph at any closed types given
 for these variables, when the graph reads them at their nestings: the equality of its terms is the
 same at two substitutions, as the meaning of a nested field of a block asks, whatever the relations
@@ -36,11 +40,42 @@ variable {sig : Signature} {ι : Interpretation}
 
 -- ADE: none.
 /-- The graph of the nestings of the sort of the quality `s` at the level `n` reads two closed
-types, each at its nesting, with the same equality of their terms. -/
-def NestReads (sig : Signature) (ι : Interpretation) (n : Nat) (s : Quality)
+types, each at its nesting, with the same equality of their terms, where the positions hold types
+of sorts of the quality `sT`. -/
+def NestReads (sig : Signature) (ι : Interpretation) (n : Nat) (sT s : Quality)
     (τ₁ τ₂ : Nest NestLeaf) (A₁ A₂ : Term 0 []) : Prop :=
-  ∃ F, NestRel sig ι n (fun m _ => levelRel sig ι m) s τ₁ A₁ F ∧
-    NestRel sig ι n (fun m _ => levelRel sig ι m) s τ₂ A₂ F
+  ∃ F, NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ₁ A₁ F ∧
+    NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ₂ A₂ F
+
+/-- Two equal closed types of a universe that the graph of the nestings reads without position in
+the sort of the quality `s` are read in a sort of types: a type of a universe is not a
+proposition. -/
+theorem NestReads.quality_of_univ {A₁ A₂ : Term 0 []} {κ : Universe 0} {n : Nat}
+    {sT s : Quality} (hκ : κ.quality = .type) (h : ValidEqTerm₀ sig ι A₁ A₂ (.sort κ))
+    (hr : NestReads sig ι n sT s .plain .plain A₁ A₂) : s = .type := by
+  obtain ⟨F, hF, -⟩ := hr
+  obtain ⟨q, l⟩ := κ
+  obtain rfl : q = .type := hκ
+  have hd := h.1.1
+  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
+  cases hc.sort_inv
+  cases hR with
+  | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+  | univ k hk =>
+    cases levelRel_univ_iff.1 hk with
+    | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
+    | univ hl _ =>
+      obtain ⟨⟨R', h₁, -⟩, -⟩ := hvw
+      cases hF with
+      | plain hA hF' =>
+        cases Computesι.det hd hw₁ hA
+        cases hF' with
+        | univ hs _ => exact hs
+        | univBelow hs _ _ _ => exact hs
+        | prop hP => exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h₁) hP).elim
+        | propBelow m _ hP =>
+          exact (UnivRel.not_prop hd (levelRel_univ_iff.1 h₁) (levelRel_prop_iff.1 hP)).elim
 
 /-! ## Destructors Read by the Graph of the Nestings -/
 
@@ -50,7 +85,7 @@ that the graph of the nestings reads with one equality at these, for each pair o
 abstractions for it, is read with them by the graph of the nestings with one equality, as a
 destructor whose result has no position: the equality of its results and that of the destructors
 after it are defined from the graph at the first substitution, which gives one at most. -/
-theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : Universe 0}
+theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {κ κ₁ : Universe 0}
     (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
     {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
@@ -66,15 +101,15 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : Unive
     (hB₂ : ∀ τ, B.subst (Subst.append θ₂' τ) = B.subst (Subst.append θ₂ τ))
     (hds : ∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
         ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
-      ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+      ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
           (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
           (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁) S ∧
-        NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
           (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
           (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) S) :
-    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality @ν₁
+    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₁
         (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality @ν₂
+      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
   have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
   have ihκ : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
@@ -139,20 +174,20 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : Unive
       obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
       exact hF.validEqTerm hd hw (hf _ _ hts)
   let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
       (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' ∧ S' o₁ o₂
-  have hGeq : ∀ f S', NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+  have hGeq : ∀ f S', NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
       (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' → G f = S' := fun f S' hS' =>
     funext fun o₁ => funext fun o₂ => propext
       ⟨fun ⟨_, h', hs⟩ => (NestDesRel.unique hd ih h' _ _ hS' o₁ o₂).1 hs,
         fun hs => ⟨S', hS', hs⟩⟩
   have hG : ∀ f, AbstractionRel SΘ F f f →
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
         (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
         (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) (G f) ∧
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
         (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
         (Subst.snoc (e := .secondOrder ps ψ) θ₂' f) (G f) := fun f hf => by
     obtain ⟨S', h₁, h₂⟩ := hds f f (hcond f f hf)
@@ -184,7 +219,7 @@ the same at two other substitutions, at which the graph of the nestings reads it
 nestings with one equality, at equal arguments, followed by destructors that the graph reads with
 one equality at these substitutions, for each pair of abstractions for it, is read with them by the
 graph of the nestings with one equality, as a destructor whose result has a position. -/
-theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Universe 0}
+theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {κ : Universe 0}
     (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
     {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
     {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
@@ -194,18 +229,18 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Universe 0
     (hΘ : ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂))
     (hΘ₁ : Θ.subst θ₁' = Θ.subst θ₁) (hΘ₂ : Θ.subst θ₂' = Θ.subst θ₂)
     (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      NestReads sig ι n κ.quality (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
+      NestReads sig ι n sT κ.quality (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
         (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂))
         (B.subst (Subst.append θ₁' τ₁)) (B.subst (Subst.append θ₂' τ₂)))
-    (hds : ∀ f₁ f₂, ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+    (hds : ∀ f₁ f₂, ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
           (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
           (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁) S ∧
-        NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
           (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
           (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) S) :
-    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality @ν₁
+    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₁
         (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) κ.quality @ν₂
+      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
   have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
   have ihκ : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
@@ -215,11 +250,11 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Universe 0
     (fun _ => .plain)
   have hSp := TelRel.isPer hd ihκ (fun _ => .plain) hT₁
   let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ F', NestRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+    ∃ F', NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
       (B.subst (Subst.append θ₁' ts.toSubst)) F' ∧ F' t u
   have hFeq : ∀ (ts : Args 0 [] ps) F₀,
-      NestRel sig ι n (fun m _ => levelRel sig ι m) κ.quality
+      NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
         (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
         (B.subst (Subst.append θ₁' ts.toSubst)) F₀ → F ts.terms = F₀ := fun ts F₀ hF₀ =>
     funext fun t => funext fun u => propext
@@ -303,13 +338,16 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
 
 -- ADE: none.
 /-- The reading of the graph of the nestings of the equality at the level `n`, of the sorts whose
-level `n` bounds: two types, or the destructors of a codata type at two substitutions, are read
-with one equality, in the sort of a quality. -/
-def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n : Nat) :
+level `n` bounds, at positions that hold types of sorts of the quality `sT`: two types, or the
+destructors of a codata type at two substitutions, are read with one equality, in the sort of a
+quality. -/
+def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n : Nat)
+    (sT : Quality) :
     Reading sig ι NestLeaf Quality where
-  rd := NestReads sig ι n
-  dr s _ _ ν₁ ν₂ ds θ₁ θ₂ := ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν₁ ds @θ₁ S ∧
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν₂ ds @θ₂ S
+  rd := NestReads sig ι n sT
+  dr s _ _ ν₁ ν₂ ds θ₁ θ₂ := ∃ S,
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₁ ds @θ₁ S ∧
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₂ ds @θ₂ S
   ok s κ := κ.level.closedValue ≤ n ∧ s = κ.quality
   plain := fun ⟨hn, hs⟩ hκ h => by
     subst hs
@@ -359,10 +397,10 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
 variables with a position, are read by the graph of the nestings of the equality at their
 nestings, with one equality of their terms, given the soundness of the typing. -/
-theorem NestReads.readsNested (hS : TypingSound sig ι) (hd : sig.Distinct) (n : Nat)
+theorem NestReads.readsNested (hS : TypingSound sig ι) (hd : sig.Distinct) (n : Nat) (sT : Quality)
     {sigT : Signature} (hent : sig.ValidEntries ι sigT) :
-    ReadsNested sig ι (NestReads sig ι n) sigT :=
-  ReadsInstances.readsNested hS hent ((nestReading sig ι hd n).readsInstances hS sigT hent)
+    ReadsNested sig ι (NestReads sig ι n sT) sigT :=
+  ReadsInstances.readsNested hS hent ((nestReading sig ι hd n sT).readsInstances hS sigT hent)
 
 end
 

@@ -167,8 +167,8 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
     obtain ⟨_, _, E, hc, _, hE, _, _⟩ := hv.fieldRel hs hn
     obtain ⟨_, _, R', hc', _, hR', _⟩ := hv.runFieldRel P hn
     cases Computesι.det hd hc hc'
-    exact hR'.runsAs hc (levelRel_runNest_agree_plain hd hinv h hτ (.plain hc hR') (.plain hc hE)
-      H t b (hE.of_validEqTerm hc ht) hr)
+    exact hR'.runsAs hc (levelRel_runNest_agree_plain hd hinv h hτ (.plain hc hR')
+      (.plain (sT := .type) hc hE) H t b (hE.of_validEqTerm hc ht) hr)
   cases h with
   | plain hc hR => exact hR.runsAs hc hr
   | direct hT =>

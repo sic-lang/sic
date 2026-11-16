@@ -72,19 +72,19 @@ theorem HasEq.unique {sig : Signature} {ι : Interpretation} {v : Term 0 []} {R 
 relations that the nesting holds are, in a signature whose names are distinct.
 RFC: `\mathsf{per}_\lambda.\mathsf{symm}`
 RFC: `\mathsf{per}_\lambda.\mathsf{trans}` -/
-theorem levelRel_nest_isPer {sig : Signature} {ι : Interpretation} {n : Nat} {s : Quality}
+theorem levelRel_nest_isPer {sig : Signature} {ι : Interpretation} {n : Nat} {sT s : Quality}
     {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} (hd : sig.Distinct)
-    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All (fun x => IsPer x.2) τ) : IsPer F :=
   NestRel.isPer hd (fun m _ => levelRel_isPer hd m) hτ h
 
 /-- `ty(s_n)[λ]` gives a type a unique equality of its terms: two equalities of a type at a nesting
 relate the same terms, in a signature whose names are distinct.
 RFC: `\mathsf{unique}_\lambda` -/
-theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat} {s s' : Quality}
-    {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
-    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
-    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' τ A F') : ∀ t u, F t u ↔ F' t u :=
+theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat}
+    {sT sT' s s' : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
+    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' τ A F') : ∀ t u, F t u ↔ F' t u :=
   NestRel.unique hd (fun m _ => levelRel_isPer hd m) h _ _ h'
 
 /-- `ty(s_n)[λ]` agrees with the graph of the types: when each position of the nesting holds a type
@@ -94,14 +94,16 @@ The premise `hinv`, that the graph of the types gives the types equal up to the 
 levels the same equality, is no premise of the RFC, whose levels are equal when their values are;
 the invariance of the graph by these levels is proved after this module.
 RFC: `\mathsf{agree}_\lambda` -/
-theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {s s' : Quality}
+theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {sT sT' s s' : Quality}
     {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
     (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain A R)
-    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F)
-    (hτ : Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ)
-    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F') : ∀ t u, F t u ↔ F' t u :=
+      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
+    (hτ : Nest.All
+      (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ)
+    (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain A F') :
+    ∀ t u, F t u ↔ F' t u :=
   NestRel.agree hd (fun m _ => levelRel_isPer hd m) hinv h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
@@ -149,7 +151,7 @@ distinct.
 The premise `hinv` is that of `levelRel_runNest_agree_nest`.
 RFC: `\mathsf{agree}_{\circledR\lambda}.\bot` -/
 theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    {s : Quality} {τ : Nest RunNestLeaf} {A : Term 0 []} {R R' : RunRel} {E : TermRel}
+    {sT s : Quality} {τ : Nest RunNestLeaf} {A : Term 0 []} {R R' : RunRel} {E : TermRel}
     (hd : sig.Distinct)
     (hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
@@ -157,7 +159,7 @@ theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P 
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R')
-    (hE : NestRel sig ι n (fun m _ => levelRel sig ι m) s .plain A E) :
+    (hE : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s .plain A E) :
     ∀ H t a, E t t → R H t a → R' H t a :=
   RunNestRel.to_plain hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m)
     hinv h hτ _ h' _ _ hE

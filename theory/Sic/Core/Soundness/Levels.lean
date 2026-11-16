@@ -981,20 +981,20 @@ theorem TelRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
 /-- A type whose levels change for equal ones has, at a nesting, the same equality of its terms, at
 positions that hold the same relations and types whose levels change for equal ones. -/
 theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality} {τ τ' : Nest NestLeaf}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {sT s : Quality} {τ τ' : Nest NestLeaf}
     {A A' : Term 0 []} {F : TermRel} :
-    NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F → Term.LevelEquiv A A' →
+    NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F → Term.LevelEquiv A A' →
       Nest.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) τ τ' →
-      NestRel sig ι n (fun m _ => levelRel sig ι m) s τ' A' F
+      NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ' A' F
   | .plain hA hF, h, hτ => by
     cases hτ
     obtain ⟨_, hA', hv⟩ := Computes.levelEquiv hA h
     exact .plain hA' (FieldRel.levelEquiv ih hF hv)
-  | .direct hT, h, hτ => by
+  | .direct hs hT, h, hτ => by
     cases hτ with
     | direct hr =>
       obtain ⟨hTT', rfl⟩ := hr
-      exact .direct ((hTT'.symm.trans hT).trans h)
+      exact .direct hs ((hTT'.symm.trans hT).trans h)
   | .codata hD hq hl hp hA hs hκ hn hrec S hS, h, hτ => by
     subst hA
     cases hτ with
@@ -1024,13 +1024,13 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
 equal ones, have, at nestings, the same equality of the abstractions for them, at positions that
 hold the same relations and types whose levels change for equal ones. -/
 theorem NestDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {s : Quality} {Γ : Scope}
+    (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {sT s : Quality} {Γ : Scope}
     {ν ν' : Nesting NestLeaf Γ} {ns : List Name} {ds ds' : Destructors 0 Γ ns}
     {θ θ' : Subst 0 [] Γ} {S : ObsRel} :
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν ds @θ S →
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν ds @θ S →
       Destructors.LevelEquiv ds ds' → Subst.LevelEquiv θ θ' →
       Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν' →
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν' ds' @θ' S
+      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν' ds' @θ' S
   | .nil, .nil, _, _ => .nil
   | .cons (ps := ps) hν hΘ F hF hBresp G hG hresp, .cons (B₂ := B') _ _ _ _ hΘe hBe hds, hθ,
       hνν =>
@@ -1395,11 +1395,11 @@ termination_by structural h _ _ _ _ _ _ _ _ => h
 /-- The equality that the graph of the nestings gives the terms of a type relates the terms whose
 levels change for equal ones, at positions whose relations do. -/
 theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s₁ : Quality}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {sT₁ sT₂ s₁ : Quality}
     {τ₁ : Nest NestLeaf} {A : Term 0 []} {F₁ : TermRel} {t u t' u' : Term 0 []} :
-    NestRel sig ι n (fun m _ => levelRel sig ι m) s₁ τ₁ A F₁ →
+    NestRel sig ι n (fun m _ => levelRel sig ι m) sT₁ s₁ τ₁ A F₁ →
       ∀ (s₂ : Quality) (τ₂ : Nest NestLeaf) (F₂ : TermRel),
-        NestRel sig ι n (fun m _ => levelRel sig ι m) s₂ τ₂ A F₂ →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) sT₂ s₂ τ₂ A F₂ →
         Nest.Rel (fun x y => ∀ t u t' u', x.2 t u → Term.LevelEquiv t t' →
           Term.LevelEquiv u u' → y.2 t' u') τ₁ τ₂ →
         F₁ t u → Term.LevelEquiv t t' → Term.LevelEquiv u u' → F₂ t' u'
@@ -1410,11 +1410,11 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     | plain hA' hF' =>
       cases Computesι.det hd hA hA'
       exact (FieldRel.unique hd hp hF _ _ hF' _ _).1 (FieldRel.rel_levelEquiv hd ih hF h ht hu)
-  | .direct _, _, _, _, h', hR, h, ht, hu => by
+  | .direct _ _, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | direct hr =>
       cases h' with
-      | direct _ => exact hr _ _ _ _ h ht hu
+      | direct _ _ => exact hr _ _ _ _ h ht hu
   | .codata hD _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | inst hνs =>
@@ -1473,12 +1473,12 @@ termination_by structural h _ _ _ _ _ _ _ _ => h
 /-- The equality of the abstractions for destructors read at nestings relates the observations whose
 levels change for equal ones, at positions whose relations do. -/
 theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
-    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {s₁ : Quality}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).RelInvariant) {sT₁ sT₂ s₁ : Quality}
     {Γ : Scope} {ν₁ : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns}
     {θ : Subst 0 [] Γ} {S₁ : ObsRel} {o₁ o₂ o₁' o₂' : Observations} :
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₁ @ν₁ ds @θ S₁ →
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT₁ s₁ @ν₁ ds @θ S₁ →
       ∀ (s₂ : Quality) (ν₂ : Nesting NestLeaf Γ) (S₂ : ObsRel),
-        NestDesRel sig ι n (fun m _ => levelRel sig ι m) s₂ @ν₂ ds @θ S₂ →
+        NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT₂ s₂ @ν₂ ds @θ S₂ →
         Nesting.Rel (fun x y => ∀ t u t' u', x.2 t u → Term.LevelEquiv t t' →
           Term.LevelEquiv u u' → y.2 t' u') @ν₁ @ν₂ →
         S₁ o₁ o₂ → (∀ d ps, Term.LevelEquiv (o₁ d ps) (o₁' d ps)) →

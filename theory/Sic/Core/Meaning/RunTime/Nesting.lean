@@ -264,7 +264,7 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         have hts' := (hSS _ _).1 hts
         have ⟨_, hv⟩ := hB' ts hts'
-        NestRel.unique hd ihm (hF ts hts) _ _ (.plain hv (hF' ts hts' _ hv))
+        NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
@@ -315,11 +315,11 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
     (hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R)
-    {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
+    {sT : Quality} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
     RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R →
       Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ →
       ∀ (R' : RunRel), RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' →
-      ∀ (s : Quality) (E : TermRel), NestRel sig ι n (fun m _ => levelRel sig ι m) s .plain A E →
+      ∀ (s : Quality) (E : TermRel), NestRel sig ι n (fun m _ => levelRel sig ι m) sT s .plain A E →
         ∀ H t a, E t t → R H t a → R' H t a
   | .plain hA hR, _, _, h', _, _, _ => fun H t a _ =>
     (RunNestRel.unique hd ihm ih (.plain hA hR) _ h' H t a).1
@@ -425,14 +425,14 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
             F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
           have hts' := (hSS _ _).1 hts
           have ⟨_, hv⟩ := hB' ts hts'
-          NestRel.unique hd ihm (hF ts hts) _ _ (.plain hv (hF' ts hts' _ hv))
+          NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
         have hEE := AbstractionRel.congr hSΘp hSS hFF
         have hSE := TelRel.unique hd ihm hΘ _ _ hΘE
         have hFE : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
             F ts.terms t u ↔ FE ts.terms t u := fun ts hts =>
           have hts' := (hSE _ _).1 hts
           have ⟨_, hv⟩ := hBE ts hts'
-          NestRel.unique hd ihm (hF ts hts) _ _ (.plain hv (hFE ts hts' _ hv))
+          NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hFE ts hts' _ hv))
         have hEEE := AbstractionRel.congr hSΘp hSE hFE
         have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
@@ -472,7 +472,8 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
             have ⟨w, H₂, Rc, he, hw⟩ := h₁ hp H₁ hH₁ ts bs hts₁ ϖ
             ⟨w, H₂, Rc, he, RunNestRel.to_plain hd ihm ih hinv (hR ts hts')
               (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _
-              (.plain hv (hR' ts hts'' _ hv)) _ _ (.plain hv (hF' ts hts'' _ hv)) H₂ _ w
+              (.plain hv (hR' ts hts'' _ hv)) _ _
+              (.plain (sT := .type) hv (hF' ts hts'' _ hv)) H₂ _ w
               (e₁' ts ts hts'') hw⟩,
             RunNestDesRel.to_plain hd ihm ih hinv (hG _) (Nesting.lift_rel₃ hν) _ (hG' _ e₁') _ _
               (hGE _ e₁) H o a e₂ h₂⟩

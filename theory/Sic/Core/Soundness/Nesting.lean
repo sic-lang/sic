@@ -46,6 +46,29 @@ section
 
 variable {k : Nat}
 
+/-- The closed arguments that give one term for every name give it to each variable of their
+telescope. -/
+theorem Args.ofNames_const_toSubst (U : Term k []) :
+    (names : List Name) →
+      (z : Var (Scope.extend [] (List.replicate names.length (⟨.zero, .zero⟩ : Parameter)).length)
+        .var) →
+      (Args.ofNames (fun _ => U) names).toSubst z = U
+  | [], z => nomatch z
+  | _ :: names, z => by
+    rcases Var.cases_extend (Γ := [.var])
+      (List.replicate names.length (⟨.zero, .zero⟩ : Parameter)).length z with ⟨y, rfl⟩ | ⟨z', rfl⟩
+    · cases y with
+      | zero =>
+        show Subst.append (Subst.closedSingle U) (Args.ofNames (fun _ => U) names).toSubst
+          (Var.weakenN _ .zero) = U
+        rw [Subst.append_weakenN]
+        rfl
+      | succ y => exact nomatch y
+    · show Subst.append (Subst.closedSingle U) (Args.ofNames (fun _ => U) names).toSubst
+        (Ren.liftN _ Ren.empty z') = U
+      rw [Subst.append_liftN_empty]
+      exact Args.ofNames_const_toSubst U names z'
+
 /-- The arguments that `f` gives for names are, for each variable of their telescope, the term
 that `f` gives for one of the names. -/
 theorem Args.ofNames_toSubst₀ {Γ : Scope} (f : Name → Term k Γ) :
@@ -207,8 +230,8 @@ before the block, in the context extended by a type variable of the sort `κ` fo
 block, and strictly positive in these variables, is read by a reading `rd` of the nested types at
 its nesting, at two equal closed substitutions of the context, where each position holds what
 `f₁` and `f₂` give the type of the block it holds: `rd` reads the instances of the types of the
-block as given, and reads without position the types of a sort that `κ` bounds, of which `U₁` and
-`U₂` are two for the type variables. -/
+block as given, where it reads without position the types `U₁` and `U₂` of the sort `κ`, given
+for the type variables, and reads without position the types of a sort that `κ` bounds. -/
 theorem Term.readsBlockNest {α J : Type} {rd : J → Nest α → Nest α → Term 0 [] → Term 0 [] → Prop}
     {sigT : Signature} (hS : TypingSound sig ι) (hent : sig.ValidEntries ι sigT)
     (hread : ReadsNested sig ι rd sigT) {decl : TypeDeclaration}
@@ -225,7 +248,7 @@ theorem Term.readsBlockNest {α J : Type} {rd : J → Nest α → Nest α → Te
     (hσ : EqSubst sig ι (ctx.atLevels ρ) σ₁ σ₂) (f₁ f₂ : Name → α) (j : J)
     {U₁ U₂ : Term 0 []} (hU : ValidEqTerm₀ sig ι U₁ U₂ (.sort (κ.atLevels ρ)))
     (hpl : ∀ A₁ A₂, ValidEqTerm₀ sig ι A₁ A₂ (.sort (κ₁.atLevels ρ)) → rd j .plain .plain A₁ A₂)
-    (hdir : ∀ D ∈ decl.names, ∀ s, rd s (.direct (f₁ D)) (.direct (f₂ D))
+    (hdir : ∀ D ∈ decl.names, ∀ s, rd s .plain .plain U₁ U₂ → rd s (.direct (f₁ D)) (.direct (f₂ D))
       (((decl.blockInstance I D as).atLevels ρ).subst σ₁)
       (((decl.blockInstance I D as).atLevels ρ).subst σ₂)) :
     rd j (((A₀.instantiate (decl.blockArgs I as)).blockNest decl.names).map f₁)
@@ -296,16 +319,19 @@ theorem Term.readsBlockNest {α J : Type} {rd : J → Nest α → Nest α → Te
           obtain ⟨D, -, hD, -⟩ := hnew z
           rw [hmp, hD] at hx
           exact nomatch hx
-      var := fun x hx s _ => by
+      var := fun x hx s hr => by
         rcases Var.cases_extend _ x with ⟨y, rfl⟩ | ⟨z, rfl⟩
         · rw [hmp, hold] at hx
           exact nomatch hx
         · obtain ⟨D, hDm, hD, hτ⟩ := hnew z
+          rw [Subst.append_liftN_empty, Subst.append_liftN_empty,
+            show τE U₁ z = U₁ from Args.ofNames_const_toSubst U₁ decl.names z,
+            show τE U₂ z = U₂ from Args.ofNames_const_toSubst U₂ decl.names z] at hr
           rw [Subst.append_liftN_empty, Subst.append_liftN_empty, hτ, hτ]
           show rd s ((νX (Ren.liftN _ Ren.empty z)).map f₁) ((νX (Ren.liftN _ Ren.empty z)).map f₂)
             _ _
           rw [hD]
-          exact hdir D hDm s
+          exact hdir D hDm s hr
       secondOrder := fun X _ _ _ hp => by
         rcases Var.cases_extend _ X with ⟨y, rfl⟩ | ⟨z, rfl⟩
         · rw [hmp, hold] at hp
@@ -361,12 +387,12 @@ theorem Term.validBlockNest {sigT : Signature} (hS : TypingSound sig ι) (hd : s
     (hσ : EqSubst sig ι (ctx.atLevels ρ) σ₁ σ₂) :
     (∀ R : Name → TermRel, ∃ F,
       NestRel sig ι (κ.atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
-        (κ.atLevels ρ).quality
+        (κ.atLevels ρ).quality (κ.atLevels ρ).quality
         (((A₀.instantiate (decl.blockArgs I as)).blockNest decl.names).map fun D =>
           (((decl.blockInstance I D as).atLevels ρ).subst σ₁, R D))
         (((A₀.instantiate (decl.blockArgs I as)).atLevels ρ).subst σ₁) F ∧
       NestRel sig ι (κ.atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
-        (κ.atLevels ρ).quality
+        (κ.atLevels ρ).quality (κ.atLevels ρ).quality
         (((A₀.instantiate (decl.blockArgs I as)).blockNest decl.names).map fun D =>
           (((decl.blockInstance I D as).atLevels ρ).subst σ₂, R D))
         (((A₀.instantiate (decl.blockArgs I as)).atLevels ρ).subst σ₂) F) ∧
@@ -397,14 +423,16 @@ theorem Term.validBlockNest {sigT : Signature} (hS : TypingSound sig ι) (hd : s
       (((Term.inst "Unit" [] [l] [] .nil).atLevels ρ).subst σ₂)
       (.sort (Universe.atLevels ρ ⟨.type, l⟩)) := (hS.hasType hent hUnit ρ).2 σ₁ σ₂ hσ
   refine ⟨fun R => ?_, fun P Q => ?_, fun hinst => ?_⟩
-  · exact Term.readsBlockNest hS hent (NestReads.readsNested hS hd _ hent) fresh I as hA₀ hpos ρ hσ
-      _ _ (Universe.atLevels ρ ⟨.type, l⟩).quality hU
-      (fun _ _ h => (nestReading sig ι hd _).plain ⟨Nat.le_refl _, rfl⟩ hκρ h)
-      (fun D _ _ => ⟨R D, .direct (.refl _), .direct (.refl _)⟩)
+  · exact Term.readsBlockNest hS hent (NestReads.readsNested hS hd _ _ hent) fresh I as hA₀ hpos ρ
+      hσ _ _ (Universe.atLevels ρ ⟨.type, l⟩).quality hU
+      (fun _ _ h => (nestReading sig ι hd _ _).plain ⟨Nat.le_refl _, rfl⟩ hκρ h)
+      (fun D _ _ hr =>
+        have hs := hr.quality_of_univ rfl hU
+        ⟨R D, .direct hs (.refl _), .direct hs (.refl _)⟩)
   · exact Term.readsBlockNest hS hent (RunNestReads.readsNested hS hd P _ hent) fresh I as hA₀ hpos
       ρ hσ _ _ () hU
       (fun _ _ h => (runNestReading sig ι hd P _).plain (i := ()) (Nat.le_refl _) hκρ h)
-      (fun D _ _ => ⟨Q D, .direct (.refl _), .direct (.refl _)⟩)
+      (fun D _ _ _ => ⟨Q D, .direct (.refl _), .direct (.refl _)⟩)
   · have hE : EqSubst sig ι
         ((ctx.append (Telescope.sorts ⟨.type, l⟩ decl.names.length)).atLevels ρ)
         (Subst.append σ₁ (((decl.blockArgs I as).atLevels ρ).subst σ₁).toSubst)

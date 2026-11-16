@@ -391,9 +391,9 @@ def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) (
     /- `(⊨fields_λ)`. -/
     | .inst νs =>
       (∀ R : Name → TermRel, ∃ F,
-        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
           (Nest.map (fun D => (inst₁ D, R D)) (.inst νs)) A₁ F ∧
-        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
           (Nest.map (fun D => (inst₂ D, R D)) (.inst νs)) A₂ F) ∧
       (κ.quality = .type → ∀ (P : Program) (Q : Name → RunRel), ∃ R,
         RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)

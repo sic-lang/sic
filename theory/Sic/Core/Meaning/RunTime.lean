@@ -445,7 +445,7 @@ inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n
       (hRΘ : RunTelRel sig ι P n below (fun _ => .plain) (Θ.subst θ) RΘ)
       (F : Terms 0 [] → TermRel) (R : Terms 0 [] → RunRel)
       (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
-        NestRel sig ι n below .type .plain (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
+        NestRel sig ι n below .type .type .plain (B.subst (Subst.append θ ts.toSubst)) (F ts.terms))
       (hR : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         RunNestRel sig ι P n below .plain (B.subst (Subst.append θ ts.toSubst)) (R ts.terms))
       (G : Term 0 (Scope.extend [] ps.length) → RunObsRel)

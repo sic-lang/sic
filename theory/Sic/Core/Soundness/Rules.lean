@@ -507,9 +507,9 @@ theorem ValidFieldsΓ.nested {Γ : Scope} {ps : List Parameter} {ctx : Context 0
     (hr : rs 0 = .inst νs)
     (hA : ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
       (∀ R : Name → TermRel, ∃ F,
-        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
           (Nest.map (fun D => ((inst D).subst σ₁, R D)) (.inst νs)) (A.subst σ₁) F ∧
-        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
           (Nest.map (fun D => ((inst D).subst σ₂, R D)) (.inst νs)) (A.subst σ₂) F) ∧
       (κ.quality = .type → ∀ (P : Program) (Q : Name → RunRel), ∃ R,
         RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)

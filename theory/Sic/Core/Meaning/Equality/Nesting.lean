@@ -12,15 +12,17 @@ The graph of the nestings of annex 18 of RFC 36 agrees with the graph of the typ
 that hold types with the equality of their terms, it gives a type the equality that the graph of the
 types gives it, when this graph gives it one.
 The graph of the types need not give one: the graph of the nestings takes the relation of a position
-whatever the sort that bounds its type, which the formation of a declaration checks, while a
-proposition has no destructor whose result is a type of a universe.
+whatever the type that the position holds and whatever its level, which the formation of a
+declaration checks, and only asks that the position be read in a sort of the quality of the sorts
+of the types at the positions.
 
 The agreement is proved by recursion on the clauses of the graph of the nestings, after the
 properties of the relations of a level, which it reads: the clause of a type without position is
 that of the graph of the types, the relation of a position is the equality of its type, which is
 unique and the same for the types equal up to the values of their levels, a property of the graph
-of the types that is proved after this module and that the agreement takes as a premise, and the clauses of an instance of a codata type are those of the graph of the types, where
-the block has no recursive destructor.
+of the types that is proved after this module and that the agreement takes as a premise, and the
+clauses of an instance of a codata type are those of the graph of the types, where the block has no
+recursive destructor.
 An instance of a codata type may live below the level of the graph of the nestings that reads it,
 while the graph of the types reads it at its own level: the graphs of a level relate what those of
 a level below relate, which the first section proves.
@@ -69,11 +71,11 @@ termination_by structural h => h
 /-- A type that the graph of the nestings reads at the level `m` is read at a level `n` above
 `m`, with the same equality. -/
 theorem NestRel.levelLe {sig : Signature} {ι : Interpretation} {m n : Nat} (hmn : m ≤ n)
-    {s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
-    NestRel sig ι m (fun k _ => levelRel sig ι k) s τ A F →
-      NestRel sig ι n (fun k _ => levelRel sig ι k) s τ A F
+    {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
+    NestRel sig ι m (fun k _ => levelRel sig ι k) sT s τ A F →
+      NestRel sig ι n (fun k _ => levelRel sig ι k) sT s τ A F
   | .plain hA hF => .plain hA (hF.levelLe hmn)
-  | .direct hA => .direct hA
+  | .direct hs hA => .direct hs hA
   | .codata h hq hl hp hA hs hκ hn hrec S hS =>
     .codata h hq hl hp hA hs hκ (Nat.le_trans hn hmn) hrec S (NestDesRel.levelLe hmn hS)
   | .codataProp h hq hl hp hA hκ hn hrec S hS =>
@@ -83,10 +85,10 @@ termination_by structural h => h
 /-- Destructors that the graph of the nestings reads at the level `m` are read at a level `n`
 above `m`, with the same equality. -/
 theorem NestDesRel.levelLe {sig : Signature} {ι : Interpretation} {m n : Nat} (hmn : m ≤ n)
-    {s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns}
+    {sT s : Quality} {Γ : Scope} {ν : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns}
     {θ : Subst 0 [] Γ} {S : ObsRel} :
-    NestDesRel sig ι m (fun k _ => levelRel sig ι k) s @ν ds @θ S →
-      NestDesRel sig ι n (fun k _ => levelRel sig ι k) s @ν ds @θ S
+    NestDesRel sig ι m (fun k _ => levelRel sig ι k) sT s @ν ds @θ S →
+      NestDesRel sig ι n (fun k _ => levelRel sig ι k) sT s @ν ds @θ S
   | .nil => .nil
   | .cons hν hΘ F hF hBresp G hG hresp =>
     .cons hν (TelRel.levelLe hmn hΘ) F (fun ts hts => NestRel.levelLe hmn (hF ts hts)) hBresp G
@@ -187,16 +189,17 @@ positions that hold types with the equality of their terms. -/
 theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain A R)
-    {s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
-    NestRel sig ι n (fun m _ => levelRel sig ι m) s τ A F →
-      Nest.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2) τ →
+      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
+    {sT sT' s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
+    NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F →
+      Nest.All
+        (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ →
       ∀ (s' : Quality) (F' : TermRel),
-        NestRel sig ι n (fun m _ => levelRel sig ι m) s' .plain A F' →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain A F' →
         ∀ t u, F t u ↔ F' t u
-  | .plain hA hF, _, _, _, h' => NestRel.unique hd ih (.plain hA hF) _ _ h'
-  | .direct hA, hτ, _, _, h' => by
+  | .plain hA hF, _, _, _, h' => NestRel.unique hd ih (.plain (sT := sT) hA hF) _ _ h'
+  | .direct _ hA, hτ, _, _, h' => by
     cases hτ with
     | direct hT => exact NestRel.unique hd ih (hinv _ _ _ hT hA) _ _ h'
   | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA _ hκ hn hrec _ hS,
@@ -254,14 +257,14 @@ gives them, at positions that hold types with the equality of their terms. -/
 theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain A R)
-    {s : Quality} {Γ : Scope}
+      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
+        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
+    {sT s : Quality} {Γ : Scope}
     {ν : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
     {S : ObsRel} :
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) s @ν ds @θ S →
-      Nesting.All (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .plain x.1 x.2)
-        @ν →
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν ds @θ S →
+      Nesting.All
+        (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) @ν →
       ∀ (s' : Quality) (S' : ObsRel),
         DesRel sig ι n (fun m _ => levelRel sig ι m) s' (fun _ => none) ds @θ S' →
         ∀ o₁ o₂, S o₁ o₂ ↔ S' o₁ o₂
@@ -277,7 +280,7 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
           F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
         have hts' := (hSS _ _).1 hts
         have ⟨_, hv⟩ := hB' ts hts'
-        NestRel.agree hd ih hinv (hF ts hts) .plain _ _ (.plain hv (hF' ts hts' _ hv))
+        NestRel.agree hd ih hinv (hF ts hts) .plain _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       exact ObsRel.cons_congr hEp hEE fun f hf =>
         NestDesRel.agree hd ih hinv (hG f hf) (Nesting.lift_rel₃ hν) _ _ (hG' f ((hEE f f).1 hf))
@@ -293,7 +296,7 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
         have hts' := (hSS _ _).1 hts
         have ⟨_, hv⟩ := hB' ts hts'
         NestRel.agree hd ih hinv (hF ts hts) (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _ _
-          (.plain hv (hF' ts hts' _ hv))
+          (.plain (sT := .type) hv (hF' ts hts' _ hv))
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       have hEp' := AbstractionRel.isPer hSΘp'
         (fun ts hts => have ⟨_, hv⟩ := hB' ts hts; FieldRel.isPer hd ih (hF' ts hts _ hv)) hBresp'
