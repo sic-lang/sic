@@ -7,7 +7,8 @@ public import Sic.Core.Lifting
 
 The liftings of annex 20 of RFC 36 hold in every signature that has the entries of theirs: the
 relations read their signature only by the entries that it has, the declaration of the type of an
-instance and that of its lifting, so that a signature with more entries gives the same premises.
+instance and that of its lifting, so that a signature that has these type declarations gives the same premises, as a signature with
+more entries does, and as the signature of the meaning does, in which the constants alone change.
 
 A lifting is checked in the signature before it, while a later entry reads it in its own
 signature, which has more entries.
@@ -26,28 +27,47 @@ variable {k : Nat} {sig sig' : Signature} {v : Lifting.Variables}
 mutual
 
 -- ADE: none.
-/-- A type lifted is lifted likewise in a signature with more entries. -/
-theorem Term.Lifts.extend (hs : sig ⊆ sig') :
+/-- A type lifted is lifted likewise in a signature that has the type declarations of its
+signature. -/
+theorem Term.Lifts.ofTypeDeclarations
+    (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
       {A' : Term k Γ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
         Term.Lifts sig' v ρ n e A A' l
   | _, _, _, _, _, _, _, _, .var hx hts => .var hx hts
   | _, _, _, _, _, _, _, _, .block hD hT => .block hD hT
   | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL =>
-    .inst (hs h) hD hn hq hl hp (has.extend hs) hS (hs hL)
+    .inst (hs _ h) hD hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL)
 
 -- ADE: none.
-/-- The arguments of an instance lifted are lifted likewise in a signature with more entries. -/
-theorem InstanceArgs.Lifts.extend (hs : sig ⊆ sig') :
+/-- The arguments of an instance lifted are lifted likewise in a signature that has the type
+declarations of their signature. -/
+theorem InstanceArgs.Lifts.ofTypeDeclarations
+    (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
       {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} → {Δ' : Scope} →
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
         InstanceArgs.Lifts sig' v ρ ns as S ls as'
   | _, _, _, _, _, _, _, _, _, _, .nil => .nil
-  | _, _, _, _, _, _, _, _, _, _, .lifted has hB => .lifted (has.extend hs) (hB.extend hs)
-  | _, _, _, _, _, _, _, _, _, _, .absent has hB hn => .absent (has.extend hs) hB hn
+  | _, _, _, _, _, _, _, _, _, _, .lifted has hB => .lifted (has.ofTypeDeclarations hs) (hB.ofTypeDeclarations hs)
+  | _, _, _, _, _, _, _, _, _, _, .absent has hB hn => .absent (has.ofTypeDeclarations hs) hB hn
 
 end
+
+-- ADE: none.
+/-- A type lifted is lifted likewise in a signature with more entries. -/
+theorem Term.Lifts.extend (hs : sig ⊆ sig') {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n : Nest Name}
+    {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {l : Level k}
+    (h : Term.Lifts sig v ρ n e A A' l) : Term.Lifts sig' v ρ n e A A' l :=
+  h.ofTypeDeclarations fun _ h' => hs h'
+
+-- ADE: none.
+/-- The arguments of an instance lifted are lifted likewise in a signature with more entries. -/
+theorem InstanceArgs.Lifts.extend (hs : sig ⊆ sig') {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    {ns : List (Nest Name)} {Δ : Scope} {as : InstanceArgs k Γ Δ} {S : List Nat}
+    {ls : List (Level k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
+    (h : InstanceArgs.Lifts sig v ρ ns as S ls as') : InstanceArgs.Lifts sig' v ρ ns as S ls as' :=
+  h.ofTypeDeclarations fun _ h' => hs h'
 
 -- ADE: none.
 /-- The destructors of a codata type lifted are lifted likewise in a signature with more
