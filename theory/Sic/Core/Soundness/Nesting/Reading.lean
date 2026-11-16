@@ -1221,12 +1221,10 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
     obtain ⟨sigF, hsuf, hdecl⟩ := hsigT.wfTypeDeclaration hT.1
     have hentF : sig.ValidEntries ι sigF :=
       fun e he => hent e (Signature.subset_of_cons_suffix hsuf he)
-    have freshF : ∀ e ∈ sigF, ∀ D' ∈ declF.names, D' ∉ e.names := by
-      cases hsigT.of_suffix hsuf with
-      | typeDeclaration _ _ fr => exact fr
+    have freshF : ∀ e ∈ sigF, ∀ D' ∈ declF.names, D' ∉ e.names := hdecl.fresh
     cases hdecl with
-    | data hb _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
-    | codata hb _ _ hds hpF _ =>
+    | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
+    | codata hb _ _ hds hpF _ _ =>
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length =
           declF.levels := (List.length_map _).trans hl
       have hTm := (hent.hasCodataType hT).1

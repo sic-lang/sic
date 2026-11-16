@@ -46,8 +46,9 @@ theorem WfType.ofSort {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k 
   | ⟨.type, _⟩, h => .univType h
   | ⟨.prop, _⟩, h => .propType h
 
-/-- The unit is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
+/-- The unit is well formed in every well-formed signature that does not introduce its name. -/
+theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig)
+    (fresh : ∀ e ∈ sig, ∀ D ∈ Prelude.unit.names, D ∉ e.names) :
     WfTypeDeclaration sig Prelude.unit :=
   .data (Ts := _) rfl ⟨⟨Fin.elim0, Fin.elim0⟩, trivial⟩ (fun _ _ => .empty h)
     (fun _ _ T hT c hc => by
@@ -63,6 +64,7 @@ theorem WfTypeDeclaration.unit {sig : Signature} (h : WfSig sig) :
       simp only [TypeDeclaration.dataTypes, Prelude.unit] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       decide)
+    fresh
 
 /-- The parameters of the pair form a context, whatever the sort of `A`. -/
 theorem WfCtx.pairParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
@@ -72,8 +74,9 @@ theorem WfCtx.pairParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 2) :
   have hx := WfCtx.var (WfType.ofSort (HasType.var hA .zero))
   exact .secondOrder (WfType.ofSort (HasType.sort hx ⟨.type, .var 1⟩))
 
-/-- The pair is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
+/-- The pair is well formed in every well-formed signature that does not introduce its name. -/
+theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig)
+    (fresh : ∀ e ∈ sig, ∀ D ∈ Prelude.pair.names, D ∉ e.names) :
     WfTypeDeclaration sig Prelude.pair :=
   .data (Ts := _) rfl ⟨⟨fun _ => .type, fun _ => Grade.zero⟩, fun h => nomatch h⟩
     (fun ι _ => WfCtx.pairParams h ι)
@@ -107,6 +110,7 @@ theorem WfTypeDeclaration.pair {sig : Signature} (h : WfSig sig) :
       simp only [TypeDeclaration.dataTypes, Prelude.pair] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       decide)
+    fresh
 
 /-- The parameters of the type of positions form a context, whatever the sort of `B`. -/
 theorem WfCtx.stepParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 3) :
@@ -115,8 +119,9 @@ theorem WfCtx.stepParams {sig : Signature} (h : WfSig sig) (ι : Instance 1 3) :
     .var (WfType.ofSort (HasType.sort (.empty h) _))
   exact .var (WfType.ofSort (HasType.sort hS ⟨ι.sorts 0, .var 1⟩))
 
-/-- The type of positions is well formed in every well-formed signature. -/
-theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
+/-- The type of positions is well formed in every well-formed signature that does not introduce its name. -/
+theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig)
+    (fresh : ∀ e ∈ sig, ∀ D ∈ Prelude.step.names, D ∉ e.names) :
     WfTypeDeclaration sig Prelude.step :=
   .data (Ts := _) rfl ⟨⟨fun _ => .type, fun _ => Grade.zero⟩, fun h => nomatch h⟩
     (fun ι _ => WfCtx.stepParams h ι)
@@ -149,15 +154,16 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig) :
       simp only [TypeDeclaration.dataTypes, Prelude.step] at hT
       obtain _ | ⟨_, ⟨⟩⟩ := hT
       decide)
+    fresh
 
 /-- The prelude is a well-formed signature.
 RFC: `\mathsf{prelude}_{\vdash}` -/
 theorem WfSig.prelude : WfSig Signature.prelude :=
   have hu : WfSig [.typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.unit .empty) (by decide) nofun
+    .typeDeclaration (.unit .empty nofun) (by decide)
   have hp : WfSig [.typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit] :=
-    .typeDeclaration (.pair hu) (by decide) (by decide)
-  .typeDeclaration (.step hp) (by decide) (by decide)
+    .typeDeclaration (.pair hu (by decide)) (by decide)
+  .typeDeclaration (.step hp (by decide)) (by decide)
 
 /-! ## Packing -/
 

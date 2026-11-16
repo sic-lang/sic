@@ -384,8 +384,8 @@ theorem Destructors.Pos.hasType_observations (hT : sig.HasCodataType D decl T)
   obtain ⟨sig', hs, hdecl⟩ := hsig.wfTypeDeclaration hT.1
   replace hs := Signature.subset_of_cons_suffix hs
   cases hdecl with
-  | data hb _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
-  | codata hb _ hΔ hds _ _ =>
+  | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
+  | codata hb _ hΔ hds _ _ _ =>
     have hP := stableUnderLevels.wfCtx (ls.getFin hl)
       (stableUnderExtension.wfCtx hs hsig (hΔ _ hadm))
     have hθ : ∀ {a} (x : Var decl.scope a),

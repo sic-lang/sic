@@ -30,7 +30,8 @@ open Sic.Grading
 
 -- ADE: none.
 /-- The lifting of a codata type without recursive destructor of a well-formed signature, at
-parameters each of which is a type, is a well-formed type declaration in this signature.
+parameters each of which is a type, is a well-formed type declaration in this signature, when no
+entry of the signature introduces its name.
 RFC: `\mathsf{lift}_\vdash` -/
 theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : TypeDeclaration}
     (hd : .typeDeclaration decl ∈ sig) {F : Name} {S : List Nat} {ns : List Name}
@@ -39,7 +40,8 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
     (hl : decl.Lifts sig F S body)
     (hF : ∀ ι, ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body ι).recursion decl.names, r = none)
-    (hS : ∀ ι, decl.constraint ι → (decl.params ι).LiftsTypes sig S) :
+    (hS : ∀ ι, decl.constraint ι → (decl.params ι).LiftsTypes sig S)
+    (fresh : ∀ e ∈ sig, ∀ D ∈ (decl.lifting F S ns body).names, D ∉ e.names) :
     WfTypeDeclaration sig (decl.lifting F S ns body) := by
   obtain ⟨T, hT, hn, hb⟩ := hl
   have hT' : sig.HasCodataType F decl T := ⟨hd, hT, hn⟩
@@ -47,11 +49,11 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
   have hdecl' : (∃ ι, decl.constraint ι) ∧ T.destructors.Nodup := by
     cases hdecl with
     | data hb' => simp [TypeDeclaration.codataTypes, hb'] at hT
-    | codata _ hadm _ _ _ hc => exact ⟨hadm, hc T hT⟩
+    | codata _ hadm _ _ _ hc _ => exact ⟨hadm, hc T hT⟩
   obtain ⟨⟨ι, hι⟩, hc⟩ := hdecl'
   refine .codata rfl ?_
     (fun I hI => (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI)).ren.wfCtx)
-    (fun I hI T' hT'' => ?_) (fun _ _ _ hT'' _ _ hx => ?_) (fun T' hT'' => ?_)
+    (fun I hI T' hT'' => ?_) (fun _ _ _ hT'' _ _ hx => ?_) (fun T' hT'' => ?_) fresh
   · have hq : (List.ofFn ι.sorts ++ [Quality.type]).length = decl.sorts + 1 := by simp
     have hp : (List.ofFn ι.grades ++
         [Grade.unrestrictedUnrestricted, Grade.unrestrictedUnrestricted,

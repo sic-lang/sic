@@ -866,12 +866,12 @@ where
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
       (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
-    | .data hb _ _ hΘ _ _ => by
+    | .data hb _ _ hΘ _ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT c hc =>
         wfFields hd hι (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
-    | .codata hb _ _ hds _ _ => by
+    | .codata hb _ _ hds _ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT =>
@@ -898,7 +898,7 @@ theorem WfSig.validEntries {ι : Interpretation} {sigM : Signature}
       cases h with
       | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hrest hdef
       | constantDeclaration _ _ => exact hι _ hmem
-      | typeDeclaration hdecl _ _ => exact soundnessIn.wfTypeDeclaration hd hrest hdecl
+      | typeDeclaration hdecl _ => exact soundnessIn.wfTypeDeclaration hd hrest hdecl
     · exact hrest e' he'
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a

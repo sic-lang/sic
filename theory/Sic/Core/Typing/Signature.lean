@@ -33,7 +33,7 @@ theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
     rcases List.mem_cons.1 he with he | he
     · subst he
       cases h with
-      | typeDeclaration hdecl _ _ => exact ⟨_, List.suffix_refl _, hdecl⟩
+      | typeDeclaration hdecl _ => exact ⟨_, List.suffix_refl _, hdecl⟩
     · obtain ⟨sig', hs, hdecl⟩ :=
         (Presuppositions.tail presuppositions h).wfTypeDeclaration he
       exact ⟨sig', hs.trans (List.suffix_cons _ _), hdecl⟩
@@ -106,8 +106,8 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
     (decl.sort I).quality = .prop → p.mode ≠ .oneOne := by
   obtain ⟨_, _, hdecl⟩ := h.wfTypeDeclaration hT.1
   cases hdecl with
-  | data hb _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
-  | codata hb _ _ hds _ _ =>
+  | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
+  | codata hb _ _ hds _ _ _ =>
     exact (hds I hI T hT.2.1).mode_of_grade
       (hpos.grade (h.distinct.destructors_nodup hT))
 

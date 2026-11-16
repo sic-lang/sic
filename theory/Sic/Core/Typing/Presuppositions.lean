@@ -254,12 +254,12 @@ where
     | .recursive _ hΘ .. => wfTelescope hΘ
   wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
       WfTypeDeclaration sig decl → WfSig sig
-    | .data _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
-    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ => wfCtx (hΔ _ hadm)
+    | .data _ ⟨_, hadm⟩ hΔ _ _ _ _ => wfCtx (hΔ _ hadm)
+    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ _ => wfCtx (hΔ _ hadm)
   tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
     | .constantDefinition h _ => wfConstantDefinition h
     | .constantDeclaration h _ => wfConstantDeclaration h
-    | .typeDeclaration h _ _ => wfTypeDeclaration h
+    | .typeDeclaration h _ => wfTypeDeclaration h
 
 -- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- Every judgment in a context holds in a well-formed context. -/
@@ -410,6 +410,13 @@ where
     | .cons hA _ _ _ => eqTerm hA
 
 -- ADE: none.
+/-- A well-formed type declaration introduces names of types that no entry of the signature does. -/
+theorem WfTypeDeclaration.fresh {sig : Signature} {decl : TypeDeclaration} :
+    WfTypeDeclaration sig decl → ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names
+  | .data _ _ _ _ _ _ h => h
+  | .codata _ _ _ _ _ _ h => h
+
+-- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
 theorem WfSig.fresh {e : Entry} {sig : Signature} :
     WfSig (e :: sig) → ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
@@ -419,7 +426,7 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
   | .constantDeclaration _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
-  | .typeDeclaration _ _ h, e', he', n, hn => h e' he' n hn
+  | .typeDeclaration h _, e', he', n, hn => h.fresh e' he' n hn
 
 -- ADE: none.
 /-- The names of a well-formed signature are distinct.
@@ -428,15 +435,15 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
   | [], _ => trivial
   | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct,
       by cases h with
-        | typeDeclaration _ hn _ => exact hn
+        | typeDeclaration _ hn => exact hn
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by cases h with
-        | typeDeclaration hdecl _ _ => cases hdecl with
-          | data hb _ _ _ _ hc =>
+        | typeDeclaration hdecl _ => cases hdecl with
+          | data hb _ _ _ _ hc _ =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
             nomatch hT
-          | codata hb _ _ _ _ hc =>
+          | codata hb _ _ _ _ hc _ =>
             refine ⟨fun T hT => ?_, hc⟩
             simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT

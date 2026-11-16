@@ -59,12 +59,12 @@ inductive WfSig : Signature → Prop where
   | constantDeclaration {sig : Signature} {c : ConstantDeclaration}
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
-  /-- A type declaration, whose names of types are distinct and fresh.
+  /-- A type declaration, whose names of types are distinct.
   RFC: `\mathsf{sig}_{\mathsf{data}}`
   RFC: `\mathsf{sig}_{\mathsf{codata}}` -/
   | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
-      (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
-      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) : WfSig (.typeDeclaration decl :: sig)
+      (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup) :
+      WfSig (.typeDeclaration decl :: sig)
 
 /--
 `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
@@ -1031,6 +1031,8 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
 -- ADE: none.
 /--
 `Σ ⊢ 𝒟`: the type declaration is well formed.
+No entry of the signature introduces the name of one of its types, so that an instance of a type of
+this name is an instance of the block.
 A block of data types is well formed when its constraint `C` admits an instance of the sort and grade
 variables and, for each instance it admits, the parameters `Δ` form a context and the fields of each
 constructor live in the sort `κ` and are strictly positive in each parameter in which their type
@@ -1053,7 +1055,8 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ {e : Scope.Entry}
         (x : Var decl.scope e), T.positive x.level → ∀ c ∈ T.constructors,
           (c.fields ι).Positive (sig.PositiveIn decl) x)
-      (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup) :
+      (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
       WfTypeDeclaration sig decl
   /-- A block of codata types.
   RFC: `\mathsf{codata}` -/
@@ -1066,7 +1069,8 @@ inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
       (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ {e : Scope.Entry}
         (x : Var decl.scope e), T.positive x.level →
           (T.body ι).Positive (sig.PositiveIn decl) x)
-      (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup) :
+      (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
       WfTypeDeclaration sig decl
 
 end
