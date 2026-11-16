@@ -419,14 +419,14 @@ where
           Term.subst_subst_of (Subst.liftN_subst_of _
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss₁ gs₁ ps''))] at ih
         exact ih
-    | .iota (r := r) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (Cs := Cs) (us := us)
-        h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ,
+    | .iota (r := r) (ς := ς) (χ := χ) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as)
+        (κ := κ) (Cs := Cs) (us := us) h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ,
         hθ => by
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ), Term.instantiate_subst,
         Term.instantiate_subst, Args.subst_liftN_rename_weakenN,
-        Args.results_subst θ (f' := fun D' t => .recursor r D' qs ls ps (as.subst θ) t (Cs.subst θ)
-          (us.subst θ)) (fun _ _ => rfl)]
-      show EqTerm sig ctx' (.recursor _ _ _ _ _ _ (Term.subst θ (.ctor _ _ _ _ _ _ _)) _ _) _ _
+        Args.results_subst θ (f' := fun D' t => .recursor r ς χ D' qs ls ps (as.subst θ) t κ
+          (Cs.subst θ) (us.subst θ)) (fun _ _ => rfl)]
+      show EqTerm sig ctx' (.recursor _ _ _ _ _ _ _ _ (Term.subst θ (.ctor _ _ _ _ _ _ _)) _ _ _) _ _
       rw [Term.ctor_subst]
       refine .iota h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_ hi (Motives.get_subst θ hC)
         (Branches.get_subst θ hu) ((Motives.length_subst θ Cs).trans hCl) ?_ ?_

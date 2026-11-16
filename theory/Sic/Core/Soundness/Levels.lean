@@ -46,8 +46,8 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {t₁ 
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.rename α)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.rename α) (hts.rename α)
-  | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl (has.rename α) (h.rename α) (hCs.rename α) (hus.rename α)
+  | .recursor r ς χ D qs ps s hl has h hκ hCs hus =>
+    .recursor r ς χ D qs ps s hl (has.rename α) (h.rename α) hκ (hCs.rename α) (hus.rename α)
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.rename α) (h.rename α) (hbs.rename α)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.rename α) (hss.rename α) (hSs.rename α) (hvs.rename α)
@@ -131,9 +131,10 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
   | .ctor D qs ls ps as c ts =>
     .ctor D qs ps c (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
       (Terms.substLevels_levelEquiv h ts)
-  | .recursor r D qs ls ps as t Cs us =>
-    .recursor r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
-      (Term.substLevels_levelEquiv h t) (Motives.substLevels_levelEquiv h Cs)
+  | .recursor r ς χ D qs ls ps as t ⟨s, l⟩ Cs us =>
+    .recursor r ς χ D qs ps s (Level.ListEquiv.map_subst h ls)
+      (InstanceArgs.substLevels_levelEquiv h as) (Term.substLevels_levelEquiv h t)
+      (Level.subst_equiv h l) (Motives.substLevels_levelEquiv h Cs)
       (Branches.substLevels_levelEquiv h us)
   | .obs D qs ls ps as t d bs =>
     .obs D qs ps d (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
@@ -331,8 +332,8 @@ theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst�
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.subst₀ hσ)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst₀ hσ) (hts.subst₀ hσ)
-  | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl (has.subst₀ hσ) (h.subst₀ hσ) (hCs.subst₀ hσ) (hus.subst₀ hσ)
+  | .recursor r ς χ D qs ps s hl has h hκ hCs hus =>
+    .recursor r ς χ D qs ps s hl (has.subst₀ hσ) (h.subst₀ hσ) hκ (hCs.subst₀ hσ) (hus.subst₀ hσ)
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst₀ hσ) (h.subst₀ hσ) (hbs.subst₀ hσ)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.subst₀ hσ) (hss.subst₀ hσ) (hSs.subst₀ hσ) (hvs.subst₀ hσ)
@@ -474,8 +475,8 @@ theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k �
   | .const f qs ps h => .const f qs ps h
   | .inst D qs ps h has => .inst D qs ps h (has.subst hθ)
   | .ctor D qs ps c h has hts => .ctor D qs ps c h (has.subst hθ) (hts.subst hθ)
-  | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl (has.subst hθ) (h.subst hθ) (hCs.subst hθ) (hus.subst hθ)
+  | .recursor r ς χ D qs ps s hl has h hκ hCs hus =>
+    .recursor r ς χ D qs ps s hl (has.subst hθ) (h.subst hθ) hκ (hCs.subst hθ) (hus.subst hθ)
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst hθ) (h.subst hθ) (hbs.subst hθ)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.subst hθ) (hss.subst hθ) (hSs.subst hθ) (hvs.subst hθ)
@@ -619,7 +620,7 @@ theorem Neutral.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term
   | const hc => cases h; exact .const hc
   | recursor _ ih =>
     cases h with
-    | recursor _ _ _ _ _ _ ht => exact .recursor (ih ht)
+    | recursor _ _ _ _ _ _ _ _ _ ht => exact .recursor (ih ht)
   | obs _ ih =>
     cases h with
     | obs _ _ _ _ _ _ ht => exact .obs (ih ht)
@@ -672,22 +673,25 @@ by one and at equal levels, are equal up to their levels. -/
 theorem Term.LevelEquiv.unpack {k : Nat} (r : Grade) : {Γ : Scope} → {ps : List Parameter} →
     {u₁ u₂ : Term k Γ} → Term.LevelEquiv u₁ u₂ → {Θ₁ Θ₂ : Telescope k Γ ps} →
     Telescope.LevelEquiv Θ₁ Θ₂ → {κs₁ κs₂ : List (Universe k)} → Universe.ListEquiv κs₁ κs₂ →
-    {l₁ l₂ : Level k} → l₁ ≈ l₂ → {C₁ C₂ : Term k Γ} → Term.LevelEquiv C₁ C₂ →
+    {l₁ l₂ : Level k} → l₁ ≈ l₂ → (s : Quality) → {l₁' l₂' : Level k} → l₁' ≈ l₂' →
+    {C₁ C₂ : Term k Γ} → Term.LevelEquiv C₁ C₂ →
     {b₁ b₂ : Term k (Γ.extend ps.length)} → Term.LevelEquiv b₁ b₂ →
-      Term.LevelEquiv (Term.unpack r u₁ Θ₁ κs₁ l₁ C₁ b₁) (Term.unpack r u₂ Θ₂ κs₂ l₂ C₂ b₂)
-  | _, [], _, _, hu, _, _, .nil, _, _, _, _, _, hl, _, _, hC, _, _, hb =>
-    .recursor _ _ _ _ (.cons hl .nil) .nil hu (.cons (hC.rename _) .nil) (.cons hb .nil)
-  | _, _ :: _, _, _, hu, _, _, .cons _ _ hA hΘ, _, _, hκ, _, _, hl, _, _, hC, _, _, hb => by
+      Term.LevelEquiv (Term.unpack r u₁ Θ₁ κs₁ l₁ ⟨s, l₁'⟩ C₁ b₁)
+        (Term.unpack r u₂ Θ₂ κs₂ l₂ ⟨s, l₂'⟩ C₂ b₂)
+  | _, [], _, _, hu, _, _, .nil, _, _, _, _, _, hl, s, _, _, hs, _, _, hC, _, _, hb =>
+    .recursor _ _ _ _ _ _ s (.cons hl .nil) .nil hu hs (.cons (hC.rename _) .nil) (.cons hb .nil)
+  | _, _ :: _, _, _, hu, _, _, .cons _ _ hA hΘ, _, _, hκ, _, _, hl, s, _, _, hs', _, _, hC, _, _,
+      hb => by
     cases hκ with
     | nil =>
-      exact .recursor _ _ _ _ (.cons hl (.cons (Telescope.packLevel_equiv .nil hl) .nil))
-        (.snoc (.snoc .nil hA) (hΘ.pack .nil hl)) hu (.cons (hC.rename _) .nil)
-        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) .nil hl
+      exact .recursor _ _ _ _ _ _ s (.cons hl (.cons (Telescope.packLevel_equiv .nil hl) .nil))
+        (.snoc (.snoc .nil hA) (hΘ.pack .nil hl)) hu hs' (.cons (hC.rename _) .nil)
+        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) .nil hl s hs'
           (hC.rename _) (hb.rename _)) .nil)
     | cons _ h hs =>
-      exact .recursor _ _ _ _ (.cons h (.cons (Telescope.packLevel_equiv hs hl) .nil))
-        (.snoc (.snoc .nil hA) (hΘ.pack hs hl)) hu (.cons (hC.rename _) .nil)
-        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) hs hl
+      exact .recursor _ _ _ _ _ _ s (.cons h (.cons (Telescope.packLevel_equiv hs hl) .nil))
+        (.snoc (.snoc .nil hA) (hΘ.pack hs hl)) hu hs' (.cons (hC.rename _) .nil)
+        (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hΘ.rename _) hs hl s hs'
           (hC.rename _) (hb.rename _)) .nil)
 
 /-- The states at a position of states equal up to their levels are equal up to their levels, and
@@ -737,9 +741,10 @@ theorem Term.LevelEquiv.resume {k : Nat} {Γ Δ : Scope} {ps' : List Parameter} 
   have h0 := Telescope.packLevel_equiv hκs (Level.equivalence.refl .zero)
   have hT : Term.LevelEquiv (Term.inst D qs ls₁ ps as₁) (Term.inst D qs ls₂ ps as₂) :=
     .inst _ _ _ hl has
-  exact .recursor _ _ _ _ (.cons (Telescope.packLevel_equiv hκs h0) (.cons hκ .nil))
-    (.snoc (.snoc .nil (hS.pack hκs h0)) hT) hv (.cons (hT.rename _) .nil)
-    (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hS.rename _) hκs h0 (hT.rename _)
+  exact .recursor _ _ _ _ _ _ s (.cons (Telescope.packLevel_equiv hκs h0) (.cons hκ .nil))
+    (.snoc (.snoc .nil (hS.pack hκs h0)) hT) hv hκ (.cons (hT.rename _) .nil)
+    (.cons (Term.LevelEquiv.unpack r (Term.LevelEquiv.refl _) (hS.rename _) hκs h0 s hκ
+        (hT.rename _)
         (.corec _ _ _ _ hl ((has.rename _).rename _) (Terms.LevelEquiv.refl _)
           ((hSs.rename _).rename _) ((hgs.rename _).rename _)))
       (.cons (Term.LevelEquiv.refl _) .nil))
@@ -777,18 +782,18 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
         (Term.substLevels_levelEquiv (hls.getFin hl hl') _).rename _⟩
   | iota hdecl hi hD hc hq hp hu hv =>
     cases h with
-    | recursor _ _ _ _ hl has ht hCs hus =>
+    | recursor _ _ _ _ _ _ _ hl has ht hκ hCs hus =>
       cases ht with
       | ctor _ _ _ _ _ _ hts =>
         obtain ⟨u', hu', huu⟩ := hus.get hu
         obtain ⟨v', hv', hvv⟩ := huu.instantiateTerms₂ hts
-          (Terms.LevelEquiv.results (fun D _ _ h => .recursor _ D _ _ hl has h hCs hus) hts _) hv
+          (Terms.LevelEquiv.results (fun D _ _ h => .recursor _ _ _ D _ _ _ hl has h hκ hCs hus) hts _) hv
         exact ⟨v', .iota hdecl hi hD hc hq hp hu' hv', hvv⟩
   | recursor _ ih =>
     cases h with
-    | recursor _ _ _ _ hl has ht hCs hus =>
+    | recursor _ _ _ _ _ _ _ hl has ht hκ hCs hus =>
       obtain ⟨u', hr', hu⟩ := ih ht
-      exact ⟨_, .recursor hr', .recursor _ _ _ _ hl has hu hCs hus⟩
+      exact ⟨_, .recursor hr', .recursor _ _ _ _ _ _ _ hl has hu hκ hCs hus⟩
   | beta hdecl hi hD hq hl hp hg hv =>
     cases h with
     | obs _ _ _ _ _ _ ht hbs =>
@@ -845,7 +850,7 @@ theorem Term.LevelEquiv.nest {k : Nat} {α : Type} (mark : Name → Option α) {
     simp only [Term.nest]
     rw [InstanceArgs.LevelEquiv.nest mark has]
   | .ctor _ _ _ _ _ _ _ => rfl
-  | .recursor _ _ _ _ _ _ _ _ _ => rfl
+  | .recursor _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | .obs _ _ _ _ _ _ _ _ => rfl
   | .corec _ _ _ _ _ _ _ _ _ => rfl
 

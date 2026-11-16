@@ -79,8 +79,8 @@ def Term.rename {Γ Δ : Scope} (α : Ren Γ Δ) : Term k Δ → Term k Γ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.rename α)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.rename α) c (ts.rename α)
-  | .recursor r D qs ls ps as t Cs us =>
-    .recursor r D qs ls ps (as.rename α) (t.rename α) (Cs.rename α) (us.rename α)
+  | .recursor r ς χ D qs ls ps as t κ Cs us =>
+    .recursor r ς χ D qs ls ps (as.rename α) (t.rename α) κ (Cs.rename α) (us.rename α)
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.rename α) (t.rename α) d (bs.rename α)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.rename α) (ss.rename α) (Ss.rename α) (vs.rename α)
@@ -285,8 +285,8 @@ def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst₀ σ)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst₀ σ) c (ts.subst₀ σ)
-  | .recursor r D qs ls ps as t Cs us =>
-    .recursor r D qs ls ps (as.subst₀ σ) (t.subst₀ σ) (Cs.subst₀ σ) (us.subst₀ σ)
+  | .recursor r ς χ D qs ls ps as t κ Cs us =>
+    .recursor r ς χ D qs ls ps (as.subst₀ σ) (t.subst₀ σ) κ (Cs.subst₀ σ) (us.subst₀ σ)
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.subst₀ σ) (t.subst₀ σ) d (bs.subst₀ σ)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.subst₀ σ) (ss.subst₀ σ) (Ss.subst₀ σ) (vs.subst₀ σ)
@@ -409,8 +409,8 @@ def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .const c qs ls ps => .const c qs ls ps
   | .inst D qs ls ps as => .inst D qs ls ps (as.subst θ)
   | .ctor D qs ls ps as c ts => .ctor D qs ls ps (as.subst θ) c (ts.subst θ)
-  | .recursor r D qs ls ps as t Cs us =>
-    .recursor r D qs ls ps (as.subst θ) (t.subst θ) (Cs.subst θ) (us.subst θ)
+  | .recursor r ς χ D qs ls ps as t κ Cs us =>
+    .recursor r ς χ D qs ls ps (as.subst θ) (t.subst θ) κ (Cs.subst θ) (us.subst θ)
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.subst θ) (t.subst θ) d (bs.subst θ)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.subst θ) (ss.subst θ) (Ss.subst θ) (vs.subst θ)
@@ -532,9 +532,9 @@ def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k
   | .inst D qs ls ps as => .inst D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
   | .ctor D qs ls ps as c ts =>
     .ctor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c (ts.substLevels ls')
-  | .recursor r D qs ls ps as t Cs us =>
-    .recursor r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls')
-      (Cs.substLevels ls') (us.substLevels ls')
+  | .recursor r ς χ D qs ls ps as t κ Cs us =>
+    .recursor r ς χ D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls')
+      (κ.substLevels ls') (Cs.substLevels ls') (us.substLevels ls')
   | .obs D qs ls ps as t d bs =>
     .obs D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls') d
       (bs.substLevels ls')
@@ -719,7 +719,7 @@ theorem Term.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ
   | .inst D qs ls ps as => by rw [Term.rename, InstanceArgs.rename_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, InstanceArgs.rename_id_of h as, Terms.rename_id_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, InstanceArgs.rename_id_of h as, Term.rename_id_of h t,
       Motives.rename_id_of h Cs, Branches.rename_id_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -818,7 +818,7 @@ theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x
   | .inst D qs ls ps as => by rw [Term.subst₀, InstanceArgs.subst₀_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Terms.subst₀_id_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Term.subst₀_id_of h t,
       Motives.subst₀_id_of h Cs, Branches.subst₀_id_of h us]
   | .obs D qs ls ps as t d bs => by

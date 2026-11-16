@@ -607,7 +607,7 @@ variable {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {decl : TypeDec
   {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
   {ls : List (Level 0)} {ps : List Grade} {hq : qs.length = decl.sorts}
   {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
-  {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Cs : Motives 0 Γ} {us : Branches 0 Γ}
+  {as : InstanceArgs 0 Γ decl.scope} {r ς χ' : Grade} {Cs : Motives 0 Γ} {us : Branches 0 Γ}
   {χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}
   {κ : Universe 0}
 
@@ -662,7 +662,7 @@ theorem RunsAs.recursor_of_redStar (hd : sig.Distinct)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+      ValidTerm₀ sig ι (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ))
         ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
     {σ : Subst 0 [] Γ} (hσ : EqSubst sig ι ctx σ σ) {j : Nat}
     {T' : DataType decl.sorts decl.grades decl.levels decl.scope} {C' : Term 0 (.var :: Γ)}
@@ -670,9 +670,9 @@ theorem RunsAs.recursor_of_redStar (hd : sig.Distinct)
     (htv : RedStar (sig.interpret ι) t v)
     (hvt : ValidTerm₀ sig ι t (.inst T'.name qs ls ps (as.subst σ))) {H : Heap} {b : Nat}
     (hrun : RunsAs sig ι P H
-      (.recursor r T'.name qs ls ps (as.subst σ) v (Cs.subst σ) (us.subst σ)) b
+      (.recursor r ς χ' T'.name qs ls ps (as.subst σ) v κ (Cs.subst σ) (us.subst σ)) b
       ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single v))) :
-    RunsAs sig ι P H (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
+    RunsAs sig ι P H (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
       ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
   have hvv := (ValidEqTerm₀.redStar_iff hd htv).1 hvt
   have hrv := hrec j T' C' hj hCj σ hσ v (hvv.trans hvv.symm)
@@ -697,7 +697,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+      ValidTerm₀ sig ι (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ))
         ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
     (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as Cs us δs gs)
     (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
@@ -743,14 +743,14 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
           ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) b v H₂
           tr ∧ H''.Extends H₂ ∧
         ∀ C, (Cs.subst σ).get (decl.names.idxOf D') = some ⟨0, C⟩ →
-          RunsAs sig ι P H₂ (.recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) v
+          RunsAs sig ι P H₂ (.recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) v
             (C.subst₀ (Subst₀.single t)))
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (us.grades i) ts.terms bs) :
     ∃ v H₃ tr, EvalRec P ϖ₀ H' E r.run ϱ (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a v H₃ tr ∧
       H'.Extends H₃ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
-        RunsAs sig ι P H₃ (.recursor r T'.name qs ls ps (as.subst σ) w (Cs.subst σ) (us.subst σ))
+        RunsAs sig ι P H₃ (.recursor r ς χ' T'.name qs ls ps (as.subst σ) w κ (Cs.subst σ) (us.subst σ))
           v ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single w)) := by
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
@@ -814,7 +814,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (Constructor.results_subst_append hRt σ ts) ϖ₀ H' (List.prefix_refl _)
   -- The branch, at the substitution of its context by `σ`, the fields and the results.
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
-    .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
+    .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
   have hres := EqSubst.results (sig := sig) (ι := ι) (f₁ := f) (f₂ := f) _ ts ts
     (Constructor.results_subst_append hRt σ ts)
     (Terms.RecRel.of_diag _ (fun D hD t₁ hVt C hC => by
@@ -983,7 +983,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+      ValidTerm₀ sig ι (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ))
         ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
     (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as Cs us δs gs)
     (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
@@ -1007,7 +1007,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         (sig.recursionRequirement D qs ps r).run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₂ tr ∧
       H₁.Extends H₂ ∧
-      RunsAs sig ι P H₂ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
+      RunsAs sig ι P H₂ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
@@ -1032,7 +1032,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     ((sig.caseFieldParams T.name qs ps).getD [])
   let ϱ := (sig.recursionRequirement T.name qs ps r).run
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
-    .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
+    .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
   -- The relations of the canonical terms that `(®_μ)` relates and on whose addresses the erased
   -- recursor evaluates, in each heap that extends `H`, to the address of a value related to the
   -- recursor at the motive.
@@ -1152,7 +1152,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+      ValidTerm₀ sig ι (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ))
         ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
     (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as Cs us δs gs)
     (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
@@ -1176,7 +1176,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       EvalRec P ϖ₀ H₂ E r.run .omega (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₃
         tr ∧ H₁.Extends H₃ ∧
-      RunsAs sig ι P H₃ (.recursor r D qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)) b
+      RunsAs sig ι P H₃ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
@@ -1195,7 +1195,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
     ((sig.caseFieldParams T.name qs ps).getD [])
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
-    .recursor r D' qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ)
+    .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
   -- The erased recursor on a skeleton of the type `D'` of a canonical term `v`, within the depth of
   -- the number of the types of the block minus that of the ancestors `A` of `D'`, evaluates, in
   -- each heap that extends the heap of the skeleton, to the address of a value related to the
@@ -1371,7 +1371,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidTerm₀ sig ι (.recursor r T'.name qs ls ps (as.subst σ) t (Cs.subst σ) (us.subst σ))
+      ValidTerm₀ sig ι (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ))
         ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t)))
     (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
     (htr : r ∉ Mode.oneOne.erased → RunValid sig ι P hΓ ctx γ t (.inst D qs ls ps as))
@@ -1388,7 +1388,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
     (hr : (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
     (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases = []) :
-    RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ χ) (.recursor r D qs ls ps as t Cs us)
+    RunValid sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ χ) (.recursor r ς χ' D qs ls ps as t κ Cs us)
       (C.subst₀ (Subst₀.single t)) := by
   intro w σ H E V hσ hEV hE
   obtain ⟨hdecl, hT, rfl⟩ := id h

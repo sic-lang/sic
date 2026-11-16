@@ -55,7 +55,7 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
   | .sort _ | .const .. | .inst .. => rfl
   | .ctor _ _ _ _ _ _ ts => by
     simp only [Term.substLevels, Term.erase, Terms.erase_substLevels sig S ls' hΓ ts]
-  | .recursor _ _ _ _ _ _ t _ us => by
+  | .recursor _ ς χ _ _ _ _ _ t κ _ us => by
     simp only [Term.substLevels, Term.erase, Term.erase_substLevels sig S ls' hΓ t,
       Branches.erase_substLevels sig S ls' hΓ _ us]
   | .obs _ _ _ _ _ t _ bs => by

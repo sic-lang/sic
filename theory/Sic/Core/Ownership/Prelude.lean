@@ -70,13 +70,13 @@ theorem Ownership.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
 `o` of the term times the requirement of each field, times the grade `⌜m⌝ · r` of the recursor times
 the grade of the field, for its variable. -/
 theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
-    {m : Mode} {q : Quality} {ls : List (Level k)} {p ρ r o p' : Grade}
+    {m : Mode} {q : Quality} {ls : List (Level k)} {p ρ r ς χ o p' : Grade} {κ : Universe k}
     {as : InstanceArgs k Γ Prelude.pairScope} {t : Term k Γ} {C : Term k (.var :: Γ)}
     {u : Term k (.var :: .var :: Γ)} (ht : Ownership sig φ (m ⊙ r) o t)
     (hu : Ownership sig
       (Ownership.extendFields φ o (m.grade * r) [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
     Ownership sig φ m p'
-      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
+      (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht rfl ?_ ?_
   · intro i j T' con hi
     match i, hi with
@@ -91,10 +91,11 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
 -- ADE: none.
 /-- The recursor on a term of the unit has the ownership of its branch. -/
 theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
-    {m : Mode} {l : Level k} {r o p' : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)}
+    {m : Mode} {l : Level k} {r ς χ o p' : Grade} {κ : Universe k} {t u : Term k Γ}
+    {C : Term k (.var :: Γ)}
     (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
     Ownership sig φ m p'
-      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
+      (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht rfl ?_ ?_
   · intro i j T' con hi
     match i, hi with
@@ -111,13 +112,13 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
 with the ownership `o` of the term times the requirement of its field, times the grade `⌜m⌝ · r`
 of the recursor times the grade of the field, for its variable. -/
 theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
-    {m : Mode} {q : Quality} {ls : List (Level k)} {p q' ρ r o p' : Grade}
+    {m : Mode} {q : Quality} {ls : List (Level k)} {p q' ρ r ς χ o p' : Grade} {κ : Universe k}
     {as : InstanceArgs k Γ Prelude.stepScope} {t : Term k Γ} {C : Term k (.var :: Γ)}
     {u₀ u₁ : Term k (.var :: Γ)} (ht : Ownership sig φ (m ⊙ r) o t)
     (hu₀ : Ownership sig (Ownership.extendFields φ o (m.grade * r) [⟨p, Grade.one⟩]) m p' u₀)
     (hu₁ : Ownership sig (Ownership.extendFields φ o (m.grade * r) [⟨q', ρ⟩]) m p' u₁) :
     Ownership sig φ m p'
-      (.recursor r "Step" [q] ls [p, q', ρ] as t (.cons 0 C .nil)
+      (.recursor r ς χ "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
   refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht rfl ?_ ?_
   · intro i j T' con hi
@@ -158,13 +159,13 @@ entry, for its variable: the second field of each pair requires `11ᵖ` and has 
 `⌜m⌝ · r` is idempotent, so that each entry keeps the ownership `o` times its requirement times the
 grade with which the branch uses it.
 RFC: `\mathsf{unpack}_{◀}` -/
-theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
-    {ps : List Parameter} → {φ : Var Γ .var → Grade} → {m : Mode} → {o p' : Grade} →
+theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) {κ : Universe k} :
+    {Γ : Scope} → {ps : List Parameter} → {φ : Var Γ .var → Grade} → {m : Mode} → {o p' : Grade} →
     {u : Term k Γ} → {Θ : Telescope k Γ ps} → {κs : List (Universe k)} → {l : Level k} →
     {C : Term k Γ} → {b : Term k (Γ.extend ps.length)} →
     Ownership sig φ (m ⊙ r) o u →
     Ownership sig (Ownership.extendFields φ o (m.grade * r) ps) m p' b →
-      Ownership sig φ m p' (Term.unpack r u Θ κs l C b)
+      Ownership sig φ m p' (Term.unpack r u Θ κs l κ C b)
   | _, [], _, _, _, _, _, .nil, _, _, _, _, hu, hb => Ownership.unitRecursor hpre hu hb
   | Γ, p :: ps, φ, m, o, p', u, .cons _ _ A Θ, κs, l, C, b, hu, hb => by
     let φ' : Var (.var :: .var :: Γ) .var → Grade :=
@@ -179,7 +180,7 @@ theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
         (((o * Grade.one) * ((m.grade * r) * Grade.one)) * ρ) * ((m.grade * r) * q) =
           (o * ρ) * ((m.grade * r) * q) := by decide
     rw [← Ownership.extendFields_congr (fun p => hi m r o p.requirement p.usage)] at hb'
-    have ih := Ownership.unpack hpre r (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l)
+    have ih := Ownership.unpack hpre r (κ := κ) (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l)
       (C := C.rename (Ren.weakenN 2)) hy hb'
     exact Ownership.pairRecursor hpre hu ih
 
@@ -217,7 +218,7 @@ theorem Ownership.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Par
     (Ownership.extendFields_liftN (φ' := φ') (α := Ren.weaken)
       (fun _ => rfl) (o * (m.grade * r)) (m.grade * r) ps') hc
   erw [Term.corecAt_rename] at hc'
-  have hn := Ownership.unpack hpre r (Θ := S.rename Ren.weaken) (κs := κs)
+  have hn := Ownership.unpack hpre r (κ := κ) (Θ := S.rename Ren.weaken) (κs := κs)
     (l := Telescope.packLevel κs .zero)
     (C := (Term.inst D qs ls ps as).rename Ren.weaken) hy (.sub hc' hp₁)
   have hd : Ownership sig

@@ -213,7 +213,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
   /-- A recursor on a term of the instance it carries, which the constraint admits and whose
   arguments are arguments of the parameters, with a motive for each type of the block, a type of the
-  sort `κ` over a term of the instance of this type, and a branch for each case of the block, a term
+  sort `κ` that the recursor carries, over a term of the instance of this type, and a branch for each case of the block, a term
   of the motive of its type at its constructor applied to the variables of its fields, in the
   context extended by its fields and by its recursive results, has the motive of the type of the
   term at the term; the motives on a block of propositions that has a constructor are propositions.
@@ -222,7 +222,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   RFC: `\mathsf{rec}` -/
   | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -246,7 +246,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
             (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
-      HasType sig ctx (.recursor r D qs ls ps as t Cs us) (C.subst₀ (Subst₀.single t))
+      HasType sig ctx (.recursor r ς χ D qs ls ps as t κ Cs us) (C.subst₀ (Subst₀.single t))
   -- ADE: `_∘ⱼ_`, `fstⱼ` and `sndⱼ`, in `Definition/Typed.agda`.
   /-- An observation of a term of the instance it carries, which the constraint admits and whose
   arguments are arguments of the parameters, by one of the destructors of its codata type, at the
@@ -434,12 +434,13 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   -- ADE: `natrec-cong`, `prodrec-cong`, `unitrec-cong` and `emptyrec-cong`, in
   -- `Definition/Typed.agda`.
   /-- Two recursors at equal arguments of the instance, at equal levels, on equal terms, with equal
-  motives and equal branches, are equal.
+  motives of the same sort and equal branches, with the same ownerships of the results of their
+  nested fields, are equal.
   RFC: `\mathsf{rec}_\equiv` -/
   | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
-      {r : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
+      {r ς χ : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
       {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
@@ -473,8 +474,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
             (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
-      EqTerm sig ctx (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
-        (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁))
+      EqTerm sig ctx (.recursor r ς χ D qs ls₁ ps as₁ t₁ κ Cs₁ us₁)
+        (.recursor r ς χ D qs ls₂ ps as₂ t₂ κ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁))
   -- ADE: `app-cong`, `fst-cong` and `snd-cong`, in `Definition/Typed.agda`.
   /-- Two observations by the same destructor, at equal arguments of the instance, at equal levels,
   of equal terms, at equal arguments of its telescope, are equal.
@@ -576,7 +577,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -605,8 +606,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
             (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
-      EqTerm sig ctx (.recursor r D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) Cs us)
-        ((u.instantiate ((ts.results (fun D' t => .recursor r D' qs ls ps as t Cs us)
+      EqTerm sig ctx (.recursor r ς χ D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) κ Cs us)
+        ((u.instantiate ((ts.results (fun D' t => .recursor r ς χ D' qs ls ps as t κ Cs us)
           ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)).rename
             (Ren.weakenN _))).instantiate ts)
         (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
@@ -619,7 +620,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | etaCtor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -648,7 +649,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
             (Ren.weakenN _)))
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
-      EqTerm sig ctx (e.subst₀ (Subst₀.single t)) (.recursor r D qs ls ps as t Cs us)
+      EqTerm sig ctx (e.subst₀ (Subst₀.single t)) (.recursor r ς χ D qs ls ps as t κ Cs us)
         (C.subst₀ (Subst₀.single t))
   -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
   /-- An observation of a corecursor by the destructor of the case `i` of the block, a destructor of

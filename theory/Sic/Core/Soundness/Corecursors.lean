@@ -766,24 +766,24 @@ theorem ValidEqTerm₀.pack_inv (hpre : sig.HasPrelude) :
 reduces to the term at the arguments, by `(ι_⟶)` on each pair, then on the unit. -/
 theorem RedStar.unpack (hpre : sig.HasPrelude) (r : Grade) :
     {ps : List Parameter} → (Θ : Telescope 0 [] ps) → (κs : List (Universe 0)) → (l : Level 0) →
-      (C : Term 0 []) → (b : Term 0 (Scope.extend [] ps.length)) → {x : Term 0 []} →
+      (κ : Universe 0) → (C : Term 0 []) → (b : Term 0 (Scope.extend [] ps.length)) → {x : Term 0 []} →
       (ts : Args 0 [] ps) → Term.Packs sig ι x ts.terms →
-      RedStar (sig.interpret ι) (Term.unpack r x Θ κs l C b) (b.instantiate ts)
-  | [], .nil, _, l, C, b, x, .nil, hx => by
+      RedStar (sig.interpret ι) (Term.unpack r x Θ κs l κ C b) (b.instantiate ts)
+  | [], .nil, _, l, κ, C, b, x, .nil, hx => by
     simp only [Args.terms, Term.Packs] at hx
     obtain ⟨qs, ls, ps, Δ, as, hx, -⟩ := hx
     exact (RedStar.recursor hx).trans (.step (.iota (decl := Prelude.unit) (i := 0)
       (List.mem_map_of_mem (f := Entry.interpret ι) hpre.unit.1) rfl rfl rfl rfl rfl rfl rfl)
       (.refl _))
-  | _ :: _, .cons q p A Θ, κs, l, C, b, x, .cons t ts, hx => by
+  | _ :: _, .cons q p A Θ, κs, l, κ, C, b, x, .cons t ts, hx => by
     simp only [Args.terms, Term.Packs] at hx
     obtain ⟨qs, ls, ps, Δ, as, y, ⟨hx, -⟩, hy⟩ := hx
     exact (RedStar.recursor hx).trans (.step (.iota (decl := Prelude.pair) (i := 0)
-      (v := Term.unpack r y (Θ.subst₀ (Subst₀.single t)) κs.tail l C
+      (v := Term.unpack r y (Θ.subst₀ (Subst₀.single t)) κs.tail l κ C
         (b.subst₀ (Subst₀.liftN _ (Subst₀.single t))))
       (List.mem_map_of_mem (f := Entry.interpret ι) hpre.pair.1) rfl rfl rfl rfl rfl rfl
-      (congrArg some (Term.unpack_branch_instantiate (p := p) r t y Θ κs.tail l C b)))
-      (RedStar.unpack hpre r (Θ.subst₀ (Subst₀.single t)) κs.tail l C _ ts hy))
+      (congrArg some (Term.unpack_branch_instantiate (p := p) r t y Θ κs.tail l κ C b)))
+      (RedStar.unpack hpre r (Θ.subst₀ (Subst₀.single t)) κs.tail l κ C _ ts hy))
 
 -- ADE: none.
 /-- A closed position that reduces to a term already built resumes, by `(ι_⟶)`, to the term. -/
@@ -826,7 +826,7 @@ theorem RedStar.resume_next (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs :
     (List.mem_map_of_mem (f := Entry.interpret ι) hpre.step.1) rfl rfl rfl rfl rfl rfl rfl) ?_)
   rw [← hb]
   erw [Term.unpack_subst₀]
-  exact RedStar.unpack hpre r _ κs _ _ _ ts hx
+  exact RedStar.unpack hpre r _ κs _ _ _ _ ts hx
 
 /-! ## Corecursors
 

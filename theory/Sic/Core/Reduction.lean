@@ -46,10 +46,11 @@ inductive Neutral (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop 
   | const {c : ConstantDeclaration} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       (h : .constantDeclaration c ∈ sig) : Neutral sig (.const c.name qs ls ps)
   -- ADE: `natrecₙ`, `prodrecₙ`, `unitrecₙ` and `emptyrecₙ`, in `Definition/Untyped/Neutral.agda`.
-  /-- `rec_r T t return C̄ with ū`: a recursor on a neutral term. -/
-  | recursor {Δ : Scope} {r : Grade} {D : Name} {qs : List Quality} {ls : List (Level k)}
+  /-- `rec_{r; ς; χ} T t return C̄ : κ with ū`: a recursor on a neutral term. -/
+  | recursor {Δ : Scope} {r ς χ : Grade} {κ : Universe k} {D : Name} {qs : List Quality}
+      {ls : List (Level k)}
       {ps : List Grade} {as : InstanceArgs k Γ Δ} {t : Term k Γ} {Cs : Motives k Γ}
-      {us : Branches k Γ} (h : Neutral sig t) : Neutral sig (.recursor r D qs ls ps as t Cs us)
+      {us : Branches k Γ} (h : Neutral sig t) : Neutral sig (.recursor r ς χ D qs ls ps as t κ Cs us)
   -- ADE: `fstₙ`, `sndₙ` and `∘ₙ`, in `Definition/Untyped/Neutral.agda`.
   /-- `t.(T.d)(t̄)`: an observation of a neutral term. -/
   | obs {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
@@ -102,24 +103,26 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   RFC: `\iota_{\longrightarrow}` -/
   | iota {decl : TypeDeclaration} {i j : Nat}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope}
-      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope} {r : Grade}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope}
+      {r ς χ : Grade} {κ : Universe k}
       {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)} {ps ps' : List Grade}
       {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ Δ'} {c : Name} {ts : Terms k Γ}
       {Cs : Motives k Γ} {us : Branches k Γ} {n m : Nat} {u : Term k ((Γ.extend n).extend m)}
       {v : Term k Γ} (h : .typeDeclaration decl ∈ sig) (hi : decl.cases[i]? = some (j, T, con))
       (hD : T.name = D) (hc : con.name = c) (hq : qs'.length = decl.sorts)
       (hp : ps'.length = decl.grades) (hu : us.get i = some ⟨n, m, u⟩)
-      (hv : u.instantiateTerms₂ ts (ts.results (fun D'' t => .recursor r D'' qs' ls' ps' as' t Cs us)
+      (hv : u.instantiateTerms₂ ts (ts.results (fun D'' t => .recursor r ς χ D'' qs' ls' ps' as' t κ Cs us)
         ((con.fields (.ofLists qs' ps' hq hp)).recursion decl.names)) = some v) :
-      Red sig (.recursor r D' qs' ls' ps' as' (.ctor D qs ls ps as c ts) Cs us) v
+      Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c ts) κ Cs us) v
   -- ADE: `natrec-subst`, `prodrec-subst`, `unitrec-subst` and `emptyrec-subst`, in
   -- `Definition/Typed.agda`.
   /-- A recursor reduces the term it eliminates.
   RFC: `\mathsf{rec}_{\longrightarrow}` -/
-  | recursor {Δ : Scope} {r : Grade} {D : Name} {qs : List Quality} {ls : List (Level k)}
+  | recursor {Δ : Scope} {r ς χ : Grade} {κ : Universe k} {D : Name} {qs : List Quality}
+      {ls : List (Level k)}
       {ps : List Grade} {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {Cs : Motives k Γ}
       {us : Branches k Γ} (h : Red sig t t') :
-      Red sig (.recursor r D qs ls ps as t Cs us) (.recursor r D qs ls ps as t' Cs us)
+      Red sig (.recursor r ς χ D qs ls ps as t κ Cs us) (.recursor r ς χ D qs ls ps as t' κ Cs us)
   -- ADE: `β-red`, `Σ-β₁` and `Σ-β₂`, in `Definition/Typed.agda`.
   /-- An observation of a corecursor steps to the branch of the destructor, the case `i` of the block
   of the type of the corecursor, with the terms of the state and the arguments substituted for its

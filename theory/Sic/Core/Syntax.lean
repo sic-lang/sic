@@ -176,14 +176,16 @@ inductive Term (k : Nat) : Scope → Type where
   its type. -/
   | ctor {Γ : Scope} {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (c : Name) (ts : Terms k Γ) : Term k Γ
-  /-- `rec_r T t return C̄ with ū`: the recursor, which uses the term `t` of the instance
-  `T = D.{s̄; l̄; p̄} ā` with the grade `r`, with a motive `C_j` for each type of the block and a
-  branch `u_ji` for each constructor of each type, in the order of the declaration; the recursor
-  carries the instance of the term it eliminates, so that its usage and its ownership read the
-  grades and the requirements of the fields at this instance. -/
-  | recursor {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
+  /-- `rec_{r; ς; χ} T t return C̄ : κ with ū`: the recursor, which uses the term `t` of the
+  instance `T = D.{s̄; l̄; p̄} ā` with the grade `r`, with a motive `C_j` of the sort `κ` for each
+  type of the block and a branch `u_ji` for each constructor of each type, in the order of the
+  declaration; the recursor carries the instance of the term it eliminates, so that its usage and
+  its ownership read the grades and the requirements of the fields at this instance, and the sort
+  of its motives with the ownerships of the results of its nested fields, `ς` that their observation
+  requires of them and `χ` of what it gives, so that its computation writes these results. -/
+  | recursor {Γ : Scope} {Δ : Scope} (r ς χ : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (t : Term k Γ)
-      (Cs : Motives k Γ) (us : Branches k Γ) : Term k Γ
+      (κ : Universe k) (Cs : Motives k Γ) (us : Branches k Γ) : Term k Γ
   /-- `t.(T.d)(t̄)`: the observation of the term `t` of the instance `T = D.{s̄; l̄; p̄} ā` by its
   destructor `d`, applied to a term for each of its arguments; the observation carries the instance
   of its term, so that its usage and its ownership read the grades and the requirements of the

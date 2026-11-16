@@ -60,7 +60,7 @@ theorem Term.nest_rename (mark : Name → Option α) :
   | _, _, _, _, _, _, .sort _ => rfl
   | _, _, _, _, _, _, .const _ _ _ _ => rfl
   | _, _, _, _, _, _, .ctor _ _ _ _ _ _ _ => rfl
-  | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
 
@@ -116,7 +116,7 @@ theorem Term.nest_substLevels {k' : Nat} (mark : Name → Option α) (ls' : Fin 
   | _, _, .sort _ => by rw [Term.substLevels]; rfl
   | _, _, .const _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, .ctor _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
-  | _, _, .recursor _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
 
@@ -190,7 +190,7 @@ theorem Term.nest_subst₀ (mark : Name → Option α) :
   | _, _, _, _, _, _, .sort _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .const _ _ _ _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .ctor _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
-  | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
+  | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
 
@@ -267,7 +267,7 @@ theorem Term.nest_map {β : Type} (f : α → β) (mark : Name → Option α) :
   | _, _, _, _, .sort _ => rfl
   | _, _, _, _, .const _ _ _ _ => rfl
   | _, _, _, _, .ctor _ _ _ _ _ _ _ => rfl
-  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
 

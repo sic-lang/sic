@@ -70,7 +70,7 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       InstanceArgs.substLevels_rename ls' α as, Terms.substLevels_rename ls' α ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       InstanceArgs.substLevels_rename ls' α as, Term.substLevels_rename ls' α t,
       Motives.substLevels_rename ls' α Cs, Branches.substLevels_rename ls' α us]
@@ -204,7 +204,7 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       InstanceArgs.substLevels_subst₀_of h as, Terms.substLevels_subst₀_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       InstanceArgs.substLevels_subst₀_of h as, Term.substLevels_subst₀_of h t,
       Motives.substLevels_subst₀_of h Cs, Branches.substLevels_subst₀_of h us]
@@ -348,8 +348,8 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
   | .ctor D qs ls ps as c ts => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Terms.substLevels_substLevels ls₁ ls₂ ts]
-  | .recursor r D qs ls ps as t Cs us => by
-    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
+    simp only [Term.substLevels, Universe.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Term.substLevels_substLevels ls₁ ls₂ t,
       Motives.substLevels_substLevels ls₁ ls₂ Cs, Branches.substLevels_substLevels ls₁ ls₂ us]
   | .obs D qs ls ps as t d bs => by
@@ -583,7 +583,7 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
       InstanceArgs.substLevels_subst_of h as, Terms.substLevels_subst_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
       InstanceArgs.substLevels_subst_of h as, Term.substLevels_subst_of h t,
       Motives.substLevels_subst_of h Cs, Branches.substLevels_subst_of h us]

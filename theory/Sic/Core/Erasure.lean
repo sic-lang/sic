@@ -559,7 +559,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     match sig.constructorCase D c with
     | some i => .ctor i (ts.erase sig S hΓ ((sig.fieldParams D c qs ps).getD []))
     | none => .erased
-  | .recursor r D qs _ ps _ t _ us =>
+  | .recursor r _ _ D qs _ ps _ t _ _ us =>
     .recursor r.run
       (if r ∈ S then .omega else (sig.recursionRequirement D qs ps r).run)
       (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
@@ -823,7 +823,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     cases sig.constructorCase D c with
     | some _ => exact .ctor (Terms.erase_lessDefined sig h hΓ ts _)
     | none => exact .erased
-  | .recursor r _ _ _ _ _ t _ us => by
+  | .recursor r ς χ _ _ _ _ _ t κ _ us => by
     simp only [Term.erase]
     by_cases h₂ : r ∈ S₂
     · simp only [h₂, ↓reduceIte]

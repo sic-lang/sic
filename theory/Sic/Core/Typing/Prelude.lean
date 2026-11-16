@@ -243,7 +243,7 @@ theorem HasType.packArgs (hpre : sig.HasPrelude) : {Γ : Scope} → {ps : List P
 
 -- ADE: `prodrecⱼ`, in `Definition/Typed.agda`.
 theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k} {l₂ : Level k}
-    {p ρ r : Grade} {A t : Term k Γ} {B C : Term k (.var :: Γ)} {κ : Universe k}
+    {p ρ r ς χ : Grade} {A t : Term k Γ} {B C : Term k (.var :: Γ)} {κ : Universe k}
     {u : Term k (.var :: .var :: Γ)}
     (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
     (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩))
@@ -252,7 +252,7 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     (hu : HasType sig ((ctx.var A).var B) u
       (C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
-    HasType sig ctx (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
+    HasType sig ctx (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
       (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) hpre.pair rfl rfl rfl hadm
     (HasInstanceArgs.pair p ρ hA hB) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
@@ -279,11 +279,11 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
 -- ADE: `unitrecⱼ`, in `Definition/Typed.agda`.
 /-- The recursor on a term of the unit, whose branch has the motive at the constructor. -/
 theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {l : Level k}
-    {r : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)} {κ : Universe k}
+    {r ς χ : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)} {κ : Universe k}
     (ht : HasType sig ctx t (.inst "Unit" [] [l] [] .nil))
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) C (.sort κ))
     (hu : HasType sig ctx u (C.atCtor "Unit" [] [l] [] .nil "mk" [])) :
-    HasType sig ctx (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil))
+    HasType sig ctx (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil))
       (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (h' := 0) (κ := κ) hpre.unit rfl rfl
     rfl trivial (.nil (contextPresuppositions.hasType ht)) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_
@@ -306,8 +306,8 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
 -- ADE: `prodrec-β`, in `Definition/Typed.agda`.
 /-- The recursor on a pair built by its constructor is its branch at the fields. -/
 theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k}
-    {l₂ : Level k} {p ρ r : Grade} {A t P : Term k Γ} {B C : Term k (.var :: Γ)} {κ : Universe k}
-    {u : Term k (.var :: .var :: Γ)}
+    {l₂ : Level k} {p ρ r ς χ : Grade} {A t P : Term k Γ} {B C : Term k (.var :: Γ)}
+    {κ : Universe k} {u : Term k (.var :: .var :: Γ)}
     (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
     (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩))
     (ht : HasType sig ctx t A) (hP : HasType sig ctx P (B.subst₀ (Subst₀.single t)))
@@ -315,9 +315,9 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     (hu : HasType sig ((ctx.var A).var B) u
       (C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
-    EqTerm sig ctx (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B)
+    EqTerm sig ctx (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B)
       (.ctor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
-        (.cons t (.cons P .nil)))
+        (.cons t (.cons P .nil))) κ
       (.cons 0 C .nil) (.cons 2 0 #v[] u .nil))
       (u.instantiate (ps := [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) (.cons t (.cons P .nil)))
       (C.subst₀ (Subst₀.single (.ctor "Pair" [κA.quality] [κA.level, l₂] [p, ρ]
@@ -356,10 +356,10 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
 -- ADE: `unitrec-β`, in `Definition/Typed.agda`.
 /-- The recursor on the constructor of the unit is its branch. -/
 theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {l : Level k}
-    {r : Grade} {u : Term k Γ} {C : Term k (.var :: Γ)} {κ : Universe k} (hctx : WfCtx sig ctx)
+    {r ς χ : Grade} {u : Term k Γ} {C : Term k (.var :: Γ)} {κ : Universe k} (hctx : WfCtx sig ctx)
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) C (.sort κ))
     (hu : HasType sig ctx u (C.atCtor "Unit" [] [l] [] .nil "mk" [])) :
-    EqTerm sig ctx (.recursor r "Unit" [] [l] [] .nil (.ctor "Unit" [] [l] [] .nil "mk" .nil)
+    EqTerm sig ctx (.recursor r ς χ "Unit" [] [l] [] .nil (.ctor "Unit" [] [l] [] .nil "mk" .nil) κ
       (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) u
       (C.subst₀ (Subst₀.single (.ctor "Unit" [] [l] [] .nil "mk" .nil))) := by
   refine .iota (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
@@ -439,14 +439,14 @@ theorem HasType.pairAtCtor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrel
 -- ADE: none: their weak pairs have no extensionality.
 /-- A term over a pair is the recursor on the pair whose branch is the term at the constructor. -/
 theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k}
-    {l₂ : Level k} {p ρ r : Grade} {A t : Term k Γ} {B e Cm : Term k (.var :: Γ)} {κ : Universe k}
-    (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
+    {l₂ : Level k} {p ρ r ς χ : Grade} {A t : Term k Γ} {B e Cm : Term k (.var :: Γ)}
+    {κ : Universe k} (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
     (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩))
     (ht : HasType sig ctx t (Prelude.pairInst κA l₂ p ρ A B))
     (he : HasType sig (ctx.var (Prelude.pairInst κA l₂ p ρ A B)) e Cm)
     (hC : HasType sig (ctx.var (Prelude.pairInst κA l₂ p ρ A B)) Cm (.sort κ)) :
     EqTerm sig ctx (e.subst₀ (Subst₀.single t))
-      (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
+      (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
         (.cons 0 Cm .nil)
         (.cons 2 0 #v[] (e.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) .nil))
@@ -486,12 +486,12 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
 -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`.
 /-- A term over the unit is the recursor on the unit whose branch is the term at the constructor. -/
 theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {l : Level k}
-    {r : Grade} {t : Term k Γ} {e Cm : Term k (.var :: Γ)} {κ : Universe k}
+    {r ς χ : Grade} {t : Term k Γ} {e Cm : Term k (.var :: Γ)} {κ : Universe k}
     (ht : HasType sig ctx t (.inst "Unit" [] [l] [] .nil))
     (he : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) e Cm)
     (hC : HasType sig (ctx.var (.inst "Unit" [] [l] [] .nil)) Cm (.sort κ)) :
     EqTerm sig ctx (e.subst₀ (Subst₀.single t))
-      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 Cm .nil)
+      (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 Cm .nil)
         (.cons 0 0 #v[] (e.atCtor "Unit" [] [l] [] .nil "mk" []) .nil))
       (Cm.subst₀ (Subst₀.single t)) := by
   have hctx := contextPresuppositions.hasType ht
@@ -528,7 +528,7 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
 -- ADE: `prodrec-cong`, in `Definition/Typed.agda`.
 /-- Two recursors on a pair whose branches are equal are equal. -/
 theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
-    {κA : Universe k} {l₂ : Level k} {p ρ r : Grade} {A t : Term k Γ} {B C : Term k (.var :: Γ)}
+    {κA : Universe k} {l₂ : Level k} {p ρ r ς χ : Grade} {A t : Term k Γ} {B C : Term k (.var :: Γ)}
     {κ : Universe k} {u₁ u₂ : Term k (.var :: .var :: Γ)}
     (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
     (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩))
@@ -538,9 +538,9 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
       (C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
     EqTerm sig ctx
-      (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
+      (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
         (.cons 0 C .nil) (.cons 2 0 #v[] u₁ .nil))
-      (.recursor r "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t
+      (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
         (.cons 0 C .nil) (.cons 2 0 #v[] u₂ .nil))
       (C.subst₀ (Subst₀.single t)) := by
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) (C₁ := C)
@@ -646,11 +646,11 @@ theorem HasType.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} → {p
     {l : Level k} → {C : Term k Γ} → {κ : Universe k} → {b : Term k (Γ.extend ps.length)} →
     WfTelescopeSorts sig ctx Θ κs l → HasType sig ctx u (Θ.pack κs l) →
     HasType sig ctx C (.sort κ) → HasType sig (ctx.append Θ) b (C.rename (Ren.weakenN ps.length)) →
-      HasType sig ctx (Term.unpack r u Θ κs l C b) C
+      HasType sig ctx (Term.unpack r u Θ κs l κ C b) C
   | _, [], ctx, u, .nil, _, l, C, κ, b, .nil hctx, hu, hC, hb => by
     have hC' := stableUnderRenaming.hasType hC
       (TypedRen.weaken (.var (WfType.ofSort (HasType.packLevel hpre (.nil (l := l) hctx)))))
-    have h := HasType.unitRecursor (r := r) hpre hu hC' (by
+    have h := HasType.unitRecursor (r := r) (ς := Grade.one) (χ := Grade.one) hpre hu hC' (by
       rw [Term.atCtor_rename_weaken]
       exact hb)
     rwa [Term.subst₀_single_rename_weaken] at h
@@ -659,7 +659,7 @@ theorem HasType.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} → {p
     have hC' := stableUnderRenaming.hasType hC
       (TypedRen.weaken (.var (WfType.ofSort (HasType.packLevel hpre hW))))
     obtain ⟨hΘ₂, hu₂, hC₂, hb₂⟩ := UnpackBranch.of (A := A) hpre hΘ hC
-    have h := HasType.pairRecursor (r := r) hpre hp hA (HasType.packLevel hpre hΘ) hu hC' (by
+    have h := HasType.pairRecursor (r := r) (ς := Grade.one) (χ := Grade.one) hpre hp hA (HasType.packLevel hpre hΘ) hu hC' (by
       rw [Term.atCtor_rename_weaken]
       exact HasType.unpack hpre r hΘ₂ hu₂ hC₂ (hb₂ hb))
     rwa [Term.subst₀_single_rename_weaken] at h
@@ -673,11 +673,11 @@ theorem EqTerm.unpackBeta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     {b : Term k (Γ.extend ps.length)} →
     WfTelescopeSorts sig ctx Θ κs l → HasArgs sig ctx ts Θ → HasType sig ctx C (.sort κ) →
     HasType sig (ctx.append Θ) b (C.rename (Ren.weakenN ps.length)) →
-      EqTerm sig ctx (Term.unpack r (ts.pack Θ κs l) Θ κs l C b) (b.instantiate ts) C
+      EqTerm sig ctx (Term.unpack r (ts.pack Θ κs l) Θ κs l κ C b) (b.instantiate ts) C
   | _, [], ctx, .nil, .nil, _, l, C, κ, b, .nil hctx, _, hC, hb => by
     have hC' := stableUnderRenaming.hasType hC
       (TypedRen.weaken (.var (WfType.ofSort (HasType.packLevel hpre (.nil (l := l) hctx)))))
-    have h := EqTerm.unitIota (r := r) hpre hctx hC' (by
+    have h := EqTerm.unitIota (r := r) (ς := Grade.one) (χ := Grade.one) hpre hctx hC' (by
       rw [Term.atCtor_rename_weaken]
       exact hb)
     rwa [Term.subst₀_single_rename_weaken] at h
@@ -691,7 +691,7 @@ theorem EqTerm.unpackBeta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     have hΘt := stableUnderSubstitution.wfTelescopeSorts hΘ hσ
     have hP := HasType.packArgs hpre hΘt hts
     rw [← Telescope.pack_subst₀] at hP
-    have h := EqTerm.pairIota (r := r) hpre hp hA (HasType.packLevel hpre hΘ) ht hP hC' (by
+    have h := EqTerm.pairIota (r := r) (ς := Grade.one) (χ := Grade.one) hpre hp hA (HasType.packLevel hpre hΘ) ht hP hC' (by
       rw [Term.atCtor_rename_weaken]
       exact HasType.unpack hpre r hΘ₂ hu₂ hC₂ (hb₂ hb))
     rw [Term.subst₀_single_rename_weaken] at h
@@ -724,11 +724,11 @@ theorem EqTerm.unpackEta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     {e : Term k (.var :: Γ)} →
     WfTelescopeSorts sig ctx Θ κs l → HasType sig ctx u (Θ.pack κs l) →
     HasType sig ctx C (.sort κ) → HasType sig (ctx.var (Θ.pack κs l)) e (C.rename Ren.weaken) →
-      EqTerm sig ctx (e.subst₀ (Subst₀.single u)) (Term.unpack r u Θ κs l C (e.atPack Θ κs l)) C
+      EqTerm sig ctx (e.subst₀ (Subst₀.single u)) (Term.unpack r u Θ κs l κ C (e.atPack Θ κs l)) C
   | _, [], ctx, u, .nil, _, l, C, κ, e, .nil hctx, hu, hC, he => by
     have hC' := stableUnderRenaming.hasType hC
       (TypedRen.weaken (.var (WfType.ofSort (HasType.packLevel hpre (.nil (l := l) hctx)))))
-    have h := EqTerm.unitEta (r := r) hpre hu he hC'
+    have h := EqTerm.unitEta (r := r) (ς := Grade.one) (χ := Grade.one) hpre hu he hC'
     rw [Term.subst₀_single_rename_weaken] at h
     exact h
   | Γ, _ :: ps, ctx, u, .cons q p A Θ, κA :: κs, l, C, κ, e, .cons hA hl hΘ hp, hu, hC, he => by
@@ -750,8 +750,8 @@ theorem EqTerm.unpackEta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
         (α₃ := fun x => x.succ.succ.succ) (fun _ => rfl)] at he''
     have ih := EqTerm.unpackEta hpre r hΘ₂ hu₂ hC₂ he''
     erw [Term.subst₀_single_zero_rename_lift_weaken, Term.atPack_pair] at ih
-    have h₁ := EqTerm.pairEta (r := r) hpre hp hA hB hu he hC'
-    have h₂ := EqTerm.pairRecursorBranch (r := r) hpre hp hA hB hu hC' (by
+    have h₁ := EqTerm.pairEta (r := r) (ς := Grade.one) (χ := Grade.one) hpre hp hA hB hu he hC'
+    have h₂ := EqTerm.pairRecursorBranch (r := r) (ς := Grade.one) (χ := Grade.one) hpre hp hA hB hu hC' (by
       rw [Term.atCtor_rename_weaken]
       exact ih)
     have h := h₁.trans h₂

@@ -197,7 +197,7 @@ theorem Term.exists_of_nest :
   | _, _, .sort _, h => absurd rfl h
   | _, _, .const _ _ _ _, h => absurd rfl h
   | _, _, .ctor _ _ _ _ _ _ _, h => absurd rfl h
-  | _, _, .recursor _ _ _ _ _ _ _ _ _, h => absurd rfl h
+  | _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _, h => absurd rfl h
   | _, _, .obs _ _ _ _ _ _ _ _, h => absurd rfl h
   | _, _, .corec _ _ _ _ _ _ _ _ _, h => absurd rfl h
 

@@ -129,10 +129,10 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
     {decl : TypeDeclaration} {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {r : Grade} {t : Term k Γ} {Cs : Motives k Γ}
-    {us : Branches k Γ} {m : Mode} :
+    (hp : ps.length = decl.grades) {r ς χ' : Grade} {t : Term k Γ} {κ : Universe k}
+    {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
-      v = .recursor r D qs ls ps as t Cs us →
+      v = .recursor r ς χ' D qs ls ps as t κ Cs us →
       ∃ (γ' χ : GradeVector Γ.length) (δs : Nat → GradeVector Γ.length) (gs : Nat → Nat → Grade),
         γ ≤ᶜ (r ·ᶜ γ') +ᶜ χ ∧
         (∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
@@ -159,8 +159,8 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
           r.mode = .oneOne) ∧
         ((decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne)
   | _, _, .recursor h' _ _ hC ht _ _ hu hg hχ hr hprop, he => by
-    injection he with _ hΔ hr' hD hqs hls hps has ht' hCs hus
-    subst hr' hD hqs hls hps ht' hCs hus
+    injection he with _ hΔ hr' hς hχ' hD hqs hls hps has ht' hκ hCs hus
+    subst hr' hς hχ' hD hqs hls hps ht' hκ hCs hus
     obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
     cases hT
     cases has

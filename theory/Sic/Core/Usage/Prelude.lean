@@ -103,14 +103,15 @@ theorem Usage.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} {m : M
 /-- The recursor on a term of the pair uses the variables of its term `r` times and those of its
 branch, whose uses of the two fields cover `⌜m⌝ · r` times their grades. -/
 theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : Quality}
-    {ls : List (Level k)} {p ρ r g₀ g₁ : Grade} {as : InstanceArgs k Γ Prelude.pairScope}
+    {ls : List (Level k)} {p ρ r ς χ g₀ g₁ : Grade} {κ : Universe k}
+    {as : InstanceArgs k Γ Prelude.pairScope}
     {t : Term k Γ} {C : Term k (.var :: Γ)} {u : Term k (.var :: .var :: Γ)}
     {γ δ : GradeVector Γ.length}
     (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t)
     (hu : Usage (Γ := .var :: .var :: Γ) sig ((δ ∙ g₀) ∙ g₁) m u)
     (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * Grade.one ≤ g₁) :
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
-      (.recursor r "Pair" [q] ls [p, ρ] as t (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
+      (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
     (gs := fun _ l => if l = 0 then g₀ else g₁) hpre.pair rfl rfl
@@ -148,10 +149,11 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
 /-- The recursor on a term of the unit uses the variables of its term `r` times and those of its
 branch. -/
 theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : Level k}
-    {r : Grade} {t u : Term k Γ} {C : Term k (.var :: Γ)} {γ δ : GradeVector Γ.length}
+    {r ς χ : Grade} {κ : Universe k} {t u : Term k Γ} {C : Term k (.var :: Γ)}
+    {γ δ : GradeVector Γ.length}
     (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t) (hu : Usage sig δ m u) :
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
-      (.recursor r "Unit" [] [l] [] .nil t (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
+      (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
     (gs := fun _ _ => Grade.zero) hpre.unit rfl rfl
     ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
@@ -187,7 +189,8 @@ those of its branches as a lower bound `χ` of their uses allows, each using the
 field as `⌜m⌝ · r` times the grade of the field allows; in the mode `11ᵐ`, it uses its term at run
 time, whose constructor chooses the branch. -/
 theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : Quality}
-    {ls : List (Level k)} {p q' ρ r g₀ g₁ : Grade} {as : InstanceArgs k Γ Prelude.stepScope}
+    {ls : List (Level k)} {p q' ρ r ς χ' g₀ g₁ : Grade} {κ : Universe k}
+    {as : InstanceArgs k Γ Prelude.stepScope}
     {t : Term k Γ} {C : Term k (.var :: Γ)} {u₀ u₁ : Term k (.var :: Γ)}
     {γ δ₀ δ₁ χ : GradeVector Γ.length}
     (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t)
@@ -195,7 +198,7 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * q' ≤ g₁) (hχ₀ : χ ≤ᶜ δ₀) (hχ₁ : χ ≤ᶜ δ₁)
     (hr : m = .oneOne → r.mode = .oneOne) :
     Usage sig ((r ·ᶜ γ) +ᶜ χ) m
-      (.recursor r "Step" [q] ls [p, q', ρ] as t (.cons 0 C .nil)
+      (.recursor r ς χ' "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   have hl : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
@@ -237,13 +240,14 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
 variable of each entry of the telescope `⌜m⌝ · r` times its grade; its motive, a type, uses no
 variable.
 RFC: `\mathsf{unpack}_{▶}` -/
-theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} → {ps : List Parameter} →
+theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) {κ : Universe k} :
+    {Γ : Scope} → {ps : List Parameter} →
     {m : Mode} → {γ δ : GradeVector Γ.length} → {u : Term k Γ} → {Θ : Telescope k Γ ps} →
     {κs : List (Universe k)} → {l : Level k} → {C : Term k Γ} →
     {b : Term k (Γ.extend ps.length)} →
     Usage sig 𝟘ᶜ .zeroZero C → Usage sig γ (m ⊙ r) u →
     Usage sig (δ.extendParams (m.grade * r) ps) m b →
-      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (Term.unpack r u Θ κs l C b)
+      Usage sig ((r ·ᶜ γ) +ᶜ δ) m (Term.unpack r u Θ κs l κ C b)
   | _, [], _, _, _, _, .nil, _, _, _, _, hC, hu, hb => by
     have hC' := usageStableUnderRenaming.usage (Ren.weaken (e := .var)) hC
     rw [GradeVector.rename_commutes.rename_zero] at hC'
@@ -258,7 +262,7 @@ theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} → {ps 
       (m.grade * r) ps (Ren.weaken (e := .var)), GradeVector.rename_weaken] at hb'
     have hy : Usage sig (GradeVector.update 𝟘ᶜ (Var.toFin .zero) (m ⊙ r).grade +ᶜ 𝟘ᶜ) (m ⊙ r)
         (Term.var₀ (Γ := .var :: .var :: Γ) (k := k) .zero) := .var .nil
-    have ih := Usage.unpack hpre r (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l) hC₂ hy hb'
+    have ih := Usage.unpack hpre r (κ := κ) (Θ := Θ.rename Ren.weaken) (κs := κs.tail) (l := l) hC₂ hy hb'
     have hz : ∀ r a : Grade, r * a ≤ r * (a + Grade.zero) + Grade.zero := by decide
     have hs : ∀ r c : Grade, c ≤ r * (Grade.zero + Grade.zero) + c := by decide
     have hm : ∀ (m : Mode) (r : Grade), m.grade * r * Grade.one ≤ r * (m ⊙ r).grade := by decide
@@ -298,7 +302,7 @@ theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Paramet
     (Ren.weaken (e := .var)), GradeVector.rename_weaken, Term.corecAt_rename] at hc'
   have hy : Usage sig (GradeVector.update 𝟘ᶜ (Var.toFin .zero) (m ⊙ r).grade +ᶜ 𝟘ᶜ) (m ⊙ r)
       (Term.var₀ (Γ := .var :: Γ) (k := k) .zero) := .var .nil
-  have hn := Usage.unpack hpre r (Θ := S.rename Ren.weaken) (κs := κs)
+  have hn := Usage.unpack hpre r (κ := κ) (Θ := S.rename Ren.weaken) (κs := κs)
     (l := Telescope.packLevel κs .zero) hT' hy hc'
   have hx : Usage sig (GradeVector.update 𝟘ᶜ (Var.toFin .zero) m.grade +ᶜ 𝟘ᶜ) m
       (Term.var₀ (Γ := .var :: Γ) (k := k) .zero) := .var .nil
@@ -312,7 +316,7 @@ theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Paramet
   have hs : ∀ r c : Grade, c ≤ r * (Grade.zero + Grade.zero) + c := by decide
   have h0 : ∀ a : Grade, a ≤ a + Grade.zero := by decide
   have h00 : Grade.zero ≤ Grade.zero + Grade.zero := by decide
-  have h1 := Usage.stepRecursor (q := κ.quality)
+  have h1 := Usage.stepRecursor (ς := Grade.one) (χ' := Grade.one) (κ := κ) (q := κ.quality)
     (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]) (p := r) (ρ := χ)
     (as := Prelude.stepArgs (S.pack κs (Telescope.packLevel κs .zero)) (.inst D qs ls ps as))
     (g₀ := r * (m ⊙ r).grade) (g₁ := m.grade) (δ₁ := 𝟘ᶜ) (χ := η)

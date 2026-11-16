@@ -222,9 +222,9 @@ where
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Term.substLevels, ← Args.terms_substLevels]
       exact RunValid.sub hγ hc
-    | .recursor (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (t := t)
-        (Cs := Cs) (us := us) (κ := κ) (T := T) (C := C) h hq hl hp hadm has ht hh hC _ hCs hCt _ hus hut
-        hκ, hu => fun ρ => by
+    | .recursor (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (ς := ς)
+        (χ := χ') (t := t) (Cs := Cs) (us := us) (κ := κ) (T := T) (C := C) h hq hl hp hadm has ht
+        hh hC _ hCs hCt _ hus hut hκ, hu => fun ρ => by
       have hdT := (presuppositions.hasType ht).distinct
       obtain ⟨γ', χ, δs, gs, hγ, -, htu, hbu, hg, hχ, hr, hprop⟩ :=
         Usage.inv_recursor hdT h hq hp hu rfl
@@ -292,9 +292,10 @@ where
           ValidTerm₀ sigM ι t₀ ((Term.inst T'.name qs
             (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0))).subst σ) →
-          ValidTerm₀ sigM ι (.recursor r T'.name qs
+          ValidTerm₀ sigM ι (.recursor r ς χ' T'.name qs
             (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
             ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₀
+            (κ.substLevels fun i => (.ofNat (ρ i) : Level 0))
             ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
             ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
             ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₀)) :=

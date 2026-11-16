@@ -156,7 +156,7 @@ theorem Term.nest_of_fresh {α : Type} {sigT : Signature} (mark : Name → Optio
   | _, _, _, _, .sort _, _ => rfl
   | _, _, _, _, .const _ _ _ _, _ => rfl
   | _, _, _, _, .ctor _ _ _ _ _ _ _, _ => rfl
-  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _, _ => rfl
+  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _, _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _, _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _, _ => rfl
 

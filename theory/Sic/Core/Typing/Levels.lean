@@ -391,8 +391,8 @@ where
           Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
           Term.substLevels_substLevels_getFin] at ih
         exact ih
-    | .iota (r := r) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (Cs := Cs) (us := us)
-        (κ := κ) h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ => by
+    | .iota (r := r) (ς := ς) (χ := χ) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as)
+        (Cs := Cs) (us := us) (κ := κ) h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       have hts' := hasArgs ls' hts
@@ -400,10 +400,10 @@ where
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels ls' _))
           (fun x => by cases x <;> rfl),
         Term.substLevels_instantiate, Term.substLevels_instantiate, Args.substLevels_rename,
-        Args.results_substLevels ls' (f' := fun D' t => .recursor r D' qs
-          (ls.map (Level.subst ls')) ps (as.substLevels ls') t (Cs.substLevels ls')
+        Args.results_substLevels ls' (f' := fun D' t => .recursor r ς χ D' qs
+          (ls.map (Level.subst ls')) ps (as.substLevels ls') t (κ.substLevels ls') (Cs.substLevels ls')
           (us.substLevels ls')) (fun _ _ => rfl)]
-      show EqTerm sig _ (.recursor _ _ _ _ _ _ (Term.substLevels ls' (.ctor _ _ _ _ _ _ _)) _ _)
+      show EqTerm sig _ (.recursor _ _ _ _ _ _ _ _ (Term.substLevels ls' (.ctor _ _ _ _ _ _ _)) _ _ _)
         _ _
       rw [Term.ctor_substLevels]
       refine .iota (κ := κ.substLevels ls') h hc hq _ hp hadm has' hts' hi

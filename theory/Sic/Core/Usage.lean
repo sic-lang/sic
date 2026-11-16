@@ -97,8 +97,8 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   RFC: `\mathsf{rec}_{▶}` -/
   | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ' : Grade}
+      {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
       {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
@@ -127,7 +127,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
       (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         m ≠ .oneOne) :
-      Usage sig ((r ·ᶜ γ) +ᶜ χ) m (.recursor r D qs ls ps as t Cs us)
+      Usage sig ((r ·ᶜ γ) +ᶜ χ) m (.recursor r ς χ' D qs ls ps as t κ Cs us)
   -- ADE: `_∘ₘ_`, `fstₘ` and `sndₘ`, in `Graded/Usage.agda`.
   /-- An observation uses the variables of its term once, the term checked in the mode `m`, and those
   of its arguments as the arguments of the telescope of the destructor at the instance do; the mode

@@ -129,8 +129,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
+      {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
       (hul : us.length = decl.cases.length)
@@ -144,7 +144,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
           (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
           (con.params (.ofLists qs ps hq hp))) p (us.grades i)
           (con.resultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
-      Ownership sig φ m p (.recursor r D qs ls ps as t Cs us)
+      Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships of its arguments, which satisfy the requirements
   of the entries of the telescope of the destructor, as the arguments of a telescope do: the result

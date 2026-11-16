@@ -535,8 +535,8 @@ where
         (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             eqTerm hd hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
-    | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (Cs := Cs) (us := us) (T := T)
-        (C := C) h hc hq hl hp hadm has hts hi hC hu _ hCs hCt _ hus hut hκ =>
+    | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (ς := ς) (χ := χ) (κ := κ)
+        (Cs := Cs) (us := us) (T := T) (C := C) h hc hq hl hp hadm has hts hi hC hu _ hCs hCt _ hus hut hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -548,9 +548,9 @@ where
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels (fun i => .ofNat (ρ i))
         (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate,
         Term.substLevels_instantiate, Args.substLevels_rename,
-        Args.results_substLevels (fun i => .ofNat (ρ i)) (f' := fun D' t => .recursor r D' qs
+        Args.results_substLevels (fun i => .ofNat (ρ i)) (f' := fun D' t => .recursor r ς χ D' qs
           (ls.map (Level.subst fun i => .ofNat (ρ i))) ps (as.substLevels fun i => .ofNat (ρ i)) t
-          (Cs.substLevels fun i => .ofNat (ρ i)) (us.substLevels fun i => .ofNat (ρ i)))
+          (κ.substLevels fun i => .ofNat (ρ i)) (Cs.substLevels fun i => .ofNat (ρ i)) (us.substLevels fun i => .ofNat (ρ i)))
           (fun _ _ => rfl)]
       simp only [Term.substLevels, ← Args.terms_substLevels]
       exact ValidEqTermΓ.iota hι h hc hq hl' hp hadm (by rw [List.getFin_map]; exact has')

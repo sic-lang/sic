@@ -66,7 +66,7 @@ theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : Re
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
       Terms.rename_rename_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
       Term.rename_rename_of h t, Motives.rename_rename_of h Cs, Branches.rename_rename_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -200,7 +200,7 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α :
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
       Terms.subst₀_rename_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
       Term.subst₀_rename_of h t, Motives.subst₀_rename_of h Cs, Branches.subst₀_rename_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -326,7 +326,7 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α :
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
       Terms.rename_subst₀_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
       Term.rename_subst₀_of h t, Motives.rename_subst₀_of h Cs, Branches.rename_subst₀_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -465,7 +465,7 @@ theorem Term.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
       Terms.subst₀_subst₀_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
       Term.subst₀_subst₀_of h t, Motives.subst₀_subst₀_of h Cs, Branches.subst₀_subst₀_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -773,7 +773,7 @@ theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren �
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
       Terms.subst_rename_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
       Term.subst_rename_of h t, Motives.subst_rename_of h Cs, Branches.subst_rename_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -899,7 +899,7 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren �
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
       Terms.rename_subst_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
       Term.rename_subst_of h t, Motives.rename_subst_of h Cs, Branches.rename_subst_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -1066,7 +1066,7 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
       Terms.subst_subst₀_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
       Term.subst_subst₀_of h t, Motives.subst_subst₀_of h Cs, Branches.subst_subst₀_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -1295,7 +1295,7 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : 
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
       Terms.subst_subst_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
       Term.subst_subst_of h t, Motives.subst_subst_of h Cs, Branches.subst_subst_of h us]
   | .obs D qs ls ps as t d bs => by
@@ -1449,7 +1449,7 @@ theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var
   | .inst D qs ls ps as => by rw [Term.subst, InstanceArgs.subst_id_of h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.subst, InstanceArgs.subst_id_of h as, Terms.subst_id_of h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.subst, InstanceArgs.subst_id_of h as, Term.subst_id_of h t, Motives.subst_id_of h Cs,
       Branches.subst_id_of h us]
   | .obs D qs ls ps as t d bs => by

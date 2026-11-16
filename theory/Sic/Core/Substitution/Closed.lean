@@ -147,7 +147,7 @@ theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ
     rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as]
   | .ctor D qs ls ps as c ts => by
     rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Terms.subst₀_isVar h ts]
-  | .recursor r D qs ls ps as t Cs us => by
+  | .recursor r ς χ D qs ls ps as t κ Cs us => by
     rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Term.subst₀_isVar h t,
       Motives.subst₀_isVar h Cs, Branches.subst₀_isVar h us]
   | .obs D qs ls ps as t d bs => by

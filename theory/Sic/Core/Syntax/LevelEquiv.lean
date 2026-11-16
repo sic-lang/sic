@@ -65,14 +65,15 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       (has : InstanceArgs.LevelEquiv as₁ as₂) (hts : Terms.LevelEquiv ts₁ ts₂) :
       Term.LevelEquiv (.ctor D qs ls₁ ps as₁ c ts₁) (.ctor D qs ls₂ ps as₂ c ts₂)
   /-- A recursor of an instance at equal levels, with arguments, a term, motives and branches
-  equal up to their levels. -/
-  | recursor {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
-      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ}
+  equal up to their levels, the sorts of their motives having the same quality at equal levels. -/
+  | recursor {Γ Δ : Scope} (r ς χ : Grade) (D : Name) (qs : List Quality)
+      {ls₁ ls₂ : List (Level k)} (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ}
+      {t₁ t₂ : Term k Γ} (s : Quality) {l₁ l₂ : Level k} {Cs₁ Cs₂ : Motives k Γ}
       {us₁ us₂ : Branches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
-      (has : InstanceArgs.LevelEquiv as₁ as₂) (h : Term.LevelEquiv t₁ t₂)
+      (has : InstanceArgs.LevelEquiv as₁ as₂) (h : Term.LevelEquiv t₁ t₂) (hκ : l₁ ≈ l₂)
       (hCs : Motives.LevelEquiv Cs₁ Cs₂) (hus : Branches.LevelEquiv us₁ us₂) :
-      Term.LevelEquiv (.recursor r D qs ls₁ ps as₁ t₁ Cs₁ us₁)
-        (.recursor r D qs ls₂ ps as₂ t₂ Cs₂ us₂)
+      Term.LevelEquiv (.recursor r ς χ D qs ls₁ ps as₁ t₁ ⟨s, l₁⟩ Cs₁ us₁)
+        (.recursor r ς χ D qs ls₂ ps as₂ t₂ ⟨s, l₂⟩ Cs₂ us₂)
   /-- An observation of a term of an instance at equal levels, with arguments of the instance, a
   term and arguments of the destructor equal up to their levels. -/
   | obs {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
@@ -211,9 +212,9 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
   | .inst D qs ls ps as => .inst D qs ps (Level.ListEquiv.refl ls) (InstanceArgs.LevelEquiv.refl as)
   | .ctor D qs ls ps as c ts => .ctor D qs ps c (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ts)
-  | .recursor r D qs ls ps as t Cs us => .recursor r D qs ps (Level.ListEquiv.refl ls)
-      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Motives.LevelEquiv.refl Cs)
-      (Branches.LevelEquiv.refl us)
+  | .recursor r ς χ D qs ls ps as t ⟨s, l⟩ Cs us => .recursor r ς χ D qs ps s
+      (Level.ListEquiv.refl ls) (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t)
+      (Level.equivalence.refl l) (Motives.LevelEquiv.refl Cs) (Branches.LevelEquiv.refl us)
   | .obs D qs ls ps as t d bs => .obs D qs ps d (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl bs)
   | .corec r D qs ls ps as ss Ss vs => .corec r D qs ps (Level.ListEquiv.refl ls)
@@ -278,8 +279,8 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .const f qs ps h => .const f qs ps h.symm
   | .inst D qs ps h has => .inst D qs ps h.symm has.symm
   | .ctor D qs ps c h has hts => .ctor D qs ps c h.symm has.symm hts.symm
-  | .recursor r D qs ps hl has h hCs hus =>
-    .recursor r D qs ps hl.symm has.symm h.symm hCs.symm hus.symm
+  | .recursor r ς χ D qs ps s hl has h hκ hCs hus =>
+    .recursor r ς χ D qs ps s hl.symm has.symm h.symm (Level.equivalence.symm hκ) hCs.symm hus.symm
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl.symm has.symm h.symm hbs.symm
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl.symm has.symm hss.symm hSs.symm hvs.symm
@@ -348,9 +349,10 @@ theorem Term.LevelEquiv.trans {k : Nat} {Γ : Scope} {t₁ t₂ t₃ : Term k Γ
   | .inst D qs ps h has, .inst _ _ _ h' has' => .inst D qs ps (h.trans h') (has.trans has')
   | .ctor D qs ps c h has hts, .ctor _ _ _ _ h' has' hts' =>
     .ctor D qs ps c (h.trans h') (has.trans has') (hts.trans hts')
-  | .recursor r D qs ps hl has h hCs hus, .recursor _ _ _ _ hl' has' h' hCs' hus' =>
-    .recursor r D qs ps (hl.trans hl') (has.trans has') (h.trans h') (hCs.trans hCs')
-      (hus.trans hus')
+  | .recursor r ς χ D qs ps s hl has h hκ hCs hus,
+    .recursor _ _ _ _ _ _ _ hl' has' h' hκ' hCs' hus' =>
+    .recursor r ς χ D qs ps s (hl.trans hl') (has.trans has') (h.trans h')
+      (Level.equivalence.trans hκ hκ') (hCs.trans hCs') (hus.trans hus')
   | .obs D qs ps d hl has h hbs, .obs _ _ _ _ hl' has' h' hbs' =>
     .obs D qs ps d (hl.trans hl') (has.trans has') (h.trans h') (hbs.trans hbs')
   | .corec r D qs ps hl has hss hSs hvs, .corec _ _ _ _ hl' has' hss' hSs' hvs' =>

@@ -176,7 +176,7 @@ theorem Term.nest_plain :
   | _, _, _, .sort _ => rfl
   | _, _, _, .const _ _ _ _ => rfl
   | _, _, _, .ctor _ _ _ _ _ _ _ => rfl
-  | _, _, _, .recursor _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
 
@@ -252,7 +252,7 @@ theorem Term.nest_isPlain_mono {β : Type} :
   | _, _, _, _, .sort _ => fun _ => rfl
   | _, _, _, _, .const _ _ _ _ => fun _ => rfl
   | _, _, _, _, .ctor _ _ _ _ _ _ _ => fun _ => rfl
-  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => fun _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _ => fun _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => fun _ => rfl
 
