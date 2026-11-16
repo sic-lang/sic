@@ -382,6 +382,7 @@ theorem Destructors.Pos.hasType_observations (hT : sig.HasCodataType D decl T)
           (.sort (κ₁.substLevels (ls.getFin hl)))) := by
   have hsig := presuppositions.wfCtx hα.wfCtx
   obtain ⟨sig', hs, hdecl⟩ := hsig.wfTypeDeclaration hT.1
+  replace hs := Signature.subset_of_cons_suffix hs
   cases hdecl with
   | data hb _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
   | codata hb _ hΔ hds _ _ =>

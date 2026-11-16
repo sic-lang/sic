@@ -23,20 +23,35 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- A type declaration of a well-formed signature is well formed in the signature before it, whose
-entries the signature has. -/
+/-- A type declaration of a well-formed signature is well formed in the signature before it: the
+signature ends with the declaration, followed by this signature. -/
 theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
     {sig : Signature} → WfSig sig → .typeDeclaration decl ∈ sig →
-      ∃ sig', sig' ⊆ sig ∧ WfTypeDeclaration sig' decl
+      ∃ sig', (.typeDeclaration decl :: sig') <:+ sig ∧ WfTypeDeclaration sig' decl
   | [], _, he => nomatch he
   | _ :: _, h, he => by
     rcases List.mem_cons.1 he with he | he
     · subst he
       cases h with
-      | typeDeclaration hdecl _ _ => exact ⟨_, List.subset_cons_self _ _, hdecl⟩
+      | typeDeclaration hdecl _ _ => exact ⟨_, List.suffix_refl _, hdecl⟩
     · obtain ⟨sig', hs, hdecl⟩ :=
         (Presuppositions.tail presuppositions h).wfTypeDeclaration he
-      exact ⟨sig', List.subset_cons_of_subset _ hs, hdecl⟩
+      exact ⟨sig', hs.trans (List.suffix_cons _ _), hdecl⟩
+
+-- ADE: none.
+/-- A signature that ends a well-formed signature is well formed. -/
+theorem WfSig.of_suffix {sig' : Signature} :
+    {sig : Signature} → WfSig sig → sig' <:+ sig → WfSig sig'
+  | [], h, hs => List.eq_nil_of_suffix_nil hs ▸ h
+  | _ :: _, h, hs => by
+    rcases List.suffix_cons_iff.1 hs with rfl | hs
+    · exact h
+    · exact (Presuppositions.tail presuppositions h).of_suffix hs
+
+/-- The entries of the signature before an entry of a signature are entries of the signature. -/
+theorem Signature.subset_of_cons_suffix {e : Entry} {sig' sig : Signature}
+    (h : (e :: sig') <:+ sig) : sig' ⊆ sig :=
+  fun _ he => h.subset (List.mem_cons_of_mem _ he)
 
 -- ADE: none.
 /-- The parameters of a type declaration of a well-formed signature, at an instance that its
@@ -46,8 +61,8 @@ theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclara
     (hI : decl.constraint I) : WfCtx sig (decl.params I) := by
   obtain ⟨_, hs, hdecl⟩ := h.wfTypeDeclaration hd
   cases hdecl with
-  | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs h (hΔ _ hI)
-  | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx hs h (hΔ _ hI)
+  | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
+  | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
 
 -- ADE: none.
 /-- A destructor of destructors that live in a sort of propositions has a grade whose mode is not
