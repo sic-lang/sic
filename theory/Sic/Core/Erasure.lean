@@ -58,13 +58,14 @@ theorem Var.mem {Γ : Scope} {e : Scope.Entry} : Var Γ e → e ∈ Γ
 /-- `k`: the recursive result of a branch of a recursor of the target language: `erased`, the RFC's
 `⊥`, when the result is erased, `field l` when it is the recursor on the recursive field `l`, and
 `nested l σ` when it is the corecursor of a lifting, of the shape `σ`, on the nested field `l`; the
-positions are counted from `0`, while the RFC counts them from `1`. -/
+positions are counted from `0`, while the RFC counts them from `1`.
+RFC: `\mathsf{syntax}_w` -/
 inductive RecursiveResult where
   /-- `⊥`. -/
   | erased
   /-- `l`. -/
   | field (l : Nat)
-  /-- `l.σ`. -/
+  /-- `n.Ξ`. -/
   | nested (l : Nat) (σ : Shape)
 
 -- ADE: none.
@@ -97,7 +98,8 @@ def RecursiveResult.IsNested : RecursiveResult → Prop
 -- ADE: none.
 /-- The factor of a result, the multiplicity by which it multiplies the uses of the scope by the
 recursion that computes it: `0` when it is erased, `1` for the recursor itself, and the factor of the
-shape of a nested result. -/
+shape of a nested result.
+RFC: `\mathsf{factor}_w` -/
 def RecursiveResult.factor : RecursiveResult → Multiplicity
   | .erased => .zero
   | .field _ => .one
@@ -231,17 +233,17 @@ inductive Targets : Nat → Type where
 
 -- ADE: none.
 /-- `N̄`: the branches of a recursor of the target language, in order; the branch
-`(x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄). N` is a term over a new variable for each of the `a` fields and of the
+`(x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← w̄). N` is a term over a new variable for each of the `a` fields and of the
 `b` recursive results, of the multiplicities `π̄` and `π̄'` at run time, each variable of a field
 with the coefficient `κ` of its ownership, which multiplies the ownership of the term of the
-recursor, at run time, and `k̄` gives, for each recursive result, the result that it computes: the
+recursor, at run time, and `w̄` gives, for each recursive result, the result that it computes: the
 recursor on a recursive field, the corecursor of a lifting on a nested field, with its shape, or
 nothing when the result is erased.
 RFC: `\mathsf{syntax}_{\bar N}` -/
 inductive TargetBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetBranches n
-  /-- `((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄). N, N̄)`. -/
+  /-- `((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← w̄). N, N̄)`. -/
   | cons {n : Nat} (a b : Nat) (πs κs : Fin a → Multiplicity) (πs' : Fin b → Multiplicity)
       (ks : Fin b → RecursiveResult) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
       TargetBranches n
@@ -441,8 +443,8 @@ inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → Target
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar N}.\varepsilon` -/
   | nil {n : Nat} : TargetBranches.LessDefined (n := n) .nil .nil
-  /-- `((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄₁). M, M̄) ⊑ ((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄₂). N, N̄)`, where each
-  recursive result of `k̄₁` is not computed or has the field it has in `k̄₂`.
+  /-- `((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← w̄₁). M, M̄) ⊑ ((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← w̄₂). N, N̄)`, where each
+  recursive result of `w̄₁` is not computed or has the field it has in `w̄₂`.
   RFC: `{\sqsubseteq}_{\bar N}.{,}` -/
   | cons {n a b : Nat} {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity}
       {ks₁ ks₂ : Fin b → RecursiveResult} {M N : Target (n + (a + b))}

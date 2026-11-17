@@ -179,7 +179,7 @@ theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Mult
 end
 
 -- ADE: none.
-/-- `l.σ` at run time, over the scope of the recursor and the field, the variable `0`, has the
+/-- `n.Ξ` at run time, over the scope of the recursor and the field, the variable `0`, has the
 ownership `1` of a new value, when the branches of the recursor have their ownerships, of which `o`
 is the ownership of the term of each level of the recursion, the shape has their ownerships `ς` and
 `χ` and meets the requirements of the recursions at `o`, and the field, seen at `ς`, keeps `o`. -/

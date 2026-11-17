@@ -6,7 +6,7 @@ public import Sic.Core.Erasure.Renaming
 # Corecursors of the Nested Results
 
 The corecursor that a nested result of a branch of a recursor of the target language of annex 16 of
-RFC 36 gives at run time, `l.σ`: the evaluation builds its branches from the branches of the
+RFC 36 gives at run time, `n.Ξ`: the evaluation builds its branches from the branches of the
 recursor and from the shape `σ`, as the rule `(res_D)` of annex 21 builds the corecursor of the
 lifting from the observations of the field, one branch for each destructor that the lifting keeps,
 which observes the field by the destructor that it lifts and gives the result of this observation:
@@ -50,10 +50,13 @@ def Shape.argVar (m c : Nat) (k : Fin c) : Fin (m + (0 + c)) :=
 mutual
 
 -- ADE: none.
-/-- The branches built from the shape `σ` for the recursor `rec_ρ · ◀ ϱ with N̄` on the observations of
-the term `M`, the path from the field: the branch of each destructor, without state, binds its
-arguments and observes `M` by the destructor that it lifts, at these arguments, then gives the result
-of this observation, or `↯` when the destructor is never observed at run time. -/
+/-- `branches_{ρ,ϱ}(Ξ, O, N̄)`: the branches built from the shape `Ξ` for the recursor
+`rec_ρ · ◀ ϱ with N̄` on the observations of the term `O`, the path from the field: the branch of each
+destructor, without state, binds its arguments and observes `O` by the destructor that it lifts, at
+these arguments, then gives the result of this observation, or `↯` when the destructor is never
+observed at run time; the term and the branches are shifted under the arguments, which the RFC
+names by fresh variables instead.
+RFC: `\mathsf{branches}_\Xi` -/
 def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → TargetBranches m →
     TargetCorecBranches m
   | .nil, _, _ => .nil
@@ -67,10 +70,11 @@ def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → Tar
       (rest.branches ρ ϱ M Ns)
 
 -- ADE: none.
-/-- The result of the observation `O` of a field: the recursor `rec_ρ O ◀ ϱ with N̄` for `⋆_K`, or
-`rec_0 K ◀ ϱ with N̄` on the skeleton `K` of the motive when `ρ` is `0`, as the erasure of a recursor
+/-- `body_{ρ,ϱ}(Υ, O, N̄)`: the result of the observation `O` of a field: the recursor
+`rec_ρ O ◀ ϱ with N̄` for `⋆_M`, or `rec_0 M ◀ ϱ with N̄` on the skeleton `M` of the motive when `ρ` is `0`, as the erasure of a recursor
 on an erased term, and the corecursor without state of the next lifting, whose branches observe `O`
-in turn, for its shape. -/
+in turn, for its shape.
+RFC: `\mathsf{body}_\Upsilon` -/
 def Shape.Next.body {m : Nat} (ρ ϱ : Multiplicity) : Shape.Next → Target m → TargetBranches m →
     Target m
   | .recursor K, O, Ns => .recursor ρ ϱ (if ρ = .zero then K.target else O) Ns
@@ -79,9 +83,10 @@ def Shape.Next.body {m : Nat} (ρ ϱ : Multiplicity) : Shape.Next → Target m �
 end
 
 -- ADE: none.
-/-- `l.σ` at run time: the corecursor without state of the shape `σ` for the recursor
+/-- `nested_{ρ,ϱ}(x, Ξ, N̄)`, `n.Ξ` at run time: the corecursor without state of the shape `σ` for the recursor
 `rec_ρ · ◀ ϱ with N̄`, over the variables of the scope of the recursor and the field, the variable
-`0`, whose branches observe the field, as `(res_D)` builds the result of a nested field. -/
+`0`, whose branches observe the field, as `(res_D)` builds the result of a nested field.
+RFC: `\mathsf{nested}_\Xi` -/
 def Target.nested {n : Nat} (ρ ϱ : Multiplicity) (σ : Shape) (Ns : TargetBranches n) :
     Target (n + 1) :=
   .corec .nil (σ.branches ρ ϱ (.var 0) (Ns.rename (TargetRen.shift n 1)))

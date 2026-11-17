@@ -230,7 +230,7 @@ theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
 end
 
 -- ADE: none.
-/-- `l.σ` at run time, for a shape that fits the recursor of the multiplicity `ρ`, reads the field,
+/-- `n.Ξ` at run time, for a shape that fits the recursor of the multiplicity `ρ`, reads the field,
 the variable `0`, `ρ` times, and the variables of the scope of the recursor as `χ`, each as many
 times as the factor of the shape. -/
 theorem Target.Usage.nested {ρ ϱ : Multiplicity} {n : Nat}

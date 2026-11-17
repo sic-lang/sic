@@ -226,12 +226,12 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       (hϱ : ψ.constant.getD .omega ≤ ϱ) : EvalResume H n E Ps o ψ w x H
 
 -- ADE: none.
-/-- `recursions_{k̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
+/-- `recursions_{w̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
 its field at the position `l`, the multiplicity in `π̄'` of the binder of each recursive result
-whose field in `k̄` is `l`, times the factor of the result: the recursion runs once, but its result
+whose field in `w̄` is `l`, times the factor of the result: the recursion runs once, but its result
 is read as its binder allows, each read using the value that the recursion builds from the field,
 and a nested result uses the field as often as its shape allows at each read.
-RFC: `\mathsf{recursions}_{\bar k, \bar\pi', l}` -/
+RFC: `\mathsf{recursions}_{\bar w, \bar\pi', l}` -/
 def recursionsAt : List RecursiveResult → List Multiplicity → Nat → Multiplicity
   | k :: ks, π :: πs, l =>
     (if k.fieldPosition = some l then π * k.factor else .zero) + recursionsAt ks πs l
@@ -364,7 +364,7 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
       EvalRec P ϖ H₁ E ρ ϱ Ns a v H₃ (R₁ ++ R₂)
 
 -- ADE: none.
-/-- `𝒫; ϖ; H; E ⊢ rec_ρ ā ◀ ϱ with N̄ ← k̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
+/-- `𝒫; ϖ; H; E ⊢ rec_ρ ā ◀ ϱ with N̄ ← w̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
 order, each at the weight `ϖ` times the multiplicity of its binder in `π̄'`: the recursor on the
 field at its position in `ā`, the corecursor of a nested result, which captures the scope of the
 recursor with a cell for its field, of the multiplicity of the uses that the corecursor makes of the
@@ -391,7 +391,7 @@ inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → Li
       (hj : as[j]? = some a) (h : EvalRec P (ϖ * π) H₁ E ρ ϱ Ns a r H₂ R₁)
       (hs : EvalResults P ϖ H₂ E ρ ϱ Ns as ks πs rs H₃ R₂) :
       EvalResults P ϖ H₁ E ρ ϱ Ns as (.field j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
-  /-- The corecursor of the shape `σ` on the field at the position `l`, `l.σ`, in the scope of the
+  /-- The corecursor of the shape `σ` on the field at the position `l`, `n.Ξ`, in the scope of the
   recursor with a cell for the field, then the others. -/
   | nested {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
       {Ns : TargetBranches n} {as : List Nat} {l a r : Nat} {σ : Shape}
