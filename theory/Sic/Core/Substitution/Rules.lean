@@ -354,8 +354,8 @@ theorem Term.atCtor_rename_weaken {Γ Δ : Scope} (C : Term k Γ) (D : Name) (qs
 /-- `res_C̄(x̄)`: the recursive results of the fields `x̄`, whose entries have the parameters `ps` and
 whose recursive fields the types `rs` of the block whose names are `names` mark, a variable
 `y : C_D[x / z]` for each recursive field `x` of the type `D`, at the motive `C_D` of `D` in `C̄`,
-in order, if `C̄` has a motive without non-uniform parameters for each of these types.
-RFC: `\mathsf{results}` -/
+in order, if `C̄` has a motive without non-uniform parameters for each of these types: the results
+of the recursive fields alone, without those of the nested fields, which the run time reads. -/
 def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (rs : List (Option Name)) →
     {ps : List Parameter} → Terms k Δ → Option (Telescope k Δ (Telescope.resultParams rs ps))
   | _, Cs, some D :: rs, p :: ps, .cons x xs =>
@@ -368,32 +368,16 @@ def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (rs 
   | _, _, [], _, _ | _, _, some _ :: _, [], _ | _, _, none :: _, [], _ => some .nil
 
 -- ADE: none.
-/-- `f(D, t̄)`: the term `f D t` for each term `t` of a recursive field of the type `D` that the types
-`rs` of the block mark, in order: the recursive results of a recursor at the terms of the fields of
-a constructor, `f D t` being the recursor on `t` at the type `D`.
-RFC: `\mathsf{results}_t` -/
-def Terms.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) : List (Option Name) → Terms k Γ → Terms k Γ
-  | some D :: rs, .cons t ts => .cons (f D t) (Terms.results f rs ts)
-  | none :: rs, .cons _ ts => Terms.results f rs ts
-  | [], _ | _ :: _, .nil => .nil
-
--- ADE: none.
-/-- `f(D, t̄)` for the arguments `t̄` of a telescope whose entries have the parameters `ps`: the
-arguments of the recursive results, as `Terms.results` gives their terms. -/
+/-- `f(D, t̄)` for the arguments `t̄` of a telescope whose entries have the parameters `ps`: the term
+`f D t` for each term `t` of a recursive field of the type `D` that the types `rs` of the block
+mark, in order, the arguments of the results of the recursive fields alone, which the run time
+reads. -/
 def Args.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
     (rs : List (Option Name)) → {ps : List Parameter} → Args k Γ ps →
       Args k Γ (Telescope.resultParams rs ps)
   | some D :: rs, _ :: _, .cons t ts => .cons (f D t) (Args.results f rs ts)
   | none :: rs, _ :: _, .cons _ ts => Args.results f rs ts
   | [], _, _ | some _ :: _, [], .nil | none :: _, [], .nil => .nil
-
-/-- The terms of the arguments of the recursive results are the recursive results of the terms. -/
-theorem Args.results_terms {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
-    (rs : List (Option Name)) → {ps : List Parameter} → (ts : Args k Γ ps) →
-      (Args.results f rs ts).terms = Terms.results f rs ts.terms
-  | some _ :: rs, _ :: _, .cons _ ts => congrArg _ (Args.results_terms f rs ts)
-  | none :: rs, _ :: _, .cons _ ts => Args.results_terms f rs ts
-  | [], [], .nil | [], _ :: _, .cons _ _ | some _ :: _, [], .nil | none :: _, [], .nil => rfl
 
 -- ADE: none.
 /-- `res_C̄(Θ_c)`: the recursive results of the fields of the constructor `c` at the instance `I`, in

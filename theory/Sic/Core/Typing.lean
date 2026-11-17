@@ -450,7 +450,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   -- `Definition/Typed.agda`.
   /-- Two recursors at equal arguments of the instance, at equal levels, on equal terms, with equal
   motives of the same sort and equal branches, with the same ownerships of the results of their
-  nested fields, are equal.
+  nested fields, are equal, when the fields have the recursive results of both; the branches are
+  equal in the context of the results of the first.
   RFC: `\mathsf{rec}_\equiv` -/
   | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -595,8 +596,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   /-- A recursor on a constructor applied to arguments of its fields, with the premises of `(rec)`,
   is equal to the branch of the constructor, the case `i` of the block, with the arguments
   substituted for the variables of the fields and, for those of the recursive results, the
-  recursors on the arguments of the recursive fields, at the same instance, with the same motives
-  and the same branches.
+  recursive results of these arguments, where the result of a term of a type of the block is the
+  recursor on it, at the same instance, with the same motives and the same branches.
   RFC: `\iota` -/
   | iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -643,8 +644,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         ((u.instantiate (rs.rename (Ren.weakenN _))).instantiate ts)
         (C.subst₀ (Subst₀.single (.ctor D qs ls ps as con.name ts.terms)))
   -- ADE: `unitrec-β-η`, in `Definition/Typed.agda`, for the unit type with `η`.
-  /-- A term `e` over a term `t` of a data type with a single constructor without recursive field, the
-  case `i` of the block, is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of
+  /-- A term `e` over a term `t` of a data type with a single constructor whose fields have no
+  recursive result, the case `i` of the block, is equal to the recursor on `t`, with the premises of `(rec)`, whose motive of
   the type is that of `e` and whose branch of the constructor is `e` at the constructor applied to its
   fields.
   RFC: `\eta_c` -/

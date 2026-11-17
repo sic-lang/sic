@@ -100,9 +100,10 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
   /-- A recursor on a constructor applied to the terms of its fields steps to the branch of the
   constructor, the case `i` of the block of its type, with the terms of the fields substituted for
-  its variables of the fields and, for those of the recursive results, the recursors on the terms
-  of the recursive fields, which the fields of the constructor at the instance of the recursor
-  mark, at this instance, with the same motives and the same branches.
+  its variables of the fields and, for those of the recursive results, the recursive results of
+  these terms, at the fields of the constructor at the instance of the recursor, where the result
+  of a term of a type of the block is the recursor on it, at this instance, with the same motives
+  and the same branches.
   RFC: `\iota_{\longrightarrow}` -/
   | iota {decl : TypeDeclaration} {i j : Nat}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope}
