@@ -223,6 +223,65 @@ theorem add_ne_zero_left : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .ze
 theorem add_ne_zero_right : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero := by
   decide
 
+/-! ## Sums -/
+
+/-- The sum of multiplicities that are all `0` is `0`. -/
+theorem sum_zero : {n : Nat} → sum (n := n) (fun _ => zero) = zero
+  | 0 => rfl
+  | _ + 1 => by
+    simp only [sum]
+    rw [sum_zero]
+    rfl
+
+/-- The sum of the sums of multiplicities, index by index, is the sum of their sums. -/
+theorem sum_add : {n : Nat} → (f g : Fin n → Multiplicity) →
+    sum (fun i => f i + g i) = sum f + sum g
+  | 0, _, _ => rfl
+  | _ + 1, f, g => by
+    simp only [sum]
+    rw [sum_add (fun j => f j.succ) (fun j => g j.succ)]
+    exact (by decide : ∀ a b c d : Multiplicity, (a + b) + (c + d) = (a + c) + (b + d)) _ _ _ _
+
+/-- The sum of multiplicities each multiplied by `π` is `π` times their sum. -/
+theorem sum_mul (π : Multiplicity) : {n : Nat} → (f : Fin n → Multiplicity) →
+    sum (fun i => π * f i) = π * sum f
+  | 0, _ => by cases π <;> rfl
+  | _ + 1, f => by
+    simp only [sum]
+    rw [sum_mul π (fun j => f j.succ)]
+    exact (by decide : ∀ p a b : Multiplicity, p * a + p * b = p * (a + b)) _ _ _
+
+/-- The sum is monotone, index by index. -/
+theorem sum_le : {n : Nat} → {f g : Fin n → Multiplicity} → (∀ i, f i ≤ g i) → sum f ≤ sum g
+  | 0, _, _, _ => le_refl' _
+  | _ + 1, _, _, h => add_le_add' _ _ _ _ (h 0) (sum_le fun j => h j.succ)
+
+/-- A sum whose multiplicities are `0` but at the index `i` is the multiplicity at `i`. -/
+theorem sum_single : {n : Nat} → (f : Fin n → Multiplicity) → (i : Fin n) →
+    (∀ j, j ≠ i → f j = zero) → sum f = f i
+  | _ + 1, f, i, h => by
+    simp only [sum]
+    cases i using Fin.cases with
+    | zero =>
+      rw [show (fun j : Fin _ => f j.succ) = fun _ => zero from
+        funext fun j => h j.succ (Fin.succ_ne_zero j), sum_zero]
+      exact (by decide : ∀ a : Multiplicity, a + zero = a) _
+    | succ i =>
+      rw [h 0 (Fin.succ_ne_zero i).symm, sum_single (fun j => f j.succ) i
+        (fun j hj => h j.succ fun e => hj (Fin.succ_inj.mp e))]
+      exact (by decide : ∀ a : Multiplicity, zero + a = a) _
+
+/-- A sum over `m + k` indices whose `k` first multiplicities are `0` is the sum of the others. -/
+theorem sum_addNat {m : Nat} : (k : Nat) → (f : Fin (m + k) → Multiplicity) →
+    (∀ j : Fin (m + k), (j : Nat) < k → f j = zero) → sum f = sum fun x : Fin m => f (x.addNat k)
+  | 0, _, _ => rfl
+  | k + 1, f, h => by
+    have ih := sum_addNat k (fun j : Fin (m + k) => f j.succ)
+      (fun j hj => h j.succ (by simp only [Fin.val_succ]; omega))
+    show f 0 + sum (fun j : Fin (m + k) => f j.succ) = _
+    rw [h 0 (Nat.succ_pos k), ih]
+    exact (by decide : ∀ a : Multiplicity, zero + a = a) _
+
 end Multiplicity
 
 end Sic.Grading
