@@ -317,7 +317,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (fun i => ((T.body I).recursionAt decl.names i).map fun D' => (Y D').computed sig ι)
       ((T.body I).atLevels ρ) as.toSubst (S Y T) := by
     rw [e]
-    exact RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hS Y T hT)
+    exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hS Y T hT)
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)
   -- The observation by the destructor, at arguments related by the relation of its telescope.
@@ -329,7 +329,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       have hU : RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
           (CodataType.runBlockRel decl.codataTypes S T'.name) :=
         .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs hnS S hS
-      exact RunsAs.levelEquiv (hX _).symm
+      exact RunsAs.levelEquiv hd (hX _).symm
         ⟨_, ⟨.refl _, .inst _ _ _ _ _⟩, .inr ⟨_, .univ n (levelRel_run_iff.2 hU), w, hw, Y, hY,
           hYw⟩⟩⟩) hSρ hSo hpr
   -- The equality of the term relates its observations to those of the corecursor.
@@ -375,7 +375,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         ((decl.sort I).level.subst L).closedValue := hn
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
     rw [e', hq']
-    exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hSe _ T hT)
+    exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hSe _ T hT)
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)
   have hRr : ∀ i D', (T.body I).recursionAt decl.names i = some D' → ∃ R v,
@@ -395,7 +395,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
     rw [hi, e', hq']
     exact ⟨_, _, rfl, hcX _,
-      FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (.univ rfl hU) (hX _).symm⟩
+      FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (.univ rfl hU) (hX _).symm⟩
   -- The telescope and the result of the destructor at both observations are equal.
   obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq hmean
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi))
@@ -418,7 +418,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ((Θ.substLevels L).subst (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) :=
     Telescope.LevelEquiv.subst hcE (Telescope.substLevels_levelEquiv hls Θ)
   have htsρ := EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘE.symm) hts
-  have hbsρ := hbs.levelEquiv hΘE.symm
+  have hbsρ := RunsAsArgs.levelEquiv hd hΘE.symm hbs
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
   have hS' := RunTelRel.of_runsAsArgs hd h₁
     (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
@@ -452,7 +452,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hres' := hres ts ts htsρ
   rw [Term.observation_subst_args] at hres'
   have hw₂ := RunsAs.conv hd (ValidEqTerm₀.conv hres'.left hBT).2 hBT.symm.2 hw₁
-  exact hw₂.levelEquiv (Term.LevelEquiv.subst (Subst.LevelEquiv.append hcE (Subst.LevelEquiv.refl _))
+  exact hw₂.levelEquiv hd (Term.LevelEquiv.subst (Subst.LevelEquiv.append hcE (Subst.LevelEquiv.refl _))
     (Term.substLevels_levelEquiv hls B))
 
 -- ADE: none.
@@ -1276,7 +1276,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (fun i => ((T₂.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
           ((T₂.body I).substLevels Lρ) (as.subst σ).toSubst (S X T₂) := by
         rw [e]
-        exact RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hS X T₂ hT₁)
+        exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hS X T₂ hT₁)
           (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
           (Subst.LevelEquiv.refl _)
       -- The case of a destructor of the type and its branch.
@@ -1326,8 +1326,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
             (Telescope.substLevels_levelEquiv hls Θ))) hτ
-        have hbs₂' := hbs₂.levelEquiv (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-          (Telescope.substLevels_levelEquiv hls Θ))
+        have hbs₂' := RunsAsArgs.levelEquiv hd (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+          (Telescope.substLevels_levelEquiv hls Θ)) hbs₂
         -- The branch in the closure, at the grade of its destructor.
         have hpg : ((sig.destructorGrades D qs ps).getD [])[i']? = some p := by
           rw [hgrs]
@@ -1464,7 +1464,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             (Multiplicity.le_refl' _) hev' .none,
             fun _ => ?_,
             fun D' R hD' => ?_⟩
-          · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv
+          · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv hd
               (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
                 (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
           · simp only [hpos.recursionAt_index, hbn] at hD'
@@ -1518,12 +1518,12 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               cases hr0
             · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
               subst hD' hR
-              have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv
+              have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
                 (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
                   (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
               rw [he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
-                (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _) (h₁.levelEquiv (hX T₃.name)))
+                (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _) (h₁.levelEquiv hd (hX T₃.name)))
     -- The corecursor is related to the closure.
     exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
       hnS S hS)), _, ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩, X, hcons,

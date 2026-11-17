@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Results.Extension
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -148,11 +149,11 @@ where
       .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has)
     | .ctor h hc hq hl hp hadm has hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
-    | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hut hκ =>
+    | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>
       .recursor ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) (hasType hs hw ht) hh hC
         hCl hCs (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con C' R u hi hC' hR hu => hasType hs hw (hut i j T' con C' R u hi hC' hR hu))
-        hκ
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
     | .obs h hq hl hp hadm hd has ht hbs =>
       .obs ⟨hs h.1, h.2⟩ hq hl hp hadm hd (hasInstanceArgs hs hw has) (hasType hs hw ht)
         (hasArgs hs hw hbs)
@@ -182,13 +183,17 @@ where
       .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
         (eqArgs hs hw hts)
     | .recursor h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂
-        hes hut hκ =>
+        hes hRs₁ hRs₂ hut hκ =>
       .recursor ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
         (eqTerm hs hw ht) hh hC hCl₁ hCl₂ hCs₁ hCs₂
         (fun j T' C₁' C₂' hj hC₁ hC₂ => eqTerm hs hw (hCt j T' C₁' C₂' hj hC₁ hC₂)) hul₁ hul₂
         hus₁ hus₂ hes
-        (fun i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂ =>
-          eqTerm hs hw (hut i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂)) hκ
+        (fun i j T' con hi =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs₁ i j T' con hi))
+        (fun i j T' con hi =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs₂ i j T' con hi))
+        (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ =>
+          eqTerm hs hw (hut i j T' con C' u₁ u₂ hi hC' hu₁ hu₂)) hκ
     | .obs h hq hl₁ hl₂ hp hadm hd has hls ht hbs =>
       .obs ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm hd (eqInstanceArgs hs hw has) hls (eqTerm hs hw ht)
         (eqArgs hs hw hbs)
@@ -201,17 +206,18 @@ where
           eqTelescope hs hw (hSe j T' ps'' S₁' S₂' hj hS₁' hS₂')) hgl₁ hgl₂ hgs
         (fun i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂ =>
           eqTerm hs hw (hgt i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂))
-    | .iota h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ =>
+    | .iota h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus hRs hut hκ =>
       .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts) hi hC
-        hu hCl hCs (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con C' R u hi hC' hR hu => hasType hs hw (hut i j T' con C' R u hi hC' hR hu))
-        hκ
-    | .etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hut hκ =>
+        hu (Terms.ResultTerms.ofTypeDeclarations (fun _ h => hs h) hrs) hCl hCs
+        (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
+    | .etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ =>
       .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (hasInstanceArgs hs hw has) (hasType hs hw ht)
         (hasType hs hw he) hi hC hu hCl hCs
         (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con C' R u hi hC' hR hu => hasType hs hw (hut i j T' con C' R u hi hC' hR hu))
-        hκ
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
     | .beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt =>
       .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
         (hasInstanceArgs hs hw has) hh hS (hasArgs hs hw hss) hi hd hg (hasArgs hs hw hbs) hSl hSs

@@ -33,28 +33,28 @@ open Sic.Grading
 
 -- ADE: none.
 /-- A term related to an address at a type is related to it at every type equal to it up to its
-levels. -/
+levels, in a signature whose names are distinct. -/
 theorem RunsAs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
-    {t : Term 0 []} {a : Nat} {A A' : Term 0 []} (hAA : Term.LevelEquiv A A') :
-    RunsAs sig ι P H t a A → RunsAs sig ι P H t a A'
+    {t : Term 0 []} {a : Nat} {A A' : Term 0 []} (hd : sig.Distinct)
+    (hAA : Term.LevelEquiv A A') : RunsAs sig ι P H t a A → RunsAs sig ι P H t a A'
   | ⟨_, hA, h⟩ => by
-    obtain ⟨v', hA', hv⟩ := Computes.levelEquiv hA hAA
+    obtain ⟨v', hA', hv⟩ := Computes.levelEquiv hd.interpret hA hAA
     rcases h with hp | ⟨R, hR, ht⟩
-    · exact ⟨v', hA', .inl (hp.levelEquiv hv)⟩
-    · exact ⟨v', hA', .inr ⟨R, hR.levelEquiv hv, ht⟩⟩
+    · exact ⟨v', hA', .inl (hp.levelEquiv hd hv)⟩
+    · exact ⟨v', hA', .inr ⟨R, hR.levelEquiv hd hv, ht⟩⟩
 
 -- ADE: none.
 /-- Arguments related to addresses at a telescope are related to them at every telescope equal to
-it up to its levels. -/
-theorem RunsAsArgs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
-    {ps : List Parameter} → {g : Nat → Grade} → {ts : Args 0 [] ps} → {bs : List Nat} →
+it up to its levels, in a signature whose names are distinct. -/
+theorem RunsAsArgs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
+    (hd : sig.Distinct) : {ps : List Parameter} → {g : Nat → Grade} → {ts : Args 0 [] ps} → {bs : List Nat} →
     {Θ Θ' : Telescope 0 [] ps} → Telescope.LevelEquiv Θ Θ' → RunsAsArgs sig ι P H g ts bs Θ →
       RunsAsArgs sig ι P H g ts bs Θ'
   | [], _, .nil, [], .nil, .nil, .nil, h => h
   | _ :: _, _, .cons _ _, _ :: _, .cons _ _ _ _, .cons _ _ _ _, .cons _ _ hA hΘ, h => by
     obtain ⟨ht, hts⟩ := h
-    exact ⟨fun hp => (ht hp).levelEquiv hA,
-      RunsAsArgs.levelEquiv (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl _))) hts⟩
+    exact ⟨fun hp => (ht hp).levelEquiv hd hA,
+      RunsAsArgs.levelEquiv hd (hΘ.subst₀ (Subst₀.LevelEquiv.single (Term.LevelEquiv.refl _))) hts⟩
 
 /-! ## Terms Equal up to the Values of Their Levels
 
@@ -77,12 +77,14 @@ abbrev RunLevelRel.LevelInvariant (L : RunLevelRel) : Prop :=
   ∀ {v : Term 0 []} {R : RunRel}, L v R → R.LevelInvariant
 
 /-- `®⇓(R₂)` relates a term whose levels change for equal ones to an address that `®⇓(R₁)` relates
-the term to, when `R₂` relates so the canonical terms that `R₁` relates. -/
+the term to, when `R₂` relates so the canonical terms that `R₁` relates, in a signature whose names
+are distinct. -/
 theorem RunRel.computed_levelEquiv {sig : Signature} {ι : Interpretation} {R₁ R₂ : RunRel}
-    {H : Heap} (h : ∀ v v' a, R₁ H v a → Term.LevelEquiv v v' → R₂ H v' a) {t t' : Term 0 []}
-    {a : Nat} : R₁.computed sig ι H t a → Term.LevelEquiv t t' → R₂.computed sig ι H t' a :=
+    {H : Heap} (hd : sig.Distinct) (h : ∀ v v' a, R₁ H v a → Term.LevelEquiv v v' → R₂ H v' a)
+    {t t' : Term 0 []} {a : Nat} :
+    R₁.computed sig ι H t a → Term.LevelEquiv t t' → R₂.computed sig ι H t' a :=
   fun ⟨_, hc, hv⟩ ht =>
-    have ⟨v', hc', hvv⟩ := Computes.levelEquiv hc ht
+    have ⟨v', hc', hvv⟩ := Computes.levelEquiv hd.interpret hc ht
     ⟨v', hc', h _ _ a hv hvv⟩
 
 /-- The relation of run time of the terms of the fields of a telescope `x : A, Θ` relates terms
@@ -131,7 +133,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         (fun _ => Nest.map_rel₃
           (r := fun (x y _ : RunNestLeaf) => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' →
             y.2 H t' a)
-          (fun D' H _ _ _ => RunRel.computed_levelEquiv (hXY D' H)) _) H
+          (fun D' H _ _ _ => RunRel.computed_levelEquiv hd (hXY D' H)) _) H
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
       fun X Y hXY T hT c hc H => RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m)
@@ -155,7 +157,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         | corec _ _ _ _ hl has hss hSs hgs =>
           refine ⟨_, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩,
             RunDesRel.rel_levelEquiv hd ih (hS X T hT) _ _ (hS _ T hT)
-              (fun _ => Option.rel_map (fun D' _ _ _ _ => RunRel.computed_levelEquiv
+              (fun _ => Option.rel_map (fun D' _ _ _ _ => RunRel.computed_levelEquiv hd
                 fun _ _ _ h hv => ⟨_, hv, h⟩) _) H _ _ a ho fun d _ => ?_⟩
           exact .obs _ _ _ d hl (has.rename _)
             (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _),
@@ -192,7 +194,7 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         (fun t t' a ⟨htt, hr⟩ ht => ⟨hFt t t' htt ht,
           fun hp => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR (hr hp) ht)⟩)
         fun t t' _ ⟨htt, _⟩ ht => RunTelRel.rel_levelEquiv hd ih (hG t htt) _ _
-          (RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hG' t' (hFt t t' htt ht))
+          (RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hG' t' (hFt t t' htt ht))
             ((Telescope.LevelEquiv.refl _).subst₀ (Subst₀.LevelEquiv.single ht.symm))
             (fun _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
           (fun i => hRs (i + 1)) H
@@ -243,7 +245,7 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
         cases hT
         cases has
-        refine fun H _ _ _ => RunRel.computed_levelEquiv fun v v' a hv hvv => ?_
+        refine fun H _ _ _ => RunRel.computed_levelEquiv hd fun v v' a hv hvv => ?_
         obtain ⟨o, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩, ho⟩ := hv
         cases hvv with
         | corec _ _ _ _ hl has hss hSs hgs =>
@@ -326,7 +328,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunNestDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunNestDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+            (RunNestDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
               (hG' _ ((hEE _ _).1 h₁')) (Destructors.LevelEquiv.refl _)
               (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm)
               (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
@@ -414,7 +416,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) (hG' _ ((hEE _ _).1 h₁'))
+            (RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hG' _ ((hEE _ _).1 h₁'))
               (Destructors.LevelEquiv.refl _) (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm))
             (fun i => hRs (i + 1)) H o o' a h₃ e⟩
     | recursive _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
@@ -446,8 +448,8 @@ theorem RunFieldRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : 
     {v : Term 0 []} {R : RunRel} :
     RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v R → R.LevelInvariant
   | .univ h =>
-    RunRel.computed_levelEquiv fun _ _ _ hv hvv => RunUnivRel.rel_levelEquiv hd ih h hv hvv
-  | .univBelow m hm h => RunRel.computed_levelEquiv fun _ _ _ hv hvv => ih m hm h hv hvv
+    RunRel.computed_levelEquiv hd fun _ _ _ hv hvv => RunUnivRel.rel_levelEquiv hd ih h hv hvv
+  | .univBelow m hm h => RunRel.computed_levelEquiv hd fun _ _ _ hv hvv => ih m hm h hv hvv
   | .prop _ => fun _ _ => trivial
   | .propBelow _ _ _ => fun _ _ => trivial
 termination_by structural h => h
@@ -479,7 +481,7 @@ theorem RunsAs.term_levelEquiv {sig : Signature} {ι : Interpretation} {P : Prog
     (ht : Term.LevelEquiv t t') : RunsAs sig ι P H t a A → RunsAs sig ι P H t' a A
   | ⟨v, hA, .inl hp⟩ => ⟨v, hA, .inl hp⟩
   | ⟨v, hA, .inr ⟨R, hR, hr⟩⟩ =>
-    ⟨v, hA, .inr ⟨R, hR, RunRel.computed_levelEquiv (fun _ _ _ h hw => hR.rel_levelEquiv hd h hw)
+    ⟨v, hA, .inr ⟨R, hR, RunRel.computed_levelEquiv hd (fun _ _ _ h hw => hR.rel_levelEquiv hd h hw)
       hr ht⟩⟩
 
 end Sic.Core

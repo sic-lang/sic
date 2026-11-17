@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Results.Substitution
 
 /-!
 # Typing at Instantiated Levels
@@ -165,14 +166,16 @@ where
       rw [Term.ctor_substLevels]
       exact .ctor h hc hq _ hp hadm has' hts'
     | .recursor (ls := ls) (as := as) (t := t) (Cs := Cs) (us := us) (κ := κ) h hq hl hp hadm has
-        ht hh hC hCl hCs hCt hul hus hut hκ => by
+        ht hh hC hCl hCs hCt hul hus hRs hut hκ => by
+      rename_i Rs
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
         (fun x => by cases x <;> rfl)]
-      refine .recursor (κ := κ.substLevels ls') h hq _ hp hadm has' (hasType ls' ht) hh
-        (Motives.get_substLevels_of ls' hC) ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
-        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ hκ
+      refine .recursor (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hq _
+        hp hadm has' (hasType ls' ht) hh (Motives.get_substLevels_of ls' hC)
+        ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
+        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs j T' hj
         exact ⟨_, Motives.get_substLevels_of ls' hC'⟩
@@ -182,11 +185,12 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv ls' hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu
-        have ih := hasType ls' (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀)
+        have ih := hasType ls' (hut i j T' con C₀ u₀ hi hC₀ hu₀)
         rw [Context.substLevels_append, Context.substLevels_append,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename,
           Term.atCtor_substLevels ls' C₀,
@@ -282,19 +286,20 @@ where
       rw [Term.ctor_substLevels, Term.ctor_substLevels]
       exact .ctor h hc hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls) hts'
     | .recursor (ls₁ := ls) (t₁ := t) (Cs₁ := Cs₁) (Cs₂ := Cs₂) (us₁ := us₁) (us₂ := us₂) (κ := κ)
-        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes hut
-        hκ => by
+        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes hRs₁ hRs₂ hut hκ => by
+      rename_i Rs₁ Rs₂
       have has' := eqInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
         (fun x => by cases x <;> rfl)]
-      refine .recursor (κ := κ.substLevels ls') h hq _ _ hp hadm has'
-        (Level.getFin_map_subst_equal ls' hls) (eqTerm ls' ht) hh
+      refine .recursor (κ := κ.substLevels ls') (Rs₁ := fun con => (Rs₁ con).substLevels ls')
+        (Rs₂ := fun con => (Rs₂ con).substLevels ls') h hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls) (eqTerm ls' ht) hh
         (Motives.get_substLevels_of ls' hC) ((Motives.length_substLevels ls' Cs₁).trans hCl₁)
         ((Motives.length_substLevels ls' Cs₂).trans hCl₂) ?_ ?_ ?_
         ((Branches.length_substLevels ls' us₁).trans hul₁)
         ((Branches.length_substLevels ls' us₂).trans hul₂) ?_ ?_
-        (by funext i; rw [Branches.grades_substLevels, Branches.grades_substLevels, hes]) ?_ hκ
+        (by funext i; rw [Branches.grades_substLevels, Branches.grades_substLevels, hes]) ?_ ?_ ?_
+        hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs₁ j T' hj
         exact ⟨_, Motives.get_substLevels_of ls' hC'⟩
@@ -311,12 +316,15 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus₂ i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
-      · intro i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs₁ i j T' con hi)
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs₂ i j T' con hi)
+      · intro i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv ls' hR
         obtain ⟨u₁₀, hu₁₀, rfl⟩ := Branches.get_substLevels ls' hu₁
         obtain ⟨u₂₀, hu₂₀, rfl⟩ := Branches.get_substLevels ls' hu₂
-        have ih := eqTerm ls' (hut i j T' con C₀ R₀ u₁₀ u₂₀ hi hC₀ hR₀ hu₁₀ hu₂₀)
+        have ih := eqTerm ls' (hut i j T' con C₀ u₁₀ u₂₀ hi hC₀ hu₁₀ hu₂₀)
         rw [Context.substLevels_append, Context.substLevels_append,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename,
           Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl₁] at ih
@@ -392,24 +400,24 @@ where
           Term.substLevels_substLevels_getFin] at ih
         exact ih
     | .iota (r := r) (ς := ς) (χ := χ) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as)
-        (Cs := Cs) (us := us) (κ := κ) h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ => by
+        (Cs := Cs) (us := us) (κ := κ) h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt
+        hul hus hRs hut hκ => by
+      rename_i Rs
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       have hts' := hasArgs ls' hts
       rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels ls' _))
           (fun x => by cases x <;> rfl),
-        Term.substLevels_instantiate, Term.substLevels_instantiate, Args.substLevels_rename,
-        Args.results_substLevels ls' (f' := fun D' t => .recursor r ς χ D' qs
-          (ls.map (Level.subst ls')) ps (as.substLevels ls') t (κ.substLevels ls') (Cs.substLevels ls')
-          (us.substLevels ls')) (fun _ _ => rfl)]
+        Term.substLevels_instantiate, Term.substLevels_instantiate, Args.substLevels_rename]
       show EqTerm sig _ (.recursor _ _ _ _ _ _ _ _ (Term.substLevels ls' (.ctor _ _ _ _ _ _ _)) _ _ _)
         _ _
       rw [Term.ctor_substLevels]
-      refine .iota (κ := κ.substLevels ls') h hc hq _ hp hadm has' hts' hi
-        (Motives.get_substLevels_of ls' hC) (Branches.get_substLevels_of ls' hu)
+      refine .iota (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hc hq _
+        hp hadm has' hts' hi (Motives.get_substLevels_of ls' hC)
+        (Branches.get_substLevels_of ls' hu) (hrs.substLevels_recursorAt ls')
         ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
-        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ hκ
+        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs j T' hj
         exact ⟨_, Motives.get_substLevels_of ls' hC'⟩
@@ -419,18 +427,20 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv ls' hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu
-        have ih := hasType ls' (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀)
+        have ih := hasType ls' (hut i j T' con C₀ u₀ hi hC₀ hu₀)
         rw [Context.substLevels_append, Context.substLevels_append,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename,
           Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl] at ih
         exact ih
     | .etaCtor (D := D) (T := T) (con := con) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t)
         (e := e) (Cs := Cs) (us := us) (κ := κ) h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs
-        hCt hul hus hut hκ => by
+        hCt hul hus hRs hut hκ => by
+      rename_i Rs
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       have hu' := Branches.get_substLevels_of ls' hu
@@ -444,10 +454,10 @@ where
           (fun x => by cases x <;> rfl),
         Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
           (fun x => by cases x <;> rfl)]
-      refine .etaCtor (κ := κ.substLevels ls') h hc hq _ hp hadm hr has' (hasType ls' ht)
-        (hasType ls' he) hi (Motives.get_substLevels_of ls' hC) hu'
-        ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
-        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ hκ
+      refine .etaCtor (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hc hq
+        _ hp hadm hr has' (hasType ls' ht) (hasType ls' he) hi (Motives.get_substLevels_of ls' hC)
+        hu' ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
+        ((Branches.length_substLevels ls' us).trans hul) ?_ ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs j T' hj
         exact ⟨_, Motives.get_substLevels_of ls' hC'⟩
@@ -457,11 +467,12 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv ls' hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu
-        have ih := hasType ls' (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀)
+        have ih := hasType ls' (hut i j T' con C₀ u₀ hi hC₀ hu₀)
         rw [Context.substLevels_append, Context.substLevels_append,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename,
           Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl] at ih

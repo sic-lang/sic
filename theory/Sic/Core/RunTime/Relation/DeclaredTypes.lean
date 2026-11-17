@@ -77,7 +77,7 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain
+    RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain
   have hplain : ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' := by
     have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧ κ₁.level.closedValue ≤ n ∧
         ValidEqTerm₀ sig ι A A (.sort κ₁)) →
@@ -159,7 +159,7 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain
+    RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain
   -- An instance of a declared type is a type without position, whose equality relates the term to
   -- itself: the graph of run time then relates what the graph of the nestings does.
   have hsort : (∃ νs, τ = .inst νs) → RunsAs sig ι P H t b A := fun hi => by
@@ -419,7 +419,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
     let X : Name → RunRel := DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S
     obtain ⟨S', h₁, -⟩ := hF.runTelRel hd P hs fun D' => (X D').computed sig ι
-    have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hΘ
+    have h₁' := hn ▸ RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ hΘ
       (fun _ => Nest.map_rel₃
         (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
         (f := fun D' => (((decl.blockInstance (.ofLists qs ps hq hp) D'
@@ -440,7 +440,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               (X D').computed sig ι)) := fun j =>
       Nest.All.map_rel₃ (fun D' hD' => by
           obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-          exact hn ▸ RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+          exact hn ▸ RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
             (.plain (hw _) (.univ (hU T' hT').1))
             (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm .plain)
         (Telescope.nestAt_all decl.names _ j)
@@ -451,7 +451,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ((hs ▸ hv.nestHeads hd hdecl hT hc hq hl hp hadm has).imp
         fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ _
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts hE bs
-      (hbs.levelEquiv hΘ.symm)
+      (RunsAsArgs.levelEquiv hd hΘ.symm hbs)
     exact (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
       (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
@@ -523,7 +523,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (fun _ => Nest.map_rel₃
         (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hX D' H)) _) H H rfl _ _ h
   obtain ⟨S', h₁, -⟩ := hF.runTelRel hd P hs fun D' => (Y D').computed sig ι
-  have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hΘ
+  have h₁' := hn ▸ RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ hΘ
     (fun _ => Nest.map_rel₃
       (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D' => (((decl.blockInstance (.ofLists qs ps hq hp) D'
@@ -546,16 +546,16 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
             (Y D').computed sig ι)) := fun j =>
     Nest.All.map_rel₃ (fun D' hD' => by
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-        exact hn ▸ RunNestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+        exact hn ▸ RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
           (.plain (hw _) (.univ (hU T' hT')))
           (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm .plain)
       (Telescope.nestAt_all decl.names _ j)
   have hE : EqSubst sig ι (Context.empty.append (((con.fields (.ofLists qs ps hq hp)).atLevels
       fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) ts.toSubst ts.toSubst :=
     EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘ.symm) hts
-  exact (RunsAsArgs.of_runTelRel h₁
+  exact RunsAsArgs.levelEquiv hd hΘ (RunsAsArgs.of_runTelRel h₁
     ((hs ▸ hv.nestHeads hd hdecl hT hc hq hl hp hadm has).imp
-      fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ g hg ts hE bs hS').levelEquiv hΘ
+      fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ g hg ts hE bs hS')
 
 -- ADE: none.
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,

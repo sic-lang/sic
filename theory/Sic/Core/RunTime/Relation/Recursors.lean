@@ -7,6 +7,7 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Recursors.Results
 import Sic.Core.RunTime.Relation.Skeleton
 import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
@@ -694,6 +695,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hns : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ .inst ms)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
@@ -951,10 +954,24 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   rw [hC'] at hC''
   cases hC''
   -- The recursor on the constructor steps to the branch, at the motive at the constructor.
+  have hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς, χ'⟩ con (.ofLists qs ps hq hp) decl.names
+      (ls.getFin hl) (as.subst σ)
+      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level (Cs.subst σ))
+      (Term.recursorAt r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ)) ts
+      (ts.results (fun D'' t => .recursor r ς χ' D'' qs ls ps (as.subst σ) t κ (Cs.subst σ)
+        (us.subst σ)) ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) := by
+    have h := Constructor.resultTerms_results (sig := sig) (v := ⟨κ.quality, r, ς, χ'⟩)
+      (names := decl.names) (ls.getFin hl) (as.subst σ)
+      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level (Cs.subst σ))
+      (Term.recursorAt r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ)) ts
+      (hns i j T' con hi)
+    rw [funext fun D'' => funext fun t =>
+      Term.recursorAt_subst₀ r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ) D'' t] at h
+    exact h
   rw [Term.subst_append_rename_weakenN, Term.atCtor_subst_append] at hrun
   have hrun₁ := (RunsAs.redStar_iff hd
     (.step (Red.iota_subst (D' := T'.name) (qs'' := qs') (ls'' := ls') (ps'' := ps') (as := as')
-      ⟨hdecl, hT', rfl⟩ hi σ hq hp ts hu) (.refl _))).2 hrun
+      ⟨hdecl, hT', rfl⟩ hi σ hq hl hp ts hu hrs) (.refl _))).2 hrun
   have hca : ValidEqTerm₀ sig ι
       (.ctor T'.name qs ls ps (as.subst σ) con.name ts.terms)
       (.ctor T'.name qs' ls' ps' as' con.name ts.terms) (.inst T'.name qs ls ps (as.subst σ)) :=
@@ -980,6 +997,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hns : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ .inst ms)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
@@ -1056,7 +1075,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     rw [hidx j T' hj] at hC'
     obtain ⟨v, H₃, tr, hev, hH₃, hrun⟩ := RunsAs.recursor_ctor (ϱ := ϱ) hd ⟨hdecl, hT, rfl⟩ hv hadm
       has hCs
-      hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi' hw hwv hHH' ϖ' (hH'.getElem? ha)
+      hCv hus hns hrec husr hg hχ hs hσ hEV hE hj hcon hi' hw hwv hHH' ϖ' (hH'.getElem? ha)
       (fun l p hlp => ⟨_, by rw [List.getElem?_map, hlp]; rfl,
         (by decide : ∀ π π' : Multiplicity, π * π' ≤ π * π') _ _⟩)
       (fun l p hlp => ⟨_, _, by rw [List.getElem?_map, hlp]; rfl,
@@ -1149,6 +1168,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hns : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ .inst ms)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
@@ -1282,7 +1303,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       rw [Targets.requirements_ofList, List.getElem?_map, List.getElem?_eq_getElem (by simpa using hl)]
       rfl
     obtain ⟨b, H₄, tr, hevr, hH₄, hrun⟩ := RunsAs.recursor_ctor hd ⟨hdecl, hT, rfl⟩ hv hadm has
-      hCs hCv hus hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH' ϖ''
+      hCs hCv hus hns hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH' ϖ''
       (hH'.getElem? List.getElem?_concat_length) hπv hκv
       (fun l hl => by
         -- The fields of the skeleton, which the recursor does not use, state nothing of the
@@ -1368,6 +1389,8 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hns : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ .inst ms)
     (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
       ∀ σ, EqSubst sig ι ctx σ σ → ∀ t,
       ValidTerm₀ sig ι t ((Term.inst T'.name qs ls ps as).subst σ) →
@@ -1433,7 +1456,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         exact (by decide : ∀ r : Grade, r ∈ Mode.oneOne.erased → r.mode ≠ .oneOne) r hrS
           (hr ⟨T', hT', h2⟩)
       obtain ⟨a, H₂, b, H₃, tr, hev, hevr, hH₃, hrun⟩ := RunsAs.recursor_skeleton hd h hv hadm
-        has hh hC hCs hCv hus hrec husr hg' hχ hs hrS h1 hσ hEV hEχ (List.prefix_refl H) w htσ
+        has hh hC hCs hCv hus hns hrec husr hg' hχ hs hrS h1 hσ hEV hEχ (List.prefix_refl H) w htσ
       refine ⟨b, H₃, [] ++ tr, ?_, hH₃, hrun⟩
       show Eval P w H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _)
         (if r ∈ Mode.oneOne.erased then _ else _) _) b H₃ _
@@ -1443,7 +1466,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       have hγ : RunsAsSubst sig ι P H ctx γ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
         h (hS.mul _ _ hrS (hS.add _ _ h'))) hE
       obtain ⟨a, H₁, tr₁, hev, hH₁, hta⟩ := htr hrS (w * r.run) σ H E V hσ hEV hγ
-      obtain ⟨b, H₂, tr₂, hevr, hH₂, hrun⟩ := RunsAs.recursor hd h hv hadm has hh hC hCs hCv hus
+      obtain ⟨b, H₂, tr₂, hevr, hH₂, hrun⟩ := RunsAs.recursor hd h hv hadm has hh hC hCs hCv hus hns
         hrec husr hg' hχ hs hrS hσ hEV hEχ hH₁ w htσ hta
       refine ⟨b, H₂, tr₁ ++ tr₂, ?_, hH₁.trans hH₂, hrun⟩
       show Eval P w H E (.recursor _ (if r ∈ Mode.oneOne.erased then _ else _)

@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Results.Substitution
 
 /-!
 # Lifted Substitutions of the Typing
@@ -249,11 +250,13 @@ where
       rw [← Constructor.fieldsAt_subst]
       exact hasArgs hts hθ
     | .recursor (as := as) (t := t) (Cs := Cs) (us := us) (C := C) h hq hl hp hadm has ht hh hC hCl
-        hCs hCt hul hus hut hκ, hθ => by
+        hCs hCt hul hus hRs hut hκ, hθ => by
+      rename_i Rs
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single t _)]
-      refine .recursor h hq hl hp hadm (hasInstanceArgs has hθ) (hasType ht hθ) hh
+      refine .recursor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hq hl hp hadm
+        (hasInstanceArgs has hθ) (hasType ht hθ) hh
         (Motives.get_subst _ hC) ((Motives.length_subst _ Cs).trans hCl) ?_ ?_
-        ((Branches.length_subst _ us).trans hul) ?_ ?_ hκ
+        ((Branches.length_subst _ us).trans hul) ?_ ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs j T' hj
         exact ⟨_, Motives.get_subst _ hC'⟩
@@ -264,11 +267,13 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_subst_inv _ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv _ hu
-        have ih := hasType (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀) ((hθ.append _).append _)
+        have ih := hasType (hut i j T' con C₀ u₀ hi hC₀ hu₀) ((hθ.append _).append _)
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst _ C₀] at ih
         exact ih
     | .obs (as := as) (t := t) (ls := ls) (qs := qs) (ps := ps) (D := D) (Θ := Θ) (B := B) (bs := bs)
@@ -338,14 +343,16 @@ where
       rw [← Constructor.fieldsAt_subst]
       exact eqArgs hts hθ
     | .recursor (as₁ := as) (t₁ := t) (Cs₁ := Cs₁) (Cs₂ := Cs₂) (us₁ := us₁) (us₂ := us₂)
-        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes hut
-        hκ, hθ => by
+        h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
+        hRs₁ hRs₂ hut hκ, hθ => by
+      rename_i Rs₁ Rs₂
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
-      refine .recursor h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls (eqTerm ht hθ) hh
+      refine .recursor (Rs₁ := fun con => (Rs₁ con).subst (Subst.liftN _ θ))
+        (Rs₂ := fun con => (Rs₂ con).subst (Subst.liftN _ θ)) h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls (eqTerm ht hθ) hh
         (Motives.get_subst θ hC) ((Motives.length_subst θ Cs₁).trans hCl₁)
         ((Motives.length_subst θ Cs₂).trans hCl₂) ?_ ?_ ?_ ((Branches.length_subst θ us₁).trans hul₁)
         ((Branches.length_subst θ us₂).trans hul₂) ?_ ?_
-        (by funext i; rw [Branches.grades_subst, Branches.grades_subst, hes]) ?_ hκ
+        (by funext i; rw [Branches.grades_subst, Branches.grades_subst, hes]) ?_ ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs₁ j T' hj
         exact ⟨_, Motives.get_subst θ hC'⟩
@@ -363,12 +370,17 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus₂ i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
-      · intro i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.subst (hRs₁ i j T' con hi)
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _)
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.subst (hRs₂ i j T' con hi)
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _)
+      · intro i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_subst_inv θ hR
         obtain ⟨u₁₀, hu₁₀, rfl⟩ := Branches.get_subst_inv θ hu₁
         obtain ⟨u₂₀, hu₂₀, rfl⟩ := Branches.get_subst_inv θ hu₂
-        have ih := eqTerm (hut i j T' con C₀ R₀ u₁₀ u₂₀ hi hC₀ hR₀ hu₁₀ hu₂₀)
+        have ih := eqTerm (hut i j T' con C₀ u₁₀ u₂₀ hi hC₀ hu₁₀ hu₂₀)
           ((hθ.append _).append _)
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
         exact ih
@@ -420,17 +432,17 @@ where
             (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss₁ gs₁ ps''))] at ih
         exact ih
     | .iota (r := r) (ς := ς) (χ := χ) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as)
-        (κ := κ) (Cs := Cs) (us := us) h hc hq hl hp hadm has hts hi hC hu hCl hCs hCt hul hus hut hκ,
-        hθ => by
+        (κ := κ) (Cs := Cs) (us := us) h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus
+        hRs hut hκ, hθ => by
+      rename_i Rs
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ), Term.instantiate_subst,
-        Term.instantiate_subst, Args.subst_liftN_rename_weakenN,
-        Args.results_subst θ (f' := fun D' t => .recursor r ς χ D' qs ls ps (as.subst θ) t κ
-          (Cs.subst θ) (us.subst θ)) (fun _ _ => rfl)]
+        Term.instantiate_subst, Args.subst_liftN_rename_weakenN]
       show EqTerm sig ctx' (.recursor _ _ _ _ _ _ _ _ (Term.subst θ (.ctor _ _ _ _ _ _ _)) _ _ _) _ _
       rw [Term.ctor_subst]
-      refine .iota h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_ hi (Motives.get_subst θ hC)
-        (Branches.get_subst θ hu) ((Motives.length_subst θ Cs).trans hCl) ?_ ?_
-        ((Branches.length_subst θ us).trans hul) ?_ ?_ hκ
+      refine .iota (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hq hl hp hadm
+        (hasInstanceArgs has hθ) ?_ hi (Motives.get_subst θ hC) (Branches.get_subst θ hu)
+        (Constructor.ResultTerms.subst_recursorAt θ hrs) ((Motives.length_subst θ Cs).trans hCl)
+        ?_ ?_ ((Branches.length_subst θ us).trans hul) ?_ ?_ ?_ hκ
       · rw [← Constructor.fieldsAt_subst]
         exact hasArgs hts hθ
       · intro j T' hj
@@ -443,16 +455,19 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_subst_inv θ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv θ hu
-        have ih := hasType (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀) ((hθ.append _).append _)
+        have ih := hasType (hut i j T' con C₀ u₀ hi hC₀ hu₀) ((hθ.append _).append _)
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
         exact ih
     | .etaCtor (D := D) (T := T) (con := con) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t)
         (e := e) (Cs := Cs) (us := us) (i := i) h hc hq hl hp hadm hr has ht he hi hC hu hCl
-        hCs hCt hul hus hut hκ, hθ => by
+        hCs hCt hul hus hRs hut hκ, hθ => by
+      rename_i Rs
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ),
         Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
       have hu' := Branches.get_subst θ hu
@@ -462,8 +477,10 @@ where
           (e.subst (Subst.lift θ)).atCtor T.name qs ls ps (as.subst θ) con.name
             (con.params (.ofLists qs ps hq hp)) from Term.atCtor_subst θ e _ _ _ _ _ _ _] at hu'
       have he' := hasType he (hθ.var (.inst D qs ls ps as))
-      refine .etaCtor h hc hq hl hp hadm hr (hasInstanceArgs has hθ) (hasType ht hθ) he' hi (Motives.get_subst θ hC) hu'
-        ((Motives.length_subst θ Cs).trans hCl) ?_ ?_ ((Branches.length_subst θ us).trans hul) ?_ ?_ hκ
+      refine .etaCtor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hq hl hp hadm hr
+        (hasInstanceArgs has hθ) (hasType ht hθ) he' hi (Motives.get_subst θ hC) hu'
+        ((Motives.length_subst θ Cs).trans hCl) ?_ ?_ ((Branches.length_subst θ us).trans hul) ?_
+        ?_ ?_ hκ
       · intro j T' hj
         obtain ⟨C', hC'⟩ := hCs j T' hj
         exact ⟨_, Motives.get_subst θ hC'⟩
@@ -474,11 +491,13 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
-      · intro i j T' con C' R u hi hC' hR hu
+      · intro i j T' con hi
+        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _)
+      · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_subst_inv θ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv θ hu
-        have ih := hasType (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀) ((hθ.append _).append _)
+        have ih := hasType (hut i j T' con C₀ u₀ hi hC₀ hu₀) ((hθ.append _).append _)
         rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
         exact ih
     | .beta (r := r) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (Ss := Ss) (gs := gs)

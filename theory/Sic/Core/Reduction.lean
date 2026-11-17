@@ -1,8 +1,11 @@
 module
 
 public import Sic.Core.Prelude
+public import Sic.Core.Results
 public import Sic.Core.Substitution.Levels
+import Sic.Core.Results.Functionality
 import Sic.Core.Syntax.Signature
+import Sic.Core.Syntax.Terms
 
 /-!
 # Reduction
@@ -103,17 +106,21 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   RFC: `\iota_{\longrightarrow}` -/
   | iota {decl : TypeDeclaration} {i j : Nat}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope}
-      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope}
+      {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {Δ : Scope}
       {r ς χ : Grade} {κ : Universe k}
       {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)} {ps ps' : List Grade}
-      {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ Δ'} {c : Name} {ts : Terms k Γ}
+      {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ decl.scope} {c : Name}
       {Cs : Motives k Γ} {us : Branches k Γ} {n m : Nat} {u : Term k ((Γ.extend n).extend m)}
       {v : Term k Γ} (h : .typeDeclaration decl ∈ sig) (hi : decl.cases[i]? = some (j, T, con))
       (hD : T.name = D) (hc : con.name = c) (hq : qs'.length = decl.sorts)
-      (hp : ps'.length = decl.grades) (hu : us.get i = some ⟨n, m, u⟩)
-      (hv : u.instantiateTerms₂ ts (ts.results (fun D'' t => .recursor r ς χ D'' qs' ls' ps' as' t κ Cs us)
-        ((con.fields (.ofLists qs' ps' hq hp)).recursion decl.names)) = some v) :
-      Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c ts) κ Cs us) v
+      (hl : ls'.length = decl.levels) (hp : ps'.length = decl.grades)
+      {ts : Args k Γ (con.params (.ofLists qs' ps' hq hp))} {psr : List Parameter}
+      {rs : Args k Γ psr} (hu : us.get i = some ⟨n, m, u⟩)
+      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs' ps' hq hp)
+        decl.names (ls'.getFin hl) as' (Lifting.ofMotives decl.names qs' ls' ps' as' κ.level Cs)
+        (Term.recursorAt r ς χ qs' ls' ps' as' κ Cs us) ts rs)
+      (hv : u.instantiateTerms₂ ts.terms rs.terms = some v) :
+      Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c ts.terms) κ Cs us) v
   -- ADE: `natrec-subst`, `prodrec-subst`, `unitrec-subst` and `emptyrec-subst`, in
   -- `Definition/Typed.agda`.
   /-- A recursor reduces the term it eliminates.
@@ -209,22 +216,34 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
         (by simp [Entry.names, hx])
       cases he
       rfl
-  | iota h₁ hi₁ hD₁ hc₁ _ _ hu₁ hv₁ =>
+  | iota h₁ hi₁ hD₁ hc₁ _ _ _ hu₁ hrs₁ hv₁ =>
+    generalize hx : Term.recursor _ _ _ _ _ _ _ _ _ _ _ _ = x at h₂
     cases h₂ with
-    | iota h₂ hi₂ hD₂ hc₂ _ _ hu₂ hv₂ =>
+    | iota h₂ hi₂ hD₂ hc₂ _ _ _ hu₂ hrs₂ hv₂ =>
+      simp only [Term.recursor.injEq, Term.ctor.injEq] at hx
+      obtain ⟨-, rfl, rfl, rfl, rfl, rfl, rfl, rfl, has, ⟨rfl, rfl, rfl, rfl, rfl, -, rfl, hts⟩,
+        rfl, rfl, rfl⟩ := hx
       have hT₁ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₁)).1
       have hT₂ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₂)).1
       have he := hsig.entry_unique h₁ h₂ (TypeDeclaration.name_mem_names hT₁)
         (by rw [hD₁, ← hD₂]; exact TypeDeclaration.name_mem_names hT₂)
       cases he
+      cases eq_of_heq has
       have hi := List.getElem?_inj_of_nodup_map (hsig.cases_nodup h₁) hi₁ hi₂
         (by simp only [hD₁, hD₂, hc₁, hc₂])
       subst hi
       cases Option.some.inj (hi₁.symm.trans hi₂)
-      have hu := Option.some.inj (hu₁.symm.trans hu₂)
-      cases hu
+      obtain rfl := Args.terms_inj hts
+      cases Option.some.inj (hu₁.symm.trans hu₂)
+      cases Terms.ResultTerms.unique hsig hrs₁ hrs₂
       exact Option.some.inj (hv₁.symm.trans hv₂)
-    | recursor h => exact (Whnf.not_red hsig (.ctor ..) h).elim
+    | delta => cases hx
+    | beta => cases hx
+    | obs => cases hx
+    | recursor h =>
+      simp only [Term.recursor.injEq] at hx
+      obtain ⟨-, -, -, -, -, -, -, -, -, rfl, -⟩ := hx
+      exact (Whnf.not_red hsig (.ctor ..) h).elim
   | recursor h₁ ih =>
     cases h₂ with
     | iota => exact (Whnf.not_red hsig (.ctor ..) h₁).elim

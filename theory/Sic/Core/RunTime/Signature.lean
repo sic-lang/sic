@@ -7,6 +7,7 @@ import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.Levels
 import Sic.Core.Soundness.Closed
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
 
 /-!
@@ -103,7 +104,8 @@ when the interpretation gives the constant declarations of `Σ` terms of their t
 definition by the fundamental lemma of its body, typed in the signature before it, whose constants
 are realized by induction, and a constant declaration by `(hyp_𝒫)`. -/
 theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
-    (hι : ValidInterpretation ι sigM) (hd : sigM.Distinct) (hP : ValidProgram ι P sigM) :
+    (hι : ValidInterpretation ι sigM) (hd : sigM.Distinct) (hord : sigM.LiftsInOrder)
+    (hP : ValidProgram ι P sigM) :
     (sig : Signature) → WfSig sig → UsageSig sig → sig <:+ sigM → P.Realizes sigM ι sig
   | [], _, _, _ => fun h => by
     generalize hm : Mode.oneOne = m at h
@@ -114,7 +116,7 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
     have hw := Presuppositions.tail presuppositions h
     have hu' : UsageSig sig := by cases hu <;> assumption
     have hrest : P.Realizes sigM ι sig :=
-      WfSig.realizes hι hd hP sig hw hu' ((List.suffix_cons e sig).trans hs)
+      WfSig.realizes hι hd hord hP sig hw hu' ((List.suffix_cons e sig).trans hs)
     intro hc qs ls ps hq hl hp
     generalize hm : Mode.oneOne = m at hc
     cases hc with
@@ -129,8 +131,8 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         cases hu with
         | constantDefinition _ hus =>
         rename_i d
-        have hent := WfSig.validEntries hι hd sig hw ((List.suffix_cons _ sig).trans hs)
-        have hf := fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hent hrest
+        have hent := WfSig.validEntries hι hd hord sig hw ((List.suffix_cons _ sig).trans hs)
+        have hf := fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hord hent hrest
           (ht (.ofLists qs ps hq hp)) (hm ▸ hus (.ofLists qs ps hq hp))
           fun i => (ls.getFin hl i).closedValue
         intro w σ H E V hσ hEV hE
@@ -151,7 +153,7 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
           have hred := (Red.delta (Γ := []) (hs.subset hc) hq hl hp).interpret (ι := ι)
           rw [Signature.instanceType, Term.weakenClosed_nil] at hred
           exact (RunsAs.redStar_iff hd (.step hred (.refl _))).2
-            ((hr.levelEquiv (Term.substLevels_levelEquiv_atLevels _ _).symm).term_levelEquiv hd
+            ((hr.levelEquiv hd (Term.substLevels_levelEquiv_atLevels _ _).symm).term_levelEquiv hd
               (Term.substLevels_levelEquiv_atLevels _ _).symm)
       · rename_i d
         have hc'' : Signature.HasConstant sig d.name d.sorts d.levels d.grades .oneOne d.ownership d.type :=
@@ -188,11 +190,13 @@ gives its own entries their meaning and the program realizes its constants of th
 theorem fundamental : Fundamental where
   hasType hι hP hu h hut :=
     have hw := presuppositions.hasType h
-    fundamentalIn.hasType hw.distinct (WfSig.validEntries hι hw.distinct _ hw (List.suffix_refl _))
-      (WfSig.realizes hι hw.distinct hP _ hw hu (List.suffix_refl _)) h hut
+    fundamentalIn.hasType hw.distinct hw.liftsInOrder
+      (WfSig.validEntries hι hw.distinct hw.liftsInOrder _ hw (List.suffix_refl _))
+      (WfSig.realizes hι hw.distinct hw.liftsInOrder hP _ hw hu (List.suffix_refl _)) h hut
   hasArgs hι hP hu h hut :=
     have hw := presuppositions.hasArgs h
-    fundamentalIn.hasArgs hw.distinct (WfSig.validEntries hι hw.distinct _ hw (List.suffix_refl _))
-      (WfSig.realizes hι hw.distinct hP _ hw hu (List.suffix_refl _)) h hut
+    fundamentalIn.hasArgs hw.distinct hw.liftsInOrder
+      (WfSig.validEntries hι hw.distinct hw.liftsInOrder _ hw (List.suffix_refl _))
+      (WfSig.realizes hι hw.distinct hw.liftsInOrder hP _ hw hu (List.suffix_refl _)) h hut
 
 end Sic.Core

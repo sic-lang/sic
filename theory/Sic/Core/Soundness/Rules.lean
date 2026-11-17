@@ -1006,13 +1006,13 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
       (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
       ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' := by
     rw [← hn]
-    exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hds (Subst.LevelEquiv.refl _)
+    exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ hds (Subst.LevelEquiv.refl _)
   have h₂' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
       (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
       (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
       ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S' := by
     rw [← hn]
-    exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ hds (Subst.LevelEquiv.refl _)
+    exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds (Subst.LevelEquiv.refl _)
   have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
     ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd ih h' _ _ h₁' o₁ o₂).1 hs, fun hs => ⟨S', h₁', hs⟩⟩
   rw [hS]
@@ -1117,7 +1117,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
           fun D' => (X D').computed sig ι)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' := by
       rw [← hn]
-      exact RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ hds
+      exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ hds
         (Subst.LevelEquiv.refl _)
     have h₂' : RunDesRel sig ι P
         ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
@@ -1126,7 +1126,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
           fun D' => (X D').computed sig ι)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S' := by
       rw [← hn]
-      exact RunDesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ hds
+      exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds
         (Subst.LevelEquiv.refl _)
     have hSS : S X T = S' := funext fun H => funext fun o => funext fun a => propext
       ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd ihm ih h' _ _ h₁'

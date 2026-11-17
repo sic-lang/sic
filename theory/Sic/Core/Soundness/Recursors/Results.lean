@@ -198,4 +198,86 @@ theorem EqSubst.resultTerms (hd : sig.Distinct)
                 ih (hs.ofSnoc (e := .var) _) hctx'
                   ((EqSubst.var_iff ..).2 ⟨hθ', he.trans he.symm⟩) hAs hxs hN₂ hS₂ hr₁ hr₂⟩
 
+/-! ## Recursive Results of a Constructor -/
+
+/-- Terms substituted by closed arguments of a telescope are these terms at the arguments. -/
+theorem Terms.subst_toSubst {ps : List Parameter} (ts : Args 0 [] ps) :
+    (As : Terms 0 (Scope.extend [] ps.length)) → As.subst ts.toSubst = As.subst₀ ts.toSubst₀
+  | .nil => rfl
+  | .cons A As => by
+    rw [Terms.subst, Terms.subst₀, Terms.subst_toSubst ts As, ← Term.instantiate_eq_subst,
+      Term.instantiate_eq_subst₀]
+
+/-- The types of the entries of a telescope, substituted by a closed substitution of its scope
+followed by closed arguments, are the types of the entries of the telescope substituted, at the
+arguments. -/
+theorem Telescope.types_subst_append {Γ : Scope} {ps : List Parameter} (σ : Subst 0 [] Γ)
+    (Θ : Telescope 0 Γ ps) (ts : Args 0 [] ps) :
+    Θ.types.subst (Subst.append σ ts.toSubst) = (Θ.subst σ).typesAt ts := by
+  rw [← Terms.subst_subst_of (fun x => (Subst.append_eq_liftN σ ts.toSubst x).symm),
+    ← Telescope.types_subst, Terms.subst_toSubst, Telescope.types_toSubst₀]
+
+/-- The variables of a telescope, substituted by a closed substitution of its scope followed by
+closed arguments, are the terms of the arguments. -/
+theorem Args.bound_terms_subst_append {Γ : Scope} {ps : List Parameter} (σ : Subst 0 [] Γ)
+    (ts : Args 0 [] ps) :
+    (Args.bound (Γ := Γ) ps).terms.subst (Subst.append σ ts.toSubst) = ts.terms := by
+  rw [← Terms.subst_subst_of (fun x => (Subst.append_eq_liftN σ ts.toSubst x).symm),
+    ← Args.terms_subst, Args.bound_subst, Terms.subst_toSubst, ← Args.terms_subst₀,
+    Args.bound_toSubst₀]
+
+/-- A lifting substituted by a closed substitution, under the variables of a telescope, is
+substituted by this substitution followed by closed arguments of the telescope. -/
+theorem Lifting.Substitutes.appendArgs {Γ : Scope} {ρ : Lifting 0 Γ Γ} {ρ₁ : Lifting 0 [] []}
+    {τ : Subst 0 [] Γ} (h : Lifting.Substitutes τ τ ρ ρ₁) {ps : List Parameter}
+    (ts : Args 0 [] ps) :
+    Lifting.Substitutes (Subst.append τ ts.toSubst) (Subst.append τ ts.toSubst)
+      (ρ.liftN ps.length) ρ₁ :=
+  have e : @Eq (Subst 0 [] (Γ.extend ps.length))
+      (fun {a} x => (Subst.liftN ps.length τ x).subst (Subst.liftN a.params.length ts.toSubst))
+      (Subst.append τ ts.toSubst) :=
+    Subst.ext fun x => (Subst.append_eq_liftN τ ts.toSubst x).symm
+  e ▸ (h.liftN ps.length).comp (Lifting.Substitutes.closedArgs ρ₁ ts)
+
+-- ADE: none.
+/-- The recursive results `r̄₁` and `r̄₂` of the closed terms `t̄₁` and `t̄₂` of the fields of a
+constructor, on two sides, are equal arguments of the telescope `R` of the recursive results of
+its fields, substituted by the closed substitution `τ` of the context followed by `t̄₁`, in a
+signature whose names are distinct and whose liftings are those of its types, when the context
+extended by the fields and by `R` is meaningful and the terms are related as `EqSubst.resultTerms`
+asks: the first side is at the instance and at the lifting of the block substituted by `τ`, and
+the second one at any levels, arguments and lifting. -/
+theorem EqSubst.constructorResultTerms (hd : sig.Distinct)
+    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
+      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
+      .typeDeclaration decl ∈ sig → D ∈ decl.names →
+      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {s : Quality}
+    {L : Name → NestLeaf} (hL : ∀ D, ResultLeaf sig ι ρ₁ φ₁ φ₂ D (L D))
+    (hLc : ∀ D, LeafCongr sig ι s (L D).2) {j g k' : Nat} {Γ Ξ : Scope}
+    {c : Constructor j g k' Ξ} {I : Instance j g} {names : List Name} {ls₁ ls₂ : Fin k' → Level 0}
+    {as₁ : InstanceArgs 0 Γ Ξ} {as₂ : InstanceArgs 0 [] Ξ} {ρ : Lifting 0 Γ Γ}
+    {ps' : List Parameter} {R : Telescope 0 (Γ.extend (c.params I).length) ps'}
+    (h : Constructor.ResultTypes sig v c I names ls₁ as₁ ρ R) {τ : Subst 0 [] Γ}
+    (hs : Lifting.Substitutes τ τ ρ ρ₁) {ctx : Context 0 Γ}
+    (hctx : ValidCtx₀ sig ι ((ctx.append (c.fieldsAt I ls₁ as₁)).append R))
+    {ts₁ ts₂ : Args 0 [] (c.params I)}
+    (hθ : EqSubst sig ι (ctx.append (c.fieldsAt I ls₁ as₁)) (Subst.append τ ts₁.toSubst)
+      (Subst.append τ ts₁.toSubst))
+    (hN : Terms.NestedRel sig ι n s L ((c.fields I).nest names) (c.fieldsAt I ls₁ (as₁.subst τ))
+      ts₁.terms ts₂.terms)
+    {rs₁ rs₂ : Args 0 [] ps'}
+    (hr₁ : Constructor.ResultTerms sig v c I names ls₁ (as₁.subst τ) ρ₁ φ₁ ts₁ rs₁)
+    (hr₂ : Constructor.ResultTerms sig v c I names ls₂ as₂ ρ₂ φ₂ ts₂ rs₂) :
+    EqSubst sig ι (Context.empty.append (R.subst (Subst.append τ ts₁.toSubst))) rs₁.toSubst
+      rs₂.toSubst :=
+  EqSubst.resultTerms hd hlifts hL hLc h (hs.appendArgs ts₁) hctx hθ
+    ((Telescope.types_subst_append τ _ ts₁).trans
+      (congrArg (Telescope.typesAt · ts₁) (Constructor.fieldsAt_subst c I ls₁ as₁ τ)))
+    (Args.bound_terms_subst_append τ ts₁) hN
+    (Telescope.similar_typesAt names ls₁ ls₂ (c.fields I) (as₁.subst τ).toSubst as₂.toSubst ts₁
+      ts₂)
+    hr₁ hr₂
+
 end Sic.Core

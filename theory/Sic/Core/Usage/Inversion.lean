@@ -157,19 +157,23 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
             ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ) ∧
         (m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) →
           r.mode = .oneOne) ∧
-        ((decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne)
-  | _, _, .recursor h' _ _ hC ht _ _ hu hg hχ hr hprop, he => by
+        ((decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne) ∧
+        (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+          ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+            (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+  | _, _, .recursor h' _ _ hC ht _ hus' hu hg hχ hr hprop, he => by
     injection he with _ hΔ hr' hς hχ' hD hqs hls hps has ht' hκ hCs hus
     subst hr' hς hχ' hD hqs hls hps ht' hκ hCs hus
     obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
     cases hT
     cases has
     exact ⟨_, _, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hC, ht, hu, hg, hχ, hr,
-      hprop⟩
+      hprop, hus'⟩
   | _, _, .sub h' hle, he =>
-    have ⟨γ', χ, δs, gs, hγ, hC, ht, hu, hg, hχ, hr, hprop⟩ := Usage.inv_recursor hd h hq hp h' he
+    have ⟨γ', χ, δs, gs, hγ, hC, ht, hu, hg, hχ, hr, hprop, hus'⟩ :=
+      Usage.inv_recursor hd h hq hp h' he
     ⟨γ', χ, δs, gs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hC, ht, hu, hg, hχ, hr,
-      hprop⟩
+      hprop, hus'⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
 

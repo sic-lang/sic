@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Lifting.Substitution
 public import Sic.Core.Nesting.Relation
-public import Sic.Core.Results
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Recursors.Similar
 import Sic.Core.Lifting.Functionality

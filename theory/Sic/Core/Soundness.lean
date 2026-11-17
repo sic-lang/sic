@@ -1,12 +1,16 @@
 module
 
+public import Sic.Core.Lifting.Extension
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Nesting
 import Sic.Core.Meaning.Judgments
+import Sic.Core.Results.Extension
+import Sic.Core.Results.Substitution
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Rules
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
 
 /-!
@@ -54,55 +58,55 @@ distinct and that gives the entries of `Σ_T` their meaning. -/
 structure SoundnessIn : Prop where
   /-- A well-formed constant definition. -/
   wfConstantDefinition : ∀ {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition},
-    sigM.Distinct → sigM.ValidEntries ι sig → WfConstantDefinition sig d →
+    sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → WfConstantDefinition sig d →
       ValidConstantDefinition sigM ι d
   /-- A well-formed context. -/
   wfCtx : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ},
-    sigM.Distinct → sigM.ValidEntries ι sig → WfCtx sig ctx → ValidCtx sigM ι ctx
+    sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → WfCtx sig ctx → ValidCtx sigM ι ctx
   /-- A type. -/
   wfType : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-    {ctx : Context k Γ} {A : Term k Γ}, sigM.Distinct → sigM.ValidEntries ι sig →
+    {ctx : Context k Γ} {A : Term k Γ}, sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig →
       WfType sig ctx A → ValidType sigM ι ctx A
   /-- An equality of types. -/
   eqType : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-    {ctx : Context k Γ} {A B : Term k Γ}, sigM.Distinct → sigM.ValidEntries ι sig →
+    {ctx : Context k Γ} {A B : Term k Γ}, sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig →
       EqType sig ctx A B → ValidEqType sigM ι ctx A B
   /-- A typing. -/
   hasType : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-    {ctx : Context k Γ} {t A : Term k Γ}, sigM.Distinct → sigM.ValidEntries ι sig →
+    {ctx : Context k Γ} {t A : Term k Γ}, sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig →
       HasType sig ctx t A → ValidTerm sigM ι ctx t A
   /-- An equality of terms. -/
   eqTerm : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
-    {ctx : Context k Γ} {t u A : Term k Γ}, sigM.Distinct → sigM.ValidEntries ι sig →
+    {ctx : Context k Γ} {t u A : Term k Γ}, sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig →
       EqTerm sig ctx t u A → ValidEqTerm sigM ι ctx t u A
   /-- Arguments of a telescope. -/
   hasArgs : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps},
-      sigM.Distinct → sigM.ValidEntries ι sig → HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
   /-- Equal arguments of a telescope. -/
   eqArgs : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {ts us : Args k Γ ps} {Θ : Telescope k Γ ps},
-      sigM.Distinct → sigM.ValidEntries ι sig → EqArgs sig ctx ts us Θ →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → EqArgs sig ctx ts us Θ →
         ValidEqArgs sigM ι ctx ts us Θ
   /-- Arguments of an instance. -/
   hasInstanceArgs : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as : InstanceArgs k Γ Δ} {params : Context k Δ},
-      sigM.Distinct → sigM.ValidEntries ι sig → HasInstanceArgs sig ctx as params →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → HasInstanceArgs sig ctx as params →
         ValidInstanceArgs sigM ι ctx as params
   /-- Equal arguments of instances. -/
   eqInstanceArgs : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
-      sigM.Distinct → sigM.ValidEntries ι sig → EqInstanceArgs sig ctx as₁ as₂ params →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → EqInstanceArgs sig ctx as₁ as₂ params →
         ValidEqInstanceArgs sigM ι ctx as₁ as₂ params
   /-- A telescope in a sort. -/
   wfTelescope : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfTelescope sig ctx Θ κ →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → WfTelescope sig ctx Θ κ →
         ValidTelescope sigM ι ctx Θ κ
   /-- An equality of telescopes in a sort. -/
   eqTelescope : ∀ {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
-      sigM.Distinct → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
 
 /-- The scope of a destructor at the corecursor from the variables of a state, at levels without
@@ -242,54 +246,54 @@ theorem soundnessIn : SoundnessIn :=
     eqInstanceArgs, wfTelescope, eqTelescope⟩
 where
   wfConstantDefinition {ι : Interpretation} {sigM sig : Signature} {d : ConstantDefinition}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
-    | .intro _ _ ht => ValidConstantDefinition.intro fun inst => hasType hd hι (ht inst)
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : WfConstantDefinition sig d → ValidConstantDefinition sigM ι d
+    | .intro _ _ ht => ValidConstantDefinition.intro fun inst => hasType hd hord hι (ht inst)
   wfCtx {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfCtx sig ctx → ValidCtx sigM ι ctx
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : WfCtx sig ctx → ValidCtx sigM ι ctx
     | .empty _ => fun _ => by
       show ValidCtx₀ sigM ι .empty
       rw [ValidCtx₀]
       exact hd
-    | .var h => fun ρ => (validCtx₀_var _ _).2 (wfType hd hι h ρ)
+    | .var h => fun ρ => (validCtx₀_var _ _).2 (wfType hd hord hι h ρ)
     | .secondOrder h => fun ρ => by
-      have hA := wfType hd hι h ρ
+      have hA := wfType hd hord hι h ρ
       simp only [Context.atLevels, Context.substLevels_append] at hA
       exact (validCtx₀_secondOrder _ _ _ _).2 hA
   wfType {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-      {A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfType sig ctx A → ValidType sigM ι ctx A
-    | .univType h => fun ρ => ValidEqTermΓ.univType (hasType hd hι h ρ)
-    | .propType h => fun ρ => ValidEqTermΓ.propType (hasType hd hι h ρ)
+      {A : Term k Γ} (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : WfType sig ctx A → ValidType sigM ι ctx A
+    | .univType h => fun ρ => ValidEqTermΓ.univType (hasType hd hord hι h ρ)
+    | .propType h => fun ρ => ValidEqTermΓ.propType (hasType hd hord hι h ρ)
   eqType {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-      {A B : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      {A B : Term k Γ} (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       EqType sig ctx A B → ValidEqType sigM ι ctx A B
-    | .refl h => wfType hd hι h
-    | .symm h => fun ρ => (eqType hd hι h ρ).symm
-    | .trans h₁ h₂ => fun ρ => (eqType hd hι h₁ ρ).trans (eqType hd hι h₂ ρ)
-    | .univType h => fun ρ => ValidEqTermΓ.univType (eqTerm hd hι h ρ)
-    | .propType h => fun ρ => ValidEqTermΓ.propType (eqTerm hd hι h ρ)
+    | .refl h => wfType hd hord hι h
+    | .symm h => fun ρ => (eqType hd hord hι h ρ).symm
+    | .trans h₁ h₂ => fun ρ => (eqType hd hord hι h₁ ρ).trans (eqType hd hord hι h₂ ρ)
+    | .univType h => fun ρ => ValidEqTermΓ.univType (eqTerm hd hord hι h ρ)
+    | .propType h => fun ρ => ValidEqTermΓ.propType (eqTerm hd hord hι h ρ)
   hasType {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-      {t A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      {t A : Term k Γ} (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       HasType sig ctx t A → ValidTerm sigM ι ctx t A
-    | .var hctx hx => fun ρ => ValidTermΓ.var (wfCtx hd hι hctx ρ) (hx.substLevels _)
+    | .var hctx hx => fun ρ => ValidTermΓ.var (wfCtx hd hord hι hctx ρ) (hx.substLevels _)
     | .secondOrder hX hts => fun ρ => by
-      have hts' := hasArgs hd hι hts ρ
+      have hts' := hasArgs hd hord hι hts ρ
       simp only [Term.atLevels, Term.substLevels_instantiate]
       exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
     | .const (ls := ls) hctx h hq hl hp => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have hc := ValidTermΓ.const (wfCtx hd hι hctx ρ) hι h hq hl' hp
+      have hc := ValidTermΓ.const (wfCtx hd hord hι hctx ρ) hι h hq hl' hp
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc
     | .univ hctx => fun ρ =>
-      ValidEqTermΓ.sort (q := .type) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
+      ValidEqTermΓ.sort (q := .type) (wfCtx hd hord hι hctx ρ) (Level.equivalence.refl _)
     | .prop hctx => fun ρ =>
-      ValidEqTermΓ.sort (q := .prop) (wfCtx hd hι hctx ρ) (Level.equivalence.refl _)
+      ValidEqTermΓ.sort (q := .prop) (wfCtx hd hord hι hctx ρ) (Level.equivalence.refl _)
     | .inst (ls := ls) h hq hl hp hadm has => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
         fun _ => Level.equivalence.refl _
@@ -299,44 +303,48 @@ where
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hts' := hasArgs hd hι hts ρ
+      have hts' := hasArgs hd hord hι hts ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
         (fun _ => Level.equivalence.refl _) (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
-    | .recursor (ls := ls) (T := T) (t := t) (C := C) h hq hl hp hadm has ht hh hC _ hCs hCt _ hus hut
-        hκ =>
+    | .recursor (ls := ls) (T := T) (t := t) (C := C) h hq hl hp hadm has ht hh hC _ hCs hCt _ hus
+        hRs hut hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have ht' := hasType hd hι ht ρ
+      have ht' := hasType hd hord hι ht ρ
       simp only [Context.atLevels, Term.atLevels, Term.substLevels] at ht'
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hh
+      exact ValidEqTermΓ.recursor hι hord h hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
+        ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          have hCv := hasType hd hι (hCt j T' C₀ hj hC₀) ρ
+          have hCv := hasType hd hord hι (hCt j T' C₀ hj hC₀) ρ
           simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
           exact hCv)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂ => by
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
+        (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
           obtain ⟨u₀', hu₀', rfl⟩ := Branches.get_substLevels _ hu₂
           cases Branches.get_inj hu₀ hu₀'
-          have hb := hasType hd hι (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀) ρ
+          have hb := hasType hd hord hι (hut i j T' con C₀ u₀ hi hC₀ hu₀) ρ
           simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
             Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
           erw [Term.atCtor_substLevels] at hb
@@ -348,11 +356,11 @@ where
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have ht' := hasType hd hι ht ρ
+      have ht' := hasType hd hord hι ht ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
-      have hbs' := hasArgs hd hι hbs ρ
+      have hbs' := hasArgs hd hord hι hbs ρ
       have hcl : ∀ {a} (x : Var Ξ a),
           ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
             hpos.obsSubst ((t.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs (ls.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
@@ -372,9 +380,9 @@ where
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hss' := hasArgs hd hι hss ρ
+      have hss' := hasArgs hd hord hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact ValidTermΓ.corec hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has') hh
         (States.get_substLevels_of _ hS) hss'
@@ -383,25 +391,25 @@ where
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
-            hasType hd hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
-    | .conv ht h => fun ρ => (hasType hd hι ht ρ).conv (eqType hd hι h ρ)
+            hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+    | .conv ht h => fun ρ => (hasType hd hord hι ht ρ).conv (eqType hd hord hι h ρ)
   eqTerm {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
-      {t u A : Term k Γ} (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      {t u A : Term k Γ} (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       EqTerm sig ctx t u A → ValidEqTerm sigM ι ctx t u A
-    | .refl h => hasType hd hι h
-    | .symm h => fun ρ => (eqTerm hd hι h ρ).symm
-    | .trans h₁ h₂ => fun ρ => (eqTerm hd hι h₁ ρ).trans (eqTerm hd hι h₂ ρ)
-    | .conv h hA => fun ρ => (eqTerm hd hι h ρ).conv (eqType hd hι hA ρ)
+    | .refl h => hasType hd hord hι h
+    | .symm h => fun ρ => (eqTerm hd hord hι h ρ).symm
+    | .trans h₁ h₂ => fun ρ => (eqTerm hd hord hι h₁ ρ).trans (eqTerm hd hord hι h₂ ρ)
+    | .conv h hA => fun ρ => (eqTerm hd hord hι h ρ).conv (eqType hd hord hι hA ρ)
     | .irr ht hu hA => fun ρ =>
-      ValidEqTermΓ.irr (hasType hd hι ht ρ) (hasType hd hι hu ρ) (hasType hd hι hA ρ)
+      ValidEqTermΓ.irr (hasType hd hord hι ht ρ) (hasType hd hord hι hu ρ) (hasType hd hord hι hA ρ)
     | .secondOrder hX hts => fun ρ => by
-      have hts' := eqArgs hd hι hts ρ
+      have hts' := eqArgs hd hord hι hts ρ
       simp only [Term.atLevels, Term.substLevels_instantiate]
       exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
     | .delta (ls := ls) hctx h hq hl hp => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have hc := ValidEqTermΓ.delta (wfCtx hd hι hctx ρ) hι h hq hl' hp
+      have hc := ValidEqTermΓ.delta (wfCtx hd hord hι hctx ρ) hι h hq hl' hp
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc
@@ -410,20 +418,20 @@ where
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
-      have hc := ValidEqTermΓ.const (wfCtx hd hι hctx ρ) hι h hq hl₁' hl₂' hp (by
+      have hc := ValidEqTermΓ.const (wfCtx hd hord hι hctx ρ) hι h hq hl₁' hl₂' hp (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc
-    | .univ hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
-    | .prop hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hι hctx ρ) (Level.subst_equal _ hl)
+    | .univ hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hord hι hctx ρ) (Level.subst_equal _ hl)
+    | .prop hctx hl => fun ρ => ValidEqTermΓ.sort (wfCtx hd hord hι hctx ρ) (Level.subst_equal _ hl)
     | .inst (ls₁ := ls₁) (ls₂ := ls₂) h hq hl₁ hl₂ hp hadm has hls => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
-      have has' := eqInstanceArgs hd hι has ρ
+      have has' := eqInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has') (by
           rw [List.getFin_map, List.getFin_map]
@@ -436,9 +444,9 @@ where
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
-      have has' := eqInstanceArgs hd hι has ρ
+      have has' := eqInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hts' := eqArgs hd hι hts ρ
+      have hts' := eqArgs hd hord hι hts ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has')
         (by
@@ -447,35 +455,41 @@ where
         (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
-    | .recursor (ls₁ := ls₁) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ _ hp hadm has _ ht hh hC _ _ hCs₁
-        hCs₂ hCt _ _ hus₁ hus₂ _ hut hκ => fun ρ => by
+    | .recursor (ls₁ := ls₁) (ls₂ := ls₂) (T := T) (t₁ := t₁) (C₁ := C₁) h hq hl₁ hl₂ hp hadm has _
+        ht hh hC _ _ hCs₁ hCs₂ hCt _ _ hus₁ hus₂ _ hRs₁ hRs₂ hut hκ => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
-      have has' := eqInstanceArgs hd hι has ρ
+      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+        (List.length_map _).trans hl₂
+      have has' := eqInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have ht' := eqTerm hd hι ht ρ
+      have ht' := eqTerm hd hord hι ht ρ
       simp only [Context.atLevels, Term.atLevels, Term.substLevels] at ht'
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι h hq hl₁' hp hadm (by rw [List.getFin_map]; exact has') ht' hh
+      exact ValidEqTermΓ.recursor hι hord h hq hl₁' hl₂' hp hadm
+        (by rw [List.getFin_map]; exact has') ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨C₂, hC₂⟩ := hCs₂ j T' hj
-          have hCv := eqTerm hd hι (hCt j T' C₀ C₂ hj hC₀ hC₂) ρ
+          have hCv := eqTerm hd hord hι (hCt j T' C₀ C₂ hj hC₀ hC₂) ρ
           simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
           exact hCv.trans hCv.symm)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con C' R u₁ u₂ hi hC' hR hu₁ hu₂ => by
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs₁ i j T' con hi)))
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs₂ i j T' con hi)))
+        (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
           obtain ⟨u₀', hu₀', rfl⟩ := Branches.get_substLevels _ hu₂
-          have hb := eqTerm hd hι (hut i j T' con C₀ R₀ u₀ u₀' hi hC₀ hR₀ hu₀ hu₀') ρ
+          have hb := eqTerm hd hord hι (hut i j T' con C₀ u₀ u₀' hi hC₀ hu₀ hu₀') ρ
           simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
             Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
           erw [Term.atCtor_substLevels] at hb
@@ -489,11 +503,11 @@ where
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
-      have has' := eqInstanceArgs hd hι has ρ
+      have has' := eqInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have ht' := eqTerm hd hι ht ρ
+      have ht' := eqTerm hd hord hι ht ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
-      have hbs' := eqArgs hd hι hbs ρ
+      have hbs' := eqArgs hd hord hι hbs ρ
       have hcl : ∀ {a} (x : Var Ξ a),
           ((hpos.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
             hpos.obsSubst ((t₁.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs (ls₁.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
@@ -520,9 +534,9 @@ where
         (List.length_map _).trans hl₁
       have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₂
-      have has' := eqInstanceArgs hd hι has ρ
+      have has' := eqInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hss' := eqArgs hd hι hss ρ
+      have hss' := eqArgs hd hord hι hss ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm hpre (by rw [List.getFin_map]; exact has')
         (by
@@ -534,57 +548,57 @@ where
           ⟨ps'', _, _, States.get_substLevels_of _ hS₁', States.get_substLevels_of _ hS₂'⟩)
         (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
-            eqTerm hd hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
+            eqTerm hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
     | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (ς := ς) (χ := χ) (κ := κ)
-        (Cs := Cs) (us := us) (T := T) (C := C) h hc hq hl hp hadm has hts hi hC hu _ hCs hCt _ hus hut hκ =>
+        (Cs := Cs) (us := us) (T := T) (C := C) h hc hq hl hp hadm has hts hi hC hu hrs _ hCs hCt _
+        hus hRs hut hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hts' := hasArgs hd hι hts ρ
+      have hts' := hasArgs hd hord hι hts ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels (fun i => .ofNat (ρ i))
         (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate,
-        Term.substLevels_instantiate, Args.substLevels_rename,
-        Args.results_substLevels (fun i => .ofNat (ρ i)) (f' := fun D' t => .recursor r ς χ D' qs
-          (ls.map (Level.subst fun i => .ofNat (ρ i))) ps (as.substLevels fun i => .ofNat (ρ i)) t
-          (κ.substLevels fun i => .ofNat (ρ i)) (Cs.substLevels fun i => .ofNat (ρ i)) (us.substLevels fun i => .ofNat (ρ i)))
-          (fun _ _ => rfl)]
+        Term.substLevels_instantiate, Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.iota hι h hc hq hl' hp hadm (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.iota hι hord h hc hq hl' hp hadm (by rw [List.getFin_map]; exact has')
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          have hCv := hasType hd hι (hCt j T' C₀ hj hC₀) ρ
+          have hCv := hasType hd hord hι (hCt j T' C₀ hj hC₀) ρ
           simp only [Context.atLevels, Term.atLevels, Term.substLevels] at hCv
           exact hCv)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con C' R u hi hC' hR hu => by
+        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
+        (fun i j T' con C' u hi hC' hu => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu
-          have hb := hasType hd hι (hut i j T' con C₀ R₀ u₀ hi hC₀ hR₀ hu₀) ρ
+          have hb := hasType hd hord hι (hut i j T' con C₀ u₀ hi hC₀ hu₀) ρ
           simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
             Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
           erw [Term.atCtor_substLevels] at hb
           rw [List.getFin_map]
           exact hb)
         hκ (Branches.get_substLevels_of _ hu)
+        (Terms.ResultTerms.ofTypeDeclarations (fun _ he => (hι _ he).1)
+          (Constructor.ResultTerms.substLevels_recursorAt _ hrs))
     | .etaCtor (ls := ls) (T := T) (t := t) (C := C) (e := e) h hc hq hl hp hadm hr has ht he hi hC hu
-        _ _ hCt _ _ _ hκ =>
+        _ _ hCt _ _ _ _ hκ =>
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
       obtain ⟨-, hj⟩ := TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)
       rw [Nat.sub_zero] at hj
-      have ht' := hasType hd hι ht ρ
-      have he' := hasType hd hι he ρ
-      have hCv := hasType hd hι (hCt _ T C hj hC) ρ
+      have ht' := hasType hd hord hι ht ρ
+      have he' := hasType hd hord hι he ρ
+      have hCv := hasType hd hord hι (hCt _ T C hj hC) ρ
       simp only [Context.atLevels, Context.substLevels, Term.atLevels,
         Term.substLevels] at ht' he' hCv
       rw [h.2.2] at hCv
@@ -604,10 +618,10 @@ where
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hss' := hasArgs hd hι hss ρ
-      have hbs' := hasArgs hd hι hbs ρ
+      have hss' := hasArgs hd hord hι hss ρ
+      have hbs' := hasArgs hd hord hι hbs ρ
       have hcl : ∀ {a} (x : Var Ξ₀ a),
           ((hpos.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
             as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
@@ -635,7 +649,7 @@ where
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
-            hasType hd hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+            hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc
       exact hc
     | .etaObs (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (t := t) (u := u) h hq hl hp hadm
@@ -643,14 +657,14 @@ where
       fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
-      have has' := hasInstanceArgs hd hι has ρ
+      have has' := hasInstanceArgs hd hord hι has ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have ht' := hasType hd hι ht ρ
-      have hu' := hasType hd hι hu ρ
+      have ht' := hasType hd hord hι ht ρ
+      have hu' := hasType hd hord hι hu ρ
       simp only [Term.atLevels, Term.substLevels] at ht' hu'
       refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hu'
         fun d p q ς ps' Ξ Θ B ψ hpos => ?_
-      have hb := eqTerm hd hι (hobs d p q ς ps' Ξ Θ B ψ hpos) ρ
+      have hb := eqTerm hd hord hι (hobs d p q ς ps' Ξ Θ B ψ hpos) ρ
       have hcl : ∀ {a} (x : Var Ξ a),
           ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels
               (fun i => (.ofNat (ρ i) : Level 0)) =
@@ -670,83 +684,83 @@ where
       exact hb
   hasArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
-    | .nil hctx => fun ρ => ValidEqArgsΓ.nil (wfCtx hd hι hctx ρ)
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : HasArgs sig ctx ts Θ → ValidArgs sigM ι ctx ts Θ
+    | .nil hctx => fun ρ => ValidEqArgsΓ.nil (wfCtx hd hord hι hctx ρ)
     | .cons (t := t) ht hts => fun ρ => by
-      have hts' := hasArgs hd hι hts ρ
+      have hts' := hasArgs hd hord hι hts ρ
       simp only [Telescope.atLevels] at hts'
       rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
         (fun x => by cases x <;> rfl)] at hts'
-      exact ValidEqArgsΓ.cons (hasType hd hι ht ρ) hts'
+      exact ValidEqArgsΓ.cons (hasType hd hord hι ht ρ) hts'
   eqArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
       {ctx : Context k Γ} {ts us : Args k Γ ps} {Θ : Telescope k Γ ps}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : EqArgs sig ctx ts us Θ → ValidEqArgs sigM ι ctx ts us Θ
-    | .nil hctx => fun ρ => ValidEqArgsΓ.nil (wfCtx hd hι hctx ρ)
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : EqArgs sig ctx ts us Θ → ValidEqArgs sigM ι ctx ts us Θ
+    | .nil hctx => fun ρ => ValidEqArgsΓ.nil (wfCtx hd hord hι hctx ρ)
     | .cons (t := t) ht hts => fun ρ => by
-      have hts' := eqArgs hd hι hts ρ
+      have hts' := eqArgs hd hord hι hts ρ
       simp only [Telescope.atLevels] at hts'
       rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
         (fun x => by cases x <;> rfl)] at hts'
-      exact ValidEqArgsΓ.cons (eqTerm hd hι ht ρ) hts'
+      exact ValidEqArgsΓ.cons (eqTerm hd hord hι ht ρ) hts'
   hasInstanceArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ Δ : Scope}
       {ctx : Context k Γ} {as : InstanceArgs k Γ Δ} {params : Context k Δ}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       HasInstanceArgs sig ctx as params → ValidInstanceArgs sigM ι ctx as params
-    | .nil hctx => fun ρ => ValidEqInstanceArgsΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidEqInstanceArgsΓ.nil (wfCtx hd hord hι hctx ρ)
     | .var (as := as) has ha => fun ρ => by
-      have ha' := hasType hd hι ha ρ
+      have ha' := hasType hd hord hι ha ρ
       simp only [Term.atLevels, Term.substLevels_subst_of (InstanceArgs.toSubst_substLevels _ as)]
         at ha'
-      exact ValidEqInstanceArgsΓ.var (hasInstanceArgs hd hι has ρ) ha'
+      exact ValidEqInstanceArgsΓ.var (hasInstanceArgs hd hord hι has ρ) ha'
     | .secondOrder (as := as) has hB => fun ρ => by
-      have hB' := hasType hd hι hB ρ
+      have hB' := hasType hd hord hι hB ρ
       simp only [Context.atLevels, Term.atLevels, Context.substLevels_append,
         Telescope.substLevels_subst_of (InstanceArgs.toSubst_substLevels _ as),
         Term.substLevels_subst_of
           (Subst.liftN_substLevels_of _ (InstanceArgs.toSubst_substLevels _ as))] at hB'
-      exact ValidEqInstanceArgsΓ.secondOrder (hasInstanceArgs hd hι has ρ) hB'
+      exact ValidEqInstanceArgsΓ.secondOrder (hasInstanceArgs hd hord hι has ρ) hB'
   eqInstanceArgs {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ Δ : Scope}
       {ctx : Context k Γ} {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       EqInstanceArgs sig ctx as₁ as₂ params → ValidEqInstanceArgs sigM ι ctx as₁ as₂ params
-    | .nil hctx => fun ρ => ValidEqInstanceArgsΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidEqInstanceArgsΓ.nil (wfCtx hd hord hι hctx ρ)
     | .var (as₁ := as₁) has ha => fun ρ => by
-      have ha' := eqTerm hd hι ha ρ
+      have ha' := eqTerm hd hord hι ha ρ
       simp only [Term.atLevels, Term.substLevels_subst_of (InstanceArgs.toSubst_substLevels _ as₁)]
         at ha'
-      exact ValidEqInstanceArgsΓ.var (eqInstanceArgs hd hι has ρ) ha'
+      exact ValidEqInstanceArgsΓ.var (eqInstanceArgs hd hord hι has ρ) ha'
     | .secondOrder (as₁ := as₁) has hB => fun ρ => by
-      have hB' := eqTerm hd hι hB ρ
+      have hB' := eqTerm hd hord hι hB ρ
       simp only [Context.atLevels, Term.atLevels, Context.substLevels_append,
         Telescope.substLevels_subst_of (InstanceArgs.toSubst_substLevels _ as₁),
         Term.substLevels_subst_of
           (Subst.liftN_substLevels_of _ (InstanceArgs.toSubst_substLevels _ as₁))] at hB'
-      exact ValidEqInstanceArgsΓ.secondOrder (eqInstanceArgs hd hι has ρ) hB'
+      exact ValidEqInstanceArgsΓ.secondOrder (eqInstanceArgs hd hord hι has ρ) hB'
   wfTelescope {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
       {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) : WfTelescope sig ctx Θ κ → ValidTelescope sigM ι ctx Θ κ
-    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hι hctx ρ)
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) : WfTelescope sig ctx Θ κ → ValidTelescope sigM ι ctx Θ κ
+    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hord hι hctx ρ)
     | .cons hA hκ hΘ _ => fun ρ =>
-      ValidEqTelescopeΓ.cons (hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
-        (wfTelescope hd hι hΘ ρ)
+      ValidEqTelescopeΓ.cons (hasType hd hord hι hA ρ) (Universe.substLevels_bounded _ hκ)
+        (wfTelescope hd hord hι hΘ ρ)
   eqTelescope {ι : Interpretation} {sigM sig : Signature} {k : Nat} {Γ : Scope}
       {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       EqTelescope sig ctx Θ₁ Θ₂ κ → ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ
-    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidEqTelescopeΓ.nil (wfCtx hd hord hι hctx ρ)
     | .cons hA hκ hΘ _ => fun ρ =>
-      ValidEqTelescopeΓ.cons (eqTerm hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
-        (eqTelescope hd hι hΘ ρ)
+      ValidEqTelescopeΓ.cons (eqTerm hd hord hι hA ρ) (Universe.substLevels_bounded _ hκ)
+        (eqTelescope hd hord hι hΘ ρ)
 
 -- ADE: none.
 /-- The soundness of the typing, in the signatures whose entries a signature whose names are
 distinct gives their meaning. -/
-theorem soundnessIn.typingSound {ι : Interpretation} {sigM : Signature} (hd : sigM.Distinct) :
-    TypingSound sigM ι where
-  hasType hι h := soundnessIn.hasType hd hι h
-  wfTelescope hι h := soundnessIn.wfTelescope hd hι h
-  hasArgs hι h := soundnessIn.hasArgs hd hι h
-  hasInstanceArgs hι h := soundnessIn.hasInstanceArgs hd hι h
+theorem soundnessIn.typingSound {ι : Interpretation} {sigM : Signature} (hd : sigM.Distinct)
+    (hord : sigM.LiftsInOrder) : TypingSound sigM ι where
+  hasType hι h := soundnessIn.hasType hd hord hι h
+  wfTelescope hι h := soundnessIn.wfTelescope hd hord hι h
+  hasArgs hι h := soundnessIn.hasArgs hd hord hι h
+  hasInstanceArgs hι h := soundnessIn.hasInstanceArgs hd hord hι h
 
 /-! ## Type Declarations in a Signature That Gives Their Entries Their Meaning -/
 
@@ -760,7 +774,7 @@ structure DeclarationSoundnessIn : Prop where
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope}
     {ctx : Context decl.levels Γ} {ps : List Parameter} {Θ : Telescope decl.levels Γ ps}
     {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
         WfFields sig decl I as ctx Θ κ →
           ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ
@@ -769,12 +783,12 @@ structure DeclarationSoundnessIn : Prop where
     {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
     {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
     {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels},
-      sigM.Distinct → sigM.ValidEntries ι sig → WfDestructors sig decl I @ν as ctx ds κ →
+      sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
           (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
   /-- A well-formed type declaration. -/
   wfTypeDeclaration : ∀ {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration},
-    sigM.Distinct → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
+    sigM.Distinct → sigM.LiftsInOrder → sigM.ValidEntries ι sig → WfTypeDeclaration sig decl →
       ValidTypeDeclaration sigM ι decl
 
 /-- Every type declaration typed in the signature `Σ_T` is meaningful in a signature `Σ` whose names
@@ -786,21 +800,21 @@ where
       {I : Instance decl.sorts decl.grades} {Γ : Scope}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
       {ps : List Parameter} {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig)
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig)
       (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
       WfFields sig decl I as ctx Θ κ →
         ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ
-    | .nil hctx => fun ρ => ValidFieldsΓ.nil (soundnessIn.wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidFieldsΓ.nil (soundnessIn.wfCtx hd hord hι hctx ρ)
     | .cons (A := A) hn hA hκ hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι fresh hΘ ρ
+      have hΘ' := wfFields hd hord hι fresh hΘ ρ
       rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
           fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
         funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
-      exact ValidFieldsΓ.cons (soundnessIn.hasType hd hι hA ρ) (Universe.substLevels_bounded _ hκ)
+      exact ValidFieldsΓ.cons (soundnessIn.hasType hd hord hι hA ρ) (Universe.substLevels_bounded _ hκ)
         hn hΘ'
     | .recursive (D := D) (Θ := Θ') (q := q) (p := p) hD hΘ _ => fun ρ => by
-      have hΘ' := wfFields hd hι fresh hΘ ρ
+      have hΘ' := wfFields hd hord hι fresh hΘ ρ
       show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
         ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
@@ -816,13 +830,13 @@ where
       exact hΘ'
     | .nested (A₀ := A₀) (Θ := Θ') (q := q) (p := p) (νs := νs) hn hA₀ hκ hq hpos hpre hΘ _ =>
       fun ρ => by
-      have hΘ' := wfFields hd hι fresh hΘ ρ
+      have hΘ' := wfFields hd hord hι fresh hΘ ρ
       show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((A₀.instantiate (decl.blockArgs I as)).atLevels ρ)
         ((Θ'.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
       refine ValidFieldsΓ.nested (νs := νs)
         (by simp [Telescope.nestAt, Telescope.nest, hn]) (fun σ₁ σ₂ hσ => ?_) ?_
-      · have h := Term.validBlockNest (soundnessIn.typingSound hd) hd hι hpre fresh I as hA₀ hκ hq
+      · have h := Term.validBlockNest (soundnessIn.typingSound hd hord) hd hι hpre fresh I as hA₀ hκ hq
           hpos ρ hσ
         rw [hn] at h
         exact ⟨h.1, fun _ => h.2.1, h.2.2⟩
@@ -837,16 +851,16 @@ where
       {I : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
       {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
       {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
           (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
-    | .nil hctx => fun ρ => ValidDestructorsΓ.nil (soundnessIn.wfCtx hd hι hctx ρ)
+    | .nil hctx => fun ρ => ValidDestructorsΓ.nil (soundnessIn.wfCtx hd hord hι hctx ρ)
     | .nested (d := d) (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς)
         hn hν hΘ hB hκ _ hds => fun ρ => by
-      have hB' := soundnessIn.hasType hd hι hB ρ
+      have hB' := soundnessIn.hasType hd hord hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
-      have hds' := wfDestructors hd hι hds ρ
+      have hds' := wfDestructors hd hord hι hds ρ
       show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
         (B.substLevels fun i => .ofNat (ρ i)) ψ
         ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
@@ -854,7 +868,7 @@ where
       refine ValidDestructorsΓ.nested
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (by simp [Destructors.nestedAt, Destructors.nested, Nest.isPlain_eq_false hν])
-        (soundnessIn.wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) ?_
+        (soundnessIn.wfTelescope hd hord hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) ?_
       have hr : (fun i => (Destructors.cons (d := d) p q ς Θ B ψ
           (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
         funext i
@@ -871,19 +885,19 @@ where
       rw [hr, hr']
       exact hds'
     | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) hn hν hΘ hB hκ _ hds => fun ρ => by
-      have hB' := soundnessIn.hasType hd hι hB ρ
+      have hB' := soundnessIn.hasType hd hord hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
-      have hds' := wfDestructors hd hι hds ρ
+      have hds' := wfDestructors hd hord hι hds ρ
       rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
           fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
         funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hds'
       exact ValidDestructorsΓ.cons
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (by simp [Destructors.nestedAt, Destructors.nested, hν, Nest.isPlain])
-        (soundnessIn.wfTelescope hd hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
+        (soundnessIn.wfTelescope hd hord hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
     | .recursive (d := d) (D := D) (ps := ps) (Θ := Θ) (ψ := ψ) (ds := ds) (p := p) (q := q) (ς := ς) hD hΘ
         _ hds => fun ρ => by
-      have hds' := wfDestructors hd hι hds ρ
+      have hds' := wfDestructors hd hord hι hds ρ
       show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
         ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
         ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
@@ -893,7 +907,7 @@ where
         Term.substLevels_rename _ _ (decl.blockInstance I D as)]
       refine ValidDestructorsΓ.recursive (D := D)
         (by simp [Destructors.recursionAt, Destructors.recursion, TypeDeclaration.blockInstance,
-          Term.blockName, hD]) (soundnessIn.wfTelescope hd hι hΘ ρ) ?_
+          Term.blockName, hD]) (soundnessIn.wfTelescope hd hord hι hΘ ρ) ?_
       have hr : (fun i => (Destructors.cons (d := d) p q ς Θ
           (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
@@ -912,18 +926,18 @@ where
       rw [hr, hr']
       exact hds'
   wfTypeDeclaration {ι : Interpretation} {sigM sig : Signature} {decl : TypeDeclaration}
-      (hd : sigM.Distinct) (hι : sigM.ValidEntries ι sig) :
+      (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) :
       WfTypeDeclaration sig decl → ValidTypeDeclaration sigM ι decl
     | .data hb _ _ hΘ _ _ fresh => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT c hc =>
-        wfFields hd hι fresh (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
+        wfFields hd hord hι fresh (hΘ I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc)
     | .codata hb _ _ hds _ _ _ => by
       unfold ValidTypeDeclaration
       rw [hb]
       exact fun I hI T hT =>
-        wfDestructors hd hι (hds I hI T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT))
+        wfDestructors hd hord hι (hds I hI T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT))
 
 
 /-! ## Signatures -/
@@ -933,22 +947,22 @@ where
 the whole signature, when the interpretation gives its constant declarations terms of their types:
 each entry is typed in the signature before it, whose entries are meaningful by induction. -/
 theorem WfSig.validEntries {ι : Interpretation} {sigM : Signature}
-    (hι : ValidInterpretation ι sigM) (hd : sigM.Distinct) :
+    (hι : ValidInterpretation ι sigM) (hd : sigM.Distinct) (hord : sigM.LiftsInOrder) :
     (sig : Signature) → WfSig sig → sig <:+ sigM → sigM.ValidEntries ι sig
   | [], _, _ => fun _ he => nomatch he
   | e :: sig, h, hs => by
-    have hrest := WfSig.validEntries hι hd sig (Presuppositions.tail presuppositions h)
+    have hrest := WfSig.validEntries hι hd hord sig (Presuppositions.tail presuppositions h)
       ((List.suffix_cons e sig).trans hs)
     have hmem : e ∈ sigM := hs.subset List.mem_cons_self
     intro e' he'
     rcases List.mem_cons.1 he' with rfl | he'
     · refine ⟨hmem, ?_⟩
       cases h with
-      | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hrest hdef
+      | constantDefinition hdef _ => exact soundnessIn.wfConstantDefinition hd hord hrest hdef
       | constantDeclaration _ _ => exact hι _ hmem
       | typeDeclaration hdecl _ _ =>
-        exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
-      | lifting hdecl _ _ => exact declarationSoundnessIn.wfTypeDeclaration hd hrest hdecl
+        exact declarationSoundnessIn.wfTypeDeclaration hd hord hrest hdecl
+      | lifting hdecl _ _ => exact declarationSoundnessIn.wfTypeDeclaration hd hord hrest hdecl
     · exact hrest e' he'
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
@@ -1059,7 +1073,7 @@ structure Soundness : Prop where
 terms of their types. -/
 theorem soundness_wfSig {ι : Interpretation} {sig : Signature} (hι : ValidInterpretation ι sig)
     (h : WfSig sig) : ValidSig ι sig :=
-  ⟨h.distinct, fun e he => (WfSig.validEntries hι h.distinct sig h (List.suffix_refl _) e he).2⟩
+  ⟨h.distinct, fun e he => (WfSig.validEntries hι h.distinct h.liftsInOrder sig h (List.suffix_refl _) e he).2⟩
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
 -- context.
@@ -1069,47 +1083,61 @@ entries their meaning. -/
 theorem soundness : Soundness where
   wfSig := soundness_wfSig
   wfConstantDefinition hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfConstantDefinition h)
-    soundnessIn.wfConstantDefinition hs.1 hs.validEntries h
+    have hw := presuppositions.wfConstantDefinition h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.wfConstantDefinition hs.1 hw.liftsInOrder hs.validEntries h
   wfConstantDeclaration hι _ := hι _ List.mem_cons_self
   wfCtx hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfCtx h)
-    soundnessIn.wfCtx hs.1 hs.validEntries h
+    have hw := presuppositions.wfCtx h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.wfCtx hs.1 hw.liftsInOrder hs.validEntries h
   wfType hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfType h)
-    soundnessIn.wfType hs.1 hs.validEntries h
+    have hw := presuppositions.wfType h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.wfType hs.1 hw.liftsInOrder hs.validEntries h
   eqType hι h :=
-    have hs := soundness_wfSig hι (presuppositions.eqType h)
-    soundnessIn.eqType hs.1 hs.validEntries h
+    have hw := presuppositions.eqType h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.eqType hs.1 hw.liftsInOrder hs.validEntries h
   hasType hι h :=
-    have hs := soundness_wfSig hι (presuppositions.hasType h)
-    soundnessIn.hasType hs.1 hs.validEntries h
+    have hw := presuppositions.hasType h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.hasType hs.1 hw.liftsInOrder hs.validEntries h
   eqTerm hι h :=
-    have hs := soundness_wfSig hι (presuppositions.eqTerm h)
-    soundnessIn.eqTerm hs.1 hs.validEntries h
+    have hw := presuppositions.eqTerm h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.eqTerm hs.1 hw.liftsInOrder hs.validEntries h
   hasArgs hι h :=
-    have hs := soundness_wfSig hι (presuppositions.hasArgs h)
-    soundnessIn.hasArgs hs.1 hs.validEntries h
+    have hw := presuppositions.hasArgs h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.hasArgs hs.1 hw.liftsInOrder hs.validEntries h
   eqArgs hι h :=
-    have hs := soundness_wfSig hι (presuppositions.eqArgs h)
-    soundnessIn.eqArgs hs.1 hs.validEntries h
+    have hw := presuppositions.eqArgs h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.eqArgs hs.1 hw.liftsInOrder hs.validEntries h
   hasInstanceArgs hι h :=
-    have hs := soundness_wfSig hι (presuppositions.hasInstanceArgs h)
-    soundnessIn.hasInstanceArgs hs.1 hs.validEntries h
+    have hw := presuppositions.hasInstanceArgs h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.hasInstanceArgs hs.1 hw.liftsInOrder hs.validEntries h
   eqInstanceArgs hι h :=
-    have hs := soundness_wfSig hι (presuppositions.eqInstanceArgs h)
-    soundnessIn.eqInstanceArgs hs.1 hs.validEntries h
+    have hw := presuppositions.eqInstanceArgs h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.eqInstanceArgs hs.1 hw.liftsInOrder hs.validEntries h
   wfTelescope hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfTelescope h)
-    soundnessIn.wfTelescope hs.1 hs.validEntries h
+    have hw := presuppositions.wfTelescope h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.wfTelescope hs.1 hw.liftsInOrder hs.validEntries h
   eqTelescope hι h :=
-    have hs := soundness_wfSig hι (presuppositions.eqTelescope h)
-    soundnessIn.eqTelescope hs.1 hs.validEntries h
+    have hw := presuppositions.eqTelescope h
+    have hs := soundness_wfSig hι hw
+    soundnessIn.eqTelescope hs.1 hw.liftsInOrder hs.validEntries h
   wfDestructors hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfDestructors h)
-    declarationSoundnessIn.wfDestructors hs.1 hs.validEntries h
+    have hw := presuppositions.wfDestructors h
+    have hs := soundness_wfSig hι hw
+    declarationSoundnessIn.wfDestructors hs.1 hw.liftsInOrder hs.validEntries h
   wfTypeDeclaration hι h :=
-    have hs := soundness_wfSig hι (presuppositions.wfTypeDeclaration h)
-    declarationSoundnessIn.wfTypeDeclaration hs.1 hs.validEntries h
+    have hw := presuppositions.wfTypeDeclaration h
+    have hs := soundness_wfSig hι hw
+    declarationSoundnessIn.wfTypeDeclaration hs.1 hw.liftsInOrder hs.validEntries h
 
 end Sic.Core

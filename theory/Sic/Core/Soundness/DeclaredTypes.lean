@@ -491,9 +491,10 @@ theorem FieldRel.validEqTerm (hd : sig.Distinct) {n : Nat} {s : Quality} {A v t 
 /-- A type that the graph of the nestings reads, at positions that hold types with the equality of
 their terms, is a type without position: the type of the block that a position holds, up to the
 values of its levels, and an instance of a declared type when it is a term of a sort that the sort
-of the quality `s` at the level `n` bounds. -/
-theorem NestRel.plain_of_leaves {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []}
-    {F : TermRel} (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
+of the quality `s` at the level `n` bounds, in a signature whose names are distinct. -/
+theorem NestRel.plain_of_leaves (hd : sig.Distinct) {n : Nat} {sT s : Quality}
+    {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
+    (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All
       (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ)
     (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
@@ -510,7 +511,7 @@ theorem NestRel.plain_of_leaves {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} 
   | direct _ hT =>
     cases hτ with
     | direct hx =>
-      exact ⟨.type, _, NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hx hT .plain⟩
+      exact ⟨.type, _, NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hx hT .plain⟩
   | codata => exact hsort (hA ⟨_, rfl⟩)
   | codataProp => exact hsort (hA ⟨_, rfl⟩)
 
@@ -524,9 +525,9 @@ theorem NestRel.validEqTerm_iff (hd : sig.Distinct) {n : Nat} {sT s : Quality} {
     (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ s ∧ κ₁.level.closedValue ≤ n ∧
       ValidEqTerm₀ sig ι A A (.sort κ₁)) (t u : Term 0 []) :
     F t u ↔ ValidEqTerm₀ sig ι t u A := by
-  obtain ⟨_, _, h'⟩ := h.plain_of_leaves hτ hA
+  obtain ⟨_, _, h'⟩ := h.plain_of_leaves hd hτ hA
   refine (levelRel_nest_agree hd (fun _ _ _ hT hTA =>
-    NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hT hTA .plain) h hτ h' t u).trans ?_
+    NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain) h hτ h' t u).trans ?_
   cases h' with
   | plain hc hF => exact ⟨hF.validEqTerm hd hc, hF.of_validEqTerm hc⟩
 
@@ -854,7 +855,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
   refine ⟨S, fun Rf T hT c hc => ?_⟩
   have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
   obtain ⟨S', h₁, h₂⟩ := hF.telRel hd Rf
-  have h₁' := hn ▸ TelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ (hΘ c as₁)
+  have h₁' := hn ▸ TelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ (hΘ c as₁)
     (fun _ => Nest.map_rel₃
       (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
@@ -862,7 +863,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         as₁.toSubst, Rf D))
       (g := fun D => (.inst D qs ls ps as₁, Rf D)) (h := fun D => (.inst D qs ls ps as₁, Rf D))
       (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₁ D, rfl⟩) _)
-  have h₂' := hn ▸ TelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
+  have h₂' := hn ▸ TelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ (hΘ c as₂)
     (fun _ => Nest.map_rel₃
       (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
@@ -883,7 +884,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
       (((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map fun D =>
         (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D)) := fun i =>
-    Nest.All.map_rel₃ (fun D hD => hn ▸ NestRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+    Nest.All.map_rel₃ (fun D hD => hn ▸ NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
         (hRf D hD) (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm .plain)
       (Telescope.nestAt_all decl.names _ i)
   -- The types of the nested fields are terms of a sort, since the instances of the block are.
@@ -973,7 +974,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S X c) := fun X T hT c hc => by
     have hF := (hv.fields _ hadm hT hc fun i => (ls.getFin hl i).closedValue).2 _ _ has'
     obtain ⟨S', h₁, h₂⟩ := hF.runTelRel hd P hs fun D' => (X D').computed sig ι
-    have h₁' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₁ (hΘ c as₁)
+    have h₁' := hn ▸ RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₁ (hΘ c as₁)
       (fun _ => Nest.map_rel₃
         (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
         (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
@@ -982,7 +983,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         (g := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
         (h := fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
         (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as₁ D, rfl⟩) _)
-    have h₂' := hn ▸ RunTelRel.levelEquiv (fun m _ => levelRel_levelInvariant m) h₂ (hΘ c as₂)
+    have h₂' := hn ▸ RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ (hΘ c as₂)
       (fun _ => Nest.map_rel₃
         (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
         (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D

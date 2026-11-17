@@ -4,7 +4,7 @@ public import Sic.Core.Results
 public import Sic.Core.Lifting.Substitution
 public import Sic.Core.Substitution.Composition
 import Sic.Core.Substitution.Levels
-import Sic.Core.Substitution.Rules
+public import Sic.Core.Substitution.Rules
 
 /-!
 # Substitution of the Recursive Results
@@ -435,6 +435,67 @@ theorem Constructor.ResultTerms.substLevels (ls' : Fin k → Level k'')
   have h' := Terms.ResultTerms.substLevels ls' h
   rw [Telescope.typesAt_substLevels, Constructor.fieldsAt_substLevels,
     ← Args.terms_substLevels] at h'
+  exact h'
+
+end
+
+/-! ## Recursive Results of a Recursor -/
+
+section
+
+variable {j g k' k'' : Nat} {Ξ Δ Γ : Scope} {c : Constructor j g k' Ξ} {I : Instance j g}
+  {names : List Name} {qs : List Quality} {ls : List (Level k)} {gs : List Grade}
+  {as : InstanceArgs k Δ Ξ} {κ : Universe k} {Cs : Motives k Δ} {ps' : List Parameter}
+
+/-- The recursive results of the terms of the fields of a constructor that a recursor computes,
+substituted, are those that the recursor substituted computes on the terms substituted. -/
+theorem Constructor.ResultTerms.subst_recursorAt (θ : Subst k Γ Δ) {hl : ls.length = k'}
+    {r ς χ : Grade} {us : Branches k Δ} {ts : Args k Δ (c.params I)} {rs : Args k Δ ps'}
+    (h : Constructor.ResultTerms sig v c I names (ls.getFin hl) as
+      (Lifting.ofMotives names qs ls gs as κ.level Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
+      ts rs) :
+    Constructor.ResultTerms sig v c I names (ls.getFin hl) (as.subst θ)
+      (Lifting.ofMotives names qs ls gs (as.subst θ) κ.level (Cs.subst θ))
+      (Term.recursorAt r ς χ qs ls gs (as.subst θ) κ (Cs.subst θ) (us.subst θ)) (ts.subst θ)
+      (rs.subst θ) := by
+  have h' := h.subst (Lifting.ofMotives_substitutes θ names qs ls gs as κ.level Cs)
+  rw [funext fun E => Term.recursorAt_subst θ r ς χ qs ls gs as κ Cs us E] at h'
+  exact h'
+
+/-- The recursive results of the fields of a constructor in a recursor, at instantiated levels,
+are its results in the recursor at these levels. -/
+theorem Constructor.ResultTypes.substLevels_ofMotives (ls' : Fin k → Level k'')
+    {hl : ls.length = k'} {R : Telescope k (Δ.extend (c.params I).length) ps'}
+    (h : Constructor.ResultTypes sig v c I names (ls.getFin hl) as
+      (Lifting.ofMotives names qs ls gs as κ.level Cs) R) :
+    Constructor.ResultTypes sig v c I names
+      ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
+      (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
+        (κ.substLevels ls').level (Cs.substLevels ls'))
+      (R.substLevels ls') := by
+  have h' := h.substLevels ls'
+  rw [Lifting.ofMotives_substLevels, ← Level.getFin_map_subst ls' ls hl] at h'
+  exact h'
+
+/-- The recursive results of the terms of the fields of a constructor that a recursor computes,
+at instantiated levels, are those that the recursor at these levels computes on the terms at these
+levels. -/
+theorem Constructor.ResultTerms.substLevels_recursorAt (ls' : Fin k → Level k'')
+    {hl : ls.length = k'} {r ς χ : Grade} {us : Branches k Δ} {ts : Args k Δ (c.params I)}
+    {rs : Args k Δ ps'}
+    (h : Constructor.ResultTerms sig v c I names (ls.getFin hl) as
+      (Lifting.ofMotives names qs ls gs as κ.level Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
+      ts rs) :
+    Constructor.ResultTerms sig v c I names
+      ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
+      (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
+        (κ.substLevels ls').level (Cs.substLevels ls'))
+      (Term.recursorAt r ς χ qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
+        (κ.substLevels ls') (Cs.substLevels ls') (us.substLevels ls'))
+      (ts.substLevels ls') (rs.substLevels ls') := by
+  have h' := h.substLevels ls'
+  rw [Lifting.ofMotives_substLevels, ← Level.getFin_map_subst ls' ls hl,
+    funext fun E => Term.recursorAt_substLevels ls' r ς χ qs ls gs as κ Cs us E] at h'
   exact h'
 
 end

@@ -375,13 +375,13 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
         ⟨Nat.le_trans (Nat.le_of_eq (Level.closedValue_subst_equiv hls _)) hn, rfl⟩,
         fun ⟨S, hS₁, hS₂⟩ => ?_⟩
       have hinv : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
-        fun m _ => levelRel_levelInvariant m
+        fun m _ => levelRel_levelInvariant hd m
       have hrel : ∀ ν : Nesting NestLeaf decl.scope,
           Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν :=
         fun ν _ x => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _
-      have hS₁' := NestDesRel.levelEquiv hinv hS₁
+      have hS₁' := NestDesRel.levelEquiv hd hinv hS₁
         (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
-      have hS₂' := NestDesRel.levelEquiv hinv hS₂
+      have hS₂' := NestDesRel.levelEquiv hd hinv hS₂
         (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
       cases hκ : (decl.sort (.ofLists qs ps hq hp)).quality with
       | type =>

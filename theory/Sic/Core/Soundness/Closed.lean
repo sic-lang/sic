@@ -4,6 +4,7 @@ public import Sic.Core.Meaning
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Results.Extension
 
 /-!
 # Closed Judgments
@@ -280,12 +281,45 @@ of the signature itself.
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
   | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
-  | .iota h hi hD hc hq hp hu hv =>
-    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hq hp hu hv
+  | .iota h hi hD hc hq hl hp hu hrs hv =>
+    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hq hl hp hu
+      (Terms.ResultTerms.ofTypeDeclarations
+        (fun _ hdecl => List.mem_map_of_mem (f := Entry.interpret ι) hdecl) hrs) hv
   | .recursor h => .recursor h.interpret
   | .beta h hi hD hq hl hp hg hv =>
     .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hq hl hp hg hv
   | .obs h => .obs h.interpret
+
+open Sic.Grading in
+/-- `(ι_⟶)` on a constructor none of whose fields has a position in the nesting of its type, which
+has no recursive result: the recursor steps to the branch at the terms `fs` of the fields, those of
+arguments of the fields. -/
+theorem Red.iota_plain {sig : Signature} {k : Nat} {Γ : Scope} {decl : TypeDeclaration}
+    {i j : Nat} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {Δ : Scope} {r ς χ : Grade}
+    {κ : Universe k} {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)}
+    {ps ps' : List Grade} {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ decl.scope} {c : Name}
+    {fs : Terms k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {n : Nat}
+    {u : Term k ((Γ.extend n).extend 0)} {v : Term k Γ} (h : .typeDeclaration decl ∈ sig)
+    (hi : decl.cases[i]? = some (j, T, con)) (hD : T.name = D) (hc : con.name = c)
+    (hq : qs'.length = decl.sorts) (hl : ls'.length = decl.levels) (hp : ps'.length = decl.grades)
+    (hpl : ∀ ν ∈ (con.fields (.ofLists qs' ps' hq hp)).nest decl.names, ν = .plain)
+    (ts : Args k Γ (con.params (.ofLists qs' ps' hq hp))) (hts : ts.terms = fs)
+    (hu : us.get i = some ⟨n, 0, u⟩) (hv : u.instantiateTerms₂ fs .nil = some v) :
+    Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c fs) κ Cs us) v := by
+  subst hts
+  exact .iota h hi hD hc hq hl hp hu (Telescope.resultTerms_of_plain _ _ _ ts hpl) hv
+
+open Sic.Grading in
+/-- A recursor reduces as its term does. -/
+theorem RedStar.recursor {sig' : Signature} {k : Nat} {Γ Δ : Scope} {r ς χ : Grade}
+    {κ : Universe k} {D : Name}
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
+    {Cs : Motives k Γ} {us : Branches k Γ} {t t' : Term k Γ} (h : RedStar sig' t t') :
+    RedStar sig' (.recursor r ς χ D qs ls ps as t κ Cs us) (.recursor r ς χ D qs ls ps as t' κ Cs us) := by
+  induction h with
+  | refl => exact .refl _
+  | step h _ ih => exact .step (.recursor h) ih
 
 /-- A term computes to the canonical terms of the term it reduces to, in a signature whose names are
 distinct. -/
@@ -355,6 +389,15 @@ theorem ValidEqTerm₀.red_iff {sig : Signature} {ι : Interpretation} {t t' u A
     (hd : sig.Distinct) (h : Red (sig.interpret ι) t t') :
     ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t' u A := by
   simp only [ValidEqTerm₀, EqTermClause.red_iff hd h]
+
+/-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t' ≡ u : A` does, for steps `t ⟶* t'`. -/
+theorem ValidEqTerm₀.redStar_iff {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    {t t' u A : Term 0 []}
+    (h : RedStar (sig.interpret ι) t t') :
+    ValidEqTerm₀ sig ι t u A ↔ ValidEqTerm₀ sig ι t' u A := by
+  induction h with
+  | refl => exact .rfl
+  | step h _ ih => exact (ValidEqTerm₀.red_iff hd h).trans ih
 
 /-- `Σ ⊨ t ≡ u : A` holds exactly when `Σ ⊨ t ≡ u : A'` does, for a step `A ⟶ A'`. -/
 theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u A A' : Term 0 []}

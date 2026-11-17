@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Evaluation
 public import Sic.Core.Meaning.Interpretation
-public import Sic.Core.Nesting
 public import Sic.Core.Syntax.LevelEquiv
 public import Sic.Core.Substitution.Closed
 

@@ -241,6 +241,13 @@ theorem HasType.packArgs (hpre : sig.HasPrelude) : {Γ : Scope} → {ps : List P
 
 /-! ## Rules of the Pair and of the Unit -/
 
+/-- A telescope of sorts, whose entries have the parameters `ps`: the recursive results that the
+rules of the recursors are given for the constructors that the block of the recursor does not
+have. -/
+private def Telescope.propositions {Γ : Scope} : (ps : List Parameter) → Telescope k Γ ps
+  | [] => .nil
+  | p :: ps => .cons Grade.zero p (.sort ⟨.prop, .zero⟩) (Telescope.propositions ps)
+
 -- ADE: `prodrecⱼ`, in `Definition/Typed.agda`.
 theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k} {l₂ : Level k}
     {p ρ r ς χ : Grade} {A t : Term k Γ} {B C : Term k (.var :: Γ)} {κ : Universe k}
@@ -254,8 +261,10 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
         [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩])) :
     HasType sig ctx (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
       (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) (C.subst₀ (Subst₀.single t)) := by
-  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) hpre.pair rfl rfl rfl hadm
-    (HasInstanceArgs.pair p ρ hA hB) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
+  refine .recursor (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) hpre.pair rfl rfl rfl hadm
+    (HasInstanceArgs.pair p ρ hA hB) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_ ?_
+    (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
     | 0, _ => exact ⟨C, rfl⟩
@@ -265,9 +274,12 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .plain (.plain .nil)
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       show HasType sig ((ctx.var A).var ((B.rename (Ren.liftN 1 Ren.weaken)).instantiate
         (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩]) (.cons (Term.var₀ .zero) .nil)))
         u ((C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
@@ -285,8 +297,9 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     (hu : HasType sig ctx u (C.atCtor "Unit" [] [l] [] .nil "mk" [])) :
     HasType sig ctx (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil))
       (C.subst₀ (Subst₀.single t)) := by
-  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (h' := 0) (κ := κ) hpre.unit rfl rfl
-    rfl trivial (.nil (contextPresuppositions.hasType ht)) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_
+  refine .recursor (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.unit) (T := Prelude.unitType) (h' := 0) (κ := κ) hpre.unit rfl rfl
+    rfl trivial (.nil (contextPresuppositions.hasType ht)) ht rfl rfl rfl ?_ ?_ rfl ?_ ?_ ?_
     (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
@@ -297,9 +310,12 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .nil
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx u)
         (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
@@ -322,11 +338,13 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
       (u.instantiate (ps := [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) (.cons t (.cons P .nil)))
       (C.subst₀ (Subst₀.single (.ctor "Pair" [κA.quality] [κA.level, l₂] [p, ρ]
         (Prelude.pairArgs A B) "mk" (.cons t (.cons P .nil))))) := by
-  refine .iota (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
+  refine .iota (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
     (j := 0) (κ := κ) (qs := [κA.quality]) (ls := [κA.level, l₂]) (ps := [p, ρ])
     (Cs := .cons 0 C .nil) (us := .cons 2 0 #v[] u .nil) (C := C) (u := u)
-    (ts := .cons t (.cons P .nil)) hpre.pair (List.mem_singleton_self _) rfl rfl
-    rfl hadm (HasInstanceArgs.pair p ρ hA hB) ?_ rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_
+    (ts := .cons t (.cons P .nil)) (rs := .nil) hpre.pair (List.mem_singleton_self _) rfl rfl
+    rfl hadm (HasInstanceArgs.pair p ρ hA hB) ?_ rfl rfl rfl (.plain (.plain .nil)) rfl ?_ ?_ rfl
+    ?_ ?_ ?_
     (fun h => nomatch h)
   · show HasArgs sig _ _ (.cons .unrestrictedUnrestricted ⟨p, ρ⟩ A
       (.cons Grade.zero ⟨Grade.one, Grade.one⟩ ((B.rename (Ren.liftN 1 Ren.weaken)).instantiate
@@ -342,9 +360,12 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .plain (.plain .nil)
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       show HasType sig ((ctx.var A).var ((B.rename (Ren.liftN 1 Ren.weaken)).instantiate
         (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩]) (.cons (Term.var₀ .zero) .nil)))
         u ((C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
@@ -362,10 +383,13 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     EqTerm sig ctx (.recursor r ς χ "Unit" [] [l] [] .nil (.ctor "Unit" [] [l] [] .nil "mk" .nil) κ
       (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) u
       (C.subst₀ (Subst₀.single (.ctor "Unit" [] [l] [] .nil "mk" .nil))) := by
-  refine .iota (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
+  refine .iota (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
     (j := 0) (κ := κ) (qs := []) (ls := [l]) (ps := []) (Cs := .cons 0 C .nil)
-    (us := .cons 0 0 #v[] u .nil) (C := C) (u := u) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl
-    rfl trivial (.nil hctx) (.nil hctx) rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
+    (us := .cons 0 0 #v[] u .nil) (C := C) (u := u) (ts := .nil) (rs := .nil) hpre.unit
+    (List.mem_singleton_self _) rfl rfl rfl trivial (.nil hctx) (.nil hctx) rfl rfl rfl .nil rfl
+    ?_ ?_ rfl ?_ ?_ ?_
+    (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
     | 0, _ => exact ⟨C, rfl⟩
@@ -375,9 +399,12 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .nil
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx u)
         (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
@@ -451,12 +478,14 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
         (.cons 2 0 #v[] (e.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
           [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) .nil))
       (Cm.subst₀ (Subst₀.single t)) := by
-  refine .etaCtor (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
+  refine .etaCtor (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.pair) (T := Prelude.pairType) (con := Prelude.pairMk) (i := 0)
     (j := 0) (κ := κ) (qs := [κA.quality]) (ls := [κA.level, l₂]) (ps := [p, ρ])
     (Cs := .cons 0 Cm .nil) (C := Cm) (e := e) hpre.pair rfl rfl rfl rfl hadm ?_
-    (HasInstanceArgs.pair p ρ hA hB) ht he rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_ (fun h => nomatch h)
+    (HasInstanceArgs.pair p ρ hA hB) ht he rfl rfl rfl rfl ?_ ?_ rfl ?_ ?_ ?_
+    (fun h => nomatch h)
   · intro R hR
-    change R ∈ [none, none] at hR
+    change R ∈ [Nest.plain, Nest.plain] at hR
     cases hR with
     | head => rfl
     | tail _ h => cases h with
@@ -471,9 +500,12 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨_, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .plain (.plain .nil)
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       show HasType sig ((ctx.var A).var ((B.rename (Ren.liftN 1 Ren.weaken)).instantiate
         (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩]) (.cons (Term.var₀ .zero) .nil)))
         _ ((Cm.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"
@@ -506,10 +538,11 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
       ← Term.rename_id_of (Γ := .var :: Γ) (α := Ren.lift (Ren.weakenN 0))
       (Ren.lift_id_of (fun _ => rfl)) Cm] at h
     exact h
-  refine .etaCtor (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
+  refine .etaCtor (Rs := fun _ => Telescope.propositions _)
+    (decl := Prelude.unit) (T := Prelude.unitType) (con := Prelude.unitMk) (i := 0)
     (j := 0) (κ := κ) (qs := []) (ls := [l]) (ps := []) (Cs := .cons 0 Cm .nil) (C := Cm) (e := e)
     hpre.unit rfl rfl rfl rfl trivial (fun R hR => nomatch hR) (.nil hctx) ht he rfl rfl rfl rfl ?_ ?_
-    rfl ?_ ?_ (fun h => nomatch h)
+    rfl ?_ ?_ ?_ (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
     | 0, _ => exact ⟨Cm, rfl⟩
@@ -519,9 +552,12 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨_, rfl⟩
-  · intro i j T' con C' R u' hi hC' hR hu'
-    match i, hi, hC', hR, hu' with
-    | 0, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .nil
+  · intro i j T' con C' u' hi hC' hu'
+    match i, hi, hC', hu' with
+    | 0, rfl, rfl, rfl =>
       exact (congrArg (HasType sig ctx _)
         (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
@@ -543,10 +579,11 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
       (.recursor r ς χ "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) t κ
         (.cons 0 C .nil) (.cons 2 0 #v[] u₂ .nil))
       (C.subst₀ (Subst₀.single t)) := by
-  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) (C₁ := C)
+  refine .recursor (Rs₁ := fun _ => Telescope.propositions _) (Rs₂ := fun _ => Telescope.propositions _)
+    (decl := Prelude.pair) (T := Prelude.pairType) (h' := 0) (κ := κ) (C₁ := C)
     hpre.pair rfl rfl rfl rfl hadm (EqInstanceArgs.refl (HasInstanceArgs.pair p ρ hA hB))
     (fun _ _ => rfl) (.refl ht) rfl rfl rfl rfl ?_ ?_ ?_ rfl rfl ?_ ?_
-    (funext fun i => by cases i <;> rfl) ?_ (fun h => nomatch h)
+    (funext fun i => by cases i <;> rfl) ?_ ?_ ?_ (fun h => nomatch h)
   · intro j T' hj
     match j, hj with
     | 0, _ => exact ⟨C, rfl⟩
@@ -562,9 +599,15 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u₂, rfl⟩
-  · intro i j T' con C' R v₁ v₂ hi hC' hR hv₁ hv₂
-    match i, hi, hC', hR, hv₁, hv₂ with
-    | 0, rfl, rfl, rfl, rfl, rfl =>
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .plain (.plain .nil)
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact .plain (.plain .nil)
+  · intro i j T' con C' v₁ v₂ hi hC' hv₁ hv₂
+    match i, hi, hC', hv₁, hv₂ with
+    | 0, rfl, rfl, rfl, rfl =>
       show EqTerm sig ((ctx.var A).var ((B.rename (Ren.liftN 1 Ren.weaken)).instantiate
         (ps := [⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩]) (.cons (Term.var₀ .zero) .nil)))
         u₁ u₂ ((C.atCtor "Pair" [κA.quality] [κA.level, l₂] [p, ρ] (Prelude.pairArgs A B) "mk"

@@ -58,6 +58,22 @@ def Lifting.ofMotives {Γ Δ : Scope} (names : List Name) (qs : List Quality) (l
       | _ => none
     else none
 
+/-- A type of the block that the lifting of the scope of a recursor gives a motive has a name of
+the block, its instance at the arguments of the recursor and its motive in `C̄`. -/
+theorem Lifting.ofMotives_block_inv {Γ Δ : Scope} {names : List Name} {qs : List Quality}
+    {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ} {l : Level k}
+    {Cs : Motives k Γ} {D : Name} {b : Lifting.BlockMotive k Γ Γ}
+    (h : (Lifting.ofMotives names qs ls ps as l Cs).block D = some b) :
+    D ∈ names ∧ ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ ∧ b = ⟨.inst D qs ls ps as, C, l⟩ := by
+  unfold Lifting.ofMotives at h
+  by_cases hD : D ∈ names
+  · simp only [hD, ↓reduceIte] at h
+    split at h
+    · next C hC => exact ⟨hD, C, hC, (Option.some.inj h).symm⟩
+    · cases h
+  · simp only [hD, ↓reduceIte] at h
+    cases h
+
 /-! ## Types of the Fields -/
 
 /-- The types of the entries of the telescope `Θ`, in order, each in the scope of all the
@@ -141,6 +157,15 @@ theorem Terms.ResultTypes.params_eq {sig : Signature} {v : Lifting.Variables} :
   | _, _, _, _, _, _, _, _, _, .plain h => h.params_eq
   | _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg _ h.params_eq
   | _, _, _, _, _, _, _, _, _, .nested _ h => congrArg _ h.params_eq
+
+/-- Fields whose nestings have no position have no recursive result. -/
+theorem Telescope.nestResultParams_of_plain : {ns : List (Nest Name)} → {ps : List Parameter} →
+    (∀ ν ∈ ns, ν = .plain) → Telescope.nestResultParams ns ps = []
+  | [], _, _ | .plain :: _, [], _ | .direct _ :: _, [], _ | .inst _ :: _, [], _ => rfl
+  | .plain :: ns, _ :: ps, h =>
+    Telescope.nestResultParams_of_plain (ns := ns) (ps := ps)
+      fun ν hν => h ν (List.mem_cons_of_mem _ hν)
+  | .direct _ :: _, _ :: _, h | .inst _ :: _, _ :: _, h => nomatch h _ List.mem_cons_self
 
 /-! ## Terms of the Recursive Results -/
 
@@ -273,5 +298,19 @@ theorem Terms.ResultTerms.params_eq {sig : Signature} {v : Lifting.Variables} {�
   | _, _, _, _, _, _, .plain h => h.params_eq
   | _, _, _, _, _, _, .recursive h => congrArg _ h.params_eq
   | _, _, _, _, _, _, .nested _ h => congrArg _ h.params_eq
+
+/-- The terms of fields whose nestings have no position have no recursive result. -/
+theorem Telescope.resultTerms_of_plain {sig : Signature} {v : Lifting.Variables} {k' : Nat}
+    {Γ : Scope} {ρ : Lifting k Γ Γ} {φ : Name → Term k (.var :: Γ)} (names : List Name) :
+    {Ξ : Scope} → {ps : List Parameter} → (Θ' : Telescope k' Ξ ps) → (Θ : Telescope k Γ ps) →
+      (ts : Args k Γ ps) → (∀ ν ∈ Θ'.nest names, ν = .plain) →
+        Terms.ResultTerms sig v ρ φ (Θ'.nest names) ps (Θ.typesAt ts) ts.terms .nil
+  | _, [], .nil, .nil, .nil, _ => .nil
+  | _, _ :: _, .cons _ _ A Θ', .cons _ _ _ Θ, .cons _ ts, h => by
+    show Terms.ResultTerms sig v ρ φ (A.blockNest names :: Θ'.nest names) _ (.cons _ _)
+      (.cons _ _) .nil
+    rw [h (A.blockNest names) List.mem_cons_self]
+    exact .plain (Telescope.resultTerms_of_plain names Θ' _ ts
+      fun ν hν => h ν (List.mem_cons_of_mem _ hν))
 
 end Sic.Core

@@ -5,8 +5,8 @@ import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Levels
-import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
@@ -454,7 +454,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
       have e : ((decl.sort I).atLevels ρ).level.closedValue =
           ((decl.sort I).level.subst L).closedValue := hn
       rw [e]
-      exact DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+      exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
         (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
         (Subst.LevelEquiv.refl _)
     have hF : ∀ {s : Quality} {R' : TermRel} {D' : Name},
@@ -465,7 +465,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
       have e : ((decl.sort I).atLevels ρ).level.closedValue =
           ((decl.sort I).level.subst L).closedValue := hn
       rw [e]
-      exact FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hF' (hX a₁ _).symm
+      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF' (hX a₁ _).symm
     rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
     · have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
           (.inst D qs ls ps a₁) (CodataType.blockRel decl.codataTypes S D) :=
@@ -772,17 +772,18 @@ theorem RedStar.unpack (hpre : sig.HasPrelude) (r : Grade) :
   | [], .nil, _, l, κ, C, b, x, .nil, hx => by
     simp only [Args.terms, Term.Packs] at hx
     obtain ⟨qs, ls, ps, Δ, as, hx, -⟩ := hx
-    exact (RedStar.recursor hx).trans (.step (.iota (decl := Prelude.unit) (i := 0)
-      (List.mem_map_of_mem (f := Entry.interpret ι) hpre.unit.1) rfl rfl rfl rfl rfl rfl rfl)
+    exact (RedStar.recursor hx).trans (.step (Red.iota_plain (decl := Prelude.unit) (i := 0)
+      (List.mem_map_of_mem (f := Entry.interpret ι) hpre.unit.1) rfl rfl rfl rfl rfl rfl
+      (fun _ hν => nomatch hν) .nil rfl rfl rfl)
       (.refl _))
   | _ :: _, .cons q p A Θ, κs, l, κ, C, b, x, .cons t ts, hx => by
     simp only [Args.terms, Term.Packs] at hx
     obtain ⟨qs, ls, ps, Δ, as, y, ⟨hx, -⟩, hy⟩ := hx
-    exact (RedStar.recursor hx).trans (.step (.iota (decl := Prelude.pair) (i := 0)
+    exact (RedStar.recursor hx).trans (.step (Red.iota_plain (decl := Prelude.pair) (i := 0)
       (v := Term.unpack r y (Θ.subst₀ (Subst₀.single t)) κs.tail l κ C
         (b.subst₀ (Subst₀.liftN _ (Subst₀.single t))))
       (List.mem_map_of_mem (f := Entry.interpret ι) hpre.pair.1) rfl rfl rfl rfl rfl rfl
-      (congrArg some (Term.unpack_branch_instantiate (p := p) r t y Θ κs.tail l κ C b)))
+      (fun ν hν => by change ν ∈ [Nest.plain, Nest.plain] at hν; simpa using hν) (.cons t (.cons y .nil)) rfl rfl (congrArg some (Term.unpack_branch_instantiate (p := p) r t y Θ κs.tail l κ C b)))
       (RedStar.unpack hpre r (Θ.subst₀ (Subst₀.single t)) κs.tail l κ C _ ts hy))
 
 -- ADE: none.
@@ -795,8 +796,9 @@ theorem RedStar.resume_done (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs :
     {as' : InstanceArgs 0 [] Δ'}
     (hv : RedStar (sig.interpret ι) v (.ctor "Step" qs' ls' ps'' as' "done" (.cons t .nil))) :
     RedStar (sig.interpret ι) (Term.resume r D qs ls ps as Ss gs κ χ S κs v) t :=
-  (RedStar.recursor hv).trans (.step (.iota (decl := Prelude.step) (i := 1) (v := t)
-    (List.mem_map_of_mem (f := Entry.interpret ι) hpre.step.1) rfl rfl rfl rfl rfl rfl rfl)
+  (RedStar.recursor hv).trans (.step (Red.iota_plain (decl := Prelude.step) (i := 1) (v := t)
+    (List.mem_map_of_mem (f := Entry.interpret ι) hpre.step.1) rfl rfl rfl rfl rfl rfl
+    (fun ν hν => by change ν ∈ [Nest.plain] at hν; simpa using hν) (.cons t .nil) rfl rfl rfl)
     (.refl _))
 
 -- ADE: none.
@@ -822,8 +824,9 @@ theorem RedStar.resume_next (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs :
     rw [Term.subst₀_liftN_eq_subst, Term.corecAt_subst, InstanceArgs.subst_rename_of hc,
       States.subst_rename_of hc, CorecBranches.subst_rename_of hc, InstanceArgs.subst_id_of hid,
       States.subst_id_of hid, CorecBranches.subst_id_of hid, Term.corecAt_instantiate]
-  refine (RedStar.recursor hv).trans (.step (.iota (decl := Prelude.step) (i := 0)
-    (List.mem_map_of_mem (f := Entry.interpret ι) hpre.step.1) rfl rfl rfl rfl rfl rfl rfl) ?_)
+  refine (RedStar.recursor hv).trans (.step (Red.iota_plain (decl := Prelude.step) (i := 0)
+    (List.mem_map_of_mem (f := Entry.interpret ι) hpre.step.1) rfl rfl rfl rfl rfl rfl
+    (fun ν hν => by change ν ∈ [Nest.plain] at hν; simpa using hν) (.cons x .nil) rfl rfl rfl) ?_)
   rw [← hb]
   erw [Term.unpack_subst₀]
   exact RedStar.unpack hpre r _ κs _ _ _ _ ts hx
@@ -1064,7 +1067,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         ((T'.body I).substLevels L) a₁.toSubst S →
       DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
         ((T'.body I).substLevels Lρ) a₁.toSubst S := fun hS =>
-    DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+    DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)
   -- The observations of a pair of `P`, at the levels without variables.
@@ -1112,7 +1115,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (fun m _ => levelRel sig ι m) .type (X D')
         ((CodataType.blockRel decl.codataTypes S D').computed sig ι) := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
-      exact FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
         (.univ rfl (hU T' hT').1) (hX _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, ∀ a b, Y T'.name a b →
         corecRel T'.name (S Y T') a b := by
@@ -1162,7 +1165,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (fun m _ => levelRel sig ι m) .prop (X D')
         (fun _ _ => CodataType.blockTruth decl.codataTypes S D') := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
-      exact FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
         (.prop (hPr T' hT').1) (hX _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, Y T'.name → (S Y T').truth := by
       intro T' hT' hY
@@ -1755,7 +1758,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         ((T.body I).substLevels L) as.toSubst S →
       DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
         ((T.body I).substLevels Lρ) as.toSubst S := fun hS =>
-    DesRel.levelEquiv (fun m _ => levelRel_levelInvariant m) hS
+    DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
@@ -1780,7 +1783,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
           (Destructors.recursionAt_mem hi)
         rw [hi]
-        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
           (.univ rfl (hU T' hT')) (hX _).symm⟩)
       hDS hobs'
     obtain ⟨v₁, w₁, w₁', R₁, hv₁, hw₁, -, hR₁, hrel₁⟩ := ht.2.1 hnp
@@ -1824,7 +1827,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
           (Destructors.recursionAt_mem hi)
         rw [hi]
-        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv (fun m _ => levelRel_levelInvariant m)
+        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
           (.prop (hP T' hT')) (hX _).symm⟩)
       hDS hobs'
     have hSp := DesRel.isPer hd ih (fun i x hx => by
