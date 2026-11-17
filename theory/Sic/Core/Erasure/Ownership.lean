@@ -31,24 +31,27 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- The ownership of the variable of a recursive result of the multiplicity `1` in a branch of a
-recursor of the ownership `o'`: `1` for a nested result, the corecursor of a lifting, a new value,
-and `o'` for the others, results of the recursor. -/
+/-- `own_{o'}(w)`: the ownership of the variable of a recursive result of the multiplicity `1` in a
+branch of a recursor of the ownership `o'`: `1` for a nested result, the corecursor of a lifting, a
+new value, and `o'` for the others, results of the recursor.
+RFC: `\mathsf{own}_w` -/
 def RecursiveResult.ownership (o' : Multiplicity) : RecursiveResult → Multiplicity
   | .nested .. => .one
   | .erased | .field _ => o'
 
 -- ADE: none.
-/-- `own_χ(σ')`: the ownership of the result of a lifted destructor whose result has the shape `σ'`,
-`χ` for the recursor itself, and `1` for the corecursor of the next lifting, a new value. -/
+/-- `own_χ(Υ)`: the ownership of the result of a lifted destructor whose result has the shape `Υ`,
+`χ` for the recursor itself, and `1` for the corecursor of the next lifting, a new value.
+RFC: `\mathsf{own}_\Upsilon` -/
 def Shape.Next.ownership (χ : Multiplicity) : Shape.Next → Multiplicity
   | .recursor _ => χ
   | .lifting _ => .one
 
 -- ADE: none.
-/-- The ownership by which the observation built for a destructor whose result has the shape `σ'`
-sees the arguments of its branch: `1` when the recursor runs on it in the branch, and `ς` when the
-corecursor of the next lifting captures it, whose observations see their scope at `ς`. -/
+/-- `scale_ς(Υ)`: the ownership by which the observation built for a destructor whose result has the
+shape `Υ` sees the arguments of its branch: `1` when the recursor runs on it in the branch, and `ς`
+when the corecursor of the next lifting captures it, whose observations see their scope at `ς`.
+RFC: `\mathsf{scale}_\Upsilon` -/
 def Shape.Next.scale (ς : Multiplicity) : Shape.Next → Multiplicity
   | .recursor _ => .one
   | .lifting _ => ς
@@ -56,17 +59,19 @@ def Shape.Next.scale (ς : Multiplicity) : Shape.Next → Multiplicity
 mutual
 
 -- ADE: none.
-/-- `σ` has the ownerships `ς` and `χ`: each lifted destructor requires `ς` of the value that it
-observes, and its result has the ownership `own_χ(σ')` of the shape `σ'` of its result, whatever the
-ownerships of its arguments, as the lifting declares them. -/
+/-- `Ξ ◀ ς; χ`: the shape has the ownerships `ς` and `χ`: each lifted destructor requires `ς` of the
+value that it observes, and its result has the ownership `own_χ(Υ)` of the shape `Υ` of its result,
+whatever the ownerships of its arguments, as the lifting declares them.
+RFC: `\mathsf{uniform}_\Xi` -/
 def Shape.Uniform (ς χ : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ _ _ _ _ _ _ ψ ς' _ _ next rest =>
     ς' = ς ∧ ψ = ⟨some (next.ownership χ), fun _ => none⟩ ∧ next.Uniform ς χ ∧ rest.Uniform ς χ
 
 -- ADE: none.
-/-- The shape of a result has the ownerships `ς` and `χ`: the recursor itself does, and the next
-lifting when its shape does. -/
+/-- `Υ ◀ ς; χ`: the shape of a result has the ownerships `ς` and `χ`: the recursor itself does, and
+the next lifting when its shape does, which the RFC does not need to state.
+RFC: `\mathsf{uniform}_\Upsilon` -/
 def Shape.Next.Uniform (ς χ : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Uniform ς χ
@@ -85,13 +90,16 @@ def Shape.argOwnerships {c : Nat} (s : Multiplicity) (os πs ϱs πs' : Fin c �
 mutual
 
 -- ADE: none.
-/-- `σ` meets the requirements of the recursions on the observations of a field, whose branches see
-the term of the recursor at the ownership `o`, the corecursors capturing the scope at `ς`: for each
-destructor observed at run time, the requirement `ς₀` of the destructor that it lifts on the value
-that it observes is within `o`, and, for all the ownerships of the arguments of its branch that meet
-their requirements, the arguments of the observation meet the requirements of their positions in it,
-and the value of the ownership `ψ₀` of its result at them is defined and keeps `o`, so that the
-observation has an ownership within `o`, as each level of the recursion. -/
+/-- `Ξ meets o; ς`: the shape meets the requirements of the recursions on the observations of a
+field, whose branches see the term of the recursor at the ownership `o`, the corecursors capturing
+the scope at `ς`: for each destructor observed at run time, the requirement `ς₀` of the destructor
+that it lifts on the value that it observes is within `o`, and, for all the ownerships of the
+arguments of its branch that meet their requirements, the arguments of the observation meet the
+requirements of their positions in it, and the value of the ownership `ψ₀` of its result at them is
+defined and keeps `o`, so that the observation has an ownership within `o`, as each level of the
+recursion; the RFC writes the ownerships of the arguments of the observation `ō'`, which
+`Shape.argOwnerships` gives.
+RFC: `\mathsf{meets}_\Xi` -/
 def Shape.Requires (o ς : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest =>
@@ -102,8 +110,9 @@ def Shape.Requires (o ς : Multiplicity) : Shape → Prop
     next.Requires o ς ∧ rest.Requires o ς
 
 -- ADE: none.
-/-- The shape of a result meets the requirements of the recursions: the recursor itself does, and
-the next lifting when its shape does. -/
+/-- `Υ meets o; ς`: the shape of a result meets the requirements of the recursions: the recursor
+itself does, and the next lifting when its shape does, which the RFC does not need to state.
+RFC: `\mathsf{meets}_\Upsilon` -/
 def Shape.Next.Requires (o ς : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Requires o ς
