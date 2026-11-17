@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Lifting
+import Sic.Core.NestingFactors.Extension
 
 /-!
 # Liftings Along the Signatures
@@ -82,7 +83,7 @@ theorem Destructors.Lifts.extend (hs : sig ⊆ sig') {Γ₀ : Scope} {κ : Unive
     Destructors.Lifts sig' v κ o ρ @θ ds ds' := by
   induction h with
   | nil => exact .nil
-  | lifted hB hκ _ ih => exact .lifted (hB.extend hs) hκ ih
+  | lifted hB hπ hκ _ ih => exact .lifted (hB.extend hs) (hπ.extend hs) hκ ih
   | absent hB _ ih => exact .absent hB ih
 
 -- ADE: none.

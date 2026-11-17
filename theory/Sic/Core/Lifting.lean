@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Nesting
+public import Sic.Core.NestingFactors
 public import Sic.Core.Positivity
 
 /-!
@@ -14,8 +15,10 @@ The recursive result of a field nested below the codata type has this type.
 
 The lifting has the destructors of the codata type whose results mention a parameter lifted, each
 at the arguments of its own, used as many times as the recursor that computes its result uses them,
-and its result is the result lifted at the observation of `y`: a parameter becomes its motive at
-this observation, and an instance of a declared type the instance of its lifting.
+the grade of the recursor times the factor of the result lifted, and its result is the result lifted
+at the observation of `y`: a parameter becomes its motive at this observation, of the ownership of
+the results of the recursor, and an instance of a declared type the instance of its lifting, a new
+value, owned alone.
 The lifting is a relation, as the strict positivity is, whose cases it follows: its definition reads
 which parameters occur in a term, and a term in which a variable does not occur is a term of the
 scope without it.
@@ -172,7 +175,7 @@ def Nest.args {α : Type} : Nest α → List (Nest α)
 /-- The sort and grade variables that a lifting adds to those of its type declaration, at an
 instance: the quality `s_C` of the sorts of the motives, the grade `r` of the recursor that computes
 the terms of the lifting, the requirement `ς` of its destructors on the term that they observe, and
-the ownership `χ` of their results.
+the ownership `χ` of their results that are motives.
 The level of the sort of each motive, a level variable of the lifting, is with the motive. -/
 structure Lifting.Variables where
   /-- The quality `s_C` of the sorts of the motives. -/
@@ -181,7 +184,7 @@ structure Lifting.Variables where
   recursion : Grade
   /-- The requirement `ς` of the destructors on the term that they observe. -/
   requirement : Grade
-  /-- The ownership `χ` of the results of the destructors. -/
+  /-- The ownership `χ` of the results of the destructors that are motives. -/
   ownership : Grade
 
 -- ADE: none.
@@ -455,7 +458,8 @@ end
 /-! ## Liftings of Destructors -/
 
 /-- The parameter `p` of an argument of a destructor, in the lifting: the argument is used `r` times
-more, by the recursor of the grade `r`, and its requirement is kept. -/
+more, by the recursor of the grade `r` times the factor of the result lifted, and its requirement is
+kept. -/
 def Parameter.scale (r : Grade) (p : Parameter) : Parameter := ⟨r * p.usage, p.requirement⟩
 
 -- ADE: none.
@@ -480,6 +484,15 @@ def Lifting.resultGrade (s : Quality) (p : Grade) : Grade :=
   | .prop => (p.mode.mul .zeroOne).grade
 
 -- ADE: none.
+/-- `χ'`: the ownership of the result of a destructor of a lifting whose result lifted is `B`: the
+ownership `χ` of the results of the recursor when `B` is a motive, and `11ᵖ` when `B` is an instance
+of a lifting, whose recursive result is a new value, a corecursor.
+RFC: `\mathsf{own}_{\uparrow}` -/
+def Lifting.resultConstant {Γ : Scope} (χ : Grade) : Term k Γ → Grade
+  | .inst .. => .linearLinear
+  | _ => χ
+
+-- ADE: none.
 /--
 `Σ ⊢ d̄ ↑ y = d̄'`: the destructors `d̄'` are the destructors `d̄` of a codata type lifted at the term
 `y` of this type, where `κ` is the sort of the lifting, `o` gives the observation of `y` by each
@@ -495,27 +508,29 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
   | nil {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} :
       Destructors.Lifts sig v κ o ρ @θ .nil .nil
   /-- A destructor whose result is lifted at the observation of `y` by it, in a sort that the sort
-  of the lifting bounds: the lifting has it, at its arguments, used `r` times more, with this
-  result, of the ownership `χ`, and the requirement `ς`, and no destructor after it depends on it.
+  of the lifting bounds: the lifting has it, at its arguments, used `r` times the factor `π` of this
+  result more, with this result, of the ownership `χ` when it is a motive and `11ᵖ` when it is an
+  instance of a lifting, and the requirement `ς`, and no destructor after it depends on it.
   RFC: `\uparrow_{\bar d|}` -/
   | lifted {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} {d : Name}
       {ns ns' : List Name} {ps : List Parameter} {p q ς : Grade} {Θ : Telescope k Ξ ps}
       {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
       {ds : Destructors k (.secondOrder ps ψ :: Ξ) ns} {B' : Term k (Γ'.extend ps.length)}
-      {l : Level k}
+      {l : Level k} {π : Grade}
       {ds' : Destructors k
-        (.secondOrder (ps.map (Parameter.scale v.recursion))
-          (Lifting.resultOwnership v.ownership _) :: Γ') ns'}
+        (.secondOrder (ps.map (Parameter.scale (v.recursion * π)))
+          (Lifting.resultOwnership (Lifting.resultConstant v.ownership B') _) :: Γ') ns'}
       (hB : Term.Lifts sig v (ρ.liftN ps.length) .plain
         ((o d ps).rename (Ren.liftN ps.length ρ.ren))
         (B.subst (Subst.liftN ps.length θ)) B' l)
+      (hπ : Term.Factor sig B' π)
       (hκ : (⟨v.quality, l⟩ : Universe k) ≼ κ)
       (hds : Destructors.Lifts sig v κ o ρ.weaken (θ.snoc (e := .secondOrder ps ψ) (o d ps)) ds ds') :
       Destructors.Lifts sig v κ o ρ @θ (.cons (d := d) p q ς Θ B ψ ds)
         (.cons (d := d) (Lifting.resultGrade v.quality p) .zero v.requirement
-          (((Θ.subst θ).rename ρ.ren).scale v.recursion)
-          ((List.length_map (Parameter.scale v.recursion)).symm ▸ B')
-          (Lifting.resultOwnership v.ownership _) ds')
+          (((Θ.subst θ).rename ρ.ren).scale (v.recursion * π))
+          ((List.length_map (Parameter.scale (v.recursion * π))).symm ▸ B')
+          (Lifting.resultOwnership (Lifting.resultConstant v.ownership B') _) ds')
   /-- A destructor in whose result no variable lifted occurs, which the lifting does not have.
   RFC: `\uparrow_{\bar d\notin}` -/
   | absent {Γ' : Scope} {ρ : Lifting k Γ' Γ₀} {Ξ : Scope} {θ : Subst k Γ₀ Ξ} {d : Name}

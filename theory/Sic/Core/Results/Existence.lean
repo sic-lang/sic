@@ -403,7 +403,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
       (T.body (.ofLists qs ps hq hp))
       ((Destructors.Lifts.sublist (hb (.ofLists (qs ++ [v.quality])
         (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp'))).subset hmem)
-    obtain ⟨-, ρ₁, e₀, A₀, A₀', l, hL₁, hI, -, hnest, -, hA, -⟩ :=
+    obtain ⟨-, -, ρ₁, e₀, A₀, A₀', l, hL₁, hI, -, hnest, -, hA, -⟩ :=
       hLd.result hsig hTs hρ hq hl hp hq' hl' hp' has t hpos hd'
         (fun _ _ => .sort ⟨.prop, .zero⟩)
     have hres := hL₁.hasResult_instantiate hsub hM rfl (hI.liftN ps₁.length)

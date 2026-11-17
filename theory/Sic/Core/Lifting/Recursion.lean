@@ -163,7 +163,7 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
       Destructors.Lifts sig v κ o ρ @θ ds ds' → Subst.Neutral θ →
       (∀ r ∈ ds.recursion names, r = none) → ∀ r ∈ ds'.recursion [Lifting.name F S], r = none
   | _, _, _, _, _, _, _, _, .nil, _, _ => fun _ hr => nomatch hr
-  | _, _, _, _, _, _, _, _, .lifted hB _ h, hθ, hds => fun r hr => by
+  | _, _, _, _, _, _, _, _, .lifted hB _ _ h, hθ, hds => fun r hr => by
     rcases List.mem_cons.1 hr with rfl | hr
     · rw [Term.blockName_cast]
       exact hB.blockName hF

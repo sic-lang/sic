@@ -26,6 +26,10 @@ name = "Nesting"
 modules = ["Sic.Core.Nesting"]
 
 [[group]]
+name = "Nesting Factors"
+modules = ["Sic.Core.NestingFactors"]
+
+[[group]]
 name = "Lifting"
 modules = ["Sic.Core.Lifting"]
 
@@ -140,12 +144,25 @@ allowed = [
 ]
 
 [[rule]]
+reason = "the factors read the syntax and the liftings that the signature declares, and no judgment, so that the declaration of a lifting and each judgment may read them"
+modules = ["Sic.Core.NestingFactors"]
+allowed = [
+  "Sic.Core.Level",
+  "Sic.Core.NestingFactors",
+  "Sic.Core.Syntax",
+  "Sic.Core.Universe",
+  "Sic.Grading",
+  "Sic.Math",
+]
+
+[[rule]]
 reason = "the liftings are declared from the syntax, from the variables that occur in a term and from the nesting of a type, and read no judgment, so that each judgment proves its properties on them"
 modules = ["Sic.Core.Lifting"]
 allowed = [
   "Sic.Core.Level",
   "Sic.Core.Lifting",
   "Sic.Core.Nesting",
+  "Sic.Core.NestingFactors",
   "Sic.Core.Positivity",
   "Sic.Core.Substitution",
   "Sic.Core.Syntax",
@@ -161,6 +178,7 @@ allowed = [
   "Sic.Core.Level",
   "Sic.Core.Lifting",
   "Sic.Core.Nesting",
+  "Sic.Core.NestingFactors",
   "Sic.Core.Positivity",
   "Sic.Core.Results",
   "Sic.Core.Substitution",

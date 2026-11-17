@@ -72,7 +72,7 @@ theorem Destructors.Lifts.sublist {Γ₀ : Scope} {κ : Universe k}
       {ds : Destructors k Ξ ns} → {ns' : List Name} → {ds' : Destructors k Γ' ns'} →
       Destructors.Lifts sig v κ o ρ @θ ds ds' → ns'.Sublist ns
   | _, _, _, _, _, _, _, _, .nil => .slnil
-  | _, _, _, _, _, _, _, _, .lifted _ _ h => (Destructors.Lifts.sublist h).cons_cons _
+  | _, _, _, _, _, _, _, _, .lifted _ _ _ h => (Destructors.Lifts.sublist h).cons_cons _
   | _, _, _, _, _, _, _, _, .absent _ h => (Destructors.Lifts.sublist h).cons _
 
 end Sic.Core

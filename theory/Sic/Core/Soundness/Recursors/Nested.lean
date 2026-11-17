@@ -491,7 +491,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g₁, hg₁⟩ := hgs₁ i d' hi
     obtain ⟨_, _, _, ps₂, _, _, _, _, hpos₂, g₂, hg₂⟩ := hgs₂ i d' hi
     obtain ⟨-, rfl⟩ := hpos.params_unique (hd.destructors_nodup h) hpos₂
-    obtain ⟨hps, l₁, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
+    obtain ⟨π, hps, l₁, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
       (ρ := ρ₁) hρ₁ hq hl hp hq' hl' hp' has₁ t₁ hpos hpos' o₁'
     subst hps
     have ht₁ : t₁.rename ρ₁.ren = t₁ := Term.rename_id_of hid₁ t₁
@@ -499,15 +499,15 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨SΘ, hΘ, hsound⟩ := horacle ls₂ as₂ d' p q ς ps₁ Ξ Θ B ψ hpos
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
     have hΘ'' : TelRel sig ι nL (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
-        (((Θ.substLevels L).subst (hpos.obsSubst f₁ as.toSubst)).scale v.recursion) SΘ' := by
+        (((Θ.substLevels L).subst (hpos.obsSubst f₁ as.toSubst)).scale (v.recursion * π)) SΘ' := by
       have e := hΘeq
       rw [Telescope.rename_id_of hid₁] at e
       exact e ▸ hΘ'
     have ihm : ∀ m, m < max nL n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hSS := TelRel.unique hd ihm (TelRel.levelLe (Nat.le_max_left nL n) hΘ'') _ _
-      (TelRel.levelLe (Nat.le_max_right nL n) (hΘ.scale v.recursion))
-    obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale v.recursion) ps₁ ts'
-    obtain ⟨us, hus⟩ := Args.exists_terms_map (Parameter.scale v.recursion) ps₁ us'
+      (TelRel.levelLe (Nat.le_max_right nL n) (hΘ.scale (v.recursion * π)))
+    obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * π)) ps₁ ts'
+    obtain ⟨us, hus⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * π)) ps₁ us'
     have hSΘ : SΘ ts.terms us.terms := (hSS _ _).1 (hts ▸ hus ▸ hts')
     -- The results of the observations, at the arguments.
     have hφ₁ : (fun E => ((φ₁ E).rename (Ren.lift (Ren.weakenN ps₁.length))).subst
