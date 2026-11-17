@@ -142,7 +142,10 @@ theorem Branches.get_erase (sig : Signature) (S : Math.Set Grade) [DecidablePred
   | .nil, _, _, _, _, _, _, h => nomatch h
   | .cons _ _ gs _ _, _, _, 0, _, _, _, h => by
     cases h
-    exact ⟨gs, rfl, rfl⟩
+    refine ⟨gs, rfl, ?_⟩
+    simp only [Branches.erase, TargetBranches.get, apply_ite RecursiveResult.position,
+      RecursiveResult.position_ofPosition]
+    rfl
   | .cons _ _ _ _ us, es, fs, i + 1, _, _, _, h => by
     obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ r us es.tail fs.tail h
     have he : es.drop (i + 1) = es.tail.drop i := by

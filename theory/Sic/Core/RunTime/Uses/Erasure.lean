@@ -187,13 +187,15 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
   | .cons a b gs u us, es, fs, h => by
     obtain ⟨δ, hu, hχ, hk⟩ := h 0 a b gs u rfl rfl
     simp only [List.drop_zero] at hu hχ
-    refine .cons hu hχ (fun j hj => hk j fun hs => by simp [show gs[(j : Nat)] ∈ S from hs] at hj)
-      (Branches.erase_usage hΓ r χ us es.tail fs.tail
-      fun i a' b' gs' u' hg hgs => ?_)
-    have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
-    have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
-    have := h (i + 1) a' b' gs' u' hg hgs
-    rwa [e₁, e₂] at this
+    refine .cons hu ?_ (fun j hj => hk j fun hs => ?_) (Branches.erase_usage hΓ r χ us es.tail
+      fs.tail fun i a' b' gs' u' hg hgs => ?_)
+    · simpa only [apply_ite RecursiveResult.position, RecursiveResult.position_ofPosition,
+      RecursiveResult.position_erased] using hχ
+    · simp [show gs[(j : Nat)] ∈ S from hs] at hj
+    · have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
+      have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
+      have := h (i + 1) a' b' gs' u' hg hgs
+      rwa [e₁, e₂] at this
 
 /-- The erasure of the branches of a corecursor reads the variables of the scope as `δ` allows when
 each branch, without non-uniform parameters and with a grade, reads them as some `δᵢ` allows, and

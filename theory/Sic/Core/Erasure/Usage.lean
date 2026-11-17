@@ -108,10 +108,11 @@ inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBr
   /-- The first branch and the others.
   RFC: `\mathsf{usage}_{\bar N}.{,}` -/
   | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs κs : Fin a → Multiplicity}
-      {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
+      {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
-      (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ))
-      (hk : ∀ j, (ks j).isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
+      (hχ : χ ≤ᶜ δ +ᶜ
+        (Multiplicity.sum (fun j => if (ks j).position.isSome then πs' j else .zero) ·ᶜ χ))
+      (hk : ∀ j, (ks j).position.isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
       TargetBranches.Usage χ (.cons a b πs κs πs' ks N Ns)
 
 -- ADE: none.

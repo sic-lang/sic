@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Erasure.Shape
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set
 
@@ -16,8 +17,8 @@ and the observations and the corecursors of the codata types, whose fields, term
 states are positions, erased by their grades.
 It keeps only what its evaluation reads: a constructor and an observation keep the case of their
 constructor and of their destructor in its block, which chooses a branch, since the names are only
-distinct in their type; a branch of a recursor keeps the field of each of its recursive results, or
-none when the result is erased, and a branch of a corecursor the number of the entries of the state
+distinct in their type; a branch of a recursor keeps the field of each of its recursive results, with
+the shape of the corecursor that a nested field gives, or none when the result is erased, and a branch of a corecursor the number of the entries of the state
 it resumes, when its destructor is recursive.
 
 The translation is defined on the terms in a scope of variables only, which the hypothesis
@@ -51,6 +52,43 @@ def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
 theorem Var.mem {Γ : Scope} {e : Scope.Entry} : Var Γ e → e ∈ Γ
   | .zero => List.mem_cons_self
   | .succ x => List.mem_cons_of_mem _ x.mem
+
+-- ADE: none.
+/-- `k`: the recursive result of a branch of a recursor of the target language: `erased`, the RFC's
+`⊥`, when the result is erased, `field l` when it is the recursor on the recursive field `l`, and
+`nested l σ` when it is the corecursor of a lifting, of the shape `σ`, on the nested field `l`; the
+positions are counted from `0`, while the RFC counts them from `1`. -/
+inductive RecursiveResult where
+  /-- `⊥`. -/
+  | erased
+  /-- `l`. -/
+  | field (l : Nat)
+  /-- `l.σ`. -/
+  | nested (l : Nat) (σ : Shape)
+
+-- ADE: none.
+/-- The result at the position `l` of a field, or erased when there is none: a recursive result
+that the evaluation computes by the recursor. -/
+def RecursiveResult.ofPosition : Option Nat → RecursiveResult
+  | none => .erased
+  | some l => .field l
+
+-- ADE: none.
+/-- The position of the field of a result that the recursor computes, if any: a nested result, which
+the evaluation does not compute by the recursor, has none. -/
+def RecursiveResult.position : RecursiveResult → Option Nat
+  | .field l => some l
+  | .erased | .nested .. => none
+
+/-- An erased result has no position. -/
+@[simp]
+theorem RecursiveResult.position_erased : RecursiveResult.erased.position = none := rfl
+
+/-- A result of a position has this position. -/
+@[simp]
+theorem RecursiveResult.position_ofPosition (o : Option Nat) :
+    (RecursiveResult.ofPosition o).position = o := by
+  cases o <;> rfl
 
 -- ADE: none.
 /-- `k`: the resumption of a branch of a corecursor of the target language: `none`, the RFC's `⊥`,
@@ -159,16 +197,16 @@ inductive Targets : Nat → Type where
 `(x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄). N` is a term over a new variable for each of the `a` fields and of the
 `b` recursive results, of the multiplicities `π̄` and `π̄'` at run time, each variable of a field
 with the coefficient `κ` of its ownership, which multiplies the ownership of the term of the
-recursor, at run time, and `k̄` gives, for each recursive result, the position of its field, or
-`none`, the RFC's `⊥`, when the result is erased; the positions are counted from `0`, while the RFC
-counts them from `1`.
+recursor, at run time, and `k̄` gives, for each recursive result, the result that it computes: the
+recursor on a recursive field, the corecursor of a lifting on a nested field, with its shape, or
+nothing when the result is erased.
 RFC: `\mathsf{syntax}_{\bar N}` -/
 inductive TargetBranches : Nat → Type where
   /-- `()`. -/
   | nil {n : Nat} : TargetBranches n
   /-- `((x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← k̄). N, N̄)`. -/
   | cons {n : Nat} (a b : Nat) (πs κs : Fin a → Multiplicity) (πs' : Fin b → Multiplicity)
-      (ks : Fin b → Option Nat) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
+      (ks : Fin b → RecursiveResult) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
       TargetBranches n
 
 -- ADE: none.
@@ -246,13 +284,13 @@ inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → P
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar N}.N` -/
   | head {n : Nat} {x : Fin n} {a b : Nat} {πs κs : Fin a → Multiplicity}
-      {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
+      {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (h : Target.Occurs (x.addNat (a + b)) N) :
       TargetBranches.Occurs x (.cons a b πs κs πs' ks N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar N}.\bar N` -/
   | tail {n : Nat} {x : Fin n} {a b : Nat} {πs κs : Fin a → Multiplicity}
-      {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat} {N : Target (n + (a + b))}
+      {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (h : TargetBranches.Occurs x Ns) :
       TargetBranches.Occurs x (.cons a b πs κs πs' ks N Ns)
 
@@ -370,8 +408,8 @@ inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → Target
   recursive result of `k̄₁` is not computed or has the field it has in `k̄₂`.
   RFC: `{\sqsubseteq}_{\bar N}.{,}` -/
   | cons {n a b : Nat} {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity}
-      {ks₁ ks₂ : Fin b → Option Nat} {M N : Target (n + (a + b))}
-      {Ms Ns : TargetBranches n} (hk : ∀ j : Fin b, ks₁ j = none ∨ ks₁ j = ks₂ j)
+      {ks₁ ks₂ : Fin b → RecursiveResult} {M N : Target (n + (a + b))}
+      {Ms Ns : TargetBranches n} (hk : ∀ j : Fin b, ks₁ j = .erased ∨ ks₁ j = ks₂ j)
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
       TargetBranches.LessDefined (.cons a b πs κs πs' ks₁ M Ms) (.cons a b πs κs πs' ks₂ N Ns)
 
@@ -617,7 +655,7 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
         (((es.headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
       (fun l => r.fieldCoefficient (fs.headD [])[(l : Nat)]?)
       (fun j => gs[j].run)
-      (fun j => if gs[j] ∈ S then none else (es.headD [])[(j : Nat)]?)
+      (fun j => if gs[j] ∈ S then .erased else .ofPosition (es.headD [])[(j : Nat)]?)
       (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
       (us.erase sig S hΓ r es.tail fs.tail)
 

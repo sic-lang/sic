@@ -151,7 +151,7 @@ def TargetBranches.get {n : Nat} : TargetBranches n → Nat →
     Option (Σ a b, (Fin a → Multiplicity) × (Fin a → Multiplicity) × (Fin b → Multiplicity) ×
       (Fin b → Option Nat) × Target (n + (a + b)))
   | .nil, _ => none
-  | .cons a b πs κs πs' ks N _, 0 => some ⟨a, b, πs, κs, πs', ks, N⟩
+  | .cons a b πs κs πs' ks N _, 0 => some ⟨a, b, πs, κs, πs', fun j => (ks j).position, N⟩
   | .cons _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 /-- The branch at a position of the branches of a corecursor of the target language. -/

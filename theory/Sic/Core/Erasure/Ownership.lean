@@ -105,7 +105,7 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
   /-- The first branch and the others.
   RFC: `\mathsf{own}_{\bar N}.{,}` -/
   | cons {n a b : Nat} {φ : MultiplicityVector n} {o o' : Multiplicity}
-      {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → Option Nat}
+      {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult}
       {N : Target (n + (a + b))} {Ns : TargetBranches n}
       (hN : Target.Ownership Ω (φ.extendBinders (fun l => o * κs l) (fun j => o' * πs' j)) o' N)
       (hNs : TargetBranches.Ownership Ω φ o o' Ns) :
