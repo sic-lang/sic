@@ -216,6 +216,9 @@ theorem mul_le_self : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → ϖ * π ≤ π 
 /-- A product of multiplicities other than `0` is other than `0`. -/
 theorem mul_ne_zero : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → π ≠ .zero → ϖ * π ≠ .zero := by decide
 
+/-- A multiplicity times itself is itself: the product is idempotent. -/
+theorem mul_idem : ∀ π : Multiplicity, π * π = π := by decide
+
 /-- A sum whose first operand is not `0` is not `0`. -/
 theorem add_ne_zero_left : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .zero := by decide
 
