@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Erasure.Shape
+public import Sic.Core.Erasure.Skeleton
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set
 
@@ -507,6 +508,35 @@ def Targets.ofList {n : Nat} : List (Multiplicity × Target n) → Targets n
   | [] => .nil
   | (π, M) :: Ms => .cons π .omega M (Targets.ofList Ms)
 
+mutual
+
+-- ADE: none.
+/-- The term of the target language that a skeleton stands for, in every scope, since it mentions no
+variable. -/
+def Skeleton.target {n : Nat} : Skeleton → Target n
+  | .erased => .erased
+  | .ctor i ks => .ctor i (Skeleton.targets ks)
+
+-- ADE: none.
+/-- The terms that skeletons stand for, the first one first, each at the multiplicity `0`, since a
+skeleton holds no value that a use at run time reads, and at the requirement `ω`, which states
+nothing. -/
+def Skeleton.targets {n : Nat} : List Skeleton → Targets n
+  | [] => .nil
+  | k :: ks => .cons .zero .omega k.target (Skeleton.targets ks)
+
+end
+
+-- ADE: none.
+/-- The terms that skeletons stand for are those of the list of these terms, each at the
+multiplicity `0`. -/
+theorem Skeleton.targets_eq_ofList {n : Nat} :
+    (ks : List Skeleton) →
+      (Skeleton.targets ks : Targets n) = Targets.ofList (ks.map fun k => (.zero, k.target))
+  | [] => rfl
+  | k :: ks => by
+    simp only [Skeleton.targets, List.map_cons, Targets.ofList, Skeleton.targets_eq_ofList ks]
+
 -- ADE: none.
 /-- `π̄(M̄)`: the multiplicities at which the terms are stored, the first one first.
 RFC: `\mathsf{multiplicities}_{\bar M}` -/
@@ -528,8 +558,8 @@ recursive and to the skeleton of the type of each recursive field, each at the m
 since a skeleton holds no value that a use at run time reads, and at the requirement `ω`, which
 states nothing, when `D` has exactly one constructor, and `↯` when it has none or several, or when
 the depth is reached. -/
-def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades)
-    {n : Nat} : Nat → Name → Target n
+def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades) :
+    Nat → Name → Skeleton
   | 0, _ => .erased
   | d + 1, D =>
     match decl.dataTypes.find? (·.name == D) with
@@ -537,9 +567,9 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
       match T.constructors with
       | [con] =>
         match decl.cases.findIdx? (fun x => x.2.1.name == D && x.2.2.name == con.name) with
-        | some i => .ctor i (Targets.ofList (((con.fields I).recursion decl.names).map fun
-            | some D' => (.zero, decl.skeleton I d D')
-            | none => (.zero, .erased)))
+        | some i => .ctor i (((con.fields I).recursion decl.names).map fun
+            | some D' => decl.skeleton I d D'
+            | none => .erased)
         | none => .erased
       | _ => .erased
     | none => .erased
@@ -547,8 +577,8 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
 -- ADE: none.
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
 within the depth of the number of the types of its block, when the entry declares it. -/
-def Entry.skeleton {n : Nat} (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (Target n)
+def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
+    Entry → Option Skeleton
   | .typeDeclaration decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
@@ -568,8 +598,8 @@ The depth of the number of the types of the block is reached only on a type with
 along a path of a closed term of a type, no type of the block comes twice, since each type has one
 constructor, so that the term would hold a term of the same form, without end.
 RFC: `\mathsf{skeleton}_D` -/
-def Signature.skeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality)
-    (ps : List Grade) : Target n :=
+def Signature.skeleton (sig : Signature) (D : Name) (qs : List Quality)
+    (ps : List Grade) : Skeleton :=
   (sig.findSome? (Entry.skeleton D qs ps)).getD .erased
 
 -- ADE: none.
@@ -647,7 +677,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
   | .recursor r _ _ D qs _ ps _ t _ _ us =>
     .recursor r.run
       (if r ∈ S then .omega else (sig.recursionRequirement D qs ps r).run)
-      (if r ∈ S then sig.skeleton D qs ps else t.erase sig S hΓ)
+      (if r ∈ S then (sig.skeleton D qs ps).target else t.erase sig S hΓ)
       (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
         ((sig.caseFieldParams D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>
@@ -819,58 +849,22 @@ theorem ResultOwnership.toArity_self {α : Type} {n : Nat} (ψ : ResultOwnership
   cases ψ
   simp only [ResultOwnership.toArity, Fin.is_lt, ↓reduceDIte]
 
--- ADE: none.
-/-- The terms of a list of skeletons are skeletons. -/
-theorem Targets.isSkeleton_ofList {n : Nat} :
-    (Ms : List (Multiplicity × Target n)) → (∀ πM ∈ Ms, πM.2.IsSkeleton) →
-      (Targets.ofList Ms).IsSkeleton
-  | [], _ => .nil
-  | πM :: Ms, h => .cons (h πM List.mem_cons_self)
-      (Targets.isSkeleton_ofList Ms fun πM' hM' => h πM' (List.mem_cons_of_mem _ hM'))
+mutual
 
 -- ADE: none.
-/-- The skeleton of a data type of a block is a skeleton. -/
-theorem TypeDeclaration.skeleton_isSkeleton (decl : TypeDeclaration)
-    (I : Instance decl.sorts decl.grades) {n : Nat} :
-    (d : Nat) → (D : Name) → (decl.skeleton I d D : Target n).IsSkeleton
-  | 0, _ => .erased
-  | d + 1, D => by
-    simp only [TypeDeclaration.skeleton]
-    split
-    · split
-      · split
-        · refine .ctor (Targets.isSkeleton_ofList _ fun M hM => ?_)
-          obtain ⟨r, _, rfl⟩ := List.mem_map.mp hM
-          cases r with
-          | some D' => exact decl.skeleton_isSkeleton I d D'
-          | none => exact .erased
-        · exact .erased
-      · exact .erased
-    · exact .erased
+/-- The term that a skeleton stands for is a skeleton. -/
+theorem Skeleton.isSkeleton {n : Nat} : (k : Skeleton) → (k.target : Target n).IsSkeleton
+  | .erased => .erased
+  | .ctor _ ks => .ctor (Skeleton.isSkeleton_targets ks)
 
 -- ADE: none.
-/-- The skeleton of a data type in a signature is a skeleton. -/
-theorem Signature.skeleton_isSkeleton {n : Nat} (sig : Signature) (D : Name) (qs : List Quality)
-    (ps : List Grade) : (sig.skeleton D qs ps : Target n).IsSkeleton := by
-  unfold Signature.skeleton
-  induction sig with
-  | nil => exact .erased
-  | cons e sig ih =>
-    simp only [List.findSome?_cons]
-    split
-    · rename_i M hM
-      simp only [Option.getD_some]
-      cases e with
-      | typeDeclaration decl =>
-        simp only [Entry.skeleton] at hM
-        split at hM
-        · split at hM
-          · obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp hM
-            exact decl.skeleton_isSkeleton _ _ _
-          · exact nomatch hM
-        · exact nomatch hM
-      | _ => simp only [Entry.skeleton] at hM; exact nomatch hM
-    · exact ih
+/-- The terms that skeletons stand for are skeletons. -/
+theorem Skeleton.isSkeleton_targets {n : Nat} :
+    (ks : List Skeleton) → (Skeleton.targets ks : Targets n).IsSkeleton
+  | [] => .nil
+  | k :: ks => .cons k.isSkeleton (Skeleton.isSkeleton_targets ks)
+
+end
 
 mutual
 
@@ -912,7 +906,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     simp only [Term.erase]
     by_cases h₂ : r ∈ S₂
     · simp only [h₂, ↓reduceIte]
-      exact .skeleton (sig.skeleton_isSkeleton _ _ _) (Branches.erase_lessDefined sig h hΓ _ us _ _)
+      exact .skeleton (sig.skeleton _ _ _).isSkeleton (Branches.erase_lessDefined sig h hΓ _ us _ _)
     · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
       simp only [h₂, h₁, ↓reduceIte]
       exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ _ us _ _)

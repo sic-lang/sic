@@ -149,59 +149,26 @@ end
 
 /-! ## Properties -/
 
--- ADE: none.
-/-- The terms of a list, each of the ownership `1`, satisfy the requirement `ω` at which the list
-stores them. -/
-theorem Targets.ownership_ofList {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} :
-    (Ms : List (Multiplicity × Target n)) → (∀ πM ∈ Ms, Target.Ownership Ω φ .one πM.2) →
-      Targets.Ownership Ω φ (Ms.map fun _ => .one) (Targets.ofList Ms)
-  | [], _ => .nil
-  | πM :: Ms, h => .cons (h πM List.mem_cons_self) (show Multiplicity.omega ≤ .one by decide)
-      (Targets.ownership_ofList Ms fun πM' hM' => h πM' (List.mem_cons_of_mem _ hM'))
+mutual
 
 -- ADE: none.
-/-- The skeleton of a data type of a block has the ownership `1` of a new value. -/
-theorem TypeDeclaration.skeleton_ownership {Ω : Name → Multiplicity} (decl : TypeDeclaration)
-    (I : Instance decl.sorts decl.grades) {n : Nat} {φ : MultiplicityVector n} :
-    (d : Nat) → (D : Name) → Target.Ownership Ω φ .one (decl.skeleton I d D)
-  | 0, _ => .erased _
-  | d + 1, D => by
-    simp only [TypeDeclaration.skeleton]
-    split
-    · split
-      · split
-        · refine .ctor (Targets.ownership_ofList _ fun M hM => ?_)
-          obtain ⟨r, _, rfl⟩ := List.mem_map.mp hM
-          cases r with
-          | some D' => exact decl.skeleton_ownership I d D'
-          | none => exact .erased _
-        · exact .erased _
-      · exact .erased _
-    · exact .erased _
+/-- The term that a skeleton stands for has the ownership `1` of a new value. -/
+theorem Skeleton.ownership {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} :
+    (k : Skeleton) → Target.Ownership Ω φ .one k.target
+  | .erased => .erased _
+  | .ctor _ ks => .ctor (Skeleton.ownership_targets ks)
 
 -- ADE: none.
-/-- The skeleton of a data type in a signature has the ownership `1` of a new value. -/
-theorem Signature.skeleton_ownership {Ω : Name → Multiplicity} {n : Nat}
-    {φ : MultiplicityVector n} (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
-    Target.Ownership Ω φ .one (sig.skeleton D qs ps) := by
-  unfold Signature.skeleton
-  induction sig with
-  | nil => exact .erased _
-  | cons e sig ih =>
-    simp only [List.findSome?_cons]
-    split
-    · rename_i M hM
-      simp only [Option.getD_some]
-      cases e with
-      | typeDeclaration decl =>
-        simp only [Entry.skeleton] at hM
-        split at hM
-        · split at hM
-          · obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp hM
-            exact decl.skeleton_ownership _ _ _
-          · exact nomatch hM
-        · exact nomatch hM
-      | _ => simp only [Entry.skeleton] at hM; exact nomatch hM
-    · exact ih
+/-- The terms that skeletons stand for have the ownership `1` of a new value, which satisfies the
+requirement `ω` at which they are stored. -/
+theorem Skeleton.ownership_targets {Ω : Name → Multiplicity} {n : Nat}
+    {φ : MultiplicityVector n} :
+    (ks : List Skeleton) →
+      Targets.Ownership Ω φ (ks.map fun _ => .one) (Skeleton.targets ks)
+  | [] => .nil
+  | k :: ks => .cons k.ownership (show Multiplicity.omega ≤ .one by decide)
+      (Skeleton.ownership_targets ks)
+
+end
 
 end Sic.Core

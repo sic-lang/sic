@@ -216,7 +216,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     | recursor ho =>
       by_cases hr : r ∈ S
       · simp only [hr, ↓reduceIte] at ho
-        exact (sig.skeleton_isSkeleton _ _ _).not_occurs ho
+        exact (sig.skeleton _ _ _).isSkeleton.not_occurs ho
       · simp only [hr, ↓reduceIte] at ho
         have hS' : ErasesUncounted (m ⊙ r) S := (hS.mode _ hr).symm ▸ hS
         exact Usage.absent hd hS' hΓ ht (hS.mul _ _ hr (hS.add _ _ hx')) ho

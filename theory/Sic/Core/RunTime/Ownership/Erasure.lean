@@ -433,7 +433,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     simp only [Term.erase]
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
-      exact .recursor (sig.skeleton_ownership _ _ _) (hbr _ (fun h' => absurd hr h')
+      exact .recursor (sig.skeleton _ _ _).ownership (hbr _ (fun h' => absurd hr h')
         fun _ => rfl)
     · simp only [hr, ↓reduceIte]
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr

@@ -33,8 +33,8 @@ open Sic.Grading
 /-! ## Signatures -/
 
 /-- An entry that does not introduce the name `D` gives the skeleton of no data type named `D`. -/
-theorem Entry.skeleton_of_not_mem {n : Nat} {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → (Entry.skeleton D qs ps e : Option (Target n)) = none
+theorem Entry.skeleton_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.skeleton D qs ps e = none
   | .typeDeclaration decl, hD => by
     have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
       hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
@@ -51,17 +51,17 @@ theorem Entry.skeleton_of_not_mem {n : Nat} {D : Name} {qs : List Quality} {ps :
 -- ADE: none.
 /-- In a signature whose names are distinct, the skeleton of a data type is that of the block of its
 declaration, at the instance, within the depth of the number of the types of the block. -/
-theorem Signature.Distinct.skeleton {n : Nat} : {sig : Signature} → sig.Distinct → {D : Name} →
+theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
-    (sig.skeleton D qs ps : Target n) =
+    sig.skeleton D qs ps =
       decl.skeleton (.ofLists qs ps hq hp) decl.names.length D
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
     unfold Signature.skeleton
     rcases List.mem_cons.1 he with rfl | he'
-    · have hs : (Entry.skeleton D qs ps (.typeDeclaration decl) : Option (Target n)) =
+    · have hs : Entry.skeleton D qs ps (.typeDeclaration decl) =
           some (decl.skeleton (.ofLists qs ps hq hp) decl.names.length D) := by
         simp only [Entry.skeleton, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
@@ -128,15 +128,18 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
     (hD : T.name = D) {c : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (hc : T.constructors = [c]) {i : Nat}
     (hi : Entry.constructorCase D c.name (.typeDeclaration decl) = some i) :
-    (decl.skeleton I (d + 1) D : Target n) =
+    ((decl.skeleton I (d + 1) D).target : Target n) =
       .ctor i (Targets.ofList (((c.fields I).recursion decl.names).map fun
-        | some D' => (.zero, decl.skeleton I d D')
+        | some D' => (.zero, (decl.skeleton I d D').target)
         | none => (.zero, .erased))) := by
   subst hD
   simp only [Entry.constructorCase] at hi
   simp only [TypeDeclaration.skeleton,
-    List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, hc, hi]
-  rfl
+    List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, hc, hi, Skeleton.target,
+    Skeleton.targets_eq_ofList, List.map_map]
+  congr 3
+  funext r
+  cases r <;> rfl
 
 /-! ## Evaluation -/
 

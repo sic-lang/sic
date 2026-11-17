@@ -1196,7 +1196,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     {H₁ : Heap}
     (hH₁ : H.Extends H₁) (ϖ₀ : Multiplicity) {t : Term 0 []}
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ)) :
-    ∃ a H₂ b H₃ tr, Eval P (ϖ₀ * r.run) H₁ E (sig.skeleton D qs ps : Target Γ.length) a H₂ [] ∧
+    ∃ a H₂ b H₃ tr, Eval P (ϖ₀ * r.run) H₁ E ((sig.skeleton D qs ps).target : Target Γ.length) a H₂ [] ∧
       EvalRec P ϖ₀ H₂ E r.run .omega (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₃
         tr ∧ H₁.Extends H₃ ∧
@@ -1227,7 +1227,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
   let Pk : Name → Term 0 [] → Prop := fun D' v => ∀ (A : List Name) (d : Nat), A.Nodup →
     (∀ X ∈ A, X ∈ decl.names) → (∀ X ∈ A, Relation.TransGen (decl.Below I) D' X) →
     d + A.length = decl.names.length → ∀ ϖ' H₂ a H₃ tr₀, H.Extends H₂ →
-    Eval P ϖ' H₂ E (decl.skeleton I d D' : Target Γ.length) a H₃ tr₀ →
+    Eval P ϖ' H₂ E ((decl.skeleton I d D').target : Target Γ.length) a H₃ tr₀ →
     ValidTerm₀ sig ι v (.inst D' qs ls ps (as.subst σ)) → ∀ ϖ'' H', H₃.Extends H' →
     ∃ b H₄ tr, EvalRec P ϖ'' H' E r.run .omega Ns a b H₄ tr ∧ H'.Extends H₄ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get (decl.names.idxOf D') = some ⟨0, C'⟩ →
@@ -1274,7 +1274,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     -- has no use at run time.
     have hπv : ∀ (l : Nat) (p : Parameter), (con.params I)[l]? = some p →
         ∃ π₀, (Targets.ofList (((con.fields I).recursion decl.names).map fun
-            | some D' => ((.zero : Multiplicity), (decl.skeleton I d' D' : Target Γ.length))
+            | some D' => ((.zero : Multiplicity), ((decl.skeleton I d' D').target : Target Γ.length))
             | none => (.zero, .erased))).multiplicities[l]? = some π₀ ∧
           r.run * π₀ ≤ r.run * p.usage.run := fun l p hlp => by
       have hl : l < ((con.fields I).recursion decl.names).length := by
@@ -1291,10 +1291,10 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     -- ownerships are `0`, since the grade of the recursor has no use at run time.
     have hκv : ∀ (l : Nat) (p : Parameter), (con.params I)[l]? = some p →
         ∃ π₀ ϱ₀, (Targets.ofList (((con.fields I).recursion decl.names).map fun
-            | some D' => ((.zero : Multiplicity), (decl.skeleton I d' D' : Target Γ.length))
+            | some D' => ((.zero : Multiplicity), ((decl.skeleton I d' D').target : Target Γ.length))
             | none => (.zero, .erased))).multiplicities[l]? = some π₀ ∧
           (Targets.ofList (((con.fields I).recursion decl.names).map fun
-            | some D' => ((.zero : Multiplicity), (decl.skeleton I d' D' : Target Γ.length))
+            | some D' => ((.zero : Multiplicity), ((decl.skeleton I d' D').target : Target Γ.length))
             | none => (.zero, .erased))).requirements[l]? = some ϱ₀ ∧
           (p.requirement * (r * p.usage)).run ≤ ϱ₀ * (r.run * π₀) := fun l p hlp => by
       obtain ⟨π₀, hπ₀, -⟩ := hπv l p hlp
@@ -1364,7 +1364,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     hclosed
   have hww := (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htv
   obtain ⟨a, H₂, hev, hH₂⟩ :=
-    (decl.skeleton_isSkeleton I decl.names.length T.name).eval P (ϖ₀ * r.run) H₁ E
+    (decl.skeleton I decl.names.length T.name).isSkeleton.eval P (ϖ₀ * r.run) H₁ E
   obtain ⟨b, H₃, tr, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
     (fun _ h => nomatch h) rfl _ H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) ϖ₀ H₂
     (List.prefix_refl _)

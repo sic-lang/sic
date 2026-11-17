@@ -372,8 +372,8 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul]
     by_cases hr : r ∈ Mode.oneOne.erased
     · simp only [hr, ↓reduceIte]
-      refine .sub (.recursor (sig.skeleton_isSkeleton _ _ _).usage
-        (fun _ => sig.skeleton_isSkeleton _ _ _) hbr) (MultiplicityVector.le_of_eq ?_)
+      refine .sub (.recursor (sig.skeleton _ _ _).isSkeleton.usage
+        (fun _ => (sig.skeleton _ _ _).isSkeleton) hbr) (MultiplicityVector.le_of_eq ?_)
       rw [(Mode.erased_values.1 r).1 hr,
         (MultiplicityVector.module Multiplicity.modality).zero_smul,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
