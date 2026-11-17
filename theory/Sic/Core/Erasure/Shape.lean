@@ -34,15 +34,16 @@ mutual
 /-- `σ`: the shape of a lifting, one element for each destructor that it keeps, in order, which gives
 the case `i` of the destructor in its block, its multiplicity `ρ` at run time, the positions
 `π̄ ◀ ϱ̄` of its `c` arguments in the observation and `π̄' ◀ ϱ̄'` in the lifted destructor, the
-ownership `ψ` of its result and the ownership `ς` that it requires of the value that it observes, and
-the shape `σ'` of its result. -/
+ownership `ψ` of the result of the lifted destructor and the ownership `ς` that it requires of the
+value that it observes, the same two ownerships `ψ₀` and `ς₀` of the destructor that it lifts, which
+the observation of the field reads, and the shape `σ'` of its result. -/
 inductive Shape : Type where
   /-- `()`. -/
   | nil : Shape
-  /-- `((i, ρ, π̄ ◀ ϱ̄, π̄' ◀ ϱ̄', ψ, ς, σ'), σ)`. -/
+  /-- `((i, ρ, π̄ ◀ ϱ̄, π̄' ◀ ϱ̄', ψ, ς, ψ₀, ς₀, σ'), σ)`. -/
   | cons (case c : Nat) (ρ : Multiplicity) (πs ϱs πs' ϱs' : Fin c → Multiplicity)
-      (ψ : ResultOwnership Multiplicity c) (ς : Multiplicity) (next : Shape.Next) (rest : Shape) :
-      Shape
+      (ψ : ResultOwnership Multiplicity c) (ς : Multiplicity) (ψ₀ : ResultOwnership Multiplicity c)
+      (ς₀ : Multiplicity) (next : Shape.Next) (rest : Shape) : Shape
 
 -- ADE: none.
 /-- `σ'`: the shape of the result of a lifted destructor, `⋆`, the recursor itself, when its type
@@ -64,7 +65,7 @@ destructors times the factors of their results, and `0` without destructor, whic
 observed. -/
 def Shape.factor : Shape → Multiplicity
   | .nil => .zero
-  | .cons _ _ ρ _ _ _ _ _ _ next rest =>
+  | .cons _ _ ρ _ _ _ _ _ _ _ _ next rest =>
     match rest with
     | .nil => ρ * next.factor
     | .cons .. => (ρ * next.factor) ⊓ rest.factor
@@ -85,13 +86,36 @@ captures, the product of the ownerships that its destructors require of the valu
 and of the shapes of their results, which the recursions run from it see at every depth. -/
 def Shape.scope : Shape → Multiplicity
   | .nil => .one
-  | .cons _ _ _ _ _ _ _ _ ς next rest => (ς * next.scope) * rest.scope
+  | .cons _ _ _ _ _ _ _ _ ς _ _ next rest => (ς * next.scope) * rest.scope
 
 -- ADE: none.
 /-- `scope(σ')`: the scope of the shape of a result, `1` for the recursor itself. -/
 def Shape.Next.scope : Shape.Next → Multiplicity
   | .recursor => .one
   | .lifting σ => σ.scope
+
+end
+
+mutual
+
+-- ADE: none.
+/-- `σ` fits the recursor of the multiplicity `ρ`: the multiplicity at run time of each argument of
+each lifted destructor is within `ρ` times the multiplicity at run time of the destructor times the
+factor of its result times the multiplicity of the argument in the observation, at every depth, as
+the lifting scales the arguments of the destructors that it lifts, since the observation by the
+lifted destructor reads its arguments as many times as the recursor reads the observation that it
+builds, and a destructor never observed reads none. -/
+def Shape.Fits (ρ : Multiplicity) : Shape → Prop
+  | .nil => True
+  | .cons _ _ ρᵢ πs _ πs' _ _ _ _ _ next rest =>
+    (∀ k, πs' k ≤ ρ * (ρᵢ * next.factor) * πs k) ∧ next.Fits ρ ∧ rest.Fits ρ
+
+-- ADE: none.
+/-- The shape of a result fits the recursor of the multiplicity `ρ`: the recursor itself does, and
+the next lifting when its shape does. -/
+def Shape.Next.Fits (ρ : Multiplicity) : Shape.Next → Prop
+  | .recursor => True
+  | .lifting σ => σ.Fits ρ
 
 end
 

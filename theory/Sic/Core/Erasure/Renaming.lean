@@ -46,6 +46,12 @@ theorem TargetRen.lift_val {n m : Nat} (α : TargetRen n m) (k : Nat) (i : Fin (
   simp only [TargetRen.lift]
   split <;> rfl
 
+-- ADE: `step id`, a weakening of `Wk`, in `Definition/Untyped/NotParametrised.agda`, by one variable.
+/-- The renaming of the `n` variables of a term placed under `k` new variables, which shifts their
+indices above them. -/
+def TargetRen.shift (n k : Nat) : TargetRen (n + k) n :=
+  fun x => ⟨x + k, by omega⟩
+
 mutual
 
 -- ADE: `wk`, in `Graded/Erasure/Target.agda`.
