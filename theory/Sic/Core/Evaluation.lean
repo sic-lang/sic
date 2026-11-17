@@ -392,7 +392,9 @@ inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → Li
       (hs : EvalResults P ϖ H₂ E ρ ϱ Ns as ks πs rs H₃ R₂) :
       EvalResults P ϖ H₁ E ρ ϱ Ns as (.field j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
   /-- The corecursor of the shape `σ` on the field at the position `l`, `n.Ξ`, in the scope of the
-  recursor with a cell for the field, then the others. -/
+  recursor with a cell for the field, then the others; the variable `x` of the field, which the
+  RFC names apart from the scope, is the de Bruijn index `0`.
+  RFC: `\mathsf{results}_\Downarrow.\mathsf{nest}` -/
   | nested {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
       {Ns : TargetBranches n} {as : List Nat} {l a r : Nat} {σ : Shape}
       {ks : List RecursiveResult} {π : Multiplicity} {πs : List Multiplicity} {rs : List Nat}
