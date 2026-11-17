@@ -211,11 +211,14 @@ theorem Branches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePre
   | .cons a b gs u us, es, fs, h => by
     have hu := h 0 a b gs u rfl rfl
     simp only [List.drop_zero] at hu
-    refine .cons hu (Branches.erase_ownership hΓ r φ' o o' us es.tail fs.tail
+    refine .cons hu (fun ⟨j, hj⟩ => ?_) (Branches.erase_ownership hΓ r φ' o o' us es.tail fs.tail
       fun i a' b' gs' u' hg hgs => ?_)
-    have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
-    have := h (i + 1) a' b' gs' u' hg hgs
-    rwa [e₂] at this
+    · split at hj
+      · exact hj.elim
+      · exact RecursiveResult.not_isNested_ofPosition _ hj |>.elim
+    · have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
+      have := h (i + 1) a' b' gs' u' hg hgs
+      rwa [e₂] at this
 
 /-- The grade of the mode `11ᵐ` is `1`. -/
 theorem Mode.oneOne_grade : Mode.oneOne.grade = Grade.one := rfl

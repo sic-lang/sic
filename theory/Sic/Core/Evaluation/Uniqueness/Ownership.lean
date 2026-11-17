@@ -132,10 +132,10 @@ theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
       {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       Target.Ownership Ω (φ.extendBinders (fun l => o * κs l) (fun j => o' * πs' j)) o' N
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hN _, 0, _, _, _, _, _, _, _, h => by
+  | _, .cons hN _ _, 0, _, _, _, _, _, _, _, h => by
     cases h
     exact hN
-  | _, .cons _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Ownership.get hNs i h
+  | _, .cons _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Ownership.get hNs i h
 
 /-- The ownership of the branches of a corecursor gives that of each branch. -/
 theorem TargetCorecBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}

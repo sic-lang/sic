@@ -95,7 +95,10 @@ inductive Targets.Ownership (Ω : Name → Multiplicity) :
 -- ADE: none.
 /-- `Ω; φ ⊢ N̄ ◀ o; o'`: each branch of a recursor whose term has the ownership `o` has the
 ownership `o'`, given the ownership `o · κ` of the variable of each field, of the coefficient `κ`,
-and `o' · π'` of the variable of each recursive result, of the multiplicity `π'`. -/
+and `o' · π'` of the variable of each recursive result, of the multiplicity `π'`; when a result is
+nested, the corecursor that it builds captures the scope, which the recursions run from it see at the
+ownership `ς · φ`, `ς` being the scope of the shapes of the results, so that each branch is checked a
+second time with the scope at this ownership. -/
 inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
     {n : Nat} → MultiplicityVector n → Multiplicity → Multiplicity → TargetBranches n → Prop where
   /-- No branch.
@@ -108,6 +111,9 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
       {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult}
       {N : Target (n + (a + b))} {Ns : TargetBranches n}
       (hN : Target.Ownership Ω (φ.extendBinders (fun l => o * κs l) (fun j => o' * πs' j)) o' N)
+      (hN' : (∃ j, (ks j).IsNested) →
+        Target.Ownership Ω (MultiplicityVector.extendBinders (RecursiveResult.scopeOf ks ·ᶜ φ)
+          (fun l => o * κs l) (fun j => o' * πs' j)) o' N)
       (hNs : TargetBranches.Ownership Ω φ o o' Ns) :
       TargetBranches.Ownership Ω φ o o' (.cons a b πs κs πs' ks N Ns)
 
