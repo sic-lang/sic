@@ -17,7 +17,8 @@ whose branches are checked a second time at `ς · φ` with the ownership `χ` o
 lifted destructor, or the corecursor of the next lifting, a new value, whose branches see the scope
 at `ς · ς · φ = ς · φ`.
 At the multiplicity `0`, the recursor runs on the skeleton of the motive, of the ownership `1`,
-which keeps `o` when `o ≤ 1`, as the term of a recursor on an erased term.
+lowered to some `o₀ ≤ 1` whose branches are checked at `o₀ · ϱ = o`, as the term of a recursor on
+an erased term: a requirement `ϱ = 0` gives `o = 0`, which no `o₀ ≤ 1` keeps by itself.
 
 ADE have no nested fields.
 -/
@@ -105,7 +106,7 @@ with the scope at `ς · φ`: each built branch observes the path at the ownersh
 which keeps `o`, and gives the recursor, of the ownership `χ`, or the corecursor of the next
 lifting, of the ownership `1`. -/
 theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
-    {ρ ϱ o ς χ : Multiplicity} (hϱ : o * ϱ = o) (hz : ρ = .zero → o ≤ .one) :
+    {ρ ϱ o ς χ : Multiplicity} (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) :
     {m : Nat} → {φ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
       (σ : Shape) → Target.Ownership Ω (ς ·ᶜ φ) o M →
         TargetBranches.Ownership Ω (ς ·ᶜ φ) o χ ς χ Ns → σ.Uniform ς χ → σ.Requires o ς →
@@ -162,10 +163,12 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
 and `χ`, which meets the requirements of the recursions at `o`, has the ownership of the result of
 the lifted destructor, when `O` and the branches of the recursor keep `o` with the scope at the scale
 of the shape: the recursor on `O`, or on the skeleton of the motive at the multiplicity `0`, whose
-branches are checked at `o · ϱ = o`, has the ownership `χ`, and the corecursor of the next lifting
+branches are checked at `o · ϱ = o`, or at `o₀ · ϱ = o` for the skeleton, of an ownership `o₀ ≤ 1`,
+has the ownership `χ`, and the corecursor of the next lifting
 the ownership `1`. -/
 theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Multiplicity}
-    (hϱ : o * ϱ = o) (hz : ρ = .zero → o ≤ .one) {m : Nat} {φ : MultiplicityVector m}
+    (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) {m : Nat}
+    {φ : MultiplicityVector m}
     {O : Target m} {Ns : TargetBranches m} :
     (next : Shape.Next) → Target.Ownership Ω (next.scale ς ·ᶜ φ) o O →
       TargetBranches.Ownership Ω (next.scale ς ·ᶜ φ) o χ ς χ Ns → next.Uniform ς χ →
@@ -175,11 +178,11 @@ theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Mult
       (MultiplicityVector.module Multiplicity.modality).one_smul φ
     rw [h1] at hO hNs
     show Target.Ownership Ω φ χ (.recursor ρ ϱ (if ρ = .zero then K.target else O) Ns)
-    refine .recursor (o := o) ?_ (by rw [hϱ]; exact hNs)
     split
     · rename_i h
-      exact .sub K.ownership (hz h)
-    · exact hO
+      obtain ⟨o₀, ho₀, rfl⟩ := hz h
+      exact .recursor (.sub K.ownership ho₀) hNs
+    · exact .recursor hO (by rw [hϱ]; exact hNs)
   | .lifting σ, hO, hNs, hσ, hreq =>
     .corec (os := []) .nil (TargetCorecBranches.Ownership.branches hϱ hz σ hO hNs hσ hreq)
 
@@ -191,7 +194,8 @@ ownership `1` of a new value, when the branches of the recursor have their owner
 is the ownership of the term of each level of the recursion, the shape has their ownerships `ς` and
 `χ` and meets the requirements of the recursions at `o`, and the field, seen at `ς`, keeps `o`. -/
 theorem Target.Ownership.nested {Ω : Name → Multiplicity} {ρ ϱ o o' ς χ : Multiplicity}
-    (hϱ : o * ϱ = o) (hz : ρ = .zero → o ≤ .one) {n : Nat} {φ : MultiplicityVector n}
+    (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) {n : Nat}
+    {φ : MultiplicityVector n}
     {φ' : MultiplicityVector (n + 1)} (hφ : ∀ x, φ' (TargetRen.shift n 1 x) = φ x)
     (hf : o ≤ ς * φ' 0) {σ : Shape} {Ns : TargetBranches n}
     (hNs : TargetBranches.Ownership Ω φ o o' ς χ Ns) (hσ : σ.Uniform ς χ)
