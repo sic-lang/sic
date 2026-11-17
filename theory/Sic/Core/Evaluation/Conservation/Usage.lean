@@ -116,10 +116,11 @@ theorem TargetBranches.Usage.get {n : Nat} {χ : MultiplicityVector n} :
         χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ) ∧
         ∀ j, (ks j).isSome → πs' j ≠ .zero
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hN hχ hk _, 0, _, _, _, _, _, _, _, h => by
+  | _, .cons hN hχ hk hn _, 0, _, _, _, _, _, _, _, h => by
     cases h
-    exact ⟨_, hN, hχ, hk⟩
-  | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
+    refine ⟨_, hN, ?_, fun j hj => hk j (RecursiveResult.ne_erased_of_position hj)⟩
+    simpa only [RecursiveResult.mul_factor (hn _)] using hχ
+  | _, .cons _ _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
 
 /-- The usage of the branches of a corecursor gives that of each branch. -/
 theorem TargetCorecBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :

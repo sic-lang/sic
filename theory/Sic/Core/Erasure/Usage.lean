@@ -98,9 +98,11 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
 branch reads them as `δ` allows and its new variables as their binders allow, and each recursive
 result that it computes runs the recursor again, which reads them as `χ` allows again, and is read
 as its binder allows, so that `χ` bounds `δ` plus `χ` times the multiplicity of the binder of each
-result that the branch computes, an erased result running no recursion; a result that the branch
-computes has a multiplicity other than `0`, since the recursion that computes it reads the field,
-whose uses a result never read would not count. -/
+result that the branch computes times the factor of the result, an erased result running no
+recursion and a nested result running the branches of its corecursor, which read the scope as often
+as its shape allows; a result that the branch computes has a multiplicity other than `0`, since the
+recursion that computes it reads the field, whose uses a result never read would not count.
+The evaluation does not compute the nested results yet, so that the rule excludes them (`hn`). -/
 inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar N}.\varepsilon` -/
@@ -110,9 +112,9 @@ inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBr
   | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs κs : Fin a → Multiplicity}
       {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult} {N : Target (n + (a + b))}
       {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
-      (hχ : χ ≤ᶜ δ +ᶜ
-        (Multiplicity.sum (fun j => if (ks j).position.isSome then πs' j else .zero) ·ᶜ χ))
-      (hk : ∀ j, (ks j).position.isSome → πs' j ≠ .zero) (hNs : TargetBranches.Usage χ Ns) :
+      (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => πs' j * (ks j).factor) ·ᶜ χ))
+      (hk : ∀ j, ks j ≠ .erased → πs' j ≠ .zero) (hn : ∀ j, ¬ (ks j).IsNested)
+      (hNs : TargetBranches.Usage χ Ns) :
       TargetBranches.Usage χ (.cons a b πs κs πs' ks N Ns)
 
 -- ADE: none.

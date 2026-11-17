@@ -80,6 +80,40 @@ def RecursiveResult.position : RecursiveResult → Option Nat
   | .field l => some l
   | .erased | .nested .. => none
 
+-- ADE: none.
+/-- The result is the corecursor of a lifting, on a nested field. -/
+def RecursiveResult.IsNested : RecursiveResult → Prop
+  | .nested .. => True
+  | .erased | .field _ => False
+
+-- ADE: none.
+/-- The factor of a result, the multiplicity by which it multiplies the uses of the scope by the
+recursion that computes it: `0` when it is erased, `1` for the recursor itself, and the factor of the
+shape of a nested result. -/
+def RecursiveResult.factor : RecursiveResult → Multiplicity
+  | .erased => .zero
+  | .field _ => .one
+  | .nested _ σ => σ.factor
+
+/-- A result that is not nested multiplies the uses by its multiplicity when the recursor computes it,
+and by `0` when it does not. -/
+theorem RecursiveResult.mul_factor {r : RecursiveResult} (h : ¬ r.IsNested) (π : Multiplicity) :
+    π * r.factor = if r.position.isSome then π else .zero := by
+  cases r with
+  | erased => cases π <;> rfl
+  | field _ => cases π <;> rfl
+  | nested _ _ => exact absurd trivial h
+
+/-- A result that the recursor computes is not erased. -/
+theorem RecursiveResult.ne_erased_of_position {r : RecursiveResult} (h : r.position.isSome) :
+    r ≠ .erased := by
+  cases r <;> simp_all [RecursiveResult.position]
+
+/-- The result of a position is not nested. -/
+theorem RecursiveResult.not_isNested_ofPosition (o : Option Nat) :
+    ¬ (RecursiveResult.ofPosition o).IsNested := by
+  cases o <;> exact id
+
 /-- An erased result has no position. -/
 @[simp]
 theorem RecursiveResult.position_erased : RecursiveResult.erased.position = none := rfl
