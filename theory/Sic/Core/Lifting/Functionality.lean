@@ -87,7 +87,7 @@ theorem Term.Lifts.not_avoidsLifted :
         ¬ A.AvoidsLifted ρ
   | _, _, _, _, _, _, _, _, .var (x := x) (ts := ts) hx _, _ => fun h =>
     Term.not_avoids_var x ts (h x (hx ▸ rfl))
-  | _, _, _, _, _, _, _, _, .block _ _, hn => nomatch hn
+  | _, _, _, _, _, _, _, _, .block _, hn => nomatch hn
   | _, _, _, _, _, _, _, _, .inst _ _ _ _ _ _ has hS _, hn => fun h => by
     subst hn
     exact has.not_avoidsLifted rfl hS fun x hx => (h x hx).inst_args
@@ -163,9 +163,9 @@ theorem Term.Lifts.unique (hd : sig.Distinct) :
     | var hx₂ _ =>
       cases hx₁.symm.trans hx₂
       exact ⟨rfl, rfl⟩
-  | _, _, _, _, _, _, _, _, _, _, .block hD₁ _, h₂ => by
+  | _, _, _, _, _, _, _, _, _, _, .block hD₁, h₂ => by
     cases h₂ with
-    | block hD₂ _ =>
+    | block hD₂ =>
       cases hD₁.symm.trans hD₂
       exact ⟨rfl, rfl⟩
     | inst _ _ hn => exact absurd rfl (hn _)

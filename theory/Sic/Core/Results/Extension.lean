@@ -47,7 +47,7 @@ theorem Term.NestedResult.ofTypeDeclarations
     {A t e : Term k Γ} (h : Term.NestedResult sig v ρ φ n A t e) :
     Term.NestedResult sig' v ρ φ n A t e := by
   induction h with
-  | block hD hT => exact .block hD hT
+  | block hD => exact .block hD
   | inst h hn hq hl hp has hS hL hgl hgs _ ih =>
     exact .inst ⟨hs _ h.1, h.2⟩ hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL) hgl hgs ih
 

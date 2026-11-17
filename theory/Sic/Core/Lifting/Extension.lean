@@ -38,7 +38,7 @@ theorem Term.Lifts.ofTypeDeclarations
       {A' : Term k Γ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
         Term.Lifts sig' v ρ n e A A' l
   | _, _, _, _, _, _, _, _, .var hx hts => .var hx hts
-  | _, _, _, _, _, _, _, _, .block hD hT => .block hD hT
+  | _, _, _, _, _, _, _, _, .block hD => .block hD
   | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL =>
     .inst (hs _ h) hD hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL)
 

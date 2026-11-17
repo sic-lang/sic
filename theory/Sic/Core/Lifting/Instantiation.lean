@@ -477,7 +477,7 @@ theorem Term.Lifts.instantiate :
         (Args.rename_subst_of (fun x => (hI.ren x).symm) ts).symm
     rw [Term.subst, Term.subst, Args.subst_snoc, e₁, hB']
     exact hL.instantiateAbstraction hI.motive' (e.subst θ') (ts.subst θ)
-  | _, _, _, _, _, _, _, _, .block _ _, hn, _, _, _, _, _, _, _ => nomatch hn
+  | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _ => nomatch hn
   | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL, hn, _, _, _, _, _, _, hI => by
     subst hn
     simp only [Term.subst, InstanceArgs.subst]

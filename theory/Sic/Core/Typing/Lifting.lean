@@ -103,6 +103,10 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
       exact Level.le_joins _ _ (Level.preorder.refl _)
     exact Destructors.Lifts.wfDestructors hT' hI' hα (.var (.var hA) .zero) hκ _ _ _ _ _ _ _ _ _
       (fun _ _ => rfl) hds (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI))
+      (fun D => by
+        show ((Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).block D).map _ = none
+        rw [Lifting.base_block]
+        rfl)
       (InstanceArgs.identity_rename_neutral _) (hF _ T hT hn) (fun h => ⟨h, fun _ => rfl⟩)
   · cases List.mem_singleton.1 hT''
     exact nomatch hx

@@ -169,13 +169,11 @@ theorem Term.NestedResult.subst :
       ∀ {Γ : Scope} {θ : Subst k Γ Δ} {ρ' : Lifting k Γ Γ}, Lifting.Substitutes θ θ ρ ρ' →
         Term.NestedResult sig v ρ' (fun E => (φ E).subst (Subst.lift θ)) n (A.subst θ)
           (t.subst θ) (e.subst θ)
-  | _, _, φ, _, _, _, _, .block (D := D) (b := b) hD hT, _, θ, _, hs => by
+  | _, _, φ, _, _, _, _, .block (D := D) (b := b) hD, _, θ, _, hs => by
     rw [Term.subst, Term.subst_subst₀_of (Subst₀.Swaps.single _ θ) (φ D)]
-    refine Term.NestedResult.block (b := b.subst θ θ) ?_ ?_
-    · rw [hs.block, hD]
-      rfl
-    · show b.type.subst θ = _
-      rw [hT, Term.subst]
+    refine Term.NestedResult.block (b := b.subst θ θ) ?_
+    rw [hs.block, hD]
+    rfl
   | _, _, φ, _, _, _, _,
       .inst (t := t) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (gs := gs) h hn hq hl hp
         has hS hL hgl hgs hgt,
@@ -353,15 +351,13 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
       {A t e : Term k Γ} → Term.NestedResult sig v ρ φ n A t e →
         Term.NestedResult sig v (ρ.substLevels ls') (fun E => (φ E).substLevels ls') n
           (A.substLevels ls') (t.substLevels ls') (e.substLevels ls')
-  | _, ρ, φ, _, _, t, _, .block (D := D) (b := b) hD hT => by
+  | _, ρ, φ, _, _, t, _, .block (D := D) (b := b) hD => by
     rw [Term.substLevels, Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
       (fun y => by cases y <;> rfl) (φ D)]
-    refine Term.NestedResult.block (b := b.substLevels ls') ?_ ?_
-    · show (ρ.block D).map _ = _
-      rw [hD]
-      rfl
-    · show b.type.substLevels ls' = _
-      rw [hT, Term.substLevels]
+    refine Term.NestedResult.block (b := b.substLevels ls') ?_
+    show (ρ.block D).map _ = _
+    rw [hD]
+    rfl
   | _, _, φ, _, _, _, _,
       .inst (t := t) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (gs := gs) h hn hq hl hp
         has hS hL hgl hgs hgt => by

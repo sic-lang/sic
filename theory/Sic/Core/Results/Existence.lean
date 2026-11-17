@@ -238,7 +238,7 @@ theorem Term.Lifts.hasResult_instantiate
       hL.not_avoidsLifted h (Term.avoidsLifted_of_none hI.motive' _ (θ x))
     rw [Term.subst]
     exact (ho _ x hν).instantiate hI.motive' (ts.subst θ)
-  | _, _, _, _, _, _, _, _, .block _ _, hn, _, _, _, _, _, _, _, _ => nomatch hn
+  | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _, _ => nomatch hn
   | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL, hn, _, _, _, _, _, _, hI, ho => by
     subst hn
     intro Γ₂ w w' ρ₂ hs φ t
@@ -299,14 +299,12 @@ theorem Term.Lifts.hasResult (hM : Signature.LiftingsHaveResults sig sig) :
   | _, _, _, _, _, _, _, _, .var hx _ => by
     intro Γ₂ θ θ' ρ₂ hs
     exact nomatch (hs.motive _).symm.trans hx
-  | _, _, _, _, _, _, _, _, .block (b := b) hD hT => by
+  | _, _, _, _, _, _, _, _, .block (b := b) hD => by
     intro Γ₂ θ θ' ρ₂ hs φ t
     rw [Term.subst]
-    refine ⟨_, Term.NestedResult.block (b := b.subst θ θ') ?_ ?_⟩
-    · rw [hs.block, hD]
-      rfl
-    · show b.type.subst θ = _
-      rw [hT, Term.subst]
+    refine ⟨_, Term.NestedResult.block (b := b.subst θ θ') ?_⟩
+    rw [hs.block, hD]
+    rfl
   | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL => by
     intro Γ₂ θ θ' ρ₂ hs φ t
     rw [Term.subst]

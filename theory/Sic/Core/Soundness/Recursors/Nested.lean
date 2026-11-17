@@ -646,11 +646,11 @@ theorem NestRel.resultSound (hd : sig.Distinct)
     | direct hr =>
       intro A₂ e₁ e₂ A' l _ h₁ h₂ hL _
       cases h₁ with
-      | block hD₁ _ =>
+      | block hD₁ =>
         cases h₂ with
-        | block _ _ =>
+        | block _ =>
           cases hL with
-          | block hD' _ =>
+          | block hD' =>
             cases Option.some.inj (hD₁.symm.trans hD')
             exact hr _ hD₁ _ _ ht
           | inst _ _ hn => exact absurd rfl (hn _)

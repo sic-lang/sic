@@ -59,7 +59,7 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
     {Γ : Scope} → {ρ : Lifting k Γ Γ} → {φ : Name → Term k (.var :: Γ)} → {n : Nest Name} →
       {A t e₁ e₂ : Term k Γ} → Term.NestedResult sig v ρ φ n A t e₁ →
         Term.NestedResult sig v ρ φ n A t e₂ → e₁ = e₂
-  | _, _, _, _, _, _, _, _, .block _ _, h₂ => by
+  | _, _, _, _, _, _, _, _, .block _, h₂ => by
     cases h₂ with
     | block => rfl
     | inst _ hn => exact absurd rfl (hn _)

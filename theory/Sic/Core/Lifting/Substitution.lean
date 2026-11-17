@@ -130,6 +130,23 @@ theorem Lifting.cons_ren_congr {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry} (l 
   | false, _, .zero => rfl
   | false, _, .succ x => congrArg Var.succ (h x)
 
+/-- The lifting of parameters lifts no type of a block. -/
+theorem Lifting.base_block (S : List Nat) (lv : Nat → Level k) :
+    (Δ : Scope) → ∀ D, (Lifting.base S lv Δ).block D = none
+  | [], _ => rfl
+  | e :: Δ, D => by
+    show (Lifting.cons (e := e) (lv Δ.length) (decide (Δ.length ∈ S)) (Lifting.base S lv Δ)).block D
+      = none
+    cases decide (Δ.length ∈ S) with
+    | true =>
+      show (((Lifting.base S lv Δ).block D).map _).map _ = none
+      rw [Lifting.base_block S lv Δ D]
+      rfl
+    | false =>
+      show ((Lifting.base S lv Δ).block D).map _ = none
+      rw [Lifting.base_block S lv Δ D]
+      rfl
+
 /-- The renaming of the parameters in the parameters lifted does not read the levels of the
 motives. -/
 theorem Lifting.base_ren {k' : Nat} (S : List Nat) (lv : Nat → Level k) (lv' : Nat → Level k')
@@ -493,13 +510,11 @@ theorem Term.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
           Term.Lifts sig v ρ' n (e.subst θ') (A.subst θ) (A'.subst θ') l
   | _, _, _, _, _, _, _, _, .var hx _, _, _, _, _, _, hs =>
     nomatch (hs.motive _).symm.trans hx
-  | _, _, _, _, e, _, _, _, .block (b := b) hD hT, _, _, θ, θ', _, hs => by
+  | _, _, _, _, e, _, _, _, .block (b := b) hD, _, _, θ, θ', _, hs => by
     rw [Term.subst, Term.subst_subst₀_of (Subst₀.Swaps.single e θ') b.motive]
-    refine Term.Lifts.block (b := b.subst θ θ') ?_ ?_
-    · rw [hs.block, hD]
-      rfl
-    · show b.type.subst θ = _
-      rw [hT, Term.subst]
+    refine Term.Lifts.block (b := b.subst θ θ') ?_
+    rw [hs.block, hD]
+    rfl
   | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL, _, _, _, _, _, hs => by
     simp only [Term.subst, InstanceArgs.subst]
     exact Term.Lifts.inst h hD hn hq hl hp (has.subst hs) hS hL
@@ -679,15 +694,13 @@ theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variabl
     show (ρ.motive x).map _ = _
     rw [hx]
     rfl
-  | _, _, ρ, _, e, _, _, _, .block (D := D) (b := b) hD hT => by
+  | _, _, ρ, _, e, _, _, _, .block (D := D) (b := b) hD => by
     rw [Term.substLevels, Term.substLevels_subst₀_of
       (σ' := Subst₀.single (e.substLevels ls')) (fun x => by cases x <;> rfl) b.motive]
-    refine Term.Lifts.block (b := b.substLevels ls') ?_ ?_
-    · show (ρ.block D).map _ = _
-      rw [hD]
-      rfl
-    · show b.type.substLevels ls' = _
-      rw [hT, Term.substLevels]
+    refine Term.Lifts.block (b := b.substLevels ls') ?_
+    show (ρ.block D).map _ = _
+    rw [hD]
+    rfl
   | _, _, _, _, _, _, _, _, .inst (ls := ls) h hD hn hq hl hp has hS hL => by
     simp only [Term.substLevels, InstanceArgs.substLevels, List.map_append]
     rw [Level.subst_joins, Level.subst_subst, ← Level.getFin_map_subst ls' ls hl]

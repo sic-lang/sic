@@ -379,13 +379,14 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
       {y : Var Γ' a.motive} {l : Level k} {ts : Args k Γ a.params}
       (hx : ρ.motive x = some (y, l)) (hts : ts.AvoidsLifted ρ) :
       Term.Lifts sig v ρ .plain e (.var x ts) (.var y ((ts.rename ρ.ren).snoc e)) l
-  /-- The instance of a type of the block lifted, at a position that holds this type, the one that
-  its motive is over: this motive at the term, of the level of the motive.
+  /-- An instance of a type of the block lifted, at a position that holds this type: the motive of
+  this type at the term, of the level of the motive.
+  The position tells that the instance is the one that the motive is over, which a well-formed
+  declaration ensures, so the rule does not compare them.
   RFC: `\uparrow_T` -/
   | block {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {Δ : Scope} {D : Name}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
-      {b : Lifting.BlockMotive k Γ' Γ} (hD : ρ.block D = some b)
-      (hT : b.type = .inst D qs ls ps as) :
+      {b : Lifting.BlockMotive k Γ' Γ} (hD : ρ.block D = some b) :
       Term.Lifts sig v ρ (.direct D) e (.inst D qs ls ps as) (b.motive.subst₀ (Subst₀.single e))
         b.level
   /-- An instance of a declared type whose nesting is not a position, of which an argument at least

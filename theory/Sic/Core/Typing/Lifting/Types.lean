@@ -275,7 +275,7 @@ theorem Term.Lifts.wfType {s : Quality} {v : Lifting.Variables} {Γ'' Γ' Γ : S
     obtain ⟨Θ, A₀, hX, hts⟩ := hA.secondOrder_inv
     rw [← Var.eta_instantiate X ts]
     exact (hρ.secondOrder hx' hX).1.instantiate hts
-  | .block _ _, hA => by
+  | .block _, hA => by
     obtain ⟨decl, ζ, hΔ, hq, hl, hp, hD, hadm, has⟩ := hA.inst_inv
     subst hΔ
     exact .ofSort (.inst hD hq hl hp hadm has)
@@ -438,34 +438,35 @@ theorem HasInstanceArgs.liftedSecondOrder_true {s : Quality} {Γ' Γ Δ₁ Δ : 
 
 -- ADE: none.
 /-- A type lifted at a term of the type that it lifts, which is typed, is a type of the sort of its
-level, in the context of a typed lifting whose motives have the quality of the lifting. -/
+level, in the context of a typed lifting whose motives have the quality of the lifting, and which
+lifts no type of a block: the rule of such a type does not tell that the term is of the type that
+its motive is over. -/
 theorem Term.Lifts.hasType {v : Lifting.Variables} {Γ' Γ : Scope} {ctx' : Context k Γ'}
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ}
-    {l : Level k} (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (h : Term.Lifts sig v ρ n e A A' l)
-    (hA : HasType sig ctx A T) (he : HasType sig ctx' e (A.rename ρ.ren)) :
-    HasType sig ctx' A' (.sort ⟨v.quality, l⟩) :=
-  type h hρ hA he
+    {l : Level k} (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (hb : ∀ D, ρ.block D = none)
+    (h : Term.Lifts sig v ρ n e A A' l) (hA : HasType sig ctx A T)
+    (he : HasType sig ctx' e (A.rename ρ.ren)) : HasType sig ctx' A' (.sort ⟨v.quality, l⟩) :=
+  type h hρ hb hA he
 where
   /-- The typing of a type lifted, by recursion on the relation. -/
   type {Γ' Γ : Scope} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ} {ctx : Context k Γ}
       {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ} {l : Level k} :
       Term.Lifts sig v ρ n e A A' l → Lifting.Typed sig v.quality ctx' ρ ctx →
-        HasType sig ctx A T → HasType sig ctx' e (A.rename ρ.ren) →
+        (∀ D, ρ.block D = none) → HasType sig ctx A T → HasType sig ctx' e (A.rename ρ.ren) →
           HasType sig ctx' A' (.sort ⟨v.quality, l⟩)
-    | .var (a := .var) (ts := .nil) hx _, hρ, _, he =>
+    | .var (a := .var) (ts := .nil) hx _, hρ, _, _, he =>
       Term.sort_instantiate _ _ ▸
         HasType.secondOrder (hρ.var hx).2 (HasArgs.snoc (.nil hρ.ren.wfCtx) he)
-    | .var (a := .secondOrder _ _) (x := X) (ts := ts) hx _, hρ, hA, he => by
+    | .var (a := .secondOrder _ _) (x := X) (ts := ts) hx _, hρ, _, hA, he => by
       obtain ⟨Θ, A₀, hX, hts⟩ := hA.secondOrder_inv
       have he' : HasType sig ctx' e ((Var.eta (ρ.ren X)).instantiate (ts.rename ρ.ren)) := by
         rw [Var.eta_instantiate]
         exact he
       exact Term.sort_instantiate _ _ ▸ HasType.secondOrder (hρ.secondOrder hx hX).2
         (HasArgs.snoc (stableUnderRenaming.hasArgs hts hρ.ren) he')
-    | .block hD hT, hρ, _, he =>
-      stableUnderSubstitution.hasType (hρ.block hD) (TypedSubst.single (hT ▸ he))
+    | .block (D := D) hD, _, hb, _, _ => nomatch (hb D).symm.trans hD
     | .inst (decl := decl) (D := D) (qs := qs) (ls := ls) (ls' := ls') (ps := ps) (as := as)
-        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL, hρ, hA, he => by
+        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL, hρ, hb, hA, he => by
       obtain ⟨ζ, _, _, _, hDT, hadm, hargs⟩ := hA.inst_inv_of_mem hd hD
       have hlen := has.length_eq
       have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
@@ -476,7 +477,7 @@ where
         rfl
       have hl' : (ls ++ ls').length = decl.levels + S.length := by
         rw [List.length_append, hl, hlen]
-      obtain ⟨hΔ, has', hc⟩ := args has hρ hargs S
+      obtain ⟨hΔ, has', hc⟩ := args has hρ hb hargs S
         (fun i => (Lifting.motiveLevel decl.levels S i).subst ((ls ++ ls').getFin hl'))
         (fun _ _ => Iff.rfl)
         (fun j h₁ h₂ => Lifting.motiveLevel_subst has.nodup hl hlen hl' j h₁ h₂)
@@ -535,7 +536,7 @@ where
       {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)}
       {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'} {params : Context k Δ} :
       InstanceArgs.Lifts sig v ρ ns as S ls as' → Lifting.Typed sig v.quality ctx' ρ ctx →
-        HasInstanceArgs sig ctx as params → ∀ (S₂ : List Nat) (lv : Nat → Level k),
+        (∀ D, ρ.block D = none) → HasInstanceArgs sig ctx as params → ∀ (S₂ : List Nat) (lv : Nat → Level k),
           (∀ i, i < Δ.length → (i ∈ S₂ ↔ i ∈ S)) →
             (∀ j (h₁ : j < S.length) (h₂ : j < ls.length), lv S[j] = ls[j]) →
               ∃ hΔ : Δ' = Δ.lifted S₂,
@@ -543,26 +544,26 @@ where
                   ∀ {a} (x : Var Δ a),
                     (hΔ ▸ as').toSubst ((Lifting.base S₂ lv Δ).ren x) =
                       (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren)
-    | .nil, hρ, .nil _, _, _, _, _ => ⟨rfl, .nil hρ.ren.wfCtx, fun x => nomatch x⟩
-    | .absent (a := .var) (Δ := Δ₀) has _ _, hρ, .var hps ha, S₂, lv, hS, hlv => by
+    | .nil, hρ, _, .nil _, _, _, _, _ => ⟨rfl, .nil hρ.ren.wfCtx, fun x => nomatch x⟩
+    | .absent (a := .var) (Δ := Δ₀) has _ _, hρ, hk, .var hps ha, S₂, lv, hS, hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
-        args has hρ hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
+        args has hρ hk hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
       subst hΔ
       exact HasInstanceArgs.liftedVar_false _ (lv Δ₀.length) hρ has' hc ha _
         (decide_eq_false fun h =>
           Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
-    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _ _, hρ, .secondOrder hps hb, S₂, lv, hS,
+    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _ _, hρ, hk, .secondOrder hps hb, S₂, lv, hS,
         hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
-        args has hρ hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
+        args has hρ hk hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
       subst hΔ
       exact HasInstanceArgs.liftedSecondOrder_false _ (lv Δ₀.length) hρ has' hc hb _
         (decide_eq_false fun h =>
           Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
     | .lifted (a := .var) (Δ := Δ₀) (S := S) (ls := ls) (l := l) (B := B) has hB, hρ,
-        .var hps ha, S₂, lv, hS, hlv => by
+        hk, .var hps ha, S₂, lv, hS, hlv => by
       have hlen := has.length_eq
-      obtain ⟨hΔ, has', hc⟩ := args has hρ hps S₂ lv
+      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ lv
         (fun i hi => (hS i (Nat.lt_succ_of_lt hi)).trans
           ⟨fun h => (List.mem_append.1 h).elim id fun h' =>
             absurd (List.mem_singleton.1 h') (Nat.ne_of_lt hi), List.mem_append_left _⟩)
@@ -576,15 +577,15 @@ where
       subst hl
       have hw := stableUnderRenaming.wfType
         (hB.wfType hρ (fun x h => Lifting.isSome_of_weaken ρ x h) ha) hρ.ren
-      have ih := type hB (hρ.weaken (.var hw)) ha
+      have ih := type hB (hρ.weaken (.var hw)) (fun D => by show (ρ.block D).map _ = none; rw [hk D]; rfl) ha
         (Term.rename_rename_of (α₁ := Ren.weaken) (α₂ := ρ.ren) (fun _ => rfl) B ▸
           HasType.var (.var hw) .zero)
       exact HasInstanceArgs.liftedVar_true _ hρ has' hc ha ih _
         (decide_eq_true ((hS _ (Nat.lt_succ_self _)).2 (List.mem_append_right _ (.head _))))
     | .lifted (a := .secondOrder ps _) (Δ := Δ₀) (S := S) (ls := ls) (l := l) (B := B) has hB,
-        hρ, .secondOrder hps hb, S₂, lv, hS, hlv => by
+        hρ, hk, .secondOrder hps hb, S₂, lv, hS, hlv => by
       have hlen := has.length_eq
-      obtain ⟨hΔ, has', hc⟩ := args has hρ hps S₂ lv
+      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ lv
         (fun i hi => (hS i (Nat.lt_succ_of_lt hi)).trans
           ⟨fun h => (List.mem_append.1 h).elim id fun h' =>
             absurd (List.mem_singleton.1 h') (Nat.ne_of_lt hi), List.mem_append_left _⟩)
@@ -599,7 +600,12 @@ where
       have hρn := hρ.liftN (contextPresuppositions.hasType hb)
       have hw := stableUnderRenaming.wfType
         (hB.wfType hρn (fun x h => Lifting.isSome_of_weaken _ x h) hb) hρn.ren
-      have ih := type hB (hρn.weaken (.var hw)) hb
+      have ih := type hB (hρn.weaken (.var hw))
+        (fun D => by
+          show ((ρ.liftN ps.length).block D).map _ = none
+          rw [Lifting.liftN_block, hk D]
+          rfl)
+        hb
         (Term.rename_rename_of (α₁ := Ren.weaken) (α₂ := (ρ.liftN ps.length).ren)
           (fun _ => rfl) B ▸ HasType.var (.var hw) .zero)
       rw [Lifting.liftN_ren] at ih

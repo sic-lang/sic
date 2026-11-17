@@ -158,12 +158,13 @@ whose type is the result of this destructor at the arguments of the instance.
 inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
     {Γ : Scope} → Lifting k Γ Γ → (Name → Term k (.var :: Γ)) → Nest Name → Term k Γ → Term k Γ →
       Term k Γ → Prop where
-  /-- A term of the instance of a type of the block, at a position that holds this type, the one
-  that its motive is over: `f` at the term. -/
+  /-- A term of an instance of a type of the block, at a position that holds this type: `f` at the
+  term.
+  The position tells that the instance is the one that the motive of the type is over, which a
+  well-formed declaration ensures, so the rule does not compare them. -/
   | block {Γ : Scope} {ρ : Lifting k Γ Γ} {φ : Name → Term k (.var :: Γ)} {t : Term k Γ}
       {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      {as : InstanceArgs k Γ Δ} {b : Lifting.BlockMotive k Γ Γ} (hD : ρ.block D = some b)
-      (hT : b.type = .inst D qs ls ps as) :
+      {as : InstanceArgs k Γ Δ} {b : Lifting.BlockMotive k Γ Γ} (hD : ρ.block D = some b) :
       Term.NestedResult sig v ρ φ (.direct D) (.inst D qs ls ps as) t
         ((φ D).subst₀ (Subst₀.single t))
   /-- A term of an instance of a codata type whose nesting is not a position, of which an argument
