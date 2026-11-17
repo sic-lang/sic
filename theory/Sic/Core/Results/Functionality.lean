@@ -26,7 +26,8 @@ variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 
 -- ADE: none.
 /-- Fields have one telescope of recursive results at most, in a signature whose names are
-distinct. -/
+distinct.
+RFC: `\mathsf{unique}_{\uparrow\Theta}` -/
 theorem Terms.ResultTypes.unique (hd : sig.Distinct) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
       {As xs : Terms k Δ} → {ps₁ ps₂ : List Parameter} → {R₁ : Telescope k Δ' ps₁} →
@@ -54,7 +55,8 @@ theorem Terms.ResultTypes.unique (hd : sig.Distinct) :
 
 -- ADE: none.
 /-- A term has one recursive result at most, at its type and at its nesting, in a signature whose
-names are distinct. -/
+names are distinct.
+RFC: `\mathsf{unique}_{\mathsf{res}}` -/
 theorem Term.NestedResult.unique (hd : sig.Distinct) :
     {Γ : Scope} → {ρ : Lifting k Γ Γ} → {φ : Name → Term k (.var :: Γ)} → {n : Nest Name} →
       {A t e₁ e₂ : Term k Γ} → Term.NestedResult sig v ρ φ n A t e₁ →
@@ -95,7 +97,8 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
 
 -- ADE: none.
 /-- The terms of fields have one list of recursive results at most, in a signature whose names are
-distinct. -/
+distinct.
+RFC: `\mathsf{unique}_{\mathsf{res}\Theta}` -/
 theorem Terms.ResultTerms.unique (hd : sig.Distinct) {Γ : Scope} {ρ : Lifting k Γ Γ}
     {φ : Name → Term k (.var :: Γ)} :
     {ns : List (Nest Name)} → {ps : List Parameter} → {As ts : Terms k Γ} →

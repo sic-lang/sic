@@ -8,7 +8,7 @@ import Sic.Core.Soundness.Closed
 /-!
 # Computation of the Relation of Run Time
 
-The relation of run time of annex 21 of RFC 36, `t ®_H a : A`, relates a term as the canonical term
+The relation of run time of annex 22 of RFC 36, `t ®_H a : A`, relates a term as the canonical term
 it computes to, so that it holds of a term exactly when it holds of the terms it reduces to; and it
 relates the terms of a type as those of every type equal to it, whose relations of run time are the
 same, when the term is a term of the type, which tells a proposition from a type without terms

@@ -9,7 +9,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Extraction
 
-The soundness of the extraction, of annex 21 of RFC 36: the erasure by `S^{11ᵐ}` of a closed term
+The soundness of the extraction, of annex 22 of RFC 36: the erasure by `S^{11ᵐ}` of a closed term
 typed and used in the mode `11ᵐ`, run in the empty heap, computes a value to which the relation of
 run time of its type relates the term, `(sound_⌊⌋)`; at an instance of a data type that is not a
 proposition, this value is the constructor of the case of the constructor that the term computes,

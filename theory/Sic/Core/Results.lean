@@ -104,15 +104,18 @@ position, in order.
 inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
     {Δ' Δ : Scope} → Lifting k Δ' Δ → List (Nest Name) → List Parameter → Terms k Δ → Terms k Δ →
       {ps' : List Parameter} → Telescope k Δ' ps' → Prop where
-  /-- No field. -/
+  /-- No field.
+  RFC: `\uparrow_{\Theta\varepsilon}` -/
   | nil {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} : Terms.ResultTypes sig v ρ [] [] .nil .nil .nil
-  /-- A field without position, which has no result. -/
+  /-- A field without position, which has no result.
+  RFC: `\uparrow_{\Theta\bot}` -/
   | plain {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ns : List (Nest Name)} {p : Parameter}
       {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ} {R : Telescope k Δ' ps'}
       (h : Terms.ResultTypes sig v ρ ns ps As xs R) :
       Terms.ResultTypes sig v ρ (.plain :: ns) (p :: ps) (.cons A As) (.cons x xs) R
   /-- A recursive field `x` of the type `D` of the block: `y : C_D[x / z]`, the motive of `D` at
-  the field. -/
+  the field.
+  RFC: `\uparrow_{\Theta T}` -/
   | recursive {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {D : Name} {ns : List (Nest Name)}
       {p : Parameter} {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ}
       {b : Lifting.BlockMotive k Δ' Δ} {R : Telescope k (.var :: Δ') ps'}
@@ -120,7 +123,8 @@ inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
       Terms.ResultTypes sig v ρ (.direct D :: ns) (p :: ps) (.cons A As) (.cons x xs)
         (.cons Grade.zero p (b.motive.subst₀ (Subst₀.single (x.rename ρ.ren))) R)
   /-- A nested field `x : A`, whose nesting is that of an instance: `y : A'`, the type `A` lifted
-  at the field. -/
+  at the field.
+  RFC: `\uparrow_{\Theta\lambda}` -/
   | nested {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ms ns : List (Nest Name)} {p : Parameter}
       {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ} {A' : Term k Δ'}
       {l : Level k} {R : Telescope k (.var :: Δ') ps'}
@@ -177,7 +181,8 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
   /-- A term of an instance of a type of the block, at a position that holds this type: `f` at the
   term.
   The position tells that the instance is the one that the motive of the type is over, which a
-  well-formed declaration ensures, so the rule does not compare them. -/
+  well-formed declaration ensures, so the rule does not compare them.
+  RFC: `\mathsf{res}_T` -/
   | block {Γ : Scope} {ρ : Lifting k Γ Γ} {φ : Name → Term k (.var :: Γ)} {t : Term k Γ}
       {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ Δ} {b : Lifting.BlockMotive k Γ Γ} (hD : ρ.block D = some b) :
@@ -190,7 +195,8 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
   of the type, which is one of its destructors, at the position `hd` in the destructors
   `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς | d̄₂)` of the type at the instance: the type of this
   observation is `B`, the destructors `d̄₁` before it being the observations of the term by them,
-  and its nesting is that of `B`, where the parameters have the nestings of the arguments. -/
+  and its nesting is that of `B`, where the parameters have the nestings of the arguments.
+  RFC: `\mathsf{res}_D` -/
   | inst {Γ : Scope} {ρ : Lifting k Γ Γ} {φ : Name → Term k (.var :: Γ)} {n : Nest Name}
       {t : Term k Γ} {decl : TypeDeclaration}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {Δ' : Scope} {D : Name}
@@ -245,20 +251,24 @@ inductive Terms.ResultTerms (sig : Signature) (v : Lifting.Variables) {Γ : Scop
     (ρ : Lifting k Γ Γ) (φ : Name → Term k (.var :: Γ)) :
     List (Nest Name) → List Parameter → Terms k Γ → Terms k Γ → {ps' : List Parameter} →
       Args k Γ ps' → Prop where
-  /-- No field. -/
+  /-- No field.
+  RFC: `\mathsf{res}_{\Theta\varepsilon}` -/
   | nil : Terms.ResultTerms sig v ρ φ [] [] .nil .nil .nil
-  /-- A field without position, which has no result. -/
+  /-- A field without position, which has no result.
+  RFC: `\mathsf{res}_{\Theta\bot}` -/
   | plain {ns : List (Nest Name)} {p : Parameter} {ps ps' : List Parameter} {A t : Term k Γ}
       {As ts : Terms k Γ} {rs : Args k Γ ps'} (h : Terms.ResultTerms sig v ρ φ ns ps As ts rs) :
       Terms.ResultTerms sig v ρ φ (.plain :: ns) (p :: ps) (.cons A As) (.cons t ts) rs
-  /-- The term `t` of a recursive field of the type `D` of the block: `f(D, t)`. -/
+  /-- The term `t` of a recursive field of the type `D` of the block: `f(D, t)`.
+  RFC: `\mathsf{res}_{\Theta T}` -/
   | recursive {D : Name} {ns : List (Nest Name)} {p : Parameter} {ps ps' : List Parameter}
       {A t : Term k Γ} {As ts : Terms k Γ} {rs : Args k Γ ps'}
       (h : Terms.ResultTerms sig v ρ φ ns ps As ts rs) :
       Terms.ResultTerms sig v ρ φ (.direct D :: ns) (p :: ps) (.cons A As) (.cons t ts)
         (.cons (p := p) ((φ D).subst₀ (Subst₀.single t)) rs)
   /-- The term `t` of a nested field, whose nesting is that of an instance: its recursive
-  result. -/
+  result.
+  RFC: `\mathsf{res}_{\Theta\lambda}` -/
   | nested {ms ns : List (Nest Name)} {p : Parameter} {ps ps' : List Parameter} {A t e : Term k Γ}
       {As ts : Terms k Γ} {rs : Args k Γ ps'} (he : Term.NestedResult sig v ρ φ (.inst ms) A t e)
       (h : Terms.ResultTerms sig v ρ φ ns ps As ts rs) :

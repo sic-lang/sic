@@ -11,7 +11,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Levels of the Relation of Run Time
 
-The relation of run time of annex 21 of RFC 36 reads the levels of its type by their values, as the
+The relation of run time of annex 22 of RFC 36 reads the levels of its type by their values, as the
 meaning does: two types that differ only by levels of the same values compute to canonical types
 that differ in the same way, which the graph of run time does not tell apart, so that a term related
 to an address at one is related to it at the other, and so are the arguments of two telescopes that

@@ -13,7 +13,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Programs of a Signature
 
-The programs that realize a signature at run time, and the fundamental lemma of annex 21 of RFC 36
+The programs that realize a signature at run time, and the fundamental lemma of annex 22 of RFC 36
 in a well-formed signature whose entries use their variables as their grades allow: a program
 realizes the signature when it holds the erasure of the signature by `S^{11ᵐ}` and realizes its
 constant declarations of the mode `11ᵐ`, `(hyp_𝒫)`; it then realizes every constant of the mode

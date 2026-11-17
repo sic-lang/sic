@@ -525,6 +525,26 @@ theorem Lifting.Substitutes.args {Γ : Scope} {ρ : Lifting k Γ Γ}
     rw [Ren.liftN_id_of ps.length hid x, Term.rename_id_of (Ren.liftN_id_of _ hid)]
 
 -- ADE: none.
+/-- The terms of the fields of a telescope whose recursive results have types have recursive
+results, in a signature whose names are distinct and that declares each lifting after the
+destructors that it lifts, where the lifting of the block lifts no variable and renames none,
+whatever the results of the terms of the types of the block are. -/
+theorem Telescope.exists_resultTerms (hsig : sig.Distinct) (hord : sig.LiftsInOrder) {Γ : Scope}
+    {ρ : Lifting k Γ Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
+    (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x) {ns : List (Nest Name)} {ps ps' : List Parameter}
+    {Θ : Telescope k Γ ps} {R : Telescope k (Γ.extend ps.length) ps'}
+    (h : Terms.ResultTypes sig v (ρ.liftN ps.length) ns ps Θ.types (Args.bound (Γ := Γ) ps).terms
+      R)
+    (φ : Name → Term k (.var :: Γ)) (ts : Args k Γ ps) :
+    ∃ rs : Args k Γ ps', Terms.ResultTerms sig v ρ φ ns ps (Θ.typesAt ts) ts.terms rs := by
+  obtain ⟨ps'', rs, hr⟩ := Terms.ResultTypes.exists_resultTerms
+    (hord.liftingsHaveResults hsig sig [] rfl) h (Lifting.Substitutes.args hρ hid ts) φ
+  rw [← Terms.subst₀_eq_subst, ← Terms.subst₀_eq_subst, Telescope.types_toSubst₀,
+    ← Args.terms_subst₀, Args.bound_toSubst₀] at hr
+  obtain rfl : ps'' = ps' := hr.params_eq.trans h.params_eq.symm
+  exact ⟨rs, hr⟩
+
+-- ADE: none.
 /-- The terms of the fields of a constructor whose recursive results have types have recursive
 results, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, where the lifting of the block lifts no variable and renames none,
@@ -537,12 +557,7 @@ theorem Constructor.ResultTypes.exists_resultTerms (hsig : sig.Distinct)
     {R : Telescope k (Γ.extend (c.params I).length) ps'}
     (h : Constructor.ResultTypes sig v c I names ls as ρ R) (φ : Name → Term k (.var :: Γ))
     (ts : Args k Γ (c.params I)) :
-    ∃ rs : Args k Γ ps', Constructor.ResultTerms sig v c I names ls as ρ φ ts rs := by
-  obtain ⟨ps'', rs, hr⟩ := Terms.ResultTypes.exists_resultTerms
-    (hord.liftingsHaveResults hsig sig [] rfl) h (Lifting.Substitutes.args hρ hid ts) φ
-  rw [← Terms.subst₀_eq_subst, ← Terms.subst₀_eq_subst, Telescope.types_toSubst₀,
-    ← Args.terms_subst₀, Args.bound_toSubst₀] at hr
-  obtain rfl : ps'' = ps' := hr.params_eq.trans h.params_eq.symm
-  exact ⟨rs, hr⟩
+    ∃ rs : Args k Γ ps', Constructor.ResultTerms sig v c I names ls as ρ φ ts rs :=
+  Telescope.exists_resultTerms hsig hord hρ hid h φ ts
 
 end Sic.Core

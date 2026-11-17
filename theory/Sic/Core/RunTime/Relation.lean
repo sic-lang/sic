@@ -6,7 +6,7 @@ public import Sic.Core.Syntax.Grades
 /-!
 # Relation of Run Time
 
-The relation of run time of annex 21 of RFC 36, `t ®_H a : A`, between a closed term `t` of the
+The relation of run time of annex 22 of RFC 36, `t ®_H a : A`, between a closed term `t` of the
 source of a closed type `A` and the address `a` of a value of the target language in the heap `H`,
 which states that the value at `a` is what the erasure by `S^{11ᵐ}` of `t` computes at run time: the
 type computes to a proposition, whose proofs are related to every address, or to a canonical type,
