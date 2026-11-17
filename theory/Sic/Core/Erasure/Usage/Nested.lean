@@ -124,13 +124,14 @@ end MultiplicityVector
 mutual
 
 -- ADE: none.
-/-- The branches built from a shape that fits the recursor of the multiplicity `ρ`, other than `0`,
-read the variables of the path `M` as `ρ` times its reads, and those of the scope of the branches of
-the recursor as `χ`, at most as many times as the factor of the shape: the branch of each destructor
-observed at run time runs the recursor once on the observation of the path, or captures it in the
-corecursor of the next lifting, whose factor bounds its reads in turn, and the factor of the shape is
-the meet of these factors, each times the multiplicity of its destructor. -/
-theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} (hρ : ρ ≠ .zero) :
+/-- The branches built from a shape that fits the recursor of the multiplicity `ρ` read the variables
+of the path `M` as `ρ` times its reads, and those of the scope of the branches of the recursor as
+`χ`, at most as many times as the factor of the shape: the branch of each destructor observed at run
+time runs the recursor once on the observation of the path, or on the skeleton of the motive when
+`ρ` is `0`, or captures it in the corecursor of the next lifting, whose factor bounds its reads in
+turn, and the factor of the shape is the meet of these factors, each times the multiplicity of its
+destructor. -/
+theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
     {m : Nat} → {ν χ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
       (σ : Shape) → {π : Multiplicity} → Target.Usage ν M → TargetBranches.Usage χ Ns →
         σ.Fits ρ → (σ ≠ .nil → π ≤ σ.factor) →
@@ -144,7 +145,7 @@ theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} (hρ : ρ ≠ 
       · exact hπ
       · exact Multiplicity.le_trans' _ _ _ hπ
           ((by decide : ∀ a b : Multiplicity, a ⊓ b ≤ a) _ _)
-    have hrest' := TargetCorecBranches.Usage.branches hρ (ϱ := ϱ) rest hM hNs hrest fun hn => by
+    have hrest' := TargetCorecBranches.Usage.branches (ϱ := ϱ) rest hM hNs hrest fun hn => by
       cases rest
       · exact absurd rfl hn
       · exact Multiplicity.le_trans' _ _ _ hπ ((by decide : ∀ a b : Multiplicity, a ⊓ b ≤ b) _ _)
@@ -165,7 +166,7 @@ theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} (hρ : ρ ≠ 
     · simp only [hz, ↓reduceIte]
       have hO := Target.Usage.obs (i := i) (ψ := ψ₀) (ς := ς₀) (hM.rename (TargetRen.shift m (0 + c)))
         (Targets.Usage.ofVars πs ϱs (Shape.argVar m c))
-      have hB := Target.Usage.body hρ (ϱ := ϱ) next hO (hNs.rename (TargetRen.shift m (0 + c))) hnext
+      have hB := Target.Usage.body (ϱ := ϱ) next hO (hNs.rename (TargetRen.shift m (0 + c))) hnext
       rw [MultiplicityVector.rename_shift, MultiplicityVector.rename_shift,
         MultiplicityVector.rename_argVar] at hB
       refine .sub hB fun x => ?_
@@ -181,28 +182,36 @@ theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} (hρ : ρ ≠ 
 
 -- ADE: none.
 /-- The result of the observation `O` of a field, for the shape of a result that fits the recursor
-of the multiplicity `ρ`, other than `0`, reads the variables of `O` as `ρ` times its reads, and those
-of the scope of the branches of the recursor as `χ`, as many times as the factor of the shape. -/
-theorem Target.Usage.body {ρ ϱ : Multiplicity} (hρ : ρ ≠ .zero) {m : Nat}
+of the multiplicity `ρ`, reads the variables of `O` as `ρ` times its reads, and those of the scope
+of the branches of the recursor as `χ`, as many times as the factor of the shape. -/
+theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
     {ν χ : MultiplicityVector m} {O : Target m} {Ns : TargetBranches m} :
     (next : Shape.Next) → Target.Usage ν O → TargetBranches.Usage χ Ns → next.Fits ρ →
       Target.Usage (next.factor ·ᶜ ((ρ ·ᶜ ν) +ᶜ χ)) (next.body ρ ϱ O Ns)
-  | .recursor, hO, hNs, _ => by
-    rw [show Shape.Next.factor .recursor = .one from rfl,
+  | .recursor K, hO, hNs, _ => by
+    rw [show Shape.Next.factor (.recursor K) = .one from rfl,
       (MultiplicityVector.module Multiplicity.modality).one_smul]
-    exact .recursor hO (fun h => absurd h hρ) hNs
+    by_cases hρ : ρ = .zero
+    · subst hρ
+      have h := Target.Usage.recursor (ρ := .zero) (ϱ := ϱ) K.isSkeleton.usage
+        (fun _ => K.isSkeleton) hNs
+      simp only [↓reduceIte, Shape.Next.body]
+      rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul,
+        ← (MultiplicityVector.module Multiplicity.modality).zero_smul ν] at h
+    · simp only [hρ, ↓reduceIte, Shape.Next.body]
+      exact .recursor hO (fun h => absurd h hρ) hNs
   | .lifting σ, hO, hNs, hσ => by
     have h := Target.Usage.corec .nil
-      (TargetCorecBranches.Usage.branches hρ (ϱ := ϱ) σ hO hNs hσ fun _ => Multiplicity.le_refl' _)
+      (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ hO hNs hσ fun _ => Multiplicity.le_refl' _)
     rwa [MultiplicityVector.zero_add] at h
 
 end
 
 -- ADE: none.
-/-- `l.σ` at run time, for a shape that fits the recursor of the multiplicity `ρ`, other than `0`,
-reads the field, the variable `0`, `ρ` times, and the variables of the scope of the recursor as `χ`,
-each as many times as the factor of the shape. -/
-theorem Target.Usage.nested {ρ ϱ : Multiplicity} (hρ : ρ ≠ .zero) {n : Nat}
+/-- `l.σ` at run time, for a shape that fits the recursor of the multiplicity `ρ`, reads the field,
+the variable `0`, `ρ` times, and the variables of the scope of the recursor as `χ`, each as many
+times as the factor of the shape. -/
+theorem Target.Usage.nested {ρ ϱ : Multiplicity} {n : Nat}
     {χ : MultiplicityVector n} {σ : Shape} {Ns : TargetBranches n} (hNs : TargetBranches.Usage χ Ns)
     (hσ : σ.Fits ρ) :
     Target.Usage
@@ -210,7 +219,7 @@ theorem Target.Usage.nested {ρ ϱ : Multiplicity} (hρ : ρ ≠ .zero) {n : Nat
         MultiplicityVector.rename (TargetRen.shift n 1) χ))
       (Target.nested ρ ϱ σ Ns) := by
   have h := Target.Usage.corec .nil
-    (TargetCorecBranches.Usage.branches hρ (ϱ := ϱ) σ (.var 0)
+    (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ (.var 0)
       (hNs.rename (TargetRen.shift n 1)) hσ fun _ => Multiplicity.le_refl' _)
   rwa [MultiplicityVector.zero_add] at h
 

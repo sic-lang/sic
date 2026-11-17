@@ -17,6 +17,9 @@ the recursor with the field, its variable `0`, so that the evaluation binds the 
 captures this scope.
 Each built branch observes a path from the field, the field itself or an observation of it at the
 level before, and the branches of the recursor are shifted under the arguments of each built branch.
+When the recursor is of the multiplicity `0`, its term is erased and the field of its skeleton is
+`↯`: the recursor then runs on the skeleton of the motive instead of the observation, which is never
+evaluated.
 
 ADE have no nested fields.
 -/
@@ -64,11 +67,13 @@ def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → Tar
       (rest.branches ρ ϱ M Ns)
 
 -- ADE: none.
-/-- The result of the observation `O` of a field: the recursor `rec_ρ O ◀ ϱ with N̄` for `⋆`, and the
-corecursor without state of the next lifting, whose branches observe `O` in turn, for its shape. -/
+/-- The result of the observation `O` of a field: the recursor `rec_ρ O ◀ ϱ with N̄` for `⋆_K`, or
+`rec_0 K ◀ ϱ with N̄` on the skeleton `K` of the motive when `ρ` is `0`, as the erasure of a recursor
+on an erased term, and the corecursor without state of the next lifting, whose branches observe `O`
+in turn, for its shape. -/
 def Shape.Next.body {m : Nat} (ρ ϱ : Multiplicity) : Shape.Next → Target m → TargetBranches m →
     Target m
-  | .recursor, O, Ns => .recursor ρ ϱ O Ns
+  | .recursor K, O, Ns => .recursor ρ ϱ (if ρ = .zero then K.target else O) Ns
   | .lifting σ, O, Ns => .corec .nil (σ.branches ρ ϱ O Ns)
 
 end

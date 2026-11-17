@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Erasure.Skeleton
 public import Sic.Core.Syntax
 
 /-!
@@ -16,7 +17,7 @@ more.
 A destructor whose multiplicity at run time is `0` is never observed at run time, and its branch is
 erased.
 
-The shape reads the multiplicities only, so that the usage and the ownership of the target language
+The shape reads the multiplicities and the skeletons only, so that the usage and the ownership of the target language
 read it, with the factor that it gives the uses of the scope.
 
 ADE have no nested fields.
@@ -46,11 +47,13 @@ inductive Shape : Type where
       (ς₀ : Multiplicity) (next : Shape.Next) (rest : Shape) : Shape
 
 -- ADE: none.
-/-- `σ'`: the shape of the result of a lifted destructor, `⋆`, the recursor itself, when its type
-lifted is a motive, or the shape of the next lifting, when it is an instance of a lifting. -/
+/-- `σ'`: the shape of the result of a lifted destructor, `⋆_K`, the recursor itself, when its type
+lifted is a motive, with the skeleton `K` of this motive, which the recursor of the multiplicity `0`
+runs on instead of the observation, or the shape of the next lifting, when it is an instance of a
+lifting. -/
 inductive Shape.Next : Type where
-  /-- `⋆`. -/
-  | recursor : Shape.Next
+  /-- `⋆_K`. -/
+  | recursor (K : Skeleton) : Shape.Next
   /-- `σ`. -/
   | lifting (σ : Shape) : Shape.Next
 
@@ -73,7 +76,7 @@ def Shape.factor : Shape → Multiplicity
 -- ADE: none.
 /-- `factor(σ')`: the factor of the shape of a result, `1` for the recursor itself. -/
 def Shape.Next.factor : Shape.Next → Multiplicity
-  | .recursor => .one
+  | .recursor _ => .one
   | .lifting σ => σ.factor
 
 end
@@ -91,7 +94,7 @@ def Shape.scope : Shape → Multiplicity
 -- ADE: none.
 /-- `scope(σ')`: the scope of the shape of a result, `1` for the recursor itself. -/
 def Shape.Next.scope : Shape.Next → Multiplicity
-  | .recursor => .one
+  | .recursor _ => .one
   | .lifting σ => σ.scope
 
 end
@@ -114,7 +117,7 @@ def Shape.Fits (ρ : Multiplicity) : Shape → Prop
 /-- The shape of a result fits the recursor of the multiplicity `ρ`: the recursor itself does, and
 the next lifting when its shape does. -/
 def Shape.Next.Fits (ρ : Multiplicity) : Shape.Next → Prop
-  | .recursor => True
+  | .recursor _ => True
   | .lifting σ => σ.Fits ρ
 
 end
