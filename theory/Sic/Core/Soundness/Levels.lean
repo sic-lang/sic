@@ -590,17 +590,6 @@ theorem Term.LevelEquiv.instantiateTerms₂ {k : Nat} {Γ : Scope} {m a : Nat}
     obtain ⟨v₂, hv₂, hvv⟩ := hw.instantiateTerms hts hv
     exact ⟨v₂, by rw [hg₂]; exact hv₂, hvv⟩
 
-/-- The recursive results of terms equal up to their levels, by functions that give terms equal up to
-their levels, are equal up to their levels. -/
-theorem Terms.LevelEquiv.results {k : Nat} {Γ : Scope} {f₁ f₂ : Name → Term k Γ → Term k Γ}
-    (hf : ∀ D t₁ t₂, Term.LevelEquiv t₁ t₂ → Term.LevelEquiv (f₁ D t₁) (f₂ D t₂)) :
-    {ts₁ ts₂ : Terms k Γ} → Terms.LevelEquiv ts₁ ts₂ → (rs : List (Option Name)) →
-      Terms.LevelEquiv (ts₁.results f₁ rs) (ts₂.results f₂ rs)
-  | _, _, _, [] => .nil
-  | _, _, .nil, some _ :: _ | _, _, .nil, none :: _ => .nil
-  | _, _, .cons ht hts, some D :: rs => .cons (hf D _ _ ht) (Terms.LevelEquiv.results hf hts rs)
-  | _, _, .cons _ hts, none :: rs => Terms.LevelEquiv.results hf hts rs
-
 /-- The branches of corecursors equal up to their levels have, at a position, branches equal up to
 their levels. -/
 theorem CorecBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :

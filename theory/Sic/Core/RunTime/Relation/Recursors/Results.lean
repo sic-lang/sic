@@ -92,19 +92,6 @@ theorem Telescope.not_inst_of_length_eq :
         (Telescope.resultParams (ns.map Nest.blockName) ps).length := h
     omega
 
-/-- Without nested field, the fields whose nestings have a position are the recursive fields. -/
-theorem Telescope.nestResultParams_eq_resultParams :
-    (ns : List (Nest Name)) → (ps : List Parameter) → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
-      Telescope.nestResultParams ns ps = Telescope.resultParams (ns.map Nest.blockName) ps
-  | [], _, _ | .plain :: _, [], _ | .direct _ :: _, [], _ | .inst _ :: _, [], _ => by
-    simp only [Telescope.nestResultParams, Telescope.resultParams, List.map, Nest.blockName]
-  | .plain :: ns, _ :: ps, h =>
-    Telescope.nestResultParams_eq_resultParams ns ps fun ν hν => h ν (List.mem_cons_of_mem _ hν)
-  | .direct _ :: ns, p :: ps, h =>
-    congrArg (p :: ·) (Telescope.nestResultParams_eq_resultParams ns ps
-      fun ν hν => h ν (List.mem_cons_of_mem _ hν))
-  | .inst ms :: _, _ :: _, h => absurd rfl (h _ List.mem_cons_self ms)
-
 /-! ## Recursive Results -/
 
 -- ADE: none.

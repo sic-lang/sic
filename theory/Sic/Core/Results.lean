@@ -158,15 +158,6 @@ theorem Terms.ResultTypes.params_eq {sig : Signature} {v : Lifting.Variables} :
   | _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg _ h.params_eq
   | _, _, _, _, _, _, _, _, _, .nested _ h => congrArg _ h.params_eq
 
-/-- Fields whose nestings have no position have no recursive result. -/
-theorem Telescope.nestResultParams_of_plain : {ns : List (Nest Name)} → {ps : List Parameter} →
-    (∀ ν ∈ ns, ν = .plain) → Telescope.nestResultParams ns ps = []
-  | [], _, _ | .plain :: _, [], _ | .direct _ :: _, [], _ | .inst _ :: _, [], _ => rfl
-  | .plain :: ns, _ :: ps, h =>
-    Telescope.nestResultParams_of_plain (ns := ns) (ps := ps)
-      fun ν hν => h ν (List.mem_cons_of_mem _ hν)
-  | .direct _ :: _, _ :: _, h | .inst _ :: _, _ :: _, h => nomatch h _ List.mem_cons_self
-
 /-! ## Terms of the Recursive Results -/
 
 -- ADE: none.
