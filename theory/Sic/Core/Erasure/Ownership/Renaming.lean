@@ -85,14 +85,14 @@ theorem Targets.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : 
 `φ'` of the variables of the scope that agree with `φ` along `α`. -/
 theorem TargetBranches.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : TargetRen n m)
     {φ' : MultiplicityVector n} {φ : MultiplicityVector m} (hφ : ∀ x, φ' (α x) = φ x) :
-    {o o' : Multiplicity} → {Ns : TargetBranches m} → TargetBranches.Ownership Ω φ o o' Ns →
-      TargetBranches.Ownership Ω φ' o o' (Ns.rename α)
-  | _, _, _, .nil => .nil
-  | _, _, _, .cons hN hN' hNs =>
+    {o o' ς χ : Multiplicity} → {Ns : TargetBranches m} → TargetBranches.Ownership Ω φ o o' ς χ Ns →
+      TargetBranches.Ownership Ω φ' o o' ς χ (Ns.rename α)
+  | _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, .cons hN hN' hks hNs =>
     .cons (hN.rename _ (MultiplicityVector.extendBinders_lift α hφ _ _))
-      (fun h => (hN' h).rename _ (MultiplicityVector.extendBinders_lift α
+      (hN'.rename _ (MultiplicityVector.extendBinders_lift α
         (fun x => congrArg (_ * ·) (hφ x)) _ _))
-      (hNs.rename α hφ)
+      hks (hNs.rename α hφ)
 
 -- ADE: none.
 /-- The branches of a corecursor renamed by `α` have the ownerships of the branches, given

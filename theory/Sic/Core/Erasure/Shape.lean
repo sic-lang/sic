@@ -17,8 +17,8 @@ more.
 A destructor whose multiplicity at run time is `0` is never observed at run time, and its branch is
 erased.
 
-The shape reads the multiplicities and the skeletons only, so that the usage and the ownership of the target language
-read it, with the factor that it gives the uses of the scope.
+The shape reads the multiplicities and the skeletons only, so that the usage and the ownership of
+the target language read it, with the factor that it gives the uses of the scope.
 
 ADE have no nested fields.
 -/
@@ -78,24 +78,6 @@ def Shape.factor : Shape → Multiplicity
 def Shape.Next.factor : Shape.Next → Multiplicity
   | .recursor _ => .one
   | .lifting σ => σ.factor
-
-end
-
-mutual
-
--- ADE: none.
-/-- `scope(σ)`: the ownership by which the corecursor of a shape multiplies that of the scope that it
-captures, the product of the ownerships that its destructors require of the value that they observe,
-and of the shapes of their results, which the recursions run from it see at every depth. -/
-def Shape.scope : Shape → Multiplicity
-  | .nil => .one
-  | .cons _ _ _ _ _ _ _ _ ς _ _ next rest => (ς * next.scope) * rest.scope
-
--- ADE: none.
-/-- `scope(σ')`: the scope of the shape of a result, `1` for the recursor itself. -/
-def Shape.Next.scope : Shape.Next → Multiplicity
-  | .recursor _ => .one
-  | .lifting σ => σ.scope
 
 end
 

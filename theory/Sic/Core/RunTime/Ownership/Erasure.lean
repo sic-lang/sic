@@ -195,7 +195,8 @@ theorem Target.Ownership.cast {Ω : Name → Multiplicity} {n n' : Nat} (h : n =
 
 /-- The erasure of the branches of a recursor whose term has the ownership `o` has the ownership `o'`
 when the erasure of each branch has it, given the ownership `o` times the coefficient of each
-variable of a field and `o'` times the multiplicity of each variable of a recursive result. -/
+variable of a field and `o'` times the multiplicity of each variable of a recursive result; without
+nested result, the second check of the branches, at `1 · φ` with the ownership `o'`, is the first. -/
 theorem Branches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {Ω : Name → Multiplicity} {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade)
     (φ' : MultiplicityVector Γ.length) (o o' : Multiplicity) :
@@ -206,16 +207,26 @@ theorem Branches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePre
           (fun l => o * r.fieldCoefficient ((fs.drop i).headD [])[(l : Nat)]?)
           (fun (j : Fin b) => o' * gs[j].run)) o'
         (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))) →
-    TargetBranches.Ownership Ω φ' o o' (us.erase sig S hΓ r es fs)
+    TargetBranches.Ownership Ω φ' o o' .one o' (us.erase sig S hΓ r es fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
     have hu := h 0 a b gs u rfl rfl
     simp only [List.drop_zero] at hu
-    refine .cons hu (fun ⟨j, hj⟩ => ?_) (Branches.erase_ownership hΓ r φ' o o' us es.tail fs.tail
-      fun i a' b' gs' u' hg hgs => ?_)
+    have hown : ∀ (x : Option Nat) (c : Prop) [Decidable c],
+        (if c then RecursiveResult.erased else .ofPosition x).ownership o' = o' := by
+      intro x c _
+      split
+      · rfl
+      · cases x <;> rfl
+    refine .cons ?_ ?_ (fun j l σ hj => ?_) (Branches.erase_ownership hΓ r φ' o o' us es.tail
+      fs.tail fun i a' b' gs' u' hg hgs => ?_)
+    · simp only [hown]
+      exact hu
+    · simp only [hown, (MultiplicityVector.module Multiplicity.modality).one_smul]
+      exact hu
     · split at hj
-      · exact hj.elim
-      · exact RecursiveResult.not_isNested_ofPosition _ hj |>.elim
+      · exact nomatch hj
+      · exact (RecursiveResult.not_isNested_ofPosition _ (by rw [hj]; trivial)).elim
     · have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
       have := h (i + 1) a' b' gs' u' hg hgs
       rwa [e₂] at this
@@ -389,7 +400,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     have hbr : ∀ o',
         (r ∉ Mode.oneOne.erased → o' = o.run * (sig.recursionRequirement D qs ps r).run) →
         (r ∈ Mode.oneOne.erased → o' = .one * .omega) →
-        TargetBranches.Ownership Ω φ' o' p.run (us.erase sig Mode.oneOne.erased hΓ r
+        TargetBranches.Ownership Ω φ' o' p.run .one p.run (us.erase sig Mode.oneOne.erased hΓ r
           ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
       intro o' ho₁ ho₂
       rw [Signature.recursionRequirement] at ho₁

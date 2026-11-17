@@ -82,19 +82,6 @@ def RecursiveResult.position : RecursiveResult → Option Nat
   | .erased | .nested .. => none
 
 -- ADE: none.
-/-- The ownership by which a result multiplies that of the scope, as the recursions it runs see it:
-`1` unless it is nested, and the scope of its shape then. -/
-def RecursiveResult.scope : RecursiveResult → Multiplicity
-  | .nested _ σ => σ.scope
-  | .erased | .field _ => .one
-
--- ADE: none.
-/-- The ownership by which the results of a branch multiply that of the scope, as the recursions that
-they run see it: the product of their scopes. -/
-def RecursiveResult.scopeOf {b : Nat} (ks : Fin b → RecursiveResult) : Multiplicity :=
-  (List.ofFn fun j => (ks j).scope).foldr (· * ·) .one
-
--- ADE: none.
 /-- The result is the corecursor of a lifting, on a nested field. -/
 def RecursiveResult.IsNested : RecursiveResult → Prop
   | .nested .. => True
