@@ -115,12 +115,13 @@ theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]
   rw [List.headD_eq_head?_getD, List.head?_drop, h]
   rfl
 
-/-- The elements `ks j` of positions `j < m`, each `none` when the element `gs[j]` satisfies `p`, and
-the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length `m`. -/
-theorem List.ofFn_ite_getElem? {α : Type} {m : Nat} (p : α → Prop) [DecidablePred p]
-    (gs : Vector α m) (L : List Nat) (hL : L.length = m) :
-    List.ofFn (fun j : Fin m => if p gs[j] then none else L[(j : Nat)]?) =
-      List.zipWith (fun e l => if p e then none else some l) gs.toList L := by
+/-- The elements `ks j` of positions `j < m`, each `x` when the element `gs[j]` satisfies `p`, and
+`g` of the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length
+`m`. -/
+theorem List.ofFn_ite_getElem? {α β : Type} {m : Nat} (p : α → Prop) [DecidablePred p] (x : β)
+    (g : Option Nat → β) (gs : Vector α m) (L : List Nat) (hL : L.length = m) :
+    List.ofFn (fun j : Fin m => if p gs[j] then x else g L[(j : Nat)]?) =
+      List.zipWith (fun e l => if p e then x else g (some l)) gs.toList L := by
   apply List.ext_getElem
   · simp [hL]
   · intro j _ h₂

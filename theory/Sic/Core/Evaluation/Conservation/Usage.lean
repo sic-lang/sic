@@ -63,7 +63,7 @@ branches. -/
 theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
     {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .recursor ρ ϱ M Ns →
       ∃ ν₁ χ, ν ≤ᶜ (ρ ·ᶜ ν₁) +ᶜ χ ∧ Target.Usage ν₁ M ∧ (ρ = .zero → M.IsSkeleton) ∧
-        TargetBranches.Usage χ Ns
+        TargetBranches.Usage ρ χ Ns
   | _, _, .recursor hM hz hNs, h => by
     cases h
     exact ⟨_, _, MultiplicityVector.le_refl _, hM, hz, hNs⟩
@@ -107,20 +107,19 @@ theorem corec_inv {Ms : Targets n} {Ps : TargetCorecBranches n} :
 end Target.Usage
 
 /-- The usage of the branches of a recursor gives that of each branch. -/
-theorem TargetBranches.Usage.get {n : Nat} {χ : MultiplicityVector n} :
-    {Ns : TargetBranches n} → TargetBranches.Usage χ Ns → (i : Nat) → {a b : Nat} →
+theorem TargetBranches.Usage.get {n : Nat} {ρ : Multiplicity} {χ : MultiplicityVector n} :
+    {Ns : TargetBranches n} → TargetBranches.Usage ρ χ Ns → (i : Nat) → {a b : Nat} →
       {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} →
       {ks : Fin b → RecursiveResult} →
       {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       ∃ δ : MultiplicityVector n, Target.Usage (δ.extendBinders πs πs') N ∧
-        χ ≤ᶜ δ +ᶜ
-          (Multiplicity.sum (fun j => if (ks j).position.isSome then πs' j else .zero) ·ᶜ χ) ∧
-        ∀ j, (ks j).position.isSome → πs' j ≠ .zero
+        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => πs' j * (ks j).factor) ·ᶜ χ) ∧
+        (∀ j, ks j ≠ .erased → πs' j ≠ .zero) ∧
+        ∀ (j : Fin b) (l : Nat) (σ : Shape), ks j = .nested l σ → σ.Fits ρ
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hN hχ hk hn _, 0, _, _, _, _, _, _, _, h => by
+  | _, .cons hN hχ hk hσ _, 0, _, _, _, _, _, _, _, h => by
     cases h
-    refine ⟨_, hN, ?_, fun j hj => hk j (RecursiveResult.ne_erased_of_position hj)⟩
-    simpa only [RecursiveResult.mul_factor (hn _)] using hχ
+    exact ⟨_, hN, hχ, hk, hσ⟩
   | _, .cons _ _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
 
 /-- The usage of the branches of a corecursor gives that of each branch. -/

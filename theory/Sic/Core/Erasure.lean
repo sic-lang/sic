@@ -82,6 +82,13 @@ def RecursiveResult.position : RecursiveResult → Option Nat
   | .erased | .nested .. => none
 
 -- ADE: none.
+/-- The position of the field on which a result recurses, by the recursor on the field itself or by
+the recursors on its observations, if any. -/
+def RecursiveResult.fieldPosition : RecursiveResult → Option Nat
+  | .field l | .nested l _ => some l
+  | .erased => none
+
+-- ADE: none.
 /-- The result is the corecursor of a lifting, on a nested field. -/
 def RecursiveResult.IsNested : RecursiveResult → Prop
   | .nested .. => True
@@ -104,11 +111,6 @@ theorem RecursiveResult.mul_factor {r : RecursiveResult} (h : ¬ r.IsNested) (π
   | erased => cases π <;> rfl
   | field _ => cases π <;> rfl
   | nested _ _ => exact absurd trivial h
-
-/-- A result that the recursor computes is not erased. -/
-theorem RecursiveResult.ne_erased_of_position {r : RecursiveResult} (h : r.position.isSome) :
-    r ≠ .erased := by
-  cases r <;> simp_all [RecursiveResult.position]
 
 /-- The result of a position is not nested. -/
 theorem RecursiveResult.not_isNested_ofPosition (o : Option Nat) :

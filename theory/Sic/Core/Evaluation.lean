@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Erasure
+public import Sic.Core.Erasure.Nested
 
 /-!
 # Evaluation
@@ -44,6 +44,10 @@ the corecursors, which hold their environment, their branches and the addresses 
 corecursor computes nothing until it is observed, and each observation runs the branch of its
 destructor again, without keeping its result, so that the laziness is explicit, a closure that the
 program builds, and the sharing too, a variable that it binds.
+A nested result of a branch of a recursor is such a closure, the corecursor that
+`Sic/Core/Erasure/Nested.lean` builds from the branches of the recursor and the shape of the result,
+which captures the scope of the recursor with a cell for the field, so that each of its
+observations runs the recursor on an observation of the field.
 A constant is unfolded at each of its uses, as the rule `(δ_⟶)` of the reduction unfolds it, rather
 than evaluated once: the program has no state of its own.
 
@@ -224,26 +228,30 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
 -- ADE: none.
 /-- `recursions_{k̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
 its field at the position `l`, the multiplicity in `π̄'` of the binder of each recursive result
-whose field in `k̄` is `l`: the recursion runs once, but its result is read as its binder allows,
-each read using the value that the recursion builds from the field.
+whose field in `k̄` is `l`, times the factor of the result: the recursion runs once, but its result
+is read as its binder allows, each read using the value that the recursion builds from the field,
+and a nested result uses the field as often as its shape allows at each read.
 RFC: `\mathsf{recursions}_{\bar k, \bar\pi', l}` -/
-def recursionsAt : List (Option Nat) → List Multiplicity → Nat → Multiplicity
-  | k :: ks, π :: πs, l => (if k = some l then π else .zero) + recursionsAt ks πs l
+def recursionsAt : List RecursiveResult → List Multiplicity → Nat → Multiplicity
+  | k :: ks, π :: πs, l =>
+    (if k.fieldPosition = some l then π * k.factor else .zero) + recursionsAt ks πs l
   | _, _, _ => .zero
 
-/-- A field on which a recursive result of a multiplicity other than `0` recurses has recursions. -/
-theorem recursionsAt_ne_zero {l : Nat} {π : Multiplicity} (hπ : π ≠ .zero) :
-    {ks : List (Option Nat)} → {πs : List Multiplicity} → {j : Nat} → ks[j]? = some (some l) →
-      πs[j]? = some π → recursionsAt ks πs l ≠ .zero
-  | k :: ks, π' :: πs, 0, hk, hπ' => by
-    cases hk
+/-- A field on which a result recurses, whose multiplicity times its factor is not `0`, has
+recursions. -/
+theorem recursionsAt_ne_zero {l : Nat} {k : RecursiveResult} {π : Multiplicity}
+    (hk : k.fieldPosition = some l) (hπ : π * k.factor ≠ .zero) :
+    {ks : List RecursiveResult} → {πs : List Multiplicity} → {j : Nat} →
+      ks[j]? = some k → πs[j]? = some π → recursionsAt ks πs l ≠ .zero
+  | k' :: ks, π' :: πs, 0, hk', hπ' => by
+    cases hk'
     cases hπ'
-    simp only [recursionsAt, ↓reduceIte]
+    simp only [recursionsAt, hk, ↓reduceIte]
     exact (by decide : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .zero) _ _ hπ
-  | k :: ks, π' :: πs, j + 1, hk, hπ' => by
+  | k' :: ks, π' :: πs, j + 1, hk', hπ' => by
     simp only [recursionsAt]
     exact (by decide : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero) _ _
-      (recursionsAt_ne_zero hπ (ks := ks) (πs := πs) (j := j) (by simpa using hk)
+      (recursionsAt_ne_zero hk hπ (ks := ks) (πs := πs) (j := j) (by simpa using hk')
         (by simpa using hπ'))
 
 mutual
@@ -324,15 +332,16 @@ inductive EvalAll (P : Program) : {n : Nat} → Multiplicity → Heap → List N
 -- ADE: none.
 /-- `𝒫; ϖ; H; E ⊢ rec_ρ a ◀ ϱ with N̄ ⇓ b; H'; R`: the recursor of the multiplicity `ρ`, of the
 requirement `ϱ` of the recursion of its block, with the branches `N̄`, in the environment `E`, at
-the weight `ϖ`, eliminates the value at the address `a`, a constructor: the branch of its case evaluates, with cells for its fields and its recursive results,
-each the recursor on its field, at the weight times the multiplicity of its binder, or `↯` when it
-is erased, at the multiplicities of its binders times the weight; the uses that the branch makes of
+the weight `ϖ`, eliminates the value at the address `a`, a constructor: the branch of its case
+evaluates, with cells for its fields and its recursive results, each the recursor on its field, the
+corecursor of a nested result or `↯` when it is erased, at the weight times the multiplicity of its
+binder, at the multiplicities of its binders times the weight; the uses that the branch makes of
 each field, by its cell and by the recursions on it, must be within the uses that the constructor
 allows, `ρ` times the multiplicity of the field, the coefficient of the ownership that the branch
 gives the variable of each field within the requirement of the field times these uses, and the
 requirement `ϱ`, which the branches assume of the term of each level of the recursion, within the
-requirement times these uses of each field on which a recursive result recurses, a recursion being
-a use of the field, and the evaluation is stuck otherwise. -/
+requirement times these uses of each field on which the recursor computes a result, a recursion
+being a use of the field, and the evaluation is stuck otherwise. -/
 inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Multiplicity →
     Multiplicity → TargetBranches n → Nat → Nat → Heap → List Nat → Prop where
   /-- RFC: `\iota_\Downarrow` -/
@@ -344,24 +353,25 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
       (h : H₁[a]? = some (.ctor i πs₀ ϱs₀ as)) (hN : Ns.get i = some ⟨a', b, πs, κs, πs', ks, N⟩)
       (ha : as.length = a')
       (hπ : ∀ l : Fin a', ∃ π₀, πs₀[(l : Nat)]? = some π₀ ∧
-        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs') l)
+        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l)
       (hκ : ∀ l : Fin a', ∃ π₀ ϱ₀, πs₀[(l : Nat)]? = some π₀ ∧ ϱs₀[(l : Nat)]? = some ϱ₀ ∧
         κs l ≤ ϱ₀ * (ρ * π₀))
-      (hϱ : ∀ (j : Fin b) (l : Nat), (ks j).position = some l → ∃ π₀ ϱ₀, πs₀[l]? = some π₀ ∧
+      (hϱ : ∀ (j : Fin b) (l : Nat), ks j = .field l → ∃ π₀ ϱ₀, πs₀[l]? = some π₀ ∧
         ϱs₀[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀ * (ρ * π₀))
-      (hr : EvalResults P ϖ H₁ E ρ ϱ Ns as (List.ofFn fun j => (ks j).position) (List.ofFn πs') rs
-        H₂ R₁)
+      (hr : EvalResults P ϖ H₁ E ρ ϱ Ns as (List.ofFn ks) (List.ofFn πs') rs H₂ R₁)
       (hv : Eval P ϖ (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
       EvalRec P ϖ H₁ E ρ ϱ Ns a v H₃ (R₁ ++ R₂)
 
 -- ADE: none.
 /-- `𝒫; ϖ; H; E ⊢ rec_ρ ā ◀ ϱ with N̄ ← k̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
-order, each the recursor on the field at its position in `ā`, at the weight `ϖ` times the
-multiplicity of its binder in `π̄'`, or `↯` when it is erased. -/
+order, each at the weight `ϖ` times the multiplicity of its binder in `π̄'`: the recursor on the
+field at its position in `ā`, the corecursor of a nested result, which captures the scope of the
+recursor with a cell for its field, of the multiplicity of the uses that the corecursor makes of the
+field, or `↯` when it is erased. -/
 inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Multiplicity →
-    Multiplicity → TargetBranches n → List Nat → List (Option Nat) → List Multiplicity → List Nat → Heap →
-    List Nat → Prop where
+    Multiplicity → TargetBranches n → List Nat → List RecursiveResult → List Multiplicity →
+    List Nat → Heap → List Nat → Prop where
   /-- No result.
   RFC: `\mathsf{results}_\Downarrow.\varepsilon` -/
   | nil {ϖ : Multiplicity} {n : Nat} {H : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
@@ -369,18 +379,28 @@ inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → Li
   /-- An erased result, `↯`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\text{↯}` -/
   | erased {ϖ : Multiplicity} {n : Nat} {H₁ H₂ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
-      {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)} {π : Multiplicity}
+      {Ns : TargetBranches n} {as : List Nat} {ks : List RecursiveResult} {π : Multiplicity}
       {πs : List Multiplicity} {rs : List Nat} {R : List Nat}
       (hs : EvalResults P ϖ (H₁ ++ [.erased]) E ρ ϱ Ns as ks πs rs H₂ R) :
-      EvalResults P ϖ H₁ E ρ ϱ Ns as (none :: ks) (π :: πs) (H₁.length :: rs) H₂ R
+      EvalResults P ϖ H₁ E ρ ϱ Ns as (.erased :: ks) (π :: πs) (H₁.length :: rs) H₂ R
   /-- The recursor on the field at the position `j`, then the others.
   RFC: `\mathsf{results}_\Downarrow.\mathsf{rec}` -/
   | recursor {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
-      {Ns : TargetBranches n} {as : List Nat} {j a r : Nat} {ks : List (Option Nat)}
+      {Ns : TargetBranches n} {as : List Nat} {j a r : Nat} {ks : List RecursiveResult}
       {π : Multiplicity} {πs : List Multiplicity} {rs : List Nat} {R₁ R₂ : List Nat}
       (hj : as[j]? = some a) (h : EvalRec P (ϖ * π) H₁ E ρ ϱ Ns a r H₂ R₁)
       (hs : EvalResults P ϖ H₂ E ρ ϱ Ns as ks πs rs H₃ R₂) :
-      EvalResults P ϖ H₁ E ρ ϱ Ns as (some j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
+      EvalResults P ϖ H₁ E ρ ϱ Ns as (.field j :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
+  /-- The corecursor of the shape `σ` on the field at the position `l`, `l.σ`, in the scope of the
+  recursor with a cell for the field, then the others. -/
+  | nested {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
+      {Ns : TargetBranches n} {as : List Nat} {l a r : Nat} {σ : Shape}
+      {ks : List RecursiveResult} {π : Multiplicity} {πs : List Multiplicity} {rs : List Nat}
+      {R₁ R₂ : List Nat} (hl : as[l]? = some a)
+      (h : Eval P (ϖ * π) (H₁ ++ [.cell ((ϖ * π) * (σ.factor * ρ)) a]) (H₁.length :: E)
+        (Target.nested ρ ϱ σ Ns) r H₂ R₁)
+      (hs : EvalResults P ϖ H₂ E ρ ϱ Ns as ks πs rs H₃ R₂) :
+      EvalResults P ϖ H₁ E ρ ϱ Ns as (.nested l σ :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
 
 -- ADE: none.
 /-- `𝒫; ϖ; H ⊢ a.dᵢ(b̄ ▶ π̄ ◀ ϱ̄) ◀ ψ ◀ ς ⇓ c; H'; R`: the observation by the destructor of the case
@@ -438,10 +458,10 @@ theorem Unpack.length {H : Heap} : {k x : Nat} → {πs ϱs : List Multiplicity}
 /-- The recursive results of a branch are as many as their fields and their binders. -/
 theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
     {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
-    {ks : List (Option Nat)} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
+    {ks : List RecursiveResult} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
       EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R → rs.length = ks.length ∧ πs.length = ks.length
   | _, _, _, _, .nil => ⟨rfl, rfl⟩
-  | _, _, _, _, .erased hs | _, _, _, _, .recursor _ _ hs =>
+  | _, _, _, _, .erased hs | _, _, _, _, .recursor _ _ hs | _, _, _, _, .nested _ _ hs =>
     ⟨congrArg (· + 1) hs.length.1, congrArg (· + 1) hs.length.2⟩
 
 /-! ## Determinism -/
@@ -553,7 +573,7 @@ termination_by structural h₁
 -- ADE: none.
 /-- The evaluation of the recursive results of a branch is deterministic. -/
 theorem EvalResults.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
-    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
+    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List RecursiveResult}
     {πs' : List Multiplicity} {rs₁ rs₂ : List Nat} {R₁ R₂ : List Nat}
     (h₁ : EvalResults P ϖ H E ρ ϱ Ns as ks πs' rs₁ H₁ R₁)
     (h₂ : EvalResults P ϖ H E ρ ϱ Ns as ks πs' rs₂ H₂ R₂) : rs₁ = rs₂ ∧ H₁ = H₂ ∧ R₁ = R₂ :=
@@ -566,6 +586,12 @@ theorem EvalResults.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂
     rw [hj] at hj'
     cases hj'
     obtain ⟨rfl, rfl, rfl⟩ := EvalRec.det h h'
+    obtain ⟨rfl, rfl, rfl⟩ := EvalResults.det hs hs'
+    exact ⟨rfl, rfl, rfl⟩
+  | .nested hl h hs, .nested hl' h' hs' => by
+    rw [hl] at hl'
+    cases hl'
+    obtain ⟨rfl, rfl, rfl⟩ := Eval.det h h'
     obtain ⟨rfl, rfl, rfl⟩ := EvalResults.det hs hs'
     exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁

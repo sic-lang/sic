@@ -63,7 +63,7 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   RFC: `\mathsf{usage}_M.\mathsf{rec}` -/
   | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ ϱ : Multiplicity} {M : Target n}
       {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → M.IsSkeleton)
-      (hNs : TargetBranches.Usage χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ ϱ M Ns)
+      (hNs : TargetBranches.Usage ρ χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ ϱ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
   | obs {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {M : Target n} {i c : Nat}
@@ -94,7 +94,7 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
       (hMs : Targets.Usage ν₂ Ms) : Targets.Usage ((π ·ᶜ ν₁) +ᶜ ν₂) (.cons π ϱ M Ms)
 
 -- ADE: `natrec-no-nrₘ`, in `Graded/Usage.agda`, for the bound of the uses of the branches.
-/-- `χ ⊢ N̄ ▶`: the branches `N̄` of a recursor read the variables of the scope as `χ` allows: each
+/-- `ρ; χ ⊢ N̄ ▶`: the branches `N̄` of a recursor of the multiplicity `ρ` read the variables of the scope as `χ` allows: each
 branch reads them as `δ` allows and its new variables as their binders allow, and each recursive
 result that it computes runs the recursor again, which reads them as `χ` allows again, and is read
 as its binder allows, so that `χ` bounds `δ` plus `χ` times the multiplicity of the binder of each
@@ -102,20 +102,24 @@ result that the branch computes times the factor of the result, an erased result
 recursion and a nested result running the branches of its corecursor, which read the scope as often
 as its shape allows; a result that the branch computes has a multiplicity other than `0`, since the
 recursion that computes it reads the field, whose uses a result never read would not count.
-The evaluation does not compute the nested results yet, so that the rule excludes them (`hn`). -/
-inductive TargetBranches.Usage : {n : Nat} → MultiplicityVector n → TargetBranches n → Prop where
+The shape of each nested result fits the recursor of the multiplicity `ρ`, so that its corecursor
+reads the arguments of its observations as the observations allow. -/
+inductive TargetBranches.Usage :
+    {n : Nat} → Multiplicity → MultiplicityVector n → TargetBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar N}.\varepsilon` -/
-  | nil {n : Nat} {χ : MultiplicityVector n} : TargetBranches.Usage χ .nil
+  | nil {n : Nat} {ρ : Multiplicity} {χ : MultiplicityVector n} : TargetBranches.Usage ρ χ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{usage}_{\bar N}.{,}` -/
-  | cons {n a b : Nat} {χ δ : MultiplicityVector n} {πs κs : Fin a → Multiplicity}
-      {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult} {N : Target (n + (a + b))}
-      {Ns : TargetBranches n} (hN : Target.Usage (δ.extendBinders πs πs') N)
+  | cons {n a b : Nat} {ρ : Multiplicity} {χ δ : MultiplicityVector n}
+      {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult}
+      {N : Target (n + (a + b))} {Ns : TargetBranches n}
+      (hN : Target.Usage (δ.extendBinders πs πs') N)
       (hχ : χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => πs' j * (ks j).factor) ·ᶜ χ))
-      (hk : ∀ j, ks j ≠ .erased → πs' j ≠ .zero) (hn : ∀ j, ¬ (ks j).IsNested)
-      (hNs : TargetBranches.Usage χ Ns) :
-      TargetBranches.Usage χ (.cons a b πs κs πs' ks N Ns)
+      (hk : ∀ j, ks j ≠ .erased → πs' j ≠ .zero)
+      (hσ : ∀ (j : Fin b) (l : Nat) (σ : Shape), ks j = .nested l σ → σ.Fits ρ)
+      (hNs : TargetBranches.Usage ρ χ Ns) :
+      TargetBranches.Usage ρ χ (.cons a b πs κs πs' ks N Ns)
 
 -- ADE: none.
 /-- `δ ⊢ P̄ ▶`: the branches `P̄` of a corecursor, which its closure captures with the scope, read

@@ -7,6 +7,7 @@ public import Sic.Core.Evaluation.Conservation.Positions
 public import Sic.Core.Evaluation.Conservation.Recursions
 public import Sic.Core.Evaluation.Conservation.Skeletons
 public import Sic.Core.Evaluation.Conservation.Usage
+import Sic.Core.Erasure.Usage.Nested
 
 /-!
 # Conservation
@@ -228,7 +229,7 @@ its value. -/
 theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
     {n : Nat} {H H' : Heap} {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n}
     {a v : Nat} {R : List Nat} (h : EvalRec P ϖ H E ρ ϱ Ns a v H' R)
-    {χ : MultiplicityVector n} {Dχ Da : Demand} (hNs : TargetBranches.Usage χ Ns)
+    {χ : MultiplicityVector n} {Dχ Da : Demand} (hNs : TargetBranches.Usage ρ χ Ns)
     (hE : H.EnvDemand E χ Dχ) (ha : H.ValueDemand a Da) :
     ∃ D, H'.ValueDemand v D ∧
       ϖ ·ᶜ (Dχ +ᶜ ρ ·ᶜ Da) +ᶜ Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ D :=
@@ -236,18 +237,25 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
   | .iota (H₂ := H₂) (πs₀ := πs₀) (as := as) (a' := a') (b := b) (πs := πs) (πs' := πs')
       (ks := ks) (N := N) (rs := rs) (R₁ := R₁) (R₂ := R₂) hca hN hla hπ _ _ hres hv => by
     obtain ⟨Ds, hDs, rfl, hl₀⟩ := (ha.ctor_inv hca).inv
-    obtain ⟨δ, hNu, hχ, hk⟩ := hNs.get _ hN
+    obtain ⟨δ, hNu, hχ, hk, hσ⟩ := hNs.get _ hN
     obtain ⟨D', hD', hE'⟩ := hE.le hχ
     obtain ⟨Dδ, DS, rfl, hEδ, hES⟩ := hE'.split
     obtain ⟨Dχ₂, rfl, hEχ₂⟩ := hES.unsmul
     have hlr := hres.length
     -- The recursive results.
     obtain ⟨Drs, hDrs, hDres⟩ := EvalResults.conserve hP hϖ hres hNs hEχ₂ hDs
-      (fun j l π hj hπj h0 => by
+      (fun j k π hj hke hπj h0 => by
         rw [List.getElem?_ofFn] at hj hπj
         by_cases hjb : j < b
         · simp only [hjb, ↓reduceDIte, Option.some.injEq] at hj hπj
-          exact hk ⟨j, hjb⟩ (by rw [hj]; rfl) (hπj.trans h0)
+          exact hk ⟨j, hjb⟩ (by rw [hj]; exact hke) (hπj.trans h0)
+        · simp only [hjb, ↓reduceDIte] at hj
+          cases hj)
+      (fun j l σ' hj => by
+        rw [List.getElem?_ofFn] at hj
+        by_cases hjb : j < b
+        · simp only [hjb, ↓reduceDIte, Option.some.injEq] at hj
+          exact hσ ⟨j, hjb⟩ l σ' hj
         · simp only [hjb, ↓reduceDIte] at hj
           cases hj)
     have hH₂ : H₂.Extends (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (as ++ rs)) :=
@@ -260,7 +268,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
     refine ⟨Dv, hvv, ?_⟩
     -- The uses of the fields by the branch and by the recursions.
     have hfield := Demand.positions_le_add ρ πs₀ (List.ofFn πs)
-      ((List.range Ds.length).map (recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs'))) Ds
+      ((List.range Ds.length).map (recursionsAt (List.ofFn ks) (List.ofFn πs'))) Ds
       (hl₀.trans hDs.length) (by simp [← hDs.length, hla]) (by simp)
       (fun l π₀ π r h₀ h₁ h₂ => by
         rw [List.getElem?_ofFn] at h₁
@@ -275,7 +283,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
           rw [← h₂]
           exact hle
         · cases h₁)
-    rw [← Demand.recursions_eq _ _ _ (by simp) (fun j l h => hDs.length ▸ hres.lt j l h)]
+    rw [← Demand.recursions_eq _ _ _ (by simp) (fun j k l h hk => hDs.length ▸ hres.lt j k l h hk)]
       at hfield
     rw [Multiplicity.computed_ofFn] at hDres
     rw [Demand.allocated_trans hres.extends (hH₂.trans hv.extends),
@@ -286,7 +294,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
     generalize Demand.allocated _ H' = A₂ at hDv ⊢
     generalize Demand.uses R₁ = U₁ at hDres ⊢
     generalize Demand.uses R₂ = U₂ at hDv ⊢
-    generalize Demand.recursions (List.ofFn fun j => (ks j).position) (List.ofFn πs') Ds = Rc at hfield hDres ⊢
+    generalize Demand.recursions (List.ofFn ks) (List.ofFn πs') Ds = Rc at hfield hDres ⊢
     generalize Demand.positions (List.ofFn πs) Ds = Q₁ at hfield hDv ⊢
     generalize Demand.positions (List.ofFn πs') Drs = Q₂ at hDres hDv ⊢
     generalize Demand.positions πs₀ Ds = P₀ at hfield ⊢
@@ -311,11 +319,13 @@ that the recursions use, pay the reads of the runs and the demands of the result
 times as the multiplicity of its binder. -/
 theorem EvalResults.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
     {n : Nat} {H H' : Heap} {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n}
-    {as : List Nat} {ks : List (Option Nat)} {πs : List Multiplicity} {rs : List Nat}
+    {as : List Nat} {ks : List RecursiveResult} {πs : List Multiplicity} {rs : List Nat}
     {R : List Nat} (h : EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R) {χ : MultiplicityVector n}
-    {Dχ : Demand} {Ds : List Demand} (hNs : TargetBranches.Usage χ Ns)
+    {Dχ : Demand} {Ds : List Demand} (hNs : TargetBranches.Usage ρ χ Ns)
     (hE : H.EnvDemand E χ Dχ) (hDs : H.ValueDemands as Ds)
-    (hk : ∀ (j l : Nat) π, ks[j]? = some (some l) → πs[j]? = some π → π ≠ .zero) :
+    (hk : ∀ (j : Nat) (k : RecursiveResult) π, ks[j]? = some k → k ≠ .erased → πs[j]? = some π →
+      π ≠ .zero)
+    (hσ : ∀ (j l : Nat) (σ : Shape), ks[j]? = some (.nested l σ) → σ.Fits ρ) :
     ∃ Drs, H'.ValueDemands rs Drs ∧
       ϖ ·ᶜ (Multiplicity.computed ks πs ·ᶜ Dχ +ᶜ ρ ·ᶜ Demand.recursions ks πs Ds) +ᶜ
         Demand.allocated H H' ≤ᶜ Demand.uses R +ᶜ ϖ ·ᶜ Demand.positions πs Drs :=
@@ -329,22 +339,24 @@ theorem EvalResults.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (h
   | .erased (H₂ := H₂) hs => by
     have hH : H.Extends (H ++ [Value.erased]) := List.prefix_append _ _
     obtain ⟨Drs, hDrs, hD⟩ := EvalResults.conserve hP hϖ hs hNs (hE.mono hH) (hDs.mono hH)
-      (fun j l π h₁ h₂ => hk (j + 1) l π h₁ h₂)
+      (fun j => hk (j + 1)) (fun j => hσ (j + 1))
     refine ⟨𝟘ᵛ :: Drs, .cons (Heap.ValueDemand.erased List.getElem?_concat_length |>.mono
       hs.extends) hDrs, ?_⟩
     rw [Demand.allocated_trans hH hs.extends,
       Demand.allocated_append (fun _ _ h => Value.noConfusion h), Demand.zero_add]
     show _ ≤ᶜ _ +ᶜ ϖ ·ᶜ (_ ·ᶜ 𝟘ᵛ +ᶜ _)
     rw [Demand.smul_zero, Demand.zero_add]
-    exact hD
+    rwa [Multiplicity.computed, RecursiveResult.factor, Multiplicity.modality.semiring.mul_zero,
+      Multiplicity.modality.semiring.zero_add, Demand.recursions]
   | .recursor (π := π) (H₂ := H₂) (R₁ := R₁) (R₂ := R₂) (j := j) hj hev hs => by
-    have hπ : π ≠ .zero := fun h0 => hk 0 j π rfl rfl h0
+    have hπ : π ≠ .zero := fun h0 => hk 0 _ π rfl (fun h => nomatch h) rfl h0
     have hD := hDs.getElem? j hj
     obtain ⟨Dr, hvr, hDr⟩ := EvalRec.conserve hP (Multiplicity.mul_ne_zero ϖ π hϖ hπ) hev hNs hE hD
     obtain ⟨Drs, hDrs, hDt⟩ := EvalResults.conserve hP hϖ hs hNs (hE.mono hev.extends)
-      (hDs.mono hev.extends) (fun j l π h₁ h₂ => hk (j + 1) l π h₁ h₂)
+      (hDs.mono hev.extends) (fun j => hk (j + 1)) (fun j => hσ (j + 1))
     refine ⟨Dr :: Drs, .cons (hvr.mono hs.extends) hDrs, ?_⟩
-    rw [Demand.allocated_trans hev.extends hs.extends, Demand.uses_append]
+    rw [Demand.allocated_trans hev.extends hs.extends, Demand.uses_append, Multiplicity.computed,
+      RecursiveResult.factor, Multiplicity.modality.semiring.mul_one]
     show ϖ ·ᶜ ((π + Multiplicity.computed _ _) ·ᶜ Dχ +ᶜ
         ρ ·ᶜ (π ·ᶜ Ds.getD j 𝟘ᵛ +ᶜ Demand.recursions _ _ Ds)) +ᶜ _ ≤ᶜ
       _ +ᶜ ϖ ·ᶜ (π ·ᶜ Dr +ᶜ Demand.positions _ Drs)
@@ -369,6 +381,61 @@ theorem EvalResults.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (h
         = ((ϖ * π) ·ᶜ Dχ +ᶜ (ϖ * π) ·ᶜ ρ ·ᶜ Da +ᶜ A₁) +ᶜ
             (ϖ ·ᶜ c ·ᶜ Dχ +ᶜ ϖ ·ᶜ ρ ·ᶜ Rc +ᶜ A₂) := by ac_rfl
       _ ≤ᶜ (U₁ +ᶜ (ϖ * π) ·ᶜ Dr) +ᶜ (U₂ +ᶜ ϖ ·ᶜ Q) := Demand.add_le_add hDr hDt
+      _ = U₁ +ᶜ U₂ +ᶜ ((ϖ * π) ·ᶜ Dr +ᶜ ϖ ·ᶜ Q) := by ac_rfl
+  | .nested (π := π) (H₂ := H₂) (R₁ := R₁) (R₂ := R₂) (l := l) (a := a) (σ := σ) hl hev hs => by
+    have hπ : π ≠ .zero := fun h0 => hk 0 _ π rfl (fun h => nomatch h) rfl h0
+    have hD := hDs.getElem? l hl
+    have hH : H.Extends (H ++ [.cell ((ϖ * π) * (σ.factor * ρ)) a]) := List.prefix_append _ _
+    -- The corecursor reads its field `factor(σ) · ρ` times and the scope `factor(σ)` times.
+    have hν := MultiplicityVector.nested_succ σ.factor ρ χ
+    have hEn := Heap.EnvDemand.cons (ν := σ.factor ·ᶜ ((ρ ·ᶜ MultiplicityVector.update 𝟘ᵛ 0 .one)
+        +ᶜ MultiplicityVector.rename (TargetRen.shift n 1) χ)) List.getElem?_concat_length
+      (hD.mono hH) (by rw [funext hν]; exact (hE.mono hH).smul σ.factor)
+    obtain ⟨Dr, hvr, hDr⟩ := Eval.conserve hP (Multiplicity.mul_ne_zero ϖ π hϖ hπ) hev
+      (Target.Usage.nested hNs (hσ 0 l σ rfl)) hEn
+    obtain ⟨Drs, hDrs, hDt⟩ := EvalResults.conserve hP hϖ hs hNs ((hE.mono hH).mono hev.extends)
+      ((hDs.mono hH).mono hev.extends) (fun j => hk (j + 1)) (fun j => hσ (j + 1))
+    refine ⟨Dr :: Drs, .cons (hvr.mono hs.extends) hDrs, ?_⟩
+    rw [Demand.allocated_trans hH (hev.extends.trans hs.extends),
+      Demand.allocated_trans hev.extends hs.extends, Demand.allocated_cell, Demand.uses_append,
+      Multiplicity.computed, RecursiveResult.factor]
+    show ϖ ·ᶜ ((π * σ.factor + Multiplicity.computed _ _) ·ᶜ Dχ +ᶜ
+        ρ ·ᶜ ((π * σ.factor) ·ᶜ Ds.getD l 𝟘ᵛ +ᶜ Demand.recursions _ _ Ds)) +ᶜ _ ≤ᶜ
+      _ +ᶜ ϖ ·ᶜ (π ·ᶜ Dr +ᶜ Demand.positions _ Drs)
+    rw [MultiplicityVector.nested_zero] at hDr
+    rw [Demand.smul_add] at hDt
+    generalize Demand.allocated (H ++ _) H₂ = A₂ at hDr ⊢
+    generalize Demand.allocated H₂ H' = A₃ at hDt ⊢
+    generalize Demand.uses R₁ = U₁ at hDr ⊢
+    generalize Demand.uses R₂ = U₂ at hDt ⊢
+    generalize Ds.getD l 𝟘ᵛ = Da at hDr ⊢
+    generalize Demand.recursions _ _ Ds = Rc at hDt ⊢
+    generalize Multiplicity.computed _ _ = c at hDt ⊢
+    generalize Demand.positions _ Drs = Q at hDt ⊢
+    generalize Demand.unit H.length = Uc at hDr ⊢
+    generalize σ.factor = f at hDr ⊢
+    have e₁ : ϖ ·ᶜ ((π * f + c) ·ᶜ Dχ +ᶜ ρ ·ᶜ ((π * f) ·ᶜ Da +ᶜ Rc)) +ᶜ
+        ((ϖ * π * (f * ρ)) ·ᶜ Uc +ᶜ (A₂ +ᶜ A₃)) =
+        ((ϖ * π) ·ᶜ ((f * ρ) ·ᶜ (Uc +ᶜ Da) +ᶜ f ·ᶜ Dχ) +ᶜ A₂) +ᶜ
+          (ϖ ·ᶜ c ·ᶜ Dχ +ᶜ ϖ ·ᶜ ρ ·ᶜ Rc +ᶜ A₃) := by
+      funext x
+      show ϖ * ((π * f + c) * Dχ x + ρ * (π * f * Da x + Rc x)) +
+          (ϖ * π * (f * ρ) * Uc x + (A₂ x + A₃ x)) =
+        (ϖ * π * (f * ρ * (Uc x + Da x) + f * Dχ x) + A₂ x) +
+          (ϖ * (c * Dχ x) + ϖ * (ρ * Rc x) + A₃ x)
+      rw [(by decide : ∀ ϖ π f c ρ d a r : Multiplicity,
+          ϖ * ((π * f + c) * d + ρ * (π * f * a + r)) =
+            ϖ * π * (f * ρ * a + f * d) + (ϖ * (c * d) + ϖ * (ρ * r))) ϖ π f c ρ (Dχ x) (Da x)
+          (Rc x),
+        (by decide : ∀ w f ρ u a d : Multiplicity,
+          w * (f * ρ * (u + a) + f * d) = w * (f * ρ) * u + w * (f * ρ * a + f * d))
+          (ϖ * π) f ρ (Uc x) (Da x) (Dχ x)]
+      exact (by decide : ∀ X Y Z a b : Multiplicity,
+        X + Y + (Z + (a + b)) = Z + X + a + (Y + b)) _ _ _ _ _
+    rw [e₁, Demand.smul_add ϖ (π ·ᶜ Dr), ← Demand.mul_smul ϖ π]
+    calc ((ϖ * π) ·ᶜ ((f * ρ) ·ᶜ (Uc +ᶜ Da) +ᶜ f ·ᶜ Dχ) +ᶜ A₂) +ᶜ
+          (ϖ ·ᶜ c ·ᶜ Dχ +ᶜ ϖ ·ᶜ ρ ·ᶜ Rc +ᶜ A₃)
+        ≤ᶜ (U₁ +ᶜ (ϖ * π) ·ᶜ Dr) +ᶜ (U₂ +ᶜ ϖ ·ᶜ Q) := Demand.add_le_add hDr hDt
       _ = U₁ +ᶜ U₂ +ᶜ ((ϖ * π) ·ᶜ Dr +ᶜ ϖ ·ᶜ Q) := by ac_rfl
 termination_by structural h
 

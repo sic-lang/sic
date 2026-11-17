@@ -52,7 +52,29 @@ theorem rename_shift {n a b : Nat} (ν : MultiplicityVector n) :
       simp only [this, ↓reduceIte, MultiplicityVector.extendBinders,
         show ¬ (i : Nat) < b by omega, hi, ↓reduceDIte]
 
+/-- The vector of the corecursor of a nested result reads the field `factor(σ) · ρ` times. -/
+theorem nested_zero {n : Nat} (f ρ : Multiplicity) (χ : MultiplicityVector n) :
+    (f ·ᶜ ((ρ ·ᶜ MultiplicityVector.update 𝟘ᵛ 0 .one) +ᶜ
+      MultiplicityVector.rename (TargetRen.shift n 1) χ)) 0 = f * ρ := by
+  show f * (ρ * MultiplicityVector.update 𝟘ᵛ 0 .one 0 +
+    MultiplicityVector.rename (TargetRen.shift n (0 + 1)) χ 0) = f * ρ
+  rw [rename_shift (a := 0) (b := 1)]
+  simp [MultiplicityVector.update, Sic.Math.Vector.update, MultiplicityVector.extendBinders]
+  cases f <;> cases ρ <;> rfl
+
+/-- The vector of the corecursor of a nested result reads the scope `factor(σ) · χ`. -/
+theorem nested_succ {n : Nat} (f ρ : Multiplicity) (χ : MultiplicityVector n) (x : Fin n) :
+    (f ·ᶜ ((ρ ·ᶜ MultiplicityVector.update 𝟘ᵛ 0 .one) +ᶜ
+      MultiplicityVector.rename (TargetRen.shift n 1) χ)) x.succ = f * χ x := by
+  show f * (ρ * MultiplicityVector.update 𝟘ᵛ 0 .one x.succ +
+    MultiplicityVector.rename (TargetRen.shift n (0 + 1)) χ (TargetRen.shift n (0 + 1) x)) =
+    f * χ x
+  rw [rename_shift (a := 0) (b := 1), extendBinders_shift]
+  simp [MultiplicityVector.update, Sic.Math.Vector.update, Fin.succ_ne_zero]
+  cases f <;> cases ρ <;> rfl
+
 end MultiplicityVector
+
 
 -- ADE: none.
 /-- The variables as terms read each variable as the sum of the multiplicities of the positions that
@@ -133,7 +155,7 @@ turn, and the factor of the shape is the meet of these factors, each times the m
 destructor. -/
 theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
     {m : Nat} → {ν χ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
-      (σ : Shape) → {π : Multiplicity} → Target.Usage ν M → TargetBranches.Usage χ Ns →
+      (σ : Shape) → {π : Multiplicity} → Target.Usage ν M → TargetBranches.Usage ρ χ Ns →
         σ.Fits ρ → (σ ≠ .nil → π ≤ σ.factor) →
           TargetCorecBranches.Usage (π ·ᶜ ((ρ ·ᶜ ν) +ᶜ χ)) (σ.branches ρ ϱ M Ns)
   | _, _, _, _, _, .nil, _, _, _, _, _ => .nil
@@ -186,7 +208,7 @@ of the multiplicity `ρ`, reads the variables of `O` as `ρ` times its reads, an
 of the branches of the recursor as `χ`, as many times as the factor of the shape. -/
 theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
     {ν χ : MultiplicityVector m} {O : Target m} {Ns : TargetBranches m} :
-    (next : Shape.Next) → Target.Usage ν O → TargetBranches.Usage χ Ns → next.Fits ρ →
+    (next : Shape.Next) → Target.Usage ν O → TargetBranches.Usage ρ χ Ns → next.Fits ρ →
       Target.Usage (next.factor ·ᶜ ((ρ ·ᶜ ν) +ᶜ χ)) (next.body ρ ϱ O Ns)
   | .recursor K, hO, hNs, _ => by
     rw [show Shape.Next.factor (.recursor K) = .one from rfl,
@@ -212,7 +234,8 @@ end
 the variable `0`, `ρ` times, and the variables of the scope of the recursor as `χ`, each as many
 times as the factor of the shape. -/
 theorem Target.Usage.nested {ρ ϱ : Multiplicity} {n : Nat}
-    {χ : MultiplicityVector n} {σ : Shape} {Ns : TargetBranches n} (hNs : TargetBranches.Usage χ Ns)
+    {χ : MultiplicityVector n} {σ : Shape} {Ns : TargetBranches n}
+    (hNs : TargetBranches.Usage ρ χ Ns)
     (hσ : σ.Fits ρ) :
     Target.Usage
       (σ.factor ·ᶜ ((ρ ·ᶜ MultiplicityVector.update 𝟘ᵛ 0 .one) +ᶜ

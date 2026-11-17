@@ -96,6 +96,19 @@ theorem corec_inv {Ms : Targets n} {Ps : TargetCorecBranches n} : {o : Multiplic
 
 end Target.Ownership
 
+namespace Target.Ownership
+
+/-- A constructor builds a new value, whose ownership is at most `1`. -/
+theorem ctor_le {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} {i : Nat}
+    {Ms : Targets n} : {o : Multiplicity} → {M : Target n} → Target.Ownership Ω φ o M →
+      M = .ctor i Ms → o ≤ .one
+  | _, _, .ctor _, _ => Multiplicity.le_refl' _
+  | _, _, .sub h hle, hM => Multiplicity.le_trans' _ _ _ hle (ctor_le h hM)
+  | _, _, .var _, h | _, _, .const .., h | _, _, .erased _, h
+  | _, _, .recursor .., h | _, _, .obs .., h | _, _, .corec .., h => nomatch h
+
+end Target.Ownership
+
 /-- The ownership of each term of a list satisfies the requirement of its position. -/
 theorem Targets.Ownership.get {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} :
     {os : List Multiplicity} → {Ms : Targets n} → Targets.Ownership Ω φ os Ms → {k : Nat} →
@@ -114,7 +127,8 @@ theorem Targets.Ownership.length {Ω : Name → Multiplicity} {n : Nat} {φ : Mu
   | _, _, .cons _ _ hMs => congrArg (· + 1) hMs.length
 
 /-- The ownership of the branches of a recursor gives that of each branch, with the ownership of the
-variable of each recursive result. -/
+variable of each recursive result, and the ownerships and the requirements of the shape of each
+nested result. -/
 theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
     {φ : MultiplicityVector n} {o o' ς χ : Multiplicity} : {Ns : TargetBranches n} →
     TargetBranches.Ownership Ω φ o o' ς χ Ns → (i : Nat) → {a b : Nat} →
@@ -122,11 +136,13 @@ theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
       {ks : Fin b → RecursiveResult} → {N : Target (n + (a + b))} →
       Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       Target.Ownership Ω
-        (φ.extendBinders (fun l => o * κs l) (fun j => (ks j).ownership o' * πs' j)) o' N
+        (φ.extendBinders (fun l => o * κs l) (fun j => (ks j).ownership o' * πs' j)) o' N ∧
+      ∀ (j : Fin b) (l : Fin a) (σ : Shape), ks j = .nested l σ →
+        σ.Uniform ς χ ∧ σ.Requires o ς ∧ o ≤ ς * (o * κs l)
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons hN _ _ _, 0, _, _, _, _, _, _, _, h => by
+  | _, .cons hN _ hks _, 0, _, _, _, _, _, _, _, h => by
     cases h
-    exact hN
+    exact ⟨hN, hks⟩
   | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Ownership.get hNs i h
 
 /-- The ownership of the branches of a corecursor gives that of each branch. -/

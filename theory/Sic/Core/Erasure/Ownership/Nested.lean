@@ -3,6 +3,7 @@ module
 public import Sic.Core.Erasure.Nested
 public import Sic.Core.Erasure.Ownership
 import Sic.Core.Erasure.Ownership.Renaming
+import Sic.Core.Erasure.Usage.Renaming
 
 /-!
 # Ownership of the Corecursors of the Nested Results
@@ -30,17 +31,6 @@ namespace Sic.Core
 open Sic.Grading
 
 namespace MultiplicityVector
-
--- ADE: none.
-/-- The vector of a branch at a variable of the scope, shifted under the binders of the branch, is
-the vector of the scope at this variable. -/
-theorem extendBinders_shift {m a b : Nat} (φ : MultiplicityVector m) (πs : Fin a → Multiplicity)
-    (πs' : Fin b → Multiplicity) (x : Fin m) :
-    φ.extendBinders πs πs' (TargetRen.shift m (a + b) x) = φ x := by
-  have h₁ : ¬ ((x : Nat) + (a + b) < b) := by omega
-  have h₂ : ¬ ((x : Nat) + (a + b) < a + b) := by omega
-  simp only [MultiplicityVector.extendBinders, TargetRen.shift, h₁, h₂, ↓reduceDIte,
-    Nat.add_sub_cancel, Fin.eta]
 
 -- ADE: none.
 /-- The vector of a built branch at the variable of an argument is the ownership of the argument. -/

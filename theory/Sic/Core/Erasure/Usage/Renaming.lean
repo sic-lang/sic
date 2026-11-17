@@ -89,6 +89,17 @@ theorem rename_update {n m : Nat} (α : TargetRen n m) (x : Fin m) :
     · simp [h, Ne.symm h]
 
 -- ADE: none.
+/-- The vector of a branch at a variable of the scope, shifted under the binders of the branch, is
+the vector of the scope at this variable. -/
+theorem extendBinders_shift {m a b : Nat} (φ : MultiplicityVector m) (πs : Fin a → Multiplicity)
+    (πs' : Fin b → Multiplicity) (x : Fin m) :
+    φ.extendBinders πs πs' (TargetRen.shift m (a + b) x) = φ x := by
+  have h₁ : ¬ ((x : Nat) + (a + b) < b) := by omega
+  have h₂ : ¬ ((x : Nat) + (a + b) < a + b) := by omega
+  simp only [MultiplicityVector.extendBinders, TargetRen.shift, h₁, h₂, ↓reduceDIte,
+    Nat.add_sub_cancel, Fin.eta]
+
+-- ADE: none.
 /-- The vector of a branch renamed under its new variables is the vector of the scope renamed,
 extended by the multiplicities of the new variables. -/
 theorem rename_extendBinders {n m a b : Nat} (α : TargetRen n m) (δ : MultiplicityVector m)
@@ -206,13 +217,14 @@ theorem Targets.Usage.rename {n m : Nat} (α : TargetRen n m) :
 -- ADE: none.
 /-- The branches of a recursor renamed by `α` read the variables of the scope as `α_* χ`. -/
 theorem TargetBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
-    {χ : MultiplicityVector m} → {Ns : TargetBranches m} → TargetBranches.Usage χ Ns →
-      TargetBranches.Usage (MultiplicityVector.rename α χ) (Ns.rename α)
-  | _, _, .nil => .nil
-  | _, _, .cons (δ := δ) (πs := πs) (πs' := πs') hN hχ hk hn hNs => by
+    {ρ : Multiplicity} → {χ : MultiplicityVector m} → {Ns : TargetBranches m} →
+      TargetBranches.Usage ρ χ Ns →
+        TargetBranches.Usage ρ (MultiplicityVector.rename α χ) (Ns.rename α)
+  | _, _, _, .nil => .nil
+  | _, _, _, .cons (δ := δ) (πs := πs) (πs' := πs') hN hχ hk hσ hNs => by
     have hN' := hN.rename (α.lift _)
     rw [MultiplicityVector.rename_extendBinders] at hN'
-    refine .cons hN' ?_ hk hn (hNs.rename α)
+    refine .cons hN' ?_ hk hσ (hNs.rename α)
     have h := MultiplicityVector.rename_le α hχ
     rwa [MultiplicityVector.rename_add, MultiplicityVector.rename_smul] at h
 

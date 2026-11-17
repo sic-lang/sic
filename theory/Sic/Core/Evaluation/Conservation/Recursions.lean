@@ -22,37 +22,32 @@ theorem Multiplicity.field_le : ∀ ρ π₀ π r p₀ p q d : Multiplicity, ρ 
     ρ * p₀ ≤ p + ρ * q → ρ * (π₀ * d + p₀) ≤ π * d + p + ρ * (r * d + q) := by decide
 
 -- ADE: none.
-/-- `Σ_{kⱼ ≠ ⊥} π'ⱼ`: the multiplicities of the binders of the results that a branch computes. -/
-def Multiplicity.computed : List (Option Nat) → List Multiplicity → Multiplicity
-  | some _ :: ks, π :: πs => π + Multiplicity.computed ks πs
-  | none :: ks, _ :: πs => Multiplicity.computed ks πs
+/-- `Σ_{kⱼ ≠ ⊥} π'ⱼ · factor(kⱼ)`: the multiplicities of the binders of the results that a branch
+computes, each times the factor of its result. -/
+def Multiplicity.computed : List RecursiveResult → List Multiplicity → Multiplicity
+  | k :: ks, π :: πs => π * k.factor + Multiplicity.computed ks πs
   | _, _ => .zero
 
 -- ADE: none.
 /-- The demands of the fields that the recursions of a branch use, each as many times as the
-multiplicity of the binder of its result. -/
-def Demand.recursions : List (Option Nat) → List Multiplicity → List Demand → Demand
-  | some l :: ks, π :: πs, Ds => π ·ᶜ Ds.getD l 𝟘ᵛ +ᶜ Demand.recursions ks πs Ds
-  | none :: ks, _ :: πs, Ds => Demand.recursions ks πs Ds
+multiplicity of the binder of its result times the factor of the result. -/
+def Demand.recursions : List RecursiveResult → List Multiplicity → List Demand → Demand
+  | .field l :: ks, π :: πs, Ds => π ·ᶜ Ds.getD l 𝟘ᵛ +ᶜ Demand.recursions ks πs Ds
+  | .nested l σ :: ks, π :: πs, Ds =>
+    (π * σ.factor) ·ᶜ Ds.getD l 𝟘ᵛ +ᶜ Demand.recursions ks πs Ds
+  | .erased :: ks, _ :: πs, Ds => Demand.recursions ks πs Ds
   | _, _, _ => 𝟘ᵛ
 
 /-- The multiplicities of the computed results, as a list, are those that the usage of the branches
 sums. -/
-theorem Multiplicity.computed_ofFn : {b : Nat} → (ks : Fin b → Option Nat) →
+theorem Multiplicity.computed_ofFn : {b : Nat} → (ks : Fin b → RecursiveResult) →
     (πs : Fin b → Multiplicity) →
       Multiplicity.computed (List.ofFn ks) (List.ofFn πs) =
-        Multiplicity.sum (fun j => if (ks j).isSome then πs j else .zero)
+        Multiplicity.sum (fun j => πs j * (ks j).factor)
   | 0, _, _ => rfl
   | b + 1, ks, πs => by
-    rw [List.ofFn_succ, List.ofFn_succ, Multiplicity.sum]
-    have ih := Multiplicity.computed_ofFn (fun j => ks j.succ) (fun j => πs j.succ)
-    cases h : ks 0 with
-    | none =>
-      simp only [Multiplicity.computed, Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
-      rw [ih, Multiplicity.modality.semiring.zero_add]
-    | some l =>
-      simp only [Multiplicity.computed, Option.isSome_some, ↓reduceIte]
-      rw [ih]
+    rw [List.ofFn_succ, List.ofFn_succ, Multiplicity.sum, Multiplicity.computed,
+      Multiplicity.computed_ofFn (fun j => ks j.succ) (fun j => πs j.succ)]
 
 /-- The sum of demands at the sum of two multiplicities, one by one, is the sum of the sums. -/
 theorem Demand.positions_add : (πs₁ πs₂ : List Multiplicity) → (Ds : List Demand) →
@@ -100,10 +95,11 @@ theorem Demand.positions_single (π : Multiplicity) : (l o : Nat) → (Ds : List
       rfl
 
 /-- The recursions of a branch regroup by field: each field is used as many times as the
-multiplicities of the binders of the results that its recursions compute. -/
-theorem Demand.recursions_eq : (ks : List (Option Nat)) → (πs : List Multiplicity) →
+multiplicities of the binders of the results that its recursions compute, times their factors. -/
+theorem Demand.recursions_eq : (ks : List RecursiveResult) → (πs : List Multiplicity) →
     (Ds : List Demand) → ks.length = πs.length →
-      (∀ (j : Nat) l, ks[j]? = some (some l) → l < Ds.length) →
+      (∀ (j : Nat) (k : RecursiveResult) l, ks[j]? = some k → k.fieldPosition = some l →
+        l < Ds.length) →
       Demand.recursions ks πs Ds =
         Demand.positions ((List.range Ds.length).map (recursionsAt ks πs)) Ds
   | [], [], Ds, _, _ => by
@@ -115,31 +111,45 @@ theorem Demand.recursions_eq : (ks : List (Option Nat)) → (πs : List Multipli
       simp [recursionsAt]]
     exact (Demand.positions_replicate_zero _ _).symm
   | k :: ks, π :: πs, Ds, hl, hk => by
-    have ih := Demand.recursions_eq ks πs Ds (Nat.succ.inj hl) (fun j l h => hk (j + 1) l h)
+    have ih := Demand.recursions_eq ks πs Ds (Nat.succ.inj hl) (fun j => hk (j + 1))
     have hsplit : (List.range Ds.length).map (recursionsAt (k :: ks) (π :: πs)) =
-        List.zipWith (· + ·) ((List.range Ds.length).map fun l => if k = some l then π else .zero)
+        List.zipWith (· + ·)
+          ((List.range Ds.length).map fun l =>
+            if k.fieldPosition = some l then π * k.factor else .zero)
           ((List.range Ds.length).map (recursionsAt ks πs)) := by
       apply List.ext_getElem (by simp)
       intro i _ _
       simp [recursionsAt]
     rw [hsplit, Demand.positions_add _ _ _ (by simp) (by simp), ← ih]
-    cases k with
-    | none =>
-      rw [Demand.recursions, show ((List.range Ds.length).map fun l =>
-          if (none : Option Nat) = some l then π else .zero) = List.replicate Ds.length .zero by
-        apply List.ext_getElem (by simp)
-        intro i _ _
-        simp,
-        Demand.positions_replicate_zero, Demand.zero_add]
-    | some l =>
-      have hlt := hk 0 l rfl
-      rw [Demand.recursions, List.range_eq_range', show ((List.range' 0 Ds.length).map fun l' =>
-          if some l = some l' then π else .zero) =
-          (List.range' 0 Ds.length).map fun l' => if l' = l then π else .zero by
+    -- The first result uses its field `π · factor(k)` times, or none when it is erased.
+    have hone : ∀ l, l < Ds.length → ∀ π' : Multiplicity,
+        Demand.positions ((List.range Ds.length).map fun l' =>
+          if l = l' then π' else .zero) Ds = π' ·ᶜ Ds.getD l 𝟘ᵛ := fun l hlt π' => by
+      rw [List.range_eq_range', show ((List.range' 0 Ds.length).map fun l' =>
+          if l = l' then π' else .zero) =
+          (List.range' 0 Ds.length).map fun l' => if l' = l then π' else .zero by
         apply List.map_congr_left
         intro x _
         simp [eq_comm],
-        Demand.positions_single π l 0 Ds (by omega) (Nat.zero_le _), Nat.sub_zero]
+        Demand.positions_single π' l 0 Ds (by omega) (Nat.zero_le _), Nat.sub_zero]
+    cases k with
+    | erased =>
+      rw [Demand.recursions, show ((List.range Ds.length).map fun l =>
+          if RecursiveResult.erased.fieldPosition = some l then π * RecursiveResult.erased.factor
+          else .zero) = List.replicate Ds.length .zero by
+        apply List.ext_getElem (by simp)
+        intro i _ _
+        simp [RecursiveResult.fieldPosition],
+        Demand.positions_replicate_zero, Demand.zero_add]
+    | field l =>
+      rw [Demand.recursions]
+      simp only [RecursiveResult.fieldPosition, RecursiveResult.factor, Option.some.injEq]
+      rw [hone l (hk 0 _ l rfl rfl) (π * .one),
+        (by decide : ∀ x : Multiplicity, x * .one = x)]
+    | nested l σ =>
+      rw [Demand.recursions]
+      simp only [RecursiveResult.fieldPosition, RecursiveResult.factor, Option.some.injEq]
+      rw [hone l (hk 0 _ l rfl rfl) (π * σ.factor)]
   | [], _ :: _, _, hl, _ | _ :: _, [], _, hl, _ => nomatch hl
 
 /-- The uses of the fields by a branch of the recursor of the multiplicity `ρ`: `ρ` times their
@@ -168,14 +178,24 @@ theorem Demand.positions_le_add (ρ : Multiplicity) : (πs₀ πs ρs : List Mul
 /-- The recursive results of a branch are on its fields. -/
 theorem EvalResults.lt {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
     {E : List Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} :
-    {ks : List (Option Nat)} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
+    {ks : List RecursiveResult} → {πs : List Multiplicity} → {rs : List Nat} → {R : List Nat} →
       EvalResults P ϖ H E ρ ϱ Ns as ks πs rs H' R →
-        ∀ (j : Nat) l, ks[j]? = some (some l) → l < as.length
-  | _, _, _, _, .nil, _, _, h => nomatch h
-  | _, _, _, _, .erased hs, j + 1, l, h => hs.lt j l h
-  | _, _, _, _, .recursor hj _ _, 0, l, h => by
+        ∀ (j : Nat) (k : RecursiveResult) l, ks[j]? = some k → k.fieldPosition = some l →
+          l < as.length
+  | _, _, _, _, .nil, _, _, _, h, _ => nomatch h
+  | _, _, _, _, .erased hs, j + 1, k, l, h, hk => hs.lt j k l h hk
+  | _, _, _, _, .erased _, 0, _, _, h, hk => by
     cases h
+    cases hk
+  | _, _, _, _, .recursor hj _ _, 0, _, l, h, hk => by
+    cases h
+    cases hk
     exact (List.getElem?_eq_some_iff.1 hj).1
-  | _, _, _, _, .recursor _ _ hs, j + 1, l, h => hs.lt j l h
+  | _, _, _, _, .recursor _ _ hs, j + 1, k, l, h, hk => hs.lt j k l h hk
+  | _, _, _, _, .nested hl _ _, 0, _, l, h, hk => by
+    cases h
+    cases hk
+    exact (List.getElem?_eq_some_iff.1 hl).1
+  | _, _, _, _, .nested _ _ hs, j + 1, k, l, h, hk => hs.lt j k l h hk
 
 end Sic.Core

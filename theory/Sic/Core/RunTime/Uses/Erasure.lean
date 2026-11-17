@@ -182,7 +182,7 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
           if (if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?).isSome then gs[j].run
           else .zero) ·ᶜ χ) ∧
         ∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) →
-    TargetBranches.Usage χ (us.erase sig S hΓ r es fs)
+    TargetBranches.Usage r.run χ (us.erase sig S hΓ r es fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
     obtain ⟨δ, hu, hχ, hk⟩ := h 0 a b gs u rfl rfl
@@ -192,7 +192,8 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
       split
       · exact id
       · exact RecursiveResult.not_isNested_ofPosition _
-    refine .cons hu ?_ (fun j hj => hk j fun hs => ?_) hn (Branches.erase_usage hΓ r χ us es.tail
+    refine .cons hu ?_ (fun j hj => hk j fun hs => ?_)
+      (fun j l σ h => (hn j (by rw [h]; exact trivial)).elim) (Branches.erase_usage hΓ r χ us es.tail
       fs.tail fun i a' b' gs' u' hg hgs => ?_)
     · simp only [RecursiveResult.mul_factor (hn _), apply_ite RecursiveResult.position,
         RecursiveResult.position_ofPosition, RecursiveResult.position_erased]
@@ -295,7 +296,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (us := us) (χ := χ)
       (δs := δs) (gs := gs) h hq hp _ ht hul hus hu hg hχ _ _ => by
     -- The branches, whose binders have the multiplicities of their variables at run time.
-    have hbr : TargetBranches.Usage χ.run (us.erase sig Mode.oneOne.erased hΓ r
+    have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
       rw [hd.recursiveFields h hq hp, hd.caseFieldParams h hq hp, Option.getD_some,
         Option.getD_some]

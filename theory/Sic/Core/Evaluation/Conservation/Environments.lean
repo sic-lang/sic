@@ -45,6 +45,30 @@ theorem Heap.EnvSum.var_inv {H : Heap} {R : Nat → Demand → Prop} : {n : Nat}
       refine ⟨c', π, ℓ, Dx, hx', hc', hv', ?_⟩
       rw [hy 0 (Fin.succ_ne_zero x).symm, Demand.zero_smul, Demand.zero_add]
 
+/-- A sum for a vector gives `π` times the sum for the vector multiplied by `π`. -/
+theorem Heap.EnvSum.smul {H : Heap} {R : Nat → Demand → Prop} (π : Multiplicity) :
+    {n : Nat} → {E : List Nat} → {ν : MultiplicityVector n} → {D : Demand} →
+      Heap.EnvSum H R E ν D → Heap.EnvSum H R E (π ·ᶜ ν) (π ·ᶜ D)
+  | _, _, _, _, .nil => by
+    rw [Demand.smul_zero]
+    exact .nil
+  | _, _, ν, _, .cons (c := c) (D₁ := D₁) (D₂ := D₂) hc h hE => by
+    have h' := Heap.EnvSum.cons (ν := π ·ᶜ ν) hc h (Heap.EnvSum.smul π hE)
+    rwa [show ((π ·ᶜ ν) 0 ·ᶜ (Demand.unit c +ᶜ D₁)) +ᶜ π ·ᶜ D₂ =
+        π ·ᶜ ((ν 0 ·ᶜ (Demand.unit c +ᶜ D₁)) +ᶜ D₂) from funext fun a => by
+      show π * ν 0 * (Demand.unit c a + D₁ a) + π * D₂ a =
+        π * (ν 0 * (Demand.unit c a + D₁ a) + D₂ a)
+      exact (by decide : ∀ p v u d e : Multiplicity,
+        p * v * (u + d) + p * e = p * (v * (u + d) + e)) _ _ _ _ _] at h'
+
+-- ADE: none.
+/-- The demand of an environment for a vector multiplied by `π` is `π` times its demand for the
+vector. -/
+theorem Heap.EnvDemand.smul {H : Heap} (π : Multiplicity) {n : Nat} {E : List Nat}
+    {ν : MultiplicityVector n} {D : Demand} (h : Heap.EnvDemand H E ν D) :
+    Heap.EnvDemand H E (π ·ᶜ ν) (π ·ᶜ D) :=
+  (h.toEnvSum.smul π).toEnvDemand
+
 -- ADE: none.
 /-- The demand of an environment for a vector of `0`s is `0`. -/
 theorem Heap.EnvDemand.eq_zero {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}

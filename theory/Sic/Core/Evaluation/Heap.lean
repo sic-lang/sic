@@ -70,12 +70,13 @@ theorem EvalRec.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap
 
 /-- The evaluation of the recursive results of a branch extends the heap. -/
 theorem EvalResults.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
-    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List (Option Nat)}
+    {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List RecursiveResult}
     {πs' : List Multiplicity} {rs : List Nat} {R : List Nat} :
     EvalResults P ϖ H E ρ ϱ Ns as ks πs' rs H' R → H.Extends H'
   | .nil => List.prefix_refl _
   | .erased hs => (List.prefix_append _ _).trans hs.extends
   | .recursor _ h hs => h.extends.trans hs.extends
+  | .nested _ h hs => (List.prefix_append _ _).trans (h.extends.trans hs.extends)
 
 /-- The observation of a value extends the heap. -/
 theorem EvalObs.extends {P : Program} {ϖ : Multiplicity} {H H' : Heap} {a i c : Nat}
