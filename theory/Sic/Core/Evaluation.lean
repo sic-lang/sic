@@ -149,9 +149,9 @@ def Signature.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S
 /-- The branch at a position of the branches of a recursor of the target language. -/
 def TargetBranches.get {n : Nat} : TargetBranches n → Nat →
     Option (Σ a b, (Fin a → Multiplicity) × (Fin a → Multiplicity) × (Fin b → Multiplicity) ×
-      (Fin b → Option Nat) × Target (n + (a + b)))
+      (Fin b → RecursiveResult) × Target (n + (a + b)))
   | .nil, _ => none
-  | .cons a b πs κs πs' ks N _, 0 => some ⟨a, b, πs, κs, πs', fun j => (ks j).position, N⟩
+  | .cons a b πs κs πs' ks N _, 0 => some ⟨a, b, πs, κs, πs', ks, N⟩
   | .cons _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 /-- The branch at a position of the branches of a corecursor of the target language. -/
@@ -339,16 +339,18 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
   | iota {ϖ : Multiplicity} {n : Nat} {H₁ H₂ H₃ : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
       {Ns : TargetBranches n} {a v : Nat} {i : Nat} {πs₀ ϱs₀ : List Multiplicity} {as : List Nat}
       {a' b : Nat} {πs κs : Fin a' → Multiplicity} {πs' : Fin b → Multiplicity}
-      {ks : Fin b → Option Nat} {N : Target (n + (a' + b))} {rs : List Nat} {R₁ R₂ : List Nat}
+      {ks : Fin b → RecursiveResult} {N : Target (n + (a' + b))} {rs : List Nat}
+      {R₁ R₂ : List Nat}
       (h : H₁[a]? = some (.ctor i πs₀ ϱs₀ as)) (hN : Ns.get i = some ⟨a', b, πs, κs, πs', ks, N⟩)
       (ha : as.length = a')
       (hπ : ∀ l : Fin a', ∃ π₀, πs₀[(l : Nat)]? = some π₀ ∧
-        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l)
+        ρ * π₀ ≤ πs l + ρ * recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs') l)
       (hκ : ∀ l : Fin a', ∃ π₀ ϱ₀, πs₀[(l : Nat)]? = some π₀ ∧ ϱs₀[(l : Nat)]? = some ϱ₀ ∧
         κs l ≤ ϱ₀ * (ρ * π₀))
-      (hϱ : ∀ (j : Fin b) (l : Nat), ks j = some l → ∃ π₀ ϱ₀, πs₀[l]? = some π₀ ∧
+      (hϱ : ∀ (j : Fin b) (l : Nat), (ks j).position = some l → ∃ π₀ ϱ₀, πs₀[l]? = some π₀ ∧
         ϱs₀[l]? = some ϱ₀ ∧ ϱ ≤ ϱ₀ * (ρ * π₀))
-      (hr : EvalResults P ϖ H₁ E ρ ϱ Ns as (List.ofFn ks) (List.ofFn πs') rs H₂ R₁)
+      (hr : EvalResults P ϖ H₁ E ρ ϱ Ns as (List.ofFn fun j => (ks j).position) (List.ofFn πs') rs
+        H₂ R₁)
       (hv : Eval P ϖ (H₂.bind ((List.ofFn πs ++ List.ofFn πs').map (ϖ * ·)) (as ++ rs))
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
       EvalRec P ϖ H₁ E ρ ϱ Ns a v H₃ (R₁ ++ R₂)

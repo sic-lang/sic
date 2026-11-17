@@ -426,7 +426,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
       hres hv => by
     -- The reach of the constructor, the sum of those of its fields.
     obtain ⟨Us, hUs, rfl, hl₀⟩ := ha.ctor_inv hlook
-    obtain ⟨ws, hws, hN_own⟩ := hNs.get _ hN
+    have hN_own := hNs.get _ hN
     obtain ⟨δ, hNu, hχle, hk⟩ := hχ.get _ hN
     -- The reads of the scope by the branch and by its recursions.
     obtain ⟨U', hU', hE'⟩ := hE.toEnvSum.le hχle
@@ -434,15 +434,15 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
     obtain ⟨Uχ', rfl, hEχ'⟩ := hEs.unsmul
     obtain rfl := hE.det hEχ'.toEnvReach
     have hχpt : ∀ b, U_χ b ≤ U_δ b +
-        Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) * U_χ b := hU'
-    have hcomp := Multiplicity.computed_ofFn ks πs'
+        Multiplicity.sum (fun j => if (ks j).position.isSome then πs' j else .zero) * U_χ b := hU'
+    have hcomp := Multiplicity.computed_ofFn (fun j => (ks j).position) πs'
     have hlr := hres.length
     have hlU : as.length = Us.length := hUs.length
-    have hlen : (List.ofFn ks).length = (List.ofFn πs').length := by simp
+    have hlen : (List.ofFn fun j => (ks j).position).length = (List.ofFn πs').length := by simp
     -- The checks of the evaluation, on the lists.
     have hπL : ∀ (l : Nat) (π₀ π : Multiplicity), πs₀[l]? = some π₀ →
         (List.ofFn πs)[l]? = some π →
-        ρ * π₀ ≤ π + ρ * recursionsAt (List.ofFn ks) (List.ofFn πs') l := fun l π₀ π h₀ h₁ => by
+        ρ * π₀ ≤ π + ρ * recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs') l := fun l π₀ π h₀ h₁ => by
       rw [List.getElem?_ofFn] at h₁
       split at h₁
       · rename_i hl
@@ -452,19 +452,19 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
         cases h₀'
         exact hle
       · cases h₁
-    have hkL : ∀ (j l : Nat) (π : Multiplicity), (List.ofFn ks)[j]? = some (some l) →
+    have hkL : ∀ (j l : Nat) (π : Multiplicity), (List.ofFn fun j => (ks j).position)[j]? = some (some l) →
         (List.ofFn πs')[j]? = some π → π ≠ .zero := fun j l π h₁ h₂ => by
       by_cases hj : j < b'
       · simp only [List.getElem?_ofFn, hj, ↓reduceDIte, Option.some.injEq] at h₁ h₂
         subst h₂
         exact hk ⟨j, hj⟩ (by rw [h₁]; rfl)
       · simp [hj] at h₁
-    have hrecL : ∀ (j l : Nat), (List.ofFn ks)[j]? = some (some l) → l < Us.length :=
+    have hrecL : ∀ (j l : Nat), (List.ofFn fun j => (ks j).position)[j]? = some (some l) → l < Us.length :=
       fun j l h => hlU ▸ hres.lt j l h
     -- A field on which a result recurses is referred to by the value, unless `ρ` is `0`.
     have hrec0 : ∀ b, ρ.references * (Demand.unit a b +
         Demand.positions (πs₀.map Multiplicity.references) Us b) = .zero →
-        ∀ (j l : Nat), (List.ofFn ks)[j]? = some (some l) →
+        ∀ (j l : Nat), (List.ofFn fun j => (ks j).position)[j]? = some (some l) →
         ρ.references * Us.getD l 𝟘ᵛ b = .zero := fun b h0 j l hj => by
       by_cases hρ : ρ = .zero
       · subst hρ
@@ -518,9 +518,9 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
         F b = .zero ∧ U_δ b = .zero ∧ U_χ b = .zero ∧ b < H.length ∧
         (∃ U_l, Us[l]? = some U_l ∧ U_l b ≠ .zero) ∧
         Multiplicity.one ≤ Demand.positions (List.ofFn πs) Us b +
-          Demand.recursions (List.ofFn ks) (List.ofFn πs') Us b ∧
-        Demand.recursions (List.ofFn ks) (List.ofFn πs') Us b ≤
-          Demand.need ρ Us U_χ (List.ofFn ks) b := fun b l a_l hθ' hρ hal hπ₀ hϱ₀ hb => by
+          Demand.recursions (List.ofFn fun j => (ks j).position) (List.ofFn πs') Us b ∧
+        Demand.recursions (List.ofFn fun j => (ks j).position) (List.ofFn πs') Us b ≤
+          Demand.need ρ Us U_χ (List.ofFn fun j => (ks j).position) b := fun b l a_l hθ' hρ hal hπ₀ hϱ₀ hb => by
       have hρ0 : ρ ≠ .zero := by rw [hρ]; decide
       have h : F b + ((Demand.unit a b +
           Demand.positions (πs₀.map Multiplicity.references) Us b) + U_χ b) ≠ .omega :=
@@ -542,7 +542,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
       have hδ0 : U_δ b = .zero := (by decide : ∀ c d s : Multiplicity, c ≤ d + s * c →
         c = .zero → d = .zero) _ _ _ (hχpt b) hχ0
       have hQ3 := Demand.positions_le_add ρ πs₀ (List.ofFn πs)
-        ((List.range Us.length).map (recursionsAt (List.ofFn ks) (List.ofFn πs'))) Us
+        ((List.range Us.length).map (recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs'))) Us
         (by omega) (by simp; omega) (by simp)
         (fun l π₀ π r h₀ h₁ h₂ => by
           by_cases hl : l < Us.length
@@ -551,9 +551,9 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             exact hπL l π₀ π h₀ h₁
           · rw [List.getElem?_eq_none (by simpa using hl)] at h₂
             cases h₂) b
-      rw [← Demand.recursions_eq (List.ofFn ks) (List.ofFn πs') Us hlen hrecL] at hQ3
+      rw [← Demand.recursions_eq (List.ofFn fun j => (ks j).position) (List.ofFn πs') Us hlen hrecL] at hQ3
       have hQ3' : ρ * Demand.positions πs₀ Us b ≤ Demand.positions (List.ofFn πs) Us b +
-          ρ * Demand.recursions (List.ofFn ks) (List.ofFn πs') Us b := hQ3
+          ρ * Demand.recursions (List.ofFn fun j => (ks j).position) (List.ofFn πs') Us b := hQ3
       rw [hL, hρ] at hQ3'
       exact ⟨hf0, hδ0, hχ0, hUal.lt hul, ⟨U_l, hUl, hul⟩,
         (by decide : ∀ t p r : Multiplicity, t ≠ .zero → t ≠ .omega →
@@ -590,7 +590,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
         have hjlt : j < b' := by
           have := (List.getElem?_eq_some_iff.1 hj).1
           simpa using this
-        have hks : ks ⟨j, hjlt⟩ = some l := by
+        have hks : (ks ⟨j, hjlt⟩).position = some l := by
           simpa [List.getElem?_ofFn, hjlt] using hj
         obtain ⟨π₀, ϱ₀, hπ₀, hϱ₀, hle⟩ := hϱ ⟨j, hjlt⟩ l hks
         rw [hθ hθ'] at hle
@@ -691,8 +691,8 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
               hB_R b j _ hrj (by rw [List.getElem?_ofFn]; simp [hπ1])
                 (fun l hl => by
                   rw [List.getElem?_ofFn] at hl
-                  have hks : (ks j).isSome := by simp at hl; simp [hl]
-                  rw [← hws j hks]
+                  have hks : (ks j).position.isSome := by simp at hl; simp [hl]
+                  rw [← RecursiveResult.ownership_of_position hks o']
                   exact hw1) hcl₂
             rw [hC0 b (hVj.lt (hcl₂.reach_ne_zero.1 _ hVj))]
             exact (by decide : ∀ f d p v : Multiplicity, (f + (d + p)) + v ≠ .omega →
@@ -714,7 +714,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           have hs0 := (by decide : ∀ f c d s : Multiplicity, f + c ≠ .omega → c ≠ .zero →
             d ≠ .zero → c ≤ d + s * c → s = .zero) _ _ _ _ hfc hχb hδb (hχpt b)
           have hblt := hE.lt hχb
-          have hn0 : Demand.need ρ Us U_χ (List.ofFn ks) b = .zero :=
+          have hn0 : Demand.need ρ Us U_χ (List.ofFn fun j => (ks j).position) b = .zero :=
             Demand.need_eq_zero_of_computed hlen (hcomp.trans hs0) hkL
           rw [hP0 b hra, hC0 b (Nat.lt_of_lt_of_le hblt hH₁₂.length_le),
             Demand.positions_eq_zero _ _ (hA_R b hblt hn0)]

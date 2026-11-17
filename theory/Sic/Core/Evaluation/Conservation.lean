@@ -260,7 +260,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
     refine ⟨Dv, hvv, ?_⟩
     -- The uses of the fields by the branch and by the recursions.
     have hfield := Demand.positions_le_add ρ πs₀ (List.ofFn πs)
-      ((List.range Ds.length).map (recursionsAt (List.ofFn ks) (List.ofFn πs'))) Ds
+      ((List.range Ds.length).map (recursionsAt (List.ofFn fun j => (ks j).position) (List.ofFn πs'))) Ds
       (hl₀.trans hDs.length) (by simp [← hDs.length, hla]) (by simp)
       (fun l π₀ π r h₀ h₁ h₂ => by
         rw [List.getElem?_ofFn] at h₁
@@ -286,7 +286,7 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
     generalize Demand.allocated _ H' = A₂ at hDv ⊢
     generalize Demand.uses R₁ = U₁ at hDres ⊢
     generalize Demand.uses R₂ = U₂ at hDv ⊢
-    generalize Demand.recursions (List.ofFn ks) (List.ofFn πs') Ds = Rc at hfield hDres ⊢
+    generalize Demand.recursions (List.ofFn fun j => (ks j).position) (List.ofFn πs') Ds = Rc at hfield hDres ⊢
     generalize Demand.positions (List.ofFn πs) Ds = Q₁ at hfield hDv ⊢
     generalize Demand.positions (List.ofFn πs') Drs = Q₂ at hDres hDv ⊢
     generalize Demand.positions πs₀ Ds = P₀ at hfield ⊢

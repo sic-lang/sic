@@ -114,25 +114,19 @@ theorem Targets.Ownership.length {Ω : Name → Multiplicity} {n : Nat} {φ : Mu
   | _, _, .cons _ _ hMs => congrArg (· + 1) hMs.length
 
 /-- The ownership of the branches of a recursor gives that of each branch, with the ownership of the
-variable of each recursive result, `o'` for a result that the recursor computes. -/
+variable of each recursive result. -/
 theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
     {φ : MultiplicityVector n} {o o' ς χ : Multiplicity} : {Ns : TargetBranches n} →
     TargetBranches.Ownership Ω φ o o' ς χ Ns → (i : Nat) → {a b : Nat} →
-      {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} → {ks : Fin b → Option Nat} →
-      {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
-      ∃ ws : Fin b → Multiplicity, (∀ j, (ks j).isSome → ws j = o') ∧
-        Target.Ownership Ω (φ.extendBinders (fun l => o * κs l) (fun j => ws j * πs' j)) o' N
+      {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} →
+      {ks : Fin b → RecursiveResult} → {N : Target (n + (a + b))} →
+      Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
+      Target.Ownership Ω
+        (φ.extendBinders (fun l => o * κs l) (fun j => (ks j).ownership o' * πs' j)) o' N
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
-  | _, .cons (ks := ks) hN _ _ _, 0, _, _, _, _, _, _, _, h => by
+  | _, .cons hN _ _ _, 0, _, _, _, _, _, _, _, h => by
     cases h
-    refine ⟨fun j => (ks j).ownership o', fun j hj => ?_, hN⟩
-    simp only at hj ⊢
-    cases hk : ks j with
-    | field _ => rfl
-    | erased => rfl
-    | nested _ _ =>
-      simp only [hk, RecursiveResult.position, Option.isSome_none] at hj
-      exact absurd hj Bool.false_ne_true
+    exact hN
   | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Ownership.get hNs i h
 
 /-- The ownership of the branches of a corecursor gives that of each branch. -/

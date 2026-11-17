@@ -1,7 +1,8 @@
 module
 
 public import Sic.Core.Erasure.Nested
-public import Sic.Core.Erasure.Ownership.Renaming
+public import Sic.Core.Erasure.Ownership
+import Sic.Core.Erasure.Ownership.Renaming
 
 /-!
 # Ownership of the Corecursors of the Nested Results

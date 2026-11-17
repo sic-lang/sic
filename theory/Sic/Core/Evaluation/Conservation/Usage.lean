@@ -110,11 +110,12 @@ end Target.Usage
 theorem TargetBranches.Usage.get {n : Nat} {χ : MultiplicityVector n} :
     {Ns : TargetBranches n} → TargetBranches.Usage χ Ns → (i : Nat) → {a b : Nat} →
       {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} →
-      {ks : Fin b → Option Nat} →
+      {ks : Fin b → RecursiveResult} →
       {N : Target (n + (a + b))} → Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       ∃ δ : MultiplicityVector n, Target.Usage (δ.extendBinders πs πs') N ∧
-        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun j => if (ks j).isSome then πs' j else .zero) ·ᶜ χ) ∧
-        ∀ j, (ks j).isSome → πs' j ≠ .zero
+        χ ≤ᶜ δ +ᶜ
+          (Multiplicity.sum (fun j => if (ks j).position.isSome then πs' j else .zero) ·ᶜ χ) ∧
+        ∀ j, (ks j).position.isSome → πs' j ≠ .zero
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
   | _, .cons hN hχ hk hn _, 0, _, _, _, _, _, _, _, h => by
     cases h

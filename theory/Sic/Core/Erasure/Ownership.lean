@@ -38,6 +38,11 @@ def RecursiveResult.ownership (o' : Multiplicity) : RecursiveResult → Multipli
   | .nested .. => .one
   | .erased | .field _ => o'
 
+/-- A result that the recursor computes has the ownership of the branch. -/
+theorem RecursiveResult.ownership_of_position {r : RecursiveResult} (h : r.position.isSome)
+    (o' : Multiplicity) : r.ownership o' = o' := by
+  cases r <;> simp_all [RecursiveResult.position, RecursiveResult.ownership]
+
 -- ADE: none.
 /-- `own_χ(σ')`: the ownership of the result of a lifted destructor whose result has the shape `σ'`,
 `χ` for the recursor itself, and `1` for the corecursor of the next lifting, a new value. -/

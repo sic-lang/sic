@@ -137,14 +137,12 @@ theorem Branches.get_erase (sig : Signature) (S : Math.Set Grade) [DecidablePred
           ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?),
         fun l => r.fieldCoefficient ((fs.drop i).headD [])[(l : Nat)]?,
         fun j => gs[j].run,
-        fun j => if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?,
+        fun j => if gs[j] ∈ S then .erased else .ofPosition ((es.drop i).headD [])[(j : Nat)]?,
         Scope.length_extend_extend Γ n m ▸ u.erase sig S ((hΓ.extend n).extend m)⟩
   | .nil, _, _, _, _, _, _, h => nomatch h
   | .cons _ _ gs _ _, _, _, 0, _, _, _, h => by
     cases h
     refine ⟨gs, rfl, ?_⟩
-    simp only [Branches.erase, TargetBranches.get, apply_ite RecursiveResult.position,
-      RecursiveResult.position_ofPosition]
     rfl
   | .cons _ _ _ _ us, es, fs, i + 1, _, _, _, h => by
     obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ r us es.tail fs.tail h
@@ -952,7 +950,15 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
           ρ * π₀ = .zero → ρ = .zero) _ _ _ _ hle₁ hne hz)]
         exact (by decide : ∀ x : Multiplicity, .omega ≤ x) _
       · exact hle hz
-  refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha hget (RunsAsArgs.length hfa) hπ hκ hϱ (hks ▸ hevs)
+  -- The recursor computes the results that the erasure keeps, at their positions.
+  have hpos : (fun j : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length =>
+      (if gs₀[j] ∈ Mode.oneOne.erased then RecursiveResult.erased
+        else .ofPosition ((rfs.drop i).headD [])[(j : Nat)]?).position) =
+      fun j : Fin (con.resultParams (.ofLists qs ps hq hp) decl.names).length =>
+        if gs₀[j] ∈ Mode.oneOne.erased then none else ((rfs.drop i).headD [])[(j : Nat)]? :=
+    funext fun _ => by split <;> simp
+  refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha hget (RunsAsArgs.length hfa) (hpos ▸ hπ)
+    hκ (fun j l h => hϱ j l (by rw [← congrFun hpos j]; exact h)) (hpos ▸ hks ▸ hevs)
     ((Eval.cast _).2 hev), hH₂.trans (hH₂'.trans hH₃), fun C'' hC'' => ?_⟩
   rw [hC'] at hC''
   cases hC''
