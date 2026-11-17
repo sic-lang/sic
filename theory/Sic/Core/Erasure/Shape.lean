@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Syntax
-public import Sic.Grading.Multiplicity
 
 /-!
 # Shapes of the Nested Results
