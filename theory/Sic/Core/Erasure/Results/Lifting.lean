@@ -395,18 +395,6 @@ theorem Destructors.Lifts.shape_factor
     simp only [Destructors.shape, hn]
     exact hds.shape_factor hsub hM D ho hθ' hρ hb
 
-/-- A meet of grades is not used at run time only when its second grade is not either. -/
-theorem _root_.Sic.Grading.Grade.run_meet_eq_zero_right :
-    ∀ p q : Grade, (p ⊓ q).run = .zero → q.run = .zero := by
-  decide
-
-/-- A meet of a grade with the meet of a list of grades is not used at run time only when the grade
-is not either. -/
-theorem _root_.Sic.Grading.Grade.run_meetWith_eq_zero (p : Grade) :
-    (q : Option Grade) → (p.meetWith q).run = .zero → p.run = .zero
-  | none, h => h
-  | some q, h => (by decide : ∀ p q : Grade, (p ⊓ q).run = .zero → p.run = .zero) p q h
-
 -- ADE: none.
 /-- The shape of the destructors of a codata type lifted, in a signature `Σ₁` whose liftings have
 shapes in `Σ`, from the index of a destructor of the lifting on, in destructors whose names are
@@ -490,7 +478,7 @@ theorem Destructors.Lifts.shape_get
         · simp only [Destructors.shape, hm', Shape.drop, Destructors.Pos.index]
           exact h₆
         · simp only [Destructors.shape, hm', h₇]
-          exact ⟨_, rfl, fun h => h₈ (Grade.run_meet_eq_zero_right _ _ h)⟩
+          exact ⟨_, rfl, fun h => h₈ (Multiplicity.modality.zero.meet_eq_zero _ _ h).2⟩
   | _, ρ, _, θ, _, _, _, _, .absent (d := d₀) (ps := ps₀) (ψ := ψ₀) (B := B₀) hB hds, hnd, ν, ν₀, hθ, hρ, hb, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, hd' => by
     have hnd' := List.nodup_cons.1 hnd
     have hn : B₀.shape v (sig.shapes v sig₁) (fun _ => none)

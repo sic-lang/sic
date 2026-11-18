@@ -286,28 +286,6 @@ theorem List.getElem?_reverse_range'_append_left (a c k : Nat) (hk : k < c) (E :
   simp only [List.length_range', Option.some.injEq]
   omega
 
-/-- A grade of a destructor of a lifting used at run time is the grade of a destructor used at run
-time. -/
-theorem Lifting.not_erased_of_resultGrade :
-    ∀ (s : Quality) (p : Grade), Lifting.resultGrade s p ∉ Mode.oneOne.erased →
-      p ∉ Mode.oneOne.erased := by
-  decide
-
-/-- A product of grades used at run time is used at run time. -/
-theorem _root_.Sic.Grading.Grade.mul_not_erased :
-    ∀ p q : Grade, p ∉ Mode.oneOne.erased → q ∉ Mode.oneOne.erased →
-      p * q ∉ Mode.oneOne.erased := by
-  decide
-
-/-- A product of grades not used at run time has a factor not used at run time. -/
-theorem _root_.Sic.Grading.Grade.run_mul_eq_zero :
-    ∀ p q : Grade, (p * q).run = .zero → p.run = .zero ∨ q.run = .zero := by
-  decide
-
-/-- The unit of the grades is the unit of their product. -/
-theorem _root_.Sic.Grading.Grade.one_mul' : ∀ p : Grade, Grade.one * p = p := by
-  decide
-
 end
 
 /-! ## Nested Results of an Instance -/
@@ -625,7 +603,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rfl
     obtain rfl : i' = hpos'.index :=
       Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hLm hiL))
-    have hpu : p ∉ Mode.oneOne.erased := Lifting.not_erased_of_resultGrade v.quality p (hp'g ▸ hp'u)
+    have hpu : p ∉ Mode.oneOne.erased := fun hpe => hp'u ((Mode.erased_values.1 _).2
+      (hp'g ▸ Lifting.resultGrade_run_eq_zero _ _ ((Mode.erased_values.1 _).1 hpe)))
     have hprun : p'.run ≠ .zero := fun h0 => hp'u ((Mode.erased_values.1 p').2 h0)
     obtain ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ, hAbs, hNest⟩ := horacle d' p q ς ps₁ Ξ Θ B ψ hpos hpu
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
@@ -695,15 +674,15 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       intro hmf
       -- The factor of the shape of the instance is used at run time, so that the path runs.
       have hπ : π.run ≠ .zero := fun h0 => by
-        rcases Grade.run_mul_eq_zero _ _ (hfac h0) with h1 | h1
+        rcases Multiplicity.modality.zero.mul_eq_zero _ _ (hfac h0) with h1 | h1
         · exact hprun h1
         · exact hmf h1
       have hr' : v.recursion * mS.factor ∉ Mode.oneOne.erased :=
-        Grade.mul_not_erased _ _ hr fun h0 => hmf ((Mode.erased_values.1 _).1 h0)
+        fun h => hmf ((Mode.erased_values.1 _).1 ((Mode.erasesUncounted .oneOne).mul _ _ hr h))
       have hus : ∀ p ∈ ps₁, p.usage ∉ Mode.oneOne.erased →
           (p.scale (v.recursion * mr.factor)).usage ∉ Mode.oneOne.erased := fun p hp hu => by
         rw [List.map_inj_left.1 hps' p hp]
-        exact Grade.mul_not_erased _ _ hr' hu
+        exact fun h => hu ((Mode.erasesUncounted .oneOne).mul _ _ hr' h)
       have hcase : (sig.destructorCase D d').getD 0 = i := by rw [hi]; rfl
       intro m'' f' E'' hE''
       exact Target.RunsTo.obs_args (i := (sig.destructorCase D d').getD 0)
@@ -725,7 +704,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       (hς' ▸ Multiplicity.le_refl' _) (hbody ▸ hev) .none, (RunsAs.congr_computes hred).2 hrunI⟩
     · refine ⟨_, ?_, Multiplicity.le_refl' _⟩
       simp only [hps', List.map_map, List.getElem?_map, Mode.grade_odot_of_not_erased p' hp'u,
-        Grade.one_mul', List.getElem?_eq_getElem j.isLt]
+        Grade.modality.semiring.one_mul, List.getElem?_eq_getElem j.isLt]
       rfl
     · refine ⟨_, ?_, Multiplicity.le_refl' _⟩
       simp only [hps', List.map_map, List.getElem?_map, List.getElem?_eq_getElem j.isLt]

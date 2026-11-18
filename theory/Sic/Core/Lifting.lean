@@ -452,6 +452,13 @@ def _root_.Sic.Grading.Grade.meetWith (p : Grade) : Option Grade → Grade
   | none => p
   | some q => p ⊓ q
 
+/-- A meet of a grade with the meet of a list of grades has no use at run time only when the grade
+has none. -/
+theorem _root_.Sic.Grading.Grade.run_meetWith_eq_zero (p : Grade) :
+    (q : Option Grade) → (p.meetWith q).run = .zero → p.run = .zero
+  | none, h => h
+  | some _, h => (Multiplicity.modality.zero.meet_eq_zero _ _ h).1
+
 mutual
 
 -- ADE: none.
@@ -637,6 +644,12 @@ def Lifting.resultGrade (s : Quality) (p : Grade) : Grade :=
   match s with
   | .type => p.mode.grade
   | .prop => (p.mode.mul .zeroOne).grade
+
+/-- The grade of the result of a destructor of a lifting has no use at run time when the grade of
+the destructor lifted has none. -/
+theorem Lifting.resultGrade_run_eq_zero :
+    ∀ (s : Quality) (p : Grade), p.run = .zero → (Lifting.resultGrade s p).run = .zero := by
+  decide
 
 -- ADE: none.
 /--
