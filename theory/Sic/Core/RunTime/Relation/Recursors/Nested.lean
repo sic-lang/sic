@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Erasure.Nested
 public import Sic.Core.Evaluation
 
 /-!
