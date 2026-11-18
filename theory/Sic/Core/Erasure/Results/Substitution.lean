@@ -2,7 +2,9 @@ module
 
 public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Observations
+import Sic.Core.Lifting.Functionality
 import Sic.Core.Positivity.Nesting
+import Sic.Core.Substitution.Nesting
 
 /-!
 # Shapes of the Substituted Types
@@ -14,6 +16,16 @@ none either.
 A type without position, at nestings of its variables none of which has a position where it
 occurs, has no shape.
 
+The run time of the nested results relates the closed types of the results of the destructors,
+while the erasure computes the shapes on the types that their declarations give, where the
+parameters have the shapes of the arguments: a type lifted at no position, substituted by an
+instantiation of its lifting, has, at its nesting, the shape of the type where each variable lifted
+has the shape of what the instantiation gives it, at its nesting, when no variable of the scope of
+the instantiation has a position.
+The instantiation gives a variable lifted an abstraction lifted by a lifting that lifts no variable,
+which keeps its shape at the arguments of the variable, and a renaming keeps the shapes, under the
+variables of the arguments of an instance.
+
 ADE have no nested fields.
 -/
 
@@ -23,7 +35,7 @@ namespace Sic.Core
 
 open Sic.Grading
 
-variable {k : Nat} {v : Lifting.Variables} {lookup : Shape.Lookup}
+variable {k : Nat} {sig : Signature} {v : Lifting.Variables} {lookup : Shape.Lookup}
   {block : Name → Option Shape.Motive}
 
 /-! ## Levels -/
@@ -151,5 +163,243 @@ theorem Term.shape_eq_none_of_avoids {Γ : Scope} {ν : Nesting Shape.Motive Γ}
     (h : ∀ {e : Scope.Entry} (x : Var Γ e), ν x ≠ .plain → A.Avoids x) :
     A.shape v lookup block @ν .plain = none :=
   Term.shape_eq_none_of_nest A (Term.nest_eq_plain_of_avoids h)
+
+/-! ## Renamings -/
+
+/-- A renamed type has the shape of the type, at the shapes of the variables renamed. -/
+theorem Term.shape_rename {Γ Δ : Scope} (α : Ren Γ Δ) {ν : Nesting Shape.Motive Δ}
+    {ν' : Nesting Shape.Motive Γ} (h : ∀ (a : Scope.Entry) (x : Var Δ a), ν' (α x) = ν x)
+    {n : Nest Name} (A : Term k Δ) :
+    (A.rename α).shape v lookup block @ν' n = A.shape v lookup block @ν n := by
+  rw [Term.rename_eq_subst]
+  exact Term.shape_subst_of (fun x => .inr ⟨α x, Args.bound _, rfl, h _ x⟩) A
+
+/-! ## Nestings Without Position -/
+
+/-- The arguments of an instance, at nestings none of which has a position, have the shapes that
+they have at no nesting. -/
+theorem InstanceArgs.shapes_of_all_isPlain {Γ : Scope} {ν : Nesting Shape.Motive Γ} :
+    {Δ : Scope} → (as : InstanceArgs k Γ Δ) → {ns : List (Nest Name)} →
+      ns.all Nest.isPlain = true → as.shapes v lookup block @ν ns = as.shapes v lookup block @ν []
+  | _, .nil, _, _ => rfl
+  | _, .snoc _ _, [], _ => rfl
+  | _, .snoc as B, n :: ns, h => by
+    rw [List.all_cons, Bool.and_eq_true] at h
+    rw [InstanceArgs.shapes, InstanceArgs.shapes, List.tail_cons, List.headD_cons, List.tail_nil,
+      List.headD_nil, Nest.eq_plain_of_isPlain h.1, InstanceArgs.shapes_of_all_isPlain as h.2]
+
+/-- The arguments of an instance have the same shapes at their nestings and at the nestings of the
+arguments of the nesting of the instance. -/
+theorem InstanceArgs.shapes_ofArgs_args {Γ Δ : Scope} {ν : Nesting Shape.Motive Γ}
+    (as : InstanceArgs k Γ Δ) (ns : List (Nest Name)) :
+    as.shapes v lookup block @ν (Nest.ofArgs ns).args = as.shapes v lookup block @ν ns := by
+  unfold Nest.ofArgs
+  split
+  · next hns => exact (InstanceArgs.shapes_of_all_isPlain as hns).symm
+  · rfl
+
+/-! ## Liftings That Lift No Variable -/
+
+mutual
+
+/-- A type lifted by a lifting that lifts no variable, substituted, has the shape of the type, at
+the same nesting, where no variable has a position, on either side. -/
+theorem Term.Lifts.shape_subst :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {n : Nest Name} → {e : Term k Δ'} → {A : Term k Δ} →
+      {A' : Term k Δ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m →
+      (∀ {a} (x : Var Δ a), ρ.motive x = none) →
+      ∀ {Γ : Scope} (θ : Subst k Γ Δ) {νs : Nesting Shape.Motive Δ}
+        {νs' : Nesting Shape.Motive Γ}, (∀ (a : Scope.Entry) (x : Var Δ a), νs x = .plain) →
+        (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
+          (A.subst θ).shape v lookup block @νs' n = A.shape v lookup block @νs n
+  | _, _, _, _, _, _, _, _, .var hx _, hρ, _, _, _, _, _, _ => by
+    rw [hρ] at hx
+    exact nomatch hx
+  | _, _, _, _, _, _, _, _, .block _, _, _, _, _, _, _, _ => by
+    simp only [Term.subst, Term.shape]
+  | _, _, _, n, _, _, _, _, .inst _ _ hn _ _ _ has _ _ _, hρ, _, θ, _, _, h₁, h₂ => by
+    cases n with
+    | direct E => exact absurd rfl (hn E)
+    | plain => simp only [Term.subst, Term.shape, InstanceArgs.Lifts.shapes_subst has hρ θ h₁ h₂]
+    | inst _ => simp only [Term.subst, Term.shape, InstanceArgs.Lifts.shapes_subst has hρ θ h₁ h₂]
+
+/-- The arguments of an instance lifted by a lifting that lifts no variable, substituted, have the
+shapes of the arguments, at the same nestings, where no variable has a position, on either side. -/
+theorem InstanceArgs.Lifts.shapes_subst :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {Ξ : Scope} →
+      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Ξ' : Scope} →
+      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' →
+      (∀ {a} (x : Var Δ a), ρ.motive x = none) →
+      ∀ {Γ : Scope} (θ : Subst k Γ Δ) {νs : Nesting Shape.Motive Δ}
+        {νs' : Nesting Shape.Motive Γ}, (∀ (a : Scope.Entry) (x : Var Δ a), νs x = .plain) →
+        (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
+          (as.subst θ).shapes v lookup block @νs' ns = as.shapes v lookup block @νs ns
+  | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _ => rfl
+  | _, _, _, _, _, _, _, _, _, _, .lifted has hB, hρ, _, θ, _, _, h₁, h₂ => by
+    rw [InstanceArgs.subst, InstanceArgs.shapes, InstanceArgs.shapes,
+      InstanceArgs.Lifts.shapes_subst has hρ θ h₁ h₂,
+      Term.Lifts.shape_subst hB
+        (Lifting.weaken_motive_eq_none (Lifting.liftN_motive_eq_none hρ _)) _
+        (Nesting.liftN_plain _ h₁) (Nesting.liftN_plain _ h₂)]
+  | _, _, _, _, _, _, _, _, _, _, .absent (a := a) (B := B) has _ hn, hρ, _, θ, νs, νs', h₁,
+      h₂ => by
+    have e₁ : (B.subst (Subst.liftN a.params.length θ)).shape v lookup block
+        (Nesting.liftN a.params.length @νs') .plain = none :=
+      Term.shape_eq_none_of_avoids fun x hx => absurd (Nesting.liftN_plain _ h₂ _ x) hx
+    have e₂ : B.shape v lookup block (Nesting.liftN a.params.length @νs) .plain = none :=
+      Term.shape_eq_none_of_avoids fun x hx => absurd (Nesting.liftN_plain _ h₁ _ x) hx
+    rw [InstanceArgs.subst, InstanceArgs.shapes, InstanceArgs.shapes,
+      InstanceArgs.Lifts.shapes_subst has hρ θ h₁ h₂, hn, e₁, e₂]
+
+end
+
+
+/-! ## Liftings Instantiated -/
+
+/-- An abstraction lifted by a lifting that lifts no variable, under the variables of its telescope,
+instantiated at arguments, has the shape of the abstraction, at the same nesting, where no variable
+has a position. -/
+theorem Term.Lifts.shape_instantiate_abstraction {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {ps : List Parameter} {n : Nest Name}
+    {e : Term k (.var :: Γ'.extend ps.length)} {A : Term k (Γ.extend ps.length)}
+    {A' : Term k (.var :: Γ'.extend ps.length)} {m : Lifting.Result k}
+    (h : Term.Lifts sig v (ρ.liftN ps.length).weaken n e A A' m) {νs : Nesting Shape.Motive Γ}
+    (hνs : ∀ (a : Scope.Entry) (x : Var Γ a), νs x = .plain) (us : Args k Γ ps) :
+    (A.instantiate us).shape v lookup block @νs n =
+      A.shape v lookup block (Nesting.liftN ps.length @νs) n := by
+  rw [Term.instantiate_eq_subst₀, Term.subst₀_eq_subst]
+  exact h.shape_subst (Lifting.weaken_motive_eq_none (Lifting.liftN_motive_eq_none hρ _)) _
+    (Nesting.liftN_plain _ hνs) hνs
+
+namespace Lifting.Instantiates
+
+variable {Γ' Γ Δ' Δ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ : Lifting k Δ' Δ}
+  {ρ' : Lifting k Γ' Γ} {ν : Nesting Name Δ}
+
+/-- The variables with a position of a lifting instantiated, under `n` new variables of the scopes
+and in the scope extended by an entry, are lifted. -/
+theorem isSome_liftN_weaken {νs : Nesting Shape.Motive Δ}
+    (h : ∀ {a} (x : Var Δ a), νs x ≠ .plain → (ρ.motive x).isSome) (n : Nat) {e : Scope.Entry}
+    {a : Scope.Entry} (z : Var (Δ.extend n) a) (hz : Nesting.liftN n @νs z ≠ .plain) :
+    (((ρ.liftN n).weaken (e := e)).motive z).isSome := by
+  obtain ⟨x, rfl, hx⟩ := Nesting.exists_of_liftN n z hz
+  rw [show ((ρ.liftN n).weaken (e := e)).motive (x.weakenN n) =
+    ((ρ.liftN n).motive (x.weakenN n)).map (Prod.map .succ id) from rfl, Option.isSome_map]
+  exact Lifting.isSome_liftN_weakenN n ρ x (h x hx)
+
+/-- What a substitution gives the variables lifted keeps its shape, at the nesting of the variable,
+under `n` new variables of the scopes and in the scope extended by an entry, where no variable of
+the scope of the substitution has a position. -/
+theorem shape_liftN_weaken {νs : Nesting Shape.Motive Δ} {νs' : Nesting Shape.Motive Γ}
+    (hνs' : ∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain)
+    (h : ∀ {a} (x : Var Δ a), (ρ.motive x).isSome →
+      (θ x).shape v lookup block (Nesting.liftN a.params.length @νs') (ν x) = (νs x).motive)
+    (n : Nat) {e : Scope.Entry} {a : Scope.Entry} (z : Var (Δ.extend n) a)
+    (hz : (((ρ.liftN n).weaken (e := e)).motive z).isSome) :
+    (Subst.liftN n θ z).shape v lookup block
+        (Nesting.liftN a.params.length (Nesting.liftN n @νs')) (Nesting.liftN n @ν z) =
+      (Nesting.liftN n @νs z).motive := by
+  obtain ⟨x, rfl, hx⟩ := Lifting.isSome_of_liftN n ρ z (Lifting.isSome_of_weaken _ z hz)
+  have hp : ∀ (b : Scope.Entry) (y : Var (Γ.extend a.params.length) b),
+      Nesting.liftN a.params.length (Nesting.liftN n @νs') (Ren.liftN a.params.length
+        (Ren.weakenN n) y) = Nesting.liftN a.params.length @νs' y := fun _ y =>
+    (Nesting.liftN_plain _ (Nesting.liftN_plain _ hνs') _ _).trans
+      (Nesting.liftN_plain _ hνs' _ y).symm
+  rw [Subst.liftN_weakenN, Nesting.liftN_weakenN n ν x, Nesting.liftN_weakenN n νs x,
+    Term.shape_rename _ hp]
+  exact h x hx
+
+end Lifting.Instantiates
+
+mutual
+
+-- ADE: none.
+/-- A type lifted at no position, substituted by an instantiation of its lifting, has, at its
+nesting, where the variables have the nestings of the instantiation, the shape of the type where
+each variable lifted has the shape of what the instantiation gives it, at its nesting, and the
+others none, when no variable of the scope of the instantiation has a position: the shape of a
+variable lifted, applied to arguments, is that of the abstraction that the instantiation gives it,
+which is lifted by a lifting that lifts no variable. -/
+theorem Term.Lifts.shape_instantiate {block₀ : Name → Option Shape.Motive} :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {n : Nest Name} → {e : Term k Δ'} → {A : Term k Δ} →
+      {A' : Term k Δ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m → n = .plain →
+      ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ}
+        {ν : Nesting Name Δ}, Lifting.Instantiates sig v θ θ' ρ ρ' @ν →
+      ∀ {νs : Nesting Shape.Motive Δ} {νs' : Nesting Shape.Motive Γ},
+        (∀ {a} (x : Var Δ a), νs x ≠ .plain → (ρ.motive x).isSome) →
+        (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
+        (∀ {a} (x : Var Δ a), (ρ.motive x).isSome →
+          (θ x).shape v lookup block (Nesting.liftN a.params.length @νs') (ν x) = (νs x).motive) →
+          (A.subst θ).shape v lookup block @νs' (A.nest (fun _ => none) @ν) =
+            A.shape v lookup block₀ @νs .plain
+  | _, _, _, _, _, _, _, _, .var (x := x) (y := y) (m := m) (ts := ts) hx _, _, _, _, θ, _, _,
+      ν, hI, νs, νs', _, hνs', hθ => by
+    obtain ⟨_, -, hL⟩ := hI.lifted x y m hx
+    show ((θ x).instantiate (ts.subst θ)).shape v lookup block @νs' (ν x) = (νs x).motive
+    rw [hL.shape_instantiate_abstraction hI.motive' hνs']
+    exact hθ x (by rw [hx]; rfl)
+  | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch hn
+  | _, _, _, _, _, _, _, _, .inst (as := as) _ _ _ _ _ _ has _ _ _, hn, _, _, θ, _, _, ν, hI, νs,
+      νs', hνs, hνs', hθ => by
+    subst hn
+    have h := InstanceArgs.Lifts.shapes_instantiate (block₀ := block₀) has rfl hI hνs hνs' hθ
+    rw [← InstanceArgs.shapes_ofArgs_args] at h
+    simp only [Term.subst, Term.nest]
+    have hne := Nest.ofArgs_ne_direct (as.nest (fun _ => none) @ν)
+    generalize Nest.ofArgs _ = N at h hne ⊢
+    cases N with
+    | direct E => exact absurd rfl (hne E)
+    | plain => simp only [Term.shape, Nest.args] at h ⊢; rw [h]
+    | inst _ => simp only [Term.shape, Nest.args] at h ⊢; rw [h]
+
+-- ADE: none.
+/-- The arguments of an instance lifted at no position, substituted by an instantiation of their
+lifting, have, at their nestings, the shapes of the arguments where each variable lifted has the
+shape of what the instantiation gives it, at its nesting, and the others none, when no variable of
+the scope of the instantiation has a position. -/
+theorem InstanceArgs.Lifts.shapes_instantiate {block₀ : Name → Option Shape.Motive} :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {Ξ : Scope} →
+      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Ξ' : Scope} →
+      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' → ns = [] →
+      ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ}
+        {ν : Nesting Name Δ}, Lifting.Instantiates sig v θ θ' ρ ρ' @ν →
+      ∀ {νs : Nesting Shape.Motive Δ} {νs' : Nesting Shape.Motive Γ},
+        (∀ {a} (x : Var Δ a), νs x ≠ .plain → (ρ.motive x).isSome) →
+        (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
+        (∀ {a} (x : Var Δ a), (ρ.motive x).isSome →
+          (θ x).shape v lookup block (Nesting.liftN a.params.length @νs') (ν x) = (νs x).motive) →
+          (as.subst θ).shapes v lookup block @νs' (as.nest (fun _ => none) @ν) =
+            as.shapes v lookup block₀ @νs []
+  | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, _, _ => rfl
+  | _, _, _, _, _, _, _, _, _, _, .lifted (a := a) has hB, hns, _, _, _, _, _, _, hI, _, _, hνs,
+      hνs', hθ => by
+    subst hns
+    rw [InstanceArgs.subst, InstanceArgs.nest, InstanceArgs.shapes, InstanceArgs.shapes,
+      List.tail_cons, List.headD_cons, List.tail_nil, List.headD_nil,
+      InstanceArgs.Lifts.shapes_instantiate has rfl hI hνs hνs' hθ,
+      Term.Lifts.shape_instantiate hB rfl (hI.liftN a.params.length).weaken
+        (Lifting.Instantiates.isSome_liftN_weaken hνs _) (Nesting.liftN_plain _ hνs')
+        (Lifting.Instantiates.shape_liftN_weaken hνs' hθ _)]
+  | _, _, _, _, _, _, _, _, _, _, .absent (a := a) (B := B) has hB _, hns, _, _, θ, _, _, ν, hI,
+      νs, νs', hνs, hνs', hθ => by
+    subst hns
+    have hN := hI.liftN a.params.length
+    have e₁ : (B.subst (Subst.liftN a.params.length θ)).shape v lookup block
+        (Nesting.liftN a.params.length @νs')
+        (B.nest (fun _ => none) (Nesting.liftN a.params.length @ν)) = none := by
+      rw [Term.nest_eq_plain_of_avoids fun z hz => hB z ?_]
+      · exact Term.shape_eq_none_of_avoids fun x hx => absurd (Nesting.liftN_plain _ hνs' _ x) hx
+      · cases hm : (Lifting.liftN a.params.length _).motive z with
+        | none => exact absurd (hN.plain z hm) hz
+        | some _ => rfl
+    have e₂ : B.shape v lookup block₀ (Nesting.liftN a.params.length @νs) .plain = none :=
+      Term.shape_eq_none_of_avoids fun x hx =>
+        hB x (Lifting.isSome_of_weaken _ x
+          (Lifting.Instantiates.isSome_liftN_weaken (e := .var) hνs _ x hx))
+    rw [InstanceArgs.subst, InstanceArgs.nest, InstanceArgs.shapes, InstanceArgs.shapes,
+      List.tail_cons, List.headD_cons, List.tail_nil, List.headD_nil,
+      InstanceArgs.Lifts.shapes_instantiate has rfl hI hνs hνs' hθ, e₁, e₂]
+
+end
 
 end Sic.Core

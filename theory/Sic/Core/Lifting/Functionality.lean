@@ -255,6 +255,16 @@ theorem Lifting.isSome_of_liftN {Γ' Γ : Scope} :
       rwa [show (ρ.lift (e := .var)).motive (.succ x) = (ρ.motive x).map (Prod.map .succ id)
         from rfl, Option.isSome_map] at hx
 
+/-- A variable lifted by a lifting is lifted by the lifting under new variables. -/
+theorem Lifting.isSome_liftN_weakenN {Γ' Γ : Scope} :
+    (n : Nat) → (ρ : Lifting k Γ' Γ) → {a : Scope.Entry} → (x : Var Γ a) →
+      (ρ.motive x).isSome → ((ρ.liftN n).motive (x.weakenN n)).isSome
+  | 0, _, _, _, h => h
+  | n + 1, ρ, _, x, h =>
+    Lifting.isSome_liftN_weakenN n ρ.lift x.succ (by
+      rwa [show (ρ.lift (e := .var)).motive (.succ x) = (ρ.motive x).map (Prod.map .succ id)
+        from rfl, Option.isSome_map])
+
 /-- A lifting that lifts no variable lifts none under new variables. -/
 theorem Lifting.liftN_motive_eq_none {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (n : Nat) :
