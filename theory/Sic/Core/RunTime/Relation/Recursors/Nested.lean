@@ -2,9 +2,7 @@ module
 
 public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Extension
-public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Monotonicity
-public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.Corecursors
 import Sic.Core.Erasure.Results.Lifting
 import Sic.Core.Erasure.Results.Substitution
