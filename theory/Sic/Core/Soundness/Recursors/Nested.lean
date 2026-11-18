@@ -216,6 +216,46 @@ theorem DesRel.of_positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Na
       exact ⟨hA, DesRel.of_positions hd L ds (fun i => hN (i + 1)) (hG _ hff)
         fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hv d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos)⟩
 
+-- ADE: none.
+/-- Observations that the equality of the destructors, none of which is recursive, at instantiated
+levels, relates to themselves give, at each position, at arguments that the equality of the
+telescope of its destructor relates, terms that the equality of its result relates: the converse of
+`DesRel.of_positions`, for the observations related to themselves. -/
+theorem DesRel.positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Nat}
+    (L : Fin k' → Level 0) :
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {rs : Nat → Option TermRel} →
+      (∀ i, rs i = none) → {θ : Subst 0 [] Γ} → {S : ObsRel} →
+      DesRel sig ι n (fun m _ => levelRel sig ι m) s rs (ds.substLevels L) @θ S →
+      {o : Observations} → S o o →
+      ∀ (d : Name) (p q ς : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
+        (hpos : ds.Pos d p q ς Ξ Θ B ψ) (SΘ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
+          ((Θ.substLevels L).subst (hpos.obsSubst o θ)) SΘ →
+        ∀ (ts us : Args 0 [] ps), SΘ ts.terms us.terms → ∀ (v : Term 0 []) (F : TermRel),
+        Computesι sig ι
+          ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst)) v →
+        FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F →
+        F ((o d ps).subst ts.toSubst) ((o d ps).subst us.toSubst)
+  | _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hpos, _, _, _, _, _, _, _, _, _ =>
+    nomatch hpos
+  | _, _, .cons _ _ _ _ _ _ ds, _, hN, _, _, h, _, ho, _, _, _, _, _, _, _, _, _, hpos, _, hΘ',
+      ts, us, hts, v, _, hv, hF' => by
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    cases h with
+    | recursive hrs => rw [hN 0] at hrs; cases hrs
+    | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF _ G hG _ =>
+      obtain ⟨hA, hGo⟩ := ho
+      cases hpos with
+      | here =>
+        have hts' := (TelRel.unique hd ihm hΘ' _ _ hΘ _ _).1 hts
+        have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+        have htt := hSp.trans hts' (hSp.symm hts')
+        exact (FieldRel.unique hd ihm (hF ts htt v hv) _ _ hF' _ _).1 (hA ts us hts')
+      | there hpos' =>
+        exact DesRel.positions hd L ds (fun i => hN (i + 1)) (hG _ hA) hGo _ _ _ _ _ _ _ _ _ hpos'
+          _ hΘ' ts us hts v _ hv hF'
+
 end
 
 section
