@@ -88,7 +88,7 @@
             };
             # Checks the imports of the modules of Sic/ against the rules of theory/imports.toml, through
             # the modules they import in turn, which fails with the path of the imports that a rule
-            # forbids or does not allow.
+            # forbids or does not allow, or with the groups that import each other in a cycle.
             imports = {
               tools = [
                 pkgs.coreutils

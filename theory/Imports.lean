@@ -124,8 +124,52 @@ def pathTo (graph : Std.HashMap Name (Array Name)) (start : Name) (target : Name
       queue := queue.push imported
   return none
 
+/-- The imports between the groups: an arrow from each group to each other group that one of its
+modules imports a module of, in the order of the groups. -/
+def Rules.groupArrows (rules : Rules) (modules : Array Name)
+    (graph : Std.HashMap Name (Array Name)) : Array (Nat × Nat) := Id.run do
+  let groupOf (module : Name) : Nat := (rules.groupOf module).getD rules.groups.size
+  let mut arrows := #[]
+  for index in [0:rules.groups.size] do
+    let imported := modules.filter (groupOf · == index) |>.flatMap (graph.getD · #[])
+      |>.map groupOf |>.filter (· != index)
+    for target in [0:rules.groups.size] do
+      if imported.contains target then
+        arrows := arrows.push (index, target)
+  return arrows
+
+/-- A cycle of the arrows between the nodes `0` to `n - 1`, if there is one, as the nodes along it
+from a node back to the same node: a depth-first search, which follows each arrow once. -/
+def findCycle (n : Nat) (arrows : Array (Nat × Nat)) : Option (List Nat) := Id.run do
+  let mut next : Array (Array Nat) := Array.replicate n #[]
+  for (source, target) in arrows do
+    next := next.modify source (·.push target)
+  -- The state of each node: `0` before the search reaches it, `1` while it is on the path of the
+  -- search, `2` once every arrow from it is followed.
+  let mut state : Array Nat := Array.replicate n 0
+  for root in [0:n] do
+    if state[root]! != 0 then continue
+    -- The path of the search from `root`, each node with the index of the next arrow to follow.
+    let mut path : Array (Nat × Nat) := #[(root, 0)]
+    state := state.set! root 1
+    while 0 < path.size do
+      let (node, index) := path.back!
+      match next[node]![index]? with
+      | none =>
+        state := state.set! node 2
+        path := path.pop
+      | some target =>
+        path := path.set! (path.size - 1) (node, index + 1)
+        if state[target]! == 1 then
+          let start := (path.findIdx? (·.1 == target)).getD 0
+          return some ((path.extract start path.size).toList.map (·.1) ++ [target])
+        if state[target]! == 0 then
+          state := state.set! target 1
+          path := path.push (target, 0)
+  return none
+
 /-- The failures of the rules on the graph of the modules: for each module of a rule, the path to
-a module it must not import, if any. -/
+a module it must not import, if any, and a cycle of the imports between the groups, if any. -/
 def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array Name)) :
     Array String := Id.run do
   let mut failures := #[]
@@ -151,6 +195,12 @@ def checkRules (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name 
       if let some path := pathTo graph module rule.imports.excludes then
         failures := failures.push
           s!"{" → ".intercalate (path.map toString)}, which the rule excludes: {rule.reason}"
+  -- The graph of the groups draws each group above the groups it imports, and its transitive
+  -- reduction assumes that they import each other in no cycle.
+  if let some cycle := findCycle rules.groups.size (rules.groupArrows modules graph) then
+    let names := cycle.map fun index => (rules.groups[index]?.map (·.name)).getD ""
+    failures := failures.push s!"the groups {" → ".intercalate names} import each other in a cycle, \
+      while a group imports only groups below it"
   return failures
 
 /-- The longest namespace of all the names, `anonymous` if there is none. -/
@@ -180,8 +230,9 @@ def reaches (arrows : Array (String × String)) (start target : String) : Bool :
         seen := seen.push next
   return false
 
-/-- The arrows of a graph without cycles that no path of its other arrows replaces, its transitive
-reduction: they draw the same imports, since a module brings the modules that it imports. -/
+/-- The arrows of a graph without cycles, as `checkRules` requires the graph of the groups to be,
+that no path of its other arrows replaces, its transitive reduction: they draw the same imports,
+since a module brings the modules that it imports. -/
 def reduce (arrows : Array (String × String)) : Array (String × String) :=
   arrows.filter fun (source, target) =>
     !arrows.any fun (source', next) => source' == source && next != target && reaches arrows next target
@@ -214,13 +265,8 @@ def page (rules : Rules) (modules : Array Name) (graph : Std.HashMap Name (Array
     lines := lines ++ #[
       s!"  g{index}[\"{group.name}\"]",
       s!"  click g{index} href \"#{anchor group}\""]
-  let mut groupArrows := #[]
-  for index in [0:rules.groups.size] do
-    let imported := modules.filter (groupOf · == index) |>.flatMap (graph.getD · #[])
-      |>.map groupOf |>.filter (· != index)
-    for target in [0:rules.groups.size] do
-      if imported.contains target then
-        groupArrows := groupArrows.push (s!"g{index}", s!"g{target}")
+  let groupArrows := (rules.groupArrows modules graph).map fun (source, target) =>
+    (s!"g{source}", s!"g{target}")
   for (source, target) in reduce groupArrows do
     lines := lines.push s!"  {source} --> {target}"
   lines := lines ++ #[
