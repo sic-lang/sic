@@ -3,7 +3,9 @@ module
 public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Nesting.Relation
+public import Sic.Core.RunTime.Monotonicity
 public import Sic.Core.RunTime.Relation
+public import Sic.Core.Soundness.Corecursors
 import Sic.Core.Erasure.Results.Lifting
 import Sic.Core.Erasure.Results.Substitution
 import Sic.Core.Lifting.Functionality
@@ -13,7 +15,6 @@ import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Substitution
-import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
@@ -693,6 +694,361 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     · refine ⟨_, ?_, Multiplicity.le_refl' _⟩
       simp only [hps', List.map_map, List.getElem?_map, List.getElem?_eq_getElem j.isLt]
       rfl
+
+/-- The recursive result of a closed term at a nesting without position, which no type lifts,
+vacuously runs. -/
+theorem NestedRunsAt.plain (A t : Term 0 []) (R : RunRel) :
+    NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ .plain A t R :=
+  fun _ _ _ _ _ hL => (hL.not_avoidsLifted rfl fun x _ => nomatch x).elim
+
+/-- The recursive result of a closed term at a position that holds a type of the block runs as the
+leaf of the position says. -/
+theorem NestedRunsAt.direct {D : Name} {x : RunNestLeaf}
+    (hx : RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀ D x) (A t : Term 0 []) :
+    NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ (.direct D) A t x.2 := by
+  intro e A' mr ms hres hL hsh _ _ m g E hE H O hO ϖ H₁ hH₁
+  cases hres with
+  | block hD =>
+    cases hL with
+    | block hD' =>
+      cases Option.some.inj (hD.symm.trans hD')
+      exact hx _ ms hD hsh t g E hE H O hO ϖ H₁ hH₁
+    | inst _ _ hn => exact absurd rfl (hn _)
+  | inst _ hn => exact absurd rfl (hn _)
+
+/-- An abstraction related at run time to an address is related to it when it computes as an
+abstraction that is, at a relation of its result that does not read the computation. -/
+theorem RunAbstractionRel.congr_computes {ps : List Parameter} {i : Nat}
+    {ψ : ResultOwnership Grade ps.length} {ς : Grade} {RΘ : RunFieldsRel}
+    {Rb : Terms 0 [] → RunRel} {f g : Term 0 (Scope.extend [] ps.length)} {H : Heap} {a : Nat}
+    (hRb : ∀ H' (ts : Args 0 [] ps) bs, RΘ H' ts.terms bs → RunLeafCongr sig ι (Rb ts.terms))
+    (hfg : ∀ τ w, Computesι sig ι (f.subst τ) w ↔ Computesι sig ι (g.subst τ) w)
+    (h : RunAbstractionRel P i ψ ς RΘ Rb g H a) : RunAbstractionRel P i ψ ς RΘ Rb f H a :=
+  fun H' hH ts bs hts ϖ =>
+    let ⟨w, H'', tr, hev, hR⟩ := h H' hH ts bs hts ϖ
+    ⟨w, H'', tr, hev, (hRb H' ts bs hts H'' _ _ w fun u => hfg ts.toSubst u).2 hR⟩
+
+end
+
+/-! ## Observations of a Term of an Instance -/
+
+section
+
+variable {sig : Signature} {ι : Interpretation}
+
+/-- The observations of a closed term of an instance of a codata type of `Σ`, in a universe of
+types, none of whose destructors is recursive, are related to themselves by the equality of the
+destructors of the type: the term computes to a corecursor whose observations the equality
+relates, and its observations compute as them. -/
+theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as : InstanceArgs 0 [] decl.scope}
+    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+    {t : Term 0 []} (ht : ValidTerm₀ sig ι t (.inst D qs ls ps as)) :
+    ∃ (rs : Nat → Option TermRel) (SE : ObsRel), (∀ i, rs i = none) ∧
+      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) .type rs
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst SE ∧
+      SE (t.observation D qs ls ps as) (t.observation D qs ls ps as) := by
+  have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
+    ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨-, v₀, -, R₀, hv₀, -, hR₀, -, -⟩ := ht.1
+  cases Computesι.det hd hI hv₀
+  obtain ⟨-, Se, hSe, rfl⟩ := (HasEq.instCodata_inv hd h hq hl hp hR₀).resolve_right
+    fun ⟨hs', _⟩ => nomatch hκ.symm.trans hs'
+  have hU₀ : (levelRel sig ι
+      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue).univ
+      (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes Se D) :=
+    levelRel_univ_iff.2 (.codata h hq hl hp rfl hκ rfl Se hSe)
+  have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps as) := fun ⟨v, hv, k, b, hk⟩ => by
+    cases Computesι.det hd hI hv
+    exact HasEq.univ_not_prop hd hU₀ hk
+  obtain ⟨v₁, w₁, w₂, R', hv₁, hw₁, hw₂, hR', hrel⟩ := ht.2.1 hnp
+  cases Computesι.det hd hI hv₁
+  cases Computesι.det hd hw₁ hw₂
+  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
+      ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, Se X T' o₁ o₂ → Se Y T' o₁ o₂ :=
+    fun X Y hXY T' hT' => DesRel.mono hd ih (hSe X T' hT') _ _ _ (hSe Y T' hT')
+      fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+  have hrel' := (HasEq.unique hd hR' hR₀ w₁ w₁).1 hrel
+  rw [← h.2.2] at hrel'
+  obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel'
+  obtain ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩ := hc₁
+  obtain ⟨_, _, _, _, _, _, _, _, _, he, rfl⟩ := hc₂
+  cases he
+  have hrs : ∀ i, ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+      (fun D' => (CodataType.blockRel decl.codataTypes Se D').computed sig ι) = none := fun i => by
+    rw [Destructors.recursionAt_eq_none hrec i]
+    rfl
+  have hDes := hSe (CodataType.blockRel decl.codataTypes Se) T h.2.1
+  -- The observations of the term compute as those of the corecursor, and conversely.
+  rcases ObsEquiv.of_computes (s := .type) hd (qs := qs) (ls := ls) (ps := ps) (as := as) hw₁
+    ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩ with hf | hf
+  · exact nomatch hf
+  refine ⟨_, _, hrs, hDes, DesRel.obsEquiv hd (fun i R hi => by rw [hrs i] at hi; cases hi) hDes
+    ho (.inr fun d ps τ w => (hf d ps τ w).symm) (.inr fun d ps τ w => (hf d ps τ w).symm)⟩
+
+end
+
+/-! ## Nested Results at Run Time -/
+
+section
+
+variable {sig : Signature} {ι : Interpretation} {P : Program} {v : Lifting.Variables}
+  {ρ₁ : Lifting 0 [] []} {φ : Name → Term 0 [.var]} {block : Name → Option Shape.Motive}
+  {ρ ϱ : Multiplicity} {m₀ : Nat} {Ns₀ : TargetBranches m₀} {E₀ : List Nat}
+
+mutual
+
+-- ADE: none.
+/-- The recursive result of a closed term of a type, which the graph of the nestings of run time
+reads at the relation `R`, runs: its shape, on a path that runs to an address that `R` relates to
+the term, gives a value related to the result at the type lifted, in a signature whose names are
+distinct, whose liftings are those of its types, in their order, and whose destructors of a codata
+proposition are erased, when the recursor is used at run time, the shapes of the types of the block
+follow `ρ₁`, and the relation at each position runs as the leaf of the position says and does not
+read the computation. -/
+theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
+    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
+      .typeDeclaration decl ∈ sig → D ∈ decl.names →
+      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hr : v.recursion ∉ Mode.oneOne.erased)
+    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
+      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
+        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
+        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
+          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+          {ψ : ResultOwnership Grade ps₁.length},
+          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
+    RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R →
+      Nest.All (fun x => RunLeafCongr sig ι x.2) τ →
+      ∀ {ν : Nest Name}, Nest.Rel (RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀) ν τ →
+      ∀ t, ValidTerm₀ sig ι t A → NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ ν A t R
+  | .plain _ _, _, _, hν, _, _ => by
+    cases hν with
+    | plain => exact NestedRunsAt.plain _ _ _
+  | .direct _, _, _, hν, _, _ => by
+    cases hν with
+    | direct hx => exact NestedRunsAt.direct hx _ _
+  | .codata (ls := ls) h hq hl hp hA hκ _ hrec _ hS, hτ, _, hν, _, ht => by
+    subst hA
+    cases hν with
+    | inst hνs =>
+      cases hτ with
+      | inst hτs =>
+        obtain ⟨_, _, hrs, hDes, hSf⟩ := ValidTerm₀.desRel hd h hq hl hp hκ hrec ht
+        refine NestedRunsAt.inst (n := n) hd hord hlifts hr hb h hq hl hp hrec
+          fun d p q ς ps₁ Ξ Θ B ψ hpos hpu => ?_
+        obtain ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts hr
+          hb hprop (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)
+          (Nesting.ofArgs_rel₃ hνs) hrs hDes hSf hpu
+          (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
+          (hpos.nest_substLevels _ _)
+        exact ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ,
+          fun H a ⟨_, hu, o, hco, hSo⟩ => hAbs H o a (ObsEquiv.of_computes hd hu hco) hSo, hN⟩
+  | .codataProp h hq hl hp hA hκ _ hrec, _, _, hν, _, _ => by
+    subst hA
+    cases hν with
+    | inst _ =>
+      exact NestedRunsAt.inst (n := n) hd hord hlifts hr hb h hq hl hp hrec
+        fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hκ hpos) hpu
+termination_by structural h _ _ _ _ _ => h
+
+-- ADE: none.
+/-- At a position of a destructor, whose grade is used at run time, in destructors that the graph
+of the nestings of run time reads, and that the equality of the destructors reads too, the
+observations `f`, which this equality relates to themselves, give the telescope of the destructor,
+with its equality and its relation of run time, and a relation of run time of its result: the
+observation of an address related to observations that `f` computes as runs to addresses related
+to the observations by `f`, and the recursive results of these observations run. -/
+theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
+    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
+      .typeDeclaration decl ∈ sig → D ∈ decl.names →
+      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hr : v.recursion ∉ Mode.oneOne.erased)
+    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
+      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
+        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
+        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
+          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+          {ψ : ResultOwnership Grade ps₁.length},
+          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    {n : Nat} {D : Name} {d : Name} {p q ς : Grade} {ps : List Parameter} :
+    {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
+      {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : ds.Pos d p q ς Ξ Θ B ψ) →
+      {ν' : Nesting RunNestLeaf Γ} → {θ : Subst 0 [] Γ} → {S : RunObsRel} →
+      RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν' ds @θ S →
+      Nesting.All (fun x => RunLeafCongr sig ι x.2) @ν' → {ν : Nesting Name Γ} →
+      Nesting.Rel (RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀) @ν @ν' →
+      {nE : Nat} → {rs : Nat → Option TermRel} → (∀ i, rs i = none) → {SE : ObsRel} →
+      DesRel sig ι nE (fun m _ => levelRel sig ι m) .type rs ds @θ SE →
+      {f : Observations} → SE f f → p ∉ Mode.oneOne.erased →
+      ∀ {σ : (e : Scope.Entry) → Var Ξ e → Term 0 (Scope.extend [] e.params.length)},
+      (σ = fun _ x => hpos.obsSubst f θ x) → ∀ {νB : Nest Name},
+      νB = B.nest (fun _ => none) (Nesting.liftN ps.length (hpos.nesting @ν)) →
+      ∃ SΘ RΘ Rb i, sig.destructorCase D d = some i ∧
+        TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
+          (Θ.subst fun {e} x => σ e x) SΘ ∧
+        RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain)
+          (Θ.subst fun {e} x => σ e x) RΘ ∧
+        (∀ H o a, ObsEquiv sig ι .type f o → S H o a →
+          RunAbstractionRel P i ψ ς RΘ Rb (f d ps) H a) ∧
+        ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+          NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ νB
+            (B.subst (Subst.append (fun {e} x => σ e x) ts.toSubst)) ((f d ps).subst ts.toSubst)
+            (Rb ts.terms)
+  | _, _, _, _, _, B, _, .here, _, _, _,
+      .cons (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ hRΘ _ R _ hR _ _ _, _, _, hRel, _, _, _, _,
+      _, f, _, _, _, hσ, _, hνB => by
+    subst hσ hνB
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    refine ⟨SΘ, RΘ, R, i, hi, hΘ, hRΘ, fun H o a ho hSo => ?_, fun ts _ => ?_⟩
+    · -- The observation by `o` runs, and the observation by `f` computes as it.
+      refine RunAbstractionRel.congr_computes (fun H' ts bs hts =>
+        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ
+          (fun _ => rfl) H' ts.terms bs hts)) .plain) (fun τ w => ?_) (hSo.2.1 ‹_›)
+      rcases ho with ho | ho
+      · exact nomatch ho
+      · exact ho d ps τ w
+    · -- The result has no position.
+      simp only [Destructors.Pos.nesting]
+      rw [((Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B).eq_plain.1.1 hν)]
+      exact NestedRunsAt.plain _ _ _
+  | _, _, _, _, _, B, _, .here, _, _, _,
+      .nested (SΘ := SΘ) (RΘ := RΘ) (i := i) hi _ hΘ hRΘ R hR _ _, hAll, _, hRel, nE, _, hrs, _,
+      hE, f, hSf, hpu, _, hσ, _, hνB => by
+    subst hσ hνB
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hAllB := Term.nest_all (p := fun x : RunNestLeaf => RunLeafCongr sig ι x.2)
+      (mark := fun _ => none) (fun _ _ h => nomatch h) (Nesting.liftN_rel₃ ps.length hAll) B
+    refine ⟨SΘ, RΘ, R, i, hi, hΘ, hRΘ, fun H o a ho hSo => ?_, fun ts hts => ?_⟩
+    · -- The observation by `o` runs, and the observation by `f` computes as it.
+      refine RunAbstractionRel.congr_computes (fun H' ts bs hts =>
+        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ
+          (fun _ => rfl) H' ts.terms bs hts)) hAllB) (fun τ w => ?_) (hSo.1 hpu)
+      rcases ho with ho | ho
+      · exact nomatch ho
+      · exact ho d ps τ w
+    · -- The observation is a term of the result, which the equality of the destructors gives.
+      cases hE with
+      | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
+      | cons hΘE _ hBE hFE _ _ _ _ _ =>
+        have ihE : ∀ m, m < max n nE → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+        have htE := (TelRel.unique hd ihE (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
+          (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 hts
+        obtain ⟨vB, hvB⟩ := hBE ts htE
+        exact RunNestRel.nestedRuns hd hord hlifts hr hb hprop (hR ts hts) hAllB
+          (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B) _
+          (FieldRel.validEqTerm hd (hFE ts htE vB hvB) hvB (hSf.1 ts ts htE))
+  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _,
+      .cons (SΘ := SΘ) _ _ hΘ _ F _ hF _ G hG hresp, hAll, _, hRel, nE, _, hrs, _, hE, f, hSf, hpu,
+      _, hσ, _, hνB => by
+    cases hE with
+    | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
+    | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘE hΘE FE _ hFE _ _ hGE _ _ =>
+      have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+      have ihE : ∀ m, m < max n nE → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+      have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+      have hFv : ∀ ts : Args 0 [] ps', SΘ ts.terms ts.terms → ∃ v,
+          Computesι sig ι _ v ∧ FieldRel sig ι n (fun m _ => levelRel sig ι m) .type v (F ts.terms) :=
+        fun ts hts => by
+          cases hF ts hts with
+          | plain hA hF' => exact ⟨_, hA, hF'⟩
+      -- The observations by `f` at `d'` are related to themselves by the clause of `d'`.
+      have hAf : AbstractionRel SΘ F (f d' ps') (f d' ps') := fun ts us hts => by
+        have htt := hSp.trans hts (hSp.symm hts)
+        obtain ⟨vB, hvB, hFB⟩ := hFv ts htt
+        have htsE := (TelRel.unique hd ihE (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
+          (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 hts
+        have httE := (TelRel.unique hd ihE (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
+          (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 htt
+        exact (FieldRel.unique hd ihE ((hFE ts httE vB hvB).levelLe (Nat.le_max_right n nE)) _ _
+          (hFB.levelLe (Nat.le_max_left n nE)) _ _).1 (hSf.1 ts us htsE)
+      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts
+        hr hb hprop hp (hG _ hAf) (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel)
+        (fun i => hrs (i + 1)) (hGE _ hSf.1) hSf.2 hpu hσ hνB
+      refine ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, fun H o a ho hSo => hAbs H o a ho ?_, hN⟩
+      -- The destructors after `d'` are the same for the observations by `f` and by `o` at `d'`.
+      have hfo : AbstractionRel SΘ F (f d' ps') (o d' ps') :=
+        (AbstractionRel.congr_computes (s := .type) hSp
+          (fun ts hts => (hFv ts hts).imp fun _ h => h.2)
+          (ho.imp_right fun h => ⟨fun _ _ => .rfl, fun τ w => h d' ps' τ w⟩)).1 hAf
+      exact (hresp _ _ hfo H o a).2 hSo.2.2
+  | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _, .nested _ _ _ _ _ _ _ hG,
+      hAll, _, hRel, _, _, hrs, _, hE, f, hSf, hpu, _, hσ, _, hνB => by
+    cases hE with
+    | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
+    | cons _ _ _ _ _ _ hGE _ _ =>
+      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts
+        hr hb hprop hp (hG (f d' ps')) (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel)
+        (fun i => hrs (i + 1)) (hGE _ hSf.1) hSf.2 hpu hσ hνB
+      exact ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, fun H o a ho hSo => hAbs H o a ho hSo.2, hN⟩
+termination_by structural _ _ _ _ _ _ _ _ _ _ _ h _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => h
+
+end
+
+-- ADE: none.
+/-- `n.Ξ` at run time: the corecursor without state of the shape of the type of a nested field,
+whose field is bound to a cell that holds an address that the relation of run time of the type
+relates to the field, evaluates to a value related to the recursive result of the field at the type
+lifted, when the hypotheses of `RunNestRel.nestedRuns` hold and the relations of the positions are
+monotone in the heap: the path from the field is the field itself. -/
+theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
+    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
+        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
+      .typeDeclaration decl ∈ sig → D ∈ decl.names →
+      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hr : v.recursion ∉ Mode.oneOne.erased)
+    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
+      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
+      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
+        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
+        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
+          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+          {ψ : ResultOwnership Grade ps₁.length},
+          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel}
+    (hR : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
+    (hτ : Nest.All (fun x => RunLeafCongr sig ι x.2) τ) (hτm : Nest.All (fun x => RunRel.Monotone x.2) τ)
+    {ν : Nest Name} (hν : Nest.Rel (RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀) ν τ)
+    {t e A' : Term 0 []} (ht : ValidTerm₀ sig ι t A) {mr : Lifting.Result 0}
+    (hres : Term.NestedResult sig v ρ₁ φ ν A t e) (hL : Term.Lifts sig v ρ₁ ν t A A' mr)
+    {σ : Shape} {π χ : Grade}
+    (hsh : A.shape v (sig.shapes v sig) block Nesting.plain ν = some ⟨.lifting σ, π, χ⟩)
+    (hrun : ∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') (hval : ValidTerm₀ sig ι e A')
+    {c : Nat} {H : Heap}
+    (hc : π.run ≠ .zero → ∃ π' a, H[c]? = some (.cell π' a) ∧ R H t a) (ϖ : Multiplicity)
+    (H₁ : Heap) (hH₁ : H.Extends H₁) :
+    ∃ w H₂ tr, Eval P ϖ H₁ (c :: E₀) (Target.nested ρ ϱ σ Ns₀) w H₂ tr ∧ H₁.Extends H₂ ∧
+      RunsAs sig ι P H₂ e w A' := by
+  have hmono : R.Monotone := levelRel_runNest_mono hd hR hτm
+  refine RunNestRel.nestedRuns hd hord hlifts hr hb hprop hR hτ hν t ht e A' mr _ hres hL hsh hrun
+    hval (TargetRen.shift m₀ 1) (c :: E₀) (fun x => List.getElem?_cons_succ) H (.var 0)
+    (fun hπ m' f E' hE' ϖ' H' hH' => ?_) ϖ H₁ hH₁
+  -- The path from the field is the field, whose cell holds an address related to it.
+  obtain ⟨π', a, hca, hRa⟩ := hc hπ
+  have hE0 : E'[(f 0 : Nat)]? = some c := hE' 0
+  exact ⟨a, H', [c], .var hE0 (Heap.Extends.getElem? hH' hca), List.prefix_refl _, hmono hH' hRa⟩
 
 end
 
