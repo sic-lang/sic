@@ -7,8 +7,8 @@ Properties of the lists that Lean does not provide: the positions and the images
 a list whose images are distinct, the element at the position that `findIdx?` finds, the first
 element after a prefix, the pairs of the elements of two lists of the same length, the numbered
 elements of a list of a known length, the results of a function defined at every element of a list,
-the length of a list whose distinct elements are all in another, and the lists related element by
-element.
+the length of a list whose distinct elements are all in another, the lists related element by
+element, and the elements of a list after the reverse of a range of numbers.
 -/
 
 @[expose] public section
@@ -328,3 +328,10 @@ theorem getElem? : {as : List α} → {bs : List β} → List.Pointwise R as bs 
   | _, _, .cons _ hs, j + 1, _, h => hs.getElem? (j := j) h
 
 end List.Pointwise
+
+/-- The elements of a list after the reverse of the `c` numbers from `a` are the elements of the
+list: its element at the position `x` is the element at the position `x + c` of the concatenation. -/
+theorem List.getElem?_reverse_range'_append_right (a c x : Nat) (E : List Nat) :
+    ((List.range' a c).reverse ++ E)[x + c]? = E[x]? := by
+  rw [List.getElem?_append_right (by simp), List.length_reverse, List.length_range',
+    Nat.add_sub_cancel]

@@ -270,22 +270,6 @@ theorem RunsAsArgs.of_addrs {H : Heap} :
   | [], _, _, .nil, .nil, [], _ :: _, hl, _, _ => nomatch hl
   | _ :: _, _, _, .cons _ _, .cons _ _ _ _, _ :: _, [], hl, _, _ => nomatch hl
 
-/-- The environment of a built branch, the cells of its arguments, the last one first, then the
-environment of the closure, binds a variable of the closure as the environment of the closure. -/
-theorem List.getElem?_reverse_range'_append_right (a c x : Nat) (E : List Nat) :
-    ((List.range' a c).reverse ++ E)[x + c]? = E[x]? := by
-  rw [List.getElem?_append_right (by simp), List.length_reverse, List.length_range',
-    Nat.add_sub_cancel]
-
-/-- The environment of a built branch binds the variable of its argument `k` to the cell at the
-address `a + k`, the cells of its arguments being at the addresses from `a`. -/
-theorem List.getElem?_reverse_range'_append_left (a c k : Nat) (hk : k < c) (E : List Nat) :
-    ((List.range' a c).reverse ++ E)[c - 1 - k]? = some (a + k) := by
-  rw [List.getElem?_append_left (by simp; omega), List.getElem?_reverse (by simp; omega),
-    List.getElem?_range' (by simp; omega)]
-  simp only [List.length_range', Option.some.injEq]
-  omega
-
 end
 
 /-! ## Nested Results of an Instance -/
@@ -358,7 +342,7 @@ theorem Target.RunsTo.obs_args {R : RunRel} {t : Term 0 []} {m : Nat} {E : List 
     {Rb : Terms 0 [] → RunRel} {f : Term 0 (Scope.extend [] ps.length)}
     (hAbs : ∀ H a, R H t a → RunAbstractionRel P i ψ ς RΘ Rb f H a) (ts : Args 0 [] ps)
     {H' : Heap} (hH : H.Extends H') {πs : List Multiplicity} {bs : List Nat}
-    (hlen : bs.length = ps.length) (hπs : bs.length ≤ πs.length)
+    (hlen : bs.length = ps.length) (hπs : πs.length = bs.length)
     (hrel : ∀ H'', H'.Extends H'' → ∀ as : List Nat, as.length = ps.length →
       (∀ l (h : l < ps.length), ps[l].usage.run ≠ .zero → as[l]? = bs[l]?) →
       RΘ H'' ts.terms as) :
@@ -383,16 +367,17 @@ theorem Target.RunsTo.obs_args {R : RunRel} {t : Term 0 []} {m : Nat} {E : List 
   have hcells : ∀ k : Fin ps.length, ps[k].usage.run ≠ .zero → ∃ c' π',
       E''[(f' (Shape.argVar m ps.length k) : Nat)]? = some c' ∧
         H₅[c']? = some (.cell π' (bs[(k : Nat)]'(by rw [hlen]; exact k.isLt))) := fun k _ => by
-    have hk : (k : Nat) < πs.length := by have := k.isLt; omega
-    refine ⟨H'.length + k, πs[(k : Nat)], ?_, ?_⟩
-    · rw [hE'']
-      show ((List.range' H'.length bs.length).reverse ++ E)[ps.length - 1 - (k : Nat)]? = _
-      rw [hlen]
-      exact List.getElem?_reverse_range'_append_left _ _ _ k.isLt _
-    · refine Heap.Extends.getElem? (hH₄.trans hext₁) ?_
-      simp only [Heap.bind, List.getElem?_append_right (Nat.le_add_right _ _),
-        Nat.add_sub_cancel_left, List.getElem?_zipWith, List.getElem?_eq_getElem hk,
-        List.getElem?_eq_getElem (by rw [hlen]; exact k.isLt : (k : Nat) < bs.length)]
+    have hk : (k : Nat) < bs.length := by rw [hlen]; exact k.isLt
+    have hi : bs.reverse[ps.length - 1 - (k : Nat)]? = some bs[(k : Nat)] := by
+      rw [List.getElem?_reverse (by rw [hlen]; omega),
+        show bs.length - 1 - (ps.length - 1 - (k : Nat)) = k by omega,
+        List.getElem?_eq_getElem hk]
+    obtain ⟨c', π', hc', hc⟩ := (Heap.binds_bind H' hπs).reverse.getElem? hi
+    refine ⟨c', π', ?_, Heap.Extends.getElem? (hH₄.trans hext₁) hc⟩
+    rw [hE'']
+    show ((List.range' H'.length bs.length).reverse ++ E)[ps.length - 1 - (k : Nat)]? = _
+    rw [List.getElem?_append_left (by simp; omega)]
+    exact hc'
   obtain ⟨as₂, H₆, tr₂, hev₂, hext₂, hl₂, hk₂⟩ := Targets.evalAll_ofVars P ϖ₂ E''
     (fun j => ps[j].usage.run) (fun j => ps[j].requirement.run) (f' ∘ Shape.argVar m ps.length) H₅
     (fun k => bs[(k : Nat)]'(by rw [hlen]; exact k.isLt)) hcells
@@ -688,7 +673,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       exact Target.RunsTo.obs_args (i := (sig.destructorCase D d').getD 0)
         (πs := (List.ofFn (Fin.elim0 : Fin 0 → Multiplicity) ++ List.ofFn πs').map (ϖ' * ·))
         (hO hπ) (by rw [hcase]; exact hAbs) ts
-        (hH₁.trans ((List.prefix_append _ _).trans (hHx.trans hH'))) hlen (by simp [hlen]; exact Nat.le_refl _)
+        (hH₁.trans ((List.prefix_append _ _).trans (hHx.trans hH'))) hlen (by simp [hlen]; rfl)
         (hrel hus) f' E'' hE''
     obtain ⟨w'', H₃, tr, hev, hext, hrunI⟩ := hNest ts hSΘ (g₁.subst ts.toSubst) _ mr mS hN hL''
       (hshape.trans hmS) ⟨vB, R'', hvB, hR''⟩ hvalI g' E' hE' Hb O' hO' ϖ' Hb (List.prefix_refl _)
