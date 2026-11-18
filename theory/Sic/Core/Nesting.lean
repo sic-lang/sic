@@ -317,6 +317,21 @@ def Telescope.nestAt {Γ : Scope} {ps : List Parameter} (names : List Name)
     (Θ : Telescope k Γ ps) : Nat → Nest Name :=
   fun i => ((Θ.nest names)[i]?).getD .plain
 
+/-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
+those of the recursive and of the nested fields, whose nestings `ns` have a position, in order:
+each result has the parameter of its field, which no judgment reads. -/
+def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Parameter
+  | .plain :: ns, _ :: ps => Telescope.nestResultParams ns ps
+  | .direct _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
+  | .inst _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
+  | [], _ | _ :: _, [] => []
+
+/-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
+whose types have the names `names`. -/
+abbrev Constructor.nestResultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)
+    (I : Instance j g) (names : List Name) : List Parameter :=
+  Telescope.nestResultParams ((c.fields I).nest names) (c.params I)
+
 /-! ## Nesting of the Destructors of a Block -/
 
 -- ADE: none.

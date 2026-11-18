@@ -85,15 +85,6 @@ def Telescope.types : {Γ : Scope} → {ps : List Parameter} → Telescope k Γ 
 
 /-! ## Recursive Results -/
 
-/-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
-those of the recursive and of the nested fields, whose nestings `ns` have a position, in order:
-each result has the parameter of its field, which no judgment reads. -/
-def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Parameter
-  | .plain :: ns, _ :: ps => Telescope.nestResultParams ns ps
-  | .direct _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
-  | .inst _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
-  | [], _ | _ :: _, [] => []
-
 -- ADE: none.
 /--
 The recursive results `R` of the fields `x̄`, whose types are `Ā`, whose nestings are `ns` and whose
@@ -134,12 +125,6 @@ inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
       (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R πs) :
       Terms.ResultTypes sig v ρ (.inst ms :: ns) (p :: ps) (.cons A As) (.cons x xs)
         (.cons Grade.zero p A' R) (m.factor :: πs)
-
-/-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
-whose types have the names `names`. -/
-abbrev Constructor.nestResultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)
-    (I : Instance j g) (names : List Name) : List Parameter :=
-  Telescope.nestResultParams ((c.fields I).nest names) (c.params I)
 
 -- ADE: none.
 /-- The recursive results `R` of the fields of the constructor `c` at the instance `I`, at the
