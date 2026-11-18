@@ -224,16 +224,6 @@ section
 
 variable {sig : Signature} {ι : Interpretation} {P : Program}
 
-/-- The type of a field, or of the result of a destructor, of the graph of run time has a relation of
-run time. -/
-theorem RunFieldRel.hasRun {n : Nat} {v : Term 0 []} {R : RunRel}
-    (h : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v R) : ∃ R', HasRun sig ι P v R' := by
-  cases h with
-  | univ h => exact ⟨_, .univ n (levelRel_run_iff.2 h)⟩
-  | univBelow m _ h => exact ⟨_, .univ m h⟩
-  | prop h => exact ⟨_, .prop n _ (levelRel_prop_iff.2 h) fun _ _ _ => trivial⟩
-  | propBelow m _ h => exact ⟨_, .prop m _ h fun _ _ _ => trivial⟩
-
 /-- Arguments related to addresses at a telescope whose entries are used more are related to them at
 the telescope: the relation reads the types of the entries only, which are the same. -/
 theorem RunsAsArgs.of_scale {H : Heap} (r : Grade) :

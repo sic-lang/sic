@@ -133,6 +133,16 @@ theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {H : Heap} :
         (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs
           hbs)
 
+/-- The type of a field, or of the result of a destructor, of the graph of run time has a relation of
+run time. -/
+theorem RunFieldRel.hasRun {n : Nat} {v : Term 0 []} {R : RunRel}
+    (h : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v R) : ∃ R', HasRun sig ι P v R' := by
+  cases h with
+  | univ h => exact ⟨_, .univ n (levelRel_run_iff.2 h)⟩
+  | univBelow m _ h => exact ⟨_, .univ m h⟩
+  | prop h => exact ⟨_, .prop n _ (levelRel_prop_iff.2 h) fun _ _ _ => trivial⟩
+  | propBelow m _ h => exact ⟨_, .prop m _ h fun _ _ _ => trivial⟩
+
 /-- A term related to an address by the relation of run time of the type of a field is related to
 it at a type that computes to this type: the converse of `RunFieldRel.of_runsAs`. -/
 theorem RunFieldRel.runsAs {n : Nat} {v A t : Term 0 []} {R : RunRel} {H : Heap} {b : Nat}
