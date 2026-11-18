@@ -5,7 +5,6 @@ import Sic.Core.Lifting.Shape
 import Sic.Core.Substitution.Closed
 import Sic.Core.Substitution.Levels
 import Sic.Core.Substitution.Nesting
-import Sic.Core.Substitution.Rules
 import Sic.Core.Syntax.Signature
 
 /-!

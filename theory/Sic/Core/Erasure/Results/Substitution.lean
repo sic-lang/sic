@@ -3,7 +3,6 @@ module
 public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Functionality
-import Sic.Core.Positivity.Nesting
 import Sic.Core.Substitution.Nesting
 
 /-!
