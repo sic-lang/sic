@@ -1,5 +1,4 @@
 import Lean.CoreM
-import Lean.Util.CollectAxioms
 import Lean.Util.Path
 
 /-!
@@ -17,19 +16,66 @@ open Lean
 /-- The axioms that the formalization may use. -/
 def allowedAxioms : List Name := [``propext, ``Quot.sound]
 
-/-- Logs every declaration of the libraries `roots` that depends on an axiom outside `allowedAxioms`,
-and tells whether there is one. -/
+/-- The declarations among `names` through which they reach an axiom outside `allowedAxioms`, by
+axiom: those that reach it without going through another of `names`, where the axiom enters the
+library. The declarations that depend on them depend on the axiom too, but fixing those found here
+removes it from all. A single walk visits once each constant that `names` use, and records who uses
+it; the declarations are then found from the axiom through the users, stopping at the first of
+`names` on each path. The map is empty when the check passes. -/
+def forbiddenAxioms (env : Environment) (names : Array Name) : NameMap NameSet := Id.run do
+  -- The bodies of the private declarations are those of the module that declares them.
+  let env := env.setExporting false
+  let mut visited : NameSet := {}
+  let mut users : NameMap (Array Name) := {}
+  let mut forbidden : Array Name := #[]
+  let mut todo := names
+  while !todo.isEmpty do
+    let c := todo.back!
+    todo := todo.pop
+    if visited.contains c then continue
+    visited := visited.insert c
+    -- The constants that `c` uses: those that `collectAxioms` follows.
+    let used := match env.find? c with
+      | some (.axiomInfo v) => v.type.getUsedConstants
+      | some (.inductInfo v) => v.type.getUsedConstants ++ v.ctors.toArray
+      | some info => info.type.getUsedConstants ++
+          ((info.value? (allowOpaque := true)).map (·.getUsedConstants)).getD #[]
+      | none => #[]
+    if let some (.axiomInfo _) := env.find? c then
+      unless allowedAxioms.contains c do forbidden := forbidden.push c
+    for d in used do
+      users := users.insert d (((users.find? d).getD #[]).push c)
+    todo := todo ++ used
+  let roots : NameSet := names.foldl (·.insert ·) {}
+  let mut result : NameMap NameSet := {}
+  for axiom_ in forbidden do
+    let mut reached : NameSet := {}
+    let mut declarations : NameSet := {}
+    let mut pending := #[axiom_]
+    while !pending.isEmpty do
+      let c := pending.back!
+      pending := pending.pop
+      if reached.contains c then continue
+      reached := reached.insert c
+      if roots.contains c then
+        declarations := declarations.insert c
+      else
+        pending := pending ++ (users.find? c).getD #[]
+    result := result.insert axiom_ declarations
+  return result
+
+/-- Logs the declarations of the libraries `roots` through which they reach an axiom outside
+`allowedAxioms`, and tells whether there is one. -/
 def checkAxioms (roots : List Name) : CoreM Bool := do
   let env ← getEnv
-  let mut failed := false
-  for (name, _) in env.constants.map₁.toList do
-    let some idx := env.getModuleIdxFor? name | continue
-    unless roots.any (·.isPrefixOf env.header.moduleNames[idx.toNat]!) do continue
-    for axiom_ in ← collectAxioms name do
-      unless allowedAxioms.contains axiom_ do
-        IO.eprintln s!"{name} depends on the axiom {axiom_}"
-        failed := true
-  return failed
+  let names := env.constants.map₁.toArray.filterMap fun (name, _) => do
+    let idx ← env.getModuleIdxFor? name
+    if roots.any (·.isPrefixOf env.header.moduleNames[idx.toNat]!) then some name else none
+  let forbidden := forbiddenAxioms env names
+  for (axiom_, declarations) in forbidden do
+    for name in declarations do
+      IO.eprintln s!"{name} depends on the axiom {axiom_}"
+  return !forbidden.isEmpty
 
 def main : List String → IO UInt32
   | [] => do
