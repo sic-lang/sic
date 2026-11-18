@@ -4,16 +4,13 @@ public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
-public import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Erasure.Results.Lifting
 import Sic.Core.Erasure.Results.Substitution
 import Sic.Core.Lifting.Functionality
-import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Substitution
 import Sic.Core.RunTime.Monotonicity
@@ -21,9 +18,8 @@ import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.Soundness.Closed
-import Sic.Core.Soundness.DeclaredTypes
+import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution
-import Sic.Core.Syntax.Grades
 import Sic.Core.Syntax.Signature
 
 /-!
