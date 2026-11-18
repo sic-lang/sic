@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Nesting
 public import Sic.Core.Substitution.Composition
+public import Sic.Core.Substitution.Rules
 
 /-!
 # Nesting of the Renamed Types
@@ -11,7 +12,7 @@ it renames, and so the nestings of the fields of a block, whose variables have n
 fields after a recursive field, which do not depend on it, are renamed under it.
 A variable of a scope keeps its nesting under new variables, which have no position.
 A type keeps its nesting when levels replace its level variables, since the nesting does not read
-the levels.
+the levels, and so do the variables of the scope of a destructor.
 
 ADE have no declared types, and no nesting.
 -/
@@ -131,6 +132,17 @@ theorem InstanceArgs.nest_substLevels {k' : Nat} (mark : Name → Option α)
       Term.nest_substLevels mark ls' B, InstanceArgs.nest_substLevels mark ls' as]
 
 end
+
+/-- The nestings of the variables of the scope of a position are the same at instantiated levels,
+since they read only the scopes. -/
+theorem Destructors.Pos.nesting_substLevels {k' : Nat} (L : Fin k → Level k') {d : Name}
+    {p q ς : Grading.Grade} {ps : List Parameter} :
+    {Γ : Scope} → {nms : List Name} → {ds : Destructors k Γ nms} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership Grading.Grade ps.length} → (hpos : ds.Pos d p q ς Ξ Θ B ψ) →
+      (ν : Nesting α Γ) → @Eq (Nesting α Ξ) ((hpos.substLevels L).nesting @ν) (hpos.nesting @ν)
+  | _, _, _, _, _, _, _, .here, _ => rfl
+  | _, _, _, _, _, _, _, .there h, ν => h.nesting_substLevels L (Nesting.lift @ν)
 
 /-! ## Substituted Types -/
 
