@@ -112,6 +112,18 @@ theorem Lifting.liftN_block_ownership {D : Name} : (n : Nat) → {Γ' Γ : Scope
     obtain ⟨b₀, h₀, rfl⟩ := Option.map_eq_some_iff.1 h₁
     exact ⟨b₀, h₀, he⟩
 
+/-- Shapes of the types of a block that carry the ownerships of their motives in a lifting still do
+under new variables and in the scope extended by an entry. -/
+theorem Lifting.blockShapes_liftN_weaken {block : Name → Option Shape.Motive} {Γ' Γ : Scope}
+    {ρ : Lifting k Γ' Γ} (n : Nat) {e : Scope.Entry}
+    (hb : ∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) :
+    ∀ D b, ((ρ.liftN n).weaken (e := e)).block D = some b →
+      ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩ := fun D _ hD => by
+  obtain ⟨b₁, hb₁, rfl⟩ := Option.map_eq_some_iff.1 hD
+  obtain ⟨b₀, hb₀, he⟩ := Lifting.liftN_block_ownership n hb₁
+  obtain ⟨Υ, hΥ⟩ := hb D b₀ hb₀
+  exact ⟨Υ, he ▸ hΥ⟩
+
 /-- A lifting without type of a block has none under new variables. -/
 theorem Lifting.liftN_block_none : (n : Nat) → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} →
     (∀ D, ρ.block D = none) → ∀ D, (ρ.liftN n).block D = none
@@ -215,11 +227,8 @@ theorem InstanceArgs.Lifts.shapes
   | _, _, ρ, _, _, _, _, _, _, _, .lifted (a := a) has hB, ν, hν, hb => by
     obtain ⟨ms', hms', hms⟩ := has.shapes hsub hM hν hb
     obtain ⟨m', hm', hm⟩ := hB.shape hsub hM
-      (Lifting.Shapes.weaken (Lifting.Shapes.liftN a.params.length hν)) (fun D b hD => by
-        obtain ⟨b₁, hb₁, rfl⟩ := Option.map_eq_some_iff.1 hD
-        obtain ⟨b₀, hb₀, he⟩ := Lifting.liftN_block_ownership a.params.length hb₁
-        obtain ⟨Υ, hΥ⟩ := hb D b₀ hb₀
-        exact ⟨Υ, he ▸ hΥ⟩)
+      (Lifting.Shapes.weaken (Lifting.Shapes.liftN a.params.length hν))
+      (Lifting.blockShapes_liftN_weaken a.params.length hb)
     refine ⟨ms' ++ [m'], ?_, by
       simp only [Shape.Motive.AllOf, List.map_append, List.map_cons, List.map_nil] at hms ⊢
       rw [hms, hm.1, hm.2]⟩
