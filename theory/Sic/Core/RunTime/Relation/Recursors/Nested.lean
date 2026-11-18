@@ -406,7 +406,12 @@ observations of `t` by the destructors used at run time are, and when these obse
 an address that `R` relates to `t`, to addresses related to them: the closure observed by a
 destructor of the lifting used at run time runs its branch, which observes the path by the
 destructor that it lifts, at the arguments of the observation, and gives the body of the shape of
-the result on this observation, a path from the field again. -/
+the result on this observation, a path from the field again.
+The recursor is used at run time, `hr`, since the lifting scales the arguments of the destructors
+that it lifts by its grade, while the branches built read them through the destructors lifted; and
+the shapes of the types of the block carry the factor `11ᵖ` and the ownerships of the motives that
+`ρ₁` gives them, `hb`, so that the arguments lifted have the shapes of their motives, at which the
+shape of the instance is that of the lifting of the result. -/
 theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
