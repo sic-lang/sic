@@ -453,6 +453,9 @@ that has the type `D`: the result declared, substituted by this instantiation, i
 destructor `d` of `D`, at the arguments `ā` and at the observations of `t` by the destructors
 before it, with the nesting of this result, where the parameters have the nestings of the
 arguments, and it is lifted at the observation of `t` by `d`.
+The result declared is the result of `d` at the variables of the lifting and at the observations of
+its parameter `y` by the destructors before `d`, a substitution that keeps the nestings of the
+parameters, whatever they are.
 The declaration lifts the result in the signature before the lifting, while the arguments of the
 instance are lifted in the whole signature.
 -/
@@ -498,6 +501,10 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
             ρ.ren).scale (v.recursion * m.factor) ∧
       A₀.nest (fun _ => none) (Nesting.liftN ps₁.length (Nesting.lift (Nesting.ofArgs nsA))) =
         B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA))) ∧
+      (∃ β : Subst (decl.levels + S.length) (.var :: decl.scope) Ξ,
+        A₀ = ((B.substLevels (Level.lifted S.length)).subst (Subst.liftN ps₁.length β)).substLevels
+          ((ls ++ ms.map (·.level)).getFin hl') ∧
+        ∀ {α : Type} (ν : Nesting α decl.scope), Subst.Nests β (hd.nesting ν) (Nesting.lift ν)) ∧
       e₀.subst (Subst.liftN ps₁.length
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)) =
         (t.observation D qs ls ps as d ps₁).rename (Ren.liftN ps₁.length ρ.ren) ∧
@@ -589,8 +596,17 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       hd.obsSubst_posSubstLevels (Level.lifted S.length) _ _ x) _) rfl).substLevels
     ((ls ++ ms.map (·.level)).getFin hl')
   rw [Lifting.substLevels_liftN] at hL₁
+  have hN : ∀ {α : Type} (ν : Nesting α decl.scope), Subst.Nests
+      (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+        ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
+      (hd.nesting ν) (Nesting.lift ν) := fun ν =>
+    Destructors.Pos.nests (o := decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+      (ν' := Nesting.lift ν) (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩) hd
+      (θ := ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
+      (ν := ν) fun x =>
+        .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x, rfl⟩
   refine ⟨m.substLevels ((ls ++ ms.map (·.level)).getFin hl'), rfl, _, _, _, _, hL₁, hI, ?_, ?_,
-    ?_, ?_, ?_⟩
+    ⟨_, rfl, hN⟩, ?_, ?_, ?_⟩
   · refine (?_ : ∀ θ' : Subst k Γ' Ξ',
       (∀ {a} (x : Var (.var :: decl.scope) a), θ' (ρ₁.ren x) =
         ((InstanceArgs.snoc (e := .var) as t).toSubst x).rename
@@ -610,16 +626,8 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       Telescope.subst_subst_of hσ, Telescope.substLevels_substLevels,
       Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
     rfl
-  · have hN : Subst.Nests
-        (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
-          ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
-        (hd.nesting (Nesting.ofArgs nsA)) (Nesting.lift (Nesting.ofArgs nsA)) :=
-      Destructors.Pos.nests (o := decl.liftedObservation D S.length (.ofLists qs ps hq hp))
-        (ν' := Nesting.lift (Nesting.ofArgs nsA)) (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩) hd
-        (θ := ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
-        (ν := Nesting.ofArgs nsA) fun x =>
-          .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x, rfl⟩
-    rw [Term.nest_substLevels, Term.nest_subst_of (hN.liftN ps₁.length), Term.nest_substLevels]
+  · rw [Term.nest_substLevels, Term.nest_subst_of (Subst.Nests.liftN ps₁.length (@hN _ (Nesting.ofArgs nsA))),
+      Term.nest_substLevels]
   · rw [Term.substLevels_rename]
     exact (hI.subst_rename ps₁.length _).trans (congrArg (Term.rename _) (hobs d ps₁))
   · rw [Term.substLevels_subst_of (ls' := (ls ++ ms.map (·.level)).getFin hl')
@@ -686,7 +694,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
             (Subst.liftN ps₁'.length
               (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)))
         m := by
-  obtain ⟨m, hps, _, _, _, _, hL₁, hI, hΘ, h₁, h₂, h₃, h₄⟩ :=
+  obtain ⟨m, hps, _, _, _, _, hL₁, hI, hΘ, h₁, -, h₂, h₃, h₄⟩ :=
     hL.result hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' o'
   exact ⟨m, hps, hΘ, (hL₁.instantiate rfl (hI.liftN ps₁.length)).congr h₁ h₂ h₃ h₄⟩
 
