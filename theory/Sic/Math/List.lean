@@ -115,6 +115,16 @@ theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]
   rw [List.headD_eq_head?_getD, List.head?_drop, h]
   rfl
 
+/-- Two lists of the same length, each element of the second of which is a right unit `c` of `f`,
+combine by `f` into the first one. -/
+theorem List.zipWith_eq_left {α β : Type} {f : α → β → α} {c : β} (hf : ∀ a, f a c = a) :
+    (as : List α) → (bs : List β) → as.length = bs.length → (∀ b ∈ bs, b = c) →
+      List.zipWith f as bs = as
+  | [], [], _, _ => rfl
+  | a :: as, b :: bs, hl, hb => by
+    rw [List.zipWith_cons_cons, hb b List.mem_cons_self, hf,
+      List.zipWith_eq_left hf as bs (Nat.succ.inj hl) fun b' h => hb b' (List.mem_cons_of_mem _ h)]
+
 /-- The elements `ks j` of positions `j < m`, each `x` when the element `gs[j]` satisfies `p`, and
 `g` of the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length
 `m`. -/

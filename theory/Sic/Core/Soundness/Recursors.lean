@@ -95,61 +95,6 @@ theorem Red.iota_subst₀ {decl : TypeDeclaration} {D : Name}
     ((Term.instantiateTerms_terms _ ts).trans
       (congrArg some ((Term.instantiate_eq_subst _ ts).trans (Term.subst_append σ _ u))))
 
-/-- The recursive results `f₁(D, t̄₁)` and `f₂(D, t̄₂)` of closed arguments of fields are equal
-substitutions of the recursive results of `t̄₁` at closed motives `C̄`, when each pair `f₁ D t₁`
-and `f₂ D t₂` at the recursive fields are equal terms of the motive of `D` at `t₁`. -/
-theorem EqSubst.results {names : List Name} {f₁ f₂ : Name → Term 0 [] → Term 0 []} :
-    {Cs : Motives 0 []} → (rs : List (Option Name)) → {ps : List Parameter} →
-      (ts₁ ts₂ : Args 0 [] ps) → {R : Telescope 0 [] (Telescope.resultParams rs ps)} →
-      Motives.results names Cs rs ts₁.terms = some R →
-      Terms.RecRel (fun D t₁ t₂ => ∀ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ →
-        ValidEqTerm₀ sig ι (f₁ D t₁) (f₂ D t₂) (C.subst₀ (Subst₀.single t₁))) rs ts₁.terms
-        ts₂.terms →
-      EqSubst sig ι (Context.empty.append R) (ts₁.results f₁ rs).toSubst
-        (ts₂.results f₂ rs).toSubst
-  | Cs, some D :: rs, p :: ps, .cons t₁ ts₁, .cons t₂ ts₂, R, hR, hQQ => by
-    obtain ⟨hQ, hQs⟩ := hQQ
-    simp only [Args.terms] at hR
-    unfold Motives.results at hR
-    cases hC : Cs.get (names.idxOf D) with
-    | none => simp only [hC] at hR; cases hR
-    | some a =>
-      obtain ⟨n, C⟩ := a
-      cases n with
-      | succ => simp only [hC] at hR; cases hR
-      | zero =>
-        simp only [hC] at hR
-        obtain ⟨R', hR', rfl⟩ := Option.map_eq_some_iff.1 hR
-        let σ : Subst 0 [] [] := fun x => nomatch x
-        have hc : Telescope.subst σ (.cons Grade.zero p (C.subst₀ (Subst₀.single t₁)) R') =
-            .cons Grade.zero p (C.subst₀ (Subst₀.single t₁)) R' :=
-          Telescope.subst_id_of (fun x => by cases x) _
-        have d₁ : Subst.dropN _ (Subst.append (Subst.closedSingle (f₁ D t₁))
-            (ts₁.results f₁ rs).toSubst) .zero = f₁ D t₁ := Subst.dropN_append _ _ .zero
-        have d₂ : Subst.dropN _ (Subst.append (Subst.closedSingle (f₂ D t₂))
-            (ts₂.results f₂ rs).toSubst) .zero = f₂ D t₂ := Subst.dropN_append _ _ .zero
-        show EqSubst sig ι (Context.empty.append (.cons Grade.zero p (C.subst₀ (Subst₀.single t₁)) R'))
-          (Subst.append (Subst.closedSingle (f₁ D t₁)) (ts₁.results f₁ rs).toSubst)
-          (Subst.append (Subst.closedSingle (f₂ D t₂)) (ts₂.results f₂ rs).toSubst)
-        rw [← hc, EqSubst.telescope_cons_iff, d₁, d₂, Term.subst_empty,
-          EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
-        refine ⟨hQ C hC, ?_⟩
-        have hR'' := Motives.results_subst names (Subst.dropN (Γ := [.var]) _
-          (Subst.append (n := (Telescope.resultParams rs ps).length + 1) σ
-            (Subst.append (Subst.closedSingle (f₁ D t₁)) (ts₁.results f₁ rs).toSubst))) rs hR'
-        rw [Motives.subst_rename_of (θ' := σ) (fun x => by cases x),
-          Motives.subst_id_of (fun x => by cases x), Terms.subst_rename_of (θ' := σ)
-            (fun x => by cases x), Terms.subst_id_of (fun x => by cases x)] at hR''
-        exact EqSubst.results rs ts₁ ts₂ hR'' hQs
-  | Cs, none :: rs, _ :: ps, .cons _ ts₁, .cons _ ts₂, R, hR, hQs => by
-    unfold Motives.results at hR
-    exact EqSubst.results rs ts₁ ts₂ hR hQs
-  | _, [], _, _, _, R, hR, _ | _, some _ :: _, [], .nil, .nil, R, hR, _
-  | _, none :: _, [], .nil, .nil, R, hR, _ => by
-    unfold Motives.results at hR
-    cases hR
-    exact (EqSubst.empty_iff _ _).2 trivial
-
 /-- `C[T.c(x̄) / z][σ, t̄ / x̄] = C[σ⇑][T[σ].c(t̄) / z]`: the motive at a constructor, substituted by
 `σ` followed by closed arguments of its fields, is the motive substituted by `σ` at the constructor
 of the instance substituted, applied to the arguments. -/

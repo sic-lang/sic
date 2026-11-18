@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Lifting
+public import Sic.Core.Results
 public import Sic.Core.Syntax.Grades
 
 /-!
@@ -84,46 +84,58 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- A recursor uses the variables of its term `r` times, the term checked in the mode `m ⊙ r`, and
   those of its branches: each branch uses the variables of the scope as `δs i`, the variable of the
   field at the position `l` as `gs i l` and that of its recursive result with the grade `e_l` that
-  the branch gives it; a use of the
-  recursive result of a field runs the recursor on it again, which uses the field `r` times and the
-  variables of the scope as `χ`, so that the uses of a field and of its result must cover `⌜m⌝ · r`
-  times the grade of the field at the instance, and `χ` the uses of each branch and of its recursive
-  results; its motives, which are types, use no variable, checked in the mode `00ᵐ`; in the mode
-  `11ᵐ`, a recursor on a block of which a type has two constructors or more uses its term at run
-  time, whose constructor chooses the branch; a recursor on a block of propositions that has a
-  constructor, whose motives are then propositions, builds a proof from a proof, and is checked only
-  in a mode other than `11ᵐ`, as an observation whose result is a proof, since a proof is related to
-  no value at run time that a recursor could eliminate.
+  the branch gives it; a use of the recursive result of a field runs the recursion on it again, as
+  many times as the factor of the result, `11ᵖ` for a recursive field and the factor of the lifting
+  of its type for a nested one, each of which uses the field `r` times and the variables of the
+  scope as `χ`, so that each result counts its grade times its factor: the uses of a field and of
+  its result must cover `⌜m⌝ · r` times the grade of the field at the instance, and `χ` the uses of
+  each branch and of its recursive results; its motives, which are types, use no variable, checked
+  in the mode `00ᵐ`; in the mode `11ᵐ`, a recursor on a block of which a type has two constructors
+  or more uses its term at run time, whose constructor chooses the branch; a recursor on a block of
+  propositions that has a constructor, whose motives are then propositions, builds a proof from a
+  proof, and is checked only in a mode other than `11ᵐ`, as an observation whose result is a proof,
+  since a proof is related to no value at run time that a recursor could eliminate.
+  The premise `hn` excludes the nested fields until the run time of their results is plugged.
   RFC: `\mathsf{rec}_{▶}` -/
   | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ' : Grade}
       {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
       {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}
-      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
+      {πs : Nat → List Grade}
+      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
         Usage sig 𝟘ᶜ .zeroZero C)
       (ht : Usage sig γ (m ⊙ r) t) (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+      (hR : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+        ∃ R : Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
+            (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
+          Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+            (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) R (πs i))
+      (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+        ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms)
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Usage sig (((δs i).extendGrades (gs i) (con.params (.ofLists qs ps hq hp))).extendResults
-          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
-          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
+          (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (us.grades i))
+          ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
           (con.params (.ofLists qs ps hq hp))) m u)
       (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
         (con.params (.ofLists qs ps hq hp))[l]? = some p →
         m.grade * r * p.usage ≤ gs i l +
-          (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
-            (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) l
-            else Grade.zero) * r)
+          (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r)
       (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         χ ≤ᶜ δs i +ᶜ Telescope.resultSum
-          (us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names))
-          ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ·ᶜ χ)
+          (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (List.zipWith (· * ·) (us.grades i) (πs i)))
+          ((con.fields (.ofLists qs ps hq hp)).nest decl.names) ·ᶜ χ)
       (hr : m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
       (hprop : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
         m ≠ .oneOne) :

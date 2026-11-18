@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Syntax
+import Sic.Core.Syntax.Terms
 
 /-!
 # Nesting
@@ -317,6 +318,12 @@ def Telescope.nestAt {Γ : Scope} {ps : List Parameter} (names : List Name)
     (Θ : Telescope k Γ ps) : Nat → Nest Name :=
   fun i => ((Θ.nest names)[i]?).getD .plain
 
+/-- The nestings of the entries of a telescope are as many as its entries. -/
+theorem Telescope.length_nest {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (Θ.nest names).length = ps.length
+  | [], .nil => rfl
+  | _ :: _, .cons _ _ _ Θ => congrArg (· + 1) (Telescope.length_nest names Θ)
+
 /-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
 those of the recursive and of the nested fields, whose nestings `ns` have a position, in order:
 each result has the parameter of its field, which no judgment reads. -/
@@ -396,6 +403,15 @@ theorem Term.blockNest_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
   | .var .. | .sort _ | .const .. | .ctor .. | .recursor .. | .obs .. | .corec .. =>
     ⟨(fun h => nomatch h), fun h => nomatch h⟩
 
+/-- A position among the nestings of the entries of a telescope holds a type of the block. -/
+theorem Telescope.mem_names_of_direct_mem {Γ : Scope} {names : List Name} {D : Name} :
+    {ps : List Parameter} → {Θ : Telescope k Γ ps} → .direct D ∈ Θ.nest names → D ∈ names
+  | [], .nil, h => nomatch h
+  | _ :: _, .cons _ _ A Θ, h => by
+    rcases List.mem_cons.1 h with h | h
+    · exact Term.blockName_mem ((Term.blockNest_eq_direct A).1 h.symm)
+    · exact Telescope.mem_names_of_direct_mem h
+
 /-- The nesting of the entry at a position of a telescope is a position that holds a type of the
 block when the entry is a recursive field of this type, and only then. -/
 theorem Telescope.nestAt_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
@@ -404,5 +420,28 @@ theorem Telescope.nestAt_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
   | [], .nil, _ => ⟨(fun h => nomatch h), fun h => nomatch h⟩
   | _ :: _, .cons _ _ A _, 0 => Term.blockNest_eq_direct A
   | _ :: _, .cons _ _ _ Θ, i + 1 => Telescope.nestAt_eq_direct Θ i
+
+/-- The type of the block that a field whose type has the nesting `ν` is a recursive field of: the
+type that its position holds, and none for the other nestings. -/
+def Nest.blockName : Nest Name → Option Name
+  | .direct D => some D
+  | _ => none
+
+/-- The recursive fields of a telescope are its fields whose nestings are positions. -/
+theorem Telescope.recursion_eq_map_nest {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) →
+      Θ.recursion names = (Θ.nest names).map Nest.blockName
+  | [], .nil => rfl
+  | _ :: _, .cons _ _ A Θ => by
+    show A.blockName names :: Θ.recursion names =
+      Nest.blockName (A.blockNest names) :: (Θ.nest names).map Nest.blockName
+    rw [Telescope.recursion_eq_map_nest names Θ]
+    congr 1
+    cases hN : A.blockNest names with
+    | direct D => exact (Term.blockNest_eq_direct A).1 hN
+    | plain | inst _ =>
+      cases hA : A.blockName names with
+      | none => rfl
+      | some D => rw [(Term.blockNest_eq_direct A).2 hA] at hN; cases hN
 
 end Sic.Core

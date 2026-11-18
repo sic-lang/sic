@@ -107,21 +107,29 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     {as : InstanceArgs k Γ Prelude.pairScope}
     {t : Term k Γ} {C : Term k (.var :: Γ)} {u : Term k (.var :: .var :: Γ)}
     {γ δ : GradeVector Γ.length}
-    (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t)
-    (hu : Usage (Γ := .var :: .var :: Γ) sig ((δ ∙ g₀) ∙ g₁) m u)
+    (hl : ls.length = Prelude.pair.levels) (hC : Usage sig 𝟘ᶜ .zeroZero C)
+    (ht : Usage sig γ (m ⊙ r) t) (hu : Usage (Γ := .var :: .var :: Γ) sig ((δ ∙ g₀) ∙ g₁) m u)
     (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * Grade.one ≤ g₁) :
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
       (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
-    (gs := fun _ l => if l = 0 then g₀ else g₁) hpre.pair rfl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
+    (gs := fun _ l => if l = 0 then g₀ else g₁) (πs := fun _ => []) hpre.pair rfl hl rfl
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl =>
+      exact fun _ hν ms he => by
+        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu
@@ -155,14 +163,22 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
-    (gs := fun _ _ => Grade.zero) hpre.unit rfl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
+    (gs := fun _ _ => Grade.zero) (πs := fun _ => []) hpre.unit rfl rfl rfl
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨_, .nil⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl =>
+      exact fun _ hν ms he => by
+        subst he; exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu
@@ -193,7 +209,8 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     {as : InstanceArgs k Γ Prelude.stepScope}
     {t : Term k Γ} {C : Term k (.var :: Γ)} {u₀ u₁ : Term k (.var :: Γ)}
     {γ δ₀ δ₁ χ : GradeVector Γ.length}
-    (hC : Usage sig 𝟘ᶜ .zeroZero C) (ht : Usage sig γ (m ⊙ r) t)
+    (hl : ls.length = Prelude.step.levels) (hC : Usage sig 𝟘ᶜ .zeroZero C)
+    (ht : Usage sig γ (m ⊙ r) t)
     (hu₀ : Usage (Γ := .var :: Γ) sig (δ₀ ∙ g₀) m u₀) (hu₁ : Usage (Γ := .var :: Γ) sig (δ₁ ∙ g₁) m u₁)
     (hg₀ : m.grade * r * p ≤ g₀) (hg₁ : m.grade * r * q' ≤ g₁) (hχ₀ : χ ≤ᶜ δ₀) (hχ₁ : χ ≤ᶜ δ₁)
     (hr : m = .oneOne → r.mode = .oneOne) :
@@ -201,10 +218,10 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
       (.recursor r ς χ' "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
-  have hl : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
+  have hle : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
   refine .recursor (decl := Prelude.step) (T := Prelude.stepType)
     (δs := fun i => if i = 0 then δ₀ else δ₁) (gs := fun i _ => if i = 0 then g₀ else g₁)
-    hpre.step rfl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_
+    (πs := fun _ => []) hpre.step rfl hl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -212,6 +229,18 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     match i, hi with
     | 0, rfl => exact ⟨u₀, rfl⟩
     | 1, rfl => exact ⟨u₁, rfl⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl => exact ⟨_, .plain .nil⟩
+    | 1, rfl => exact ⟨_, .plain .nil⟩
+  · intro i j T' con hi
+    match i, hi with
+    | 0, rfl =>
+      exact fun _ hν ms he => by
+        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
+    | 1, rfl =>
+      exact fun _ hν ms he => by
+        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu₀
@@ -226,8 +255,8 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
       | 0, rfl => exact hz _ _ _ hg₁
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact fun x => hl _ _ (hχ₀ x)
-    | 1, rfl => exact fun x => hl _ _ (hχ₁ x)
+    | 0, rfl => exact fun x => hle _ _ (hχ₀ x)
+    | 1, rfl => exact fun x => hle _ _ (hχ₁ x)
   · intro hm _
     exact hr hm
   · intro h
@@ -266,8 +295,8 @@ theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) {κ : Universe k} :
     have hz : ∀ r a : Grade, r * a ≤ r * (a + Grade.zero) + Grade.zero := by decide
     have hs : ∀ r c : Grade, c ≤ r * (Grade.zero + Grade.zero) + c := by decide
     have hm : ∀ (m : Mode) (r : Grade), m.grade * r * Grade.one ≤ r * (m ⊙ r).grade := by decide
-    refine Usage.pairRecursor (g₁ := r * (m ⊙ r).grade) hpre hC₁ hu (.sub ih ?_) (Grade.le_refl _)
-      (hm m r)
+    refine Usage.pairRecursor (g₁ := r * (m ⊙ r).grade) hpre rfl hC₁ hu (.sub ih ?_)
+      (Grade.le_refl _) (hm m r)
     intro y
     cases y using Fin.cases with
     | zero =>
@@ -320,7 +349,7 @@ theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Paramet
     (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]) (p := r) (ρ := χ)
     (as := Prelude.stepArgs (S.pack κs (Telescope.packLevel κs .zero)) (.inst D qs ls ps as))
     (g₀ := r * (m ⊙ r).grade) (g₁ := m.grade) (δ₁ := 𝟘ᶜ) (χ := η)
-    hpre hT' hv' (.sub hn ?_) (.sub hx ?_) (hn' m r) (hd m _ hm) hηδ hη (fun _ => by decide)
+    hpre rfl hT' hv' (.sub hn ?_) (.sub hx ?_) (hn' m r) (hd m _ hm) hηδ hη (fun _ => by decide)
   · have hγ : ∀ x, (Grade.one ·ᶜ γ) x = γ x := fun x => by
       show Grade.one * γ x = γ x
       generalize γ x = a; revert a; decide

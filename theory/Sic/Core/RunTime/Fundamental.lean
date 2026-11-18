@@ -8,7 +8,6 @@ import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.Results.Extension
 import Sic.Core.Results.Substitution
 import Sic.Core.RunTime.Relation.Recursors
-import Sic.Core.RunTime.Relation.Recursors.Results
 import Sic.Core.RunTime.Relation.Rules
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness
@@ -231,21 +230,14 @@ where
         hh hC _ hCs hCt _ hus hRs hut hκ, hu => fun ρ => by
       rename_i Rs
       have hdT := (presuppositions.hasType ht).distinct
-      obtain ⟨γ', χ, δs, gs, hγ, -, htu, hbu, hg, hχ, hr, hprop, husU⟩ :=
-        Usage.inv_recursor hdT h hq hp hu rfl
-      -- The branches have the results of the typing and those of the usage, as many, so that no
-      -- field of a constructor of the block is nested.
-      have hns : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms :=
-        fun i j T' con hi => by
+      obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, hns, hbu, hg, hχ, hr, hprop, -⟩ :=
+        Usage.inv_recursor hdT h hq hl hp hu rfl
+      -- The usage excludes the nested fields, whose recursive results then have the factor `11ᵖ`.
+      have hz : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+          List.zipWith (· * ·) (us.grades i) (πs i) = us.grades i := fun i j T' con hi => by
+        obtain ⟨_, hR⟩ := hRU i j T' con hi
         obtain ⟨u₁, hu₁⟩ := hus i j T' con hi
-        obtain ⟨u₂, hu₂⟩ := husU i j T' con hi
-        have hlen : (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length =
-            (Telescope.resultParams ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
-              (con.params (.ofLists qs ps hq hp))).length :=
-          (Sigma.mk.inj (eq_of_heq (Sigma.mk.inj (Option.some.inj (hu₁.symm.trans hu₂))).2)).1
-        rw [Telescope.recursion_eq_map_nest] at hlen
-        exact Telescope.not_inst_of_length_eq _ _ (Telescope.length_nest _ _) hlen
+        exact hR.zipWith_factors (hns i j T' con hi) (Branches.length_grades hu₁)
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -276,11 +268,6 @@ where
             some ⟨(con.params (.ofLists qs ps hq hp)).length,
               (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ :=
         fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩
-      have hus' : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-          ∃ u, (us.substLevels fun i => (.ofNat (ρ i) : Level 0)).get i =
-            some ⟨(con.params (.ofLists qs ps hq hp)).length,
-              (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ :=
-        fun i j T' con hi => let ⟨_, hu⟩ := husU i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩
       have hRs' : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
@@ -350,44 +337,23 @@ where
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
         obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
-        obtain ⟨u₁, hu₁'⟩ := hus i j T' con hi
-        obtain ⟨πs, hRc⟩ := hRs i j T' con hi
-        obtain ⟨R', hR', eR⟩ := Constructor.ResultTypes.results hRc (hns i j T' con hi)
-        cases hR₀.symm.trans hR'
-        -- The branch is typed in the results of the typing, and used in those of the usage: the
-        -- same results, with the same term, given with other parameters.
-        have key : ∀ (ps₂ : List Parameter)
-            (R₂ : Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length) ps₂)
-            (u₂ : Term k ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend ps₂.length))
-            (γ₂ : GradeVector
-              ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend ps₂.length).length),
-            (⟨_, Rs con⟩ : (ps' : List Parameter) ×
-              Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length) ps') = ⟨ps₂, R₂⟩ →
-            (⟨_, _, u₁⟩ : (n : Nat) × (m : Nat) × Term k ((Γ.extend n).extend m)) =
-              ⟨_, ps₂.length, u₂⟩ →
-            Usage sig γ₂ .oneOne u₂ → ∀ ρ,
-            RunValid sigM ι P ((hΓ.extend _).extend _)
-              (((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append
-                R₂).atLevels ρ) γ₂ (u₂.atLevels ρ)
-              (((C₀.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
-                (Ren.weakenN ps₂.length)).atLevels ρ) := by
-          intro ps₂ R₂ u₂ γ₂ eR eu
-          cases eR
-          cases eu
-          exact fun hU ρ => hasType (hΓ := (hΓ.extend _).extend _) hd hord hι hP
-            (hut i j T' con C₀ u₁ hi hC₀ hu₁') hU ρ
-        have hb := key _ R₀ u₀ _ eR.symm (Option.some.inj (hu₁'.symm.trans hu₀))
-          (hbu i j T' con u₀ hi hu₀) ρ
+        -- The branch is typed in the results of the typing, which are its results `res_C̄`.
+        obtain ⟨_, hRc⟩ := hRs i j T' con hi
+        cases hR₀.symm.trans (Constructor.ResultTypes.results hRc (hns i j T' con hi))
+        have hb := hasType (hΓ := (hΓ.extend _).extend _) hd hord hι hP
+          (hut i j T' con C₀ u₀ hi hC₀ hu₀) (hbu i j T' con u₀ hi hu₀) ρ
         simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
         erw [Term.atCtor_substLevels] at hb
-        simp only [Branches.resultGrades, Branches.grades_substLevels]
+        simp only [Branches.grades_substLevels]
         rw [List.getFin_map]
         exact hb
       have hc := RunValid.recursor (P := P) (γ := γ') hd hM hv hadm has'' hh
-        (Motives.get_substLevels_of _ hC) hCs' hCv hus' hns hrec ht' htr husr
-        (by simpa only [Branches.resultGrades, Branches.grades_substLevels] using hg)
-        (by simpa only [Branches.resultGrades, Branches.grades_substLevels] using hχ)
+        (Motives.get_substLevels_of _ hC) hCs' hCv husN hns hrec ht' htr husr
+        (fun i j T' con l p hi hl => by
+          simpa only [hz i j T' con hi, Branches.grades_substLevels] using hg i j T' con l p hi hl)
+        (fun i j T' con hi => by
+          simpa only [hz i j T' con hi, Branches.grades_substLevels] using hχ i j T' con hi)
         (hr rfl) (fun hq' => match hc : decl.cases with
           | [] => rfl
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))

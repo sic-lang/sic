@@ -1,9 +1,8 @@
 module
 
 public import Sic.Core.Usage
-import Sic.Core.Substitution.Composition
+import Sic.Core.Results.Substitution
 import Sic.Core.Substitution.Levels
-import Sic.Core.Substitution.Rules
 
 /-!
 # Renaming of the Usage
@@ -232,16 +231,22 @@ theorem rename_extendGrades {Γ : Scope} : {Δ : Scope} → (γ : GradeVector Δ
 /-- A vector extended by the grades of the recursive results, renamed under them, is the vector
 renamed, extended. -/
 theorem rename_extendResults {Γ : Scope} : {Δ : Scope} → (γ : GradeVector Δ.length) →
-    (e : Nat → Grade) → (rs : List (Option Name)) → (ps : List Parameter) → (α : Ren Γ Δ) →
-      (γ.extendResults e rs ps).rename (Ren.liftN (Telescope.resultParams rs ps).length α) =
-        (γ.rename α).extendResults e rs ps
-  | _, γ, e, some _ :: rs, _ :: ps, α =>
-    (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) rs ps
+    (e : Nat → Grade) → (ns : List (Nest Name)) → (ps : List Parameter) → (α : Ren Γ Δ) →
+      (γ.extendResults e ns ps).rename (Ren.liftN (Telescope.nestResultParams ns ps).length α) =
+        (γ.rename α).extendResults e ns ps
+  | _, γ, e, .direct _ :: ns, _ :: ps, α =>
+    (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) ns ps
       (Ren.lift α)).trans
-      (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) rs ps)
+      (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) ns ps)
         (rename_commutes.rename_extend γ _ α))
-  | _, γ, e, none :: rs, _ :: ps, α => rename_extendResults γ (fun l => e (l + 1)) rs ps α
-  | _, _, _, [], _, _ | _, _, _, some _ :: _, [], _ | _, _, _, none :: _, [], _ => rfl
+  | _, γ, e, .inst _ :: ns, _ :: ps, α =>
+    (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) ns ps
+      (Ren.lift α)).trans
+      (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) ns ps)
+        (rename_commutes.rename_extend γ _ α))
+  | _, γ, e, .plain :: ns, _ :: ps, α => rename_extendResults γ (fun l => e (l + 1)) ns ps α
+  | _, _, _, [], _, _ | _, _, _, .direct _ :: _, [], _ | _, _, _, .inst _ :: _, [], _
+  | _, _, _, .plain :: _, [], _ => rfl
 
 -- ADE: `wkConₘ` of `step`, in `Graded/Context/Weakening.agda`.
 /-- A vector renamed by the weakening is the vector extended by the grade `𝟘` of the new variable,
@@ -271,12 +276,6 @@ end Sic.Grading.GradeVector
 namespace Sic.Core
 
 open Sic.Grading
-
-/-- The grades of the recursive results of branches substituted are those of the branches. -/
-theorem Branches.resultGrades_subst {k : Nat} {Γ Δ : Scope} (θ : Subst k Γ Δ) (us : Branches k Δ) :
-    (us.subst θ).resultGrades = us.resultGrades := by
-  funext i rs
-  simp only [Branches.resultGrades, Branches.grades_subst]
 
 /-! ## Stability of the Usage -/
 
@@ -330,12 +329,12 @@ where
     | .ctor h hc hq hp hts, hθ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (usageArgs hts hθ)
-    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hp hC ht hul hus hu hg
-        hχ hr hprop, hθ => by
+    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hl hp hC ht hul hus hR hn hu
+        hg hχ hr hprop, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
-      refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hp ?_
-        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_
-        (by rw [Branches.resultGrades_subst]; exact hg) ?_ hr hprop
+      refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hl hp ?_
+        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_ hn ?_
+        (by simp only [Branches.grades_subst]; exact hg) ?_ hr hprop
       · intro j n C hC'
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'
         have ih := usage (hC j n C₀ hC₀) (Subst.liftN_eta_of _ hθ)
@@ -344,18 +343,22 @@ where
       · intro i j T' con hi
         obtain ⟨u, hu'⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu'⟩
+      · intro i j T' con hi
+        obtain ⟨R, hR'⟩ := hR i j T' con hi
+        exact ⟨_, Constructor.ResultTypes.subst hR'
+          (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)⟩
       · intro i j T' con u hi hu'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv _ hu'
         have ih := usage (hu i j T' con u₀ hi hu₀)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
         rw [GradeVector.rename_extendResults _ _ _ _ (Ren.liftN _ α),
           GradeVector.rename_extendGrades _ _ _ α] at ih
-        rw [Branches.resultGrades_subst]
+        rw [Branches.grades_subst]
         exact ih
       · intro i j T' con hi
         have := GradeVector.rename_commutes.rename_le α (hχ i j T' con hi)
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul] at this
-        rw [Branches.resultGrades_subst]
+        rw [Branches.grades_subst]
         exact this
     | .obs h hq hp hd ht hbs hm, hθ => by
       rw [Term.obs_subst, GradeVector.rename_commutes.rename_add]

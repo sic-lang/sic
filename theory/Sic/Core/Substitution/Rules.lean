@@ -8,9 +8,9 @@ import Sic.Core.Substitution.Levels
 # Substitutions of the Rules
 
 The substitutions that the rules of annexes 14 and 18 of RFC 36 build: the motive `C[T.c(x̄) / z]` at
-a constructor, the corecursor at the variables of its state, the recursive results of a branch, the
-motives and the branches at a position and the observations, with their commutation with the
-renamings, the substitutions and the instantiation of the levels.
+a constructor, the corecursor at the variables of its state, the motives and the branches at a
+position and the observations, with their commutation with the renamings, the substitutions and the
+instantiation of the levels.
 
 ADE have none of them: their eliminators substitute their constructors in their motives directly,
 and they have no codata types.
@@ -347,137 +347,6 @@ theorem Term.atCtor_rename_weaken {Γ Δ : Scope} (C : Term k Γ) (D : Name) (qs
     Term.subst₀_rename_of (α := fun x => .succ (Ren.weakenN fs.length x))
       (σ' := fun x => .var (Ren.weakenN fs.length x)) (fun _ => rfl)]
   exact Term.subst₀_eq_rename_of (fun _ => rfl) C
-
-/-! ## Recursive Results -/
-
--- ADE: none.
-/-- `res_C̄(x̄)`: the recursive results of the fields `x̄`, whose entries have the parameters `ps` and
-whose recursive fields the types `rs` of the block whose names are `names` mark, a variable
-`y : C_D[x / z]` for each recursive field `x` of the type `D`, at the motive `C_D` of `D` in `C̄`,
-in order, if `C̄` has a motive without non-uniform parameters for each of these types: the results
-of the recursive fields alone, without those of the nested fields, which the run time reads. -/
-def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (rs : List (Option Name)) →
-    {ps : List Parameter} → Terms k Δ → Option (Telescope k Δ (Telescope.resultParams rs ps))
-  | _, Cs, some D :: rs, p :: ps, .cons x xs =>
-    match Cs.get (names.idxOf D) with
-    | some ⟨0, C⟩ => (Motives.results names (Cs.rename Ren.weaken) rs (ps := ps)
-        (xs.rename Ren.weaken)).map (Telescope.cons Grade.zero p (C.subst₀ (Subst₀.single x)))
-    | _ => none
-  | _, Cs, none :: rs, _ :: ps, .cons _ xs => Motives.results names Cs rs (ps := ps) xs
-  | _, _, some _ :: _, _ :: _, .nil | _, _, none :: _, _ :: _, .nil => none
-  | _, _, [], _, _ | _, _, some _ :: _, [], _ | _, _, none :: _, [], _ => some .nil
-
--- ADE: none.
-/-- `f(D, t̄)` for the arguments `t̄` of a telescope whose entries have the parameters `ps`: the term
-`f D t` for each term `t` of a recursive field of the type `D` that the types `rs` of the block
-mark, in order, the arguments of the results of the recursive fields alone, which the run time
-reads. -/
-def Args.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
-    (rs : List (Option Name)) → {ps : List Parameter} → Args k Γ ps →
-      Args k Γ (Telescope.resultParams rs ps)
-  | some D :: rs, _ :: _, .cons t ts => .cons (f D t) (Args.results f rs ts)
-  | none :: rs, _ :: _, .cons _ ts => Args.results f rs ts
-  | [], _, _ | some _ :: _, [], .nil | none :: _, [], .nil => .nil
-
--- ADE: none.
-/-- `res_C̄(Θ_c)`: the recursive results of the fields of the constructor `c` at the instance `I`, in
-a block whose types have the names `names`, in the scope `Γ` extended by its fields, for the motives
-`C̄` in `Γ`. -/
-def Constructor.results {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ) (I : Instance j g)
-    (names : List Name) (Cs : Motives k Γ) :
-    Option (Telescope k (Γ.extend (c.params I).length) (c.resultParams I names)) :=
-  Motives.results names (Cs.rename (Ren.weakenN _)) ((c.fields I).recursion names)
-    (Args.bound (Γ := Γ) (c.params I)).terms
-
-/-- The recursive results of terms, substituted, are those of the terms substituted, at the motives
-substituted. -/
-theorem Motives.results_subst (names : List Name) :
-    {Γ Δ : Scope} → (θ : Subst k Γ Δ) → {Cs : Motives k Δ} → (rs : List (Option Name)) →
-      {ps : List Parameter} → {xs : Terms k Δ} → {R : Telescope k Δ (Telescope.resultParams rs ps)} →
-      Motives.results names Cs rs xs = some R →
-        Motives.results names (Cs.subst θ) rs (xs.subst θ) = some (R.subst θ)
-  | _, _, θ, Cs, some D :: rs, p :: ps, .cons x xs, R, h => by
-    unfold Motives.results at h
-    cases hC : Cs.get (names.idxOf D) with
-    | none => simp only [hC] at h; cases h
-    | some a =>
-      obtain ⟨n, C⟩ := a
-      cases n with
-      | succ => simp only [hC] at h; cases h
-      | zero =>
-        simp only [hC] at h
-        obtain ⟨R', hR', rfl⟩ := Option.map_eq_some_iff.1 h
-        have ih := Motives.results_subst names (Subst.lift θ) rs hR'
-        rw [Motives.subst_lift_rename_weaken, Terms.subst_lift_rename_weaken] at ih
-        unfold Motives.results
-        simp only [Terms.subst, Motives.get_subst θ hC]
-        simp only [ih, Telescope.subst]
-        rw [Term.subst_subst₀_of (Subst₀.Swaps.single x θ) C]
-        rfl
-  | _, _, θ, Cs, none :: rs, _ :: ps, .cons _ xs, R, h => by
-    unfold Motives.results at h ⊢
-    exact Motives.results_subst names θ rs h
-  | _, _, _, _, some _ :: _, _ :: _, .nil, _, h | _, _, _, _, none :: _, _ :: _, .nil, _, h => by
-    unfold Motives.results at h; cases h
-  | _, _, _, _, [], _, _, R, h | _, _, _, _, some _ :: _, [], _, R, h
-  | _, _, _, _, none :: _, [], _, R, h => by
-    unfold Motives.results at h ⊢
-    cases h
-    rfl
-
-/-- Recursive results of terms whose levels are instantiated, at the motives instantiated, are those
-of the terms, instantiated. -/
-theorem Motives.results_substLevels_inv {k' : Nat} (ls' : Fin k → Level k') (names : List Name) :
-    {Δ : Scope} → {Cs : Motives k Δ} → (rs : List (Option Name)) →
-      {ps : List Parameter} → {xs : Terms k Δ} →
-      {R' : Telescope k' Δ (Telescope.resultParams rs ps)} →
-      Motives.results names (Cs.substLevels ls') rs (xs.substLevels ls') = some R' →
-        ∃ R, Motives.results names Cs rs xs = some R ∧ R' = R.substLevels ls'
-  | _, Cs, some D :: rs, p :: ps, .cons x xs, R', h => by
-    unfold Motives.results at h
-    simp only [Terms.substLevels] at h
-    cases hC' : (Cs.substLevels ls').get (names.idxOf D) with
-    | none => simp only [hC'] at h; cases h
-    | some a =>
-      obtain ⟨n, C'⟩ := a
-      cases n with
-      | succ => simp only [hC'] at h; cases h
-      | zero =>
-        obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
-        simp only [hC'] at h
-        obtain ⟨R'', hR'', rfl⟩ := Option.map_eq_some_iff.1 h
-        rw [← Motives.substLevels_rename, ← Terms.substLevels_rename] at hR''
-        obtain ⟨R₀, hR₀, rfl⟩ := Motives.results_substLevels_inv ls' names rs hR''
-        refine ⟨.cons Grade.zero p (C₀.subst₀ (Subst₀.single x)) R₀, ?_, ?_⟩
-        · unfold Motives.results
-          simp only [hC₀, hR₀]
-          rfl
-        · show Telescope.cons Grade.zero p _ _ = Telescope.cons Grade.zero p _ _
-          rw [Term.substLevels_subst₀_of (σ := Subst₀.single x)
-            (σ' := Subst₀.single (x.substLevels ls')) (fun y => by cases y <;> rfl) C₀]
-          rfl
-  | _, Cs, none :: rs, _ :: ps, .cons _ xs, R', h => by
-    unfold Motives.results at h ⊢
-    exact Motives.results_substLevels_inv ls' names rs h
-  | _, _, some _ :: _, _ :: _, .nil, _, h | _, _, none :: _, _ :: _, .nil, _, h => by
-    unfold Motives.results at h; cases h
-  | _, _, [], _, _, R', h | _, _, some _ :: _, [], _, R', h
-  | _, _, none :: _, [], _, R', h => by
-    unfold Motives.results at h
-    cases h
-    exact ⟨.nil, by unfold Motives.results; rfl, rfl⟩
-
-/-- The recursive results of a constructor at motives whose levels are instantiated are its
-recursive results at the motives, instantiated. -/
-theorem Constructor.results_substLevels_inv {k' : Nat} (ls' : Fin k → Level k') {j g k'' : Nat}
-    {Δ Γ : Scope} {c : Constructor j g k'' Δ} {I : Instance j g} {names : List Name}
-    {Cs : Motives k Γ} {R' : Telescope k' (Γ.extend (c.params I).length) (c.resultParams I names)}
-    (h : c.results I names (Cs.substLevels ls') = some R') :
-    ∃ R, c.results I names Cs = some R ∧ R' = R.substLevels ls' := by
-  unfold Constructor.results at h ⊢
-  rw [← Motives.substLevels_rename, ← Args.substLevels_bound ls' (c.params I),
-    Args.terms_substLevels] at h
-  exact Motives.results_substLevels_inv ls' names _ h
 
 /-! ## Recursors at a Variable -/
 

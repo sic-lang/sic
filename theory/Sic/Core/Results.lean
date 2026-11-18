@@ -160,6 +160,34 @@ theorem Terms.ResultTypes.length_factors {sig : Signature} {v : Lifting.Variable
   | _, _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg (· + 1) h.length_factors
   | _, _, _, _, _, _, _, _, _, _, .nested _ h => congrArg (· + 1) h.length_factors
 
+/-- The recursive results of fields none of which is nested have the factor `11ᵖ` each, that of a
+recursion on the field itself. -/
+theorem Terms.ResultTypes.factors_of_not_inst {sig : Signature} {v : Lifting.Variables} :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
+        ∀ π ∈ πs, π = Grade.linearLinear
+  | _, _, _, _, _, _, _, _, _, _, .nil, _ => fun _ h => nomatch h
+  | _, _, _, _, _, _, _, _, _, _, .plain h, hn =>
+    h.factors_of_not_inst fun ν hν => hn ν (List.mem_cons_of_mem _ hν)
+  | _, _, _, _, _, _, _, _, _, _, .recursive _ h, hn => fun π hπ => by
+    rcases List.mem_cons.1 hπ with rfl | hπ
+    · rfl
+    · exact h.factors_of_not_inst (fun ν hν => hn ν (List.mem_cons_of_mem _ hν)) π hπ
+  | _, _, _, _, _, _, _, _, _, _, .nested (ms := ms) _ _, hn =>
+    absurd rfl (hn _ List.mem_cons_self ms)
+
+/-- Grades of the recursive results of fields none of which is nested, one for each result,
+multiplied by the factors of the results, are these grades. -/
+theorem Terms.ResultTypes.zipWith_factors {sig : Signature} {v : Lifting.Variables} {Δ' Δ : Scope}
+    {ρ : Lifting k Δ' Δ} {ns : List (Nest Name)} {ps : List Parameter} {As xs : Terms k Δ}
+    {ps' : List Parameter} {R : Telescope k Δ' ps'} {πs : List Grade}
+    (h : Terms.ResultTypes sig v ρ ns ps As xs R πs) (hn : ∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms)
+    {es : List Grade} (hes : es.length = (Telescope.nestResultParams ns ps).length) :
+    List.zipWith (· * ·) es πs = es :=
+  List.zipWith_eq_left Grade.modality.semiring.mul_one es πs (hes.trans h.length_factors.symm)
+    (h.factors_of_not_inst hn)
+
 /-! ## Terms of the Recursive Results -/
 
 -- ADE: none.

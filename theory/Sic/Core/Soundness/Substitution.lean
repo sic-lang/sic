@@ -89,20 +89,6 @@ theorem Args.bound_subst_append {Γ : Scope} (σ : Subst k [] Γ) {ps : List Par
     (ts : Args k [] ps) : (Args.bound (Γ := Γ) ps).subst (Subst.append σ ts.toSubst) = ts := by
   rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst]
 
-/-- The recursive results of the fields of a constructor, substituted by a closed substitution `σ` of
-the context followed by closed arguments of the fields, are those of the arguments, at the motives
-substituted by `σ`. -/
-theorem Constructor.results_subst_append {j g k' : Nat} {Δ Γ : Scope}
-    {c : Constructor j g k' Δ} {I : Instance j g} {names : List Name} {Cs : Motives k Γ}
-    {R : Telescope k (Γ.extend (c.params I).length) (c.resultParams I names)}
-    (h : c.results I names Cs = some R) (σ : Subst k [] Γ) (ts : Args k [] (c.params I)) :
-    Motives.results names (Cs.subst σ) ((c.fields I).recursion names) ts.terms =
-      some (R.subst (Subst.append σ ts.toSubst)) := by
-  have h' := Motives.results_subst names (Subst.append σ ts.toSubst) _ h
-  rwa [Motives.subst_rename_of (α := Ren.weakenN (c.params I).length) (θ' := σ)
-      (fun x => Subst.append_weakenN σ _ x), ← Args.terms_subst,
-    Args.bound_subst_append] at h'
-
 /-- A term renamed under `n` new variables, substituted by `σ` followed by a substitution of them,
 is the term substituted by `σ`. -/
 theorem Term.subst_append_rename_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
@@ -210,41 +196,6 @@ theorem Motives.get_rename {Γ Δ : Scope} (α : Ren Γ Δ) :
   | .nil, _, _, _, h => nomatch h
   | .cons .., 0, _, _, h => by cases h; rfl
   | .cons _ _ Cs, _ + 1, _, _, h => Motives.get_rename α (Cs := Cs) h
-
-/-- Fields have recursive results when the motives have a motive without non-uniform parameters for
-each type of the block. -/
-theorem Motives.results_isSome (names : List Name) :
-    {Δ : Scope} → {Cs : Motives k Δ} →
-      (∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) → (rs : List (Option Name)) →
-      {ps : List Parameter} → (xs : Args k Δ ps) → rs.length = ps.length →
-      (∀ D, some D ∈ rs → D ∈ names) →
-        ∃ R, Motives.results names Cs rs (ps := ps) xs.terms = some R
-  | _, Cs, hCs, some D :: rs, p :: ps, .cons x xs, hl, hrs => by
-    obtain ⟨C, hC⟩ := hCs D (hrs D (List.mem_cons_self ..))
-    obtain ⟨R, hR⟩ := Motives.results_isSome names (Cs := Cs.rename Ren.weaken)
-      (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩) rs (xs.rename Ren.weaken)
-      (Nat.succ.inj hl) (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
-    rw [Args.terms_rename] at hR
-    refine ⟨.cons Grade.zero p (C.subst₀ (Subst₀.single x)) R, ?_⟩
-    unfold Motives.results
-    simp only [Args.terms, hC, hR]
-    rfl
-  | _, Cs, hCs, none :: rs, _ :: ps, .cons _ xs, hl, hrs => by
-    obtain ⟨R, hR⟩ := Motives.results_isSome names hCs rs xs (Nat.succ.inj hl)
-      (fun D hD => hrs D (List.mem_cons_of_mem _ hD))
-    exact ⟨R, by unfold Motives.results; exact hR⟩
-  | _, _, _, [], _, _, _, _ => ⟨.nil, by unfold Motives.results; rfl⟩
-  | _, _, _, _ :: _, [], .nil, hl, _ => nomatch hl
-
-/-- A constructor has recursive results when the motives have a motive without non-uniform
-parameters for each type of the block. -/
-theorem Constructor.results_isSome {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ)
-    (I : Instance j g) {names : List Name} {Cs : Motives k Γ}
-    (hCs : ∀ D ∈ names, ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩) :
-    ∃ R, c.results I names Cs = some R :=
-  Motives.results_isSome names (fun D hD => let ⟨_, hC⟩ := hCs D hD; ⟨_, Motives.get_rename _ hC⟩)
-    _ (Args.bound (c.params I)) (Telescope.length_recursion names _)
-    (fun _ hD => Telescope.mem_recursion hD)
 
 /-- `g[σ⇑⇑][t̄ / z̄][s̄ / ȳ] = g[σ, s̄, t̄]`: a branch of a corecursor, substituted by a closed
 substitution `σ` under the variables `ȳ` of its state and `z̄` of its arguments, instantiated by

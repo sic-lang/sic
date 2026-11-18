@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Usage
+import Sic.Core.Results.Extension
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -65,9 +66,12 @@ where
     | .sort => .sort
     | .inst h hq hp has => .inst ⟨hs h.1, h.2⟩ hq hp (usageInstanceArgs hs has)
     | .ctor h hc hq hp hts => .ctor ⟨hs h.1, h.2⟩ hc hq hp (usageArgs hs hts)
-    | .recursor h hq hp hC ht hul hus hu hg hχ hr hprop =>
-      .recursor ⟨hs h.1, h.2⟩ hq hp (fun j n C hC' => usage hs (hC j n C hC')) (usage hs ht) hul
-        hus (fun i j T' con u hi hu' => usage hs (hu i j T' con u hi hu')) hg hχ hr hprop
+    | .recursor h hq hl hp hC ht hul hus hR hn hu hg hχ hr hprop =>
+      .recursor ⟨hs h.1, h.2⟩ hq hl hp (fun j n C hC' => usage hs (hC j n C hC')) (usage hs ht)
+        hul hus
+        (fun i j T' con hi => (hR i j T' con hi).imp fun _ =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h)) hn
+        (fun i j T' con u hi hu' => usage hs (hu i j T' con u hi hu')) hg hχ hr hprop
     | .obs h hq hp hd ht hbs hm => .obs ⟨hs h.1, h.2⟩ hq hp hd (usage hs ht) (usageArgs hs hbs) hm
     | .corec h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr =>
       .corec ⟨hs h.1, h.2⟩ hq hp hh hS (fun j ps'' S' hS' => usageTelescope hs (hSu j ps'' S' hS'))

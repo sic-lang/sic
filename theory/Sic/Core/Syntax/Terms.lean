@@ -40,16 +40,6 @@ theorem Term.blockName_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name}
   | .var .., h | .sort _, h | .const .., h | .ctor .., h | .recursor .., h | .obs .., h
   | .corec .., h => by cases h
 
-/-- The type of a recursive field of a telescope is a type of the block. -/
-theorem Telescope.recursionAt_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
-    {ps : List Parameter} → {Θ : Telescope k Γ ps} → {i : Nat} → Θ.recursionAt names i = some D →
-      D ∈ names
-  | [], .nil, _, h => by simp [Telescope.recursionAt, Telescope.recursion] at h
-  | _ :: _, .cons _ _ A _, 0, h => Term.blockName_mem (by simpa [Telescope.recursionAt,
-      Telescope.recursion] using h)
-  | _ :: _, .cons _ _ _ Θ, i + 1, h => Telescope.recursionAt_mem (Θ := Θ) (i := i)
-      (by simpa [Telescope.recursionAt, Telescope.recursion] using h)
-
 /-- A telescope has a type of the block or none for each of its entries. -/
 theorem Telescope.length_recursion {k : Nat} {Γ : Scope} (names : List Name) :
     {ps : List Parameter} → (Θ : Telescope k Γ ps) → (Θ.recursion names).length = ps.length
@@ -138,5 +128,16 @@ theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
   | .nil, _, _, h => nomatch h
   | .cons .., 0, _, _ => Nat.zero_lt_succ _
   | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
+
+/-- The grades of the recursive results of the branch at a position of branches are as many as its
+recursive results. -/
+theorem Branches.length_grades {k : Nat} {Γ : Scope} :
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} →
+      us.get i = some ⟨n, m, u⟩ → (us.grades i).length = m
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons _ _ es _ _, 0, _, _, _, h => by
+    cases h
+    exact es.length_toList
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.length_grades (us := us) h
 
 end Sic.Core

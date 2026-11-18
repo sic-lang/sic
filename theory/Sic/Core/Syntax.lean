@@ -329,15 +329,6 @@ def Telescope.recursionAt {k : Nat} {Γ : Scope} {ps : List Parameter} (names : 
     (Θ : Telescope k Γ ps) : Nat → Option Name :=
   fun i => ((Θ.recursion names)[i]?).join
 
--- ADE: none.
-/-- The parameters of the recursive results of the fields whose entries have the parameters `ps`,
-those of the recursive fields, which the types `rs` of the block mark, in order: each result has the
-parameter of its field, which no judgment reads. -/
-def Telescope.resultParams : List (Option Name) → List Parameter → List Parameter
-  | some _ :: rs, p :: ps => p :: Telescope.resultParams rs ps
-  | none :: rs, _ :: ps => Telescope.resultParams rs ps
-  | [], _ | some _ :: _, [] | none :: _, [] => []
-
 /-- The number of the motives `C̄`. -/
 def Motives.length {k : Nat} {Γ : Scope} : Motives k Γ → Nat
   | .nil => 0
@@ -481,12 +472,6 @@ structure Constructor (j g k : Nat) (Δ : Scope) where
   params : Instance j g → List Parameter
   /-- The fields `Θ`, for each instance. -/
   fields : (I : Instance j g) → Telescope k Δ (params I)
-
-/-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
-whose types have the names `names`. -/
-abbrev Constructor.resultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)
-    (I : Instance j g) (names : List Name) : List Parameter :=
-  Telescope.resultParams ((c.fields I).recursion names) (c.params I)
 
 -- ADE: none.
 /-- `D ▶ ζ ⊕ Π ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it

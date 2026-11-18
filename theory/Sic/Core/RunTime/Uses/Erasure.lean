@@ -138,26 +138,30 @@ theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_le_run {Γ : Scope}
 
 /-- The sum of the grades of the recursive results of a branch has, at run time, a multiplicity
 below the sum of multiplicities above those of their grades. -/
-theorem Telescope.run_resultSum_le : (rs : List (Option Name)) → (ps : List Parameter) →
-    rs.length = ps.length → (es : List Grade) → es.length = (Telescope.resultParams rs ps).length →
-    (πs : Fin (Telescope.resultParams rs ps).length → Multiplicity) →
-    (∀ (j : Fin (Telescope.resultParams rs ps).length) (e : Grade), es[(j : Nat)]? = some e →
+theorem Telescope.run_resultSum_le : (ns : List (Nest Name)) → (ps : List Parameter) →
+    ns.length = ps.length → (es : List Grade) →
+    es.length = (Telescope.nestResultParams ns ps).length →
+    (πs : Fin (Telescope.nestResultParams ns ps).length → Multiplicity) →
+    (∀ (j : Fin (Telescope.nestResultParams ns ps).length) (e : Grade), es[(j : Nat)]? = some e →
       e.run ≤ πs j) →
-    (Telescope.resultSum (Telescope.resultGrades rs es) rs).run ≤ Multiplicity.sum πs
+    (Telescope.resultSum (Telescope.resultGrades ns es) ns).run ≤ Multiplicity.sum πs
   | [], [], _, _, _, _, _ => by
     show Multiplicity.zero ≤ Multiplicity.zero
     decide
-  | none :: rs, _ :: ps, hl, es, he, πs, hk => by
-    show (Telescope.resultSum (fun l => Telescope.resultGrades (none :: rs) es (l + 1)) rs).run ≤ _
-    exact Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es he πs hk
-  | some _ :: rs, _ :: ps, hl, [], he, _, _ => nomatch he
-  | some _ :: rs, _ :: ps, hl, e :: es, he, πs, hk => by
-    let j₀ : Fin (Telescope.resultParams rs ps).length.succ := ⟨0, Nat.zero_lt_succ _⟩
-    show (e + Telescope.resultSum (fun l => Telescope.resultGrades rs es l) rs).run ≤
+  | .plain :: ns, _ :: ps, hl, es, he, πs, hk => by
+    show (Telescope.resultSum (fun l => Telescope.resultGrades (.plain :: ns) es (l + 1)) ns).run ≤
+      _
+    exact Telescope.run_resultSum_le ns ps (Nat.succ.inj hl) es he πs hk
+  | .direct _ :: ns, _ :: ps, hl, [], he, _, _ | .inst _ :: ns, _ :: ps, hl, [], he, _, _ =>
+    nomatch he
+  | .direct _ :: ns, _ :: ps, hl, e :: es, he, πs, hk
+  | .inst _ :: ns, _ :: ps, hl, e :: es, he, πs, hk => by
+    let j₀ : Fin (Telescope.nestResultParams ns ps).length.succ := ⟨0, Nat.zero_lt_succ _⟩
+    show (e + Telescope.resultSum (fun l => Telescope.resultGrades ns es l) ns).run ≤
       πs j₀ + Multiplicity.sum fun j => πs j.succ
     rw [(Grade.run_op _ _).1]
     exact Multiplicity.add_le_add' _ _ _ _ (hk j₀ e rfl)
-      (Telescope.run_resultSum_le rs ps (Nat.succ.inj hl) es (Nat.succ.inj he)
+      (Telescope.run_resultSum_le ns ps (Nat.succ.inj hl) es (Nat.succ.inj he)
         (fun j => πs j.succ) fun j e' h => hk j.succ e' (by simpa using h))
 
 /-! ## Branches -/
@@ -294,7 +298,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (us := us) (χ := χ)
-      (δs := δs) (gs := gs) h hq hp _ ht hul hus hu hg hχ _ _ => by
+      (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hn hu hg hχ _ _ => by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
@@ -313,33 +317,24 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         (l := decl.recursivePositions (.ofLists qs ps hq hp)) (i := i)
         (x := ((con.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
           fun y => y.1.map fun _ => y.2) (by simp [TypeDeclaration.recursivePositions, hc])
-      rw [hfs, hes]
-      have hrg : us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) =
-          Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)
-            gs'.toList := by
-        rw [Branches.resultGrades, hgs']
-      have hlr := Telescope.length_recursion decl.names (con.fields (.ofLists qs ps hq hp))
+      rw [hfs, hes, Telescope.recursion_eq_map_nest]
+      have hn' := hn i j T' con hc
+      -- The factors of the recursive results, of fields none of which is nested, are `11ᵖ`.
+      obtain ⟨R, hR'⟩ := hR i j T' con hc
+      have hz : List.zipWith (· * ·) (us.grades i) (πs i) = us.grades i :=
+        hR'.zipWith_factors hn' (Branches.length_grades hu')
+      have hln := Telescope.length_nest decl.names (con.fields (.ofLists qs ps hq hp))
       refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => hj ((Mode.erased_values.1 _).2 h0)⟩
       · -- The erased branch reads the new variables below the grades that its usage gives them.
         have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm
           (hu i j T' con u' hc hu')
-        rw [hrg, GradeVector.extendResults_resultGrades] at ih
+        rw [hgs', GradeVector.extendResults_resultGrades] at ih
         refine .sub (Target.Usage.cast _ ih) (MultiplicityVector.extendBinders_le_run _ _ _ _ _
           (fun l => ?_) (fun l => ?_))
         · obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
             ⟨_, List.getElem?_eq_getElem l.2⟩
           have hgl := Grade.run_le (hg i j T' con l p' hc hp')
-          rw [show (if ((con.fields (.ofLists qs ps hq hp)).recursionAt decl.names l).isSome then
-                us.resultGrades i ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) l
-              else Grade.zero) = Telescope.resultGrades
-                ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) gs'.toList l by
-            rw [hrg]
-            split
-            · rfl
-            · rename_i hn
-              exact (Telescope.resultGrades_of_none _ _ _
-                (by simpa [Telescope.recursionAt] using hn)).symm] at hgl
-          rw [← Telescope.resultGrades_eq_idxOf _ _ 0 l, Nat.zero_add] at hgl
+          rw [hz, hgs', ← Telescope.resultGrades_eq_idxOf _ _ 0 l hn', Nat.zero_add] at hgl
           rw [hm] at hgl
           simp only [Mode.grade, Grade.modality.semiring.one_mul] at hgl
           rw [(Grade.run_op _ _).1] at hgl
@@ -350,13 +345,13 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
           exact (Multiplicity.modality.meet.meet_idem _).symm
       · -- The bound of the recursions.
         have hχi := GradeVector.run_commutes.run_le (hχ i j T' con hc)
-        rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul, hrg] at hχi
+        rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul, hz, hgs'] at hχi
         refine MultiplicityVector.le_trans hχi (MultiplicityVector.add_le_add'
           (MultiplicityVector.le_refl _) fun x => Multiplicity.mul_le_mul_right' _ _ _ ?_)
-        refine Telescope.run_resultSum_le _ _ hlr _ (by simp) _ fun j' e he => ?_
+        refine Telescope.run_resultSum_le _ _ hln _ (by simp) _ fun j' e he => ?_
         rw [List.getElem?_eq_getElem (by simp), _root_.Vector.getElem_toList] at he
         cases Option.some.inj he
-        have hpl := Telescope.length_positions _ hlr 0
+        have hpl := Telescope.length_positions _ hln hn' 0
         split
         · -- An erased result runs no recursion, and has no use at run time.
           rename_i hS
