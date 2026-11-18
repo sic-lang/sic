@@ -587,8 +587,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rfl
     obtain rfl : i' = hpos'.index :=
       Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hLm hiL))
-    have hpu : p ∉ Mode.oneOne.erased := fun hpe => hp'u ((Mode.erased_values.1 _).2
-      (hp'g ▸ Lifting.resultGrade_run_eq_zero _ _ ((Mode.erased_values.1 _).1 hpe)))
+    have hpu : p ∉ Mode.oneOne.erased := fun hp₀ => hp'u ((Mode.erased_values.1 _).2
+      (hp'g ▸ Lifting.resultGrade_run_eq_zero _ _ ((Mode.erased_values.1 _).1 hp₀)))
     have hprun : p'.run ≠ .zero := fun h0 => hp'u ((Mode.erased_values.1 p').2 h0)
     obtain ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ, hAbs, hNest⟩ := horacle d' p q ς ps₁ Ξ Θ B ψ hpos hpu
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
