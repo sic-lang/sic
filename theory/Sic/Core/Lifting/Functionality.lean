@@ -19,6 +19,9 @@ and an instance without position having an argument lifted, without position eit
 
 The factors are functions of the result of a destructor of a lifting too, in such a signature: an
 instance of a lifting reads one list of destructors, whose factors are unique by induction.
+Without block, the factor that the lifting of a type gives is the factor of this type lifted: the
+motive of a variable lifted reads its factor from the lifting of the scope, and the lifting of an
+instance takes its factor as a premise.
 
 ADE have no declared types, and no liftings.
 -/
@@ -216,6 +219,18 @@ theorem Term.Factor.unique_inst (hd : sig.Distinct) {Γ₁ Γ₂ Γ' Δ : Scope}
     (h₂ : Term.Factor sig ρ₂ (.inst D qs ls ps as) π₂) : π₁ = π₂ :=
   Term.Factor.unique hd (ρ := { ρ₁ with motive := fun _ => none }) (fun _ _ _ _ _ _ _ _ hx => nomatch hx)
     (h₁.inst_congr _ ls as) (h₂.inst_congr _ ls as)
+
+-- ADE: none.
+/-- In a lifting without block, the factor of the recursive result that a type lifted is the type
+of is the factor of this type lifted, so that the lifting of a destructor reads it from the lifting
+of its result. -/
+theorem Term.Lifts.factor {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ D, ρ.block D = none)
+    {n : Nest Name} {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {m : Lifting.Result k}
+    (h : Term.Lifts sig v ρ n e A A' m) : Term.Factor sig ρ A' m.factor := by
+  cases h with
+  | var hx _ => exact .var hx _
+  | block hD => cases (hρ _).symm.trans hD
+  | inst _ _ _ _ _ _ _ _ _ hπ => exact hπ
 
 
 /-! ## Variables Lifted -/
