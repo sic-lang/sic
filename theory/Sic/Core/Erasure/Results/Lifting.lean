@@ -522,6 +522,48 @@ theorem TypeDeclaration.lifting_names {decl : TypeDeclaration} {F : Name} {S : L
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns} :
     (decl.lifting F S ns body).names = [Lifting.name F S] := rfl
 
+/-- The shape of the lifting of the codata type `D` at the positions `S` of the parameters, along
+the entries of a signature whose names are distinct from the declaration of this lifting on, is
+that of the destructors of `D` at the instance, where the parameters at these positions have the
+shapes of `m̄'`, along the entries after the declaration. -/
+theorem Signature.shapes_lifting (hsig : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : sig.HasCodataType D decl T)
+    {S : List Nat} {ns : List Name}
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (sig₁ : Signature) {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hp : ps.length = decl.grades) {ms' : List Shape.Motive} (hfst : (S.zip ms').map (·.1) = S) :
+    sig.shapes v (.typeDeclaration (decl.lifting D S ns body) :: sig₁) D qs ps (S.zip ms') =
+      some (((T.body (.ofLists qs ps hq hp)).shape sig v (sig.shapes v sig₁) D
+          (Shape.motives (S.zip ms'))).1,
+        ((T.body (.ofLists qs ps hq hp)).shape sig v (sig.shapes v sig₁) D
+          (Shape.motives (S.zip ms'))).2.getD .noneNone) := by
+  obtain ⟨hdecl, hT, hTn⟩ := hT
+  have hD : D ∈ decl.names := hTn ▸ TypeDeclaration.codata_name_mem_names hT
+  have hfind : decl.codataTypes.find? (·.name == D) = some T := by
+    obtain ⟨T₀, hT₀⟩ := Option.isSome_iff_exists.1
+      ((List.find?_isSome (p := fun (x : CodataType decl.sorts decl.grades decl.levels decl.scope) => x.name == D)).2 ⟨T, hT, beq_iff_eq.2 hTn⟩)
+    have hT₀' : T₀.name = D := beq_iff_eq.1 (List.find?_some (p := fun (x : CodataType decl.sorts decl.grades decl.levels decl.scope) => x.name == D) hT₀)
+    rw [hT₀, List.eq_of_nodup_map (TypeDeclaration.codataTypes_nodup (hsig.nodup hdecl))
+      (List.mem_of_find?_eq_some hT₀) hT (hT₀'.trans hTn.symm)]
+  simp only [Signature.shapes, hfst, TypeDeclaration.lifting_names, ↓reduceIte]
+  rw [hsig.findSome?_eq hdecl hD (fun e' _ he' => ?_)]
+  · simp only [hq, hp, ↓reduceDIte, hfind, Option.map_some]
+  · cases e' with
+    | typeDeclaration decl' =>
+      simp only at he'
+      split at he'
+      · split at he'
+        · obtain ⟨T', hT'⟩ := Option.isSome_iff_exists.1
+            (Option.isSome_map.symm.trans he' : _)
+          have := List.find?_some hT'
+          exact (beq_iff_eq.1 this) ▸ TypeDeclaration.codata_name_mem_names
+            (List.mem_of_find?_eq_some hT')
+        · cases he'
+      · cases he'
+    | constantDefinition _ => cases he'
+    | constantDeclaration _ => cases he'
+
 -- ADE: none.
 /-- The liftings that a signature whose names are distinct declares, each after the destructors
 that it lifts, have shapes: those of the entries after a prefix of the signature, by induction on
@@ -565,12 +607,6 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         obtain rfl := TypeDeclaration.lifting_destructors heL
         obtain rfl := TypeDeclaration.lifting_body heL
         -- The shape of the destructors of `D` gives the lifting the factor of its destructors.
-        have hfind : decl.codataTypes.find? (·.name == D) = some T := by
-          obtain ⟨T₀, hT₀⟩ := Option.isSome_iff_exists.1
-            ((List.find?_isSome (p := fun (x : CodataType decl.sorts decl.grades decl.levels decl.scope) => x.name == D)).2 ⟨T, hT, beq_iff_eq.2 hTn⟩)
-          have hT₀' : T₀.name = D := beq_iff_eq.1 (List.find?_some (p := fun (x : CodataType decl.sorts decl.grades decl.levels decl.scope) => x.name == D) hT₀)
-          rw [hT₀, List.eq_of_nodup_map (TypeDeclaration.codataTypes_nodup (hsig.nodup hdecl))
-            (List.mem_of_find?_eq_some hT₀) hT (hT₀'.trans hTn.symm)]
         let I : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
           .ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp'
         have hLd := hb I
@@ -602,23 +638,7 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
           (TypeDeclaration.liftingScope_distinctMotives _ _ _) hF hds
         refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig v (sig.shapes v sig₁) D
           (Shape.motives (S.zip ms'))).1, ?_⟩
-        simp only [Signature.shapes, hfst, TypeDeclaration.lifting_names, ↓reduceIte]
-        rw [hsig.findSome?_eq hdecl hD (fun e' _ he' => ?_)]
-        · simp only [hq, hp, ↓reduceDIte, hfind, Option.map_some, hu]
-        · cases e' with
-          | typeDeclaration decl' =>
-            simp only at he'
-            split at he'
-            · split at he'
-              · obtain ⟨T', hT'⟩ := Option.isSome_iff_exists.1
-                  (Option.isSome_map.symm.trans he' : _)
-                have := List.find?_some hT'
-                exact (beq_iff_eq.1 this) ▸ TypeDeclaration.codata_name_mem_names
-                  (List.mem_of_find?_eq_some hT')
-              · cases he'
-            · cases he'
-          | constantDefinition _ => cases he'
-          | constantDeclaration _ => cases he'
+        rw [Signature.shapes_lifting hsig ⟨hdecl, hT, hTn⟩ sig₁ hq hp hfst, hu]
     · -- The entry is not the lifting: its names are not the name of the lifting.
       have hne : ∀ L, e = .typeDeclaration L → L.names ≠ [Lifting.name D S] := by
         rintro L rfl hLn
