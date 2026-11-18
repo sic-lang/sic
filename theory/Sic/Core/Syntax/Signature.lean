@@ -647,6 +647,16 @@ theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q ς : Grade} {ps : List Par
   | _, _, _, _, _, _, _, .here => List.mem_cons_self
   | _, _, _, _, _, _, _, .there h => List.mem_cons_of_mem _ h.mem
 
+/-- The destructor at a position in destructors is the name at the number of the position. -/
+theorem Destructors.Pos.getElem?_index {k : Nat} {d : Name} {p q ς : Grade}
+    {ps : List Parameter} :
+    {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} → {Ξ : Scope} →
+      {Θ : Telescope k Ξ ps} → {B : Term k (Ξ.extend ps.length)} →
+      {ψ : ResultOwnership Grade ps.length} → (hpos : Destructors.Pos d p q ς ds Ξ Θ B ψ) →
+        ns[hpos.index]? = some d
+  | _, _, _, _, _, _, _, .here => rfl
+  | _, _, _, _, _, _, _, .there h => h.getElem?_index
+
 /-- Destructors with distinct names give the destructor at a position the parameters of its
 arguments, the ownership of its result and the ownership that it requires of the value that it
 observes. -/
