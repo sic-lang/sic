@@ -182,7 +182,8 @@ in a heap that extends `H`, evaluate to addresses to which they are related, are
 address `a` by the relation of run time of the destructors, none of which is recursive, at
 instantiated levels: the telescopes and the results that the clauses of the relation carry replace
 the meaning of the destructors that `RunDesRel.of_obs` reads, as `DesRel.of_positions` does for the
-equality. -/
+equality, and the observation by each destructor may read the equality and the relation of run
+time of its result, which the clause of the destructor gives. -/
 theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin k' → Level 0) :
     {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {rs : Nat → Option RunRel} →
       (∀ i, rs i = none) → {D : Name} → {θ : Subst 0 [] Γ} → {S : RunObsRel} →
@@ -207,6 +208,10 @@ theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin
         RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain)
           ((Θ.substLevels L).subst (hpos.obsSubst o θ)) RΘ →
         ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), RΘ H' ts.terms bs →
+        (∃ v F R, Computesι sig ι
+          ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst)) v ∧
+          FieldRel sig ι n (fun m _ => levelRel sig ι m) .type v F ∧
+          RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v R) →
         ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) ς.run (ps.map (·.usage.run))
           (ps.map (·.requirement.run)) bs w H'' tr ∧
           RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
@@ -231,9 +236,9 @@ theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin
           (fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hr d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos))⟩
       have htt := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H'
         ts.terms bs hts
-      obtain ⟨w, H'', tr, hev, hw⟩ := hr d p q ς ps _ Θ B ψ .here i SΘ RΘ hp hi hΘ hRΘ H' hH' ts bs
-        hts ϖ'
       obtain ⟨v, hv'⟩ := hB ts htt
+      obtain ⟨w, H'', tr, hev, hw⟩ := hr d p q ς ps _ Θ B ψ .here i SΘ RΘ hp hi hΘ hRΘ H' hH' ts bs
+        hts ⟨v, _, _, hv', hF ts htt v hv', hR ts htt v hv'⟩ ϖ'
       exact ⟨w, H'', tr, hev, RunFieldRel.of_runsAs hd (hR ts htt v hv') hv' hw⟩
 
 end Sic.Core
