@@ -176,4 +176,64 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           rw [hBD, Term.subst_append_rename_weakenN]
         exact ⟨w, H'', tr, hev, hw D' R hr0 hR0 e⟩
 
+/-- Observations whose results are equal, destructor by destructor, at equal arguments, and whose
+observations by each destructor whose grade is used at run time, at arguments related to addresses
+in a heap that extends `H`, evaluate to addresses to which they are related, are related to the
+address `a` by the relation of run time of the destructors, none of which is recursive, at
+instantiated levels: the telescopes and the results that the clauses of the relation carry replace
+the meaning of the destructors that `RunDesRel.of_obs` reads, as `DesRel.of_positions` does for the
+equality. -/
+theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin k' → Level 0) :
+    {Γ : Scope} → {ns : List Name} → (ds : Destructors k' Γ ns) → {rs : Nat → Option RunRel} →
+      (∀ i, rs i = none) → {D : Name} → {θ : Subst 0 [] Γ} → {S : RunObsRel} →
+      RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs (ds.substLevels L) θ S →
+      {H : Heap} → {o : Observations} → {a : Nat} →
+      (∀ (d : Name) (p q ς : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
+        (hpos : ds.Pos d p q ς Ξ Θ B ψ) (SΘ : FieldsRel),
+        TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
+          ((Θ.substLevels L).subst (hpos.obsSubst o θ)) SΘ →
+        ∀ (ts us : Args 0 [] ps), SΘ ts.terms us.terms → ∀ (v : Term 0 []) (F : TermRel),
+        Computesι sig ι
+          ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst)) v →
+        FieldRel sig ι n (fun m _ => levelRel sig ι m) .type v F →
+        F ((o d ps).subst ts.toSubst) ((o d ps).subst us.toSubst)) →
+      (∀ (d : Name) (p q ς : Grade) (ps : List Parameter) (Ξ : Scope) (Θ : Telescope k' Ξ ps)
+        (B : Term k' (Ξ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
+        (hpos : ds.Pos d p q ς Ξ Θ B ψ) (i : Nat) (SΘ : FieldsRel) (RΘ : RunFieldsRel),
+        p ∉ Mode.oneOne.erased → sig.destructorCase D d = some i →
+        TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
+          ((Θ.substLevels L).subst (hpos.obsSubst o θ)) SΘ →
+        RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain)
+          ((Θ.substLevels L).subst (hpos.obsSubst o θ)) RΘ →
+        ∀ H', H.Extends H' → ∀ (ts : Args 0 [] ps) (bs : List Nat), RΘ H' ts.terms bs →
+        ∀ ϖ', ∃ w H'' tr, EvalObs P ϖ' H' a i (ψ.map Grade.run) ς.run (ps.map (·.usage.run))
+          (ps.map (·.requirement.run)) bs w H'' tr ∧
+          RunsAs sig ι P H'' ((o d ps).subst ts.toSubst) w
+            ((B.substLevels L).subst (Subst.append (hpos.obsSubst o θ) ts.toSubst))) →
+      S H o a
+  | _, _, .nil, _, _, _, _, _, h, _, _, _, _, _ => by
+    cases h
+    trivial
+  | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, rs, hN, D, θ, _, h, H, o, a, hv, hr => by
+    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    cases h with
+    | recursive _ hrs => rw [hN 0] at hrs; cases hrs
+    | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
+      have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+      have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
+        have htt := hSp.trans hts (hSp.symm hts)
+        obtain ⟨v, hv'⟩ := hB ts htt
+        exact hv d p q ς ps _ Θ B ψ .here SΘ hΘ ts us hts v _ hv' (hF ts htt v hv')
+      refine ⟨hA, fun hp H' hH' ts bs hts ϖ' => ?_,
+        RunDesRel.of_positions hd L ds (fun i => hN (i + 1)) (hG _ hA)
+          (fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hv d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos))
+          (fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hr d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos))⟩
+      have htt := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H'
+        ts.terms bs hts
+      obtain ⟨w, H'', tr, hev, hw⟩ := hr d p q ς ps _ Θ B ψ .here i SΘ RΘ hp hi hΘ hRΘ H' hH' ts bs
+        hts ϖ'
+      obtain ⟨v, hv'⟩ := hB ts htt
+      exact ⟨w, H'', tr, hev, RunFieldRel.of_runsAs hd (hR ts htt v hv') hv' hw⟩
+
 end Sic.Core
