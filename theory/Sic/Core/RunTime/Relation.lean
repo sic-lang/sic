@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Syntax.Grades
 
 /-!
 # Relation of Run Time

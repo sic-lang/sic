@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Results
-public import Sic.Core.Syntax.Grades
 
 /-!
 # Usage

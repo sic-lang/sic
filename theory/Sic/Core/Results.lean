@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Lifting
+public import Sic.Core.Syntax.Grades
 
 /-!
 # Recursive Results
@@ -12,6 +13,8 @@ the block has its motive.
 
 The nesting of the fields, which the declaration gives, tells which fields are recursive, which are
 nested, and where the types of the block are in the types of the nested ones.
+The grades of the recursive results, which the usage of a branch of a recursor reads, are at the
+positions of these fields.
 The results are a relation, as the lifting is: a nested field whose type has no lifting, since the
 signature does not declare it, has no result.
 
@@ -187,6 +190,62 @@ theorem Terms.ResultTypes.zipWith_factors {sig : Signature} {v : Lifting.Variabl
     List.zipWith (· * ·) es πs = es :=
   List.zipWith_eq_left Grade.modality.semiring.mul_one es πs (hes.trans h.length_factors.symm)
     (h.factors_of_not_inst hn)
+
+/-! ## Grades of the Recursive Results -/
+
+-- ADE: none.
+/-- `e_l`: the grade of the recursive result of the field at each position `l` of the fields whose
+nestings are `ns`, the first field at `0`, read from the grades `es` of the recursive results in
+order, and `0` for a field without result, whose nesting has no position. -/
+def Telescope.resultGrades : List (Nest Name) → List Grade → Nat → Grade
+  | .plain :: _, _, 0 => Grade.zero
+  | .plain :: ns, es, l + 1 => Telescope.resultGrades ns es l
+  | _ :: _, e :: _, 0 => e
+  | _ :: ns, _ :: es, l + 1 => Telescope.resultGrades ns es l
+  | _, _, _ => Grade.zero
+
+/-- A position has the grade `0`, erased, when no grade of a recursive result is left. -/
+theorem Telescope.resultGrades_nil : (ns : List (Nest Name)) → (l : Nat) →
+    Telescope.resultGrades ns [] l = Grade.zero
+  | [], _ | .direct _ :: _, _ | .inst _ :: _, _ | .plain :: _, 0 => rfl
+  | .plain :: ns, l + 1 => Telescope.resultGrades_nil ns l
+
+-- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
+/-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
+each field that has one, at its position `l` in the fields whose entries have the parameters `ps`
+and whose nestings are `ns`, the first field at `0`, in order. -/
+def _root_.Sic.Grading.GradeVector.extendResults {Γ : Scope} (γ : GradeVector Γ.length)
+    (e : Nat → Grade) : (ns : List (Nest Name)) → (ps : List Parameter) →
+      GradeVector (Γ.extend (Telescope.nestResultParams ns ps).length).length
+  | .plain :: ns, _ :: ps => extendResults γ (fun l => e (l + 1)) ns ps
+  | .direct _ :: ns, _ :: ps | .inst _ :: ns, _ :: ps =>
+    extendResults (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) ns ps
+  | [], _ | .plain :: _, [] | .direct _ :: _, [] | .inst _ :: _, [] => γ
+
+/-- The extension by the recursive results at the grades `es`, in order, is the extension by the
+variables of the telescope of their parameters at these grades. -/
+theorem _root_.Sic.Grading.GradeVector.extendResults_resultGrades {Γ : Scope} :
+    (γ : GradeVector Γ.length) → (ns : List (Nest Name)) → (ps : List Parameter) →
+    (es : List Grade) →
+    γ.extendResults (Telescope.resultGrades ns es) ns ps =
+      γ.extendGrades (fun l => es.getD l Grade.zero) (Telescope.nestResultParams ns ps)
+  | γ, .plain :: ns, _ :: ps, es => extendResults_resultGrades γ ns ps es
+  | γ, .direct _ :: ns, _ :: ps, e :: es | γ, .inst _ :: ns, _ :: ps, e :: es =>
+    extendResults_resultGrades (Γ := .var :: Γ) (γ ∙ e) ns ps es
+  | γ, .direct _ :: ns, _ :: ps, [] | γ, .inst _ :: ns, _ :: ps, [] => by
+    have h := extendResults_resultGrades (Γ := .var :: Γ) (γ ∙ Grade.zero) ns ps []
+    rw [funext (Telescope.resultGrades_nil ns)] at h
+    exact h
+  | _, [], _, _ | _, .plain :: _, [], _ | _, .direct _ :: _, [], _
+  | _, .inst _ :: _, [], _ => rfl
+
+-- ADE: none.
+/-- `e_{l₁} + … + e_{l_b}`: the sum of the grades `e l` of the recursive results of the fields whose
+nestings `ns` have a position, at their positions `l`, the first field at `0`. -/
+def Telescope.resultSum (e : Nat → Grade) : List (Nest Name) → Grade
+  | [] => Grade.zero
+  | .plain :: ns => Telescope.resultSum (fun l => e (l + 1)) ns
+  | _ :: ns => e 0 + Telescope.resultSum (fun l => e (l + 1)) ns
 
 /-! ## Terms of the Recursive Results -/
 
