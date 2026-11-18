@@ -1,12 +1,10 @@
 module
 
 public import Sic.Core.RunTime.Relation
-public import Sic.Core.Soundness.Corecursors
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Relation.DeclaredTypes
-import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Substitution
 
 /-!
