@@ -17,6 +17,7 @@ import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
+import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution
@@ -250,25 +251,23 @@ theorem RunsAsArgs.of_scale {H : Heap} (r : Grade) :
   | [], _, .nil, .nil, .nil, _, _ :: _, hb => (hb : False).elim
   | _ :: _, _, .cons _ _ _ _, .cons _ _, .cons _ _, _, [], hb => (hb : False).elim
 
-/-- Arguments related to addresses at some grades are related, at grades used at run time only where
-the first ones are, to addresses that are the same at each position whose grade is used at run
-time. -/
+/-- Arguments related to addresses are related to addresses that are the same at each position whose
+grade is used at run time. -/
 theorem RunsAsArgs.of_addrs {H : Heap} :
-    {ps : List Parameter} → {g g' : Nat → Grade} → {ts : Args 0 [] ps} →
+    {ps : List Parameter} → {g : Nat → Grade} → {ts : Args 0 [] ps} →
       {Θ : Telescope 0 [] ps} → {bs as : List Nat} → as.length = bs.length →
-      (∀ l, g' l ∉ Mode.oneOne.erased → g l ∉ Mode.oneOne.erased ∧ as[l]? = bs[l]?) →
-      RunsAsArgs sig ι P H g ts bs Θ → RunsAsArgs sig ι P H g' ts as Θ
-  | [], _, _, .nil, .nil, [], [], _, _, h => h
-  | _ :: _, _, _, .cons _ _, .cons _ _ _ _, b :: bs, a :: as, hl, heq, h =>
+      (∀ l, g l ∉ Mode.oneOne.erased → as[l]? = bs[l]?) →
+      RunsAsArgs sig ι P H g ts bs Θ → RunsAsArgs sig ι P H g ts as Θ
+  | [], _, .nil, .nil, [], [], _, _, h => h
+  | _ :: _, _, .cons _ _, .cons _ _ _ _, b :: bs, a :: as, hl, heq, h =>
     ⟨fun hg => by
-      obtain ⟨hg', e⟩ := heq 0 hg
-      cases Option.some.inj e
-      exact h.1 hg',
+      cases Option.some.inj (heq 0 hg)
+      exact h.1 hg,
     RunsAsArgs.of_addrs (Nat.succ.inj hl) (fun l hg => heq (l + 1) hg) h.2⟩
-  | [], _, _, .nil, .nil, _ :: _, _, _, _, h => (h : False).elim
-  | _ :: _, _, _, .cons _ _, .cons _ _ _ _, [], _, _, _, h => (h : False).elim
-  | [], _, _, .nil, .nil, [], _ :: _, hl, _, _ => nomatch hl
-  | _ :: _, _, _, .cons _ _, .cons _ _ _ _, _ :: _, [], hl, _, _ => nomatch hl
+  | [], _, .nil, .nil, _ :: _, _, _, _, h => (h : False).elim
+  | _ :: _, _, .cons _ _, .cons _ _ _ _, [], _, _, _, h => (h : False).elim
+  | [], _, .nil, .nil, [], _ :: _, hl, _, _ => nomatch hl
+  | _ :: _, _, .cons _ _, .cons _ _ _ _, _ :: _, [], hl, _, _ => nomatch hl
 
 end
 
@@ -317,19 +316,24 @@ theorem RunTelRel.of_scale (hd : sig.Distinct) {n n' : Nat} {ps : List Parameter
   refine RunTelRel.of_runsAsArgs hd hRΘ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
     (fun _ => .plain) (Parameter.grades ps)
     (fun _ _ h hu => by rw [Parameter.grades_of_getElem? h]; exact hu) ts heqΘ as ?_
-  refine RunsAsArgs.of_scale r ts ts' hts (RunsAsArgs.of_addrs (g' := Parameter.grades ps)
-    (by rw [hl, hlen]) (fun l hg => ?_) (RunsAsArgs.mono hd hH hargs'))
-  by_cases hlc : l < ps.length
-  · have hu : ps[l].usage ∉ Mode.oneOne.erased := by
-      rwa [Parameter.grades_of_getElem? (List.getElem?_eq_getElem hlc)] at hg
-    refine ⟨?_, hag l hlc fun h0 => hu ((Mode.erased_values.1 _).2 h0)⟩
+  -- A position whose grade is used at run time is a position of the telescope.
+  have hpos : ∀ l, Parameter.grades ps l ∉ Mode.oneOne.erased →
+      ∃ h : l < ps.length, ps[l].usage ∉ Mode.oneOne.erased := fun l hg => by
+    by_cases hlc : l < ps.length
+    · exact ⟨hlc, by rwa [Parameter.grades_of_getElem? (List.getElem?_eq_getElem hlc)] at hg⟩
+    · have hz : Parameter.grades ps l = Grade.zero := by
+        simp [Parameter.grades, List.getD_eq_getElem?_getD,
+          List.getElem?_eq_none (Nat.le_of_not_lt hlc)]
+      exact absurd ((hz ▸ (by decide : Grade.zero ∈ Mode.oneOne.erased))) hg
+  refine RunsAsArgs.of_scale r ts ts' hts (RunsAsArgs.of_addrs (by rw [hl, hlen])
+    (fun l hg => ?_) (RunsAsArgs.of_counted (g' := Parameter.grades ps) (fun l hg => ?_)
+      (RunsAsArgs.mono hd hH hargs')))
+  · obtain ⟨hlc, hu⟩ := hpos l hg
+    exact hag l hlc fun h0 => hu ((Mode.erased_values.1 _).2 h0)
+  · obtain ⟨hlc, hu⟩ := hpos l hg
     rw [Parameter.grades_of_getElem?
       (by rw [List.getElem?_map, List.getElem?_eq_getElem hlc]; rfl)]
     exact hus _ (List.getElem_mem hlc) hu
-  · have hz : Parameter.grades ps l = Grade.zero := by
-      simp [Parameter.grades, List.getD_eq_getElem?_getD,
-        List.getElem?_eq_none (Nat.le_of_not_lt hlc)]
-    exact absurd ((hz ▸ (by decide : Grade.zero ∈ Mode.oneOne.erased))) hg
 
 /-- The observation that a built branch makes of a path that runs to an address related to `t` by
 `R`, by the destructor of the case `i`, at the variables of its arguments, whose cells bind the
