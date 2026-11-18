@@ -37,7 +37,10 @@ does not declare has none.
 
 The RFC names the variables, so that the shape of a variable lifted is found by its name; with de
 Bruijn indices, the shapes of the variables of a scope are a nesting of its variables, whose
-positions hold the shapes of the variables lifted.
+positions hold the shapes of the variables lifted, while the types of the block, which a name finds,
+have their shapes apart, where the RFC gives both by one nesting `Λ`; the shapes of the arguments of
+an instance, which the RFC gives as a nesting per parameter, are the positions of the parameters
+lifted with their shapes.
 
 ADE have no nested fields.
 -/
@@ -82,7 +85,8 @@ gives the shapes of the liftings, `block` the shapes of the types of the block a
 variables lifted, as `Term.Lifts` lifts it: a variable lifted, applied to arguments, has its shape,
 an instance of a type of the block at a position that holds it has the shape of this type, and an
 instance of another declared type, of which an argument at least is lifted, the shape of the
-lifting of this type at the positions and the shapes of these arguments, of the ownership `11ᵖ`. -/
+lifting of this type at the positions and the shapes of these arguments, of the ownership `11ᵖ`.
+RFC: `\mathsf{shape}_A` -/
 def Term.shape (v : Lifting.Variables) (lookup : Shape.Lookup) (block : Name → Option Shape.Motive)
     {Γ : Scope} (ν : Nesting Shape.Motive Γ) (n : Nest Name) : Term k Γ → Option Shape.Motive
   | .var x _ => (ν x).motive
@@ -99,7 +103,8 @@ termination_by structural A => A
 -- ADE: none.
 /-- The positions and the shapes of the arguments `ā` of an instance that are lifted, whose nestings
 are `ns`, the last one first, the first argument first, as `InstanceArgs.Lifts` lifts them: the
-position of an argument is the number of the arguments before it. -/
+position of an argument is the number of the arguments before it.
+RFC: `\mathsf{shape}_{\bar a}` -/
 def InstanceArgs.shapes (v : Lifting.Variables) (lookup : Shape.Lookup)
     (block : Name → Option Shape.Motive) {Γ : Scope} (ν : Nesting Shape.Motive Γ) :
     List (Nest Name) → {Δ : Scope} → InstanceArgs k Γ Δ → List (Nat × Shape.Motive)
@@ -119,7 +124,8 @@ end
 of the variables lifted, and the meet of the grades of its destructors times the factors of their
 results, absent without destructor, as `Destructors.Lifts` and `Destructors.Factor` give them: a
 destructor whose result has a shape is kept, at the case that the signature gives it, and the others
-are not. -/
+are not.
+RFC: `\mathsf{shape}_{\bar d}` -/
 def Destructors.shape (sig : Signature) (v : Lifting.Variables) (lookup : Shape.Lookup) (D : Name) :
     {Γ : Scope} → Nesting Shape.Motive Γ → {ns : List Name} → Destructors k Γ ns →
       Shape × Option Grade
@@ -152,7 +158,8 @@ def Shape.motives {Δ : Scope} (ms : List (Nat × Shape.Motive)) : Nesting Shape
 the lifting of the type `D` at the positions of `ms`, at the instance of the qualities `qs` and of
 the grades `ps`, is that of the destructors of `D` at this instance, where the parameters at these
 positions have the shapes of `ms`, which reads the shapes of the liftings declared before it, and the
-declarations of the types in the whole signature. -/
+declarations of the types in the whole signature.
+RFC: `\mathsf{shape}_\Sigma` -/
 def Signature.shapes (sig : Signature) (v : Lifting.Variables) : Signature → Shape.Lookup
   | [] => fun _ _ _ _ => none
   | .typeDeclaration L :: sig' => fun D qs ps ms =>
