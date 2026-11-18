@@ -329,8 +329,7 @@ those of the recursive and of the nested fields, whose nestings `ns` have a posi
 each result has the parameter of its field, which no judgment reads. -/
 def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Parameter
   | .plain :: ns, _ :: ps => Telescope.nestResultParams ns ps
-  | .direct _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
-  | .inst _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
+  | _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
   | [], _ | _ :: _, [] => []
 
 /-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block

@@ -149,9 +149,7 @@ theorem _root_.Sic.Grading.GradeVector.extendResults_addNat {Γ : Scope} (γ : G
     (e : Nat → Grade) : (ns : List (Nest Name)) → (ps : List Parameter) → (x : Fin Γ.length) →
       γ.extendResults e ns ps ((x.addNat (Telescope.nestResultParams ns ps).length).cast
         (Scope.length_extend Γ _).symm) = γ x
-  | .direct _ :: ns, _ :: ps, x => extendResults_addNat_cons
-    (extendResults_addNat (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) ns ps ·.succ) x
-  | .inst _ :: ns, _ :: ps, x => extendResults_addNat_cons
+  | .direct _ :: ns, _ :: ps, x | .inst _ :: ns, _ :: ps, x => extendResults_addNat_cons
     (extendResults_addNat (Γ := .var :: Γ) (γ ∙ e 0) (fun l => e (l + 1)) ns ps ·.succ) x
   | .plain :: ns, _ :: ps, x => extendResults_addNat γ (fun l => e (l + 1)) ns ps x
   | [], _, _ | .direct _ :: _, [], _ | .inst _ :: _, [], _ | .plain :: _, [], _ => rfl

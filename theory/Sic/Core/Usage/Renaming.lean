@@ -234,12 +234,7 @@ theorem rename_extendResults {Γ : Scope} : {Δ : Scope} → (γ : GradeVector �
     (e : Nat → Grade) → (ns : List (Nest Name)) → (ps : List Parameter) → (α : Ren Γ Δ) →
       (γ.extendResults e ns ps).rename (Ren.liftN (Telescope.nestResultParams ns ps).length α) =
         (γ.rename α).extendResults e ns ps
-  | _, γ, e, .direct _ :: ns, _ :: ps, α =>
-    (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) ns ps
-      (Ren.lift α)).trans
-      (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) ns ps)
-        (rename_commutes.rename_extend γ _ α))
-  | _, γ, e, .inst _ :: ns, _ :: ps, α =>
+  | _, γ, e, .direct _ :: ns, _ :: ps, α | _, γ, e, .inst _ :: ns, _ :: ps, α =>
     (rename_extendResults (Γ := .var :: Γ) (Δ := .var :: _) (γ ∙ e 0) (fun l => e (l + 1)) ns ps
       (Ren.lift α)).trans
       (congrArg (fun δ => extendResults δ (fun l => e (l + 1)) ns ps)
