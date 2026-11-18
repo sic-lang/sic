@@ -268,7 +268,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ h => Constructor.ResultTypes.subst h
           (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'
@@ -371,10 +371,10 @@ where
         obtain ⟨u, hu⟩ := hus₂ i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.subst (hRs₁ i j T' con hi)
+        exact (hRs₁ i j T' con hi).imp fun _ h => Constructor.ResultTypes.subst h
           (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)
       · intro i j T' con hi
-        exact Constructor.ResultTypes.subst (hRs₂ i j T' con hi)
+        exact (hRs₂ i j T' con hi).imp fun _ h => Constructor.ResultTypes.subst h
           (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)
       · intro i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
@@ -456,7 +456,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ h => Constructor.ResultTypes.subst h
           (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'
@@ -492,7 +492,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst θ hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.subst (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ h => Constructor.ResultTypes.subst h
           (Lifting.ofMotives_substitutes θ _ _ _ _ _ _ _ _)
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv θ hC'

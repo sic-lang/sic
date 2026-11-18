@@ -99,22 +99,22 @@ theorem Telescope.not_inst_of_length_eq :
 at motives that hold the motive of each type of the block that the lifting gives a motive. -/
 theorem Terms.ResultTypes.results (names : List Name) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
-      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
-      Terms.ResultTypes sig v ρ ns ps As xs R → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
       ∀ Cs : Motives k Δ',
         (∀ D b, ρ.block D = some b → Cs.get (names.idxOf D) = some ⟨0, b.motive⟩) →
         ∃ R', Motives.results names Cs (ns.map Nest.blockName) (ps := ps) (xs.rename ρ.ren) =
             some R' ∧
           (⟨_, R'⟩ : (ps'' : List Parameter) × Telescope k Δ' ps'') = ⟨ps', R⟩
-  | _, _, _, _, _, _, _, _, _, .nil, _, _, _ => ⟨.nil, by unfold Motives.results; rfl, rfl⟩
-  | _, _, _, _, _, _, _, _, _, .plain h, hns, Cs, hCs => by
+  | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => ⟨.nil, by unfold Motives.results; rfl, rfl⟩
+  | _, _, _, _, _, _, _, _, _, _, .plain h, hns, Cs, hCs => by
     obtain ⟨R', hR', he⟩ := h.results names (fun ν hν => hns ν (List.mem_cons_of_mem _ hν)) Cs hCs
     refine ⟨R', ?_, he⟩
     rw [Terms.rename]
     show Motives.results names Cs (none :: _) _ = _
     unfold Motives.results
     exact hR'
-  | _, _, ρ, _, _, _, _, _, _, .recursive (D := D) (p := p) (x := x) (xs := xs) (b := b) hD h,
+  | _, _, ρ, _, _, _, _, _, _, _, .recursive (D := D) (p := p) (x := x) (xs := xs) (b := b) hD h,
       hns, Cs, hCs => by
     obtain ⟨R', hR', he⟩ := h.results names (fun ν hν => hns ν (List.mem_cons_of_mem _ hν))
       (Cs.rename Ren.weaken) (fun D' b' hb' => by
@@ -131,7 +131,7 @@ theorem Terms.ResultTypes.results (names : List Name) :
     rw [← e] at hR'
     simp only [hCs D b hD, hR']
     rfl
-  | _, _, _, _, _, _, _, _, _, .nested (ms := ms) _ _, hns, _, _ =>
+  | _, _, _, _, _, _, _, _, _, _, .nested (ms := ms) _ _, hns, _, _ =>
     absurd rfl (hns _ List.mem_cons_self ms)
 
 -- ADE: none.
@@ -173,9 +173,9 @@ theorem Constructor.ResultTypes.results {ls : Fin k' → Level k} {as : Instance
     {Ξ : Scope} {qs : List Quality} {ls' : List (Level k)} {gs : List Grade}
     {as' : InstanceArgs k Γ Ξ} {l : Level k} {χ : Grade} {Cs : Motives k Γ}
     {ps' : List Parameter}
-    {R : Telescope k (Γ.extend (c.params I).length) ps'}
+    {R : Telescope k (Γ.extend (c.params I).length) ps'} {πs : List Grade}
     (h : Constructor.ResultTypes sig v c I names ls as (Lifting.ofMotives names qs ls' gs as' l χ Cs)
-      R)
+      R πs)
     (hns : ∀ ν ∈ (c.fields I).nest names, ∀ ms, ν ≠ .inst ms) :
     ∃ R', c.results I names Cs = some R' ∧
       (⟨_, R'⟩ : (ps'' : List Parameter) × Telescope k (Γ.extend (c.params I).length) ps'') =

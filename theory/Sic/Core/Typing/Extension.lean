@@ -152,7 +152,8 @@ where
     | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>
       .recursor ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) (hasType hs hw ht) hh hC
         hCl hCs (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
     | .obs h hq hl hp hadm hd has ht hbs =>
       .obs ⟨hs h.1, h.2⟩ hq hl hp hadm hd (hasInstanceArgs hs hw has) (hasType hs hw ht)
@@ -189,9 +190,9 @@ where
         (fun j T' C₁' C₂' hj hC₁ hC₂ => eqTerm hs hw (hCt j T' C₁' C₂' hj hC₁ hC₂)) hul₁ hul₂
         hus₁ hus₂ hes
         (fun i j T' con hi =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs₁ i j T' con hi))
+          (hRs₁ i j T' con hi).imp fun _ => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con hi =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs₂ i j T' con hi))
+          (hRs₂ i j T' con hi).imp fun _ => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ =>
           eqTerm hs hw (hut i j T' con C' u₁ u₂ hi hC' hu₁ hu₂)) hκ
     | .obs h hq hl₁ hl₂ hp hadm hd has hls ht hbs =>
@@ -210,13 +211,15 @@ where
       .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts) hi hC
         hu (Terms.ResultTerms.ofTypeDeclarations (fun _ h => hs h) hrs) hCl hCs
         (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
     | .etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ =>
       .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (hasInstanceArgs hs hw has) (hasType hs hw ht)
         (hasType hs hw he) hi hC hu hCl hCs
         (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h) (hRs i j T' con hi))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
     | .beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt =>
       .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))

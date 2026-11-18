@@ -25,33 +25,35 @@ open Sic.Grading
 variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 
 -- ADE: none.
-/-- Fields have one telescope of recursive results at most, in a signature whose names are
-distinct.
+/-- Fields have one telescope of recursive results at most, and one list of factors, in a signature
+whose names are distinct.
 RFC: `\mathsf{unique}_{\uparrow\Theta}` -/
 theorem Terms.ResultTypes.unique (hd : sig.Distinct) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
       {As xs : Terms k Δ} → {ps₁ ps₂ : List Parameter} → {R₁ : Telescope k Δ' ps₁} →
-      {R₂ : Telescope k Δ' ps₂} → Terms.ResultTypes sig v ρ ns ps As xs R₁ →
-        Terms.ResultTypes sig v ρ ns ps As xs R₂ →
-          (⟨ps₁, R₁⟩ : (ps' : List Parameter) × Telescope k Δ' ps') = ⟨ps₂, R₂⟩
-  | _, _, _, _, _, _, _, _, _, _, _, .nil, h₂ => by
+      {R₂ : Telescope k Δ' ps₂} → {πs₁ πs₂ : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R₁ πs₁ → Terms.ResultTypes sig v ρ ns ps As xs R₂ πs₂ →
+        (⟨ps₁, R₁⟩ : (ps' : List Parameter) × Telescope k Δ' ps') = ⟨ps₂, R₂⟩ ∧ πs₁ = πs₂
+  | _, _, _, _, _, _, _, _, _, _, _, _, _, .nil, h₂ => by
     cases h₂
-    rfl
-  | _, _, _, _, _, _, _, _, _, _, _, .plain h₁, h₂ => by
+    exact ⟨rfl, rfl⟩
+  | _, _, _, _, _, _, _, _, _, _, _, _, _, .plain h₁, h₂ => by
     cases h₂ with
     | plain h₂ => exact Terms.ResultTypes.unique hd h₁ h₂
-  | _, _, _, _, _, _, _, _, _, _, _, .recursive hD₁ h₁, h₂ => by
+  | _, _, _, _, _, _, _, _, _, _, _, _, _, .recursive hD₁ h₁, h₂ => by
     cases h₂ with
     | recursive hD₂ h₂ =>
       cases hD₁.symm.trans hD₂
-      cases Terms.ResultTypes.unique hd h₁ h₂
-      rfl
-  | _, _, _, _, _, _, _, _, _, _, _, .nested hA₁ h₁, h₂ => by
+      obtain ⟨h, rfl⟩ := Terms.ResultTypes.unique hd h₁ h₂
+      cases h
+      exact ⟨rfl, rfl⟩
+  | _, _, _, _, _, _, _, _, _, _, _, _, _, .nested hA₁ h₁, h₂ => by
     cases h₂ with
     | nested hA₂ h₂ =>
-      obtain ⟨rfl, -⟩ := Term.Lifts.unique hd hA₁ hA₂
-      cases Terms.ResultTypes.unique hd h₁ h₂
-      rfl
+      obtain ⟨rfl, rfl⟩ := Term.Lifts.unique hd hA₁ hA₂
+      obtain ⟨h, rfl⟩ := Terms.ResultTypes.unique hd h₁ h₂
+      cases h
+      exact ⟨rfl, rfl⟩
 
 -- ADE: none.
 /-- A term has one recursive result at most, at its type and at its nesting, in a signature whose

@@ -36,9 +36,9 @@ theorem WfSig.exists_resultTerms {sig : Signature} (h : WfSig sig) {k : Nat}
     {v : Lifting.Variables} {Γ : Scope} {ρ : Lifting k Γ Γ}
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x)
     {ns : List (Nest Name)} {ps ps' : List Parameter} {Θ : Telescope k Γ ps}
-    {R : Telescope k (Γ.extend ps.length) ps'}
+    {R : Telescope k (Γ.extend ps.length) ps'} {πs : List Grade}
     (hR : Terms.ResultTypes sig v (ρ.liftN ps.length) ns ps Θ.types
-      (Args.bound (Γ := Γ) ps).terms R)
+      (Args.bound (Γ := Γ) ps).terms R πs)
     (φ : Name → Term k (.var :: Γ)) (ts : Args k Γ ps) :
     ∃ rs : Args k Γ ps', Terms.ResultTerms sig v ρ φ ns ps (Θ.typesAt ts) ts.terms rs :=
   Telescope.exists_resultTerms h.distinct h.liftsInOrder hρ hid hR φ ts

@@ -98,40 +98,42 @@ def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Pa
 /--
 The recursive results `R` of the fields `x̄`, whose types are `Ā`, whose nestings are `ns` and whose
 entries have the parameters `ps`, in a signature, where `ρ` gives the types of the block their
-motives and `v` the variables of the liftings: a variable `y` for each field whose nesting has a
-position, in order.
+motives and `v` the variables of the liftings, with their factors `πs`: a variable `y` for each
+field whose nesting has a position, in order, and one factor for each result, in the same order,
+which the uses of the result multiply.
 -/
 inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
     {Δ' Δ : Scope} → Lifting k Δ' Δ → List (Nest Name) → List Parameter → Terms k Δ → Terms k Δ →
-      {ps' : List Parameter} → Telescope k Δ' ps' → Prop where
+      {ps' : List Parameter} → Telescope k Δ' ps' → List Grade → Prop where
   /-- No field.
   RFC: `\uparrow_{\Theta\varepsilon}` -/
-  | nil {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} : Terms.ResultTypes sig v ρ [] [] .nil .nil .nil
+  | nil {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} : Terms.ResultTypes sig v ρ [] [] .nil .nil .nil []
   /-- A field without position, which has no result.
   RFC: `\uparrow_{\Theta\bot}` -/
   | plain {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ns : List (Nest Name)} {p : Parameter}
       {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ} {R : Telescope k Δ' ps'}
-      (h : Terms.ResultTypes sig v ρ ns ps As xs R) :
-      Terms.ResultTypes sig v ρ (.plain :: ns) (p :: ps) (.cons A As) (.cons x xs) R
+      {πs : List Grade} (h : Terms.ResultTypes sig v ρ ns ps As xs R πs) :
+      Terms.ResultTypes sig v ρ (.plain :: ns) (p :: ps) (.cons A As) (.cons x xs) R πs
   /-- A recursive field `x` of the type `D` of the block: `y : C_D[x / z]`, the motive of `D` at
-  the field.
+  the field, with the factor `11ᵖ`, since the recursion is on the field itself.
   RFC: `\uparrow_{\Theta T}` -/
   | recursive {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {D : Name} {ns : List (Nest Name)}
       {p : Parameter} {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ}
-      {b : Lifting.BlockMotive k Δ' Δ} {R : Telescope k (.var :: Δ') ps'}
-      (hD : ρ.block D = some b) (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R) :
+      {b : Lifting.BlockMotive k Δ' Δ} {R : Telescope k (.var :: Δ') ps'} {πs : List Grade}
+      (hD : ρ.block D = some b) (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R πs) :
       Terms.ResultTypes sig v ρ (.direct D :: ns) (p :: ps) (.cons A As) (.cons x xs)
         (.cons Grade.zero p (b.motive.subst₀ (Subst₀.single (x.rename ρ.ren))) R)
+        (Grade.linearLinear :: πs)
   /-- A nested field `x : A`, whose nesting is that of an instance: `y : A'`, the type `A` lifted
-  at the field.
+  at the field, with the factor `π` of the lifting.
   RFC: `\uparrow_{\Theta\lambda}` -/
   | nested {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ms ns : List (Nest Name)} {p : Parameter}
       {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ} {A' : Term k Δ'}
-      {m : Lifting.Result k} {R : Telescope k (.var :: Δ') ps'}
+      {m : Lifting.Result k} {R : Telescope k (.var :: Δ') ps'} {πs : List Grade}
       (hA : Term.Lifts sig v ρ (.inst ms) (x.rename ρ.ren) A A' m)
-      (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R) :
+      (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R πs) :
       Terms.ResultTypes sig v ρ (.inst ms :: ns) (p :: ps) (.cons A As) (.cons x xs)
-        (.cons Grade.zero p A' R)
+        (.cons Grade.zero p A' R) (m.factor :: πs)
 
 /-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
 whose types have the names `names`. -/
@@ -142,25 +144,36 @@ abbrev Constructor.nestResultParams {j g k' : Nat} {Δ : Scope} (c : Constructor
 -- ADE: none.
 /-- The recursive results `R` of the fields of the constructor `c` at the instance `I`, at the
 levels `ls` and at the arguments `ā`, in a block whose types have the names `names`, in the scope
-`Γ` extended by its fields, where `ρ` gives the types of the block their motives in `Γ`: the
-nestings are those of the fields of the declaration, and the types those of the fields at the
-instance. -/
+`Γ` extended by its fields, where `ρ` gives the types of the block their motives in `Γ`, with their
+factors `πs`, one for each result: the nestings are those of the fields of the declaration, and the
+types those of the fields at the instance. -/
 def Constructor.ResultTypes {j g k' : Nat} {Δ Γ : Scope} (sig : Signature) (v : Lifting.Variables)
     (c : Constructor j g k' Δ) (I : Instance j g) (names : List Name) (ls : Fin k' → Level k)
     (as : InstanceArgs k Γ Δ) (ρ : Lifting k Γ Γ) {ps' : List Parameter}
-    (R : Telescope k (Γ.extend (c.params I).length) ps') : Prop :=
+    (R : Telescope k (Γ.extend (c.params I).length) ps') (πs : List Grade) : Prop :=
   Terms.ResultTypes sig v (ρ.liftN (c.params I).length) ((c.fields I).nest names) (c.params I)
-    (c.fieldsAt I ls as).types (Args.bound (Γ := Γ) (c.params I)).terms R
+    (c.fieldsAt I ls as).types (Args.bound (Γ := Γ) (c.params I)).terms R πs
 
 /-- The recursive results have the parameters of the fields whose nestings have a position. -/
 theorem Terms.ResultTypes.params_eq {sig : Signature} {v : Lifting.Variables} :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
-      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
-      Terms.ResultTypes sig v ρ ns ps As xs R → ps' = Telescope.nestResultParams ns ps
-  | _, _, _, _, _, _, _, _, _, .nil => rfl
-  | _, _, _, _, _, _, _, _, _, .plain h => h.params_eq
-  | _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg _ h.params_eq
-  | _, _, _, _, _, _, _, _, _, .nested _ h => congrArg _ h.params_eq
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs → ps' = Telescope.nestResultParams ns ps
+  | _, _, _, _, _, _, _, _, _, _, .nil => rfl
+  | _, _, _, _, _, _, _, _, _, _, .plain h => h.params_eq
+  | _, _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg _ h.params_eq
+  | _, _, _, _, _, _, _, _, _, _, .nested _ h => congrArg _ h.params_eq
+
+/-- The recursive results have a factor each. -/
+theorem Terms.ResultTypes.length_factors {sig : Signature} {v : Lifting.Variables} :
+    {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs →
+        πs.length = (Telescope.nestResultParams ns ps).length
+  | _, _, _, _, _, _, _, _, _, _, .nil => rfl
+  | _, _, _, _, _, _, _, _, _, _, .plain h => h.length_factors
+  | _, _, _, _, _, _, _, _, _, _, .recursive _ h => congrArg (· + 1) h.length_factors
+  | _, _, _, _, _, _, _, _, _, _, .nested _ h => congrArg (· + 1) h.length_factors
 
 /-! ## Terms of the Recursive Results -/
 

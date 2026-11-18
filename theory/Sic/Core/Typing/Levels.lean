@@ -186,7 +186,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ => Constructor.ResultTypes.substLevels_ofMotives ls'
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu
@@ -317,9 +317,9 @@ where
         obtain ⟨u, hu⟩ := hus₂ i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs₁ i j T' con hi)
+        exact (hRs₁ i j T' con hi).imp fun _ => Constructor.ResultTypes.substLevels_ofMotives ls'
       · intro i j T' con hi
-        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs₂ i j T' con hi)
+        exact (hRs₂ i j T' con hi).imp fun _ => Constructor.ResultTypes.substLevels_ofMotives ls'
       · intro i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
         obtain ⟨u₁₀, hu₁₀, rfl⟩ := Branches.get_substLevels ls' hu₁
@@ -428,7 +428,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ => Constructor.ResultTypes.substLevels_ofMotives ls'
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu
@@ -468,7 +468,7 @@ where
         obtain ⟨u, hu⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_substLevels_of ls' hu⟩
       · intro i j T' con hi
-        exact Constructor.ResultTypes.substLevels_ofMotives ls' (hRs i j T' con hi)
+        exact (hRs i j T' con hi).imp fun _ => Constructor.ResultTypes.substLevels_ofMotives ls'
       · intro i j T' con C' u hi hC' hu
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels ls' hC'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels ls' hu

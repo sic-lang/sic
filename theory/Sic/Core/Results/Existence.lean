@@ -486,22 +486,22 @@ recursive field has the result of its term, and a nested field, whose type is li
 since the terms of a type lifted have. -/
 theorem Terms.ResultTypes.exists_resultTerms (hM : Signature.LiftingsHaveResults sig sig) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
-      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
-      Terms.ResultTypes sig v ρ ns ps As xs R →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs →
       ∀ {Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ Δ'} {ρ₂ : Lifting k Γ Γ},
         Lifting.Substitutes θ θ' ρ ρ₂ → ∀ φ : Name → Term k (.var :: Γ),
           ∃ (ps'' : List Parameter) (rs : Args k Γ ps''),
             Terms.ResultTerms sig v ρ₂ φ ns ps (As.subst θ) (xs.subst θ) rs
-  | _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _ => ⟨[], .nil, .nil⟩
-  | _, _, _, _, _, _, _, _, _, .plain h, _, _, _, _, hs, φ => by
+  | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _ => ⟨[], .nil, .nil⟩
+  | _, _, _, _, _, _, _, _, _, _, .plain h, _, _, _, _, hs, φ => by
     obtain ⟨_, rs, hr⟩ := h.exists_resultTerms hM hs φ
     rw [Terms.subst, Terms.subst]
     exact ⟨_, rs, .plain hr⟩
-  | _, _, _, _, _, _, _, _, _, .recursive _ h, _, _, _, _, hs, φ => by
+  | _, _, _, _, _, _, _, _, _, _, .recursive _ h, _, _, _, _, hs, φ => by
     obtain ⟨_, rs, hr⟩ := h.exists_resultTerms hM (hs.ofSnoc (.sort ⟨.prop, .zero⟩)) φ
     rw [Terms.subst, Terms.subst]
     exact ⟨_, .cons _ rs, .recursive hr⟩
-  | _, _, _, _, _, _, _, _, _, .nested (x := x) hA h, _, θ, _, _, hs, φ => by
+  | _, _, _, _, _, _, _, _, _, _, .nested (x := x) hA h, _, θ, _, _, hs, φ => by
     obtain ⟨_, rs, hr⟩ := h.exists_resultTerms hM (hs.ofSnoc (.sort ⟨.prop, .zero⟩)) φ
     obtain ⟨e, he⟩ := hA.hasResult hM _ _ _ _ hs φ (x.subst θ)
     rw [Terms.subst, Terms.subst]
@@ -533,9 +533,9 @@ whatever the results of the terms of the types of the block are. -/
 theorem Telescope.exists_resultTerms (hsig : sig.Distinct) (hord : sig.LiftsInOrder) {Γ : Scope}
     {ρ : Lifting k Γ Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x) {ns : List (Nest Name)} {ps ps' : List Parameter}
-    {Θ : Telescope k Γ ps} {R : Telescope k (Γ.extend ps.length) ps'}
+    {Θ : Telescope k Γ ps} {R : Telescope k (Γ.extend ps.length) ps'} {πs : List Grade}
     (h : Terms.ResultTypes sig v (ρ.liftN ps.length) ns ps Θ.types (Args.bound (Γ := Γ) ps).terms
-      R)
+      R πs)
     (φ : Name → Term k (.var :: Γ)) (ts : Args k Γ ps) :
     ∃ rs : Args k Γ ps', Terms.ResultTerms sig v ρ φ ns ps (Θ.typesAt ts) ts.terms rs := by
   obtain ⟨ps'', rs, hr⟩ := Terms.ResultTypes.exists_resultTerms
@@ -555,8 +555,8 @@ theorem Constructor.ResultTypes.exists_resultTerms (hsig : sig.Distinct)
     {I : Instance j g} {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Γ Δ}
     {ρ : Lifting k Γ Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     (hid : ∀ {a} (x : Var Γ a), ρ.ren x = x) {ps' : List Parameter}
-    {R : Telescope k (Γ.extend (c.params I).length) ps'}
-    (h : Constructor.ResultTypes sig v c I names ls as ρ R) (φ : Name → Term k (.var :: Γ))
+    {R : Telescope k (Γ.extend (c.params I).length) ps'} {πs : List Grade}
+    (h : Constructor.ResultTypes sig v c I names ls as ρ R πs) (φ : Name → Term k (.var :: Γ))
     (ts : Args k Γ (c.params I)) :
     ∃ rs : Args k Γ ps', Constructor.ResultTerms sig v c I names ls as ρ φ ts rs :=
   Telescope.exists_resultTerms hsig hord hρ hid h φ ts

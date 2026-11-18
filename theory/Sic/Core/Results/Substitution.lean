@@ -127,20 +127,20 @@ theorem Telescope.typesAt_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 substituted, at the lifting of the block substituted. -/
 theorem Terms.ResultTypes.subst :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
-      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
-      Terms.ResultTypes sig v ρ ns ps As xs R →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs →
       ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ},
         Lifting.Substitutes θ θ' ρ ρ' →
-          Terms.ResultTypes sig v ρ' ns ps (As.subst θ) (xs.subst θ) (R.subst θ')
-  | _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _ => .nil
-  | _, _, _, _, _, _, _, _, _, .plain h, _, _, _, _, _, hs => by
+          Terms.ResultTypes sig v ρ' ns ps (As.subst θ) (xs.subst θ) (R.subst θ') πs
+  | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _ => .nil
+  | _, _, _, _, _, _, _, _, _, _, .plain h, _, _, _, _, _, hs => by
     rw [Terms.subst, Terms.subst]
     exact .plain (h.subst hs)
-  | _, _, _, _, _, _, _, _, _, .recursive (x := x) (b := b) hD h, _, _, θ, θ', _, hs => by
+  | _, _, _, _, _, _, _, _, _, _, .recursive (x := x) (b := b) hD h, _, _, θ, θ', _, hs => by
     rw [Terms.subst, Terms.subst, Telescope.subst,
       Term.subst_subst₀_of (Subst₀.Swaps.single _ θ') b.motive, hs.subst_rename₀ x]
     exact .recursive (b := b.subst θ θ') (by rw [hs.block, hD]; rfl) (h.subst hs.weaken)
-  | _, _, _, _, _, _, _, _, _, .nested (x := x) hA h, _, _, _, _, _, hs => by
+  | _, _, _, _, _, _, _, _, _, _, .nested (x := x) hA h, _, _, _, _, _, hs => by
     have hA' := hA.subst hs
     rw [hs.subst_rename₀ x] at hA'
     rw [Terms.subst, Terms.subst, Telescope.subst]
@@ -228,9 +228,10 @@ variable {j g k' : Nat} {Ξ Δ Γ : Scope} {c : Constructor j g k' Ξ} {I : Inst
 /-- The recursive results of the fields of a constructor, substituted under the fields, are those
 of its fields at the arguments substituted, at the lifting of the block substituted. -/
 theorem Constructor.ResultTypes.subst {R : Telescope k (Δ.extend (c.params I).length) ps'}
-    (h : Constructor.ResultTypes sig v c I names ls as ρ R) (hs : Lifting.Substitutes θ θ ρ ρ') :
+    {πs : List Grade} (h : Constructor.ResultTypes sig v c I names ls as ρ R πs)
+    (hs : Lifting.Substitutes θ θ ρ ρ') :
     Constructor.ResultTypes sig v c I names ls (as.subst θ) ρ'
-      (R.subst (Subst.liftN (c.params I).length θ)) := by
+      (R.subst (Subst.liftN (c.params I).length θ)) πs := by
   have h' := Terms.ResultTypes.subst h (hs.liftN (c.params I).length)
   rw [← Telescope.types_subst, Constructor.fieldsAt_subst, ← Args.terms_subst,
     Args.bound_subst] at h'
@@ -315,15 +316,15 @@ theorem Telescope.typesAt_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ 
 types at these levels, at the lifting of the block at these levels. -/
 theorem Terms.ResultTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {ps : List Parameter} →
-      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
-      Terms.ResultTypes sig v ρ ns ps As xs R →
+      {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} → {πs : List Grade} →
+      Terms.ResultTypes sig v ρ ns ps As xs R πs →
         Terms.ResultTypes sig v (ρ.substLevels ls') ns ps (As.substLevels ls')
-          (xs.substLevels ls') (R.substLevels ls')
-  | _, _, _, _, _, _, _, _, _, .nil => .nil
-  | _, _, _, _, _, _, _, _, _, .plain h => by
+          (xs.substLevels ls') (R.substLevels ls') πs
+  | _, _, _, _, _, _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, _, _, _, _, _, .plain h => by
     rw [Terms.substLevels, Terms.substLevels]
     exact .plain (h.substLevels ls')
-  | _, _, ρ, _, _, _, _, _, _, .recursive (D := D) (x := x) (b := b) hD h => by
+  | _, _, ρ, _, _, _, _, _, _, _, .recursive (D := D) (x := x) (b := b) hD h => by
     have ih := h.substLevels ls'
     rw [Lifting.substLevels_weaken] at ih
     rw [Terms.substLevels, Terms.substLevels, Telescope.substLevels,
@@ -334,7 +335,7 @@ theorem Terms.ResultTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     show (ρ.block D).map _ = _
     rw [hD]
     rfl
-  | _, _, _, _, _, _, _, _, _, .nested hA h => by
+  | _, _, _, _, _, _, _, _, _, _, .nested hA h => by
     have hA' := hA.substLevels ls'
     rw [Term.substLevels_rename] at hA'
     have ih := h.substLevels ls'
@@ -414,10 +415,10 @@ variable {j g k' k'' : Nat} {Δ Γ : Scope} {c : Constructor j g k' Δ} {I : Ins
 fields at the levels and at the arguments at these levels, at the lifting of the block at these
 levels. -/
 theorem Constructor.ResultTypes.substLevels (ls' : Fin k → Level k'')
-    {R : Telescope k (Γ.extend (c.params I).length) ps'}
-    (h : Constructor.ResultTypes sig v c I names ls as ρ R) :
+    {R : Telescope k (Γ.extend (c.params I).length) ps'} {πs : List Grade}
+    (h : Constructor.ResultTypes sig v c I names ls as ρ R πs) :
     Constructor.ResultTypes sig v c I names (fun i => (ls i).subst ls') (as.substLevels ls')
-      (ρ.substLevels ls') (R.substLevels ls') := by
+      (ρ.substLevels ls') (R.substLevels ls') πs := by
   have h' := Terms.ResultTypes.substLevels ls' h
   rw [Lifting.substLevels_liftN, ← Telescope.types_substLevels, Constructor.fieldsAt_substLevels,
     ← Args.terms_substLevels, Args.bound_substLevels] at h'
@@ -467,13 +468,14 @@ theorem Constructor.ResultTerms.subst_recursorAt (θ : Subst k Γ Δ) {hl : ls.l
 are its results in the recursor at these levels. -/
 theorem Constructor.ResultTypes.substLevels_ofMotives (ls' : Fin k → Level k'')
     {hl : ls.length = k'} {χ : Grade} {R : Telescope k (Δ.extend (c.params I).length) ps'}
+    {πs : List Grade}
     (h : Constructor.ResultTypes sig v c I names (ls.getFin hl) as
-      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) R) :
+      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) R πs) :
     Constructor.ResultTypes sig v c I names
       ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
       (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
         (κ.substLevels ls').level χ (Cs.substLevels ls'))
-      (R.substLevels ls') := by
+      (R.substLevels ls') πs := by
   have h' := h.substLevels ls'
   rw [Lifting.ofMotives_substLevels, ← Level.getFin_map_subst ls' ls hl] at h'
   exact h'

@@ -276,7 +276,7 @@ theorem HasType.pairRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .plain (.plain .nil)
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -312,7 +312,7 @@ theorem HasType.unitRecursor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPr
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .nil
+    | 0, rfl => exact ⟨_, .nil⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -362,7 +362,7 @@ theorem EqTerm.pairIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .plain (.plain .nil)
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -401,7 +401,7 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .nil
+    | 0, rfl => exact ⟨_, .nil⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -502,7 +502,7 @@ theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
     | 0, rfl => exact ⟨_, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .plain (.plain .nil)
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -554,7 +554,7 @@ theorem EqTerm.unitEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
     | 0, rfl => exact ⟨_, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .nil
+    | 0, rfl => exact ⟨_, .nil⟩
   · intro i j T' con C' u' hi hC' hu'
     match i, hi, hC', hu' with
     | 0, rfl, rfl, rfl =>
@@ -601,10 +601,10 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
     | 0, rfl => exact ⟨u₂, rfl⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .plain (.plain .nil)
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
   · intro i j T' con hi
     match i, hi with
-    | 0, rfl => exact .plain (.plain .nil)
+    | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
   · intro i j T' con C' v₁ v₂ hi hC' hv₁ hv₂
     match i, hi, hC', hv₁, hv₂ with
     | 0, rfl, rfl, rfl, rfl =>

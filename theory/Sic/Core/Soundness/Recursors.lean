@@ -242,11 +242,13 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       Telescope 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
     (hRs₁ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁) (Rs₁ con))
+      ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁)
+        (Rs₁ con) πs)
     (hRs₂ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂) (Rs₂ con))
+      ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂)
+        (Rs₂ con) πs)
     (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
       Cs₁.get j = some ⟨0, C'⟩ →
       us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
@@ -342,16 +344,18 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     obtain ⟨u₂, hu₂⟩ := hus₂ i j T' con hi
     have hρ₁ := Lifting.ofMotives_substitutes τ₁ decl.names qs ls₁ ps as₁ κ.level χ Cs₁
     have hρ₂ := Lifting.ofMotives_substitutes τ₂ decl.names qs ls₂ ps as₂ κ.level χ Cs₂
+    obtain ⟨πs₁, hR₁⟩ := hRs₁ i j T' con hi
     obtain ⟨rs₁, hrs₁⟩ := Constructor.ResultTypes.exists_resultTerms hd hord (fun _ => rfl)
-      (fun _ => rfl) ((hRs₁ i j T' con hi).subst hρ₁)
+      (fun _ => rfl) (hR₁.subst hρ₁)
       (Term.recursorAt r ς χ qs ls₁ ps (as₁.subst τ₁) κ (Cs₁.subst τ₁) (us₁.subst τ₁)) ts₁
+    obtain ⟨πs₂, hR₂⟩ := hRs₂ i j T' con hi
     obtain ⟨rs₂, hrs₂⟩ := Constructor.ResultTypes.exists_resultTerms hd hord (fun _ => rfl)
-      (fun _ => rfl) ((hRs₂ i j T' con hi).subst hρ₂)
+      (fun _ => rfl) (hR₂.subst hρ₂)
       (Term.recursorAt r ς χ qs ls₂ ps (as₂.subst τ₂) κ (Cs₂.subst τ₂) (us₂.subst τ₂)) ts₂
     have hb := hut i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
     have hfs := (EqSubst.append_append_iff ctx _ τ₁ τ₂ _ _).2 ⟨hτ, hts⟩
     have hres := EqSubst.constructorResultTerms hd (fun hdecl hD hL => hord.lifts hdecl hD hL)
-      hL hLc (hRs₁ i j T' con hi) hρ₁ hb.1.1 (hfs.left (ValidCtx₀.append_left hb.1.1)) hN hrs₁
+      hL hLc hR₁ hρ₁ hb.1.1 (hfs.left (ValidCtx₀.append_left hb.1.1)) hN hrs₁
       hrs₂
     have hb' := hb.2 _ _ ((EqSubst.append_append_iff _ (Rs₁ con) _ _ _ _).2 ⟨hfs, hres⟩)
     rw [Term.subst_append_rename_weakenN, Term.atCtor_subst_append] at hb'
@@ -528,11 +532,13 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
       Telescope 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
     (hRs₁ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁) (Rs₁ con))
+      ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁)
+        (Rs₁ con) πs)
     (hRs₂ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂) (Rs₂ con))
+      ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂)
+        (Rs₂ con) πs)
     (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
       Cs₁.get j = some ⟨0, C'⟩ →
       us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
@@ -591,8 +597,8 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       Telescope 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
     (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con))
+      ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con) πs)
     (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) →
       Cs.get j = some ⟨0, C'⟩ →
       us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,

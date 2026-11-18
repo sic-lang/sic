@@ -282,16 +282,17 @@ where
               (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ :=
         fun i j T' con hi => let ⟨_, hu⟩ := husU i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩
       have hRs' : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
             (Lifting.ofMotives decl.names qs (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
               (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
               (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ'
               (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
-            ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) :=
-        fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi))
+            ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) πs :=
+        fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h)
       have hut' : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).get j = some ⟨0, C'⟩ →
           (us.substLevels fun i => (.ofNat (ρ i) : Level 0)).get i =
@@ -350,8 +351,8 @@ where
         obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
         obtain ⟨u₁, hu₁'⟩ := hus i j T' con hi
-        obtain ⟨R', hR', eR⟩ := Constructor.ResultTypes.results (hRs i j T' con hi)
-          (hns i j T' con hi)
+        obtain ⟨πs, hRc⟩ := hRs i j T' con hi
+        obtain ⟨R', hR', eR⟩ := Constructor.ResultTypes.results hRc (hns i j T' con hi)
         cases hR₀.symm.trans hR'
         -- The branch is typed in the results of the typing, and used in those of the usage: the
         -- same results, with the same term, given with other parameters.

@@ -83,7 +83,7 @@ theorem EqSubst.resultTerms (hd : sig.Distinct)
     {L : Name → NestLeaf} (hL : ∀ D, ResultLeaf sig ι ρ₁ φ₁ φ₂ D (L D))
     (hLc : ∀ D, LeafCongr sig ι s (L D).2) {Δ' Δ : Scope} {ρ : Lifting 0 Δ' Δ}
     {ns : List (Nest Name)} {ps : List Parameter} {As xs : Terms 0 Δ} {ps' : List Parameter}
-    {R : Telescope 0 Δ' ps'} (h : Terms.ResultTypes sig v ρ ns ps As xs R) :
+    {R : Telescope 0 Δ' ps'} {πs : List Grade} (h : Terms.ResultTypes sig v ρ ns ps As xs R πs) :
     ∀ {θ : Subst 0 [] Δ} {θ' : Subst 0 [] Δ'}, Lifting.Substitutes θ θ' ρ ρ₁ →
       ∀ {ctx : Context 0 Δ'}, ValidCtx₀ sig ι (ctx.append R) → EqSubst sig ι ctx θ' θ' →
       ∀ {Θ : Telescope 0 [] ps} {ts₁ ts₂ : Args 0 [] ps} {As₂ : Terms 0 []}
@@ -123,7 +123,7 @@ theorem EqSubst.resultTerms (hd : sig.Distinct)
             | plain hr₂ =>
               obtain ⟨-, hS₂⟩ := hS
               exact ih hs hctx hθ' hAs hxs hN₂ hS₂ hr₁ hr₂
-  | @recursive _ _ ρ D _ p _ _ _ x _ _ b R hD h ih =>
+  | @recursive _ _ ρ D _ p _ _ _ x _ _ b R _ hD h ih =>
     intro θ θ' hs ctx hctx hθ' Θ ts₁ ts₂ As₂ rs₁ rs₂ hAs hxs hN hS hr₁ hr₂
     cases Θ with
     | cons q _ A₁ Θ =>
@@ -162,7 +162,7 @@ theorem EqSubst.resultTerms (hd : sig.Distinct)
                 exact (EqSubst.args_cons_subst_iff θ').2 ⟨he,
                   ih (hs.ofSnoc (e := .var) _) hctx'
                     ((EqSubst.var_iff ..).2 ⟨hθ', he.trans he.symm⟩) hAs hxs hN₂ hS₂ hr₁ hr₂⟩
-  | @nested _ _ ρ ms _ p _ _ _ x _ _ A' l R hA h ih =>
+  | @nested _ _ ρ ms _ p _ _ _ x _ _ A' l R _ hA h ih =>
     intro θ θ' hs ctx hctx hθ' Θ ts₁ ts₂ As₂ rs₁ rs₂ hAs hxs hN hS hr₁ hr₂
     cases Θ with
     | cons q _ A₁ Θ =>
@@ -259,7 +259,8 @@ theorem EqSubst.constructorResultTerms (hd : sig.Distinct)
     {c : Constructor j g k' Ξ} {I : Instance j g} {names : List Name} {ls₁ ls₂ : Fin k' → Level 0}
     {as₁ : InstanceArgs 0 Γ Ξ} {as₂ : InstanceArgs 0 [] Ξ} {ρ : Lifting 0 Γ Γ}
     {ps' : List Parameter} {R : Telescope 0 (Γ.extend (c.params I).length) ps'}
-    (h : Constructor.ResultTypes sig v c I names ls₁ as₁ ρ R) {τ : Subst 0 [] Γ}
+    {πs : List Grade} (h : Constructor.ResultTypes sig v c I names ls₁ as₁ ρ R πs)
+    {τ : Subst 0 [] Γ}
     (hs : Lifting.Substitutes τ τ ρ ρ₁) {ctx : Context 0 Γ}
     (hctx : ValidCtx₀ sig ι ((ctx.append (c.fieldsAt I ls₁ as₁)).append R))
     {ts₁ ts₂ : Args 0 [] (c.params I)}

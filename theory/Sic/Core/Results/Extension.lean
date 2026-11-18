@@ -30,8 +30,9 @@ declarations of their signature. -/
 theorem Terms.ResultTypes.ofTypeDeclarations
     (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig')
     {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ns : List (Nest Name)} {ps : List Parameter}
-    {As xs : Terms k Δ} {ps' : List Parameter} {R : Telescope k Δ' ps'}
-    (h : Terms.ResultTypes sig v ρ ns ps As xs R) : Terms.ResultTypes sig' v ρ ns ps As xs R := by
+    {As xs : Terms k Δ} {ps' : List Parameter} {R : Telescope k Δ' ps'} {πs : List Grade}
+    (h : Terms.ResultTypes sig v ρ ns ps As xs R πs) :
+    Terms.ResultTypes sig' v ρ ns ps As xs R πs := by
   induction h with
   | nil => exact .nil
   | plain _ ih => exact .plain ih

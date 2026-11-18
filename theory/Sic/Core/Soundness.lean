@@ -335,10 +335,12 @@ where
           exact hCv)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h))
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -481,10 +483,12 @@ where
           exact hCv.trans hCv.symm)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs₁ i j T' con hi)))
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs₂ i j T' con hi)))
+        (fun i j T' con hi => (hRs₁ i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+        (fun i j T' con hi => (hRs₂ i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h))
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -573,8 +577,9 @@ where
           simp only [Context.atLevels, Term.atLevels, Term.substLevels] at hCv
           exact hCv)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con hi => Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-          (Constructor.ResultTypes.substLevels_ofMotives _ (hRs i j T' con hi)))
+        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
+          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h))
         (fun i j T' con C' u hi hC' hu => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu
