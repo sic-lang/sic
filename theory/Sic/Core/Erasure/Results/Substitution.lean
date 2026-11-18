@@ -2,7 +2,9 @@ module
 
 public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Observations
+public import Sic.Core.Substitution.Closed
 import Sic.Core.Lifting.Functionality
+import Sic.Core.Positivity.Substitution
 import Sic.Core.Substitution.Nesting
 
 /-!
@@ -24,6 +26,10 @@ the instantiation has a position.
 The instantiation gives a variable lifted an abstraction lifted by a lifting that lifts no variable,
 which keeps its shape at the arguments of the variable, and a renaming keeps the shapes, under the
 variables of the arguments of an instance.
+So the result of a destructor of a codata type, at a closed instance lifted at a term, at the
+observations of the term and at closed arguments, has the shape of the result of the destructor where
+the parameters have the shapes of the arguments of the instance, the shape that the shape of the
+lifting of the type gives the destructor of the lifting.
 
 ADE have no nested fields.
 -/
@@ -400,5 +406,175 @@ theorem InstanceArgs.Lifts.shapes_instantiate {block₀ : Name → Option Shape.
       InstanceArgs.Lifts.shapes_instantiate has rfl hI hνs hνs' hθ, e₁, e₂]
 
 end
+
+/-! ## Shapes of the Arguments of an Instance -/
+
+/-- The shapes of the arguments of an instance are at positions of its parameters. -/
+theorem InstanceArgs.lt_of_mem_shapes {Γ : Scope} {ν : Nesting Shape.Motive Γ} :
+    {Δ : Scope} → (as : InstanceArgs k Γ Δ) → (ns : List (Nest Name)) →
+      {y : Nat × Shape.Motive} → y ∈ as.shapes v lookup block @ν ns → y.1 < Δ.length
+  | _, .nil, _, _, h => nomatch h
+  | _, .snoc (Δ := Δ) as B, ns, y, h => by
+    rw [InstanceArgs.shapes, List.mem_append] at h
+    rcases h with h | h
+    · exact Nat.lt_succ_of_lt (InstanceArgs.lt_of_mem_shapes as ns.tail h)
+    · cases hB : B.shape v lookup block (Nesting.liftN _ @ν) (ns.headD .plain) with
+      | none => rw [hB] at h; exact nomatch h
+      | some m =>
+        rw [hB] at h
+        cases List.mem_singleton.1 h
+        exact Nat.lt_succ_self Δ.length
+
+/-- A key other than all the keys of a list of pairs has no value in it. -/
+theorem List.lookup_eq_none_of_ne {β : Type} {n : Nat} :
+    (l : List (Nat × β)) → (∀ y ∈ l, y.1 ≠ n) → l.lookup n = none
+  | [], _ => rfl
+  | (a, b) :: l, h => by
+    rw [List.lookup_cons, beq_eq_false_iff_ne.2 (h (a, b) (List.mem_cons_self ..)).symm]
+    exact List.lookup_eq_none_of_ne l fun y hy => h y (List.mem_cons_of_mem _ hy)
+
+/-- The shape that the arguments of an instance give the parameter at the level of a variable is
+the shape of the argument of this variable, at its nesting. -/
+theorem InstanceArgs.lookup_shapes {Γ : Scope} {ν : Nesting Shape.Motive Γ} :
+    {Δ : Scope} → (as : InstanceArgs k Γ Δ) → (ns : List (Nest Name)) → {a : Scope.Entry} →
+      (x : Var Δ a) → (as.shapes v lookup block @ν ns).lookup x.level =
+        (as.toSubst x).shape v lookup block (Nesting.liftN a.params.length @ν)
+          (Nesting.ofArgs ns x)
+  | _, .snoc (Δ := Δ) (e := e) as B, ns, _, .zero => by
+    have hn : Nesting.ofArgs (Δ := e :: Δ) ns (.zero (Γ := Δ) (e := e)) = ns.headD .plain := by
+      cases ns <;> rfl
+    show (as.shapes v lookup block @ν ns.tail ++ _).lookup Δ.length = B.shape v lookup block _ _
+    rw [List.lookup_append, List.lookup_eq_none_of_ne _
+      fun y hy => Nat.ne_of_lt (InstanceArgs.lt_of_mem_shapes as ns.tail hy), Option.none_or, hn]
+    cases B.shape v lookup block (Nesting.liftN _ @ν) (ns.headD .plain) with
+    | none => rfl
+    | some m =>
+      show List.lookup Δ.length [(Δ.length, m)] = some m
+      rw [List.lookup_cons, beq_iff_eq.2 rfl]
+  | _, .snoc (Δ := Δ) (e := e) as B, ns, _, .succ y => by
+    have h₀ : ∀ {Δ' : Scope} {a' : Scope.Entry} (z : Var Δ' a'),
+        Nesting.ofArgs (α := Name) [] z = .plain := fun z => by cases z <;> rfl
+    have hn : Nesting.ofArgs (Δ := e :: Δ) ns (y.succ (e' := e)) = Nesting.ofArgs ns.tail y := by
+      cases ns with
+      | nil => exact (h₀ _).trans (h₀ y).symm
+      | cons => rfl
+    show (as.shapes v lookup block @ν ns.tail ++ _).lookup y.level =
+      (as.toSubst y).shape v lookup block _ _
+    rw [List.lookup_append, hn, ← InstanceArgs.lookup_shapes as ns.tail y]
+    cases (as.shapes v lookup block @ν ns.tail).lookup y.level with
+    | some _ => rfl
+    | none =>
+      rw [Option.none_or]
+      exact List.lookup_eq_none_of_ne _ fun z hz => by
+        cases hB : B.shape v lookup block (Nesting.liftN _ @ν) (ns.headD .plain) with
+        | none => rw [hB] at hz; exact nomatch hz
+        | some _ =>
+          rw [hB] at hz
+          cases List.mem_singleton.1 hz
+          exact Nat.ne_of_gt (Var.level_lt y)
+
+/-! ## Shapes of the Results of the Destructors at an Instance -/
+
+-- ADE: none.
+/-- The result of a destructor `d` of the codata type `D`, at a closed instance `D.{s̄; l̄; p̄} ā`
+lifted at a term `t`, at the observations of `t` by the destructors before `d` and at closed
+arguments of `d`, has, at its nesting, where no variable has a position, the shape of the result of
+`d` where the parameters have the shapes of the arguments `ā`: the lifting of `D` lifts the result
+of `d` at the parameters lifted, which the instance instantiates with the arguments lifted, whose
+shapes are those of the parameters, and the substitution of the destructors before `d` by
+observations keeps the nestings. -/
+theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
+    {ns : List Name}
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
+      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
+    {ρ : Lifting 0 [] []} {qs : List Quality} {ls : List (Level 0)}
+    {ms : List (Lifting.Result 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
+    (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
+    (hp' : (v.grades ps ms).length = decl.liftingGrades S) {nsA : List (Nest Name)}
+    {as : InstanceArgs 0 [] decl.scope} {as' : InstanceArgs 0 [] (decl.scope.lifted S)}
+    (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term 0 []) {ms' : List Shape.Motive}
+    (hms : as.shapes v lookup block Nesting.plain nsA = S.zip ms') {d : Name}
+    {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
+    {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
+    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {p' q' ς' : Grade}
+    {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
+    {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
+    {ψ' : ResultOwnership Grade ps₁'.length}
+    (hd' : (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')).Pos d p' q' ς' Ξ' Θ'
+      B' ψ')
+    (ts : Args 0 [] ps₁) :
+    (((B.substLevels (ls.getFin hl)).subst
+          (Subst.liftN ps₁.length (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).subst
+        ts.toSubst).shape v lookup block Nesting.plain
+        (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA)))) =
+      B.shape v lookup (fun _ => none)
+        (Nesting.liftN ps₁.length (hd.nesting (Shape.motives (S.zip ms')))) .plain := by
+  have hρ : ∀ {a} (x : Var [] a), ρ.motive x = none := fun x => nomatch x
+  have h₀ : ∀ (a : Scope.Entry) (x : Var [] a), (Nesting.plain : Nesting Shape.Motive []) x =
+      .plain := fun _ _ => rfl
+  -- A term over the arguments of an entry, at a nesting none of whose variables has a position,
+  -- has no shape there.
+  have hnone : ∀ {n : Nat} (u : Term 0 (Scope.extend [] n)),
+      u.shape v lookup block (Nesting.liftN n Nesting.plain) .plain = none := fun u =>
+    Term.shape_eq_none_of_avoids fun x hx => (hx (Nesting.liftN_plain _ h₀ _ x)).elim
+  obtain ⟨_, _, ρ₁, _, A₀, _, hL₁, hI, -, hnest, ⟨β, hA₀, hN⟩, -, hA, -⟩ :=
+    hL.result hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+  obtain ⟨_, _, _, hLo⟩ :=
+    hL.observation hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+  have hid : ∀ {a} (x : Var [] a), ρ.ren x = x := fun x => nomatch x
+  rw [Term.rename_id_of (Ren.liftN_id_of _ hid)] at hLo
+  -- The closed arguments do not change the shape, the lifting lifting no variable.
+  rw [hLo.shape_subst (Lifting.liftN_motive_eq_none hρ _) ts.toSubst
+    (νs := Nesting.liftN ps₁.length Nesting.plain) (Nesting.liftN_plain _ h₀) h₀,
+    ← hA, ← hnest]
+  -- The shape of a variable lifted is that of its argument lifted.
+  have hθ : ∀ {a : Scope.Entry} (y : Var (.var :: decl.scope) a), (ρ₁.motive y).isSome →
+      ((InstanceArgs.snoc (e := .var) as t).toSubst y).shape v lookup block
+          (Nesting.liftN a.params.length Nesting.plain)
+          (Nesting.lift (Nesting.ofArgs nsA) y) =
+        (Nesting.lift (Shape.motives (S.zip ms')) y).motive := fun y _ => by
+    cases y with
+    | zero => exact hnone (n := 0) t
+    | succ z =>
+      show (as.toSubst z).shape v lookup block _ (Nesting.ofArgs nsA z) =
+        (Shape.motives (S.zip ms') z).motive
+      rw [← InstanceArgs.lookup_shapes as nsA z, hms]
+      unfold Shape.motives
+      cases (S.zip ms').lookup z.level <;> rfl
+  refine (hL₁.shape_instantiate (block₀ := fun _ => none) rfl (hI.liftN ps₁.length)
+    (νs := Nesting.liftN ps₁.length (Nesting.lift (Shape.motives (S.zip ms')))) ?_
+    (Nesting.liftN_plain _ h₀) ?_).trans ?_
+  · intro a x hx
+    obtain ⟨y, rfl, hy⟩ := Nesting.exists_of_liftN ps₁.length x hx
+    refine Lifting.isSome_liftN_weakenN ps₁.length ρ₁ y ?_
+    cases y with
+    | zero => exact absurd rfl hy
+    | succ z =>
+      cases hm : ρ₁.motive (.succ z) with
+      | some _ => rfl
+      | none =>
+        have hz : Nesting.ofArgs nsA z = .plain := hI.plain (.succ z) hm
+        have hs : (S.zip ms').lookup z.level ≠ none := fun h => hy (by
+          show Shape.motives (S.zip ms') z = .plain
+          unfold Shape.motives
+          rw [h])
+        rw [← hms, InstanceArgs.lookup_shapes as nsA z, hz] at hs
+        exact absurd (hnone _) hs
+  · intro a x hx
+    obtain ⟨y, rfl, hy⟩ := Lifting.isSome_of_liftN ps₁.length ρ₁ x hx
+    have hp₀ : ∀ (b : Scope.Entry) (z : Var (Scope.extend [] a.params.length) b),
+        Nesting.liftN a.params.length (Nesting.liftN ps₁.length Nesting.plain)
+          (Ren.liftN a.params.length (Ren.weakenN ps₁.length) z) =
+        Nesting.liftN a.params.length Nesting.plain z := fun _ z =>
+      (Nesting.liftN_plain _ (Nesting.liftN_plain _ h₀) _ _).trans
+        (Nesting.liftN_plain _ h₀ _ z).symm
+    rw [Subst.liftN_weakenN, Nesting.liftN_weakenN, Nesting.liftN_weakenN, Term.shape_rename _ hp₀]
+    exact hθ y hy
+  · rw [hA₀, Term.shape_substLevels, Term.shape_subst_of (Subst.Nests.liftN ps₁.length (@hN _ _)),
+      Term.shape_substLevels]
 
 end Sic.Core
