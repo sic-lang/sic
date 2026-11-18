@@ -62,6 +62,13 @@ inductive Shape.Next : Type where
 
 end
 
+/-- The shape `Ξ` from its destructor at the index `k` on, empty past its last destructor: the
+element at the index `k` of the list that the RFC writes. -/
+def Shape.drop : Nat → Shape → Shape
+  | 0, σ => σ
+  | _ + 1, .nil => .nil
+  | k + 1, .cons _ _ _ _ _ _ _ _ _ _ _ _ rest => rest.drop k
+
 mutual
 
 -- ADE: none.

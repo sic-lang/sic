@@ -22,6 +22,9 @@ entry by entry, as the shape does.
 The shape gives a lifting the meet of the grades of its destructors times the factors of their
 results: the proof builds the factor of the destructors of the lifting from their shape, and the
 factor of an instance of a lifting is one.
+The element of the shape at the index of a destructor of the lifting is the one that the shape
+builds from the destructor that it lifts, at the grade, the requirement, the ownership and the
+arguments of the destructor of the lifting, which the run time of the nested results reads.
 The declaration lifts the destructors at its parameters, where the parameters lifted have their
 motives, and the shape reads them at the nestings of the parameters, whose positions hold the shapes
 of the arguments lifted: the substitution of the parameters by those of the lifting, and of the
@@ -288,6 +291,96 @@ theorem Destructors.Lifts.shape_factor
       exact hθ.snocObs (e := .secondOrder ps ψ) D' qs ls ps' as t d' bs
     simp only [Destructors.shape, hn]
     exact hds.shape_factor hsub hM D ho hθ' hρ hb
+
+-- ADE: none.
+/-- The shape of the destructors of a codata type lifted, in a signature `Σ₁` whose liftings have
+shapes in `Σ`, from the index of a destructor of the lifting on, in destructors whose names are
+distinct: it starts with the element that the shape builds from the destructor of the same name
+that it lifts, whose result has a shape, and the destructor of the lifting has the grade, the
+requirement, the ownership of its result and the arguments that this element reads, its arguments
+being those of the destructor lifted, used `r` times the factor of the shape more. -/
+theorem Destructors.Lifts.shape_get
+    (hsub : ∀ decl, Entry.typeDeclaration decl ∈ sig₁ → Entry.typeDeclaration decl ∈ sig)
+    (hM : Signature.LiftingsHaveShapes sig₁ sig) (D : Name) {Γ₀ : Scope} {κ : Universe k}
+    {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)}
+    (ho : ∀ d ps', ∃ (Ξ : Scope) (D' : Name) (qs : List Quality) (ls : List (Level k))
+      (ps : List Grade) (as : InstanceArgs k (Γ₀.extend ps'.length) Ξ)
+      (t : Term k (Γ₀.extend ps'.length)) (d' : Name) (bs : Terms k (Γ₀.extend ps'.length)),
+      o d ps' = .obs D' qs ls ps as t d' bs) :
+    {Γ' : Scope} → {ρ : Lifting k Γ' Γ₀} → {Ξ₀ : Scope} → {θ : Subst k Γ₀ Ξ₀} → {ns : List Name} →
+      {ds : Destructors k Ξ₀ ns} → {ns' : List Name} → {ds' : Destructors k Γ' ns'} →
+      Destructors.Lifts sig₁ v κ o ρ @θ ds ds' → ns.Nodup →
+      ∀ {ν : Nesting Shape.Motive Ξ₀} {ν₀ : Nesting Shape.Motive Γ₀}, Subst.Nests θ @ν @ν₀ →
+        ρ.Shapes @ν₀ → (∀ E, ρ.block E = none) →
+      ∀ {d : Name} {p q ς : Grade} {ps : List Parameter} {Ξ : Scope} {Θ : Telescope k Ξ ps}
+        {B : Term k (Ξ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+        (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) {p' q' ς' : Grade} {ps' : List Parameter}
+        {Ξ' : Scope} {Θ' : Telescope k Ξ' ps'} {B' : Term k (Ξ'.extend ps'.length)}
+        {ψ' : ResultOwnership Grade ps'.length}
+        (hd' : Destructors.Pos d p' q' ς' ds' Ξ' Θ' B' ψ'),
+        ∃ (m : Shape.Motive) (rest : Shape),
+          B.shape v (sig.shapes v sig₁) (fun _ => none)
+            (Nesting.liftN ps.length (hd.nesting @ν)) .plain = some m ∧
+          p' = Lifting.resultGrade v.quality p ∧ ς' = v.requirement ∧
+          ps' = ps.map (Parameter.scale (v.recursion * m.factor)) ∧
+          (⟨_, ψ'⟩ : Σ c, ResultOwnership Grade c) =
+            ⟨ps.length, Lifting.resultOwnership m.ownership ps.length⟩ ∧
+          (ds.shape sig v (sig.shapes v sig₁) D @ν).1.drop hd'.index =
+            .cons ((sig.destructorCase D d).getD 0) ps.length p'.run
+              (fun j => ps[j].usage.run) (fun j => ps[j].requirement.run)
+              (fun j => ((Mode.oneOne ⊙ p').grade *
+                (ps[j].scale (v.recursion * m.factor)).usage).run)
+              (fun j => ps[j].requirement.run)
+              ((Lifting.resultOwnership m.ownership _).map Grade.run) v.requirement.run
+              (ψ.map Grade.run) ς.run m.next rest
+  | _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, _ =>
+    nomatch hd
+  | _, ρ, _, θ, _, _, _, _, .lifted (d := d₀) (ps := ps₀) (ψ := ψ₀) (ds := ds₀) hB _ hds, hnd, ν, ν₀, hθ, hρ, hb, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, hd' => by
+    have hnd' := List.nodup_cons.1 hnd
+    obtain ⟨m', hm', hm⟩ := hB.shape hsub hM (block := fun _ => none)
+      (Lifting.Shapes.liftN ps₀.length hρ) (fun E b h => by
+        rw [Lifting.liftN_block_none ps₀.length hb E] at h
+        cases h)
+    rw [Term.shape_subst_of (hθ.liftN ps₀.length)] at hm'
+    cases hd' with
+    | here =>
+      cases hd with
+      | here =>
+        refine ⟨m', (ds₀.shape sig v (sig.shapes v sig₁) D (Nesting.lift @ν)).1, hm', rfl, rfl,
+          by rw [hm.1], by rw [hm.2, List.length_map], ?_⟩
+        simp only [Destructors.shape, hm', Shape.drop, Destructors.Pos.index]
+      | there hd₀ => exact absurd hd₀.mem hnd'.1
+    | there hd'' =>
+      cases hd with
+      | here => exact absurd ((Destructors.Lifts.sublist hds).subset hd''.mem) hnd'.1
+      | there hd₀ =>
+        obtain ⟨Ξ₁, D', qs, ls, ps₁, as, t, d₁, bs, he⟩ := ho d₀ ps₀
+        have hθ' : Subst.Nests (θ.snoc (e := .secondOrder ps₀ ψ₀) (o d₀ ps₀)) (Nesting.lift @ν)
+            @ν₀ := by
+          rw [he]
+          exact hθ.snocObs (e := .secondOrder ps₀ ψ₀) D' qs ls ps₁ as t d₁ bs
+        obtain ⟨m, rest, h₁, h₂, h₃, h₄, h₅, h₆⟩ := hds.shape_get hsub hM D ho hnd'.2 hθ'
+          (Lifting.Shapes.weaken hρ) (Lifting.weaken_block_none hb) hd₀ hd''
+        refine ⟨m, rest, h₁, h₂, h₃, h₄, h₅, ?_⟩
+        simp only [Destructors.shape, hm', Shape.drop, Destructors.Pos.index]
+        exact h₆
+  | _, ρ, _, θ, _, _, _, _, .absent (d := d₀) (ps := ps₀) (ψ := ψ₀) (B := B₀) hB hds, hnd, ν, ν₀, hθ, hρ, hb, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, hd' => by
+    have hnd' := List.nodup_cons.1 hnd
+    have hn : B₀.shape v (sig.shapes v sig₁) (fun _ => none)
+        (Nesting.liftN ps₀.length @ν) .plain = none := by
+      rw [← Term.shape_subst_of (hθ.liftN ps₀.length)]
+      exact Term.shape_eq_none_of_avoids fun x hx =>
+        hB x (Lifting.Shapes.isSome (Lifting.Shapes.liftN ps₀.length hρ) x hx)
+    cases hd with
+    | here => exact absurd ((Destructors.Lifts.sublist hds).subset hd'.mem) hnd'.1
+    | there hd₀ =>
+      obtain ⟨Ξ₁, D', qs, ls, ps₁, as, t, d₁, bs, he⟩ := ho d₀ ps₀
+      have hθ' : Subst.Nests (θ.snoc (e := .secondOrder ps₀ ψ₀) (o d₀ ps₀)) (Nesting.lift @ν)
+          @ν₀ := by
+        rw [he]
+        exact hθ.snocObs (e := .secondOrder ps₀ ψ₀) D' qs ls ps₁ as t d₁ bs
+      simp only [Destructors.shape, hn]
+      exact hds.shape_get hsub hM D ho hnd'.2 hθ' hρ hb hd₀ hd'
 
 /-! ## Shapes of the Parameters of a Lifting -/
 
