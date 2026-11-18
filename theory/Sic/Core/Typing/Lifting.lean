@@ -45,7 +45,7 @@ entry of the signature introduces its name.
 RFC: `\mathsf{lift}_\vdash` -/
 theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : TypeDeclaration}
     (hd : .typeDeclaration decl ∈ sig) {F : Name} {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hl : decl.Lifts sig F S body)
     (hF : ∀ ι, ∀ T ∈ decl.codataTypes, T.name = F →
@@ -66,11 +66,11 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
     (fun I hI T' hT'' => ?_) (fun _ _ _ hT'' _ _ hx => ?_) (fun T' hT'' => ?_) fresh
   · have hq : (List.ofFn ι.sorts ++ [Quality.type]).length = decl.sorts + 1 := by simp
     have hp : (List.ofFn ι.grades ++
-        [Grade.unrestrictedUnrestricted, Grade.unrestrictedUnrestricted,
-          Grade.unrestrictedUnrestricted]).length = decl.grades + 3 := by simp
+        List.replicate (2 + 2 * S.length) Grade.unrestrictedUnrestricted).length =
+          decl.liftingGrades S := by simp
     refine ⟨.ofLists _ _ hq hp, ?_⟩
     show decl.constraint (Instance.ofLists _ _ hq hp).lifted
-    rw [Instance.lifted_ofLists _ _ _ _ _ _ List.length_ofFn List.length_ofFn,
+    rw [Instance.lifted_ofLists _ _ _ _ List.length_ofFn List.length_ofFn,
       Instance.ofLists_ofFn]
     exact hι
   · cases List.mem_singleton.1 hT''
@@ -90,8 +90,7 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
       rw [List.getFin_ofFn, Instance.ofLists_ofFn]
       exact TypedRen.weaken (.var hA)
     have hds : Destructors.Lifts sig I.liftingVariables (decl.liftingSort S I)
-        (decl.liftedObservation F S.length I.lifted)
-        (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift
+        (decl.liftedObservation F S.length I.lifted) (decl.liftingScope S I)
         ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst
         ((T.body (.ofLists _ _ hq hp)).substLevels
           ((List.ofFn (Level.lifted S.length)).getFin hl)) (body I) := by
@@ -104,7 +103,7 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
     exact Destructors.Lifts.wfDestructors hT' hI' hα (.var (.var hA) .zero) hκ _ _ _ _ _ _ _ _ _
       (fun _ _ => rfl) hds (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI))
       (fun D => by
-        show ((Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).block D).map _ = none
+        show ((Lifting.base S (decl.liftingMotive S I) decl.scope).block D).map _ = none
         rw [Lifting.base_block]
         rfl)
       (InstanceArgs.identity_rename_neutral _) (hF _ T hT hn) (fun h => ⟨h, fun _ => rfl⟩)
@@ -120,7 +119,7 @@ lifted. -/
 theorem WfSig.lifting_inv {E : TypeDeclaration} {F : Name} {S : List Nat} :
     {sig : Signature} → WfSig sig → .typeDeclaration E ∈ sig → Lifting.name F S ∈ E.names →
       ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
-        (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+        (body : Instance (decl.sorts + 1) (decl.liftingGrades S') →
           Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
         E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig ∧ decl.Lifts sig F' S' body
   | [], _, he, _ => nomatch he
@@ -144,7 +143,7 @@ RFC: `\mathsf{sig}_{\uparrow}` -/
 theorem WfSig.lifts {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
     (hd : .typeDeclaration decl ∈ sig) {D : Name} (hD : D ∈ decl.names) {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by
   obtain ⟨decl', F', S', ns', body', he, hd', hl'⟩ :=
@@ -167,7 +166,7 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
     {sig₁ : Signature} :
     (pre : Signature) → WfSig (pre ++ .typeDeclaration E :: sig₁) → Lifting.name F S ∈ E.names →
       ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
-        (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+        (body : Instance (decl.sorts + 1) (decl.liftingGrades S') →
           Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
         E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig₁ ∧
           decl.Lifts sig₁ F' S' body

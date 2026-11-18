@@ -118,9 +118,9 @@ def Context.LiftsTypes (sig : Signature) (S : List Nat) : {Δ : Scope} → Conte
         WfType sig ((ctx.secondOrder Θ A ψ).append (Θ.rename Ren.weaken)) (Var.eta .zero))
 
 /-- The renaming of a lifting extended by a parameter lifted skips the motive of the parameter. -/
-theorem Lifting.cons_true_ren {Δ' Δ : Scope} {e : Scope.Entry} (l : Level k)
+theorem Lifting.cons_true_ren {Δ' Δ : Scope} {e : Scope.Entry} (m : Lifting.Result k)
     (ρ : Lifting k Δ' Δ) :
-    @Lifting.ren k _ _ (Lifting.cons (e := e) l true ρ) =
+    @Lifting.ren k _ _ (Lifting.cons (e := e) m true ρ) =
       fun {_} x => Ren.weaken (e := e.motive) (Ren.lift ρ.ren x) := by
   funext a x
   cases x <;> rfl
@@ -129,10 +129,10 @@ theorem Lifting.cons_true_ren {Δ' Δ : Scope} {e : Scope.Entry} (l : Level k)
 extended by the variable, followed by its motive if it is lifted, when the variable lifted is a
 type. -/
 theorem TypedRen.liftedVar {Δ' Δ : Scope} {ctx' : Context k Δ'} {ρ : Lifting k Δ' Δ}
-    {ctx : Context k Δ} {A : Term k Δ} (s : Quality) (l : Level k)
+    {ctx : Context k Δ} {A : Term k Δ} (s : Quality) (m : Lifting.Result k)
     (h : TypedRen sig ctx' ρ.ren ctx) (hA : WfType sig ctx A) :
     (b : Bool) → (b = true → WfType sig (ctx.var A) (.var₀ .zero)) →
-      TypedRen sig (Context.liftedVar ⟨s, l⟩ b ctx' (A.rename ρ.ren)) (Lifting.cons l b ρ).ren
+      TypedRen sig (Context.liftedVar ⟨s, m.level⟩ b ctx' (A.rename ρ.ren)) (Lifting.cons m b ρ).ren
         (ctx.var A)
   | false, _ => h.lift (stableUnderRenaming.wfType hA h)
   | true, hx => by
@@ -148,14 +148,14 @@ at the variables of its telescope, is a type. -/
 theorem TypedRen.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
     {ψ : ResultOwnership Grade ps.length} {ctx' : Context k Δ'} {ρ : Lifting k Δ' Δ}
     {ctx : Context k Δ} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} (s : Quality)
-    (l : Level k) (h : TypedRen sig ctx' ρ.ren ctx) (hA : WfType sig (ctx.append Θ) A) :
+    (m : Lifting.Result k) (h : TypedRen sig ctx' ρ.ren ctx) (hA : WfType sig (ctx.append Θ) A) :
     (b : Bool) →
       (b = true →
         WfType sig ((ctx.secondOrder Θ A ψ).append (Θ.rename Ren.weaken)) (Var.eta .zero)) →
         TypedRen sig
-          (Context.liftedSecondOrder ⟨s, l⟩ b ctx' (Θ.rename ρ.ren)
+          (Context.liftedSecondOrder ⟨s, m.level⟩ b ctx' (Θ.rename ρ.ren)
             (A.rename (Ren.liftN ps.length ρ.ren)) ψ)
-          (Lifting.cons l b ρ).ren (ctx.secondOrder Θ A ψ)
+          (Lifting.cons m b ρ).ren (ctx.secondOrder Θ A ψ)
   | false, _ =>
     h.liftSecondOrder
       (stableUnderRenaming.wfType hA (h.liftN (contextPresuppositions.wfType hA)))
@@ -175,17 +175,17 @@ theorem TypedRen.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
 -- ADE: none.
 /-- The parameters of a lifting are well formed, and the renaming of the parameters in them is
 typed, when the parameters are well formed and each parameter lifted is a type. -/
-theorem Context.lifted_typedRen (S : List Nat) (s : Quality) (lv : Nat → Level k) :
+theorem Context.lifted_typedRen (S : List Nat) (s : Quality) (mv : Nat → Lifting.Result k) :
     {Δ : Scope} → {ctx : Context k Δ} → WfCtx sig ctx → ctx.LiftsTypes sig S →
-      TypedRen sig (ctx.lifted S s lv) (Lifting.base S lv Δ).ren ctx
+      TypedRen sig (ctx.lifted S s mv) (Lifting.base S mv Δ).ren ctx
   | _, .empty, h, _ => ⟨h, fun hx => (nomatch hx), fun hX => (nomatch hX)⟩
   | _, .var _ _, .var hA, hS =>
     TypedRen.liftedVar s _
-      (Context.lifted_typedRen S s lv (contextPresuppositions.wfType hA) hS.1) hA _
+      (Context.lifted_typedRen S s mv (contextPresuppositions.wfType hA) hS.1) hA _
       fun hb => hS.2 (of_decide_eq_true hb)
   | _, .secondOrder _ _ _ _, .secondOrder hA, hS =>
     TypedRen.liftedSecondOrder s _
-      (Context.lifted_typedRen S s lv (WfCtx.of_append (contextPresuppositions.wfType hA)) hS.1)
+      (Context.lifted_typedRen S s mv (WfCtx.of_append (contextPresuppositions.wfType hA)) hS.1)
       hA _ fun hb => hS.2 (of_decide_eq_true hb)
 
 end Sic.Core

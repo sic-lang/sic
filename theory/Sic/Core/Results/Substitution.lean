@@ -35,9 +35,9 @@ variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 arguments and at the motives substituted. -/
 theorem Lifting.ofMotives_substitutes {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (names : List Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
-    (l : Level k) (Cs : Motives k Δ) :
-    Lifting.Substitutes θ θ (Lifting.ofMotives names qs ls ps as l Cs)
-      (Lifting.ofMotives names qs ls ps (as.subst θ) l (Cs.subst θ)) where
+    (l : Level k) (χ : Grade) (Cs : Motives k Δ) :
+    Lifting.Substitutes θ θ (Lifting.ofMotives names qs ls ps as l χ Cs)
+      (Lifting.ofMotives names qs ls ps (as.subst θ) l χ (Cs.subst θ)) where
   ren := fun x => (Term.rename_id_of (Ren.liftN_id_of _ fun _ => rfl) (θ x)).symm
   motive := fun _ => rfl
   motive' := fun _ => rfl
@@ -58,7 +58,7 @@ theorem Lifting.ofMotives_substitutes {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (n
         rw [Motives.get_subst θ hC]
         cases n with
         | zero =>
-          show some (Lifting.BlockMotive.mk _ _ _) = some (Lifting.BlockMotive.mk _ _ _)
+          show some (Lifting.BlockMotive.mk _ _ _ _) = some (Lifting.BlockMotive.mk _ _ _ _)
           rw [Term.subst]
           rfl
         | succ => rfl
@@ -257,12 +257,12 @@ end
 the levels, at the arguments and at the motives instantiated. -/
 theorem Lifting.ofMotives_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
     (names : List Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
-    (as : InstanceArgs k Γ Δ) (l : Level k) (Cs : Motives k Γ) :
-    (Lifting.ofMotives names qs ls ps as l Cs).substLevels ls' =
+    (as : InstanceArgs k Γ Δ) (l : Level k) (χ : Grade) (Cs : Motives k Γ) :
+    (Lifting.ofMotives names qs ls ps as l χ Cs).substLevels ls' =
       Lifting.ofMotives names qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
-        (l.subst ls') (Cs.substLevels ls') :=
+        (l.subst ls') χ (Cs.substLevels ls') :=
   Lifting.ext_of (fun _ => rfl) (fun _ => rfl) fun D => by
-    show Option.map _ ((Lifting.ofMotives names qs ls ps as l Cs).block D) = _
+    show Option.map _ ((Lifting.ofMotives names qs ls ps as l χ Cs).block D) = _
     unfold Lifting.ofMotives
     by_cases hD : D ∈ names
     · simp only [hD, ↓reduceIte]
@@ -279,7 +279,7 @@ theorem Lifting.ofMotives_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k �
         rw [Motives.get_substLevels_of ls' hC]
         cases n with
         | zero =>
-          show some (Lifting.BlockMotive.mk _ _ _) = some (Lifting.BlockMotive.mk _ _ _)
+          show some (Lifting.BlockMotive.mk _ _ _ _) = some (Lifting.BlockMotive.mk _ _ _ _)
           rw [Term.substLevels]
           rfl
         | succ => rfl
@@ -359,10 +359,11 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     rw [hD]
     rfl
   | _, _, φ, _, _, _, _,
-      .inst (t := t) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (gs := gs) h hn hq hl hp
-        has hS hL hgl hgs hgt => by
+      .inst (t := t) (D := D) (qs := qs) (ls := ls) (ms := ms) (ps := ps) (as := as) (gs := gs) h hn
+        hq hl hp has hS hL hgl hgs hgt => by
     simp only [Term.substLevels, InstanceArgs.substLevels, States.substLevels,
       Telescope.substLevels, List.map_append, List.map_nil]
+    rw [← Lifting.Result.levels_substLevels ls' ms, ← Lifting.Variables.grades_substLevels v ps ls' ms]
     refine Term.NestedResult.inst h hn hq ((List.length_map _).trans hl) hp (has.substLevels ls')
       hS hL ((CorecBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
     · intro i d hi
@@ -452,26 +453,26 @@ substituted, are those that the recursor substituted computes on the terms subst
 theorem Constructor.ResultTerms.subst_recursorAt (θ : Subst k Γ Δ) {hl : ls.length = k'}
     {r ς χ : Grade} {us : Branches k Δ} {ts : Args k Δ (c.params I)} {rs : Args k Δ ps'}
     (h : Constructor.ResultTerms sig v c I names (ls.getFin hl) as
-      (Lifting.ofMotives names qs ls gs as κ.level Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
+      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
       ts rs) :
     Constructor.ResultTerms sig v c I names (ls.getFin hl) (as.subst θ)
-      (Lifting.ofMotives names qs ls gs (as.subst θ) κ.level (Cs.subst θ))
+      (Lifting.ofMotives names qs ls gs (as.subst θ) κ.level χ (Cs.subst θ))
       (Term.recursorAt r ς χ qs ls gs (as.subst θ) κ (Cs.subst θ) (us.subst θ)) (ts.subst θ)
       (rs.subst θ) := by
-  have h' := h.subst (Lifting.ofMotives_substitutes θ names qs ls gs as κ.level Cs)
+  have h' := h.subst (Lifting.ofMotives_substitutes θ names qs ls gs as κ.level χ Cs)
   rw [funext fun E => Term.recursorAt_subst θ r ς χ qs ls gs as κ Cs us E] at h'
   exact h'
 
 /-- The recursive results of the fields of a constructor in a recursor, at instantiated levels,
 are its results in the recursor at these levels. -/
 theorem Constructor.ResultTypes.substLevels_ofMotives (ls' : Fin k → Level k'')
-    {hl : ls.length = k'} {R : Telescope k (Δ.extend (c.params I).length) ps'}
+    {hl : ls.length = k'} {χ : Grade} {R : Telescope k (Δ.extend (c.params I).length) ps'}
     (h : Constructor.ResultTypes sig v c I names (ls.getFin hl) as
-      (Lifting.ofMotives names qs ls gs as κ.level Cs) R) :
+      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) R) :
     Constructor.ResultTypes sig v c I names
       ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
       (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
-        (κ.substLevels ls').level (Cs.substLevels ls'))
+        (κ.substLevels ls').level χ (Cs.substLevels ls'))
       (R.substLevels ls') := by
   have h' := h.substLevels ls'
   rw [Lifting.ofMotives_substLevels, ← Level.getFin_map_subst ls' ls hl] at h'
@@ -484,12 +485,12 @@ theorem Constructor.ResultTerms.substLevels_recursorAt (ls' : Fin k → Level k'
     {hl : ls.length = k'} {r ς χ : Grade} {us : Branches k Δ} {ts : Args k Δ (c.params I)}
     {rs : Args k Δ ps'}
     (h : Constructor.ResultTerms sig v c I names (ls.getFin hl) as
-      (Lifting.ofMotives names qs ls gs as κ.level Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
+      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) (Term.recursorAt r ς χ qs ls gs as κ Cs us)
       ts rs) :
     Constructor.ResultTerms sig v c I names
       ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
       (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
-        (κ.substLevels ls').level (Cs.substLevels ls'))
+        (κ.substLevels ls').level χ (Cs.substLevels ls'))
       (Term.recursorAt r ς χ qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
         (κ.substLevels ls') (Cs.substLevels ls') (us.substLevels ls'))
       (ts.substLevels ls') (rs.substLevels ls') := by

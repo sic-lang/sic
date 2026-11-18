@@ -136,8 +136,8 @@ theorem Term.blockName_cast {Γ : Scope} (names : List Name) {n m : Nat} (h : n 
 /-- The lifting of a type without position that is not an instance of a type of the block of `F`
 is not an instance of a lifting of `F`. -/
 theorem Term.Lifts.blockName {sig : Signature} {v : Lifting.Variables} {Γ' Γ : Scope}
-    {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {l : Level k}
-    (h : Term.Lifts sig v ρ .plain e A A' l) {names : List Name} {F : Name}
+    {ρ : Lifting k Γ' Γ} {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {m : Lifting.Result k}
+    (h : Term.Lifts sig v ρ .plain e A A' m) {names : List Name} {F : Name}
     (hF : F ∈ names) (hA : A.blockName names = none) (S : List Nat) :
     A'.blockName [Lifting.name F S] = none := by
   cases h with
@@ -163,7 +163,7 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
       Destructors.Lifts sig v κ o ρ @θ ds ds' → Subst.Neutral θ →
       (∀ r ∈ ds.recursion names, r = none) → ∀ r ∈ ds'.recursion [Lifting.name F S], r = none
   | _, _, _, _, _, _, _, _, .nil, _, _ => fun _ hr => nomatch hr
-  | _, _, _, _, _, _, _, _, .lifted hB _ _ h, hθ, hds => fun r hr => by
+  | _, _, _, _, _, _, _, _, .lifted hB _ h, hθ, hds => fun r hr => by
     rcases List.mem_cons.1 hr with rfl | hr
     · rw [Term.blockName_cast]
       exact hB.blockName hF
@@ -179,9 +179,9 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
 destructor at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.grades + 3))
+    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.liftingGrades S))
     (hF : ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none) :
     ∀ r ∈ (body I).recursion [Lifting.name F S], r = none := by
@@ -196,9 +196,9 @@ theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaratio
 instance is no instance of this lifting, at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.blockName_pos {sig : Signature} {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.grades + 3))
+    (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.liftingGrades S))
     (hF : ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none)
     {d : Name} {p q ς : Grade} {ps : List Parameter} {Ξ : Scope}

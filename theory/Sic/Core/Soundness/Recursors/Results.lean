@@ -75,7 +75,7 @@ does not read their computation; the types of the fields of the second side have
 those of the first. -/
 theorem EqSubst.resultTerms (hd : sig.Distinct)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
       .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
@@ -249,7 +249,7 @@ asks: the first side is at the instance and at the lifting of the block substitu
 the second one at any levels, arguments and lifting. -/
 theorem EqSubst.constructorResultTerms (hd : sig.Distinct)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
       .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)

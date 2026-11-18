@@ -117,8 +117,8 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       (hl : ls'.length = decl.levels) (hp : ps'.length = decl.grades)
       {ts : Args k Γ (con.params (.ofLists qs' ps' hq hp))} {psr : List Parameter}
       {rs : Args k Γ psr} (hu : us.get i = some ⟨n, m, u⟩)
-      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs' ps' hq hp)
-        decl.names (ls'.getFin hl) as' (Lifting.ofMotives decl.names qs' ls' ps' as' κ.level Cs)
+      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con (.ofLists qs' ps' hq hp)
+        decl.names (ls'.getFin hl) as' (Lifting.ofMotives decl.names qs' ls' ps' as' κ.level χ Cs)
         (Term.recursorAt r ς χ qs' ls' ps' as' κ Cs us) ts rs)
       (hv : u.instantiateTerms₂ ts.terms rs.terms = some v) :
       Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c ts.terms) κ Cs us) v

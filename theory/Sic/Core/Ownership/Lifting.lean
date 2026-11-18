@@ -28,7 +28,7 @@ without recursive destructor, has the ownerships of its entries.
 RFC: `\mathsf{lift}_{◀}` -/
 theorem OwnershipSig.lifting {sig : Signature} (hs : OwnershipSig sig) {decl : TypeDeclaration}
     {F : Name} {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hl : decl.Lifts sig F S body)
     (hF : ∀ ι, ∀ T ∈ decl.codataTypes, T.name = F →

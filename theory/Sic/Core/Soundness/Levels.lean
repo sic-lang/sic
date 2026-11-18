@@ -259,7 +259,7 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
         have hl₂ := hls.length_eq.symm.trans hl
         obtain ⟨u', hu', huu⟩ := hus.get hu
         obtain ⟨rs₂, hrs₂, hrse⟩ := Terms.ResultTerms.levelEquiv hsig
-          (Lifting.LevelEquiv.ofMotives _ _ _ hls has hκ hCs) (fun _ => rfl)
+          (Lifting.LevelEquiv.ofMotives _ _ _ _ hls has hκ hCs) (fun _ => rfl)
           (fun D => .recursor _ _ _ D _ _ s hls (has.rename _) (Term.LevelEquiv.refl _) hκ
             (hCs.rename _) (hus.rename _))
           hrs ((Constructor.fieldsAt_levelEquiv _ _ (hls.getFin hl hl₂) has).typesAt htse)

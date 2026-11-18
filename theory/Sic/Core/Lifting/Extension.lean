@@ -39,29 +39,30 @@ mutual
 declarations of its signature. -/
 theorem Term.Factor.ofTypeDeclarations
     (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
-    {k : Nat} → {Γ : Scope} → {B : Term k Γ} → {π : Grade} → Term.Factor sig B π →
-      Term.Factor sig' B π
-  | _, _, _, _, .var x ts => .var x ts
-  | _, _, _, _, .inst h hq hp hds =>
-    .inst ⟨hs _ h.1, h.2⟩ hq hp (hds.ofTypeDeclarations hs)
+    {k : Nat} → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {B : Term k Γ'} → {π : Grade} →
+      Term.Factor sig ρ B π → Term.Factor sig' ρ B π
+  | _, _, _, _, _, _, .var hx ts => .var hx ts
+  | _, _, _, _, _, _, .inst hdecl hD h hq hp hds =>
+    .inst (hs _ hdecl) hD (hs _ h) hq hp (hds.ofTypeDeclarations hs)
 
 -- ADE: none.
 /-- Destructors have their meet likewise in a signature that has the type declarations of their
 signature. -/
 theorem Destructors.Factor.ofTypeDeclarations
     (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
-    {k : Nat} → {Γ : Scope} → {ns : List Name} → {ds : Destructors k Γ ns} →
-      {π : Option Grade} → Destructors.Factor sig ds π → Destructors.Factor sig' ds π
-  | _, _, _, _, _, .nil => .nil
-  | _, _, _, _, _, .cons hB hds => .cons (hB.ofTypeDeclarations hs) (hds.ofTypeDeclarations hs)
+    {k : Nat} → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List Name} →
+      {ds : Destructors k Γ' ns} → {π : Option Grade} → Destructors.Factor sig ρ ds π →
+        Destructors.Factor sig' ρ ds π
+  | _, _, _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, _, _, .cons hB hds => .cons (hB.ofTypeDeclarations hs) (hds.ofTypeDeclarations hs)
 
 end
 
 -- ADE: none.
 /-- A result of a destructor of a lifting has its factor likewise in a signature with more
 entries. -/
-theorem Term.Factor.extend (hs : sig ⊆ sig') {k : Nat} {Γ : Scope} {B : Term k Γ} {π : Grade}
-    (h : Term.Factor sig B π) : Term.Factor sig' B π :=
+theorem Term.Factor.extend (hs : sig ⊆ sig') {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    {B : Term k Γ'} {π : Grade} (h : Term.Factor sig ρ B π) : Term.Factor sig' ρ B π :=
   h.ofTypeDeclarations fun _ h' => hs h'
 
 /-! ## Liftings -/
@@ -74,12 +75,13 @@ signature. -/
 theorem Term.Lifts.ofTypeDeclarations
     (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
-      {A' : Term k Γ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
-        Term.Lifts sig' v ρ n e A A' l
+      {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m →
+        Term.Lifts sig' v ρ n e A A' m
   | _, _, _, _, _, _, _, _, .var hx hts => .var hx hts
   | _, _, _, _, _, _, _, _, .block hD => .block hD
-  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL =>
+  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL hπ =>
     .inst (hs _ h) hD hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL)
+      (hπ.ofTypeDeclarations hs)
 
 -- ADE: none.
 /-- The arguments of an instance lifted are lifted likewise in a signature that has the type
@@ -87,9 +89,9 @@ declarations of their signature. -/
 theorem InstanceArgs.Lifts.ofTypeDeclarations
     (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
-      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} → {Δ' : Scope} →
-      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
-        InstanceArgs.Lifts sig' v ρ ns as S ls as'
+      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Δ' : Scope} →
+      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' →
+        InstanceArgs.Lifts sig' v ρ ns as S ms as'
   | _, _, _, _, _, _, _, _, _, _, .nil => .nil
   | _, _, _, _, _, _, _, _, _, _, .lifted has hB => .lifted (has.ofTypeDeclarations hs) (hB.ofTypeDeclarations hs)
   | _, _, _, _, _, _, _, _, _, _, .absent has hB hn => .absent (has.ofTypeDeclarations hs) hB hn
@@ -99,16 +101,16 @@ end
 -- ADE: none.
 /-- A type lifted is lifted likewise in a signature with more entries. -/
 theorem Term.Lifts.extend (hs : sig ⊆ sig') {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n : Nest Name}
-    {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {l : Level k}
-    (h : Term.Lifts sig v ρ n e A A' l) : Term.Lifts sig' v ρ n e A A' l :=
+    {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {m : Lifting.Result k}
+    (h : Term.Lifts sig v ρ n e A A' m) : Term.Lifts sig' v ρ n e A A' m :=
   h.ofTypeDeclarations fun _ h' => hs h'
 
 -- ADE: none.
 /-- The arguments of an instance lifted are lifted likewise in a signature with more entries. -/
 theorem InstanceArgs.Lifts.extend (hs : sig ⊆ sig') {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
     {ns : List (Nest Name)} {Δ : Scope} {as : InstanceArgs k Γ Δ} {S : List Nat}
-    {ls : List (Level k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
-    (h : InstanceArgs.Lifts sig v ρ ns as S ls as') : InstanceArgs.Lifts sig' v ρ ns as S ls as' :=
+    {ms : List (Lifting.Result k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
+    (h : InstanceArgs.Lifts sig v ρ ns as S ms as') : InstanceArgs.Lifts sig' v ρ ns as S ms as' :=
   h.ofTypeDeclarations fun _ h' => hs h'
 
 -- ADE: none.
@@ -121,7 +123,7 @@ theorem Destructors.Lifts.extend (hs : sig ⊆ sig') {Γ₀ : Scope} {κ : Unive
     Destructors.Lifts sig' v κ o ρ @θ ds ds' := by
   induction h with
   | nil => exact .nil
-  | lifted hB hπ hκ _ ih => exact .lifted (hB.extend hs) (hπ.extend hs) hκ ih
+  | lifted hB hκ _ ih => exact .lifted (hB.extend hs) hκ ih
   | absent hB _ ih => exact .absent hB ih
 
 -- ADE: none.
@@ -129,7 +131,7 @@ theorem Destructors.Lifts.extend (hs : sig ⊆ sig') {Γ₀ : Scope} {κ : Unive
 signature with more entries. -/
 theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (h : decl.Lifts sig F S body) : decl.Lifts sig' F S body :=
   let ⟨T, hT, hn, hb⟩ := h
@@ -143,7 +145,7 @@ a type of one of its type declarations has the destructors of this type, lifted 
 before the lifting. -/
 def Signature.LiftsInOrder (sig : Signature) : Prop :=
   ∀ (pre sig₁ : Signature) (decl : TypeDeclaration) (D : Name) (S : List Nat) (ns : List Name)
-    (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns),
     sig = pre ++ .typeDeclaration (decl.lifting D S ns body) :: sig₁ →
       .typeDeclaration decl ∈ sig → D ∈ decl.names → decl.Lifts sig₁ D S body
@@ -153,7 +155,7 @@ def Signature.LiftsInOrder (sig : Signature) : Prop :=
 those of its types, in the whole signature. -/
 theorem Signature.LiftsInOrder.lifts (h : sig.LiftsInOrder) {decl : TypeDeclaration} {D : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by

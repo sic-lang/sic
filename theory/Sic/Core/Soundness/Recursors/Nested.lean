@@ -243,15 +243,14 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
     {as : InstanceArgs k Γ decl.scope} {t e : Term k Γ}
     (hres : Term.NestedResult sig v ρ φ (.inst ns) (.inst D qs ls ps as) t e) :
     ∃ (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (S : List Nat) (ls' : List (Level k)) (Δ' : Scope) (as' : InstanceArgs k Γ Δ')
+      (S : List Nat) (ms : List (Lifting.Result k)) (Δ' : Scope) (as' : InstanceArgs k Γ Δ')
       (nms : List Name)
-      (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms)
       (gs : CorecBranches k Γ),
-      e = .corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-        (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t) .nil
-        (.cons 0 .nil [] .nil) gs ∧
-      InstanceArgs.Lifts sig v ρ ns as S ls' as' ∧
+      e = .corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level))
+        (v.grades ps ms) (.snoc (e := .var) as' t) .nil (.cons 0 .nil [] .nil) gs ∧
+      InstanceArgs.Lifts sig v ρ ns as S ms as' ∧
       .typeDeclaration (decl.lifting D S nms body) ∈ sig ∧
       (∀ i d, nms[i]? = some d →
         ∃ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
@@ -286,14 +285,14 @@ theorem Term.Lifts.inst_inv {k : Nat} (hd : sig.Distinct) {Γ' Γ : Scope} {ρ :
     {ns : List (Nest Name)} {decl : TypeDeclaration} {D : Name}
     (hdecl : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {e A' : Term k Γ'}
-    {l : Level k} (hL : Term.Lifts sig v ρ (.inst ns) e (.inst D qs ls ps as) A' l) :
-    ∃ (S : List Nat) (ls' : List (Level k)) (Δ' : Scope) (as' : InstanceArgs k Γ' Δ'),
-      A' = .inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-        (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' e) ∧
-      InstanceArgs.Lifts sig v ρ ns as S ls' as' := by
+    {m : Lifting.Result k} (hL : Term.Lifts sig v ρ (.inst ns) e (.inst D qs ls ps as) A' m) :
+    ∃ (S : List Nat) (ms : List (Lifting.Result k)) (Δ' : Scope) (as' : InstanceArgs k Γ' Δ'),
+      A' = .inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level)) (v.grades ps ms)
+        (.snoc (e := .var) as' e) ∧
+      InstanceArgs.Lifts sig v ρ ns as S ms as' := by
   generalize hA : Term.inst D qs ls ps as = A at hL
   cases hL with
-  | inst h₂ hD₂ _ _ _ _ has₂ _ _ =>
+  | inst h₂ hD₂ _ _ _ _ has₂ _ _ _ =>
     injection hA with _ _ hD' hqs hls hps has
     subst hD' hqs hls hps
     cases Entry.typeDeclaration.inj (hd.entry_unique hdecl h₂ (n := D) hD hD₂)
@@ -335,9 +334,9 @@ results of the terms of these types, on each side. -/
 def ResultSoundAt (sig : Signature) (ι : Interpretation) (v : Lifting.Variables)
     (ρ₁ ρ₂ : Lifting 0 [] []) (φ₁ φ₂ : Name → Term 0 [.var]) (ν : Nest Name)
     (A₁ t₁ t₂ : Term 0 []) : Prop :=
-  ∀ (A₂ e₁ e₂ A' : Term 0 []) (l : Level 0), Term.Similar ν A₁ A₂ →
+  ∀ (A₂ e₁ e₂ A' : Term 0 []) (m : Lifting.Result 0), Term.Similar ν A₁ A₂ →
     Term.NestedResult sig v ρ₁ φ₁ ν A₁ t₁ e₁ → Term.NestedResult sig v ρ₂ φ₂ ν A₂ t₂ e₂ →
-    Term.Lifts sig v ρ₁ ν t₁ A₁ A' l → ValidType₀ sig ι A' → ValidEqTerm₀ sig ι e₁ e₂ A'
+    Term.Lifts sig v ρ₁ ν t₁ A₁ A' m → ValidType₀ sig ι A' → ValidEqTerm₀ sig ι e₁ e₂ A'
 
 /-- A closed lifting, under the variables of a telescope, substituted by closed arguments of the
 telescope. -/
@@ -383,7 +382,7 @@ those of the type lifted, and the equality of the destructors of the lifting, wh
 the instance lifted gives, relates their observations, which step to their branches. -/
 theorem ResultSoundAt.inst (hd : sig.Distinct)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
       .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
@@ -410,14 +409,14 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
             ((t₁.observation D qs ls ps as d ps₁).subst ts.toSubst)
             ((t₂.observation D qs ls₂ ps as₂ d ps₁).subst us.toSubst)) :
     ResultSoundAt sig ι v ρ₁ ρ₂ φ₁ φ₂ (.inst ns) (.inst D qs ls ps as) t₁ t₂ := by
-  intro A₂ e₁ e₂ A' l hsim h₁ h₂ hL hA'
+  intro A₂ e₁ e₂ A' mA hsim h₁ h₂ hL hA'
   have hρ₁ : ∀ {a} (x : Var [] a), ρ₁.motive x = none := fun x => nomatch x
   have hρ₂ : ∀ {a} (x : Var [] a), ρ₂.motive x = none := fun x => nomatch x
   have hid₁ : ∀ {a} (x : Var [] a), ρ₁.ren x = x := fun x => nomatch x
   obtain ⟨ls₂, as₂, rfl, hsas⟩ := hsim.inst_inv
-  obtain ⟨_, _, _, S, ls', Δ', as', nms, body, gs₁, rfl, has₁, hLm, hgs₁, hgt₁⟩ :=
+  obtain ⟨_, _, _, S, ms₁, Δ', as', nms, body, gs₁, rfl, has₁, hLm, hgs₁, hgt₁⟩ :=
     h₁.inst_inv hd h
-  obtain ⟨_, hl₂, _, S₂, ls₂', Δ₂', as₂', nms₂, body₂, gs₂, rfl, has₂, hLm₂, hgs₂, hgt₂⟩ :=
+  obtain ⟨_, hl₂, _, S₂, ms₂, Δ₂', as₂', nms₂, body₂, gs₂, rfl, has₂, hLm₂, hgs₂, hgt₂⟩ :=
     h₂.inst_inv hd h
   obtain rfl := InstanceArgs.Lifts.positions_eq hρ₁ hρ₂ has₁ has₂
   have he := Entry.typeDeclaration.inj (hd.entry_unique hLm hLm₂ (n := Lifting.name D S)
@@ -425,23 +424,24 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   obtain rfl := TypeDeclaration.lifting_destructors he
   obtain rfl := TypeDeclaration.lifting_body he
   have hDn : D ∈ decl.names := h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1
-  obtain ⟨S', ls'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
+  obtain ⟨S', ms'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
   obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
   cases hsg
   have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
     rw [List.length_append, hq]
     rfl
-  have hp' : (ps ++ [v.recursion, v.requirement, v.ownership]).length = decl.grades + 3 := by
-    rw [List.length_append, hp]
-    rfl
-  have hl' : (ls ++ ls').length = decl.levels + S.length := by
-    rw [List.length_append, hl, has₁.length_eq]
-  have hl₂' : (ls₂ ++ ls₂').length = decl.levels + S.length := by
-    rw [List.length_append, hl₂, has₂.length_eq]
+  have hp' : (v.grades ps ms₁).length = decl.liftingGrades S := v.length_grades hp has₁.length_eq
+  have hp₂' : (v.grades ps ms₂).length = decl.liftingGrades S := v.length_grades hp has₂.length_eq
+  have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
+    rw [List.length_append, hl, List.length_map, has₁.length_eq]
+  have hl₂' : (ls₂ ++ ms₂.map (·.level)).length = decl.levels + S.length := by
+    rw [List.length_append, hl₂, List.length_map, has₂.length_eq]
   obtain ⟨hΔ, -⟩ := has₁.instantiates hρ₁ S
-    (fun i => (Lifting.motiveLevel decl.levels S i).subst ((ls ++ ls').getFin hl'))
+    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp')
+      i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => Lifting.motiveLevel_subst has₁.nodup hl has₁.length_eq hl' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has₁.nodup hq' hl has₁.length_eq hl' hp
+      hp' j h₁ h₂)
   subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
@@ -454,32 +454,37 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
   have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
   have hLf := hlifts h.1 hDn hLm
-  let I' : Instance (decl.sorts + 1) (decl.grades + 3) :=
-    .ofLists (qs ++ [v.quality]) (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp'
-  have hFrec : ∀ T' ∈ decl.codataTypes, T'.name = D →
-      ∀ r ∈ (T'.body I'.lifted).recursion decl.names, r = none := fun T' hT' hn' => by
+  let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
+    .ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp'
+  -- The type has no recursive destructor at the instance of the type declaration that each
+  -- instance of the lifting at the qualities and grades of the instance holds.
+  have hFrecAt : ∀ (ms : List (Lifting.Result 0)) (hpm : (v.grades ps ms).length = decl.liftingGrades S),
+      ∀ T' ∈ decl.codataTypes, T'.name = D →
+        ∀ r ∈ (T'.body (Instance.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hpm).lifted).recursion
+          decl.names, r = none := fun ms hpm T' hT' hn' => by
     cases eq_of_heq (hd.hasCodataType_unique ⟨h.1, hT', hn'⟩ h).2
-    rw [Instance.lifted_ofLists qs ps v.quality v.recursion v.requirement v.ownership hq hp]
+    rw [Instance.lifted_ofLists qs ps v.quality _ hq hp]
     exact hrec
+  have hFrec := hFrecAt ms₁ hp'
   have hrecL : ∀ r ∈ (TL.body I').recursion declL.names, r = none := hLf.recursion I' hFrec
   -- The observations of the results.
   let L := ls.getFin hl
   let L₂ := ls₂.getFin hl₂
-  let L' := (ls ++ ls').getFin hl'
+  let L' := (ls ++ ms₁.map (·.level)).getFin hl'
   let f₁ := t₁.observation D qs ls ps as
   let f₂ := t₂.observation D qs ls₂ ps as₂
   let θ' : Subst 0 [] (.var :: decl.scope.lifted S) :=
     (InstanceArgs.snoc (e := .var) as' t₁).toSubst
-  generalize he₁ : Term.corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-    (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t₁) .nil
+  generalize he₁ : Term.corec v.recursion (Lifting.name D S) (qs ++ [v.quality])
+    (ls ++ ms₁.map (·.level)) (v.grades ps ms₁) (.snoc (e := .var) as' t₁) .nil
     (.cons 0 .nil [] .nil) gs₁ = e₁
-  generalize he₂ : Term.corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls₂ ++ ls₂')
-    (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as₂' t₂) .nil
+  generalize he₂ : Term.corec v.recursion (Lifting.name D S) (qs ++ [v.quality])
+    (ls₂ ++ ms₂.map (·.level)) (v.grades ps ms₂) (.snoc (e := .var) as₂' t₂) .nil
     (.cons 0 .nil [] .nil) gs₂ = e₂
-  let o₁' : Observations := e₁.observation (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-    (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t₁)
-  let o₂ : Observations := e₂.observation (Lifting.name D S) (qs ++ [v.quality]) (ls₂ ++ ls₂')
-    (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as₂' t₂)
+  let o₁' : Observations := e₁.observation (Lifting.name D S) (qs ++ [v.quality])
+    (ls ++ ms₁.map (·.level)) (v.grades ps ms₁) (.snoc (e := .var) as' t₁)
+  let o₂ : Observations := e₂.observation (Lifting.name D S) (qs ++ [v.quality])
+    (ls₂ ++ ms₂.map (·.level)) (v.grades ps ms₂) (.snoc (e := .var) as₂' t₂)
   have hC : ∀ {nL : Nat} {s' : Quality} {rs : Nat → Option TermRel} {S' : ObsRel}
       {o₂' : Observations}, (∀ i, rs i = none) →
       DesRel sig ι nL (fun m _ => levelRel sig ι m) s' rs ((body I').substLevels L') @θ' S' →
@@ -491,7 +496,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g₁, hg₁⟩ := hgs₁ i d' hi
     obtain ⟨_, _, _, ps₂, _, _, _, _, hpos₂, g₂, hg₂⟩ := hgs₂ i d' hi
     obtain ⟨-, rfl⟩ := hpos.params_unique (hd.destructors_nodup h) hpos₂
-    obtain ⟨π, hps, l₁, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
+    obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
       (ρ := ρ₁) hρ₁ hq hl hp hq' hl' hp' has₁ t₁ hpos hpos' o₁'
     subst hps
     have ht₁ : t₁.rename ρ₁.ren = t₁ := Term.rename_id_of hid₁ t₁
@@ -499,15 +504,15 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨SΘ, hΘ, hsound⟩ := horacle ls₂ as₂ d' p q ς ps₁ Ξ Θ B ψ hpos
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
     have hΘ'' : TelRel sig ι nL (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
-        (((Θ.substLevels L).subst (hpos.obsSubst f₁ as.toSubst)).scale (v.recursion * π)) SΘ' := by
+        (((Θ.substLevels L).subst (hpos.obsSubst f₁ as.toSubst)).scale (v.recursion * mr.factor)) SΘ' := by
       have e := hΘeq
       rw [Telescope.rename_id_of hid₁] at e
       exact e ▸ hΘ'
     have ihm : ∀ m, m < max nL n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hSS := TelRel.unique hd ihm (TelRel.levelLe (Nat.le_max_left nL n) hΘ'') _ _
-      (TelRel.levelLe (Nat.le_max_right nL n) (hΘ.scale (v.recursion * π)))
-    obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * π)) ps₁ ts'
-    obtain ⟨us, hus⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * π)) ps₁ us'
+      (TelRel.levelLe (Nat.le_max_right nL n) (hΘ.scale (v.recursion * mr.factor)))
+    obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ ts'
+    obtain ⟨us, hus⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ us'
     have hSΘ : SΘ ts.terms us.terms := (hSS _ _).1 (hts ▸ hus ▸ hts')
     -- The results of the observations, at the arguments.
     have hφ₁ : (fun E => ((φ₁ E).rename (Ren.lift (Ren.weakenN ps₁.length))).subst
@@ -530,7 +535,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     have hL' := hBL.subst (Lifting.Substitutes.closedArgs ρ₁ ts)
     rw [Term.rename_id_of (Ren.liftN_id_of _ hid₁), Term.subst_append,
       Term.subst_toSubst_cast _ _ ts ts' hts, Term.subst_append] at hL'
-    have hE := hsound ts us hSΘ _ _ _ _ l₁ hsim' hN₁ hN₂ hL' (hF'.validType hd hvB)
+    have hE := hsound ts us hSΘ _ _ _ _ mr hsim' hN₁ hN₂ hL' (hF'.validType hd hvB)
     have hFg : F' (g₁.subst ts.toSubst) (g₂.subst us.toSubst) := hF'.of_validEqTerm hvB hE
     -- The observations of the corecursors step to their branches.
     have hiL : declL.codataCases[i]? = some (0, TL, d') := by
@@ -540,6 +545,13 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     have hrecN : (TL.body I').resultName declL.names d' = none :=
       (hpos'.resultName declL.names (hd.destructors_nodup hTL)).trans
         (hLf.blockName_pos I' hFrec hpos')
+    -- The destructor has no result of the block at the instance of the second side either.
+    let I₂' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
+      .ofLists (qs ++ [v.quality]) (v.grades ps ms₂) hq' hp₂'
+    obtain ⟨_, _, _, _, _, _, _, _, ⟨hpos₂'⟩⟩ := Destructors.exists_pos (TL.body I₂') hpos'.mem
+    have hrecN₂ : (TL.body I₂').resultName declL.names d' = none :=
+      (hpos₂'.resultName declL.names (hd.destructors_nodup hTL)).trans
+        (hLf.blockName_pos I₂' (hFrecAt ms₂ hp₂') hpos₂')
     have hr₁ : ∀ w, Computesι sig ι ((o₁' d' _).subst ts'.toSubst) w ↔
         Computesι sig ι (g₁.subst ts.toSubst) w := fun w => by
       subst he₁
@@ -550,15 +562,15 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       (hO' d' _ us'.toSubst w).trans (by
         subst he₂
         rw [Term.observation_subst_args, ← hus]
-        exact Computesι.red_iff hd (Red.beta_stateless hTL hq' hl₂' hp' hiL hrecN hg₂ us))
+        exact Computesι.red_iff hd (Red.beta_stateless hTL hq' hl₂' hp₂' hiL hrecN₂ hg₂ us))
     exact (hF'.congr_computes (hr₂.elim .inl fun h₂ => .inr ⟨hr₁, h₂⟩)).2 hFg
   -- The meaning of the instance lifted.
   obtain ⟨-, vA, -, R, hcA, -, hR, -, -⟩ := id hA'
   have hIA : Computesι sig ι
-      (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-        (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t₁))
-      (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-        (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t₁)) :=
+      (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
+        (v.grades ps ms₁) (.snoc (e := .var) as' t₁))
+      (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
+        (v.grades ps ms₁) (.snoc (e := .var) as' t₁)) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
   cases Computesι.det hd hIA hcA
   have hrs : ∀ {α : Type} (f : Name → α) (i : Nat),
@@ -625,7 +637,7 @@ terms whose results are equal terms of the motive of the type that the position 
 not read their computation. -/
 theorem NestRel.resultSound (hd : sig.Distinct)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
       .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
@@ -693,7 +705,7 @@ equal abstractions for them, or have a result with a position, on which the dest
 them do not depend. -/
 theorem NestDesRel.resultSound (hd : sig.Distinct)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
       .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)

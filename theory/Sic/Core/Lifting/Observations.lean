@@ -215,41 +215,39 @@ theorem Destructors.Lifts.pos {Γ₀ : Scope} {κ : Universe k}
         {Ξ' : Scope} {Θ' : Telescope k Ξ' ps'} {B' : Term k (Ξ'.extend ps'.length)}
         {ψ' : ResultOwnership Grade ps'.length}
         (hd' : Destructors.Pos d p' q' ς' ds' Ξ' Θ' B' ψ'),
-        ∃ (π : Grade) (hps : ps' = ps.map (Parameter.scale (v.recursion * π)))
-          (ρ₁ : Lifting k Ξ' Γ₀) (β : Ren Ξ' Γ') (l : Level k),
+        ∃ (m : Lifting.Result k) (hps : ps' = ps.map (Parameter.scale (v.recursion * m.factor)))
+          (ρ₁ : Lifting k Ξ' Γ₀) (β : Ren Ξ' Γ'),
           (∀ {a} (x : Var Γ₀ a), ρ₁.ren x = β (ρ.ren x)) ∧
           (∀ {a} (x : Var Γ₀ a),
             ρ₁.motive x = (ρ.motive x).map (Prod.map (fun y => β y) id)) ∧
           (∀ {k'' : Nat} {Γ'' : Scope}
             (o' : Name → (ps : List Parameter) → Term k'' (Γ''.extend ps.length))
             (θ' : Subst k'' Γ'' Γ') {a} (z : Var Γ' a), hd'.obsSubst o' @θ' (β z) = θ' z) ∧
-          (hps ▸ Θ' : Telescope k Ξ' (ps.map (Parameter.scale (v.recursion * π)))) =
-            ((Θ.subst (hd.obsSubst o @θ)).rename ρ₁.ren).scale (v.recursion * π) ∧
+          (hps ▸ Θ' : Telescope k Ξ' (ps.map (Parameter.scale (v.recursion * m.factor)))) =
+            ((Θ.subst (hd.obsSubst o @θ)).rename ρ₁.ren).scale (v.recursion * m.factor) ∧
           Term.Lifts sig v (ρ₁.liftN ps.length) .plain
             ((o d ps).rename (Ren.liftN ps.length ρ₁.ren))
             (B.subst (Subst.liftN ps.length (hd.obsSubst o @θ)))
-            (((congrArg List.length hps).trans (List.length_map _)) ▸ B') l ∧
-          Term.Factor sig (((congrArg List.length hps).trans (List.length_map _)) ▸ B') π
+            (((congrArg List.length hps).trans (List.length_map _)) ▸ B') m
   | _, _, _, _, _, _, _, _, .nil, _ => fun hd => nomatch hd
-  | _, ρ, _, _, _, _, _, _, .lifted (B' := B₀') (l := l₀) (π := π₀) hB hπ _ hds, hnd => by
+  | _, ρ, _, _, _, _, _, _, .lifted (B' := B₀') (m := m₀) hB _ hds, hnd => by
     intro hd p' q' ς' ps' Ξ' Θ' B' ψ' hd'
     have hnd' := List.nodup_cons.1 hnd
     cases hd' with
     | here =>
       cases hd with
       | here =>
-        exact ⟨π₀, rfl, ρ, fun z => z, l₀, fun _ => rfl, fun x => by cases ρ.motive x <;> rfl,
-          fun {_ _} _ _ {_} _ => rfl, rfl, hB.congr rfl rfl rfl (Term.cast_cast _ _ B₀').symm,
-          (Term.cast_cast _ _ B₀').symm ▸ hπ⟩
+        exact ⟨m₀, rfl, ρ, fun z => z, fun _ => rfl, fun x => by cases ρ.motive x <;> rfl,
+          fun {_ _} _ _ {_} _ => rfl, rfl, hB.congr rfl rfl rfl (Term.cast_cast _ _ B₀').symm⟩
       | there hd₀ => exact absurd hd₀.mem hnd'.1
     | there hd'' =>
       cases hd with
       | here => exact absurd ((Destructors.Lifts.sublist hds).subset hd''.mem) hnd'.1
       | there hd₀ =>
-        obtain ⟨π, hps, ρ₁, β, l, hr, hm, ho', hΘ, hL, hπ⟩ :=
+        obtain ⟨m, hps, ρ₁, β, hr, hm, ho', hΘ, hL⟩ :=
           Destructors.Lifts.pos hds hnd'.2 hd₀ hd''
-        refine ⟨π, hps, ρ₁, fun z => β (.succ z), l, fun x => hr x, fun x => ?_,
-          fun {_ _} o' θ' {_} z => ho' o' _ (.succ z), hΘ, hL, hπ⟩
+        refine ⟨m, hps, ρ₁, fun z => β (.succ z), fun x => hr x, fun x => ?_,
+          fun {_ _} o' θ' {_} z => ho' o' _ (.succ z), hΘ, hL⟩
         rw [hm x]
         show ((ρ.motive x).map _).map _ = _
         cases ρ.motive x <;> rfl
@@ -267,16 +265,16 @@ lifted and its motive, for a parameter lifted. -/
 theorem Lifting.Instantiates.consLifted {Γ' Γ Δ' Δ : Scope} {ρ : Lifting k Γ' Γ}
     {ρb : Lifting k Δ' Δ} {a : Scope.Entry} {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ}
     {as' : InstanceArgs k Γ' Δ'} {B : Term k (Γ.extend a.params.length)}
-    {B' : Term k (.var :: Γ'.extend a.params.length)} {l : Level k}
+    {B' : Term k (.var :: Γ'.extend a.params.length)} {m : Lifting.Result k}
     (h : Lifting.Instantiates sig v as.toSubst as'.toSubst ρb ρ (Nesting.ofArgs ns.tail))
     (hB : Term.Lifts sig v (ρ.liftN a.params.length).weaken (ns.headD .plain) (.var₀ .zero) B B'
-      l) :
+      m) :
     (b : Bool) → b = true → ∃ hΔ : a.motive :: a :: Δ' = Scope.liftedCons b a Δ',
       Lifting.Instantiates sig v (InstanceArgs.snoc as B).toSubst
         (hΔ ▸ InstanceArgs.snoc (e := a.motive)
           (.snoc as' (B.rename (Ren.liftN a.params.length ρ.ren)))
           (Scope.extend_snoc Γ' a.params Lifting.termParam ▸ B')).toSubst
-        (Lifting.cons l b ρb) ρ (Nesting.ofArgs ns)
+        (Lifting.cons m b ρb) ρ (Nesting.ofArgs ns)
   | true, _ =>
     ⟨rfl, {
       ren := fun x =>
@@ -307,13 +305,13 @@ theorem Lifting.Instantiates.consLifted {Γ' Γ Δ' Δ : Scope} {ρ : Lifting k 
 kept, without position, for a parameter that is not lifted. -/
 theorem Lifting.Instantiates.consAbsent {Γ' Γ Δ' Δ : Scope} {ρ : Lifting k Γ' Γ}
     {ρb : Lifting k Δ' Δ} {a : Scope.Entry} {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ}
-    {as' : InstanceArgs k Γ' Δ'} {B : Term k (Γ.extend a.params.length)} (l : Level k)
+    {as' : InstanceArgs k Γ' Δ'} {B : Term k (Γ.extend a.params.length)} (m : Lifting.Result k)
     (h : Lifting.Instantiates sig v as.toSubst as'.toSubst ρb ρ (Nesting.ofArgs ns.tail))
     (hn : ns.headD .plain = .plain) :
     (b : Bool) → b = false → ∃ hΔ : a :: Δ' = Scope.liftedCons b a Δ',
       Lifting.Instantiates sig v (InstanceArgs.snoc as B).toSubst
         (hΔ ▸ InstanceArgs.snoc as' (B.rename (Ren.liftN a.params.length ρ.ren))).toSubst
-        (Lifting.cons l b ρb) ρ (Nesting.ofArgs ns)
+        (Lifting.cons m b ρb) ρ (Nesting.ofArgs ns)
   | false, _ =>
     ⟨rfl, {
       ren := fun x =>
@@ -341,20 +339,20 @@ theorem Lifting.Instantiates.consAbsent {Γ' Γ Δ' Δ : Scope} {ρ : Lifting k 
 -- ADE: none.
 /-- The arguments of an instance lifted, by a lifting that lifts no variable, are an instantiation
 of the lifting of the parameters at the positions of the arguments lifted, whose motives have the
-levels of these: the arguments lifted are arguments of the parameters lifted, they give each
+results of these: the arguments lifted are arguments of the parameters lifted, they give each
 parameter its argument, renamed, and the motive of each parameter lifted its argument lifted, at
 the nesting of this argument.
-The positions `S₂` are those of the relation among the positions of the parameters, and `lv` gives
-the levels of the relation. -/
+The positions `S₂` are those of the relation among the positions of the parameters, and `mv` gives
+the results of the relation. -/
 theorem InstanceArgs.Lifts.instantiates {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) :
     {ns : List (Nest Name)} → {Δ : Scope} → {as : InstanceArgs k Γ Δ} → {S : List Nat} →
-      {ls : List (Level k)} → {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} →
-      InstanceArgs.Lifts sig v ρ ns as S ls as' → ∀ (S₂ : List Nat) (lv : Nat → Level k),
+      {ms : List (Lifting.Result k)} → {Δ' : Scope} → {as' : InstanceArgs k Γ' Δ'} →
+      InstanceArgs.Lifts sig v ρ ns as S ms as' → ∀ (S₂ : List Nat) (mv : Nat → Lifting.Result k),
         (∀ i, i < Δ.length → (i ∈ S₂ ↔ i ∈ S)) →
-          (∀ j (h₁ : j < S.length) (h₂ : j < ls.length), lv S[j] = ls[j]) →
+          (∀ j (h₁ : j < S.length) (h₂ : j < ms.length), mv S[j] = ms[j]) →
             ∃ hΔ : Δ' = Δ.lifted S₂,
-              Lifting.Instantiates sig v as.toSubst (hΔ ▸ as').toSubst (Lifting.base S₂ lv Δ) ρ
+              Lifting.Instantiates sig v as.toSubst (hΔ ▸ as').toSubst (Lifting.base S₂ mv Δ) ρ
                 (Nesting.ofArgs ns)
   | _, _, _, _, _, _, _, .nil, _, _, _, _ =>
     ⟨rfl, {
@@ -362,10 +360,10 @@ theorem InstanceArgs.Lifts.instantiates {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
       motive' := hρ
       plain := fun x => nomatch x
       lifted := fun x => nomatch x }⟩
-  | _, _, _, _, _, _, _, .lifted (Δ := Δ₀) (S := S) (ls := ls) (l := l) has hB, S₂, lv, hS,
+  | _, _, _, _, _, _, _, .lifted (Δ := Δ₀) (S := S) (ms := ms) (m := m) has hB, S₂, mv, hS,
       hlv => by
     have hlen := has.length_eq
-    obtain ⟨hΔ, ih⟩ := InstanceArgs.Lifts.instantiates hρ has S₂ lv
+    obtain ⟨hΔ, ih⟩ := InstanceArgs.Lifts.instantiates hρ has S₂ mv
       (fun i hi => (hS i (Nat.lt_succ_of_lt hi)).trans
         ⟨fun h => (List.mem_append.1 h).elim id fun h' =>
           absurd (List.mem_singleton.1 h') (Nat.ne_of_lt hi), List.mem_append_left _⟩)
@@ -373,17 +371,17 @@ theorem InstanceArgs.Lifts.instantiates {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
         have h := hlv j (by rw [List.length_append]; omega) (by rw [List.length_append]; omega)
         rwa [List.getElem_append_left h₁, List.getElem_append_left h₂] at h)
     subst hΔ
-    have hl : lv Δ₀.length = l := by
+    have hl : mv Δ₀.length = m := by
       have h := hlv S.length (by simp) (by simp [hlen])
       simpa [hlen] using h
     subst hl
     exact ih.consLifted hB _
       (decide_eq_true ((hS _ (Nat.lt_succ_self _)).2 (List.mem_append_right _ (.head _))))
-  | _, _, _, _, _, _, _, .absent (Δ := Δ₀) has _ hn, S₂, lv, hS, hlv => by
-    obtain ⟨hΔ, ih⟩ := InstanceArgs.Lifts.instantiates hρ has S₂ lv
+  | _, _, _, _, _, _, _, .absent (Δ := Δ₀) has _ hn, S₂, mv, hS, hlv => by
+    obtain ⟨hΔ, ih⟩ := InstanceArgs.Lifts.instantiates hρ has S₂ mv
       (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
     subst hΔ
-    exact ih.consAbsent (lv Δ₀.length) hn _
+    exact ih.consAbsent (mv Δ₀.length) hn _
       (decide_eq_false fun h => Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
 
 /-- The instantiation of a lifting by arguments, followed by a term and this term renamed, for a
@@ -462,19 +460,19 @@ instance are lifted in the whole signature.
 theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     {sig₁ : Signature} (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T)
     (hL : decl.Lifts sig₁ D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
-    {qs : List Quality} {ls ls' : List (Level k)} {ps : List Grade}
+    {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
-    (hl' : (ls ++ ls').length = decl.levels + S.length)
-    (hp' : (ps ++ [v.recursion, v.requirement, v.ownership]).length = decl.grades + 3)
+    (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
+    (hp' : (v.grades ps ms).length = decl.liftingGrades S)
     {nsA : List (Nest Name)} {as : InstanceArgs k Γ decl.scope}
     {as' : InstanceArgs k Γ' (decl.scope.lifted S)}
-    (has : InstanceArgs.Lifts sig v ρ nsA as S ls' as') (t : Term k Γ) {d : Name}
+    (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
     {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
     {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hd : Destructors.Pos d p q ς (T.body (.ofLists qs ps hq hp)) Ξ Θ B ψ) {p' q' ς' : Grade}
@@ -482,24 +480,23 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
     (hd' : Destructors.Pos d p' q' ς'
-      (body (.ofLists (qs ++ [v.quality]) (ps ++ [v.recursion, v.requirement, v.ownership]) hq'
-        hp')) Ξ' Θ' B' ψ')
+      (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) Ξ' Θ' B' ψ')
     (o' : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
-    ∃ (π : Grade) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * π)))
+    ∃ (m : Lifting.Result k) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * m.factor)))
       (ρ₁ : Lifting k Ξ' (.var :: decl.scope))
       (e₀ : Term k (Ξ'.extend ps₁.length))
       (A₀ : Term k (Scope.extend (.var :: decl.scope) ps₁.length))
-      (A₀' : Term k (Ξ'.extend ps₁.length)) (l : Level k),
-      Term.Lifts sig₁ v (ρ₁.liftN ps₁.length) .plain e₀ A₀ A₀' l ∧
+      (A₀' : Term k (Ξ'.extend ps₁.length)),
+      Term.Lifts sig₁ v (ρ₁.liftN ps₁.length) .plain e₀ A₀ A₀' m ∧
       Lifting.Instantiates sig v (InstanceArgs.snoc (e := .var) as t).toSubst
         (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst) ρ₁ ρ
         (Nesting.lift (Nesting.ofArgs nsA)) ∧
-      (hps ▸ (Θ'.substLevels ((ls ++ ls').getFin hl')).subst
+      (hps ▸ (Θ'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst) :
-        Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * π)))) =
+        Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * m.factor)))) =
         (((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)).rename
-            ρ.ren).scale (v.recursion * π) ∧
+            ρ.ren).scale (v.recursion * m.factor) ∧
       A₀.nest (fun _ => none) (Nesting.liftN ps₁.length (Nesting.lift (Nesting.ofArgs nsA))) =
         B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA))) ∧
       e₀.subst (Subst.liftN ps₁.length
@@ -511,50 +508,53 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       A₀'.subst (Subst.liftN ps₁.length
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)) =
         (((congrArg List.length hps).trans (List.length_map _)) ▸
-          (B'.substLevels ((ls ++ ls').getFin hl')).subst
+          (B'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
             (Subst.liftN ps₁'.length
               (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst))) := by
   -- The destructors of the lifting are those of `T`, lifted, at each instance.
   obtain ⟨T₀, hT₀, hn₀, hb⟩ := hL
   cases eq_of_heq (hsig.hasCodataType_unique ⟨hT.1, hT₀, hn₀⟩ hT).2
-  have hb' := hb (.ofLists (qs ++ [v.quality]) (ps ++ [v.recursion, v.requirement, v.ownership])
-    hq' hp')
-  rw [Instance.liftingVariables_ofLists qs ps v hq hp,
-    Instance.lifted_ofLists qs ps v.quality v.recursion v.requirement v.ownership hq hp] at hb'
-  obtain ⟨π, hps, ρ₁, β, l, hr, hm, ho, hΘ, hL₀, -⟩ :=
+  have hb' := hb (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
+  rw [Instance.liftingVariables_ofLists qs ps v ms hq hp,
+    Instance.lifted_ofLists qs ps v.quality _ hq hp] at hb'
+  obtain ⟨m, hps, ρ₁, β, hr, hm, ho, hΘ, hL₀⟩ :=
     hb'.pos (hsig.destructors_nodup hT) (hd.substLevels (Level.lifted S.length)) hd'
   subst hps
   cases (hΘ : Θ' = _)
-  -- The arguments lifted, followed by the term, instantiate the lifting of the position.
+  -- The arguments lifted, followed by the term, instantiate the lifting of the position: the
+  -- instance gives the motive of each parameter lifted the result of its argument lifted.
   obtain ⟨_, hI₀⟩ := has.instantiates hρ S
-    (fun i => (Lifting.motiveLevel decl.levels S i).subst ((ls ++ ls').getFin hl'))
+    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
+      i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => Lifting.motiveLevel_subst has.nodup hl has.length_eq hl' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl' hp
+      hp' j h₁ h₂)
   have hI : Lifting.Instantiates sig v (InstanceArgs.snoc (e := .var) as t).toSubst
       (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)
-      (ρ₁.substLevels ((ls ++ ls').getFin hl')) ρ (Nesting.lift (Nesting.ofArgs nsA)) := by
+      (ρ₁.substLevels ((ls ++ ms.map (·.level)).getFin hl')) ρ (Nesting.lift (Nesting.ofArgs nsA)) := by
     have h₁ := Lifting.Instantiates.snocTerm hI₀ t
     rw [← Lifting.base_substLevels, ← Lifting.substLevels_lift] at h₁
     exact h₁.ofRen (fun z => β z) (fun z => ho _ _ z) (fun x => hr x) (fun x => by
       show (ρ₁.motive x).map _ = (((Lifting.base S _ decl.scope).lift.motive x).map _).map _
       rw [hm x]
-      cases (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift.motive x <;> rfl)
+      unfold TypeDeclaration.liftingScope
+      cases (Lifting.base S _ decl.scope).lift.motive x <;> rfl)
   -- The observations of the parameter `y` of the lifting become those of the term.
   have hargs : (((InstanceArgs.identity (k := decl.levels + S.length) decl.scope).rename
-        Ren.weaken).substLevels ((ls ++ ls').getFin hl')).subst
+        Ren.weaken).substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
       (InstanceArgs.snoc (e := .var) as t).toSubst = as := by
     rw [InstanceArgs.substLevels_rename, InstanceArgs.identity_substLevels]
     exact (InstanceArgs.subst_rename_of (α := Ren.weaken) (θ' := as.toSubst) (fun _ => rfl)
       _).trans (InstanceArgs.identity_subst_toSubst as)
   have hobs : ∀ d' ps',
       ((decl.liftedObservation D S.length (.ofLists qs ps hq hp) d' ps').substLevels
-          ((ls ++ ls').getFin hl')).subst
+          ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN ps'.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
       t.observation D qs ls ps as d' ps' := fun d' ps' => by
     have e_l : (List.ofFn (Level.lifted (k := decl.levels) S.length)).map
-        (Level.subst ((ls ++ ls').getFin hl')) = ls :=
+        (Level.subst ((ls ++ ms.map (·.level)).getFin hl')) = ls :=
       (List.map_ofFn ..).trans
-        ((congrArg List.ofFn (Level.lifted_subst ls ls' hl hl')).trans (List.ofFn_getFin ls hl))
+        ((congrArg List.ofFn (Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl')).trans (List.ofFn_getFin ls hl))
     show ((Term.observation D (List.ofFn (qs.getFin hq)) (List.ofFn (Level.lifted S.length))
       (List.ofFn (ps.getFin hp)) ((InstanceArgs.identity decl.scope).rename Ren.weaken)
       (.var₀ .zero) d' ps').substLevels _).subst _ = _
@@ -563,24 +563,24 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     rfl
   have hθ₀ : ∀ {a} (y : Var decl.scope a),
       ((((InstanceArgs.identity (k := decl.levels + S.length) decl.scope).rename
-          Ren.weaken).toSubst y).substLevels ((ls ++ ls').getFin hl')).subst
+          Ren.weaken).toSubst y).substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN a.params.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
       as.toSubst y := fun y => by
     rw [InstanceArgs.toSubst_substLevels, InstanceArgs.toSubst_subst, hargs]
   have hσ : ∀ {a} (x : Var Ξ a),
       ((hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
           ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
-          ((ls ++ ls').getFin hl')).subst
+          ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN a.params.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
       hd.obsSubst (t.observation D qs ls ps as) as.toSubst x := fun x => by
-    have e₁ := hd.obsSubst_substLevels ((ls ++ ls').getFin hl')
+    have e₁ := hd.obsSubst_substLevels ((ls ++ ms.map (·.level)).getFin hl')
       (o := decl.liftedObservation D S.length (.ofLists qs ps hq hp))
       (o' := fun d' ps' => (decl.liftedObservation D S.length (.ofLists qs ps hq hp) d'
-        ps').substLevels ((ls ++ ls').getFin hl'))
+        ps').substLevels ((ls ++ ms.map (·.level)).getFin hl'))
       (fun _ _ => rfl)
       (θ := ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
       (θ' := fun y => (((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst
-        y).substLevels ((ls ++ ls').getFin hl'))
+        y).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
       (fun _ => rfl) x
     rw [e₁]
     exact hd.obsSubst_subst (InstanceArgs.snoc (e := .var) as t).toSubst hobs (fun y => hθ₀ y) x
@@ -588,9 +588,10 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
   have hL₁ := (hL₀.congr rfl rfl
     (Term.subst_congr (Subst.liftN_congr ps₁.length fun x =>
       hd.obsSubst_posSubstLevels (Level.lifted S.length) _ _ x) _) rfl).substLevels
-    ((ls ++ ls').getFin hl')
+    ((ls ++ ms.map (·.level)).getFin hl')
   rw [Lifting.substLevels_liftN] at hL₁
-  refine ⟨π, rfl, _, _, _, _, l.subst ((ls ++ ls').getFin hl'), hL₁, hI, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨m.substLevels ((ls ++ ms.map (·.level)).getFin hl'), rfl, _, _, _, _, hL₁, hI, ?_, ?_,
+    ?_, ?_, ?_⟩
   · refine (?_ : ∀ θ' : Subst k Γ' Ξ',
       (∀ {a} (x : Var (.var :: decl.scope) a), θ' (ρ₁.ren x) =
         ((InstanceArgs.snoc (e := .var) as t).toSubst x).rename
@@ -601,14 +602,15 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       Telescope.scale_substLevels, Telescope.scale_subst, Telescope.substLevels_rename,
       (Telescope.subst_rename_of (fun _ => rfl) _).trans
         (Telescope.rename_subst_of (fun x => (hθ' x).symm) _).symm,
-      Telescope.substLevels_subst_of (ls' := (ls ++ ls').getFin hl')
+      Telescope.substLevels_subst_of (ls' := (ls ++ ms.map (·.level)).getFin hl')
         (θ' := fun x =>
           (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
             ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
-            ((ls ++ ls').getFin hl'))
+            ((ls ++ ms.map (·.level)).getFin hl'))
         (fun _ => rfl),
       Telescope.subst_subst_of hσ, Telescope.substLevels_substLevels,
-      Level.lifted_subst ls ls' hl hl']
+      Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
+    rfl
   · have hN : Subst.Nests
         (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
           ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
@@ -621,14 +623,14 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     rw [Term.nest_substLevels, Term.nest_subst_of (hN.liftN ps₁.length), Term.nest_substLevels]
   · rw [Term.substLevels_rename]
     exact (hI.subst_rename ps₁.length _).trans (congrArg (Term.rename _) (hobs d ps₁))
-  · rw [Term.substLevels_subst_of (ls' := (ls ++ ls').getFin hl')
+  · rw [Term.substLevels_subst_of (ls' := (ls ++ ms.map (·.level)).getFin hl')
         (θ' := Subst.liftN ps₁.length fun x =>
           (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
             ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
-            ((ls ++ ls').getFin hl'))
+            ((ls ++ ms.map (·.level)).getFin hl'))
         (Subst.liftN_substLevels_of ps₁.length fun _ => rfl),
       Term.subst_subst_of (Subst.liftN_subst_of ps₁.length hσ), Term.substLevels_substLevels,
-      Level.lifted_subst ls ls' hl hl']
+      Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
   · exact Term.substLevels_subst_cast _ _ _ B'
 
 -- ADE: none.
@@ -647,18 +649,18 @@ RFC: `\mathsf{inst}_{\uparrow}`
 theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
-    {qs : List Quality} {ls ls' : List (Level k)} {ps : List Grade}
+    {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
-    (hl' : (ls ++ ls').length = decl.levels + S.length)
-    (hp' : (ps ++ [v.recursion, v.requirement, v.ownership]).length = decl.grades + 3)
+    (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
+    (hp' : (v.grades ps ms).length = decl.liftingGrades S)
     {nsA : List (Nest Name)} {as : InstanceArgs k Γ decl.scope}
     {as' : InstanceArgs k Γ' (decl.scope.lifted S)}
-    (has : InstanceArgs.Lifts sig v ρ nsA as S ls' as') (t : Term k Γ) {d : Name}
+    (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
     {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
     {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hd : Destructors.Pos d p q ς (T.body (.ofLists qs ps hq hp)) Ξ Θ B ψ) {p' q' ς' : Grade}
@@ -666,28 +668,27 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
     (hd' : Destructors.Pos d p' q' ς'
-      (body (.ofLists (qs ++ [v.quality]) (ps ++ [v.recursion, v.requirement, v.ownership]) hq'
-        hp')) Ξ' Θ' B' ψ')
+      (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) Ξ' Θ' B' ψ')
     (o' : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
-    ∃ (π : Grade) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * π))) (l : Level k),
-      (hps ▸ (Θ'.substLevels ((ls ++ ls').getFin hl')).subst
+    ∃ (m : Lifting.Result k) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * m.factor))),
+      (hps ▸ (Θ'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst) :
-        Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * π)))) =
+        Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * m.factor)))) =
         (((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)).rename
-            ρ.ren).scale (v.recursion * π) ∧
+            ρ.ren).scale (v.recursion * m.factor) ∧
       Term.Lifts sig v (ρ.liftN ps₁.length)
         (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA))))
         ((t.observation D qs ls ps as d ps₁).rename (Ren.liftN ps₁.length ρ.ren))
         ((B.substLevels (ls.getFin hl)).subst
           (Subst.liftN ps₁.length (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
         (((congrArg List.length hps).trans (List.length_map _)) ▸
-          (B'.substLevels ((ls ++ ls').getFin hl')).subst
+          (B'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
             (Subst.liftN ps₁'.length
               (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)))
-        l := by
-  obtain ⟨π, hps, _, _, _, _, l, hL₁, hI, hΘ, h₁, h₂, h₃, h₄⟩ :=
+        m := by
+  obtain ⟨m, hps, _, _, _, _, hL₁, hI, hΘ, h₁, h₂, h₃, h₄⟩ :=
     hL.result hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' o'
-  exact ⟨π, hps, l, hΘ, (hL₁.instantiate rfl (hI.liftN ps₁.length)).congr h₁ h₂ h₃ h₄⟩
+  exact ⟨m, hps, hΘ, (hL₁.instantiate rfl (hI.liftN ps₁.length)).congr h₁ h₂ h₃ h₄⟩
 
 end Sic.Core

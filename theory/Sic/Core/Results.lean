@@ -44,27 +44,27 @@ variable {k : Nat}
 -- ADE: none.
 /-- The lifting of the scope of a recursor in itself, which lifts no variable, and the types of the
 block whose names are `names`: each has its instance at the variables `qs`, `ls`, `ps` and at the
-arguments `as` of the recursor, its motive in `C̄`, without non-uniform parameter, and the level `l`
-of the sort of the motives. -/
+arguments `as` of the recursor, its motive in `C̄`, without non-uniform parameter, the level `l` of
+the sort of the motives, and the ownership `χ` of the results of the recursor. -/
 def Lifting.ofMotives {Γ Δ : Scope} (names : List Name) (qs : List Quality) (ls : List (Level k))
-    (ps : List Grade) (as : InstanceArgs k Γ Δ) (l : Level k) (Cs : Motives k Γ) :
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (l : Level k) (χ : Grade) (Cs : Motives k Γ) :
     Lifting k Γ Γ where
   ren := fun x => x
   motive := fun _ => none
   block := fun D =>
     if D ∈ names then
       match Cs.get (names.idxOf D) with
-      | some ⟨0, C⟩ => some ⟨.inst D qs ls ps as, C, l⟩
+      | some ⟨0, C⟩ => some ⟨.inst D qs ls ps as, C, l, χ⟩
       | _ => none
     else none
 
 /-- A type of the block that the lifting of the scope of a recursor gives a motive has a name of
 the block, its instance at the arguments of the recursor and its motive in `C̄`. -/
 theorem Lifting.ofMotives_block_inv {Γ Δ : Scope} {names : List Name} {qs : List Quality}
-    {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ} {l : Level k}
+    {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ} {l : Level k} {χ : Grade}
     {Cs : Motives k Γ} {D : Name} {b : Lifting.BlockMotive k Γ Γ}
-    (h : (Lifting.ofMotives names qs ls ps as l Cs).block D = some b) :
-    D ∈ names ∧ ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ ∧ b = ⟨.inst D qs ls ps as, C, l⟩ := by
+    (h : (Lifting.ofMotives names qs ls ps as l χ Cs).block D = some b) :
+    D ∈ names ∧ ∃ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ ∧ b = ⟨.inst D qs ls ps as, C, l, χ⟩ := by
   unfold Lifting.ofMotives at h
   by_cases hD : D ∈ names
   · simp only [hD, ↓reduceIte] at h
@@ -127,8 +127,8 @@ inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
   RFC: `\uparrow_{\Theta\lambda}` -/
   | nested {Δ' Δ : Scope} {ρ : Lifting k Δ' Δ} {ms ns : List (Nest Name)} {p : Parameter}
       {ps ps' : List Parameter} {A x : Term k Δ} {As xs : Terms k Δ} {A' : Term k Δ'}
-      {l : Level k} {R : Telescope k (.var :: Δ') ps'}
-      (hA : Term.Lifts sig v ρ (.inst ms) (x.rename ρ.ren) A A' l)
+      {m : Lifting.Result k} {R : Telescope k (.var :: Δ') ps'}
+      (hA : Term.Lifts sig v ρ (.inst ms) (x.rename ρ.ren) A A' m)
       (h : Terms.ResultTypes sig v ρ.weaken ns ps As xs R) :
       Terms.ResultTypes sig v ρ (.inst ms :: ns) (p :: ps) (.cons A As) (.cons x xs)
         (.cons Grade.zero p A' R)
@@ -200,15 +200,15 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
   | inst {Γ : Scope} {ρ : Lifting k Γ Γ} {φ : Name → Term k (.var :: Γ)} {n : Nest Name}
       {t : Term k Γ} {decl : TypeDeclaration}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {Δ' : Scope} {D : Name}
-      {qs : List Quality} {ls ls' : List (Level k)} {ps : List Grade}
+      {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} {S : List Nat} {as' : InstanceArgs k Γ Δ'}
       {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       {gs : CorecBranches k Γ}
       (h : sig.HasCodataType D decl T) (hn : ∀ E, n ≠ .direct E)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (has : InstanceArgs.Lifts sig v ρ n.args as S ls' as') (hS : S ≠ [])
+      (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
       (hgl : gs.length = ns.length)
       (hgs : ∀ i d, ns[i]? = some d →
@@ -228,8 +228,8 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
             (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
           (t.observation D qs ls ps as d ps₁) g) :
       Term.NestedResult sig v ρ φ n (.inst D qs ls ps as) t
-        (.corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ls')
-          (ps ++ [v.recursion, v.requirement, v.ownership]) (.snoc (e := .var) as' t) .nil
+        (.corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level))
+          (v.grades ps ms) (.snoc (e := .var) as' t) .nil
           (.cons 0 .nil [] .nil) gs)
 
 /-- The types of the entries of the telescope `Θ` at the arguments `t̄`, in order: the type of each

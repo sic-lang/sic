@@ -153,9 +153,9 @@ them, as `link` states. -/
 theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns₀ : List Name}
-    {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₀}
-    {I : Instance (decl.sorts + 1) (decl.grades + 3)} {qs : List Quality}
+    {I : Instance (decl.sorts + 1) (decl.liftingGrades S)} {qs : List Quality}
     {ls : List (Level (decl.levels + S.length))} {ps : List Grade} {hq : qs.length = decl.sorts}
     {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
     (hT : sig.HasCodataType D decl T) (hadm : decl.constraint (.ofLists qs ps hq hp))
@@ -199,7 +199,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     | absent _ hds =>
       exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _ as' @ν' hν hds hρ hk
         (hθ.snoc (.obs ..)) hrec' (fun h' => link (.there h'))
-    | @lifted _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ π _ hB _ hκ' hds =>
+    | @lifted _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ m _ hB hκ' hds =>
       obtain ⟨hd, hx⟩ := link .here
       have hx : ∀ {a} (x : Var _ a),
           hd.obsSubst (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
@@ -215,13 +215,13 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
       rw [Telescope.subst_congr hx] at hΘ₀ hBσ hobs hΘctx
       rw [Term.subst_congr (Subst.liftN_congr ps'.length hx)] at hBσ hobs
       have he := stableUnderRenaming.hasType hobs (hρ.ren.liftN hΘctx)
-      have hB' := HasType.append_scale (v.recursion * π) (List.length_map _).symm
+      have hB' := HasType.append_scale (v.recursion * m.factor) (List.length_map _).symm
         (Term.Lifts.hasType (hρ.liftN hΘctx)
           (fun D => by rw [Lifting.liftN_block, hk D]; rfl) hB hBσ (by rw [Lifting.liftN_ren]; exact he))
       have hκ₀ : (⟨.type, ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level⟩ :
           Universe (decl.levels + S.length)) ≼ ⟨.type, κ.level⟩ := ⟨fun h => h, hκ⟩
       refine .cons ?_ (Term.nest_plain (Nesting.liftN_plain _ hν) _)
-        (((stableUnderRenaming.wfTelescope hΘ₀ hρ.ren).mono hκ₀).scale (v.recursion * π))
+        (((stableUnderRenaming.wfTelescope hΘ₀ hρ.ren).mono hκ₀).scale (v.recursion * m.factor))
         hB' hκ' (fun hs => ?_) ?_
       · exact (Term.blockName_cast [Lifting.name D S] _ _).trans
           (hB.blockName

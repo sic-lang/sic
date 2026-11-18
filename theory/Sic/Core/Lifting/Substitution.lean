@@ -32,6 +32,19 @@ open Sic.Grading
 
 variable {k : Nat}
 
+/-! ## Factors of the Instances -/
+
+/-- An instance of a lifting has its factor at any lifting of the scope, at any levels and at any
+arguments: the factor of an instance reads its name, its qualities and its grades, and the motives
+of the lifting of the scope of its declaration only. -/
+theorem Term.Factor.inst_congr {sig : Signature} {k' : Nat} {Γ₁' Γ₁ Γ₂' Γ₂ Δ₁ Δ₂ : Scope}
+    {ρ₁ : Lifting k Γ₁' Γ₁} (ρ₂ : Lifting k' Γ₂' Γ₂) {D : Name} {qs : List Quality}
+    {ls₁ : List (Level k)} (ls₂ : List (Level k')) {ps : List Grade} {as₁ : InstanceArgs k Γ₁' Δ₁}
+    (as₂ : InstanceArgs k' Γ₂' Δ₂) {π : Grade} (h : Term.Factor sig ρ₁ (.inst D qs ls₁ ps as₁) π) :
+    Term.Factor sig ρ₂ (.inst D qs ls₂ ps as₂) π := by
+  cases h with
+  | inst hdecl hD h hq hp hds => exact .inst hdecl hD h hq hp hds
+
 /-! ## Telescopes Followed by an Entry -/
 
 /-- A telescope followed by an entry, renamed, is the telescope renamed followed by the entry
@@ -88,21 +101,22 @@ where
 
 /-- Motives of a type of a block are equal when their instances and their motives are. -/
 theorem Lifting.BlockMotive.mk_congr {Γ' Γ : Scope} {T T' : Term k Γ} {C C' : Term k (.var :: Γ')}
-    (l : Level k) (hT : T = T') (hC : C = C') :
-    Lifting.BlockMotive.mk (Γ' := Γ') T C l = Lifting.BlockMotive.mk T' C' l := by
+    (l : Level k) (χ : Grade) (hT : T = T') (hC : C = C') :
+    Lifting.BlockMotive.mk (Γ' := Γ') T C l χ = Lifting.BlockMotive.mk T' C' l χ := by
   rw [hT, hC]
 
 /-- The motive of a type of a block, in a lifting under `n` new variables, is its motive in the
 lifting, renamed under these variables. -/
 theorem Lifting.liftN_block : (n : Nat) → {Γ' Γ : Scope} → (ρ : Lifting k Γ' Γ) → (D : Name) →
     (ρ.liftN n).block D = (ρ.block D).map fun b =>
-      ⟨b.type.rename (Ren.weakenN n), b.motive.rename (Ren.lift (Ren.weakenN n)), b.level⟩
+      ⟨b.type.rename (Ren.weakenN n), b.motive.rename (Ren.lift (Ren.weakenN n)), b.level,
+        b.ownership⟩
   | 0, _, _, ρ, D => by
     show ρ.block D = _
     cases ρ.block D with
     | none => rfl
     | some b =>
-      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level b.ownership
         (Term.rename_id_of (fun _ => rfl) b.type).symm
         (Term.rename_id_of (Ren.lift_id_of fun _ => rfl) b.motive).symm)
   | n + 1, _, _, ρ, D => by
@@ -112,52 +126,52 @@ theorem Lifting.liftN_block : (n : Nat) → {Γ' Γ : Scope} → (ρ : Lifting k
     cases ρ.block D with
     | none => rfl
     | some b =>
-      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level b.ownership
         (Term.rename_rename_of (α₁ := Ren.weakenN n) (α₂ := Ren.weaken)
           (α₃ := Ren.weakenN (n + 1)) (fun _ => rfl) b.type)
         (Term.rename_rename_of (α₁ := Ren.lift (Ren.weakenN n)) (α₂ := Ren.lift Ren.weaken)
           (α₃ := Ren.lift (Ren.weakenN (n + 1))) (fun x => by cases x <;> rfl) b.motive))
 
 /-- The renamings of two liftings extended by a parameter are the same when those of the liftings
-are, whatever the levels of the motives. -/
-theorem Lifting.cons_ren_congr {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry} (l : Level k)
-    (l' : Level k') {ρ : Lifting k Δ' Δ} {ρ' : Lifting k' Δ' Δ}
+are, whatever the motives give the results. -/
+theorem Lifting.cons_ren_congr {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry} (m : Lifting.Result k)
+    (m' : Lifting.Result k') {ρ : Lifting k Δ' Δ} {ρ' : Lifting k' Δ' Δ}
     (h : ∀ {a} (x : Var Δ a), ρ.ren x = ρ'.ren x) :
     (b : Bool) → ∀ {a} (x : Var (e :: Δ) a),
-      (Lifting.cons l b ρ).ren x = (Lifting.cons l' b ρ').ren x
+      (Lifting.cons m b ρ).ren x = (Lifting.cons m' b ρ').ren x
   | true, _, .zero => rfl
   | true, _, .succ x => congrArg (fun y => Var.succ (Var.succ y)) (h x)
   | false, _, .zero => rfl
   | false, _, .succ x => congrArg Var.succ (h x)
 
 /-- The lifting of parameters lifts no type of a block. -/
-theorem Lifting.base_block (S : List Nat) (lv : Nat → Level k) :
-    (Δ : Scope) → ∀ D, (Lifting.base S lv Δ).block D = none
+theorem Lifting.base_block (S : List Nat) (mv : Nat → Lifting.Result k) :
+    (Δ : Scope) → ∀ D, (Lifting.base S mv Δ).block D = none
   | [], _ => rfl
   | e :: Δ, D => by
-    show (Lifting.cons (e := e) (lv Δ.length) (decide (Δ.length ∈ S)) (Lifting.base S lv Δ)).block D
+    show (Lifting.cons (e := e) (mv Δ.length) (decide (Δ.length ∈ S)) (Lifting.base S mv Δ)).block D
       = none
     cases decide (Δ.length ∈ S) with
     | true =>
-      show (((Lifting.base S lv Δ).block D).map _).map _ = none
-      rw [Lifting.base_block S lv Δ D]
+      show (((Lifting.base S mv Δ).block D).map _).map _ = none
+      rw [Lifting.base_block S mv Δ D]
       rfl
     | false =>
-      show ((Lifting.base S lv Δ).block D).map _ = none
-      rw [Lifting.base_block S lv Δ D]
+      show ((Lifting.base S mv Δ).block D).map _ = none
+      rw [Lifting.base_block S mv Δ D]
       rfl
 
-/-- The renaming of the parameters in the parameters lifted does not read the levels of the
-motives. -/
-theorem Lifting.base_ren {k' : Nat} (S : List Nat) (lv : Nat → Level k) (lv' : Nat → Level k')
-    (Δ : Scope) :
-    @Lifting.ren k _ _ (Lifting.base S lv Δ) = @Lifting.ren k' _ _ (Lifting.base S lv' Δ) := by
+/-- The renaming of the parameters in the parameters lifted does not read what the motives give the
+results. -/
+theorem Lifting.base_ren {k' : Nat} (S : List Nat) (mv : Nat → Lifting.Result k)
+    (mv' : Nat → Lifting.Result k') (Δ : Scope) :
+    @Lifting.ren k _ _ (Lifting.base S mv Δ) = @Lifting.ren k' _ _ (Lifting.base S mv' Δ) := by
   funext a x
   exact go Δ x
 where
   /-- The equality at a variable, by recursion on the parameters. -/
   go : (Δ : Scope) → ∀ {a} (x : Var Δ a),
-      (Lifting.base S lv Δ).ren x = (Lifting.base S lv' Δ).ren x
+      (Lifting.base S mv Δ).ren x = (Lifting.base S mv' Δ).ren x
     | [], _, x => nomatch x
     | _ :: Δ, _, x => Lifting.cons_ren_congr _ _ (go Δ) _ x
 
@@ -187,17 +201,16 @@ theorem Lifting.motiveLevel_subst {k' : Nat} {S : List Nat} (hS : S.Nodup)
 /-- The instance of the variables of a type declaration that an instance of the variables of its
 lifting holds, given by lists, is given by the lists without the variables that the lifting
 adds. -/
-theorem Instance.lifted_ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (s : Quality)
-    (r ς χ : Grade) (hq : qs.length = j) (hp : ps.length = g) (hq' : (qs ++ [s]).length = j + 1)
-    (hp' : (ps ++ [r, ς, χ]).length = g + 3) :
-    (Instance.ofLists (qs ++ [s]) (ps ++ [r, ς, χ]) hq' hp').lifted =
-      Instance.ofLists qs ps hq hp := by
+theorem Instance.lifted_ofLists {j g n : Nat} (qs : List Quality) (ps : List Grade) (s : Quality)
+    (gs : List Grade) (hq : qs.length = j) (hp : ps.length = g) (hq' : (qs ++ [s]).length = j + 1)
+    (hp' : (ps ++ gs).length = g + (2 + 2 * n)) :
+    (Instance.ofLists (qs ++ [s]) (ps ++ gs) hq' hp').lifted = Instance.ofLists qs ps hq hp := by
   unfold Instance.lifted Instance.ofLists
   congr 1
   · funext i
     exact List.getFin_append_castAdd qs [s] hq hq' i
   · funext i
-    exact List.getFin_append_castAdd ps [r, ς, χ] hp hp' i
+    exact List.getFin_append_castAdd ps gs hp hp' i
 
 /-- The quality of the sorts of the motives, at an instance of the variables of a lifting given by
 lists, is the last quality. -/
@@ -206,20 +219,105 @@ theorem Instance.sorts_last_ofLists {j g : Nat} (qs : List Quality) (ps : List G
     (Instance.ofLists (qs ++ [s]) ps hq' hp).sorts (Fin.last j) = s :=
   List.getFin_append_natAdd qs [s] hq rfl hq' 0
 
-/-- The variables that a lifting adds, at an instance of its variables given by lists, are the last
-quality and the last three grades. -/
-theorem Instance.liftingVariables_ofLists {j g : Nat} (qs : List Quality) (ps : List Grade)
-    (v : Lifting.Variables) (hq : qs.length = j) (hp : ps.length = g)
-    (hq' : (qs ++ [v.quality]).length = j + 1)
-    (hp' : (ps ++ [v.recursion, v.requirement, v.ownership]).length = g + 3) :
-    (Instance.ofLists (qs ++ [v.quality]) (ps ++ [v.recursion, v.requirement, v.ownership]) hq'
-      hp').liftingVariables = v := by
-  obtain ⟨s, r, ς, χ⟩ := v
-  exact congr (congr (congr (congrArg Lifting.Variables.mk
+/-- The grades of the results `m̄` are two for each. -/
+theorem Lifting.Result.length_grades (ms : List (Lifting.Result k)) :
+    (Lifting.Result.grades ms).length = 2 * ms.length := by
+  induction ms with
+  | nil => rfl
+  | cons m ms ih =>
+    simp only [Lifting.Result.grades, List.flatMap_cons, List.length_append, List.length_cons,
+      List.length_nil] at ih ⊢
+    omega
+
+/-- The grades of an instance of a lifting are as many as its grade variables. -/
+theorem Lifting.Variables.length_grades (v : Lifting.Variables) {g n : Nat} {ps : List Grade}
+    {ms : List (Lifting.Result k)} (hp : ps.length = g) (hm : ms.length = n) :
+    (v.grades ps ms).length = g + (2 + 2 * n) := by
+  simp only [Lifting.Variables.grades, List.length_append, List.length_cons,
+    Lifting.Result.length_grades, hp, hm]
+  omega
+
+/-- The variables that a lifting adds, at an instance of its variables given by lists, but those of
+its motives, are the last quality and the two grades after those of the type declaration. -/
+theorem Instance.liftingVariables_ofLists {j g n : Nat} (qs : List Quality) (ps : List Grade)
+    (v : Lifting.Variables) (ms : List (Lifting.Result k)) (hq : qs.length = j) (hp : ps.length = g)
+    (hq' : (qs ++ [v.quality]).length = j + 1) (hp' : (v.grades ps ms).length = g + (2 + 2 * n)) :
+    (Instance.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp').liftingVariables = v := by
+  obtain ⟨s, r, ς⟩ := v
+  have hm : (r :: ς :: Lifting.Result.grades ms).length = 2 + 2 * n := by
+    simp only [Lifting.Variables.grades, List.length_append, hp] at hp'
+    omega
+  exact congr (congr (congrArg Lifting.Variables.mk
       (Instance.sorts_last_ofLists qs _ s hq hq' hp'))
-    (List.getFin_append_natAdd ps [r, ς, χ] hp rfl hp' 0))
-    (List.getFin_append_natAdd ps [r, ς, χ] hp rfl hp' 1))
-    (List.getFin_append_natAdd ps [r, ς, χ] hp rfl hp' 2)
+    (List.getFin_append_natAdd ps _ hp hm hp' ⟨0, by omega⟩))
+    (List.getFin_append_natAdd ps _ hp hm hp' ⟨1, by omega⟩)
+
+/-- The grade `2 · j + o` of the results `m̄` is the factor (`o = 0`) or the ownership (`o = 1`) of
+the result at the position `j`. -/
+theorem Lifting.Result.getElem_grades (o : Fin 2) :
+    (ms : List (Lifting.Result k)) → (j : Nat) → (hj : j < ms.length) →
+      (h : 2 * j + o < (Lifting.Result.grades ms).length) →
+        (Lifting.Result.grades ms)[2 * j + o] = [ms[j].factor, ms[j].ownership][o]
+  | [], _, hj, _ => absurd hj (Nat.not_lt_zero _)
+  | m :: ms, 0, _, _ =>
+    match o with
+    | ⟨0, _⟩ => rfl
+    | ⟨1, _⟩ => rfl
+  | m :: ms, j + 1, hj, h => by
+    have e : 2 * (j + 1) + o = (2 * j + o) + 2 := by omega
+    simp only [e, Lifting.Result.grades, List.flatMap_cons, List.cons_append, List.nil_append,
+      List.getElem_cons_succ, List.getElem_cons_succ]
+    exact Lifting.Result.getElem_grades o ms j (Nat.lt_of_succ_lt_succ hj) _
+
+/-- The factor (`o = 0`) or the ownership (`o = 1`) of the motive of the parameter at the position
+`j` of `S`, at an instance of the variables of a lifting given by lists, is the factor or the
+ownership of the result at the position `j` of the results of the instance. -/
+theorem Lifting.motiveGrade_ofLists {j' g : Nat} {S : List Nat} (hS : S.Nodup) (qs : List Quality)
+    (ps : List Grade) (v : Lifting.Variables) (ms : List (Lifting.Result k))
+    (hq : qs.length = j') (hp : ps.length = g) (hm : ms.length = S.length)
+    (hp' : (v.grades ps ms).length = g + (2 + 2 * S.length)) (o : Fin 2) (j : Nat)
+    (hj : j < S.length) :
+    Lifting.motiveGrade S (.ofLists qs (v.grades ps ms) hq hp') o S[j] =
+      [ms[j].factor, ms[j].ownership][o] := by
+  have hi : S.idxOf S[j] = j := hS.idxOf_getElem j hj
+  have hm' : (v.recursion :: v.requirement :: Lifting.Result.grades ms).length =
+      2 + 2 * S.length := by
+    rw [List.length_cons, List.length_cons, Lifting.Result.length_grades, hm]
+    omega
+  unfold Lifting.motiveGrade
+  split
+  case isFalse hn => exact absurd (hi.symm ▸ hj) hn
+  show (ps ++ (v.recursion :: v.requirement :: Lifting.Result.grades ms)).getFin hp' _ = _
+  rw [List.getFin_append_natAdd ps _ hp hm' hp']
+  have e : 2 + 2 * S.idxOf S[j] + o = (2 * j + o) + 2 := by omega
+  simp only [List.getFin, List.get_eq_getElem, Fin.val_cast, e, List.getElem_cons_succ]
+  exact Lifting.Result.getElem_grades o ms j (hm ▸ hj) _
+
+/-- What a type lifted gives the result of a destructor, at instantiated levels: the level of its
+sort at these levels, with the same factor and ownership. -/
+def Lifting.Result.substLevels {k' : Nat} (ls' : Fin k → Level k') (m : Lifting.Result k) :
+    Lifting.Result k' :=
+  ⟨m.level.subst ls', m.factor, m.ownership⟩
+
+/-- The motive of the parameter at the position `j` of `S`, at an instance of the variables of the
+lifting given by lists, at the levels of this instance, is the result at the position `j` of the
+results of the instance: its level, its factor and its ownership. -/
+theorem TypeDeclaration.liftingMotive_ofLists {decl : TypeDeclaration} {S : List Nat}
+    (hS : S.Nodup) {v : Lifting.Variables} {qs : List Quality} {ls : List (Level k)}
+    {ms : List (Lifting.Result k)} {ps : List Grade}
+    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1) (hl : ls.length = decl.levels)
+    (hm : ms.length = S.length) (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
+    (hp : ps.length = decl.grades) (hp' : (v.grades ps ms).length = decl.liftingGrades S)
+    (j : Nat) (h₁ : j < S.length) (h₂ : j < ms.length) :
+    (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp') S[j]).substLevels
+        ((ls ++ ms.map (·.level)).getFin hl') = ms[j] := by
+  have hlv := Lifting.motiveLevel_subst hS hl (by rw [List.length_map, hm]) hl' j h₁
+    (by rw [List.length_map]; exact h₂)
+  have hf := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp' 0 j h₁
+  have ho := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp' 1 j h₁
+  simp only [TypeDeclaration.liftingMotive, Lifting.Result.substLevels, hlv, hf, ho,
+    List.getElem_map]
+  rfl
 
 /-- The level variables of a type declaration, among those of its lifting, at the levels of an
 instance of the lifting, are the levels of the instance of the type declaration. -/
@@ -232,12 +330,13 @@ theorem Level.lifted_subst {k' n : Nat} (ls ls' : List (Level k')) (hl : ls.leng
 motives, and the level of the type declaration at its instance joined to the levels of the
 motives. -/
 theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : List Nat)
-    {qs : List Quality} {ps : List Grade} {s : Quality} {r ς χ : Grade} {ls ls' : List (Level k)}
+    {qs : List Quality} {ps : List Grade} {s : Quality} {gs : List Grade}
+    {ls ls' : List (Level k)}
     (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (hl : ls.length = decl.levels)
     (hl' : ls'.length = S.length) (hq' : (qs ++ [s]).length = decl.sorts + 1)
-    (hp' : (ps ++ [r, ς, χ]).length = decl.grades + 3)
+    (hp' : (ps ++ gs).length = decl.liftingGrades S)
     (h : (ls ++ ls').length = decl.levels + S.length) :
-    (decl.liftingSort S (.ofLists (qs ++ [s]) (ps ++ [r, ς, χ]) hq' hp')).substLevels
+    (decl.liftingSort S (.ofLists (qs ++ [s]) (ps ++ gs) hq' hp')).substLevels
         ((ls ++ ls').getFin h) =
       ⟨s, ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).joins ls'⟩ := by
   have e : (List.ofFn fun i : Fin S.length => Level.var (Fin.natAdd decl.levels i)).map
@@ -246,7 +345,7 @@ theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : Li
     exact (congrArg List.ofFn (funext fun i => List.getFin_append_natAdd ls ls' hl hl' h i)).trans
       (List.ofFn_getFin ls' hl')
   unfold TypeDeclaration.liftingSort Universe.substLevels
-  rw [Instance.lifted_ofLists qs ps s r ς χ hq hp, Instance.sorts_last_ofLists qs _ s hq,
+  rw [Instance.lifted_ofLists qs ps s gs hq hp, Instance.sorts_last_ofLists qs _ s hq,
     Level.subst_joins, Level.subst_subst, Level.lifted_subst ls ls' hl h, e]
 
 /-- The type of the parameter `y` of a lifting, at an instance of its variables, is the instance of
@@ -290,22 +389,22 @@ theorem Context.liftedSecondOrder_substLevels {k' : Nat} {Δ' : Scope} {ps : Lis
 
 /-- The parameters of a lifting, at instantiated levels, are the parameters at these levels, lifted
 with motives at the levels instantiated. -/
-theorem Context.lifted_substLevels {k' : Nat} (S : List Nat) (s : Quality) (lv : Nat → Level k)
-    (ls' : Fin k → Level k') : {Δ : Scope} → (ctx : Context k Δ) →
-      (ctx.lifted S s lv).substLevels ls' =
-        (ctx.substLevels ls').lifted S s fun i => (lv i).subst ls'
+theorem Context.lifted_substLevels {k' : Nat} (S : List Nat) (s : Quality)
+    (mv : Nat → Lifting.Result k) (ls' : Fin k → Level k') : {Δ : Scope} → (ctx : Context k Δ) →
+      (ctx.lifted S s mv).substLevels ls' =
+        (ctx.substLevels ls').lifted S s fun i => (mv i).substLevels ls'
   | _, .empty => rfl
   | _, .var (Γ := Δ) ctx A => by
     show (Context.liftedVar _ _ _ _).substLevels ls' = Context.liftedVar _ _ _ _
-    rw [Context.liftedVar_substLevels, Context.lifted_substLevels S s lv ls' ctx,
-      Term.substLevels_rename, Lifting.base_ren S lv (fun i => (lv i).subst ls') Δ]
+    rw [Context.liftedVar_substLevels, Context.lifted_substLevels S s mv ls' ctx,
+      Term.substLevels_rename, Lifting.base_ren S mv (fun i => (mv i).substLevels ls') Δ]
     rfl
   | _, .secondOrder (Γ := Δ) ctx Θ A ψ => by
     show (Context.liftedSecondOrder _ _ _ _ _ _).substLevels ls' =
       Context.liftedSecondOrder _ _ _ _ _ _
-    rw [Context.liftedSecondOrder_substLevels, Context.lifted_substLevels S s lv ls' ctx,
+    rw [Context.liftedSecondOrder_substLevels, Context.lifted_substLevels S s mv ls' ctx,
       Term.substLevels_rename, Telescope.substLevels_rename,
-      Lifting.base_ren S lv (fun i => (lv i).subst ls') Δ]
+      Lifting.base_ren S mv (fun i => (mv i).substLevels ls') Δ]
     rfl
 
 /-! ## Liftings Substituted -/
@@ -314,7 +413,7 @@ theorem Context.lifted_substLevels {k' : Nat} (S : List Nat) (s : Quality) (lv :
 under the term that it is over. -/
 def Lifting.BlockMotive.subst {Γ' Γ Δ' Δ : Scope} (θ : Subst k Γ Δ) (θ' : Subst k Γ' Δ')
     (b : Lifting.BlockMotive k Δ' Δ) : Lifting.BlockMotive k Γ' Γ :=
-  ⟨b.type.subst θ, b.motive.subst (Subst.lift θ'), b.level⟩
+  ⟨b.type.subst θ, b.motive.subst (Subst.lift θ'), b.level, b.ownership⟩
 
 /-- The lifting `ρ'` is the lifting `ρ`, which lifts no variable, substituted by `θ` in the scope
 that it lifts and by `θ'` in the scope in which it lifts it: `ρ'` lifts no variable either, what
@@ -367,9 +466,9 @@ theorem Lifting.Substitutes.lift {Γ' Γ Δ' Δ : Scope} {e : Scope.Entry} {θ :
     rw [h.block D, Option.map_map, Option.map_map]
     refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
     show Lifting.BlockMotive.mk ((b.type.subst θ).rename Ren.weaken)
-        ((b.motive.subst (Subst.lift θ')).rename (Ren.lift Ren.weaken)) b.level =
+        ((b.motive.subst (Subst.lift θ')).rename (Ren.lift Ren.weaken)) b.level b.ownership =
       Lifting.BlockMotive.mk ((b.type.rename Ren.weaken).subst (Subst.lift θ))
-        ((b.motive.rename (Ren.lift Ren.weaken)).subst (Subst.lift (Subst.lift θ'))) b.level
+        ((b.motive.rename (Ren.lift Ren.weaken)).subst (Subst.lift (Subst.lift θ'))) b.level b.ownership
     rw [Term.subst_lift_rename_lift_weaken, Term.subst_lift_rename_weaken]
 
 /-- A lifting substituted, under `n` new variables of both scopes. -/
@@ -404,7 +503,7 @@ theorem Lifting.Substitutes.weaken {Γ' Γ Δ' Δ : Scope} {e : Scope.Entry} {θ
     show (ρ'.block D).map _ = ((ρ.block D).map _).map _
     rw [h.block D, Option.map_map, Option.map_map]
     refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
-    exact congrArg (fun C => Lifting.BlockMotive.mk (b.type.subst θ) C b.level)
+    exact congrArg (fun C => Lifting.BlockMotive.mk (b.type.subst θ) C b.level b.ownership)
       (Term.subst_lift_rename_lift_weaken θ' b.motive)
 
 /-- A term renamed by a lifting and then substituted is the term substituted and then renamed by
@@ -442,7 +541,7 @@ theorem Lifting.Substitutes.comp {Γ' Γ Δ' Δ Ξ' Ξ : Scope} {θ₁ : Subst k
   block := fun D => by
     rw [h₂.block D, h₁.block D, Option.map_map]
     refine congrArg (fun f => Option.map f (ρ₁.block D)) (funext fun b => ?_)
-    exact Lifting.BlockMotive.mk_congr b.level (Term.subst_subst_of (fun _ => rfl) b.type)
+    exact Lifting.BlockMotive.mk_congr b.level b.ownership (Term.subst_subst_of (fun _ => rfl) b.type)
       (Term.subst_subst_of (Subst.lift_subst_of fun _ => rfl) b.motive)
 
 /-- A lifting that lifts no variable is itself, substituted by the substitutions that give each
@@ -457,7 +556,7 @@ theorem Lifting.Substitutes.refl {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
     cases ρ.block D with
     | none => rfl
     | some b =>
-      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level b.ownership
         (Term.subst_id_of (fun _ => rfl) b.type).symm
         (Term.subst_id_of (Subst.lift_id_of fun _ => rfl) b.motive).symm)
 
@@ -477,7 +576,7 @@ theorem Lifting.Substitutes.ofSnoc {Γ' Γ Δ' Δ : Scope} {e : Scope.Entry} {θ
     show ρ'.block D = ((ρ.block D).map _).map _
     rw [h.block D, Option.map_map]
     refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
-    exact Lifting.BlockMotive.mk_congr b.level rfl
+    exact Lifting.BlockMotive.mk_congr b.level b.ownership rfl
       (Term.subst_rename_of (fun x => by cases x <;> rfl) b.motive).symm
 
 /-- The motive of a parameter lifted, in the scope of its telescope followed by a term, substituted
@@ -501,13 +600,13 @@ mutual
 -- ADE: none.
 /-- A type lifted by a lifting that lifts no variable, substituted, is the type substituted,
 lifted by the lifting substituted, at the term substituted and at the same nesting, of the same
-level. -/
+result. -/
 theorem Term.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {n : Nest Name} → {e : Term k Δ'} → {A : Term k Δ} →
-      {A' : Term k Δ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
+      {A' : Term k Δ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m →
       ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ},
         Lifting.Substitutes θ θ' ρ ρ' →
-          Term.Lifts sig v ρ' n (e.subst θ') (A.subst θ) (A'.subst θ') l
+          Term.Lifts sig v ρ' n (e.subst θ') (A.subst θ) (A'.subst θ') m
   | _, _, _, _, _, _, _, _, .var hx _, _, _, _, _, _, hs =>
     nomatch (hs.motive _).symm.trans hx
   | _, _, _, _, e, _, _, _, .block (b := b) hD, _, _, θ, θ', _, hs => by
@@ -515,21 +614,21 @@ theorem Term.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
     refine Term.Lifts.block (b := b.subst θ θ') ?_
     rw [hs.block, hD]
     rfl
-  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL, _, _, _, _, _, hs => by
+  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL hπ, _, _, _, _, _, hs => by
     simp only [Term.subst, InstanceArgs.subst]
-    exact Term.Lifts.inst h hD hn hq hl hp (has.subst hs) hS hL
+    exact Term.Lifts.inst h hD hn hq hl hp (has.subst hs) hS hL (hπ.inst_congr _ _ _)
 
 -- ADE: none.
 /-- The arguments of an instance lifted by a lifting that lifts no variable, substituted, are the
 arguments substituted, lifted by the lifting substituted, at the same nestings, at the same
-parameters and of the same levels. -/
+parameters and of the same results. -/
 theorem InstanceArgs.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {Ξ : Scope} →
-      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ls : List (Level k)} → {Ξ' : Scope} →
-      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
+      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Ξ' : Scope} →
+      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' →
       ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ},
         Lifting.Substitutes θ θ' ρ ρ' →
-          InstanceArgs.Lifts sig v ρ' ns (as.subst θ) S ls (as'.subst θ')
+          InstanceArgs.Lifts sig v ρ' ns (as.subst θ) S ms (as'.subst θ')
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _ => .nil
   | _, _, _, _, _, _, _, _, _, _, .lifted (a := a) (B := B) (B' := B') has hB, _, _, θ, θ', _,
       hs => by
@@ -553,14 +652,36 @@ end
 /-- The motive of a type of a block, at instantiated levels. -/
 def Lifting.BlockMotive.substLevels {k' : Nat} {Γ' Γ : Scope} (ls' : Fin k → Level k')
     (b : Lifting.BlockMotive k Γ' Γ) : Lifting.BlockMotive k' Γ' Γ :=
-  ⟨b.type.substLevels ls', b.motive.substLevels ls', b.level.subst ls'⟩
+  ⟨b.type.substLevels ls', b.motive.substLevels ls', b.level.subst ls', b.ownership⟩
+
+/-- The levels of the results `m̄` at instantiated levels are their levels instantiated. -/
+theorem Lifting.Result.levels_substLevels {k' : Nat} (ls' : Fin k → Level k')
+    (ms : List (Lifting.Result k)) :
+    (ms.map (Lifting.Result.substLevels ls')).map (·.level) =
+      (ms.map (·.level)).map (Level.subst ls') := by
+  rw [List.map_map, List.map_map]
+  rfl
+
+/-- The grades of the results `m̄` at instantiated levels are their grades. -/
+theorem Lifting.Result.grades_substLevels {k' : Nat} (ls' : Fin k → Level k')
+    (ms : List (Lifting.Result k)) :
+    Lifting.Result.grades (ms.map (Lifting.Result.substLevels ls')) = Lifting.Result.grades ms := by
+  simp only [Lifting.Result.grades, List.flatMap_map]
+  rfl
+
+/-- The grades of an instance of a lifting at the results `m̄` at instantiated levels are its grades
+at `m̄`. -/
+theorem Lifting.Variables.grades_substLevels {k' : Nat} (v : Lifting.Variables) (ps : List Grade)
+    (ls' : Fin k → Level k') (ms : List (Lifting.Result k)) :
+    v.grades ps (ms.map (Lifting.Result.substLevels ls')) = v.grades ps ms := by
+  rw [Lifting.Variables.grades, Lifting.Result.grades_substLevels]
 
 /-- The lifting `ρ` at instantiated levels: the levels of the motives of the variables lifted, and
 the motives of the types of the block, are instantiated. -/
 def Lifting.substLevels {k' : Nat} {Γ' Γ : Scope} (ls' : Fin k → Level k')
     (ρ : Lifting k Γ' Γ) : Lifting k' Γ' Γ where
   ren := ρ.ren
-  motive := fun x => (ρ.motive x).map (Prod.map id (Level.subst ls'))
+  motive := fun x => (ρ.motive x).map (Prod.map id (Lifting.Result.substLevels ls'))
   block := fun D => (ρ.block D).map (Lifting.BlockMotive.substLevels ls')
 
 /-- Liftings are the same when their renamings, their variables lifted and the motives of their
@@ -594,9 +715,9 @@ theorem Lifting.substLevels_lift {k' : Nat} {Γ' Γ : Scope} {e : Scope.Entry}
       | none => rfl
       | some b =>
         show some (Lifting.BlockMotive.mk ((b.type.rename Ren.weaken).substLevels ls')
-            ((b.motive.rename (Ren.lift Ren.weaken)).substLevels ls') (b.level.subst ls')) =
+            ((b.motive.rename (Ren.lift Ren.weaken)).substLevels ls') (b.level.subst ls') b.ownership) =
           some (Lifting.BlockMotive.mk ((b.type.substLevels ls').rename Ren.weaken)
-            ((b.motive.substLevels ls').rename (Ren.lift Ren.weaken)) (b.level.subst ls'))
+            ((b.motive.substLevels ls').rename (Ren.lift Ren.weaken)) (b.level.subst ls') b.ownership)
         rw [Term.substLevels_rename, Term.substLevels_rename])
 
 /-- A lifting under `n` new variables of both scopes, at instantiated levels. -/
@@ -621,17 +742,17 @@ theorem Lifting.substLevels_weaken {k' : Nat} {Γ' Γ : Scope} {e : Scope.Entry}
       | none => rfl
       | some b =>
         show some (Lifting.BlockMotive.mk (b.type.substLevels ls')
-            ((b.motive.rename (Ren.lift Ren.weaken)).substLevels ls') (b.level.subst ls')) =
+            ((b.motive.rename (Ren.lift Ren.weaken)).substLevels ls') (b.level.subst ls') b.ownership) =
           some (Lifting.BlockMotive.mk (b.type.substLevels ls')
-            ((b.motive.substLevels ls').rename (Ren.lift Ren.weaken)) (b.level.subst ls'))
+            ((b.motive.substLevels ls').rename (Ren.lift Ren.weaken)) (b.level.subst ls') b.ownership)
         rw [Term.substLevels_rename])
 
 /-- A lifting extended by a parameter, at instantiated levels. -/
 theorem Lifting.cons_substLevels {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry}
-    (ls' : Fin k → Level k') (l : Level k) :
+    (ls' : Fin k → Level k') (m : Lifting.Result k) :
     (b : Bool) → (ρ : Lifting k Δ' Δ) →
-      (Lifting.cons (e := e) l b ρ).substLevels ls' =
-        Lifting.cons (l.subst ls') b (ρ.substLevels ls')
+      (Lifting.cons (e := e) m b ρ).substLevels ls' =
+        Lifting.cons (m.substLevels ls') b (ρ.substLevels ls')
   | false, ρ => Lifting.substLevels_lift ls' ρ
   | true, ρ =>
     Lifting.ext_of (fun _ => rfl)
@@ -647,21 +768,22 @@ theorem Lifting.cons_substLevels {k' : Nat} {Δ' Δ : Scope} {e : Scope.Entry}
         rw [Lifting.substLevels_weaken, Lifting.substLevels_lift])
 
 /-- The lifting of parameters, at instantiated levels, has motives at the levels instantiated. -/
-theorem Lifting.base_substLevels {k' : Nat} (S : List Nat) (lv : Nat → Level k)
+theorem Lifting.base_substLevels {k' : Nat} (S : List Nat) (mv : Nat → Lifting.Result k)
     (ls' : Fin k → Level k') :
     (Δ : Scope) →
-      (Lifting.base S lv Δ).substLevels ls' = Lifting.base S (fun i => (lv i).subst ls') Δ
+      (Lifting.base S mv Δ).substLevels ls' = Lifting.base S (fun i => (mv i).substLevels ls') Δ
   | [] => Lifting.ext_of (fun x => nomatch x) (fun x => nomatch x) (fun _ => rfl)
   | _ :: Δ => by
-    show (Lifting.cons _ _ (Lifting.base S lv Δ)).substLevels ls' =
-      Lifting.cons _ _ (Lifting.base S (fun i => (lv i).subst ls') Δ)
-    rw [Lifting.cons_substLevels, Lifting.base_substLevels S lv ls' Δ]
+    show (Lifting.cons _ _ (Lifting.base S mv Δ)).substLevels ls' =
+      Lifting.cons _ _ (Lifting.base S (fun i => (mv i).substLevels ls') Δ)
+    rw [Lifting.cons_substLevels, Lifting.base_substLevels S mv ls' Δ]
 
 /-- A variable lifted by a lifting at instantiated levels is lifted by the lifting. -/
 theorem Lifting.isSome_of_substLevels {k' : Nat} {Γ' Γ : Scope} {a : Scope.Entry}
     {ls' : Fin k → Level k'} {ρ : Lifting k Γ' Γ} {x : Var Γ a}
     (h : ((ρ.substLevels ls').motive x).isSome) : (ρ.motive x).isSome := by
-  rwa [show (ρ.substLevels ls').motive x = (ρ.motive x).map (Prod.map id (Level.subst ls'))
+  rwa [show (ρ.substLevels ls').motive x =
+      (ρ.motive x).map (Prod.map id (Lifting.Result.substLevels ls'))
     from rfl, Option.isSome_map] at h
 
 /-- Arguments followed by one more, at instantiated levels. -/
@@ -681,13 +803,13 @@ mutual
 
 -- ADE: none.
 /-- A type lifted, at instantiated levels, is the type at these levels, lifted by the lifting at
-these levels, at the term at these levels and at the same nesting, of the level instantiated. -/
+these levels, at the term at these levels and at the same nesting, of the result at these levels. -/
 theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variables}
     (ls' : Fin k → Level k') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
-      {A' : Term k Γ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l →
+      {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m →
         Term.Lifts sig v (ρ.substLevels ls') n (e.substLevels ls') (A.substLevels ls')
-          (A'.substLevels ls') (l.subst ls')
+          (A'.substLevels ls') (m.substLevels ls')
   | _, _, ρ, _, _, _, _, _, .var (x := x) hx hts => by
     rw [Term.substLevels, Term.substLevels, Args.substLevels_snoc, Args.substLevels_rename]
     refine Term.Lifts.var ?_ fun z hz => (hts z (Lifting.isSome_of_substLevels hz)).substLevels ls'
@@ -701,22 +823,25 @@ theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variabl
     show (ρ.block D).map _ = _
     rw [hD]
     rfl
-  | _, _, _, _, _, _, _, _, .inst (ls := ls) h hD hn hq hl hp has hS hL => by
-    simp only [Term.substLevels, InstanceArgs.substLevels, List.map_append]
-    rw [Level.subst_joins, Level.subst_subst, ← Level.getFin_map_subst ls' ls hl]
+  | _, _, _, _, _, _, _, _, .inst (ls := ls) (ms := ms) h hD hn hq hl hp has hS hL hπ => by
+    simp only [Term.substLevels, InstanceArgs.substLevels, List.map_append, Lifting.Result.substLevels]
+    rw [Level.subst_joins, Level.subst_subst, ← Level.getFin_map_subst ls' ls hl,
+      ← Lifting.Result.levels_substLevels ls' ms]
+    rw [← Lifting.Variables.grades_substLevels v _ ls' ms] at hπ ⊢
     exact Term.Lifts.inst h hD hn hq ((List.length_map _).trans hl) hp (has.substLevels ls') hS hL
+      (hπ.inst_congr _ _ _)
 
 -- ADE: none.
 /-- The arguments of an instance lifted, at instantiated levels, are the arguments at these levels,
 lifted by the lifting at these levels, at the same nestings and at the same parameters, of the
-levels instantiated. -/
+results at these levels. -/
 theorem InstanceArgs.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variables}
     (ls' : Fin k → Level k') :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
-      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} → {Δ' : Scope} →
-      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
+      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Δ' : Scope} →
+      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' →
         InstanceArgs.Lifts sig v (ρ.substLevels ls') ns (as.substLevels ls') S
-          (ls.map (Level.subst ls')) (as'.substLevels ls')
+          (ms.map (Lifting.Result.substLevels ls')) (as'.substLevels ls')
   | _, _, _, _, _, _, _, _, _, _, .nil => .nil
   | _, _, ρ, _, _, _, _, _, _, _, .lifted (a := a) has hB => by
     have hB' := hB.substLevels ls'

@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Soundness.Levels.Substitution
 import Sic.Core.Lifting.Functionality
+import Sic.Core.Lifting.Substitution
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -137,8 +138,49 @@ theorem Destructors.Pos.obsSubst_levelEquiv {k k' : Nat} {Γ' : Scope} {d : Name
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') h, _, _, hθ =>
     h.obsSubst_levelEquiv ho (hθ.snoc (ho d' ps'))
 
+/-- What two types lifted give the results, equal up to their levels: equal levels, the same factor
+and the same ownership. -/
+structure Lifting.Result.LevelEquiv {k : Nat} (m₁ m₂ : Lifting.Result k) : Prop where
+  /-- The levels are equal. -/
+  level : m₁.level ≈ m₂.level
+  /-- The factors are the same. -/
+  factor : m₁.factor = m₂.factor
+  /-- The ownerships are the same. -/
+  ownership : m₁.ownership = m₂.ownership
+
+/-- Lists of what types lifted give the results, equal one by one up to their levels. -/
+inductive Lifting.Result.ListEquiv {k : Nat} :
+    List (Lifting.Result k) → List (Lifting.Result k) → Prop where
+  /-- No result. -/
+  | nil : ListEquiv [] []
+  /-- Two results equal up to their levels, then equal lists. -/
+  | cons {m₁ m₂ : Lifting.Result k} {ms₁ ms₂ : List (Lifting.Result k)} (h : m₁.LevelEquiv m₂)
+      (hs : ListEquiv ms₁ ms₂) : ListEquiv (m₁ :: ms₁) (m₂ :: ms₂)
+
+/-- The levels of results equal up to their levels are equal. -/
+theorem Lifting.Result.ListEquiv.levels {k : Nat} : {ms₁ ms₂ : List (Lifting.Result k)} →
+    Lifting.Result.ListEquiv ms₁ ms₂ → Level.ListEquiv (ms₁.map (·.level)) (ms₂.map (·.level))
+  | _, _, .nil => .nil
+  | _, _, .cons h hs => .cons h.level hs.levels
+
+/-- The grades of results equal up to their levels are the same. -/
+theorem Lifting.Result.ListEquiv.grades {k : Nat} : {ms₁ ms₂ : List (Lifting.Result k)} →
+    Lifting.Result.ListEquiv ms₁ ms₂ → Lifting.Result.grades ms₁ = Lifting.Result.grades ms₂
+  | _, _, .nil => rfl
+  | _, _, .cons h hs => by
+    have ih := hs.grades
+    simp only [Lifting.Result.grades, List.flatMap_cons] at ih ⊢
+    rw [h.factor, h.ownership, ih]
+
+/-- Lists of results equal up to their levels, followed by such lists, are such lists. -/
+theorem Lifting.Result.ListEquiv.append {k : Nat} : {ms₁ ms₂ ms₁' ms₂' : List (Lifting.Result k)} →
+    Lifting.Result.ListEquiv ms₁ ms₂ → Lifting.Result.ListEquiv ms₁' ms₂' →
+      Lifting.Result.ListEquiv (ms₁ ++ ms₁') (ms₂ ++ ms₂')
+  | _, _, _, _, .nil, h' => h'
+  | _, _, _, _, .cons h hs, h' => .cons h (hs.append h')
+
 /-- Two motives of a type of a block equal up to their levels: instances and motives equal up to
-their levels, at equal levels. -/
+their levels, at equal levels, of the same ownership. -/
 structure Lifting.BlockMotive.LevelEquiv {k : Nat} {Γ' Γ : Scope}
     (b₁ b₂ : Lifting.BlockMotive k Γ' Γ) : Prop where
   /-- The instances are equal up to their levels. -/
@@ -147,6 +189,8 @@ structure Lifting.BlockMotive.LevelEquiv {k : Nat} {Γ' Γ : Scope}
   motive : Term.LevelEquiv b₁.motive b₂.motive
   /-- The levels are equal. -/
   level : b₁.level ≈ b₂.level
+  /-- The ownerships are the same. -/
+  ownership : b₁.ownership = b₂.ownership
 
 /-- Two liftings equal up to their levels: the same renaming, the same variables lifted, with the
 same motives at equal levels, and the same types of a block, with motives equal up to their
@@ -157,7 +201,7 @@ structure Lifting.LevelEquiv {k : Nat} {Γ' Γ : Scope} (ρ₁ ρ₂ : Lifting k
   /-- A variable is lifted by both or by none, with the same motive at equal levels. -/
   motive : ∀ {e : Scope.Entry} (x : Var Γ e),
     (ρ₁.motive x = none ∧ ρ₂.motive x = none) ∨
-      ∃ y l₁ l₂, ρ₁.motive x = some (y, l₁) ∧ ρ₂.motive x = some (y, l₂) ∧ l₁ ≈ l₂
+      ∃ y m₁ m₂, ρ₁.motive x = some (y, m₁) ∧ ρ₂.motive x = some (y, m₂) ∧ m₁.LevelEquiv m₂
   /-- A type is lifted by both or by none, with motives equal up to their levels. -/
   block : ∀ D : Name,
     (ρ₁.block D = none ∧ ρ₂.block D = none) ∨
@@ -189,7 +233,7 @@ theorem lift {e : Scope.Entry} (h : Lifting.LevelEquiv ρ₁ ρ₂) :
         by show (ρ₂.block D).map _ = none; rw [h₂]; rfl⟩
     · exact .inr ⟨b₁.lift, b₂.lift, by show (ρ₁.block D).map _ = _; rw [h₁]; rfl,
         by show (ρ₂.block D).map _ = _; rw [h₂]; rfl,
-        ⟨hb.type.rename _, hb.motive.rename _, hb.level⟩⟩
+        ⟨hb.type.rename _, hb.motive.rename _, hb.level, hb.ownership⟩⟩
 
 /-- Two liftings equal up to their levels stay so in a scope extended by a new entry. -/
 theorem weaken {e : Scope.Entry} (h : Lifting.LevelEquiv ρ₁ ρ₂) :
@@ -209,7 +253,8 @@ theorem weaken {e : Scope.Entry} (h : Lifting.LevelEquiv ρ₁ ρ₂) :
     · exact .inl ⟨by show (ρ₁.block D).map _ = none; rw [h₁]; rfl,
         by show (ρ₂.block D).map _ = none; rw [h₂]; rfl⟩
     · exact .inr ⟨b₁.weaken, b₂.weaken, by show (ρ₁.block D).map _ = _; rw [h₁]; rfl,
-        by show (ρ₂.block D).map _ = _; rw [h₂]; rfl, ⟨hb.type, hb.motive.rename _, hb.level⟩⟩
+        by show (ρ₂.block D).map _ = _; rw [h₂]; rfl, ⟨hb.type, hb.motive.rename _, hb.level,
+          hb.ownership⟩⟩
 
 /-- Two liftings equal up to their levels stay so under new variables. -/
 theorem liftN : (n : Nat) → {Γ' Γ : Scope} → {ρ₁ ρ₂ : Lifting k Γ' Γ} →
@@ -238,10 +283,10 @@ theorem rename_liftN (h : Lifting.LevelEquiv ρ₁ ρ₂) (n : Nat) {B₁ B₂ :
 motives equal up to their levels, in sorts of equal levels, are equal up to their levels. -/
 theorem ofMotives {Γ Δ : Scope} (names : List Name) (qs : List Quality)
     {ls₁ ls₂ : List (Level k)} (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ}
-    {l₁ l₂ : Level k} {Cs₁ Cs₂ : Motives k Γ} (hls : Level.ListEquiv ls₁ ls₂)
+    {l₁ l₂ : Level k} (χ : Grade) {Cs₁ Cs₂ : Motives k Γ} (hls : Level.ListEquiv ls₁ ls₂)
     (has : InstanceArgs.LevelEquiv as₁ as₂) (hl : l₁ ≈ l₂) (hCs : Motives.LevelEquiv Cs₁ Cs₂) :
-    Lifting.LevelEquiv (Lifting.ofMotives names qs ls₁ ps as₁ l₁ Cs₁)
-      (Lifting.ofMotives names qs ls₂ ps as₂ l₂ Cs₂) where
+    Lifting.LevelEquiv (Lifting.ofMotives names qs ls₁ ps as₁ l₁ χ Cs₁)
+      (Lifting.ofMotives names qs ls₂ ps as₂ l₂ χ Cs₂) where
   ren := rfl
   motive := fun _ => .inl ⟨rfl, rfl⟩
   block := fun D => by
@@ -253,7 +298,7 @@ theorem ofMotives {Γ Δ : Scope} (names : List Name) (qs : List Quality)
         exact .inl ⟨rfl, rfl⟩
       · rw [h₁, h₂]
         cases n with
-        | zero => exact .inr ⟨_, _, rfl, rfl, ⟨.inst _ _ _ hls has, hC, hl⟩⟩
+        | zero => exact .inr ⟨_, _, rfl, rfl, ⟨.inst _ _ _ hls has, hC, hl, rfl⟩⟩
         | succ => exact .inl ⟨rfl, rfl⟩
     · simp only [hD, ↓reduceIte]
       exact .inl ⟨trivial, trivial⟩
@@ -283,14 +328,15 @@ mutual
 
 /-- A type lifted by a lifting that lifts no variable, at a term, and a type equal to it up to its
 levels: the second one is lifted by a lifting equal to the first one up to its levels, at a term
-equal up to its levels, to a type equal up to its levels, of an equal level. -/
+equal up to its levels, to a type equal up to its levels, of a result equal up to its levels. -/
 theorem Term.Lifts.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Variables} :
     {Γ' Γ : Scope} → {ρ₁ ρ₂ : Lifting k Γ' Γ} → {n : Nest Name} → {e₁ e₂ : Term k Γ'} →
-      {A₁ A₂ : Term k Γ} → {A₁' : Term k Γ'} → {l₁ : Level k} →
-      Term.Lifts sig v ρ₁ n e₁ A₁ A₁' l₁ → Lifting.LevelEquiv ρ₁ ρ₂ →
+      {A₁ A₂ : Term k Γ} → {A₁' : Term k Γ'} → {m₁ : Lifting.Result k} →
+      Term.Lifts sig v ρ₁ n e₁ A₁ A₁' m₁ → Lifting.LevelEquiv ρ₁ ρ₂ →
       (∀ {a} (x : Var Γ a), ρ₁.motive x = none) → Term.LevelEquiv e₁ e₂ →
       Term.LevelEquiv A₁ A₂ →
-        ∃ A₂' l₂, Term.Lifts sig v ρ₂ n e₂ A₂ A₂' l₂ ∧ Term.LevelEquiv A₁' A₂' ∧ l₁ ≈ l₂
+        ∃ A₂' m₂, Term.Lifts sig v ρ₂ n e₂ A₂ A₂' m₂ ∧ Term.LevelEquiv A₁' A₂' ∧
+          m₁.LevelEquiv m₂
   | _, _, _, _, _, _, _, _, _, _, _, .var (x := x) hx _, _, hρ₁, _, _ =>
     nomatch (hρ₁ x).symm.trans hx
   | _, _, _, _, _, _, _, _, _, _, _, .block (D := D) hD, hρ, _, he, hA => by
@@ -299,27 +345,35 @@ theorem Term.Lifts.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Variables
       rcases hρ.block D with ⟨h₁, _⟩ | ⟨b₁, b₂, h₁, h₂, hb⟩
       · exact nomatch h₁.symm.trans hD
       · cases Option.some.inj (h₁.symm.trans hD)
-        exact ⟨_, _, .block h₂, hb.motive.subst₀ (Subst₀.LevelEquiv.single he), hb.level⟩
-  | _, _, _, _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL, hρ, hρ₁, he, hA => by
+        exact ⟨_, _, .block h₂, hb.motive.subst₀ (Subst₀.LevelEquiv.single he),
+          ⟨hb.level, rfl, hb.ownership⟩⟩
+  | _, _, _, _, _, _, _, _, _, _, _, .inst (ps := ps) (ms := ms₁) h hD hn hq hl hp has hS hL hπ, hρ,
+      hρ₁, he,
+      hA => by
     cases hA with
     | inst _ _ _ hls hase =>
-      obtain ⟨ls₂', as₂', has₂, hls', has'⟩ := InstanceArgs.Lifts.levelEquiv has hρ hρ₁ hase
+      obtain ⟨ms₂, as₂', has₂, hms, has'⟩ := InstanceArgs.Lifts.levelEquiv has hρ hρ₁ hase
       have hl₂ := hls.length_eq.symm.trans hl
-      exact ⟨_, _, .inst h hD hn hq hl₂ hp has₂ hS hL,
-        .inst _ _ _ (hls.append hls') (.snoc has' he),
-        Level.joins_equiv hls' (Level.subst_equiv (hls.getFin hl hl₂) _)⟩
+      have hg : v.grades ps ms₁ = v.grades ps ms₂ := by
+        rw [Lifting.Variables.grades, Lifting.Variables.grades, hms.grades]
+      rw [hg] at hπ
+      rw [hg]
+      exact ⟨_, _, .inst h hD hn hq hl₂ hp has₂ hS hL (hπ.inst_congr _ _ _),
+        .inst _ _ _ (hls.append hms.levels) (.snoc has' he),
+        ⟨Level.joins_equiv hms.levels (Level.subst_equiv (hls.getFin hl hl₂) _), rfl, rfl⟩⟩
 
 /-- The arguments of an instance lifted by a lifting that lifts no variable, and arguments equal
 to them up to their levels: the second ones are lifted by a lifting equal to the first one up to
-its levels, at the same positions, to arguments equal up to their levels, at equal levels. -/
+its levels, at the same positions, to arguments equal up to their levels, of results equal up to
+their levels. -/
 theorem InstanceArgs.Lifts.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Variables} :
     {Γ' Γ : Scope} → {ρ₁ ρ₂ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
-      {as₁ as₂ : InstanceArgs k Γ Δ} → {S : List Nat} → {ls₁ : List (Level k)} → {Δ' : Scope} →
-      {as₁' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ₁ ns as₁ S ls₁ as₁' →
+      {as₁ as₂ : InstanceArgs k Γ Δ} → {S : List Nat} → {ms₁ : List (Lifting.Result k)} →
+      {Δ' : Scope} → {as₁' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ₁ ns as₁ S ms₁ as₁' →
       Lifting.LevelEquiv ρ₁ ρ₂ → (∀ {a} (x : Var Γ a), ρ₁.motive x = none) →
       InstanceArgs.LevelEquiv as₁ as₂ →
-        ∃ (ls₂ : List (Level k)) (as₂' : InstanceArgs k Γ' Δ'),
-          InstanceArgs.Lifts sig v ρ₂ ns as₂ S ls₂ as₂' ∧ Level.ListEquiv ls₁ ls₂ ∧
+        ∃ (ms₂ : List (Lifting.Result k)) (as₂' : InstanceArgs k Γ' Δ'),
+          InstanceArgs.Lifts sig v ρ₂ ns as₂ S ms₂ as₂' ∧ Lifting.Result.ListEquiv ms₁ ms₂ ∧
             InstanceArgs.LevelEquiv as₁' as₂'
   | _, _, _, _, _, _, _, _, _, _, _, _, .nil, _, _, hA => by
     cases hA with
@@ -362,13 +416,16 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
       · exact nomatch h₁.symm.trans hD
       · exact ⟨_, .block h₂, (hφ D).subst₀ (Subst₀.LevelEquiv.single ht)⟩
   | Γ, _, ρ₂, _, φ₂, n, _, _, t₁, t₂, _,
-      .inst (decl := decl) (T := T) (D := D) (qs := qs) (ls := ls₁) (ps := ps) (as := as₁)
-        (ns := ns) (gs := gs₁) h hn hq hl hp has hS hL hgl hgs hgt,
+      .inst (decl := decl) (T := T) (D := D) (qs := qs) (ls := ls₁) (ms := ms₁) (ps := ps)
+        (as := as₁) (ns := ns) (gs := gs₁) h hn hq hl hp has hS hL hgl hgs hgt,
       hρ, hρ₁, hφ, hA, ht => by
     cases hA with
     | @inst _ _ _ _ _ ls₂ _ _ as₂ hls hase =>
-      obtain ⟨ls₂', as₂', has₂, hls', has'⟩ := InstanceArgs.Lifts.levelEquiv has hρ hρ₁ hase
+      obtain ⟨ms₂, as₂', has₂, hms, has'⟩ := InstanceArgs.Lifts.levelEquiv has hρ hρ₁ hase
       have hl₂ := hls.length_eq.symm.trans hl
+      have hg : v.grades ps ms₁ = v.grades ps ms₂ := by
+        rw [Lifting.Variables.grades, Lifting.Variables.grades, hms.grades]
+      rw [hg]
       have ho : ∀ d ps', Term.LevelEquiv (t₁.observation D qs ls₁ ps as₁ d ps')
           (t₂.observation D qs ls₂ ps as₂ d ps') := fun d ps' =>
         .obs _ _ _ _ hls (hase.rename _) (ht.rename _) (Terms.LevelEquiv.refl _)
@@ -417,7 +474,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
       refine ⟨_, .inst h hn hq hl₂ hp has₂ hS hL (hgse.length_eq.symm.trans hgl)
           (fun i d hnd => ?_)
           (fun i d p q ς ps₁ Ξ Θ B ψ g hnd hd hg => hQ i _ hg d hnd p q ς ps₁ Ξ Θ B ψ hd g rfl),
-        .corec _ _ _ _ (hls.append hls') (.snoc has' ht) .nil (States.LevelEquiv.refl _) hgse⟩
+        .corec _ _ _ _ (hls.append hms.levels) (.snoc has' ht) .nil (States.LevelEquiv.refl _) hgse⟩
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g, hg⟩ := hgs i d hnd
       obtain ⟨g₂, hg₂, -⟩ := hgse.get hg
       exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g₂, hg₂⟩

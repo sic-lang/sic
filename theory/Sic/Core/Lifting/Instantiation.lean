@@ -107,7 +107,7 @@ theorem Lifting.Substitutes.single {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
       show some b = some (Lifting.BlockMotive.mk
         ((b.type.rename Ren.weaken).subst (Subst₀.toSubst (Subst₀.single u)))
         ((b.motive.rename (Ren.lift Ren.weaken)).subst
-          (Subst.lift (Subst₀.toSubst (Subst₀.single (u.rename ρ.ren))))) b.level)
+          (Subst.lift (Subst₀.toSubst (Subst₀.single (u.rename ρ.ren))))) b.level b.ownership)
       rw [Term.subst_rename_weaken_of (fun _ => rfl),
         Term.subst_lift_rename_lift_weaken_of (fun _ => rfl)]
 
@@ -131,7 +131,7 @@ theorem Lifting.Substitutes.weakenSingle {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ
       show some b = some (Lifting.BlockMotive.mk (b.type.subst fun x => Var.eta x)
         ((b.motive.rename (Ren.lift Ren.weaken)).subst
           (Subst.lift (Subst₀.toSubst (Subst₀.single e))))
-        b.level)
+        b.level b.ownership)
       rw [Term.subst_id_of (fun _ => rfl), Term.subst_lift_rename_lift_weaken_of (fun _ => rfl)]
 
 /-- A lifting that lifts no variable, renamed under a new entry of both scopes. -/
@@ -153,9 +153,9 @@ theorem Lifting.Substitutes.ofLift {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Lift
     show (ρ.block D).map _ = (ρ.block D).map _
     refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
     show Lifting.BlockMotive.mk (b.type.rename Ren.weaken)
-        (b.motive.rename (Ren.lift Ren.weaken)) b.level =
+        (b.motive.rename (Ren.lift Ren.weaken)) b.level b.ownership =
       Lifting.BlockMotive.mk (b.type.subst (Ren.toSubst Ren.weaken))
-        (b.motive.subst (Subst.lift (Ren.toSubst Ren.weaken))) b.level
+        (b.motive.subst (Subst.lift (Ren.toSubst Ren.weaken))) b.level b.ownership
     rw [Term.rename_eq_subst,
       Term.rename_eq_subst_of (θ := Subst.lift (Ren.toSubst Ren.weaken))
         (Subst.lift_eta_of fun _ => rfl) b.motive]
@@ -176,9 +176,9 @@ theorem Lifting.Substitutes.ofWeaken {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Li
   block := fun D => by
     show (ρ.block D).map _ = (ρ.block D).map _
     refine congrArg (fun f => Option.map f (ρ.block D)) (funext fun b => ?_)
-    show Lifting.BlockMotive.mk b.type (b.motive.rename (Ren.lift Ren.weaken)) b.level =
+    show Lifting.BlockMotive.mk b.type (b.motive.rename (Ren.lift Ren.weaken)) b.level b.ownership =
       Lifting.BlockMotive.mk (b.type.subst (Ren.toSubst fun x => x))
-        (b.motive.subst (Subst.lift (Ren.toSubst Ren.weaken))) b.level
+        (b.motive.subst (Subst.lift (Ren.toSubst Ren.weaken))) b.level b.ownership
     rw [Term.subst_id_of (θ := Ren.toSubst fun x => x) (fun _ => rfl),
       Term.rename_eq_subst_of (θ := Subst.lift (Ren.toSubst Ren.weaken))
         (Subst.lift_eta_of fun _ => rfl) b.motive]
@@ -213,7 +213,7 @@ theorem Lifting.Substitutes.ofLiftN {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
           show (τ' (x.weakenN n)).rename (Ren.liftN _ Ren.weaken) = _
           rw [hτ' x]
           exact Var.eta_rename Ren.weaken x
-      exact congrArg some (Lifting.BlockMotive.mk_congr b.level
+      exact congrArg some (Lifting.BlockMotive.mk_congr b.level b.ownership
         ((Term.subst_rename_of (θ := τ) (α := Ren.weakenN n) (θ' := fun x => Var.eta x)
           (fun x => hτ x) b.type).trans (Term.subst_id_of (fun _ => rfl) b.type)).symm
         ((Term.subst_rename_of key b.motive).trans
@@ -224,9 +224,9 @@ theorem Lifting.Substitutes.ofLiftN {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
 /-- A type lifted is lifted likewise at the nesting and at the term, from the type and to the type,
 that those of the lifting are equal to. -/
 theorem Term.Lifts.congr {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n₁ n₂ : Nest Name}
-    {e₁ e₂ : Term k Γ'} {A₁ A₂ : Term k Γ} {A₁' A₂' : Term k Γ'} {l : Level k}
-    (h : Term.Lifts sig v ρ n₁ e₁ A₁ A₁' l) (hn : n₁ = n₂) (he : e₁ = e₂) (hA : A₁ = A₂)
-    (hA' : A₁' = A₂') : Term.Lifts sig v ρ n₂ e₂ A₂ A₂' l :=
+    {e₁ e₂ : Term k Γ'} {A₁ A₂ : Term k Γ} {A₁' A₂' : Term k Γ'} {m : Lifting.Result k}
+    (h : Term.Lifts sig v ρ n₁ e₁ A₁ A₁' m) (hn : n₁ = n₂) (he : e₁ = e₂) (hA : A₁ = A₂)
+    (hA' : A₁' = A₂') : Term.Lifts sig v ρ n₂ e₂ A₂ A₂' m :=
   hn ▸ he ▸ hA ▸ hA' ▸ h
 
 /-- The motive of a parameter lifted, in the scope of its telescope followed by a term, substituted
@@ -244,9 +244,9 @@ theorem Term.subst₀_extend_snoc {Γ Δ : Scope} (ps : List Parameter) (p : Par
 lifts it, substituted under this variable. -/
 theorem Term.Lifts.substWeaken {Γ' Γ Δ' Δ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'}
     {ρ : Lifting k Δ' Δ} {ρ' : Lifting k Γ' Γ} (hs : Lifting.Substitutes θ θ' ρ ρ')
-    {n : Nest Name} {A : Term k Δ} {B' : Term k (.var :: Δ')} {l : Level k}
-    (h : Term.Lifts sig v ρ.weaken n (.var₀ .zero) A B' l) :
-    Term.Lifts sig v ρ'.weaken n (.var₀ .zero) (A.subst θ) (B'.subst (Subst.lift θ')) l := by
+    {n : Nest Name} {A : Term k Δ} {B' : Term k (.var :: Δ')} {m : Lifting.Result k}
+    (h : Term.Lifts sig v ρ.weaken n (.var₀ .zero) A B' m) :
+    Term.Lifts sig v ρ'.weaken n (.var₀ .zero) (A.subst θ) (B'.subst (Subst.lift θ')) m := by
   have h' := h.subst hs.weaken
   rwa [Term.var₀_zero_subst_lift] at h'
 
@@ -255,10 +255,10 @@ that lifts no variable, renamed as this lifting is. -/
 theorem Term.Lifts.renameAbstraction {Γ₂' Γ₂ Γ' Γ : Scope} {α : Ren Γ₂ Γ} {α' : Ren Γ₂' Γ'}
     {ρ : Lifting k Γ' Γ} {ρ₂ : Lifting k Γ₂' Γ₂}
     (hs : Lifting.Substitutes (Ren.toSubst α) (Ren.toSubst α') ρ ρ₂) (m : Nat) {n : Nest Name}
-    {A : Term k (Γ.extend m)} {B' : Term k (.var :: Γ'.extend m)} {l : Level k}
-    (h : Term.Lifts sig v (ρ.liftN m).weaken n (.var₀ .zero) A B' l) :
+    {A : Term k (Γ.extend m)} {B' : Term k (.var :: Γ'.extend m)} {r : Lifting.Result k}
+    (h : Term.Lifts sig v (ρ.liftN m).weaken n (.var₀ .zero) A B' r) :
     Term.Lifts sig v (ρ₂.liftN m).weaken n (.var₀ .zero) (A.rename (Ren.liftN m α))
-      (B'.rename (Ren.lift (Ren.liftN m α'))) l := by
+      (B'.rename (Ren.lift (Ren.liftN m α'))) r := by
   have h' := h.substWeaken (hs.liftN m)
   have e₁ : A.subst (Subst.liftN m (Ren.toSubst α)) = A.rename (Ren.liftN m α) :=
     (Term.rename_eq_subst_of (Subst.liftN_eta_of m fun _ => rfl) A).symm
@@ -274,13 +274,13 @@ that lifts no variable, at arguments for these variables and at a term: the abst
 arguments is lifted at the term, to the abstraction lifted at the arguments, renamed, followed by
 the term. -/
 theorem Term.Lifts.instantiateAbstraction {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
-    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {n : Nest Name} (e : Term k Γ') {l : Level k} :
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {n : Nest Name} (e : Term k Γ') {m : Lifting.Result k} :
     {ps : List Parameter} → {A : Term k (Γ.extend ps.length)} →
       {B' : Term k (.var :: Γ'.extend ps.length)} → (us : Args k Γ ps) →
-      Term.Lifts sig v (ρ.liftN ps.length).weaken n (.var₀ .zero) A B' l →
+      Term.Lifts sig v (ρ.liftN ps.length).weaken n (.var₀ .zero) A B' m →
         Term.Lifts sig v ρ n e (A.instantiate us)
           ((Scope.extend_snoc Γ' ps Lifting.termParam ▸ B').instantiate
-            ((us.rename ρ.ren).snoc e)) l
+            ((us.rename ρ.ren).snoc e)) m
   | [], A, B', .nil, h => by
     exact (h.subst (Lifting.Substitutes.weakenSingle hρ e)).congr rfl rfl
       (Term.subst_id_of (fun _ => rfl) A) (Term.subst₀_eq_subst (Subst₀.single e) B').symm
@@ -288,7 +288,7 @@ theorem Term.Lifts.instantiateAbstraction {Γ' Γ : Scope} {ρ : Lifting k Γ' �
     have h' : Term.Lifts sig v (ρ.liftN ps.length).weaken n (.var₀ .zero)
         (A.subst (Subst.liftN ps.length (Subst₀.toSubst (Subst₀.single u))))
         (B'.subst (Subst.lift (Subst.liftN ps.length
-          (Subst₀.toSubst (Subst₀.single (u.rename ρ.ren)))))) l :=
+          (Subst₀.toSubst (Subst₀.single (u.rename ρ.ren)))))) m :=
       Term.Lifts.substWeaken ((Lifting.Substitutes.single hρ u).liftN ps.length) h
     exact (Term.Lifts.instantiateAbstraction hρ e us h').congr rfl rfl
       (congrArg (fun t => Term.instantiate t us)
@@ -316,10 +316,11 @@ structure Lifting.Instantiates (sig : Signature) (v : Lifting.Variables) {Γ' Γ
   /-- A variable that is not lifted has no position. -/
   plain : ∀ {a} (x : Var Δ a), ρ.motive x = none → ν x = .plain
   /-- The motive of a variable lifted is given the abstraction for the variable, lifted. -/
-  lifted : ∀ {a} (x : Var Δ a) (y : Var Δ' a.motive) (l : Level k), ρ.motive x = some (y, l) →
+  lifted : ∀ {a} (x : Var Δ a) (y : Var Δ' a.motive) (m : Lifting.Result k),
+    ρ.motive x = some (y, m) →
     ∃ B' : Term k (.var :: Γ'.extend a.params.length),
       θ' y = Scope.extend_snoc Γ' a.params Lifting.termParam ▸ B' ∧
-        Term.Lifts sig v (ρ'.liftN a.params.length).weaken (ν x) (.var₀ .zero) (θ x) B' l
+        Term.Lifts sig v (ρ'.liftN a.params.length).weaken (ν x) (.var₀ .zero) (θ x) B' m
 
 namespace Lifting.Instantiates
 
@@ -347,9 +348,9 @@ theorem lift {e : Scope.Entry} (h : Lifting.Instantiates sig v θ θ' ρ ρ' @ν
   lifted := fun x =>
     match x with
     | .zero => fun _ _ hx => nomatch hx
-    | .succ x => fun y l hx => by
+    | .succ x => fun y m hx => by
       obtain ⟨⟨y₀, l₀⟩, hy₀, he⟩ := Option.map_eq_some_iff.1
-        (hx : (ρ.motive x).map (Prod.map .succ id) = some (y, l))
+        (hx : (ρ.motive x).map (Prod.map .succ id) = some (y, m))
       cases he
       obtain ⟨B', hB', hL⟩ := h.lifted x y₀ l₀ hy₀
       refine ⟨B'.rename (Ren.lift (Ren.liftN _ Ren.weaken)), ?_,
@@ -382,9 +383,9 @@ theorem weaken {e : Scope.Entry} (h : Lifting.Instantiates sig v θ θ' ρ ρ' @
     rw [h.motive' x]
     rfl
   plain := fun x hx => h.plain x (Option.map_eq_none_iff.1 (hx : (ρ.motive x).map _ = none))
-  lifted := fun x y l hx => by
+  lifted := fun x y m hx => by
     obtain ⟨⟨y₀, l₀⟩, hy₀, he⟩ := Option.map_eq_some_iff.1
-      (hx : (ρ.motive x).map (Prod.map .succ id) = some (y, l))
+      (hx : (ρ.motive x).map (Prod.map .succ id) = some (y, m))
     cases he
     obtain ⟨B', hB', hL⟩ := h.lifted x y₀ l₀ hy₀
     refine ⟨B'.rename (Ren.lift (Ren.liftN _ Ren.weaken)), ?_, ?_⟩
@@ -424,9 +425,9 @@ theorem Term.nest_eq_plain_of_avoids {α : Type} {Γ : Scope} {ν : Nesting α �
 /-- Arguments lifted at nestings none of which has a position are lifted at no nesting. -/
 theorem InstanceArgs.Lifts.of_all_isPlain :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ns : List (Nest Name)} → {Δ : Scope} →
-      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ls : List (Level k)} → {Δ' : Scope} →
-      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' →
-        ns.all Nest.isPlain = true → InstanceArgs.Lifts sig v ρ [] as S ls as'
+      {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Δ' : Scope} →
+      {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' →
+        ns.all Nest.isPlain = true → InstanceArgs.Lifts sig v ρ [] as S ms as'
   | _, _, _, _, _, _, _, _, _, _, .nil, _ => .nil
   | _, _, _, ns, _, _, _, _, _, _, .lifted has hB, hns => by
     cases ns with
@@ -447,9 +448,9 @@ theorem InstanceArgs.Lifts.of_all_isPlain :
 of their instance. -/
 theorem InstanceArgs.Lifts.ofArgs_args {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
     {ns : List (Nest Name)} {Δ : Scope} {as : InstanceArgs k Γ Δ} {S : List Nat}
-    {ls : List (Level k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
-    (h : InstanceArgs.Lifts sig v ρ ns as S ls as') :
-    InstanceArgs.Lifts sig v ρ (Nest.ofArgs ns).args as S ls as' := by
+    {ms : List (Lifting.Result k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
+    (h : InstanceArgs.Lifts sig v ρ ns as S ms as') :
+    InstanceArgs.Lifts sig v ρ (Nest.ofArgs ns).args as S ms as' := by
   unfold Nest.ofArgs
   split
   · next hns => exact h.of_all_isPlain hns
@@ -462,39 +463,39 @@ mutual
 -- ADE: none.
 /-- A type lifted at no position, substituted by an instantiation of its lifting, is the type
 substituted, lifted by the lifting instantiated, at the term substituted and at the nesting of the
-type, where the variables have the nestings of the instantiation, of the same level. -/
+type, where the variables have the nestings of the instantiation, of the same result. -/
 theorem Term.Lifts.instantiate :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {n : Nest Name} → {e : Term k Δ'} → {A : Term k Δ} →
-      {A' : Term k Δ'} → {l : Level k} → Term.Lifts sig v ρ n e A A' l → n = .plain →
+      {A' : Term k Δ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m → n = .plain →
       ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ}
         {ν : Nesting Name Δ}, Lifting.Instantiates sig v θ θ' ρ ρ' @ν →
-          Term.Lifts sig v ρ' (A.nest (fun _ => none) @ν) (e.subst θ') (A.subst θ) (A'.subst θ') l
-  | _, _, ρ, _, e, _, _, _, .var (x := x) (y := y) (l := l) (ts := ts) hx _, _, _, _, θ, θ', ρ',
+          Term.Lifts sig v ρ' (A.nest (fun _ => none) @ν) (e.subst θ') (A.subst θ) (A'.subst θ') m
+  | _, _, ρ, _, e, _, _, _, .var (x := x) (y := y) (m := m) (ts := ts) hx _, _, _, _, θ, θ', ρ',
       _, hI => by
-    obtain ⟨B', hB', hL⟩ := hI.lifted x y l hx
+    obtain ⟨B', hB', hL⟩ := hI.lifted x y m hx
     have e₁ : (ts.rename ρ.ren).subst θ' = (ts.subst θ).rename ρ'.ren :=
       (Args.subst_rename_of (fun _ => rfl) ts).trans
         (Args.rename_subst_of (fun x => (hI.ren x).symm) ts).symm
     rw [Term.subst, Term.subst, Args.subst_snoc, e₁, hB']
     exact hL.instantiateAbstraction hI.motive' (e.subst θ') (ts.subst θ)
   | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _ => nomatch hn
-  | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL, hn, _, _, _, _, _, _, hI => by
+  | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL hπ, hn, _, _, _, _, _, _, hI => by
     subst hn
     simp only [Term.subst, InstanceArgs.subst]
     exact Term.Lifts.inst h hD (fun E => Nest.ofArgs_ne_direct _ E) hq hl hp
-      (has.instantiate rfl hI).ofArgs_args hS hL
+      (has.instantiate rfl hI).ofArgs_args hS hL (hπ.inst_congr _ _ _)
 
 -- ADE: none.
 /-- The arguments of an instance lifted at no position, substituted by an instantiation of their
 lifting, are the arguments substituted, lifted by the lifting instantiated, at their nestings, at
-the same parameters and of the same levels. -/
+the same parameters and of the same results. -/
 theorem InstanceArgs.Lifts.instantiate :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {Ξ : Scope} →
-      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ls : List (Level k)} → {Ξ' : Scope} →
-      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ls as' → ns = [] →
+      {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Ξ' : Scope} →
+      {as' : InstanceArgs k Δ' Ξ'} → InstanceArgs.Lifts sig v ρ ns as S ms as' → ns = [] →
       ∀ {Γ' Γ : Scope} {θ : Subst k Γ Δ} {θ' : Subst k Γ' Δ'} {ρ' : Lifting k Γ' Γ}
         {ν : Nesting Name Δ}, Lifting.Instantiates sig v θ θ' ρ ρ' @ν →
-          InstanceArgs.Lifts sig v ρ' (as.nest (fun _ => none) @ν) (as.subst θ) S ls
+          InstanceArgs.Lifts sig v ρ' (as.nest (fun _ => none) @ν) (as.subst θ) S ms
             (as'.subst θ')
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _ => .nil
   | _, _, _, _, _, _, _, _, _, _, .lifted (a := a) (B := B) (B' := B') has hB, hns, _, _, θ, θ',

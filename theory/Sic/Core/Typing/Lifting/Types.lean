@@ -72,13 +72,13 @@ structure Lifting.Typed (sig : Signature) (s : Quality) {Γ' Γ : Scope} (ctx' :
   /-- The renaming of the lifting is typed. -/
   ren : TypedRen sig ctx' ρ.ren ctx
   /-- A variable lifted is a type, and its motive is declared over a term of it. -/
-  var : ∀ {x : Var Γ .var} {y : Var Γ' Scope.Entry.var.motive} {l : Level k},
+  var : ∀ {x : Var Γ .var} {y : Var Γ' Scope.Entry.var.motive} {l : Lifting.Result k},
     ρ.motive x = some (y, l) →
       WfType sig ctx (.var₀ x) ∧
         ctx'.SecondOrderIn y
           (Telescope.snoc (p := Lifting.termParam) .unrestrictedUnrestricted .nil
             (.var₀ (ρ.ren x)))
-          (.sort ⟨s, l⟩)
+          (.sort ⟨s, l.level⟩)
   /-- The motive of a type of the block lifted is a type over a term of the instance of this type,
   in the sort of its level. -/
   block : ∀ {D : Name} {b : Lifting.BlockMotive k Γ' Γ}, ρ.block D = some b →
@@ -87,13 +87,13 @@ structure Lifting.Typed (sig : Signature) (s : Quality) {Γ' Γ : Scope} (ctx' :
   declared over this telescope followed by a term of the variable at them. -/
   secondOrder : ∀ {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
     {X : Var Γ (.secondOrder ps ψ)} {y : Var Γ' (Scope.Entry.secondOrder ps ψ).motive}
-    {l : Level k} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)},
+    {l : Lifting.Result k} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)},
     ρ.motive X = some (y, l) → ctx.SecondOrderIn X Θ A →
       WfType sig (ctx.append Θ) (Var.eta X) ∧
         ctx'.SecondOrderIn y
           ((Θ.rename ρ.ren).snoc (p := Lifting.termParam) .unrestrictedUnrestricted
             (Var.eta (ρ.ren X)))
-          (.sort ⟨s, l⟩)
+          (.sort ⟨s, l.level⟩)
 
 /-- The telescope of a motive, in a context extended by an entry, is the telescope of the motive of
 the variable in this context. -/
@@ -263,10 +263,10 @@ telescope, and an instance of a declared type is in the sort of its type declara
 The variables lifted are those of a typed lifting, in any context. -/
 theorem Term.Lifts.wfType {s : Quality} {v : Lifting.Variables} {Γ'' Γ' Γ : Scope}
     {ctx' : Context k Γ'} {ρ' : Lifting k Γ' Γ} {ρ : Lifting k Γ'' Γ} {ctx : Context k Γ}
-    {n : Nest Name} {e A' : Term k Γ''} {A T : Term k Γ} {l : Level k}
+    {n : Nest Name} {e A' : Term k Γ''} {A T : Term k Γ} {m : Lifting.Result k}
     (hρ : Lifting.Typed sig s ctx' ρ' ctx)
     (hm : ∀ {a} (x : Var Γ a), (ρ.motive x).isSome → (ρ'.motive x).isSome) :
-    Term.Lifts sig v ρ n e A A' l → HasType sig ctx A T → WfType sig ctx A
+    Term.Lifts sig v ρ n e A A' m → HasType sig ctx A T → WfType sig ctx A
   | .var (a := .var) (x := x) (ts := .nil) hx _, _ => by
     obtain ⟨⟨y, l⟩, hx'⟩ := Option.isSome_iff_exists.1 (hm x (hx ▸ rfl))
     exact (hρ.var hx').1
@@ -290,7 +290,7 @@ lifted, renamed. -/
 theorem HasInstanceArgs.liftedVar_false {s : Quality} {Γ' Γ Δ₁ Δ : Scope} {ctx' : Context k Γ'}
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {as : InstanceArgs k Γ Δ}
     {as' : InstanceArgs k Γ' Δ₁} {params' : Context k Δ₁} {ρ₀ : Lifting k Δ₁ Δ} {A : Term k Δ}
-    {B : Term k Γ} (κ : Universe k) (l : Level k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
+    {B : Term k Γ} (κ : Universe k) (m : Lifting.Result k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
     (has' : HasInstanceArgs sig ctx' as' params')
     (hc : ∀ {a} (x : Var Δ a),
       as'.toSubst (ρ₀.ren x) = (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren))
@@ -300,7 +300,7 @@ theorem HasInstanceArgs.liftedVar_false {s : Quality} {Γ' Γ Δ₁ Δ : Scope} 
           (Context.liftedVar κ b params' (A.rename ρ₀.ren)) ∧
         ∀ {a} (x : Var (.var :: Δ) a),
           (hΔ ▸ InstanceArgs.snoc (e := .var) as' (B.rename ρ.ren)).toSubst
-              ((Lifting.cons l b ρ₀).ren x) =
+              ((Lifting.cons m b ρ₀).ren x) =
             ((InstanceArgs.snoc (e := .var) as B).toSubst x).rename
               (Ren.liftN a.params.length ρ.ren) := by
   subst hb
@@ -318,7 +318,7 @@ theorem HasInstanceArgs.liftedSecondOrder_false {s : Quality} {Γ' Γ Δ₁ Δ :
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {as : InstanceArgs k Γ Δ}
     {as' : InstanceArgs k Γ' Δ₁} {params' : Context k Δ₁} {ρ₀ : Lifting k Δ₁ Δ}
     {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} {B : Term k (Γ.extend ps.length)}
-    (κ : Universe k) (l : Level k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
+    (κ : Universe k) (m : Lifting.Result k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
     (has' : HasInstanceArgs sig ctx' as' params')
     (hc : ∀ {a} (x : Var Δ a),
       as'.toSubst (ρ₀.ren x) = (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren))
@@ -332,7 +332,7 @@ theorem HasInstanceArgs.liftedSecondOrder_false {s : Quality} {Γ' Γ Δ₁ Δ :
             (A.rename (Ren.liftN ps.length ρ₀.ren)) ψ) ∧
         ∀ {a} (x : Var (.secondOrder ps ψ :: Δ) a),
           (hΔ ▸ InstanceArgs.snoc (e := .secondOrder ps ψ) as'
-              (B.rename (Ren.liftN ps.length ρ.ren))).toSubst ((Lifting.cons l b ρ₀).ren x) =
+              (B.rename (Ren.liftN ps.length ρ.ren))).toSubst ((Lifting.cons m b ρ₀).ren x) =
             ((InstanceArgs.snoc (e := .secondOrder ps ψ) as B).toSubst x).rename
               (Ren.liftN a.params.length ρ.ren) := by
   subst hb
@@ -350,22 +350,22 @@ theorem HasInstanceArgs.liftedVar_true {s : Quality} {Γ' Γ Δ₁ Δ : Scope} {
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {as : InstanceArgs k Γ Δ}
     {as' : InstanceArgs k Γ' Δ₁} {params' : Context k Δ₁} {ρ₀ : Lifting k Δ₁ Δ} {A : Term k Δ}
     {B : Term k Γ} {B' : Term k (Γ'.extend (Scope.Entry.var.motive).params.length)}
-    (l : Level k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
+    (m : Lifting.Result k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
     (has' : HasInstanceArgs sig ctx' as' params')
     (hc : ∀ {a} (x : Var Δ a),
       as'.toSubst (ρ₀.ren x) = (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren))
     (hB : HasType sig ctx B (A.subst as.toSubst))
-    (hB' : HasType sig (ctx'.var (B.rename ρ.ren)) B' (.sort ⟨s, l⟩)) (b : Bool)
+    (hB' : HasType sig (ctx'.var (B.rename ρ.ren)) B' (.sort ⟨s, m.level⟩)) (b : Bool)
     (hb : b = true) :
     ∃ hΔ : Scope.Entry.var.motive :: .var :: Δ₁ = Scope.liftedCons b .var Δ₁,
       HasInstanceArgs sig ctx'
           (hΔ ▸ InstanceArgs.snoc (e := Scope.Entry.var.motive)
             (InstanceArgs.snoc (e := .var) as' (B.rename ρ.ren)) B')
-          (Context.liftedVar ⟨s, l⟩ b params' (A.rename ρ₀.ren)) ∧
+          (Context.liftedVar ⟨s, m.level⟩ b params' (A.rename ρ₀.ren)) ∧
         ∀ {a} (x : Var (.var :: Δ) a),
           (hΔ ▸ InstanceArgs.snoc (e := Scope.Entry.var.motive)
               (InstanceArgs.snoc (e := .var) as' (B.rename ρ.ren)) B').toSubst
-              ((Lifting.cons l b ρ₀).ren x) =
+              ((Lifting.cons m b ρ₀).ren x) =
             ((InstanceArgs.snoc (e := .var) as B).toSubst x).rename
               (Ren.liftN a.params.length ρ.ren) := by
   subst hb
@@ -386,7 +386,7 @@ theorem HasInstanceArgs.liftedSecondOrder_true {s : Quality} {Γ' Γ Δ₁ Δ : 
     {as' : InstanceArgs k Γ' Δ₁} {params' : Context k Δ₁} {ρ₀ : Lifting k Δ₁ Δ}
     {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} {B : Term k (Γ.extend ps.length)}
     {B' : Term k (Γ'.extend ((Scope.Entry.secondOrder ps ψ).motive).params.length)}
-    (l : Level k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
+    (m : Lifting.Result k) (hρ : Lifting.Typed sig s ctx' ρ ctx)
     (has' : HasInstanceArgs sig ctx' as' params')
     (hc : ∀ {a} (x : Var Δ a),
       as'.toSubst (ρ₀.ren x) = (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren))
@@ -394,20 +394,20 @@ theorem HasInstanceArgs.liftedSecondOrder_true {s : Quality} {Γ' Γ Δ₁ Δ : 
     (hB' : HasType sig
       (ctx'.append ((((Θ.subst as.toSubst).rename ρ.ren).snoc (p := Lifting.termParam)
         .unrestrictedUnrestricted (B.rename (Ren.liftN ps.length ρ.ren)))))
-      B' (.sort ⟨s, l⟩)) (b : Bool) (hb : b = true) :
+      B' (.sort ⟨s, m.level⟩)) (b : Bool) (hb : b = true) :
     ∃ hΔ : (Scope.Entry.secondOrder ps ψ).motive :: .secondOrder ps ψ :: Δ₁ =
         Scope.liftedCons b (.secondOrder ps ψ) Δ₁,
       HasInstanceArgs sig ctx'
           (hΔ ▸ InstanceArgs.snoc (e := (Scope.Entry.secondOrder ps ψ).motive)
             (InstanceArgs.snoc (e := .secondOrder ps ψ) as'
               (B.rename (Ren.liftN ps.length ρ.ren))) B')
-          (Context.liftedSecondOrder ⟨s, l⟩ b params' (Θ.rename ρ₀.ren)
+          (Context.liftedSecondOrder ⟨s, m.level⟩ b params' (Θ.rename ρ₀.ren)
             (A.rename (Ren.liftN ps.length ρ₀.ren)) ψ) ∧
         ∀ {a} (x : Var (.secondOrder ps ψ :: Δ) a),
           (hΔ ▸ InstanceArgs.snoc (e := (Scope.Entry.secondOrder ps ψ).motive)
               (InstanceArgs.snoc (e := .secondOrder ps ψ) as'
                 (B.rename (Ren.liftN ps.length ρ.ren))) B').toSubst
-              ((Lifting.cons l b ρ₀).ren x) =
+              ((Lifting.cons m b ρ₀).ren x) =
             ((InstanceArgs.snoc (e := .secondOrder ps ψ) as B).toSubst x).rename
               (Ren.liftN a.params.length ρ.ren) := by
   subst hb
@@ -443,17 +443,17 @@ lifts no type of a block: the rule of such a type does not tell that the term is
 its motive is over. -/
 theorem Term.Lifts.hasType {v : Lifting.Variables} {Γ' Γ : Scope} {ctx' : Context k Γ'}
     {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ}
-    {l : Level k} (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (hb : ∀ D, ρ.block D = none)
-    (h : Term.Lifts sig v ρ n e A A' l) (hA : HasType sig ctx A T)
-    (he : HasType sig ctx' e (A.rename ρ.ren)) : HasType sig ctx' A' (.sort ⟨v.quality, l⟩) :=
+    {m : Lifting.Result k} (hρ : Lifting.Typed sig v.quality ctx' ρ ctx) (hb : ∀ D, ρ.block D = none)
+    (h : Term.Lifts sig v ρ n e A A' m) (hA : HasType sig ctx A T)
+    (he : HasType sig ctx' e (A.rename ρ.ren)) : HasType sig ctx' A' (.sort ⟨v.quality, m.level⟩) :=
   type h hρ hb hA he
 where
   /-- The typing of a type lifted, by recursion on the relation. -/
   type {Γ' Γ : Scope} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ} {ctx : Context k Γ}
-      {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ} {l : Level k} :
-      Term.Lifts sig v ρ n e A A' l → Lifting.Typed sig v.quality ctx' ρ ctx →
+      {n : Nest Name} {e A' : Term k Γ'} {A T : Term k Γ} {m : Lifting.Result k} :
+      Term.Lifts sig v ρ n e A A' m → Lifting.Typed sig v.quality ctx' ρ ctx →
         (∀ D, ρ.block D = none) → HasType sig ctx A T → HasType sig ctx' e (A.rename ρ.ren) →
-          HasType sig ctx' A' (.sort ⟨v.quality, l⟩)
+          HasType sig ctx' A' (.sort ⟨v.quality, m.level⟩)
     | .var (a := .var) (ts := .nil) hx _, hρ, _, _, he =>
       Term.sort_instantiate _ _ ▸
         HasType.secondOrder (hρ.var hx).2 (HasArgs.snoc (.nil hρ.ren.wfCtx) he)
@@ -465,105 +465,100 @@ where
       exact Term.sort_instantiate _ _ ▸ HasType.secondOrder (hρ.secondOrder hx hX).2
         (HasArgs.snoc (stableUnderRenaming.hasArgs hts hρ.ren) he')
     | .block (D := D) hD, _, hb, _, _ => nomatch (hb D).symm.trans hD
-    | .inst (decl := decl) (D := D) (qs := qs) (ls := ls) (ls' := ls') (ps := ps) (as := as)
-        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL, hρ, hb, hA, he => by
+    | .inst (decl := decl) (D := D) (qs := qs) (ls := ls) (ms := ms) (ps := ps) (as := as)
+        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL _, hρ, hb, hA,
+        he => by
       obtain ⟨ζ, _, _, _, hDT, hadm, hargs⟩ := hA.inst_inv_of_mem hd hD
       have hlen := has.length_eq
       have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
         rw [List.length_append, hq]
         rfl
-      have hp' : (ps ++ [v.recursion, v.requirement, v.ownership]).length = decl.grades + 3 := by
-        rw [List.length_append, hp]
-        rfl
-      have hl' : (ls ++ ls').length = decl.levels + S.length := by
-        rw [List.length_append, hl, hlen]
+      have hp' : (v.grades ps ms).length = decl.liftingGrades S := v.length_grades hp hlen
+      have hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length := by
+        rw [List.length_append, hl, List.length_map, hlen]
+      let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
+        .ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp'
       obtain ⟨hΔ, has', hc⟩ := args has hρ hb hargs S
-        (fun i => (Lifting.motiveLevel decl.levels S i).subst ((ls ++ ls').getFin hl'))
+        (fun i => (decl.liftingMotive S I' i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
         (fun _ _ => Iff.rfl)
-        (fun j h₁ h₂ => Lifting.motiveLevel_subst has.nodup hl hlen hl' j h₁ h₂)
+        (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl hlen hl' hp hp' j h₁
+          h₂)
       subst hΔ
-      have hI := Instance.lifted_ofLists qs ps v.quality v.recursion v.requirement v.ownership hq
-        hp hq' hp'
-      have hadm' : decl.constraint (Instance.ofLists (qs ++ [v.quality])
-          (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp').lifted := hI ▸ hadm
+      have hI := Instance.lifted_ofLists qs ps v.quality _ hq hp hq' hp'
+      have hadm' : decl.constraint I'.lifted := hI ▸ hadm
       have hargs' : HasInstanceArgs sig ctx' as'
-          (Context.substLevels ((ls ++ ls').getFin hl')
-            (Context.lifted S
-              ((Instance.ofLists (qs ++ [v.quality])
-                (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp').sorts
-                (Fin.last decl.sorts))
-              (Lifting.motiveLevel decl.levels S)
-              (Context.substLevels (Level.lifted S.length)
-                (decl.params (Instance.ofLists (qs ++ [v.quality])
-                  (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp').lifted)))) := by
+          (Context.substLevels ((ls ++ ms.map (·.level)).getFin hl')
+            (Context.lifted S (I'.sorts (Fin.last decl.sorts)) (decl.liftingMotive S I')
+              (Context.substLevels (Level.lifted S.length) (decl.params I'.lifted)))) := by
         rw [Context.lifted_substLevels, hI,
           Instance.sorts_last_ofLists qs _ v.quality hq hq' hp',
-          Context.substLevels_substLevels, Level.lifted_subst ls ls' hl hl']
+          Context.substLevels_substLevels,
+          Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
         exact has'
       have e₀ : ((InstanceArgs.identity (k := k) decl.scope).rename
-            (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).ren).subst
+            (Lifting.base S (decl.liftingMotive S I') decl.scope).ren).subst
           as'.toSubst = as.rename ρ.ren :=
         InstanceArgs.toSubst_inj fun x => by
           rw [InstanceArgs.subst_rename_of (θ' := fun y => as'.toSubst
-              ((Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).ren y))
+              ((Lifting.base S (decl.liftingMotive S I') decl.scope).ren y))
               (fun _ => rfl),
             InstanceArgs.identity_subst, ← InstanceArgs.toSubst_rename,
-            Lifting.base_ren S (Lifting.motiveLevel decl.levels S)
-              (fun i => (Lifting.motiveLevel decl.levels S i).subst ((ls ++ ls').getFin hl'))]
+            Lifting.base_ren S (decl.liftingMotive S I')
+              (fun i => (decl.liftingMotive S I' i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))]
           exact hc x
       have he' : HasType sig ctx' e
           (Term.subst as'.toSubst
-            (Term.substLevels ((ls ++ ls').getFin hl')
-              (decl.liftedInstance D S.length
-                (Instance.ofLists (qs ++ [v.quality])
-                  (ps ++ [v.recursion, v.requirement, v.ownership]) hq' hp').lifted
+            (Term.substLevels ((ls ++ ms.map (·.level)).getFin hl')
+              (decl.liftedInstance D S.length I'.lifted
                 ((InstanceArgs.identity decl.scope).rename
-                  (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).ren)))) := by
+                  (Lifting.base S (decl.liftingMotive S I') decl.scope).ren)))) := by
         rw [hI, decl.liftedInstance_substLevels D hq hp hl hl', InstanceArgs.substLevels_rename,
           InstanceArgs.identity_substLevels]
         show HasType sig ctx' e (.inst D qs ls ps _)
         rw [e₀]
         exact he
-      rw [← decl.liftingSort_substLevels S hq hp hl hlen hq' hp' hl']
+      rw [← decl.liftingSort_substLevels S hq hp hl ((List.length_map _).trans hlen) hq' hp' hl']
       exact HasType.inst (decl := decl.lifting D S ns body)
         (ζ := fun _ _ => .unrestrictedUnrestricted)
         ⟨hL, .inr ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩ hq' hl' hp' hadm' (.var hargs' he')
   /-- The typing of the arguments lifted of an instance, by recursion on the relation: they are
   arguments of the parameters lifted at the positions `S₂`, which are those of the relation among
-  the positions of the parameters, with motives at the levels that `lv` gives, those of the
+  the positions of the parameters, with motives of the results that `mv` gives, those of the
   relation, and they give the image of a parameter its argument, renamed. -/
   args {Γ' Γ : Scope} {ctx' : Context k Γ'} {ρ : Lifting k Γ' Γ} {ctx : Context k Γ} {Δ : Scope}
-      {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ} {S : List Nat} {ls : List (Level k)}
-      {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'} {params : Context k Δ} :
-      InstanceArgs.Lifts sig v ρ ns as S ls as' → Lifting.Typed sig v.quality ctx' ρ ctx →
-        (∀ D, ρ.block D = none) → HasInstanceArgs sig ctx as params → ∀ (S₂ : List Nat) (lv : Nat → Level k),
+      {ns : List (Nest Name)} {as : InstanceArgs k Γ Δ} {S : List Nat}
+      {ms : List (Lifting.Result k)} {Δ' : Scope} {as' : InstanceArgs k Γ' Δ'}
+      {params : Context k Δ} :
+      InstanceArgs.Lifts sig v ρ ns as S ms as' → Lifting.Typed sig v.quality ctx' ρ ctx →
+        (∀ D, ρ.block D = none) → HasInstanceArgs sig ctx as params →
+          ∀ (S₂ : List Nat) (mv : Nat → Lifting.Result k),
           (∀ i, i < Δ.length → (i ∈ S₂ ↔ i ∈ S)) →
-            (∀ j (h₁ : j < S.length) (h₂ : j < ls.length), lv S[j] = ls[j]) →
+            (∀ j (h₁ : j < S.length) (h₂ : j < ms.length), mv S[j] = ms[j]) →
               ∃ hΔ : Δ' = Δ.lifted S₂,
-                HasInstanceArgs sig ctx' (hΔ ▸ as') (params.lifted S₂ v.quality lv) ∧
+                HasInstanceArgs sig ctx' (hΔ ▸ as') (params.lifted S₂ v.quality mv) ∧
                   ∀ {a} (x : Var Δ a),
-                    (hΔ ▸ as').toSubst ((Lifting.base S₂ lv Δ).ren x) =
+                    (hΔ ▸ as').toSubst ((Lifting.base S₂ mv Δ).ren x) =
                       (as.toSubst x).rename (Ren.liftN a.params.length ρ.ren)
     | .nil, hρ, _, .nil _, _, _, _, _ => ⟨rfl, .nil hρ.ren.wfCtx, fun x => nomatch x⟩
-    | .absent (a := .var) (Δ := Δ₀) has _ _, hρ, hk, .var hps ha, S₂, lv, hS, hlv => by
+    | .absent (a := .var) (Δ := Δ₀) has _ _, hρ, hk, .var hps ha, S₂, mv, hS, hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
-        args has hρ hk hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
+        args has hρ hk hps S₂ mv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
       subst hΔ
-      exact HasInstanceArgs.liftedVar_false _ (lv Δ₀.length) hρ has' hc ha _
+      exact HasInstanceArgs.liftedVar_false _ (mv Δ₀.length) hρ has' hc ha _
         (decide_eq_false fun h =>
           Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
-    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _ _, hρ, hk, .secondOrder hps hb, S₂, lv, hS,
+    | .absent (a := .secondOrder _ _) (Δ := Δ₀) has _ _, hρ, hk, .secondOrder hps hb, S₂, mv, hS,
         hlv => by
       obtain ⟨hΔ, has', hc⟩ :=
-        args has hρ hk hps S₂ lv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
+        args has hρ hk hps S₂ mv (fun i hi => hS i (Nat.lt_succ_of_lt hi)) hlv
       subst hΔ
-      exact HasInstanceArgs.liftedSecondOrder_false _ (lv Δ₀.length) hρ has' hc hb _
+      exact HasInstanceArgs.liftedSecondOrder_false _ (mv Δ₀.length) hρ has' hc hb _
         (decide_eq_false fun h =>
           Nat.lt_irrefl _ (has.lt _ ((hS _ (Nat.lt_succ_self _)).1 h)))
-    | .lifted (a := .var) (Δ := Δ₀) (S := S) (ls := ls) (l := l) (B := B) has hB, hρ,
-        hk, .var hps ha, S₂, lv, hS, hlv => by
+    | .lifted (a := .var) (Δ := Δ₀) (S := S) (ms := ms) (m := l) (B := B) has hB, hρ,
+        hk, .var hps ha, S₂, mv, hS, hlv => by
       have hlen := has.length_eq
-      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ lv
+      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ mv
         (fun i hi => (hS i (Nat.lt_succ_of_lt hi)).trans
           ⟨fun h => (List.mem_append.1 h).elim id fun h' =>
             absurd (List.mem_singleton.1 h') (Nat.ne_of_lt hi), List.mem_append_left _⟩)
@@ -571,7 +566,7 @@ where
           have h := hlv j (by rw [List.length_append]; omega) (by rw [List.length_append]; omega)
           rwa [List.getElem_append_left h₁, List.getElem_append_left h₂] at h)
       subst hΔ
-      have hl : lv Δ₀.length = l := by
+      have hl : mv Δ₀.length = l := by
         have h := hlv S.length (by simp) (by simp [hlen])
         simpa [hlen] using h
       subst hl
@@ -582,10 +577,10 @@ where
           HasType.var (.var hw) .zero)
       exact HasInstanceArgs.liftedVar_true _ hρ has' hc ha ih _
         (decide_eq_true ((hS _ (Nat.lt_succ_self _)).2 (List.mem_append_right _ (.head _))))
-    | .lifted (a := .secondOrder ps _) (Δ := Δ₀) (S := S) (ls := ls) (l := l) (B := B) has hB,
-        hρ, hk, .secondOrder hps hb, S₂, lv, hS, hlv => by
+    | .lifted (a := .secondOrder ps _) (Δ := Δ₀) (S := S) (ms := ms) (m := l) (B := B) has hB,
+        hρ, hk, .secondOrder hps hb, S₂, mv, hS, hlv => by
       have hlen := has.length_eq
-      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ lv
+      obtain ⟨hΔ, has', hc⟩ := args has hρ hk hps S₂ mv
         (fun i hi => (hS i (Nat.lt_succ_of_lt hi)).trans
           ⟨fun h => (List.mem_append.1 h).elim id fun h' =>
             absurd (List.mem_singleton.1 h') (Nat.ne_of_lt hi), List.mem_append_left _⟩)
@@ -593,7 +588,7 @@ where
           have h := hlv j (by rw [List.length_append]; omega) (by rw [List.length_append]; omega)
           rwa [List.getElem_append_left h₁, List.getElem_append_left h₂] at h)
       subst hΔ
-      have hl : lv Δ₀.length = l := by
+      have hl : mv Δ₀.length = l := by
         have h := hlv S.length (by simp) (by simp [hlen])
         simpa [hlen] using h
       subst hl

@@ -966,15 +966,15 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   rw [hC'] at hC''
   cases hC''
   -- The recursor on the constructor steps to the branch, at the motive at the constructor.
-  have hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς, χ'⟩ con (.ofLists qs ps hq hp) decl.names
+  have hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
       (ls.getFin hl) (as.subst σ)
-      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level (Cs.subst σ))
+      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level χ' (Cs.subst σ))
       (Term.recursorAt r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ)) ts
       (ts.results (fun D'' t => .recursor r ς χ' D'' qs ls ps (as.subst σ) t κ (Cs.subst σ)
         (us.subst σ)) ((con.fields (.ofLists qs ps hq hp)).recursion decl.names)) := by
-    have h := Constructor.resultTerms_results (sig := sig) (v := ⟨κ.quality, r, ς, χ'⟩)
+    have h := Constructor.resultTerms_results (sig := sig) (v := ⟨κ.quality, r, ς⟩)
       (names := decl.names) (ls.getFin hl) (as.subst σ)
-      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level (Cs.subst σ))
+      (Lifting.ofMotives decl.names qs ls ps (as.subst σ) κ.level χ' (Cs.subst σ))
       (Term.recursorAt r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ)) ts
       (hns i j T' con hi)
     rw [funext fun D'' => funext fun t =>

@@ -53,11 +53,11 @@ theorem Context.LiftsTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') {S 
 /-- The lifting extended by a variable, lifted or not, is typed in the contexts extended by the
 variable, followed by its motive if it is lifted, when the variable lifted is a type. -/
 theorem Lifting.Typed.liftedVar {Δ' Δ : Scope} {ctx' : Context k Δ'} {ρ : Lifting k Δ' Δ}
-    {ctx : Context k Δ} {A : Term k Δ} (s : Quality) (l : Level k)
+    {ctx : Context k Δ} {A : Term k Δ} (s : Quality) (l : Lifting.Result k)
     (h : Lifting.Typed sig s ctx' ρ ctx) (hA : WfType sig ctx A) :
     (b : Bool) → (b = true → WfType sig (ctx.var A) (.var₀ .zero)) →
-      Lifting.Typed sig s (Context.liftedVar ⟨s, l⟩ b ctx' (A.rename ρ.ren)) (Lifting.cons l b ρ)
-        (ctx.var A)
+      Lifting.Typed sig s (Context.liftedVar ⟨s, l.level⟩ b ctx' (A.rename ρ.ren))
+        (Lifting.cons l b ρ) (ctx.var A)
   | false, _ => h.lift hA
   | true, hx =>
     have hρ := TypedRen.liftedVar s l h.ren hA true hx
@@ -92,12 +92,12 @@ type, at the variables of its telescope. -/
 theorem Lifting.Typed.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
     {ψ : ResultOwnership Grade ps.length} {ctx' : Context k Δ'} {ρ : Lifting k Δ' Δ}
     {ctx : Context k Δ} {Θ : Telescope k Δ ps} {A : Term k (Δ.extend ps.length)} (s : Quality)
-    (l : Level k) (h : Lifting.Typed sig s ctx' ρ ctx) (hA : WfType sig (ctx.append Θ) A) :
+    (l : Lifting.Result k) (h : Lifting.Typed sig s ctx' ρ ctx) (hA : WfType sig (ctx.append Θ) A) :
     (b : Bool) →
       (b = true →
         WfType sig ((ctx.secondOrder Θ A ψ).append (Θ.rename Ren.weaken)) (Var.eta .zero)) →
         Lifting.Typed sig s
-          (Context.liftedSecondOrder ⟨s, l⟩ b ctx' (Θ.rename ρ.ren)
+          (Context.liftedSecondOrder ⟨s, l.level⟩ b ctx' (Θ.rename ρ.ren)
             (A.rename (Ren.liftN ps.length ρ.ren)) ψ)
           (Lifting.cons l b ρ) (ctx.secondOrder Θ A ψ)
   | false, _ => h.liftSecondOrder hA
@@ -124,7 +124,7 @@ theorem Lifting.Typed.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
               (A.rename (Ren.liftN ps.length ρ.ren)) ψ)
             (Θ := ((Θ.rename ρ.ren).rename Ren.weaken).snoc (p := Lifting.termParam)
               .unrestrictedUnrestricted (Var.eta .zero))
-            (A := .sort ⟨s, l⟩) (ψ := Lifting.resultOwnership .unrestrictedUnrestricted _)
+            (A := .sort ⟨s, l.level⟩) (ψ := Lifting.resultOwnership .unrestrictedUnrestricted _)
           rw [Telescope.rename_snoc, Var.eta_rename (e := .secondOrder ps ψ),
             Telescope.rename_rename_of (α₁ := Ren.weaken) (α₂ := Ren.weaken)
               (α₃ := fun x => Ren.weaken (Ren.weaken x)) (fun _ => rfl),
@@ -149,19 +149,19 @@ theorem Lifting.Typed.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
 -- ADE: none.
 /-- The lifting of the parameters in the parameters lifted is typed, when the parameters are well
 formed and each parameter lifted is a type. -/
-theorem Context.lifted_typed (S : List Nat) (s : Quality) (lv : Nat → Level k) :
+theorem Context.lifted_typed (S : List Nat) (s : Quality) (mv : Nat → Lifting.Result k) :
     {Δ : Scope} → {ctx : Context k Δ} → WfCtx sig ctx → ctx.LiftsTypes sig S →
-      Lifting.Typed sig s (ctx.lifted S s lv) (Lifting.base S lv Δ) ctx
+      Lifting.Typed sig s (ctx.lifted S s mv) (Lifting.base S mv Δ) ctx
   | _, .empty, h, _ =>
     ⟨⟨h, fun hx => (nomatch hx), fun hX => (nomatch hX)⟩, fun {x} => (nomatch x),
       fun hD => (nomatch hD), fun {_ _ X} => (nomatch X)⟩
   | _, .var _ _, .var hA, hS =>
     Lifting.Typed.liftedVar s _
-      (Context.lifted_typed S s lv (contextPresuppositions.wfType hA) hS.1) hA _
+      (Context.lifted_typed S s mv (contextPresuppositions.wfType hA) hS.1) hA _
       fun hb => hS.2 (of_decide_eq_true hb)
   | _, .secondOrder _ _ _ _, .secondOrder hA, hS =>
     Lifting.Typed.liftedSecondOrder s _
-      (Context.lifted_typed S s lv (WfCtx.of_append (contextPresuppositions.wfType hA)) hS.1)
+      (Context.lifted_typed S s mv (WfCtx.of_append (contextPresuppositions.wfType hA)) hS.1)
       hA _ fun hb => hS.2 (of_decide_eq_true hb)
 
 /-! ## Parameters of a Lifting -/
@@ -197,12 +197,12 @@ constraint of its type declaration admits, when each parameter lifted is a type.
 theorem TypeDeclaration.lifting_typed {decl : TypeDeclaration} {F : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hsig : WfSig sig)
     (hT : sig.HasCodataType F decl T) (S : List Nat) {ns : List Name}
-    (body : Instance (decl.sorts + 1) (decl.grades + 3) →
+    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns)
-    (I : Instance (decl.sorts + 1) (decl.grades + 3)) (hadm : decl.constraint I.lifted)
+    (I : Instance (decl.sorts + 1) (decl.liftingGrades S)) (hadm : decl.constraint I.lifted)
     (hS : (decl.params I.lifted).LiftsTypes sig S) :
     Lifting.Typed sig (I.sorts (Fin.last decl.sorts)) ((decl.lifting F S ns body).params I)
-      (Lifting.base S (Lifting.motiveLevel decl.levels S) decl.scope).lift
+      (decl.liftingScope S I)
       (((decl.params I.lifted).substLevels (Level.lifted S.length)).var
         (decl.liftedInstance F S.length I.lifted (.identity decl.scope))) :=
   (Context.lifted_typed S _ _

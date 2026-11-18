@@ -171,9 +171,10 @@ variable {j g k' : Nat} {Δ Γ : Scope} {c : Constructor j g k' Δ} {I : Instanc
 are their recursive results `res_C̄` at the motives of the recursor. -/
 theorem Constructor.ResultTypes.results {ls : Fin k' → Level k} {as : InstanceArgs k Γ Δ}
     {Ξ : Scope} {qs : List Quality} {ls' : List (Level k)} {gs : List Grade}
-    {as' : InstanceArgs k Γ Ξ} {l : Level k} {Cs : Motives k Γ} {ps' : List Parameter}
+    {as' : InstanceArgs k Γ Ξ} {l : Level k} {χ : Grade} {Cs : Motives k Γ}
+    {ps' : List Parameter}
     {R : Telescope k (Γ.extend (c.params I).length) ps'}
-    (h : Constructor.ResultTypes sig v c I names ls as (Lifting.ofMotives names qs ls' gs as' l Cs)
+    (h : Constructor.ResultTypes sig v c I names ls as (Lifting.ofMotives names qs ls' gs as' l χ Cs)
       R)
     (hns : ∀ ν ∈ (c.fields I).nest names, ∀ ms, ν ≠ .inst ms) :
     ∃ R', c.results I names Cs = some R' ∧
@@ -186,7 +187,7 @@ theorem Constructor.ResultTypes.results {ls : Fin k' → Level k} {as : Instance
       obtain ⟨-, C, hC, rfl⟩ := Lifting.ofMotives_block_inv hb₀
       exact Motives.get_rename _ hC)
   have e : (Args.bound (k := k) (Γ := Γ) (c.params I)).terms.rename
-      ((Lifting.ofMotives names qs ls' gs as' l Cs).liftN (c.params I).length).ren =
+      ((Lifting.ofMotives names qs ls' gs as' l χ Cs).liftN (c.params I).length).ren =
       (Args.bound (c.params I)).terms := by
     rw [Lifting.liftN_ren]
     exact Terms.rename_id_of (Ren.liftN_id_of _ fun _ => rfl) _

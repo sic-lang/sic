@@ -71,7 +71,7 @@ inductive WfSig : Signature → Prop where
   lifted.
   RFC: `\mathsf{sig}_{\mathsf{lift}}` -/
   | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.grades + 3) →
+      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       (h : WfTypeDeclaration sig (decl.lifting F S ns body)) (hd : .typeDeclaration decl ∈ sig)
       (hl : decl.Lifts sig F S body) :
@@ -252,8 +252,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level Cs) (Rs con))
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con))
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
@@ -484,11 +484,11 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
       (hRs₁ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-          (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level Cs₁) (Rs₁ con))
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁) (Rs₁ con))
       (hRs₂ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-          (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level Cs₂) (Rs₂ con))
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂) (Rs₂ con))
       (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) → Cs₁.get j = some ⟨0, C'⟩ →
         us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
         us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
@@ -616,8 +616,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
       (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
       {rs : Args k Γ (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
-      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-        (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level Cs)
+      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs)
         (Term.recursorAt r ς χ qs ls ps as κ Cs us) ts rs)
       (hCl : Cs.length = decl.dataTypes.length)
       (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
@@ -631,8 +631,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level Cs) (Rs con))
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con))
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
@@ -677,8 +677,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς, χ⟩ con (.ofLists qs ps hq hp) decl.names
-          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level Cs) (Rs con))
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con))
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
