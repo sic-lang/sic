@@ -16,10 +16,12 @@ open Lean
 /-- The axioms that the formalization may use. -/
 def allowedAxioms : List Name := [``propext, ``Quot.sound]
 
-/-- The declarations among `names` that depend on an axiom outside `allowedAxioms`, by axiom. A
-single walk visits once each constant that `names` use, and records who uses it; the declarations
-that depend on a forbidden axiom are then those reached from it through the users. A declaration
-that depends only on allowed axioms is never in the map, which is empty when the check passes. -/
+/-- The declarations among `names` through which they reach an axiom outside `allowedAxioms`, by
+axiom: those that reach it without going through another of `names`, where the axiom enters the
+library. The declarations that depend on them depend on the axiom too, but fixing those found here
+removes it from all. A single walk visits once each constant that `names` use, and records who uses
+it; the declarations are then found from the axiom through the users, stopping at the first of
+`names` on each path. The map is empty when the check passes. -/
 def forbiddenAxioms (env : Environment) (names : Array Name) : NameMap NameSet := Id.run do
   -- The bodies of the private declarations are those of the module that declares them.
   let env := env.setExporting false
@@ -55,13 +57,15 @@ def forbiddenAxioms (env : Environment) (names : Array Name) : NameMap NameSet :
       pending := pending.pop
       if reached.contains c then continue
       reached := reached.insert c
-      if roots.contains c then declarations := declarations.insert c
-      pending := pending ++ (users.find? c).getD #[]
+      if roots.contains c then
+        declarations := declarations.insert c
+      else
+        pending := pending ++ (users.find? c).getD #[]
     result := result.insert axiom_ declarations
   return result
 
-/-- Logs every declaration of the libraries `roots` that depends on an axiom outside `allowedAxioms`,
-and tells whether there is one. -/
+/-- Logs the declarations of the libraries `roots` through which they reach an axiom outside
+`allowedAxioms`, and tells whether there is one. -/
 def checkAxioms (roots : List Name) : CoreM Bool := do
   let env ← getEnv
   let names := env.constants.map₁.toArray.filterMap fun (name, _) => do
