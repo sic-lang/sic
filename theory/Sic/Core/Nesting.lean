@@ -402,15 +402,6 @@ theorem Term.blockNest_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
   | .var .. | .sort _ | .const .. | .ctor .. | .recursor .. | .obs .. | .corec .. =>
     ⟨(fun h => nomatch h), fun h => nomatch h⟩
 
-/-- A position among the nestings of the entries of a telescope holds a type of the block. -/
-theorem Telescope.mem_names_of_direct_mem {Γ : Scope} {names : List Name} {D : Name} :
-    {ps : List Parameter} → {Θ : Telescope k Γ ps} → .direct D ∈ Θ.nest names → D ∈ names
-  | [], .nil, h => nomatch h
-  | _ :: _, .cons _ _ A Θ, h => by
-    rcases List.mem_cons.1 h with h | h
-    · exact Term.blockName_mem ((Term.blockNest_eq_direct A).1 h.symm)
-    · exact Telescope.mem_names_of_direct_mem h
-
 /-- The nesting of the entry at a position of a telescope is a position that holds a type of the
 block when the entry is a recursive field of this type, and only then. -/
 theorem Telescope.nestAt_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
@@ -442,5 +433,11 @@ theorem Telescope.recursion_eq_map_nest {Γ : Scope} (names : List Name) :
       cases hA : A.blockName names with
       | none => rfl
       | some D => rw [(Term.blockNest_eq_direct A).2 hA] at hN; cases hN
+
+/-- A position among the nestings of the entries of a telescope holds a type of the block. -/
+theorem Telescope.mem_names_of_direct_mem {Γ : Scope} {names : List Name} {D : Name}
+    {ps : List Parameter} {Θ : Telescope k Γ ps} (h : .direct D ∈ Θ.nest names) : D ∈ names :=
+  Telescope.mem_recursion
+    ((Telescope.recursion_eq_map_nest names Θ) ▸ List.mem_map_of_mem (f := Nest.blockName) h)
 
 end Sic.Core
