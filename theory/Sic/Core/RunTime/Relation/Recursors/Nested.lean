@@ -1,11 +1,7 @@
 module
 
-public import Sic.Core.Evaluation
-public import Sic.Core.Evaluation.Heap
 public import Sic.Core.Erasure.Results
-public import Sic.Core.Meaning.RunTime
 public import Sic.Core.Nesting.Relation
-public import Sic.Core.Results
 public import Sic.Core.RunTime.Relation
 
 /-!
