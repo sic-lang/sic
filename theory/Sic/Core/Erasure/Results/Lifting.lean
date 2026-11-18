@@ -481,6 +481,27 @@ theorem Lifting.base_shapes {S : List Nat} (hS : S.Nodup) {mv : Nat → Lifting.
       | none => .plain) = _
     rw [List.lookup_zip_eq_none hi]
 
+/-- The shapes of the parameters of a type declaration at distinct positions `S`, which carry the
+factors and the ownerships of the results `m̄`, follow the lifting of the scope of its lifting at
+the instance of the grades of these results, under the parameter that the lifting observes. -/
+theorem TypeDeclaration.liftingScope_shapes {decl : TypeDeclaration} {S : List Nat} (hS : S.Nodup)
+    {qs : List Quality} {ps : List Grade} {ms : List (Lifting.Result k)}
+    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1) (hp : ps.length = decl.grades)
+    (hm : ms.length = S.length) (hp' : (v.grades ps ms).length = decl.liftingGrades S)
+    {ms' : List Shape.Motive} (hms : Shape.Motive.AllOf ms' ms) :
+    (decl.liftingScope S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')).Shapes
+      (Nesting.lift (Shape.motives (S.zip ms'))) :=
+  Lifting.Shapes.lift (Lifting.base_shapes hS (by rw [hms.length_eq, hm])
+    (fun j h₁ h₂ => by
+      have hj : j < ms.length := hm ▸ h₁
+      have hf := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp' 0 j h₁
+      have ho := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp' 1 j h₁
+      have hmj : (ms'[j].factor, ms'[j].ownership) = (ms[j].factor, ms[j].ownership) := by
+        have := congrArg (·[j]?) hms
+        simpa [List.getElem?_map, h₂, hj] using this
+      obtain ⟨h₃, h₄⟩ := Prod.mk.inj hmj
+      exact ⟨h₃.trans hf.symm, h₄.trans ho.symm⟩) decl.scope)
+
 /-! ## Signatures Whose Liftings Have Shapes -/
 
 /-- The entries of a suffix of a signature whose names are distinct have distinct names. -/
@@ -617,18 +638,7 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
           (ν := Shape.motives (S.zip ms')) (ν₀ := Nesting.lift (Shape.motives (S.zip ms')))
           (fun x => .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x,
             rfl⟩)
-          (Lifting.Shapes.lift (Lifting.base_shapes hS (by rw [hms.length_eq, hm])
-            (fun j h₁ h₂ => by
-              have hj : j < ms.length := hm ▸ h₁
-              have hf := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp'
-                0 j h₁
-              have ho := Lifting.motiveGrade_ofLists hS (qs ++ [v.quality]) ps v ms hq' hp hm hp'
-                1 j h₁
-              have hmj : (ms'[j].factor, ms'[j].ownership) = (ms[j].factor, ms[j].ownership) := by
-                have := congrArg (·[j]?) hms
-                simpa [List.getElem?_map, h₂, hj] using this
-              obtain ⟨h₃, h₄⟩ := Prod.mk.inj hmj
-              exact ⟨h₃.trans hf.symm, h₄.trans ho.symm⟩) decl.scope))
+          (TypeDeclaration.liftingScope_shapes hS hq' hp hm hp' hms)
           (fun E => by
             show ((Lifting.base S _ decl.scope).block E).map _ = none
             rw [Lifting.base_block]
