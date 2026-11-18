@@ -6,7 +6,6 @@ public import Sic.Core.Lifting.Observations
 import Sic.Core.Erasure.Results.Substitution
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Shape
-import Sic.Core.Substitution.Closed
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
 
