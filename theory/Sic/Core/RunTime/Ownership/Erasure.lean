@@ -424,7 +424,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           (Ownership.extendResults (Ownership.extendFields φ
             (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
             (con.params (.ofLists qs ps hq hp))) p (us.grades i)
-            (con.resultParams (.ofLists qs ps hq hp) decl.names).length) := by
+            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) := by
         rw [Ownership.extendResults_eq, Ownership.extendFields_eq]
         refine Ownership.RunAgree.extendBinders hφ _ _ _ _ (fun l => ?_) (fun l => ?_)
         · -- The variable of a field.

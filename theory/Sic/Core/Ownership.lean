@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Syntax
+public import Sic.Core.Nesting
 
 /-!
 # Ownership
@@ -136,14 +136,14 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.resultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields φ
           (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
           (con.params (.ofLists qs ps hq hp))) p (us.grades i)
-          (con.resultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships of its arguments, which satisfy the requirements
