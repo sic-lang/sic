@@ -91,10 +91,10 @@ theorem RunNestDesRel.levelLe {sig : Signature} {ι : Interpretation} {P : Progr
     RunNestDesRel sig ι P m (fun k _ => levelRel sig ι k) D @ν ds @θ S →
       RunNestDesRel sig ι P n (fun k _ => levelRel sig ι k) D @ν ds @θ S
   | .nil => .nil
-  | .cons hi hν hΘ hRΘ F R hF hR G hG =>
+  | .cons hi hν hΘ hRΘ F R hF hR G hG hresp =>
     .cons hi hν (hΘ.levelLe hmn) (RunTelRel.levelLe hmn hRΘ) F R
       (fun ts hts => (hF ts hts).levelLe hmn) (fun ts hts => RunNestRel.levelLe hmn (hR ts hts)) G
-      fun f hf => RunNestDesRel.levelLe hmn (hG f hf)
+      (fun f hf => RunNestDesRel.levelLe hmn (hG f hf)) hresp
   | .nested hi hν hΘ hRΘ R hR G hG =>
     .nested hi hν (hΘ.levelLe hmn) (RunTelRel.levelLe hmn hRΘ) R
       (fun ts hts => RunNestRel.levelLe hmn (hR ts hts)) G
@@ -253,7 +253,7 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
         RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D (fun _ => none) ds @θ S' →
         ∀ H o a, S' H o a → S H o a
   | .nil, _, _, h' => by cases h'; exact fun _ _ _ _ => trivial
-  | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG, hν, _,
+  | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG _, hν, _,
       h' => by
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
@@ -412,7 +412,7 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
         DesRel sig ι n (fun m _ => levelRel sig ι m) s (fun _ => none) ds @θ SE →
         ∀ H o a, SE o o → S H o a → S' H o a
   | .nil, _, _, h', _, _, _ => by cases h'; exact fun _ _ _ _ _ => trivial
-  | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG, hν, _,
+  | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG _, hν, _,
       h', _, _, hE => by
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with

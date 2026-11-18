@@ -683,8 +683,8 @@ theorem RunNestDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν' →
       RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν' ds' @θ' S
   | .nil, .nil, _, _ => .nil
-  | .cons (ps := ps) hi hν hΘ hRΘ F R hF hR G hG, .cons (B₂ := B') _ _ _ _ hΘe hBe hds, hθ,
-      hνν =>
+  | .cons (ps := ps) hi hν hΘ hRΘ F R hF hR G hG hresp, .cons (B₂ := B') _ _ _ _ hΘe hBe hds,
+      hθ, hνν =>
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hνν) B'
     .cons hi (hB.eq_plain.1.2 (Term.LevelEquiv.nest _ hBe ▸ hν))
       (TelRel.levelEquiv hd ih hΘ (hΘe.subst hθ) (fun _ => .plain))
@@ -694,8 +694,8 @@ theorem RunNestDesRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       (fun ts hts => RunNestRel.levelEquiv hd ih (hR ts hts)
         (hBe.subst (Subst.LevelEquiv.append hθ (Subst.LevelEquiv.refl _))) .plain)
       G
-      fun f hf => RunNestDesRel.levelEquiv hd ih (hG f hf) hds (hθ.snoc (Term.LevelEquiv.refl f))
-        (Nesting.lift_rel₃ hνν)
+      (fun f hf => RunNestDesRel.levelEquiv hd ih (hG f hf) hds (hθ.snoc (Term.LevelEquiv.refl f))
+        (Nesting.lift_rel₃ hνν)) hresp
   | .nested (ps := ps) hi hν hΘ hRΘ R hR G hG, .cons (B₂ := B') _ _ _ _ hΘe hBe hds, hθ, hνν =>
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hνν) B'
     .nested hi (fun h => hν (Term.LevelEquiv.nest _ hBe ▸ hB.eq_plain.1.1 h))

@@ -194,10 +194,23 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
     obtain ⟨S', h₁, h₂⟩ := hds f f (hcond f f hf) D hcase'
     rw [hGeq f S' h₁]
     exact ⟨h₁, h₂⟩
+  -- The destructors after it have the same relation at equal abstractions, which the destructors
+  -- at the second substitution relate to the second one, with one relation for each pair.
+  have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ H o a, G f₁ H o a ↔ G f₂ H o a :=
+    fun f₁ f₂ hf H o a => by
+      have hf₂ : AbstractionRel SΘ F f₂ f₂ := fun ts us hts => by
+        have htt := hSp.trans hts (hSp.symm hts)
+        obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
+        have hP := FieldRel.isPer hd ihm hF
+        exact hP.trans (hP.symm (hf ts ts htt)) (hf ts us hts)
+      obtain ⟨S₁, h₁, h₂⟩ := hds f₁ f₂ (hcond f₁ f₂ hf) D hcase'
+      obtain ⟨S₂, h₁', h₂'⟩ := hds f₂ f₂ (hcond f₂ f₂ hf₂) D hcase'
+      rw [hGeq f₁ S₁ h₁, hGeq f₂ S₂ h₁']
+      exact RunNestDesRel.unique hd ihm ih h₂ _ h₂' H o a
   refine ⟨_, .cons hi hν₁ (hΘ₁ ▸ hT₁.levelLe hn) (hΘ₁ ▸ hRT₁.levelLe hn) F R
-      (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).1),
+      (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).1) hresp,
     .cons hi hν₂ (hΘ₂ ▸ hT₂.levelLe hn) (hΘ₂ ▸ hRT₂.levelLe hn) F R
-      (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).2)⟩
+      (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).2) hresp⟩
   · obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts hts)
     rw [hB₁]
     exact .plain hw hF

@@ -289,14 +289,14 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
         ∀ H o o' a, S₁ H o a → (∀ d ps, Term.LevelEquiv (o d ps) (o' d ps)) → S₂ H o' a
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ _ _ _ => trivial
   | .cons (d := d) (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ
-      hRΘ F R hF hR _ hG, _, _, h', hRs => by
+      hRΘ F R hF hR _ hG _, _, _, h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
     have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
     cases h' with
-    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' =>
+    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,

@@ -433,7 +433,8 @@ inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n
   that `U_n` bounds, with the equality `F t̄` and the relation of run time `R t̄`, so that the
   observation of a term is one that the equality gives to `d`, related by `(®_x̄)` at the case `i`
   of `d` when `p` is used at run time, and the destructors after it, of run time for each
-  abstraction `f` that the equality gives to `d`, with the relation `G f`.
+  abstraction `f` that the equality gives to `d`, with the relation `G f`, the same for equal
+  abstractions.
   RFC: `\mathsf{rt}_{\lambda|}` -/
   | cons {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {d : Name} {ns : List Name}
       {ps : List Parameter} {p q ς : Grade}
@@ -450,7 +451,8 @@ inductive RunNestDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n
         RunNestRel sig ι P n below .plain (B.subst (Subst.append θ ts.toSubst)) (R ts.terms))
       (G : Term 0 (Scope.extend [] ps.length) → RunObsRel)
       (hG : ∀ f, AbstractionRel SΘ F f f →
-        RunNestDesRel sig ι P n below D (Nesting.lift @ν) ds (Subst.snoc θ f) (G f)) :
+        RunNestDesRel sig ι P n below D (Nesting.lift @ν) ds (Subst.snoc θ f) (G f))
+      (hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ H o a, G f₁ H o a ↔ G f₂ H o a) :
       RunNestDesRel sig ι P n below D @ν (.cons (d := d) p q ς Θ B ψ ds) @θ fun H o a =>
         AbstractionRel SΘ F (o d ps) (o d ps) ∧
           (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ ς RΘ R (o d ps) H a) ∧ G (o d ps) H o a

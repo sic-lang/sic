@@ -315,7 +315,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
         Nesting.Rel (fun x y => ∀ H H', K H H' → ∀ t a, x.2 H t a → y.2 H' t a) @ν₁ @ν₂ →
         ∀ H H', K H H' → ∀ o a, S₁ H o a → S₂ H' o a
   | .nil, _, _, h', _ => by cases h'; exact fun _ _ _ _ _ _ => trivial
-  | .cons (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hν hΘ hRΘ F R hF hR _ hG,
+  | .cons (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hν hΘ hRΘ F R hF hR _ hG _,
       _, _, h', hτ => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
@@ -323,7 +323,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
-    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' =>
+    | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
       have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
