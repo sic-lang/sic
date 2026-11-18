@@ -255,6 +255,25 @@ theorem Lifting.isSome_of_liftN {Γ' Γ : Scope} :
       rwa [show (ρ.lift (e := .var)).motive (.succ x) = (ρ.motive x).map (Prod.map .succ id)
         from rfl, Option.isSome_map] at hx
 
+/-- A lifting that lifts no variable lifts none under new variables. -/
+theorem Lifting.liftN_motive_eq_none {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) (n : Nat) :
+    ∀ {a} (y : Var (Γ.extend n) a), (ρ.liftN n).motive y = none := fun y => by
+  cases h : (ρ.liftN n).motive y with
+  | none => rfl
+  | some p =>
+    obtain ⟨x, -, hx⟩ := Lifting.isSome_of_liftN n ρ y (by rw [h]; rfl)
+    rw [hρ x] at hx
+    exact nomatch hx
+
+/-- A lifting that lifts no variable lifts none in a scope extended by a new entry. -/
+theorem Lifting.weaken_motive_eq_none {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
+    (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {e : Scope.Entry} :
+    ∀ {a} (x : Var Γ a), (ρ.weaken (e := e)).motive x = none := fun x => by
+  show (ρ.motive x).map _ = none
+  rw [hρ x]
+  rfl
+
 /-! ## Variables That Occur in an Instance -/
 
 /-- A variable that does not occur in an instance does not occur in its arguments. -/
