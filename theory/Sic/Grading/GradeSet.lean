@@ -185,4 +185,9 @@ theorem Mode.oneOne_odot_mul :
     ∀ r p : Grade, r * p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ r) ⊙ p = .oneOne := by
   decide
 
+/-- The grade of the mode `11ᵐ ⊙ p` of a grade `p` with a use at run time is `1`. -/
+theorem Mode.grade_odot_of_not_erased :
+    ∀ p : Grade, p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ p).grade = Grade.one := by
+  decide
+
 end Sic.Grading

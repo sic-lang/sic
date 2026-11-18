@@ -854,11 +854,6 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
 
 /-! ## Erasure -/
 
-/-- The grade of the mode of a destructor with a use at run time is `1`. -/
-theorem Mode.grade_odot_of_not_erased :
-    ∀ p : Grade, p ∉ Mode.oneOne.erased → (Mode.oneOne ⊙ p).grade = Grade.one := by
-  decide
-
 /-- The branch at a position of the erased branches of a corecursor, without non-uniform
 parameters, is the erasure of the branch at this position, at the grade `p` of its destructor, with
 the resumption at this position, the multiplicities `run(⌜11ᵐ ⊙ p⌝ · q)` and the requirements at
