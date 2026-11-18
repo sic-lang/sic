@@ -130,13 +130,13 @@ def Destructors.shape (sig : Signature) (v : Lifting.Variables) (lookup : Shape.
     | none => rest
     | some m =>
       let p' := Lifting.resultGrade v.quality p
-      (.cons ((sig.destructorCase D d).getD 0) ps.length p'.run
+      ⟨.cons ((sig.destructorCase D d).getD 0) ps.length p'.run
         (fun j => ps[j].usage.run) (fun j => ps[j].requirement.run)
         (fun j => ((Mode.oneOne ⊙ p').grade * (ps[j].scale (v.recursion * m.factor)).usage).run)
         (fun j => ps[j].requirement.run)
         ((Lifting.resultOwnership m.ownership _).map Grade.run) v.requirement.run
         (ψ₀.map Grade.run) ς₀.run m.next rest.1,
-       some ((p' * m.factor).meetWith rest.2))
+        some ((p' * m.factor).meetWith rest.2)⟩
 termination_by structural _ _ ds => ds
 
 /-- The shapes of the parameters of a type declaration, the parameter at each position of `ms`
