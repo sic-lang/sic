@@ -378,7 +378,7 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
         exact ⟨_, .codata hT hq hl hp rfl hκ hn hrec S hS₁',
           .codata hT hq hl hp rfl hκ hn hrec S hS₂'⟩
       | prop =>
-        exact ⟨_, .codataProp hT hq hl hp rfl hκ hn, .codataProp hT hq hl hp rfl hκ hn⟩
+        exact ⟨_, .codataProp hT hq hl hp rfl hκ hn hrec, .codataProp hT hq hl hp rfl hκ hn hrec⟩
 
 -- ADE: none.
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
