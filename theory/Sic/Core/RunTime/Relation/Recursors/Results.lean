@@ -35,7 +35,9 @@ variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 whose nestings in the block whose types have the names `names` are `ns`, a variable
 `y : C_D[x / z]` for each recursive field `x` of the type `D`, at the motive `C_D` of `D` in `C̄`,
 in order, if no field is nested and `C̄` has a motive without non-uniform parameters for each of
-these types: the results of the recursive fields, which the run time reads. -/
+these types: the results of the recursive fields, which the run time reads.
+They are not definitions of the RFC, which defines the recursive results as a relation: the run time
+reads them until it computes the results of the nested fields. -/
 def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (ns : List (Nest Name)) →
     {ps : List Parameter} → Terms k Δ → Option (Telescope k Δ (Telescope.nestResultParams ns ps))
   | _, Cs, .direct D :: ns, p :: ps, .cons x xs =>
@@ -53,7 +55,9 @@ def Motives.results (names : List Name) : {Δ : Scope} → Motives k Δ → (ns 
 /-- `f(D, t̄)` for the arguments `t̄` of a telescope whose entries have the parameters `ps`: the term
 `f D t` for each term `t` of a recursive field of the type `D`, whose nesting in `ns` holds `D`, in
 order, if no field is nested: the arguments of the results of the recursive fields, which the run
-time reads. -/
+time reads.
+They are not definitions of the RFC, which defines the recursive results as a relation: the run time
+reads them until it computes the results of the nested fields. -/
 def Args.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
     (ns : List (Nest Name)) → {ps : List Parameter} → Args k Γ ps →
       Option (Args k Γ (Telescope.nestResultParams ns ps))
@@ -66,7 +70,9 @@ def Args.results {Γ : Scope} (f : Name → Term k Γ → Term k Γ) :
 -- ADE: none.
 /-- `res_C̄(Θ_c)`: the recursive results of the fields of the constructor `c` at the instance `I`, in
 a block whose types have the names `names`, in the scope `Γ` extended by its fields, for the motives
-`C̄` in `Γ`. -/
+`C̄` in `Γ`.
+They are not definitions of the RFC, which defines the recursive results as a relation: the run time
+reads them until it computes the results of the nested fields. -/
 def Constructor.results {j g k' : Nat} {Δ Γ : Scope} (c : Constructor j g k' Δ) (I : Instance j g)
     (names : List Name) (Cs : Motives k Γ) :
     Option (Telescope k (Γ.extend (c.params I).length) (c.nestResultParams I names)) :=
