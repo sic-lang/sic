@@ -343,15 +343,6 @@ theorem _root_.Sic.Grading.Grade.run_mul_le_fieldMultiplicity : ∀ (π : Multip
       r.run * (if e ∈ Mode.oneOne.erased then .zero else e.run) := by
   decide
 
-/-- Arguments related to addresses are as many as the addresses. -/
-theorem RunsAsArgs.length {H : Heap} : {ps : List Parameter} → {g : Nat → Grade} →
-    {ts : Args 0 [] ps} → {bs : List Nat} → {Θ : Telescope 0 [] ps} →
-    RunsAsArgs sig ι P H g ts bs Θ → bs.length = ps.length
-  | [], _, .nil, [], .nil, _ => rfl
-  | _ :: _, _, .cons _ _, _ :: _, .cons _ _ _ _, h => congrArg (· + 1) (RunsAsArgs.length h.2)
-  | [], _, .nil, _ :: _, .nil, h => (h : False).elim
-  | _ :: _, _, .cons _ _, [], .cons _ _ _ _, h => (h : False).elim
-
 /-- Terms related to themselves at the recursive fields by `Q` are related to themselves by `Q'`,
 when `Q'` relates each term to itself that `Q` does. -/
 theorem Terms.RecRel.of_diag {Q Q' : Name → TermRel} :

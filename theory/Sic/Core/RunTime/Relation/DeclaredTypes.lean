@@ -215,6 +215,15 @@ theorem RunsAsArgs.of_runTelRel {n : Nat} {H : Heap} :
       exact And.intro (fun hp => hRn.runsAs (hτ 0) hH.1 ht (hb (hg 0 _ rfl hp)))
         (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs hbs)
 
+/-- Arguments related to addresses are as many as the addresses. -/
+theorem RunsAsArgs.length {H : Heap} : {ps : List Parameter} → {g : Nat → Grade} →
+    {ts : Args 0 [] ps} → {bs : List Nat} → {Θ : Telescope 0 [] ps} →
+    RunsAsArgs sig ι P H g ts bs Θ → bs.length = ps.length
+  | [], _, .nil, [], .nil, _ => rfl
+  | _ :: _, _, .cons _ _, _ :: _, .cons _ _ _ _, h => congrArg (· + 1) (RunsAsArgs.length h.2)
+  | [], _, .nil, _ :: _, .nil, h => (h : False).elim
+  | _ :: _, _, .cons _ _, [], .cons _ _ _ _, h => (h : False).elim
+
 /-- The relation of run time of an instance of a data type of a type is `(®_μ)` of its block, for
 relations of the fields that the graph of a level gives, in a signature whose names are distinct. -/
 theorem HasRun.data (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
