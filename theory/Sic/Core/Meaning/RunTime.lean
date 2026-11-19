@@ -395,9 +395,9 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       (hS : RunNestDesRel sig ι P n below D (Nesting.ofArgs νs)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
       RunNestRel sig ι P n below (.inst νs) A ((runCorecRel D S).computed sig ι)
-  /-- `(rt_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in a universe of
-  propositions that `Ω_n` bounds, that the constraint of its block admits, none of whose destructors
-  is recursive, and whose terms, proofs, are erased.
+  /-- `(rt_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature that the
+  constraint of its block admits, in a universe of propositions that `Ω_n` bounds, none of whose
+  destructors is recursive, and whose terms, proofs, are erased.
   RFC: `\mathsf{rt}_{\lambda D\Omega}` -/
   | codataProp {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
