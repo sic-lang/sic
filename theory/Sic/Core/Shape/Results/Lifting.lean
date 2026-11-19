@@ -1,8 +1,6 @@
 module
 
 public import Sic.Core.Lifting.Extension
-public import Sic.Core.Lifting.Observations
-public import Sic.Core.Shape.Results
 public import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Shape

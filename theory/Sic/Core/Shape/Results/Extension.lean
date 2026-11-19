@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Shape.Results
-public import Sic.Core.Syntax.Signature
 import Sic.Core.Positivity.Nesting
 import Sic.Core.Shape.Results.Lifting
 

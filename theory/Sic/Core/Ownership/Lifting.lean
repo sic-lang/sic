@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Lifting
 public import Sic.Core.Ownership
 import Sic.Core.Lifting.Recursion
 

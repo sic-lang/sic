@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Erasure.Usage
-public import Sic.Core.Shape.Ownership
 
 /-!
 # Ownership of the Target Language

@@ -177,12 +177,12 @@ theorem TypeDeclaration.recursionRequirement_append {sig pre : Signature}
       decl.recursionRequirement sig v m χ qs ps I := by
   have hn : ∀ ax ∈ [Grade.run, Grade.total],
       decl.nestedPairs (pre ++ sig) v m χ qs ps I ax = decl.nestedPairs sig v m χ qs ps I ax :=
-    fun ax hax => by
+    fun ax hxs => by
       unfold TypeDeclaration.nestedPairs
       congr 1
       refine List.map_congr_left fun x hx => ?_
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
-      rw [Constructor.nestedShapes_append hd hdecl qs ps χ (h i x.1 x.2.1 x.2.2 hi ax hax)]
+      rw [Constructor.nestedShapes_append hd hdecl qs ps χ (h i x.1 x.2.1 x.2.2 hi ax hxs)]
   unfold TypeDeclaration.recursionRequirement
   exact Grade.ext (by simp only [Parameter.recursion]; rw [hn Grade.run (by simp)])
     (by simp only [Parameter.recursion]; rw [hn Grade.total (by simp)])
@@ -195,6 +195,6 @@ theorem TypeDeclaration.NestedHaveShapes.append {sig pre : Signature}
     {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
     {I : Instance decl.sorts decl.grades} (h : decl.NestedHaveShapes sig v m χ qs ps I) :
     decl.NestedHaveShapes (pre ++ sig) v m χ qs ps I :=
-  fun i j T con hi ax hax => (h i j T con hi ax hax).append hd hdecl
+  fun i j T con hi ax hxs => (h i j T con hi ax hxs).append hd hdecl
 
 end Sic.Core

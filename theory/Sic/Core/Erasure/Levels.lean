@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Erasure
-public import Sic.Core.Substitution
 import Sic.Core.Substitution.Levels
 
 /-!

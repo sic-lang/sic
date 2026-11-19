@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Shape
 public import Sic.Core.Shape.Recursion
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set

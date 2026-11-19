@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Nesting
 public import Sic.Core.Shape.Recursion
 
 /-!
