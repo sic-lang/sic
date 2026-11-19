@@ -30,18 +30,18 @@ section
 
 variable (sig : Signature) (ι : Interpretation) (P : Program) (ρ₁ : Lifting 0 [] [])
   (φ : Name → Term 0 [.var]) (block : Name → Option Shape.Motive) (ϱ : Multiplicity) {m₀ : Nat}
-  (Ns₀ : TargetBranches m₀) (E₀ : List Nat)
+  (Ns₀ : TargetBranches m₀) (E₀ : List Nat) (Hb : Heap)
 
 -- ADE: none.
 /-- The leaf `x` given at a position that holds the type `D` of the block, for the recursor of the
 multiplicity `0`: the recursor `rec_0 · ◀ ϱ with N̄₀` of the shape of `D`, on any path, which it
 does not evaluate, gives a value related to the result of a term that `x.2` relates, at the motive
 of `D` at this term, in any environment that binds the variables of the branches renamed as `E₀`
-binds them. -/
+binds them, from any heap that extends the heap `Hb` in which the cells of `E₀` live. -/
 def SkeletonResultLeaf (D : Name) (x : NestLeaf) : Prop :=
   ∀ b ms, ρ₁.block D = some b → block D = some ms → ∀ t t', x.2 t t' → ∀ {m : Nat}
     (g : TargetRen m m₀) (E : List Nat), (∀ x : Fin m₀, E[(g x : Nat)]? = E₀[(x : Nat)]?) →
-    ∀ (H : Heap) (O : Target m) ϖ H₁, H.Extends H₁ →
+    ∀ (H : Heap) (O : Target m), Hb.Extends H → ∀ ϖ H₁, H.Extends H₁ →
       ∃ w H₂ tr, Eval P ϖ H₁ E (ms.next.body .zero ϱ O (Ns₀.rename g)) w H₂ tr ∧
         H₁.Extends H₂ ∧
         RunsAs sig ι P H₂ ((φ D).subst₀ (Subst₀.single t)) w (b.motive.subst₀ (Subst₀.single t))
@@ -52,22 +52,22 @@ section
 
 variable {sig : Signature} {ι : Interpretation} {P : Program} {v : Lifting.Variables}
   {ρ₁ : Lifting 0 [] []} {φ : Name → Term 0 [.var]} {block : Name → Option Shape.Motive}
-  {ϱ : Multiplicity} {m₀ : Nat} {Ns₀ : TargetBranches m₀} {E₀ : List Nat}
+  {ϱ : Multiplicity} {m₀ : Nat} {Ns₀ : TargetBranches m₀} {E₀ : List Nat} {Hb : Heap}
 
 /-- The recursive result of the multiplicity `0` of a closed term at a position that holds a type of
 the block runs as the leaf of the position says, for any relation of the path, which the body does
 not evaluate. -/
 theorem NestedRunsAt.skeleton_direct {D : Name} {x : NestLeaf}
-    (hx : SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀ D x) (A : Term 0 []) {t t' : Term 0 []}
+    (hx : SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀ Hb D x) (A : Term 0 []) {t t' : Term 0 []}
     (ht : x.2 t t') (R : RunRel) :
-    NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ (.direct D) A t R := by
-  intro e A' mr ms hres hL hsh _ _ m g E hE H O _ ϖ H₁ hH₁
+    NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ Hb (.direct D) A t R := by
+  intro e A' mr ms hres hL hsh _ _ m g E hE H O hHb _ ϖ H₁ hH₁
   cases hres with
   | block hD =>
     cases hL with
     | block hD' =>
       cases Option.some.inj (hD.symm.trans hD')
-      exact hx _ ms hD hsh t t' ht g E hE H O ϖ H₁ hH₁
+      exact hx _ ms hD hsh t t' ht g E hE H O hHb ϖ H₁ hH₁
     | inst _ _ hn => exact absurd rfl (hn _)
   | inst _ hn => exact absurd rfl (hn _)
 
@@ -90,8 +90,8 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F →
       Nest.All (fun x => LeafCongr sig ι sT x.2) τ →
-      ∀ {ν : Nest Name}, Nest.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀) ν τ →
-      ∀ t t', F t t' → ∀ R, NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ ν A t R
+      ∀ {ν : Nest Name}, Nest.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀ Hb) ν τ →
+      ∀ t t', F t t' → ∀ R, NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ Hb ν A t R
   | .plain _ _, _, _, hν, _, _, _, _ => by
     cases hν with
     | plain => exact NestedRunsAt.plain _ _ _
@@ -157,7 +157,7 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       {ν' : Nesting NestLeaf Γ} → {θ : Subst 0 [] Γ} → {S : ObsRel} →
       NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν' ds @θ S →
       Nesting.All (fun x => LeafCongr sig ι sT x.2) @ν' → {ν : Nesting Name Γ} →
-      Nesting.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀) @ν @ν' →
+      Nesting.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀ Hb) @ν @ν' →
       {o₁ o₂ f₁ : Observations} → S o₁ o₂ → ObsEquiv sig ι s f₁ o₁ →
       ∀ {σ : (e : Scope.Entry) → Var Ξ e → Term 0 (Scope.extend [] e.params.length)},
       (σ = fun _ x => hpos.obsSubst f₁ θ x) → ∀ {νB : Nest Name},
@@ -165,7 +165,7 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       ∃ SΘ, TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
           (Θ.subst fun {e} x => σ e x) SΘ ∧
         ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ R,
-          NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ νB
+          NestedRunsAt sig ι P v ρ₁ φ block .zero ϱ Ns₀ E₀ Hb νB
             (B.subst (Subst.append (fun {e} x => σ e x) ts.toSubst)) ((f₁ d ps).subst ts.toSubst) R
   | _, _, _, _, _, B, _, .here, _, _, _, .cons (SΘ := SΘ) hν hΘ F hF _ _ _ _, _, _, hRel, _, _, _,
       hSo, hf₁, _, hσ, _, hνB => by
@@ -213,7 +213,8 @@ end
 
 -- ADE: none.
 /-- `n.Ξ` at run time for the recursor of the multiplicity `0`: the corecursor without state of the
-shape of the type of a nested field, whose field is bound to any cell, evaluates to a value related
+shape of the type of a nested field, whose field is bound to any cell, in a heap that extends the
+heap `Hb` of the cells of `E₀`, evaluates to a value related
 to the recursive result of the field at the type lifted, when the hypotheses of
 `NestRel.skeletonRuns` hold and the equality of the type relates the field to a term: the field is
 never read. -/
@@ -227,19 +228,20 @@ theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
     (hF : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All (fun x => LeafCongr sig ι sT x.2) τ)
-    {ν : Nest Name} (hν : Nest.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀) ν τ)
+    {ν : Nest Name} (hν : Nest.Rel (SkeletonResultLeaf sig ι P ρ₁ φ block ϱ Ns₀ E₀ Hb) ν τ)
     {t t' e A' : Term 0 []} (ht : F t t') {mr : Lifting.Result 0}
     (hres : Term.NestedResult sig v ρ₁ φ ν A t e) (hL : Term.Lifts sig v ρ₁ ν t A A' mr)
     {σ : Shape} {π χ : Grade}
     (hsh : A.shape v (Signature.shapes v .oneOne Grade.run sig) block Nesting.plain ν =
       some ⟨.lifting σ, π, χ⟩)
     (hrun : ∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') (hval : ValidTerm₀ sig ι e A')
-    (c : Nat) (H : Heap) (ϖ : Multiplicity) (H₁ : Heap) (hH₁ : H.Extends H₁) :
+    (c : Nat) (H : Heap) (hHb : Hb.Extends H) (ϖ : Multiplicity) (H₁ : Heap)
+    (hH₁ : H.Extends H₁) :
     ∃ w H₂ tr, Eval P ϖ H₁ (c :: E₀) (Target.nested .zero ϱ σ Ns₀) w H₂ tr ∧ H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ e w A' :=
   NestRel.skeletonRuns hd hord hlifts hb hF hτ hν t t' ht (fun _ _ _ => False) e A' mr _ hres hL
     hsh hrun hval (TargetRen.shift m₀ 1) (c :: E₀) (fun _ => List.getElem?_cons_succ) H (.var 0)
-    (fun h0 => (h0 rfl).elim) ϖ H₁ hH₁
+    hHb (fun h0 => (h0 rfl).elim) ϖ H₁ hH₁
 
 end
 
