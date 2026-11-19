@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Results
-public import Sic.Core.Shape.Results
 public import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Shape.Results.Factor
 import Sic.Core.Shape.Results.Lifting

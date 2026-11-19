@@ -5,7 +5,6 @@ public import Sic.Core.Lifting.Extension
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
 import Sic.Core.Erasure.Fields
-import Sic.Core.Erasure.Results
 import Sic.Core.RunTime.Relation.Corecursors
 import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.Shape.Results.Factor
