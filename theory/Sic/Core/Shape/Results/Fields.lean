@@ -32,12 +32,6 @@ open Sic.Grading
 variable {k : Nat} {v : Lifting.Variables} {lookup : Shape.Lookup}
   {block : Name → Option Shape.Motive}
 
-/-- The term at the position `j` of the terms `t̄`, the first one at `0`. -/
-def Terms.get {Γ : Scope} : Terms k Γ → Nat → Option (Term k Γ)
-  | .nil, _ => none
-  | .cons t _, 0 => some t
-  | .cons _ ts, j + 1 => ts.get j
-
 /-! ## Substitutions at a Nesting Without Variables -/
 
 mutual

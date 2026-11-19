@@ -341,6 +341,12 @@ def Motives.get {k : Nat} {Γ : Scope} : Motives k Γ → Nat → Option (Σ n, 
   | .cons n C _, 0 => some ⟨n, C⟩
   | .cons _ _ Cs, j + 1 => Cs.get j
 
+/-- The term at the position `j` of the terms `t̄`, the first one at `0`. -/
+def Terms.get {k : Nat} {Γ : Scope} : Terms k Γ → Nat → Option (Term k Γ)
+  | .nil, _ => none
+  | .cons t _, 0 => some t
+  | .cons _ ts, j + 1 => ts.get j
+
 /-- The number of the branches `ū`. -/
 def Branches.length {k : Nat} {Γ : Scope} : Branches k Γ → Nat
   | .nil => 0
