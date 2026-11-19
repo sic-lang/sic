@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.RunTime.Relation
+import Sic.Core.Erasure.Fields
 import Sic.Core.RunTime.Relation.Skeleton
 import Sic.Core.Syntax.Signature
 
@@ -353,6 +354,134 @@ as many times as its result is read, when it has a use at run time. -/
 theorem _root_.Sic.Grading.Grade.run_mul_le_fieldMultiplicity : ∀ (π : Multiplicity) (r p e g : Grade),
     r.run * π ≤ r.run * p.run → r * p ≤ g + e * r → r.run * π ≤ ((r * p).run - (e * r).run) +
       r.run * (if e ∈ Mode.oneOne.erased then .zero else e.run) := by
+  decide
+
+/-- No recursion of the recursive results of the fields from the position `o`, each erased when its
+grade is in `S`, runs on a field before `o`. -/
+theorem RecursiveResult.recursionsAt_ofField_lt (S : Math.Set Grade) [DecidablePred (· ∈ S)]
+    {f : Nat → Option Name} {s : Nat → Option Shape} (ns : List (Nest Name)) {o x : Nat}
+    (hx : x < o) : (es : List Grade) →
+    recursionsAt (List.zipWith (fun e w => if e ∈ S then RecursiveResult.erased else w) es
+      ((Telescope.nestPositions ns o).map fun l => RecursiveResult.ofField (f l) (s l) l))
+      (es.map Grade.run) x = .zero := by
+  generalize hws : ((Telescope.nestPositions ns o).map fun l =>
+    RecursiveResult.ofField (f l) (s l) l) = ws
+  have hmem : ∀ w ∈ ws, ∀ y, w.fieldPosition = some y → o ≤ y := fun w hw y hy =>
+    RecursiveResult.le_of_mem_ofField (hws ▸ hw) hy
+  clear hws
+  induction ws with
+  | nil => intro es; cases es <;> rfl
+  | cons w ws ih =>
+    intro es
+    cases es with
+    | nil => rfl
+    | cons e es =>
+      have hne : (if e ∈ S then RecursiveResult.erased else w).fieldPosition ≠ some x := by
+        split
+        · exact nofun
+        · exact fun h => absurd (hmem w List.mem_cons_self x h) (by omega)
+      simp only [List.zipWith_cons_cons, List.map_cons, recursionsAt, hne, ↓reduceIte,
+        ih (fun w' hw' => hmem w' (List.mem_cons_of_mem _ hw')) es]
+      rfl
+
+/-- The recursion that the recursive result of the field at `o` runs on this field: its factor, at
+the multiplicity of its grade. -/
+theorem RecursiveResult.recursionsAt_ofField_self (r : Option Name) (s : Option Shape) (o : Nat)
+    (m : Multiplicity) :
+    (if (RecursiveResult.ofField r s o).fieldPosition = some o then
+      m * (RecursiveResult.ofField r s o).factor else .zero) + .zero =
+      m * (RecursiveResult.ofField r s o).factor := by
+  cases r with
+  | some D =>
+    show (if some o = some o then _ else _) + _ = _
+    rw [ite_eq_left rfl]
+    exact (by decide : ∀ m n : Multiplicity, m * n + .zero = m * n) _ _
+  | none =>
+    cases s with
+    | some σ =>
+      show (if some o = some o then _ else _) + _ = _
+      rw [ite_eq_left rfl]
+      exact (by decide : ∀ m n : Multiplicity, m * n + .zero = m * n) _ _
+    | none =>
+      show (if (none : Option Nat) = some o then _ else _) + _ = m * .zero
+      rw [ite_eq_right nofun]
+      exact (by decide : ∀ m : Multiplicity, Multiplicity.zero + .zero = m * .zero) _
+
+/-- `0` plus a multiplicity is this multiplicity. -/
+theorem _root_.Sic.Grading.Multiplicity.zero_add' : ∀ m : Multiplicity, .zero + m = m := by
+  decide
+
+-- ADE: none.
+/-- The recursions that the recursive results of the fields whose nestings are `ns`, from the
+position `o`, each erased when its grade in `es` is in `S`, run on the field at `o + l`, at the
+run-time multiplicities of their grades: the run-time multiplicity of the grade of the result of the
+field times its factor in `πs`, when the grades of `S` have no use at run time and the factor of each
+recursive result is the run-time multiplicity of the factor in `πs` at its index. -/
+theorem Telescope.recursionsAt_results (S : Math.Set Grade) [DecidablePred (· ∈ S)]
+    (hS : ∀ e ∈ S, e.run = .zero) (f : Nat → Option Name) (s : Nat → Option Shape) :
+    (ns : List (Nest Name)) → (o : Nat) → (es πs : List Grade) →
+    (∀ (j : Nat) (w : RecursiveResult), ((Telescope.nestPositions ns o).map fun l =>
+      RecursiveResult.ofField (f l) (s l) l)[j]? = some w →
+        ∃ π : Grade, πs[j]? = some π ∧ w.factor = π.run) → (l : Nat) →
+    recursionsAt (List.zipWith (fun e w => if e ∈ S then RecursiveResult.erased else w) es
+      ((Telescope.nestPositions ns o).map fun l => RecursiveResult.ofField (f l) (s l) l))
+      (es.map Grade.run) (o + l) =
+      (Telescope.resultGrades ns (List.zipWith (· * ·) es πs) l).run
+  | [], _, es, _, _, _ => by cases es <;> rfl
+  | .plain :: ns, o, es, πs, hf, l => by
+    rw [Telescope.nestPositions_plain] at hf ⊢
+    cases l with
+    | zero => exact (RecursiveResult.recursionsAt_ofField_lt S ns (Nat.lt_succ_self o) es).trans rfl
+    | succ l =>
+      rw [show o + (l + 1) = o + 1 + l by omega]
+      exact Telescope.recursionsAt_results S hS f s ns (o + 1) es πs hf l
+  | .direct _ :: ns, o, es, πs, hf, l | .inst _ :: ns, o, es, πs, hf, l => by
+    rw [Telescope.nestPositions_cons rfl, List.map_cons] at hf ⊢
+    obtain ⟨π, hπ, hw⟩ := hf 0 _ rfl
+    cases πs with
+    | nil => cases hπ
+    | cons π' πs =>
+      cases hπ
+      have hf' : ∀ (j : Nat) (w : RecursiveResult), ((Telescope.nestPositions ns (o + 1)).map
+          fun l => RecursiveResult.ofField (f l) (s l) l)[j]? = some w →
+          ∃ π : Grade, πs[j]? = some π ∧ w.factor = π.run := fun j w h => hf (j + 1) w h
+      cases es with
+      | nil => simp only [List.zipWith_nil_left, Telescope.resultGrades_nil]; rfl
+      | cons e es =>
+        simp only [List.zipWith_cons_cons, List.map_cons, recursionsAt]
+        cases l with
+        | zero =>
+          show _ + recursionsAt _ _ o = (e * π).run
+          rw [RecursiveResult.recursionsAt_ofField_lt S ns (Nat.lt_succ_self o)]
+          rw [(Grade.run_op _ _).2.1]
+          by_cases he : e ∈ S
+          · simp only [he, ↓reduceIte, RecursiveResult.fieldPosition, hS e he]
+            exact (by decide : ∀ m : Multiplicity, Multiplicity.zero + .zero = .zero * m) _
+          · simp only [he, ↓reduceIte]
+            rw [← hw]
+            exact RecursiveResult.recursionsAt_ofField_self _ _ o _
+        | succ l =>
+          have hne : (if e ∈ S then RecursiveResult.erased
+              else RecursiveResult.ofField (f o) (s o) o).fieldPosition ≠ some (o + (l + 1)) := by
+            split
+            · exact nofun
+            · intro h
+              have := RecursiveResult.fieldPosition_ofField _ _ _ h
+              omega
+          simp only [hne, ↓reduceIte]
+          rw [show o + (l + 1) = o + 1 + l by omega,
+            Telescope.recursionsAt_results S hS f s ns (o + 1) es πs hf' l,
+            Multiplicity.zero_add']
+          rfl
+
+/-- The uses at run time of a field of the grade `p`, stored at a multiplicity `π` within it, that
+a recursor of the grade `r` gives are within those that the branch makes of it, when its usage
+bounds them by the grade `g` of its variable and the grade `x` of its recursions, its result times
+its factor: by the variable of the field, at the multiplicity that the erasure gives it, and by the
+recursions on it. -/
+theorem _root_.Sic.Grading.Grade.run_mul_le_fieldMultiplicity_results :
+    ∀ (π : Multiplicity) (r p x g : Grade), r.run * π ≤ r.run * p.run → r * p ≤ g + x * r →
+      r.run * π ≤ ((r * p).run - (x * r).run) + r.run * x.run := by
   decide
 
 /-- Arguments whose grades are all erased are related to addresses as many as them, whatever they

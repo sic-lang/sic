@@ -128,8 +128,8 @@ theorem List.zipWith_eq_left {α β : Type} {f : α → β → α} {c : β} (hf 
 /-- The elements `ks j` of positions `j < m`, each `x` when the element `gs[j]` satisfies `p`, and
 `g` of the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length
 `m`. -/
-theorem List.ofFn_ite_getElem? {α β : Type} {m : Nat} (p : α → Prop) [DecidablePred p] (x : β)
-    (g : Option Nat → β) (gs : Vector α m) (L : List Nat) (hL : L.length = m) :
+theorem List.ofFn_ite_getElem? {α β γ : Type} {m : Nat} (p : α → Prop) [DecidablePred p] (x : β)
+    (g : Option γ → β) (gs : Vector α m) (L : List γ) (hL : L.length = m) :
     List.ofFn (fun j : Fin m => if p gs[j] then x else g L[(j : Nat)]?) =
       List.zipWith (fun e l => if p e then x else g (some l)) gs.toList L := by
   apply List.ext_getElem
