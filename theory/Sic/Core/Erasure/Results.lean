@@ -328,6 +328,18 @@ theorem Constructor.getElem?_recursiveResults {j g k' : Nat} {Δ : Scope} (sig :
   funext y
   split <;> rfl
 
+/-- The recursive result of a field is the recursor on this field exactly when the field is
+recursive. -/
+theorem RecursiveResult.ofField_eq_field {r : Option Name} {s : Option Shape} {l l' : Nat} :
+    RecursiveResult.ofField r s l = .field l' ↔ l' = l ∧ r.isSome := by
+  cases r <;> cases s <;> simp [RecursiveResult.ofField, eq_comm]
+
+/-- The recursive result of a field is erased exactly when the field is not recursive and its type
+has no shape. -/
+theorem RecursiveResult.ofField_eq_erased {r : Option Name} {s : Option Shape} {l : Nat} :
+    RecursiveResult.ofField r s l = .erased ↔ r = none ∧ s = none := by
+  cases r <;> cases s <;> simp [RecursiveResult.ofField]
+
 /-- The recursive result of a field is nested on this field, at the shape `σ`, exactly when the
 field is not recursive and its type has the shape `σ`. -/
 theorem RecursiveResult.ofField_eq_nested {r : Option Name} {s : Option Shape} {l l' : Nat}
