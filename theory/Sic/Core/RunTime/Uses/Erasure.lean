@@ -1,10 +1,14 @@
 module
 
 public import Sic.Core.Erasure.Usage
+public import Sic.Core.Lifting.Extension
 public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
+import Sic.Core.Erasure.Fields
+import Sic.Core.Erasure.Results
 import Sic.Core.RunTime.Relation.Corecursors
 import Sic.Core.RunTime.Relation.Recursors
+import Sic.Core.Shape.Results.Factor
 import Sic.Core.Syntax.Signature
 import Sic.Core.Usage.Absence
 
@@ -166,56 +170,50 @@ theorem Telescope.run_resultSum_le : (ns : List (Nest Name)) → (ps : List Para
 
 /-! ## Branches -/
 
-/-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
-the recursive results are the recursors on the fields at the positions `es`, the erasure of each
-branch reads them as some `δ` allows, and its new variables as the multiplicities that the erasure
-gives their binders allow, `χ` bounds `δ` plus `χ` times the multiplicity of each recursive result
-that the branch computes, and a result that the branch computes has a multiplicity other than
-`0`. -/
+/-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when the
+recursive results of each branch are those of `ws`, the erasure of each branch reads them as some
+`δ` allows, and its new variables as the multiplicities that the erasure gives their binders allow,
+`χ` bounds `δ` plus `χ` times the multiplicity of each recursive result times its factor, `0` for a
+result that the branch does not compute, a result that the branch computes has a multiplicity other
+than `0`, and the shape of each nested result fits the recursor. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
-    (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Parameter)) →
+    (us : Branches k Γ) → (ws : List (List RecursiveResult)) → (fs : List (List Parameter)) →
     (∀ i a b (gs : _root_.Vector Grade b) (u : Term k ((Γ.extend a).extend b)),
       us.get i = some ⟨a, b, u⟩ → us.grades i = gs.toList →
       ∃ δ : MultiplicityVector Γ.length,
         Target.Usage (δ.extendBinders
             (fun l => r.fieldMultiplicity (((fs.drop i).headD [])[(l : Nat)]?.map (·.usage))
-              ((((es.drop i).headD []).map RecursiveResult.field).zip gs.toList |>.find?
+              ((((ws.drop i).headD []).zip gs.toList).find?
                 fun x => x.1.fieldPosition == some (l : Nat)))
             (fun (j : Fin b) => gs[j].run))
           (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b)) ∧
-        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) =>
-          if (if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?).isSome then gs[j].run
-          else .zero) ·ᶜ χ) ∧
-        ∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) →
-    TargetBranches.Usage r.run χ (us.erase sig S hΓ r (es.map (·.map RecursiveResult.field)) fs)
+        χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) => gs[j].run *
+          (if gs[j] ∈ S then RecursiveResult.erased
+            else (((ws.drop i).headD [])[(j : Nat)]?).getD .erased).factor) ·ᶜ χ) ∧
+        (∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) ∧
+        ∀ (j : Fin b) (l : Nat) (σ : Shape),
+          ((ws.drop i).headD [])[(j : Nat)]? = some (.nested l σ) → σ.Fits r.run) →
+    TargetBranches.Usage r.run χ (us.erase sig S hΓ r ws fs)
   | .nil, _, _, _ => .nil
-  | .cons a b gs u us, es, fs, h => by
-    obtain ⟨δ, hu, hχ, hk⟩ := h 0 a b gs u rfl rfl
-    simp only [List.drop_zero] at hu hχ
-    have hn (j : Fin b) : ¬ (if gs[j] ∈ S then RecursiveResult.erased
-        else .ofPosition (es.headD [])[(j : Nat)]?).IsNested := by
-      split
-      · exact id
-      · exact RecursiveResult.not_isNested_ofPosition _
-    have ih := Branches.erase_usage hΓ r χ us es.tail fs.tail fun i a' b' gs' u' hg hgs => by
-      have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
+  | .cons a b gs u us, ws, fs, h => by
+    obtain ⟨δ, hu, hχ, hk, hσ⟩ := h 0 a b gs u rfl rfl
+    simp only [List.drop_zero] at hu hχ hσ
+    have ih := Branches.erase_usage hΓ r χ us ws.tail fs.tail fun i a' b' gs' u' hg hgs => by
+      have e₁ : ws.drop (i + 1) = ws.tail.drop i := by cases ws <;> simp
       have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
       have := h (i + 1) a' b' gs' u' hg hgs
       rwa [e₁, e₂] at this
-    rw [List.map_tail] at ih
-    have hd₀ := RecursiveResult.headD_drop_map_field es 0
-    simp only [List.drop_zero] at hd₀
-    refine .cons (δ := δ) ?_ ?_ (fun j hj => hk j fun hs => ?_) (fun j l σ h => ?_) ih
-    · simp only [hd₀]
-      exact hu
-    · simp only [hd₀, RecursiveResult.getD_map_field, RecursiveResult.mul_factor (hn _),
-        apply_ite RecursiveResult.position, RecursiveResult.position_ofPosition,
-        RecursiveResult.position_erased]
-      exact hχ
-    · simp [show gs[(j : Nat)] ∈ S from hs] at hj
-    · simp only [hd₀, RecursiveResult.getD_map_field] at h
-      exact (hn j (by rw [h]; exact trivial)).elim
+    refine .cons (δ := δ) hu hχ (fun j hj => hk j fun hs => hj ?_) (fun j l σ hj => ?_) ih
+    · show (if gs[j] ∈ S then RecursiveResult.erased else _) = _
+      simp only [hs, ↓reduceIte]
+    · change (if gs[j] ∈ S then RecursiveResult.erased else _) = _ at hj
+      split at hj
+      · cases hj
+      · refine hσ j l σ ?_
+        cases hw : (ws.headD [])[(j : Nat)]? with
+        | none => rw [hw] at hj; cases hj
+        | some w => rw [hw] at hj; cases hj; rfl
 
 /-- The erasure of the branches of a corecursor reads the variables of the scope as `δ` allows when
 each branch, without non-uniform parameters and with a grade, reads them as some `δᵢ` allows, and
@@ -275,12 +273,14 @@ mutual
 The erasure at run time of a term checked in the mode `11ᵐ` reads its variables as the run-time
 multiplicities of their grades allow, in a signature whose names are distinct, so that the usage and
 the erasure read the grades of the fields, of the arguments and of the branches in the same
-declaration; the mode is a premise `m = 11ᵐ`, so that the positions of the term, which the usage
-checks in the mode `m ⊙ p`, are checked by the same theorem.
+declaration, and that declares its liftings in order, so that the factor that the usage gives the
+recursive result of a nested field is that of the shape that the erasure gives it; the mode is a
+premise `m = 11ᵐ`, so that the positions of the term, which the usage checks in the mode `m ⊙ p`,
+are checked by the same theorem.
 RFC: `\mathsf{erase}_{▶}`
 -/
-theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) {γ : GradeVector Γ.length} {m : Mode} {t : Term k Γ}
+theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.LiftsInOrder)
+    {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {γ : GradeVector Γ.length} {m : Mode} {t : Term k Γ}
     (hm : m = .oneOne) :
     Usage sig γ m t → Target.Usage γ.run (t.erase sig Mode.oneOne.erased hΓ)
   | .var (e := .secondOrder ..) (x := y) _ => nomatch hΓ _ y.mem
@@ -305,16 +305,15 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
-    exact .ctor (UsageArgs.erase_usage hd hΓ hm hts)
+    exact .ctor (UsageArgs.erase_usage hd hord hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
-      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hn hu hg hχ _ _ =>
+      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR _ hu hg hχ _ _ =>
       by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
         (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
         ((sig.caseFieldParams D qs ps).getD [])) := by
-      rw [hd.recursiveResults h hq hp, TypeDeclaration.recursiveResults_of_not_nested hn,
-        hd.caseFieldParams h hq hp, Option.getD_some]
+      rw [hd.recursiveResults h hq hp, hd.caseFieldParams h hq hp, Option.getD_some]
       refine Branches.erase_usage hΓ r χ.run us _ _ fun i a b gs' u hget hgs' => ?_
       have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -324,20 +323,21 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
       have hfs := List.headD_drop_of_getElem? (d := []) (l := decl.cases.map fun x =>
         x.2.2.params (.ofLists qs ps hq hp)) (i := i)
         (x := con.params (.ofLists qs ps hq hp)) (by simp [hc])
-      have hes := List.headD_drop_of_getElem? (d := [])
-        (l := decl.recursivePositions (.ofLists qs ps hq hp)) (i := i)
-        (x := ((con.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
-          fun y => y.1.map fun _ => y.2) (by simp [TypeDeclaration.recursivePositions, hc])
-      rw [hfs, hes, Telescope.recursion_eq_map_nest]
-      have hn' := hn i j T' con hc
-      -- The factors of the recursive results, of fields none of which is nested, are `11ᵖ`.
+      have hws := List.headD_drop_of_getElem? (d := [])
+        (l := decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ' (.ofLists qs ps hq hp)) (i := i)
+        (x := con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
+          (.ofLists qs ps hq hp)) (by simp [TypeDeclaration.recursiveResults, hc])
+      rw [hfs, hws]
+      -- The typing and the erasure give each recursive result the same factor.
       obtain ⟨R, hR'⟩ := hR i j T' con hc
-      have hz : List.zipWith (· * ·) (us.grades i) (πs i) = us.grades i :=
-        hR'.zipWith_factors hn' (Branches.length_grades hu')
+      have hf := hR'.factors_recursiveResults hd hord
       have hln := Telescope.length_nest decl.names (con.fields (.ofLists qs ps hq hp))
-      refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => hj ((Mode.erased_values.1 _).2 h0)⟩
+      have hπl : (πs i).length = (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length :=
+        Terms.ResultTypes.length_factors hR'
+      refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => hj ((Mode.erased_values.1 _).2 h0),
+        fun j l σ hj => ?_⟩
       · -- The erased branch reads the new variables below the grades that its usage gives them.
-        have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm
+        have ih := Usage.erase_usage hd hord ((hΓ.extend _).extend _) hm
           (hu i j T' con u' hc hu')
         rw [hgs', GradeVector.extendResults_resultGrades] at ih
         refine .sub (Target.Usage.cast _ ih) (MultiplicityVector.extendBinders_le_run _ _ _ _ _
@@ -345,38 +345,52 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         · obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
             ⟨_, List.getElem?_eq_getElem l.2⟩
           have hgl := Grade.run_le (hg i j T' con l p' hc hp')
-          rw [hz, hgs'] at hgl
-          rw [hm] at hgl
+          rw [hgs', hm] at hgl
           simp only [Mode.grade, Grade.modality.semiring.one_mul] at hgl
           rw [(Grade.run_op _ _).1] at hgl
-          have he := Grade.fieldMultiplicity_positions r p'.usage _ gs'.toList 0 l hn'
-          rw [Nat.zero_add] at he
-          simp only [hp', Option.map_some, he]
+          simp only [hp', Option.map_some,
+            Grade.fieldMultiplicity_results r p'.usage con _ gs'.toList (πs i) hf]
           exact Multiplicity.sub_best.1 _ _ _ hgl
         · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp), Option.getD_some,
             _root_.Vector.getElem_toList]
           exact (Multiplicity.modality.meet.meet_idem _).symm
-      · -- The bound of the recursions.
+      · -- The bound of the recursions, each result at its factor.
         have hχi := GradeVector.run_commutes.run_le (hχ i j T' con hc)
-        rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul, hz, hgs'] at hχi
+        rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul, hgs'] at hχi
         refine MultiplicityVector.le_trans hχi (MultiplicityVector.add_le_add'
           (MultiplicityVector.le_refl _) fun x => Multiplicity.mul_le_mul_right' _ _ _ ?_)
-        refine Telescope.run_resultSum_le _ _ hln _ (by simp) _ fun j' e he => ?_
-        rw [List.getElem?_eq_getElem (by simp), _root_.Vector.getElem_toList] at he
-        cases Option.some.inj he
-        have hpl := Telescope.length_positions _ hln hn' 0
-        split
-        · -- An erased result runs no recursion, and has no use at run time.
-          rename_i hS
-          simp only [Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
-          have hz : gs'[(j' : Nat)].run = .zero := (Mode.erased_values.1 _).1 hS
-          show _ = _ ⊓ _
-          rw [hz]
-          rfl
-        · -- A computed result is at the position of its recursive field.
-          rw [List.getElem?_eq_getElem (by rw [hpl]; exact j'.2)]
-          simp only [Option.isSome_some, ↓reduceIte]
-          exact (Multiplicity.modality.meet.meet_idem _).symm
+        refine Telescope.run_resultSum_le _ _ hln _
+          (by rw [List.length_zipWith, hπl]; simp) _ fun j' e he => ?_
+        rw [List.getElem?_zipWith, List.getElem?_eq_getElem (by simp),
+          _root_.Vector.getElem_toList] at he
+        cases hπ : (πs i)[(j' : Nat)]? with
+        | none => rw [hπ] at he; cases he
+        | some π =>
+          rw [hπ] at he
+          cases Option.some.inj he
+          rw [(Grade.run_op _ _).2.1]
+          split
+          · -- An erased result runs no recursion, and has no use at run time.
+            rename_i hS
+            have hz : gs'[j'].run = .zero := (Mode.erased_values.1 _).1 hS
+            show gs'[j'].run * π.run ≤ gs'[j'].run * _
+            rw [hz]
+            exact (by decide : ∀ b c : Multiplicity, Multiplicity.zero * b ≤ .zero * c) _ _
+          · -- A computed result runs the recursion at its factor.
+            have hlt : (j' : Nat) < (con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
+                (.ofLists qs ps hq hp)).length := by
+              rw [Constructor.length_recursiveResults]
+              exact j'.2
+            obtain ⟨π', hπ', hw⟩ := hf j' _ (List.getElem?_eq_getElem hlt)
+            rw [hπ] at hπ'
+            cases Option.some.inj hπ'
+            rw [List.getElem?_eq_getElem hlt, Option.getD_some, hw]
+            exact Multiplicity.le_refl' _
+      · -- The shape of a nested result fits the recursor.
+        rw [Constructor.getElem?_recursiveResults] at hj
+        obtain ⟨l', -, he⟩ := Option.map_eq_some_iff.1 hj
+        obtain ⟨rfl, -, hs⟩ := RecursiveResult.ofField_eq_nested.1 he
+        exact Constructor.nestedShapes_fits (Option.join_eq_some_iff.1 hs)
     simp only [Term.erase]
     rw [GradeVector.run_commutes.run_add, GradeVector.run_commutes.run_smul]
     by_cases hr : r ∈ Mode.oneOne.erased
@@ -388,21 +402,21 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
     · simp only [hr, ↓reduceIte]
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
-      exact .recursor (Usage.erase_usage hd hΓ hm' ht)
+      exact .recursor (Usage.erase_usage hd hord hΓ hm' ht)
         (fun h0 => absurd ((Mode.erased_values.1 r).2 h0) hr) hbr
   | .obs (d := d) h hq hp hpos ht hbs _ => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.argumentParams h hq hp hpos, Option.getD_some]
     rw [GradeVector.run_commutes.run_add]
-    exact .obs (Usage.erase_usage hd hΓ hm ht) (UsageArgs.erase_usage hd hΓ hm hbs)
+    exact .obs (Usage.erase_usage hd hord hΓ hm ht) (UsageArgs.erase_usage hd hord hΓ hm hbs)
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
       (δ := δ) (δs := δs) h hq hp hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
     obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim, hgrs,
       Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
     rw [GradeVector.run_commutes.run_add]
-    refine .corec (UsageArgs.erase_usage_mul hd hΓ hm rfl hss)
+    refine .corec (UsageArgs.erase_usage_mul hd hord hΓ hm rfl hss)
       (CorecBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     have hi' : i < decl.codataCases.length := hgl ▸ hi
@@ -449,7 +463,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         · rfl
     · simp only [hpS, ↓reduceIte]
       have hm' : m ⊙ p = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hpS
-      have ih := Usage.erase_usage hd ((hΓ.extend _).extend _) hm'
+      have ih := Usage.erase_usage hd hord ((hΓ.extend _).extend _) hm'
         (hgu i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hc hSj hpos hg)
       rw [GradeVector.extendParams_eq_extendGrades, GradeVector.extendParams_eq_extendGrades,
         hm'] at ih
@@ -479,13 +493,14 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
             (MultiplicityVector.smul_le_of_not_erased hpS _)
             (MultiplicityVector.smul_le_of_not_erased hpS _))
   | .sub h hle =>
-    .sub (Usage.erase_usage hd hΓ hm h) (GradeVector.run_commutes.run_le hle)
+    .sub (Usage.erase_usage hd hord hΓ hm h) (GradeVector.run_commutes.run_le hle)
 
 -- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in the mode `11ᵐ`, each at the
 parameter of its entry, reads their variables as the run-time multiplicities of their grades
 allow. -/
-theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.LiftsInOrder)
+    {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) {m : Mode} (hm : m = .oneOne) {ps : List Parameter}
     {γ : GradeVector Γ.length} {ts : Args k Γ ps} :
     UsageArgs sig γ m ts →
@@ -502,19 +517,20 @@ theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {�
       rw [(Mode.erased_values.1 p.usage).1 hp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
       have h := Targets.Usage.cons (π := .zero) (ϱ := p.requirement.run) .erased
-        (fun _ => .erased) (UsageArgs.erase_usage hd hΓ hm hts)
+        (fun _ => .erased) (UsageArgs.erase_usage hd hord hΓ hm hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hp, ↓reduceIte]
       have hm' : m ⊙ p.usage = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hp
-      exact .cons (Usage.erase_usage hd hΓ hm' ht)
+      exact .cons (Usage.erase_usage hd hord hΓ hm' ht)
         (fun h0 => absurd ((Mode.erased_values.1 _).2 h0) hp)
-        (UsageArgs.erase_usage hd hΓ hm hts)
+        (UsageArgs.erase_usage hd hord hΓ hm hts)
 
 -- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in the mode `11ᵐ ⊙ r`, each at
 the parameter of its entry whose grade is multiplied by `r`, reads their variables as the run-time multiplicities of their
 grades times `r` allow: the state of a corecursor. -/
-theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct)
+    (hord : sig.LiftsInOrder) {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) {m m' : Mode} (hm : m = .oneOne) {r : Grade} (hm' : m ⊙ r = m')
     {ps : List Parameter} {γ : GradeVector Γ.length} {ts : Args k Γ ps} :
     UsageArgs sig γ m' ts → Targets.Usage (GradeVector.run (r ·ᶜ γ))
@@ -533,15 +549,15 @@ theorem UsageArgs.erase_usage_mul {sig : Signature} (hd : sig.Distinct) {k : Nat
       rw [(Mode.erased_values.1 _).1 hrp,
         (MultiplicityVector.module Multiplicity.modality).zero_smul]
       have h := Targets.Usage.cons (π := .zero) (ϱ := p.requirement.run) .erased
-        (fun _ => .erased) (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
+        (fun _ => .erased) (UsageArgs.erase_usage_mul hd hord hΓ hm hm' hts)
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul] at h
     · simp only [hrp, ↓reduceIte]
       have hmp : m' ⊙ p.usage = .oneOne := by
         rw [← hm', hm]
         exact Mode.oneOne_odot_mul _ _ hrp
-      exact .cons (Usage.erase_usage hd hΓ hmp ht)
+      exact .cons (Usage.erase_usage hd hord hΓ hmp ht)
         (fun h0 => absurd ((Mode.erased_values.1 _).2 h0) hrp)
-        (UsageArgs.erase_usage_mul hd hΓ hm hm' hts)
+        (UsageArgs.erase_usage_mul hd hord hΓ hm hm' hts)
 
 end
 
