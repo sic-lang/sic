@@ -468,9 +468,8 @@ theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : H
 
 /-! ## Renamings
 
-The erasure copies the branches of a recursor, renamed, under the arguments of the branches that a
-nested result builds, which evaluate in an environment that binds each variable of the renamed
-branches as the environment of the recursor binds the variable that it renames. -/
+The branches of a recursor or of a corecursor renamed, read at a position: the erasure copies the
+branches of a recursor, renamed, under the arguments of the branches that a nested result builds. -/
 
 -- ADE: none.
 /-- The branch at a position of the branches of a recursor renamed is the branch renamed under its
