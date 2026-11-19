@@ -1,11 +1,9 @@
 module
 
-public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Monotonicity
+public import Sic.Core.Shape.Results
 public import Sic.Core.Soundness.Corecursors
-import Sic.Core.Erasure.Results.Lifting
-import Sic.Core.Erasure.Results.Substitution
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
@@ -17,6 +15,8 @@ import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.RunTime.Subsumption
+import Sic.Core.Shape.Results.Lifting
+import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution

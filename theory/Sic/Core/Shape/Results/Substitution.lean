@@ -1,7 +1,7 @@
 module
 
-public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Observations
+public import Sic.Core.Shape.Results
 public import Sic.Core.Substitution.Closed
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Positivity.Substitution
