@@ -16,6 +16,9 @@ A substitution only replaces variables, which have no position in the nesting of
 shape of a type at no position is none whatever its variables are, so that the shape of a type at
 its nesting does not depend on the terms that a substitution gives its variables, nor on its
 levels.
+The shapes that the erasure gives the types of the block are also those that the lifting of the
+block of a recursor asks: the recursor itself, of the factor `11ᵖ` and of the ownership of its
+results.
 
 ADE have no nested fields.
 -/
@@ -163,5 +166,19 @@ theorem Constructor.nestedShapes_shape {j g k' : Nat} {Δ : Scope} {sig : Signat
         Nesting.plain n = some ⟨.lifting σ, π, χ'⟩ := by
   rw [Constructor.nestedShapes, Telescope.nestedShapes_typesAt names ls (con.fields I)
     as.toSubst ts l hA hn, Option.some.injEq, Shape.Motive.nested_eq_some]
+
+/-! ## Shapes of the Block -/
+
+-- ADE: none.
+/-- Each type of the block that the lifting of the scope of a recursor gives a motive has a shape,
+the recursor itself, of the factor `11ᵖ` and of the ownership of the results of the recursor. -/
+theorem Signature.blockShapes_of_block {sig : Signature} {Γ Δ : Scope}
+    {names : List Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {as : InstanceArgs k Γ Δ} {l : Level k} {χ : Grade} {Cs : Motives k Γ} :
+    ∀ D b, (Lifting.ofMotives names qs ls ps as l χ Cs).block D = some b →
+      ∃ Υ, sig.blockShapes names qs ps χ D = some ⟨Υ, .linearLinear, b.ownership⟩ := by
+  intro D b h
+  obtain ⟨hD, _, _, rfl⟩ := Lifting.ofMotives_block_inv h
+  exact ⟨.recursor (sig.skeleton D qs ps), ite_eq_left hD⟩
 
 end Sic.Core

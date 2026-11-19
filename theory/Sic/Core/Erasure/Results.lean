@@ -1,11 +1,10 @@
 module
 
-public import Sic.Core.Results
 public import Sic.Core.Shape.Results
 import Sic.Core.Syntax.Signature
 
 /-!
-# Recursive Results of the Branches
+# Recursive Results of the Branches of the Target Language
 
 The recursive results of the branches of a recursor of the target language of annex 19 of RFC 36,
 `w`: what computes each recursive result of a branch, the recursor on a recursive field, the
@@ -280,17 +279,5 @@ theorem TypeDeclaration.recursiveResults_of_not_nested {decl : TypeDeclaration} 
   refine List.map_congr_left fun x hx => ?_
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
   exact Constructor.recursiveResults_of_not_nested (hn i x.1 x.2.1 x.2.2 hi)
-
--- ADE: none.
-/-- Each type of the block that the lifting of the scope of a recursor gives a motive has a shape,
-the recursor itself, of the factor `11ᵖ` and of the ownership of the results of the recursor. -/
-theorem Signature.blockShapes_of_block {k : Nat} {sig : Signature} {Γ Δ : Scope}
-    {names : List Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ Δ} {l : Level k} {χ : Grade} {Cs : Motives k Γ} :
-    ∀ D b, (Lifting.ofMotives names qs ls ps as l χ Cs).block D = some b →
-      ∃ Υ, sig.blockShapes names qs ps χ D = some ⟨Υ, .linearLinear, b.ownership⟩ := by
-  intro D b h
-  obtain ⟨hD, _, _, rfl⟩ := Lifting.ofMotives_block_inv h
-  exact ⟨.recursor (sig.skeleton D qs ps), ite_eq_left hD⟩
 
 end Sic.Core

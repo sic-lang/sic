@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Shape.Branches
+public import Sic.Core.Erasure.Results
 public import Sic.Core.Shape.Recursion
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set
