@@ -16,6 +16,7 @@ import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Shape.Results.Lifting
 import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
@@ -151,14 +152,13 @@ variable (v : Lifting.Variables) (ρ₁ : Lifting 0 [] []) (φ : Name → Term 0
 -- ADE: none.
 /-- The leaf `x` given at a position that holds the type `D` of the block: the recursor
 `rec_ρ · ◀ ϱ with N̄₀` of the shape of `D`, on a path that runs to an address that the relation `x.2`
-relates to the term `t`, when the recursor and the factor of the shape are used at run time, gives a
-value related to
-the result of `t` at the motive of `D` at `t`, in any environment that binds the variables of the
-branches renamed as `E₀` binds them. -/
+relates to a term `t` of the type `x.1` of the position, when the recursor and the factor of the
+shape are used at run time, gives a value related to the result of `t` at the motive of `D` at `t`,
+in any environment that binds the variables of the branches renamed as `E₀` binds them. -/
 def RunResultLeaf (D : Name) (x : RunNestLeaf) : Prop :=
-  ∀ b ms, ρ₁.block D = some b → block D = some ms → ∀ (t : Term 0 []) {m : Nat}
-    (g : TargetRen m m₀) (E : List Nat), (∀ x : Fin m₀, E[(g x : Nat)]? = E₀[(x : Nat)]?) →
-    ∀ (H : Heap) (O : Target m), (ρ ≠ .zero → ms.factor.run ≠ .zero → O.RunsTo P x.2 t E H) →
+  ∀ b ms, ρ₁.block D = some b → block D = some ms → ∀ (t : Term 0 []), ValidTerm₀ sig ι t x.1 →
+    ∀ {m : Nat} (g : TargetRen m m₀) (E : List Nat),
+    (∀ x : Fin m₀, E[(g x : Nat)]? = E₀[(x : Nat)]?) → ∀ (H : Heap) (O : Target m), (ρ ≠ .zero → ms.factor.run ≠ .zero → O.RunsTo P x.2 t E H) →
     ∀ ϖ H₁, H.Extends H₁ → ∃ w H₂ tr, Eval P ϖ H₁ E (ms.next.body ρ ϱ O (Ns₀.rename g)) w H₂ tr ∧
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ ((φ D).subst₀ (Subst₀.single t)) w (b.motive.subst₀ (Subst₀.single t))
@@ -704,10 +704,12 @@ theorem NestedRunsAt.plain (A t : Term 0 []) (R : RunRel) :
     NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ .plain A t R :=
   fun _ _ _ _ _ hL => (hL.not_avoidsLifted rfl fun x _ => nomatch x).elim
 
-/-- The recursive result of a closed term at a position that holds a type of the block runs as the
-leaf of the position says. -/
+/-- The recursive result of a closed term of a type at a position that holds a type of the block,
+which has the levels of the type of the leaf up to their values, runs as the leaf of the position
+says. -/
 theorem NestedRunsAt.direct {D : Name} {x : RunNestLeaf}
-    (hx : RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀ D x) (A t : Term 0 []) :
+    (hx : RunResultLeaf sig ι P ρ₁ φ block ρ ϱ Ns₀ E₀ D x) {A t : Term 0 []}
+    (hA : Term.LevelEquiv x.1 A) (ht : ValidTerm₀ sig ι t A) :
     NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ (.direct D) A t x.2 := by
   intro e A' mr ms hres hL hsh _ _ m g E hE H O hO ϖ H₁ hH₁
   cases hres with
@@ -715,7 +717,8 @@ theorem NestedRunsAt.direct {D : Name} {x : RunNestLeaf}
     cases hL with
     | block hD' =>
       cases Option.some.inj (hD.symm.trans hD')
-      exact hx _ ms hD hsh t g E hE H O hO ϖ H₁ hH₁
+      exact hx _ ms hD hsh t
+        (ValidEqTerm₀.levelEquiv ht (.refl t) (.refl t) hA.symm) g E hE H O hO ϖ H₁ hH₁
     | inst _ _ hn => exact absurd rfl (hn _)
   | inst _ hn => exact absurd rfl (hn _)
 
@@ -842,9 +845,9 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   | .plain _ _, _, _, hν, _, _ => by
     cases hν with
     | plain => exact NestedRunsAt.plain _ _ _
-  | .direct _, _, _, hν, _, _ => by
+  | .direct hA, _, _, hν, _, ht => by
     cases hν with
-    | direct hx => exact NestedRunsAt.direct hx _ _
+    | direct hx => exact NestedRunsAt.direct hx hA ht
   | .codata (ls := ls) h hq hl hp hA hκ _ hrec _ hS, hτ, _, hν, _, ht => by
     subst hA
     cases hν with
