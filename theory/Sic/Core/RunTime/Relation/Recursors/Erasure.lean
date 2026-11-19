@@ -164,10 +164,6 @@ theorem RecursiveResult.recursionsAt_ofField_self (r : Option Name) (s : Option 
       rw [ite_eq_right nofun]
       exact (by decide : ∀ m : Multiplicity, Multiplicity.zero + .zero = m * .zero) _
 
-/-- `0` plus a multiplicity is this multiplicity. -/
-theorem _root_.Sic.Grading.Multiplicity.zero_add' : ∀ m : Multiplicity, .zero + m = m := by
-  decide
-
 -- ADE: none.
 /-- The recursions that the recursive results of the fields whose nestings are `ns`, from the
 position `o`, each erased when its grade in `es` is in `S`, run on the field at `o + l`, at the
@@ -228,7 +224,7 @@ theorem Telescope.recursionsAt_results (S : Math.Set Grade) [DecidablePred (· �
           simp only [hne, ↓reduceIte]
           rw [show o + (l + 1) = o + 1 + l by omega,
             Telescope.recursionsAt_results S hS f s ns (o + 1) es πs hf' l,
-            Multiplicity.zero_add']
+            Multiplicity.modality.semiring.zero_add]
           rfl
 
 /-- The uses at run time of a field of the grade `p`, stored at a multiplicity `π` within it, that
