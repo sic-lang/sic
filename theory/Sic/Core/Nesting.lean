@@ -332,6 +332,77 @@ def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Pa
   | _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
   | [], _ | _ :: _, [] => []
 
+-- ADE: none.
+/-- The positions of the fields whose nestings `ns` have a position, from the position `o`, in
+order: the positions of the fields that have a recursive result, whose parameters
+`Telescope.nestResultParams` gives. -/
+def Telescope.nestPositions (ns : List (Nest Name)) (o : Nat) : List Nat :=
+  (ns.zipIdx o).filterMap fun y => if y.1.isPlain then none else some y.2
+
+/-- A field whose nesting has no position has no recursive result. -/
+theorem Telescope.nestPositions_plain (ns : List (Nest Name)) (o : Nat) :
+    Telescope.nestPositions (.plain :: ns) o = Telescope.nestPositions ns (o + 1) :=
+  rfl
+
+/-- A field whose nesting has a position has a recursive result, before those of the others. -/
+theorem Telescope.nestPositions_cons {n : Nest Name} (h : n.isPlain = false)
+    (ns : List (Nest Name)) (o : Nat) :
+    Telescope.nestPositions (n :: ns) o = o :: Telescope.nestPositions ns (o + 1) := by
+  cases n with
+  | plain => cases h
+  | direct _ | inst _ => rfl
+
+/-- The positions of the fields that have a recursive result are those, from `o`, of the fields
+whose nesting has a position. -/
+theorem Telescope.mem_nestPositions {ns : List (Nest Name)} {o l : Nat} :
+    o + l ∈ Telescope.nestPositions ns o ↔ ∃ n, ns[l]? = some n ∧ n.isPlain = false := by
+  unfold Telescope.nestPositions
+  rw [List.mem_filterMap]
+  constructor
+  · rintro ⟨⟨n, l'⟩, hy, hf⟩
+    obtain ⟨-, hn⟩ := List.mem_zipIdx_iff_le_and_getElem?_sub.1 hy
+    split at hf
+    · cases hf
+    · rename_i hp
+      cases hf
+      refine ⟨n, ?_, Bool.not_eq_true _ ▸ hp⟩
+      simpa using hn
+  · rintro ⟨n, hn, hp⟩
+    refine ⟨(n, o + l), List.mem_zipIdx_iff_le_and_getElem?_sub.2
+      ⟨by simp, by simpa using hn⟩, by simp [hp]⟩
+
+/-- The positions of the fields that have a recursive result, from the position `o`, are at `o`
+or after it. -/
+theorem Telescope.le_of_mem_nestPositions {y : Nat} {ns : List (Nest Name)} {o : Nat}
+    (h : y ∈ Telescope.nestPositions ns o) : o ≤ y := by
+  obtain ⟨⟨n, l⟩, hy, hf⟩ := List.mem_filterMap.1 h
+  have hl := (List.mem_zipIdx hy).1
+  split at hf
+  · cases hf
+  · cases hf
+    exact hl
+
+/-- The fields that have a recursive result are as many as the recursive results that the typing
+binds for fields of the parameters `ps`. -/
+theorem Telescope.length_nestPositions : (ns : List (Nest Name)) → (ps : List Parameter) →
+    ns.length = ps.length → (o : Nat) →
+      (Telescope.nestPositions ns o).length = (Telescope.nestResultParams ns ps).length
+  | [], [], _, _ => rfl
+  | .plain :: ns, _ :: ps, h, o => Telescope.length_nestPositions ns ps (Nat.succ.inj h) (o + 1)
+  | .direct _ :: ns, _ :: ps, h, o | .inst _ :: ns, _ :: ps, h, o =>
+    congrArg (· + 1) (Telescope.length_nestPositions ns ps (Nat.succ.inj h) (o + 1))
+
+/-- A list built from the fields whose nesting has a position, by a function of their positions, is
+the image of their positions. -/
+theorem Telescope.filterMap_eq_map_nestPositions {β : Type} (f : Nat → β)
+    (ns : List (Nest Name)) (o : Nat) :
+    (ns.zipIdx o).filterMap (fun y => if y.1.isPlain then none else some (f y.2)) =
+      (Telescope.nestPositions ns o).map f := by
+  rw [Telescope.nestPositions, List.map_filterMap]
+  congr 1
+  funext y
+  split <;> rfl
+
 /-- The parameters of the recursive results of the constructor `c` at the instance `I`, in a block
 whose types have the names `names`. -/
 abbrev Constructor.nestResultParams {j g k' : Nat} {Δ : Scope} (c : Constructor j g k' Δ)

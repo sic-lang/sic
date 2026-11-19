@@ -189,32 +189,45 @@ theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct
       decl.recursiveResults sig v qs ps χ (.ofLists qs ps hq hp) := by
   rw [Signature.recursiveResults, hd.findSome?_recursiveResults h hq hp, Option.getD_some]
 
+-- ADE: none.
+/-- The recursive results of the fields of the constructor `con` are the results of the fields that
+have one, at their positions, in order. -/
+theorem Constructor.recursiveResults_eq_map {j g k' : Nat} {Δ : Scope} (sig : Signature)
+    (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
+    (con : Constructor j g k' Δ) (I : Instance j g) :
+    con.recursiveResults sig v names qs ps χ I =
+      (Telescope.nestPositions ((con.fields I).nest names) 0).map fun l =>
+        RecursiveResult.ofField ((con.fields I).recursionAt names l)
+          (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l :=
+  Telescope.filterMap_eq_map_nestPositions (fun l => RecursiveResult.ofField
+    ((con.fields I).recursionAt names l)
+    (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l) _ 0
+
 /-- The recursive results of fields none of which is nested, whose nestings are `ns`, from the
 position `o`, are the recursors on their recursive fields, at their positions, when `f` gives a
 type of the block for each recursive field. -/
-theorem RecursiveResult.filterMap_ofField {f : Nat → Option Name} {s : Nat → Option Shape} :
+theorem RecursiveResult.map_ofField {f : Nat → Option Name} {s : Nat → Option Shape} :
     (ns : List (Nest Name)) → (o : Nat) → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
     (∀ i (D : Name), ns[i]? = some (.direct D) → (f (o + i)).isSome) →
-    (ns.zipIdx o).filterMap (fun y => if y.1.isPlain then none
-      else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)) =
+    (Telescope.nestPositions ns o).map (fun l => RecursiveResult.ofField (f l) (s l) l) =
       (((ns.map Nest.blockName).zipIdx o).filterMap fun y => y.1.map fun _ => y.2).map .field
   | [], _, _, _ => rfl
   | .inst ms :: _, _, hn, _ => absurd rfl (hn _ List.mem_cons_self ms)
   | .plain :: ns, o, hn, hf => by
-    simp only [List.zipIdx_cons, List.filterMap_cons, Nest.isPlain, ↓reduceIte, List.map_cons,
-      Nest.blockName, Option.map_none]
-    exact RecursiveResult.filterMap_ofField ns (o + 1)
+    rw [Telescope.nestPositions_plain]
+    simp only [List.map_cons, List.zipIdx_cons, List.filterMap_cons, Nest.blockName,
+      Option.map_none]
+    exact RecursiveResult.map_ofField ns (o + 1)
       (fun ν hν => hn ν (List.mem_cons_of_mem _ hν))
       (fun i D h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hf (i + 1) D h)
   | .direct D :: ns, o, hn, hf => by
     obtain ⟨D', hD'⟩ := Option.isSome_iff_exists.1 (hf 0 D rfl)
     rw [Nat.add_zero] at hD'
-    rw [List.zipIdx_cons, List.filterMap_cons, List.map_cons, List.zipIdx_cons,
-      List.filterMap_cons, RecursiveResult.filterMap_ofField ns (o + 1)
+    rw [Telescope.nestPositions_cons rfl, List.map_cons, List.map_cons, List.zipIdx_cons,
+      List.filterMap_cons, RecursiveResult.map_ofField ns (o + 1)
         (fun ν hν => hn ν (List.mem_cons_of_mem _ hν))
         (fun i D h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hf (i + 1) D h)]
-    simp only [Nest.isPlain, Bool.false_eq_true, ↓reduceIte, Nest.blockName, Option.map_some,
-      RecursiveResult.ofField, hD', List.map_cons]
+    simp only [Nest.blockName, Option.map_some, RecursiveResult.ofField, hD', List.map_cons]
 
 -- ADE: none.
 /-- The recursive results of the fields of a constructor none of which is nested are the recursors
@@ -226,8 +239,8 @@ theorem Constructor.recursiveResults_of_not_nested {j g k' : Nat} {Δ : Scope} {
     con.recursiveResults sig v names qs ps χ I =
       (((con.fields I).recursion names).zipIdx.filterMap fun y => y.1.map fun _ => y.2).map
         .field := by
-  rw [Constructor.recursiveResults, Telescope.recursion_eq_map_nest]
-  refine RecursiveResult.filterMap_ofField (f := (con.fields I).recursionAt names)
+  rw [Constructor.recursiveResults_eq_map, Telescope.recursion_eq_map_nest]
+  refine RecursiveResult.map_ofField (f := (con.fields I).recursionAt names)
     (s := fun l => (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join) _ 0 hn
     fun i D h => ?_
   rw [Nat.zero_add, Telescope.recursionAt, Telescope.recursion_eq_map_nest, List.getElem?_map, h]
@@ -250,28 +263,15 @@ theorem TypeDeclaration.recursiveResults_of_not_nested {decl : TypeDeclaration} 
 
 /-! ## Alignment With the Recursive Results of the Typing -/
 
-/-- The fields whose nestings `ns` have a position, from the position `o`, are as many as the
-recursive results that the typing binds for fields of the parameters `ps`. -/
-theorem Telescope.length_filterMap_nest {β : Type} (f : Nat → β) :
-    (ns : List (Nest Name)) → (ps : List Parameter) → ns.length = ps.length → (o : Nat) →
-      ((ns.zipIdx o).filterMap fun y => if y.1.isPlain then none else some (f y.2)).length =
-        (Telescope.nestResultParams ns ps).length
-  | [], [], _, _ => rfl
-  | .plain :: ns, _ :: ps, h, o => Telescope.length_filterMap_nest f ns ps (Nat.succ.inj h) (o + 1)
-  | .direct _ :: ns, _ :: ps, h, o | .inst _ :: ns, _ :: ps, h, o =>
-    congrArg (· + 1) (Telescope.length_filterMap_nest f ns ps (Nat.succ.inj h) (o + 1))
-
 -- ADE: none.
 /-- The constructor `con` has one recursive result in the erasure for each recursive result that
 the typing binds in its branch, so that the `j`-th results of both are those of the same field. -/
 theorem Constructor.length_recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
     (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
     (con : Constructor j g k' Δ) (I : Instance j g) :
-    (con.recursiveResults sig v names qs ps χ I).length = (con.nestResultParams I names).length :=
-  Telescope.length_filterMap_nest (fun l => RecursiveResult.ofField
-    ((con.fields I).recursionAt names l)
-    (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l) _ _
-    (Telescope.length_nest names (con.fields I)) 0
+    (con.recursiveResults sig v names qs ps χ I).length = (con.nestResultParams I names).length := by
+  rw [Constructor.recursiveResults_eq_map, List.length_map]
+  exact Telescope.length_nestPositions _ _ (Telescope.length_nest names (con.fields I)) 0
 
 -- ADE: none.
 /-- The `j`-th recursive result of the constructor `con` in the erasure is the one of the `j`-th of
@@ -282,14 +282,10 @@ theorem Constructor.getElem?_recursiveResults {j g k' : Nat} {Δ : Scope} (sig :
     (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
     (con : Constructor j g k' Δ) (I : Instance j g) (i : Nat) :
     (con.recursiveResults sig v names qs ps χ I)[i]? =
-      ((((con.fields I).nest names).zipIdx.filterMap fun y =>
-          if y.1.isPlain then none else some y.2)[i]?).map fun l =>
+      ((Telescope.nestPositions ((con.fields I).nest names) 0)[i]?).map fun l =>
         RecursiveResult.ofField ((con.fields I).recursionAt names l)
           (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l := by
-  rw [Constructor.recursiveResults, ← List.getElem?_map, List.map_filterMap]
-  congr 2
-  funext y
-  split <;> rfl
+  rw [Constructor.recursiveResults_eq_map, List.getElem?_map]
 
 /-- The recursive result of a field is the recursor on this field exactly when the field is
 recursive. -/
@@ -316,8 +312,7 @@ and the shape of its nested result is `σ`. -/
 theorem Constructor.recursiveResults_eq_nested {j g k' : Nat} {Δ : Scope} {sig : Signature}
     {v : Lifting.Variables} {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
     {con : Constructor j g k' Δ} {I : Instance j g} {i l : Nat}
-    (hl : (((con.fields I).nest names).zipIdx.filterMap fun y =>
-      if y.1.isPlain then none else some y.2)[i]? = some l) (σ : Shape) :
+    (hl : (Telescope.nestPositions ((con.fields I).nest names) 0)[i]? = some l) (σ : Shape) :
     (con.recursiveResults sig v names qs ps χ I)[i]? = some (.nested l σ) ↔
       (con.fields I).recursionAt names l = none ∧
         (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]? = some (some σ) := by
@@ -339,17 +334,12 @@ theorem Constructor.inst_of_recursiveResults_eq_nested {j g k' : Nat} {Δ : Scop
   obtain ⟨l', hl', he⟩ := Option.map_eq_some_iff.1 h
   obtain ⟨rfl, hr, hs⟩ := RecursiveResult.ofField_eq_nested.1 he
   refine ⟨?_, Option.join_eq_some_iff.1 hs⟩
-  obtain ⟨⟨n, l''⟩, hy, hf⟩ := List.mem_filterMap.1 (List.mem_of_getElem? hl')
-  split at hf
-  · cases hf
-  · rename_i hp
-    cases hf
-    have hn := List.mem_zipIdx_iff_getElem?.1 hy
-    simp only at hn
-    rw [Telescope.recursionAt, Telescope.recursion_eq_map_nest, List.getElem?_map, hn] at hr
-    cases n with
-    | plain => exact absurd rfl hp
-    | direct _ => cases hr
-    | inst ms => exact ⟨ms, hn⟩
+  obtain ⟨n, hn, hp⟩ := Telescope.mem_nestPositions.1
+    ((Nat.zero_add l).symm ▸ List.mem_of_getElem? hl' : 0 + l ∈ _)
+  rw [Telescope.recursionAt, Telescope.recursion_eq_map_nest, List.getElem?_map, hn] at hr
+  cases n with
+  | plain => cases hp
+  | direct _ => cases hr
+  | inst ms => exact ⟨ms, hn⟩
 
 end Sic.Core

@@ -166,18 +166,17 @@ theorem Telescope.resultOwnerships_getD {p d : Grade} {f : Nat → Option Name}
     (∀ i ms, ns[i]? = some (.inst ms) → f (o + i) = none ∧ (s (o + i)).isSome) →
     ∀ j, j < (Telescope.nestResultParams ns ps).length →
       ((Telescope.resultOwnerships p ns).getD j d).run =
-        ((((ns.zipIdx o).filterMap fun (y : Nest Name × Nat) => if y.1.isPlain then none
-          else some (RecursiveResult.ofField (f y.2) (s y.2) y.2))[j]?).getD .erased).ownership
-          p.run
+        ((((Telescope.nestPositions ns o).map fun l =>
+          RecursiveResult.ofField (f l) (s l) l)[j]?).getD .erased).ownership p.run
   | [], [], _, _, _, _, _, h => nomatch h
   | _ :: _, [], hl, _, _, _, _, _ => nomatch hl
   | .plain :: ns, _ :: ps, hl, o, hf, hs, j, h => by
-    rw [RecursiveResult.filterMap_ofField_plain]
+    rw [Telescope.nestPositions_plain]
     exact Telescope.resultOwnerships_getD ns ps (Nat.succ.inj hl) (o + 1)
       (fun i D h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hf (i + 1) D h)
       (fun i ms h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hs (i + 1) ms h) j h
   | .direct D :: ns, _ :: ps, hl, o, hf, hs, j, h => by
-    rw [RecursiveResult.filterMap_ofField_cons f s rfl]
+    rw [Telescope.nestPositions_cons rfl, List.map_cons]
     cases j with
     | zero =>
       obtain ⟨D', hD'⟩ := Option.isSome_iff_exists.1 (hf 0 D rfl)
@@ -190,7 +189,7 @@ theorem Telescope.resultOwnerships_getD {p d : Grade} {f : Nat → Option Name}
         (fun i ms h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hs (i + 1) ms h) j
         (Nat.lt_of_succ_lt_succ h)
   | .inst ms :: ns, _ :: ps, hl, o, hf, hs, j, h => by
-    rw [RecursiveResult.filterMap_ofField_cons f s rfl]
+    rw [Telescope.nestPositions_cons rfl, List.map_cons]
     cases j with
     | zero =>
       obtain ⟨hn, hσ⟩ := hs 0 ms rfl
@@ -554,7 +553,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             exact (Multiplicity.modality.semiring.mul_zero _).trans
               (Multiplicity.modality.semiring.mul_zero _).symm
           · congr 1
-            rw [Constructor.recursiveResults]
+            rw [Constructor.recursiveResults_eq_map]
             refine (Telescope.resultOwnerships_getD (p := c) (d := .unrestrictedUnrestricted)
               (f := (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names)
               (s := fun l => (con.nestedShapes sig ⟨κ.quality, r, ς⟩ .oneOne Grade.run decl.names
@@ -595,9 +594,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           exact hg rfl
         obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
           ⟨_, List.getElem?_eq_getElem l.2⟩
-        have hidx : (((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap
-            fun y => if y.1.isPlain then none else some y.2)[(j' : Nat)]? =
-              some (0 + (l : Nat)) := by
+        have hidx : (Telescope.nestPositions ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            0)[(j' : Nat)]? = some (0 + (l : Nat)) := by
           rw [Constructor.getElem?_recursiveResults] at hj
           obtain ⟨l', hl', he⟩ := Option.map_eq_some_iff.1 hj
           obtain ⟨hll, -⟩ := RecursiveResult.ofField_eq_nested.1 he

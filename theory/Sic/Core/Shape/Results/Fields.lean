@@ -285,24 +285,22 @@ theorem Terms.ResultTypes.factor_shape {sig : Signature} {md : Mode} {ax : Grade
       {ν : Nesting Shape.Motive Δ} → ρ.Shapes @ν →
       (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
       ∀ (o j l : Nat) (n : Nest Name) (A : Term k Δ),
-        ((ns.zipIdx o).filterMap fun y => if y.1.isPlain then none else some y.2)[j]? =
-          some (o + l) → ns[l]? = some n → As.get l = some A →
+        (Telescope.nestPositions ns o)[j]? = some (o + l) → ns[l]? = some n →
+          As.get l = some A →
         (∀ D, n = .direct D → πs[j]? = some .linearLinear) ∧
           (∀ ms, n = .inst ms → ∃ m', A.shape v (sig.shapes v md ax) block @ν (.inst ms) =
             some m' ∧ πs[j]? = some m'.factor)
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _, hj, _, _ => nomatch hj
   | _, _, _, _, _, _, _, _, _, _, .plain h, ν, hν, hb, o, j, l, n, A, hj, hn, hA => by
-    rw [List.zipIdx_cons, List.filterMap_cons] at hj
-    simp only [Nest.isPlain, ↓reduceIte] at hj
+    rw [Telescope.nestPositions_plain] at hj
     cases l with
     | zero =>
-      exact absurd (Telescope.le_of_mem_nestPositions _ _ (List.mem_of_getElem? hj)) (by omega)
+      exact absurd (Telescope.le_of_mem_nestPositions (List.mem_of_getElem? hj)) (by omega)
     | succ l =>
       rw [show o + (l + 1) = o + 1 + l by omega] at hj
       exact h.factor_shape hsig hord hν hb (o + 1) j l n A hj hn hA
   | _, _, _, _, _, _, _, _, _, _, .recursive _ h, ν, hν, hb, o, j, l, n, A, hj, hn, hA => by
-    rw [List.zipIdx_cons, List.filterMap_cons] at hj
-    simp only [Nest.isPlain, Bool.false_eq_true, ↓reduceIte] at hj
+    rw [Telescope.nestPositions_cons rfl] at hj
     cases j with
     | zero =>
       simp only [List.getElem?_cons_zero, Option.some.injEq] at hj
@@ -314,14 +312,13 @@ theorem Terms.ResultTypes.factor_shape {sig : Signature} {md : Mode} {ax : Grade
       simp only [List.getElem?_cons_succ] at hj
       cases l with
       | zero =>
-        exact absurd (Telescope.le_of_mem_nestPositions _ _ (List.mem_of_getElem? hj)) (by omega)
+        exact absurd (Telescope.le_of_mem_nestPositions (List.mem_of_getElem? hj)) (by omega)
       | succ l =>
         rw [show o + (l + 1) = o + 1 + l by omega] at hj
         exact h.factor_shape hsig hord hν.weaken (Lifting.blockShapes_liftN_weaken 0 hb) (o + 1)
           j l n A hj hn hA
   | _, _, _, _, _, _, _, _, _, _, .nested hA' h, ν, hν, hb, o, j, l, n, A, hj, hn, hA => by
-    rw [List.zipIdx_cons, List.filterMap_cons] at hj
-    simp only [Nest.isPlain, Bool.false_eq_true, ↓reduceIte] at hj
+    rw [Telescope.nestPositions_cons rfl] at hj
     cases j with
     | zero =>
       simp only [List.getElem?_cons_zero, Option.some.injEq] at hj
@@ -337,7 +334,7 @@ theorem Terms.ResultTypes.factor_shape {sig : Signature} {md : Mode} {ax : Grade
       simp only [List.getElem?_cons_succ] at hj
       cases l with
       | zero =>
-        exact absurd (Telescope.le_of_mem_nestPositions _ _ (List.mem_of_getElem? hj)) (by omega)
+        exact absurd (Telescope.le_of_mem_nestPositions (List.mem_of_getElem? hj)) (by omega)
       | succ l =>
         rw [show o + (l + 1) = o + 1 + l by omega] at hj
         exact h.factor_shape hsig hord hν.weaken (Lifting.blockShapes_liftN_weaken 0 hb) (o + 1)
@@ -377,22 +374,17 @@ nesting other than none, and a type in the scope of all the fields. -/
 theorem Constructor.exists_nest_of_nestPositions {j g k' : Nat} {Δ Γ : Scope}
     {con : Constructor j g k' Δ} {I : Instance j g} {names : List Name} (ls : Fin k' → Level k)
     (as : InstanceArgs k Γ Δ) {i l : Nat}
-    (hl : (((con.fields I).nest names).zipIdx.filterMap fun y =>
-      if y.1.isPlain then none else some y.2)[i]? = some l) :
+    (hl : (Telescope.nestPositions ((con.fields I).nest names) 0)[i]? = some l) :
     ∃ n A, ((con.fields I).nest names)[l]? = some n ∧ n.isPlain = false ∧
       (con.fieldsAt I ls as).types.get l = some A := by
-  obtain ⟨⟨n, l'⟩, hy, hf⟩ := List.mem_filterMap.1 (List.mem_of_getElem? hl)
-  have hn : ((con.fields I).nest names)[l']? = some n := List.mem_zipIdx_iff_getElem?.1 hy
-  split at hf
-  · cases hf
-  · rename_i hp
-    cases hf
-    have hlt : l' < (con.params I).length := by
-      rw [← Telescope.length_nest names (con.fields I)]
-      exact (List.getElem?_eq_some_iff.1 hn).1
-    obtain ⟨A, hA⟩ := Option.isSome_iff_exists.1
-      ((Telescope.get_types_isSome (con.fieldsAt I ls as) l').2 hlt)
-    exact ⟨n, A, hn, Bool.not_eq_true _ ▸ hp, hA⟩
+  obtain ⟨n, hn, hp⟩ := Telescope.mem_nestPositions.1
+    ((Nat.zero_add l).symm ▸ List.mem_of_getElem? hl : 0 + l ∈ _)
+  have hlt : l < (con.params I).length := by
+    rw [← Telescope.length_nest names (con.fields I)]
+    exact (List.getElem?_eq_some_iff.1 hn).1
+  obtain ⟨A, hA⟩ := Option.isSome_iff_exists.1
+    ((Telescope.get_types_isSome (con.fieldsAt I ls as) l).2 hlt)
+  exact ⟨n, A, hn, hp, hA⟩
 
 -- ADE: none.
 /-- The `i`-th recursive result of the constructor `con`, at the field `l`, has the factor `π` of
@@ -408,8 +400,7 @@ theorem Constructor.ResultTypes.factor_nested {sig : Signature} {md : Mode}
     {R : Telescope k (Γ.extend (con.params I).length) ps'} {πs : List Grade}
     (h : Constructor.ResultTypes sig v con I names ls as
       (Lifting.ofMotives names qs ls' ps as lC χ Cs) R πs) {i l : Nat}
-    (hl : (((con.fields I).nest names).zipIdx.filterMap fun y =>
-      if y.1.isPlain then none else some y.2)[i]? = some l) {σ : Shape}
+    (hl : (Telescope.nestPositions ((con.fields I).nest names) 0)[i]? = some l) {σ : Shape}
     (hσ : (con.nestedShapes sig v md Grade.run names qs ps χ I)[l]? = some (some σ)) :
     ∃ π, πs[i]? = some π ∧ σ.factor = π.run := by
   obtain ⟨n, A, hn, hp, hA⟩ := Constructor.exists_nest_of_nestPositions ls as hl
@@ -441,8 +432,8 @@ theorem Constructor.ResultTypes.nestedShapes_isSome {sig : Signature} {md : Mode
     {R : Telescope k (Γ.extend (con.params I).length) ps'} {πs : List Grade}
     (h : Constructor.ResultTypes sig v con I names ls as
       (Lifting.ofMotives names qs ls' ps as lC χ Cs) R πs) {i l : Nat}
-    (hl : (((con.fields I).nest names).zipIdx.filterMap fun y =>
-      if y.1.isPlain then none else some y.2)[i]? = some l) {ms : List (Nest Name)}
+    (hl : (Telescope.nestPositions ((con.fields I).nest names) 0)[i]? = some l)
+    {ms : List (Nest Name)}
     (hn : ((con.fields I).nest names)[l]? = some (.inst ms)) :
     ∃ σ, (con.nestedShapes sig v md ax names qs ps χ I)[l]? = some (some σ) := by
   obtain ⟨n, A, hn', -, hA⟩ := Constructor.exists_nest_of_nestPositions ls as hl

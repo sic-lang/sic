@@ -38,46 +38,20 @@ theorem RecursiveResult.fieldPosition_ofField (r : Option Name) (s : Option Shap
 recurse on fields at `o` or after it. -/
 theorem RecursiveResult.le_of_mem_ofField {f : Nat → Option Name} {s : Nat → Option Shape}
     {ns : List (Nest Name)} {o : Nat} {w : RecursiveResult}
-    (hw : w ∈ (ns.zipIdx o).filterMap fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2))
+    (hw : w ∈ (Telescope.nestPositions ns o).map fun l => RecursiveResult.ofField (f l) (s l) l)
     {y : Nat} (h : w.fieldPosition = some y) : o ≤ y := by
-  obtain ⟨⟨n, l⟩, hy, hf⟩ := List.mem_filterMap.1 hw
-  have hl := (List.mem_zipIdx hy).1
-  split at hf
-  · cases hf
-  · cases hf
-    exact RecursiveResult.fieldPosition_ofField _ _ _ h ▸ hl
+  obtain ⟨l, hl, rfl⟩ := List.mem_map.1 hw
+  exact RecursiveResult.fieldPosition_ofField _ _ _ h ▸ Telescope.le_of_mem_nestPositions hl
 
 /-- No recursive result of the fields from the position `o + 1` recurses on the field at `o`. -/
 theorem RecursiveResult.find?_ofField_eq_none {f : Nat → Option Name} {s : Nat → Option Shape}
     {ns : List (Nest Name)} {o : Nat} (es : List Grade) :
-    ((((ns.zipIdx (o + 1)).filterMap fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)).zip
-        es).find? fun x => x.1.fieldPosition == some o) = none :=
+    ((((Telescope.nestPositions ns (o + 1)).map fun l =>
+      RecursiveResult.ofField (f l) (s l) l).zip es).find?
+        fun x => x.1.fieldPosition == some o) = none :=
   List.find?_eq_none.2 fun x hx hp => by
     have h := RecursiveResult.le_of_mem_ofField (List.of_mem_zip hx).1 (beq_iff_eq.1 hp)
     omega
-
-/-- The recursive results of fields the first of which has no position are those of the others. -/
-theorem RecursiveResult.filterMap_ofField_plain (f : Nat → Option Name) (s : Nat → Option Shape)
-    (ns : List (Nest Name)) (o : Nat) :
-    ((Nest.plain :: ns).zipIdx o).filterMap (fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)) =
-    (ns.zipIdx (o + 1)).filterMap fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2) :=
-  rfl
-
-/-- The recursive results of fields the first of which has a position are its result, then those of
-the others. -/
-theorem RecursiveResult.filterMap_ofField_cons (f : Nat → Option Name) (s : Nat → Option Shape)
-    {n : Nest Name} (h : n.isPlain = false) (ns : List (Nest Name)) (o : Nat) :
-    ((n :: ns).zipIdx o).filterMap (fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)) =
-    RecursiveResult.ofField (f o) (s o) o :: (ns.zipIdx (o + 1)).filterMap fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2) := by
-  cases n with
-  | plain => cases h
-  | direct _ | inst _ => rfl
 
 /-- Taking nothing leaves a multiplicity as it is. -/
 theorem _root_.Sic.Grading.Multiplicity.sub_zero_mul :
@@ -111,17 +85,16 @@ factor in `πs` at its index: a result that does not recurse, of the factor `0`,
 theorem _root_.Sic.Grading.Grade.fieldMultiplicity_ofField (r p : Grade) (f : Nat → Option Name)
     (s : Nat → Option Shape) :
     (ns : List (Nest Name)) → (o : Nat) → (es πs : List Grade) →
-    (∀ (j : Nat) (w : RecursiveResult), ((ns.zipIdx o).filterMap fun y =>
-      if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2))[j]? =
-        some w → ∃ π : Grade, πs[j]? = some π ∧ w.factor = π.run) → (l : Nat) →
+    (∀ (j : Nat) (w : RecursiveResult), ((Telescope.nestPositions ns o).map fun l =>
+      RecursiveResult.ofField (f l) (s l) l)[j]? = some w →
+        ∃ π : Grade, πs[j]? = some π ∧ w.factor = π.run) → (l : Nat) →
     r.fieldMultiplicity (some p)
-      ((((ns.zipIdx o).filterMap fun y =>
-        if y.1.isPlain then none else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)).zip
+      ((((Telescope.nestPositions ns o).map fun l => RecursiveResult.ofField (f l) (s l) l).zip
           es).find? fun x => x.1.fieldPosition == some (o + l)) =
       (r * p).run - ((Telescope.resultGrades ns (List.zipWith (· * ·) es πs) l) * r).run
   | [], _, _, _, _, l => Multiplicity.sub_zero_mul _ _
   | .plain :: ns, o, es, πs, hf, l => by
-    rw [RecursiveResult.filterMap_ofField_plain] at hf ⊢
+    rw [Telescope.nestPositions_plain] at hf ⊢
     cases l with
     | zero =>
       rw [Nat.add_zero, RecursiveResult.find?_ofField_eq_none]
@@ -130,15 +103,14 @@ theorem _root_.Sic.Grading.Grade.fieldMultiplicity_ofField (r p : Grade) (f : Na
       rw [show o + (l + 1) = o + 1 + l by omega]
       exact fieldMultiplicity_ofField r p f s ns (o + 1) es πs hf l
   | .direct _ :: ns, o, es, πs, hf, l | .inst _ :: ns, o, es, πs, hf, l => by
-    rw [RecursiveResult.filterMap_ofField_cons f s rfl] at hf ⊢
+    rw [Telescope.nestPositions_cons rfl, List.map_cons] at hf ⊢
     obtain ⟨π, hπ, hw⟩ := hf 0 _ rfl
     cases πs with
     | nil => cases hπ
     | cons π' πs =>
       cases hπ
-      have hf' : ∀ (j : Nat) (w : RecursiveResult), ((ns.zipIdx (o + 1)).filterMap fun y =>
-          if y.1.isPlain then none
-          else some (RecursiveResult.ofField (f y.2) (s y.2) y.2))[j]? = some w →
+      have hf' : ∀ (j : Nat) (w : RecursiveResult), ((Telescope.nestPositions ns (o + 1)).map
+          fun l => RecursiveResult.ofField (f l) (s l) l)[j]? = some w →
           ∃ π : Grade, πs[j]? = some π ∧ w.factor = π.run := fun j w h => hf (j + 1) w h
       cases es with
       | nil =>
@@ -197,6 +169,7 @@ theorem _root_.Sic.Grading.Grade.fieldMultiplicity_results (r p : Grade) {j g k'
       fun x => x.1.fieldPosition == some l) =
       (r * p).run - ((Telescope.resultGrades ((con.fields I).nest names)
         (List.zipWith (· * ·) es πs) l) * r).run := by
+  rw [Constructor.recursiveResults_eq_map] at hf ⊢
   have h := Grade.fieldMultiplicity_ofField r p ((con.fields I).recursionAt names)
     (fun l => (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join)
     ((con.fields I).nest names) 0 es πs hf l

@@ -134,13 +134,9 @@ theorem Usage.recursor_used {sig : Signature} (hsig : sig.Distinct) (hord : sig.
         (con.fields (.ofLists qs ps hq hp)) as.toSubst l hA hn, Option.some.injEq, h0] at hσ
       cases hσ
     | direct _ | inst _ => rfl
-  obtain ⟨i', hi'⟩ := List.mem_iff_getElem?.1 (List.mem_filterMap.2 ⟨(n, l),
-    List.mem_zipIdx_iff_getElem?.2 hn, by simp [hnp]⟩ :
-      l ∈ ((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap fun y =>
-        if y.1.isPlain then none else some y.2)
-  obtain ⟨π, hπ, hf⟩ := hR'.factor_nested hsig hord hi' hσ
-  have hi'0 : (((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap fun y =>
-      if y.1.isPlain then none else some y.2)[i']? = some (0 + l) := by rw [Nat.zero_add]; exact hi'
+  obtain ⟨i', hi'0⟩ := List.mem_iff_getElem?.1 (Telescope.mem_nestPositions.2 ⟨n, hn, hnp⟩ :
+    0 + l ∈ Telescope.nestPositions ((con.fields (.ofLists qs ps hq hp)).nest decl.names) 0)
+  obtain ⟨π, hπ, hf⟩ := hR'.factor_nested hsig hord ((Nat.zero_add l) ▸ hi'0) hσ
   rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0] at hu
   have hgl := hg i j T' con l p' hc hp'
   rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0, List.getD_eq_getElem?_getD,
