@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.RunTime.Relation
+import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.RunTime.Monotonicity
@@ -44,6 +45,29 @@ theorem HasRun.sort {sig : Signature} {ι : Interpretation} {P : Program} (κ : 
   cases q with
   | type => exact .univ (l.closedValue + 1) (levelRel_run_iff.2 (.univ rfl rfl))
   | prop => exact .univ (l.closedValue + 1) (levelRel_run_iff.2 (.prop rfl rfl))
+
+-- ADE: none.
+/-- A closed term of a universe computes to a type that has a relation of run time, for every
+program: a type of `U_l`, which the universe relates to itself with this relation, or a proposition
+of `Ω_l`, whose terms are related to every address. -/
+theorem ValidTerm₀.hasRun {sig : Signature} {ι : Interpretation} (P : Program) {A : Term 0 []}
+    {κ : Universe 0} (h : ValidTerm₀ sig ι A (.sort κ)) :
+    ∃ vA R, Computesι sig ι A vA ∧ HasRun sig ι P vA R := by
+  obtain ⟨-, hcl, -⟩ := h
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  cases hR with
+  | univ n hn =>
+    cases levelRel_univ_iff.1 hn with
+    | univ =>
+      obtain ⟨Q, hQ, -⟩ := hvw.2 P
+      exact ⟨v, Q, hv, .univ _ hQ⟩
+    | prop =>
+      obtain ⟨b, -, hb, -, -⟩ := hvw
+      exact ⟨v, fun _ _ _ => True, hv, .prop _ b hb fun _ _ _ => trivial⟩
+    | data _ _ _ _ hv => cases hv
+    | codata _ _ _ _ hv => cases hv
+  | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: `U/Levelᵣ`, the relation of the universes, in `Graded/Erasure/LogicalRelation.agda`.
 /-- A closed term that computes is related to every address at a sort. -/
