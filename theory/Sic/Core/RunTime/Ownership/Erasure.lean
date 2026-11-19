@@ -3,7 +3,6 @@ module
 public import Sic.Core.Erasure.Ownership
 public import Sic.Core.Ownership
 public import Sic.Grading.GradeSet
-import Sic.Core.Erasure.Fields
 import Sic.Core.Ownership.Signature
 import Sic.Core.RunTime.Ownership.Nested
 import Sic.Core.RunTime.Relation.Corecursors
