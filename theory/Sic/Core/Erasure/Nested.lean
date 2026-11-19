@@ -94,6 +94,17 @@ theorem _root_.Sic.Grading.Multiplicity.mul_mul_eq_zero :
     ∀ ρ ρᵢ f : Multiplicity, ρᵢ ≠ .zero → ρ * (ρᵢ * f) = .zero → ρ * f = .zero := by
   decide
 
+/-- A recursor of the multiplicity `ρ` that runs no recursion through a shape runs none through the
+result of its first destructor, nor through the others. -/
+theorem Shape.mul_factor_cons_eq_zero {ρ : Multiplicity} {i c : Nat} {ρᵢ : Multiplicity}
+    {πs ϱs πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
+    {ψ₀ : ResultOwnership Multiplicity c} {ς₀ : Multiplicity} {next : Shape.Next} {rest : Shape}
+    (h : ρ * (Shape.cons i c ρᵢ πs ϱs πs' ϱs' ψ ς ψ₀ ς₀ next rest).factor = .zero) :
+    ρ * (ρᵢ * next.factor) = .zero ∧ ρ * rest.factor = .zero := by
+  cases rest with
+  | nil => exact ⟨h, by cases ρ <;> rfl⟩
+  | cons => exact Multiplicity.mul_meet_eq_zero _ _ _ h
+
 mutual
 
 -- ADE: none.
@@ -107,10 +118,7 @@ theorem Shape.branches_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Mult
       σ.branches ρ ϱ O Ns = σ.branches ρ ϱ O' Ns
   | .nil, _, _, _, _ => rfl
   | .cons i c ρᵢ πs ϱs πs' ϱs' ψ ς ψ₀ ς₀ next rest, h, O, O', Ns => by
-    have h' : ρ * (ρᵢ * next.factor) = .zero ∧ ρ * rest.factor = .zero := by
-      cases rest with
-      | nil => exact ⟨h, by cases ρ <;> rfl⟩
-      | cons => exact Multiplicity.mul_meet_eq_zero _ _ _ h
+    have h' := Shape.mul_factor_cons_eq_zero h
     simp only [Shape.branches]
     rw [Shape.branches_eq_of_mul_factor ϱ rest h'.2 O O' Ns]
     by_cases hρᵢ : ρᵢ = .zero
@@ -126,7 +134,7 @@ theorem Shape.Next.body_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Mul
     (next : Shape.Next) → ρ * next.factor = .zero → (O O' : Target m) → (Ns : TargetBranches m) →
       next.body ρ ϱ O Ns = next.body ρ ϱ O' Ns
   | .recursor K, h, _, _, _ => by
-    have hρ : ρ = .zero := (by decide : ∀ ρ : Multiplicity, ρ * .one = .zero → ρ = .zero) ρ h
+    have hρ : ρ = .zero := (Multiplicity.modality.semiring.mul_one ρ).symm.trans h
     simp only [Shape.Next.body, hρ, ↓reduceIte]
   | .lifting σ, h, O, O', Ns => by
     simp only [Shape.Next.body]

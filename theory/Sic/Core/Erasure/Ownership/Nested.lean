@@ -201,10 +201,7 @@ theorem TargetCorecBranches.Ownership.branches_of_mul_factor {Ω : Name → Mult
   | _, _, _, _, .nil, _, _, _ => .nil
   | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest, h, hNs,
       ⟨rfl, rfl, hnext, hrest⟩ => by
-    have h' : ρ * (ρᵢ * next.factor) = .zero ∧ ρ * rest.factor = .zero := by
-      cases rest with
-      | nil => exact ⟨h, by cases ρ <;> rfl⟩
-      | cons => exact Multiplicity.mul_meet_eq_zero _ _ _ h
+    have h' := Shape.mul_factor_cons_eq_zero h
     refine .cons (fun os v hos hv => ?_) (fun h => absurd rfl h)
       (TargetCorecBranches.Ownership.branches_of_mul_factor hz rest h'.2 hNs hrest)
     have hv' : v = next.ownership χ := by
@@ -246,7 +243,7 @@ theorem Target.Ownership.body_of_mul_factor {Ω : Name → Multiplicity} {ρ ϱ 
     have h1 : (Shape.Next.scale ς (.recursor K) ·ᶜ φ) = φ :=
       (MultiplicityVector.module Multiplicity.modality).one_smul φ
     rw [h1] at hNs
-    have hρ : ρ = .zero := (by decide : ∀ ρ : Multiplicity, ρ * .one = .zero → ρ = .zero) ρ h
+    have hρ : ρ = .zero := (Multiplicity.modality.semiring.mul_one ρ).symm.trans h
     subst hρ
     show Target.Ownership Ω φ χ
       (.recursor .zero ϱ (if Multiplicity.zero = .zero then K.target else O) Ns)
