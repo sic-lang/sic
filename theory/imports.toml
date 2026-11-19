@@ -34,6 +34,10 @@ name = "Results"
 modules = ["Sic.Core.Results"]
 
 [[group]]
+name = "Skeleton"
+modules = ["Sic.Core.Skeleton"]
+
+[[group]]
 name = "Typing"
 modules = ["Sic.Core.Typing"]
 

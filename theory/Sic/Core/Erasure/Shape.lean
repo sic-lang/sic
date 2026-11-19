@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Erasure.Skeleton
+public import Sic.Core.Skeleton
 public import Sic.Core.Syntax
 
 /-!
