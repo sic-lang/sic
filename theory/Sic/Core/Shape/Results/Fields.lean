@@ -1,8 +1,8 @@
 module
 
-public import Sic.Core.Shape.Results.Substitution
 public import Sic.Core.Results
-import Sic.Core.Substitution.Composition
+public import Sic.Core.Shape.Results
+import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Substitution.Nesting
 
 /-!
