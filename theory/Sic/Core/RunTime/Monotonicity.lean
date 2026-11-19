@@ -282,13 +282,13 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
         cases has
         exact fun H _ hH _ _ => RunRel.computed_mono fun _ _ => runCorecRel_mono
           (RunNestDesRel.mono hd ih hK hKr hS _ _ hS' (Nesting.ofArgs_rel₃ hνs) H _ hH)
-      | codataProp h' _ _ _ hA' hκ' =>
+      | codataProp h' _ _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
         subst hD hqs hls hps
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp h _ _ _ hA hκ _ _ _, _, _, h', hτ => by
+  | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with

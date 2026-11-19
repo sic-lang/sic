@@ -446,13 +446,13 @@ theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
         have hc := RunNestDesRel.congr hd ihm ih hS _ _ hS' (Nesting.ofArgs_rel₃ hνs)
         exact RunRel.computed_congr fun H _ _ =>
           ⟨runCorecRel_mono fun o a => (hc H o a).1, runCorecRel_mono fun o a => (hc H o a).2⟩
-      | codataProp h' _ _ _ hA' hκ' =>
+      | codataProp h' _ _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
         subst hD hqs hls hps
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp h _ _ _ hA hκ _ _ _, _, _, h', hτ => by
+  | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with

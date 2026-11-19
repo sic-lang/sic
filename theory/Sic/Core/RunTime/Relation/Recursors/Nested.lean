@@ -738,7 +738,7 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           (hpos.nest_substLevels _ _)
         exact ⟨SΘ, Rb, i, hi, hΘ, fun _ => ⟨RΘ, hRΘ,
           fun H a ⟨_, hu, o, hco, hSo⟩ => hAbs H o a (ObsEquiv.of_computes hd hu hco) hSo⟩, hN⟩
-  | .codataProp h hq hl hp hA hκ hadm _ hrec, _, _, hν, _, _ => by
+  | .codataProp h hq hl hp hA hadm hκ _ hrec, _, _, hν, _, _ => by
     subst hA
     cases hν with
     | inst _ =>

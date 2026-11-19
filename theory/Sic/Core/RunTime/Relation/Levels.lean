@@ -254,13 +254,13 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
               fun d _ => ?_⟩
           exact .obs _ _ _ d hl (has.rename _)
             (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _)
-      | codataProp hD' _ _ _ hA' hκ' =>
+      | codataProp hD' _ _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
         subst hDD hqs hls hps
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp hD _ _ _ hA hκ _ _ _, _, _, h', hτ => by
+  | .codataProp hD _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with

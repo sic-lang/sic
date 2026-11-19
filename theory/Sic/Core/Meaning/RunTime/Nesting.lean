@@ -80,8 +80,8 @@ theorem RunNestRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program}
   | .direct hA => .direct hA
   | .codata h hq hl hp hA hκ hn hrec S hS =>
     .codata h hq hl hp hA hκ (Nat.le_trans hn hmn) hrec S (RunNestDesRel.levelLe hmn hS)
-  | .codataProp h hq hl hp hA hκ hadm hn hrec =>
-    .codataProp h hq hl hp hA hκ hadm (Nat.le_trans hn hmn) hrec
+  | .codataProp h hq hl hp hA hadm hκ hn hrec =>
+    .codataProp h hq hl hp hA hadm hκ (Nat.le_trans hn hmn) hrec
 termination_by structural h => h
 
 /-- Destructors that the graph of the nestings of run time reads at the level `m` are read at a
@@ -384,7 +384,7 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
                         simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hSE''
                         exact hSE''.levelLe hm') H o a hse hs⟩,
                   rfl, hx, hxe⟩
-  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq _ hp hA hκ _ _ _, hτ, _,
+  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq _ hp hA _ hκ _ _, hτ, _,
       h', _, _, _ => by
     subst hA
     cases h' with

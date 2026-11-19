@@ -405,8 +405,8 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       {A : Term 0 []} {νs : List (Nest RunNestLeaf)}
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
-      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n)
       (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none) :
       RunNestRel sig ι P n below (.inst νs) A fun _ _ _ => True
