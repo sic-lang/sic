@@ -114,6 +114,7 @@ theorem TypeDeclaration.recursionRequirement_run_le {decl : TypeDeclaration} {si
   Parameter.recursion_run_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
     (by rw [List.getElem?_map, hi]; rfl) hl hp hc
 
+-- ADE: none.
 /-- An entry that does not introduce the name `D` gives the requirement of the recursion on the
 block of no data type named `D`. -/
 theorem Entry.recursionRequirement_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
@@ -166,6 +167,7 @@ theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.D
       decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp) := by
   rw [Signature.recursionRequirement, hd.recursionRequirement h hq hp, Option.getD_some]
 
+-- ADE: none.
 /-- Each product along a prefix of a path of the shape of a nested field gives the requirement of
 the recursion a pair, of the requirement of the field times the product and of the grade with which
 the recursor uses the field. -/

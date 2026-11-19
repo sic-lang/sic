@@ -540,6 +540,7 @@ end
 
 /-! ## Shapes of the Arguments of an Instance -/
 
+-- ADE: none.
 /-- The shapes of the arguments of an instance followed by an argument, when they are given, are
 those of the arguments before it, followed by the shape of the argument at its position when it
 has one. -/

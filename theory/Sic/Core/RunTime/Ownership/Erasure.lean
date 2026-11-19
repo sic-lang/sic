@@ -142,6 +142,7 @@ theorem Ownership.extendResults_eq {Γ : Scope} (φ : Var Γ .var → Grade) :
       Ownership.extendWith]
     cases os <;> cases es <;> rfl
 
+-- ADE: none.
 /-- The recursive results of fields none of which is nested have the ownership `p` of the recursor,
 each of them. -/
 theorem Telescope.resultOwnerships_getD {p d : Grade} :
