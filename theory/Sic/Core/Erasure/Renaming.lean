@@ -193,6 +193,57 @@ theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β
 
 end
 
+/-! ## Casts -/
+
+-- ADE: none.
+/-- A term whose scope is cast to an equal one, renamed, is the term renamed by the renaming that
+reads each variable at its index in the cast scope: the indices are the same. -/
+theorem Target.rename_cast {n m m' : Nat} (h : m = m') (α : TargetRen n m') (M : Target m) :
+    (h ▸ M).rename α = M.rename fun x => α (Fin.cast h x) := by
+  subst h
+  rfl
+
+/-! ## Multiplicities and Requirements -/
+
+-- ADE: none.
+/-- The multiplicities at which terms are stored do not depend on their variables. -/
+theorem Targets.multiplicities_rename {n m : Nat} (α : TargetRen n m) :
+    (Ms : Targets m) → (Ms.rename α).multiplicities = Ms.multiplicities
+  | .nil => rfl
+  | .cons _ _ _ Ms => by
+    simp only [Targets.rename, Targets.multiplicities, Targets.multiplicities_rename α Ms]
+
+-- ADE: none.
+/-- The requirements of the positions at which terms are stored do not depend on their variables. -/
+theorem Targets.requirements_rename {n m : Nat} (α : TargetRen n m) :
+    (Ms : Targets m) → (Ms.rename α).requirements = Ms.requirements
+  | .nil => rfl
+  | .cons _ _ _ Ms => by
+    simp only [Targets.rename, Targets.requirements, Targets.requirements_rename α Ms]
+
+/-! ## Skeletons -/
+
+mutual
+
+-- ADE: none.
+/-- The term of a skeleton mentions no variable: a renaming leaves it unchanged. -/
+theorem Skeleton.target_rename {n m : Nat} (α : TargetRen n m) :
+    (K : Skeleton) → (K.target : Target m).rename α = K.target
+  | .empty => rfl
+  | .ctor _ ks => by
+    simp only [Skeleton.target, Target.rename, Skeleton.targets_rename α ks]
+
+-- ADE: none.
+/-- The terms of skeletons mention no variable: a renaming leaves them unchanged. -/
+theorem Skeleton.targets_rename {n m : Nat} (α : TargetRen n m) :
+    (ks : List Skeleton) → (Skeleton.targets ks : Targets m).rename α = Skeleton.targets ks
+  | [] => rfl
+  | k :: ks => by
+    simp only [Skeleton.targets, Targets.rename, Skeleton.target_rename α k,
+      Skeleton.targets_rename α ks]
+
+end
+
 /-! ## Data -/
 
 mutual

@@ -466,6 +466,48 @@ theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : H
   | _, _, _, _, .erased hs | _, _, _, _, .recursor _ _ hs | _, _, _, _, .nested _ _ hs =>
     ⟨congrArg (· + 1) hs.length.1, congrArg (· + 1) hs.length.2⟩
 
+/-! ## Renamings
+
+The erasure copies the branches of a recursor, renamed, under the arguments of the branches that a
+nested result builds, which evaluate in an environment that binds each variable of the renamed
+branches as the environment of the recursor binds the variable that it renames. -/
+
+-- ADE: none.
+/-- An environment `E'` that binds each variable `α x` as `E` binds `x`, extended by the same cells
+`L` for `k` new variables, binds each variable `α.lift k x` as `L ++ E` binds `x`. -/
+theorem TargetRen.getElem?_lift {n m : Nat} {α : TargetRen n m} {E E' : List Nat}
+    (hα : ∀ x : Fin m, E'[(α x : Nat)]? = E[(x : Nat)]?) (L : List Nat) {k : Nat}
+    (hL : L.length = k) (x : Fin (m + k)) :
+    (L ++ E')[(α.lift k x : Nat)]? = (L ++ E)[(x : Nat)]? := by
+  rw [TargetRen.lift_val]
+  split
+  · rw [List.getElem?_append_left (by omega), List.getElem?_append_left (by omega)]
+  · rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega), hL,
+      Nat.add_sub_cancel]
+    exact hα _
+
+-- ADE: none.
+/-- The branch at a position of the branches of a recursor renamed is the branch renamed under its
+new variables. -/
+theorem TargetBranches.get_rename {n m : Nat} (α : TargetRen n m) :
+    (Ns : TargetBranches m) → (i : Nat) →
+      (Ns.rename α).get i = (Ns.get i).map fun ⟨a, b, πs, κs, πs', ks, N⟩ =>
+        ⟨a, b, πs, κs, πs', ks, N.rename (α.lift (a + b))⟩
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ _ _ _ _ Ns, i + 1 => TargetBranches.get_rename α Ns i
+
+-- ADE: none.
+/-- The branch at a position of the branches of a corecursor renamed is the branch renamed under its
+new variables. -/
+theorem TargetCorecBranches.get_rename {n m : Nat} (α : TargetRen n m) :
+    (Ps : TargetCorecBranches m) → (i : Nat) →
+      (Ps.rename α).get i = (Ps.get i).map fun ⟨o, b, c, πs, ϱs, πs', ϱs', ψ, ς, N⟩ =>
+        (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, ς, N.rename (α.lift (b + c))⟩)
+  | .nil, _ => rfl
+  | .cons .., 0 => rfl
+  | .cons _ _ _ _ _ _ _ _ _ _ Ps, i + 1 => TargetCorecBranches.get_rename α Ps i
+
 /-! ## Determinism -/
 
 /-- The unpacking of a value is unique. -/
