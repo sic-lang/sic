@@ -86,6 +86,16 @@ def Telescope.types : {Γ : Scope} → {ps : List Parameter} → Telescope k Γ 
   | _, [], .nil => .nil
   | _, _ :: ps, .cons _ _ A Θ => .cons (A.rename (Ren.weakenN (ps.length + 1))) Θ.types
 
+/-- The types of the entries of a telescope have a type at each position before the number of its
+entries, and none from it on: `Terms.get` gives a term exactly below the length of the terms. -/
+theorem Telescope.get_types_isSome : {Γ : Scope} → {ps : List Parameter} →
+    (Θ : Telescope k Γ ps) → (l : Nat) → (Θ.types.get l).isSome ↔ l < ps.length
+  | _, [], .nil, _ => by simp [Telescope.types, Terms.get]
+  | _, _ :: _, .cons _ _ _ _, 0 => by simp [Telescope.types, Terms.get]
+  | _, _ :: _, .cons _ _ _ Θ, l + 1 => by
+    simp only [Telescope.types, Terms.get, List.length_cons, Nat.add_lt_add_iff_right]
+    exact Telescope.get_types_isSome Θ l
+
 /-! ## Recursive Results -/
 
 -- ADE: none.
@@ -324,6 +334,18 @@ def Telescope.typesAt {Γ : Scope} :
   | [], .nil, .nil => .nil
   | _ :: _, .cons _ _ A Θ, .cons t ts =>
     .cons A (Telescope.typesAt (Θ.subst₀ (Subst₀.single t)) ts)
+
+/-- The types of the entries of a telescope at arguments have a type at each position before the
+number of its entries, and none from it on: `Terms.get` gives a term exactly below the length of
+the terms. -/
+theorem Telescope.get_typesAt_isSome {Γ : Scope} : {ps : List Parameter} →
+    (Θ : Telescope k Γ ps) → (ts : Args k Γ ps) → (l : Nat) →
+      ((Θ.typesAt ts).get l).isSome ↔ l < ps.length
+  | [], .nil, .nil, _ => by simp [Telescope.typesAt, Terms.get]
+  | _ :: _, .cons _ _ _ _, .cons _ _, 0 => by simp [Telescope.typesAt, Terms.get]
+  | _ :: _, .cons _ _ _ Θ, .cons t ts, l + 1 => by
+    simp only [Telescope.typesAt, Terms.get, List.length_cons, Nat.add_lt_add_iff_right]
+    exact Telescope.get_typesAt_isSome (Θ.subst₀ (Subst₀.single t)) ts l
 
 -- ADE: none.
 /--
