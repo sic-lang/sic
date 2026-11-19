@@ -10,7 +10,7 @@ import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Levels
 import Sic.Core.RunTime.Relation.Observations
-import Sic.Core.RunTime.Relation.Recursors
+import Sic.Core.RunTime.Relation.Recursors.Erasure
 import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
