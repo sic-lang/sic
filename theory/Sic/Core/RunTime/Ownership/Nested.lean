@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Erasure
-import Sic.Core.Syntax.Signature
 
 /-!
 # Ownership of the Nested Fields at Run Time
