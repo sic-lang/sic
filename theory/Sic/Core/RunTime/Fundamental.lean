@@ -2,7 +2,7 @@ module
 
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Relation.Corecursors
-public import Sic.Core.RunTime.Relation.Recursors.Evaluation
+public import Sic.Core.RunTime.Relation.Recursors.Results
 public import Sic.Core.Typing
 public import Sic.Core.Usage
 import Sic.Core.RunTime.Relation.DeclaredTypes

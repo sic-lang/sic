@@ -83,12 +83,6 @@ theorem Args.bound_subst_toSubst :
     rw [Subst.append_weakenN]
     rfl
 
-/-- The variables of a telescope, substituted by a closed substitution `σ` of its context followed by
-closed arguments of it, are these arguments. -/
-theorem Args.bound_subst_append {Γ : Scope} (σ : Subst k [] Γ) {ps : List Parameter}
-    (ts : Args k [] ps) : (Args.bound (Γ := Γ) ps).subst (Subst.append σ ts.toSubst) = ts := by
-  rw [← Args.subst_append, Args.bound_subst, Args.bound_subst_toSubst]
-
 /-- A term renamed under `n` new variables, substituted by `σ` followed by a substitution of them,
 is the term substituted by `σ`. -/
 theorem Term.subst_append_rename_weakenN {Γ : Scope} {n : Nat} (σ : Subst k [] Γ)
