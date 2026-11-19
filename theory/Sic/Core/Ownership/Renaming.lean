@@ -112,9 +112,9 @@ where
     | .ctor h hc hq hp hts, hθ, hφ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (ownershipArgs hts hθ hφ)
-    | .recursor (us := us) h hq hp ht hns hn hul hus hu hu' hmeets, hθ, hφ => by
-      refine .recursor h hq hp (ownership ht hθ hφ) hns hn ((Branches.length_subst _ us).trans hul)
-        ?_ ?_ ?_ hmeets
+    | .recursor (us := us) h hq hp ht hns hul hus hu hu' hmeets hused, hθ, hφ => by
+      refine .recursor h hq hp (ownership ht hθ hφ) hns ((Branches.length_subst _ us).trans hul)
+        ?_ ?_ ?_ hmeets ?_
       · intro i j T' con hi
         obtain ⟨u, hu'⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu'⟩
@@ -130,6 +130,9 @@ where
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendResults_liftN (Ownership.extendFields_liftN
             (fun x => congrArg (_ * ·) (hφ x)) _ _ _) _ _ _)
+      · intro i j T' con hi l σ p' hσ hp'
+        rw [Branches.grades_subst]
+        exact hused i j T' con hi l σ p' hσ hp'
     | .obs h hq hp hd ht hbs hv hf hς, hθ, hφ => by
       rw [Term.obs_subst]
       exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf hς

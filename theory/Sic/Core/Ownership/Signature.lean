@@ -100,9 +100,9 @@ where
     | .inst => .inst
     | .ctor h hc hq hp hts =>
       .ctor ⟨List.mem_append_right pre h.1, h.2⟩ hc hq hp (ownershipArgs hds hts)
-    | .recursor h hq hp ht hns hn hul hus hu hu' hmeets =>
+    | .recursor h hq hp ht hns hul hus hu hu' hmeets hused =>
       .recursor ⟨List.mem_append_right pre h.1, h.2⟩ hq hp (ownership hds ht)
-        (hns.append hds h.1) hn hul hus
+        (hns.append hds h.1) hul hus
         (fun i j T' con u hi hget => by
           rw [TypeDeclaration.recursionRequirement_append hds h.1 hns]
           exact ownership hds (hu i j T' con u hi hget))
@@ -113,6 +113,10 @@ where
           rw [TypeDeclaration.recursionRequirement_append hds h.1 hns]
           rw [Constructor.nestedShapes_append hds h.1 _ _ _ (hns i j T' con hi ax hxs)] at hσ
           exact hmeets i j T' con hi ax hxs l σ hσ)
+        (fun i j T' con hi l σ p' hσ hp' => by
+          rw [Constructor.nestedShapes_append hds h.1 _ _ _
+            (hns i j T' con hi Grade.run List.mem_cons_self)] at hσ
+          exact hused i j T' con hi l σ p' hσ hp')
     | .obs h hq hp hd ht hbs hv hf hς =>
       .obs ⟨List.mem_append_right pre h.1, h.2⟩ hq hp hd (ownership hds ht) (ownershipArgs hds hbs)
         hv hf hς

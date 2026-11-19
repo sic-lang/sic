@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Results
 public import Sic.Core.Shape.Recursion
 
 /-!
@@ -23,8 +24,6 @@ axis of the grades: the requirement of its recursion reads the paths of the shap
 that they observe require ownerships within the term at this requirement, and its branches are
 checked a second time, as the corecursors of the nested results run them; the variable of a nested
 result has the ownership of a new value.
-Until the erasure gives the nested results, a premise of the recursor excludes the nested fields, as
-the usage does.
 -/
 
 @[expose] public section
@@ -84,15 +83,24 @@ def TypeDeclaration.HasNestedField (decl : TypeDeclaration) (I : Instance decl.s
     decl.cases[i]? = some (j, T, con) ∧ ∃ ms, Nest.inst ms ∈ (con.fields I).nest decl.names
 
 -- ADE: none.
-/-- A block whose fields are at the nesting of no instance has no nested field, so that the
-temporary premise of the recursor that excludes the nested fields excludes the second check of its
-branches. -/
-theorem TypeDeclaration.not_hasNestedField {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades}
-    (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      ∀ ν ∈ (con.fields I).nest decl.names, ∀ ms, ν ≠ Nest.inst ms) :
-    ¬ decl.HasNestedField I :=
-  fun ⟨i, j, T, con, hi, ms, hm⟩ => hn i j T con hi _ hm ms rfl
+/-- A block has a nested field or has none, decided on the nestings of the fields of its cases, a
+finite search. -/
+theorem TypeDeclaration.hasNestedField_or_not (decl : TypeDeclaration)
+    (I : Instance decl.sorts decl.grades) : decl.HasNestedField I ∨ ¬ decl.HasNestedField I := by
+  cases h : decl.cases.any fun x => ((x.2.2.fields I).nest decl.names).any fun
+      | .inst _ => true
+      | _ => false with
+  | true =>
+    obtain ⟨⟨j, T, con⟩, hx, hn⟩ := List.any_eq_true.1 h
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
+    obtain ⟨n, hn, hm⟩ := List.any_eq_true.1 hn
+    cases n with
+    | inst ms => exact .inl ⟨i, j, T, con, hi, ms, hn⟩
+    | plain | direct _ => cases hm
+  | false =>
+    refine .inr fun ⟨i, j, T, con, hi, ms, hm⟩ => ?_
+    have := List.any_eq_false.1 h _ (List.mem_of_getElem? hi)
+    exact this (List.any_eq_true.2 ⟨_, hm, rfl⟩)
 
 -- ADE: none.
 /-- `φ, x̄ ◀ ō · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
@@ -186,7 +194,10 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   captures the scope, which its observations see at the requirement `ς` of its destructors, and runs
   the recursor on the observations of the field, whose results have the ownership `χ`; any branch,
   since a recursion from a nested result may reach any constructor.
-  The premise `hn` excludes the nested fields until the erasure of their results is plugged.
+  A branch that uses at run time the result of a nested field, whose shape a recursion follows, uses
+  the field at run time, `hused`: the requirement of the recursion skips the pairs of a field that
+  is not used at run time, so that the field keeps the ownership of the term at each level of the
+  recursion only when it is used.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -195,8 +206,6 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
       (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
-      (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms)
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
@@ -225,7 +234,17 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
           (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m ax decl.names qs ps χ
             (.ofLists qs ps hq hp))[l]? = some (some σ) →
           σ.Meets (ax (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps
-            (.ofLists qs ps hq hp))) (ax ς)) :
+            (.ofLists qs ps hq hp))) (ax ς))
+      (hused : ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
+        (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
+        decl.cases[i]? = some (j, T', con) →
+        ∀ (l : Nat) (σ : Shape) (p : Parameter),
+          (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m Grade.run decl.names qs ps χ
+            (.ofLists qs ps hq hp))[l]? = some (some σ) →
+          (con.params (.ofLists qs ps hq hp))[l]? = some p →
+          (m.grade * r * Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (us.grades i) l).run * σ.factor ≠ .zero →
+          (m.grade * r * p.usage).run ≠ .zero) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships of its arguments, which satisfy the requirements

@@ -78,14 +78,11 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
       (Ownership.extendFields φ o (m.grade * r) [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht ?_ ?_ rfl ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl =>
       exact nomatch (show Nest.inst ns ∈ [Nest.plain, Nest.plain] from List.mem_of_getElem? hl)
-  · intro i j T' con hi ν hν ms he
-    match i, hi with
-    | 0, rfl => subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from hν)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
@@ -102,6 +99,10 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from List.mem_of_getElem? hms)
+  · intro i j T' con hi l σ _ hσ _ _
+    obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
+    match i, hi with
+    | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from List.mem_of_getElem? hms)
 
 -- ADE: none.
 /-- The recursor on a term of the unit has the ownership of its branch. -/
@@ -111,14 +112,11 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht ?_ ?_ rfl ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl =>
       exact nomatch (show Nest.inst ns ∈ ([] : List (Nest Name)) from List.mem_of_getElem? hl)
-  · intro i j T' con hi ν hν ms he
-    match i, hi with
-    | 0, rfl => subst he; exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from hν)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
@@ -132,6 +130,10 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from hm)
   · intro i j T' con hi ax _ l σ hσ
+    obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
+    match i, hi with
+    | 0, rfl => exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from List.mem_of_getElem? hms)
+  · intro i j T' con hi l σ _ hσ _ _
     obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from List.mem_of_getElem? hms)
@@ -149,15 +151,11 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     Ownership sig φ m p'
       (.recursor r ς χ "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
-  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht ?_ ?_ rfl ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ns ∈ [Nest.plain] from List.mem_of_getElem? hl)
     | 1, rfl => exact nomatch (show Nest.inst ns ∈ [Nest.plain] from List.mem_of_getElem? hl)
-  · intro i j T' con hi ν hν ms he
-    match i, hi with
-    | 0, rfl => subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
-    | 1, rfl => subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u₀, rfl⟩
@@ -177,6 +175,11 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hm)
     | 1, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hm)
   · intro i j T' con hi ax _ l σ hσ
+    obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
+    match i, hi with
+    | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain] from List.mem_of_getElem? hms)
+    | 1, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain] from List.mem_of_getElem? hms)
+  · intro i j T' con hi l σ _ hσ _ _
     obtain ⟨ms, hms⟩ := Constructor.nest_of_nestedShapes hσ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain] from List.mem_of_getElem? hms)
