@@ -62,14 +62,14 @@ inductive Target.Ownership (Ω : Name → Multiplicity) :
   RFC: `\mathsf{own}_M.c` -/
   | ctor {n : Nat} {φ : MultiplicityVector n} {i : Nat} {Ms : Targets n} {os : List Multiplicity}
       (hMs : Targets.Ownership Ω φ os Ms) : Target.Ownership Ω φ .one (.ctor i Ms)
-  /-- A recursor has the ownership `o'` of its branches, each checked with the ownership `o` of its
-  term times the requirement `ϱ` of the recursion of its block, which every level of the recursion
-  has, times the coefficient of each variable of a field, and `o'` times the multiplicity of each
-  variable of a recursive result.
+  /-- A recursor of the multiplicity `ρ` has the ownership `o'` of its branches, each checked with
+  the ownership `o` of its term times the requirement `ϱ` of the recursion of its block, which every
+  level of the recursion has, times the coefficient of each variable of a field, and `o'` times the
+  multiplicity of each variable of a recursive result.
   RFC: `\mathsf{own}_M.\mathsf{rec}` -/
   | recursor {n : Nat} {φ : MultiplicityVector n} {ρ ϱ o o' ς χ : Multiplicity} {M : Target n}
       {Ns : TargetBranches n} (hM : Target.Ownership Ω φ o M)
-      (hNs : TargetBranches.Ownership Ω φ (o * ϱ) o' ς χ Ns) :
+      (hNs : TargetBranches.Ownership Ω φ ρ (o * ϱ) o' ς χ Ns) :
       Target.Ownership Ω φ o' (.recursor ρ ϱ M Ns)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships `os` of its arguments, which satisfy the
@@ -107,23 +107,25 @@ inductive Targets.Ownership (Ω : Name → Multiplicity) :
       (hMs : Targets.Ownership Ω φ os Ms) : Targets.Ownership Ω φ (o :: os) (.cons π ϱ M Ms)
 
 -- ADE: none.
-/-- `Ω; φ ⊢ N̄ ◀ o; o'; ς; χ`: each branch of a recursor whose term has the ownership `o` has the
-ownership `o'`, given the ownership `o · κ` of the variable of each field, of the coefficient `κ`,
-and the ownership of each recursive result times its multiplicity `π'`, `o' · π'` for a result of
-the recursor and `1 · π'` for a nested result, a new value; each branch has also the ownership `χ`
-with the scope at `ς · φ` and the results of the recursor at `χ · π'`, as the recursions run from a
-nested result see them, and the shape of each nested result has the ownerships `ς` and `χ`, meets the
-requirements of the recursions, and the variable of its field, seen at `ς`, keeps `o`. -/
+/-- `Ω; φ ⊢ N̄ ◀ ρ; o; o'; ς; χ`: each branch of a recursor of the multiplicity `ρ` whose term has the
+ownership `o` has the ownership `o'`, given the ownership `o · κ` of the variable of each field, of
+the coefficient `κ`, and the ownership of each recursive result times its multiplicity `π'`, `o' · π'`
+for a result of the recursor and `1 · π'` for a nested result, a new value; each branch has also the
+ownership `χ` with the scope at `ς · φ` and the results of the recursor at `χ · π'`, as the
+recursions run from a nested result see them, and the shape of each nested result has the
+ownerships `ς` and `χ`, and, when `ρ` times its factor is not `0`, meets the requirements of the
+recursions, and the variable of its field, seen at `ς`, keeps `o`: otherwise the corecursor of the
+result observes the field on no path that the evaluation follows. -/
 inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
     {n : Nat} → MultiplicityVector n → Multiplicity → Multiplicity → Multiplicity → Multiplicity →
-      TargetBranches n → Prop where
+      Multiplicity → TargetBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{own}_{\bar N}.\varepsilon` -/
-  | nil {n : Nat} {φ : MultiplicityVector n} {o o' ς χ : Multiplicity} :
-      TargetBranches.Ownership Ω φ o o' ς χ .nil
+  | nil {n : Nat} {φ : MultiplicityVector n} {ρ o o' ς χ : Multiplicity} :
+      TargetBranches.Ownership Ω φ ρ o o' ς χ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{own}_{\bar N}.{,}` -/
-  | cons {n a b : Nat} {φ : MultiplicityVector n} {o o' ς χ : Multiplicity}
+  | cons {n a b : Nat} {φ : MultiplicityVector n} {ρ o o' ς χ : Multiplicity}
       {πs κs : Fin a → Multiplicity} {πs' : Fin b → Multiplicity} {ks : Fin b → RecursiveResult}
       {N : Target (n + (a + b))} {Ns : TargetBranches n}
       (hN : Target.Ownership Ω
@@ -132,9 +134,9 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
         (MultiplicityVector.extendBinders (ς ·ᶜ φ) (fun l => o * κs l)
           (fun j => (ks j).ownership χ * πs' j)) χ N)
       (hks : ∀ (j : Fin b) (l : Fin a) (σ : Shape), ks j = .nested l σ →
-        σ.Uniform ς χ ∧ σ.Requires o ς ∧ o ≤ ς * (o * κs l))
-      (hNs : TargetBranches.Ownership Ω φ o o' ς χ Ns) :
-      TargetBranches.Ownership Ω φ o o' ς χ (.cons a b πs κs πs' ks N Ns)
+        σ.Uniform ς χ ∧ (ρ * σ.factor ≠ .zero → σ.Requires o ς ∧ o ≤ ς * (o * κs l)))
+      (hNs : TargetBranches.Ownership Ω φ ρ o o' ς χ Ns) :
+      TargetBranches.Ownership Ω φ ρ o o' ς χ (.cons a b πs κs πs' ks N Ns)
 
 -- ADE: none.
 /-- `Ω; φ ⊢ P̄ ◀`: each branch of a corecursor has, for all the ownerships `ō` of its arguments that

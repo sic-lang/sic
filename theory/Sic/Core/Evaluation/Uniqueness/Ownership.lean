@@ -57,7 +57,7 @@ times the requirement of its recursion. -/
 theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
     {o : Multiplicity} → {M' : Target n} →
       Target.Ownership Ω φ o M' → M' = .recursor ρ ϱ M Ns →
-      ∃ o₁ o' ς χ, Target.Ownership Ω φ o₁ M ∧ TargetBranches.Ownership Ω φ (o₁ * ϱ) o' ς χ Ns ∧
+      ∃ o₁ o' ς χ, Target.Ownership Ω φ o₁ M ∧ TargetBranches.Ownership Ω φ ρ (o₁ * ϱ) o' ς χ Ns ∧
         o ≤ o'
   | _, _, .recursor hM hNs, h => by
     cases h
@@ -127,18 +127,18 @@ theorem Targets.Ownership.length {Ω : Name → Multiplicity} {n : Nat} {φ : Mu
   | _, _, .cons _ _ hMs => congrArg (· + 1) hMs.length
 
 /-- The ownership of the branches of a recursor gives that of each branch, with the ownership of the
-variable of each recursive result, and the ownerships and the requirements of the shape of each
-nested result. -/
+variable of each recursive result, and the ownerships of the shape of each nested result, with its
+requirements when the recursor runs a recursion through it. -/
 theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
-    {φ : MultiplicityVector n} {o o' ς χ : Multiplicity} : {Ns : TargetBranches n} →
-    TargetBranches.Ownership Ω φ o o' ς χ Ns → (i : Nat) → {a b : Nat} →
+    {φ : MultiplicityVector n} {ρ o o' ς χ : Multiplicity} : {Ns : TargetBranches n} →
+    TargetBranches.Ownership Ω φ ρ o o' ς χ Ns → (i : Nat) → {a b : Nat} →
       {πs κs : Fin a → Multiplicity} → {πs' : Fin b → Multiplicity} →
       {ks : Fin b → RecursiveResult} → {N : Target (n + (a + b))} →
       Ns.get i = some ⟨a, b, πs, κs, πs', ks, N⟩ →
       Target.Ownership Ω
         (φ.extendBinders (fun l => o * κs l) (fun j => (ks j).ownership o' * πs' j)) o' N ∧
       ∀ (j : Fin b) (l : Fin a) (σ : Shape), ks j = .nested l σ →
-        σ.Uniform ς χ ∧ σ.Requires o ς ∧ o ≤ ς * (o * κs l)
+        σ.Uniform ς χ ∧ (ρ * σ.factor ≠ .zero → σ.Requires o ς ∧ o ≤ ς * (o * κs l))
   | _, .nil, _, _, _, _, _, _, _, _, h => nomatch h
   | _, .cons hN _ hks _, 0, _, _, _, _, _, _, _, h => by
     cases h

@@ -85,10 +85,11 @@ theorem Targets.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : 
 `φ'` of the variables of the scope that agree with `φ` along `α`. -/
 theorem TargetBranches.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : TargetRen n m)
     {φ' : MultiplicityVector n} {φ : MultiplicityVector m} (hφ : ∀ x, φ' (α x) = φ x) :
-    {o o' ς χ : Multiplicity} → {Ns : TargetBranches m} → TargetBranches.Ownership Ω φ o o' ς χ Ns →
-      TargetBranches.Ownership Ω φ' o o' ς χ (Ns.rename α)
-  | _, _, _, _, _, .nil => .nil
-  | _, _, _, _, _, .cons hN hN' hks hNs =>
+    {ρ o o' ς χ : Multiplicity} → {Ns : TargetBranches m} →
+      TargetBranches.Ownership Ω φ ρ o o' ς χ Ns →
+        TargetBranches.Ownership Ω φ' ρ o o' ς χ (Ns.rename α)
+  | _, _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, _, .cons hN hN' hks hNs =>
     .cons (hN.rename _ (MultiplicityVector.extendBinders_lift α hφ _ _))
       (hN'.rename _ (MultiplicityVector.extendBinders_lift α
         (fun x => congrArg (_ * ·) (hφ x)) _ _))

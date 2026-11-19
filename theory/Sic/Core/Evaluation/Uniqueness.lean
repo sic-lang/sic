@@ -423,7 +423,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
     {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {ρ ϱ : Multiplicity}
     {Ns : TargetBranches n} {a v : Nat} {R : List Nat} (h : EvalRec P ϖ H E ρ ϱ Ns a v H' R)
     {φ χ : MultiplicityVector n} {θ o' : Multiplicity}
-    {ς χ' : Multiplicity} (hNs : TargetBranches.Ownership Ω φ θ o' ς χ' Ns)
+    {ς χ' : Multiplicity} (hNs : TargetBranches.Ownership Ω φ ρ θ o' ς χ' Ns)
     (hχ : TargetBranches.Usage ρ χ Ns) (hθ : θ = .one → ϱ = .one) (hθϱ : θ * ϱ = θ)
     (hθz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = θ) {g : Heap.Annotation} (hg : g.Valid Ω H) {U_χ U_a : Demand}
     (hE : Heap.EnvReach H g E χ U_χ) (ha : Heap.ValueReach H g a U_a) {F : Demand}
@@ -587,9 +587,8 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           simpa using this
         have hkj : ks ⟨j, hjlt⟩ = .nested l σ := by simpa [List.getElem?_ofFn, hjlt] using hj
         have hlt : l < a' := hla ▸ (List.getElem?_eq_some_iff.1 hal).1
-        obtain ⟨huni, hreq, hθκ⟩ := hks ⟨j, hjlt⟩ ⟨l, hlt⟩ σ hkj
-        exact ⟨κs ⟨l, hlt⟩, by simp [hlt], hσ ⟨j, hjlt⟩ l σ hkj, huni, hreq,
-          hθκ⟩)
+        obtain ⟨huni, hreq⟩ := hks ⟨j, hjlt⟩ ⟨l, hlt⟩ σ hkj
+        exact ⟨κs ⟨l, hlt⟩, by simp [hlt], hσ ⟨j, hjlt⟩ l σ hkj, huni, hreq⟩)
       hg hE hUs (F := F +ᶜ (U_δ +ᶜ Demand.positions (List.ofFn πs) Us))
       (fun b hb => by
         show F b + (U_δ b + Demand.positions (List.ofFn πs) Us b) = _
@@ -786,11 +785,12 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
     {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List RecursiveResult}
     {πs' : List Multiplicity} {rs : List Nat} {R : List Nat}
     (h : EvalResults P ϖ H E ρ ϱ Ns as ks πs' rs H' R) {φ χ : MultiplicityVector n}
-    {θ o' ς χ' : Multiplicity} (hNs : TargetBranches.Ownership Ω φ θ o' ς χ' Ns)
+    {θ o' ς χ' : Multiplicity} (hNs : TargetBranches.Ownership Ω φ ρ θ o' ς χ' Ns)
     (hχ : TargetBranches.Usage ρ χ Ns) (hθ : θ = .one → ϱ = .one) (hθϱ : θ * ϱ = θ)
     (hθz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = θ) {κs : List Multiplicity}
     (hks : ∀ (j l : Nat) (σ : Shape) (a : Nat), ks[j]? = some (.nested l σ) → as[l]? = some a →
-      ∃ κ, κs[l]? = some κ ∧ σ.Fits ρ ∧ σ.Uniform ς χ' ∧ σ.Requires θ ς ∧ θ ≤ ς * (θ * κ))
+      ∃ κ, κs[l]? = some κ ∧ σ.Fits ρ ∧ σ.Uniform ς χ' ∧
+        (ρ * σ.factor ≠ .zero → σ.Requires θ ς ∧ θ ≤ ς * (θ * κ)))
     {g : Heap.Annotation} (hg : g.Valid Ω H) {U_χ : Demand} (hE : Heap.EnvReach H g E χ U_χ)
     {Us : List Demand} (has : List.Pointwise (Heap.ValueReach H g) as Us) {F : Demand}
     (hF : ∀ b, H.length ≤ b → F b = .zero)
@@ -978,7 +978,7 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
   | .nested (H₂ := H₂) (l := l) (a := a) (r := r) (σ := σ) (ks := ks') (π := π) (πs := πs'')
       (rs := rs') hl hev hs => by
     obtain ⟨U_l, hUl, hUa⟩ := has.getElem? hl
-    obtain ⟨κ, hκ, hfits, huni, hreq, hθκ⟩ := hks 0 l σ a rfl hl
+    obtain ⟨κ, hκ, hfits, huni, hreq⟩ := hks 0 l σ a rfl hl
     have hneed : ∀ b, Demand.need ρ Us U_χ (.nested l σ :: ks') b =
         (σ.factor * ρ * U_l b + σ.factor * U_χ b) + Demand.need ρ Us U_χ ks' b := fun b => by
       show (σ.factor * ρ * Us.getD l 𝟘ᵛ b + σ.factor * U_χ b) + _ = _
@@ -1005,8 +1005,8 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
     have hM := Target.Ownership.nested (Ω := Ω) (ρ := ρ) (ϱ := ϱ) (o' := o') hθϱ hθz
       (φ' := (φ.extendBinders (fun _ : Fin 0 => .zero) (fun _ : Fin 1 => θ * κ) :
         MultiplicityVector (n + 1)))
-      (fun x => MultiplicityVector.extendBinders_shift (a := 0) (b := 1) _ _ _ x) hθκ hNs huni
-      hreq
+      (fun x => MultiplicityVector.extendBinders_shift (a := 0) (b := 1) _ _ _ x)
+      (fun h => (hreq h).2) hNs huni (fun h => (hreq h).1)
     have hsum : ∀ b, b < H.length →
         σ.factor * ρ * (Demand.unit H.length b + U_l b) + σ.factor * U_χ b =
           σ.factor * ρ * U_l b + σ.factor * U_χ b := fun b hb => by

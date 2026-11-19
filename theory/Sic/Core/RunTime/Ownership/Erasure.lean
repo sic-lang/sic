@@ -228,7 +228,7 @@ theorem Branches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePre
           (fun l => o * r.fieldCoefficient ((fs.drop i).headD [])[(l : Nat)]?)
           (fun (j : Fin b) => o' * gs[j].run)) o'
         (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))) →
-    TargetBranches.Ownership Ω φ' o o' .one o'
+    TargetBranches.Ownership Ω φ' r.run o o' .one o'
       (us.erase sig S hΓ r (es.map (·.map RecursiveResult.field)) fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
@@ -429,7 +429,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         (r ∉ Mode.oneOne.erased →
           o' = o.run * (sig.recursionRequirement D qs ps ⟨κ.quality, r, ς⟩ χ).run) →
         (r ∈ Mode.oneOne.erased → o' = .one * .omega) →
-        TargetBranches.Ownership Ω φ' o' p.run .one p.run (us.erase sig Mode.oneOne.erased hΓ r
+        TargetBranches.Ownership Ω φ' r.run o' p.run .one p.run (us.erase sig Mode.oneOne.erased hΓ r
           (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ)
           ((sig.caseFieldParams D qs ps).getD [])) := by
       intro o' ho₁ ho₂
