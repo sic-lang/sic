@@ -15,7 +15,7 @@ import Sic.Core.Typing.Signature
 /-!
 # Typing of the Destructors Lifted
 
-The destructors of the lifting of a codata type of annex 20 of RFC 36 are destructors of the sort of
+The destructors of the lifting of a codata type of annex 13 of RFC 36 are destructors of the sort of
 the lifting, in the context of a typed lifting, when the type that they lift is a codata type of a
 well-formed signature without recursive destructor, and the level of its sort is below the level of
 the sort of the lifting.

@@ -5,7 +5,7 @@ public import Sic.Core.Typing.Lifted
 /-!
 # Renaming of the Typing
 
-The judgments of typing and of equality of annex 14 of RFC 36 are stable under the typed renamings
+The judgments of typing and of equality of annex 15 of RFC 36 are stable under the typed renamings
 `Σ; Γ ⊢ α : Δ`: a judgment in the context `Δ` holds, renamed by `α`, in the context `Γ`, whose
 declarations give each variable of `Δ` its type, renamed.
 

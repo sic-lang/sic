@@ -10,7 +10,7 @@ import Sic.Core.Substitution.Nesting
 /-!
 # Shapes of the Substituted Types
 
-The shape of a type of the recursive results of annex 16 of RFC 36 does not read the levels, and a
+The shape of a type of the recursive results of annex 19 of RFC 36 does not read the levels, and a
 substitution that keeps the nestings of the variables keeps it: such a substitution gives each
 variable a variable with its shape, or, to a variable that has none, an observation, which has
 none either.

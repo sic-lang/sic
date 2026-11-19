@@ -6,7 +6,7 @@ import Sic.Core.Syntax.Terms
 /-!
 # Nesting
 
-The nesting of annex 14 of RFC 36: the positions at which the types of a block occur in the type of
+The nesting of annex 15 of RFC 36: the positions at which the types of a block occur in the type of
 a field, as a tree, which is no position when none of them occurs, the type of the block when the
 type is an instance of it, and, when the type is an instance of another declared type, the nesting
 of each of its arguments.

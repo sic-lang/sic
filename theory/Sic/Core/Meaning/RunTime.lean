@@ -7,7 +7,7 @@ public import Sic.Grading.GradeSet
 /-!
 # Relations of Run Time
 
-The relations of run time of the closed canonical types of annex 18 of RFC 36, between a closed term
+The relations of run time of the closed canonical types of annex 21 of RFC 36, between a closed term
 of the source and the address of a value of the target language in a heap, which state that the
 value at the address is what the erasure by `S^{11ᵐ}` of the term computes at run time.
 The terms of a universe and those of a proposition are related to every address, since their

@@ -6,7 +6,7 @@ import Sic.Core.Substitution.Levels
 /-!
 # Levels of the Erasure
 
-The erasure of annex 16 of RFC 36 reads no level: it erases the sorts and the instances, keeps the
+The erasure of annex 19 of RFC 36 reads no level: it erases the sorts and the instances, keeps the
 qualities and the grades of a constant without its levels, and reads of the states of a corecursor
 only the parameters and the arity of each state, which the instantiation of the level variables
 keeps, so that a term and its instance at other levels have the same erasure.

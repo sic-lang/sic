@@ -7,7 +7,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Typing Along the Signatures
 
-The judgments in a context of annex 14 of RFC 36, and the judgment of the destructors of a block,
+The judgments in a context of annex 15 of RFC 36, and the judgment of the destructors of a block,
 hold in every well-formed signature that has the entries of theirs: the typing reads its signature
 only by the entries that it has, the constants, the declared types, the data types, the codata
 types and the prelude, so that a signature with more entries gives the same premises, and the rule

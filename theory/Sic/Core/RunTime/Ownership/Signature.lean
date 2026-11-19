@@ -10,7 +10,7 @@ import Sic.Core.RunTime.Ownership.Erasure
 # Ownership of the Program of a Signature
 
 The program of a signature whose names are distinct and whose entries have their ownerships has its
-ownership, `⊢ ⌊Σ⌋ ◀ Ω` of annex 17 of RFC 36, which the uniqueness at run time assumes, when `Ω`
+ownership, `⊢ ⌊Σ⌋ ◀ Ω` of annex 20 of RFC 36, which the uniqueness at run time assumes, when `Ω`
 gives each constant the run-time multiplicity of the ownership of its entry: each body of the
 program is the erasure of the body of a constant definition of the mode `11ᵐ`, whose value has the
 ownership of the definition in the signature before it, and so in the whole signature, in which the

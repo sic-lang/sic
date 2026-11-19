@@ -6,7 +6,7 @@ import Sic.Core.Results.Substitution
 /-!
 # Lifted Substitutions of the Typing
 
-The judgments of typing and of equality of annex 14 of RFC 36 are stable under the substitutions of
+The judgments of typing and of equality of annex 15 of RFC 36 are stable under the substitutions of
 the second order that a family of typed substitutions gives and that the rules lift under their
 binders: a judgment in a context, substituted, holds in the context of the substitution.
 The renamings and the substitutions of the first order are two such families, whose stability

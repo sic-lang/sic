@@ -6,7 +6,7 @@ public import Sic.Core.Evaluation.Heap
 /-!
 # Demand
 
-The demands of annex 17 of RFC 36: a demand `D` gives each address of a heap a multiplicity, the
+The demands of annex 20 of RFC 36: a demand `D` gives each address of a heap a multiplicity, the
 reads of the cell at this address that remain to be done, and the uses of a trace `#R` the reads that
 a run did, so that the conservation of the bindings compares them.
 The demand of a value, `H ⊢ ℓ ▶ D`, bounds the reads that a use of the value can still do: `↯` and

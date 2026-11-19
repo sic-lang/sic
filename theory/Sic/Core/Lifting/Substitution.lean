@@ -8,7 +8,7 @@ import Sic.Core.Substitution.Levels
 /-!
 # Substitution of the Liftings
 
-The parts of the declaration of a lifting of annex 20 of RFC 36 under the renamings, the
+The parts of the declaration of a lifting of annex 13 of RFC 36 under the renamings, the
 substitutions and the instantiation of the level variables: a telescope followed by an entry, as
 the telescope of a motive is, and the parameters, the type of the parameter `y` and the sort of the
 lifting at an instance of its variables, where the levels of the motives are those of the arguments

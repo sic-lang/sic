@@ -16,7 +16,7 @@ that gives each index its element, so that the laws of the operations follow fro
 modality at each index.
 The operations and their laws hold whatever the set of the indices, finite or not, so that they are
 stated on the functions from any type of indices, of which the vectors are those from the numbers
-below `n`: the demands of annex 17, which give each address of a heap a multiplicity, use them.
+below `n`: the demands of annex 20, which give each address of a heap a multiplicity, use them.
 The core of Lean declares at its root a `Vector`, an array of a fixed size ordered
 lexicographically, so that this one is always written with its full name, `Sic.Math.Vector`, outside
 its namespace.

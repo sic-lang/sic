@@ -7,7 +7,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Typing of the Parameters of a Lifting
 
-The parameters of a lifting of annex 20 of RFC 36 are well formed when the parameters that it lifts
+The parameters of a lifting of annex 13 of RFC 36 are well formed when the parameters that it lifts
 are well formed and each parameter lifted is a type, and the renaming of the parameters in the
 parameters lifted is then typed: a type of the declaration is a type of its lifting.
 

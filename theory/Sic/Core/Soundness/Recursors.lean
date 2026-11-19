@@ -18,7 +18,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Soundness of the Rules of the Recursors
 
-The rules `(rec)`, `(rec_≡)`, `(ι)` and `(η_c)` of annex 14 of RFC 36 keep the meaning of annex 18,
+The rules `(rec)`, `(rec_≡)`, `(ι)` and `(η_c)` of annex 15 of RFC 36 keep the meaning of annex 21,
 as `Rules` proves it of the other rules, from the meaning of the data types.
 
 ADE prove the validity of the rules of their eliminators in

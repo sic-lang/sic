@@ -11,7 +11,7 @@ import Sic.Core.Usage.Absence
 /-!
 # Usage of the Erasure
 
-The preservation of the usage by the erasure of annex 16 of RFC 36: the erasure at run time of a
+The preservation of the usage by the erasure of annex 19 of RFC 36: the erasure at run time of a
 term checked in the mode `11ᵐ` reads its variables as the run-time multiplicities of their grades
 allow, in the usage of the target language.
 The erasure removes the positions whose grade has no use at run time, which the usage counts `0`

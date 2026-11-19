@@ -8,7 +8,7 @@ public import Sic.Core.Substitution.Closed
 /-!
 # Equality of the Canonical Terms
 
-The equality of the canonical terms of the closed canonical types of annex 18 of RFC 36, by the
+The equality of the canonical terms of the closed canonical types of annex 21 of RFC 36, by the
 graphs of the relations of the sorts of each level.
 A closed canonical type is known by the equality of its canonical terms, a partial equivalence
 relation `eq(v)`, which the sorts, the data types and the codata types give: the universe `U_n` has

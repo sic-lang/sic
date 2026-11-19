@@ -14,7 +14,7 @@ import Sic.Core.Typing.Signature
 /-!
 # Typing of the Liftings
 
-The typing of the liftings of annex 20 of RFC 36: the lifting of a codata type without recursive
+The typing of the liftings of annex 13 of RFC 36: the lifting of a codata type without recursive
 destructor of a well-formed signature is a well-formed type declaration in this signature, when each
 parameter at which the type is lifted is a type.
 

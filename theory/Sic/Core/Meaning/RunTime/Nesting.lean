@@ -8,7 +8,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Agreement of the Graph of the Nestings of Run Time
 
-The graph of the nestings of run time of annex 18 of RFC 36 agrees with the graph of run time, at
+The graph of the nestings of run time of annex 21 of RFC 36 agrees with the graph of run time, at
 positions that hold types with their relations of run time, on the terms that the equality of a
 type relates to themselves.
 The two graphs do not give a type the same relation: a position holds no equality, so that the

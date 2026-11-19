@@ -7,7 +7,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Requirement of the Recursion
 
-The requirement `r̂` of the recursion of a recursor of annex 13 of RFC 36, `(recursion_p)`, on a
+The requirement `r̂` of the recursion of a recursor of annex 18 of RFC 36, `(recursion_p)`, on a
 block of data types: on each axis of the grades, the meet of `11ᵖ`, of the coefficient of each
 recursive field, and of the pairs that each nested field gives along the paths of its shape, read in
 the mode of the recursor and on the axis, so that every value that a recursion observes keeps the

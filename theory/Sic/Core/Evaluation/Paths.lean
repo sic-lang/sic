@@ -5,7 +5,7 @@ public import Sic.Core.Evaluation.Demand
 /-!
 # Paths
 
-The reaches of annex 17 of RFC 36: the reach of a value, `H ⊢ ℓ ⇝ U`, counts the references that a
+The reaches of annex 20 of RFC 36: the reach of a value, `H ⊢ ℓ ⇝ U`, counts the references that a
 use of the value at the address `ℓ` of the heap `H` makes to each address, a value or a cell, along
 the paths that start from it, so that the uniqueness at run time compares the references to an
 address with its ownership.

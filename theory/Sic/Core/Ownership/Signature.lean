@@ -7,7 +7,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Ownership of a Signature
 
-The judgment `⊢ Σ ◀` of annex 13 of RFC 36 holds of each declaration of the signature: the
+The judgment `⊢ Σ ◀` of annex 18 of RFC 36 holds of each declaration of the signature: the
 ownership of the result of each recursive destructor of a block of codata types of the signature is
 a constant, at each instance, which the erasure keeps, so that the ownership of the target language
 reads it in the branches of the corecursors.

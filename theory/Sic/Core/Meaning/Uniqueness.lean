@@ -8,7 +8,7 @@ import Sic.Core.Meaning.Equality.Properties
 /-!
 # Uniqueness of the Relations of the Levels
 
-The relations of every level of annex 18 of RFC 36 are unique, by induction on the level: the
+The relations of every level of annex 21 of RFC 36 are unique, by induction on the level: the
 equality of the terms of a type is a partial equivalence relation, and it is unique, as are the
 truth of a proposition and the relation of run time of a type, given those of the levels below it,
 which `Sic.Core.Meaning.Equality.Properties` and `Sic.Core.Meaning.RunTime.Properties` prove on the

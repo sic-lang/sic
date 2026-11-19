@@ -10,7 +10,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Liftings at the Observations of a Term
 
-The result of a destructor of the lifting of a codata type of annex 20 of RFC 36, at an instance of
+The result of a destructor of the lifting of a codata type of annex 13 of RFC 36, at an instance of
 the lifting, at arguments lifted and at a term `t` of the instance lifted, is the result of the
 destructor that it lifts, at the arguments of the instance and at the observations of `t`, lifted
 at the observation of `t` by this destructor: the type of the recursive result of this observation.

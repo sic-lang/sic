@@ -11,7 +11,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Ownership of the Erasure
 
-The preservation of the ownership by the erasure of annex 16 of RFC 36: the erasure at run time of
+The preservation of the ownership by the erasure of annex 19 of RFC 36: the erasure at run time of
 a term checked in the mode `11ᵐ` has, in the ownership of the target language, the run-time
 multiplicity of its ownership, given the run-time multiplicities of the ownerships of its variables
 and of its constants.

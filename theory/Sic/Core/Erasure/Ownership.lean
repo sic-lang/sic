@@ -5,10 +5,10 @@ public import Sic.Core.Erasure.Usage
 /-!
 # Ownership of the Target Language
 
-The ownership of the target language of annex 16 of RFC 36, `Ω; φ ⊢ M ◀ o`: the value of the term
+The ownership of the target language of annex 19 of RFC 36, `Ω; φ ⊢ M ◀ o`: the value of the term
 `M` has the ownership `o` at run time, a multiplicity, given the ownership `φ` of each variable and
 the ownership `Ω` of each constant.
-It follows the ownership of annex 13 on the run-time components that the target language keeps: the
+It follows the ownership of annex 18 on the run-time components that the target language keeps: the
 requirements of the positions, the coefficients of the variables of the fields of the branches of
 the recursors, the requirements of the variables of the branches of the corecursors, the ownerships
 of the results of the destructors and the requirements of the destructors on the values that they

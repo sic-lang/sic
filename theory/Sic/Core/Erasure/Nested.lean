@@ -5,9 +5,9 @@ public import Sic.Core.Erasure.Renaming
 /-!
 # Corecursors of the Nested Results
 
-The corecursor that a nested result of a branch of a recursor of the target language of annex 16 of
+The corecursor that a nested result of a branch of a recursor of the target language of annex 19 of
 RFC 36 gives at run time, `n.Ξ`: the evaluation builds its branches from the branches of the
-recursor and from the shape `σ`, as the rule `(res_D)` of annex 21 builds the corecursor of the
+recursor and from the shape `σ`, as the rule `(res_D)` of annex 14 builds the corecursor of the
 lifting from the observations of the field, one branch for each destructor that the lifting keeps,
 which observes the field by the destructor that it lifts and gives the result of this observation:
 the recursor on it, or the corecursor of the next lifting.

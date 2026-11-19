@@ -13,7 +13,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Equality of the Nested Types
 
-The graph of the nestings of the equality of annex 18 of RFC 36 is a reading of the nested types:
+The graph of the nestings of the equality of annex 21 of RFC 36 is a reading of the nested types:
 it reads two closed types, each at its nesting, with the same equality of their terms.
 A position is read in a sort of the quality of the sort of the type it holds: the types given for
 the variables with a position are read where the types of a universe that stand for them are, and a

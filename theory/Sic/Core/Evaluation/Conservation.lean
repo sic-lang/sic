@@ -12,7 +12,7 @@ import Sic.Core.Erasure.Usage.Nested
 /-!
 # Conservation
 
-The conservation of the bindings of annex 17 of RFC 36: a run of a term of the target language that
+The conservation of the bindings of annex 20 of RFC 36: a run of a term of the target language that
 reads its variables as its usage allows reads each cell that it allocates, of the multiplicity `π`,
 as `π` allows, once the reads that the value that it computes can still do are counted, its demand.
 The invariant, `𝒫; ϖ; H; E ⊢ M ⇓ a; H'; R` with `ν ⊢ M ▶` and `H ⊢ E ▶_ν D_E`, bounds the demand

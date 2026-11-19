@@ -6,8 +6,8 @@ public import Sic.Grading.MultiplicityVector
 /-!
 # Usage of the Target Language
 
-The usage of the target language of annex 16 of RFC 36, `ν ⊢ M ▶`: the term `M` reads each of its
-variables at most as the multiplicity that `ν` gives it allows, as the evaluation of annex 17 runs
+The usage of the target language of annex 19 of RFC 36, `ν ⊢ M ▶`: the term `M` reads each of its
+variables at most as the multiplicity that `ν` gives it allows, as the evaluation of annex 20 runs
 it, so that the conservation of the bindings of the multiplicity `1` is stated on it.
 Each binder and each position carries its multiplicity, so that the rules read them; a position
 is evaluated once, and its value is then read as its multiplicity allows, so that the position

@@ -24,7 +24,7 @@ import Sic.Core.Syntax.Signature
 The recursive results of two terms of a field nested below a codata type, which the equality of
 the type of the field relates, are equal terms of this type lifted at the first term, when the
 results of the terms of the types of the block are equal terms of their motives: the equality of
-the field is that of the graph of the nestings of annex 18 of RFC 36, which this module follows,
+the field is that of the graph of the nestings of annex 21 of RFC 36, which this module follows,
 clause by clause.
 
 At a position, the results are those of the terms of a type of the block.

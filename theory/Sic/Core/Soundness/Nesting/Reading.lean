@@ -16,8 +16,8 @@ import Sic.Core.Typing.Signature
 /-!
 # Types Read at Their Nestings
 
-A type that is strictly positive in variables, as annex 14 of RFC 36 says it, is read by the graphs
-of the nestings of annex 18, that of the equality and that of run time, at any closed types given
+A type that is strictly positive in variables, as annex 15 of RFC 36 says it, is read by the graphs
+of the nestings of annex 21, that of the equality and that of run time, at any closed types given
 for these variables, when the graph reads them at their nestings.
 This module holds what the two graphs share, stated of a reading `rd`, a property of two closed
 types and of their nestings, which is the graph of the nestings of the equality, or that of run

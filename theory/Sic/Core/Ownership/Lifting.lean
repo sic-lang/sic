@@ -6,7 +6,7 @@ import Sic.Core.Lifting.Recursion
 /-!
 # Ownership of the Liftings
 
-The ownership of the liftings of annex 20 of RFC 36: the judgment `⊢ Σ ◀` holds of a signature
+The ownership of the liftings of annex 13 of RFC 36: the judgment `⊢ Σ ◀` holds of a signature
 followed by the lifting of a codata type without recursive destructor.
 The judgment reads the recursive destructors of a block of codata types only, and such a lifting has
 none: the result of each of its destructors is a motive, or an instance of the lifting of another

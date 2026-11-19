@@ -7,7 +7,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Usage Along the Signatures
 
-The judgments of usage of annex 12 of RFC 36 hold in every signature that has the entries of theirs:
+The judgments of usage of annex 17 of RFC 36 hold in every signature that has the entries of theirs:
 the usage reads its signature only by the entries that it has, the constants, the declared types,
 the data types and the codata types, so that a signature with more entries gives the same premises.
 

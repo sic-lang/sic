@@ -5,7 +5,7 @@ public import Sic.Core.Typing
 /-!
 # Presuppositions
 
-The presuppositions of the judgments of annex 14 of RFC 36: every judgment holds in a well-formed
+The presuppositions of the judgments of annex 15 of RFC 36: every judgment holds in a well-formed
 signature, and the signature that a well-formed signature extends is well formed, so that the names
 of a well-formed signature are distinct.
 The proof is by mutual structural recursion on the derivations, through a premise that is a judgment

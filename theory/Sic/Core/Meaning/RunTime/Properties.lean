@@ -8,7 +8,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Properties of the Relations of Run Time
 
-The relations of run time of annex 18 of RFC 36 are unique: two derivations of `rt(U_n)` for the
+The relations of run time of annex 21 of RFC 36 are unique: two derivations of `rt(U_n)` for the
 same type relate the same terms to the same addresses in each heap, by mutual recursion on the
 graph, as the equality proves its uniqueness, of which it reads the equality of the terms of each
 field and of each result.

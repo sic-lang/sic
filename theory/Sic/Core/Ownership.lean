@@ -5,7 +5,7 @@ public import Sic.Core.Shape.Recursion
 /-!
 # Ownership
 
-The judgment of ownership `Σ; φ ⊢ t ◀ p; m` of annex 13 of RFC 36: checked in the mode `m`, the
+The judgment of ownership `Σ; φ ⊢ t ◀ p; m` of annex 18 of RFC 36: checked in the mode `m`, the
 value of the term `t` has the ownership `p`, given the ownership `φ` of each variable of its scope
 whose telescope is empty.
 

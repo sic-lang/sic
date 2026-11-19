@@ -16,7 +16,7 @@ import Sic.Core.Erasure.Usage.Nested
 /-!
 # Uniqueness
 
-The uniqueness at run time of annex 17 of RFC 36, on the claims of
+The uniqueness at run time of annex 20 of RFC 36, on the claims of
 `Sic/Core/Evaluation/Claims.lean` and the reaches of `Sic/Core/Evaluation/Paths.lean`.
 
 The invariant, `reach_⇓`, follows a run of a term that has an ownership and a usage: its value has

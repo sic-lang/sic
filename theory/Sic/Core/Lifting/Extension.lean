@@ -5,7 +5,7 @@ public import Sic.Core.Lifting
 /-!
 # Liftings Along the Signatures
 
-The liftings of annex 20 of RFC 36 hold in every signature that has the entries of theirs: the
+The liftings of annex 13 of RFC 36 hold in every signature that has the entries of theirs: the
 relations read their signature only by the entries that it has, the declaration of the type of an
 instance and that of its lifting, so that a signature that has these type declarations gives the same premises, as a signature with
 more entries does, and as the signature of the meaning does, in which the constants alone change.

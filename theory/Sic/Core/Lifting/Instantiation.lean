@@ -8,7 +8,7 @@ import Sic.Core.Lifting.Functionality
 # Instantiation of the Liftings
 
 A type lifted by a lifting that lifts variables, as the result of a destructor of the lifting of a
-codata type of annex 20 of RFC 36 is, substituted by a substitution that gives each variable lifted
+codata type of annex 13 of RFC 36 is, substituted by a substitution that gives each variable lifted
 an abstraction lifted, at its nesting, and its motive this abstraction lifted, is the type
 substituted, lifted at the term substituted: the motive of a variable applied to arguments becomes
 the abstraction lifted at these arguments.

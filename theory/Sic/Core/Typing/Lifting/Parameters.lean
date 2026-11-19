@@ -12,7 +12,7 @@ import Sic.Core.Typing.Signature
 /-!
 # Typed Lifting of the Parameters
 
-The lifting of the parameters of a codata type in the parameters of its lifting, of annex 20 of
+The lifting of the parameters of a codata type in the parameters of its lifting, of annex 13 of
 RFC 36, is typed, `Lifting.Typed`, when the parameters are well formed and each parameter lifted is
 a type: the motive of each parameter lifted is declared over the telescope of the parameter, followed
 by a term of it, in the sort of its level.

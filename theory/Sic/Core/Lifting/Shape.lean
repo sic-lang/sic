@@ -5,7 +5,7 @@ public import Sic.Core.Lifting
 /-!
 # Shape of the Liftings
 
-The parameters and the destructors that a lifting of annex 20 of RFC 36 keeps: the positions of
+The parameters and the destructors that a lifting of annex 13 of RFC 36 keeps: the positions of
 the arguments lifted of an instance are positions of its parameters, in order and distinct, with a
 result each, and the destructors of a lifting are among those of the codata type that it lifts, in
 their order.

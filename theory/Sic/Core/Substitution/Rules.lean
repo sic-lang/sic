@@ -7,7 +7,7 @@ import Sic.Core.Substitution.Levels
 /-!
 # Substitutions of the Rules
 
-The substitutions that the rules of annexes 14 and 18 of RFC 36 build: the motive `C[T.c(x̄) / z]` at
+The substitutions that the rules of annexes 15 and 21 of RFC 36 build: the motive `C[T.c(x̄) / z]` at
 a constructor, the corecursor at the variables of its state, the motives and the branches at a
 position and the observations, with their commutation with the renamings, the substitutions and the
 instantiation of the levels.

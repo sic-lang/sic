@@ -5,7 +5,7 @@ public import Sic.Core.Reduction
 /-!
 # Interpretation of the Constants
 
-The interpretation of the constants and the levels without variables of annex 18 of RFC 36, on
+The interpretation of the constants and the levels without variables of annex 21 of RFC 36, on
 which the meaning computes its closed terms.
 The meaning computes each constant to its interpretation `ι(c)`: it computes in the signature whose
 constants become definitions with these bodies, so that it has a single reduction, that of the

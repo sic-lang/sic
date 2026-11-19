@@ -7,7 +7,7 @@ import Sic.Core.Substitution.Levels
 /-!
 # Substitution of the Terms in Which Variables Do Not Occur
 
-A term in which a variable does not occur, as the strict positivity of annex 14 of RFC 36 says it,
+A term in which a variable does not occur, as the strict positivity of annex 15 of RFC 36 says it,
 does not read what a substitution gives this variable: two substitutions give it the same term when
 they give the same abstractions to the variables that occur in it, and so do they to a telescope.
 

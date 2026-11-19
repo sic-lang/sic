@@ -6,7 +6,7 @@ public import Sic.Core.Positivity
 /-!
 # Liftings
 
-The liftings of annex 20 of RFC 36: the lifting of a codata type at a set of its parameters is a
+The liftings of annex 13 of RFC 36: the lifting of a codata type at a set of its parameters is a
 codata type declared from it, over a motive for each of these parameters and a term `y` of the
 type, whose terms hold, for each observation of `y`, a term of the motive at each position of the
 parameters in the result.

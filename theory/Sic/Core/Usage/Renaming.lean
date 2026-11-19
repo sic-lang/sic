@@ -7,7 +7,7 @@ import Sic.Core.Substitution.Levels
 /-!
 # Renaming of the Usage
 
-The judgments of usage of annex 12 of RFC 36 are stable under the renamings: a term that uses the
+The judgments of usage of annex 17 of RFC 36 are stable under the renamings: a term that uses the
 variables of its scope as `γ` allows, renamed by `α`, uses them as the vector `α γ` allows, which
 gives each variable the sum of the grades of the variables that `α` renames to it.
 

@@ -6,7 +6,7 @@ public import Sic.Core.Syntax
 # Grades of the Binders
 
 The grades of the variables that the binders of the syntax of annex 08 of RFC 36 introduce, which
-the rules of usage of annex 12 write in their premises by the extension `•` of the grade vectors of
+the rules of usage of annex 17 write in their premises by the extension `•` of the grade vectors of
 annex 10: each variable of a telescope at the grade of its entry, or at a grade given for its
 position; the recursive results of a branch of a recursor, whose positions the nestings of its
 fields give, have their grades with the recursive results, in `Results`.

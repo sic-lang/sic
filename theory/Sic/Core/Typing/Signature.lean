@@ -8,7 +8,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Well-Formed Signatures
 
-Properties of the well-formed signatures of annex 14 of RFC 36: each type declaration of a
+Properties of the well-formed signatures of annex 15 of RFC 36: each type declaration of a
 well-formed signature is well formed in the signature before it, so that its parameters form a
 context of the signature, at each instance that its constraint admits, and a destructor of a block
 of propositions has a grade without use at run time, as the rules `(d̄_κ|)` and `(d̄_κrec)` premise.

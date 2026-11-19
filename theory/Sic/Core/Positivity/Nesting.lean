@@ -8,7 +8,7 @@ import Sic.Core.Substitution.Nesting
 /-!
 # Strict Positivity and Nesting
 
-The strict positivity of annex 14 of RFC 36 relates the occurrences of a variable to the nesting of
+The strict positivity of annex 15 of RFC 36 relates the occurrences of a variable to the nesting of
 a type: a variable whose nesting has a position does not occur in a type that is strictly positive
 in it and whose nesting has no position, since the variable itself has its nesting, and an instance
 of a declared type the nesting of its arguments, whatever the parameters in which the type is

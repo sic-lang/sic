@@ -13,7 +13,7 @@ The relation of run time of annex 22 of RFC 36 is monotone in the heap: a term r
 in a heap stays related to it in each heap that extends it, since the relations of the data types
 read only values that the heap keeps, by induction on their least fixed points, and those of the
 codata types are stated in each heap that extends it.
-The relation that the graph of the nestings of run time of annex 18 gives a type is monotone in the
+The relation that the graph of the nestings of run time of annex 21 gives a type is monotone in the
 heap too, when the relations that the nesting holds are.
 
 ADE have no heap in their target language, so that they have no monotonicity.

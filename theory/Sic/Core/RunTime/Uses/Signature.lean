@@ -9,7 +9,7 @@ import Sic.Core.Usage.Signature
 /-!
 # Uses of the Program of a Signature
 
-The program of a well-used signature whose names are distinct is well used, `⊢ ⌊Σ⌋ ▶` of annex 17 of
+The program of a well-used signature whose names are distinct is well used, `⊢ ⌊Σ⌋ ▶` of annex 20 of
 RFC 36, which the conservation of the bindings assumes: each body of the program is the erasure of
 the body of a constant definition of the mode `11ᵐ`, which uses no variable in the signature before
 it, and so in the whole signature, in which the program erases it.

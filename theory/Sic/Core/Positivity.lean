@@ -5,7 +5,7 @@ public import Sic.Core.Substitution
 /-!
 # Strict Positivity
 
-The strict positivity of annex 14 of RFC 36: a type is strictly positive in a variable when the
+The strict positivity of annex 15 of RFC 36: a type is strictly positive in a variable when the
 variable occurs in it only as the type itself, or as an argument of an instance of a declared type
 at a parameter in which this type is declared strictly positive, and never in a term.
 Each type of a type declaration declares the parameters in which it is strictly positive, which the

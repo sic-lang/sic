@@ -7,7 +7,7 @@ import Sic.Core.Syntax.Terms
 /-!
 # Inversion of the Usage
 
-The judgments of usage of annex 12 of RFC 36, inverted: a term of a given form uses its variables as
+The judgments of usage of annex 17 of RFC 36, inverted: a term of a given form uses its variables as
 the rule of its form allows, with grades above those of the judgment, since the subsumption
 `(sub_▶)` may end its derivation.
 Each lemma takes the entries of the signature that the term names, in a signature whose names are

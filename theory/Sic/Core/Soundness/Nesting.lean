@@ -12,10 +12,10 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Nested Fields of a Block
 
-A nested field of a block, as annex 14 of RFC 36 forms it, has the type `A₀[D̄ x̄_Δ / X̄]`, where `A₀`
+A nested field of a block, as annex 15 of RFC 36 forms it, has the type `A₀[D̄ x̄_Δ / X̄]`, where `A₀`
 is typed in the signature before the block, with a type variable of `X̄` for each type of the
 block, in which it is strictly positive.
-Its meaning in annex 18 has three parts, proved here from the readings of the nested types, at two
+Its meaning in annex 21 has three parts, proved here from the readings of the nested types, at two
 equal closed substitutions of the context: the graph of the nestings of the equality reads the two
 types with one equality, that of run time with one relation, and the two types are equal when the
 instances of the types of the block are.

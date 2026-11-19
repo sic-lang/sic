@@ -6,7 +6,7 @@ public import Sic.Core.Evaluation.Paths
 /-!
 # Claims
 
-The claims of the uniqueness at run time of annex 17 of RFC 36: a value owned alone claims the
+The claims of the uniqueness at run time of annex 20 of RFC 36: a value owned alone claims the
 addresses that it holds alone, `H; g ⊢ ℓ ⊳ b`, itself, the fields and the entries of the state that
 it stores at the requirement `1` and at a multiplicity other than `0`, the cells of the variables of
 its scope that its closure owns alone and reads, as the annotation `g` of the heap gives the

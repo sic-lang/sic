@@ -6,7 +6,7 @@ import Sic.Core.Results.Substitution
 /-!
 # Typing at Instantiated Levels
 
-The judgments in a context of annex 14 of RFC 36 hold once levels replace their level variables,
+The judgments in a context of annex 15 of RFC 36 hold once levels replace their level variables,
 in the context, the terms, the types, the telescopes and the sorts: a rule reads the levels only by
 the equality and the order of levels, which every instantiation keeps, and by the instances of the
 entries of the signature, whose levels are instantiated in turn.

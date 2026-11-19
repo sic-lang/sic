@@ -8,7 +8,7 @@ import Sic.Core.Substitution.Rules
 /-!
 # Renaming of the Ownership
 
-The judgments of ownership of annex 13 of RFC 36 are stable under the renamings: a term whose value
+The judgments of ownership of annex 18 of RFC 36 are stable under the renamings: a term whose value
 has an ownership, given the ownerships `φ` of the variables of its scope, renamed by `α`, has the
 same ownership, given ownerships `φ'` that give the image of each variable its ownership by `φ`.
 

@@ -6,7 +6,7 @@ public import Sic.Core.Nesting
 # Relations Between Nestings
 
 Nestings with the same positions, whose objects are related: the properties of the graph of the
-nestings of annex 18 of RFC 36 compare the relations that the graph gives at related positions, of
+nestings of annex 21 of RFC 36 compare the relations that the graph gives at related positions, of
 two nestings for its growth and its symmetry, and of three for its transitivity.
 The relation of three nestings is the only one defined, and those of two nestings and of one are
 read from it, so that each lemma is proved once: the nesting of a type, the nestings of the

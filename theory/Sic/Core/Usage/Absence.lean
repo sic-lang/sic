@@ -8,7 +8,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Absence of the Erased Variables
 
-The absence of annex 16 of RFC 36: a variable whose grade is in a set of grades `S` does not occur
+The absence of annex 19 of RFC 36: a variable whose grade is in a set of grades `S` does not occur
 in the erasure by `S` of a term checked in a mode whose uses `S` does not erase.
 The property is one of the usage, stated on the erasure, which reads no judgment: the erasure
 follows the grades of the signature and of the terms alone, so that the property is with the usage,

@@ -8,7 +8,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Agreement of the Graph of the Nestings
 
-The graph of the nestings of annex 18 of RFC 36 agrees with the graph of the types: at positions
+The graph of the nestings of annex 21 of RFC 36 agrees with the graph of the types: at positions
 that hold types with the equality of their terms, it gives a type the equality that the graph of the
 types gives it, when this graph gives it one.
 The graph of the types need not give one: the graph of the nestings takes the relation of a position

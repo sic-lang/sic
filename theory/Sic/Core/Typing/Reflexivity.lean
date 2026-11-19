@@ -5,7 +5,7 @@ public import Sic.Core.Typing
 /-!
 # Reflexivity
 
-The reflexivity of the equality of the arguments of an instance of annex 14 of RFC 36, which no rule
+The reflexivity of the equality of the arguments of an instance of annex 15 of RFC 36, which no rule
 gives: arguments of an instance are equal to themselves, as the reflexivity of the equality of the
 terms and of the types gives each of them.
 

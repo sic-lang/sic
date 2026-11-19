@@ -13,7 +13,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Run Time of the Nested Types
 
-The graph of the nestings of run time of annex 18 of RFC 36 is a reading of the nested types: it
+The graph of the nestings of run time of annex 21 of RFC 36 is a reading of the nested types: it
 reads two closed types, each at its nesting, with the same relation of run time of their terms.
 A type that is strictly positive in variables is then read by the graph at any closed types given
 for these variables, when the graph reads them at their nestings: the relation of run time of its

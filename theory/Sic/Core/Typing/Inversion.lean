@@ -7,7 +7,7 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Inversion
 
-The inversion of the rules `(var_X)` and `(D)` of annex 14 of RFC 36: a typing of an application of
+The inversion of the rules `(var_X)` and `(D)` of annex 15 of RFC 36: a typing of an application of
 a second-order variable, or of an instance of a declared type, has the premises of its rule, since
 the rule of its term and the rule `(conv)`, which keeps the term and its premises, are the only ones
 that conclude it.

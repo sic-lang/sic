@@ -11,7 +11,7 @@ import Sic.Core.Typing.Signature
 /-!
 # Typing at the Observations of a Term
 
-The arguments and the result of a destructor of a codata type of annex 14 of RFC 36, in which the
+The arguments and the result of a destructor of a codata type of annex 15 of RFC 36, in which the
 destructors before it are the observations of a term of an instance of the type at variables, are
 typed in the context of the term: the lifting of a codata type declares each of its destructors at
 the arguments of the destructor that it lifts, and lifts its result, both at the observations of

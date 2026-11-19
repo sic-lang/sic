@@ -5,7 +5,7 @@ public import Sic.Core.Erasure
 /-!
 # Renaming of the Target Language
 
-The renamings of the variables of the terms of the target language of annex 16 of RFC 36, which the
+The renamings of the variables of the terms of the target language of annex 19 of RFC 36, which the
 representation of its variables by de Bruijn indices needs: the RFC names its variables, so that a
 term placed under new binders keeps its variables, while here their indices are shifted.
 A renaming `α : TargetRen n m` gives each of the `m` variables of a term a variable of the `n`

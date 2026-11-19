@@ -5,7 +5,7 @@ public import Sic.Core.Results
 /-!
 # Usage
 
-The judgment of usage of annex 12 of RFC 36, `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t`
+The judgment of usage of annex 17 of RFC 36, `Σ; γ ⊢ t ▶ m`: checked in the mode `m`, the term `t`
 uses each variable of its scope as the grade that `γ` gives it allows.
 Usage is defined on the term and the signature alone, whose binders and entries carry the grades:
 a second-order variable uses its arguments with the grades of the parameters of its telescope, which
@@ -14,7 +14,7 @@ its scope gives.
 The usage of an instance of a declared type reads the grades `ζ` with which its type uses its
 parameters, which the declaration gives and its formation checks against the usage of the telescopes
 of its constructors or of its destructors, defined here.
-The usage of a signature does not check the destructors of a lifting of annex 20, which uses its
+The usage of a signature does not check the destructors of a lifting of annex 13, which uses its
 parameters with the least grades.
 ADE have no second-order variables, no constants, no sorts of propositions and no declared types.
 -/

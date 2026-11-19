@@ -13,7 +13,7 @@ import Sic.Core.Typing.Substitution
 /-!
 # Typing of the Types Lifted
 
-A type lifted of annex 20 of RFC 36 is a type of the sort of its level, in the context of the
+A type lifted of annex 13 of RFC 36 is a type of the sort of its level, in the context of the
 lifting, when the type that it lifts is typed and the term at which it is lifted is a term of this
 type.
 

@@ -5,7 +5,7 @@ public import Sic.Core.Erasure.Nested
 /-!
 # Evaluation
 
-The evaluation of annex 17 of RFC 36, which runs the target language of the erasure by the calling
+The evaluation of annex 20 of RFC 36, which runs the target language of the erasure by the calling
 convention of Sic: `P; H; E ⊢ M ⇓ a; H'; R` evaluates the term `M` of the target language, in the
 environment `E` of the addresses of the cells of its variables and the heap `H`, to the address `a`
 of its value in the heap `H'`, reading the cells `R`, the constants being those of the program `P`,

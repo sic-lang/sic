@@ -7,7 +7,7 @@ import Sic.Math.Relation
 /-!
 # Skeletons at Run Time
 
-The skeleton of annex 16 of RFC 36 at run time, which the erasure of a recursor whose grade is
+The skeleton of annex 19 of RFC 36 at run time, which the erasure of a recursor whose grade is
 erased runs on: in a signature whose names are distinct, the skeleton of a data type is that of the
 block of its declaration, and the case of a constructor that of its block; the skeleton of a type
 with exactly one constructor unfolds into this constructor applied to the skeletons of the types of
