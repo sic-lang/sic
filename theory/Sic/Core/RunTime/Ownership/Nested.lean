@@ -6,9 +6,9 @@ public import Sic.Core.Erasure
 # Ownership of the Nested Fields at Run Time
 
 What the rule of the recursor of annex 18 of RFC 36 gives the ownership of the corecursor of a
-nested result at run time, which the erasure of a recursor whose branches have nested results
-reads: in the mode `11ᵐ`, on the axis of the uses at run time, the variable of a nested field used at
-run time, seen at the requirement `ς` of the corecursors, keeps the ownership of the term of the
+nested result at run time, which the erasure of a recursor whose branches have nested results reads:
+in the mode `11ᵐ`, on the axis of the uses at run time, the variable of a nested field used at run
+time, seen at the requirement `ς` of the corecursors, keeps the ownership of the term of the
 recursor times the requirement `r̂` of its recursion, since `r̂` reads the empty prefix of the paths
 of the field, and its shape, which meets the requirements of its observations at this ownership,
 meets the requirements of the recursions there, since `r̂` reads every prefix of the paths of the

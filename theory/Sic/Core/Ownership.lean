@@ -242,8 +242,9 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
           (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m Grade.run decl.names qs ps χ
             (.ofLists qs ps hq hp))[l]? = some (some σ) →
           (con.params (.ofLists qs ps hq hp))[l]? = some p →
-          (m.grade * r * Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
-            (us.grades i) l).run * σ.factor ≠ .zero →
+          (m.grade * r * Telescope.resultGrades
+            ((con.fields (.ofLists qs ps hq hp)).nest decl.names) (us.grades i) l).run *
+              σ.factor ≠ .zero →
           (m.grade * r * p.usage).run ≠ .zero) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of

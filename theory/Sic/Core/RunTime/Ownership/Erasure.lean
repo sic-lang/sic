@@ -497,7 +497,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             con.params (.ofLists qs ps hq hp) ∧
           ((decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ (.ofLists qs ps hq hp)).drop
             i).headD [] =
-            con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ (.ofLists qs ps hq hp) := by
+            con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ
+              (.ofLists qs ps hq hp) := by
         intro i a b u hget
         have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
         obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -554,8 +555,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             rw [Constructor.recursiveResults]
             refine (Telescope.resultOwnerships_getD (p := c) (d := .unrestrictedUnrestricted)
               (f := (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names)
-              (s := fun l => (con.nestedShapes sig ⟨κ.quality, r, ς⟩ .oneOne Grade.run decl.names qs ps
-                χ (.ofLists qs ps hq hp))[l]?.join) _ _
+              (s := fun l => (con.nestedShapes sig ⟨κ.quality, r, ς⟩ .oneOne Grade.run decl.names
+                qs ps χ (.ofLists qs ps hq hp))[l]?.join) _ _
               (Telescope.length_nest decl.names (con.fields (.ofLists qs ps hq hp))) 0
               (fun i' D hD => ?_) (fun i' ms hms => ⟨?_, ?_⟩) l l.2).symm
             · rw [Nat.zero_add, Telescope.recursionAt, Telescope.recursion_eq_map_nest,
@@ -593,7 +594,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
           ⟨_, List.getElem?_eq_getElem l.2⟩
         have hidx : (((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap
-            fun y => if y.1.isPlain then none else some y.2)[(j' : Nat)]? = some (0 + (l : Nat)) := by
+            fun y => if y.1.isPlain then none else some y.2)[(j' : Nat)]? =
+              some (0 + (l : Nat)) := by
           rw [Constructor.getElem?_recursiveResults] at hj
           obtain ⟨l', hl', he⟩ := Option.map_eq_some_iff.1 hj
           obtain ⟨hll, -⟩ := RecursiveResult.ofField_eq_nested.1 he

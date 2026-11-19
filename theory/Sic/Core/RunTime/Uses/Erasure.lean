@@ -195,12 +195,12 @@ theorem Telescope.run_resultSum_le : (ns : List (Nest Name)) → (ps : List Para
 
 /-! ## Branches -/
 
-/-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when the
-recursive results of each branch are those of `ws`, the erasure of each branch reads them as some
-`δ` allows, and its new variables as the multiplicities that the erasure gives their binders allow,
-`χ` bounds `δ` plus `χ` times the multiplicity of each recursive result times its factor, `0` for a
-result that the branch does not compute, a result that the branch computes has a multiplicity other
-than `0`, and the shape of each nested result fits the recursor. -/
+/-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
+the recursive results of each branch are those of `ws`, the erasure of each branch reads them as
+some `δ` allows, and its new variables as the multiplicities that the erasure gives their binders
+allow, `χ` bounds `δ` plus `χ` times the multiplicity of each recursive result times its factor, `0`
+for a result that the branch does not compute, a result that the branch computes has a multiplicity
+other than `0`, and the shape of each nested result fits the recursor. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
     (us : Branches k Γ) → (ws : List (List RecursiveResult)) → (fs : List (List Parameter)) →

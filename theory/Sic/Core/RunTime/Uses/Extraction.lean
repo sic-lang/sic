@@ -13,10 +13,10 @@ import Sic.Core.RunTime.Uses.Signature
 
 The conservation of the bindings by the extraction, of annex 22 of RFC 36: the erasure by
 `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, run under the program of a well-used signature
-whose names are distinct and that declares its liftings in order, reads each cell of its heap as the multiplicity of the cell allows, once
-the reads that its value can still do are counted, `(cons_⌊⌋)`; when its value holds no closure,
-each cell of the multiplicity `1` is read exactly once, and no cell of the multiplicity `0`,
-`(cons_⌊⌋.data)`.
+whose names are distinct and that declares its liftings in order, reads each cell of its heap as
+the multiplicity of the cell allows, once the reads that its value can still do are counted,
+`(cons_⌊⌋)`; when its value holds no closure, each cell of the multiplicity `1` is read exactly
+once, and no cell of the multiplicity `0`, `(cons_⌊⌋.data)`.
 The erasure keeps no level, so that the run is the same at every value of the level variables of the
 term, and the typing is not needed: the usage alone bounds the reads.
 
@@ -37,8 +37,8 @@ theorem GradeVector.run_nil (γ : GradeVector ([] : Scope).length) : γ.run = �
 -- ADE: none.
 /-- The erasure by `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, run at the weight `1` in the
 empty heap under the program of a well-used signature whose names are distinct and that declares
-its liftings in order, reads each cell of its heap as the multiplicity of the cell allows, once the reads that its value can still do are
-counted.
+its liftings in order, reads each cell of its heap as the multiplicity of the cell allows, once the
+reads that its value can still do are counted.
 RFC: `\mathsf{cons}_{\lfloor\rfloor}` -/
 theorem extraction_conservation {sig : Signature} {k : Nat} {t : Term k []}
     {γ : GradeVector ([] : Scope).length} (hd : sig.Distinct) (hord : sig.LiftsInOrder)

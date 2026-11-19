@@ -17,8 +17,8 @@ import Sic.Core.RunTime.Uses.Signature
 The uniqueness of what the value of the extraction owns alone, of annex 22 of RFC 36: the erasure by
 `S^{11ᵐ}` of a closed term used in the mode `11ᵐ` and owned alone at run time, run under the
 program of a signature whose names are distinct, that declares its liftings in order and whose
-entries have their usages and their ownerships, has a value whose reach refers once at most to each address that it claims,
-`(uniq_⌊⌋)`.
+entries have their usages and their ownerships, has a value whose reach refers once at most to each
+address that it claims, `(uniq_⌊⌋)`.
 A closed term runs in the empty heap, which no frame refers to, so that the invariant of the
 evaluation, `reach_⇓`, is read at the frame that refers to nothing: what remains is that the value
 itself does not share what it owns alone.
