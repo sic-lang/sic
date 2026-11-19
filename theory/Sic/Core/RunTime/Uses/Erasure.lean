@@ -137,22 +137,18 @@ theorem Usage.recursor_used {sig : Signature} (hsig : sig.Distinct) (hord : sig.
   obtain ⟨i', hi'0⟩ := List.mem_iff_getElem?.1 (Telescope.mem_nestPositions.2 ⟨n, hn, hnp⟩ :
     0 + l ∈ Telescope.nestPositions ((con.fields (.ofLists qs ps hq hp)).nest decl.names) 0)
   obtain ⟨π, hπ, hf⟩ := hR'.factor_nested hsig hord ((Nat.zero_add l) ▸ hi'0) hσ
-  rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0] at hu
-  have hgl := hg i j T' con l p' hc hp'
-  rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0, List.getD_eq_getElem?_getD,
-    List.getElem?_zipWith, hπ] at hgl
   cases he : (us.grades i)[i']? with
   | none =>
-    rw [List.getD_eq_getElem?_getD, he] at hu
+    rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0, List.getD_eq_getElem?_getD,
+      he] at hu
     exact absurd (by
       show (m.grade * r * Grade.zero).run * σ.factor = .zero
       exact (by decide : ∀ (a b : Grade) (c : Multiplicity), (a * b * Grade.zero).run * c = .zero)
         _ _ _) hu
   | some e =>
-    rw [List.getD_eq_getElem?_getD, he] at hu
-    rw [he] at hgl
-    rw [hf] at hu
-    exact Grade.used_of_usage m r p'.usage (gs i l) e π hgl hu
+    obtain ⟨hre, hrπ⟩ := Telescope.resultGrades_of_index ((Nat.zero_add l) ▸ hi'0) he hπ
+    rw [hre, hf] at hu
+    exact Grade.used_of_usage m r p'.usage (gs i l) e π (hrπ ▸ hg i j T' con l p' hc hp') hu
 
 /-! ## Transports -/
 

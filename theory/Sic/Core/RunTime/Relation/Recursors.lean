@@ -86,38 +86,6 @@ theorem _root_.Sic.Grading.Grade.used_of_result : ∀ r p g e π : Grade,
       π.run ≠ .zero → p ∉ Mode.oneOne.erased := by
   decide
 
-/-- The grade of the recursive result of the field at the position `l`, the `j`-th field whose
-nesting has a position, and that grade times the factor of the result, read from the grades `es`
-and the factors `πs` of the results. -/
-theorem Telescope.resultGrades_of_index {ns : List (Nest Name)} {es πs : List Grade} {j l : Nat}
-    (hj : (Telescope.nestPositions ns 0)[j]? = some l) {e π : Grade} (he : es[j]? = some e)
-    (hπ : πs[j]? = some π) :
-    Telescope.resultGrades ns es l = e ∧
-      Telescope.resultGrades ns (List.zipWith (· * ·) es πs) l = e * π := by
-  have hj' : (Telescope.nestPositions ns 0)[j]? = some (0 + l) := by rw [Nat.zero_add]; exact hj
-  refine ⟨?_, ?_⟩
-  · rw [Telescope.resultGrades_of_nestPositions ns es 0 j l hj', List.getD_eq_getElem?_getD, he]
-    rfl
-  · rw [Telescope.resultGrades_of_nestPositions ns _ 0 j l hj', List.getD_eq_getElem?_getD,
-      List.getElem?_zipWith, he, hπ]
-    rfl
-
-/-- A field at a position of the fields of a constructor at which a type of the block is
-recursive has its recursions among the positions of the recursive fields. -/
-theorem Telescope.mem_positions_of_recursionAt {k' : Nat} {Γ : Scope} {ps : List Parameter}
-    {names : List Name} {Θ : Telescope k' Γ ps} {l : Nat} {D : Name}
-    (h : Θ.recursionAt names l = some D) :
-    l ∈ (Θ.recursion names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2) ∧ l < ps.length := by
-  unfold Telescope.recursionAt at h
-  cases hx : (Θ.recursion names)[l]? with
-  | none => rw [hx] at h; cases h
-  | some x =>
-    rw [hx] at h
-    cases h
-    refine ⟨List.mem_filterMap.2 ⟨(some D, l), List.mem_zipIdx_iff_getElem?.2 hx, rfl⟩, ?_⟩
-    rw [← Telescope.length_recursion names Θ]
-    exact (List.getElem?_eq_some_iff.1 hx).1
-
 section
 
 variable {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {decl : TypeDeclaration} {D : Name}

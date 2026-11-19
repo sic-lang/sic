@@ -46,6 +46,22 @@ theorem Telescope.length_recursion {k : Nat} {Γ : Scope} (names : List Name) :
   | [], .nil => rfl
   | _ :: _, .cons _ _ _ Θ => congrArg (· + 1) (Telescope.length_recursion names Θ)
 
+/-- A field at a position of the fields of a constructor at which a type of the block is
+recursive has its recursions among the positions of the recursive fields. -/
+theorem Telescope.mem_positions_of_recursionAt {k' : Nat} {Γ : Scope} {ps : List Parameter}
+    {names : List Name} {Θ : Telescope k' Γ ps} {l : Nat} {D : Name}
+    (h : Θ.recursionAt names l = some D) :
+    l ∈ (Θ.recursion names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2) ∧ l < ps.length := by
+  unfold Telescope.recursionAt at h
+  cases hx : (Θ.recursion names)[l]? with
+  | none => rw [hx] at h; cases h
+  | some x =>
+    rw [hx] at h
+    cases h
+    refine ⟨List.mem_filterMap.2 ⟨(some D, l), List.mem_zipIdx_iff_getElem?.2 hx, rfl⟩, ?_⟩
+    rw [← Telescope.length_recursion names Θ]
+    exact (List.getElem?_eq_some_iff.1 hx).1
+
 /-- The types of the recursive fields of a telescope are types of the block. -/
 theorem Telescope.mem_recursion {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
     {ps : List Parameter} → {Θ : Telescope k Γ ps} → some D ∈ Θ.recursion names → D ∈ names

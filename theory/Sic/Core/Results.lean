@@ -226,6 +226,22 @@ theorem Telescope.resultGrades_of_nestPositions : (ns : List (Nest Name)) → (e
         | nil => exact Telescope.resultGrades_nil _ _
         | cons e es => exact Telescope.resultGrades_of_nestPositions ns es (o + 1) j l h
 
+/-- The grade of the recursive result of the field at the position `l`, the `j`-th field whose
+nesting has a position, and that grade times the factor of the result, read from the grades `es`
+and the factors `πs` of the results. -/
+theorem Telescope.resultGrades_of_index {ns : List (Nest Name)} {es πs : List Grade} {j l : Nat}
+    (hj : (Telescope.nestPositions ns 0)[j]? = some l) {e π : Grade} (he : es[j]? = some e)
+    (hπ : πs[j]? = some π) :
+    Telescope.resultGrades ns es l = e ∧
+      Telescope.resultGrades ns (List.zipWith (· * ·) es πs) l = e * π := by
+  have hj' : (Telescope.nestPositions ns 0)[j]? = some (0 + l) := by rw [Nat.zero_add]; exact hj
+  refine ⟨?_, ?_⟩
+  · rw [Telescope.resultGrades_of_nestPositions ns es 0 j l hj', List.getD_eq_getElem?_getD, he]
+    rfl
+  · rw [Telescope.resultGrades_of_nestPositions ns _ 0 j l hj', List.getD_eq_getElem?_getD,
+      List.getElem?_zipWith, he, hπ]
+    rfl
+
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
 each field that has one, at its position `l` in the fields whose entries have the parameters `ps`
