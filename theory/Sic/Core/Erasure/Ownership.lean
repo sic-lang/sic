@@ -187,7 +187,7 @@ mutual
 /-- The term that a skeleton stands for has the ownership `1` of a new value. -/
 theorem Skeleton.ownership {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} :
     (k : Skeleton) → Target.Ownership Ω φ .one k.target
-  | .erased => .erased _
+  | .empty => .erased _
   | .ctor _ ks => .ctor (Skeleton.ownership_targets ks)
 
 -- ADE: none.

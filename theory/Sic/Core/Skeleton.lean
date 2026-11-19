@@ -23,26 +23,23 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- `Z`: a skeleton, `↯`, or a constructor of the case `i` of its block applied to skeletons, each
-stored at the multiplicity `0` and at the requirement `ω`, the term of the target language that it
-stands for being built of these alone.
+/-- `Z`: a skeleton, the empty skeleton `□`, which holds nothing, or the constructor `c_i` of the
+case `i` in its block applied to a skeleton for each of its fields.
 RFC: `\mathsf{syntax}_Z` -/
 inductive Skeleton : Type where
-  /-- `↯`. -/
-  | erased : Skeleton
-  /-- `c_i(Z₁, …, Z_a)`. -/
+  /-- `□`. -/
+  | empty : Skeleton
+  /-- `c_i⟨Z₁, …, Z_a⟩`. -/
   | ctor (case : Nat) (fields : List Skeleton) : Skeleton
 
 -- ADE: none.
 /-- The skeleton of the data type `D` of the block of the type declaration `decl`, at the instance
-`I`, within the depth `d`: the constructor of its case applied to `↯` for each field that is not
-recursive and to the skeleton of the type of each recursive field, each at the multiplicity `0`,
-since a skeleton holds no value that a use at run time reads, and at the requirement `ω`, which
-states nothing, when `D` has exactly one constructor, and `↯` when it has none or several, or when
-the depth is reached. -/
+`I`, within the depth `d`: the constructor of its case applied to `□` for each field that is not
+recursive and to the skeleton of the type of each recursive field, when `D` has exactly one
+constructor, and `□` when it has none or several, or when the depth is reached. -/
 def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades) :
     Nat → Name → Skeleton
-  | 0, _ => .erased
+  | 0, _ => .empty
   | d + 1, D =>
     match decl.dataTypes.find? (·.name == D) with
     | some T =>
@@ -51,10 +48,10 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
         match decl.cases.findIdx? (fun x => x.2.1.name == D && x.2.2.name == con.name) with
         | some i => .ctor i (((con.fields I).recursion decl.names).map fun
             | some D' => decl.skeleton I d D'
-            | none => .erased)
-        | none => .erased
-      | _ => .erased
-    | none => .erased
+            | none => .empty)
+        | none => .empty
+      | _ => .empty
+    | none => .empty
 
 -- ADE: none.
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
@@ -72,7 +69,7 @@ def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
 
 -- ADE: none.
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
-in the last entry of the signature that declares it, and `↯` when the signature has no such entry,
+in the last entry of the signature that declares it, and `□` when the signature has no such entry,
 which the erasure of a recursor on an erased term reads: in a block whose types have one
 constructor at most, the type of a term gives its form, which the skeleton rebuilds, so that the
 recursor runs its branches on it.
@@ -82,7 +79,7 @@ constructor, so that the term would hold a term of the same form, without end.
 RFC: `\mathsf{skeleton}_D` -/
 def Signature.skeleton (sig : Signature) (D : Name) (qs : List Quality)
     (ps : List Grade) : Skeleton :=
-  (sig.findSome? (Entry.skeleton D qs ps)).getD .erased
+  (sig.findSome? (Entry.skeleton D qs ps)).getD .empty
 
 /-- An entry that does not introduce the name `D` gives the skeleton of no data type named `D`. -/
 theorem Entry.skeleton_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :

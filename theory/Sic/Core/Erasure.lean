@@ -505,7 +505,7 @@ mutual
 since it mentions no variable.
 RFC: `\mathsf{target}_Z` -/
 def Skeleton.target {n : Nat} : Skeleton → Target n
-  | .erased => .erased
+  | .empty => .erased
   | .ctor i ks => .ctor i (Skeleton.targets ks)
 
 -- ADE: none.
@@ -794,7 +794,7 @@ mutual
 -- ADE: none.
 /-- The term of a skeleton is data. -/
 theorem Skeleton.isData {n : Nat} : (k : Skeleton) → (k.target : Target n).IsData
-  | .erased => .erased
+  | .empty => .erased
   | .ctor _ ks => .ctor (Skeleton.isData_targets ks)
 
 -- ADE: none.
