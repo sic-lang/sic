@@ -17,6 +17,14 @@ in every premise, as the context of the typing is.
 The declared types give the ownership of their instances, the data types that of their
 constructors and of their recursors, and the codata types that of their observations and of their
 corecursors.
+
+A recursor on a block with nested fields reads the shapes of these fields, in its mode and on each
+axis of the grades: the requirement of its recursion reads the paths of the shapes, the destructors
+that they observe require ownerships within the term at this requirement, and its branches are
+checked a second time, as the corecursors of the nested results run them; the variable of a nested
+result has the ownership of a new value.
+Until the erasure gives the nested results, a premise of the recursor excludes the nested fields, as
+the usage does.
 -/
 
 @[expose] public section
@@ -37,14 +45,41 @@ def Ownership.extendFields {Γ : Scope} (φ : Var Γ .var → Grade) (o g : Grad
       (fun | .zero => (o * p.requirement) * (g * p.usage) | .succ x => φ x) o g ps
 
 -- ADE: none.
-/-- `φ, ȳ ◀ p · ē`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
-`p · eᵢ` of `n` new variables, `eᵢ` being the grade `es` gives the `i`-th one, the first one first:
-the value of ownership `p` is used `eᵢ` times through the variable, as its usage allows. -/
-def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) (p : Grade) :
-    List Grade → (n : Nat) → Var (Γ.extend n) .var → Grade
-  | _, 0 => φ
-  | es, n + 1 => Ownership.extendResults (Γ := .var :: Γ)
-      (fun | .zero => p * es.headD Grade.zero | .succ x => φ x) p es.tail n
+/-- `φ, ȳ ◀ ō · ē`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
+`oᵢ · eᵢ` of `n` new variables, `oᵢ` and `eᵢ` being the ownership and the grade that `os` and `es`
+give the `i`-th one, the first one first, and `ωωᵖ · eᵢ` for a variable without `oᵢ`: the value of
+ownership `oᵢ` is used `eᵢ` times through the variable, as its usage allows. -/
+def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) :
+    List Grade → List Grade → (n : Nat) → Var (Γ.extend n) .var → Grade
+  | _, _, 0 => φ
+  | os, es, n + 1 => Ownership.extendResults (Γ := .var :: Γ)
+      (fun | .zero => os.headD .unrestrictedUnrestricted * es.headD Grade.zero | .succ x => φ x)
+      os.tail es.tail n
+
+-- ADE: none.
+/-- `own_p(y)`: the ownership of the value of the recursive result of a field whose type has the
+nesting `ν`, in a branch of a recursor of the ownership `p`: `11ᵖ` for a nested result, the
+corecursor of a lifting, a new value, and `p` for the result of a recursive field, a result of the
+recursor. -/
+def Nest.resultOwnership (p : Grade) : Nest Name → Grade
+  | .inst _ => .linearLinear
+  | _ => p
+
+-- ADE: none.
+/-- The ownerships of the values of the recursive results of the fields whose types have the
+nestings `ns`, those of the recursive and of the nested fields, in order, in a branch of a recursor
+of the ownership `p`. -/
+def Telescope.resultOwnerships (p : Grade) (ns : List (Nest Name)) : List Grade :=
+  ns.filterMap fun n => if n.isPlain then none else some (n.resultOwnership p)
+
+-- ADE: none.
+/-- A constructor of the block of the type declaration `decl` has, at the instance `I`, a nested
+field, a field whose type is at the nesting of an instance. -/
+def TypeDeclaration.HasNestedField (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades) :
+    Prop :=
+  ∃ (i j : Nat) (T : DataType decl.sorts decl.grades decl.levels decl.scope)
+    (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
+    decl.cases[i]? = some (j, T, con) ∧ ∃ ms, Nest.inst ms ∈ (con.fields I).nest decl.names
 
 -- ADE: none.
 /-- `φ, x̄ ◀ ō · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
@@ -119,15 +154,27 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
   times the requirement `r̂` of its recursion, times the requirement of the entry of each field,
   times the grade `⌜m⌝ · r · q` with which the branch uses the field of grade `q`, for the variable
-  of the field, and with the ownership `p` of the recursor times the grade `e` that the branch gives
-  each recursive result, for its variable: a field of a unique value has the ownership its entry
-  requires, a field of a shared value is shared, a recursive result is a result of the recursor, and
-  a variable used more than once is shared; the branches run at each level of the recursion, on a
-  recursive field, and a recursion is a use of its field, whose ownership is that of its value
-  times the coefficient of the variable of the field, the requirement of its entry times the grade
-  `⌜m⌝ · r · q`, so that they see the term at the ownership `o · r̂`, which every level has; each
-  nested field of the block has a shape, whose paths the requirement of the recursion reads, so
-  that it reads the liftings that the signature declares.
+  of the field, and with the ownership `own_p(y)` of each recursive result times the grade `e` that
+  the branch gives it, for its variable, `p` for the result of a recursive field, a result of the
+  recursor, and `11ᵖ` for a nested result, the corecursor of a lifting, a new value: a field of a
+  unique value has the ownership its entry requires, a field of a shared value is shared, and a
+  variable used more than once is shared; the branches run at each level of the recursion, on a
+  recursive field or on an observation of a nested field, and a recursion is a use of its field,
+  whose ownership is that of its value times the coefficient of the variable of the field, the
+  requirement of its entry times the grade `⌜m⌝ · r · q`, or times the ownerships along the path of
+  the observation, which `r̂` reads from the shape of the field, so that they see the term at the
+  ownership `o · r̂`, which every level has.
+  Each nested field of the block has a shape, which reads the liftings that the signature declares;
+  on each axis of the grades, each destructor that its shape observes requires of the value that it
+  observes an ownership within `o · r̂`, and the arguments of its observation meet their requirements
+  and give its result an ownership, `Shape.Meets`.
+  When the block has a nested field, each branch is checked a second time, with the ownership `χ`,
+  the scope at `ς · φ` and the results at `own_χ(y)`: the corecursor of a nested result captures
+  the scope, which its observations see at the requirement `ς` of its destructors, and runs the
+  recursor on the observations of the field, whose results have the ownership `χ`; any branch,
+  since a recursion from a nested result may reach any constructor.
+  The premise `hn` excludes the nested fields until the erasure gives their results, which the
+  ownership of the erasure then reads.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -136,6 +183,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
       (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
+      (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+        ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms)
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
@@ -145,9 +194,26 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields φ
           (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
-          (m.grade * r)
-          (con.params (.ofLists qs ps hq hp))) p (us.grades i)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
+          (m.grade * r) (con.params (.ofLists qs ps hq hp)))
+          (Telescope.resultOwnerships p ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
+          (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m p u)
+      (hu' : decl.HasNestedField (.ofLists qs ps hq hp) → ∀ i j T' con u,
+        decl.cases[i]? = some (j, T', con) →
+        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        Ownership sig (Ownership.extendResults (Ownership.extendFields (fun x => ς * φ x)
+          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
+          (m.grade * r) (con.params (.ofLists qs ps hq hp)))
+          (Telescope.resultOwnerships χ ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
+          (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m χ u)
+      (hmeets : ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
+        (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
+        decl.cases[i]? = some (j, T', con) →
+        ∀ ax ∈ [Grade.run, Grade.total], ∀ (l : Nat) (σ : Shape),
+          (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m ax decl.names qs ps χ
+            (.ofLists qs ps hq hp))[l]? = some (some σ) →
+          σ.Meets (ax (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps
+            (.ofLists qs ps hq hp))) (ax ς)) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
   /-- An observation has the ownership `o` of its term times the value `v` of the ownership `ψ` of
   the result of its destructor, given the ownerships of its arguments, which satisfy the requirements

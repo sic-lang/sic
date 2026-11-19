@@ -131,15 +131,34 @@ theorem Ownership.extendFields_eq {Γ : Scope} (φ : Var Γ .var → Grade) (o g
       List.getElem?_cons_zero, Option.map_some, Option.getD_some]
     rfl
 
-/-- The ownerships extended by `n` recursive results, each at `p` times its grade, are extended by
-their values in order. -/
-theorem Ownership.extendResults_eq {Γ : Scope} (φ : Var Γ .var → Grade) (p : Grade) :
-    (es : List Grade) → (n : Nat) → Ownership.extendResults φ p es n =
-      Ownership.extendWith φ (fun l => p * es.getD l .zero) n
-  | _, 0 => rfl
-  | es, n + 1 => by
-    rw [Ownership.extendResults, Ownership.extendResults_eq _ p es.tail n, Ownership.extendWith]
-    cases es <;> rfl
+/-- The ownerships extended by `n` recursive results, each at its ownership times its grade, are
+extended by their values in order. -/
+theorem Ownership.extendResults_eq {Γ : Scope} (φ : Var Γ .var → Grade) :
+    (os es : List Grade) → (n : Nat) → Ownership.extendResults φ os es n =
+      Ownership.extendWith φ (fun l => os.getD l .unrestrictedUnrestricted * es.getD l .zero) n
+  | _, _, 0 => rfl
+  | os, es, n + 1 => by
+    rw [Ownership.extendResults, Ownership.extendResults_eq _ os.tail es.tail n,
+      Ownership.extendWith]
+    cases os <;> cases es <;> rfl
+
+/-- The recursive results of fields none of which is nested have the ownership `p` of the recursor,
+each of them. -/
+theorem Telescope.resultOwnerships_getD {p d : Grade} :
+    (ns : List (Nest Name)) → (ps : List Parameter) → (∀ ν ∈ ns, ∀ ms, ν ≠ Nest.inst ms) →
+      ∀ l, l < (Telescope.nestResultParams ns ps).length →
+        (Telescope.resultOwnerships p ns).getD l d = p
+  | [], _, _, _, h => nomatch h
+  | _ :: _, [], _, _, h => by cases ‹Nest Name› <;> exact nomatch h
+  | .plain :: ns, _ :: ps, hn, l, h => by
+    simp only [Telescope.resultOwnerships, List.filterMap_cons, Nest.isPlain, ↓reduceIte]
+    exact Telescope.resultOwnerships_getD ns ps (fun ν hν => hn ν (List.mem_cons_of_mem _ hν)) l h
+  | .direct _ :: ns, _ :: ps, hn, 0, _ => rfl
+  | .direct _ :: ns, _ :: ps, hn, l + 1, h => by
+    simp only [Telescope.resultOwnerships, List.filterMap_cons, Nest.isPlain]
+    exact Telescope.resultOwnerships_getD ns ps (fun ν hν => hn ν (List.mem_cons_of_mem _ hν)) l
+      (Nat.lt_of_succ_lt_succ h)
+  | .inst ms :: _, _ :: _, hn, _, _ => absurd rfl (hn _ List.mem_cons_self ms)
 
 /-- The ownerships extended by the variables of the arguments of a telescope, each at its ownership
 times a grade, are extended by their values in order. -/
@@ -395,7 +414,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     rw [Parameter.map_eta] at hos
     exact .ctor hos
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ := χ) (κ := κ)
-      (us := us) (o := o) (p := p) h hq hp ht _ hul hus hu => by
+      (us := us) (o := o) (p := p) h hq hp ht _ hn hul hus hu _ _ => by
     -- The branches, whose variables have the run-time multiplicities of their ownerships.
     have hbr : ∀ o',
         (r ∉ Mode.oneOne.erased →
@@ -425,8 +444,9 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           (Ownership.extendResults (Ownership.extendFields φ
             (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
             (m.grade * r)
-            (con.params (.ofLists qs ps hq hp))) p (us.grades i)
-            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) := by
+            (con.params (.ofLists qs ps hq hp)))
+            (Telescope.resultOwnerships p ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
+            (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) := by
         rw [Ownership.extendResults_eq, Ownership.extendFields_eq]
         refine Ownership.RunAgree.extendBinders hφ _ _ _ _ (fun l => ?_) (fun l => ?_)
         · -- The variable of a field.
@@ -437,7 +457,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             exact Multiplicity.mul_fieldCoefficient_zero _ _ _ _
           · rw [ho₁ hr]
             exact Multiplicity.mul_fieldCoefficient _ _ _ _
-        · -- The variable of a recursive result.
+        · -- The variable of a recursive result, of the ownership `p`, since no field is nested.
+          rw [Telescope.resultOwnerships_getD _ _ (hn i j T' con hc) l l.2]
           rw [hgs', (Grade.run_op _ _).2.1, List.getD_eq_getElem?_getD,
             List.getElem?_eq_getElem (by simp), Option.getD_some, _root_.Vector.getElem_toList]
           rfl

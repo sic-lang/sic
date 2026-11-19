@@ -230,4 +230,61 @@ theorem Constructor.NestedHaveShapes.append {sig pre : Signature} (hd : (pre ++ 
   rw [Constructor.nestedShapes_append hd hdecl qs ps χ h]
   exact h l ns hl
 
+/-- A field of a telescope whose recursive result has the shape of a lifting is nested, when the
+types of the block have the shape of the recursor itself: a field at no position has no shape, and
+a recursive field the shape of the type of its block. -/
+theorem Telescope.nest_of_nestedShapes {lookup : Shape.Lookup}
+    {block : Name → Option Shape.Motive}
+    (hb : ∀ D μ, block D = some μ → ∃ K, μ.next = .recursor K) (names : List Name) :
+    {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) → {l : Nat} → {σ : Shape} →
+      (Θ.nestedShapes v lookup block names)[l]? = some (some σ) →
+        ∃ ms, (Θ.nest names)[l]? = some (.inst ms)
+  | _, [], .nil, _, _, h => nomatch h
+  | Γ, _ :: _, .cons _ _ A Θ, l + 1, _, h =>
+    Telescope.nest_of_nestedShapes hb names Θ h
+  | Γ, _ :: _, .cons _ _ A Θ, 0, σ, h => by
+    simp only [Telescope.nestedShapes, List.getElem?_cons_zero, Option.some.injEq] at h
+    simp only [Telescope.nest, List.getElem?_cons_zero, Option.some.injEq]
+    have h₀ : ∀ (a : Scope.Entry) (x : Var Γ a), (Nesting.plain : Nesting Shape.Motive Γ) x =
+        .plain := fun _ _ => rfl
+    cases hn : A.blockNest names with
+    | inst ms => exact ⟨ms, rfl⟩
+    | plain =>
+      rw [hn, Term.shape_eq_none_of_avoids (A := A) (ν := Nesting.plain)
+        fun x hx => absurd (h₀ _ x) hx] at h
+      exact nomatch h
+    | direct E =>
+      rw [hn] at h
+      exfalso
+      cases A with
+      | inst D _ _ _ _ =>
+        simp only [Term.shape] at h
+        cases hD : block D with
+        | none => rw [hD] at h; exact nomatch h
+        | some μ =>
+          rw [hD] at h
+          obtain ⟨K, hK⟩ := hb D μ hD
+          obtain ⟨next, f, o⟩ := μ
+          cases hK
+          exact nomatch h
+      | var x _ => exact nomatch h
+      | sort _ => exact nomatch h
+      | const _ _ _ _ => exact nomatch h
+      | ctor _ _ _ _ _ _ _ => exact nomatch h
+      | recursor _ _ _ _ _ _ _ _ _ _ _ _ => exact nomatch h
+      | obs _ _ _ _ _ _ _ _ => exact nomatch h
+      | corec _ _ _ _ _ _ _ _ _ => exact nomatch h
+
+/-- A field of a constructor whose recursive result has the shape of a lifting is nested. -/
+theorem Constructor.nest_of_nestedShapes {j g k' : Nat} {Δ : Scope} {sig : Signature}
+    {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
+    {con : Constructor j g k' Δ} {I : Instance j g} {l : Nat} {σ : Shape}
+    (h : (con.nestedShapes sig v md ax names qs ps χ I)[l]? = some (some σ)) :
+    ∃ ms, ((con.fields I).nest names)[l]? = some (.inst ms) :=
+  Telescope.nest_of_nestedShapes (fun D μ hD => by
+    unfold Signature.blockShapes at hD
+    split at hD
+    · cases hD; exact ⟨_, rfl⟩
+    · exact nomatch hD) names _ h
+
 end Sic.Core

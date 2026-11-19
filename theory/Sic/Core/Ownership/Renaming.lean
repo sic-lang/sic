@@ -48,12 +48,12 @@ variables by a renaming lifted under them the same ownerships when the ownership
 extension do. -/
 theorem Ownership.extendResults_liftN :
     {Γ Δ : Scope} → {φ' : Var Γ .var → Grade} → {φ : Var Δ .var → Grade} → {α : Ren Γ Δ} →
-      (∀ x, φ' (α x) = φ x) → (p : Grade) → (es : List Grade) → (n : Nat) →
-      ∀ x, Ownership.extendResults φ' p es n (Ren.liftN n α x) = Ownership.extendResults φ p es n x
+      (∀ x, φ' (α x) = φ x) → (os es : List Grade) → (n : Nat) →
+      ∀ x, Ownership.extendResults φ' os es n (Ren.liftN n α x) = Ownership.extendResults φ os es n x
   | _, _, _, _, _, h, _, _, 0 => h
-  | Γ, Δ, _, _, α, h, p, es, n + 1 =>
+  | Γ, Δ, _, _, α, h, os, es, n + 1 =>
     Ownership.extendResults_liftN (Γ := .var :: Γ) (Δ := .var :: Δ) (α := Ren.lift α)
-      (fun | .zero => rfl | .succ x => h x) p es.tail n
+      (fun | .zero => rfl | .succ x => h x) os.tail es.tail n
 
 /-- The ownerships of the variables extended by those of the arguments of a telescope give the
 images of the variables by a renaming lifted under them the same ownerships when the ownerships
@@ -112,8 +112,9 @@ where
     | .ctor h hc hq hp hts, hθ, hφ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (ownershipArgs hts hθ hφ)
-    | .recursor (us := us) h hq hp ht hns hul hus hu, hθ, hφ => by
-      refine .recursor h hq hp (ownership ht hθ hφ) hns ((Branches.length_subst _ us).trans hul) ?_ ?_
+    | .recursor (us := us) h hq hp ht hns hn hul hus hu hu' hmeets, hθ, hφ => by
+      refine .recursor h hq hp (ownership ht hθ hφ) hns hn ((Branches.length_subst _ us).trans hul)
+        ?_ ?_ ?_ hmeets
       · intro i j T' con hi
         obtain ⟨u, hu'⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu'⟩
@@ -122,6 +123,13 @@ where
         rw [Branches.grades_subst]
         exact ownership (hu i j T' con u₀ hi hu₀) (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
           (Ownership.extendResults_liftN (Ownership.extendFields_liftN hφ _ _ _) _ _ _)
+      · intro hN i j T' con u hi hu''
+        obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_subst_inv _ hu''
+        rw [Branches.grades_subst]
+        exact ownership (hu' hN i j T' con u₀ hi hu₀)
+          (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
+          (Ownership.extendResults_liftN (Ownership.extendFields_liftN
+            (fun x => congrArg (_ * ·) (hφ x)) _ _ _) _ _ _)
     | .obs h hq hp hd ht hbs hv hf hς, hθ, hφ => by
       rw [Term.obs_subst]
       exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf hς
