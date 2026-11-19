@@ -32,22 +32,6 @@ open Sic.Grading
 
 /-! ## Signatures -/
 
-/-- An entry that does not introduce the name `D` gives the skeleton of no data type named `D`. -/
-theorem Entry.skeleton_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.skeleton D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.skeleton]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
-
 -- ADE: none.
 /-- In a signature whose names are distinct, the skeleton of a data type is that of the block of its
 declaration, at the instance, within the depth of the number of the types of the block. -/

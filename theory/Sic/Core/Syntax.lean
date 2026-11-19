@@ -670,27 +670,26 @@ theorem Parameter.recursionAxis_ne_zero :
 -- ADE: none.
 /-- `r̂`: the requirement of the recursion of a recursor that uses its term with the grade `c`, on
 a block whose constructors have, in order, the recursive fields at the positions `es` and the
-parameters `fs` of their fields: the meet, on each axis, of `11ᵖ` and of the coefficient
-`r · (c · q)` of each recursive field of the requirement `r` and of the grade `q` that the recursor
-uses on this axis, the coefficient of the variable of the field, a field without parameter, in a
-term that no declaration types, having the coefficient `ωωᵖ`, which states nothing: each recursion
-of a recursor is a use of a recursive field, whose ownership is the ownership of its value times
-this coefficient, so that the branches, which run at each level of the recursion, see the term of
-the recursor at its ownership times `r̂`, which every level has, since the grades are idempotent.
+parameters `fs` of their fields, and whose nested fields give on each axis `ax` the pairs
+`nested ax`: the meet, on each axis, of `11ᵖ`, of the coefficient `r · (c · q)` of each recursive
+field of the requirement `r` and of the grade `q` that the recursor uses on this axis, the
+coefficient of the variable of the field, a field without parameter, in a term that no declaration
+types, having the coefficient `ωωᵖ`, which states nothing, and of the product `ϱ · π` of each pair
+`π ◀ ϱ` of a nested field whose multiplicity `π` is not `0`: each recursion of a recursor is a use
+of a recursive field, whose ownership is the ownership of its value times this coefficient, or of
+an observation of a nested field, whose ownership the pair bounds, so that the branches, which run
+at each level of the recursion, see the term of the recursor at its ownership times `r̂`, which
+every level has, since the grades are idempotent; the pairs of the nested fields are read from
+their shapes on each axis, which the syntax does not give.
 RFC: `\mathsf{recursion}_p` -/
-def Parameter.recursion (c : Grade) (es : List (List Nat)) (fs : List (List Parameter)) : Grade :=
+def Parameter.recursion (c : Grade) (es : List (List Nat)) (fs : List (List Parameter))
+    (nested : (Grade → Multiplicity) → List (Multiplicity × Multiplicity)) : Grade :=
   let xs : List (Grade × Grade) := (List.zipWith (fun e f => e.map fun l =>
     ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
       (.unrestrictedUnrestricted, .linearLinear)) es fs).flatten
-  { run := Parameter.recursionAxis (xs.map fun x => (x.1.run, x.2.run))
-    total := Parameter.recursionAxis (xs.map fun x => (x.1.total, x.2.total))
+  { run := Parameter.recursionAxis (xs.map (fun x => (x.1.run, x.2.run)) ++ nested Grade.run)
+    total := Parameter.recursionAxis (xs.map (fun x => (x.1.total, x.2.total)) ++ nested Grade.total)
     run_zero := fun h => absurd h (Parameter.recursionAxis_ne_zero _) }
-
-/-- `r̂`: the requirement of the recursion of a recursor that uses its term with the grade `c`, on
-the block at the instance `I`. -/
-def TypeDeclaration.recursionRequirement (decl : TypeDeclaration)
-    (I : Instance decl.sorts decl.grades) (c : Grade) : Grade :=
-  Parameter.recursion c (decl.recursivePositions I) (decl.cases.map fun x => x.2.2.params I)
 
 /-- An entry of the signature.
 RFC: `\mathsf{syntax}_e` -/
@@ -1019,17 +1018,6 @@ RFC: `\mathsf{parameters}_{\bar u}` -/
 def Signature.caseFieldParams (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
     Option (List (List Parameter)) :=
   sig.findSome? (Entry.caseFieldParams D qs ps)
-
--- ADE: none.
-/-- `recursion_Σ(T, r)`: the requirement `r̂` of the recursion of a recursor of the grade `r` on
-the block of the data type `D`, at the instance of the qualities `qs` and of the grades `ps`, read
-from its recursive fields and the parameters of their entries in the signature, which the erasure of
-the recursor keeps at run time.
-RFC: `\mathsf{recursion}_c` -/
-def Signature.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality)
-    (ps : List Grade) (r : Grade) : Grade :=
-  Parameter.recursion r ((sig.recursiveFields D qs ps).getD [])
-    ((sig.caseFieldParams D qs ps).getD [])
 
 -- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,

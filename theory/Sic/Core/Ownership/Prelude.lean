@@ -77,14 +77,18 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
       (Ownership.extendFields φ o (m.grade * r) [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht rfl ?_ ?_
+  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht ?_ rfl ?_ ?_
+  · intro i j T' con hi ax _ l ns hl
+    match i, hi with
+    | 0, rfl =>
+      exact nomatch (show Nest.inst ns ∈ [Nest.plain, Nest.plain] from List.mem_of_getElem? hl)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.pair.recursionRequirement _ _ = Grade.one from rfl,
+      rw [show Prelude.pair.recursionRequirement _ _ _ _ _ _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu
 
@@ -96,14 +100,18 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht rfl ?_ ?_
+  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht ?_ rfl ?_ ?_
+  · intro i j T' con hi ax _ l ns hl
+    match i, hi with
+    | 0, rfl =>
+      exact nomatch (show Nest.inst ns ∈ ([] : List (Nest Name)) from List.mem_of_getElem? hl)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u, rfl⟩
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.unit.recursionRequirement _ _ = Grade.one from rfl,
+      rw [show Prelude.unit.recursionRequirement _ _ _ _ _ _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu
 
@@ -120,7 +128,11 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     Ownership sig φ m p'
       (.recursor r ς χ "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
-  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht rfl ?_ ?_
+  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht ?_ rfl ?_ ?_
+  · intro i j T' con hi ax _ l ns hl
+    match i, hi with
+    | 0, rfl => exact nomatch (show Nest.inst ns ∈ [Nest.plain] from List.mem_of_getElem? hl)
+    | 1, rfl => exact nomatch (show Nest.inst ns ∈ [Nest.plain] from List.mem_of_getElem? hl)
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨u₀, rfl⟩
@@ -128,11 +140,11 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl =>
-      rw [show Prelude.step.recursionRequirement _ _ = Grade.one from rfl,
+      rw [show Prelude.step.recursionRequirement _ _ _ _ _ _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu₀
     | 1, rfl, rfl =>
-      rw [show Prelude.step.recursionRequirement _ _ = Grade.one from rfl,
+      rw [show Prelude.step.recursionRequirement _ _ _ _ _ _ _ = Grade.one from rfl,
         Grade.modality.semiring.mul_one]
       exact hu₁
 

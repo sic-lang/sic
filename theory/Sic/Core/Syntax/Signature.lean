@@ -591,10 +591,12 @@ theorem Parameter.recursionAxis_le {ϱ π : Multiplicity} (hπ : π ≠ .zero) :
 at run time, the coefficient of each recursive field of each constructor of the block that the
 recursor uses at run time. -/
 theorem Parameter.recursion_run_le {c : Grade} {es : List (List Nat)} {fs : List (List Parameter)}
+    {nested : (Grade → Multiplicity) → List (Multiplicity × Multiplicity)}
     {i l : Nat} {e : List Nat} {f : List Parameter} {p : Parameter} (he : es[i]? = some e)
     (hf : fs[i]? = some f) (hl : l ∈ e) (hp : f[l]? = some p) (hc : (c * p.usage).run ≠ .zero) :
-    (Parameter.recursion c es fs).run ≤ p.requirement.run * (c * p.usage).run := by
-  refine Parameter.recursionAxis_le hc (List.mem_map.2 ⟨(p.requirement, c * p.usage), ?_, rfl⟩)
+    (Parameter.recursion c es fs nested).run ≤ p.requirement.run * (c * p.usage).run := by
+  refine Parameter.recursionAxis_le hc (List.mem_append_left _
+    (List.mem_map.2 ⟨(p.requirement, c * p.usage), ?_, rfl⟩))
   have hx : (fun l => ((f[l]?).map fun p => (p.requirement, c * p.usage)).getD
       (Grade.unrestrictedUnrestricted, Grade.linearLinear)) l = (p.requirement, c * p.usage) := by
     simp only [hp, Option.map_some, Option.getD_some]
@@ -603,21 +605,6 @@ theorem Parameter.recursion_run_le {c : Grade} {es : List (List Nat)} {fs : List
     (Grade.unrestrictedUnrestricted, Grade.linearLinear),
     List.mem_of_getElem? (i := i) ?_, List.mem_map_of_mem hl⟩
   rw [List.getElem?_zipWith, he, hf]
-
--- ADE: none.
-/-- The requirement of the recursion of a recursor on a block is below, at run time, the coefficient
-of each recursive field of each of its constructors that the recursor uses at run time, at each
-instance. -/
-theorem TypeDeclaration.recursionRequirement_run_le {decl : TypeDeclaration}
-    {I : Instance decl.sorts decl.grades} {c : Grade} {i j : Nat}
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
-    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
-    (hi : decl.cases[i]? = some (j, T, con)) {l : Nat}
-    (hl : l ∈ ((con.fields I).recursion decl.names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2))
-    {p : Parameter} (hp : (con.params I)[l]? = some p) (hc : (c * p.usage).run ≠ .zero) :
-    (decl.recursionRequirement I c).run ≤ p.requirement.run * (c * p.usage).run :=
-  Parameter.recursion_run_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
-    (by rw [List.getElem?_map, hi]; rfl) hl hp hc
 
 /-- An entry that does not introduce the name `D` gives the parameters of the fields of the cases of no
 data type named `D`. -/

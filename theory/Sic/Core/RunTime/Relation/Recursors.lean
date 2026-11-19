@@ -1043,7 +1043,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ))
     (ht : RunsAs sig ι P H₁ t a ((Term.inst D qs ls ps as).subst σ)) :
     ∃ b H₂ tr, EvalRec P ϖ₀ H₁ E r.run
-        (sig.recursionRequirement D qs ps r).run (us.erase sig Mode.oneOne.erased hΓ r
+        (sig.recursionRequirement D qs ps ⟨κ.quality, r, ς⟩ χ').run (us.erase sig Mode.oneOne.erased hΓ r
         ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₂ tr ∧
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
@@ -1069,7 +1069,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
           (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
   let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
     ((sig.caseFieldParams T.name qs ps).getD [])
-  let ϱ := (sig.recursionRequirement T.name qs ps r).run
+  let ϱ := (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
   -- The relations of the canonical terms that `(®_μ)` relates and on whose addresses the erased
@@ -1107,11 +1107,13 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         rw [Telescope.length_recursion, Nat.zero_add] at hlt
         refine ⟨_, _, by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl,
           by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl, fun hne => ?_⟩
-        show (sig.recursionRequirement T.name qs ps r).run ≤ _
-        rw [Signature.recursionRequirement, hd.recursiveFields ⟨hdecl, hT, rfl⟩ hq hp,
-          hd.caseFieldParams ⟨hdecl, hT, rfl⟩ hq hp, Option.getD_some, Option.getD_some]
-        have hle := TypeDeclaration.recursionRequirement_run_le (c := r) hi' hl
-          (List.getElem?_eq_getElem hlt) (by rwa [(Grade.run_op _ _).2.1])
+        show (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run ≤ _
+        rw [hd.recursionRequirement_eq ⟨hdecl, hT, rfl⟩ hq hp]
+        have h1 : Mode.oneOne.grade * r = r := Grade.modality.semiring.one_mul r
+        have hle := TypeDeclaration.recursionRequirement_run_le (sig := sig)
+          (v := ⟨κ.quality, r, ς⟩) (m := .oneOne) (χ := χ') (qs := qs) (ps := ps) hi' hl
+          (List.getElem?_eq_getElem hlt) (by rw [h1]; rwa [(Grade.run_op _ _).2.1])
+        rw [h1] at hle
         rwa [(Grade.run_op _ _).2.1] at hle)
       (fun h0 => absurd ((by decide : ∀ g : Grade, g.run = .zero → g ∈ Mode.oneOne.erased) r h0) hr)
       fun ts hfs hts hrecV => by

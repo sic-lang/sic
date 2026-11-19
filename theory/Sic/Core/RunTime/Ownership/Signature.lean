@@ -51,7 +51,7 @@ theorem OwnershipSig.compile_ownership {sig : Signature} (hd : sig.Distinct)
     cases hc
     rw [← hn.1, hΩ _ _ _ _ _ _ _ (.constantDefinition he)]
     exact Ownership.erase_ownership hd hs hΩ Scope.FirstOrder.nil (fun x => nomatch x) hn.2
-      (hs.constantDefinition_ownership he (.ofLists qs ps hq hp))
+      (hs.constantDefinition_ownership hd he (.ofLists qs ps hq hp))
   | _ => simp only [Entry.compile] at hc; exact nomatch hc
 
 end Sic.Core

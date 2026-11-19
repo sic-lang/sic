@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Syntax
+import Sic.Core.Syntax.Signature
 
 /-!
 # Skeletons
@@ -81,5 +82,21 @@ RFC: `\mathsf{skeleton}_D` -/
 def Signature.skeleton (sig : Signature) (D : Name) (qs : List Quality)
     (ps : List Grade) : Skeleton :=
   (sig.findSome? (Entry.skeleton D qs ps)).getD .erased
+
+/-- An entry that does not introduce the name `D` gives the skeleton of no data type named `D`. -/
+theorem Entry.skeleton_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.skeleton D qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
+    simp only [Entry.skeleton]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.map_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
 
 end Sic.Core

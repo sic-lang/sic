@@ -113,8 +113,8 @@ where
     | .ctor h hc hq hp hts, hθ, hφ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (ownershipArgs hts hθ hφ)
-    | .recursor (us := us) h hq hp ht hul hus hu, hθ, hφ => by
-      refine .recursor h hq hp (ownership ht hθ hφ) ((Branches.length_subst _ us).trans hul) ?_ ?_
+    | .recursor (us := us) h hq hp ht hns hul hus hu, hθ, hφ => by
+      refine .recursor h hq hp (ownership ht hθ hφ) hns ((Branches.length_subst _ us).trans hul) ?_ ?_
       · intro i j T' con hi
         obtain ⟨u, hu'⟩ := hus i j T' con hi
         exact ⟨_, Branches.get_subst _ hu'⟩

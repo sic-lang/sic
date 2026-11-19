@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Nesting
+public import Sic.Core.Shape.Recursion
 
 /-!
 # Ownership
@@ -125,7 +126,9 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   a variable used more than once is shared; the branches run at each level of the recursion, on a
   recursive field, and a recursion is a use of its field, whose ownership is that of its value
   times the coefficient of the variable of the field, the requirement of its entry times the grade
-  `⌜m⌝ · r · q`, so that they see the term at the ownership `o · r̂`, which every level has.
+  `⌜m⌝ · r · q`, so that they see the term at the ownership `o · r̂`, which every level has; each
+  nested field of the block has a shape, whose paths the requirement of the recursion reads, so
+  that it reads the liftings that the signature declares.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -133,6 +136,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
       (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
       (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
+      (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
         ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
@@ -141,7 +145,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields φ
-          (o * decl.recursionRequirement (.ofLists qs ps hq hp) (m.grade * r)) (m.grade * r)
+          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
+          (m.grade * r)
           (con.params (.ofLists qs ps hq hp))) p (us.grades i)
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m p u) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)

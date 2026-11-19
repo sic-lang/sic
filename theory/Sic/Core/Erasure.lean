@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Shape
+public import Sic.Core.Shape.Recursion
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set
 
@@ -613,9 +614,9 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     match sig.constructorCase D c with
     | some i => .ctor i (ts.erase sig S hΓ ((sig.fieldParams D c qs ps).getD []))
     | none => .erased
-  | .recursor r _ _ D qs _ ps _ t _ _ us =>
+  | .recursor r ς χ D qs _ ps _ t κ _ us =>
     .recursor r.run
-      (if r ∈ S then .omega else (sig.recursionRequirement D qs ps r).run)
+      (if r ∈ S then .omega else (sig.recursionRequirement D qs ps ⟨κ.quality, r, ς⟩ χ).run)
       (if r ∈ S then (sig.skeleton D qs ps).target else t.erase sig S hΓ)
       (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
         ((sig.caseFieldParams D qs ps).getD []))

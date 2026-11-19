@@ -242,4 +242,15 @@ def Constructor.nestedShapes {j g k' : Nat} {Δ : Scope} (sig : Signature) (v : 
     List (Option Shape) :=
   (con.fields I).nestedShapes v (sig.shapes v m ax) (sig.blockShapes names qs ps χ) names
 
+-- ADE: none.
+/-- Each nested field of the constructor `con` at the instance `I` has a shape, computed as
+`Constructor.nestedShapes` computes it: the field whose type is at the nesting of an instance, in
+the block whose types are named `names`, has the shape of a lifting that the signature declares. -/
+def Constructor.NestedHaveShapes {j g k' : Nat} {Δ : Scope} (sig : Signature)
+    (v : Lifting.Variables) (m : Mode) (ax : Grade → Multiplicity) (names : List Name)
+    (qs : List Quality) (ps : List Grade) (χ : Grade) (con : Constructor j g k' Δ)
+    (I : Instance j g) : Prop :=
+  ∀ (l : Nat) (ns : List (Nest Name)), ((con.fields I).nest names)[l]? = some (.inst ns) →
+    ∃ σ, (con.nestedShapes sig v m ax names qs ps χ I)[l]? = some (some σ)
+
 end Sic.Core
