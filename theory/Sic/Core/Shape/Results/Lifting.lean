@@ -166,7 +166,7 @@ def Signature.LiftingsHaveShapes (md : Mode) (ax : Grade → Multiplicity) (sig�
       qs.length = decl.sorts → ps.length = decl.grades → S.Nodup → ms.length = S.length →
       Shape.Motive.AllOf ms' ms →
       Term.Factor sig ρ (.inst (Lifting.name D S) (qs ++ [v.quality]) ls (v.grades ps ms) as) π →
-        ∃ σ, sig.shapes v md ax sig₁ D qs ps (S.zip ms') = some (σ, π)
+        ∃ σ, Signature.shapes v md ax sig₁ D qs ps (S.zip ms') = some (σ, π)
 
 /-- The shape of an instance of a declared type, at a nesting that is not a position, whose
 arguments lifted have shapes: that of the lifting at them. -/
@@ -195,7 +195,7 @@ theorem Term.Lifts.shape
       {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig₁ v ρ n e A A' m →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
         (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
-          ∃ m', A.shape v (sig.shapes v md ax sig₁) block @ν n = some m' ∧ m'.Of m
+          ∃ m', A.shape v (Signature.shapes v md ax sig₁) block @ν n = some m' ∧ m'.Of m
   | _, _, _, _, _, _, _, _, .var (x := x) hx _, ν, hν, _ => by
     rcases hν x with ⟨h₁, -⟩ | ⟨y, m, m', h₁, h₂, h₃⟩
     · cases h₁.symm.trans hx
@@ -229,7 +229,7 @@ theorem InstanceArgs.Lifts.shapes
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig₁ v ρ ns as S ms as' →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
         (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
-          ∃ ms', as.shapes v (sig.shapes v md ax sig₁) block @ν ns = S.zip ms' ∧
+          ∃ ms', as.shapes v (Signature.shapes v md ax sig₁) block @ν ns = S.zip ms' ∧
             Shape.Motive.AllOf ms' ms
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => ⟨[], rfl, rfl⟩
   | _, _, ρ, _, _, _, _, _, _, _, .lifted (a := a) has hB, ν, hν, hb => by
@@ -256,14 +256,14 @@ end
 /-- The shape of the lifting of a type at the positions of `m̄`, whose name is a name of an entry of
 `Σ₁`, along the entries of a signature `pre ++ Σ₁` whose names are distinct, is the one along the
 entries of `Σ₁`, since no entry of `pre` has this name. -/
-theorem Signature.shapes_append {sig₀ sig₁ : Signature} {D : Name} {qs : List Quality}
+theorem Signature.shapes_append {sig₁ : Signature} {D : Name} {qs : List Quality}
     {ps : List Grade} {ms : List (Nat × Shape.Motive)} {L : TypeDeclaration}
     (hL : .typeDeclaration L ∈ sig₁) (hn : Lifting.name D (ms.map (·.1)) ∈ L.names) :
     (pre : Signature) → (pre ++ sig₁).Distinct →
-      sig₀.shapes v md ax (pre ++ sig₁) D qs ps ms = sig₀.shapes v md ax sig₁ D qs ps ms
+      Signature.shapes v md ax (pre ++ sig₁) D qs ps ms = Signature.shapes v md ax sig₁ D qs ps ms
   | [], _ => rfl
   | e :: pre, ⟨hd, _, hfresh, _⟩ => by
-    have ih := Signature.shapes_append (sig₀ := sig₀) (qs := qs) (ps := ps) hL hn pre hd
+    have ih := Signature.shapes_append (qs := qs) (ps := ps) hL hn pre hd
     cases e with
     | typeDeclaration L' =>
       have hne : L'.names ≠ [Lifting.name D (ms.map (·.1))] := fun h =>
@@ -290,8 +290,8 @@ theorem Term.Lifts.shape_append {sig₀ pre : Signature} (hsig : (pre ++ sig₁)
       {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig₁ v ρ n e A A' m →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
         (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
-          A.shape v (sig₀.shapes v md ax sig₁) block @ν n =
-            A.shape v (sig₀.shapes v md ax (pre ++ sig₁)) block @ν n
+          A.shape v (Signature.shapes v md ax sig₁) block @ν n =
+            A.shape v (Signature.shapes v md ax (pre ++ sig₁)) block @ν n
   | _, _, _, _, _, _, _, _, .var _ _, _, _, _ => rfl
   | _, _, _, _, _, _, _, _, .block _, _, _, _ => rfl
   | _, _, _, _, _, _, _, _, .inst (S := S) _ _ hn _ _ _ has hS hL _, _, hν, hb => by
@@ -321,8 +321,8 @@ theorem InstanceArgs.Lifts.shapes_append {sig₀ pre : Signature} (hsig : (pre +
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig₁ v ρ ns as S ms as' →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
         (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
-          as.shapes v (sig₀.shapes v md ax sig₁) block @ν ns =
-            as.shapes v (sig₀.shapes v md ax (pre ++ sig₁)) block @ν ns
+          as.shapes v (Signature.shapes v md ax sig₁) block @ν ns =
+            as.shapes v (Signature.shapes v md ax (pre ++ sig₁)) block @ν ns
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => rfl
   | _, _, _, _, _, _, _, _, _, _, .lifted (a := a) has hB, _, hν, hb => by
     rw [InstanceArgs.shapes, InstanceArgs.shapes,
@@ -353,7 +353,7 @@ theorem Term.Factor.cast_liftN {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n₁ n�
 /-- The destructors of a codata type lifted, in a signature `Σ₁` whose liftings have shapes in `Σ`,
 have the factor that their shape gives, where the substitution of the destructors before each by
 observations keeps the shapes, which follow the lifting. -/
-theorem Destructors.Lifts.shape_factor
+theorem Destructors.Lifts.shape_factor {sigC : Signature}
     (hsub : ∀ decl, Entry.typeDeclaration decl ∈ sig₁ → Entry.typeDeclaration decl ∈ sig)
     (hM : Signature.LiftingsHaveShapes md ax sig₁ sig) (D : Name) {Γ₀ : Scope} {κ : Universe k}
     {o : Name → (ps : List Parameter) → Term k (Γ₀.extend ps.length)}
@@ -366,7 +366,7 @@ theorem Destructors.Lifts.shape_factor
       Destructors.Lifts sig₁ v κ o ρ @θ ds ds' →
       ∀ {ν : Nesting Shape.Motive Ξ} {ν₀ : Nesting Shape.Motive Γ₀}, Subst.Nests θ @ν @ν₀ →
         ρ.Shapes @ν₀ → (∀ E, ρ.block E = none) →
-          Destructors.Factor sig ρ ds' (ds.shape sig v md ax (sig.shapes v md ax sig₁) D @ν).2
+          Destructors.Factor sig ρ ds' (ds.shape sigC v md ax (Signature.shapes v md ax sig₁) D @ν).2
   | _, _, _, _, _, _, _, _, .nil, _, _, _, _, _ => .nil
   | _, ρ, _, θ, _, _, _, _, .lifted (d := d) (ps := ps) (ψ := ψ) hB _ hds, ν, ν₀, hθ, hρ, hb => by
     obtain ⟨m', hm', hm⟩ := hB.shape hsub hM (block := fun _ => none)
@@ -385,7 +385,7 @@ theorem Destructors.Lifts.shape_factor
       (hds.shape_factor hsub hM D ho hθ' (Lifting.Shapes.weaken hρ)
         (Lifting.weaken_block_none hb))
   | _, ρ, _, θ, _, _, _, _, .absent (d := d) (ps := ps) (ψ := ψ) (B := B) hB hds, ν, ν₀, hθ, hρ, hb => by
-    have hn : B.shape v (sig.shapes v md ax sig₁) (fun _ => none)
+    have hn : B.shape v (Signature.shapes v md ax sig₁) (fun _ => none)
         (Nesting.liftN ps.length @ν) .plain = none := by
       rw [← Term.shape_subst_of (hθ.liftN ps.length)]
       exact Term.shape_eq_none_of_avoids fun x hx =>
@@ -406,7 +406,7 @@ requirement, the ownership of its result and the arguments that this element rea
 being those of the destructor lifted, used `r` times the factor of the shape more; the factor of
 the destructors is used at run time when the grade of the destructor of the lifting times the factor
 of the shape is, as a meet of these products. -/
-theorem Destructors.Lifts.shape_get
+theorem Destructors.Lifts.shape_get {sigC : Signature}
     (hsub : ∀ decl, Entry.typeDeclaration decl ∈ sig₁ → Entry.typeDeclaration decl ∈ sig)
     (hM : Signature.LiftingsHaveShapes md ax sig₁ sig) {pre : Signature} (hsig : (pre ++ sig₁).Distinct)
     (D : Name) {Γ₀ : Scope} {κ : Universe k}
@@ -427,20 +427,20 @@ theorem Destructors.Lifts.shape_get
         {ψ' : ResultOwnership Grade ps'.length}
         (hd' : Destructors.Pos d p' q' ς' ds' Ξ' Θ' B' ψ'),
         ∃ (m : Shape.Motive) (rest : Shape),
-          B.shape v (sig.shapes v md ax (pre ++ sig₁)) (fun _ => none)
+          B.shape v (Signature.shapes v md ax (pre ++ sig₁)) (fun _ => none)
             (Nesting.liftN ps.length (hd.nesting @ν)) .plain = some m ∧
           p' = Lifting.resultGrade v.quality p ∧ ς' = v.requirement ∧
           ps' = ps.map (Parameter.scale (v.recursion * m.factor)) ∧
           (⟨_, ψ'⟩ : Σ c, ResultOwnership Grade c) =
             ⟨ps.length, Lifting.resultOwnership m.ownership ps.length⟩ ∧
-          (ds.shape sig v md ax (sig.shapes v md ax sig₁) D @ν).1.drop hd'.index =
-            .cons ((sig.destructorCase D d).getD 0) ps.length (ax p')
+          (ds.shape sigC v md ax (Signature.shapes v md ax sig₁) D @ν).1.drop hd'.index =
+            .cons ((sigC.destructorCase D d).getD 0) ps.length (ax p')
               (fun j => ax ps[j].usage) (fun j => ax ps[j].requirement)
               (fun j => ax ((md ⊙ p').grade * (ps[j].scale (v.recursion * m.factor)).usage))
               (fun j => ax ps[j].requirement)
               ((Lifting.resultOwnership m.ownership _).map ax) (ax v.requirement)
               (ψ.map ax) (ax ς) m.next rest ∧
-          ∃ π, (ds.shape sig v md ax (sig.shapes v md ax sig₁) D @ν).2 = some π ∧
+          ∃ π, (ds.shape sigC v md ax (Signature.shapes v md ax sig₁) D @ν).2 = some π ∧
             (π.run = .zero → (p' * m.factor).run = .zero)
   | _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, _ =>
     nomatch hd
@@ -458,7 +458,7 @@ theorem Destructors.Lifts.shape_get
     | here =>
       cases hd with
       | here =>
-        refine ⟨m', (ds₀.shape sig v md ax (sig.shapes v md ax sig₁) D (Nesting.lift @ν)).1, hm₂, rfl, rfl,
+        refine ⟨m', (ds₀.shape sigC v md ax (Signature.shapes v md ax sig₁) D (Nesting.lift @ν)).1, hm₂, rfl, rfl,
           by rw [hm.1], by rw [hm.2, List.length_map], ?_, ?_⟩
         · simp only [Destructors.shape, hm', Shape.drop, Destructors.Pos.index]
         · simp only [Destructors.shape, hm']
@@ -482,7 +482,7 @@ theorem Destructors.Lifts.shape_get
           exact ⟨_, rfl, fun h => h₈ (Multiplicity.modality.zero.meet_eq_zero _ _ h).2⟩
   | _, ρ, _, θ, _, _, _, _, .absent (d := d₀) (ps := ps₀) (ψ := ψ₀) (B := B₀) hB hds, hnd, ν, ν₀, hθ, hρ, hb, _, _, _, _, _, _, _, _, _, hd, _, _, _, _, _, _, _, _, hd' => by
     have hnd' := List.nodup_cons.1 hnd
-    have hn : B₀.shape v (sig.shapes v md ax sig₁) (fun _ => none)
+    have hn : B₀.shape v (Signature.shapes v md ax sig₁) (fun _ => none)
         (Nesting.liftN ps₀.length @ν) .plain = none := by
       rw [← Term.shape_subst_of (hθ.liftN ps₀.length)]
       exact Term.shape_eq_none_of_avoids fun x hx =>
@@ -647,20 +647,21 @@ theorem TypeDeclaration.lifting_names {decl : TypeDeclaration} {F : Name} {S : L
     (decl.lifting F S ns body).names = [Lifting.name F S] := rfl
 
 /-- The shape of the lifting of the codata type `D` at the positions `S` of the parameters, along
-the entries of a signature whose names are distinct from the declaration of this lifting on, is
-that of the destructors of `D` at the instance, where the parameters at these positions have the
-shapes of `m̄'`, along the entries after the declaration. -/
-theorem Signature.shapes_lifting (hsig : sig.Distinct) {decl : TypeDeclaration} {D : Name}
-    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : sig.HasCodataType D decl T)
-    {S : List Nat} {ns : List Name}
+the entries from the declaration of this lifting on, whose entries after it have distinct names and
+declare `D`, is that of the destructors of `D` at the instance, where the parameters at these
+positions have the shapes of `m̄'`, along the entries after the declaration. -/
+theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {decl : TypeDeclaration}
+    {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (hT : sig₁.HasCodataType D decl T) {S : List Nat} {ns : List Name}
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    (sig₁ : Signature) {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
+    {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hp : ps.length = decl.grades) {ms' : List Shape.Motive} (hfst : (S.zip ms').map (·.1) = S) :
-    sig.shapes v md ax (.typeDeclaration (decl.lifting D S ns body) :: sig₁) D qs ps (S.zip ms') =
-      some (((T.body (.ofLists qs ps hq hp)).shape sig v md ax (sig.shapes v md ax sig₁) D
+    Signature.shapes v md ax (.typeDeclaration (decl.lifting D S ns body) :: sig₁) D qs ps
+        (S.zip ms') =
+      some (((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
           (Shape.motives (S.zip ms'))).1,
-        ((T.body (.ofLists qs ps hq hp)).shape sig v md ax (sig.shapes v md ax sig₁) D
+        ((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
           (Shape.motives (S.zip ms'))).2.getD .noneNone) := by
   obtain ⟨hdecl, hT, hTn⟩ := hT
   have hD : D ∈ decl.names := hTn ▸ TypeDeclaration.codata_name_mem_names hT
@@ -710,7 +711,10 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
     · -- The entry is the lifting: its shape is that of the destructors of `D`, lifted before it.
       have hLs : Entry.typeDeclaration (decl.lifting D S ns body) ∈ sig :=
         he ▸ List.mem_append_right pre List.mem_cons_self
-      obtain ⟨T, hT, hTn, hb⟩ := hord pre sig₁ decl D S ns body he hdecl hD
+      obtain ⟨hdecl₁, T, hT, hTn, hb⟩ := hord pre sig₁ decl D S ns body he hdecl hD
+      have hsig₁ : Signature.Distinct sig₁ :=
+        Signature.Distinct.suffix (pre ++ [.typeDeclaration (decl.lifting D S ns body)])
+          (by rw [List.append_assoc]; exact he ▸ hsig)
       have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
         rw [List.length_append, hq]
         rfl
@@ -737,7 +741,7 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         rw [Instance.liftingVariables_ofLists qs ps v ms hq hp hq' hp',
           show I.lifted = .ofLists qs ps hq hp from
             Instance.lifted_ofLists qs ps v.quality _ hq hp hq' hp'] at hLd
-        have hF := hLd.shape_factor hsub ih D (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩)
+        have hF := hLd.shape_factor (sigC := sig₁) hsub ih D (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩)
           (ν := Shape.motives (S.zip ms')) (ν₀ := Nesting.lift (Shape.motives (S.zip ms')))
           (fun x => .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x,
             rfl⟩)
@@ -749,9 +753,9 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         rw [Destructors.shape_substLevels] at hF
         have hu := Destructors.Factor.unique hsig
           (TypeDeclaration.liftingScope_distinctMotives _ _ _) hF hds
-        refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig v md ax (sig.shapes v md ax sig₁) D
-          (Shape.motives (S.zip ms'))).1, ?_⟩
-        rw [Signature.shapes_lifting hsig ⟨hdecl, hT, hTn⟩ sig₁ hq hp hfst, hu]
+        refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁)
+          D (Shape.motives (S.zip ms'))).1, ?_⟩
+        rw [Signature.shapes_lifting hsig₁ ⟨hdecl₁, hT, hTn⟩ hq hp hfst, hu]
     · -- The entry is not the lifting: its names are not the name of the lifting.
       have hne : ∀ L, e = .typeDeclaration L → L.names ≠ [Lifting.name D S] := by
         rintro L rfl hLn
@@ -802,8 +806,8 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
     (hd' : (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')).Pos d p' q' ς' Ξ' Θ' B'
       ψ') :
     ∃ (σ : Shape) (π : Grade) (m : Shape.Motive) (rest : Shape),
-      sig.shapes v md ax sig D qs ps (S.zip ms') = some (σ, π) ∧
-      B.shape v (sig.shapes v md ax sig) (fun _ => none)
+      Signature.shapes v md ax sig D qs ps (S.zip ms') = some (σ, π) ∧
+      B.shape v (Signature.shapes v md ax sig) (fun _ => none)
         (Nesting.liftN ps₁.length (hd.nesting (Shape.motives (S.zip ms')))) .plain = some m ∧
       p' = Lifting.resultGrade v.quality p ∧ ς' = v.requirement ∧
       ps₁' = ps₁.map (Parameter.scale (v.recursion * m.factor)) ∧
@@ -826,12 +830,19 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
     exact he
   have ih := hord.liftingsHaveShapes (md := md) (ax := ax) hsig sig₁ _ hpre
   -- The declaration lifts the destructors of `D` in the signature before the lifting.
-  obtain ⟨T₀, hT₀, hn₀, hb⟩ := hord pre sig₁ decl D S ns body he hT.1 hD
+  obtain ⟨hdecl₁, T₀, hT₀, hn₀, hb⟩ := hord pre sig₁ decl D S ns body he hT.1 hD
   cases eq_of_heq (hsig.hasCodataType_unique ⟨hT.1, hT₀, hn₀⟩ hT).2
+  have hsig₁ : Signature.Distinct sig₁ :=
+    Signature.Distinct.suffix (pre ++ [.typeDeclaration (decl.lifting D S ns body)]) (hpre ▸ hsig)
+  have hT₁ : Signature.HasCodataType sig₁ D decl T := ⟨hdecl₁, hT.2.1, hT.2.2⟩
+  -- The case of a destructor is the one of the declaration of `D`, before the lifting.
+  have hcase : ∀ d, Signature.destructorCase sig₁ D d = sig.destructorCase D d := fun d =>
+    (hsig₁.destructorCase hT₁).trans (hsig.destructorCase hT).symm
   have hLd := hb (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
   rw [Instance.liftingVariables_ofLists qs ps v ms hq hp hq' hp',
     Instance.lifted_ofLists qs ps v.quality _ hq hp hq' hp'] at hLd
-  obtain ⟨m, rest, h₁, h₂, h₃, h₄, h₅, h₆, π, h₇, h₈⟩ := hLd.shape_get hsub ih (hpre ▸ hsig) D
+  obtain ⟨m, rest, h₁, h₂, h₃, h₄, h₅, h₆, π, h₇, h₈⟩ := hLd.shape_get (sigC := sig₁) hsub ih
+    (hpre ▸ hsig) D
     (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩) (hsig.destructors_nodup hT)
     (ν := Shape.motives (S.zip ms')) (ν₀ := Nesting.lift (Shape.motives (S.zip ms')))
     (fun x => .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x, rfl⟩)
@@ -844,17 +855,17 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
   -- The shape of the lifting is the one that its entry declares.
   have hfst : (S.zip ms').map (·.1) = S :=
     List.map_fst_zip (by rw [hms.length_eq, hm]; exact Nat.le_refl _)
-  refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig v md ax (sig.shapes v md ax sig₁) D
-      (Shape.motives (S.zip ms'))).1, ((T.body (.ofLists qs ps hq hp)).shape sig v md ax
-      (sig.shapes v md ax sig₁) D (Shape.motives (S.zip ms'))).2.getD .noneNone, m, rest, ?_, ?_, h₂, h₃,
+  refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
+      (Shape.motives (S.zip ms'))).1, ((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax
+      (Signature.shapes v md ax sig₁) D (Shape.motives (S.zip ms'))).2.getD .noneNone, m, rest, ?_, ?_, h₂, h₃,
     h₄, h₅, ?_, ?_⟩
-  · exact (congrArg (fun s => sig.shapes v md ax s D qs ps (S.zip ms')) he).trans
+  · exact (congrArg (fun s => Signature.shapes v md ax s D qs ps (S.zip ms')) he).trans
       ((Signature.shapes_append List.mem_cons_self
           (by rw [hfst]; exact TypeDeclaration.name_mem_lifting_names) pre (he ▸ hsig)).trans
-        (Signature.shapes_lifting hsig hT sig₁ hq hp hfst))
+        (Signature.shapes_lifting hsig₁ hT₁ hq hp hfst))
   · rw [← hpre, Term.shape_substLevels, Destructors.Pos.nesting_substLevels] at h₁
     exact h₁
-  · rw [Destructors.shape_substLevels] at h₆
+  · rw [Destructors.shape_substLevels, hcase] at h₆
     exact h₆
   · rw [Destructors.shape_substLevels] at h₇
     rw [h₇]
@@ -872,7 +883,7 @@ theorem Term.Lifts.shape_eq (hsig : sig.Distinct) (hord : sig.LiftsInOrder)
     {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {m : Lifting.Result k}
     (h : Term.Lifts sig v ρ n e A A' m) {ν : Nesting Shape.Motive Γ} (hν : ρ.Shapes @ν)
     (hb : ∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) :
-    ∃ m', A.shape v (sig.shapes v md ax sig) block @ν n = some m' ∧ m'.Of m :=
+    ∃ m', A.shape v (Signature.shapes v md ax sig) block @ν n = some m' ∧ m'.Of m :=
   h.shape (fun _ h => h) (hord.liftingsHaveShapes hsig sig [] rfl) hν hb
 
 end Sic.Core

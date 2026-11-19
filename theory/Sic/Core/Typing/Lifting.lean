@@ -178,8 +178,9 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
     WfSig.lifting_inv_before pre (Presuppositions.tail presuppositions h) hn
 
 -- ADE: none.
-/-- A well-formed signature declares each of its liftings after the destructors that it lifts: the
-rule of the liftings asks for these destructors, lifted in the signature before the lifting. -/
+/-- A well-formed signature declares each of its liftings after the type that it lifts and the
+destructors that it lifts: the rule of the liftings asks for the declaration of the type in the
+signature before the lifting, and for these destructors, lifted in it. -/
 theorem WfSig.liftsInOrder {sig : Signature} (h : WfSig sig) : sig.LiftsInOrder := by
   intro pre sig₁ decl D S ns body he hd hD
   subst he
@@ -194,6 +195,6 @@ theorem WfSig.liftsInOrder {sig : Signature} (h : WfSig sig) : sig.LiftsInOrder 
     (hn ▸ TypeDeclaration.codata_name_mem_names hT))
   obtain rfl := TypeDeclaration.lifting_destructors he'
   obtain rfl := TypeDeclaration.lifting_body he'
-  exact ⟨T, hT, hn, hb⟩
+  exact ⟨hd', T, hT, hn, hb⟩
 
 end Sic.Core

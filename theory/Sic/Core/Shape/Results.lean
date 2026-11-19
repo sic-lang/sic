@@ -34,7 +34,9 @@ and the requirement of the recursor.
 The result of a destructor of a lifting is an instance of a lifting declared before it, as the
 signature declares its liftings in order, so that the shape of a lifting reads only the shapes of
 the liftings before it in the signature: the shape follows the signature, entry by entry, without
-fuel, while it reads the declarations of the types lifted and their cases in the whole signature.
+fuel, and it reads the declarations of the types lifted and their cases in the entries before the
+lifting too, which a well-formed signature declares before it, so that the shape of a lifting does
+not depend on the entries after it, which an extension of the signature adds.
 The shape is a function, which the erasure computes on the syntax, and it is the shape of an
 instance of a lifting that the signature declares only: an instance of a lifting that the signature
 does not declare has none.
@@ -165,32 +167,32 @@ def Shape.motives {Δ : Scope} (ms : List (Nat × Shape.Motive)) : Nesting Shape
     | none => .plain
 
 -- ADE: none.
-/-- The shapes of the liftings that the entries `sig'` of the signature `sig` declare, checked in the
-mode `m`, on the axis `ax` of the grades: the shape of the lifting of the type `D` at the positions
-of `ms`, at the instance of the qualities `qs` and of the grades `ps`, is that of the destructors of
-`D` at this instance, where the parameters at these positions have the shapes of `ms`, which reads
-the shapes of the liftings declared before it, and the declarations of the types in the whole
-signature.
+/-- The shapes of the liftings that the entries of a signature declare, checked in the mode `m`, on
+the axis `ax` of the grades: the shape of the lifting of the type `D` at the positions of `ms`, at
+the instance of the qualities `qs` and of the grades `ps`, is that of the destructors of `D` at this
+instance, where the parameters at these positions have the shapes of `ms`, which reads the
+declaration of `D`, its cases and the shapes of the liftings in the entries before the lifting, so
+that the shape does not depend on the entries after it.
 RFC: `\mathsf{shape}_\Sigma` -/
-def Signature.shapes (sig : Signature) (v : Lifting.Variables) (m : Mode)
-    (ax : Grade → Multiplicity) : Signature → Shape.Lookup
+def Signature.shapes (v : Lifting.Variables) (m : Mode) (ax : Grade → Multiplicity) :
+    Signature → Shape.Lookup
   | [] => fun _ _ _ _ => none
   | .typeDeclaration L :: sig' => fun D qs ps ms =>
     if L.names = [Lifting.name D (ms.map (·.1))] then
-      sig.findSome? fun
+      sig'.findSome? fun
         | .typeDeclaration decl =>
           if hq : qs.length = decl.sorts then
             if hp : ps.length = decl.grades then
               (decl.codataTypes.find? (·.name == D)).map fun T =>
-                let σ := (T.body (.ofLists qs ps hq hp)).shape sig v m ax (sig.shapes v m ax sig') D
-                  (Shape.motives ms)
+                let σ := (T.body (.ofLists qs ps hq hp)).shape sig' v m ax
+                  (Signature.shapes v m ax sig') D (Shape.motives ms)
                 (σ.1, σ.2.getD .noneNone)
             else none
           else none
         | _ => none
-    else sig.shapes v m ax sig' D qs ps ms
-  | _ :: sig' => sig.shapes v m ax sig'
-termination_by structural sig' => sig'
+    else Signature.shapes v m ax sig' D qs ps ms
+  | _ :: sig' => Signature.shapes v m ax sig'
+termination_by structural sig => sig
 
 /-! ## Shapes of the Nested Fields -/
 
@@ -233,6 +235,6 @@ def Constructor.nestedShapes {j g k' : Nat} {Δ : Scope} (sig : Signature) (v : 
     (m : Mode) (ax : Grade → Multiplicity) (names : List Name) (qs : List Quality)
     (ps : List Grade) (χ : Grade) (con : Constructor j g k' Δ) (I : Instance j g) :
     List (Option Shape) :=
-  (con.fields I).nestedShapes v (sig.shapes v m ax sig) (sig.blockShapes names qs ps χ) names
+  (con.fields I).nestedShapes v (sig.shapes v m ax) (sig.blockShapes names qs ps χ) names
 
 end Sic.Core

@@ -458,7 +458,7 @@ theorem Signature.LiftsInOrder.liftingsHaveResults (hsig : sig.Distinct)
       φ t
     rcases List.mem_cons.1 hL with heq | hL'
     · subst heq
-      exact (hord pre sig₁ decl D S ns body he hdecl hD).hasResult hsig
+      exact (hord pre sig₁ decl D S ns body he hdecl hD).2.hasResult hsig
         (fun _ h => he ▸ List.mem_append_right pre (List.mem_cons_of_mem _ h)) ih hdecl
         (he ▸ List.mem_append_right pre List.mem_cons_self) hρ hn hq hl hp has hS ho φ t
     · exact ih _ v hdecl hD hL' hρ hn hq hl hp has hS ho φ t

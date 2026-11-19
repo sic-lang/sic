@@ -140,15 +140,16 @@ theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration
 /-! ## Order of the Liftings -/
 
 -- ADE: none.
-/-- The signature declares each of its liftings after the destructors that it lifts: the lifting of
-a type of one of its type declarations has the destructors of this type, lifted in the signature
-before the lifting. -/
+/-- The signature declares each of its liftings after the type that it lifts and the destructors
+that it lifts: the lifting of a type of one of its type declarations comes after this declaration,
+and has the destructors of this type, lifted in the signature before the lifting. -/
 def Signature.LiftsInOrder (sig : Signature) : Prop :=
   ∀ (pre sig₁ : Signature) (decl : TypeDeclaration) (D : Name) (S : List Nat) (ns : List Name)
     (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns),
     sig = pre ++ .typeDeclaration (decl.lifting D S ns body) :: sig₁ →
-      .typeDeclaration decl ∈ sig → D ∈ decl.names → decl.Lifts sig₁ D S body
+      .typeDeclaration decl ∈ sig → D ∈ decl.names →
+        .typeDeclaration decl ∈ sig₁ ∧ decl.Lifts sig₁ D S body
 
 -- ADE: none.
 /-- The liftings of a signature that declares each of them after the destructors that it lifts are
@@ -160,7 +161,7 @@ theorem Signature.LiftsInOrder.lifts (h : sig.LiftsInOrder) {decl : TypeDeclarat
     (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by
   obtain ⟨pre, sig₁, rfl⟩ := List.append_of_mem hL
-  exact (h pre sig₁ decl D S ns body rfl hd hD).extend
+  exact (h pre sig₁ decl D S ns body rfl hd hD).2.extend
     fun _ he => List.mem_append_right _ (List.mem_cons_of_mem _ he)
 
 end Sic.Core

@@ -174,7 +174,7 @@ the variables of the branches renamed as `E₀` binds them. -/
 def NestedRunsAt (ν : Nest Name) (A t : Term 0 []) (R : RunRel) : Prop :=
   ∀ (e A' : Term 0 []) (mr : Lifting.Result 0) (ms : Shape.Motive),
     Term.NestedResult sig v ρ₁ φ ν A t e → Term.Lifts sig v ρ₁ ν t A A' mr →
-    A.shape v (sig.shapes v .oneOne Grade.run sig) block Nesting.plain ν = some ms →
+    A.shape v (Signature.shapes v .oneOne Grade.run sig) block Nesting.plain ν = some ms →
     (∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') → ValidTerm₀ sig ι e A' →
     ∀ {m : Nat} (g : TargetRen m m₀) (E : List Nat),
       (∀ x : Fin m₀, E[(g x : Nat)]? = E₀[(x : Nat)]?) →
@@ -1037,7 +1037,7 @@ theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {t e A' : Term 0 []} (ht : ValidTerm₀ sig ι t A) {mr : Lifting.Result 0}
     (hres : Term.NestedResult sig v ρ₁ φ ν A t e) (hL : Term.Lifts sig v ρ₁ ν t A A' mr)
     {σ : Shape} {π χ : Grade}
-    (hsh : A.shape v (sig.shapes v .oneOne Grade.run sig) block Nesting.plain ν =
+    (hsh : A.shape v (Signature.shapes v .oneOne Grade.run sig) block Nesting.plain ν =
       some ⟨.lifting σ, π, χ⟩)
     (hrun : ∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') (hval : ValidTerm₀ sig ι e A')
     {c : Nat} {H : Heap}
