@@ -72,14 +72,15 @@ def Shape.argOwnerships {c : Nat} (s : Multiplicity) (os πs ϱs πs' : Fin c �
 mutual
 
 -- ADE: none.
-/-- The shape meets the requirements of the observations of a field, whose branches see the term of
-the recursor at the ownership `o`, the corecursors capturing the scope at `ς`: for each destructor
-observed, the requirement `ς₀` of the destructor that it lifts on the value that it observes is
-within `o`, and, for all the ownerships of the arguments of its branch that meet their requirements,
-the arguments of the observation meet the requirements of their positions in it, and the value of
-the ownership `ψ₀` of its result at them is defined, and the shape of its result meets them in turn;
-a destructor never observed has the branch `↯`, which observes nothing; the requirement `r̂` of the
-recursion gives the rest, that the value keeps `o`. -/
+/-- `Ξ meets o; ς`: the shape meets the requirements of the observations of a field, whose branches
+see the term of the recursor at the ownership `o`, the corecursors capturing the scope at `ς`: for
+each destructor observed on the axis of the shape, the requirement `ς₀` of the destructor that it
+lifts on the value that it observes is within `o`, and, for all the ownerships of the arguments of
+its branch that meet their requirements, the arguments of the observation meet the requirements of
+their positions in it, and the value of the ownership `ψ₀` of its result at them is defined, and the
+shape of its result meets them in turn; a destructor never observed has the branch `↯`, which
+observes nothing; the requirement `r̂` of the recursion gives the rest, that the value keeps `o`.
+RFC: `\mathsf{meets}_\Xi` -/
 def Shape.Meets (o ς : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest =>
@@ -90,8 +91,9 @@ def Shape.Meets (o ς : Multiplicity) : Shape → Prop
     rest.Meets o ς
 
 -- ADE: none.
-/-- The shape of a result meets the requirements of the observations: the recursor itself does,
-and the next lifting when its shape does. -/
+/-- `Υ meets o; ς`: the shape of a result meets the requirements of the observations: the recursor
+itself does, and the next lifting when its shape does.
+RFC: `\mathsf{meets}_\Upsilon` -/
 def Shape.Next.Meets (o ς : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Meets o ς
@@ -101,11 +103,13 @@ end
 mutual
 
 -- ADE: none.
-/-- The observations of a field keep the ownership `o` of the term of the recursor: for each
-destructor observed, for all the ownerships of the arguments of its branch that meet their
-requirements, the value of the ownership `ψ₀` of its result at them, when it is defined, keeps `o`,
-and the observations from the shape of its result keep it in turn, which the requirement `r̂` of the
-recursion gives along the prefixes of the paths of the destructors observed. -/
+/-- `Ξ keeps o; ς`: the observations of a field keep the ownership `o` of the term of the recursor:
+for each destructor observed on the axis of the shape, for all the ownerships of the arguments of
+its branch that meet their requirements, the value of the ownership `ψ₀` of its result at them, when
+it is defined, keeps `o`, and the observations from the shape of its result keep it in turn, which
+the requirement `r̂` of the recursion gives along the prefixes of the paths of the destructors
+observed.
+RFC: `\mathsf{keeps}_\Xi` -/
 def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest =>
@@ -116,8 +120,9 @@ def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
     rest.Keeps o ς
 
 -- ADE: none.
-/-- The observations from the shape of a result keep the ownership `o`: the recursor itself does,
-and the next lifting when its shape does. -/
+/-- `Υ keeps o; ς`: the observations from the shape of a result keep the ownership `o`: the recursor
+itself does, and the next lifting when its shape does.
+RFC: `\mathsf{keeps}_\Upsilon` -/
 def Shape.Next.Keeps (o ς : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Keeps o ς
@@ -125,25 +130,25 @@ def Shape.Next.Keeps (o ς : Multiplicity) : Shape.Next → Prop
 end
 
 -- ADE: none.
-/-- `Ξ meets o; ς`: the shape meets the requirements of the recursions on the observations of a
+/-- `Ξ requires o; ς`: the shape meets the requirements of the recursions on the observations of a
 field, whose branches see the term of the recursor at the ownership `o`, the corecursors capturing
-the scope at `ς`: for each destructor observed at run time, the requirement `ς₀` of the destructor
-that it lifts on the value that it observes is within `o`, and, for all the ownerships of the
-arguments of its branch that meet their requirements, the arguments of the observation meet the
-requirements of their positions in it, and the value of the ownership `ψ₀` of its result at them is
-defined and keeps `o`, so that the observation has an ownership within `o`, as each level of the
-recursion, and the shape of its result meets the requirements in turn; a destructor never observed,
-whose branch is `↯`, asks nothing; the RFC writes the ownerships of the arguments of the observation `ō'`, which
-`Shape.argOwnerships` gives. The source checks the first part, `Shape.Meets`, and its requirement of
-the recursion gives the second, `Shape.Keeps`.
-RFC: `\mathsf{meets}_\Xi` -/
+the scope at `ς`: for each destructor observed on the axis of the shape, the requirement `ς₀` of
+the destructor that it lifts on the value that it observes is within `o`, and, for all the
+ownerships of the arguments of its branch that meet their requirements, the arguments of the
+observation meet the requirements of their positions in it, and the value of the ownership `ψ₀` of
+its result at them is defined and keeps `o`, so that the observation has an ownership within `o`,
+as each level of the recursion, and the shape of its result meets the requirements in turn; a
+destructor never observed, whose branch is `↯`, asks nothing; the RFC writes the ownerships of the
+arguments of the observation `ō'`, which `Shape.argOwnerships` gives. The source checks the first
+part, `Shape.Meets`, and its requirement of the recursion gives the second, `Shape.Keeps`.
+RFC: `\mathsf{requires}_\Xi` -/
 def Shape.Requires (o ς : Multiplicity) (σ : Shape) : Prop :=
   σ.Meets o ς ∧ σ.Keeps o ς
 
 -- ADE: none.
-/-- `Υ meets o; ς`: the shape of a result meets the requirements of the recursions: the recursor
+/-- `Υ requires o; ς`: the shape of a result meets the requirements of the recursions: the recursor
 itself does, and the next lifting when its shape does, which the RFC does not need to state.
-RFC: `\mathsf{meets}_\Upsilon` -/
+RFC: `\mathsf{requires}_\Upsilon` -/
 def Shape.Next.Requires (o ς : Multiplicity) (next : Shape.Next) : Prop :=
   next.Meets o ς ∧ next.Keeps o ς
 

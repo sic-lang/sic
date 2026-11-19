@@ -60,7 +60,8 @@ def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) :
 /-- `own_p(y)`: the ownership of the value of the recursive result of a field whose type has the
 nesting `ν`, in a branch of a recursor of the ownership `p`: `11ᵖ` for a nested result, the
 corecursor of a lifting, a new value, and `p` for the result of a recursive field, a result of the
-recursor. -/
+recursor.
+RFC: `\mathsf{own}_y` -/
 def Nest.resultOwnership (p : Grade) : Nest Name → Grade
   | .inst _ => .linearLinear
   | _ => p

@@ -59,7 +59,8 @@ def TypeDeclaration.NestedHaveShapes (decl : TypeDeclaration) (sig : Signature)
 /-- `r̂`: the requirement of the recursion of a recursor of the variables `v`, checked in the mode
 `m`, whose results that are motives have the ownership `χ`, on the block at the instance `I` of the
 qualities `qs` and of the grades `ps`, in the signature `sig`: its term is used with the grade
-`⌜m⌝ · r`, and its nested fields give their pairs on each axis. -/
+`⌜m⌝ · r`, and its nested fields give their pairs on each axis.
+RFC: `\mathsf{recursion}_p` -/
 def TypeDeclaration.recursionRequirement (decl : TypeDeclaration) (sig : Signature)
     (v : Lifting.Variables) (m : Mode) (χ : Grade) (qs : List Quality) (ps : List Grade)
     (I : Instance decl.sorts decl.grades) : Grade :=
