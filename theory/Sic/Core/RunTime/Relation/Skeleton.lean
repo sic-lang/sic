@@ -11,8 +11,7 @@ The skeleton of annex 14 of RFC 36 at run time, on whose term the erasure of a r
 is erased runs: in a signature whose names are distinct, the skeleton of a data type is that of the
 block of its declaration, and the case of a constructor that of its block; the term of the skeleton
 of a type with exactly one constructor unfolds into this constructor applied to the terms of the
-skeletons of the types of its recursive fields, and to `↯` for its other fields; data, the term of
-a skeleton among them, evaluates in every environment and heap.
+skeletons of the types of its recursive fields, and to `↯` for its other fields.
 
 The depth of the skeleton, the number of the types of the block, is never reached along a path of
 types that has an end: a type with exactly one constructor is above the types of its recursive
@@ -124,37 +123,6 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
   congr 3
   funext r
   cases r <;> rfl
-
-/-! ## Evaluation -/
-
-mutual
-
--- ADE: none.
-/-- Data evaluates, at every weight, in every environment and heap, to a value in a heap that
-extends it, reading no cell. -/
-theorem Target.IsData.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsData)
-    (ϖ : Multiplicity) (H : Heap) (E : List Nat) :
-    ∃ a H', Eval P ϖ H E M a H' [] ∧ H.Extends H' :=
-  match h with
-  | .erased => ⟨_, _, .erased, List.prefix_append _ _⟩
-  | .ctor hs =>
-    have ⟨_, _, hM, hH⟩ := Targets.IsData.eval P hs ϖ H E
-    ⟨_, _, .ctor hM, hH.trans (List.prefix_append _ _)⟩
-
--- ADE: none.
-/-- Terms that are data evaluate, at every weight, in every environment and heap, to values in a
-heap that extends it, reading no cell. -/
-theorem Targets.IsData.eval (P : Program) {n : Nat} {Ms : Targets n} (h : Ms.IsData)
-    (ϖ : Multiplicity) (H : Heap) (E : List Nat) :
-    ∃ as H', EvalAll P ϖ H E Ms as H' [] ∧ H.Extends H' :=
-  match h with
-  | .nil => ⟨_, _, .nil, List.prefix_refl _⟩
-  | .cons (π := π) hM hs =>
-    have ⟨_, H₁, hM', hH₁⟩ := Target.IsData.eval P hM (ϖ * π) H E
-    have ⟨_, _, hs', hH₂⟩ := Targets.IsData.eval P hs ϖ H₁ E
-    ⟨_, _, .cons hM' hs', hH₁.trans hH₂⟩
-
-end
 
 /-! ## Acyclicity -/
 

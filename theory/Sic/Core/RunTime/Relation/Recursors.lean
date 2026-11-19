@@ -6,6 +6,7 @@ import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
+import Sic.Core.RunTime.Relation.Data
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Skeleton
 import Sic.Core.RunTime.Relation.Substitution
