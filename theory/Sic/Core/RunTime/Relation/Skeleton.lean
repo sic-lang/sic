@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Evaluation.Heap
+public import Sic.Core.Erasure
 import Sic.Core.Syntax.Signature
 import Sic.Math.Relation
 
