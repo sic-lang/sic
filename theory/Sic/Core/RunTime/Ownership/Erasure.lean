@@ -305,12 +305,6 @@ theorem _root_.Sic.Grading.Grade.oneOne_mul_run_ne_zero :
       (Mode.oneOne.grade * r * e).run * c ≠ .zero := by
   decide
 
-/-- A multiplicity times the run-time multiplicity `0` of a grade is `0`, whatever the
-multiplicity. -/
-theorem _root_.Sic.Grading.Multiplicity.mul_run_zero :
-    ∀ (a b : Multiplicity), a * Multiplicity.zero = b * Multiplicity.zero := by
-  decide
-
 /-- The grade of the mode `11ᵐ` is `1`. -/
 theorem Mode.oneOne_grade : Mode.oneOne.grade = Grade.one := rfl
 
@@ -550,7 +544,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             have hz : gs'[l].run = .zero := (Mode.erased_values.1 _).1 hS
             show _ * gs'[l].run = _ * gs'[l].run
             rw [hz]
-            exact Multiplicity.mul_run_zero _ _
+            exact (Multiplicity.modality.semiring.mul_zero _).trans
+              (Multiplicity.modality.semiring.mul_zero _).symm
           · congr 1
             rw [Constructor.recursiveResults]
             refine (Telescope.resultOwnerships_getD (p := c) (d := .unrestrictedUnrestricted)
