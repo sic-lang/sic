@@ -24,6 +24,13 @@ multiplicity keeps the product and the meet of the grades, so that the coefficie
 erasure stores give the run-time multiplicities of the ownerships of the variables of the
 branches, and the value of the ownership of the result of a destructor, which reads only the
 ownerships of the arguments checked in the mode of the observation, is kept.
+A recursor whose block has nested fields gives each nested result the ownership `1` of a new value,
+and checks its branches a second time, at the requirement `ς` of the lifted destructors and the
+ownership `χ`, as the target does; the shape of each nested result has these ownerships, and, when
+the recursor runs a recursion through it, meets the requirements of the recursions and keeps the
+ownership of the term, since the premise `hused` of the rule of the recursor makes the field used
+at run time, so that the requirement of the recursion reads its pairs.
+A block without nested field checks its branches a second time as the first.
 ADE have no such property: their erasure keeps no ownership.
 -/
 

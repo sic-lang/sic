@@ -334,7 +334,7 @@ theorem Term.shape_inst_lifting {lookup : Shape.Lookup} {block : Name → Option
   | .sort _, h | .const _ _ _ _, h | .ctor _ _ _ _ _ _ _, h | .recursor _ _ _ _ _ _ _ _ _ _ _ _, h
   | .obs _ _ _ _ _ _ _ _, h | .corec _ _ _ _ _ _ _ _ _, h => by simp [Term.shape] at h
 
-/-- The `j`-th field of the constructor `con` whose nesting has a position, the field `l`, has a
+/-- The `i`-th field of the constructor `con` whose nesting has a position, the field `l`, has a
 nesting other than none, and a type in the scope of all the fields. -/
 theorem Constructor.exists_nest_of_nestPositions {j g k' : Nat} {Δ Γ : Scope}
     {con : Constructor j g k' Δ} {I : Instance j g} {names : List Name} (ls : Fin k' → Level k)
@@ -357,7 +357,7 @@ theorem Constructor.exists_nest_of_nestPositions {j g k' : Nat} {Δ Γ : Scope}
     exact ⟨n, A, hn, Bool.not_eq_true _ ▸ hp, hA⟩
 
 -- ADE: none.
-/-- The `j`-th recursive result of the constructor `con`, at the field `l`, has the factor `π` of
+/-- The `i`-th recursive result of the constructor `con`, at the field `l`, has the factor `π` of
 the typing, whose run-time multiplicity is the factor of the shape of the field that the erasure
 reads, when the field is nested, in a signature whose names are distinct and that declares each
 lifting after the destructors that it lifts: both read the shape of the lifting of the type of the
@@ -391,7 +391,7 @@ theorem Constructor.ResultTypes.factor_nested {sig : Signature} {md : Mode}
     exact ⟨π, hπ, Shape.factor_eq_run hm⟩
 
 -- ADE: none.
-/-- The nested field that is the `j`-th field of the constructor `con` whose nesting has a position
+/-- The nested field that is the `i`-th field of the constructor `con` whose nesting has a position
 has a shape, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, when the typing gives it a recursive result: the type of the field
 lifted has a shape. -/
