@@ -103,9 +103,9 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
           TargetCorecBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
   | _, _, _, _, .nil, _, _, _, _ => .nil
   | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest, hM, hNs,
-      ⟨rfl, rfl, hnext, hrest⟩, ⟨hreq, hreqn, hreqr⟩ => by
+      ⟨rfl, rfl, hnext, hrest⟩, ⟨⟨hreq, hreqn, hreqr⟩, ⟨hkeep, hkeepn, hkeepr⟩⟩ => by
     refine .cons (fun os v hos hv => ?_) (fun h => absurd rfl h)
-      (TargetCorecBranches.Ownership.branches hϱ hz rest hM hNs hrest hreqr)
+      (TargetCorecBranches.Ownership.branches hϱ hz rest hM hNs hrest ⟨hreqr, hkeepr⟩)
     have hv' : v = next.ownership χ := by
       rcases hv with ⟨_, hv⟩ | ⟨h, _⟩
       · rw [ResultOwnership.value_const] at hv
@@ -118,7 +118,8 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
       exact .erased _
     · simp only [hρᵢ, ↓reduceIte]
       obtain ⟨hς₀, hargs⟩ := hreq hρᵢ
-      obtain ⟨hϱs, v₀, hv₀, hov⟩ := hargs os hos
+      obtain ⟨hϱs, v₀, hv₀⟩ := hargs os hos
+      have hov := hkeep hρᵢ os hos v₀ hv₀
       -- The scope of the branch: the scope of the corecursor at `ς · φ`, then the arguments.
       have key : ∀ φb : MultiplicityVector (m + (0 + c)),
           (∀ x, φb (TargetRen.shift m (0 + c) x) = ς * φ x) →
@@ -144,7 +145,7 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
                 rw [harg k]
                 simp only [Shape.argOwnerships, hk, ↓reduceIte])
               hϱs) hv₀ hς₀) hov
-        exact Target.Ownership.body hϱ hz next hO (hNs.rename _ hsh') hnext hreqn
+        exact Target.Ownership.body hϱ hz next hO (hNs.rename _ hsh') hnext ⟨hreqn, hkeepn⟩
       exact key _ (fun x => MultiplicityVector.extendBinders_shift _ _ _ x)
         (fun k => MultiplicityVector.extendBinders_argVar _ _ _ k)
 
