@@ -272,10 +272,15 @@ theorem RecursiveResult.find?_zip_map_field : (xs : List Nat) → (es : List Gra
   | x :: xs, e :: es, n => by
     by_cases h : x = n
     · subst h
-      simp [List.idxOf?_cons, RecursiveResult.fieldPosition]
+      rw [List.map_cons, List.zip_cons_cons, List.find?_cons_of_pos
+          (p := fun y : RecursiveResult × Grade => y.1.fieldPosition == some x) (a := (.field x, e))
+          (beq_self_eq_true (some x)),
+        List.idxOf?_cons, beq_self_eq_true]
+      rfl
     · have hne : (x == n) = false := beq_false_of_ne h
       rw [List.map_cons, List.zip_cons_cons, List.find?_cons_of_neg
-          (by simp [RecursiveResult.fieldPosition, h]),
+          (p := fun y : RecursiveResult × Grade => y.1.fieldPosition == some n) (a := (.field x, e))
+          (fun h' => h (Option.some.inj (beq_iff_eq.1 h'))),
         RecursiveResult.find?_zip_map_field xs es n, List.idxOf?_cons, hne]
       cases List.idxOf? n xs <;> rfl
 
