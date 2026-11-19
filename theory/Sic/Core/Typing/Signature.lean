@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+public import Sic.Grading.GradeSet
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Extension
 import Sic.Core.Typing.Presuppositions
@@ -109,5 +110,18 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
   | codata hb _ _ hds _ _ _ =>
     exact (hds I hI T hT.2.1).mode_of_grade
       (hpos.grade (h.distinct.destructors_nodup hT))
+
+-- ADE: none.
+/-- A destructor of a codata type of a well-formed signature, at an instance that the constraint
+admits, of a block of propositions, has a grade without use at run time. -/
+theorem WfSig.destructor_erased {sig : Signature} (h : WfSig sig) {D : Name}
+    {decl : TypeDeclaration} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (hT : sig.HasCodataType D decl T) {I : Instance decl.sorts decl.grades}
+    (hI : decl.constraint I) {d : Name} {p q ς : Grade} {ps : List Parameter} {Ξ : Scope}
+    {Θ : Telescope decl.levels Ξ ps} {B : Term decl.levels (Ξ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length} (hpos : (T.body I).Pos d p q ς Ξ Θ B ψ)
+    (hκ : (decl.sort I).quality = .prop) : p ∈ Mode.oneOne.erased :=
+  (by decide : ∀ p : Grade, p.mode ≠ .oneOne → p ∈ Mode.oneOne.erased) p
+    (h.destructor_mode hT hI hpos hκ)
 
 end Sic.Core
