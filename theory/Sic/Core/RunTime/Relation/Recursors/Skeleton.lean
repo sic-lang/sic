@@ -231,7 +231,8 @@ theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {t t' e A' : Term 0 []} (ht : F t t') {mr : Lifting.Result 0}
     (hres : Term.NestedResult sig v ρ₁ φ ν A t e) (hL : Term.Lifts sig v ρ₁ ν t A A' mr)
     {σ : Shape} {π χ : Grade}
-    (hsh : A.shape v (sig.shapes v sig) block Nesting.plain ν = some ⟨.lifting σ, π, χ⟩)
+    (hsh : A.shape v (sig.shapes v .oneOne Grade.run sig) block Nesting.plain ν =
+      some ⟨.lifting σ, π, χ⟩)
     (hrun : ∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') (hval : ValidTerm₀ sig ι e A')
     (c : Nat) (H : Heap) (ϖ : Multiplicity) (H₁ : Heap) (hH₁ : H.Extends H₁) :
     ∃ w H₂ tr, Eval P ϖ H₁ (c :: E₀) (Target.nested .zero ϱ σ Ns₀) w H₂ tr ∧ H₁.Extends H₂ ∧

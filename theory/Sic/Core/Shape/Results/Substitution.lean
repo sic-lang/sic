@@ -40,7 +40,8 @@ namespace Sic.Core
 
 open Sic.Grading
 
-variable {k : Nat} {sig : Signature} {v : Lifting.Variables} {lookup : Shape.Lookup}
+variable {k : Nat} {sig : Signature} {v : Lifting.Variables} {md : Mode}
+  {ax : Grade → Multiplicity} {lookup : Shape.Lookup}
   {block : Name → Option Shape.Motive}
 
 /-! ## Levels -/
@@ -77,7 +78,7 @@ end
 theorem Destructors.shape_substLevels {k' : Nat} (sig : Signature) (D : Name)
     (ls' : Fin k → Level k') :
     {Γ : Scope} → (ν : Nesting Shape.Motive Γ) → {ns : List Name} → (ds : Destructors k Γ ns) →
-      (ds.substLevels ls').shape sig v lookup D @ν = ds.shape sig v lookup D @ν
+      (ds.substLevels ls').shape sig v md ax lookup D @ν = ds.shape sig v md ax lookup D @ν
   | _, _, _, .nil => rfl
   | _, ν, _, .cons _ _ _ _ B _ ds => by
     rw [Destructors.substLevels, Destructors.shape, Destructors.shape, Term.shape_substLevels ls' B,

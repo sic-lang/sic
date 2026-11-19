@@ -19,6 +19,9 @@ erased.
 
 The shape reads the multiplicities and the skeletons only, so that the usage and the ownership of
 the target language read it, with the factor that it gives the uses of the scope.
+The ownership of annex 13 reads the same shape on each axis of the grades, the uses at run time and
+all the uses, where its multiplicities are those of the axis: the requirements of the recursions on
+the observations of a nested field.
 
 ADE have no nested fields.
 -/

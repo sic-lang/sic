@@ -174,7 +174,7 @@ the variables of the branches renamed as `E₀` binds them. -/
 def NestedRunsAt (ν : Nest Name) (A t : Term 0 []) (R : RunRel) : Prop :=
   ∀ (e A' : Term 0 []) (mr : Lifting.Result 0) (ms : Shape.Motive),
     Term.NestedResult sig v ρ₁ φ ν A t e → Term.Lifts sig v ρ₁ ν t A A' mr →
-    A.shape v (sig.shapes v sig) block Nesting.plain ν = some ms →
+    A.shape v (sig.shapes v .oneOne Grade.run sig) block Nesting.plain ν = some ms →
     (∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') → ValidTerm₀ sig ι e A' →
     ∀ {m : Nat} (g : TargetRen m m₀) (E : List Nat),
       (∀ x : Fin m₀, E[(g x : Nat)]? = E₀[(x : Nat)]?) →
@@ -494,7 +494,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rw [Destructors.recursionAt_eq_none hrecL i]
     rfl
   -- The shape of the instance is the shape of the lifting at the shapes of the arguments lifted.
-  obtain ⟨ms', hms', hmsA⟩ := has₁.shapes (fun _ h => h) (hord.liftingsHaveShapes hd sig [] rfl)
+  obtain ⟨ms', hms', hmsA⟩ := has₁.shapes (fun _ h => h)
+    (hord.liftingsHaveShapes (md := .oneOne) (ax := Grade.run) hd sig [] rfl)
     (ν := Nesting.plain) (fun x => nomatch x) hb
   have hne : S.zip ms' ≠ [] := fun h0 => by
     simp only [Term.shape, Nest.args, hms', h0] at hsh
@@ -1036,7 +1037,8 @@ theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {t e A' : Term 0 []} (ht : ValidTerm₀ sig ι t A) {mr : Lifting.Result 0}
     (hres : Term.NestedResult sig v ρ₁ φ ν A t e) (hL : Term.Lifts sig v ρ₁ ν t A A' mr)
     {σ : Shape} {π χ : Grade}
-    (hsh : A.shape v (sig.shapes v sig) block Nesting.plain ν = some ⟨.lifting σ, π, χ⟩)
+    (hsh : A.shape v (sig.shapes v .oneOne Grade.run sig) block Nesting.plain ν =
+      some ⟨.lifting σ, π, χ⟩)
     (hrun : ∃ vA R', Computesι sig ι A' vA ∧ HasRun sig ι P vA R') (hval : ValidTerm₀ sig ι e A')
     {c : Nat} {H : Heap}
     (hc : π.run ≠ .zero → ∃ π' a, H[c]? = some (.cell π' a) ∧ R H t a) (ϖ : Multiplicity)
