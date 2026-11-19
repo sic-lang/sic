@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Shape.Ownership
 public import Sic.Core.Shape.Results
-import Sic.Core.Shape.Results.Extension
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -165,37 +164,6 @@ theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.D
     sig.recursionRequirement D qs ps v χ =
       decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp) := by
   rw [Signature.recursionRequirement, hd.recursionRequirement h hq hp, Option.getD_some]
-
-/-- The requirement of the recursion of a recursor on a block that an entry of a signature declares,
-whose nested fields have shapes, is the same along the entries of a signature with more entries
-before them, whose names are distinct. -/
-theorem TypeDeclaration.recursionRequirement_append {sig pre : Signature}
-    (hd : (pre ++ sig).Distinct) {decl : TypeDeclaration} (hdecl : .typeDeclaration decl ∈ sig)
-    {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
-    {I : Instance decl.sorts decl.grades} (h : decl.NestedHaveShapes sig v m χ qs ps I) :
-    decl.recursionRequirement (pre ++ sig) v m χ qs ps I =
-      decl.recursionRequirement sig v m χ qs ps I := by
-  have hn : ∀ ax ∈ [Grade.run, Grade.total],
-      decl.nestedPairs (pre ++ sig) v m χ qs ps I ax = decl.nestedPairs sig v m χ qs ps I ax :=
-    fun ax hxs => by
-      unfold TypeDeclaration.nestedPairs
-      congr 1
-      refine List.map_congr_left fun x hx => ?_
-      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
-      rw [Constructor.nestedShapes_append hd hdecl qs ps χ (h i x.1 x.2.1 x.2.2 hi ax hxs)]
-  unfold TypeDeclaration.recursionRequirement
-  exact Grade.ext (by simp only [Parameter.recursion]; rw [hn Grade.run (by simp)])
-    (by simp only [Parameter.recursion]; rw [hn Grade.total (by simp)])
-
-/-- The nested fields of the constructors of a block that an entry of a signature declares have
-shapes along the entries of a signature with more entries before them, whose names are distinct,
-when they have shapes along the entries of the signature. -/
-theorem TypeDeclaration.NestedHaveShapes.append {sig pre : Signature}
-    (hd : (pre ++ sig).Distinct) {decl : TypeDeclaration} (hdecl : .typeDeclaration decl ∈ sig)
-    {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
-    {I : Instance decl.sorts decl.grades} (h : decl.NestedHaveShapes sig v m χ qs ps I) :
-    decl.NestedHaveShapes (pre ++ sig) v m χ qs ps I :=
-  fun i j T con hi ax hxs => (h i j T con hi ax hxs).append hd hdecl
 
 /-- Each product along a prefix of a path of the shape of a nested field gives the requirement of
 the recursion a pair, of the requirement of the field times the product and of the grade with which

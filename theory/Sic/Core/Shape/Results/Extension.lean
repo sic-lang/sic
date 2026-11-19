@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Shape.Results
+public import Sic.Core.Shape.Recursion
 import Sic.Core.Positivity.Nesting
 import Sic.Core.Shape.Results.Lifting
 
@@ -14,7 +14,7 @@ variable has a position, has no argument without shape at a position, so that th
 liftings that it reads are given, and given alike.
 The shapes of the nested fields of a constructor of a block of the signature are then the same in
 the signature with more entries, when each nested field has a shape, as the other fields have none
-in both.
+in both, and so is the requirement of the recursion of a recursor on the block, which reads them.
 
 ADE have no nested fields.
 -/
@@ -286,5 +286,38 @@ theorem Constructor.nest_of_nestedShapes {j g k' : Nat} {Δ : Scope} {sig : Sign
     split at hD
     · cases hD; exact ⟨_, rfl⟩
     · exact nomatch hD) names _ h
+
+/-! ## Requirement of the Recursion -/
+
+/-- The requirement of the recursion of a recursor on a block that an entry of a signature declares,
+whose nested fields have shapes, is the same along the entries of a signature with more entries
+before them, whose names are distinct. -/
+theorem TypeDeclaration.recursionRequirement_append {sig pre : Signature}
+    (hd : (pre ++ sig).Distinct) {decl : TypeDeclaration} (hdecl : .typeDeclaration decl ∈ sig)
+    {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
+    {I : Instance decl.sorts decl.grades} (h : decl.NestedHaveShapes sig v m χ qs ps I) :
+    decl.recursionRequirement (pre ++ sig) v m χ qs ps I =
+      decl.recursionRequirement sig v m χ qs ps I := by
+  have hn : ∀ ax ∈ [Grade.run, Grade.total],
+      decl.nestedPairs (pre ++ sig) v m χ qs ps I ax = decl.nestedPairs sig v m χ qs ps I ax :=
+    fun ax hxs => by
+      unfold TypeDeclaration.nestedPairs
+      congr 1
+      refine List.map_congr_left fun x hx => ?_
+      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
+      rw [Constructor.nestedShapes_append hd hdecl qs ps χ (h i x.1 x.2.1 x.2.2 hi ax hxs)]
+  unfold TypeDeclaration.recursionRequirement
+  exact Grade.ext (by simp only [Parameter.recursion]; rw [hn Grade.run (by simp)])
+    (by simp only [Parameter.recursion]; rw [hn Grade.total (by simp)])
+
+/-- The nested fields of the constructors of a block that an entry of a signature declares have
+shapes along the entries of a signature with more entries before them, whose names are distinct,
+when they have shapes along the entries of the signature. -/
+theorem TypeDeclaration.NestedHaveShapes.append {sig pre : Signature}
+    (hd : (pre ++ sig).Distinct) {decl : TypeDeclaration} (hdecl : .typeDeclaration decl ∈ sig)
+    {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
+    {I : Instance decl.sorts decl.grades} (h : decl.NestedHaveShapes sig v m χ qs ps I) :
+    decl.NestedHaveShapes (pre ++ sig) v m χ qs ps I :=
+  fun i j T con hi ax hxs => (h i j T con hi ax hxs).append hd hdecl
 
 end Sic.Core
