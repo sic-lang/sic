@@ -39,6 +39,10 @@ The shape is a function, which the erasure computes on the syntax, and it is the
 instance of a lifting that the signature declares only: an instance of a lifting that the signature
 does not declare has none.
 
+The shapes of the nested fields of a constructor are those of their types, in the block of the
+recursor, whose types have the shape of the recursor itself on their skeletons, and the ownership of
+the source and the erasure read them alike.
+
 The RFC names the variables, so that the shape of a variable lifted is found by its name; with de
 Bruijn indices, the shapes of the variables of a scope are a nesting of its variables, whose
 positions hold the shapes of the variables lifted, while the types of the block, which a name finds,
@@ -187,5 +191,48 @@ def Signature.shapes (sig : Signature) (v : Lifting.Variables) (m : Mode)
     else sig.shapes v m ax sig' D qs ps ms
   | _ :: sig' => sig.shapes v m ax sig'
 termination_by structural sig' => sig'
+
+/-! ## Shapes of the Nested Fields -/
+
+-- ADE: none.
+/-- The shapes of the types of the block whose names are `names`, for a recursor whose results that
+are motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`: the
+recursor itself, on the skeleton of the type when its multiplicity is `0`, of the factor `11ᵖ` and
+of the ownership `χ`, as the lifting of the block gives them, and none for the other names. -/
+def Signature.blockShapes (sig : Signature) (names : List Name) (qs : List Quality)
+    (ps : List Grade) (χ : Grade) : Name → Option Shape.Motive :=
+  fun D => if D ∈ names then some ⟨.recursor (sig.skeleton D qs ps), .linearLinear, χ⟩ else none
+
+/-- The shape of the nested result of a field, from the shape of its type: the shape of the lifting
+when the result is the corecursor of a lifting, and none for the others. -/
+def Shape.Motive.nested : Option Shape.Motive → Option Shape
+  | some ⟨.lifting σ, _, _⟩ => some σ
+  | _ => none
+
+-- ADE: none.
+/-- The shapes of the nested results of the fields of a telescope, the first one first: the shape
+of the lifting of the type of each nested field, at the nesting of its type in the block whose names
+are `names`, where `lookup` gives the shapes of the liftings and `block` those of the types of the
+block, and none for the other fields; the variables of the fields have no shape, since the lifting
+of a block lifts no variable. -/
+def Telescope.nestedShapes (v : Lifting.Variables) (lookup : Shape.Lookup)
+    (block : Name → Option Shape.Motive) (names : List Name) :
+    {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → List (Option Shape)
+  | _, [], .nil => []
+  | _, _ :: _, .cons _ _ A Θ =>
+    Shape.Motive.nested (A.shape v lookup block Nesting.plain (A.blockNest names)) ::
+      Θ.nestedShapes v lookup block names
+
+-- ADE: none.
+/-- The shapes of the nested results of the fields of the constructor `con` at the instance `I`, in
+a block whose types are named `names`, of a recursor of the variables `v` whose results that are
+motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`,
+computed in the mode `m` on the axis `ax` of the grades, in the signature `sig`: the shape of each
+nested field, and none for the other fields, in order. -/
+def Constructor.nestedShapes {j g k' : Nat} {Δ : Scope} (sig : Signature) (v : Lifting.Variables)
+    (m : Mode) (ax : Grade → Multiplicity) (names : List Name) (qs : List Quality)
+    (ps : List Grade) (χ : Grade) (con : Constructor j g k' Δ) (I : Instance j g) :
+    List (Option Shape) :=
+  (con.fields I).nestedShapes v (sig.shapes v m ax sig) (sig.blockShapes names qs ps χ) names
 
 end Sic.Core
