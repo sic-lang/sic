@@ -203,6 +203,34 @@ theorem _root_.Sic.Grading.Grade.fieldMultiplicity_results (r p : Grade) {j g k'
   rw [Nat.zero_add] at h
   exact h
 
+/-! ## Validation of the Multiplicity of a Nested Field -/
+
+/-- The multiplicity that the erasure gives the variable of a nested field is below every
+multiplicity that, added to the uses of the corecursor of its result, covers the uses of the
+field. -/
+theorem _root_.Sic.Grading.Grade.fieldMultiplicity_nested_le (r p e : Grade) (l : Nat) (σ : Shape)
+    (g : Multiplicity) (h : (r * p).run ≤ g + e.run * (σ.factor * r.run)) :
+    r.fieldMultiplicity (some p) (some (.nested l σ, e)) ≤ g :=
+  Multiplicity.sub_best.1 _ _ _ h
+
+/-- The multiplicity that the erasure gives the variable of a nested field, added to the uses of the
+corecursor of its result, covers the uses of the field exactly when some multiplicity does: it is
+the least of them. -/
+theorem _root_.Sic.Grading.Grade.fieldMultiplicity_nested_covers (r p e : Grade) (l : Nat)
+    (σ : Shape) :
+    (∃ g : Multiplicity, (r * p).run ≤ g + e.run * (σ.factor * r.run)) ↔
+      (r * p).run ≤ r.fieldMultiplicity (some p) (some (.nested l σ, e)) +
+        e.run * (σ.factor * r.run) :=
+  ⟨fun ⟨_, h⟩ => Multiplicity.sub_best.2 _ _ _ h, fun h => ⟨_, h⟩⟩
+
+/-- The uses of the corecursor of a nested result that the erasure subtracts, its grade times the
+factor of its shape times the grade of the recursor, are those that the usage of the recursor adds
+to the uses of the field, the grade times the factor `π` of the typing times the grade of the
+recursor, when the factor of the shape is `run(π)`. -/
+theorem _root_.Sic.Grading.Grade.nested_uses_eq (r e π : Grade) (σ : Shape)
+    (h : σ.factor = π.run) : e.run * (σ.factor * r.run) = ((e * π) * r).run := by
+  rw [Grade.run_mul_mul, h]
+
 -- ADE: none.
 /-- The typing and the erasure give each recursive result of the constructor `con` the same factor,
 the erasure at run time, in a signature whose names are distinct and that declares its liftings in
