@@ -12,9 +12,10 @@ ownership of the result of each recursive destructor of a block of codata types 
 a constant, at each instance, which the erasure keeps, so that the ownership of the target language
 reads it in the branches of the corecursors.
 
-The judgments of ownership hold in every signature that has the entries of theirs: the ownership
-reads its signature only by the entries that it has, the constants, the data types and the codata
-types, so that a signature with more entries gives the same premises.
+The judgments of ownership hold in every signature that has more entries before theirs, all of
+distinct names: the ownership reads its signature by the entries that it has, the constants, the
+data types and the codata types, and by the shapes of the nested fields, which the requirement `r̂`
+of the recursion of a recursor reads, so that such a signature gives the same premises.
 The judgment `⊢ Σ ◀` checks the body of each constant definition in the signature before it, while
 the program of a signature erases it in the whole signature, which has more entries.
 The proof is by mutual structural recursion on the derivations, in the clause `where` of the
@@ -63,24 +64,27 @@ theorem OwnershipSig.recursiveResult {sig : Signature} (hs : OwnershipSig sig)
     · exact ih h
 
 -- ADE: none.
-/-- The judgments of ownership hold in every signature with more entries after theirs, whose names
-are distinct: the requirement of the recursion of a recursor reads the shapes of the nested fields
-of its block, which such a signature keeps. -/
+/-- The judgments of ownership hold in every signature that has more entries before theirs, all of
+distinct names: the requirement `r̂` of the recursion of a recursor reads the shapes of the nested
+fields of its block, which such a signature keeps. -/
 structure OwnershipStableUnderExtension : Prop where
-  /-- The value of a term has the same ownership in a signature with more entries.
+  /-- The value of a term has the same ownership in a signature that has more entries before
+  theirs, all of distinct names.
   RFC: `\mathsf{ext}_{◀}.t` -/
   ownership : ∀ {sig pre : Signature} {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode}
     {p : Grade} {t : Term k Γ}, (pre ++ sig).Distinct → Ownership sig φ m p t →
       Ownership (pre ++ sig) φ m p t
-  /-- Arguments of a telescope have the same ownerships in a signature with more entries.
+  /-- Arguments of a telescope have the same ownerships in a signature that has more entries
+  before theirs, all of distinct names.
   RFC: `\mathsf{ext}_{◀}.\bar t` -/
   ownershipArgs : ∀ {sig pre : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {φ : Var Γ .var → Grade} {m : Mode} {ts : Args k Γ ps} {os : List Grade},
     (pre ++ sig).Distinct → OwnershipArgs sig φ m ts os → OwnershipArgs (pre ++ sig) φ m ts os
 
 -- ADE: none.
-/-- The judgments of ownership hold in every signature with more entries after theirs, whose names
-are distinct.
+/-- The judgments of ownership hold in every signature that has more entries before theirs, all of
+distinct names, since the requirement `r̂` of the recursion reads the shapes, which such a
+signature keeps.
 RFC: `\mathsf{ext}_{◀}.t`
 RFC: `\mathsf{ext}_{◀}.\bar t` -/
 theorem ownershipStableUnderExtension : OwnershipStableUnderExtension :=

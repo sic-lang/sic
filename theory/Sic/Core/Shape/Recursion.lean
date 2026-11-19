@@ -46,7 +46,7 @@ def TypeDeclaration.nestedPairs (decl : TypeDeclaration) (sig : Signature) (v : 
 for a recursor of the variables `v`, checked in the mode `m`, whose results that are motives have
 the ownership `χ`, at the instance `I` of the qualities `qs` and of the grades `ps`: each lifting
 that the requirement of the recursion reads is declared, so that it reads the same shapes in a
-signature with more entries. -/
+signature that has more entries before theirs, all of distinct names. -/
 def TypeDeclaration.NestedHaveShapes (decl : TypeDeclaration) (sig : Signature)
     (v : Lifting.Variables) (m : Mode) (χ : Grade) (qs : List Quality) (ps : List Grade)
     (I : Instance decl.sorts decl.grades) : Prop :=
