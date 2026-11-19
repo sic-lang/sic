@@ -4,10 +4,8 @@ public import Sic.Core.RunTime.Relation.Recursors.Constructor
 public import Sic.Core.RunTime.Relation.Recursors.Nested
 public import Sic.Core.RunTime.Relation.Recursors.Skeleton
 import Sic.Core.Erasure.Fields
-import Sic.Core.Erasure.Renaming
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
-import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Data
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Recursors.Erasure

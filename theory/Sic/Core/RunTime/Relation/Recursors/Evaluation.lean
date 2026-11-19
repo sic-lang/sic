@@ -1,9 +1,6 @@
 module
 
-public import Sic.Core.Erasure.Nested
-public import Sic.Core.Erasure.Results
 public import Sic.Core.Lifting.Substitution
-public import Sic.Core.Results
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.RunTime.Monotonicity
