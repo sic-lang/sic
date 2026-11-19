@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Skeleton
-public import Sic.Core.Syntax
 
 /-!
 # Shapes of the Nested Results
