@@ -61,4 +61,12 @@ theorem RunValid.sub {sig : Signature} {ι : Interpretation} {P : Program} {Γ :
     (hle : δ ≤ᶜ γ) (h : RunValid sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx δ t A :=
   fun ϖ σ H E V hσ hEV hV => h ϖ σ H E V hσ hEV (RunsAsSubst.of_le ctx hle hV)
 
+-- ADE: none.
+/-- A term valid at run time with the grades `γ` in every environment that binds the scope through a
+renaming is valid so with any grades `δ ≤ᶜ γ`, as `RunValid.sub` states. -/
+theorem RunValidRen.sub {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+    {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ δ : GradeVector Γ.length} {t A : Term 0 Γ}
+    (hle : δ ≤ᶜ γ) (h : RunValidRen sig ι P hΓ ctx γ t A) : RunValidRen sig ι P hΓ ctx δ t A :=
+  fun ϖ σ H E V hσ hEV hV => h ϖ σ H E V hσ hEV (RunsAsSubst.of_le ctx hle hV)
+
 end Sic.Core

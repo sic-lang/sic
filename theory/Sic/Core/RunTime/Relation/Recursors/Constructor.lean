@@ -56,7 +56,8 @@ variable {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {decl : TypeDec
   {κ : Universe 0}
 
 /-- The branches of a recursor are valid at run time: each branch, in the context extended by the
-fields of its constructor and by its recursive results, at the grades of its variables. -/
+fields of its constructor and by its recursive results, at the grades of its variables, in every
+environment that binds its scope through a renaming. -/
 def RunValidBranches (sig : Signature) (ι : Interpretation) (P : Program) (hΓ : Γ.FirstOrder)
     (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0))
     (ps : List Grade) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
@@ -66,7 +67,7 @@ def RunValidBranches (sig : Signature) (ι : Interpretation) (P : Program) (hΓ 
     con.results (.ofLists qs ps hq hp) decl.names Cs = some R →
     us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
       (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-    RunValid sig ι P ((hΓ.extend _).extend _)
+    RunValidRen sig ι P ((hΓ.extend _).extend _)
       ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append R)
       (((δs i).extendGrades (gs i) (con.params (.ofLists qs ps hq hp))).extendResults
         (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
@@ -124,11 +125,13 @@ theorem RunsAs.recursor_of_redStar (hd : sig.Distinct)
   have hmot := (hCv j T' C' hj hCj).motive hσ hvv
   exact (RunsAs.redStar_iff hd (RedStar.recursor htv)).2 (hrun.conv hd hrv.2 hmot.2)
 
-/-- The erased recursor eliminates the address of a constructor of a type of the block, by the
+/-- The erased recursor, its branches renamed by `g` in an environment `E'` that binds each variable
+`g x` as `E` binds `x`, eliminates the address of a constructor of a type of the block, by the
 branch of its case, to the address of a value to which the recursor on a term of the instance that
 computes to this constructor is related at the motive at the term, when the fields of the
 constructor are related to their addresses at their grades in the branch, and the recursive
-results used at run time evaluate to addresses related to them. -/
+results used at run time evaluate, with the branches renamed by any renaming in any such
+environment, to addresses related to them. -/
 theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
     (has : ValidInstanceArgsΓ sig ι ctx as
@@ -159,7 +162,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         ((con.fields (.ofLists qs ps hq hp)).nest decl.names) ·ᶜ χ)
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) {σ : Subst 0 [] Γ} {H : Heap}
     {E V : List Nat} (hσ : EqSubst sig ι ctx σ σ) (hEV : H.Binds E V)
-    (hE : RunsAsSubst sig ι P H ctx χ σ V)
+    (hE : RunsAsSubst sig ι P H ctx χ σ V) {m : Nat} (g : TargetRen m Γ.length) (E' : List Nat)
+    (hgE : ∀ x : Fin Γ.length, E'[(g x : Nat)]? = E[(x : Nat)]?)
     {i j : Nat} {T' : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (hj : decl.dataTypes[j]? = some T') (hcon : con ∈ T'.constructors)
@@ -185,16 +189,19 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) ts.terms ts.terms →
       RunsAsArgs sig ι P H' (gs i) ts bs
         (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) (as.subst σ)) ∧
-      Terms.RecAt (fun D' t b => ∀ ϖ' H'', H'.Extends H'' → ∃ v H₂ tr,
-        EvalRec P ϖ' H'' E r.run ϱ (us.erase sig Mode.oneOne.erased hΓ r
-          (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) b v H₂
-          tr ∧ H''.Extends H₂ ∧
+      Terms.RecAt (fun D' t b => ∀ ϖ' H'', H'.Extends H'' → ∀ {m' : Nat}
+        (g' : TargetRen m' Γ.length) (E'' : List Nat),
+        (∀ x : Fin Γ.length, E''[(g' x : Nat)]? = E[(x : Nat)]?) → ∃ v H₂ tr,
+        EvalRec P ϖ' H'' E'' r.run ϱ ((us.erase sig Mode.oneOne.erased hΓ r
+          (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
+          ((sig.caseFieldParams D qs ps).getD [])).rename g') b v H₂ tr ∧ H''.Extends H₂ ∧
         ∀ C, (Cs.subst σ).get (decl.names.idxOf D') = some ⟨0, C⟩ →
           RunsAs sig ι P H₂ (.recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) v
             (C.subst₀ (Subst₀.single t)))
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (us.grades i) ts.terms bs) :
-    ∃ v H₃ tr, EvalRec P ϖ₀ H' E r.run ϱ (us.erase sig Mode.oneOne.erased hΓ r
-        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) a v H₃ tr ∧
+    ∃ v H₃ tr, EvalRec P ϖ₀ H' E' r.run ϱ ((us.erase sig Mode.oneOne.erased hΓ r
+        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
+        ((sig.caseFieldParams D qs ps).getD [])).rename g) a v H₃ tr ∧
       H'.Extends H₃ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
         RunsAs sig ι P H₃ (.recursor r ς χ' T'.name qs ls ps (as.subst σ) w κ (Cs.subst σ) (us.subst σ))
@@ -282,7 +289,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   obtain ⟨vs, H₂, tr₁, hevs, hH₂, hruns⟩ := Args.evalResults hd
     ((con.fields (.ofLists qs ps hq hp)).nest decl.names) (Telescope.length_nest _ _)
     ts 0 bs List.drop_zero (RunsAsArgs.length hfa) gs₀.toList gs₀.length_toList (hrn ▸ hQ)
-    (Constructor.results_subst_append hRt σ ts) hrsf ϖ₀ H' (List.prefix_refl _)
+    (Constructor.results_subst_append hRt σ ts) hrsf ϖ₀ H' (List.prefix_refl _) g E' hgE
   -- The branch, at the substitution of its context by `σ`, the fields and the results.
   have hres := EqSubst.results (sig := sig) (ι := ι) (f₁ := f) (f₂ := f) _ ts ts
     (Constructor.results_subst_append hRt σ ts) hrsf hrsf
@@ -322,7 +329,18 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       (vs.reverse ++ (bs.reverse ++ V)) := by
     have h' := (Heap.binds_bind H₂ hlen).reverse.append (hEV.mono (hH'.trans (hH₂.trans hH₂')))
     rwa [List.reverse_append, List.append_assoc] at h'
+  -- The renamed branch runs in the environment `E'` extended by the cells of its variables, which
+  -- binds its renamed scope as the environment of the branch binds it.
+  have hL : ((List.range' H₂.length (bs ++ vs).length).reverse).length =
+      (con.params (.ofLists qs ps hq hp)).length +
+        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length := by
+    simp only [List.length_reverse, List.length_range', List.length_append, RunsAsArgs.length hfa,
+      RunsAsArgs.length hruns]
   obtain ⟨v, H₃, tr₂, hev, hH₃, hrun⟩ := hbr ϖ₀ _ H₂' _ _ hEqbr hB (hσr.mono hd hH₂')
+    (fun x => g.lift _ (Fin.cast (Scope.length_extend_extend Γ _ _) x))
+    ((List.range' H₂.length (bs ++ vs).length).reverse ++ E')
+    (fun x => TargetRen.getElem?_lift hgE _ hL _)
+  rw [← Target.rename_cast] at hev
   -- The erased recursor steps to the erased branch.
   have hks : List.ofFn
       (fun j : Fin (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length =>
@@ -414,8 +432,9 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
           ρ * π₀ = .zero → ρ = .zero) _ _ _ _ hle₁ hne hz)]
         exact (by decide : ∀ x : Multiplicity, .omega ≤ x) _
       · exact hle hz
-  refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha hget (RunsAsArgs.length hfa) hπ hκ hϱ (hks ▸ hevs)
-    ((Eval.cast _).2 hev), hH₂.trans (hH₂'.trans hH₃), fun C'' hC'' => ?_⟩
+  refine ⟨v, H₃, tr₁ ++ tr₂, .iota ha (by rw [TargetBranches.get_rename, hget]; rfl)
+    (RunsAsArgs.length hfa) hπ hκ hϱ (hks ▸ hevs) hev, hH₂.trans (hH₂'.trans hH₃),
+    fun C'' hC'' => ?_⟩
   rw [hC'] at hC''
   cases hC''
   -- The recursor on the constructor steps to the branch, at the motive at the constructor.

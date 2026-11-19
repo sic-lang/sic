@@ -20,15 +20,6 @@ open Sic.Grading
 
 variable {sig : Signature} {ι : Interpretation} {P : Program}
 
-/-! ## Evaluation -/
-
-/-- A cast of the number of variables of a term of the target language keeps its evaluations. -/
-theorem Eval.cast {n m : Nat} (h : n = m) {ϖ : Multiplicity} {H H' : Heap} {E : List Nat}
-    {M : Target n} {a : Nat} {R : List Nat} :
-    Eval P ϖ H E (h ▸ M) a H' R ↔ Eval P ϖ H E M a H' R := by
-  subst h
-  rfl
-
 /-! ## Signatures -/
 
 /-- In a signature whose names are distinct, the case of a constructor of a data type is a case of

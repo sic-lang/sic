@@ -56,11 +56,12 @@ theorem RunsAs.sort {sig : Signature} {ι : Interpretation} {P : Program} {H : H
 /-- A term of a sort that its erasure replaces by `↯` is valid at run time, at every grades: `↯` is
 allocated, and the term, which computes as the meaning of its type says, is related to its address,
 as every term of a sort. -/
-theorem RunValid.erased {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+theorem RunValidRen.erased {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t : Term 0 Γ}
     {κ : Universe 0} (ht : ValidTermΓ sig ι ctx t (.sort κ))
-    (he : t.erase sig Mode.oneOne.erased hΓ = .erased) : RunValid sig ι P hΓ ctx γ t (.sort κ) := by
-  intro _ σ H E _ hσ _ _
+    (he : t.erase sig Mode.oneOne.erased hΓ = .erased) :
+    RunValidRen sig ι P hΓ ctx γ t (.sort κ) := by
+  intro _ σ H _ _ hσ _ _ _ _ _ _
   obtain ⟨-, hcl, -⟩ := ht.2 σ σ hσ
   obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
   refine ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
@@ -92,28 +93,29 @@ theorem RunsAsSubst.varIn {sig : Signature} {ι : Interpretation} {P : Program} 
 -- ADE: `fundamental′`, the case `var`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- `(var)` at run time: the variable `x : A ∈ Γ`, whose grade in `γ` is not in `S^{11ᵐ}`, is valid
 at run time with the grades `γ`: its erasure is the variable, which reads the cell that the
-environment gives it, whose address its closed term is related to. -/
-theorem RunValid.var {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+environment gives it, whose address its closed term is related to; renamed, it reads the same cell
+in an environment that binds it as the environment binds `x`. -/
+theorem RunValidRen.var {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {x : Var Γ .var}
     {A : Term 0 Γ} (hx : ctx.VarIn x A) (hγ : γ x.toFin ∉ Mode.oneOne.erased) :
-    RunValid sig ι P hΓ ctx γ (.var₀ x) A := by
-  intro _ σ H E V _ hEV hV
+    RunValidRen sig ι P hΓ ctx γ (.var₀ x) A := by
+  intro _ σ H E V _ hEV hV _ g E' hg
   obtain ⟨a, ha, hrun⟩ := hV.varIn hx hγ
   obtain ⟨c, π, hc, hcell⟩ := hEV.getElem? ha
-  exact ⟨a, H, [c], .var hc hcell, List.prefix_refl H, hrun⟩
+  exact ⟨a, H, [c], .var ((hg _).trans hc) hcell, List.prefix_refl H, hrun⟩
 
 /-! ## Constants -/
 
 -- ADE: the case `defn` of `fundamental′`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- A constant valid at run time at a closed type in the empty context is valid at run time in every
-context, at this type: its erasure evaluates its body in the program, without the addresses of the
-variables. -/
-theorem RunValid.const {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+context, at this type, in every environment: its erasure evaluates its body in the program, in the
+empty environment, without the addresses of the variables. -/
+theorem RunValidRen.const {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {f : Name}
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} {γ₀ : GradeVector 0}
     {A : Term 0 []} (h : RunValid sig ι P .nil .empty γ₀ (.const f qs ls ps) A) :
-    RunValid sig ι P hΓ ctx γ (.const f qs ls ps) A.weakenClosed := by
-  intro w σ H E _ _ _ _
+    RunValidRen sig ι P hΓ ctx γ (.const f qs ls ps) A.weakenClosed := by
+  intro w σ H _ _ _ _ _ _ _ _ _
   let σ₀ : Subst 0 [] [] := fun x => nomatch x
   have hσ₀ : ∀ t : Term 0 [], t.subst σ₀ = t := fun t => by
     have h := Term.subst_weakenClosed σ₀ t
@@ -134,10 +136,10 @@ valid at run time with the grades that they use, which the grades of the argumen
 
 -- ADE: none.
 /-- `(tel_ε▶)` at run time: no argument is valid at run time with the grades `𝟘ᶜ`. -/
-theorem RunValidArgs.nil {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+theorem RunValidArgsRen.nil {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} :
-    RunValidArgs sig ι P hΓ ctx 𝟘ᶜ (.nil : Args 0 Γ []) .nil :=
-  fun _ _ H _ _ _ _ _ => ⟨[], H, [], .nil, List.prefix_refl H, trivial⟩
+    RunValidArgsRen sig ι P hΓ ctx 𝟘ᶜ (.nil : Args 0 Γ []) .nil :=
+  fun _ _ H _ _ _ _ _ _ _ _ _ => ⟨[], H, [], .nil, List.prefix_refl H, trivial⟩
 
 -- ADE: none.
 /-- `(tel_,▶)` at run time: the arguments `t, t̄` of the telescope `x : A ▶ p, Θ` are valid at run
@@ -145,34 +147,39 @@ time with the grades `(p ·ᶜ δ) +ᶜ δ'`, when `t` is valid at run time at `
 `p` is not in `S^{11ᵐ}`, and `t̄` at `Θ[t / x]` with the grades `δ'`, in a signature whose names are
 distinct: the addresses that stand for a substitution as these grades require stand for it as `δ`
 requires, when `p` is not in `S^{11ᵐ}`, and as `δ'` requires. -/
-theorem RunValidArgs.cons {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+theorem RunValidArgsRen.cons {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {δ δ' : GradeVector Γ.length} {ps : List Parameter}
     {q : Grade} {p : Parameter} {t A : Term 0 Γ} {ts : Args 0 Γ ps}
     {Θ : Telescope 0 (.var :: Γ) ps} (hd : sig.Distinct)
-    (ht : p.usage ∉ Mode.oneOne.erased → RunValid sig ι P hΓ ctx δ t A)
-    (hts : RunValidArgs sig ι P hΓ ctx δ' ts (Θ.subst₀ (Subst₀.single t))) :
-    RunValidArgs sig ι P hΓ ctx ((p.usage ·ᶜ δ) +ᶜ δ') (.cons t ts) (.cons q p A Θ) := by
-  intro w σ H E V hσ hEV hE
+    (ht : p.usage ∉ Mode.oneOne.erased → RunValidRen sig ι P hΓ ctx δ t A)
+    (hts : RunValidArgsRen sig ι P hΓ ctx δ' ts (Θ.subst₀ (Subst₀.single t))) :
+    RunValidArgsRen sig ι P hΓ ctx ((p.usage ·ᶜ δ) +ᶜ δ') (.cons t ts) (.cons q p A Θ) := by
+  intro w σ H E V hσ hEV hE _ g E' hg
   have hS := Mode.erasesUncounted .oneOne
   have hE' : RunsAsSubst sig ι P H ctx δ' σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
   have hΘ := Telescope.subst_subst₀_of (Subst₀.Swaps.single t σ) Θ
   by_cases hp : p.usage ∈ Mode.oneOne.erased
   · obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hts w σ (H ++ [.erased]) E V hσ
-      (hEV.mono (List.prefix_append _ _)) (hE'.mono hd (List.prefix_append _ _))
+      (hEV.mono (List.prefix_append _ _)) (hE'.mono hd (List.prefix_append _ _)) g E' hg
     refine ⟨H.length :: bs, H', [] ++ R, ?_, (List.prefix_append _ _).trans hH',
       fun h => absurd hp h, ?_⟩
-    · show EvalAll P w H E (.cons _ _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
+    · show EvalAll P w H E' (.cons _ _
+        ((if p.usage ∈ Mode.oneOne.erased then (.erased : Target Γ.length) else _).rename g) _)
+        _ _ _
       rw [ite_eq_left hp]
       exact .cons .erased hevs
     · rw [← hΘ]
       exact hruns
   · have hδ : RunsAsSubst sig ι P H ctx δ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
       h (hS.mul _ _ hp (hS.add _ _ h'))) hE
-    obtain ⟨a, H₁, R₁, hev, hH₁, hrun⟩ := ht hp _ σ H E V hσ hEV hδ
-    obtain ⟨bs, H', R₂, hevs, hH', hruns⟩ := hts w σ H₁ E V hσ (hEV.mono hH₁) (hE'.mono hd hH₁)
+    obtain ⟨a, H₁, R₁, hev, hH₁, hrun⟩ := ht hp _ σ H E V hσ hEV hδ g E' hg
+    obtain ⟨bs, H', R₂, hevs, hH', hruns⟩ :=
+      hts w σ H₁ E V hσ (hEV.mono hH₁) (hE'.mono hd hH₁) g E' hg
     refine ⟨a :: bs, H', R₁ ++ R₂, ?_, hH₁.trans hH', fun _ => hrun.mono hd hH', ?_⟩
-    · show EvalAll P w H E (.cons _ _ (if p.usage ∈ Mode.oneOne.erased then .erased else _) _) _ _ _
+    · show EvalAll P w H E' (.cons _ _
+        ((if p.usage ∈ Mode.oneOne.erased then (.erased : Target Γ.length) else _).rename g) _)
+        _ _ _
       rw [ite_eq_right hp]
       exact .cons hev hevs
     · rw [← hΘ]
@@ -183,12 +190,12 @@ theorem RunValidArgs.cons {sig : Signature} {ι : Interpretation} {P : Program} 
 -- ADE: `conv-▸⊩ʳ∷`, in `Graded/Erasure/LogicalRelation/Hidden.agda`.
 /-- A term valid at run time at a type is valid at run time at every type equal to it, when it is a
 term of the type. -/
-theorem RunValid.conv {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+theorem RunValidRen.conv {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A B : Term 0 Γ}
     (ht : ValidTermΓ sig ι ctx t A) (hAB : ValidEqTypeΓ sig ι ctx A B)
-    (h : RunValid sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx γ t B := by
-  intro w σ H E V hσ hEV hE
-  obtain ⟨a, H', R, hev, hH, hrun⟩ := h w σ H E V hσ hEV hE
+    (h : RunValidRen sig ι P hΓ ctx γ t A) : RunValidRen sig ι P hΓ ctx γ t B := by
+  intro w σ H E V hσ hEV hE _ g E' hg
+  obtain ⟨a, H', R, hev, hH, hrun⟩ := h w σ H E V hσ hEV hE g E' hg
   obtain ⟨hd, hAB'⟩ := hAB.2 σ σ hσ
   exact ⟨a, H', R, hev, hH, hrun.conv hd (ht.2 σ σ hσ).2 hAB'⟩
 

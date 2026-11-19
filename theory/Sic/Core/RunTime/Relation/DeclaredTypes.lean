@@ -580,8 +580,9 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,
 applied to arguments of its fields valid at run time with the grades `γ`, is valid at run time at its
 instance with the grades `γ`, in a signature whose names are distinct: its erasure evaluates its
-arguments, then allocates a value of its case with their addresses. -/
-theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ}
+arguments, then allocates a value of its case with their addresses, the same in every environment
+that binds the scope through a renaming. -/
+theorem RunValidRen.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ}
     {γ : GradeVector Γ.length} {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
@@ -593,10 +594,10 @@ theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ct
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
     {ts : Args 0 Γ (con.params (.ofLists qs ps hq hp))}
     (hts : ValidArgsΓ sig ι ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
-    (hrun : RunValidArgs sig ι P hΓ ctx γ ts
+    (hrun : RunValidArgsRen sig ι P hΓ ctx γ ts
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
-    RunValid sig ι P hΓ ctx γ (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as) := by
-  intro w σ H E V hσ hEV hE
+    RunValidRen sig ι P hΓ ctx γ (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as) := by
+  intro w σ H E V hσ hEV hE _ g E' hg
   have hfg := hd.fieldParams h hc hq hp
   obtain ⟨hdecl, hT, rfl⟩ := h
   obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem hdecl hT hc
@@ -604,14 +605,16 @@ theorem RunValid.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {ct
       .ctor i (ts.terms.erase sig Mode.oneOne.erased hΓ (con.params (.ofLists qs ps hq hp))) := by
     rw [Term.erase, hi, hfg]
     rfl
-  obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hrun w σ H E V hσ hEV hE
-  have hπ := Args.multiplicities_erase sig Mode.oneOne.erased hΓ ts
-  have hϱ := Args.requirements_erase sig Mode.oneOne.erased hΓ ts
+  obtain ⟨bs, H', R, hevs, hH', hruns⟩ := hrun w σ H E V hσ hEV hE g E' hg
+  have hev := Eval.ctor (i := i) hevs
+  rw [Targets.multiplicities_rename, Targets.requirements_rename,
+    Args.multiplicities_erase sig Mode.oneOne.erased hΓ ts,
+    Args.requirements_erase sig Mode.oneOne.erased hΓ ts] at hev
   have hH'' : H'.Extends
       (H' ++ [.ctor i ((con.params (.ofLists qs ps hq hp)).map (·.usage.run))
         ((con.params (.ofLists qs ps hq hp)).map (·.requirement.run)) bs]) :=
     List.prefix_append _ _
-  refine ⟨H'.length, _, R, he ▸ hπ ▸ hϱ ▸ .ctor hevs, hH'.trans hH'', ?_⟩
+  refine ⟨H'.length, _, R, by rw [he]; exact hev, hH'.trans hH'', ?_⟩
   have hts' := hts.2 σ σ hσ
   rw [Constructor.fieldsAt_subst] at hts' hruns
   have hc' := RunsAs.ctor hd ⟨hdecl, hT, rfl⟩ hv hc hq hl hp hadm (has.2 σ σ hσ) hts' hi

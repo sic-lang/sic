@@ -101,10 +101,11 @@ theorem RunTelRel.recAt {n : Nat} {below : LevelRel.Below n} {Q : Name → Term 
 
 /-- The recursive results of a branch at run time, by induction on the fields, whose nestings are
 `ns`: from the addresses `bs` of the fields, the last of the addresses `bsAll` from the position
-`o`, the recursive results evaluate, at each weight and in each heap that extends `H₀`, to addresses
-related to the results `f D t` at the motives at their fields, each at its grade in `es`, when the
-recursor on each recursive field `t` of the type `D` whose result is used evaluates, at each weight
-and in each such heap, to such an address. -/
+`o`, the recursive results evaluate, at each weight, in each heap that extends `H₀` and with the
+branches renamed by any `g` in any environment `E'` that binds each variable `g x` as `E` binds `x`,
+to addresses related to the results `f D t` at the motives at their fields, each at its grade in
+`es`, when the recursor on each recursive field `t` of the type `D` whose result is used evaluates,
+at each weight, in each such heap and with the branches so renamed, to such an address. -/
 theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ ϱ : Multiplicity} {Ns : TargetBranches m}
     {E : List Nat}
     {f : Name → Term 0 [] → Term 0 []} {names : List Name} {Cs : Motives 0 []} {H₀ : Heap}
@@ -113,21 +114,25 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ ϱ : Multiplicity} {N
     (ts : Args 0 [] ps) → (o : Nat) → (bs : List Nat) → bsAll.drop o = bs →
     bs.length = ps.length → (es : List Grade) →
     es.length = (Telescope.nestResultParams ns ps).length →
-    Terms.RecAt (fun D t b => ∀ ϖ H', H₀.Extends H' → ∃ v H₂ tr, EvalRec P ϖ H' E ρ ϱ Ns b v H₂ tr ∧
+    Terms.RecAt (fun D t b => ∀ ϖ H', H₀.Extends H' → ∀ {m' : Nat} (g : TargetRen m' m)
+      (E' : List Nat), (∀ x : Fin m, E'[(g x : Nat)]? = E[(x : Nat)]?) →
+      ∃ v H₂ tr, EvalRec P ϖ H' E' ρ ϱ (Ns.rename g) b v H₂ tr ∧
       H'.Extends H₂ ∧ ∀ C, Cs.get (names.idxOf D) = some ⟨0, C⟩ →
         RunsAs sig ι P H₂ (f D t) v (C.subst₀ (Subst₀.single t))) (ns.map Nest.blockName) es
       ts.terms bs →
     {R : Telescope 0 [] (Telescope.nestResultParams ns ps)} →
     Motives.results names Cs ns ts.terms = some R →
     {rs : Args 0 [] (Telescope.nestResultParams ns ps)} → ts.results f ns = some rs →
-    ∀ ϖ H', H₀.Extends H' → ∃ vs H₂ tr, EvalResults P ϖ H' E ρ ϱ Ns bsAll
+    ∀ ϖ H', H₀.Extends H' → ∀ {m' : Nat} (g : TargetRen m' m) (E' : List Nat),
+      (∀ x : Fin m, E'[(g x : Nat)]? = E[(x : Nat)]?) →
+      ∃ vs H₂ tr, EvalResults P ϖ H' E' ρ ϱ (Ns.rename g) bsAll
       (List.zipWith (fun e l => if e ∈ Mode.oneOne.erased then RecursiveResult.erased else .field l)
         es
         (((ns.map Nest.blockName).zipIdx o).filterMap fun y => y.1.map fun _ => y.2))
         (es.map Grade.run) vs H₂ tr ∧
       H'.Extends H₂ ∧
       RunsAsArgs sig ι P H₂ (fun j => es.getD j Grade.zero) rs vs R
-  | [], ns, hlen, .nil, _, _, _, _, es, hes, _, R, hR, rs, hrs, ϖ, H', _ => by
+  | [], ns, hlen, .nil, _, _, _, _, es, hes, _, R, hR, rs, hrs, ϖ, H', _, _, _, _, _ => by
     cases ns with
     | cons _ _ => cases hlen
     | nil =>
@@ -139,22 +144,24 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ ϱ : Multiplicity} {N
       have hes' : es = [] := List.eq_nil_of_length_eq_zero hes
       subst hes'
       exact .nil
-  | _ :: _, [], hlen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by cases hlen
-  | _ :: _, _ :: _, _, .cons _ _, _, [], _, hbl, _, _, _, _, _, _, _, _, _, _ => by cases hbl
-  | _ :: _, .inst _ :: _, _, .cons _ _, _, _ :: _, _, _, _, _, _, _, hR, _, _, _, _, _ => by
+  | _ :: _, [], hlen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by cases hlen
+  | _ :: _, _ :: _, _, .cons _ _, _, [], _, hbl, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
+    cases hbl
+  | _ :: _, .inst _ :: _, _, .cons _ _, _, _ :: _, _, _, _, _, _, _, hR, _, _, _, _, _, _, _, _,
+      _ => by
     unfold Motives.results at hR
     cases hR
   | p :: ps, .plain :: ns, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, rs, hrs,
-      ϖ, H', hH' => by
+      ϖ, H', hH', _, g, E', hg => by
     have hdrop' : bsAll.drop (o + 1) = bs := by
       rw [List.drop_add_one_eq_tail_drop, hdrop]
       rfl
     unfold Motives.results at hR
     unfold Args.results at hrs
     exact Args.evalResults hd ns (Nat.succ.inj hlen) ts (o + 1) bs hdrop' (Nat.succ.inj hbl) es
-      hes hQ hR hrs ϖ H' hH'
+      hes hQ hR hrs ϖ H' hH' g E' hg
   | p :: ps, .direct D :: ns, hlen, .cons t ts, o, b :: bs, hdrop, hbl, es, hes, hQ, R, hR, rs,
-      hrs, ϖ, H', hH' => by
+      hrs, ϖ, H', hH', _, g, E', hg => by
     cases es with
     | nil => cases hes
     | cons e es =>
@@ -194,18 +201,18 @@ theorem Args.evalResults (hd : sig.Distinct) {m : Nat} {ρ ϱ : Multiplicity} {N
     by_cases he : e ∈ Mode.oneOne.erased
     · have hH'' : H'.Extends (H' ++ [.erased]) := List.prefix_append _ _
       obtain ⟨vs, H₂, R₂, hevs, hH₂, hruns⟩ := Args.evalResults hd ns hlen' ts (o + 1) bs hdrop'
-        hbl' es hes' hQ' hR'' hrs' ϖ _ (hH'.trans hH'')
+        hbl' es hes' hQ' hR'' hrs' ϖ _ (hH'.trans hH'') g E' hg
       refine ⟨H'.length :: vs, H₂, R₂, ?_, hH''.trans hH₂, fun h => (h he).elim, hruns⟩
-      show EvalResults P ϖ H' E ρ ϱ Ns bsAll
+      show EvalResults P ϖ H' E' ρ ϱ (Ns.rename g) bsAll
         ((if e ∈ Mode.oneOne.erased then RecursiveResult.erased else .field o) :: _) (e.run :: _) _
         H₂ _
       rw [ite_eq_left_of_eq_true _ _ (eq_true he)]
       exact .erased hevs
-    · obtain ⟨v, H₂, R₁, hev, hH₂, hrun⟩ := hQt he (ϖ * e.run) H' hH'
+    · obtain ⟨v, H₂, R₁, hev, hH₂, hrun⟩ := hQt he (ϖ * e.run) H' hH' g E' hg
       obtain ⟨vs, H₃, R₂, hevs, hH₃, hruns⟩ := Args.evalResults hd ns hlen' ts (o + 1) bs hdrop'
-        hbl' es hes' hQ' hR'' hrs' ϖ _ (hH'.trans hH₂)
+        hbl' es hes' hQ' hR'' hrs' ϖ _ (hH'.trans hH₂) g E' hg
       refine ⟨v :: vs, H₃, R₁ ++ R₂, ?_, hH₂.trans hH₃, fun _ => (hrun C hC).mono hd hH₃, hruns⟩
-      show EvalResults P ϖ H' E ρ ϱ Ns bsAll
+      show EvalResults P ϖ H' E' ρ ϱ (Ns.rename g) bsAll
         ((if e ∈ Mode.oneOne.erased then RecursiveResult.erased else .field o) :: _) (e.run :: _) _
         H₃ _
       rw [ite_eq_right_of_eq_false _ _ (eq_false he)]

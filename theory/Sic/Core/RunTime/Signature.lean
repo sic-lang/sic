@@ -132,9 +132,9 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         | constantDefinition _ hus =>
         rename_i d
         have hent := WfSig.validEntries hι hd hord sig hw ((List.suffix_cons _ sig).trans hs)
-        have hf := fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hord hent hrest
+        have hf := (fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hd hord hent hrest
           (ht (.ofLists qs ps hq hp)) (hm ▸ hus (.ofLists qs ps hq hp))
-          fun i => (ls.getFin hl i).closedValue
+          fun i => (ls.getFin hl i).closedValue).runValid
         intro w σ H E V hσ hEV hE
         obtain ⟨a, H', R, hev, hH, hr⟩ := hf w σ H E V hσ hEV hE
         cases (hE : V = [])
@@ -188,15 +188,17 @@ structure Fundamental : Prop where
 /-- The fundamental lemma of the run time: the signature of a judgment is well formed, so that it
 gives its own entries their meaning and the program realizes its constants of the mode `11ᵐ`. -/
 theorem fundamental : Fundamental where
-  hasType hι hP hu h hut :=
+  hasType hι hP hu h hut ρ :=
     have hw := presuppositions.hasType h
-    fundamentalIn.hasType hw.distinct hw.liftsInOrder
+    (fundamentalIn.hasType hw.distinct hw.liftsInOrder
       (WfSig.validEntries hι hw.distinct hw.liftsInOrder _ hw (List.suffix_refl _))
       (WfSig.realizes hι hw.distinct hw.liftsInOrder hP _ hw hu (List.suffix_refl _)) h hut
-  hasArgs hι hP hu h hut :=
+      ρ).runValid
+  hasArgs hι hP hu h hut ρ :=
     have hw := presuppositions.hasArgs h
-    fundamentalIn.hasArgs hw.distinct hw.liftsInOrder
+    (fundamentalIn.hasArgs hw.distinct hw.liftsInOrder
       (WfSig.validEntries hι hw.distinct hw.liftsInOrder _ hw (List.suffix_refl _))
       (WfSig.realizes hι hw.distinct hw.liftsInOrder hP _ hw hu (List.suffix_refl _)) h hut
+      ρ).runValidArgs
 
 end Sic.Core
