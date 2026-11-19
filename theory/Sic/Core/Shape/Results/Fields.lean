@@ -234,18 +234,6 @@ theorem Signature.blockShapes_of_block_liftN {sig : Signature} {Γ Δ : Scope}
   obtain ⟨Υ, hΥ⟩ := Signature.blockShapes_of_block D b₀ h₀
   exact ⟨Υ, he ▸ hΥ⟩
 
-/-- The positions of the fields whose nestings `ns` have a position, from the position `o`, are at
-`o` or after it. -/
-theorem Telescope.le_of_mem_nestPositions {y : Nat} (ns : List (Nest Name)) (o : Nat)
-    (h :
-      y ∈ (ns.zipIdx o).filterMap (fun z => if z.1.isPlain then none else some z.2)) : o ≤ y := by
-  obtain ⟨⟨n, l⟩, hy, hf⟩ := List.mem_filterMap.1 h
-  have hl := (List.mem_zipIdx hy).1
-  split at hf
-  · cases hf
-  · cases hf
-    exact hl
-
 -- ADE: none.
 /-- The recursive result of each field whose nesting has a position, the `j`-th of them, has the
 factor of the shape of its type: `11ᵖ` for a recursive field, and, for a nested field, the factor

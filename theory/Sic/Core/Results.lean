@@ -220,6 +220,56 @@ theorem Telescope.resultGrades_nil : (ns : List (Nest Name)) → (l : Nat) →
   | [], _ | .direct _ :: _, _ | .inst _ :: _, _ | .plain :: _, 0 => rfl
   | .plain :: ns, l + 1 => Telescope.resultGrades_nil ns l
 
+/-- The positions of the fields whose nestings `ns` have a position, from the position `o`, are at
+`o` or after it. -/
+theorem Telescope.le_of_mem_nestPositions {y : Nat} (ns : List (Nest Name)) (o : Nat)
+    (h :
+      y ∈ (ns.zipIdx o).filterMap (fun z => if z.1.isPlain then none else some z.2)) : o ≤ y := by
+  obtain ⟨⟨n, l⟩, hy, hf⟩ := List.mem_filterMap.1 h
+  have hl := (List.mem_zipIdx hy).1
+  split at hf
+  · cases hf
+  · cases hf
+    exact hl
+
+/-- The grade of the recursive result of the field at the position `o + l`, the `j`-th of the fields
+whose nestings `ns` have a position from the position `o`, is the `j`-th grade, `0` when there is
+none. -/
+theorem Telescope.resultGrades_of_nestPositions : (ns : List (Nest Name)) → (es : List Grade) →
+    (o j l : Nat) →
+    ((ns.zipIdx o).filterMap fun y => if y.1.isPlain then none else some y.2)[j]? = some (o + l) →
+      Telescope.resultGrades ns es l = es.getD j Grade.zero
+  | [], _, _, _, _, h => nomatch h
+  | .plain :: ns, es, o, j, l, h => by
+    replace h : ((ns.zipIdx (o + 1)).filterMap fun y =>
+      if y.1.isPlain then none else some y.2)[j]? = some (o + l) := h
+    cases l with
+    | zero =>
+      exact absurd (Telescope.le_of_mem_nestPositions _ _ (List.mem_of_getElem? h)) (by omega)
+    | succ l =>
+      rw [show o + (l + 1) = o + 1 + l by omega] at h
+      exact Telescope.resultGrades_of_nestPositions ns es (o + 1) j l h
+  | .direct _ :: ns, es, o, j, l, h | .inst _ :: ns, es, o, j, l, h => by
+    replace h : (o :: (ns.zipIdx (o + 1)).filterMap fun y =>
+      if y.1.isPlain then none else some y.2)[j]? = some (o + l) := h
+    cases j with
+    | zero =>
+      have hl : l = 0 := by
+        have := Option.some.inj h
+        omega
+      subst hl
+      cases es <;> rfl
+    | succ j =>
+      rw [List.getElem?_cons_succ] at h
+      cases l with
+      | zero =>
+        exact absurd (Telescope.le_of_mem_nestPositions _ _ (List.mem_of_getElem? h)) (by omega)
+      | succ l =>
+        rw [show o + (l + 1) = o + 1 + l by omega] at h
+        cases es with
+        | nil => exact Telescope.resultGrades_nil _ _
+        | cons e es => exact Telescope.resultGrades_of_nestPositions ns es (o + 1) j l h
+
 -- ADE: `_∙_`, in `Graded/Context.agda`, once for each variable.
 /-- `γ • e_{l₁} • … • e_{l_b}`: the vector `γ` extended by the grade `e l` of the recursive result of
 each field that has one, at its position `l` in the fields whose entries have the parameters `ps`

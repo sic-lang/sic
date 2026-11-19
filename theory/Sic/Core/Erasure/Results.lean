@@ -362,4 +362,31 @@ theorem Constructor.recursiveResults_eq_nested {j g k' : Nat} {Δ : Scope} {sig 
     RecursiveResult.ofField_eq_nested, Option.join_eq_some_iff]
   simp
 
+-- ADE: none.
+/-- A recursive result of the constructor `con` that is the corecursor of the shape `σ` on the field
+`l` is that of a field at the nesting of an instance, a nested field, whose nested result has the
+shape `σ`. -/
+theorem Constructor.inst_of_recursiveResults_eq_nested {j g k' : Nat} {Δ : Scope}
+    {sig : Signature} {v : Lifting.Variables} {names : List Name} {qs : List Quality}
+    {ps : List Grade} {χ : Grade} {con : Constructor j g k' Δ} {I : Instance j g} {i l : Nat}
+    {σ : Shape} (h : (con.recursiveResults sig v names qs ps χ I)[i]? = some (.nested l σ)) :
+    (∃ ms, ((con.fields I).nest names)[l]? = some (.inst ms)) ∧
+      (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]? = some (some σ) := by
+  rw [Constructor.getElem?_recursiveResults] at h
+  obtain ⟨l', hl', he⟩ := Option.map_eq_some_iff.1 h
+  obtain ⟨rfl, hr, hs⟩ := RecursiveResult.ofField_eq_nested.1 he
+  refine ⟨?_, Option.join_eq_some_iff.1 hs⟩
+  obtain ⟨⟨n, l''⟩, hy, hf⟩ := List.mem_filterMap.1 (List.mem_of_getElem? hl')
+  split at hf
+  · cases hf
+  · rename_i hp
+    cases hf
+    have hn := List.mem_zipIdx_iff_getElem?.1 hy
+    simp only at hn
+    rw [Telescope.recursionAt, Telescope.recursion_eq_map_nest, List.getElem?_map, hn] at hr
+    cases n with
+    | plain => exact absurd rfl hp
+    | direct _ => cases hr
+    | inst ms => exact ⟨ms, hn⟩
+
 end Sic.Core
