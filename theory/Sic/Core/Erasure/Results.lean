@@ -135,7 +135,7 @@ def Constructor.recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
 cases, for a recursor of the variables `v` whose results that are motives have the ownership `χ`, at
 the instance `I` of the qualities `qs` and of the grades `ps`, in the signature `sig`. -/
 def TypeDeclaration.recursiveResults (decl : TypeDeclaration) (sig : Signature)
-    (v : Lifting.Variables) (χ : Grade) (qs : List Quality) (ps : List Grade)
+    (v : Lifting.Variables) (qs : List Quality) (ps : List Grade) (χ : Grade)
     (I : Instance decl.sorts decl.grades) : List (List RecursiveResult) :=
   decl.cases.map fun x => x.2.2.recursiveResults sig v decl.names qs ps χ I
 
@@ -150,7 +150,7 @@ def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps 
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.recursiveResults sig v χ qs ps (.ofLists qs ps hq hp)
+          decl.recursiveResults sig v qs ps χ (.ofLists qs ps hq hp)
       else none
     else none
   | _ => none
@@ -197,12 +197,12 @@ theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : 
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
     sig.findSome? (Entry.recursiveResults sig₀ D qs ps v χ) =
-      some (decl.recursiveResults sig₀ v χ qs ps (.ofLists qs ps hq hp))
+      some (decl.recursiveResults sig₀ v qs ps χ (.ofLists qs ps hq hp))
   | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
   | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursiveResults sig₀ D qs ps v χ (.typeDeclaration decl) =
-          some (decl.recursiveResults sig₀ v χ qs ps (.ofLists qs ps hq hp)) := by
+          some (decl.recursiveResults sig₀ v qs ps χ (.ofLists qs ps hq hp)) := by
         simp only [Entry.recursiveResults, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
@@ -218,7 +218,8 @@ theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct
     (h : sig.HasDataType D decl T) {qs : List Quality} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (v : Lifting.Variables)
     (χ : Grade) :
-    sig.recursiveResults D qs ps v χ = decl.recursiveResults sig v χ qs ps (.ofLists qs ps hq hp) := by
+    sig.recursiveResults D qs ps v χ =
+      decl.recursiveResults sig v qs ps χ (.ofLists qs ps hq hp) := by
   rw [Signature.recursiveResults, hd.findSome?_recursiveResults h hq hp, Option.getD_some]
 
 /-- The recursive results of fields none of which is nested, whose nestings are `ns`, from the
@@ -273,7 +274,7 @@ theorem TypeDeclaration.recursiveResults_of_not_nested {decl : TypeDeclaration} 
     {I : Instance decl.sorts decl.grades}
     (hn : ∀ (i : Nat) j T con, decl.cases[i]? = some (j, T, con) →
       ∀ ν ∈ (con.fields I).nest decl.names, ∀ ms, ν ≠ .inst ms) :
-    decl.recursiveResults sig v χ qs ps I =
+    decl.recursiveResults sig v qs ps χ I =
       (decl.recursivePositions I).map (·.map .field) := by
   rw [TypeDeclaration.recursiveResults, TypeDeclaration.recursivePositions, List.map_map]
   refine List.map_congr_left fun x hx => ?_
