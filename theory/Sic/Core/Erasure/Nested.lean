@@ -71,9 +71,9 @@ def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → Tar
 
 -- ADE: none.
 /-- `body_{ρ,ϱ}(Υ, O, N̄)`: the result of the observation `O` of a field: the recursor
-`rec_ρ O ◀ ϱ with N̄` for `⋆_M`, or `rec_0 M ◀ ϱ with N̄` on the skeleton `M` of the motive when `ρ` is `0`, as the erasure of a recursor
-on an erased term, and the corecursor without state of the next lifting, whose branches observe `O`
-in turn, for its shape.
+`rec_ρ O ◀ ϱ with N̄` for `⋆_Z`, or `rec_0 target(Z) ◀ ϱ with N̄` on the skeleton `Z` of the motive
+when `ρ` is `0`, as the erasure of a recursor on an erased term, and the corecursor without state of
+the next lifting, whose branches observe `O` in turn, for its shape.
 RFC: `\mathsf{body}_\Upsilon` -/
 def Shape.Next.body {m : Nat} (ρ ϱ : Multiplicity) : Shape.Next → Target m → TargetBranches m →
     Target m

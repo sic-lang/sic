@@ -15,7 +15,7 @@ recursor, on each axis, for the requirements of the recursions on the observatio
 field.
 
 The shape follows the lifting of annex 13: the shape of a type lifted is that of the motive of a
-variable lifted, `⋆_M` for an instance of a type of the block, and, for an instance of another
+variable lifted, `⋆_Z` for an instance of a type of the block, and, for an instance of another
 declared type, of which an argument at least is lifted, the shape of the lifting of this type, at
 the shapes of these arguments.
 The shape of a lifting has an element for each destructor of the type whose result is lifted, in

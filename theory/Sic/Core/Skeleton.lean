@@ -23,13 +23,14 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- A skeleton: `↯`, or a constructor of the case `i` of its block applied to skeletons, each stored
-at the multiplicity `0` and at the requirement `ω`, the term of the target language that it stands
-for being built of these alone. -/
+/-- `Z`: a skeleton, `↯`, or a constructor of the case `i` of its block applied to skeletons, each
+stored at the multiplicity `0` and at the requirement `ω`, the term of the target language that it
+stands for being built of these alone.
+RFC: `\mathsf{syntax}_Z` -/
 inductive Skeleton : Type where
   /-- `↯`. -/
   | erased : Skeleton
-  /-- `c_i(k̄)`. -/
+  /-- `c_i(Z₁, …, Z_a)`. -/
   | ctor (case : Nat) (fields : List Skeleton) : Skeleton
 
 -- ADE: none.

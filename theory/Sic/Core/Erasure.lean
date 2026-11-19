@@ -501,8 +501,9 @@ def Targets.ofList {n : Nat} : List (Multiplicity × Target n) → Targets n
 mutual
 
 -- ADE: none.
-/-- The term of the target language that a skeleton stands for, in every scope, since it mentions no
-variable. -/
+/-- `target(Z)`: the term of the target language that the skeleton `Z` stands for, in every scope,
+since it mentions no variable.
+RFC: `\mathsf{target}_Z` -/
 def Skeleton.target {n : Nat} : Skeleton → Target n
   | .erased => .erased
   | .ctor i ks => .ctor i (Skeleton.targets ks)
