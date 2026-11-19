@@ -8,7 +8,7 @@ import Sic.Core.Ownership.Signature
 import Sic.Core.RunTime.Ownership.Nested
 import Sic.Core.RunTime.Relation.Corecursors
 import Sic.Core.RunTime.Relation.Recursors
-import Sic.Core.Shape.Results.Factor
+import Sic.Core.Shape.Results.Fields
 import Sic.Core.Syntax.Signature
 
 /-!

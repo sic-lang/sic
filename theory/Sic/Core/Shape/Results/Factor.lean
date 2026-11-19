@@ -187,21 +187,6 @@ theorem Signature.shapes_of_motives {P : Shape.Motive → Prop} (v : Lifting.Var
     simp only [Signature.shapes] at h
     exact Signature.shapes_of_motives v md ax hds sig' D qs ps ms σ π hms h
 
-/-- The shape that the declaration of a nested field gives its result is the shape of the lifting
-of the type of a field. -/
-theorem Telescope.exists_shape_of_nestedShapes {v : Lifting.Variables} {lookup : Shape.Lookup}
-    {block : Name → Option Shape.Motive} {names : List Name} {σ : Shape} :
-    {Γ : Scope} → {ps : List Parameter} → (Θ : Telescope k Γ ps) → (l : Nat) →
-      (Θ.nestedShapes v lookup block names)[l]? = some (some σ) →
-        ∃ (Δ : Scope) (A : Term k Δ) (n : Nest Name) (π χ' : Grade),
-          A.shape v lookup block Nesting.plain n = some ⟨.lifting σ, π, χ'⟩
-  | _, [], .nil, _, h => nomatch h
-  | _, _ :: _, .cons _ _ A _, 0, h => by
-    simp only [Telescope.nestedShapes, List.getElem?_cons_zero, Option.some.injEq] at h
-    match hA : A.shape v lookup block Nesting.plain (A.blockNest names), h with
-    | some ⟨.lifting _, π, χ'⟩, rfl => exact ⟨_, A, _, π, χ', hA⟩
-  | _, _ :: _, .cons _ _ _ Θ, l + 1, h => Telescope.exists_shape_of_nestedShapes Θ l h
-
 /-! ## Factors -/
 
 -- ADE: none.
@@ -414,29 +399,5 @@ theorem Shape.uniform_of_shapes {sig : Signature} {v : Lifting.Variables} {md : 
         exact ⟨trivial, rfl⟩
       · cases hm)
     Nesting.motives_plain n A _ h).1
-
-/-! ## Shapes of the Nested Fields -/
-
--- ADE: none.
-/-- The shape that the erasure gives the nested result of a field, in the mode `11ᵐ` on the axis of
-the uses at run time, fits the recursor of the grade `r`. -/
-theorem Constructor.nestedShapes_fits {j g k' : Nat} {Δ : Scope} {sig : Signature}
-    {v : Lifting.Variables} {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
-    {con : Constructor j g k' Δ} {I : Instance j g} {l : Nat} {σ : Shape}
-    (h : (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]? = some (some σ)) :
-    σ.Fits v.recursion.run := by
-  obtain ⟨_, _, _, _, _, hA⟩ := Telescope.exists_shape_of_nestedShapes _ l h
-  exact Shape.fits_of_shapes hA
-
--- ADE: none.
-/-- The shape of the nested result of a field, in the mode `md` on the axis of the uses at run time,
-has the ownerships `ς` and `χ` of the recursor, at their run-time multiplicities. -/
-theorem Constructor.nestedShapes_uniform {j g k' : Nat} {Δ : Scope} {sig : Signature}
-    {v : Lifting.Variables} {md : Mode} {names : List Name} {qs : List Quality} {ps : List Grade}
-    {χ : Grade} {con : Constructor j g k' Δ} {I : Instance j g} {l : Nat} {σ : Shape}
-    (h : (con.nestedShapes sig v md Grade.run names qs ps χ I)[l]? = some (some σ)) :
-    σ.Uniform v.requirement.run χ.run := by
-  obtain ⟨_, _, _, _, _, hA⟩ := Telescope.exists_shape_of_nestedShapes _ l h
-  exact Shape.uniform_of_shapes hA
 
 end Sic.Core
