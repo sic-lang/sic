@@ -174,8 +174,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   the scope, which its observations see at the requirement `ς` of its destructors, and runs the
   recursor on the observations of the field, whose results have the ownership `χ`; any branch,
   since a recursion from a nested result may reach any constructor.
-  The premise `hn` excludes the nested fields until the erasure gives their results, which the
-  ownership of the erasure then reads.
+  The premise `hn` excludes the nested fields until the erasure of their results is plugged.
   RFC: `\mathsf{rec}_{◀}` -/
   | recursor {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
