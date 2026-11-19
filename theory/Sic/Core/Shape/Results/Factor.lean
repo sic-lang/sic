@@ -271,7 +271,8 @@ theorem Shape.factor_eq_run {sig : Signature} {v : Lifting.Variables} {md : Mode
     {A : Term k Γ} {n : Nest Name} {σ : Shape} {π χ' : Grade}
     (h : A.shape v (sig.shapes v md Grade.run) (sig.blockShapes names qs ps χ) Nesting.plain n =
       some ⟨.lifting σ, π, χ'⟩) : σ.factor = π.run :=
-  Term.shape_of_motives (P := fun m => m.next.factor = m.factor.run) (Signature.shapes_factor v md sig)
+  Term.shape_of_motives (P := fun m => m.next.factor = m.factor.run)
+    (Signature.shapes_factor v md sig)
     (fun D m hm => by
       simp only [Signature.blockShapes] at hm
       split at hm
@@ -292,7 +293,7 @@ theorem Lifting.oneOne_odot_resultGrade :
 /-- The uses at run time of an argument of a lifted destructor, its grade times the grade of the
 recursor times the factor of the result, are within the grade of the recursor times the grade of the
 destructor times the factor times the grade of the argument. -/
-theorem Multiplicity.mul_fits :
+theorem _root_.Sic.Grading.Multiplicity.mul_fits :
     ∀ g r f u : Multiplicity, g * ((r * f) * u) ≤ r * (g * f) * u := by
   decide
 
