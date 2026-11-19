@@ -6,6 +6,7 @@ public import Sic.Core.RunTime.Relation.Recursors.Results
 public import Sic.Core.Typing
 public import Sic.Core.Usage
 import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.Results.Extension
 import Sic.Core.Results.Functionality
 import Sic.Core.Results.Substitution
