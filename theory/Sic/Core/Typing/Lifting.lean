@@ -180,7 +180,8 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
 -- ADE: none.
 /-- A well-formed signature declares each of its liftings after the type that it lifts and the
 destructors that it lifts: the rule of the liftings asks for the declaration of the type in the
-signature before the lifting, and for these destructors, lifted in it. -/
+signature before the lifting, and for these destructors, lifted in it.
+RFC: `\mathsf{order}_\Sigma` -/
 theorem WfSig.liftsInOrder {sig : Signature} (h : WfSig sig) : sig.LiftsInOrder := by
   intro pre sig₁ decl D S ns body he hd hD
   subst he

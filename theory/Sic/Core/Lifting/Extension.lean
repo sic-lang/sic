@@ -142,7 +142,8 @@ theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration
 -- ADE: none.
 /-- The signature declares each of its liftings after the type that it lifts and the destructors
 that it lifts: the lifting of a type of one of its type declarations comes after this declaration,
-and has the destructors of this type, lifted in the signature before the lifting. -/
+and has the destructors of this type, lifted in the signature before the lifting.
+RFC: `\mathsf{order}_{\uparrow}` -/
 def Signature.LiftsInOrder (sig : Signature) : Prop :=
   ∀ (pre sig₁ : Signature) (decl : TypeDeclaration) (D : Name) (S : List Nat) (ns : List Name)
     (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
