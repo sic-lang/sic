@@ -226,7 +226,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
   have hρ : r.run ≠ .zero := fun h0 =>
-    hr ((by decide : ∀ g : Grade, g.run = .zero → g ∈ Mode.oneOne.erased) r h0)
+    hr ((Mode.erased_values.1 r).2 h0)
   -- The relations of the canonical terms that `(®_μ)` relates and on whose addresses the erased
   -- recursor evaluates, in each heap that extends `H`, with its branches renamed by any renaming in
   -- any environment that binds the renamed scope as `E` binds the scope, to the address of a value
@@ -539,7 +539,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   -- and on the terms of whose skeletons the erased recursor evaluates as `Pk` states.
   let X : Name → TermRel := fun D' v w =>
     DataType.blockRel decl.dataTypes SM D' v w ∧ Acc (decl.Below I) D' ∧ Pk D' v
-  have hr0 : r.run = .zero := Mode.run_of_mem_oneOne_erased r hr
+  have hr0 : r.run = .zero := (Mode.erased_values.1 r).1 hr
   -- The leaves of the nested results: the recursor on the term of the skeleton of a type of the
   -- block, which stands for a term of this type that `X` relates, in a heap that extends `H`.
   have hleaf : ∀ {m₁ : Nat} (g₁ : TargetRen m₁ Γ.length) (E₁ : List Nat),

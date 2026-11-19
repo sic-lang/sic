@@ -135,10 +135,6 @@ theorem RunsAs.recursor_of_redStar (hd : sig.Distinct)
   have hmot := (hCv j T' C' hj hCj).motive hσ hvv
   exact (RunsAs.redStar_iff hd (RedStar.recursor htv)).2 (hrun.conv hd hrv.2 hmot.2)
 
-/-- The grades of `S^{11ᵐ}` have no use at run time. -/
-theorem Mode.run_of_mem_oneOne_erased : ∀ e : Grade, e ∈ Mode.oneOne.erased → e.run = .zero := by
-  decide
-
 /-- The erased recursor, its branches renamed by `g` in an environment `E'` that binds each variable
 `g x` as `E` binds `x`, eliminates the address of a constructor of a type of the block, by the
 branch of its case, to the address of a value to which the recursor on a term of the instance that
@@ -463,7 +459,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rw [hgs] at hgl
     have he := Grade.fieldMultiplicity_results r p'.usage con (.ofLists qs ps hq hp)
       gs₀.toList (πs i) hfac l
-    have hr := Telescope.recursionsAt_results Mode.oneOne.erased Mode.run_of_mem_oneOne_erased _ _
+    have hr := Telescope.recursionsAt_results Mode.oneOne.erased
+      (fun e => (Mode.erased_values.1 e).1) _ _
       ((con.fields (.ofLists qs ps hq hp)).nest decl.names) 0 gs₀.toList (πs i) hfac' l
     rw [Nat.zero_add] at hr
     rw [hks, hπs', hr]
