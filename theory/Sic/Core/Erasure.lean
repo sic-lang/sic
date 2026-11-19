@@ -404,9 +404,10 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   | recursor {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
       Target.LessDefined (.recursor ρ ϱ M Ms) (.recursor ρ ϱ N Ns)
-  /-- A recursor on data, of the requirement `ω`, which states nothing, is less defined than a
-  recursor on any term, of more defined branches, as a recursor on the term of the skeleton of the
-  type of its term, which holds nothing but what this type gives.
+  /-- A recursor on data whose recursion requires `ω`, which states nothing, such as a recursor on
+  the term of the skeleton of the type of its term, which holds nothing but what this type gives,
+  is less defined than a recursor on any term, of more defined branches, whatever the requirement
+  of its recursion.
   RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{data}}` -/
   | data {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
       (h : Target.IsData M) (hs : TargetBranches.LessDefined Ms Ns) :
