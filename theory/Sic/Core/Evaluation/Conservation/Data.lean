@@ -4,7 +4,7 @@ public import Sic.Core.Evaluation.Demand
 import Sic.Core.Evaluation.Conservation.Demands
 
 /-!
-# Skeletons
+# Data
 
 The runs of the data, for the proof of the invariant of the conservation of the bindings: data
 reads no cell, allocates none, and its value has the demand `0`.

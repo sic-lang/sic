@@ -1,11 +1,11 @@
 module
 
 public import Sic.Core.Evaluation.Conservation.Binders
+public import Sic.Core.Evaluation.Conservation.Data
 public import Sic.Core.Evaluation.Conservation.Demands
 public import Sic.Core.Evaluation.Conservation.Environments
 public import Sic.Core.Evaluation.Conservation.Positions
 public import Sic.Core.Evaluation.Conservation.Recursions
-public import Sic.Core.Evaluation.Conservation.Skeletons
 public import Sic.Core.Evaluation.Conservation.Usage
 import Sic.Core.Erasure.Usage.Nested
 
