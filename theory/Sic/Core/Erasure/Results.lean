@@ -281,4 +281,69 @@ theorem TypeDeclaration.recursiveResults_of_not_nested {decl : TypeDeclaration} 
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
   exact Constructor.recursiveResults_of_not_nested (hn i x.1 x.2.1 x.2.2 hi)
 
+/-! ## Alignment With the Recursive Results of the Typing -/
+
+/-- The fields whose nestings `ns` have a position, from the position `o`, are as many as the
+recursive results that the typing binds for fields of the parameters `ps`. -/
+theorem Telescope.length_filterMap_nest {β : Type} (f : Nat → β) :
+    (ns : List (Nest Name)) → (ps : List Parameter) → ns.length = ps.length → (o : Nat) →
+      ((ns.zipIdx o).filterMap fun y => if y.1.isPlain then none else some (f y.2)).length =
+        (Telescope.nestResultParams ns ps).length
+  | [], [], _, _ => rfl
+  | .plain :: ns, _ :: ps, h, o => Telescope.length_filterMap_nest f ns ps (Nat.succ.inj h) (o + 1)
+  | .direct _ :: ns, _ :: ps, h, o | .inst _ :: ns, _ :: ps, h, o =>
+    congrArg (· + 1) (Telescope.length_filterMap_nest f ns ps (Nat.succ.inj h) (o + 1))
+
+-- ADE: none.
+/-- The constructor `con` has one recursive result in the erasure for each recursive result that
+the typing binds in its branch, so that the `j`-th results of both are those of the same field. -/
+theorem Constructor.length_recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
+    (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
+    (con : Constructor j g k' Δ) (I : Instance j g) :
+    (con.recursiveResults sig v names qs ps χ I).length = (con.nestResultParams I names).length :=
+  Telescope.length_filterMap_nest (fun l => RecursiveResult.ofField
+    ((con.fields I).recursionAt names l)
+    (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l) _ _
+    (Telescope.length_nest names (con.fields I)) 0
+
+-- ADE: none.
+/-- The `j`-th recursive result of the constructor `con` in the erasure is the one of the `j`-th of
+its fields whose nesting has a position, which the typing binds the `j`-th result of its branch:
+the recursor on the field when it is recursive, the corecursor of the shape of its type when the
+type has one, and `⊥` otherwise. -/
+theorem Constructor.getElem?_recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
+    (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
+    (con : Constructor j g k' Δ) (I : Instance j g) (i : Nat) :
+    (con.recursiveResults sig v names qs ps χ I)[i]? =
+      ((((con.fields I).nest names).zipIdx.filterMap fun y =>
+          if y.1.isPlain then none else some y.2)[i]?).map fun l =>
+        RecursiveResult.ofField ((con.fields I).recursionAt names l)
+          (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join l := by
+  rw [Constructor.recursiveResults, ← List.getElem?_map, List.map_filterMap]
+  congr 2
+  funext y
+  split <;> rfl
+
+/-- The recursive result of a field is nested on this field, at the shape `σ`, exactly when the
+field is not recursive and its type has the shape `σ`. -/
+theorem RecursiveResult.ofField_eq_nested {r : Option Name} {s : Option Shape} {l l' : Nat}
+    {σ : Shape} : RecursiveResult.ofField r s l = .nested l' σ ↔ l' = l ∧ r = none ∧ s = some σ := by
+  cases r <;> cases s <;> simp [RecursiveResult.ofField, eq_comm]
+
+-- ADE: none.
+/-- The recursive result of the `j`-th field of the constructor `con` whose nesting has a
+position, the field `l`, is the corecursor of the shape `σ` exactly when the field is not recursive
+and the shape of its nested result is `σ`. -/
+theorem Constructor.recursiveResults_eq_nested {j g k' : Nat} {Δ : Scope} {sig : Signature}
+    {v : Lifting.Variables} {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
+    {con : Constructor j g k' Δ} {I : Instance j g} {i l : Nat}
+    (hl : (((con.fields I).nest names).zipIdx.filterMap fun y =>
+      if y.1.isPlain then none else some y.2)[i]? = some l) (σ : Shape) :
+    (con.recursiveResults sig v names qs ps χ I)[i]? = some (.nested l σ) ↔
+      (con.fields I).recursionAt names l = none ∧
+        (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]? = some (some σ) := by
+  rw [Constructor.getElem?_recursiveResults, hl, Option.map_some, Option.some.injEq,
+    RecursiveResult.ofField_eq_nested, Option.join_eq_some_iff]
+  simp
+
 end Sic.Core
