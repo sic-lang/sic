@@ -649,15 +649,17 @@ structure Reading (sig : Signature) (ι : Interpretation) (α I : Type) where
       (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
       (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) →
     dr i @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂'
-  /-- An instance of a codata type none of whose destructors is recursive, read without position
-  at two lists of arguments, lives in a sort of the reading, and is read at the nestings of two
-  other lists of arguments at which its destructors are read, at the values of its levels. -/
+  /-- An instance of a codata type none of whose destructors is recursive, that the constraint of
+  its block admits, read without position at two lists of arguments, lives in a sort of the
+  reading, and is read at the nestings of two other lists of arguments at which its destructors are
+  read, at the values of its levels. -/
   inst : ∀ {i : I} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as₁ as₂ as₁' as₂' : InstanceArgs 0 [] decl.scope}
     {νs₁ νs₂ : List (Nest α)} (_ : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
     (∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none) →
+    decl.constraint (.ofLists qs ps hq hp) →
     rd i .plain .plain (.inst D qs ls ps as₁) (.inst D qs ls ps as₂) →
     ∃ j, ok j ((decl.sort (.ofLists qs ps hq hp)).atLevels fun x => (ls.getFin hl x).closedValue) ∧
       (dr j (Nesting.ofArgs νs₁) (Nesting.ofArgs νs₂)
@@ -1241,7 +1243,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
         (νs₁ := (as.rename β).nest (fun _ => none) @ν₁)
         (νs₂ := (as.rename β).nest (fun _ => none) @ν₂)
         (as₁' := ((as.rename β).atLevels ρ).subst σ₁')
-        (as₂' := ((as.rename β).atLevels ρ).subst σ₂') hTm hq hl' hp (hTrec _) hr
+        (as₂' := ((as.rename β).atLevels ρ).subst σ₂') hTm hq hl' hp (hTrec _) hadm hr
       refine hfin ?_
       -- The values of the levels of the instance.
       let ρF : Fin declF.levels → Nat := fun i =>

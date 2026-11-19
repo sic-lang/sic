@@ -813,9 +813,9 @@ mutual
 reads at the relation `R`, runs: its shape, on a path that runs to an address that `R` relates to
 the term, gives a value related to the result at the type lifted, in a signature whose names are
 distinct, whose liftings are those of its types, in their order, and whose destructors of a codata
-proposition are erased, when the recursor is used at run time, the shapes of the types of the block
-follow `ρ₁`, and the relation at each position runs as the leaf of the position says and does not
-read the computation. -/
+proposition, at an instance that the constraint of its block admits, are erased, when the recursor
+is used at run time, the shapes of the types of the block follow `ρ₁`, and the relation at each
+position runs as the leaf of the position says and does not read the computation. -/
 theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
@@ -828,6 +828,7 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
       sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
         (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        decl.constraint (.ofLists qs ps hq hp) →
         (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
         ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
           {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
@@ -860,12 +861,12 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           (hpos.nest_substLevels _ _)
         exact ⟨SΘ, Rb, i, hi, hΘ, fun _ => ⟨RΘ, hRΘ,
           fun H a ⟨_, hu, o, hco, hSo⟩ => hAbs H o a (ObsEquiv.of_computes hd hu hco) hSo⟩, hN⟩
-  | .codataProp h hq hl hp hA hκ _ hrec, _, _, hν, _, _ => by
+  | .codataProp h hq hl hp hA hκ hadm _ hrec, _, _, hν, _, _ => by
     subst hA
     cases hν with
     | inst _ =>
       exact NestedRunsAt.inst (n := n) hd hord hlifts (fun _ => hr) hb h hq hl hp hrec
-        fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hκ hpos) hpu
+        fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hadm hκ hpos) hpu
 termination_by structural h _ _ _ _ _ => h
 
 -- ADE: none.
@@ -887,6 +888,7 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
       sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
         (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        decl.constraint (.ofLists qs ps hq hp) →
         (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
         ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
           {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
@@ -1025,6 +1027,7 @@ theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
       sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
         (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+        decl.constraint (.ofLists qs ps hq hp) →
         (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
         ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
           {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}

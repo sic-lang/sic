@@ -452,7 +452,7 @@ theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
         subst hD hqs hls hps
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp h _ _ _ hA hκ _ _, _, _, h', hτ => by
+  | .codataProp h _ _ _ hA hκ _ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with

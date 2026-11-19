@@ -660,7 +660,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (RunNestDesRel.levelEquiv hd ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
-  | .codataProp hD hq hl hp hA hκ hn hrec, h, hτ => by
+  | .codataProp hD hq hl hp hA hκ hadm hn hrec, h, hτ => by
     subst hA
     cases hτ with
     | inst hνs =>
@@ -668,7 +668,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
       | inst _ _ _ hls has =>
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
-        exact .codataProp hD hq hl' hp rfl hκ
+        exact .codataProp hD hq hl' hp rfl hκ hadm
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for

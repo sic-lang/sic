@@ -260,7 +260,7 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         subst hDD hqs hls hps
         obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp hD _ _ _ hA hκ _ _, _, _, h', hτ => by
+  | .codataProp hD _ _ _ hA hκ _ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with

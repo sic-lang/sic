@@ -363,7 +363,7 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
     subst hs
     exact NestDesRel.of_nested_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
   inst := by
-    intro s decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec hr
+    intro s decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec _ hr
     obtain ⟨FE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hF =>

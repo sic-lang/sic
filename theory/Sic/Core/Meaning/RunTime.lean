@@ -396,8 +396,8 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
       RunNestRel sig ι P n below (.inst νs) A ((runCorecRel D S).computed sig ι)
   /-- `(rt_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in a universe of
-  propositions that `Ω_n` bounds, none of whose destructors is recursive, and whose terms, proofs,
-  are erased.
+  propositions that `Ω_n` bounds, that the constraint of its block admits, none of whose destructors
+  is recursive, and whose terms, proofs, are erased.
   RFC: `\mathsf{rt}_{\lambda D\Omega}` -/
   | codataProp {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -406,6 +406,7 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
       (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
       (hn : ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n)
       (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none) :
       RunNestRel sig ι P n below (.inst νs) A fun _ _ _ => True

@@ -352,7 +352,7 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
   nested_head := fun hn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds =>
     RunNestDesReads.of_nested_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
   inst := by
-    intro _ decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec hr
+    intro _ decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec hadm hr
     obtain ⟨RE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hR =>
@@ -378,7 +378,8 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
         exact ⟨_, .codata hT hq hl hp rfl hκ hn hrec S hS₁',
           .codata hT hq hl hp rfl hκ hn hrec S hS₂'⟩
       | prop =>
-        exact ⟨_, .codataProp hT hq hl hp rfl hκ hn hrec, .codataProp hT hq hl hp rfl hκ hn hrec⟩
+        exact ⟨_, .codataProp hT hq hl hp rfl hκ hadm hn hrec,
+          .codataProp hT hq hl hp rfl hκ hadm hn hrec⟩
 
 -- ADE: none.
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
