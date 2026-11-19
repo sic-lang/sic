@@ -142,4 +142,40 @@ RFC: `\mathsf{meets}_\Upsilon` -/
 def Shape.Next.Requires (o ς : Multiplicity) (next : Shape.Next) : Prop :=
   next.Meets o ς ∧ next.Keeps o ς
 
+mutual
+
+-- ADE: none.
+/-- The products `a · ψ₁⁻ · … · ψ_h⁻` along the prefixes `d₁ … d_h` of the paths of the shape, other
+than the empty one, after a prefix of the product `a`: each destructor observed extends the prefix,
+whose product is then times the value `ψ⁻` of the ownership `ψ₀` of the result of the destructor
+that it lifts at the least ownerships of the arguments of its branch, their requirements, or `1`
+when this value is not defined, and the paths go on in the shape of its result; a destructor never
+observed extends no path. -/
+def Shape.prefixes (ς a : Multiplicity) : Shape → List Multiplicity
+  | .nil => []
+  | .cons _ _ ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest =>
+    (if ρᵢ = .zero then [] else
+      let a' := a *
+        (ψ₀.value (List.ofFn (Shape.argOwnerships (next.scale ς) ϱs' πs ϱs πs'))).getD .one
+      a' :: next.prefixes ς a') ++ rest.prefixes ς a
+
+-- ADE: none.
+/-- The products along the prefixes of the paths of the shape of a result, after a prefix of the
+product `a`: none for the recursor itself, where the paths end, and those of the next lifting. -/
+def Shape.Next.prefixes (ς a : Multiplicity) : Shape.Next → List Multiplicity
+  | .recursor _ => []
+  | .lifting σ => σ.prefixes ς a
+
+end
+
+-- ADE: none.
+/-- What the shape of a nested field gives the requirement of the recursion: for each prefix
+`d₁ … d_h` of each of its paths, the empty one included, the product `ς · ψ₁⁻ · … · ψ_h⁻` of the
+requirement `ς` of the corecursors on the values that they observe and of the values `ψ⁻` of the
+ownerships of the results of the destructors of the prefix at the least ownerships of their
+arguments, so that the field `x_l` of the requirement `r_l`, used with the grade `c_l`, gives the
+pairs `c_l ◀ r_l · ς · ψ₁⁻ · … · ψ_h⁻`. -/
+def Shape.recursion (ς : Multiplicity) (σ : Shape) : List Multiplicity :=
+  ς :: σ.prefixes ς ς
+
 end Sic.Core
