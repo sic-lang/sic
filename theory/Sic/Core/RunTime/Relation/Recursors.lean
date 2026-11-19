@@ -2,13 +2,13 @@ module
 
 public import Sic.Core.RunTime.Relation.Recursors.Results
 public import Sic.Core.RunTime.Relation.Recursors.Constructor
-public import Sic.Core.RunTime.Relation.Recursors.Erasure
-public import Sic.Core.RunTime.Relation.Recursors.Evaluation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Data
 import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Recursors.Erasure
+import Sic.Core.RunTime.Relation.Recursors.Evaluation
 import Sic.Core.RunTime.Relation.Skeleton
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed

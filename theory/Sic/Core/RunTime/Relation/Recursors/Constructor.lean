@@ -6,13 +6,13 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Recursors.Erasure
 import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Core.RunTime.Relation.Recursors.Erasure
 
 /-!
 # Constructors at Run Time
