@@ -1,18 +1,23 @@
 module
 
+public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Relation.Corecursors
+public import Sic.Core.RunTime.Relation.Recursors.Evaluation
 public import Sic.Core.Typing
 public import Sic.Core.Usage
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.Results.Extension
+import Sic.Core.Results.Functionality
 import Sic.Core.Results.Substitution
 import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.RunTime.Relation.Rules
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness
 import Sic.Core.Soundness.Recursors
+import Sic.Core.Soundness.Substitution
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
+import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Signature
 import Sic.Core.Usage.Inversion
 
@@ -113,6 +118,32 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
   erw [Context.substLevels_append (fun i => (.ofNat (ρ i) : Level 0)) ctx S₀] at hb
   rw [List.getFin_map]
   exact hb
+
+-- ADE: none.
+/-- The types of the entries of a telescope that extends a well-formed context, at every value of
+the level variables, and at every closed substitution of the context that the meaning relates to
+itself, are terms of universes at every term of the types of the entries before them, in a signature
+that gives the entries of the typing their meaning: each entry of a well-formed context is a term of
+a sort, which the soundness of the typing makes meaningful. -/
+theorem WfCtx.validSorts {ι : Interpretation} {sigM sig : Signature} (hd : sigM.Distinct)
+    (hord : sigM.LiftsInOrder) (hι : sigM.ValidEntries ι sig) {k : Nat} :
+    {Γ : Scope} → {ps : List Parameter} → (ctx : Context k Γ) → (Θ : Telescope k Γ ps) →
+      WfCtx sig (ctx.append Θ) → ∀ ρ θ, EqSubst sigM ι (ctx.atLevels ρ) θ θ →
+        Telescope.ValidSorts₀ sigM ι ((Θ.atLevels ρ).subst θ)
+  | _, [], _, .nil, _, _, _, _ => trivial
+  | Γ, _ :: _, ctx, .cons _ _ A Θ, h, ρ, θ, hθ => by
+    have hA : WfCtx sig (ctx.var A) := WfCtx.of_append (Γ := .var :: Γ) h
+    obtain ⟨κ, hκ⟩ : ∃ κ, HasType sig ctx A (.sort κ) := by
+      cases hA with
+      | var hA' =>
+        cases hA' with
+        | univType hT => exact ⟨_, hT⟩
+        | propType hT => exact ⟨_, hT⟩
+    have hv := (soundnessIn.hasType hd hord hι hκ ρ).2 θ θ hθ
+    refine ⟨⟨_, hv⟩, fun v hv' => ?_⟩
+    rw [Telescope.subst_lift_single_snoc]
+    exact WfCtx.validSorts hd hord hι (ctx.var A) Θ h ρ _
+      ((EqSubst.var_iff _ _ _ _).2 ⟨hθ, hv'⟩)
 
 -- ADE: `fundamental`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- Every term typed in the signature `Σ_T` and used in the mode `11ᵐ`, in a context whose variables
@@ -238,14 +269,8 @@ where
         hh hC _ hCs hCt _ hus hRs hut hκ, hu => fun ρ => by
       rename_i Rs
       have hdT := (presuppositions.hasType ht).distinct
-      obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, hns, hbu, hg, hχ, hr, hprop, -⟩ :=
+      obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, -, hbu, hg, hχ, hr, hprop, -⟩ :=
         Usage.inv_recursor hdT h hq hl hp hu rfl
-      -- The usage excludes the nested fields, whose recursive results then have the factor `11ᵖ`.
-      have hz : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-          List.zipWith (· * ·) (us.grades i) (πs i) = us.grades i := fun i j T' con hi => by
-        obtain ⟨_, hR⟩ := hRU i j T' con hi
-        obtain ⟨u₁, hu₁⟩ := hus i j T' con hi
-        exact hR.zipWith_factors (hns i j T' con hi) (Branches.length_grades hu₁)
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -288,6 +313,23 @@ where
         fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
             (Constructor.ResultTypes.substLevels_ofMotives _ h)
+      -- The factors of the results that the usage reads are those of the typing.
+      have hRsπ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+          Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+            ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
+            (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            (Lifting.ofMotives decl.names qs (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
+              (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+              (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ'
+              (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
+            ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) (πs i) :=
+        fun i j T' con hi => by
+          obtain ⟨πs', h₁⟩ := hRs i j T' con hi
+          obtain ⟨R, h₂⟩ := hRU i j T' con hi
+          obtain ⟨-, hπ⟩ := Terms.ResultTypes.unique hdT h₁ h₂
+          subst hπ
+          exact Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
+            (Constructor.ResultTypes.substLevels_ofMotives _ h₁)
       have hut' : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).get j = some ⟨0, C'⟩ →
           (us.substLevels fun i => (.ofNat (ρ i) : Level 0)).get i =
@@ -316,18 +358,24 @@ where
         exact hb
       have hrec : ∀ j T' C', decl.dataTypes[j]? = some T' →
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).get j = some ⟨0, C'⟩ →
-          ∀ σ, EqSubst sigM ι (ctx.atLevels ρ) σ σ → ∀ t₀,
-          ValidTerm₀ sigM ι t₀ ((Term.inst T'.name qs
+          ∀ σ, EqSubst sigM ι (ctx.atLevels ρ) σ σ → ∀ t₁ t₂,
+          ValidEqTerm₀ sigM ι t₁ t₂ ((Term.inst T'.name qs
             (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0))).subst σ) →
-          ValidTerm₀ sigM ι (.recursor r ς χ' T'.name qs
+          ValidEqTerm₀ sigM ι (.recursor r ς χ' T'.name qs
             (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
-            ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₀
+            ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₁
             (κ.substLevels fun i => (.ofNat (ρ i) : Level 0))
             ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
             ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
-            ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₀)) :=
-        fun j T' C' hj hC' σ hσ t₀ ht₀ =>
+            (.recursor r ς χ' T'.name qs
+            (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
+            ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₂
+            (κ.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
+            ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
+            ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)) :=
+        fun j T' C' hj hC' σ hσ t₁ t₂ ht₀ =>
           ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has'' hCs' hCv
             husN husN
             hRs' hRs' hut' hκ hσ hj hC' ht₀
@@ -341,14 +389,11 @@ where
           (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps hq hl' hp
           (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0))
-          (us.substLevels fun i => (.ofNat (ρ i) : Level 0)) δs gs :=
-        fun i j T' con C' R u hi hC' hR hu₁ => by
+          (us.substLevels fun i => (.ofNat (ρ i) : Level 0)) δs gs
+          (fun con => (Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) :=
+        fun i j T' con C' u hi hC' hu₁ => by
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-        obtain ⟨R₀, hR₀, rfl⟩ := Constructor.results_substLevels_inv _ hR
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
-        -- The branch is typed in the results of the typing, which are its results `res_C̄`.
-        obtain ⟨_, hRc⟩ := hRs i j T' con hi
-        cases hR₀.symm.trans (Constructor.ResultTypes.results hRc (hns i j T' con hi))
         have hb := hasType (hΓ := (hΓ.extend _).extend _) hw hι hP
           (hut i j T' con C₀ u₀ hi hC₀ hu₀) (hbu i j T' con u₀ hi hu₀) ρ
         simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
@@ -357,15 +402,48 @@ where
         simp only [Branches.grades_substLevels]
         rw [List.getFin_map]
         exact hb
-      have hc := RunValidRen.recursor (P := P) (γ := γ') hw.distinct hM hv hadm has'' hh
-        (Motives.get_substLevels_of _ hC) hCs' hCv husN hns hrec ht' htr husr
+      -- The context of each branch is meaningful, and the types of its recursive results are
+      -- terms of universes, by the typing of the branch.
+      have hctx : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+          ValidCtx₀ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
+            ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
+            (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))).append
+              ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0))) :=
+        fun i j T' con hi => by
+          have hjT := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
+          rw [Nat.sub_zero] at hjT
+          obtain ⟨C', hC'⟩ := hCs' j T' hjT
+          obtain ⟨u, hu₁⟩ := husN i j T' con hi
+          exact (hut' i j T' con C' u u hi hC' hu₁ hu₁).1.1
+      have hsorts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) → ∀ θ,
+          EqSubst sigM ι ((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
+            ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
+            (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))) θ θ →
+          Telescope.ValidSorts₀ sigM ι
+            (((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)).subst θ) :=
+        fun i j T' con hi θ hθ => by
+          have hjT := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
+          rw [Nat.sub_zero] at hjT
+          obtain ⟨C₀, hC₀⟩ := hCs j T' hjT
+          obtain ⟨u₀, hu₀⟩ := hus i j T' con hi
+          have hwf := contextPresuppositions.hasType (hut i j T' con C₀ u₀ hi hC₀ hu₀)
+          have hs := WfCtx.validSorts hw.distinct hw.liftsInOrder hι _ _ hwf ρ θ (by
+            simp only [Context.atLevels, Constructor.fieldsAt_substLevels,
+              Context.substLevels_append]
+            rw [List.getFin_map] at hθ
+            exact hθ)
+          exact hs
+      have hc := RunValidRen.recursor (P := P) (γ := γ') hw.distinct hw.liftsInOrder hM hv hadm
+        has'' hh (Motives.get_substLevels_of _ hC) hCs' hCv husN hRsπ hctx hsorts hrec ht' htr husr
         (fun i j T' con l p hi hl => by
-          simpa only [hz i j T' con hi, Branches.grades_substLevels] using hg i j T' con l p hi hl)
+          simpa only [Branches.grades_substLevels] using hg i j T' con l p hi hl)
         (fun i j T' con hi => by
-          simpa only [hz i j T' con hi, Branches.grades_substLevels] using hχ i j T' con hi)
+          simpa only [Branches.grades_substLevels] using hχ i j T' con hi)
         (hr rfl) (fun hq' => match hc : decl.cases with
           | [] => rfl
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))
+        (fun {_ _ _} hT {_ _} _ _ hI hκ' {_ _ _ _ _ _ _ _ _} hpos =>
+          WfSig.destructor_erased hw hT hI hpos hκ')
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]

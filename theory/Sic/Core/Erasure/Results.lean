@@ -45,13 +45,6 @@ inductive RecursiveResult where
   | nested (l : Nat) (σ : Shape)
 
 -- ADE: none.
-/-- The result at the position `l` of a field, or erased when there is none: a recursive result
-that the evaluation computes by the recursor. -/
-def RecursiveResult.ofPosition : Option Nat → RecursiveResult
-  | none => .erased
-  | some l => .field l
-
--- ADE: none.
 /-- The position of the field on which a result recurses, by the recursor on the field itself or by
 the recursors on its observations, if any. -/
 def RecursiveResult.fieldPosition : RecursiveResult → Option Nat
