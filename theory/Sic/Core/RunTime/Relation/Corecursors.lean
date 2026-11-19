@@ -1124,7 +1124,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         -- ownership of its result.
         have hpss : (pss.drop i').headD ([], ResultOwnership.noArguments) =
             (ps₁.map fun p => ⟨r * p.usage, p.requirement⟩, ⟨ps', ψ, ς⟩) :=
-          List.headD_drop_of_getElem? (by
+          List.headD_drop (by
             simp [pss, hd.destructorArguments h hq hp, hi, hS₁]
             rw [hpos.arguments (hd.destructors_nodup h₀)]
             rfl)

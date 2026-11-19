@@ -6,7 +6,6 @@ public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
 import Sic.Core.Erasure.Fields
 import Sic.Core.RunTime.Relation.Corecursors
-import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Syntax.Signature
 import Sic.Core.Usage.Absence
@@ -420,12 +419,12 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
         ⟨_, List.getElem?_eq_getElem hi⟩
       obtain ⟨u', hu'⟩ := hus i j T' con hc
       cases Option.some.inj (hget.symm.trans hu')
-      have hfs := List.headD_drop_of_getElem? (d := []) (l := decl.cases.map fun x =>
+      have hfs := List.headD_drop (d := []) (l := decl.cases.map fun x =>
         x.2.2.params (.ofLists qs ps hq hp)) (i := i)
-        (x := con.params (.ofLists qs ps hq hp)) (by simp [hc])
-      have hws := List.headD_drop_of_getElem? (d := [])
+        (a := con.params (.ofLists qs ps hq hp)) (by simp [hc])
+      have hws := List.headD_drop (d := [])
         (l := decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ' (.ofLists qs ps hq hp)) (i := i)
-        (x := con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
+        (a := con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
           (.ofLists qs ps hq hp)) (by simp [TypeDeclaration.recursiveResults, hc])
       rw [hfs, hws]
       -- The typing and the erasure give each recursive result the same factor.
@@ -533,10 +532,10 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     have hpg := hgri i j T' d hc p (hpos.grade hnd)
     obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [List.headD_drop_of_getElem?
-        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
+    rw [List.headD_drop
+        (a := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
         (by simp [hc, hSj, hpos.arguments hnd]),
-      List.headD_drop_of_getElem? (x := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
+      List.headD_drop (a := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
         (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
         (by simp [hc, hpos.resultName decl.names hnd])]
     have hδp := GradeVector.run_commutes.run_le (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hc hpos)

@@ -6,7 +6,6 @@ public import Sic.Grading.GradeSet
 import Sic.Core.Ownership.Signature
 import Sic.Core.RunTime.Ownership.Nested
 import Sic.Core.RunTime.Relation.Corecursors
-import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Syntax.Signature
 
@@ -504,8 +503,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           ⟨_, List.getElem?_eq_getElem hi⟩
         obtain ⟨u', hu'⟩ := hus i j T' con hc
         exact ⟨j, T', con, u', hc, hu',
-          List.headD_drop_of_getElem? (by simp [hc]),
-          List.headD_drop_of_getElem? (by simp [TypeDeclaration.recursiveResults, hc])⟩
+          List.headD_drop (by simp [hc]),
+          List.headD_drop (by simp [TypeDeclaration.recursiveResults, hc])⟩
       -- The run-time multiplicities of the ownerships of the variables of a branch, at the
       -- ownerships `φ₀` of the scope and `c` of the results of the recursor.
       have hagree : ∀ i j T' con (gs' : _root_.Vector Grade
@@ -674,10 +673,10 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     have hpg := hgri i j T' d hc p (hpos.grade hnd)
     obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [List.headD_drop_of_getElem?
-        (x := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
+    rw [List.headD_drop
+        (a := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
         (by simp [hc, hSj, hpos.arguments hnd]),
-      List.headD_drop_of_getElem? (x := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
+      List.headD_drop (a := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
         (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
         (by simp [hc, hpos.resultName decl.names hnd])]
     refine ⟨?_, fun hk => ?_⟩

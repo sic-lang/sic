@@ -171,12 +171,6 @@ theorem Telescope.length_positions : (ns : List (Nest Name)) → {ps : List Para
     (fun ν hν => hn ν (List.mem_cons_of_mem _ hν)) (o + 1)
   | .inst ms :: _, _ :: _, _, hn, _ => absurd rfl (hn _ List.mem_cons_self ms)
 
-/-- The first element of a list from a position is its element at this position. -/
-theorem _root_.List.headD_drop_of_getElem? {α : Type} {d x : α} : {l : List α} → {i : Nat} →
-    l[i]? = some x → (l.drop i).headD d = x
-  | _ :: _, 0, h => by simpa using h
-  | _ :: l, i + 1, h => headD_drop_of_getElem? (l := l) (i := i) (by simpa using h)
-
 /-- The positions of the recursive fields from the position `o` are at `o` or after it. -/
 theorem Telescope.le_of_mem_positions {y : Nat} : (rs : List (Option Name)) → (o : Nat) →
     y ∈ (rs.zipIdx o).filterMap (fun z => z.1.map fun _ => z.2) → o ≤ y
@@ -973,7 +967,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       ((((sig.caseFieldParams T.name qs ps).getD []).drop i).headD [])[l]? = some p' :=
     fun l p' hp' => by
       rw [hd.caseFieldParams ⟨hdecl, hT, rfl⟩ hq hp, Option.getD_some,
-        List.headD_drop_of_getElem? (by rw [List.getElem?_map, hi]; rfl), hp']
+        List.headD_drop (by rw [List.getElem?_map, hi]; rfl), hp']
   -- The uses of each field by the branch are within those that the constructor allows.
   have hπ : ∀ l : Fin (con.params (.ofLists qs ps hq hp)).length,
       ∃ π₀, πv[(l : Nat)]? = some π₀ ∧ r.run * π₀ ≤ πs₀ l + r.run * recursionsAt
