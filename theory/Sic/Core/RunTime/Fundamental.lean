@@ -5,20 +5,20 @@ public import Sic.Core.RunTime.Relation.Corecursors
 public import Sic.Core.RunTime.Relation.Recursors.Results
 public import Sic.Core.Typing
 public import Sic.Core.Usage
-import Sic.Core.RunTime.Relation.DeclaredTypes
-import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.Results.Extension
 import Sic.Core.Results.Functionality
 import Sic.Core.Results.Substitution
+import Sic.Core.RunTime.Relation.DeclaredTypes
+import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.RunTime.Relation.Recursors
 import Sic.Core.RunTime.Relation.Rules
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Substitution
+import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
-import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Signature
 import Sic.Core.Usage.Inversion
 
@@ -205,10 +205,11 @@ where
     | .prop hctx, _ => fun ρ =>
       RunValidRen.erased (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.prop hctx) ρ) rfl
     | .inst h hq hl hp hadm has, _ => fun ρ =>
-      RunValidRen.erased (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h hq hl hp hadm has) ρ) rfl
+      RunValidRen.erased
+        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h hq hl hp hadm has) ρ) rfl
     | .conv ht h, hu => fun ρ =>
-      RunValidRen.conv (soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ) (soundnessIn.eqType hw.distinct hw.liftsInOrder hι h ρ)
-        (hasType hw hι hP ht hu ρ)
+      RunValidRen.conv (soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ)
+        (soundnessIn.eqType hw.distinct hw.liftsInOrder hι h ρ) (hasType hw hι hP ht hu ρ)
     | .ctor (ls := ls) h hc hq hl hp hadm has hts, hu => fun ρ => by
       have hdT := (presuppositions.hasArgs hts).distinct
       obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc hq hp hu rfl
@@ -306,7 +307,8 @@ where
           ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
-            (Lifting.ofMotives decl.names qs (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
+            (Lifting.ofMotives decl.names qs
+              (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
               (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
               (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ'
               (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
@@ -319,7 +321,8 @@ where
           Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl')
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
-            (Lifting.ofMotives decl.names qs (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
+            (Lifting.ofMotives decl.names qs
+              (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
               (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
               (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ'
               (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
@@ -351,7 +354,8 @@ where
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
         obtain ⟨u₀', hu₀', rfl⟩ := Branches.get_substLevels _ hu₂
         cases Branches.get_inj hu₀ hu₀'
-        have hb := soundnessIn.hasType hw.distinct hw.liftsInOrder hι (hut i j T' con C₀ u₀ hi hC₀ hu₀) ρ
+        have hb :=
+          soundnessIn.hasType hw.distinct hw.liftsInOrder hι (hut i j T' con C₀ u₀ hi hC₀ hu₀) ρ
         simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
         erw [Term.atCtor_substLevels] at hb
@@ -470,7 +474,8 @@ where
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
         (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
-            soundnessIn.hasType hw.distinct hw.liftsInOrder hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
+            soundnessIn.hasType hw.distinct hw.liftsInOrder hι
+              (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
         (RunValidCorecBranches.atLevels hq hl hp
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
             hasType hw hι hP (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)

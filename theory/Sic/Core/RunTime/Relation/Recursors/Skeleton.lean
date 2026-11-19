@@ -214,10 +214,9 @@ end
 -- ADE: none.
 /-- `n.Ξ` at run time for the recursor of the multiplicity `0`: the corecursor without state of the
 shape of the type of a nested field, whose field is bound to any cell, in a heap that extends the
-heap `Hb` of the cells of `E₀`, evaluates to a value related
-to the recursive result of the field at the type lifted, when the hypotheses of
-`NestRel.skeletonRuns` hold and the equality of the type relates the field to a term: the field is
-never read. -/
+heap `Hb` of the cells of `E₀`, evaluates to a value related to the recursive result of the field at
+the type lifted, when the hypotheses of `NestRel.skeletonRuns` hold and the equality of the type
+relates the field to a term: the field is never read. -/
 theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →

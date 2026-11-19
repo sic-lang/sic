@@ -890,8 +890,9 @@ end
 /-- `n.Ξ` at run time: the corecursor without state of the shape of the type of a nested field,
 whose field is bound to a cell, in a heap that extends the heap `Hb` of the cells of `E₀`, that
 holds an address that the relation of run time of the type relates to the field, evaluates to a
-value related to the recursive result of the field at the type lifted, when the hypotheses of `RunNestRel.nestedRuns` hold and the relations of the positions are
-monotone in the heap: the path from the field is the field itself. -/
+value related to the recursive result of the field at the type lifted, when the hypotheses of
+`RunNestRel.nestedRuns` hold and the relations of the positions are monotone in the heap: the path
+from the field is the field itself. -/
 theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
