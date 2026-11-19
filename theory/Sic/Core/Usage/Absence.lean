@@ -32,16 +32,17 @@ theorem Target.occurs_cast {n n' : Nat} (h : n = n') (M : Target n) (y : Fin n')
 of a branch, in the erasure of the term of this branch. -/
 theorem Branches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} (r : Grade) : (us : Branches k Γ) →
-      (es : List (List Nat)) → (fs : List (List Parameter)) → (us.erase sig S hΓ r es fs).Occurs x →
-        ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
-          (u.erase sig S ((hΓ.extend a).extend b)).Occurs
-            ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
+      (ws : List (List RecursiveResult)) → (fs : List (List Parameter)) →
+        (us.erase sig S hΓ r ws fs).Occurs x →
+          ∃ i a b u, us.get i = some ⟨a, b, u⟩ ∧
+            (u.erase sig S ((hΓ.extend a).extend b)).Occurs
+              ((x.addNat (a + b)).cast (Scope.length_extend_extend Γ a b).symm)
   | .nil, _, _, h => nomatch h
-  | .cons a b _ u us, es, fs, h => by
+  | .cons a b _ u us, ws, fs, h => by
     cases h with
     | head h => exact ⟨0, a, b, u, rfl, Target.occurs_cast _ _ _ h⟩
     | tail h =>
-      obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ r us es.tail fs.tail h
+      obtain ⟨i, a', b', u', hu, ho⟩ := Branches.occurs_erase hΓ r us ws.tail fs.tail h
       exact ⟨i + 1, a', b', u', hu, ho⟩
 
 /-- The grades extended by the variables of a telescope give each old variable its grade. -/

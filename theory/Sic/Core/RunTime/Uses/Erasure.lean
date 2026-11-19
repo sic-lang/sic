@@ -167,10 +167,11 @@ theorem Telescope.run_resultSum_le : (ns : List (Nest Name)) → (ps : List Para
 /-! ## Branches -/
 
 /-- The erasure of the branches of a recursor reads the variables of the scope as `χ` allows when
-the erasure of each branch reads them as some `δ` allows, and its new variables as the
-multiplicities that the erasure gives their binders allow, `χ` bounds `δ` plus `χ` times the
-multiplicity of each recursive result that the branch computes, and a result that the branch
-computes has a multiplicity other than `0`. -/
+the recursive results are the recursors on the fields at the positions `es`, the erasure of each
+branch reads them as some `δ` allows, and its new variables as the multiplicities that the erasure
+gives their binders allow, `χ` bounds `δ` plus `χ` times the multiplicity of each recursive result
+that the branch computes, and a result that the branch computes has a multiplicity other than
+`0`. -/
 theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) (χ : MultiplicityVector Γ.length) :
     (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Parameter)) →
@@ -179,14 +180,15 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
       ∃ δ : MultiplicityVector Γ.length,
         Target.Usage (δ.extendBinders
             (fun l => r.fieldMultiplicity (((fs.drop i).headD [])[(l : Nat)]?.map (·.usage))
-              ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
+              ((((es.drop i).headD []).map RecursiveResult.field).zip gs.toList |>.find?
+                fun x => x.1.fieldPosition == some (l : Nat)))
             (fun (j : Fin b) => gs[j].run))
           (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b)) ∧
         χ ≤ᶜ δ +ᶜ (Multiplicity.sum (fun (j : Fin b) =>
           if (if gs[j] ∈ S then none else ((es.drop i).headD [])[(j : Nat)]?).isSome then gs[j].run
           else .zero) ·ᶜ χ) ∧
         ∀ j : Fin b, gs[j] ∉ S → gs[j].run ≠ .zero) →
-    TargetBranches.Usage r.run χ (us.erase sig S hΓ r es fs)
+    TargetBranches.Usage r.run χ (us.erase sig S hΓ r (es.map (·.map RecursiveResult.field)) fs)
   | .nil, _, _, _ => .nil
   | .cons a b gs u us, es, fs, h => by
     obtain ⟨δ, hu, hχ, hk⟩ := h 0 a b gs u rfl rfl
@@ -196,17 +198,24 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
       split
       · exact id
       · exact RecursiveResult.not_isNested_ofPosition _
-    refine .cons hu ?_ (fun j hj => hk j fun hs => ?_)
-      (fun j l σ h => (hn j (by rw [h]; exact trivial)).elim) (Branches.erase_usage hΓ r χ us es.tail
-      fs.tail fun i a' b' gs' u' hg hgs => ?_)
-    · simp only [RecursiveResult.mul_factor (hn _), apply_ite RecursiveResult.position,
-        RecursiveResult.position_ofPosition, RecursiveResult.position_erased]
-      exact hχ
-    · simp [show gs[(j : Nat)] ∈ S from hs] at hj
-    · have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
+    have ih := Branches.erase_usage hΓ r χ us es.tail fs.tail fun i a' b' gs' u' hg hgs => by
+      have e₁ : es.drop (i + 1) = es.tail.drop i := by cases es <;> simp
       have e₂ : fs.drop (i + 1) = fs.tail.drop i := by cases fs <;> simp
       have := h (i + 1) a' b' gs' u' hg hgs
       rwa [e₁, e₂] at this
+    rw [List.map_tail] at ih
+    have hd₀ := RecursiveResult.headD_drop_map_field es 0
+    simp only [List.drop_zero] at hd₀
+    refine .cons (δ := δ) ?_ ?_ (fun j hj => hk j fun hs => ?_) (fun j l σ h => ?_) ih
+    · simp only [hd₀]
+      exact hu
+    · simp only [hd₀, RecursiveResult.getD_map_field, RecursiveResult.mul_factor (hn _),
+        apply_ite RecursiveResult.position, RecursiveResult.position_ofPosition,
+        RecursiveResult.position_erased]
+      exact hχ
+    · simp [show gs[(j : Nat)] ∈ S from hs] at hj
+    · simp only [hd₀, RecursiveResult.getD_map_field] at h
+      exact (hn j (by rw [h]; exact trivial)).elim
 
 /-- The erasure of the branches of a corecursor reads the variables of the scope as `δ` allows when
 each branch, without non-uniform parameters and with a grade, reads them as some `δᵢ` allows, and
@@ -297,13 +306,15 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hΓ hm hts)
-  | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (us := us) (χ := χ)
-      (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hn hu hg hχ _ _ => by
+  | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
+      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hn hu hg hχ _ _ =>
+      by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
-        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) := by
-      rw [hd.recursiveFields h hq hp, hd.caseFieldParams h hq hp, Option.getD_some,
-        Option.getD_some]
+        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
+        ((sig.caseFieldParams D qs ps).getD [])) := by
+      rw [hd.recursiveResults h hq hp, TypeDeclaration.recursiveResults_of_not_nested hn,
+        hd.caseFieldParams h hq hp, Option.getD_some]
       refine Branches.erase_usage hΓ r χ.run us _ _ fun i a b gs' u hget hgs' => ?_
       have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -334,11 +345,13 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : 
         · obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
             ⟨_, List.getElem?_eq_getElem l.2⟩
           have hgl := Grade.run_le (hg i j T' con l p' hc hp')
-          rw [hz, hgs', ← Telescope.resultGrades_eq_idxOf _ _ 0 l hn', Nat.zero_add] at hgl
+          rw [hz, hgs'] at hgl
           rw [hm] at hgl
           simp only [Mode.grade, Grade.modality.semiring.one_mul] at hgl
           rw [(Grade.run_op _ _).1] at hgl
-          simp only [hp', Option.map_some, Grade.fieldMultiplicity]
+          have he := Grade.fieldMultiplicity_positions r p'.usage _ gs'.toList 0 l hn'
+          rw [Nat.zero_add] at he
+          simp only [hp', Option.map_some, he]
           exact Multiplicity.sub_best.1 _ _ _ hgl
         · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp), Option.getD_some,
             _root_.Vector.getElem_toList]

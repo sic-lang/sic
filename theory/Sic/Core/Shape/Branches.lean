@@ -29,7 +29,7 @@ namespace Sic.Core
 open Sic.Grading
 
 -- ADE: none.
-/-- `k`: the recursive result of a branch of a recursor of the target language: `erased`, the RFC's
+/-- `w`: the recursive result of a branch of a recursor of the target language: `erased`, the RFC's
 `⊥`, when the result is erased, `field l` when it is the recursor on the recursive field `l`, and
 `nested l σ` when it is the corecursor of a lifting, of the shape `σ`, on the nested field `l`; the
 positions are counted from `0`, while the RFC counts them from `1`.

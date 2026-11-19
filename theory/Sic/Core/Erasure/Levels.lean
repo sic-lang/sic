@@ -90,13 +90,13 @@ theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred
 /-- Branches of a recursor instantiated at other levels have the same erasure. -/
 theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) :
-    (us : Branches k Γ) → (es : List (List Nat)) → (fs : List (List Parameter)) →
-      (us.substLevels ls').erase sig S hΓ r es fs = us.erase sig S hΓ r es fs
+    (us : Branches k Γ) → (ws : List (List RecursiveResult)) → (fs : List (List Parameter)) →
+      (us.substLevels ls').erase sig S hΓ r ws fs = us.erase sig S hΓ r ws fs
   | .nil, _, _ => rfl
-  | .cons a b _ u us, es, fs => by
+  | .cons a b _ u us, ws, fs => by
     simp only [Branches.substLevels, Branches.erase,
       Term.erase_substLevels sig S ls' ((hΓ.extend a).extend b) u,
-      Branches.erase_substLevels sig S ls' hΓ r us es.tail fs.tail]
+      Branches.erase_substLevels sig S ls' hΓ r us ws.tail fs.tail]
 
 -- ADE: none.
 /-- Branches of a corecursor instantiated at other levels have the same erasure. -/

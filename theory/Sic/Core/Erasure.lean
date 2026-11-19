@@ -471,13 +471,20 @@ def Targets.requirements {n : Nat} : Targets n → List Multiplicity
 
 -- ADE: none.
 /-- `π_l`: the multiplicity at run time of the variable of a field of grade `p` in a branch of a
-recursor of grade `r`, whose recursive result, when the field has one, has the grade `e`: the uses
-at run time of the field that the recursor gives, `run(r · p)`, minus those of the recursion on the
-field, `run(e · r)`, the least multiplicity that the usage allows the variable; a field without
-grade, in a term that no declaration types, has `ω`, which states nothing.
+recursor of grade `r`, given the recursive result that names the field, when one does, with its
+grade `e`: the uses at run time of the field that the recursor gives, `run(r · p)`, minus those of
+the recursion on the field, `run(e · r)` for the recursor on the field itself and
+`run(e) · (factor(Ξ) · run(r))` for the corecursor of the shape `Ξ` of a nested field, which runs
+the recursor on the observations of the field as often as its factor allows at each read of the
+result, the least multiplicity that the usage allows the variable; a field that no result names
+has `run(r · p)`, and a field without grade, in a term that no declaration types, has `ω`, which
+states nothing.
 RFC: `\mathsf{erase}_{\bar u}.\pi` -/
-def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) : Option Grade → Option Grade → Multiplicity
-  | some p, e => (r * p).run - ((e.getD .zero) * r).run
+def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) :
+    Option Grade → Option (RecursiveResult × Grade) → Multiplicity
+  | some p, some (.field _, e) => (r * p).run - (e * r).run
+  | some p, some (.nested _ σ, e) => (r * p).run - e.run * (σ.factor * r.run)
+  | some p, some (.erased, _) | some p, none => (r * p).run
   | none, _ => .omega
 
 -- ADE: none.
@@ -522,10 +529,11 @@ its argument, and a corecursor keeps its state, each entry at its grade times th
 corecursor, and its branches, without its instance and its states; a second-order variable has no
 erasure, since the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
-ownerships of the results of the destructors, the fields of the recursive results and the states
-that the branches resume are those of the declarations in the signature `sig`; a constructor or an
-observation whose case the signature does not give, and a field, an argument or an entry whose
-parameter it does not give, in a term that no declaration types, are erased.
+ownerships of the results of the destructors, the recursive results of the branches, with the
+shapes of the nested fields, and the states that the branches resume are those of the declarations
+in the signature `sig`; a constructor or an observation whose case the signature does not give,
+and a field, an argument or an entry whose parameter it does not give, in a term that no
+declaration types, are erased.
 Whether a grade is in `S` decides the erasure of its position, so that `S` is decidable, as the
 sets `S^m` are.
 RFC: `\mathsf{erase}_t`
@@ -545,7 +553,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
     .recursor r.run
       (if r ∈ S then .omega else (sig.recursionRequirement D qs ps ⟨κ.quality, r, ς⟩ χ).run)
       (if r ∈ S then (sig.skeleton D qs ps).target else t.erase sig S hΓ)
-      (us.erase sig S hΓ r ((sig.recursiveFields D qs ps).getD [])
+      (us.erase sig S hΓ r (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ)
         ((sig.caseFieldParams D qs ps).getD []))
   | .obs D qs _ ps _ t d bs =>
     match sig.destructorCase D d with
@@ -580,28 +588,29 @@ def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k 
       (ts.erase sig S hΓ ps)
 
 -- ADE: none.
-/-- `⌊ū⌋_{S, r, ē̄, p̄̄}`: the erasure of the branches of a recursor of grade `r`, under their new
-variables, each with the field of each of its recursive results, in the positions `es` of the
-recursive fields of its constructor, or `none` when the grade of the result is in `S`, so that the
-result is not computed; the variable of a field of grade `p`, in the grades `fs` of the fields of
-its constructor, has the multiplicity `run(r · p) - run(e · r)`, where `e` is the grade of its
-recursive result, or `0` when it has none, and the coefficient of ownership `run(r' · (r · p))`,
-where `r'` is the requirement of the field, and the variable of a recursive result of grade `e` the
+/-- `⌊ū⌋_{S, r, w̄̄, p̄̄}`: the erasure of the branches of a recursor of grade `r`, under their new
+variables, each with what computes each of its recursive results, in the recursive results `ws` of
+its constructor, or `⊥` when the grade of the result is in `S`, so that the result is not computed,
+or when its constructor gives no result at its position, in a term that no declaration types; the
+variable of a field of grade `p`, in the grades `fs` of the fields of its constructor, has the
+multiplicity that `Grade.fieldMultiplicity` gives it from the first recursive result of `ws` that
+names the field, with its grade `e`, and the coefficient of ownership `run(r' · (r · p))`, where
+`r'` is the requirement of the field, and the variable of a recursive result of grade `e` the
 multiplicity `run(e)`.
 RFC: `\mathsf{erase}_{\bar u}` -/
 def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) (r : Grade) :
-    Branches k Γ → List (List Nat) → List (List Parameter) → TargetBranches Γ.length
+    Branches k Γ → List (List RecursiveResult) → List (List Parameter) → TargetBranches Γ.length
   | .nil, _, _ => .nil
-  | .cons a b gs u us, es, fs =>
+  | .cons a b gs u us, ws, fs =>
     .cons a b
       (fun l => r.fieldMultiplicity (((fs.headD [])[(l : Nat)]?).map (·.usage))
-        (((es.headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?))
+        (((ws.headD []).zip gs.toList).find? fun x => x.1.fieldPosition == some (l : Nat)))
       (fun l => r.fieldCoefficient (fs.headD [])[(l : Nat)]?)
       (fun j => gs[j].run)
-      (fun j => if gs[j] ∈ S then .erased else .ofPosition (es.headD [])[(j : Nat)]?)
+      (fun j => if gs[j] ∈ S then .erased else ((ws.headD [])[(j : Nat)]?).getD .erased)
       (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
-      (us.erase sig S hΓ r es.tail fs.tail)
+      (us.erase sig S hΓ r ws.tail fs.tail)
 
 -- ADE: none.
 /-- `⌊ḡ⌋_{S, p̄, k̄, q̄̄}`: the erasure of the branches of a corecursor, under their new variables,
@@ -808,17 +817,17 @@ theorem Terms.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decid
 /-- The erasure of branches by a larger set of grades is less defined. -/
 theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
-    (hΓ : Γ.FirstOrder) (r : Grade) : (us : Branches k Γ) → (es : List (List Nat)) →
+    (hΓ : Γ.FirstOrder) (r : Grade) : (us : Branches k Γ) → (ws : List (List RecursiveResult)) →
       (fs : List (List Parameter)) →
-      TargetBranches.LessDefined (us.erase sig S₂ hΓ r es fs) (us.erase sig S₁ hΓ r es fs)
+      TargetBranches.LessDefined (us.erase sig S₂ hΓ r ws fs) (us.erase sig S₁ hΓ r ws fs)
   | .nil, _, _ => .nil
-  | .cons a b gs u us, es, fs => .cons (fun j => by
+  | .cons a b gs u us, ws, fs => .cons (fun j => by
       by_cases h₂ : gs[j] ∈ S₂
       · exact .inl (by simp only [h₂, ↓reduceIte])
       · have h₁ : gs[j] ∉ S₁ := fun h₁ => h₂ (h _ h₁)
         exact .inr (by simp only [h₁, h₂, ↓reduceIte]))
       (Target.LessDefined.cast _ (Term.erase_lessDefined sig h ((hΓ.extend a).extend b) u))
-      (Branches.erase_lessDefined sig h hΓ r us es.tail fs.tail)
+      (Branches.erase_lessDefined sig h hΓ r us ws.tail fs.tail)
 
 -- ADE: none.
 /-- The erasure of the branches of a corecursor by a larger set of grades, at less defined

@@ -126,29 +126,29 @@ theorem Entry.constructorCase_of_cases {decl : TypeDeclaration}
 
 /-- The branch at a position of the erased branches of a recursor is the erasure of the branch at
 this position, with the multiplicities and the coefficients of ownership that the erasure gives its
-binders and the positions of its recursive fields that it gives, each `none` when the grade of its
-result is erased. -/
+binders and the recursive results that it gives, each `⊥` when the grade of its result is
+erased. -/
 theorem Branches.get_erase (sig : Signature) (S : Math.Set Grade) [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) : (us : Branches k Γ) →
-    (es : List (List Nat)) → (fs : List (List Parameter)) →
+    (ws : List (List RecursiveResult)) → (fs : List (List Parameter)) →
     {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} → us.get i = some ⟨n, m, u⟩ →
-    ∃ gs : Vector Grade m, us.grades i = gs.toList ∧ (us.erase sig S hΓ r es fs).get i =
+    ∃ gs : Vector Grade m, us.grades i = gs.toList ∧ (us.erase sig S hΓ r ws fs).get i =
       some ⟨n, m,
         fun l => r.fieldMultiplicity ((((fs.drop i).headD [])[(l : Nat)]?).map (·.usage))
-          ((((es.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs.toList[j]?),
+          ((((ws.drop i).headD []).zip gs.toList).find? fun x => x.1.fieldPosition == some (l : Nat)),
         fun l => r.fieldCoefficient ((fs.drop i).headD [])[(l : Nat)]?,
         fun j => gs[j].run,
-        fun j => if gs[j] ∈ S then .erased else .ofPosition ((es.drop i).headD [])[(j : Nat)]?,
+        fun j => if gs[j] ∈ S then .erased else (((ws.drop i).headD [])[(j : Nat)]?).getD .erased,
         Scope.length_extend_extend Γ n m ▸ u.erase sig S ((hΓ.extend n).extend m)⟩
   | .nil, _, _, _, _, _, _, h => nomatch h
   | .cons _ _ gs _ _, _, _, 0, _, _, _, h => by
     cases h
     refine ⟨gs, rfl, ?_⟩
     rfl
-  | .cons _ _ _ _ us, es, fs, i + 1, _, _, _, h => by
-    obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ r us es.tail fs.tail h
-    have he : es.drop (i + 1) = es.tail.drop i := by
-      cases es
+  | .cons _ _ _ _ us, ws, fs, i + 1, _, _, _, h => by
+    obtain ⟨gs, h₁, h₂⟩ := Branches.get_erase sig S hΓ r us ws.tail fs.tail h
+    have he : ws.drop (i + 1) = ws.tail.drop i := by
+      cases ws
       · exact List.drop_nil.trans List.drop_nil.symm
       · rfl
     have hf : fs.drop (i + 1) = fs.tail.drop i := by
@@ -258,6 +258,56 @@ theorem Telescope.resultGrades_eq_idxOf : (ns : List (Nest Name)) → (es : List
     rw [show o + (l + 1) = o + 1 + l by omega]
     exact Telescope.resultGrades_eq_idxOf ns es (o + 1) l
       (fun ν hν => hn ν (List.mem_cons_of_mem _ hν))
+
+/-- The first recursor on a field among recursors on fields at the positions `xs`, each with its
+grade in `es`, that names the field `n` is the one at the index of `n` in `xs`, with its grade, when
+it has one. -/
+theorem RecursiveResult.find?_zip_map_field : (xs : List Nat) → (es : List Grade) → (n : Nat) →
+    ((xs.map RecursiveResult.field).zip es).find? (fun x => x.1.fieldPosition == some n) =
+      ((xs.idxOf? n).bind fun j => es[j]?).map (RecursiveResult.field n, ·)
+  | [], _, _ => rfl
+  | x :: xs, [], n => by
+    simp only [List.map_cons, List.zip_nil_right, List.find?_nil, List.getElem?_nil,
+      Option.bind_fun_none, Option.map_none]
+  | x :: xs, e :: es, n => by
+    by_cases h : x = n
+    · subst h
+      simp [List.idxOf?_cons, RecursiveResult.fieldPosition]
+    · have hne : (x == n) = false := beq_false_of_ne h
+      rw [List.map_cons, List.zip_cons_cons, List.find?_cons_of_neg
+          (by simp [RecursiveResult.fieldPosition, h]),
+        RecursiveResult.find?_zip_map_field xs es n, List.idxOf?_cons, hne]
+      cases List.idxOf? n xs <;> rfl
+
+/-- The multiplicity that the erasure gives the variable of a field of the grade `p`, among fields
+none of which is nested, whose nestings are `ns`, from the position `o`, is the uses at run time of
+the field that the recursor gives minus those of the recursion on it, at the grade of its recursive
+result, `0` when it has none. -/
+theorem _root_.Sic.Grading.Grade.fieldMultiplicity_positions (r p : Grade) (ns : List (Nest Name))
+    (es : List Grade) (o l : Nat) (hn : ∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) :
+    r.fieldMultiplicity (some p)
+      (((((ns.map Nest.blockName).zipIdx o).filterMap fun z => z.1.map fun _ => z.2).map
+        RecursiveResult.field).zip es |>.find? fun x => x.1.fieldPosition == some (o + l)) =
+      (r * p).run - ((Telescope.resultGrades ns es l) * r).run := by
+  rw [RecursiveResult.find?_zip_map_field, ← Telescope.resultGrades_eq_idxOf ns es o l hn]
+  cases ((((ns.map Nest.blockName).zipIdx o).filterMap fun z => z.1.map fun _ => z.2).idxOf?
+    (o + l)).bind (fun j => es[j]?) with
+  | none => exact (by decide : ∀ (m : Multiplicity) (r : Grade), m = m - (Grade.zero * r).run) _ _
+  | some e => rfl
+
+/-- The recursive results of the first constructor from a position, among the recursors on the
+fields at the positions `es`, are the recursors on the fields at its positions. -/
+theorem RecursiveResult.headD_drop_map_field (es : List (List Nat)) (i : Nat) :
+    ((es.map (·.map RecursiveResult.field)).drop i).headD [] = ((es.drop i).headD []).map .field := by
+  rw [← List.map_drop]
+  cases es.drop i <;> rfl
+
+/-- The recursive result at a position among recursors on fields at the positions `xs` is the
+result of the field at this position, erased when there is none. -/
+theorem RecursiveResult.getD_map_field (xs : List Nat) (j : Nat) :
+    ((xs.map RecursiveResult.field)[j]?).getD .erased = .ofPosition xs[j]? := by
+  rw [List.getElem?_map]
+  cases xs[j]? <;> rfl
 
 /-- No recursion runs on a field before the positions of the recursive fields from the position
 `o`. -/
@@ -763,14 +813,14 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) (as.subst σ)) ∧
       Terms.RecAt (fun D' t b => ∀ ϖ' H'', H'.Extends H'' → ∃ v H₂ tr,
         EvalRec P ϖ' H'' E r.run ϱ (us.erase sig Mode.oneOne.erased hΓ r
-          ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) b v H₂
+          (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) b v H₂
           tr ∧ H''.Extends H₂ ∧
         ∀ C, (Cs.subst σ).get (decl.names.idxOf D') = some ⟨0, C⟩ →
           RunsAs sig ι P H₂ (.recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) v
             (C.subst₀ (Subst₀.single t)))
         ((con.fields (.ofLists qs ps hq hp)).recursion decl.names) (us.grades i) ts.terms bs) :
     ∃ v H₃ tr, EvalRec P ϖ₀ H' E r.run ϱ (us.erase sig Mode.oneOne.erased hΓ r
-        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a v H₃ tr ∧
+        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) a v H₃ tr ∧
       H'.Extends H₃ ∧
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
         RunsAs sig ι P H₃ (.recursor r ς χ' T'.name qs ls ps (as.subst σ) w κ (Cs.subst σ) (us.subst σ))
@@ -834,15 +884,19 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       Term.recursorAt_subst₀ r ς χ' qs ls ps (as.subst σ) κ (Cs.subst σ) (us.subst σ) D'' t] at h₁
     exact ⟨rs, h₁, h₂⟩
   obtain ⟨gs₀, hgs, hget⟩ := Branches.get_erase sig Mode.oneOne.erased hΓ r us
-    ((sig.recursiveFields T.name qs ps).getD []) ((sig.caseFieldParams T.name qs ps).getD []) hu
+    (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams T.name qs ps).getD [])
+    hu
   -- The positions of the recursive fields of each case.
   let rfs : List (List Nat) := decl.cases.map fun x =>
     ((x.2.2.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
       fun y => y.1.map fun _ => y.2
-  have hrfs : (sig.recursiveFields T.name qs ps).getD [] = rfs := by
-    rw [hd.recursiveFields ⟨hdecl, hT, rfl⟩ hq hp]
+  have hrfs : sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ' = rfs.map (·.map .field) := by
+    rw [hd.recursiveResults ⟨hdecl, hT, rfl⟩ hq hp,
+      TypeDeclaration.recursiveResults_of_not_nested hns]
     rfl
   rw [hrfs] at hQ hget ⊢
+  rw [RecursiveResult.headD_drop_map_field] at hget
+  simp only [RecursiveResult.getD_map_field] at hget
   rw [hgs] at hQ
   have hpos : (rfs.drop i).headD [] =
       ((con.fields (.ofLists qs ps hq hp)).recursion decl.names).zipIdx.filterMap
@@ -881,7 +935,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
   let πs₀ : Fin (con.params (.ofLists qs ps hq hp)).length → Multiplicity := fun l =>
     r.fieldMultiplicity
       (((((sig.caseFieldParams T.name qs ps).getD []).drop i).headD [])[(l : Nat)]?.map (·.usage))
-      ((((rfs.drop i).headD []).idxOf? (l : Nat)).bind fun j => gs₀.toList[j]?)
+      ((((rfs.drop i).headD []).map RecursiveResult.field).zip gs₀.toList |>.find?
+        fun x => x.1.fieldPosition == some (l : Nat))
   let πs₀' : Fin (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length → Multiplicity :=
     fun j => gs₀[j].run
   have hlen : ((List.ofFn πs₀ ++ List.ofFn πs₀').map (ϖ₀ * ·)).length = (bs ++ vs).length := by
@@ -928,13 +983,13 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     refine ⟨π₀, hπ₀, ?_⟩
     have hgl := hg i j T' con l p' hi hp'
     rw [hgs] at hgl
-    have he := Telescope.resultGrades_eq_idxOf
+    have he := Grade.fieldMultiplicity_positions r p'.usage
       ((con.fields (.ofLists qs ps hq hp)).nest decl.names) gs₀.toList 0 l hn
     have hr := Telescope.recursionsAt_positions Mode.oneOne.erased (by decide)
       ((con.fields (.ofLists qs ps hq hp)).nest decl.names) gs₀.toList 0 l hn
     rw [Nat.zero_add] at he hr
     rw [hks, hπs', hr]
-    simp only [πs₀, hfs l p' hp', Option.map_some, Grade.fieldMultiplicity, hpos', he]
+    simp only [πs₀, hfs l p' hp', Option.map_some, hpos', he]
     exact Grade.run_mul_le_fieldMultiplicity π₀ r p'.usage _ _ hle hgl
   -- The coefficient of the ownership of each field is within the one that the constructor
   -- allows.
@@ -1046,7 +1101,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (ht : RunsAs sig ι P H₁ t a ((Term.inst D qs ls ps as).subst σ)) :
     ∃ b H₂ tr, EvalRec P ϖ₀ H₁ E r.run
         (sig.recursionRequirement D qs ps ⟨κ.quality, r, ς⟩ χ').run (us.erase sig Mode.oneOne.erased hΓ r
-        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₂ tr ∧
+        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) a b H₂ tr ∧
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
@@ -1069,7 +1124,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
         (hS X T hT c hc) _ _ (hS Y T hT c hc)
         (fun _ => Nest.map_rel₃
           (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
-  let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
+  let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
     ((sig.caseFieldParams T.name qs ps).getD [])
   let ϱ := (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
@@ -1211,7 +1266,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     (htv : ValidTerm₀ sig ι t ((Term.inst D qs ls ps as).subst σ)) :
     ∃ a H₂ b H₃ tr, Eval P (ϖ₀ * r.run) H₁ E ((sig.skeleton D qs ps).target : Target Γ.length) a H₂ [] ∧
       EvalRec P ϖ₀ H₂ E r.run .omega (us.erase sig Mode.oneOne.erased hΓ r
-        ((sig.recursiveFields D qs ps).getD []) ((sig.caseFieldParams D qs ps).getD [])) a b H₃
+        (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ') ((sig.caseFieldParams D qs ps).getD [])) a b H₃
         tr ∧ H₁.Extends H₃ ∧
       RunsAs sig ι P H₃ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
@@ -1229,7 +1284,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
         ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
     fun T' hT' _ _ hab => (FieldRel.univ rfl (hUM T' hT').1).validEqTerm hd (hI _) hab
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  let Ns := us.erase sig Mode.oneOne.erased hΓ r ((sig.recursiveFields T.name qs ps).getD [])
+  let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
     ((sig.caseFieldParams T.name qs ps).getD [])
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
