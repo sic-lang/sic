@@ -471,14 +471,14 @@ def Targets.requirements {n : Nat} : Targets n → List Multiplicity
 
 -- ADE: none.
 /-- `π_l`: the multiplicity at run time of the variable of a field of grade `p` in a branch of a
-recursor of grade `r`, given the recursive result that names the field, when one does, with its
-grade `e`: the uses at run time of the field that the recursor gives, `run(r · p)`, minus those of
-the recursion on the field, `run(e · r)` for the recursor on the field itself and
-`run(e) · (factor(Ξ) · run(r))` for the corecursor of the shape `Ξ` of a nested field, which runs
-the recursor on the observations of the field as often as its factor allows at each read of the
-result, the least multiplicity that the usage allows the variable; a field that no result names
-has `run(r · p)`, and a field without grade, in a term that no declaration types, has `ω`, which
-states nothing.
+recursor of grade `r`, given the recursive result that names the field, when one does and the grades
+`ē` of the results have an element for it, with its grade `e`: the uses at run time of the field
+that the recursor gives, `run(r · p)`, minus those of the recursion on the field, `run(e · r)` for
+the recursor on the field itself and `run(e) · (factor(Ξ) · run(r))` for the corecursor of the shape
+`Ξ` of a nested field, which runs the recursor on the observations of the field as often as its
+factor allows at each read of the result, the least multiplicity that the usage allows the variable;
+a field that no result names has `run(r · p)`, as does a field whose result has no grade, and a
+field without grade, in a term that no declaration types, has `ω`, which states nothing.
 RFC: `\mathsf{erase}_{\bar u}.\pi` -/
 def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) :
     Option Grade → Option (RecursiveResult × Grade) → Multiplicity
@@ -594,9 +594,9 @@ its constructor, or `⊥` when the grade of the result is in `S`, so that the re
 or when its constructor gives no result at its position, in a term that no declaration types; the
 variable of a field of grade `p`, in the grades `fs` of the fields of its constructor, has the
 multiplicity that `Grade.fieldMultiplicity` gives it from the first recursive result of `ws` that
-names the field, with its grade `e`, and the coefficient of ownership `run(r' · (r · p))`, where
-`r'` is the requirement of the field, and the variable of a recursive result of grade `e` the
-multiplicity `run(e)`.
+names the field and has a grade `e` in the grades `gs` of the results, and the coefficient of
+ownership `run(r' · (r · p))`, where `r'` is the requirement of the field, and the variable of a
+recursive result of grade `e` the multiplicity `run(e)`.
 RFC: `\mathsf{erase}_{\bar u}` -/
 def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k : Nat} {Γ : Scope}
     (hΓ : Γ.FirstOrder) (r : Grade) :
