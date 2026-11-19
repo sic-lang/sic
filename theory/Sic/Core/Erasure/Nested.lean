@@ -112,7 +112,9 @@ mutual
 path `O` that they observe when `ρ · factor(σ)` is `0`: each destructor is either never observed at
 run time, and its branch is `↯`, or gives a result through which the recursor runs no recursion, the
 recursor on the term of a skeleton when `ρ` is `0`, or the branches of the next lifting, which do not
-depend on the path either, so that the corecursor built holds no observation of the field. -/
+depend on the path either, so that the corecursor built holds no observation of the field.
+It is the reason of the guard of `(own_N̄.,)`: where `ρ · factor(Ξ) = 0`, the branches built do not
+read the term observed, so that the ownership of a nested result asks nothing of its field there. -/
 theorem Shape.branches_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Multiplicity) :
     (σ : Shape) → ρ * σ.factor = .zero → (O O' : Target m) → (Ns : TargetBranches m) →
       σ.branches ρ ϱ O Ns = σ.branches ρ ϱ O' Ns
