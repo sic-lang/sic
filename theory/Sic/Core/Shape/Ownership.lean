@@ -178,4 +178,41 @@ pairs `c_l ◀ r_l · ς · ψ₁⁻ · … · ψ_h⁻`. -/
 def Shape.recursion (ς : Multiplicity) (σ : Shape) : List Multiplicity :=
   ς :: σ.prefixes ς ς
 
+/-! ## Properties -/
+
+-- ADE: none.
+/-- The value of the ownership `ψ` of a result is monotone in the ownerships of its arguments: it is
+defined at the same ownerships, a meet of products of them, so that its least value, at the
+requirements of the arguments, bounds its value at any ownerships that meet them, which the
+requirement of the recursion reads. -/
+theorem ResultOwnership.value_mono :
+    {c : Nat} → (ψ : ResultOwnership Multiplicity c) → (os os' : Fin c → Multiplicity) →
+      (∀ k, os k ≤ os' k) →
+        Option.Rel (· ≤ ·) (ψ.value (List.ofFn os)) (ψ.value (List.ofFn os'))
+  | 0, ψ, _, _, _ => by
+    show Option.Rel _ ψ.constant ψ.constant
+    cases ψ.constant with
+    | none => exact .none
+    | some c => exact .some ((by decide : ∀ a : Multiplicity, a ≤ a) c)
+  | _ + 1, ψ, os, os', h => by
+    have ih := ResultOwnership.value_mono ψ.tail (fun k => os k.succ) (fun k => os' k.succ)
+      fun k => h k.succ
+    rw [List.ofFn_succ, List.ofFn_succ]
+    show Option.Rel _ (Option.merge _ ((ψ.coefficient 0).map (os 0 * ·)) (ψ.tail.value _))
+      (Option.merge _ ((ψ.coefficient 0).map (os' 0 * ·)) (ψ.tail.value _))
+    generalize ψ.tail.value (List.ofFn fun k => os k.succ) = x at ih ⊢
+    generalize ψ.tail.value (List.ofFn fun k => os' k.succ) = y at ih ⊢
+    have hm : ∀ a b c : Multiplicity, a ≤ b → a * c ≤ b * c := by decide
+    cases ψ.coefficient 0 with
+    | none =>
+      cases ih with
+      | none => exact .none
+      | some h => exact .some h
+    | some c =>
+      cases ih with
+      | none => exact .some (hm _ _ c (h 0))
+      | some h' =>
+        exact .some ((by decide : ∀ a b c d : Multiplicity, a ≤ b → c ≤ d → a ⊓ c ≤ b ⊓ d) _ _ _ _
+          (hm _ _ c (h 0)) h')
+
 end Sic.Core
