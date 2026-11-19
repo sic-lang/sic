@@ -530,7 +530,7 @@ theorem ValidFieldsΓ.nested {Γ : Scope} {ps : List Parameter} {ctx : Context 0
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
   exact hΘ.2 σ₁ σ₂ h
 
-/-! ## Destructors of a Block -/
+/-! ## Formation of the Destructors of a Block -/
 
 /-- A closed substitution followed by closed arguments gives a renamed variable under the arguments
 what a substitution that the renaming composes gives the variable. -/
