@@ -151,16 +151,16 @@ theorem _root_.Sic.Grading.Grade.fieldMultiplicity_ofField (r p : Grade) (f : Na
         | zero =>
           rw [Nat.add_zero]
           show _ = _ - ((e * π) * r).run
-          generalize f o = fo at hw ⊢
-          generalize s o = so at hw ⊢
-          cases fo with
+          generalize f o = rec at hw ⊢
+          generalize s o = shp at hw ⊢
+          cases rec with
           | some D =>
             rw [List.find?_cons_of_pos (p := fun x => x.1.fieldPosition == some o)
-              (a := (RecursiveResult.ofField (some D) so o, e)) (beq_iff_eq.2 rfl)]
+              (a := (RecursiveResult.ofField (some D) shp o, e)) (beq_iff_eq.2 rfl)]
             rw [Grade.run_mul_mul_of_run_eq_one e π r hw.symm]
             rfl
           | none =>
-            cases so with
+            cases shp with
             | some σ =>
               rw [List.find?_cons_of_pos (p := fun x => x.1.fieldPosition == some o)
                 (a := (RecursiveResult.ofField none (some σ) o, e)) (beq_iff_eq.2 rfl)]
