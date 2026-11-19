@@ -57,18 +57,20 @@ def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) :
       os.tail es.tail n
 
 -- ADE: none.
-/-- `own_p(y)`: the ownership of the value of the recursive result of a field whose type has the
+/-- `own_p(λ)`: the ownership of the value of the recursive result of a field whose type has the
 nesting `ν`, in a branch of a recursor of the ownership `p`: `11ᵖ` for a nested result, the
 corecursor of a lifting, a new value, and `p` for the result of a recursive field, a result of the
-recursor. -/
+recursor.
+RFC: `\mathsf{own}_\lambda` -/
 def Nest.resultOwnership (p : Grade) : Nest Name → Grade
   | .inst _ => .linearLinear
   | _ => p
 
 -- ADE: none.
-/-- The ownerships of the values of the recursive results of the fields whose types have the
-nestings `ns`, those of the recursive and of the nested fields, in order, in a branch of a recursor
-of the ownership `p`. -/
+/-- `own_p(λ̄)`: the ownerships of the values of the recursive results of the fields whose types
+have the nestings `ns`, those of the recursive and of the nested fields, in order, in a branch of a
+recursor of the ownership `p`.
+RFC: `\mathsf{own}_{\bar\lambda}` -/
 def Telescope.resultOwnerships (p : Grade) (ns : List (Nest Name)) : List Grade :=
   ns.filterMap fun n => if n.isPlain then none else some (n.resultOwnership p)
 
@@ -165,7 +167,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
   times the requirement `r̂` of its recursion, times the requirement of the entry of each field,
   times the grade `⌜m⌝ · r · q` with which the branch uses the field of grade `q`, for the variable
-  of the field, and with the ownership `own_p(y)` of each recursive result times the grade `e` that
+  of the field, and with the ownership `own_p(λ)` of each recursive result times the grade `e` that
   the branch gives it, for its variable, `p` for the result of a recursive field, a result of the
   recursor, and `11ᵖ` for a nested result, the corecursor of a lifting, a new value: a field of a
   unique value has the ownership its entry requires, a field of a shared value is shared, and a
@@ -180,9 +182,9 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   observes an ownership within `o · r̂`, and the arguments of its observation meet their requirements
   and give its result an ownership, `Shape.Meets`.
   When the block has a nested field, each branch is checked a second time, with the ownership `χ`,
-  the scope at `ς · φ` and the results at `own_χ(y)`: the corecursor of a nested result captures
-  the scope, which its observations see at the requirement `ς` of its destructors, and runs the
-  recursor on the observations of the field, whose results have the ownership `χ`; any branch,
+  the scope at `ς · φ` and the results at `own_χ(λ̄) · ē`: the corecursor of a nested result
+  captures the scope, which its observations see at the requirement `ς` of its destructors, and runs
+  the recursor on the observations of the field, whose results have the ownership `χ`; any branch,
   since a recursion from a nested result may reach any constructor.
   The premise `hn` excludes the nested fields until the erasure of their results is plugged.
   RFC: `\mathsf{rec}_{◀}` -/

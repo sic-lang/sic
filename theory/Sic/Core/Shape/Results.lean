@@ -142,6 +142,9 @@ the grades of its destructors times the factors of their results, absent without
 kept, at the case that the signature gives it, and the others are not; the multiplicities of the
 shape are those of the grades on the axis, the uses at run time or all the uses, and the arguments
 of the lifted destructor are used as the mode `m` gives its grade.
+The axis `β` of the grades is the function `ax : Grade → Multiplicity`, `Grade.run` or
+`Grade.total`: an axis reads each grade on one of its multiplicities, which is what a projection of
+a grade does, so the walk applies the projection itself, with no name of the axis to decode.
 RFC: `\mathsf{shape}_{\bar d}` -/
 def Destructors.shape (sig : Signature) (v : Lifting.Variables) (m : Mode)
     (ax : Grade → Multiplicity) (lookup : Shape.Lookup) (D : Name) :
@@ -205,7 +208,8 @@ termination_by structural sig => sig
 /-- The shapes of the types of the block whose names are `names`, for a recursor whose results that
 are motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`: the
 recursor itself, on the skeleton of the type when its multiplicity is `0`, of the factor `11ᵖ` and
-of the ownership `χ`, as the lifting of the block gives them, and none for the other names. -/
+of the ownership `χ`, as the lifting of the block gives them, and none for the other names.
+RFC: `\mathsf{shape}_{\mathcal{D}}` -/
 def Signature.blockShapes (sig : Signature) (names : List Name) (qs : List Quality)
     (ps : List Grade) (χ : Grade) : Name → Option Shape.Motive :=
   fun D => if D ∈ names then some ⟨.recursor (sig.skeleton D qs ps), .linearLinear, χ⟩ else none
@@ -221,7 +225,8 @@ def Shape.Motive.nested : Option Shape.Motive → Option Shape
 of the lifting of the type of each nested field, at the nesting of its type in the block whose names
 are `names`, where `lookup` gives the shapes of the liftings and `block` those of the types of the
 block, and none for the other fields; the variables of the fields have no shape, since the lifting
-of a block lifts no variable. -/
+of a block lifts no variable.
+RFC: `\mathsf{shapes}_\Theta` -/
 def Telescope.nestedShapes (v : Lifting.Variables) (lookup : Shape.Lookup)
     (block : Name → Option Shape.Motive) (names : List Name) :
     {Γ : Scope} → {ps : List Parameter} → Telescope k Γ ps → List (Option Shape)
@@ -235,7 +240,8 @@ def Telescope.nestedShapes (v : Lifting.Variables) (lookup : Shape.Lookup)
 a block whose types are named `names`, of a recursor of the variables `v` whose results that are
 motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`,
 computed in the mode `m` on the axis `ax` of the grades, in the signature `sig`: the shape of each
-nested field, and none for the other fields, in order. -/
+nested field, and none for the other fields, in order.
+RFC: `\mathsf{shapes}_c` -/
 def Constructor.nestedShapes {j g k' : Nat} {Δ : Scope} (sig : Signature) (v : Lifting.Variables)
     (m : Mode) (ax : Grade → Multiplicity) (names : List Name) (qs : List Quality)
     (ps : List Grade) (χ : Grade) (con : Constructor j g k' Δ) (I : Instance j g) :

@@ -56,11 +56,13 @@ def TypeDeclaration.NestedHaveShapes (decl : TypeDeclaration) (sig : Signature)
       con.NestedHaveShapes sig v m ax decl.names qs ps χ I
 
 -- ADE: none.
-/-- `r̂`: the requirement of the recursion of a recursor of the variables `v`, checked in the mode
-`m`, whose results that are motives have the ownership `χ`, on the block at the instance `I` of the
-qualities `qs` and of the grades `ps`, in the signature `sig`: its term is used with the grade
-`⌜m⌝ · r`, and its nested fields give their pairs on each axis.
-RFC: `\mathsf{recursion}_p` -/
+/-- `recursion_Σ;m(𝒟.{s̄'; p̄'}; s_C, r, ς, χ)`: the requirement `r̂` of the recursion of a recursor
+checked in the mode `m`, of the variables `v`, the quality `s_C` of the sorts of its motives, its
+grade `r` and the requirement `ς` of the lifted destructors, whose results that are motives have
+the ownership `χ`, on the block at the instance `I` of the qualities `qs` and of the grades `ps`, in
+the signature `sig`: its term is used with the grade `⌜m⌝ · r`, and its nested fields give their
+pairs on each axis `β`.
+RFC: `\mathsf{recursion}_{\mathcal{D}}` -/
 def TypeDeclaration.recursionRequirement (decl : TypeDeclaration) (sig : Signature)
     (v : Lifting.Variables) (m : Mode) (χ : Grade) (qs : List Quality) (ps : List Grade)
     (I : Instance decl.sorts decl.grades) : Grade :=

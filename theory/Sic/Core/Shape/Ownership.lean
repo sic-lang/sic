@@ -64,7 +64,8 @@ end
 /-- The ownerships of the arguments of the observation built for a lifted destructor, at the scale
 `s`, given the ownerships `ō` of the arguments of its branch: the ownership of the variable of each
 argument, `s · ō · π'`, and the requirement of its position in the observation when it is erased,
-`↯` having every ownership. -/
+`↯` having every ownership.
+RFC: `\mathsf{args}_\Xi` -/
 def Shape.argOwnerships {c : Nat} (s : Multiplicity) (os πs ϱs πs' : Fin c → Multiplicity) :
     Fin c → Multiplicity :=
   fun k => if πs k = .zero then ϱs k else s * (os k * πs' k)
@@ -108,7 +109,8 @@ for each destructor observed on the axis of the shape, for all the ownerships of
 its branch that meet their requirements, the value of the ownership `ψ₀` of its result at them, when
 it is defined, keeps `o`, and the observations from the shape of its result keep it in turn, which
 the requirement `r̂` of the recursion gives along the prefixes of the paths of the destructors
-observed. -/
+observed.
+RFC: `\mathsf{keeps}_\Xi` -/
 def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest =>
@@ -120,7 +122,8 @@ def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
 
 -- ADE: none.
 /-- `Υ keeps o; ς`: the observations from the shape of a result keep the ownership `o`: the recursor
-itself does, and the next lifting when its shape does. -/
+itself does, and the next lifting when its shape does.
+RFC: `\mathsf{keeps}_\Upsilon` -/
 def Shape.Next.Keeps (o ς : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Keeps o ς
@@ -138,7 +141,8 @@ its result at them is defined and keeps `o`, so that the observation has an owne
 as each level of the recursion, and the shape of its result meets the requirements in turn; a
 destructor never observed, whose branch is `↯`, asks nothing; the RFC writes the ownerships of the
 arguments of the observation `ō'`, which `Shape.argOwnerships` gives. The source checks the first
-part, `Shape.Meets`, and its requirement of the recursion gives the second, `Shape.Keeps`. -/
+part, `Shape.Meets`, and its requirement of the recursion gives the second, `Shape.Keeps`.
+RFC: `\mathsf{requires}_\Xi` -/
 def Shape.Requires (o ς : Multiplicity) (σ : Shape) : Prop :=
   σ.Meets o ς ∧ σ.Keeps o ς
 
@@ -156,7 +160,8 @@ than the empty one, after a prefix of the product `a`: each destructor observed 
 whose product is then times the value `ψ⁻` of the ownership `ψ₀` of the result of the destructor
 that it lifts at the least ownerships of the arguments of its branch, their requirements, or `1`
 when this value is not defined, and the paths go on in the shape of its result; a destructor never
-observed extends no path. -/
+observed extends no path.
+RFC: `\mathsf{prefixes}_\Xi` -/
 def Shape.prefixes (ς a : Multiplicity) : Shape → List Multiplicity
   | .nil => []
   | .cons _ _ ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest =>
@@ -167,7 +172,8 @@ def Shape.prefixes (ς a : Multiplicity) : Shape → List Multiplicity
 
 -- ADE: none.
 /-- The products along the prefixes of the paths of the shape of a result, after a prefix of the
-product `a`: none for the recursor itself, where the paths end, and those of the next lifting. -/
+product `a`: none for the recursor itself, where the paths end, and those of the next lifting.
+RFC: `\mathsf{prefixes}_\Upsilon` -/
 def Shape.Next.prefixes (ς a : Multiplicity) : Shape.Next → List Multiplicity
   | .recursor _ => []
   | .lifting σ => σ.prefixes ς a
@@ -180,7 +186,8 @@ end
 requirement `ς` of the corecursors on the values that they observe and of the values `ψ⁻` of the
 ownerships of the results of the destructors of the prefix at the least ownerships of their
 arguments, so that the field `x_l` of the requirement `r_l`, used with the grade `c_l`, gives the
-pairs `c_l ◀ r_l · ς · ψ₁⁻ · … · ψ_h⁻`. -/
+pairs `c_l ◀ r_l · ς · ψ₁⁻ · … · ψ_h⁻`.
+RFC: `\mathsf{recursion}_\Xi` -/
 def Shape.recursion (ς : Multiplicity) (σ : Shape) : List Multiplicity :=
   ς :: σ.prefixes ς ς
 

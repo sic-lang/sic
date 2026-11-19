@@ -29,7 +29,8 @@ RFC: `\mathsf{syntax}_p`
 structure Grade where
   /-- The multiplicity of the uses at run time. -/
   run : Multiplicity
-  /-- The multiplicity of all the uses, erased or not. -/
+  /-- The multiplicity of all the uses, erased or not.
+  RFC: `\mathsf{total}_p` -/
   total : Multiplicity
   /-- No use at all means no use at run time. -/
   run_zero : total = .zero → run = .zero
