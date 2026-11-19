@@ -94,8 +94,9 @@ mutual
 gives the shapes of the liftings, `block` the shapes of the types of the block and `ν` those of the
 variables lifted, as `Term.Lifts` lifts it: a variable lifted, applied to arguments, has its shape,
 an instance of a type of the block at a position that holds it has the shape of this type, and an
-instance of another declared type, of which an argument at least is lifted, the shape of the
-lifting of this type at the positions and the shapes of these arguments, of the ownership `11ᵖ`.
+instance of another declared type, of which an argument at least is lifted and each argument whose
+nesting has a position has a shape, the shape of the lifting of this type at the positions and the
+shapes of these arguments, of the ownership `11ᵖ`.
 RFC: `\mathsf{shape}_A` -/
 def Term.shape (v : Lifting.Variables) (lookup : Shape.Lookup) (block : Name → Option Shape.Motive)
     {Γ : Scope} (ν : Nesting Shape.Motive Γ) (n : Nest Name) : Term k Γ → Option Shape.Motive
@@ -105,24 +106,28 @@ def Term.shape (v : Lifting.Variables) (lookup : Shape.Lookup) (block : Name →
     | .direct _ => block D
     | _ =>
       match as.shapes v lookup block ν n.args with
-      | [] => none
-      | ms => (lookup D qs ps ms).map fun σ => ⟨.lifting σ.1, σ.2, .linearLinear⟩
+      | some (m :: ms) => (lookup D qs ps (m :: ms)).map fun σ => ⟨.lifting σ.1, σ.2, .linearLinear⟩
+      | _ => none
   | _ => none
 termination_by structural A => A
 
 -- ADE: none.
 /-- The positions and the shapes of the arguments `ā` of an instance that are lifted, whose nestings
 are `ns`, the last one first, the first argument first, as `InstanceArgs.Lifts` lifts them: the
-position of an argument is the number of the arguments before it.
+position of an argument is the number of the arguments before it; an argument without shape is
+not lifted when its nesting has no position, and the arguments have no shapes when its nesting has
+one, since the lifting lifts it.
 RFC: `\mathsf{shape}_{\bar a}` -/
 def InstanceArgs.shapes (v : Lifting.Variables) (lookup : Shape.Lookup)
     (block : Name → Option Shape.Motive) {Γ : Scope} (ν : Nesting Shape.Motive Γ) :
-    List (Nest Name) → {Δ : Scope} → InstanceArgs k Γ Δ → List (Nat × Shape.Motive)
-  | _, _, .nil => []
+    List (Nest Name) → {Δ : Scope} → InstanceArgs k Γ Δ → Option (List (Nat × Shape.Motive))
+  | _, _, .nil => some []
   | ns, _, .snoc (Δ := Δ) as B =>
-    as.shapes v lookup block ν ns.tail ++
-      ((B.shape v lookup block (Nesting.liftN _ ν) (ns.headD .plain)).map
-        fun m => (Δ.length, m)).toList
+    match as.shapes v lookup block ν ns.tail,
+      B.shape v lookup block (Nesting.liftN _ ν) (ns.headD .plain) with
+    | some l, some m => some (l ++ [(Δ.length, m)])
+    | some l, none => if (ns.headD .plain).isPlain then some l else none
+    | none, _ => none
 termination_by structural _ _ as => as
 
 end

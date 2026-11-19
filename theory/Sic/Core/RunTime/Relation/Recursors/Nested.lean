@@ -620,7 +620,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rw [Term.rename_id_of (Ren.liftN_id_of _ hid₁), Term.subst_append,
       Term.subst_toSubst_cast _ _ ts ts' hts, Term.subst_append] at hL''
     have hshape := TypeDeclaration.Lifts.shape_result hd h hLf (ρ := ρ₁) hq hl hp hq' hl' hp' has₁
-      t hms' hpos hpos' ts
+      t hms' hpos hpos' ts (fun hA _ hν hbA =>
+        (hA.shape_eq hd hord (md := .oneOne) (ax := Grade.run) hν hbA).imp fun _ h => h.1) hb
     rw [Term.subst_append] at hshape
     obtain ⟨vB, FB, RB, hvB, hFB, hRB⟩ := hfield
     have hrecN : (TL.body I').resultName declL.names d' = none :=

@@ -3,9 +3,9 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Lifting.Observations
 public import Sic.Core.Shape.Results
+public import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Shape
-import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
 
@@ -48,105 +48,6 @@ open Sic.Grading
 variable {k : Nat} {sig sig₁ : Signature} {v : Lifting.Variables} {md : Mode}
   {ax : Grade → Multiplicity}
 
-/-! ## Shapes That Follow a Lifting -/
-
-/-- The shape `m'` carries the factor and the ownership of the result `m`. -/
-def Shape.Motive.Of (m' : Shape.Motive) (m : Lifting.Result k) : Prop :=
-  m'.factor = m.factor ∧ m'.ownership = m.ownership
-
-/-- The shapes `m̄'` carry the factors and the ownerships of the results `m̄`, one by one. -/
-def Shape.Motive.AllOf (ms' : List Shape.Motive) (ms : List (Lifting.Result k)) : Prop :=
-  ms'.map (fun m' => (m'.factor, m'.ownership)) = ms.map (fun m => (m.factor, m.ownership))
-
-/-- Shapes that carry the factors and the ownerships of results are as many as these. -/
-theorem Shape.Motive.AllOf.length_eq {ms' : List Shape.Motive} {ms : List (Lifting.Result k)}
-    (h : Shape.Motive.AllOf ms' ms) : ms'.length = ms.length := by
-  have := congrArg List.length h
-  rwa [List.length_map, List.length_map] at this
-
-/-- The shapes `ν` of the variables follow the lifting `ρ`: a variable lifted has a shape, which
-carries the factor and the ownership of its motive, and the others have no position. -/
-def Lifting.Shapes {Γ' Γ : Scope} (ρ : Lifting k Γ' Γ) (ν : Nesting Shape.Motive Γ) : Prop :=
-  ∀ {a : Scope.Entry} (x : Var Γ a), (ρ.motive x = none ∧ ν x = .plain) ∨
-    ∃ (y : Var Γ' a.motive) (m : Lifting.Result k) (m' : Shape.Motive),
-      ρ.motive x = some (y, m) ∧ ν x = .direct m' ∧ m'.Of m
-
-namespace Lifting.Shapes
-
-variable {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {ν : Nesting Shape.Motive Γ}
-
-/-- Shapes that follow a lifting follow it under a new entry of both scopes. -/
-theorem lift {e : Scope.Entry} (h : ρ.Shapes @ν) : (ρ.lift (e := e)).Shapes (Nesting.lift @ν) := by
-  intro a x
-  cases x with
-  | zero => exact .inl ⟨rfl, rfl⟩
-  | succ x =>
-    rcases h x with ⟨h₁, h₂⟩ | ⟨y, m, m', h₁, h₂, h₃⟩
-    · exact .inl ⟨by show (ρ.motive x).map _ = none; rw [h₁]; rfl, h₂⟩
-    · exact .inr ⟨.succ y, m, m', by show (ρ.motive x).map _ = _; rw [h₁]; rfl, h₂, h₃⟩
-
-/-- Shapes that follow a lifting follow it under new variables of both scopes. -/
-theorem liftN : (n : Nat) → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {ν : Nesting Shape.Motive Γ} →
-    ρ.Shapes @ν → (ρ.liftN n).Shapes (Nesting.liftN n @ν)
-  | 0, _, _, _, _, h => h
-  | n + 1, _, _, _, _, h => liftN n h.lift
-
-/-- Shapes that follow a lifting follow it in a scope extended by a new entry. -/
-theorem weaken {e : Scope.Entry} (h : ρ.Shapes @ν) : (ρ.weaken (e := e)).Shapes @ν := by
-  intro a x
-  rcases h x with ⟨h₁, h₂⟩ | ⟨y, m, m', h₁, h₂, h₃⟩
-  · exact .inl ⟨by show (ρ.motive x).map _ = none; rw [h₁]; rfl, h₂⟩
-  · exact .inr ⟨.succ y, m, m', by show (ρ.motive x).map _ = _; rw [h₁]; rfl, h₂, h₃⟩
-
-/-- A variable whose shape has a position is lifted. -/
-theorem isSome {a : Scope.Entry} (h : ρ.Shapes @ν) (x : Var Γ a) (hx : ν x ≠ .plain) :
-    (ρ.motive x).isSome := by
-  rcases h x with ⟨-, h₂⟩ | ⟨y, m, -, h₁, -, -⟩
-  · exact absurd h₂ hx
-  · rw [h₁]
-    rfl
-
-end Lifting.Shapes
-
-/-- The motive of a type of a block in a lifting under new variables has the ownership of its motive
-in the lifting. -/
-theorem Lifting.liftN_block_ownership {D : Name} : (n : Nat) → {Γ' Γ : Scope} →
-    {ρ : Lifting k Γ' Γ} → {b : Lifting.BlockMotive k (Γ'.extend n) (Γ.extend n)} →
-    (ρ.liftN n).block D = some b → ∃ b₀, ρ.block D = some b₀ ∧ b₀.ownership = b.ownership
-  | 0, _, _, _, _, h => ⟨_, h, rfl⟩
-  | n + 1, _, _, ρ, _, h => by
-    obtain ⟨b₁, h₁, he⟩ := Lifting.liftN_block_ownership n (ρ := ρ.lift) h
-    obtain ⟨b₀, h₀, rfl⟩ := Option.map_eq_some_iff.1 h₁
-    exact ⟨b₀, h₀, he⟩
-
-/-- Shapes of the types of a block that carry the ownerships of their motives in a lifting still do
-under new variables and in the scope extended by an entry. -/
-theorem Lifting.blockShapes_liftN_weaken {block : Name → Option Shape.Motive} {Γ' Γ : Scope}
-    {ρ : Lifting k Γ' Γ} (n : Nat) {e : Scope.Entry}
-    (hb : ∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) :
-    ∀ D b, ((ρ.liftN n).weaken (e := e)).block D = some b →
-      ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩ := fun D _ hD => by
-  obtain ⟨b₁, hb₁, rfl⟩ := Option.map_eq_some_iff.1 hD
-  obtain ⟨b₀, hb₀, he⟩ := Lifting.liftN_block_ownership n hb₁
-  obtain ⟨Υ, hΥ⟩ := hb D b₀ hb₀
-  exact ⟨Υ, he ▸ hΥ⟩
-
-/-- A lifting without type of a block has none under new variables. -/
-theorem Lifting.liftN_block_none : (n : Nat) → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} →
-    (∀ D, ρ.block D = none) → ∀ D, (ρ.liftN n).block D = none
-  | 0, _, _, _, h => h
-  | n + 1, _, _, ρ, h => Lifting.liftN_block_none n (ρ := ρ.lift) fun D => by
-    show (ρ.block D).map _ = none
-    rw [h D]
-    rfl
-
-/-- A lifting without type of a block has none in a scope extended by a new entry. -/
-theorem Lifting.weaken_block_none {Γ' Γ : Scope} {e : Scope.Entry} {ρ : Lifting k Γ' Γ}
-    (h : ∀ D, ρ.block D = none) : ∀ D, (ρ.weaken (e := e)).block D = none := fun D => by
-  show (ρ.block D).map _ = none
-  rw [h D]
-  rfl
-
 /-! ## Shapes of the Types Lifted -/
 
 /-- The shapes of the liftings that the signature `Σ₁` declares follow their factors in the
@@ -173,7 +74,8 @@ arguments lifted have shapes: that of the lifting at them. -/
 theorem Term.shape_inst {lookup : Shape.Lookup} {block : Name → Option Shape.Motive} {Γ : Scope}
     {ν : Nesting Shape.Motive Γ} {n : Nest Name} (hn : ∀ E, n ≠ .direct E) {Δ : Scope} {D : Name}
     {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
-    {l : List (Nat × Shape.Motive)} (h : as.shapes v lookup block @ν n.args = l) (hl : l ≠ []) :
+    {l : List (Nat × Shape.Motive)} (h : as.shapes v lookup block @ν n.args = some l)
+    (hl : l ≠ []) :
     (Term.inst D qs ls ps as).shape v lookup block @ν n =
       (lookup D qs ps l).map fun σ => ⟨.lifting σ.1, σ.2, .linearLinear⟩ := by
   obtain ⟨a, l, rfl⟩ := List.exists_cons_of_ne_nil hl
@@ -229,7 +131,7 @@ theorem InstanceArgs.Lifts.shapes
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig₁ v ρ ns as S ms as' →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
         (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
-          ∃ ms', as.shapes v (Signature.shapes v md ax sig₁) block @ν ns = S.zip ms' ∧
+          ∃ ms', as.shapes v (Signature.shapes v md ax sig₁) block @ν ns = some (S.zip ms') ∧
             Shape.Motive.AllOf ms' ms
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => ⟨[], rfl, rfl⟩
   | _, _, ρ, _, _, _, _, _, _, _, .lifted (a := a) has hB, ν, hν, hb => by
@@ -247,7 +149,7 @@ theorem InstanceArgs.Lifts.shapes
     refine ⟨ms', ?_, hms⟩
     rw [InstanceArgs.shapes, hms', hn, Term.shape_eq_none_of_avoids (fun x hx =>
       hB x (Lifting.Shapes.isSome (Lifting.Shapes.liftN a.params.length hν) x hx))]
-    simp only [Option.map_none, Option.toList_none, List.append_nil]
+    rfl
 
 end
 
