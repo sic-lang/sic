@@ -237,6 +237,17 @@ theorem _root_.Sic.Grading.Grade.run_mul_le_fieldMultiplicity :
       r.run * π ≤ ((r * p).run - (x * r).run) + r.run * x.run := by
   decide
 
+/-- The grades of a branch of a recursor used at run time make the field of a recursive result
+used at run time used too, when the factor of the result is: the usage covers the uses of the
+recursions on the field by the grade of the field. It is `Grade.used_of_usage` in the mode `11ᵐ`,
+whose grade is `1`, with the grades erased at run time for the multiplicities `0` at run time, as
+`Mode.erased_values` relates them; `Grade.used_of_usage` is in the uses at run time, which read the
+usage, and the relation of run time, which reads no usage, cannot import it. -/
+theorem _root_.Sic.Grading.Grade.used_of_result : ∀ r p g e π : Grade,
+    r ∉ Mode.oneOne.erased → r * p ≤ g + (e * π) * r → e ∉ Mode.oneOne.erased →
+      π.run ≠ .zero → p ∉ Mode.oneOne.erased := by
+  decide
+
 /-- Arguments whose grades are all erased are related to addresses as many as them, whatever they
 are. -/
 theorem RunsAsArgs.of_erased {H : Heap} : {ps : List Parameter} → {g : Nat → Grade} →

@@ -78,14 +78,6 @@ theorem Terms.RecRel.exists_of_mem {Q : Name → TermRel} {D : Name} : {ps : Lis
 
 /-! ## Recursors -/
 
-/-- The grades of a branch of a recursor used at run time make the field of a recursive result
-used at run time used too, when the factor of the result is: the usage covers the uses of the
-recursions on the field by the grade of the field. -/
-theorem _root_.Sic.Grading.Grade.used_of_result : ∀ r p g e π : Grade,
-    r ∉ Mode.oneOne.erased → r * p ≤ g + (e * π) * r → e ∉ Mode.oneOne.erased →
-      π.run ≠ .zero → p ∉ Mode.oneOne.erased := by
-  decide
-
 section
 
 variable {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {decl : TypeDeclaration} {D : Name}
