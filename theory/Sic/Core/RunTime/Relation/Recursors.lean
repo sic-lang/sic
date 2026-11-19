@@ -274,8 +274,8 @@ theorem RecursiveResult.find?_zip_map_field : (xs : List Nat) → (es : List Gra
     · subst h
       rw [List.map_cons, List.zip_cons_cons, List.find?_cons_of_pos
           (p := fun y : RecursiveResult × Grade => y.1.fieldPosition == some x) (a := (.field x, e))
-          (beq_self_eq_true (some x)),
-        List.idxOf?_cons, beq_self_eq_true]
+          (beq_iff_eq.2 rfl),
+        List.idxOf?_cons, beq_iff_eq.2 rfl]
       rfl
     · have hne : (x == n) = false := beq_false_of_ne h
       rw [List.map_cons, List.zip_cons_cons, List.find?_cons_of_neg
