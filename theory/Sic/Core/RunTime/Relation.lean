@@ -115,10 +115,8 @@ every environment that binds the variables of the renamed erasure as the environ
 the erasure, and gives back `RunValid` and `RunValidArgs` at the identity. -/
 
 -- ADE: none.
-/-- `Σ; γ; Γ ⊨® t : A` in every environment that binds the scope through a renaming: `RunValid`,
-where the erasure of `t`, renamed by any `g`, evaluates in any environment `E'` that binds each
-variable `g x` to the cell to which `E` binds `x`, so that the branches of a recursor, which the
-erasure of a nested result copies renamed under new binders, are valid at run time there too. -/
+/-- `RunValid` of `t` where its erasure, renamed by any `g`, evaluates in any environment `E'` that
+binds each variable `g x` to the cell to which `E` binds `x`. -/
 def RunValidRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) (t A : Term 0 Γ) : Prop :=
   ∀ ϖ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
@@ -128,10 +126,8 @@ def RunValidRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scop
         H.Extends H' ∧ RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
 
 -- ADE: none.
-/-- `Σ; γ; Γ ⊨® t̄ : Θ` in every environment that binds the scope through a renaming:
-`RunValidArgs`, where the erasure of the arguments `t̄`, renamed by any `g`, evaluates in any
-environment `E'` that binds each variable `g x` to the cell to which `E` binds `x`, as `RunValidRen`
-does for a term. -/
+/-- `RunValidArgs` of `t̄` where its erasure is renamed and evaluated as `RunValidRen` does for a
+term. -/
 def RunValidArgsRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) {ps : List Parameter}
     (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
