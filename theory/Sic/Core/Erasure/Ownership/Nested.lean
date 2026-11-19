@@ -90,23 +90,40 @@ theorem TargetBranches.Ownership.second {Ω : Name → Multiplicity} {n : Nat}
 mutual
 
 -- ADE: none.
-/-- The branches built from a shape of the ownerships `ς` and `χ`, which meets the requirements of
-the recursions at `o`, for the recursor `rec_ρ · ◀ ϱ with N̄` on the observations of the path `M`,
-have their ownerships, when `M` and the branches of the recursor, checked a second time, keep `o`
-with the scope at `ς · φ`: each built branch observes the path at the ownerships of its arguments,
-which keeps `o`, and gives the recursor, of the ownership `χ`, or the corecursor of the next
-lifting, of the ownership `1`. -/
+/-- The branches built from a shape of the ownerships `ς` and `χ` for the recursor
+`rec_ρ · ◀ ϱ with N̄` on the observations of the path `M` have their ownerships, when the branches
+of the recursor, checked a second time, keep `o` with the scope at `ς · φ`, and, when `ρ` times the
+factor of the shape is not `0`, the shape meets the requirements of the recursions at `o` and `M`
+keeps `o` with the scope at `ς · φ`: a destructor never observed at run time has the branch `↯`; the
+branch of another observes the path at the ownerships of its arguments, which keeps `o`, and gives
+the recursor, of the ownership `χ`, or the corecursor of the next lifting, of the ownership `1`,
+and when the recursor runs no recursion through its result, this result does not read the
+observation, the recursor of the multiplicity `0` running on the term of a skeleton. -/
 theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
     {ρ ϱ o ς χ : Multiplicity} (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) :
     {m : Nat} → {φ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
-      (σ : Shape) → Target.Ownership Ω (ς ·ᶜ φ) o M →
-        TargetBranches.Ownership Ω (ς ·ᶜ φ) ρ o χ ς χ Ns → σ.Uniform ς χ → σ.Requires o ς →
-          TargetCorecBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
+      (σ : Shape) → (ρ * σ.factor ≠ .zero → Target.Ownership Ω (ς ·ᶜ φ) o M) →
+        TargetBranches.Ownership Ω (ς ·ᶜ φ) ρ o χ ς χ Ns → σ.Uniform ς χ →
+          (ρ * σ.factor ≠ .zero → σ.Requires o ς) →
+            TargetCorecBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
   | _, _, _, _, .nil, _, _, _, _ => .nil
-  | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest, hM, hNs,
-      ⟨rfl, rfl, hnext, hrest⟩, ⟨⟨hreq, hreqr⟩, ⟨hkeep, hkeepr⟩⟩ => by
+  | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' ψ ς' ψ₀ ς₀ next rest, hM, hNs, hσ, hR => by
+    have hg₁ : ρ * (ρᵢ * next.factor) ≠ .zero →
+        ρ * (Shape.cons i c ρᵢ πs ϱs πs' ϱs' ψ ς' ψ₀ ς₀ next rest).factor ≠ .zero :=
+      fun hn h0 => hn (Shape.mul_factor_cons_eq_zero h0).1
+    have hg₂ : ρ * rest.factor ≠ .zero →
+        ρ * (Shape.cons i c ρᵢ πs ϱs πs' ϱs' ψ ς' ψ₀ ς₀ next rest).factor ≠ .zero :=
+      fun hn h0 => hn (Shape.mul_factor_cons_eq_zero h0).2
+    -- The recursor runs a recursion through the shape when it runs one through the result of a
+    -- destructor observed at run time.
+    have hg₃ : ρᵢ ≠ .zero → ρ * next.factor ≠ .zero →
+        ρ * (Shape.cons i c ρᵢ πs ϱs πs' ϱs' ψ ς' ψ₀ ς₀ next rest).factor ≠ .zero :=
+      fun hρᵢ hn => hg₁ fun h0 => hn (Multiplicity.mul_mul_eq_zero _ _ _ hρᵢ h0)
+    obtain ⟨hς', rfl, hnext, hrest⟩ := hσ
+    subst ς'
     refine .cons (fun os v hos hv => ?_) (fun h => absurd rfl h)
-      (TargetCorecBranches.Ownership.branches hϱ hz rest hM hNs hrest ⟨hreqr, hkeepr⟩)
+      (TargetCorecBranches.Ownership.branches hϱ hz rest (fun hn => hM (hg₂ hn)) hNs hrest
+        fun hn => ⟨(hR (hg₂ hn)).1.2, (hR (hg₂ hn)).2.2⟩)
     have hv' : v = next.ownership χ := by
       rcases hv with ⟨_, hv⟩ | ⟨h, _⟩
       · rw [ResultOwnership.value_const] at hv
@@ -118,10 +135,7 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
     · simp only [hρᵢ, ↓reduceIte]
       exact .erased _
     · simp only [hρᵢ, ↓reduceIte]
-      obtain ⟨hς₀, hargs, hreqn⟩ := hreq hρᵢ
-      obtain ⟨hϱs, v₀, hv₀⟩ := hargs os hos
-      obtain ⟨hkeep', hkeepn⟩ := hkeep hρᵢ
-      have hov := hkeep' os hos v₀ hv₀
+      have hg := hg₃ hρᵢ
       -- The scope of the branch: the scope of the corecursor at `ς · φ`, then the arguments.
       have key : ∀ φb : MultiplicityVector (m + (0 + c)),
           (∀ x, φb (TargetRen.shift m (0 + c) x) = ς * φ x) →
@@ -137,36 +151,37 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
             show next.scale ς * φb _ = ς * φ x
             rw [hsh x, (by decide : ∀ a b f : Multiplicity, a * (b * f) = (a * b) * f),
               next.scale_mul ς]
-        have hO : Target.Ownership Ω (next.scale ς ·ᶜ φb) o
-            (.obs (M.rename (TargetRen.shift m (0 + c))) i ψ₀ ς₀
-              (Targets.ofVars πs ϱs (Shape.argVar m c))) :=
-          .sub (.obs (hM.rename _ hsh')
-            (Targets.Ownership.ofVars πs ϱs (Shape.argOwnerships (next.scale ς) os πs ϱs πs') _
-              (fun k hk => by
-                show next.scale ς * φb _ = _
-                rw [harg k]
-                simp only [Shape.argOwnerships, hk, ↓reduceIte])
-              hϱs) hv₀ hς₀) hov
-        exact Target.Ownership.body hϱ hz next hO (hNs.rename _ hsh') hnext ⟨hreqn, hkeepn⟩
+        refine Target.Ownership.body hϱ hz next (fun hn => ?_) (hNs.rename _ hsh') hnext
+          (fun hn => ⟨((hR (hg hn)).1.1 hρᵢ).2.2, ((hR (hg hn)).2.1 hρᵢ).2⟩)
+        obtain ⟨hς₀, hargs, -⟩ := (hR (hg hn)).1.1 hρᵢ
+        obtain ⟨hϱs, v₀, hv₀⟩ := hargs os hos
+        have hov := ((hR (hg hn)).2.1 hρᵢ).1 os hos v₀ hv₀
+        exact .sub (.obs ((hM (hg hn)).rename _ hsh')
+          (Targets.Ownership.ofVars πs ϱs (Shape.argOwnerships (next.scale ς) os πs ϱs πs') _
+            (fun k hk => by
+              show next.scale ς * φb _ = _
+              rw [harg k]
+              simp only [Shape.argOwnerships, hk, ↓reduceIte])
+            hϱs) hv₀ hς₀) hov
       exact key _ (fun x => MultiplicityVector.extendBinders_shift _ _ _ x)
         (fun k => MultiplicityVector.extendBinders_argVar _ _ _ k)
 
 -- ADE: none.
 /-- The result of the observation `O` of a field, for the shape of a result of the ownerships `ς`
-and `χ`, which meets the requirements of the recursions at `o`, has the ownership of the result of
-the lifted destructor, when `O` and the branches of the recursor keep `o` with the scope at the scale
-of the shape: the recursor on `O`, or on the term of the skeleton of the motive at the multiplicity
-`0`, whose branches are checked at `o · ϱ = o`, or at `o₀ · ϱ = o` for the term of the skeleton, of
-an ownership `o₀ ≤ 1`,
-has the ownership `χ`, and the corecursor of the next lifting
-the ownership `1`. -/
+and `χ`, has the ownership of the result of the lifted destructor, when the branches of the
+recursor keep `o` with the scope at the scale of the shape, and, when the recursor runs a recursion
+through the shape, the shape meets the requirements of the recursions at `o` and `O` keeps `o`:
+the recursor on `O`, whose branches are checked at `o · ϱ = o`, or, at the multiplicity `0`, on the
+term of the skeleton of the motive, of an ownership `o₀ ≤ 1`, whose branches are checked at
+`o₀ · ϱ = o`, has the ownership `χ`, and the corecursor of the next lifting the ownership `1`. -/
 theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Multiplicity}
     (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) {m : Nat}
     {φ : MultiplicityVector m}
     {O : Target m} {Ns : TargetBranches m} :
-    (next : Shape.Next) → Target.Ownership Ω (next.scale ς ·ᶜ φ) o O →
+    (next : Shape.Next) → (ρ * next.factor ≠ .zero → Target.Ownership Ω (next.scale ς ·ᶜ φ) o O) →
       TargetBranches.Ownership Ω (next.scale ς ·ᶜ φ) ρ o χ ς χ Ns → next.Uniform ς χ →
-        next.Requires o ς → Target.Ownership Ω φ (next.ownership χ) (next.body ρ ϱ O Ns)
+        (ρ * next.factor ≠ .zero → next.Requires o ς) →
+          Target.Ownership Ω φ (next.ownership χ) (next.body ρ ϱ O Ns)
   | .recursor K, hO, hNs, _, _ => by
     have h1 : (Shape.Next.scale ς (.recursor K) ·ᶜ φ) = φ :=
       (MultiplicityVector.module Multiplicity.modality).one_smul φ
@@ -176,82 +191,11 @@ theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Mult
     · rename_i h
       obtain ⟨o₀, ho₀, rfl⟩ := hz h
       exact .recursor (.sub K.ownership ho₀) hNs
-    · exact .recursor hO (by rw [hϱ]; exact hNs)
+    · rename_i h
+      exact .recursor (hO fun h0 => h ((Multiplicity.modality.semiring.mul_one ρ).symm.trans h0))
+        (by rw [hϱ]; exact hNs)
   | .lifting σ, hO, hNs, hσ, hreq =>
     .corec (os := []) .nil (TargetCorecBranches.Ownership.branches hϱ hz σ hO hNs hσ hreq)
-
-end
-
-mutual
-
--- ADE: none.
-/-- The branches built from a shape of the ownerships `ς` and `χ`, for the recursor
-`rec_ρ · ◀ ϱ with N̄` on the observations of any path `M`, have their ownerships when `ρ` times the
-factor of the shape is `0`, when the branches of the recursor, checked a second time, keep `o`
-with the scope at `ς · φ`: each destructor is either never observed at run time, and its branch is
-`↯`, or gives the recursor on the term of a skeleton, of the ownership `χ`, when `ρ` is `0`, or the
-corecursor of the next lifting, of the ownership `1`, whose factor is `0`, so that no built branch
-observes the path. -/
-theorem TargetCorecBranches.Ownership.branches_of_mul_factor {Ω : Name → Multiplicity}
-    {ρ ϱ o ς χ : Multiplicity} (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) :
-    {m : Nat} → {φ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
-      (σ : Shape) → ρ * σ.factor = .zero →
-        TargetBranches.Ownership Ω (ς ·ᶜ φ) ρ o χ ς χ Ns → σ.Uniform ς χ →
-          TargetCorecBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
-  | _, _, _, _, .nil, _, _, _ => .nil
-  | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ ς₀ next rest, h, hNs,
-      ⟨rfl, rfl, hnext, hrest⟩ => by
-    have h' := Shape.mul_factor_cons_eq_zero h
-    refine .cons (fun os v hos hv => ?_) (fun h => absurd rfl h)
-      (TargetCorecBranches.Ownership.branches_of_mul_factor hz rest h'.2 hNs hrest)
-    have hv' : v = next.ownership χ := by
-      rcases hv with ⟨_, hv⟩ | ⟨h, _⟩
-      · rw [ResultOwnership.value_const] at hv
-        exact (Option.some.inj hv).symm
-      · exact absurd rfl h
-    subst hv'
-    show Target.Ownership Ω _ _ (if ρᵢ = .zero then .erased else _)
-    by_cases hρᵢ : ρᵢ = .zero
-    · simp only [hρᵢ, ↓reduceIte]
-      exact .erased _
-    · simp only [hρᵢ, ↓reduceIte]
-      have hsh' : ∀ x, (next.scale ς ·ᶜ MultiplicityVector.extendBinders (ς ·ᶜ φ)
-          (fun l : Fin 0 => ς * Fin.elim0 l * Fin.elim0 l) (fun l => os l * πs' l))
-          (TargetRen.shift m (0 + c) x) = (ς ·ᶜ φ) x :=
-        fun x => by
-          show next.scale ς * _ = ς * φ x
-          rw [MultiplicityVector.extendBinders_shift _ _ _ x]
-          show next.scale ς * (ς * φ x) = ς * φ x
-          rw [(by decide : ∀ a b f : Multiplicity, a * (b * f) = (a * b) * f), next.scale_mul ς]
-      exact Target.Ownership.body_of_mul_factor hz next
-        (Multiplicity.mul_mul_eq_zero _ _ _ hρᵢ h'.1) (hNs.rename _ hsh') hnext
-
--- ADE: none.
-/-- The result of an observation, for the shape of a result of the ownerships `ς` and `χ` through
-which the recursor of the multiplicity `ρ` runs no recursion, has the ownership of the result of
-the lifted destructor, whatever the observation, when the branches of the recursor keep `o` with
-the scope at the scale of the shape: the recursor of the multiplicity `0` on the term of the
-skeleton of the motive, of an ownership `o₀ ≤ 1`, whose branches are checked at `o₀ · ϱ = o`, has
-the ownership `χ`, and the corecursor of the next lifting the ownership `1`. -/
-theorem Target.Ownership.body_of_mul_factor {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Multiplicity}
-    (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) {m : Nat} {φ : MultiplicityVector m}
-    {O : Target m} {Ns : TargetBranches m} :
-    (next : Shape.Next) → ρ * next.factor = .zero →
-      TargetBranches.Ownership Ω (next.scale ς ·ᶜ φ) ρ o χ ς χ Ns → next.Uniform ς χ →
-        Target.Ownership Ω φ (next.ownership χ) (next.body ρ ϱ O Ns)
-  | .recursor K, h, hNs, _ => by
-    have h1 : (Shape.Next.scale ς (.recursor K) ·ᶜ φ) = φ :=
-      (MultiplicityVector.module Multiplicity.modality).one_smul φ
-    rw [h1] at hNs
-    have hρ : ρ = .zero := (Multiplicity.modality.semiring.mul_one ρ).symm.trans h
-    subst hρ
-    show Target.Ownership Ω φ χ
-      (.recursor .zero ϱ (if Multiplicity.zero = .zero then K.target else O) Ns)
-    simp only [↓reduceIte]
-    obtain ⟨o₀, ho₀, rfl⟩ := hz rfl
-    exact .recursor (.sub K.ownership ho₀) hNs
-  | .lifting σ, h, hNs, hσ =>
-    .corec (os := []) .nil (TargetCorecBranches.Ownership.branches_of_mul_factor hz σ h hNs hσ)
 
 end
 
@@ -273,10 +217,7 @@ theorem Target.Ownership.nested {Ω : Name → Multiplicity} {ρ ϱ o o' ς χ :
   have hNs' := hNs.second.rename (TargetRen.shift n 1) (φ' := ς ·ᶜ φ') fun x => by
     show ς * φ' _ = ς * φ x
     rw [hφ x]
-  by_cases h : ρ * σ.factor = .zero
-  · exact .corec (os := []) .nil
-      (TargetCorecBranches.Ownership.branches_of_mul_factor hz σ h hNs' hσ)
-  · exact .corec (os := []) .nil
-      (TargetCorecBranches.Ownership.branches hϱ hz σ (.sub (.var 0) (hf h)) hNs' hσ (hreq h))
+  exact .corec (os := []) .nil
+    (TargetCorecBranches.Ownership.branches hϱ hz σ (fun h => .sub (.var 0) (hf h)) hNs' hσ hreq)
 
 end Sic.Core
