@@ -356,27 +356,27 @@ end
 mutual
 
 -- ADE: none.
-/-- The term of the target language is a skeleton: it is built of constructors and of `↯` only,
-and has no variable. -/
-inductive Target.IsSkeleton : {n : Nat} → Target n → Prop where
-  /-- `↯` is a skeleton.
-  RFC: `\mathsf{skeleton}_M.\text{↯}` -/
-  | erased {n : Nat} : Target.IsSkeleton (n := n) .erased
-  /-- A constructor whose fields are skeletons is a skeleton.
-  RFC: `\mathsf{skeleton}_M.c` -/
-  | ctor {n : Nat} {i : Nat} {Ms : Targets n} (h : Targets.IsSkeleton Ms) :
-      Target.IsSkeleton (.ctor i Ms)
+/-- The term of the target language is data: it is built of constructors and of `↯` only, and has
+no variable. -/
+inductive Target.IsData : {n : Nat} → Target n → Prop where
+  /-- `↯` is data.
+  RFC: `\mathsf{data}_M.\text{↯}` -/
+  | erased {n : Nat} : Target.IsData (n := n) .erased
+  /-- A constructor whose fields are data is data.
+  RFC: `\mathsf{data}_M.c` -/
+  | ctor {n : Nat} {i : Nat} {Ms : Targets n} (h : Targets.IsData Ms) :
+      Target.IsData (.ctor i Ms)
 
 -- ADE: none.
-/-- The terms are skeletons, one by one. -/
-inductive Targets.IsSkeleton : {n : Nat} → Targets n → Prop where
+/-- The terms are data, one by one. -/
+inductive Targets.IsData : {n : Nat} → Targets n → Prop where
   /-- `()`.
-  RFC: `\mathsf{skeleton}_{\bar M}.\varepsilon` -/
-  | nil {n : Nat} : Targets.IsSkeleton (n := n) .nil
+  RFC: `\mathsf{data}_{\bar M}.\varepsilon` -/
+  | nil {n : Nat} : Targets.IsData (n := n) .nil
   /-- `(M, M̄)`.
-  RFC: `\mathsf{skeleton}_{\bar M}.{,}` -/
+  RFC: `\mathsf{data}_{\bar M}.{,}` -/
   | cons {n : Nat} {π ϱ : Multiplicity} {M : Target n} {Ms : Targets n}
-      (h : Target.IsSkeleton M) (hs : Targets.IsSkeleton Ms) : Targets.IsSkeleton (.cons π ϱ M Ms)
+      (h : Target.IsData M) (hs : Targets.IsData Ms) : Targets.IsData (.cons π ϱ M Ms)
 
 end
 
@@ -404,12 +404,12 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
   | recursor {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
       Target.LessDefined (.recursor ρ ϱ M Ms) (.recursor ρ ϱ N Ns)
-  /-- A recursor on a skeleton, of the requirement `ω`, which states nothing, is less defined than a
-  recursor on any term, of more defined branches: the skeleton holds nothing but what the type of
-  the term already gives.
-  RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{skeleton}}` -/
-  | skeleton {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
-      (h : Target.IsSkeleton M) (hs : TargetBranches.LessDefined Ms Ns) :
+  /-- A recursor on data, of the requirement `ω`, which states nothing, is less defined than a
+  recursor on any term, of more defined branches, as a recursor on the term of the skeleton of the
+  type of its term, which holds nothing but what this type gives.
+  RFC: `{\sqsubseteq}.\mathsf{rec}_{\mathsf{data}}` -/
+  | data {n : Nat} {ρ ϱ : Multiplicity} {M N : Target n} {Ms Ns : TargetBranches n}
+      (h : Target.IsData M) (hs : TargetBranches.LessDefined Ms Ns) :
       Target.LessDefined (.recursor ρ .omega M Ms) (.recursor ρ ϱ N Ns)
   /-- An observation is less defined than the same observation of a more defined term and
   arguments.
@@ -588,10 +588,10 @@ grade is in `S`: `U_l`, `Ω_l` and the instances `T` are erased, a variable is k
 `f.{s̄; l̄; p̄}` keeps its qualities and its grades, `f.{s̄; p̄}`, a constructor keeps its case and its
 fields, each at the parameter of its field, a recursor keeps the multiplicity at run time of its
 grade, the requirement at run time `run(r̂)` of its recursion on its block, its term, at its grade,
-or, when its grade is erased, `ω`, which states nothing, and the skeleton of its type, and its
-branches, without its instance and its motives, an observation keeps its term, the case of its
-destructor, the ownership at run time of its result and its arguments, each at the parameter of its
-argument, and a corecursor keeps its state, each entry at its grade times the grade of the
+or, when its grade is erased, `ω`, which states nothing, and the term of the skeleton of its type,
+and its branches, without its instance and its motives, an observation keeps its term, the case of
+its destructor, the ownership at run time of its result and its arguments, each at the parameter of
+its argument, and a corecursor keeps its state, each entry at its grade times the grade of the
 corecursor, and its branches, without its instance and its states; a second-order variable has no
 erasure, since the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
@@ -792,36 +792,36 @@ theorem ResultOwnership.toArity_self {α : Type} {n : Nat} (ψ : ResultOwnership
 mutual
 
 -- ADE: none.
-/-- The term that a skeleton stands for is a skeleton. -/
-theorem Skeleton.isSkeleton {n : Nat} : (k : Skeleton) → (k.target : Target n).IsSkeleton
+/-- The term of a skeleton is data. -/
+theorem Skeleton.isData {n : Nat} : (k : Skeleton) → (k.target : Target n).IsData
   | .erased => .erased
-  | .ctor _ ks => .ctor (Skeleton.isSkeleton_targets ks)
+  | .ctor _ ks => .ctor (Skeleton.isData_targets ks)
 
 -- ADE: none.
-/-- The terms that skeletons stand for are skeletons. -/
-theorem Skeleton.isSkeleton_targets {n : Nat} :
-    (ks : List Skeleton) → (Skeleton.targets ks : Targets n).IsSkeleton
+/-- The terms of skeletons are data. -/
+theorem Skeleton.isData_targets {n : Nat} :
+    (ks : List Skeleton) → (Skeleton.targets ks : Targets n).IsData
   | [] => .nil
-  | k :: ks => .cons k.isSkeleton (Skeleton.isSkeleton_targets ks)
+  | k :: ks => .cons k.isData (Skeleton.isData_targets ks)
 
 end
 
 mutual
 
 -- ADE: none.
-/-- No variable occurs in a skeleton. -/
-theorem Target.IsSkeleton.not_occurs {n : Nat} {x : Fin n} :
-    {M : Target n} → M.IsSkeleton → ¬M.Occurs x
+/-- No variable occurs in data. -/
+theorem Target.IsData.not_occurs {n : Nat} {x : Fin n} :
+    {M : Target n} → M.IsData → ¬M.Occurs x
   | _, .erased, h => nomatch h
-  | _, .ctor hs, .ctor h => Targets.IsSkeleton.not_occurs hs h
+  | _, .ctor hs, .ctor h => Targets.IsData.not_occurs hs h
 
 -- ADE: none.
-/-- No variable occurs in skeletons. -/
-theorem Targets.IsSkeleton.not_occurs {n : Nat} {x : Fin n} :
-    {Ms : Targets n} → Ms.IsSkeleton → ¬Ms.Occurs x
+/-- No variable occurs in terms that are data. -/
+theorem Targets.IsData.not_occurs {n : Nat} {x : Fin n} :
+    {Ms : Targets n} → Ms.IsData → ¬Ms.Occurs x
   | _, .nil, h => nomatch h
-  | _, .cons h _, .head ho => Target.IsSkeleton.not_occurs h ho
-  | _, .cons _ hs, .tail ho => Targets.IsSkeleton.not_occurs hs ho
+  | _, .cons h _, .head ho => Target.IsData.not_occurs h ho
+  | _, .cons _ hs, .tail ho => Targets.IsData.not_occurs hs ho
 
 end
 
@@ -846,7 +846,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     simp only [Term.erase]
     by_cases h₂ : r ∈ S₂
     · simp only [h₂, ↓reduceIte]
-      exact .skeleton (sig.skeleton _ _ _).isSkeleton (Branches.erase_lessDefined sig h hΓ _ us _ _)
+      exact .data (sig.skeleton _ _ _).isData (Branches.erase_lessDefined sig h hΓ _ us _ _)
     · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
       simp only [h₂, h₁, ↓reduceIte]
       exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ _ us _ _)

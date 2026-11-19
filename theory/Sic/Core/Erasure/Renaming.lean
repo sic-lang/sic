@@ -193,21 +193,21 @@ theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β
 
 end
 
-/-! ## Skeletons -/
+/-! ## Data -/
 
 mutual
 
 -- ADE: none.
-/-- A skeleton renamed is a skeleton. -/
-theorem Target.IsSkeleton.rename {n m : Nat} (α : TargetRen n m) :
-    {M : Target m} → M.IsSkeleton → (M.rename α).IsSkeleton
+/-- Data renamed is data. -/
+theorem Target.IsData.rename {n m : Nat} (α : TargetRen n m) :
+    {M : Target m} → M.IsData → (M.rename α).IsData
   | _, .erased => .erased
   | _, .ctor h => .ctor (h.rename α)
 
 -- ADE: none.
-/-- Skeletons renamed are skeletons. -/
-theorem Targets.IsSkeleton.rename {n m : Nat} (α : TargetRen n m) :
-    {Ms : Targets m} → Ms.IsSkeleton → (Ms.rename α).IsSkeleton
+/-- Terms that are data, renamed, are data. -/
+theorem Targets.IsData.rename {n m : Nat} (α : TargetRen n m) :
+    {Ms : Targets m} → Ms.IsData → (Ms.rename α).IsData
   | _, .nil => .nil
   | _, .cons h hs => .cons (h.rename α) (hs.rename α)
 

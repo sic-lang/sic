@@ -17,7 +17,8 @@ ownership keeps `o` at each step, as the shape requires, and gives the recursor 
 whose branches are checked a second time at `ς · φ` with the ownership `χ` of the result of the
 lifted destructor, or the corecursor of the next lifting, a new value, whose branches see the scope
 at `ς · ς · φ = ς · φ`.
-At the multiplicity `0`, the recursor runs on the skeleton of the motive, of the ownership `1`,
+At the multiplicity `0`, the recursor runs on the term of the skeleton of the motive, of the
+ownership `1`,
 lowered to some `o₀ ≤ 1` whose branches are checked at `o₀ · ϱ = o`, as the term of a recursor on
 an erased term: a requirement `ϱ = 0` gives `o = 0`, which no `o₀ ≤ 1` keeps by itself.
 
@@ -154,8 +155,9 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
 /-- The result of the observation `O` of a field, for the shape of a result of the ownerships `ς`
 and `χ`, which meets the requirements of the recursions at `o`, has the ownership of the result of
 the lifted destructor, when `O` and the branches of the recursor keep `o` with the scope at the scale
-of the shape: the recursor on `O`, or on the skeleton of the motive at the multiplicity `0`, whose
-branches are checked at `o · ϱ = o`, or at `o₀ · ϱ = o` for the skeleton, of an ownership `o₀ ≤ 1`,
+of the shape: the recursor on `O`, or on the term of the skeleton of the motive at the multiplicity
+`0`, whose branches are checked at `o · ϱ = o`, or at `o₀ · ϱ = o` for the term of the skeleton, of
+an ownership `o₀ ≤ 1`,
 has the ownership `χ`, and the corecursor of the next lifting
 the ownership `1`. -/
 theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Multiplicity}

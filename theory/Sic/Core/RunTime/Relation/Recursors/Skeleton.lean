@@ -10,12 +10,12 @@ import Sic.Core.Syntax.Signature
 # Run Time of the Nested Results of an Erased Recursor
 
 The recursive result of a nested field at run time, `n.Ξ`, when the recursor is of the multiplicity
-`0`: the recursor then runs on the skeleton of its type, whose nested fields are `↯`, and the
-corecursor of the shape observes no field, since the result of each of its branches is the recursor
-on the skeleton of its motive, or the corecursor of the next lifting.
-The fields of the skeleton are related by the equality of the block rather than by its relation of
-run time, so that the proof is an induction on the graph of the nestings of the equality, beside
-the one on the graph of run time when the recursor is used.
+`0`: the recursor then runs on the term of the skeleton of its type, whose nested fields are `↯`,
+and the corecursor of the shape observes no field, since the result of each of its branches is the
+recursor on the term of the skeleton of its motive, or the corecursor of the next lifting.
+The fields of the term of the skeleton are related by the equality of the block rather than by its
+relation of run time, so that the proof is an induction on the graph of the nestings of the
+equality, beside the one on the graph of run time when the recursor is used.
 
 ADE have no nested fields.
 -/

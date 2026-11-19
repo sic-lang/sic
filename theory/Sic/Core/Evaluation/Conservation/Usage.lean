@@ -62,7 +62,7 @@ theorem ctor_inv {i : Nat} {Ms : Targets n} :
 branches. -/
 theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
     {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .recursor ρ ϱ M Ns →
-      ∃ ν₁ χ, ν ≤ᶜ (ρ ·ᶜ ν₁) +ᶜ χ ∧ Target.Usage ν₁ M ∧ (ρ = .zero → M.IsSkeleton) ∧
+      ∃ ν₁ χ, ν ≤ᶜ (ρ ·ᶜ ν₁) +ᶜ χ ∧ Target.Usage ν₁ M ∧ (ρ = .zero → M.IsData) ∧
         TargetBranches.Usage ρ χ Ns
   | _, _, .recursor hM hz hNs, h => by
     cases h

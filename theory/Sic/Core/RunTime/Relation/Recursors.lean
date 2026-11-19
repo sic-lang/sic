@@ -19,10 +19,10 @@ import Sic.Math.Relation
 /-!
 # Run Time of the Recursors
 
-The recursors at run time: the erasure of a recursor evaluates its term, or the skeleton of its
-instance when its grade is erased, then eliminates the value of the case of its constructor by the
-branch of the case, with its fields and its recursive results, each the recursor on its recursive
-field, or `↯` when its grade is erased.
+The recursors at run time: the erasure of a recursor evaluates its term, or the term of the
+skeleton of its instance when its grade is erased, then eliminates the value of the case of its
+constructor by the branch of the case, with its fields and its recursive results, each the recursor
+on its recursive field, or `↯` when its grade is erased.
 
 When the grade of the recursor is used at run time, the term of the recursor is related to the
 address of its value at its instance, by `(®_μ)`, the least relations closed under its clauses: the
@@ -32,11 +32,12 @@ constructor steps to its branch, at the terms of the fields and at the recursive
 these relations relate to the addresses of the fields and of the results.
 
 When the grade of the recursor is erased, every type of the block has one constructor at most, and
-every field of the branch is erased, so that the skeleton of the instance stands for the term: the
-term computes to a canonical term that `(eq_μ)` relates, and the relations of the canonical terms
-that `(eq_μ)` relates, whose type is accessible for `≺`, and on whose skeletons the recursor evaluates
-to the address of a value related to the recursor at the motive, are closed, since the skeleton of a
-type unfolds into its constructor, applied to the skeletons of the types of its recursive fields,
+every field of the branch is erased, so that the term of the skeleton of the instance stands for
+the term: the term computes to a canonical term that `(eq_μ)` relates, and the relations of the
+canonical terms that `(eq_μ)` relates, whose type is accessible for `≺`, and on the terms of whose
+skeletons the recursor evaluates to the address of a value related to the recursor at the motive,
+are closed, since the term of the skeleton of a type unfolds into its constructor, applied to the
+terms of the skeletons of the types of its recursive fields,
 within a depth that their ancestors, fewer than the types of the block, never reach.
 
 Both cases eliminate a constructor in the same way, once its fields are related to their addresses
@@ -1166,10 +1167,10 @@ theorem RunsAs.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
       (hRw X hclosed).2 ϖ₀ H₁ (List.prefix_refl _) hH₁ (hwv.trans hwv.symm) C hC₀
     exact ⟨b, H₂, tr, hev, hH₂, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC htw.1 htv hrun⟩
 
-/-- `r ∈ S`, by induction on `(eq_μ)`: the skeleton of the instance evaluates to an address that the
-erased recursor eliminates to the address of a value to which the recursor on a term of the
-instance is related at the motive at the term, when every type of the block has one constructor at
-most. -/
+/-- `r ∈ S`, by induction on `(eq_μ)`: the term of the skeleton of the instance evaluates to an
+address that the erased recursor eliminates to the address of a value to which the recursor on a
+term of the instance is related at the motive at the term, when every type of the block has one
+constructor at most. -/
 theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
     (has : ValidInstanceArgsΓ sig ι ctx as
@@ -1231,10 +1232,10 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     ((sig.caseFieldParams T.name qs ps).getD [])
   let f : Name → Term 0 [] → Term 0 [] := fun D' t =>
     .recursor r ς χ' D' qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)
-  -- The erased recursor on a skeleton of the type `D'` of a canonical term `v`, within the depth of
-  -- the number of the types of the block minus that of the ancestors `A` of `D'`, evaluates, in
-  -- each heap that extends the heap of the skeleton, to the address of a value related to the
-  -- recursor on `v` at the motive.
+  -- The erased recursor on the term of a skeleton of the type `D'` of a canonical term `v`, within
+  -- the depth of the number of the types of the block minus that of the ancestors `A` of `D'`,
+  -- evaluates, in each heap that extends the heap of this term, to the address of a value related
+  -- to the recursor on `v` at the motive.
   let Pk : Name → Term 0 [] → Prop := fun D' v => ∀ (A : List Name) (d : Nat), A.Nodup →
     (∀ X ∈ A, X ∈ decl.names) → (∀ X ∈ A, Relation.TransGen (decl.Below I) D' X) →
     d + A.length = decl.names.length → ∀ ϖ' H₂ a H₃ tr₀, H.Extends H₂ →
@@ -1244,7 +1245,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       ∀ C' : Term 0 (.var :: Γ), Cs.get (decl.names.idxOf D') = some ⟨0, C'⟩ →
         RunsAs sig ι P H₄ (f D' v) b ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single v))
   -- The relations of the canonical terms that `(eq_μ)` relates, whose type is accessible for `≺`,
-  -- and on whose skeletons the erased recursor evaluates as `Pk` states.
+  -- and on the terms of whose skeletons the erased recursor evaluates as `Pk` states.
   let X : Name → TermRel := fun D' v w =>
     DataType.blockRel decl.dataTypes SM D' v w ∧ Acc (decl.Below I) D' ∧ Pk D' v
   have hclosed : ∀ T' ∈ decl.dataTypes, ∀ v w, T'.ctorRel T'.name (SM X) v w →
@@ -1271,7 +1272,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     have hlt := TypeDeclaration.length_ancestors_lt hacc (TypeDeclaration.name_mem_names hT') hA
       hAn hAD
     obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
-    -- The skeleton unfolds into the constructor of the case of the type.
+    -- The term of the skeleton unfolds into the constructor of the case of the type.
     obtain ⟨i, j, hi, hj⟩ := TypeDeclaration.exists_cases hT' hcon
     rw [TypeDeclaration.skeleton_succ hnd I hT' rfl hcons
       (Entry.constructorCase_of_cases (hd.cases_nodup hdecl) hi)] at hev
@@ -1281,8 +1282,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     have hHH' : H.Extends H' := hH₂.trans (hall.extends.trans hH₂₀)
     have hbl : bs.length = (con.params I).length := by
       rw [EvalAll.length_ofList _ hall, List.length_map, Telescope.length_recursion]
-    -- The fields of the skeleton are stored at the multiplicity `0`, and the grade of the recursor
-    -- has no use at run time.
+    -- The fields of the term of the skeleton are stored at the multiplicity `0`, and the grade of
+    -- the recursor has no use at run time.
     have hπv : ∀ (l : Nat) (p : Parameter), (con.params I)[l]? = some p →
         ∃ π₀, (Targets.ofList (((con.fields I).recursion decl.names).map fun
             | some D' => ((.zero : Multiplicity), ((decl.skeleton I d' D').target : Target Γ.length))
@@ -1298,8 +1299,9 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       congr 1
       simp only [Function.comp_apply]
       split <;> rfl
-    -- The fields of the skeleton are stored at the requirement `ω`, and the coefficients of their
-    -- ownerships are `0`, since the grade of the recursor has no use at run time.
+    -- The fields of the term of the skeleton are stored at the requirement `ω`, and the
+    -- coefficients of their ownerships are `0`, since the grade of the recursor has no use at run
+    -- time.
     have hκv : ∀ (l : Nat) (p : Parameter), (con.params I)[l]? = some p →
         ∃ π₀ ϱ₀, (Targets.ofList (((con.fields I).recursion decl.names).map fun
             | some D' => ((.zero : Multiplicity), ((decl.skeleton I d' D').target : Target Γ.length))
@@ -1320,8 +1322,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
       hCs hCv hus hns hrec husr hg hχ hs hσ hEV hE hj hcon hi hvc hvv hHH' ϖ''
       (hH'.getElem? List.getElem?_concat_length) hπv hκv
       (fun l hl => by
-        -- The fields of the skeleton, which the recursor does not use, state nothing of the
-        -- requirement of its recursion.
+        -- The fields of the term of the skeleton, which the recursor does not use, state nothing of
+        -- the requirement of its recursion.
         have hlt := Telescope.lt_of_mem_positions _ 0 hl
         rw [Telescope.length_recursion, Nat.zero_add] at hlt
         obtain ⟨π₀, ϱ₀, hπ₀, hϱ₀, -⟩ := hκv l _ (List.getElem?_eq_getElem hlt)
@@ -1334,7 +1336,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
         refine ⟨RunsAsArgs.of_erased ts' bs _ (fun l p hl' => (by decide : ∀ r p g x : Grade,
           r ∈ Mode.oneOne.erased → r * p ≤ g + x * r → g ∈ Mode.oneOne.erased) r p.usage
           (gs i l) _ hr (hg i j T' con l p hi hl')) hbl, ?_⟩
-        -- The recursive results used at run time, on the skeletons of the recursive fields.
+        -- The recursive results used at run time, on the terms of the skeletons of the recursive
+        -- fields.
         refine EvalAll.recAt _ (fun D'' hD'' t u ⟨v₁, w₁, hcv, hcw, hX₁⟩ ϖa Ha b' Hb Rb hHa hevb
           hHb ϖb H'' hH'' => ?_) (Telescope.length_recursion _ _) _ ts us' (List.prefix_refl _)
           hall hrX
@@ -1375,7 +1378,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     hclosed
   have hww := (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htv
   obtain ⟨a, H₂, hev, hH₂⟩ :=
-    (decl.skeleton I decl.names.length T.name).isSkeleton.eval P (ϖ₀ * r.run) H₁ E
+    (decl.skeleton I decl.names.length T.name).isData.eval P (ϖ₀ * r.run) H₁ E
   obtain ⟨b, H₃, tr, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
     (fun _ h => nomatch h) rfl _ H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) ϖ₀ H₂
     (List.prefix_refl _)
@@ -1388,9 +1391,9 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
 -- ADE: the cases `natrecₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ` of `fundamental`, in
 -- `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- `(rec)` keeps the validity at run time: the erasure of the recursor evaluates its term, or the
-skeleton of its instance when its grade `r` is erased, then the branch of the case of its value. A
-recursor on a block of propositions has no constructor, in the mode `11ᵐ`, so that no term of its
-instance is true and none is substituted. -/
+term of the skeleton of its instance when its grade `r` is erased, then the branch of the case of
+its value. A recursor on a block of propositions has no constructor, in the mode `11ᵐ`, so that no
+term of its instance is true and none is substituted. -/
 theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
     (has : ValidInstanceArgsΓ sig ι ctx as
@@ -1463,7 +1466,7 @@ theorem RunValid.recursor (hd : sig.Distinct) (h : sig.HasDataType D decl T)
     cases hi
   | type =>
     by_cases hrS : r ∈ Mode.oneOne.erased
-    · -- The skeleton of the instance stands for the term.
+    · -- The term of the skeleton of the instance stands for the term.
       have h1 : ∀ T' ∈ decl.dataTypes, T'.constructors.length ≤ 1 := fun T' hT' => by
         refine Nat.le_of_not_lt fun h2 => ?_
         exact (by decide : ∀ r : Grade, r ∈ Mode.oneOne.erased → r.mode ≠ .oneOne) r hrS

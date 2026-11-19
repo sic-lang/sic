@@ -153,8 +153,8 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
         rw [hF b hb, hEχ.toEnvReach.eq_zero b hb]
         rfl) hc₁
     have hEχ₂ := hEχ.toEnvReach.mono hH₁₂ hg₁₂
-    -- At the multiplicity `0`, the term is a skeleton that evaluates to a constructor, a new value
-    -- of an ownership at most `1`.
+    -- At the multiplicity `0`, the term is data, which evaluates to a constructor, a new value of
+    -- an ownership at most `1`.
     have hθz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o₁ * ϱ := fun hρ0 => ⟨o₁, by
       cases hz hρ0 with
       | erased =>

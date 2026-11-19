@@ -405,7 +405,8 @@ an address that `R` relates to `t`, to addresses related to them, when `ρ` is n
 observed by a destructor of the lifting used at run time runs its branch, which observes the path by
 the destructor that it lifts, at the arguments of the observation, and gives the body of the shape
 of the result on this observation, a path from the field again; when `ρ` is `0`, the body of the
-recursor runs on the skeleton of its motive, and the observation of the path is never evaluated.
+recursor runs on the term of the skeleton of its motive, and the observation of the path is never
+evaluated.
 The recursor is used at run time when `ρ` is not `0`, `hr`, since the lifting scales the arguments of the destructors
 that it lifts by its grade, while the branches built read them through the destructors lifted; and
 the shapes of the types of the block carry the factor `11ᵖ` and the ownerships of the motives that

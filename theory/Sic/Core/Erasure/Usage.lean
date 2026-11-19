@@ -12,7 +12,7 @@ it, so that the conservation of the bindings of the multiplicity `1` is stated o
 Each binder and each position carries its multiplicity, so that the rules read them; a position
 is evaluated once, and its value is then read as its multiplicity allows, so that the position
 counts the reads of its term that many times, and a position of the multiplicity `0`, whose value
-is never read, holds a skeleton, which reads no variable and binds none: a closure that it holds
+is never read, holds data, which reads no variable and binds none: a closure that it holds
 would never release a linear variable, read by its term or bound inside it, and the multiplicity
 `0` would hide the reads of the others; the term of a recursor of the multiplicity `0` likewise.
 A recursor evaluates its term once and runs a branch, whose recursive results each run the
@@ -59,10 +59,10 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   | ctor {n : Nat} {ν : MultiplicityVector n} {i : Nat} {Ms : Targets n}
       (hMs : Targets.Usage ν Ms) : Target.Usage ν (.ctor i Ms)
   /-- A recursor reads the variables of its term as its multiplicity `ρ` allows, and those of its
-  branches as `χ` allows; a term of the multiplicity `0` is a skeleton.
+  branches as `χ` allows; a term of the multiplicity `0` is data.
   RFC: `\mathsf{usage}_M.\mathsf{rec}` -/
   | recursor {n : Nat} {ν χ : MultiplicityVector n} {ρ ϱ : Multiplicity} {M : Target n}
-      {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → M.IsSkeleton)
+      {Ns : TargetBranches n} (hM : Target.Usage ν M) (hz : ρ = .zero → M.IsData)
       (hNs : TargetBranches.Usage ρ χ Ns) : Target.Usage ((ρ ·ᶜ ν) +ᶜ χ) (.recursor ρ ϱ M Ns)
   /-- An observation reads the variables of its term and of its arguments once.
   RFC: `\mathsf{usage}_M.d` -/
@@ -87,10 +87,10 @@ inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → P
   RFC: `\mathsf{usage}_{\bar M}.\varepsilon` -/
   | nil {n : Nat} : Targets.Usage 𝟘ᵛ (.nil : Targets n)
   /-- The first term, read as its multiplicity `π` allows, and the others; a term of the
-  multiplicity `0` is a skeleton.
+  multiplicity `0` is data.
   RFC: `\mathsf{usage}_{\bar M}.{,}` -/
   | cons {n : Nat} {ν₁ ν₂ : MultiplicityVector n} {π ϱ : Multiplicity} {M : Target n}
-      {Ms : Targets n} (hM : Target.Usage ν₁ M) (hz : π = .zero → M.IsSkeleton)
+      {Ms : Targets n} (hM : Target.Usage ν₁ M) (hz : π = .zero → M.IsData)
       (hMs : Targets.Usage ν₂ Ms) : Targets.Usage ((π ·ᶜ ν₁) +ᶜ ν₂) (.cons π ϱ M Ms)
 
 -- ADE: `natrec-no-nrₘ`, in `Graded/Usage.agda`, for the bound of the uses of the branches.
@@ -149,14 +149,14 @@ end
 mutual
 
 -- ADE: none.
-/-- A skeleton reads no variable. -/
-theorem Target.IsSkeleton.usage {n : Nat} {M : Target n} : M.IsSkeleton → Target.Usage 𝟘ᵛ M
+/-- Data reads no variable. -/
+theorem Target.IsData.usage {n : Nat} {M : Target n} : M.IsData → Target.Usage 𝟘ᵛ M
   | .erased => .erased
   | .ctor h => .ctor h.usage
 
 -- ADE: none.
-/-- Skeletons read no variable. -/
-theorem Targets.IsSkeleton.usage {n : Nat} {Ms : Targets n} : Ms.IsSkeleton → Targets.Usage 𝟘ᵛ Ms
+/-- Terms that are data read no variable. -/
+theorem Targets.IsData.usage {n : Nat} {Ms : Targets n} : Ms.IsData → Targets.Usage 𝟘ᵛ Ms
   | .nil => .nil
   | .cons (π := π) (ϱ := ϱ) hM hMs => by
     have h := Targets.Usage.cons (π := π) (ϱ := ϱ) hM.usage (fun _ => hM) hMs.usage

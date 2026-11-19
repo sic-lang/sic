@@ -33,12 +33,12 @@ theorem Heap.EnvReach.sub {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List N
   · exact (by decide : ∀ x y : Multiplicity, x ≤ y → x = .zero → y = .zero) _ _ (hU' b) hb
 
 /-- The term of a position of the multiplicity `π`, in an environment whose reach is that of the
-position and of the rest: its usage, `0` for a skeleton at the multiplicity `0`, the reach of the
+position and of the rest: its usage, `0` for data at the multiplicity `0`, the reach of the
 environment for it, which refers to no address that the position does not refer to, and to the
 addresses that the term claims once at most with the frame and the rest. -/
 theorem Target.Usage.atPosition {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
     {φ ν₁ ν₂ : MultiplicityVector n} {π : Multiplicity} {M : Target n} {U₁ U₂ F : Demand}
-    (hν₁ : Target.Usage ν₁ M) (hz : π = .zero → M.IsSkeleton)
+    (hν₁ : Target.Usage ν₁ M) (hz : π = .zero → M.IsData)
     (hE₁ : Heap.EnvSum H (Heap.ValueReach H g) E ν₁ U₁)
     (hc : ∀ b, Heap.EnvClaims H g E φ ((π ·ᶜ ν₁) +ᶜ ν₂) b →
       F b + (π * U₁ b + U₂ b) ≠ .omega) :
