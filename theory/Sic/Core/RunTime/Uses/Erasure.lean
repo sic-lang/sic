@@ -64,20 +64,99 @@ theorem _root_.Sic.Grading.Multiplicity.used_of_recursion_used :
   decide
 
 -- ADE: none.
-/-- The usage of a recursor gives the premise `hused` of the rule of the recursor of the ownership,
-in every mode: when the uses `⌜m⌝ · r · q` of a field of the grade `q` that the recursor of the
-grade `r` gives are covered by the uses `g` of its variable plus those of the recursion through its
-recursive result, of the grade `e` and the factor `π`, `(e · π) · r`, the premise `hg` of the rule
-of the recursor of the usage, a use at run time of the recursion, `run(⌜m⌝ · r · e) · run(π)`, is a
-use at run time of the field. The factor of the shape of a nested field is `run(π)`
-(`Shape.factor_eq_run`, `Term.Lifts.shape_eq`), so that the premise of the ownership refuses no
-recursor that the usage accepts. -/
+/-- The arithmetic step of the premise `hused` of the rule of the recursor of the ownership, in
+every mode: when the uses `⌜m⌝ · r · q` of a field of the grade `q` that the recursor of the grade
+`r` gives are covered by the uses `g` of its variable plus those of the recursion through its
+recursive result, of the grade `e` and the factor `π`, `(e · π) · r`, as the premise `hg` of the
+rule of the recursor of the usage asks, a use at run time of the recursion,
+`run(⌜m⌝ · r · e) · run(π)`, is a use at run time of the field; `Usage.recursor_used` composes it
+with the factors of the shapes. -/
 theorem _root_.Sic.Grading.Grade.used_of_usage (m : Mode) (r q g e π : Grade)
     (hg : m.grade * r * q ≤ g + (e * π) * r) :
     (m.grade * r * e).run * π.run ≠ .zero → (m.grade * r * q).run ≠ .zero := by
   have h := Grade.run_le hg
   simp only [(Grade.run_op _ _).1, (Grade.run_op _ _).2.1] at h ⊢
   exact Multiplicity.used_of_recursion_used _ _ _ _ _ _ h
+
+-- ADE: none.
+/-- The premises `hR` and `hg` of the rule of the recursor of the usage give the premise `hused` of
+the rule of the recursor of the ownership, for the same mode `m`, grade `r`, branches `ūs` and
+ownership `χ` of the results that are motives, in a signature whose names are distinct and that
+declares its liftings in order: the factor of the shape of a nested field is the run-time
+multiplicity of the factor `π` that the typing gives its result, so that the premise of the
+ownership refuses no recursor that the usage accepts. -/
+theorem Usage.recursor_used {sig : Signature} (hsig : sig.Distinct) (hord : sig.LiftsInOrder)
+    {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level k)}
+    {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade} {κ : Universe k}
+    {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} {gs : Nat → Nat → Grade}
+    {πs : Nat → List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+    (hp : ps.length = decl.grades)
+    (hR : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ R : Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
+          (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) R (πs i))
+    (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+      (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      m.grade * r * p.usage ≤ gs i l +
+        (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+          (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r) :
+    ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
+      (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
+      decl.cases[i]? = some (j, T', con) →
+      ∀ (l : Nat) (σ : Shape) (p' : Parameter),
+        (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m Grade.run decl.names qs ps χ
+          (.ofLists qs ps hq hp))[l]? = some (some σ) →
+        (con.params (.ofLists qs ps hq hp))[l]? = some p' →
+        (m.grade * r * Telescope.resultGrades
+          ((con.fields (.ofLists qs ps hq hp)).nest decl.names) (us.grades i) l).run *
+            σ.factor ≠ .zero →
+        (m.grade * r * p'.usage).run ≠ .zero := by
+  intro i j T' con hc l σ p' hσ hp' hu
+  obtain ⟨R, hR'⟩ := hR i j T' con hc
+  -- The field is nested, the `i'`-th of the fields whose nestings have a position.
+  have hlen : l < ((con.fields (.ofLists qs ps hq hp)).nest decl.names).length := by
+    rw [Telescope.length_nest]
+    exact (List.getElem?_eq_some_iff.1 hp').1
+  obtain ⟨n, hn⟩ : ∃ n, ((con.fields (.ofLists qs ps hq hp)).nest decl.names)[l]? = some n :=
+    ⟨_, List.getElem?_eq_getElem hlen⟩
+  have hnp : n.isPlain = false := by
+    cases n with
+    | plain =>
+      obtain ⟨A, hA⟩ := Option.isSome_iff_exists.1
+        ((Telescope.get_types_isSome (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) l).2
+          (by rw [← Telescope.length_nest decl.names]; exact hlen))
+      have h0 := Term.shape_eq_none_of_nest (v := ⟨κ.quality, r, ς⟩)
+        (lookup := Signature.shapes ⟨κ.quality, r, ς⟩ m Grade.run sig)
+        (block := sig.blockShapes decl.names qs ps χ) (ν := Nesting.plain) A
+        (Term.nest_plain (fun _ _ => rfl) A)
+      rw [Constructor.nestedShapes, Telescope.nestedShapes_types decl.names (ls.getFin hl)
+        (con.fields (.ofLists qs ps hq hp)) as.toSubst l hA hn, Option.some.injEq, h0] at hσ
+      cases hσ
+    | direct _ | inst _ => rfl
+  obtain ⟨i', hi'⟩ := List.mem_iff_getElem?.1 (List.mem_filterMap.2 ⟨(n, l),
+    List.mem_zipIdx_iff_getElem?.2 hn, by simp [hnp]⟩ :
+      l ∈ ((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap fun y =>
+        if y.1.isPlain then none else some y.2)
+  obtain ⟨π, hπ, hf⟩ := hR'.factor_nested hsig hord hi' hσ
+  have hi'0 : (((con.fields (.ofLists qs ps hq hp)).nest decl.names).zipIdx.filterMap fun y =>
+      if y.1.isPlain then none else some y.2)[i']? = some (0 + l) := by rw [Nat.zero_add]; exact hi'
+  rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0] at hu
+  have hgl := hg i j T' con l p' hc hp'
+  rw [Telescope.resultGrades_of_nestPositions _ _ 0 i' l hi'0, List.getD_eq_getElem?_getD,
+    List.getElem?_zipWith, hπ] at hgl
+  cases he : (us.grades i)[i']? with
+  | none =>
+    rw [List.getD_eq_getElem?_getD, he] at hu
+    exact absurd (by
+      show (m.grade * r * Grade.zero).run * σ.factor = .zero
+      exact (by decide : ∀ (a b : Grade) (c : Multiplicity), (a * b * Grade.zero).run * c = .zero)
+        _ _ _) hu
+  | some e =>
+    rw [List.getD_eq_getElem?_getD, he] at hu
+    rw [he] at hgl
+    rw [hf] at hu
+    exact Grade.used_of_usage m r p'.usage (gs i l) e π hgl hu
 
 /-! ## Transports -/
 
