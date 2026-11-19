@@ -11,12 +11,15 @@ The recursive results of the branches of a recursor of the target language of an
 corecursor of a lifting on a nested field, of the shape of annex 14 of the type of the field, or
 nothing when the result is erased.
 
-The erasure of a recursor reads them from the signature, `results_Σ(T, r, ς, χ)`: one for each
-field of each constructor of the block whose nesting has a position, in order, as the typing binds
-one recursive result for each of these fields, the recursor on a recursive field, and the
-corecursor of the lifting of the type of a nested field, of its shape in the mode `11ᵐ` on the axis
-of the uses at run time, which the evaluation runs; a nested field whose type has no shape, since
-the signature does not declare its lifting, has its result erased, in a term that no rule types.
+The erasure of a recursor reads them from the signature, `results_Σ(T, κ_C, r, ς, χ)`, where the
+quality `s_C` of the sort `κ_C` of the motives, the grade `r` of the recursor and the requirement
+`ς` of the lifted destructors are the variables of the lifting, and `χ` is the ownership of the
+results that are motives: one for each field of each constructor of the block whose nesting has a
+position, in order, as the typing binds one recursive result for each of these fields, the recursor
+on a recursive field, and the corecursor of the lifting of the type of a nested field, of its shape
+in the mode `11ᵐ` on the axis of the uses at run time, which the evaluation runs; a nested field
+whose type has no shape, since the signature does not declare its lifting, has its result erased, in
+a term that no rule types.
 
 ADE have no nested fields.
 -/
@@ -156,13 +159,14 @@ def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps 
   | _ => none
 
 -- ADE: none.
-/-- `results_Σ(T, r, ς, χ)`: the recursive results `w̄̄` of the fields of each constructor of the
+/-- `results_Σ(T, κ_C, r, ς, χ)`: the recursive results `w̄̄` of the fields of each constructor of the
 block of the data type `D`, in the order of the declaration, which is that of the branches of a
-recursor, for a recursor of the variables `v`, its grade `r` and the requirement `ς` of the lifted
-destructors, whose results that are motives have the ownership `χ`, at the instance of the qualities
-`qs` and of the grades `ps`, in the last entry of the signature that declares the block, which the
-erasure of a recursor reads to tell what computes each recursive result, and none when no entry
-declares it. -/
+recursor, for a recursor of the variables `v`, which are the quality `s_C` of the sort `κ_C` of its
+motives, its grade `r` and the requirement `ς` of the lifted destructors, whose results that are
+motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`, in the
+last entry of the signature that declares the block, which the erasure of a recursor reads to tell
+what computes each recursive result, and none when no entry declares it.
+RFC: `\mathsf{results}_c` -/
 def Signature.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
     (v : Lifting.Variables) (χ : Grade) : List (List RecursiveResult) :=
   (sig.findSome? (Entry.recursiveResults sig D qs ps v χ)).getD []
