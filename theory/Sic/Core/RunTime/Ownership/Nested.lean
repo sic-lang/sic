@@ -46,17 +46,9 @@ theorem Ownership.nestedField_keeps {sig : Signature} {decl : TypeDeclaration}
     show Multiplicity.one * v.recursion.run * p.usage.run ≠ .zero
     rw [h1]
     exact hc
-  have hR : (decl.recursionRequirement sig v .oneOne χ qs ps I).run ≤
-      (p.requirement.run * v.requirement.run) * (Mode.oneOne.grade * v.recursion * p.usage).run :=
-    Parameter.recursionAxis_le hc' (List.mem_append_right _
-      (TypeDeclaration.mem_nestedPairs hi hσ hp List.mem_cons_self))
-  have hne := Parameter.recursionAxis_ne_zero
-    ((List.zipWith (fun e f => e.map fun l =>
-      ((f[l]?).map fun p => (p.requirement, (Mode.oneOne.grade * v.recursion) * p.usage)).getD
-        (Grade.unrestrictedUnrestricted, Grade.linearLinear)) (decl.recursivePositions I)
-        (decl.cases.map fun x => x.2.2.params I)).flatten.map (fun x => (x.1.run, x.2.run)) ++
-      decl.nestedPairs sig v .oneOne χ qs ps I Grade.run)
-  change (decl.recursionRequirement sig v .oneOne χ qs ps I).run ≠ .zero at hne
+  have hR := TypeDeclaration.recursionRequirement_run_le_nested hi hσ hp hc' List.mem_cons_self
+  have hne := TypeDeclaration.recursionRequirement_run_ne_zero (decl := decl) (sig := sig) (v := v)
+    (m := .oneOne) (χ := χ) (qs := qs) (ps := ps) (I := I)
   show o.run * _ ≤ v.requirement.run * (o.run * _ * (p.requirement.run * (v.recursion.run *
     p.usage.run)))
   change _ ≤ _ * (Multiplicity.one * v.recursion.run * p.usage.run) at hR
@@ -143,17 +135,10 @@ theorem Ownership.nestedField_requires {sig : Signature} {decl : TypeDeclaration
     show Multiplicity.one * v.recursion.run * p.usage.run ≠ .zero
     rw [h1]
     exact hc
-  have hne := Parameter.recursionAxis_ne_zero
-    ((List.zipWith (fun e f => e.map fun l =>
-      ((f[l]?).map fun p => (p.requirement, (Mode.oneOne.grade * v.recursion) * p.usage)).getD
-        (Grade.unrestrictedUnrestricted, Grade.linearLinear)) (decl.recursivePositions I)
-        (decl.cases.map fun x => x.2.2.params I)).flatten.map (fun x => (x.1.run, x.2.run)) ++
-      decl.nestedPairs sig v .oneOne χ qs ps I Grade.run)
-  change (decl.recursionRequirement sig v .oneOne χ qs ps I).run ≠ .zero at hne
-  refine ⟨hmeets, Shape.keeps_of_prefixes (ϱ := p.requirement.run)
-    (π := (Mode.oneOne.grade * v.recursion * p.usage).run) hne σ v.requirement.run hmeets
-    fun y hy => ?_⟩
-  exact Parameter.recursionAxis_le hc' (List.mem_append_right _
-    (TypeDeclaration.mem_nestedPairs hi hσ hp (List.mem_cons_of_mem _ hy)))
+  exact ⟨hmeets, Shape.keeps_of_prefixes (ϱ := p.requirement.run)
+    (π := (Mode.oneOne.grade * v.recursion * p.usage).run)
+    TypeDeclaration.recursionRequirement_run_ne_zero σ v.requirement.run hmeets
+    fun _ hy => TypeDeclaration.recursionRequirement_run_le_nested hi hσ hp hc'
+      (List.mem_cons_of_mem _ hy)⟩
 
 end Sic.Core

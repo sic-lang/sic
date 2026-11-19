@@ -185,4 +185,30 @@ theorem TypeDeclaration.mem_nestedPairs {decl : TypeDeclaration} {sig : Signatur
     exact ⟨hσ, hp⟩
   · exact List.mem_map.2 ⟨y, hy, rfl⟩
 
+-- ADE: none.
+/-- The requirement of the recursion of a recursor is never `0` at run time. -/
+theorem TypeDeclaration.recursionRequirement_run_ne_zero {decl : TypeDeclaration}
+    {sig : Signature} {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality}
+    {ps : List Grade} {I : Instance decl.sorts decl.grades} :
+    (decl.recursionRequirement sig v m χ qs ps I).run ≠ .zero :=
+  Parameter.recursionAxis_ne_zero _
+
+-- ADE: none.
+/-- The requirement of the recursion of a recursor on a block is below, at run time, the requirement
+of each nested field that the recursor uses at run time times the product along each prefix of the
+paths of its shape times the grade with which the recursor uses the field, at each instance. -/
+theorem TypeDeclaration.recursionRequirement_run_le_nested {decl : TypeDeclaration}
+    {sig : Signature} {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality}
+    {ps : List Grade} {I : Instance decl.sorts decl.grades} {i j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hi : decl.cases[i]? = some (j, T, con)) {l : Nat} {σ : Shape} {p : Parameter}
+    (hσ : (con.nestedShapes sig v m Grade.run decl.names qs ps χ I)[l]? = some (some σ))
+    (hp : (con.params I)[l]? = some p) (hc : ((m.grade * v.recursion) * p.usage).run ≠ .zero)
+    {y : Multiplicity} (hy : y ∈ σ.recursion v.requirement.run) :
+    (decl.recursionRequirement sig v m χ qs ps I).run ≤
+      (p.requirement.run * y) * ((m.grade * v.recursion) * p.usage).run :=
+  Parameter.recursionAxis_le hc
+    (List.mem_append_right _ (TypeDeclaration.mem_nestedPairs hi hσ hp hy))
+
 end Sic.Core
