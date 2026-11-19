@@ -115,7 +115,7 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
     (gs := fun _ l => if l = 0 then g₀ else g₁) (πs := fun _ => []) hpre.pair rfl hl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -125,11 +125,6 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨_, .plain (.plain .nil)⟩
-  · intro i j T' con hi
-    match i, hi with
-    | 0, rfl =>
-      exact fun _ hν ms he => by
-        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu
@@ -164,7 +159,7 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
     (gs := fun _ _ => Grade.zero) (πs := fun _ => []) hpre.unit rfl rfl rfl
-    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -174,11 +169,6 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
   · intro i j T' con hi
     match i, hi with
     | 0, rfl => exact ⟨_, .nil⟩
-  · intro i j T' con hi
-    match i, hi with
-    | 0, rfl =>
-      exact fun _ hν ms he => by
-        subst he; exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu
@@ -221,7 +211,7 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   have hle : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
   refine .recursor (decl := Prelude.step) (T := Prelude.stepType)
     (δs := fun i => if i = 0 then δ₀ else δ₁) (gs := fun i _ => if i = 0 then g₀ else g₁)
-    (πs := fun _ => []) hpre.step rfl hl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    (πs := fun _ => []) hpre.step rfl hl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC
@@ -233,14 +223,6 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
     match i, hi with
     | 0, rfl => exact ⟨_, .plain .nil⟩
     | 1, rfl => exact ⟨_, .plain .nil⟩
-  · intro i j T' con hi
-    match i, hi with
-    | 0, rfl =>
-      exact fun _ hν ms he => by
-        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
-    | 1, rfl =>
-      exact fun _ hν ms he => by
-        subst he; exact nomatch (show Nest.inst ms ∈ [Nest.plain] from hν)
   · intro i j T' con u' hi hu'
     match i, hi, hu' with
     | 0, rfl, rfl => exact hu₀

@@ -269,7 +269,7 @@ where
         hh hC _ hCs hCt _ hus hRs hut hκ, hu => fun ρ => by
       rename_i Rs
       have hdT := (presuppositions.hasType ht).distinct
-      obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, -, hbu, hg, hχ, hr, hprop, -⟩ :=
+      obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, hbu, hg, hχ, hr, hprop, -⟩ :=
         Usage.inv_recursor hdT h hq hl hp hu rfl
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=

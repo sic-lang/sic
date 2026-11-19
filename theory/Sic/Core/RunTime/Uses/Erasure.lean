@@ -407,7 +407,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hord hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
-      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR _ hu hg hχ _ _ =>
+      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hu hg hχ _ _ =>
       by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r

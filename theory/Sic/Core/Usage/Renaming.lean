@@ -324,11 +324,11 @@ where
     | .ctor h hc hq hp hts, hθ => by
       rw [Term.ctor_subst]
       exact .ctor h hc hq hp (usageArgs hts hθ)
-    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hl hp hC ht hul hus hR hn hu
+    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hl hp hC ht hul hus hR hu
         hg hχ hr hprop, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
       refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hl hp ?_
-        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_ hn ?_
+        (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_ ?_
         (by simp only [Branches.grades_subst]; exact hg) ?_ hr hprop
       · intro j n C hC'
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_subst_inv _ hC'

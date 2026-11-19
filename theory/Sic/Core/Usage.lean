@@ -94,7 +94,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   propositions that has a constructor, whose motives are then propositions, builds a proof from a
   proof, and is checked only in a mode other than `11ᵐ`, as an observation whose result is a proof,
   since a proof is related to no value at run time that a recursor could eliminate.
-  The premise `hn` excludes the nested fields until the run time of their results is plugged.
   RFC: `\mathsf{rec}_{▶}` -/
   | recursor {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
@@ -115,8 +114,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
             (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
           Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) R (πs i))
-      (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms)
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
         us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
           (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →

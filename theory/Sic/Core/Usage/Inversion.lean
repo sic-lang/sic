@@ -144,8 +144,6 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
               (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
             Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
               (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) R (πs i)) ∧
-        (∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ∀ ms, ν ≠ Nest.inst ms) ∧
         (∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
           us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
             (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
@@ -170,19 +168,19 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
         (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
           ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
             (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
-  | _, _, .recursor h' _ _ _ hC ht _ hus' hR hn hu hg hχ hr hprop, he => by
+  | _, _, .recursor h' _ _ _ hC ht _ hus' hR hu hg hχ hr hprop, he => by
     injection he with _ hΔ hr' hς hχ' hD hqs hls hps has ht' hκ hCs hus
     subst hr' hς hχ' hD hqs hls hps ht' hκ hCs hus
     obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
     cases hT
     cases has
-    exact ⟨_, _, _, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hC, ht, hR, hn, hu, hg,
-      hχ, hr, hprop, hus'⟩
+    exact ⟨_, _, _, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hC, ht, hR, hu, hg, hχ,
+      hr, hprop, hus'⟩
   | _, _, .sub h' hle, he =>
-    have ⟨γ', χ, δs, gs, πs, hγ, hC, ht, hR, hn, hu, hg, hχ, hr, hprop, hus'⟩ :=
+    have ⟨γ', χ, δs, gs, πs, hγ, hC, ht, hR, hu, hg, hχ, hr, hprop, hus'⟩ :=
       Usage.inv_recursor hd h hq hl hp h' he
-    ⟨γ', χ, δs, gs, πs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hC, ht, hR, hn, hu,
-      hg, hχ, hr, hprop, hus'⟩
+    ⟨γ', χ, δs, gs, πs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hC, ht, hR, hu, hg,
+      hχ, hr, hprop, hus'⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
 
