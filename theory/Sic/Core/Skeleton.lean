@@ -6,7 +6,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Skeletons
 
-The skeleton of a data type of annex 19 of RFC 36, which the erasure of a recursor runs on when its
+The skeleton of a data type of annex 14 of RFC 36, which the erasure of a recursor runs on when its
 term is erased, without the scope of the term of the target language that it stands for: a skeleton
 mentions no variable, so that the shape of a nested result holds the skeleton of a motive, which
 the recursor of the multiplicity `0` runs on, whatever the scope of the branch that builds it.

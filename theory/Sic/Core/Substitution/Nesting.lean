@@ -7,7 +7,7 @@ public import Sic.Core.Substitution.Rules
 /-!
 # Nesting of the Renamed Types
 
-A renaming keeps the nesting of a type of annex 15 of RFC 36, at the nestings of the variables that
+A renaming keeps the nesting of a type of annex 08 of RFC 36, at the nestings of the variables that
 it renames, and so the nestings of the fields of a block, whose variables have no position: the
 fields after a recursive field, which do not depend on it, are renamed under it.
 A variable of a scope keeps its nesting under new variables, which have no position.

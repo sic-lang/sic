@@ -8,8 +8,9 @@ import Sic.Core.Typing.Presuppositions
 /-!
 # Recursive Results in a Well-Formed Signature
 
-The existence of the recursive results of annex 14 of RFC 36: in a well-formed signature, the
-terms of the fields of a telescope whose recursive results have types have recursive results.
+The existence of the recursive results of annex 14 of RFC 36, which annex 15 states: in a
+well-formed signature, the terms of the fields of a telescope whose recursive results have types
+have recursive results.
 
 A well-formed signature has distinct names and declares each of its liftings after the destructors
 that it lifts, which is what the existence of the results asks of a signature.

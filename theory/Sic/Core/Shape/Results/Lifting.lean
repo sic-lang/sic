@@ -10,7 +10,7 @@ import Sic.Core.Syntax.Signature
 /-!
 # Shapes of the Types Lifted
 
-The shape of annex 19 of RFC 36 follows the lifting of annex 13: a type lifted has a shape, which
+The shape of annex 14 of RFC 36 follows the lifting of annex 13: a type lifted has a shape, which
 gives the recursive result the factor and the ownership that the lifting gives it, in a signature
 whose names are distinct and that declares each lifting after the destructors that it lifts.
 

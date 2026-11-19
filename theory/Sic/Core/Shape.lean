@@ -5,14 +5,14 @@ public import Sic.Core.Skeleton
 /-!
 # Shapes of the Nested Results
 
-The shape of a recursive result that a nested field gives, in a branch of a recursor of the target
-language of annex 19 of RFC 36, `n.Ξ`: the result is the corecursor of a lifting, with a branch for
-each destructor that the lifting keeps, and the shape `σ` gives the evaluation what it needs to build
-these branches from the recursor, without the terms of the branches: the case of the destructor in its
-block, the positions of its arguments in the observation and in the lifted destructor, the ownership
-of its result and the ownership that it requires of the value that it observes, at run time, and the
-shape of the result, which is the recursor itself or the next lifting, two levels of nesting deep or
-more.
+The shape of annex 14 of RFC 36 of a recursive result that a nested field gives, in a branch of a
+recursor of the target language of annex 19, `n.Ξ`: the result is the corecursor of a lifting, with
+a branch for each destructor that the lifting keeps, and the shape `σ` gives the evaluation what it
+needs to build these branches from the recursor, without the terms of the branches: the case of the
+destructor in its block, the positions of its arguments in the observation and in the lifted
+destructor, the ownership of its result and the ownership that it requires of the value that it
+observes, at run time, and the shape of the result, which is the recursor itself or the next
+lifting, two levels of nesting deep or more.
 A destructor whose multiplicity at run time is `0` is never observed at run time, and its branch is
 erased.
 

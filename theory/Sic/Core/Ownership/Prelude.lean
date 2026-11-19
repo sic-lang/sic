@@ -8,11 +8,11 @@ import Sic.Core.Shape.Results.Extension
 /-!
 # Ownership of the Prelude
 
-The ownership of the prelude of annex 12 of RFC 36: its declarations are data types only, whose
-values have the ownerships that their constructors give, and the packing of arguments, the recursors
-on the pair, on the unit and on the type of positions, the unpacking of a term of a packing and the
-resumption of a position, which an observation of a recursive destructor computes, have the
-ownerships that their rules show.
+The ownership of the prelude of annex 12 of RFC 36, which annex 18 states: its declarations are data
+types only, whose values have the ownerships that their constructors give, and the packing of
+arguments, the recursors on the pair, on the unit and on the type of positions, the unpacking of a
+term of a packing and the resumption of a position, which an observation of a recursive destructor
+computes, have the ownerships that their rules show.
 
 The rules of the recursors on the pair, on the unit and on the type of positions are the rules of
 the data types at the instances of the prelude, whose premises on the block hold by computation; the

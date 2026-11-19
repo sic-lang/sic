@@ -7,11 +7,11 @@ import Sic.Core.Usage.Renaming
 /-!
 # Usage of the Prelude
 
-The usage of the prelude of annex 12 of RFC 36: the constructors of its types use their parameters
-as the grades of the types allow, and the packing of arguments, the recursors on the pair, on the
-unit and on the type of positions, the unpacking of a term of a packing and the resumption of a
-position, which an observation of a recursive destructor computes, use the variables as their rules
-show.
+The usage of the prelude of annex 12 of RFC 36, which annex 17 states: the constructors of its types
+use their parameters as the grades of the types allow, and the packing of arguments, the recursors
+on the pair, on the unit and on the type of positions, the unpacking of a term of a packing and the
+resumption of a position, which an observation of a recursive destructor computes, use the variables
+as their rules show.
 
 The rules of the recursors on the pair, on the unit and on the type of positions are the rules of
 the data types at the instances of the prelude, whose premises on the block hold by computation; the

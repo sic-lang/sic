@@ -6,9 +6,9 @@ public import Sic.Core.Lifting
 /-!
 # Shapes of the Recursive Results
 
-The shape that the erasure of a recursor of annex 19 of RFC 36 gives the recursive result of a field
-of a constructor: the shape `Υ` of the corecursor of the lifting of the type of a nested field, or the
-recursor itself for a recursive field, read from the signature.
+The shape of annex 14 of RFC 36 that the erasure of a recursor of annex 19 gives the recursive
+result of a field of a constructor: the shape `Υ` of the corecursor of the lifting of the type of a
+nested field, or the recursor itself for a recursive field, read from the signature.
 The shape is computed in a mode, on an axis of the grades: the erasure reads it in the mode `11ᵐ`,
 on the axis of the uses at run time, and the ownership of annex 18 reads it in the mode of the
 recursor, on each axis, for the requirements of the recursions on the observations of a nested

@@ -5,7 +5,7 @@ public import Sic.Core.Shape
 /-!
 # Ownerships of the Shapes
 
-The ownerships that the shape of a nested result of annex 19 of RFC 36 carries, at run time: the
+The ownerships that the shape of a nested result of annex 14 of RFC 36 carries, at run time: the
 ownership of the result of a lifted destructor and the scale at which the observation that it builds
 sees the arguments of its branch, read from the shape of its result, the ownerships `ς` and `χ`
 that a shape has when its lifted destructors require `ς` of the value that they observe and give
