@@ -83,6 +83,17 @@ def TypeDeclaration.HasNestedField (decl : TypeDeclaration) (I : Instance decl.s
     decl.cases[i]? = some (j, T, con) ∧ ∃ ms, Nest.inst ms ∈ (con.fields I).nest decl.names
 
 -- ADE: none.
+/-- A block whose fields are at the nesting of no instance has no nested field, so that the
+temporary premise of the recursor that excludes the nested fields excludes the second check of its
+branches. -/
+theorem TypeDeclaration.not_hasNestedField {decl : TypeDeclaration}
+    {I : Instance decl.sorts decl.grades}
+    (hn : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∀ ν ∈ (con.fields I).nest decl.names, ∀ ms, ν ≠ Nest.inst ms) :
+    ¬ decl.HasNestedField I :=
+  fun ⟨i, j, T, con, hi, ms, hm⟩ => hn i j T con hi _ hm ms rfl
+
+-- ADE: none.
 /-- `φ, x̄ ◀ ō · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
 ownership `oᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are `ps`,
 the first one first, `qᵢ` being the grade of the entry, and `ωωᵖ · (g · qᵢ)` for a variable without
