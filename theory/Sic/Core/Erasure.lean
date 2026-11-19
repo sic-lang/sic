@@ -793,16 +793,16 @@ mutual
 
 -- ADE: none.
 /-- The term of a skeleton is data. -/
-theorem Skeleton.isData {n : Nat} : (k : Skeleton) → (k.target : Target n).IsData
+theorem Skeleton.target_isData {n : Nat} : (k : Skeleton) → (k.target : Target n).IsData
   | .empty => .erased
-  | .ctor _ ks => .ctor (Skeleton.isData_targets ks)
+  | .ctor _ ks => .ctor (Skeleton.targets_isData ks)
 
 -- ADE: none.
 /-- The terms of skeletons are data. -/
-theorem Skeleton.isData_targets {n : Nat} :
+theorem Skeleton.targets_isData {n : Nat} :
     (ks : List Skeleton) → (Skeleton.targets ks : Targets n).IsData
   | [] => .nil
-  | k :: ks => .cons k.isData (Skeleton.isData_targets ks)
+  | k :: ks => .cons k.target_isData (Skeleton.targets_isData ks)
 
 end
 
@@ -846,7 +846,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     simp only [Term.erase]
     by_cases h₂ : r ∈ S₂
     · simp only [h₂, ↓reduceIte]
-      exact .data (sig.skeleton _ _ _).isData (Branches.erase_lessDefined sig h hΓ _ us _ _)
+      exact .data (sig.skeleton _ _ _).target_isData (Branches.erase_lessDefined sig h hΓ _ us _ _)
     · have h₁ : r ∉ S₁ := fun h₁ => h₂ (h r h₁)
       simp only [h₂, h₁, ↓reduceIte]
       exact .recursor (Term.erase_lessDefined sig h hΓ t) (Branches.erase_lessDefined sig h hΓ _ us _ _)

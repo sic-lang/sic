@@ -215,8 +215,8 @@ theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
       (MultiplicityVector.module Multiplicity.modality).one_smul]
     by_cases hρ : ρ = .zero
     · subst hρ
-      have h := Target.Usage.recursor (ρ := .zero) (ϱ := ϱ) K.isData.usage
-        (fun _ => K.isData) hNs
+      have h := Target.Usage.recursor (ρ := .zero) (ϱ := ϱ) K.target_isData.usage
+        (fun _ => K.target_isData) hNs
       simp only [↓reduceIte, Shape.Next.body]
       rwa [(MultiplicityVector.module Multiplicity.modality).zero_smul,
         ← (MultiplicityVector.module Multiplicity.modality).zero_smul ν] at h

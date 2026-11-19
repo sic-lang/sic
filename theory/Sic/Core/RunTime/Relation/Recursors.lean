@@ -1378,7 +1378,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (h : sig.HasDataType D decl
     hclosed
   have hww := (ValidEqTerm₀.redStar_iff hd hw₁.1).1 htv
   obtain ⟨a, H₂, hev, hH₂⟩ :=
-    (decl.skeleton I decl.names.length T.name).isData.eval P (ϖ₀ * r.run) H₁ E
+    (decl.skeleton I decl.names.length T.name).target_isData.eval P (ϖ₀ * r.run) H₁ E
   obtain ⟨b, H₃, tr, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
     (fun _ h => nomatch h) rfl _ H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) ϖ₀ H₂
     (List.prefix_refl _)
