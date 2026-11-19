@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Relation.Corecursors
 public import Sic.Core.Typing
 public import Sic.Core.Usage
