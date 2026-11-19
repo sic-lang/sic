@@ -1,6 +1,8 @@
 module
 
-public import Sic.Core.Shape
+public import Sic.Core.Results
+public import Sic.Core.Shape.Results
+import Sic.Core.Syntax.Signature
 
 /-!
 # Recursive Results of the Branches
@@ -9,6 +11,13 @@ The recursive results of the branches of a recursor of the target language of an
 `w`: what computes each recursive result of a branch, the recursor on a recursive field, the
 corecursor of a lifting on a nested field, of the shape of annex 14 of the type of the field, or
 nothing when the result is erased.
+
+The erasure of a recursor reads them from the signature, `results_Σ(T, r, ς, χ)`: one for each
+field of each constructor of the block whose nesting has a position, in order, as the typing binds
+one recursive result for each of these fields, the recursor on a recursive field, and the
+corecursor of the lifting of the type of a nested field, of its shape in the mode `11ᵐ` on the axis
+of the uses at run time, which the evaluation runs; a nested field whose type has no shape, since
+the signature does not declare its lifting, has its result erased, in a term that no rule types.
 
 ADE have no nested fields.
 -/
@@ -93,5 +102,195 @@ theorem RecursiveResult.position_erased : RecursiveResult.erased.position = none
 theorem RecursiveResult.position_ofPosition (o : Option Nat) :
     (RecursiveResult.ofPosition o).position = o := by
   cases o <;> rfl
+
+/-! ## Recursive Results of a Block -/
+
+-- ADE: none.
+/-- What computes the recursive result of the field at the position `l`, whose nesting has a
+position: the recursor on the field itself when it is recursive, of the type `D` of the block that
+`recursion` gives, the corecursor of the lifting of its type when its type has the shape `shape`,
+and nothing otherwise, in a term that no rule types. -/
+def RecursiveResult.ofField (recursion : Option Name) (shape : Option Shape) (l : Nat) :
+    RecursiveResult :=
+  match recursion, shape with
+  | some _, _ => .field l
+  | none, some σ => .nested l σ
+  | none, none => .erased
+
+-- ADE: none.
+/-- `w̄`: the recursive results of the fields of the constructor `con` at the instance `I`, in a
+block whose types are named `names`, for a recursor of the variables `v` whose results that are
+motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`, in
+the signature `sig`: one for each field whose nesting has a position, in order, what computes it,
+the shapes of the nested fields read in the mode `11ᵐ` on the axis of the uses at run time. -/
+def Constructor.recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
+    (v : Lifting.Variables) (names : List Name) (qs : List Quality) (ps : List Grade) (χ : Grade)
+    (con : Constructor j g k' Δ) (I : Instance j g) : List RecursiveResult :=
+  ((con.fields I).nest names).zipIdx.filterMap fun y =>
+    if y.1.isPlain then none
+    else some (RecursiveResult.ofField ((con.fields I).recursionAt names y.2)
+      (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[y.2]?.join y.2)
+
+-- ADE: none.
+/-- The recursive results of the fields of each constructor of the block, in the order of the
+cases, for a recursor of the variables `v` whose results that are motives have the ownership `χ`, at
+the instance `I` of the qualities `qs` and of the grades `ps`, in the signature `sig`. -/
+def TypeDeclaration.recursiveResults (decl : TypeDeclaration) (sig : Signature)
+    (v : Lifting.Variables) (χ : Grade) (qs : List Quality) (ps : List Grade)
+    (I : Instance decl.sorts decl.grades) : List (List RecursiveResult) :=
+  decl.cases.map fun x => x.2.2.recursiveResults sig v decl.names qs ps χ I
+
+-- ADE: none.
+/-- The recursive results of the fields of each constructor of the block of the data type `D`, for a
+recursor of the variables `v` whose results that are motives have the ownership `χ`, at the instance
+of the qualities `qs` and of the grades `ps`, in the signature `sig`, when the entry declares
+them. -/
+def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
+    (v : Lifting.Variables) (χ : Grade) : Entry → Option (List (List RecursiveResult))
+  | .typeDeclaration decl =>
+    if hq : qs.length = decl.sorts then
+      if hp : ps.length = decl.grades then
+        (decl.dataTypes.find? (·.name == D)).map fun _ =>
+          decl.recursiveResults sig v χ qs ps (.ofLists qs ps hq hp)
+      else none
+    else none
+  | _ => none
+
+-- ADE: none.
+/-- `results_Σ(T, r, ς, χ)`: the recursive results `w̄̄` of the fields of each constructor of the
+block of the data type `D`, in the order of the declaration, which is that of the branches of a
+recursor, for a recursor of the variables `v`, its grade `r` and the requirement `ς` of the lifted
+destructors, whose results that are motives have the ownership `χ`, at the instance of the qualities
+`qs` and of the grades `ps`, in the last entry of the signature that declares the block, which the
+erasure of a recursor reads to tell what computes each recursive result, and none when no entry
+declares it. -/
+def Signature.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
+    (v : Lifting.Variables) (χ : Grade) : List (List RecursiveResult) :=
+  (sig.findSome? (Entry.recursiveResults sig D qs ps v χ)).getD []
+
+/-! ## Properties -/
+
+-- ADE: none.
+/-- An entry that does not introduce the name `D` gives the recursive results of no data type named
+`D`. -/
+theorem Entry.recursiveResults_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
+    {ps : List Grade} {v : Lifting.Variables} {χ : Grade} :
+    {e : Entry} → D ∉ e.names → Entry.recursiveResults sig D qs ps v χ e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
+    simp only [Entry.recursiveResults]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.map_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+-- ADE: none.
+/-- In a signature whose names are distinct, the recursive results that the erasure reads are those
+of the block of the data type, along the whole signature. -/
+theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : Lifting.Variables}
+    {χ : Grade} : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    sig.findSome? (Entry.recursiveResults sig₀ D qs ps v χ) =
+      some (decl.recursiveResults sig₀ v χ qs ps (.ofLists qs ps hq hp))
+  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hs : Entry.recursiveResults sig₀ D qs ps v χ (.typeDeclaration decl) =
+          some (decl.recursiveResults sig₀ v χ qs ps (.ofLists qs ps hq hp)) := by
+        simp only [Entry.recursiveResults, hq, hp, ↓reduceDIte, ← hD,
+          List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
+      rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
+    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveResults_of_not_mem hDe]; rfl)]
+      exact hd.findSome?_recursiveResults ⟨he', hT, hD⟩ hq hp
+
+-- ADE: none.
+/-- In a signature whose names are distinct, the recursive results that the erasure of a recursor
+reads are those of the block of its data type, at the instance. -/
+theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct) {D : Name}
+    {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDataType D decl T) {qs : List Quality} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (v : Lifting.Variables)
+    (χ : Grade) :
+    sig.recursiveResults D qs ps v χ = decl.recursiveResults sig v χ qs ps (.ofLists qs ps hq hp) := by
+  rw [Signature.recursiveResults, hd.findSome?_recursiveResults h hq hp, Option.getD_some]
+
+/-- The recursive results of fields none of which is nested, whose nestings are `ns`, from the
+position `o`, are the recursors on their recursive fields, at their positions, when `f` gives a
+type of the block for each recursive field. -/
+theorem RecursiveResult.filterMap_ofField {f : Nat → Option Name} {s : Nat → Option Shape} :
+    (ns : List (Nest Name)) → (o : Nat) → (∀ ν ∈ ns, ∀ ms, ν ≠ .inst ms) →
+    (∀ i (D : Name), ns[i]? = some (.direct D) → (f (o + i)).isSome) →
+    (ns.zipIdx o).filterMap (fun y => if y.1.isPlain then none
+      else some (RecursiveResult.ofField (f y.2) (s y.2) y.2)) =
+      (((ns.map Nest.blockName).zipIdx o).filterMap fun y => y.1.map fun _ => y.2).map .field
+  | [], _, _, _ => rfl
+  | .inst ms :: _, _, hn, _ => absurd rfl (hn _ List.mem_cons_self ms)
+  | .plain :: ns, o, hn, hf => by
+    simp only [List.zipIdx_cons, List.filterMap_cons, Nest.isPlain, ↓reduceIte, List.map_cons,
+      Nest.blockName, Option.map_none]
+    exact RecursiveResult.filterMap_ofField ns (o + 1)
+      (fun ν hν => hn ν (List.mem_cons_of_mem _ hν))
+      (fun i D h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hf (i + 1) D h)
+  | .direct D :: ns, o, hn, hf => by
+    obtain ⟨D', hD'⟩ := Option.isSome_iff_exists.1 (hf 0 D rfl)
+    rw [Nat.add_zero] at hD'
+    rw [List.zipIdx_cons, List.filterMap_cons, List.map_cons, List.zipIdx_cons,
+      List.filterMap_cons, RecursiveResult.filterMap_ofField ns (o + 1)
+        (fun ν hν => hn ν (List.mem_cons_of_mem _ hν))
+        (fun i D h => by rw [show o + 1 + i = o + (i + 1) by omega]; exact hf (i + 1) D h)]
+    simp only [Nest.isPlain, Bool.false_eq_true, ↓reduceIte, Nest.blockName, Option.map_some,
+      RecursiveResult.ofField, hD', List.map_cons]
+
+-- ADE: none.
+/-- The recursive results of the fields of a constructor none of which is nested are the recursors
+on its recursive fields, at their positions: a block without nested field has no other results. -/
+theorem Constructor.recursiveResults_of_not_nested {j g k' : Nat} {Δ : Scope} {sig : Signature}
+    {v : Lifting.Variables} {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
+    {con : Constructor j g k' Δ} {I : Instance j g}
+    (hn : ∀ ν ∈ (con.fields I).nest names, ∀ ms, ν ≠ .inst ms) :
+    con.recursiveResults sig v names qs ps χ I =
+      (((con.fields I).recursion names).zipIdx.filterMap fun y => y.1.map fun _ => y.2).map
+        .field := by
+  rw [Constructor.recursiveResults, Telescope.recursion_eq_map_nest]
+  refine RecursiveResult.filterMap_ofField (f := (con.fields I).recursionAt names)
+    (s := fun l => (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[l]?.join) _ 0 hn
+    fun i D h => ?_
+  rw [Nat.zero_add, Telescope.recursionAt, Telescope.recursion_eq_map_nest, List.getElem?_map, h]
+  rfl
+
+-- ADE: none.
+/-- The recursive results of the fields of a block none of whose constructors has a nested field
+are the recursors on their recursive fields, at their positions. -/
+theorem TypeDeclaration.recursiveResults_of_not_nested {decl : TypeDeclaration} {sig : Signature}
+    {v : Lifting.Variables} {χ : Grade} {qs : List Quality} {ps : List Grade}
+    {I : Instance decl.sorts decl.grades}
+    (hn : ∀ (i : Nat) j T con, decl.cases[i]? = some (j, T, con) →
+      ∀ ν ∈ (con.fields I).nest decl.names, ∀ ms, ν ≠ .inst ms) :
+    decl.recursiveResults sig v χ qs ps I =
+      (decl.recursivePositions I).map (·.map .field) := by
+  rw [TypeDeclaration.recursiveResults, TypeDeclaration.recursivePositions, List.map_map]
+  refine List.map_congr_left fun x hx => ?_
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hx
+  exact Constructor.recursiveResults_of_not_nested (hn i x.1 x.2.1 x.2.2 hi)
+
+-- ADE: none.
+/-- Each type of the block that the lifting of the scope of a recursor gives a motive has a shape,
+the recursor itself, of the factor `11ᵖ` and of the ownership of the results of the recursor. -/
+theorem Signature.blockShapes_of_block {k : Nat} {sig : Signature} {Γ Δ : Scope}
+    {names : List Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {as : InstanceArgs k Γ Δ} {l : Level k} {χ : Grade} {Cs : Motives k Γ} :
+    ∀ D b, (Lifting.ofMotives names qs ls ps as l χ Cs).block D = some b →
+      ∃ Υ, sig.blockShapes names qs ps χ D = some ⟨Υ, .linearLinear, b.ownership⟩ := by
+  intro D b h
+  obtain ⟨hD, _, _, rfl⟩ := Lifting.ofMotives_block_inv h
+  exact ⟨.recursor (sig.skeleton D qs ps), ite_eq_left hD⟩
 
 end Sic.Core
