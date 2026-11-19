@@ -84,13 +84,13 @@ end
 
 /-- A recursor of the multiplicity `ρ` that runs no recursion through a meet of two factors runs
 none through either. -/
-theorem Multiplicity.mul_meet_eq_zero :
+theorem _root_.Sic.Grading.Multiplicity.mul_meet_eq_zero :
     ∀ ρ a b : Multiplicity, ρ * (a ⊓ b) = .zero → ρ * a = .zero ∧ ρ * b = .zero := by
   decide
 
 /-- A recursor of the multiplicity `ρ` that runs no recursion through a destructor observed at run
 time runs none through its result. -/
-theorem Multiplicity.mul_mul_eq_zero :
+theorem _root_.Sic.Grading.Multiplicity.mul_mul_eq_zero :
     ∀ ρ ρᵢ f : Multiplicity, ρᵢ ≠ .zero → ρ * (ρᵢ * f) = .zero → ρ * f = .zero := by
   decide
 
