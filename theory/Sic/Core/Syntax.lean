@@ -940,32 +940,6 @@ def Signature.destructorCase (sig : Signature) (D d : Name) : Option Nat :=
   sig.findSome? (Entry.destructorCase D d)
 
 -- ADE: none.
-/-- The positions of the recursive fields of each constructor of the block of the data type `D`, at
-the instance of the qualities `qs` and of the grades `ps`, in the order of the declaration, when the
-entry declares them. -/
-def Entry.recursiveFields (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (List Nat))
-  | .typeDeclaration decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.recursivePositions (.ofLists qs ps hq hp)
-      else none
-    else none
-  | _ => none
-
--- ADE: none.
-/-- The positions `ē` of the recursive fields of each constructor of the block of the data type `D`,
-the first field at `0`, at the instance of the qualities `qs` and of the grades `ps`, in the order of
-the declaration, which is that of the branches of a recursor, in the last entry of the signature
-that declares them, which the erasure of a recursor reads to tell the field of each recursive
-result.
-RFC: `\mathsf{recursive}_c` -/
-def Signature.recursiveFields (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade) :
-    Option (List (List Nat)) :=
-  sig.findSome? (Entry.recursiveFields D qs ps)
-
--- ADE: none.
 /-- The position in the block of the type of the result of each destructor of the block of the codata
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, `none` for a destructor that is not recursive, when the entry declares them. -/
