@@ -52,24 +52,11 @@ def RecursiveResult.ofPosition : Option Nat → RecursiveResult
   | some l => .field l
 
 -- ADE: none.
-/-- The position of the field of a result that the recursor computes, if any: a nested result, which
-the evaluation does not compute by the recursor, has none. -/
-def RecursiveResult.position : RecursiveResult → Option Nat
-  | .field l => some l
-  | .erased | .nested .. => none
-
--- ADE: none.
 /-- The position of the field on which a result recurses, by the recursor on the field itself or by
 the recursors on its observations, if any. -/
 def RecursiveResult.fieldPosition : RecursiveResult → Option Nat
   | .field l | .nested l _ => some l
   | .erased => none
-
--- ADE: none.
-/-- The result is the corecursor of a lifting, on a nested field. -/
-def RecursiveResult.IsNested : RecursiveResult → Prop
-  | .nested .. => True
-  | .erased | .field _ => False
 
 -- ADE: none.
 /-- The factor of a result, the multiplicity by which it multiplies the uses of the scope by the
@@ -80,30 +67,6 @@ def RecursiveResult.factor : RecursiveResult → Multiplicity
   | .erased => .zero
   | .field _ => .one
   | .nested _ σ => σ.factor
-
-/-- A result that is not nested multiplies the uses by its multiplicity when the recursor computes it,
-and by `0` when it does not. -/
-theorem RecursiveResult.mul_factor {r : RecursiveResult} (h : ¬ r.IsNested) (π : Multiplicity) :
-    π * r.factor = if r.position.isSome then π else .zero := by
-  cases r with
-  | erased => cases π <;> rfl
-  | field _ => cases π <;> rfl
-  | nested _ _ => exact absurd trivial h
-
-/-- The result of a position is not nested. -/
-theorem RecursiveResult.not_isNested_ofPosition (o : Option Nat) :
-    ¬ (RecursiveResult.ofPosition o).IsNested := by
-  cases o <;> exact id
-
-/-- An erased result has no position. -/
-@[simp]
-theorem RecursiveResult.position_erased : RecursiveResult.erased.position = none := rfl
-
-/-- A result of a position has this position. -/
-@[simp]
-theorem RecursiveResult.position_ofPosition (o : Option Nat) :
-    (RecursiveResult.ofPosition o).position = o := by
-  cases o <;> rfl
 
 /-! ## Recursive Results of a Block -/
 
