@@ -42,12 +42,26 @@ def Terms.RecAt (Qd : Name → Term 0 [] → Nat → Prop)
 
 -- ADE: none.
 /-- The types of the entries of a closed telescope are terms of universes, each at every term of the
-types of the entries before it. -/
+types of the entries before it. Each entry has its own universe, rather than one universe bounding
+them all, as in `ValidEqTelescope₀`, since the context of a branch, which gives these types, gives
+one universe to each of its entries. -/
 def Telescope.ValidSorts₀ (sig : Signature) (ι : Interpretation) :
     {ps : List Parameter} → Telescope 0 [] ps → Prop
   | [], .nil => True
   | _ :: _, .cons _ _ A Θ => (∃ κ, ValidTerm₀ sig ι A (.sort κ)) ∧
       ∀ v, ValidTerm₀ sig ι v A → Telescope.ValidSorts₀ sig ι (Θ.subst₀ (Subst₀.single v))
+
+/-- A closed telescope equal to itself in a sort `κ` has types that are terms of universes, each at
+every term of the types of the entries before it: `Telescope.ValidSorts₀` only drops the bound `κ`
+of the universes of the entries. -/
+theorem ValidEqTelescope₀.validSorts {κ : Universe 0} :
+    {ps : List Parameter} → {Θ : Telescope 0 [] ps} → ValidEqTelescope₀ sig ι κ Θ Θ →
+      Telescope.ValidSorts₀ sig ι Θ
+  | [], .nil, _ => trivial
+  | _ :: _, .cons _ _ _ _, h => by
+    rw [ValidEqTelescope₀] at h
+    obtain ⟨⟨κ₁, -, hA⟩, hΘ⟩ := h
+    exact ⟨⟨κ₁, hA⟩, fun v hv => ValidEqTelescope₀.validSorts (hΘ v v hv)⟩
 
 /-- Each type of a closed telescope whose types are terms of universes, at arguments that the
 meaning relates to themselves, has a relation of run time: the way the walk of the recursive
