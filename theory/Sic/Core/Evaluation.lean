@@ -473,20 +473,6 @@ nested result builds, which evaluate in an environment that binds each variable 
 branches as the environment of the recursor binds the variable that it renames. -/
 
 -- ADE: none.
-/-- An environment `E'` that binds each variable `α x` as `E` binds `x`, extended by the same cells
-`L` for `k` new variables, binds each variable `α.lift k x` as `L ++ E` binds `x`. -/
-theorem TargetRen.getElem?_lift {n m : Nat} {α : TargetRen n m} {E E' : List Nat}
-    (hα : ∀ x : Fin m, E'[(α x : Nat)]? = E[(x : Nat)]?) (L : List Nat) {k : Nat}
-    (hL : L.length = k) (x : Fin (m + k)) :
-    (L ++ E')[(α.lift k x : Nat)]? = (L ++ E)[(x : Nat)]? := by
-  rw [TargetRen.lift_val]
-  split
-  · rw [List.getElem?_append_left (by omega), List.getElem?_append_left (by omega)]
-  · rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega), hL,
-      Nat.add_sub_cancel]
-    exact hα _
-
--- ADE: none.
 /-- The branch at a position of the branches of a recursor renamed is the branch renamed under its
 new variables. -/
 theorem TargetBranches.get_rename {n m : Nat} (α : TargetRen n m) :

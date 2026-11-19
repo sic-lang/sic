@@ -46,6 +46,20 @@ theorem TargetRen.lift_val {n m : Nat} (α : TargetRen n m) (k : Nat) (i : Fin (
   simp only [TargetRen.lift]
   split <;> rfl
 
+-- ADE: none.
+/-- An environment `E'` that binds each variable `α x` as `E` binds `x`, extended by the same cells
+`L` for `k` new variables, binds each variable `α.lift k x` as `L ++ E` binds `x`. -/
+theorem TargetRen.getElem?_lift {n m : Nat} {α : TargetRen n m} {E E' : List Nat}
+    (hα : ∀ x : Fin m, E'[(α x : Nat)]? = E[(x : Nat)]?) (L : List Nat) {k : Nat}
+    (hL : L.length = k) (x : Fin (m + k)) :
+    (L ++ E')[(α.lift k x : Nat)]? = (L ++ E)[(x : Nat)]? := by
+  rw [TargetRen.lift_val]
+  split
+  · rw [List.getElem?_append_left (by omega), List.getElem?_append_left (by omega)]
+  · rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega), hL,
+      Nat.add_sub_cancel]
+    exact hα _
+
 -- ADE: `step id`, a weakening of `Wk`, in `Definition/Untyped/NotParametrised.agda`, by one variable.
 /-- The renaming of the `n` variables of a term placed under `k` new variables, which shifts their
 indices above them. -/
