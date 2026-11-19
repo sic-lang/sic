@@ -51,10 +51,10 @@ inductive Shape : Type where
 
 -- ADE: none.
 /-- `Υ`: the shape of the result of a lifted destructor, `⋆_Z`, the recursor itself, when its type
-lifted is a motive, with the skeleton `Z` of this motive, which the recursor of the multiplicity `0`
-runs on instead of the observation, or the shape of the next lifting, when it is an instance of a
-lifting; a shape is a shape of a result in the RFC, and a case of its own here, since Lean has no
-subtypes of inductive types.
+lifted is a motive, with the skeleton `Z` of this motive, on whose term the recursor of the
+multiplicity `0` runs instead of the observation, or the shape of the next lifting, when it is an
+instance of a lifting; a shape is a shape of a result in the RFC, and a case of its own here, since
+Lean has no subtypes of inductive types.
 RFC: `\mathsf{syntax}_\Upsilon` -/
 inductive Shape.Next : Type where
   /-- `⋆_Z`. -/

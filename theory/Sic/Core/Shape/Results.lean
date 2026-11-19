@@ -42,8 +42,8 @@ instance of a lifting that the signature declares only: an instance of a lifting
 does not declare has none.
 
 The shapes of the nested fields of a constructor are those of their types, in the block of the
-recursor, whose types have the shape of the recursor itself on their skeletons, and the ownership of
-the source and the erasure read them alike.
+recursor, whose types have the shape of the recursor itself on the terms of their skeletons, and the
+ownership of the source and the erasure read them alike.
 
 The RFC names the variables, so that the shape of a variable lifted is found by its name; with de
 Bruijn indices, the shapes of the variables of a scope are a nesting of its variables, whose
@@ -207,8 +207,9 @@ termination_by structural sig => sig
 -- ADE: none.
 /-- The shapes of the types of the block whose names are `names`, for a recursor whose results that
 are motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`: the
-recursor itself, on the skeleton of the type when its multiplicity is `0`, of the factor `11ᵖ` and
-of the ownership `χ`, as the lifting of the block gives them, and none for the other names.
+recursor itself, on the term of the skeleton of the type when its multiplicity is `0`, of the factor
+`11ᵖ` and of the ownership `χ`, as the lifting of the block gives them, and none for the other
+names.
 RFC: `\mathsf{shape}_{\mathcal{D}}` -/
 def Signature.blockShapes (sig : Signature) (names : List Name) (qs : List Quality)
     (ps : List Grade) (χ : Grade) : Name → Option Shape.Motive :=

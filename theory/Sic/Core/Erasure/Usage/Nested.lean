@@ -149,10 +149,10 @@ mutual
 /-- The branches built from a shape that fits the recursor of the multiplicity `ρ` read the variables
 of the path `M` as `ρ` times its reads, and those of the scope of the branches of the recursor as
 `χ`, at most as many times as the factor of the shape: the branch of each destructor observed at run
-time runs the recursor once on the observation of the path, or on the skeleton of the motive when
-`ρ` is `0`, or captures it in the corecursor of the next lifting, whose factor bounds its reads in
-turn, and the factor of the shape is the meet of these factors, each times the multiplicity of its
-destructor. -/
+time runs the recursor once on the observation of the path, or on the term of the skeleton of the
+motive when `ρ` is `0`, or captures it in the corecursor of the next lifting, whose factor bounds
+its reads in turn, and the factor of the shape is the meet of these factors, each times the
+multiplicity of its destructor. -/
 theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
     {m : Nat} → {ν χ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
       (σ : Shape) → {π : Multiplicity} → Target.Usage ν M → TargetBranches.Usage ρ χ Ns →

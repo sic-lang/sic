@@ -6,10 +6,11 @@ import Sic.Core.Syntax.Signature
 /-!
 # Skeletons
 
-The skeleton of a data type of annex 14 of RFC 36, which the erasure of a recursor runs on when its
-term is erased, without the scope of the term of the target language that it stands for: a skeleton
-mentions no variable, so that the shape of a nested result holds the skeleton of a motive, which
-the recursor of the multiplicity `0` runs on, whatever the scope of the branch that builds it.
+The skeleton of a data type of annex 14 of RFC 36, on whose term the erasure of a recursor runs
+when its term is erased, without the scope of the term of the target language that it stands for: a
+skeleton mentions no variable, so that the shape of a nested result holds the skeleton of a motive,
+on whose term the recursor of the multiplicity `0` runs, whatever the scope of the branch that
+builds it.
 The skeleton of a data type is read from the signature alone; the term of the target language that
 a skeleton stands for is in `Sic/Core/Erasure.lean`.
 
@@ -72,7 +73,7 @@ def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
 in the last entry of the signature that declares it, and `□` when the signature has no such entry,
 which the erasure of a recursor on an erased term reads: in a block whose types have one
 constructor at most, the type of a term gives its form, which the skeleton rebuilds, so that the
-recursor runs its branches on it.
+recursor runs its branches on the term of the skeleton.
 The depth of the number of the types of the block is reached only on a type without closed term:
 along a path of a closed term of a type, no type of the block comes twice, since each type has one
 constructor, so that the term would hold a term of the same form, without end.
