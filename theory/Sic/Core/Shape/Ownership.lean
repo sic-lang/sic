@@ -108,8 +108,7 @@ for each destructor observed on the axis of the shape, for all the ownerships of
 its branch that meet their requirements, the value of the ownership `ψ₀` of its result at them, when
 it is defined, keeps `o`, and the observations from the shape of its result keep it in turn, which
 the requirement `r̂` of the recursion gives along the prefixes of the paths of the destructors
-observed.
-RFC: `\mathsf{keeps}_\Xi` -/
+observed. -/
 def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
   | .nil => True
   | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest =>
@@ -121,8 +120,7 @@ def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
 
 -- ADE: none.
 /-- `Υ keeps o; ς`: the observations from the shape of a result keep the ownership `o`: the recursor
-itself does, and the next lifting when its shape does.
-RFC: `\mathsf{keeps}_\Upsilon` -/
+itself does, and the next lifting when its shape does. -/
 def Shape.Next.Keeps (o ς : Multiplicity) : Shape.Next → Prop
   | .recursor _ => True
   | .lifting σ => σ.Keeps o ς
@@ -140,15 +138,13 @@ its result at them is defined and keeps `o`, so that the observation has an owne
 as each level of the recursion, and the shape of its result meets the requirements in turn; a
 destructor never observed, whose branch is `↯`, asks nothing; the RFC writes the ownerships of the
 arguments of the observation `ō'`, which `Shape.argOwnerships` gives. The source checks the first
-part, `Shape.Meets`, and its requirement of the recursion gives the second, `Shape.Keeps`.
-RFC: `\mathsf{requires}_\Xi` -/
+part, `Shape.Meets`, and its requirement of the recursion gives the second, `Shape.Keeps`. -/
 def Shape.Requires (o ς : Multiplicity) (σ : Shape) : Prop :=
   σ.Meets o ς ∧ σ.Keeps o ς
 
 -- ADE: none.
 /-- `Υ requires o; ς`: the shape of a result meets the requirements of the recursions: the recursor
-itself does, and the next lifting when its shape does, which the RFC does not need to state.
-RFC: `\mathsf{requires}_\Upsilon` -/
+itself does, and the next lifting when its shape does, which the RFC does not need to state. -/
 def Shape.Next.Requires (o ς : Multiplicity) (next : Shape.Next) : Prop :=
   next.Meets o ς ∧ next.Keeps o ς
 
