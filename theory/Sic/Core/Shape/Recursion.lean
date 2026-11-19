@@ -197,4 +197,24 @@ theorem TypeDeclaration.NestedHaveShapes.append {sig pre : Signature}
     decl.NestedHaveShapes (pre ++ sig) v m χ qs ps I :=
   fun i j T con hi ax hxs => (h i j T con hi ax hxs).append hd hdecl
 
+/-- Each product along a prefix of a path of the shape of a nested field gives the requirement of
+the recursion a pair, of the requirement of the field times the product and of the grade with which
+the recursor uses the field. -/
+theorem TypeDeclaration.mem_nestedPairs {decl : TypeDeclaration} {sig : Signature}
+    {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality} {ps : List Grade}
+    {I : Instance decl.sorts decl.grades} {ax : Grade → Multiplicity} {i j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hi : decl.cases[i]? = some (j, T, con)) {l : Nat} {σ : Shape} {p : Parameter}
+    (hσ : (con.nestedShapes sig v m ax decl.names qs ps χ I)[l]? = some (some σ))
+    (hp : (con.params I)[l]? = some p) {y : Multiplicity} (hy : y ∈ σ.recursion (ax v.requirement)) :
+    (ax p.requirement * y, ax ((m.grade * v.recursion) * p.usage)) ∈
+      decl.nestedPairs sig v m χ qs ps I ax := by
+  unfold TypeDeclaration.nestedPairs
+  refine List.mem_flatten.2 ⟨_, List.mem_map.2 ⟨(j, T, con), List.mem_of_getElem? hi, rfl⟩, ?_⟩
+  refine List.mem_flatMap.2 ⟨(some σ, p), List.mem_of_getElem? (i := l) ?_, ?_⟩
+  · rw [List.getElem?_zip_eq_some]
+    exact ⟨hσ, hp⟩
+  · exact List.mem_map.2 ⟨y, hy, rfl⟩
+
 end Sic.Core
