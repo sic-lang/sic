@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Erasure.Shape
+public import Sic.Core.Shape
 public import Sic.Core.Skeleton
 public import Sic.Core.Syntax.Terms
 public import Sic.Math.Set

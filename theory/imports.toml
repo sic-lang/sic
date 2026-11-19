@@ -38,6 +38,10 @@ name = "Skeleton"
 modules = ["Sic.Core.Skeleton"]
 
 [[group]]
+name = "Shape"
+modules = ["Sic.Core.Shape"]
+
+[[group]]
 name = "Typing"
 modules = ["Sic.Core.Typing"]
 
