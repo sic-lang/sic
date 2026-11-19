@@ -54,6 +54,32 @@ theorem _root_.Sic.Grading.GradeVector.run_smul_of_erased {n : Nat} {p : Grade}
     (hp : p ∈ Mode.oneOne.erased) (γ : GradeVector n) : GradeVector.run (p ·ᶜ γ) = 𝟘ᵛ :=
   funext fun x => Grade.run_mul_of_erased p (γ x) hp
 
+/-! ## Uses of the Nested Fields -/
+
+/-- A use at run time of a recursion that a branch runs on a field, at a grade `e` and a factor `π`,
+is a use at run time of the field: the uses at run time of the field cover those of the recursion,
+none of which is `0`. -/
+theorem _root_.Sic.Grading.Multiplicity.used_of_recursion_used :
+    ∀ a r q g e π : Multiplicity, a * r * q ≤ g + (e * π) * r → (a * r * e) * π ≠ .zero →
+      a * r * q ≠ .zero := by
+  decide
+
+-- ADE: none.
+/-- The usage of a recursor gives the premise `hused` of the rule of the recursor of the ownership,
+in every mode: when the uses `⌜m⌝ · r · q` of a field of the grade `q` that the recursor of the
+grade `r` gives are covered by the uses `g` of its variable plus those of the recursion through its
+recursive result, of the grade `e` and the factor `π`, `(e · π) · r`, the premise `hg` of the rule
+of the recursor of the usage, a use at run time of the recursion, `run(⌜m⌝ · r · e) · run(π)`, is a
+use at run time of the field. The factor of the shape of a nested field is `run(π)`
+(`Shape.factor_eq_run`, `Term.Lifts.shape_eq`), so that the premise of the ownership refuses no
+recursor that the usage accepts. -/
+theorem _root_.Sic.Grading.Grade.used_of_usage (m : Mode) (r q g e π : Grade)
+    (hg : m.grade * r * q ≤ g + (e * π) * r) :
+    (m.grade * r * e).run * π.run ≠ .zero → (m.grade * r * q).run ≠ .zero := by
+  have h := Grade.run_le hg
+  simp only [(Grade.run_op _ _).1, (Grade.run_op _ _).2.1] at h ⊢
+  exact Multiplicity.used_of_recursion_used _ _ _ _ _ _ h
+
 /-! ## Transports -/
 
 /-- A term of the target language and a vector transported along the same equality of sizes keep
