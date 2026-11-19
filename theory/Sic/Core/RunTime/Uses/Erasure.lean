@@ -6,6 +6,7 @@ public import Sic.Core.Usage
 public import Sic.Grading.GradeSet
 import Sic.Core.Erasure.Fields
 import Sic.Core.RunTime.Relation.Corecursors
+import Sic.Core.RunTime.Relation.Corecursors.Erasure
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Syntax.Signature
 import Sic.Core.Usage.Absence
