@@ -102,4 +102,65 @@ def RunValidArgs (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Sco
       EvalAll P ϖ H E (ts.terms.erase sig Mode.oneOne.erased hΓ ps) bs H' R ∧
       H.Extends H' ∧ RunsAsArgs sig ι P H' (Parameter.grades ps) (ts.subst σ) bs (Θ.subst σ)
 
+/-! ## Renamings of the Environment
+
+The erasure of a nested result copies the branches of its recursor, renamed, under the arguments of
+the branches that it builds, which evaluate them in an environment that extends that of the
+recursor: the validity at run time of a branch is then needed of its erasure renamed, in such an
+environment.
+A closure stores the scope, the environment and the code of its branches, so that a renamed term
+does not evaluate into the same heap as the term, and no lemma of the evaluation gives the renamed
+run from the run of the term: the validity at run time is proved, by the fundamental lemma, in
+every environment that binds the variables of the renamed erasure as the environment binds those of
+the erasure, and gives back `RunValid` and `RunValidArgs` at the identity. -/
+
+-- ADE: none.
+/-- `Σ; γ; Γ ⊨® t : A` in every environment that binds the scope through a renaming: `RunValid`,
+where the erasure of `t`, renamed by any `g`, evaluates in any environment `E'` that binds each
+variable `g x` to the cell to which `E` binds `x`, so that the branches of a recursor, which the
+erasure of a nested result copies renamed under new binders, are valid at run time there too. -/
+def RunValidRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
+    (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) (t A : Term 0 Γ) : Prop :=
+  ∀ ϖ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
+    ∀ {m : Nat} (g : TargetRen m Γ.length) (E' : List Nat),
+      (∀ x : Fin Γ.length, E'[(g x : Nat)]? = E[(x : Nat)]?) →
+      ∃ a H' R, Eval P ϖ H E' ((t.erase sig Mode.oneOne.erased hΓ).rename g) a H' R ∧
+        H.Extends H' ∧ RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
+
+-- ADE: none.
+/-- `Σ; γ; Γ ⊨® t̄ : Θ` in every environment that binds the scope through a renaming:
+`RunValidArgs`, where the erasure of the arguments `t̄`, renamed by any `g`, evaluates in any
+environment `E'` that binds each variable `g x` to the cell to which `E` binds `x`, as `RunValidRen`
+does for a term. -/
+def RunValidArgsRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
+    (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (γ : GradeVector Γ.length) {ps : List Parameter}
+    (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
+  ∀ ϖ σ H E V, EqSubst sig ι ctx σ σ → H.Binds E V → RunsAsSubst sig ι P H ctx γ σ V →
+    ∀ {m : Nat} (g : TargetRen m Γ.length) (E' : List Nat),
+      (∀ x : Fin Γ.length, E'[(g x : Nat)]? = E[(x : Nat)]?) →
+      ∃ bs H' R,
+        EvalAll P ϖ H E' ((ts.terms.erase sig Mode.oneOne.erased hΓ ps).rename g) bs H' R ∧
+        H.Extends H' ∧ RunsAsArgs sig ι P H' (Parameter.grades ps) (ts.subst σ) bs (Θ.subst σ)
+
+-- ADE: none.
+/-- The renaming by the identity, in the same environment, gives back `RunValid`. -/
+theorem RunValidRen.runValid {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+    {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A : Term 0 Γ}
+    (h : RunValidRen sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx γ t A := by
+  intro ϖ σ H E V hσ hEV hE
+  obtain ⟨a, H', R, hev, hH, hrun⟩ := h ϖ σ H E V hσ hEV hE id E fun _ => rfl
+  rw [Target.rename_id] at hev
+  exact ⟨a, H', R, hev, hH, hrun⟩
+
+-- ADE: none.
+/-- The renaming by the identity, in the same environment, gives back `RunValidArgs`. -/
+theorem RunValidArgsRen.runValidArgs {sig : Signature} {ι : Interpretation} {P : Program}
+    {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length}
+    {ps : List Parameter} {ts : Args 0 Γ ps} {Θ : Telescope 0 Γ ps}
+    (h : RunValidArgsRen sig ι P hΓ ctx γ ts Θ) : RunValidArgs sig ι P hΓ ctx γ ts Θ := by
+  intro ϖ σ H E V hσ hEV hE
+  obtain ⟨bs, H', R, hev, hH, hrun⟩ := h ϖ σ H E V hσ hEV hE id E fun _ => rfl
+  rw [Targets.rename_id] at hev
+  exact ⟨bs, H', R, hev, hH, hrun⟩
+
 end Sic.Core
