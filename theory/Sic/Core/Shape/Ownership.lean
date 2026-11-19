@@ -220,4 +220,57 @@ theorem ResultOwnership.value_mono :
         exact .some ((by decide : ∀ a b c d : Multiplicity, a ≤ b → c ≤ d → a ⊓ c ≤ b ⊓ d) _ _ _ _
           (hm _ _ c (h 0)) h')
 
+mutual
+
+-- ADE: none.
+/-- The observations of a field keep the ownership `o · R` of the term, when the shape meets the
+requirements of the observations at it and `R`, not `0`, is below `ϱ · y · π` for the product `y`
+along each prefix of the paths after a prefix of the product `a`: the product along the prefix that
+a destructor observed ends is `a` times the value `w` of the ownership of its result at the least
+ownerships of its arguments, so that `R ≤ R · w`, and the value at any ownerships that meet these
+is above `w`. -/
+theorem Shape.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero) :
+    (σ : Shape) → (a : Multiplicity) → σ.Meets (o * R) ς →
+      (∀ y ∈ σ.prefixes ς a, R ≤ ϱ * y * π) → σ.Keeps (o * R) ς
+  | .nil, _, _, _ => trivial
+  | .cons _ c ρᵢ πs ϱs πs' ϱs' _ _ ψ₀ _ next rest, a, ⟨hm, hmr⟩, hy => by
+    have hyr : ∀ y ∈ rest.prefixes ς a, R ≤ ϱ * y * π := fun y h => hy y (by
+      simp only [Shape.prefixes]
+      exact List.mem_append_right _ h)
+    refine ⟨fun hρ => ?_, Shape.keeps_of_prefixes hR rest a hmr hyr⟩
+    obtain ⟨_, hargs, hmn⟩ := hm hρ
+    obtain ⟨-, w, hw⟩ := hargs ϱs' fun k => (by decide : ∀ x : Multiplicity, x ≤ x) _
+    have hy' : ∀ y ∈ (a * w) :: next.prefixes ς (a * w), R ≤ ϱ * y * π := fun y h => hy y (by
+      simp only [Shape.prefixes, hρ, ↓reduceIte, hw, Option.getD_some]
+      exact List.mem_append_left _ h)
+    have hRw : R ≤ R * w :=
+      (by decide : ∀ r ϱ a w π : Multiplicity, r ≠ .zero → r ≤ ϱ * (a * w) * π → r ≤ r * w)
+        _ _ _ _ _ hR (hy' _ List.mem_cons_self)
+    refine ⟨fun os hos v hv => ?_, Shape.Next.keeps_of_prefixes hR next (a * w) hmn
+      fun y h => hy' y (List.mem_cons_of_mem _ h)⟩
+    have hmono := ResultOwnership.value_mono ψ₀
+      (Shape.argOwnerships (next.scale ς) ϱs' πs ϱs πs')
+      (Shape.argOwnerships (next.scale ς) os πs ϱs πs') fun k => by
+        unfold Shape.argOwnerships
+        split
+        · exact (by decide : ∀ x : Multiplicity, x ≤ x) _
+        · exact (by decide : ∀ s x y q : Multiplicity, x ≤ y → s * (x * q) ≤ s * (y * q))
+            _ _ _ _ (hos k)
+    rw [hw, hv] at hmono
+    cases hmono with
+    | some hwv =>
+      exact (by decide : ∀ o R w v : Multiplicity, R ≤ R * w → w ≤ v → o * R ≤ o * R * v)
+        _ _ _ _ hRw hwv
+
+-- ADE: none.
+/-- The observations from the shape of a result keep the ownership `o · R` of the term in the same
+conditions: the recursor itself asks nothing, and the next lifting as a shape does. -/
+theorem Shape.Next.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero) :
+    (next : Shape.Next) → (a : Multiplicity) → next.Meets (o * R) ς →
+      (∀ y ∈ next.prefixes ς a, R ≤ ϱ * y * π) → next.Keeps (o * R) ς
+  | .recursor _, _, _, _ => trivial
+  | .lifting σ, a, hm, hy => Shape.keeps_of_prefixes hR σ a hm hy
+
+end
+
 end Sic.Core
