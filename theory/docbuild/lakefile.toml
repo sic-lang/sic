@@ -9,7 +9,7 @@ packagesDir = "../.lake/packages"
 scope = "leanprover"
 name = "doc-gen4"
 # The release of doc-gen4 for the version of Lean of flake.lock.
-rev = "v4.34.1"
+rev = "v4.35.0"
 
 [[require]]
 name = "sic"

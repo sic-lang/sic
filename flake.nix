@@ -405,10 +405,6 @@
                 echo
                 echo "/-! The modules of the metatheory, imported so that doc-gen4 documents them all. -/"
               } >docbuild/SicDocs.lean
-              # doc-gen4 v4.34.1 does not write the pages again when the modules change, since its empty
-              # markers hide the changes upstream of them (leanprover/doc-gen4#389, fixed in v4.35.0):
-              # without the marker, it writes them again at each run, until Lean 4.35 (#41).
-              rm -f docbuild/.lake/build/doc-data/SicDocs--library.docs_built*
               lake --dir docbuild build SicDocs:docs
               echo "The documentation is in $PWD/docbuild/.lake/build/doc."
             '';
