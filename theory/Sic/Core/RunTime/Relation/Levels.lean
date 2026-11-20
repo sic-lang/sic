@@ -189,7 +189,7 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       have hFF := FieldRel.unique hd ihm hF _ _ hF'
       have hRR := RunFieldRel.congr hd ihm (fun m _ => levelRel_run_unique hd m) hR _ hR'
       have hFt := fun t t' htt (ht : Term.LevelEquiv t t') =>
-        (hFF t' t').1 (FieldRel.rel_levelEquiv hd (fun m _ => levelRel_relInvariant hd m) hF htt ht ht)
+        (hFF t' t').1 (FieldRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF htt ht ht)
       exact fun H => RunFieldsRel.cons_levelEquiv
         (fun t t' a ⟨htt, hr⟩ ht => ⟨hFt t t' htt ht,
           fun hp => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR (hr hp) ht)⟩)
@@ -307,7 +307,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
-          NestRel.rel_levelEquiv hd (fun m _ => levelRel_relInvariant hd m) (hF ts hts') _ _ _
+          NestRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hF ts hts') _ _ _
             (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
             (ef.subst (Subst.LevelEquiv.refl _))
       have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
@@ -395,7 +395,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
           have ⟨_, hv⟩ := hB ts hts'
-          FieldRel.rel_levelEquiv hd (fun m _ => levelRel_relInvariant hd m) (hF ts hts' _ hv)
+          FieldRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hF ts hts' _ hv)
             (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _)) (ef.subst (Subst.LevelEquiv.refl _))
       have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
