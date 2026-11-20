@@ -77,9 +77,9 @@ theorem RunsAs.sort {sig : Signature} {ι : Interpretation} {P : Program} {H : H
   ⟨_, Computes.sort _ κ, .inr ⟨_, HasRun.sort κ, v, ht, trivial⟩⟩
 
 -- ADE: `Uʳ`, in `Graded/Erasure/LogicalRelation/Fundamental/Universe.agda`, for the universes.
-/-- A term of a sort that its erasure replaces by `↯` is valid at run time, at every grades: `↯` is
-allocated, and the term, which computes as the meaning of its type says, is related to its address,
-as every term of a sort. -/
+/-- A term of a sort that its erasure replaces by `↯` is valid at run time, at every vector of
+grades: `↯` is allocated, and the term, which computes as the meaning of its type says, is related
+to its address, as every term of a sort. -/
 theorem RunValidRen.erased {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t : Term 0 Γ}
     {κ : Universe 0} (ht : ValidTermΓ sig ι ctx t (.sort κ))
@@ -90,10 +90,10 @@ theorem RunValidRen.erased {sig : Signature} {ι : Interpretation} {P : Program}
   obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
   refine ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
 
--- ADE: none.
-/-- A proof of a proposition that its erasure replaces by `↯` is valid at run time, at every grades:
-`↯` is allocated, and the proof is related to its address, as every closed term is to every address
-at a type that computes to a proposition. -/
+-- ADE: `rflʳ`, in `Graded/Erasure/LogicalRelation/Fundamental/Identity.agda`, for the reflexivity.
+/-- A proof of a proposition that its erasure replaces by `↯` is valid at run time, at every vector of
+grades: `↯` is allocated, and the proof is related to its address, as every closed term is to every
+address at a type that computes to a proposition. -/
 theorem RunValidRen.proof {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A : Term 0 Γ}
     {l : Level 0} (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩))

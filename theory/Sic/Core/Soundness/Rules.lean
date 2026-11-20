@@ -1352,9 +1352,9 @@ theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {
 
 -- ADE: `rflᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
 /-- `(refl_∼)` keeps the meaning: at two equal substitutions, the equality of the term with itself
-is a proposition, by `(∼)` at the first twice, whose truth, which `(ty_∼)` gives, is the equality of
-the term with itself, so that any two closed terms, the two proofs among them, are equal proofs of
-it. -/
+is a proposition, by `(∼)` at the first substitution, with the term on both sides, whose truth,
+which `(ty_∼)` gives, is the equality of the term with itself, so that any two closed terms, the two
+proofs among them, are equal proofs of it. -/
 theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
     {A t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
     (ht : ValidTermΓ sig ι ctx t A) :
