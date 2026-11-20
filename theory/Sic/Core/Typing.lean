@@ -211,7 +211,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (ht : HasType sig ctx t A) (hu : HasType sig ctx u A) :
       HasType sig ctx (.equality s l A t u) (.sort ⟨.prop, l⟩)
   -- ADE: `rflⱼ`, in `Definition/Typed.agda`.
-  /-- The proof by reflexivity of the equality of a term of a type with itself. -/
+  /-- The proof by reflexivity of the equality of a term of a type with itself.
+  RFC: `\mathsf{refl}_\sim` -/
   | reflProof {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {A t : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) : HasType sig ctx (.refl s l A t) (.equality s l A t t)
