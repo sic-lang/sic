@@ -17,7 +17,7 @@ import Sic.Core.Syntax.Signature
 Each rule of annex 15 of RFC 36 keeps the meaning of annex 21: when its premises are meaningful, in
 the context of the rule at levels without variables, so is its conclusion; `Recursors` and
 `Corecursors` prove it of the rules of the recursors and of those of the observations and the
-corecursors, in the same way.
+corecursors, and `Transport` of those of the transport, in the same way.
 The proofs take the premises at two equal closed substitutions `σ₁` and `σ₂` of the context, and
 draw the conclusion from the closed judgments, whose properties `Closed` gives; the symmetry and the
 transitivity of `eq(Γ)` move a premise from one substitution to the other.

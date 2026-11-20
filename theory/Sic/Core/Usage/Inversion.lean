@@ -14,6 +14,7 @@ Each lemma takes the entries of the signature that the term names, in a signatur
 distinct, so that the rule of the derivation reads the same entries.
 The proofs are by structural recursion on the derivation, whose term is given by an equation, so
 that the subsumption keeps it.
+A transport, which no rule of usage concludes yet, has no usage.
 
 ADE invert their usage in `Graded/Usage/Inversion.agda`, one lemma `inv-usage-…` for each form of
 term, which gives the grades of the rule above those of the judgment.
