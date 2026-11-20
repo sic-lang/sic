@@ -216,35 +216,31 @@ theorem levelRel_prop_equality {sig : Signature} {ι : Interpretation} {n : Nat}
   -- The type `A` computes to `w`, a type of a universe, whose terms are equal when they compute to
   -- canonical terms that its equality relates, or a proposition, whose proofs are equal when it is
   -- true: the two cases of the clause, which the uniqueness of `eq(w)` makes agree with the truth.
-  have htype : ∀ {w : Term 0 []} {R : TermRel} (m : Nat), Computesι sig ι A w →
-      (levelRel sig ι m).univ w R → (R.computed sig ι t u ↔ EqTermClause sig ι t u A) :=
-    fun {w R} m hA hR =>
+  have htype : ∀ {w : Term 0 []} {R : TermRel}, Computesι sig ι A w →
+      (levelRel sig ι n).univ w R → (R.computed sig ι t u ↔ EqTermClause sig ι t u A) :=
+    fun {w R} hA hR =>
       have hnp : ¬ ComputesToProp sig ι A := fun ⟨_, hA', _, _, hp⟩ =>
         HasEq.univ_not_prop hd hR (Computesι.det hd hA hA' ▸ hp)
-      ⟨fun ⟨w₁, w₂, ht, hu, htu⟩ => ⟨fun _ => ⟨w, w₁, w₂, R, hA, ht, hu, .univ m hR, htu⟩,
+      ⟨fun ⟨w₁, w₂, ht, hu, htu⟩ => ⟨fun _ => ⟨w, w₁, w₂, R, hA, ht, hu, .univ n hR, htu⟩,
           fun hp => (hnp hp).elim⟩,
         fun ⟨hc, _⟩ =>
           have ⟨_, w₁, w₂, R', hA', ht, hu, hE, htu⟩ := hc hnp
           ⟨w₁, w₂, ht, hu, (HasEq.unique hd hE
-            (.univ m (Computesι.det hd hA hA' ▸ hR)) w₁ w₂).1 htu⟩⟩
-  have hprop : ∀ {w : Term 0 []} {b' : Prop} (m : Nat), Computesι sig ι A w →
-      (levelRel sig ι m).prop w b' → (b' ↔ EqTermClause sig ι t u A) :=
-    fun {w b'} m hA hp =>
-      have hcp : ComputesToProp sig ι A := ⟨w, hA, m, b', hp⟩
+            (.univ n (Computesι.det hd hA hA' ▸ hR)) w₁ w₂).1 htu⟩⟩
+  have hprop : ∀ {w : Term 0 []} {b' : Prop}, Computesι sig ι A w →
+      (levelRel sig ι n).prop w b' → (b' ↔ EqTermClause sig ι t u A) :=
+    fun {w b'} hA hp =>
+      have hcp : ComputesToProp sig ι A := ⟨w, hA, n, b', hp⟩
       ⟨fun hb => ⟨fun hnp => (hnp hcp).elim,
-          fun _ => ⟨w, fun _ _ => b', hA, .prop m b' hp fun _ _ => .rfl, hb⟩⟩,
+          fun _ => ⟨w, fun _ _ => b', hA, .prop n b' hp fun _ _ => .rfl, hb⟩⟩,
         fun ⟨_, hc⟩ =>
           have ⟨_, R, hA', hE, htu⟩ := hc hcp
-          (HasEq.unique hd hE (.prop m b' (Computesι.det hd hA hA' ▸ hp) fun _ _ => .rfl) t u).1
+          (HasEq.unique hd hE (.prop n b' (Computesι.det hd hA hA' ▸ hp) fun _ _ => .rfl) t u).1
             htu⟩
   cases levelRel_prop_iff.1 h with
   | data _ _ _ _ hv => cases hv
   | codata _ _ _ _ hv => cases hv
-  | equality _ hA hF =>
-    cases hF with
-    | univ _ hR => exact htype n hA (levelRel_univ_iff.2 hR)
-    | univBelow _ m _ hR => exact htype m hA hR
-    | prop hp => exact hprop n hA (levelRel_prop_iff.2 hp)
-    | propBelow m _ hp => exact hprop m hA hp
+  | equalityUniv _ hA hR => exact htype hA (levelRel_univ_iff.2 hR)
+  | equalityProp _ hA hP => exact hprop hA (levelRel_prop_iff.2 hP)
 
 end Sic.Core

@@ -189,7 +189,7 @@ theorem RunUnivRel.not_prop {sig : Signature} {ι : Interpretation} {P : Program
       subst hD hqs hls hps
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact nomatch hs.symm.trans hs'
-  | equality =>
+  | equalityUniv | equalityProp =>
     cases h with
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv

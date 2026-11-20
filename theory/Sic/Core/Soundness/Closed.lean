@@ -52,7 +52,7 @@ theorem PropRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
   cases h with
   | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
   | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
-  | equality => exact .equality _ _ _ _ _
+  | equalityUniv | equalityProp => exact .equality _ _ _ _ _
 
 /-- `(eq_c)` relates canonical terms: constructors. -/
 theorem DataType.ctorRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope} {D : Name}

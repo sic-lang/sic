@@ -704,7 +704,7 @@ theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
       subst hD hqs hls hps
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact nomatch hs.symm.trans hs'
-  | equality =>
+  | equalityUniv | equalityProp =>
     cases h with
     | data _ _ _ _ hv => cases hv
     | codata _ _ _ _ hv => cases hv
@@ -722,7 +722,7 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
       obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
       exact hn.symm.trans hn'
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-    | equality => cases hv
+    | equalityUniv | equalityProp => cases hv
   | codata h _ _ _ hv _ hn => cases h' with
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
@@ -731,11 +731,13 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
       subst hD hqs hls hps
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
       exact hn.symm.trans hn'
-    | equality => cases hv
-  | equality hl => cases h' with
-    | data _ _ _ _ hv' => cases hv'
-    | codata _ _ _ _ hv' => cases hv'
-    | equality hl' => exact hl.symm.trans hl'
+    | equalityUniv | equalityProp => cases hv
+  | equalityUniv hl => cases h' with
+    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
+    | equalityUniv hl' => exact hl.symm.trans hl'
+  | equalityProp hl => cases h' with
+    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
+    | equalityProp hl' => exact hl.symm.trans hl'
 
 /-! ### The Relations of a Level
 
@@ -1202,7 +1204,7 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       exact DataType.blockTruth_congr (fun B T hT c hc => TelRel.congr hd ih (hS B T hT c hc) _ _ _
         (hS' B T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-    | equality => cases hv
+    | equalityUniv | equalityProp => cases hv
   | .codata h _ _ _ hv _ _ _ hS, _, h' => by
     cases h' with
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -1215,16 +1217,21 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       cases has
       exact CodataType.blockTruth_congr (fun B T hT => DesRel.congr hd ih (hS B T hT) _ _ _
         (hS' B T hT) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
-    | equality => cases hv
-  -- The truth `F t u` of the case is a pattern of its index only once `F` is named: the application
-  -- of an unnamed relation is not one.
-  | .equality (F := F) _ hA hF, _, h' => by
+    | equalityUniv | equalityProp => cases hv
+  -- The truth `R.computed sig ι t u` of the case is a pattern of its index only once `R` is named:
+  -- the application of an unnamed relation is not one.
+  | .equalityUniv (R := R) _ hA hR, _, h' => by
     cases h' with
-    | data _ _ _ _ hv' => cases hv'
-    | codata _ _ _ _ hv' => cases hv'
-    | equality _ hA' hF' =>
+    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
+    | equalityUniv _ hA' hR' =>
       cases Computesι.det hd hA hA'
-      exact FieldRel.unique hd ih hF _ _ hF' _ _
+      exact TermRel.computed_congr (UnivRel.unique hd ih hR _ hR') _ _
+  | .equalityProp _ hA hP, _, h' => by
+    cases h' with
+    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
+    | equalityProp _ hA' hP' =>
+      cases Computesι.det hd hA hA'
+      exact PropRel.unique hd ih hP _ hP'
 termination_by structural h _ _ => h
 
 /-- The type of a field has a unique equality of its terms. -/

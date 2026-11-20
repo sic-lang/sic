@@ -20,7 +20,8 @@ constructor with equal fields, and an instance of a codata type has its corecurs
 their observations at equal arguments are equal, as the partial equivalence relations of the types
 of functions relate the functions; a proposition declared as a data type is true when one of its
 constructors has terms for its fields, one declared as a codata type when each of its destructors
-has a result, and an equality `t ∼_A u` when the equality of the terms of `A` relates `t` and `u`.
+has a result, and an equality `t ∼.{s; l}_A u` when `A` is a type of the sort of the quality `s` at
+the level of `l` whose equality of terms relates `t` and `u`.
 
 The universes are defined one level after the other, and at each level by a least relation, which
 gives each type of the level together with the equality of its terms: this induction-recursion is
@@ -305,13 +306,20 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
             fun D' => fun _ _ => B D')
           ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S B T')) :
       PropRel sig ι n below v (CodataType.blockTruth decl.codataTypes S D)
-  /-- `(ty_∼)`: the equality `t ∼.{s; l}_A u`, if `⟦l⟧ = n`, whose type `A` computes to a type of
-  a sort that the sort of the quality `s` at the level `n` bounds, whose terms are equal by `F`, and
-  whose truth is that `F` relates `t` and `u`.
+  /-- `(ty_∼)`, for a type of `U_n`: the equality `t ∼.{U; l}_A u`, if `⟦l⟧ = n`, whose type `A`
+  computes to a type of `U_n` whose canonical terms are equal by `R`, and whose truth is that `t` and
+  `u` compute to terms that `R` relates.
   RFC: `\mathsf{ty}_\sim` -/
-  | equality {s : Quality} {l : Level 0} {A t u w : Term 0 []} {F : TermRel}
-      (hl : l.closedValue = n) (hA : Computesι sig ι A w) (hF : FieldRel sig ι n below s w F) :
-      PropRel sig ι n below (.equality s l A t u) (F t u)
+  | equalityUniv {l : Level 0} {A t u w : Term 0 []} {R : TermRel}
+      (hl : l.closedValue = n) (hA : Computesι sig ι A w) (hR : UnivRel sig ι n below w R) :
+      PropRel sig ι n below (.equality .type l A t u) (R.computed sig ι t u)
+  /-- `(ty_∼)`, for a proposition of `Ω_n`: the equality `t ∼.{Ω; l}_A u` of two proofs, if
+  `⟦l⟧ = n`, whose type `A` computes to a proposition of `Ω_n`, and whose truth is the truth of that
+  proposition.
+  RFC: `\mathsf{ty}_\sim` -/
+  | equalityProp {l : Level 0} {A t u w : Term 0 []} {b : Prop}
+      (hl : l.closedValue = n) (hA : Computesι sig ι A w) (hP : PropRel sig ι n below w b) :
+      PropRel sig ι n below (.equality .prop l A t u) b
 
 -- ADE: none.
 /--
