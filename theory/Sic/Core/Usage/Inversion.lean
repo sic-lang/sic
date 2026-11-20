@@ -238,4 +238,17 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .obs .., he => nomatch he
 
+/-! ## Transports -/
+
+-- ADE: none.
+/-- A transport has no usage: no rule of usage concludes it, and the subsumption keeps its term. -/
+theorem Usage.inv_transp {sig : Signature} {k : Nat} {Γ : Scope} {A t₁ t₂ : Term k Γ}
+    {C : Term k (Γ.extend 1)} {t u : Term k Γ} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v → v = .transp A t₁ t₂ C t u →
+      False
+  | _, _, .sub h _, he => Usage.inv_transp h he
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he =>
+    nomatch he
+
 end Sic.Core
