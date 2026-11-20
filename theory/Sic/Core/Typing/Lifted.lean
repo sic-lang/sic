@@ -245,6 +245,7 @@ where
     | .prop hctx, hθ => .prop (wfCtx hctx hθ)
     | .inst h hq hl hp hadm has, hθ => .inst h hq hl hp hadm (hasInstanceArgs has hθ)
     | .equality hA ht hu, hθ => .equality (hasType hA hθ) (hasType ht hθ) (hasType hu hθ)
+    | .reflProof hA ht, hθ => .reflProof (hasType hA hθ) (hasType ht hθ)
     | .ctor h hc hq hl hp hadm has hts, hθ => by
       rw [Term.ctor_subst]
       refine .ctor h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_

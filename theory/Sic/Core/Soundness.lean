@@ -303,6 +303,8 @@ where
     | .equality hA ht hu => fun ρ =>
       ValidEqTermΓ.equality (hasType hd hord hι hA ρ) (hasType hd hord hι ht ρ)
         (hasType hd hord hι hu ρ) (Level.equivalence.refl _)
+    | .reflProof hA ht => fun ρ =>
+      ValidTermΓ.reflProof (hasType hd hord hι hA ρ) (hasType hd hord hι ht ρ)
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl

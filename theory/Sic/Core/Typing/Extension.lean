@@ -148,6 +148,7 @@ where
     | .inst h hq hl hp hadm has =>
       .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has)
     | .equality hA ht hu => .equality (hasType hs hw hA) (hasType hs hw ht) (hasType hs hw hu)
+    | .reflProof hA ht => .reflProof (hasType hs hw hA) (hasType hs hw ht)
     | .ctor h hc hq hl hp hadm has hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
     | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>

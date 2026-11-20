@@ -159,6 +159,7 @@ where
       rw [Term.substLevels, Term.substLevels, Universe.substLevels_substLevels_getFin]
       exact .inst h hq _ hp hadm has'
     | .equality hA ht hu => .equality (hasType ls' hA) (hasType ls' ht) (hasType ls' hu)
+    | .reflProof hA ht => .reflProof (hasType ls' hA) (hasType ls' ht)
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'

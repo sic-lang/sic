@@ -210,6 +210,9 @@ where
     | .equality hA ht hu, _ => fun ρ =>
       RunValidRen.erased
         (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.equality hA ht hu) ρ) rfl
+    | .reflProof hA ht, _ => fun ρ =>
+      RunValidRen.proof
+        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.equality hA ht ht) ρ) rfl
     | .conv ht h, hu => fun ρ =>
       RunValidRen.conv (soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ)
         (soundnessIn.eqType hw.distinct hw.liftsInOrder hι h ρ) (hasType hw hι hP ht hu ρ)

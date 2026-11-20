@@ -179,6 +179,7 @@ where
     | .prop hctx => wfCtx hctx
     | .inst _ _ _ _ _ has => hasInstanceArgs has
     | .equality hA _ _ => hasType hA
+    | .reflProof hA _ => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -354,6 +355,7 @@ where
     | .prop hctx => hctx
     | .inst _ _ _ _ _ has => hasInstanceArgs has
     | .equality hA _ _ => hasType hA
+    | .reflProof hA _ => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has

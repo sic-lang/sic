@@ -210,6 +210,11 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {l : Level k} {A t u : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) (hu : HasType sig ctx u A) :
       HasType sig ctx (.equality s l A t u) (.sort ⟨.prop, l⟩)
+  -- ADE: `rflⱼ`, in `Definition/Typed.agda`.
+  /-- The proof by reflexivity of the equality of a term of a type with itself. -/
+  | reflProof {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l : Level k} {A t : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
+      (ht : HasType sig ctx t A) : HasType sig ctx (.refl s l A t) (.equality s l A t t)
   -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
