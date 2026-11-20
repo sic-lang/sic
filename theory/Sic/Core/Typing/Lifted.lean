@@ -246,6 +246,12 @@ where
     | .inst h hq hl hp hadm has, hθ => .inst h hq hl hp hadm (hasInstanceArgs has hθ)
     | .equality hA ht hu, hθ => .equality (hasType hA hθ) (hasType ht hθ) (hasType hu hθ)
     | .reflProof hA ht, hθ => .reflProof (hasType hA hθ) (hasType ht hθ)
+    | .transp (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu, hθ => by
+      have hu' := hasType hu hθ
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu'
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)]
+      exact .transp (hasType hA hθ) (hasType ht₁ hθ) (hasType ht₂ hθ) (hasType hC (hθ.var _))
+        (hasType ht hθ) hu'
     | .ctor h hc hq hl hp hadm has hts, hθ => by
       rw [Term.ctor_subst]
       refine .ctor h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_
@@ -340,6 +346,19 @@ where
     | .inst h hq hl₁ hl₂ hp hadm has hls, hθ =>
       .inst h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls
     | .equality hA ht hu hl, hθ => .equality (eqTerm hA hθ) (eqTerm ht hθ) (eqTerm hu hθ) hl
+    | .transp (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu, hθ => by
+      have hu' := eqTerm hu hθ
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu'
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)]
+      exact .transp (eqTerm hA hθ) (eqTerm ht₁ hθ) (eqTerm ht₂ hθ) (eqTerm hC (hθ.var _))
+        (eqTerm ht hθ) hu'
+    | .transpSame (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu hCC, hθ => by
+      have hu' := hasType hu hθ
+      have hCC' := eqTerm hCC hθ
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu' hCC'
+      rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)] at hCC' ⊢
+      exact .transpSame (hasType hA hθ) (hasType ht₁ hθ) (hasType ht₂ hθ) (hasType hC (hθ.var _))
+        (hasType ht hθ) hu' hCC'
     | .ctor h hc hq hl₁ hl₂ hp hadm has hls hts, hθ => by
       rw [Term.ctor_subst, Term.ctor_subst]
       refine .ctor h hc hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls ?_

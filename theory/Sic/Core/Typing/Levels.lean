@@ -160,6 +160,14 @@ where
       exact .inst h hq _ hp hadm has'
     | .equality hA ht hu => .equality (hasType ls' hA) (hasType ls' ht) (hasType ls' hu)
     | .reflProof hA ht => .reflProof (hasType ls' hA) (hasType ls' ht)
+    | .transp (κ := κ) (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu => by
+      have hu' := hasType ls' hu
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
+        (fun x => by cases x <;> rfl)] at hu'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
+        (fun x => by cases x <;> rfl)]
+      exact .transp (κ := κ.substLevels ls') (hasType ls' hA) (hasType ls' ht₁) (hasType ls' ht₂)
+        (hasType ls' hC) (hasType ls' ht) hu'
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
@@ -282,6 +290,23 @@ where
       exact .inst h hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls)
     | .equality hA ht hu hl =>
       .equality (eqTerm ls' hA) (eqTerm ls' ht) (eqTerm ls' hu) (Level.subst_equal ls' hl)
+    | .transp (κ := κ) (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu => by
+      have hu' := eqTerm ls' hu
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
+        (fun x => by cases x <;> rfl)] at hu'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
+        (fun x => by cases x <;> rfl)]
+      exact .transp (κ := κ.substLevels ls') (eqTerm ls' hA) (eqTerm ls' ht₁) (eqTerm ls' ht₂)
+        (eqTerm ls' hC) (eqTerm ls' ht) hu'
+    | .transpSame (κ := κ) (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu hCC => by
+      have hu' := hasType ls' hu
+      have hCC' := eqTerm ls' hCC
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
+        (fun x => by cases x <;> rfl)] at hu' hCC'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
+        (fun x => by cases x <;> rfl)] at hCC' ⊢
+      exact .transpSame (κ := κ.substLevels ls') (hasType ls' hA) (hasType ls' ht₁)
+        (hasType ls' ht₂) (hasType ls' hC) (hasType ls' ht) hu' hCC'
     | .ctor (ls₁ := ls) h hc hq hl₁ hl₂ hp hadm has hls hts => by
       have has' := eqInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'

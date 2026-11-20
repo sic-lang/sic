@@ -149,6 +149,9 @@ where
       .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has)
     | .equality hA ht hu => .equality (hasType hs hw hA) (hasType hs hw ht) (hasType hs hw hu)
     | .reflProof hA ht => .reflProof (hasType hs hw hA) (hasType hs hw ht)
+    | .transp hA ht₁ ht₂ hC ht hu =>
+      .transp (hasType hs hw hA) (hasType hs hw ht₁) (hasType hs hw ht₂) (hasType hs hw hC)
+        (hasType hs hw ht) (hasType hs hw hu)
     | .ctor h hc hq hl hp hadm has hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
     | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>
@@ -184,6 +187,12 @@ where
       .inst ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
     | .equality hA ht hu hl =>
       .equality (eqTerm hs hw hA) (eqTerm hs hw ht) (eqTerm hs hw hu) hl
+    | .transp hA ht₁ ht₂ hC ht hu =>
+      .transp (eqTerm hs hw hA) (eqTerm hs hw ht₁) (eqTerm hs hw ht₂) (eqTerm hs hw hC)
+        (eqTerm hs hw ht) (eqTerm hs hw hu)
+    | .transpSame hA ht₁ ht₂ hC ht hu hCC =>
+      .transpSame (hasType hs hw hA) (hasType hs hw ht₁) (hasType hs hw ht₂) (hasType hs hw hC)
+        (hasType hs hw ht) (hasType hs hw hu) (eqTerm hs hw hCC)
     | .ctor h hc hq hl₁ hl₂ hp hadm has hls hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
         (eqArgs hs hw hts)

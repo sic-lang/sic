@@ -8,6 +8,7 @@ import Sic.Core.Results.Extension
 import Sic.Core.Results.Substitution
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Rules
+import Sic.Core.Soundness.Transport
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting
@@ -305,6 +306,15 @@ where
         (hasType hd hord hι hu ρ) (Level.equivalence.refl _)
     | .reflProof hA ht => fun ρ =>
       ValidTermΓ.reflProof (hasType hd hord hι hA ρ) (hasType hd hord hι ht ρ)
+    | .transp (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu => fun ρ => by
+      have hu' := hasType hd hord hι hu ρ
+      simp only [Term.atLevels] at hu' ⊢
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)] at hu'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)]
+      exact ValidEqTermΓ.transp (hasType hd hord hι hA ρ) (hasType hd hord hι ht₁ ρ)
+        (hasType hd hord hι ht₂ ρ) (hasType hd hord hι hC ρ) (hasType hd hord hι ht ρ) hu'
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -449,6 +459,24 @@ where
     | .equality hA ht hu hl => fun ρ =>
       ValidEqTermΓ.equality (eqTerm hd hord hι hA ρ) (eqTerm hd hord hι ht ρ)
         (eqTerm hd hord hι hu ρ) (Level.subst_equal _ hl)
+    | .transp (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu => fun ρ => by
+      have hu' := eqTerm hd hord hι hu ρ
+      simp only [Term.atLevels] at hu' ⊢
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)] at hu'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)]
+      exact ValidEqTermΓ.transp (eqTerm hd hord hι hA ρ) (eqTerm hd hord hι ht₁ ρ)
+        (eqTerm hd hord hι ht₂ ρ) (eqTerm hd hord hι hC ρ) (eqTerm hd hord hι ht ρ) hu'
+    | .transpSame (t₁ := t₁) (t₂ := t₂) _ _ _ _ _ hu hCC => fun ρ => by
+      have hu' := hasType hd hord hι hu ρ
+      have hCC' := eqTerm hd hord hι hCC ρ
+      simp only [Term.atLevels] at hu' hCC' ⊢
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)] at hu' hCC'
+      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
+        (fun x => by cases x <;> rfl)] at hCC' ⊢
+      exact ValidEqTermΓ.transpSame hu' hCC'
     | .ctor (ls₁ := ls₁) (ls₂ := ls₂) h hc hq hl₁ hl₂ hp hadm has hls hts => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁

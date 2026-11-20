@@ -180,6 +180,7 @@ where
     | .inst _ _ _ _ _ has => hasInstanceArgs has
     | .equality hA _ _ => hasType hA
     | .reflProof hA _ => hasType hA
+    | .transp hA .. => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -199,6 +200,8 @@ where
     | .prop hctx _ => wfCtx hctx
     | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
     | .equality hA _ _ _ => eqTerm hA
+    | .transp hA .. => eqTerm hA
+    | .transpSame hA .. => hasType hA
     | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
     | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
@@ -356,6 +359,7 @@ where
     | .inst _ _ _ _ _ has => hasInstanceArgs has
     | .equality hA _ _ => hasType hA
     | .reflProof hA _ => hasType hA
+    | .transp hA .. => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -375,6 +379,8 @@ where
     | .prop hctx _ => hctx
     | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
     | .equality hA _ _ _ => eqTerm hA
+    | .transp hA .. => eqTerm hA
+    | .transpSame hA .. => hasType hA
     | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
     | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has

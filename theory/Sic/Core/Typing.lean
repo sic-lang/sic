@@ -216,6 +216,17 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   | reflProof {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {A t : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) : HasType sig ctx (.refl s l A t) (.equality s l A t t)
+  -- ADE: `Jⱼ`, in `Definition/Typed.agda`, whose motive also binds the proof.
+  /-- The transport of a term of the motive at the first of two terms of a type of a sort, along a
+  proof of their equality, is a term of the motive at the second; the motive is a type of a sort `κ`
+  over a term of the type. -/
+  | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
+      (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)
+      (ht₂ : HasType sig ctx t₂ A) (hC : HasType sig (ctx.var A) C (.sort κ))
+      (ht : HasType sig ctx t (.equality s l A t₁ t₂))
+      (hu : HasType sig ctx u (C.subst₀ (Subst₀.single t₁))) :
+      HasType sig ctx (.transp A t₁ t₂ C t u) (C.subst₀ (Subst₀.single t₂))
   -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
@@ -448,6 +459,29 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hA : EqTerm sig ctx A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : EqTerm sig ctx t₁ t₂ A₁)
       (hu : EqTerm sig ctx u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
       EqTerm sig ctx (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂) (.sort ⟨.prop, l₁⟩)
+  -- ADE: `J-cong`, in `Definition/Typed.agda`, whose motive also binds the proof.
+  /-- Two transports of equal terms, along equal proofs of the equality of equal terms of equal
+  types, with equal motives of a sort `κ`, are equal. -/
+  | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l : Level k} {κ : Universe k} {A A' t₁ t₁' t₂ t₂' t t' u u' : Term k Γ}
+      {C C' : Term k (.var :: Γ)} (hA : EqTerm sig ctx A A' (.sort ⟨s, l⟩))
+      (ht₁ : EqTerm sig ctx t₁ t₁' A) (ht₂ : EqTerm sig ctx t₂ t₂' A)
+      (hC : EqTerm sig (ctx.var A) C C' (.sort κ))
+      (ht : EqTerm sig ctx t t' (.equality s l A t₁ t₂))
+      (hu : EqTerm sig ctx u u' (C.subst₀ (Subst₀.single t₁))) :
+      EqTerm sig ctx (.transp A t₁ t₂ C t u) (.transp A' t₁' t₂' C' t' u')
+        (C.subst₀ (Subst₀.single t₂))
+  -- ADE: none.
+  /-- A transport between two equal instances of its motive, those at the two terms of the
+  equality, is its term. -/
+  | transpSame {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
+      (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)
+      (ht₂ : HasType sig ctx t₂ A) (hC : HasType sig (ctx.var A) C (.sort κ))
+      (ht : HasType sig ctx t (.equality s l A t₁ t₂))
+      (hu : HasType sig ctx u (C.subst₀ (Subst₀.single t₁)))
+      (hCC : EqTerm sig ctx (C.subst₀ (Subst₀.single t₁)) (C.subst₀ (Subst₀.single t₂)) (.sort κ)) :
+      EqTerm sig ctx (.transp A t₁ t₂ C t u) u (C.subst₀ (Subst₀.single t₂))
   -- ADE: none.
   /-- Two applications of the same constructor, at equal arguments of the instance, at equal levels
   and at equal arguments of its fields, are equal.

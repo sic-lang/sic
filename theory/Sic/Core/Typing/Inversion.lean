@@ -59,6 +59,7 @@ where
     | _, _, .recursor .., e => by cases e
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
+    | _, _, .transp .., e => by cases e
 
 -- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Consequences/Inversion.agda`, for the types of
 -- functions and of pairs, with the equality of the sorts.
@@ -97,6 +98,7 @@ where
     | _, _, .recursor .., e => by cases e
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
+    | _, _, .transp .., e => by cases e
 
 -- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
