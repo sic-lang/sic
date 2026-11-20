@@ -399,33 +399,33 @@ theorem AbstractionRel.congr {ps : List Parameter} {SΘ SΘ' : FieldsRel} {F F' 
     fun h ts us hts => (hF ts (hSp.trans hts (hSp.symm hts)) _ _).2 (h ts us ((hS _ _).1 hts))⟩
 
 /-- The equality of the abstractions for a destructor `d` followed by the destructors after it is a
-partial equivalence relation, when the equality `E` of the abstractions for `d` is one, and so is
+partial equivalence relation, when the equality `W` of the abstractions for `d` is one, and so is
 the equality `G f` of the destructors after it for each abstraction `f`, the same for equal
 abstractions. -/
 theorem ObsRel.cons_isPer {d : Name} {ps : List Parameter}
-    {E : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
-    {G : Term 0 (Scope.extend [] ps.length) → ObsRel} (hE : IsPer E) (hG : ∀ f, E f f → IsPer (G f))
-    (hresp : ∀ f₁ f₂, E f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
-    IsPer (fun o₁ o₂ : Observations => E (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) where
+    {W : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
+    {G : Term 0 (Scope.extend [] ps.length) → ObsRel} (hW : IsPer W) (hG : ∀ f, W f f → IsPer (G f))
+    (hresp : ∀ f₁ f₂, W f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
+    IsPer (fun o₁ o₂ : Observations => W (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) where
   symm := fun ⟨h₁, h₂⟩ =>
-    ⟨hE.symm h₁, (hG _ (hE.trans (hE.symm h₁) h₁)).symm ((hresp _ _ h₁ _ _).1 h₂)⟩
+    ⟨hW.symm h₁, (hG _ (hW.trans (hW.symm h₁) h₁)).symm ((hresp _ _ h₁ _ _).1 h₂)⟩
   trans := fun ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
-    ⟨hE.trans h₁ h₁', (hG _ (hE.trans h₁ (hE.symm h₁))).trans h₂ ((hresp _ _ h₁ _ _).2 h₂')⟩
+    ⟨hW.trans h₁ h₁', (hG _ (hW.trans h₁ (hW.symm h₁))).trans h₂ ((hresp _ _ h₁ _ _).2 h₂')⟩
 
 /-- The equalities of the abstractions for a destructor `d` followed by the destructors after it
 relate the same abstractions, when those for `d` do, and those of the destructors after it do for
 each abstraction for `d`. -/
 theorem ObsRel.cons_congr {d : Name} {ps : List Parameter}
-    {E E' : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
-    {G G' : Term 0 (Scope.extend [] ps.length) → ObsRel} (hEp : IsPer E)
-    (hE : ∀ f₁ f₂, E f₁ f₂ ↔ E' f₁ f₂) (hG : ∀ f, E f f → ∀ o₁ o₂, G f o₁ o₂ ↔ G' f o₁ o₂) :
-    ∀ o₁ o₂ : Observations, (E (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) ↔
-      (E' (o₁ d ps) (o₂ d ps) ∧ G' (o₁ d ps) o₁ o₂) :=
+    {W W' : Term 0 (Scope.extend [] ps.length) → Term 0 (Scope.extend [] ps.length) → Prop}
+    {G G' : Term 0 (Scope.extend [] ps.length) → ObsRel} (hWp : IsPer W)
+    (hW : ∀ f₁ f₂, W f₁ f₂ ↔ W' f₁ f₂) (hG : ∀ f, W f f → ∀ o₁ o₂, G f o₁ o₂ ↔ G' f o₁ o₂) :
+    ∀ o₁ o₂ : Observations, (W (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) ↔
+      (W' (o₁ d ps) (o₂ d ps) ∧ G' (o₁ d ps) o₁ o₂) :=
   fun _ _ =>
-    ⟨fun ⟨h₁, h₂⟩ => ⟨(hE _ _).1 h₁, (hG _ (hEp.trans h₁ (hEp.symm h₁)) _ _).1 h₂⟩,
+    ⟨fun ⟨h₁, h₂⟩ => ⟨(hW _ _).1 h₁, (hG _ (hWp.trans h₁ (hWp.symm h₁)) _ _).1 h₂⟩,
       fun ⟨h₁, h₂⟩ =>
-        have h₁' := (hE _ _).2 h₁
-        ⟨h₁', (hG _ (hEp.trans h₁' (hEp.symm h₁')) _ _).2 h₂⟩⟩
+        have h₁' := (hW _ _).2 h₁
+        ⟨h₁', (hG _ (hWp.trans h₁' (hWp.symm h₁')) _ _).2 h₂⟩⟩
 
 /-- `(eq_d)` relates the terms that it relates for an equality of the destructors that relates
 fewer abstractions. -/
