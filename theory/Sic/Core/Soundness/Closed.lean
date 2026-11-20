@@ -291,6 +291,7 @@ theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Sc
   | .beta h hi hD hq hl hp hg hv =>
     .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hq hl hp hg hv
   | .obs h => .obs h.interpret
+  | .transp => .transp
 
 open Sic.Grading in
 /-- `(ι_⟶)` on a constructor none of whose fields has a position in the nesting of its type, which

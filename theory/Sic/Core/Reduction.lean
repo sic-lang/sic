@@ -161,6 +161,10 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   | obs {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {d : Name} {bs : Terms k Γ} (h : Red sig t t') :
       Red sig (.obs D qs ls ps as t d bs) (.obs D qs ls ps as t' d bs)
+  -- ADE: none.
+  /-- A transport reduces to its term. -/
+  | transp {A t₁ t₂ : Term k Γ} {C : Term k (Γ.extend 1)} {t u : Term k Γ} :
+      Red sig (.transp A t₁ t₂ C t u) u
 
 -- ADE: `_⊢_⇒*_∷_`, in `Definition/Typed.agda`.
 /-- `Σ ⊢ t ⟶* u`: `t` reduces to `u` in some steps. -/
@@ -195,6 +199,7 @@ theorem Neutral.not_red {sig : Signature} {k : Nat} {Γ : Scope} {t u : Term k �
   | recursor _ ih => cases hn with | recursor hn => exact ih hn
   | beta => cases hn with | obs hn => exact nomatch hn
   | obs _ ih => cases hn with | obs hn => exact ih hn
+  | transp => cases hn
 
 -- ADE: `whnfRedTerm`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- A head normal form does not reduce.
@@ -244,6 +249,7 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     | delta => cases hx
     | beta => cases hx
     | obs => cases hx
+    | transp => cases hx
     | recursor h =>
       simp only [Term.recursor.injEq] at hx
       obtain ⟨-, -, -, -, -, -, -, -, -, rfl, -⟩ := hx
@@ -274,6 +280,9 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     cases h₂ with
     | beta => exact (Whnf.not_red hsig (.corec ..) h₁).elim
     | obs h₂ => rw [ih h₂]
+  | transp =>
+    cases h₂
+    rfl
 
 -- ADE: `whrDet*Term`, in `Definition/Typed/Properties/Reduction.agda`.
 /-- Two reductions to head normal forms end on the same term.

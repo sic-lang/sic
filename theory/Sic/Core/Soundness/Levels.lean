@@ -288,6 +288,9 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
     | obs _ _ _ _ hl has ht hbs =>
       obtain ⟨u', hr', hu⟩ := ih ht
       exact ⟨_, .obs hr', .obs _ _ _ _ hl has hu hbs⟩
+  | transp =>
+    cases h with
+    | transp _ _ _ _ _ hu => exact ⟨_, .transp, hu⟩
 
 /-- A term whose levels change for equal ones reduces to the term its reducts become so. -/
 theorem RedStar.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k Γ}
