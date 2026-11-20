@@ -180,6 +180,7 @@ theorem Term.nest_plain :
   | _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, .equality .. | _, _, _, .refl .. | _, _, _, .transp .. | _, _, _, .propExt .. => rfl
 
 /-- The arguments of an instance have no position when no variable has one and no declared type
 holds one. -/
@@ -256,6 +257,8 @@ theorem Term.nest_isPlain_mono {β : Type} :
   | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => fun _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _ => fun _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => fun _ => rfl
+  | _, _, _, _, .equality .. | _, _, _, _, .refl .. | _, _, _, _, .transp ..
+  | _, _, _, _, .propExt .. => fun _ => rfl
 
 /-- The arguments of an instance without position, where no declared type holds one, have none at
 nestings that give a position to less variables. -/
@@ -470,7 +473,8 @@ theorem Term.blockNest_eq_direct {Γ : Scope} {names : List Name} {D : Name} :
     · simp only [hD, ite_true, Nest.direct.injEq, Option.some.injEq]
     · simp only [hD, ite_false, reduceCtorEq, iff_false]
       exact Nest.ofArgs_ne_direct _ _
-  | .var .. | .sort _ | .const .. | .ctor .. | .recursor .. | .obs .. | .corec .. =>
+  | .var .. | .sort _ | .const .. | .ctor .. | .recursor .. | .obs .. | .corec .. | .equality ..
+  | .refl .. | .transp .. | .propExt .. =>
     ⟨(fun h => nomatch h), fun h => nomatch h⟩
 
 /-- The nesting of the entry at a position of a telescope is a position that holds a type of the

@@ -84,6 +84,13 @@ def Term.rename {Γ Δ : Scope} (α : Ren Γ Δ) : Term k Δ → Term k Γ
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.rename α) (t.rename α) d (bs.rename α)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.rename α) (ss.rename α) (Ss.rename α) (vs.rename α)
+  | .equality s l A t u => .equality s l (A.rename α) (t.rename α) (u.rename α)
+  | .refl s l A t => .refl s l (A.rename α) (t.rename α)
+  | .transp A t u C e v =>
+    .transp (A.rename α) (t.rename α) (u.rename α) (C.rename (Ren.liftN 1 α)) (e.rename α)
+      (v.rename α)
+  | .propExt l P Q f g =>
+    .propExt l (P.rename α) (Q.rename α) (f.rename (Ren.liftN 1 α)) (g.rename (Ren.liftN 1 α))
 
 /-- The arguments `t̄` renamed by `α`. -/
 def Args.rename {Γ Δ : Scope} {a : List Parameter} (α : Ren Γ Δ) : Args k Δ a → Args k Γ a
@@ -186,7 +193,8 @@ def TypeDeclaration.blockArgs {Γ : Scope} (decl : TypeDeclaration)
 /-- A renamed term is the instance of the same type of a block. -/
 theorem Term.blockName_rename {Γ Δ : Scope} (names : List Name) (α : Ren Γ Δ) :
     (A : Term k Δ) → (A.rename α).blockName names = A.blockName names
-  | .var .. | .sort _ | .const .. | .inst .. | .ctor .. | .recursor .. | .obs .. | .corec .. => rfl
+  | .var .. | .sort _ | .const .. | .inst .. | .ctor .. | .recursor .. | .obs .. | .corec ..
+  | .equality .. | .refl .. | .transp .. | .propExt .. => rfl
 
 /-- A renamed telescope has its recursive fields at the same positions. -/
 theorem Telescope.recursion_rename {Γ Δ : Scope} (names : List Name) :
@@ -290,6 +298,13 @@ def Term.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : Term k Δ → Term k
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.subst₀ σ) (t.subst₀ σ) d (bs.subst₀ σ)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.subst₀ σ) (ss.subst₀ σ) (Ss.subst₀ σ) (vs.subst₀ σ)
+  | .equality s l A t u => .equality s l (A.subst₀ σ) (t.subst₀ σ) (u.subst₀ σ)
+  | .refl s l A t => .refl s l (A.subst₀ σ) (t.subst₀ σ)
+  | .transp A t u C e v =>
+    .transp (A.subst₀ σ) (t.subst₀ σ) (u.subst₀ σ) (C.subst₀ (Subst₀.liftN 1 σ)) (e.subst₀ σ)
+      (v.subst₀ σ)
+  | .propExt l P Q f g =>
+    .propExt l (P.subst₀ σ) (Q.subst₀ σ) (f.subst₀ (Subst₀.liftN 1 σ)) (g.subst₀ (Subst₀.liftN 1 σ))
 
 /-- The arguments `t̄` substituted by `σ`.
 RFC: `\mathsf{subst}_\sigma.\bar t` -/
@@ -414,6 +429,13 @@ def Term.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : Term k Δ → Term k Γ
   | .obs D qs ls ps as t d bs => .obs D qs ls ps (as.subst θ) (t.subst θ) d (bs.subst θ)
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ls ps (as.subst θ) (ss.subst θ) (Ss.subst θ) (vs.subst θ)
+  | .equality s l A t u => .equality s l (A.subst θ) (t.subst θ) (u.subst θ)
+  | .refl s l A t => .refl s l (A.subst θ) (t.subst θ)
+  | .transp A t u C e v =>
+    .transp (A.subst θ) (t.subst θ) (u.subst θ) (C.subst (Subst.liftN 1 θ)) (e.subst θ)
+      (v.subst θ)
+  | .propExt l P Q f g =>
+    .propExt l (P.subst θ) (Q.subst θ) (f.subst (Subst.liftN 1 θ)) (g.subst (Subst.liftN 1 θ))
 
 /-- The arguments `t̄` substituted by `θ`.
 RFC: `\mathsf{subst}_\theta.\bar t` -/
@@ -541,6 +563,15 @@ def Term.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Term k
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (ss.substLevels ls')
       (Ss.substLevels ls') (vs.substLevels ls')
+  | .equality s l A t u =>
+    .equality s (Level.subst ls' l) (A.substLevels ls') (t.substLevels ls') (u.substLevels ls')
+  | .refl s l A t => .refl s (Level.subst ls' l) (A.substLevels ls') (t.substLevels ls')
+  | .transp A t u C e v =>
+    .transp (A.substLevels ls') (t.substLevels ls') (u.substLevels ls') (C.substLevels ls')
+      (e.substLevels ls') (v.substLevels ls')
+  | .propExt l P Q f g =>
+    .propExt (Level.subst ls' l) (P.substLevels ls') (Q.substLevels ls') (f.substLevels ls')
+      (g.substLevels ls')
 
 /-- The arguments `t̄` in which the levels `ls'` replace the level variables.
 RFC: `\mathsf{inst}_l.\bar t` -/
@@ -728,6 +759,15 @@ theorem Term.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, InstanceArgs.rename_id_of h as, Terms.rename_id_of h ss,
       States.rename_id_of h Ss, CorecBranches.rename_id_of h vs]
+  | .equality s l A t u => by
+    rw [Term.rename, Term.rename_id_of h A, Term.rename_id_of h t, Term.rename_id_of h u]
+  | .refl s l A t => by rw [Term.rename, Term.rename_id_of h A, Term.rename_id_of h t]
+  | .transp A t u C e v => by
+    rw [Term.rename, Term.rename_id_of h A, Term.rename_id_of h t, Term.rename_id_of h u,
+      Term.rename_id_of (Ren.liftN_id_of _ h) C, Term.rename_id_of h e, Term.rename_id_of h v]
+  | .propExt l P Q f g => by
+    rw [Term.rename, Term.rename_id_of h P, Term.rename_id_of h Q,
+      Term.rename_id_of (Ren.liftN_id_of _ h) f, Term.rename_id_of (Ren.liftN_id_of _ h) g]
 
 theorem Args.rename_id_of {Γ : Scope} {a : List Parameter} {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), α x = x) :
     (ts : Args k Γ a) → ts.rename α = ts
@@ -827,6 +867,15 @@ theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Terms.subst₀_id_of h ss,
       States.subst₀_id_of h Ss, CorecBranches.subst₀_id_of h vs]
+  | .equality s l A t u => by
+    rw [Term.subst₀, Term.subst₀_id_of h A, Term.subst₀_id_of h t, Term.subst₀_id_of h u]
+  | .refl s l A t => by rw [Term.subst₀, Term.subst₀_id_of h A, Term.subst₀_id_of h t]
+  | .transp A t u C e v => by
+    rw [Term.subst₀, Term.subst₀_id_of h A, Term.subst₀_id_of h t, Term.subst₀_id_of h u,
+      Term.subst₀_id_of (Subst₀.liftN_id_of _ h) C, Term.subst₀_id_of h e, Term.subst₀_id_of h v]
+  | .propExt l P Q f g => by
+    rw [Term.subst₀, Term.subst₀_id_of h P, Term.subst₀_id_of h Q,
+      Term.subst₀_id_of (Subst₀.liftN_id_of _ h) f, Term.subst₀_id_of (Subst₀.liftN_id_of _ h) g]
 
 theorem Args.subst₀_id_of {Γ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (ts : Args k Γ a) → ts.subst₀ σ = ts

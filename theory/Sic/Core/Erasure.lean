@@ -525,9 +525,11 @@ grade, the requirement at run time `run(r̂)` of its recursion on its block, its
 or, when its grade is erased, `ω`, which states nothing, and the term of the skeleton of its type,
 and its branches, without its instance and its motives, an observation keeps its term, the case of
 its destructor, the ownership at run time of its result and its arguments, each at the parameter of
-its argument, and a corecursor keeps its state, each entry at its grade times the grade of the
-corecursor, and its branches, without its instance and its states; a second-order variable has no
-erasure, since the scope has none.
+its argument, a corecursor keeps its state, each entry at its grade times the grade of the
+corecursor, and its branches, without its instance and its states, an equality `t ∼.{s; l}_A u` and
+the proofs `refl.{s; l}_A(t)` and `propext.{l}(P, Q, p. q, q. p)` are erased, and a transport
+`transp(A, t, u, x. C, e, v)` keeps only its term `v`; a second-order variable has no erasure, since
+the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
 ownerships of the results of the destructors, the recursive results of the branches, with the
 shapes of the nested fields, and the states that the branches resume are those of the declarations
@@ -572,6 +574,8 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
         (((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
           ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => ⟨r * p.usage, p.requirement⟩,
             as)))
+  | .equality .. | .refl .. | .propExt .. => .erased
+  | .transp _ _ _ _ _ v => v.erase sig S hΓ
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
@@ -771,7 +775,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     (t : Term k Γ) → t.erase sig S₂ hΓ ⊑ t.erase sig S₁ hΓ
   | .var (e := .var) .. => by simp only [Term.erase]; constructor
   | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
-  | .sort _ | .inst .. => .erased
+  | .sort _ | .inst .. | .equality .. | .refl .. | .propExt .. => .erased
   | .const .. => .const
   | .ctor D _ _ _ _ c ts => by
     simp only [Term.erase]
@@ -795,6 +799,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
       (CorecBranches.erase_lessDefined sig h hΓ vs _ _ _ _
         (Resumption.map_ofArity_lessDefined
           (fun h₁ => decide_eq_true (h r (of_decide_eq_true h₁))) _ _))
+  | .transp _ _ _ _ _ v => Term.erase_lessDefined sig h hΓ v
 
 -- ADE: none.
 /-- The erasure of fields by a larger set of grades is less defined. -/

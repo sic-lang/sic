@@ -331,6 +331,7 @@ theorem Term.LevelEquiv.nest {k : Nat} {α : Type} (mark : Name → Option α) {
   | .recursor _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | .obs _ _ _ _ _ _ _ _ => rfl
   | .corec _ _ _ _ _ _ _ _ _ => rfl
+  | .equality .. | .reflProof .. | .transp .. | .propExt .. => rfl
 
 /-- The arguments of two instances equal up to their levels have the same nestings. -/
 theorem InstanceArgs.LevelEquiv.nest {k : Nat} {α : Type} (mark : Name → Option α) {Γ Δ : Scope}

@@ -75,6 +75,9 @@ theorem Term.shape_subst_nest (mark : Name → Option Name) :
   | _, _, _, _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
+  | _, _, _, _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, _, _, _, .refl ..
+  | _, _, _, _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, _, _, _, .propExt .. =>
+    by rw [Term.subst]; rfl
 
 /-- The arguments of an instance substituted by any substitution have the shapes of the arguments
 at their nestings, where no variable has a position, the variables having no shapes. -/
@@ -352,7 +355,8 @@ theorem Term.nested_shape_direct {sig : Signature} {md : Mode} {ax : Grade → M
     simp only [Term.shape, Signature.blockShapes]
     split <;> rfl
   | .sort _ | .const _ _ _ _ | .ctor _ _ _ _ _ _ _ | .recursor _ _ _ _ _ _ _ _ _ _ _ _
-  | .obs _ _ _ _ _ _ _ _ | .corec _ _ _ _ _ _ _ _ _ => rfl
+  | .obs _ _ _ _ _ _ _ _ | .corec _ _ _ _ _ _ _ _ _ | .equality .. | .refl .. | .transp ..
+  | .propExt .. => rfl
 
 /-- A type at the nesting of an instance whose shape is given is the corecursor of a lifting. -/
 theorem Term.shape_inst_lifting {lookup : Shape.Lookup} {block : Name → Option Shape.Motive}

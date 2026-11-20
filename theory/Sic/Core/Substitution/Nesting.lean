@@ -64,6 +64,8 @@ theorem Term.nest_rename (mark : Name → Option α) :
   | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, .refl ..
+  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. => rfl
 
 /-- Renamed arguments of an instance have the nestings of the arguments, at the nestings of the
 variables renamed. -/
@@ -120,6 +122,8 @@ theorem Term.nest_substLevels {k' : Nat} (mark : Name → Option α) (ls' : Fin 
   | _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
+  | _, _, .equality .. | _, _, .refl ..
+  | _, _, .transp .. | _, _, .propExt .. => by rw [Term.substLevels]; rfl
 
 /-- The arguments of an instance keep their nestings when levels replace their level variables. -/
 theorem InstanceArgs.nest_substLevels {k' : Nat} (mark : Name → Option α)
@@ -205,6 +209,8 @@ theorem Term.nest_subst₀ (mark : Name → Option α) :
   | _, _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.subst₀]; rfl
+  | _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, .refl ..
+  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. => by rw [Term.subst₀]; rfl
 
 /-- Substituted arguments of an instance have the nestings of the arguments. -/
 theorem InstanceArgs.nest_subst₀ (mark : Name → Option α) :
@@ -282,6 +288,8 @@ theorem Term.nest_map {β : Type} (f : α → β) (mark : Name → Option α) :
   | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => rfl
+  | _, _, _, _, .equality .. | _, _, _, _, .refl ..
+  | _, _, _, _, .transp .. | _, _, _, _, .propExt .. => rfl
 
 /-- The nestings of the arguments of an instance, each mapped by `f`. -/
 theorem InstanceArgs.nest_map {β : Type} (f : α → β) (mark : Name → Option α) :

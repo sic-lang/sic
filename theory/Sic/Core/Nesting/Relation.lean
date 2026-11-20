@@ -289,6 +289,8 @@ theorem Term.nest_rel₃ {r : α → β → γ → Prop} :
   | _, _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => .plain
   | _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => .plain
   | _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => .plain
+  | _, _, _, _, _, .equality .. | _, _, _, _, _, .refl ..
+  | _, _, _, _, _, .transp .. | _, _, _, _, _, .propExt .. => .plain
 
 /-- The nestings of the arguments of an instance are related at related nestings of the variables,
 when no type is of a block. -/
@@ -326,6 +328,7 @@ theorem Term.nest_all {p : α → Prop} {mark : Name → Option α}
   | _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _ => .plain
   | _, _, _, .obs _ _ _ _ _ _ _ _ => .plain
   | _, _, _, .corec _ _ _ _ _ _ _ _ _ => .plain
+  | _, _, _, .equality .. | _, _, _, .refl .. | _, _, _, .transp .. | _, _, _, .propExt .. => .plain
 
 /-- The objects at the positions of the nestings of the arguments of an instance all satisfy `p`,
 when those that the types of the block are given and those of the nestings of the variables do. -/

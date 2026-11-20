@@ -200,6 +200,23 @@ inductive Term (k : Nat) : Scope → Type where
   | corec {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ)
       (Ss : States k Γ) (vs : CorecBranches k Γ) : Term k Γ
+  /-- `t ∼.{s; l}_A u`: the equality of the terms `t` and `u` of the type `A`, whose sort has the
+  quality `s` and the level `l`; the equality carries the type of its terms and the quality and the
+  level of the sort of this type, so that the term determines its type and its sort. -/
+  | equality {Γ : Scope} (s : Quality) (l : Level k) (A t u : Term k Γ) : Term k Γ
+  /-- `refl.{s; l}_A(t)`: the proof of the equality `t ∼.{s; l}_A t` of the term `t` of the type `A`
+  with itself; the proof carries the type of its term and the quality and the level of the sort of
+  this type, so that the term determines its type. -/
+  | refl {Γ : Scope} (s : Quality) (l : Level k) (A t : Term k Γ) : Term k Γ
+  /-- `transp(A, t, u, x. C, e, v)`: the transport of the term `v` of `C[t]` along the proof `e` of
+  `t ∼ u` at the type `A`, with the motive `x. C` over a new variable; the transport carries the
+  type and the two terms of the equality, so that the term determines its type, `C[u]`. -/
+  | transp {Γ : Scope} (A t u : Term k Γ) (C : Term k (Γ.extend 1)) (e v : Term k Γ) : Term k Γ
+  /-- `propext.{l}(P, Q, p. q, q. p)`: the proof of the equality of the propositions `P` and `Q` of
+  `Ω_l` from the two implications, a proof `q` of `Q` from a proof `p` of `P` and a proof `p` of `P`
+  from a proof `q` of `Q`; the proof carries the level and the two propositions, so that the term
+  determines its type, and the two implications are terms over a new variable, the hypothesis. -/
+  | propExt {Γ : Scope} (l : Level k) (P Q : Term k Γ) (f g : Term k (Γ.extend 1)) : Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
 one first.

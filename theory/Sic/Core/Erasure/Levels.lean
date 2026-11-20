@@ -51,7 +51,7 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
     (t : Term k Γ) → (t.substLevels ls').erase sig S hΓ = t.erase sig S hΓ
   | .var (e := .var) .. => rfl
   | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
-  | .sort _ | .const .. | .inst .. => rfl
+  | .sort _ | .const .. | .inst .. | .equality .. | .refl .. | .propExt .. => rfl
   | .ctor _ _ _ _ _ _ ts => by
     simp only [Term.substLevels, Term.erase, Terms.erase_substLevels sig S ls' hΓ ts]
   | .recursor _ ς χ _ _ _ _ _ t κ _ us => by
@@ -72,6 +72,7 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
         = (Ss.get j).elim [] fun x => x.2.1.map fun p => ⟨r * p.usage, p.requirement⟩ :=
       fun j => by cases Ss.get j <;> rfl
     simp only [h]
+  | .transp _ _ _ _ _ v => Term.erase_substLevels sig S ls' hΓ v
 
 -- ADE: none.
 /-- Fields instantiated at other levels have the same erasure. -/

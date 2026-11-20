@@ -182,6 +182,8 @@ theorem Term.nest_of_fresh {α : Type} {sigT : Signature} (mark : Name → Optio
   | _, _, _, _, .recursor _ _ _ _ _ _ _ _ _ _ _ _, _ => rfl
   | _, _, _, _, .obs _ _ _ _ _ _ _ _, _ => rfl
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _, _ => rfl
+  | _, _, _, _, .equality .., _ | _, _, _, _, .refl .., _
+  | _, _, _, _, .transp .., _ | _, _, _, _, .propExt .., _ => rfl
 
 /-- The arguments of an instance typed in a signature have the same nestings whatever the names
 that the signature does not declare hold. -/

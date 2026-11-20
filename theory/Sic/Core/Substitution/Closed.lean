@@ -156,6 +156,18 @@ theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Terms.subst₀_isVar h ss,
       States.subst₀_isVar h Ss, CorecBranches.subst₀_isVar h vs]
+  | .equality s l A t u => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t,
+      Term.subst₀_isVar h u]
+  | .refl s l A t => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t]
+  | .transp A t u C e v => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t,
+      Term.subst₀_isVar h u, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) C, Term.subst₀_isVar h e,
+      Term.subst₀_isVar h v]
+  | .propExt l P Q f g => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h P, Term.subst₀_isVar h Q,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) f, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) g]
 
 theorem Args.subst₀_isVar {Γ Δ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (α x)) : (ts : Args k Δ a) → ts.subst₀ σ = ts.rename α

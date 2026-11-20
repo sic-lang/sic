@@ -1025,7 +1025,10 @@ theorem Term.nestReads (hS : TypingSound sig ι) {sigT : Signature}
   | .ctor _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
   | .recursor _ _ _ _ _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
   | .obs _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
-  | .corec _ _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr => hNS.reads_of_plain ρ hpos rfl hr
+  | .corec _ _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
+  | .equality .., _, hpos, _, hNS, _, hr | .refl .., _, hpos, _, hNS, _, hr
+  | .transp .., _, hpos, _, hNS, _, hr | .propExt .., _, hpos, _, hNS, _, hr =>
+    hNS.reads_of_plain ρ hpos rfl hr
 
 -- ADE: none.
 /-- The arguments of an instance typed in the signature `Σ_T` and strictly positive in the

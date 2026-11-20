@@ -89,6 +89,30 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       (has : InstanceArgs.LevelEquiv as₁ as₂) (hss : Terms.LevelEquiv ss₁ ss₂)
       (hSs : States.LevelEquiv Ss₁ Ss₂) (hvs : CorecBranches.LevelEquiv vs₁ vs₂) :
       Term.LevelEquiv (.corec r D qs ls₁ ps as₁ ss₁ Ss₁ vs₁) (.corec r D qs ls₂ ps as₂ ss₂ Ss₂ vs₂)
+  /-- An equality at the same quality and at equal levels, with a type and terms equal up to their
+  levels. -/
+  | equality {Γ : Scope} (s : Quality) {l₁ l₂ : Level k} {A₁ A₂ t₁ t₂ u₁ u₂ : Term k Γ}
+      (hl : l₁ ≈ l₂) (hA : Term.LevelEquiv A₁ A₂) (ht : Term.LevelEquiv t₁ t₂)
+      (hu : Term.LevelEquiv u₁ u₂) :
+      Term.LevelEquiv (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂)
+  /-- A proof by reflexivity at the same quality and at equal levels, with a type and a term equal
+  up to their levels; the case is not named `refl`, which names the reflexivity of the relation. -/
+  | reflProof {Γ : Scope} (s : Quality) {l₁ l₂ : Level k} {A₁ A₂ t₁ t₂ : Term k Γ}
+      (hl : l₁ ≈ l₂) (hA : Term.LevelEquiv A₁ A₂) (ht : Term.LevelEquiv t₁ t₂) :
+      Term.LevelEquiv (.refl s l₁ A₁ t₁) (.refl s l₂ A₂ t₂)
+  /-- A transport, with a type, terms, a motive, a proof and a transported term equal up to their
+  levels. -/
+  | transp {Γ : Scope} {A₁ A₂ t₁ t₂ u₁ u₂ : Term k Γ} {C₁ C₂ : Term k (Γ.extend 1)}
+      {e₁ e₂ v₁ v₂ : Term k Γ} (hA : Term.LevelEquiv A₁ A₂) (ht : Term.LevelEquiv t₁ t₂)
+      (hu : Term.LevelEquiv u₁ u₂) (hC : Term.LevelEquiv C₁ C₂) (he : Term.LevelEquiv e₁ e₂)
+      (hv : Term.LevelEquiv v₁ v₂) :
+      Term.LevelEquiv (.transp A₁ t₁ u₁ C₁ e₁ v₁) (.transp A₂ t₂ u₂ C₂ e₂ v₂)
+  /-- A proof by extensionality at equal levels, with propositions and implications equal up to
+  their levels. -/
+  | propExt {Γ : Scope} {l₁ l₂ : Level k} {P₁ P₂ Q₁ Q₂ : Term k Γ}
+      {f₁ f₂ g₁ g₂ : Term k (Γ.extend 1)} (hl : l₁ ≈ l₂) (hP : Term.LevelEquiv P₁ P₂)
+      (hQ : Term.LevelEquiv Q₁ Q₂) (hf : Term.LevelEquiv f₁ f₂) (hg : Term.LevelEquiv g₁ g₂) :
+      Term.LevelEquiv (.propExt l₁ P₁ Q₁ f₁ g₁) (.propExt l₂ P₂ Q₂ f₂ g₂)
 
 /-- The arguments of a telescope, equal up to their levels one by one. -/
 inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
@@ -220,6 +244,15 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
   | .corec r D qs ls ps as ss Ss vs => .corec r D qs ps (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ss) (States.LevelEquiv.refl Ss)
       (CorecBranches.LevelEquiv.refl vs)
+  | .equality s l A t u => .equality s (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
+      (Term.LevelEquiv.refl t) (Term.LevelEquiv.refl u)
+  | .refl s l A t => .reflProof s (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
+      (Term.LevelEquiv.refl t)
+  | .transp A t u C e v => .transp (Term.LevelEquiv.refl A) (Term.LevelEquiv.refl t)
+      (Term.LevelEquiv.refl u) (Term.LevelEquiv.refl C) (Term.LevelEquiv.refl e)
+      (Term.LevelEquiv.refl v)
+  | .propExt l P Q f g => .propExt (Level.equivalence.refl l) (Term.LevelEquiv.refl P)
+      (Term.LevelEquiv.refl Q) (Term.LevelEquiv.refl f) (Term.LevelEquiv.refl g)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (ts : Args k Γ ps) → Args.LevelEquiv ts ts
@@ -284,6 +317,10 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl.symm has.symm h.symm hbs.symm
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl.symm has.symm hss.symm hSs.symm hvs.symm
+  | .equality s hl hA ht hu => .equality s (Level.equivalence.symm hl) hA.symm ht.symm hu.symm
+  | .reflProof s hl hA ht => .reflProof s (Level.equivalence.symm hl) hA.symm ht.symm
+  | .transp hA ht hu hC he hv => .transp hA.symm ht.symm hu.symm hC.symm he.symm hv.symm
+  | .propExt hl hP hQ hf hg => .propExt (Level.equivalence.symm hl) hP.symm hQ.symm hf.symm hg.symm
 
 theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
     Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
@@ -358,6 +395,16 @@ theorem Term.LevelEquiv.trans {k : Nat} {Γ : Scope} {t₁ t₂ t₃ : Term k Γ
   | .corec r D qs ps hl has hss hSs hvs, .corec _ _ _ _ hl' has' hss' hSs' hvs' =>
     .corec r D qs ps (hl.trans hl') (has.trans has') (hss.trans hss') (hSs.trans hSs')
       (hvs.trans hvs')
+  | .equality s hl hA ht hu, .equality _ hl' hA' ht' hu' =>
+    .equality s (Level.equivalence.trans hl hl') (hA.trans hA') (ht.trans ht') (hu.trans hu')
+  | .reflProof s hl hA ht, .reflProof _ hl' hA' ht' =>
+    .reflProof s (Level.equivalence.trans hl hl') (hA.trans hA') (ht.trans ht')
+  | .transp hA ht hu hC he hv, .transp hA' ht' hu' hC' he' hv' =>
+    .transp (hA.trans hA') (ht.trans ht') (hu.trans hu') (hC.trans hC') (he.trans he')
+      (hv.trans hv')
+  | .propExt hl hP hQ hf hg, .propExt hl' hP' hQ' hf' hg' =>
+    .propExt (Level.equivalence.trans hl hl') (hP.trans hP') (hQ.trans hQ') (hf.trans hf')
+      (hg.trans hg')
 termination_by structural h _ => h
 
 theorem Args.LevelEquiv.trans {k : Nat} {Γ : Scope} {ps : List Parameter}

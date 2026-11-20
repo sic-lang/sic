@@ -41,6 +41,14 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {t₁ 
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.rename α) (h.rename α) (hbs.rename α)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.rename α) (hss.rename α) (hSs.rename α) (hvs.rename α)
+  | .equality s hl hA ht hu => .equality s hl (hA.rename α) (ht.rename α) (hu.rename α)
+  | .reflProof s hl hA ht => .reflProof s hl (hA.rename α) (ht.rename α)
+  | .transp hA ht hu hC he hv =>
+    .transp (hA.rename α) (ht.rename α) (hu.rename α) (hC.rename (Ren.liftN 1 α))
+      (he.rename α) (hv.rename α)
+  | .propExt hl hP hQ hf hg =>
+    .propExt hl (hP.rename α) (hQ.rename α) (hf.rename (Ren.liftN 1 α))
+      (hg.rename (Ren.liftN 1 α))
 
 theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
     {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename α) (ts₂.rename α)
@@ -133,6 +141,20 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
     .corec r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
       (Terms.substLevels_levelEquiv h ss) (States.substLevels_levelEquiv h Ss)
       (CorecBranches.substLevels_levelEquiv h vs)
+  | .equality s l A t u =>
+    .equality s (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
+      (Term.substLevels_levelEquiv h t) (Term.substLevels_levelEquiv h u)
+  | .refl s l A t =>
+    .reflProof s (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
+      (Term.substLevels_levelEquiv h t)
+  | .transp A t u C e v =>
+    .transp (Term.substLevels_levelEquiv h A) (Term.substLevels_levelEquiv h t)
+      (Term.substLevels_levelEquiv h u) (Term.substLevels_levelEquiv h C)
+      (Term.substLevels_levelEquiv h e) (Term.substLevels_levelEquiv h v)
+  | .propExt l P Q f g =>
+    .propExt (Level.subst_equiv h l) (Term.substLevels_levelEquiv h P)
+      (Term.substLevels_levelEquiv h Q) (Term.substLevels_levelEquiv h f)
+      (Term.substLevels_levelEquiv h g)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Args k Γ ps) →
@@ -327,6 +349,14 @@ theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst�
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst₀ hσ) (h.subst₀ hσ) (hbs.subst₀ hσ)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.subst₀ hσ) (hss.subst₀ hσ) (hSs.subst₀ hσ) (hvs.subst₀ hσ)
+  | .equality s hl hA ht hu => .equality s hl (hA.subst₀ hσ) (ht.subst₀ hσ) (hu.subst₀ hσ)
+  | .reflProof s hl hA ht => .reflProof s hl (hA.subst₀ hσ) (ht.subst₀ hσ)
+  | .transp hA ht hu hC he hv =>
+    .transp (hA.subst₀ hσ) (ht.subst₀ hσ) (hu.subst₀ hσ) (hC.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
+      (he.subst₀ hσ) (hv.subst₀ hσ)
+  | .propExt hl hP hQ hf hg =>
+    .propExt hl (hP.subst₀ hσ) (hQ.subst₀ hσ) (hf.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
+      (hg.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
 
 theorem Args.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Args k Δ ps} :
@@ -470,6 +500,14 @@ theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k �
   | .obs D qs ps d hl has h hbs => .obs D qs ps d hl (has.subst hθ) (h.subst hθ) (hbs.subst hθ)
   | .corec r D qs ps hl has hss hSs hvs =>
     .corec r D qs ps hl (has.subst hθ) (hss.subst hθ) (hSs.subst hθ) (hvs.subst hθ)
+  | .equality s hl hA ht hu => .equality s hl (hA.subst hθ) (ht.subst hθ) (hu.subst hθ)
+  | .reflProof s hl hA ht => .reflProof s hl (hA.subst hθ) (ht.subst hθ)
+  | .transp hA ht hu hC he hv =>
+    .transp (hA.subst hθ) (ht.subst hθ) (hu.subst hθ) (hC.subst (Subst.LevelEquiv.liftN _ hθ))
+      (he.subst hθ) (hv.subst hθ)
+  | .propExt hl hP hQ hf hg =>
+    .propExt hl (hP.subst hθ) (hQ.subst hθ) (hf.subst (Subst.LevelEquiv.liftN _ hθ))
+      (hg.subst (Subst.LevelEquiv.liftN _ hθ))
 
 theorem Args.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {θ₁ θ₂ : Subst k Γ Δ}
     (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Args k Δ ps} :
