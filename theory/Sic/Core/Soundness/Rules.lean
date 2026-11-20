@@ -1286,7 +1286,7 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       (Terms.LevelEquiv.refl _))
     (Term.LevelEquiv.refl _)
 
-/-! ## Equality -/
+/-! ## Equality of Two Terms -/
 
 -- ADE: `→⊩Id≡Id∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
 /-- `(∼_≡)`, closed: two equalities of equal terms of equal types of the sort `s_l₁`, at levels of
