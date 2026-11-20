@@ -248,11 +248,11 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
       (Term.LevelEquiv.refl t) (Term.LevelEquiv.refl u)
   | .refl s l A t => .reflProof s (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
       (Term.LevelEquiv.refl t)
-  | .transp A t u C e v => .transp (Term.LevelEquiv.refl A) (Term.LevelEquiv.refl t)
-      (Term.LevelEquiv.refl u) (Term.LevelEquiv.refl C) (Term.LevelEquiv.refl e)
-      (Term.LevelEquiv.refl v)
-  | .propExt l P Q f g => .propExt (Level.equivalence.refl l) (Term.LevelEquiv.refl P)
-      (Term.LevelEquiv.refl Q) (Term.LevelEquiv.refl f) (Term.LevelEquiv.refl g)
+  | .transp A t₁ t₂ C t u => .transp (Term.LevelEquiv.refl A) (Term.LevelEquiv.refl t₁)
+      (Term.LevelEquiv.refl t₂) (Term.LevelEquiv.refl C) (Term.LevelEquiv.refl t)
+      (Term.LevelEquiv.refl u)
+  | .propExt l A B t u => .propExt (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
+      (Term.LevelEquiv.refl B) (Term.LevelEquiv.refl t) (Term.LevelEquiv.refl u)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (ts : Args k Γ ps) → Args.LevelEquiv ts ts

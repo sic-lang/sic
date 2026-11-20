@@ -161,13 +161,13 @@ theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ
       Term.subst₀_isVar h u]
   | .refl s l A t => by
     rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t]
-  | .transp A t u C e v => by
-    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t,
-      Term.subst₀_isVar h u, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) C, Term.subst₀_isVar h e,
-      Term.subst₀_isVar h v]
-  | .propExt l P Q f g => by
-    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h P, Term.subst₀_isVar h Q,
-      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) f, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) g]
+  | .transp A t₁ t₂ C t u => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t₁,
+      Term.subst₀_isVar h t₂, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) C, Term.subst₀_isVar h t,
+      Term.subst₀_isVar h u]
+  | .propExt l A B t u => by
+    rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h B,
+      Term.subst₀_isVar (Subst₀.liftN_isVar _ h) t, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) u]
 
 theorem Args.subst₀_isVar {Γ Δ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (α x)) : (ts : Args k Δ a) → ts.subst₀ σ = ts.rename α

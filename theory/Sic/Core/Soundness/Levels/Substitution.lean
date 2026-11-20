@@ -147,14 +147,14 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
   | .refl s l A t =>
     .reflProof s (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
       (Term.substLevels_levelEquiv h t)
-  | .transp A t u C e v =>
-    .transp (Term.substLevels_levelEquiv h A) (Term.substLevels_levelEquiv h t)
-      (Term.substLevels_levelEquiv h u) (Term.substLevels_levelEquiv h C)
-      (Term.substLevels_levelEquiv h e) (Term.substLevels_levelEquiv h v)
-  | .propExt l P Q f g =>
-    .propExt (Level.subst_equiv h l) (Term.substLevels_levelEquiv h P)
-      (Term.substLevels_levelEquiv h Q) (Term.substLevels_levelEquiv h f)
-      (Term.substLevels_levelEquiv h g)
+  | .transp A t₁ t₂ C t u =>
+    .transp (Term.substLevels_levelEquiv h A) (Term.substLevels_levelEquiv h t₁)
+      (Term.substLevels_levelEquiv h t₂) (Term.substLevels_levelEquiv h C)
+      (Term.substLevels_levelEquiv h t) (Term.substLevels_levelEquiv h u)
+  | .propExt l A B t u =>
+    .propExt (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
+      (Term.substLevels_levelEquiv h B) (Term.substLevels_levelEquiv h t)
+      (Term.substLevels_levelEquiv h u)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Args k Γ ps) →

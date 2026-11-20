@@ -575,7 +575,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
           ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => ⟨r * p.usage, p.requirement⟩,
             as)))
   | .equality .. | .refl .. | .propExt .. => .erased
-  | .transp _ _ _ _ _ v => v.erase sig S hΓ
+  | .transp _ _ _ _ _ u => u.erase sig S hΓ
 
 -- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
@@ -799,7 +799,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
       (CorecBranches.erase_lessDefined sig h hΓ vs _ _ _ _
         (Resumption.map_ofArity_lessDefined
           (fun h₁ => decide_eq_true (h r (of_decide_eq_true h₁))) _ _))
-  | .transp _ _ _ _ _ v => Term.erase_lessDefined sig h hΓ v
+  | .transp _ _ _ _ _ u => Term.erase_lessDefined sig h hΓ u
 
 -- ADE: none.
 /-- The erasure of fields by a larger set of grades is less defined. -/

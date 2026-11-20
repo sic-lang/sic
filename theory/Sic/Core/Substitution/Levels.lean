@@ -89,15 +89,15 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
   | .refl s l A t => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α t]
-  | .transp A t u C e v => by
+  | .transp A t₁ t₂ C t u => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
-      Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α t,
-      Term.substLevels_rename ls' α u, Term.substLevels_rename ls' (Ren.liftN 1 α) C,
-      Term.substLevels_rename ls' α e, Term.substLevels_rename ls' α v]
-  | .propExt l P Q f g => by
+      Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α t₁,
+      Term.substLevels_rename ls' α t₂, Term.substLevels_rename ls' (Ren.liftN 1 α) C,
+      Term.substLevels_rename ls' α t, Term.substLevels_rename ls' α u]
+  | .propExt l A B t u => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
-      Term.substLevels_rename ls' α P, Term.substLevels_rename ls' α Q,
-      Term.substLevels_rename ls' (Ren.liftN 1 α) f, Term.substLevels_rename ls' (Ren.liftN 1 α) g]
+      Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α B,
+      Term.substLevels_rename ls' (Ren.liftN 1 α) t, Term.substLevels_rename ls' (Ren.liftN 1 α) u]
 
 theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Parameter} (ls' : Fin k → Level k')
     (α : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename α).substLevels ls'
@@ -239,17 +239,17 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
   | .refl s l A t => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h t]
-  | .transp A t u C e v => by
+  | .transp A t₁ t₂ C t u => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
-      Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h t,
-      Term.substLevels_subst₀_of h u,
+      Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h t₁,
+      Term.substLevels_subst₀_of h t₂,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) C,
-      Term.substLevels_subst₀_of h e, Term.substLevels_subst₀_of h v]
-  | .propExt l P Q f g => by
+      Term.substLevels_subst₀_of h t, Term.substLevels_subst₀_of h u]
+  | .propExt l A B t u => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
-      Term.substLevels_subst₀_of h P, Term.substLevels_subst₀_of h Q,
-      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) f,
-      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) g]
+      Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h B,
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) t,
+      Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) u]
 
 theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
@@ -400,15 +400,15 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
   | .refl s l A t => by
     simp only [Term.substLevels, Level.subst_subst, Term.substLevels_substLevels ls₁ ls₂ A,
       Term.substLevels_substLevels ls₁ ls₂ t]
-  | .transp A t u C e v => by
+  | .transp A t₁ t₂ C t u => by
     simp only [Term.substLevels, Term.substLevels_substLevels ls₁ ls₂ A,
-      Term.substLevels_substLevels ls₁ ls₂ t, Term.substLevels_substLevels ls₁ ls₂ u,
-      Term.substLevels_substLevels ls₁ ls₂ C, Term.substLevels_substLevels ls₁ ls₂ e,
-      Term.substLevels_substLevels ls₁ ls₂ v]
-  | .propExt l P Q f g => by
-    simp only [Term.substLevels, Level.subst_subst, Term.substLevels_substLevels ls₁ ls₂ P,
-      Term.substLevels_substLevels ls₁ ls₂ Q, Term.substLevels_substLevels ls₁ ls₂ f,
-      Term.substLevels_substLevels ls₁ ls₂ g]
+      Term.substLevels_substLevels ls₁ ls₂ t₁, Term.substLevels_substLevels ls₁ ls₂ t₂,
+      Term.substLevels_substLevels ls₁ ls₂ C, Term.substLevels_substLevels ls₁ ls₂ t,
+      Term.substLevels_substLevels ls₁ ls₂ u]
+  | .propExt l A B t u => by
+    simp only [Term.substLevels, Level.subst_subst, Term.substLevels_substLevels ls₁ ls₂ A,
+      Term.substLevels_substLevels ls₁ ls₂ B, Term.substLevels_substLevels ls₁ ls₂ t,
+      Term.substLevels_substLevels ls₁ ls₂ u]
 
 theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Parameter}
     (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
@@ -650,15 +650,15 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
   | .refl s l A t => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h A,
       Term.substLevels_subst_of h t]
-  | .transp A t u C e v => by
+  | .transp A t₁ t₂ C t u => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h A,
-      Term.substLevels_subst_of h t, Term.substLevels_subst_of h u,
-      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) C, Term.substLevels_subst_of h e,
-      Term.substLevels_subst_of h v]
-  | .propExt l P Q f g => by
-    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h P,
-      Term.substLevels_subst_of h Q, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) f,
-      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) g]
+      Term.substLevels_subst_of h t₁, Term.substLevels_subst_of h t₂,
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) C, Term.substLevels_subst_of h t,
+      Term.substLevels_subst_of h u]
+  | .propExt l A B t u => by
+    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h A,
+      Term.substLevels_subst_of h B, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) t,
+      Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) u]
 
 theorem Args.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}

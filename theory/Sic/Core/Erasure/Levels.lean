@@ -72,7 +72,7 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
         = (Ss.get j).elim [] fun x => x.2.1.map fun p => ⟨r * p.usage, p.requirement⟩ :=
       fun j => by cases Ss.get j <;> rfl
     simp only [h]
-  | .transp _ _ _ _ _ v => Term.erase_substLevels sig S ls' hΓ v
+  | .transp _ _ _ _ _ u => Term.erase_substLevels sig S ls' hΓ u
 
 -- ADE: none.
 /-- Fields instantiated at other levels have the same erasure. -/
