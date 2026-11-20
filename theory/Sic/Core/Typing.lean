@@ -219,7 +219,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   -- ADE: `Jⱼ`, in `Definition/Typed.agda`, whose motive also binds the proof.
   /-- The transport of a term of the motive at the first of two terms of a type of a sort, along a
   proof of their equality, is a term of the motive at the second; the motive is a type of a sort `κ`
-  over a term of the type. -/
+  over a term of the type.
+  RFC: `\mathsf{transp}` -/
   | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
       (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)
@@ -461,7 +462,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       EqTerm sig ctx (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂) (.sort ⟨.prop, l₁⟩)
   -- ADE: `J-cong`, in `Definition/Typed.agda`, whose motive also binds the proof.
   /-- Two transports of equal terms, along equal proofs of the equality of equal terms of equal
-  types, with equal motives of a sort `κ`, are equal. -/
+  types, with equal motives of a sort `κ`, are equal.
+  RFC: `\mathsf{transp}_\equiv` -/
   | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A A' t₁ t₁' t₂ t₂' t t' u u' : Term k Γ}
       {C C' : Term k (.var :: Γ)} (hA : EqTerm sig ctx A A' (.sort ⟨s, l⟩))
@@ -473,7 +475,8 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (C.subst₀ (Subst₀.single t₂))
   -- ADE: none.
   /-- A transport between two equal instances of its motive, those at the two terms of the
-  equality, is its term. -/
+  equality, is its term.
+  RFC: `\mathsf{transp}_\mathsf{same}` -/
   | transpSame {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
       (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)

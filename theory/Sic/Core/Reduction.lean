@@ -162,7 +162,8 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {d : Name} {bs : Terms k Γ} (h : Red sig t t') :
       Red sig (.obs D qs ls ps as t d bs) (.obs D qs ls ps as t' d bs)
   -- ADE: none.
-  /-- A transport reduces to its term. -/
+  /-- A transport reduces to its term.
+  RFC: `\mathsf{transp}_{\longrightarrow}` -/
   | transp {A t₁ t₂ : Term k Γ} {C : Term k (Γ.extend 1)} {t u : Term k Γ} :
       Red sig (.transp A t₁ t₂ C t u) u
 
