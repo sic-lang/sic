@@ -204,8 +204,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       HasType sig ctx (.inst D qs ls ps as)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
   -- ADE: `Idⱼ`, in `Definition/Typed.agda`.
-  /-- The equality of two terms of a type is a proposition at the level of the sort of this type.
-  RFC: `\sim` -/
+  /-- The equality of two terms of a type is a proposition at the level of the sort of this type. -/
   | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {A t u : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) (hu : HasType sig ctx u A) :
@@ -435,8 +434,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       EqTerm sig ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
   -- ADE: `Id-cong`, in `Definition/Typed.agda`.
-  /-- Two equalities of equal terms of equal types, at equal levels, are equal.
-  RFC: `\sim_\equiv` -/
+  /-- Two equalities of equal terms of equal types, at equal levels, are equal. -/
   | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l₁ l₂ : Level k} {A₁ A₂ t₁ t₂ u₁ u₂ : Term k Γ}
       (hA : EqTerm sig ctx A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : EqTerm sig ctx t₁ t₂ A₁)
