@@ -45,13 +45,14 @@ theorem UnivRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
   | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
   | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
 
-/-- `ty(Ω_n)` gives canonical propositions: instances of declared types. -/
+/-- `ty(Ω_n)` gives canonical propositions: instances of declared types and equalities. -/
 theorem PropRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
     {below : LevelRel.Below n} {v : Term 0 []} {b : Prop} (h : PropRel sig ι n below v b) :
     Whnf sig' v := by
   cases h with
   | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
   | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | equality => exact .equality _ _ _ _ _
 
 /-- `(eq_c)` relates canonical terms: constructors. -/
 theorem DataType.ctorRel_whnf {sig' : Signature} {j g k : Nat} {Δ : Scope} {D : Name}
@@ -110,6 +111,7 @@ theorem Term.unknown_not_whnf : ¬ Whnf [] Term.unknown := by
     | inst => cases ht
     | ctor => cases ht
     | corec => cases ht
+    | equality => cases ht
     | ne hn =>
       cases hn with
       | var => cases ht

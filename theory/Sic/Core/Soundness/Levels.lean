@@ -102,6 +102,7 @@ theorem Whnf.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' : Term k 
   | inst => cases h; exact .inst _ _ _ _ _
   | ctor => cases h; exact .ctor _ _ _ _ _ _ _
   | corec => cases h; exact .corec _ _ _ _ _ _ _ _ _
+  | equality => cases h; exact .equality _ _ _ _ _
   | ne hn => exact .ne (hn.levelEquiv h)
 
 /-! ## Positions -/
@@ -756,6 +757,16 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       exact .codata hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT => DesRel.levelEquiv hd ih (hS X _ hT) (Destructors.substLevels_levelEquiv hls' _)
           has.toSubst
+  -- The truth `F t u` of the case is a pattern of its index only once `F` is named: the application
+  -- of an unnamed relation is not one.
+  | .equality (F := F) hl hA hF, h => by
+    cases h with
+    | equality _ hl' hA' ht hu =>
+      obtain ⟨_, hA'', hw⟩ := Computes.levelEquiv hd.interpret hA hA'
+      have hF' := FieldRel.levelEquiv hd ih hF hw
+      have htu := propext ⟨fun h => FieldRel.rel_levelEquiv hd ih hF h ht hu,
+        fun h => FieldRel.rel_levelEquiv hd ih hF h ht.symm hu.symm⟩
+      exact htu ▸ .equality ((Level.equal_closed_iff.1 hl') ▸ hl) hA'' hF'
 
 /-- A telescope whose levels change for equal ones has the same equality of the terms of its
 fields, at positions that hold the same relations and types whose levels change for equal ones. -/

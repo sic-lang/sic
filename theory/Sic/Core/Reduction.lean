@@ -19,8 +19,8 @@ term that a recursor eliminates, and the codata types by `(β_⟶)`, which runs 
 destructor in the corecursor that it observes, and `(d_⟶)`, which reduces the term that an
 observation observes.
 A head normal form is a sort, an instance of a declared type, a constructor applied to the terms of
-its fields, a corecursor, or a neutral term, stuck on a variable or on a constant, which no rule
-unfolds, or a recursor or an observation of a neutral term.
+its fields, a corecursor, an equality, or a neutral term, stuck on a variable or on a constant,
+which no rule unfolds, or a recursor or an observation of a neutral term.
 
 The reduction is untyped and defined on open terms, since the meaning defines the judgments from it
 and the algorithm of the conversion reduces terms of a context.
@@ -82,6 +82,9 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   | corec {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ) (Ss : States k Γ)
       (gs : CorecBranches k Γ) : Whnf sig (.corec r D qs ls ps as ss Ss gs)
+  -- ADE: none.
+  /-- `t ∼.{s; l}_A u`, an equality. -/
+  | equality (s : Quality) (l : Level k) (A t u : Term k Γ) : Whnf sig (.equality s l A t u)
   -- ADE: `Whnf.ne`, in `Definition/Untyped/Whnf.agda`.
   /-- A neutral term. -/
   | ne {t : Term k Γ} (h : Neutral sig t) : Whnf sig t

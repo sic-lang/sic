@@ -19,8 +19,8 @@ same truth, an instance of a data type has its constructors, equal when they are
 constructor with equal fields, and an instance of a codata type has its corecursors, equal when
 their observations at equal arguments are equal, as the partial equivalence relations of the types
 of functions relate the functions; a proposition declared as a data type is true when one of its
-constructors has terms for its fields, and one declared as a codata type when each of its
-destructors has a result.
+constructors has terms for its fields, one declared as a codata type when each of its destructors
+has a result, and an equality `t ∼_A u` when the equality of the terms of `A` relates `t` and `u`.
 
 The universes are defined one level after the other, and at each level by a least relation, which
 gives each type of the level together with the equality of its terms: this induction-recursion is
@@ -262,8 +262,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
 -- ADE: none.
 /--
 `ty(Ω_n)`: the least relation of the clauses of the instances of the data types and of the codata
-types in `Ω_n`, given the
-relations `below` of the levels below `n`, which gives each proposition its truth.
+types in `Ω_n` and of the equalities, given the relations `below` of the levels below `n`, which
+gives each proposition its truth.
 -/
 inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
     Term 0 [] → Prop → Prop where
@@ -305,6 +305,13 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
             fun D' => fun _ _ => B D')
           ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S B T')) :
       PropRel sig ι n below v (CodataType.blockTruth decl.codataTypes S D)
+  /-- `(ty_∼)`: the equality `t ∼.{s; l}_A u`, if `⟦l⟧ = n`, whose type `A` computes to a type of
+  a sort that the sort of the quality `s` at the level `n` bounds, whose terms are equal by `F`, and
+  whose truth is that `F` relates `t` and `u`.
+  RFC: `\mathsf{ty}_\sim` -/
+  | equality {s : Quality} {l : Level 0} {A t u w : Term 0 []} {F : TermRel}
+      (hl : l.closedValue = n) (hA : Computesι sig ι A w) (hF : FieldRel sig ι n below s w F) :
+      PropRel sig ι n below (.equality s l A t u) (F t u)
 
 -- ADE: none.
 /--
