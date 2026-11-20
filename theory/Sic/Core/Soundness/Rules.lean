@@ -1286,6 +1286,70 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       (Terms.LevelEquiv.refl _))
     (Term.LevelEquiv.refl _)
 
+/-! ## Equality -/
+
+-- ADE: `→⊩Id≡Id∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(∼_≡)`, closed: two equalities of equal terms of equal types of the sort `s_l₁`, at levels of
+the same value, are equal propositions of `Ω_l₁`: the type of each computes to a type of this sort,
+which `(ty_∼)` reads, and their truths, that of the equality of their terms, agree, since the terms
+of the second are equal to those of the first, at an equal type. -/
+theorem ValidEqTerm₀.equality {s : Quality} {l₁ l₂ : Level 0} {A₁ A₂ t₁ t₂ u₁ u₂ : Term 0 []}
+    (hA : ValidEqTerm₀ sig ι A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : ValidEqTerm₀ sig ι t₁ t₂ A₁)
+    (hu : ValidEqTerm₀ sig ι u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
+    ValidEqTerm₀ sig ι (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂) (.sort ⟨.prop, l₁⟩) := by
+  have hd := hA.1.1
+  have hAA : EqTypeClause sig ι A₁ A₂ := by
+    cases s
+    · exact hA.univType.2
+    · exact hA.propType.2
+  have htruth : EqTermClause sig ι t₁ u₁ A₁ ↔ EqTermClause sig ι t₂ u₂ A₂ :=
+    ⟨fun h => ((ht.2.symm hd).trans hd (h.trans hd hu.2)).conv hd hAA,
+      fun h => ht.2.trans hd ((h.conv hd hAA.symm).trans hd (hu.2.symm hd))⟩
+  have hl₂ : l₂.closedValue = l₁.closedValue := (hl Fin.elim0).symm
+  -- The types compute to types of `s_l₁` that the relation of this sort relates, which `(ty_∼)`
+  -- reads at the level of `l₁`, and so at that of `l₂`.
+  obtain ⟨-, hcl, -⟩ := hA
+  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  have hP : ∃ b₁ b₂, (levelRel sig ι l₁.closedValue).prop (.equality s l₁ A₁ t₁ u₁) b₁ ∧
+      (levelRel sig ι l₁.closedValue).prop (.equality s l₂ A₂ t₂ u₂) b₂ := by
+    cases hR with
+    | univ n hn =>
+      cases levelRel_univ_iff.1 hn with
+      | univ hk _ =>
+        subst hk
+        obtain ⟨⟨R', h₁, h₂⟩, -⟩ := hvw
+        exact ⟨_, _, levelRel_prop_iff.2 (.equalityUniv rfl hv (levelRel_univ_iff.1 h₁)),
+          levelRel_prop_iff.2 (.equalityUniv hl₂ hw (levelRel_univ_iff.1 h₂))⟩
+      | prop hk _ =>
+        subst hk
+        obtain ⟨b₁, b₂, h₁, h₂, -⟩ := hvw
+        exact ⟨_, _, levelRel_prop_iff.2 (.equalityProp rfl hv (levelRel_prop_iff.1 h₁)),
+          levelRel_prop_iff.2 (.equalityProp hl₂ hw (levelRel_prop_iff.1 h₂))⟩
+      | data _ _ _ _ hv => cases hv
+      | codata _ _ _ _ hv => cases hv
+    | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+  obtain ⟨b₁, b₂, hb₁, hb₂⟩ := hP
+  have hU := HasEq.univ (sig := sig) (ι := ι) (l₁.closedValue + 1)
+    (levelRel_univ_iff.2 (.prop (l := l₁) rfl rfl))
+  refine ⟨(ValidEqTerm₀.sort hd (q := .prop) (Level.equivalence.refl l₁)).univType,
+    fun _ => ⟨_, _, _, _, Computes.sort _ _, ⟨.refl _, .equality ..⟩, ⟨.refl _, .equality ..⟩, hU,
+      b₁, b₂, hb₁, hb₂, ?_⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+  exact (levelRel_prop_equality hd hb₁).trans (htruth.trans (levelRel_prop_equality hd hb₂).symm)
+
+-- ADE: `Id-congᵗᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(∼_≡)` keeps the meaning, and `(∼)` with it: equal types and equal terms give, at equal
+substitutions of the context, equal closed types and terms, hence equal equalities. -/
+theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l₁ l₂ : Level 0}
+    {A₁ A₂ t₁ t₂ u₁ u₂ : Term 0 Γ} (hA : ValidEqTermΓ sig ι ctx A₁ A₂ (.sort ⟨s, l₁⟩))
+    (ht : ValidEqTermΓ sig ι ctx t₁ t₂ A₁) (hu : ValidEqTermΓ sig ι ctx u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
+    ValidEqTermΓ sig ι ctx (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂)
+      (.sort ⟨.prop, l₁⟩) :=
+  ⟨⟨hA.1.1, fun _ _ _ =>
+      (ValidEqTerm₀.sort hA.1.1.distinct (q := .prop) (Level.equivalence.refl l₁)).univType⟩,
+    fun σ₁ σ₂ hσ => ValidEqTerm₀.equality (hA.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) (hu.2 σ₁ σ₂ hσ) hl⟩
+
 /-! ## Entries of the Signature -/
 
 /-- A judgment in the empty context is its closed judgment, at the substitution of no variable. -/
