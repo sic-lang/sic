@@ -259,6 +259,7 @@ modules = [
   "Sic.Core.Soundness.Rules",
   "Sic.Core.Soundness.Signature",
   "Sic.Core.Soundness.Substitution",
+  "Sic.Core.Soundness.Transport",
 ]
 forbidden = ["Sic.Core.Ownership", "Sic.Core.Typing", "Sic.Core.Usage"]
 
