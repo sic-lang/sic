@@ -158,6 +158,7 @@ where
       rw [Context.substLevels_substLevels_getFin] at has'
       rw [Term.substLevels, Term.substLevels, Universe.substLevels_substLevels_getFin]
       exact .inst h hq _ hp hadm has'
+    | .equality hA ht hu => .equality (hasType ls' hA) (hasType ls' ht) (hasType ls' hu)
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
@@ -278,6 +279,8 @@ where
       rw [Term.substLevels, Term.substLevels, Term.substLevels,
         Universe.substLevels_substLevels_getFin]
       exact .inst h hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls)
+    | .equality hA ht hu hl =>
+      .equality (eqTerm ls' hA) (eqTerm ls' ht) (eqTerm ls' hu) (Level.subst_equal ls' hl)
     | .ctor (ls₁ := ls) h hc hq hl₁ hl₂ hp hadm has hls hts => by
       have has' := eqInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'

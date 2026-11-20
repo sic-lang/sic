@@ -147,6 +147,7 @@ where
     | .prop hctx => .prop (wfCtx hs hw hctx)
     | .inst h hq hl hp hadm has =>
       .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has)
+    | .equality hA ht hu => .equality (hasType hs hw hA) (hasType hs hw ht) (hasType hs hw hu)
     | .ctor h hc hq hl hp hadm has hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
     | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>
@@ -180,6 +181,8 @@ where
     | .prop hctx hl => .prop (wfCtx hs hw hctx) hl
     | .inst h hq hl₁ hl₂ hp hadm has hls =>
       .inst ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
+    | .equality hA ht hu hl =>
+      .equality (eqTerm hs hw hA) (eqTerm hs hw ht) (eqTerm hs hw hu) hl
     | .ctor h hc hq hl₁ hl₂ hp hadm has hls hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
         (eqArgs hs hw hts)

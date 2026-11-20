@@ -207,6 +207,9 @@ where
     | .inst h hq hl hp hadm has, _ => fun ρ =>
       RunValidRen.erased
         (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h hq hl hp hadm has) ρ) rfl
+    | .equality hA ht hu, _ => fun ρ =>
+      RunValidRen.erased
+        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.equality hA ht hu) ρ) rfl
     | .conv ht h, hu => fun ρ =>
       RunValidRen.conv (soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ)
         (soundnessIn.eqType hw.distinct hw.liftsInOrder hι h ρ) (hasType hw hι hP ht hu ρ)

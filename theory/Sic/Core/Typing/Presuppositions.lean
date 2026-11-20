@@ -178,6 +178,7 @@ where
     | .univ hctx => wfCtx hctx
     | .prop hctx => wfCtx hctx
     | .inst _ _ _ _ _ has => hasInstanceArgs has
+    | .equality hA _ _ => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -196,6 +197,7 @@ where
     | .univ hctx _ => wfCtx hctx
     | .prop hctx _ => wfCtx hctx
     | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
+    | .equality hA _ _ _ => eqTerm hA
     | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
     | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
@@ -351,6 +353,7 @@ where
     | .univ hctx => hctx
     | .prop hctx => hctx
     | .inst _ _ _ _ _ has => hasInstanceArgs has
+    | .equality hA _ _ => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -369,6 +372,7 @@ where
     | .univ hctx _ => hctx
     | .prop hctx _ => hctx
     | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
+    | .equality hA _ _ _ => eqTerm hA
     | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
     | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
     | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has

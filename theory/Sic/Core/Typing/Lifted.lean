@@ -244,6 +244,7 @@ where
     | .univ hctx, hθ => .univ (wfCtx hctx hθ)
     | .prop hctx, hθ => .prop (wfCtx hctx hθ)
     | .inst h hq hl hp hadm has, hθ => .inst h hq hl hp hadm (hasInstanceArgs has hθ)
+    | .equality hA ht hu, hθ => .equality (hasType hA hθ) (hasType ht hθ) (hasType hu hθ)
     | .ctor h hc hq hl hp hadm has hts, hθ => by
       rw [Term.ctor_subst]
       refine .ctor h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_
@@ -337,6 +338,7 @@ where
     | .prop hctx hl, hθ => .prop (wfCtx hctx hθ) hl
     | .inst h hq hl₁ hl₂ hp hadm has hls, hθ =>
       .inst h hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls
+    | .equality hA ht hu hl, hθ => .equality (eqTerm hA hθ) (eqTerm ht hθ) (eqTerm hu hθ) hl
     | .ctor h hc hq hl₁ hl₂ hp hadm has hls hts, hθ => by
       rw [Term.ctor_subst, Term.ctor_subst]
       refine .ctor h hc hq hl₁ hl₂ hp hadm (eqInstanceArgs has hθ) hls ?_

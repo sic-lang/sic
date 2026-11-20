@@ -203,6 +203,13 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
       HasType sig ctx (.inst D qs ls ps as)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+  -- ADE: `Idⱼ`, in `Definition/Typed.agda`.
+  /-- The equality of two terms of a type is a proposition at the level of the sort of this type.
+  RFC: `\sim` -/
+  | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l : Level k} {A t u : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
+      (ht : HasType sig ctx t A) (hu : HasType sig ctx u A) :
+      HasType sig ctx (.equality s l A t u) (.sort ⟨.prop, l⟩)
   -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
@@ -427,6 +434,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
         (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+  -- ADE: `Id-cong`, in `Definition/Typed.agda`.
+  /-- Two equalities of equal terms of equal types, at equal levels, are equal.
+  RFC: `\sim_\equiv` -/
+  | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+      {l₁ l₂ : Level k} {A₁ A₂ t₁ t₂ u₁ u₂ : Term k Γ}
+      (hA : EqTerm sig ctx A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : EqTerm sig ctx t₁ t₂ A₁)
+      (hu : EqTerm sig ctx u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
+      EqTerm sig ctx (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂) (.sort ⟨.prop, l₁⟩)
   -- ADE: none.
   /-- Two applications of the same constructor, at equal arguments of the instance, at equal levels
   and at equal arguments of its fields, are equal.

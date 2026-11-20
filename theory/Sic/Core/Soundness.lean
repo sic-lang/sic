@@ -300,6 +300,9 @@ where
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
       exact hc
+    | .equality hA ht hu => fun ρ =>
+      ValidEqTermΓ.equality (hasType hd hord hι hA ρ) (hasType hd hord hι ht ρ)
+        (hasType hd hord hι hu ρ) (Level.equivalence.refl _)
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => fun ρ => by
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl
@@ -441,6 +444,9 @@ where
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
       exact hc
+    | .equality hA ht hu hl => fun ρ =>
+      ValidEqTermΓ.equality (eqTerm hd hord hι hA ρ) (eqTerm hd hord hι ht ρ)
+        (eqTerm hd hord hι hu ρ) (Level.subst_equal _ hl)
     | .ctor (ls₁ := ls₁) (ls₂ := ls₂) h hc hq hl₁ hl₂ hp hadm has hls hts => fun ρ => by
       have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
         (List.length_map _).trans hl₁
