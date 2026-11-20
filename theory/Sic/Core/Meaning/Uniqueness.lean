@@ -21,6 +21,8 @@ equality of a type relates to themselves, which `Sic.Core.Meaning.RunTime.Nestin
 The equality of the terms of a universe compares the relations of run time of the level below it,
 so that its transitivity needs their uniqueness, which the induction gives with the partial
 equivalence relations.
+The uniqueness of the equality of the terms of a type also shows that the truth of an equality is
+the clause of the equality of its two terms in the meaning of the judgments.
 -/
 
 @[expose] public section
@@ -200,5 +202,49 @@ theorem HasRun.prop_iff {sig : Signature} {ι : Interpretation} {P : Program} {v
     HasRun sig ι P v R ↔ ∀ H t a, R H t a :=
   ⟨fun h => (h.eq hd (.prop k b hp fun _ _ _ => trivial)) ▸ fun _ _ _ => trivial,
     fun hR => .prop k b hp hR⟩
+
+/-! ## Truth of the Equality
+
+The truth that `ty(Ω_n)` gives an equality is the clause of the equality of its terms in the meaning
+of the judgments. -/
+
+/-- The truth of an equality is the equality of the meaning of its two terms, in a signature whose
+names are distinct. -/
+theorem levelRel_prop_equality {sig : Signature} {ι : Interpretation} {n : Nat} {s : Quality}
+    {l : Level 0} {A t u : Term 0 []} {b : Prop} (hd : sig.Distinct)
+    (h : (levelRel sig ι n).prop (.equality s l A t u) b) : b ↔ EqTermClause sig ι t u A := by
+  -- The type `A` computes to `w`, a type of a universe, whose terms are equal when they compute to
+  -- canonical terms that its equality relates, or a proposition, whose proofs are equal when it is
+  -- true: the two cases of the clause, which the uniqueness of `eq(w)` makes agree with the truth.
+  have htype : ∀ {w : Term 0 []} {R : TermRel} (m : Nat), Computesι sig ι A w →
+      (levelRel sig ι m).univ w R → (R.computed sig ι t u ↔ EqTermClause sig ι t u A) :=
+    fun {w R} m hA hR =>
+      have hnp : ¬ ComputesToProp sig ι A := fun ⟨_, hA', _, _, hp⟩ =>
+        HasEq.univ_not_prop hd hR (Computesι.det hd hA hA' ▸ hp)
+      ⟨fun ⟨w₁, w₂, ht, hu, htu⟩ => ⟨fun _ => ⟨w, w₁, w₂, R, hA, ht, hu, .univ m hR, htu⟩,
+          fun hp => (hnp hp).elim⟩,
+        fun ⟨hc, _⟩ =>
+          have ⟨_, w₁, w₂, R', hA', ht, hu, hE, htu⟩ := hc hnp
+          ⟨w₁, w₂, ht, hu, (HasEq.unique hd hE
+            (.univ m (Computesι.det hd hA hA' ▸ hR)) w₁ w₂).1 htu⟩⟩
+  have hprop : ∀ {w : Term 0 []} {b' : Prop} (m : Nat), Computesι sig ι A w →
+      (levelRel sig ι m).prop w b' → (b' ↔ EqTermClause sig ι t u A) :=
+    fun {w b'} m hA hp =>
+      have hcp : ComputesToProp sig ι A := ⟨w, hA, m, b', hp⟩
+      ⟨fun hb => ⟨fun hnp => (hnp hcp).elim,
+          fun _ => ⟨w, fun _ _ => b', hA, .prop m b' hp fun _ _ => .rfl, hb⟩⟩,
+        fun ⟨_, hc⟩ =>
+          have ⟨_, R, hA', hE, htu⟩ := hc hcp
+          (HasEq.unique hd hE (.prop m b' (Computesι.det hd hA hA' ▸ hp) fun _ _ => .rfl) t u).1
+            htu⟩
+  cases levelRel_prop_iff.1 h with
+  | data _ _ _ _ hv => cases hv
+  | codata _ _ _ _ hv => cases hv
+  | equality _ hA hF =>
+    cases hF with
+    | univ _ hR => exact htype n hA (levelRel_univ_iff.2 hR)
+    | univBelow _ m _ hR => exact htype m hA hR
+    | prop hp => exact hprop n hA (levelRel_prop_iff.2 hp)
+    | propBelow m _ hp => exact hprop m hA hp
 
 end Sic.Core
