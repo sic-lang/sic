@@ -1350,6 +1350,30 @@ theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {
       (ValidEqTerm₀.sort hA.1.1.distinct (q := .prop) (Level.equivalence.refl l₁)).univType⟩,
     fun σ₁ σ₂ hσ => ValidEqTerm₀.equality (hA.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) (hu.2 σ₁ σ₂ hσ) hl⟩
 
+-- ADE: `rflᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(refl_∼)` keeps the meaning: at two equal substitutions, the equality of the term with itself
+is a proposition, by `(∼)` at the first twice, whose truth, which `(ty_∼)` gives, is the equality of
+the term with itself, so that any two closed terms, the two proofs among them, are equal proofs of
+it. -/
+theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
+    (ht : ValidTermΓ sig ι ctx t A) :
+    ValidTermΓ sig ι ctx (.refl s l A t) (.equality s l A t t) := by
+  have hE := ValidEqTermΓ.equality hA ht ht (Level.equivalence.refl l)
+  have hd := hA.1.1.distinct
+  refine ⟨hE.propType, fun σ₁ _ hσ => ?_⟩
+  have hσ₁ := hσ.left hA.1.1
+  have hE₁ := hE.2 σ₁ σ₁ hσ₁
+  refine ⟨hE₁.propType, ?_⟩
+  -- The proposition computes to itself, whose truth `b` is the equality of the term with itself.
+  obtain ⟨-, hcl, -⟩ := hE₁
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
+  cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
+  exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
+    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (ht.2 σ₁ σ₁ hσ₁).2⟩⟩
+
 /-! ## Entries of the Signature -/
 
 /-- A judgment in the empty context is its closed judgment, at the substitution of no variable. -/
