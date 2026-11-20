@@ -36,8 +36,8 @@ variable {sig : Signature} {ι : Interpretation}
 
 -- ADE: none.
 /-- A proof of the equality of two terms of a type of a sort makes them, at a closed substitution,
-equal terms of the type: the equality is a proposition, by `(∼)`, whose closed terms are equal proofs
-only when it is true, and `(ty_∼)` makes its truth the equality of the terms. -/
+equal terms of the type: the equality is a proposition, by `(∼)`, whose closed terms are equal
+proofs only when it is true, and `(ty_∼)` makes its truth the equality of the terms. -/
 theorem ValidTermΓ.equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
     {A t₁ t₂ t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
     (ht₁ : ValidTermΓ sig ι ctx t₁ A) (ht₂ : ValidTermΓ sig ι ctx t₂ A)
@@ -56,7 +56,8 @@ theorem ValidTermΓ.equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} 
   have htrue : b := (hR'.unique hd (.prop n b hb fun _ _ => .rfl) _ _).1 htt
   exact ⟨(ht₁.2 σ σ hσ).1, (levelRel_prop_equality hd hb).1 htrue⟩
 
--- ADE: `J-congᵛ` and `Jᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+-- ADE: `J-congᵛ` and `Jᵛ`, in
+-- `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
 /-- `(transp_≡)` keeps the meaning, and `(transp)` with it: at two equal substitutions, the two
 transports step to their terms, by `(transp_⟶)`, which are equal terms of the motive at the first of
 the two terms of the equality; the proof makes these two terms equal, so that the motive gives equal
@@ -98,7 +99,8 @@ theorem ValidEqTermΓ.transpSame {Γ : Scope} {ctx : Context 0 Γ} {κ : Univers
     (hCC : ValidEqTermΓ sig ι ctx (C.subst₀ (Subst₀.single t₁)) (C.subst₀ (Subst₀.single t₂))
       (.sort κ)) :
     ValidEqTermΓ sig ι ctx (.transp A t₁ t₂ C t u) u (C.subst₀ (Subst₀.single t₂)) := by
-  have hCT : ValidEqTypeΓ sig ι ctx (C.subst₀ (Subst₀.single t₁)) (C.subst₀ (Subst₀.single t₂)) := by
+  have hCT :
+      ValidEqTypeΓ sig ι ctx (C.subst₀ (Subst₀.single t₁)) (C.subst₀ (Subst₀.single t₂)) := by
     obtain ⟨q, l⟩ := κ
     cases q
     · exact hCC.univType
