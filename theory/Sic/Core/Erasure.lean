@@ -527,9 +527,9 @@ and its branches, without its instance and its motives, an observation keeps its
 its destructor, the ownership at run time of its result and its arguments, each at the parameter of
 its argument, a corecursor keeps its state, each entry at its grade times the grade of the
 corecursor, and its branches, without its instance and its states, an equality `t ∼.{s; l}_A u` and
-the proofs `refl.{s; l}_A(t)` and `propext.{l}(P, Q, p. q, q. p)` are erased, and a transport
-`transp(A, t, u, x. C, e, v)` keeps only its term `v`; a second-order variable has no erasure, since
-the scope has none.
+the proofs `refl.{s; l}_A(t)` and `propext.{l}(A, B, x. t, y. u)` are erased, and a transport
+`transp(A, t₁, t₂, x. C, t, u)` keeps only its term `u`; a second-order variable has no erasure,
+since the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
 ownerships of the results of the destructors, the recursive results of the branches, with the
 shapes of the nested fields, and the states that the branches resume are those of the declarations

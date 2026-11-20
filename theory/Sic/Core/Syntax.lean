@@ -208,15 +208,16 @@ inductive Term (k : Nat) : Scope → Type where
   with itself; the proof carries the type of its term and the quality and the level of the sort of
   this type, so that the term determines its type. -/
   | refl {Γ : Scope} (s : Quality) (l : Level k) (A t : Term k Γ) : Term k Γ
-  /-- `transp(A, t, u, x. C, e, v)`: the transport of the term `v` of `C[t]` along the proof `e` of
-  `t ∼ u` at the type `A`, with the motive `x. C` over a new variable; the transport carries the
-  type and the two terms of the equality, so that the term determines its type, `C[u]`. -/
-  | transp {Γ : Scope} (A t u : Term k Γ) (C : Term k (Γ.extend 1)) (e v : Term k Γ) : Term k Γ
-  /-- `propext.{l}(P, Q, p. q, q. p)`: the proof of the equality of the propositions `P` and `Q` of
-  `Ω_l` from the two implications, a proof `q` of `Q` from a proof `p` of `P` and a proof `p` of `P`
-  from a proof `q` of `Q`; the proof carries the level and the two propositions, so that the term
+  /-- `transp(A, t₁, t₂, x. C, t, u)`: the transport of the term `u` of `C[t₁ / x]` along the proof
+  `t` of `t₁ ∼ t₂` at the type `A`, with the motive `x. C` over a new variable; the transport
+  carries the type and the two terms of the equality, so that the term determines its type,
+  `C[t₂ / x]`. -/
+  | transp {Γ : Scope} (A t₁ t₂ : Term k Γ) (C : Term k (Γ.extend 1)) (t u : Term k Γ) : Term k Γ
+  /-- `propext.{l}(A, B, x. t, y. u)`: the proof of the equality of the propositions `A` and `B` of
+  `Ω_l` from the two implications, a proof `t` of `B` from a proof `x` of `A` and a proof `u` of `A`
+  from a proof `y` of `B`; the proof carries the level and the two propositions, so that the term
   determines its type, and the two implications are terms over a new variable, the hypothesis. -/
-  | propExt {Γ : Scope} (l : Level k) (P Q : Term k Γ) (f g : Term k (Γ.extend 1)) : Term k Γ
+  | propExt {Γ : Scope} (l : Level k) (A B : Term k Γ) (t u : Term k (Γ.extend 1)) : Term k Γ
 
 /-- `t̄ = (t₁, …, tₐ)`: the arguments of a telescope whose entries have the parameters `ps`, the first
 one first.
