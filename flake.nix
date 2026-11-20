@@ -28,12 +28,33 @@
         let
           inherit (pkgs) lib;
           json = pkgs.formats.json { };
+          # The Lean that Lake records in the traces of its builds, which it rebuilds when it changes:
+          # Lake takes the hash that lean --githash prints, empty for the Lean of nixpkgs, so it would
+          # keep the builds of another Lean, unless LEAN_GITHASH gives it. Its path in the Nix store
+          # changes with its version, and with every other change of its build by nixpkgs.
+          leanEnv = {
+            LEAN_GITHASH = "${pkgs.lean4}";
+          };
           # A command of the flake, in two variants of the same script: nix run builds the one that
           # skips ShellCheck, quickly, and nix flake check, run by the flake check, the one that runs it.
-          command = args: {
-            run = pkgs.writeShellApplication (args // { checkPhase = ":"; });
-            checked = pkgs.writeShellApplication args;
-          };
+          # A command that runs the Lean of the flake runs it with leanEnv.
+          command =
+            args:
+            let
+              script =
+                extra:
+                pkgs.writeShellApplication (
+                  args
+                  // lib.optionalAttrs (lib.elem pkgs.lean4 (args.runtimeInputs or [ ])) {
+                    runtimeEnv = leanEnv;
+                  }
+                  // extra
+                );
+            in
+            {
+              run = script { checkPhase = ":"; };
+              checked = script { };
+            };
           app = program: description: {
             type = "app";
             program = lib.getExe program.run;
@@ -481,6 +502,9 @@
             packages = lib.unique (lib.concatMap (check: check.tools) (lib.attrValues fileChecks)) ++ [
               pkgs.nixd
             ];
+            # Lake run in the shell, and the language server of Lean that the editors start from it,
+            # trace the same Lean as the commands.
+            env = leanEnv;
             # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which Git
             # ignores: written from the Lean of the shell, it always matches flake.lock.
             shellHook = ''
