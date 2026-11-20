@@ -427,6 +427,8 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
 The canonical type `v` of a field is a type of a sort `κ₁` that the sort of the quality `s` at the
 level `n` bounds, whose closed terms are equal by `F`: a type of `U_n` or of a universe below it,
 if `s` is not the quality of the propositions, or a proposition of `Ω_n` or of a universe below it.
+It is `(ty_⇓)` read at every sort that the sort bounds, which the formulas write
+`∃ κ₁ ≼ s_n. (v, F) ∈ ty_⇓(κ₁)`, and not `ty_⇓(s_n)` alone, which `(ty_∼)` reads without it.
 RFC: `\mathsf{ty}_\Downarrow`
 -/
 inductive FieldRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : LevelRel.Below n) :
