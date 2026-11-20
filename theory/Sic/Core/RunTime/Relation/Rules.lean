@@ -90,6 +90,22 @@ theorem RunValidRen.erased {sig : Signature} {ι : Interpretation} {P : Program}
   obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
   refine ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
 
+-- ADE: none.
+/-- A proof of a proposition that its erasure replaces by `↯` is valid at run time, at every grades:
+`↯` is allocated, and the proof is related to its address, as every closed term is to every address
+at a type that computes to a proposition. -/
+theorem RunValidRen.proof {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
+    {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A : Term 0 Γ}
+    {l : Level 0} (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩))
+    (he : t.erase sig Mode.oneOne.erased hΓ = .erased) :
+    RunValidRen sig ι P hΓ ctx γ t A := by
+  intro _ σ H _ _ hσ _ _ _ _ _ _
+  obtain ⟨-, hcl, -⟩ := hA.2 σ σ hσ
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  exact ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _,
+    ⟨v, hv, .inl (hR.prop_isProp hvw)⟩⟩
+
 /-! ## Variables -/
 
 -- ADE: `®∷→®∷◂`, the substitutions at a variable, in `Graded/Erasure/LogicalRelation.agda`.
