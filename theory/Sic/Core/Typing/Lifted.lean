@@ -36,13 +36,19 @@ namespace Sic.Core
 
 variable {sig : Signature} {k : Nat}
 
+-- ADE: none.
+/-- A family of substitutions with `k` level variables: a property of a context, of a substitution
+from its scope and of the context of the scope that it substitutes. -/
+abbrev Subst.Family (k : Nat) : Type :=
+  ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop
+
 -- ADE: `_∷_⊇_`, in `Definition/Typed/Weakening.agda`, whose constructor `lift` it has.
 /-- A substitution `θ` of the family `Base`, lifted under variables, whose contexts are extended by
 a type and by the type substituted, without the condition that the context extended be well formed,
 which the leaves of a derivation in the context extended give.
 The substitution is lifted as the substitutions of the rules are, so that the judgments under the
 binders of a rule hold at the substitution of the rule without conversion. -/
-inductive Subst.Lifted (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop) :
+inductive Subst.Lifted (Base : Subst.Family k) :
     {Γ Δ : Scope} → Context k Γ → Subst k Γ Δ → Context k Δ → Prop where
   /-- A substitution of the family. -/
   | base {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
@@ -55,7 +61,7 @@ inductive Subst.Lifted (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ 
 -- ADE: none.
 /-- What a family `Base` of substitutions gives for the typing to be stable under them. -/
 structure Subst.Liftable (sig : Signature)
-    (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop) : Prop where
+    (Base : Subst.Family k) : Prop where
   /-- The context of a substitution of the family is well formed. -/
   wfCtx : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ},
     Base ctx' @θ ctx → WfCtx sig ctx'
@@ -81,7 +87,7 @@ structure Subst.Liftable (sig : Signature)
     Subst.Lifted @Base ctx' @θ ctx → ctx.VarIn x A → WfCtx sig ctx' →
       HasType sig ctx' ((Term.var₀ x).subst θ) (A.subst θ)
 
-variable {Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop}
+variable {Base : Subst.Family k}
 
 /-- A lifted substitution, lifted under the variables of a telescope. -/
 theorem Subst.Lifted.append {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ}
@@ -149,7 +155,7 @@ theorem Subst.Liftable.ofSecondOrderIn
 -- `subst-⊢≡`, `subst-⊢∷` and `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- The judgments in a context are stable under the lifted substitutions of a family. -/
 structure Subst.Stable (sig : Signature)
-    (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop) : Prop where
+    (Base : Subst.Family k) : Prop where
   /-- A type, substituted, is a type. -/
   wfType : ∀ {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Δ} {ctx : Context k Δ}
     {A : Term k Δ},
@@ -201,11 +207,6 @@ structure Subst.Stable (sig : Signature)
     {ctx : Context k Δ} {Θ₁ Θ₂ : Telescope k Δ ps} {κ : Universe k},
     EqTelescope sig ctx Θ₁ Θ₂ κ → Lifted @Base ctx' @θ ctx →
       EqTelescope sig ctx' (Θ₁.subst θ) (Θ₂.subst θ) κ
-
--- ADE: none.
-/-- A family of substitutions of a level context, as `Subst.Lifted` takes it. -/
-abbrev Subst.Family (k : Nat) : Type :=
-  ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop
 
 -- ADE: none.
 /-- What the stability of a judgment under the lifted substitutions of a family says. -/
