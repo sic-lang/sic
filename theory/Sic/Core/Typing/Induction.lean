@@ -149,10 +149,12 @@ structure Derivations.Conclusion
       wfTypeDeclaration sig decl h
 
 -- ADE: none.
-/-- Induction on the derivations of the judgments: the motives hold of every derivation when each
-holds of the conclusion of each rule of its judgment whenever they hold of its premises.
-The hypothesis of the rule `r` of the judgment `J` is named `J_r`, as `hasType_conv`, and states that
-the motive of `J` holds of a derivation by `r` whenever the motives hold of its premises. -/
+/-- Induction on the derivations of the judgments: the motives hold of every derivation,
+`Derivations.Conclusion` of the motives, when each holds of the conclusion of each rule of its
+judgment whenever they hold of its premises.
+The hypothesis of the rule `r` of the judgment `J` is named `J_r`, as `hasType_conv`, and its type is
+the minor premise of the rule `r` of the recursor of `J`: the motive of `J` holds of a derivation by
+`r` whenever the motives hold of its premises. -/
 theorem Derivations.induction :
     ∀ {wfSig wfConstantDefinition wfConstantDeclaration wfCtx wfType eqType hasType eqTerm hasArgs
         eqArgs hasInstanceArgs eqInstanceArgs wfTelescope wfTelescopeSorts eqTelescope wfFields
