@@ -2,11 +2,9 @@ module
 
 public import Sic.Core.Soundness.Signature
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Corecursors
-import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution

@@ -3,7 +3,6 @@ module
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.Corecursors
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Computation
