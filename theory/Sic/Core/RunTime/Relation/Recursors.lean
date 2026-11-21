@@ -680,9 +680,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rwa [hidx j T' hj] at hC'
   -- The term of the recursor computes to a canonical term that `(eq_μ)` relates, which the
   -- relations `X` contain.
-  obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ := htv.2.1 fun ⟨v, hv', _, _, hk⟩ => by
-    cases Computesι.det hd (hI _) hv'
-    exact HasEq.univ_not_prop hd (levelRel_univ_iff.2 (hUM T hT).1) hk
+  obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ :=
+    htv.2.1 (Computesι.not_computesToProp hd (hI _) (levelRel_univ_iff.2 (hUM T hT).1))
   cases Computesι.det hd (hI _) hv'
   have hX := ((HasEq.unique hd hR' (.univ _ (levelRel_univ_iff.2 (hUM T hT).1)) _ _).1 hrel) X
     hclosed

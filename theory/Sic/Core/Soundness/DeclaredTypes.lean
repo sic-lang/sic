@@ -83,10 +83,8 @@ theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ : Universe 0} {n 
         · exact .univ hs (heq ▸ levelRel_univ_iff.1 hw)
       refine ⟨w₁, w₂, R'.computed sig ι, hw₁, hw₂, hF w₁ h₁, hF w₂ h₂,
         fun a₁ a₂ ⟨v, w, ha₁, ha₂, hR'⟩ => ⟨(ValidEqTerm₀.univType h).left, fun _ =>
-          ⟨w₁, v, w, R', hw₁, ha₁, ha₂, .univ _ h₁, hR'⟩, fun ⟨v', hv', hP⟩ => ?_⟩⟩
-      cases Computesι.det hd hw₁ hv'
-      obtain ⟨_, _, hP⟩ := hP
-      exact (HasEq.univ_not_prop hd h₁ hP).elim
+          ⟨w₁, v, w, R', hw₁, ha₁, ha₂, .univ _ h₁, hR'⟩,
+          fun hp => (Computesι.not_computesToProp hd hw₁ h₁ hp).elim⟩⟩
     | prop hl _ =>
       subst hl
       obtain ⟨b₁, b₂, h₁, h₂, hb⟩ := hvw
@@ -472,9 +470,7 @@ theorem FieldRel.validEqTerm (hd : sig.Distinct) {n : Nat} {s : Quality} {A v t 
   have huniv : ∀ m R, (levelRel sig ι m).univ v R → R.computed sig ι t u →
       ValidEqTerm₀ sig ι t u A := fun m R hR ⟨w₁, w₂, h₁, h₂, hw⟩ =>
     ⟨⟨hd, v, v, R, hA, hA, .univ m hR, .univ m hR, fun _ _ => .rfl⟩, fun _ => ⟨v, w₁, w₂, R, hA, h₁, h₂, .univ m hR, hw⟩,
-      fun ⟨v', hv', _, _, hP⟩ => by
-        cases Computesι.det hd hA hv'
-        exact (HasEq.univ_not_prop hd hR hP).elim⟩
+      fun hp => (Computesι.not_computesToProp hd hA hR hp).elim⟩
   have hprop : ∀ m b, (levelRel sig ι m).prop v b → b → ValidEqTerm₀ sig ι t u A :=
     fun m b hP hb =>
       ⟨⟨hd, v, v, fun _ _ => b, hA, hA, .prop m b hP fun _ _ => .rfl,
@@ -1308,9 +1304,8 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
       DataType.blockRel_closed hmono hT ⟨con, hc, ts.terms, us.terms, ⟨qs, ls, ps, _, as₁, rfl⟩,
         ⟨qs, ls, ps, _, as₂, rfl⟩, ((hiff T hT con hc).1 ts us).2 hts⟩
     refine ⟨(ValidEqTerm₀.univType hI).left,
-      fun _ => ⟨_, _, _, _, hw, hct _ _, hct _ _, .univ _ hU', hrel⟩, fun ⟨v, hv', _, _, hP⟩ => ?_⟩
-    cases Computesι.det hd hw hv'
-    exact (HasEq.univ_not_prop hd hU' hP).elim
+      fun _ => ⟨_, _, _, _, hw, hct _ _, hct _ _, .univ _ hU', hrel⟩,
+      fun hp => (Computesι.not_computesToProp hd hw hU' hp).elim⟩
   · rw [hs] at hI
     obtain ⟨S, hP, hmono, hrec, -, hiff⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1

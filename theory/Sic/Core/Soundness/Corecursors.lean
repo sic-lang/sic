@@ -1188,9 +1188,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       fun _ _ _ _ _ => ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩
     refine ⟨(ValidEqTerm₀.univType hI).left,
       fun _ => ⟨_, _, _, _, hw, hct _ _ _ _ _, hct _ _ _ _ _, .univ _ hU', hrel⟩,
-      fun ⟨v, hv', _, _, hP⟩ => ?_⟩
-    cases Computesι.det hd hw hv'
-    exact (HasEq.univ_not_prop hd hU' hP).elim
+      fun hp => (Computesι.not_computesToProp hd hw hU' hp).elim⟩
   · rw [hs] at hI
     obtain ⟨S, hS, hPr⟩ := hv.codataPropRel hd hdecl hq hl hp hadm has hs
     have hmono := DesRel.blockMono_prop hd hS

@@ -267,9 +267,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     fun T' hT' _ _ hab => (FieldRel.univ rfl (hUM T' hT').1).validEqTerm hd (hI _) hab
   -- The meaning of the constructor gives the arguments of its fields.
   obtain ⟨qs', ls', ps', Δ', as', rfl⟩ := hw
-  obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ := hwv.2.1 fun ⟨v, hv', _, _, hk⟩ => by
-    cases Computesι.det hd (hI _) hv'
-    exact HasEq.univ_not_prop hd (levelRel_univ_iff.2 (hUM T' hT').1) hk
+  obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ :=
+    hwv.2.1 (Computesι.not_computesToProp hd (hI _) (levelRel_univ_iff.2 (hUM T' hT').1))
   cases Computesι.det hd (hI _) hv'
   cases Computesι.det hd hw₁ ⟨.refl _, .ctor _ _ _ _ _ _ _⟩
   have hrel' := (HasEq.unique hd hR' (.univ _ (levelRel_univ_iff.2 (hUM T' hT').1)) _ _).1 hrel
