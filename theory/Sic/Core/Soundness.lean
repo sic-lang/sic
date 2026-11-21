@@ -306,6 +306,11 @@ where
         (hasType hd hord hι hu ρ) (Level.equivalence.refl _)
     | .reflProof hA ht => fun ρ =>
       ValidTermΓ.reflProof (hasType hd hord hι hA ρ) (hasType hd hord hι ht ρ)
+    | .propExt hA hB ht hu => fun ρ => by
+      have ht' := hasType hd hord hι ht ρ
+      have hu' := hasType hd hord hι hu ρ
+      simp only [Term.atLevels, Term.substLevels_rename] at ht' hu'
+      exact ValidTermΓ.propExt (hasType hd hord hι hA ρ) (hasType hd hord hι hB ρ) ht' hu'
     | .transp (t₁ := t₁) (t₂ := t₂) hA ht₁ ht₂ hC ht hu => fun ρ => by
       have hu' := hasType hd hord hι hu ρ
       simp only [Term.atLevels] at hu' ⊢

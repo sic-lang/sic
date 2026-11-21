@@ -252,6 +252,11 @@ where
       rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)]
       exact .transp (hasType hA hθ) (hasType ht₁ hθ) (hasType ht₂ hθ) (hasType hC (hθ.var _))
         (hasType ht hθ) hu'
+    | .propExt hA hB ht hu, hθ => by
+      have ht' := hasType ht (hθ.var _)
+      have hu' := hasType hu (hθ.var _)
+      rw [Term.subst_lift_rename_weaken] at ht' hu'
+      exact .propExt (hasType hA hθ) (hasType hB hθ) ht' hu'
     | .ctor h hc hq hl hp hadm has hts, hθ => by
       rw [Term.ctor_subst]
       refine .ctor h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_

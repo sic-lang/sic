@@ -181,6 +181,7 @@ where
     | .equality hA _ _ => hasType hA
     | .reflProof hA _ => hasType hA
     | .transp hA .. => hasType hA
+    | .propExt hA .. => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
@@ -360,6 +361,7 @@ where
     | .equality hA _ _ => hasType hA
     | .reflProof hA _ => hasType hA
     | .transp hA .. => hasType hA
+    | .propExt hA .. => hasType hA
     | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
     | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
     | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has

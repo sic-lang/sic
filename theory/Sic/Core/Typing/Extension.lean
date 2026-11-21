@@ -152,6 +152,8 @@ where
     | .transp hA ht₁ ht₂ hC ht hu =>
       .transp (hasType hs hw hA) (hasType hs hw ht₁) (hasType hs hw ht₂) (hasType hs hw hC)
         (hasType hs hw ht) (hasType hs hw hu)
+    | .propExt hA hB ht hu =>
+      .propExt (hasType hs hw hA) (hasType hs hw hB) (hasType hs hw ht) (hasType hs hw hu)
     | .ctor h hc hq hl hp hadm has hts =>
       .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
     | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>

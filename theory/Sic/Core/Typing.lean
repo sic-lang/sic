@@ -229,6 +229,16 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (hu : HasType sig ctx u (C.subst₀ (Subst₀.single t₁))) :
       HasType sig ctx (.transp A t₁ t₂ C t u) (C.subst₀ (Subst₀.single t₂))
   -- ADE: none.
+  /-- The proof by extensionality of the equality of two propositions of `Ω_l` that imply each
+  other, by a proof `t` of `B` from a proof `x` of `A` and a proof `u` of `A` from a proof `y` of
+  `B`, at the universe `Ω_l`. -/
+  | propExt {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+      {A B : Term k Γ} {t u : Term k (.var :: Γ)} (hA : HasType sig ctx A (.sort ⟨.prop, l⟩))
+      (hB : HasType sig ctx B (.sort ⟨.prop, l⟩))
+      (ht : HasType sig (ctx.var A) t (B.rename Ren.weaken))
+      (hu : HasType sig (ctx.var B) u (A.rename Ren.weaken)) :
+      HasType sig ctx (.propExt l A B t u) (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B)
+  -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
   instance.

@@ -168,6 +168,11 @@ where
         (fun x => by cases x <;> rfl)]
       exact .transp (κ := κ.substLevels ls') (hasType ls' hA) (hasType ls' ht₁) (hasType ls' ht₂)
         (hasType ls' hC) (hasType ls' ht) hu'
+    | .propExt hA hB ht hu => by
+      have ht' := hasType ls' ht
+      have hu' := hasType ls' hu
+      rw [Term.substLevels_rename] at ht' hu'
+      exact .propExt (hasType ls' hA) (hasType ls' hB) ht' hu'
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
