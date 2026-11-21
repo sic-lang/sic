@@ -252,6 +252,7 @@ forbidden = ["Sic.Core.Ownership", "Sic.Core.Usage"]
 reason = "the properties of the meaning of the substitutions, of the levels, of the declared types and of the rules read no typing, so that the relation of run time uses them"
 modules = [
   "Sic.Core.Soundness.Closed",
+  "Sic.Core.Soundness.Coinduction",
   "Sic.Core.Soundness.Corecursors",
   "Sic.Core.Soundness.DeclaredTypes",
   "Sic.Core.Soundness.Levels",
