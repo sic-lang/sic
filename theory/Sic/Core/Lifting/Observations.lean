@@ -130,7 +130,8 @@ theorem Term.nest_subst_of {α : Type} :
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, .refl ..
-  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. => by rw [Term.subst]; rfl
+  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. | _, _, _, _, _, _, .coind .. => by
+    rw [Term.subst]; rfl
 
 /-- The arguments of an instance substituted by a substitution that keeps the nestings have the
 nestings of the arguments, where no declared type holds a position. -/

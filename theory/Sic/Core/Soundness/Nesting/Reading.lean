@@ -1027,7 +1027,8 @@ theorem Term.nestReads (hS : TypingSound sig ι) {sigT : Signature}
   | .obs _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
   | .corec _ _ _ _ _ _ _ _ _, _, hpos, _, hNS, _, hr
   | .equality .., _, hpos, _, hNS, _, hr | .refl .., _, hpos, _, hNS, _, hr
-  | .transp .., _, hpos, _, hNS, _, hr | .propExt .., _, hpos, _, hNS, _, hr =>
+  | .transp .., _, hpos, _, hNS, _, hr | .propExt .., _, hpos, _, hNS, _, hr
+  | .coind .., _, hpos, _, hNS, _, hr =>
     hNS.reads_of_plain ρ hpos rfl hr
 
 -- ADE: none.

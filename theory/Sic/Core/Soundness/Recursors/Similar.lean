@@ -223,7 +223,8 @@ theorem Term.similar_subst {k' : Nat} (mark : Name → Option Name) (ls₁ ls₂
   | _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => .plain
   | _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => .plain
   | _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, .refl ..
-  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. => .plain
+  | _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, .propExt .. | _, _, _, _, _, _, .coind .. =>
+    .plain
 
 /-- The arguments of an instance at two instantiations of their levels and at two substitutions
 that give the variables abstractions of the same shape have the same shape at their nestings. -/

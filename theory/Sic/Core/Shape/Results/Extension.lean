@@ -289,6 +289,7 @@ theorem Telescope.nest_of_nestedShapes {lookup : Shape.Lookup}
       | refl _ _ _ _ => exact nomatch h
       | transp _ _ _ _ _ _ => exact nomatch h
       | propExt _ _ _ _ _ => exact nomatch h
+      | coind _ _ _ _ _ _ _ _ _ _ => exact nomatch h
 
 -- ADE: none.
 /-- A field of a constructor whose recursive result has the shape of a lifting is nested. -/

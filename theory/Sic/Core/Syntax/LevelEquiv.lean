@@ -113,6 +113,16 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
       {f₁ f₂ g₁ g₂ : Term k (Γ.extend 1)} (hl : l₁ ≈ l₂) (hP : Term.LevelEquiv P₁ P₂)
       (hQ : Term.LevelEquiv Q₁ Q₂) (hf : Term.LevelEquiv f₁ f₂) (hg : Term.LevelEquiv g₁ g₂) :
       Term.LevelEquiv (.propExt l₁ P₁ Q₁ f₁ g₁) (.propExt l₂ P₂ Q₂ f₂ g₂)
+  /-- A proof by coinduction of an instance at equal levels, with arguments of the instance, terms,
+  relations, a proof and branches equal up to their levels. -/
+  | coind {Γ Δ : Scope} (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
+      (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {u₁ u₂ v₁ v₂ : Term k Γ}
+      {As₁ As₂ : Terms k (Γ.extend 2)} {t₁ t₂ : Term k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
+      (hl : Level.ListEquiv ls₁ ls₂) (has : InstanceArgs.LevelEquiv as₁ as₂)
+      (hu : Term.LevelEquiv u₁ u₂) (hv : Term.LevelEquiv v₁ v₂) (hAs : Terms.LevelEquiv As₁ As₂)
+      (ht : Term.LevelEquiv t₁ t₂) (hgs : DestructorBranches.LevelEquiv gs₁ gs₂) :
+      Term.LevelEquiv (.coind D qs ls₁ ps as₁ u₁ v₁ As₁ t₁ gs₁)
+        (.coind D qs ls₂ ps as₂ u₂ v₂ As₂ t₂ gs₂)
 
 /-- The arguments of a telescope, equal up to their levels one by one. -/
 inductive Args.LevelEquiv {k : Nat} : {Γ : Scope} → {ps : List Parameter} → Args k Γ ps →
@@ -253,6 +263,9 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
       (Term.LevelEquiv.refl u)
   | .propExt l A B t u => .propExt (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
       (Term.LevelEquiv.refl B) (Term.LevelEquiv.refl t) (Term.LevelEquiv.refl u)
+  | .coind D qs ls ps as t₁ t₂ As t gs => .coind D qs ps (Level.ListEquiv.refl ls)
+      (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t₁) (Term.LevelEquiv.refl t₂)
+      (Terms.LevelEquiv.refl As) (Term.LevelEquiv.refl t) (DestructorBranches.LevelEquiv.refl gs)
 
 theorem Args.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (ts : Args k Γ ps) → Args.LevelEquiv ts ts
@@ -321,6 +334,8 @@ theorem Term.LevelEquiv.symm {k : Nat} {Γ : Scope} {t₁ t₂ : Term k Γ} :
   | .reflProof s hl hA ht => .reflProof s (Level.equivalence.symm hl) hA.symm ht.symm
   | .transp hA ht hu hC he hv => .transp hA.symm ht.symm hu.symm hC.symm he.symm hv.symm
   | .propExt hl hP hQ hf hg => .propExt (Level.equivalence.symm hl) hP.symm hQ.symm hf.symm hg.symm
+  | .coind D qs ps hl has hu hv hAs ht hgs =>
+    .coind D qs ps hl.symm has.symm hu.symm hv.symm hAs.symm ht.symm hgs.symm
 
 theorem Args.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter} {ts₁ ts₂ : Args k Γ ps} :
     Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv ts₂ ts₁
@@ -406,6 +421,9 @@ theorem Term.LevelEquiv.trans {k : Nat} {Γ : Scope} {t₁ t₂ t₃ : Term k Γ
   | .propExt hl hP hQ hf hg, .propExt hl' hP' hQ' hf' hg' =>
     .propExt (Level.equivalence.trans hl hl') (hP.trans hP') (hQ.trans hQ') (hf.trans hf')
       (hg.trans hg')
+  | .coind D qs ps hl has hu hv hAs ht hgs, .coind _ _ _ hl' has' hu' hv' hAs' ht' hgs' =>
+    .coind D qs ps (hl.trans hl') (has.trans has') (hu.trans hu') (hv.trans hv') (hAs.trans hAs')
+      (ht.trans ht') (hgs.trans hgs')
 termination_by structural h _ => h
 
 theorem Args.LevelEquiv.trans {k : Nat} {Γ : Scope} {ps : List Parameter}

@@ -89,6 +89,11 @@ theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : Re
     rw [Term.rename, Term.rename, Term.rename, Term.rename_rename_of h A, Term.rename_rename_of h B,
       Term.rename_rename_of (Ren.liftN_comp_of _ h) t,
       Term.rename_rename_of (Ren.liftN_comp_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
+      Term.rename_rename_of h t₁, Term.rename_rename_of h t₂,
+      Terms.rename_rename_of (Ren.liftN_comp_of _ h) As,
+      Term.rename_rename_of h t, DestructorBranches.rename_rename_of h gs]
 
 theorem Args.rename_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {α₁ : Ren Γ Δ} {α₂ : Ren Δ Ξ}
     {α₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), α₁ (α₂ x) = α₃ x) :
@@ -236,6 +241,11 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α :
     rw [Term.rename, Term.subst₀, Term.subst₀, Term.subst₀_rename_of h A, Term.subst₀_rename_of h B,
       Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) t,
       Term.subst₀_rename_of (Subst₀.liftN_rename_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
+      Term.subst₀_rename_of h t₁, Term.subst₀_rename_of h t₂,
+      Terms.subst₀_rename_of (Subst₀.liftN_rename_of _ h) As,
+      Term.subst₀_rename_of h t, DestructorBranches.subst₀_rename_of h gs]
 
 theorem Args.subst₀_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {α : Ren Δ Ξ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (α x) = σ' x) :
@@ -375,6 +385,11 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α :
     rw [Term.subst₀, Term.rename, Term.subst₀, Term.rename_subst₀_of h A, Term.rename_subst₀_of h B,
       Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) t,
       Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
+      Term.rename_subst₀_of h t₁, Term.rename_subst₀_of h t₂,
+      Terms.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) As,
+      Term.rename_subst₀_of h t, DestructorBranches.rename_subst₀_of h gs]
 
 theorem Args.rename_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ} {α : Ren Γ Δ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename α = σ' x) :
@@ -527,6 +542,11 @@ theorem Term.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ
     rw [Term.subst₀, Term.subst₀, Term.subst₀, Term.subst₀_subst₀_of h A, Term.subst₀_subst₀_of h B,
       Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) t,
       Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
+      Term.subst₀_subst₀_of h t₁, Term.subst₀_subst₀_of h t₂,
+      Terms.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) As,
+      Term.subst₀_subst₀_of h t, DestructorBranches.subst₀_subst₀_of h gs]
 
 theorem Args.subst₀_subst₀_of {Γ Δ Ξ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {τ : Subst₀ k Γ Δ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
@@ -848,6 +868,11 @@ theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren �
     rw [Term.rename, Term.subst, Term.subst, Term.subst_rename_of h A, Term.subst_rename_of h B,
       Term.subst_rename_of (Subst.liftN_rename_of _ h) t,
       Term.subst_rename_of (Subst.liftN_rename_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
+      Term.subst_rename_of h t₁, Term.subst_rename_of h t₂,
+      Terms.subst_rename_of (Subst.liftN_rename_of _ h) As,
+      Term.subst_rename_of h t, DestructorBranches.subst_rename_of h gs]
 
 theorem Args.subst_rename_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Γ Δ} {α : Ren Δ Ξ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (α x) = θ' x) :
@@ -988,6 +1013,11 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren �
     rw [Term.subst, Term.rename, Term.subst, Term.rename_subst_of h A, Term.rename_subst_of h B,
       Term.rename_subst_of (Subst.liftN_rename_after_of _ h) t,
       Term.rename_subst_of (Subst.liftN_rename_after_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
+      Term.rename_subst_of h t₁, Term.rename_subst_of h t₂,
+      Terms.rename_subst_of (Subst.liftN_rename_after_of _ h) As,
+      Term.rename_subst_of h t, DestructorBranches.rename_subst_of h gs]
 
 theorem Args.rename_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ : Subst k Δ Ξ} {α : Ren Γ Δ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length α) = θ' x) :
@@ -1171,6 +1201,11 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, Term.subst_subst₀_of h A,
       Term.subst_subst₀_of h B, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) t,
       Term.subst_subst₀_of (Subst₀.Swaps.liftN _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
+      Term.subst_subst₀_of h t₁, Term.subst_subst₀_of h t₂,
+      Terms.subst_subst₀_of (Subst₀.Swaps.liftN _ h) As,
+      Term.subst_subst₀_of h t, DestructorBranches.subst_subst₀_of h gs]
 
 theorem Args.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {a : List Parameter} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
@@ -1414,6 +1449,11 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : 
     rw [Term.subst, Term.subst, Term.subst, Term.subst_subst_of h A, Term.subst_subst_of h B,
       Term.subst_subst_of (Subst.liftN_subst_of _ h) t,
       Term.subst_subst_of (Subst.liftN_subst_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
+      Term.subst_subst_of h t₁, Term.subst_subst_of h t₂,
+      Terms.subst_subst_of (Subst.liftN_subst_of _ h) As,
+      Term.subst_subst_of h t, DestructorBranches.subst_subst_of h gs]
 
 theorem Args.subst_subst_of {Γ Δ Ξ : Scope} {a : List Parameter} {θ₁ : Subst k Δ Ξ}
     {θ₂ : Subst k Γ Δ} {θ₃ : Subst k Γ Ξ}
@@ -1577,6 +1617,11 @@ theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var
   | .propExt l A B t u => by
     rw [Term.subst, Term.subst_id_of h A, Term.subst_id_of h B,
       Term.subst_id_of (Subst.liftN_id_of _ h) t, Term.subst_id_of (Subst.liftN_id_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst, InstanceArgs.subst_id_of h as,
+      Term.subst_id_of h t₁, Term.subst_id_of h t₂,
+      Terms.subst_id_of (Subst.liftN_id_of _ h) As,
+      Term.subst_id_of h t, DestructorBranches.subst_id_of h gs]
 
 theorem Args.subst_id_of {Γ : Scope} {a : List Parameter} {θ : Subst k Γ Γ}
     (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (ts : Args k Γ a) → ts.subst θ = ts

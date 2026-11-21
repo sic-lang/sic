@@ -528,9 +528,9 @@ and its branches, without its instance and its motives, an observation keeps its
 its destructor, the ownership at run time of its result and its arguments, each at the parameter of
 its argument, a corecursor keeps its state, each entry at its grade times the grade of the
 corecursor, and its branches, without its instance and its states, an equality `t ∼.{s; l}_A u` and
-the proofs `refl.{s; l}_A(t)` and `propext.{l}(A, B, x. t, y. u)` are erased, and a transport
-`transp(A, t₁, t₂, x. C, t, u)` keeps only its term `u`; a second-order variable has no erasure,
-since the scope has none.
+the proofs `refl.{s; l}_A(t)`, `propext.{l}(A, B, x. t, y. u)` and
+`coind(T, t₁, t₂, x₁ x₂. Ā, t, ḡ)` are erased, and a transport `transp(A, t₁, t₂, x. C, t, u)` keeps
+only its term `u`; a second-order variable has no erasure, since the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
 ownerships of the results of the destructors, the recursive results of the branches, with the
 shapes of the nested fields, and the states that the branches resume are those of the declarations
@@ -575,7 +575,7 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
         (((sig.destructorArguments D qs ps).getD []).map fun ⟨j, as⟩ =>
           ((Ss.get j).elim [] fun ⟨_, ps, _⟩ => ps.map fun p => ⟨r * p.usage, p.requirement⟩,
             as)))
-  | .equality .. | .refl .. | .propExt .. => .erased
+  | .equality .. | .refl .. | .propExt .. | .coind .. => .erased
   | .transp _ _ _ _ _ u => u.erase sig S hΓ
 
 -- ADE: none.
@@ -776,7 +776,7 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
     (t : Term k Γ) → t.erase sig S₂ hΓ ⊑ t.erase sig S₁ hΓ
   | .var (e := .var) .. => by simp only [Term.erase]; constructor
   | .var (e := .secondOrder ..) x _ => nomatch hΓ _ x.mem
-  | .sort _ | .inst .. | .equality .. | .refl .. | .propExt .. => .erased
+  | .sort _ | .inst .. | .equality .. | .refl .. | .propExt .. | .coind .. => .erased
   | .const .. => .const
   | .ctor D _ _ _ _ c ts => by
     simp only [Term.erase]

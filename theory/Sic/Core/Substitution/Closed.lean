@@ -168,6 +168,10 @@ theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ
   | .propExt l A B t u => by
     rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h B,
       Term.subst₀_isVar (Subst₀.liftN_isVar _ h) t, Term.subst₀_isVar (Subst₀.liftN_isVar _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Term.subst₀_isVar h t₁,
+      Term.subst₀_isVar h t₂, Terms.subst₀_isVar (Subst₀.liftN_isVar _ h) As, Term.subst₀_isVar h t,
+      DestructorBranches.subst₀_isVar h gs]
 
 theorem Args.subst₀_isVar {Γ Δ : Scope} {a : List Parameter} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (α x)) : (ts : Args k Δ a) → ts.subst₀ σ = ts.rename α

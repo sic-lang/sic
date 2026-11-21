@@ -166,7 +166,7 @@ theorem Term.shape_substLevels {k' : Nat} (ls' : Fin k → Level k') :
   | _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.substLevels]; rfl
   | _, _, _, .equality .. | _, _, _, .refl ..
-  | _, _, _, .transp .. | _, _, _, .propExt .. => by rw [Term.substLevels]; rfl
+  | _, _, _, .transp .. | _, _, _, .propExt .. | _, _, _, .coind .. => by rw [Term.substLevels]; rfl
 
 /-- The arguments of an instance keep their shapes when levels replace their level variables. -/
 theorem InstanceArgs.shapes_substLevels {k' : Nat} (ls' : Fin k → Level k') :
@@ -216,7 +216,8 @@ theorem Term.shape_subst_of :
   | _, _, _, _, _, _, _, .obs _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, _, .corec _ _ _ _ _ _ _ _ _ => by rw [Term.subst]; rfl
   | _, _, _, _, _, _, _, .equality .. | _, _, _, _, _, _, _, .refl ..
-  | _, _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, _, .propExt .. => by rw [Term.subst]; rfl
+  | _, _, _, _, _, _, _, .transp .. | _, _, _, _, _, _, _, .propExt ..
+  | _, _, _, _, _, _, _, .coind .. => by rw [Term.subst]; rfl
 
 /-- The arguments of an instance substituted by a substitution that keeps the nestings have the
 shapes of the arguments. -/
@@ -256,6 +257,7 @@ theorem Term.shape_eq_none_of_nest :
   | _, _, .obs _ _ _ _ _ _ _ _, _ => rfl
   | _, _, .corec _ _ _ _ _ _ _ _ _, _ => rfl
   | _, _, .equality .., _ | _, _, .refl .., _ | _, _, .transp .., _ | _, _, .propExt .., _ => rfl
+  | _, _, .coind .., _ => rfl
 
 /-- Arguments of an instance without position, where no declared type holds one, have no shape at
 no position. -/

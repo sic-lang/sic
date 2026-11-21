@@ -98,6 +98,11 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α B,
       Term.substLevels_rename ls' (Ren.liftN 1 α) t, Term.substLevels_rename ls' (Ren.liftN 1 α) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
+      InstanceArgs.substLevels_rename ls' α as, Term.substLevels_rename ls' α t₁,
+      Term.substLevels_rename ls' α t₂, Terms.substLevels_rename ls' (Ren.liftN 2 α) As,
+      Term.substLevels_rename ls' α t, DestructorBranches.substLevels_rename ls' α gs]
 
 theorem Args.substLevels_rename {k' : Nat} {Γ Δ : Scope} {a : List Parameter} (ls' : Fin k → Level k')
     (α : Ren Γ Δ) : (ts : Args k Δ a) → (ts.rename α).substLevels ls'
@@ -250,6 +255,12 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
       Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h B,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) t,
       Term.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
+      InstanceArgs.substLevels_subst₀_of h as, Term.substLevels_subst₀_of h t₁,
+      Term.substLevels_subst₀_of h t₂,
+      Terms.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) As,
+      Term.substLevels_subst₀_of h t, DestructorBranches.substLevels_subst₀_of h gs]
 
 theorem Args.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
@@ -410,6 +421,11 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
     simp only [Term.substLevels, Level.subst_subst, Term.substLevels_substLevels ls₁ ls₂ A,
       Term.substLevels_substLevels ls₁ ls₂ B, Term.substLevels_substLevels ls₁ ls₂ t,
       Term.substLevels_substLevels ls₁ ls₂ u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
+      InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Term.substLevels_substLevels ls₁ ls₂ t₁,
+      Term.substLevels_substLevels ls₁ ls₂ t₂, Terms.substLevels_substLevels ls₁ ls₂ As,
+      Term.substLevels_substLevels ls₁ ls₂ t, DestructorBranches.substLevels_substLevels ls₁ ls₂ gs]
 
 theorem Args.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} {a : List Parameter}
     (ls₁ : Fin k → Level k') (ls₂ : Fin k' → Level k'') :
@@ -662,6 +678,12 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h A,
       Term.substLevels_subst_of h B, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) t,
       Term.substLevels_subst_of (Subst.liftN_substLevels_of _ h) u]
+  | .coind D qs ls ps as t₁ t₂ As t gs => by
+    rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
+      InstanceArgs.substLevels_subst_of h as, Term.substLevels_subst_of h t₁,
+      Term.substLevels_subst_of h t₂,
+      Terms.substLevels_subst_of (Subst.liftN_substLevels_of _ h) As,
+      Term.substLevels_subst_of h t, DestructorBranches.substLevels_subst_of h gs]
 
 theorem Args.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {a : List Parameter}
     {ls' : Fin k → Level k'} {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}

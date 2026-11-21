@@ -104,7 +104,7 @@ theorem Term.blockName_subst_neutral {Γ Δ : Scope} {θ : Subst k Γ Δ} (h : S
     exact (h x).blockName_instantiate _ names
   | .inst .., hA => by rw [Term.subst]; exact hA
   | .sort _, _ | .const .., _ | .ctor .., _ | .recursor .., _ | .obs .., _ | .corec .., _
-  | .equality .., _ | .refl .., _ | .transp .., _ | .propExt .., _ => by
+  | .equality .., _ | .refl .., _ | .transp .., _ | .propExt .., _ | .coind .., _ => by
     rw [Term.subst]; rfl
 
 /-- A term in which levels replace the level variables is an instance of the same type of the
@@ -113,7 +113,7 @@ theorem Term.blockName_substLevels {k' : Nat} {Γ : Scope} (names : List Name)
     (ls' : Fin k → Level k') :
     (A : Term k Γ) → (A.substLevels ls').blockName names = A.blockName names
   | .var .. | .sort _ | .const .. | .inst .. | .ctor .. | .recursor .. | .obs .. | .corec ..
-  | .equality .. | .refl .. | .transp .. | .propExt .. => by
+  | .equality .. | .refl .. | .transp .. | .propExt .. | .coind .. => by
     rw [Term.substLevels]; rfl
 
 /-- Destructors in which levels replace the level variables have their recursive destructors at the

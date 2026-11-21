@@ -49,6 +49,9 @@ theorem Term.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {t₁ 
   | .propExt hl hP hQ hf hg =>
     .propExt hl (hP.rename α) (hQ.rename α) (hf.rename (Ren.liftN 1 α))
       (hg.rename (Ren.liftN 1 α))
+  | .coind D qs ps hl has hu hv hAs ht hgs =>
+    .coind D qs ps hl (has.rename α) (hu.rename α) (hv.rename α) (hAs.rename (Ren.liftN 2 α))
+      (ht.rename α) (hgs.rename α)
 
 theorem Args.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
     {ts₁ ts₂ : Args k Δ ps} : Args.LevelEquiv ts₁ ts₂ → Args.LevelEquiv (ts₁.rename α) (ts₂.rename α)
@@ -156,6 +159,11 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
     .propExt (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
       (Term.substLevels_levelEquiv h B) (Term.substLevels_levelEquiv h t)
       (Term.substLevels_levelEquiv h u)
+  | .coind D qs ls ps as t₁ t₂ As t gs =>
+    .coind D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
+      (Term.substLevels_levelEquiv h t₁) (Term.substLevels_levelEquiv h t₂)
+      (Terms.substLevels_levelEquiv h As) (Term.substLevels_levelEquiv h t)
+      (DestructorBranches.substLevels_levelEquiv h gs)
 
 theorem Args.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ps : List Parameter}
     {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (ts : Args k Γ ps) →
@@ -358,6 +366,9 @@ theorem Term.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst�
   | .propExt hl hP hQ hf hg =>
     .propExt hl (hP.subst₀ hσ) (hQ.subst₀ hσ) (hf.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
       (hg.subst₀ (Subst₀.LevelEquiv.liftN _ hσ))
+  | .coind D qs ps hl has hu hv hAs ht hgs =>
+    .coind D qs ps hl (has.subst₀ hσ) (hu.subst₀ hσ) (hv.subst₀ hσ)
+      (hAs.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) (ht.subst₀ hσ) (hgs.subst₀ hσ)
 
 theorem Args.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
     {σ₁ σ₂ : Subst₀ k Γ Δ} (hσ : Subst₀.LevelEquiv σ₁ σ₂) {ts₁ ts₂ : Args k Δ ps} :
@@ -510,6 +521,9 @@ theorem Term.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k �
   | .propExt hl hP hQ hf hg =>
     .propExt hl (hP.subst hθ) (hQ.subst hθ) (hf.subst (Subst.LevelEquiv.liftN _ hθ))
       (hg.subst (Subst.LevelEquiv.liftN _ hθ))
+  | .coind D qs ps hl has hu hv hAs ht hgs =>
+    .coind D qs ps hl (has.subst hθ) (hu.subst hθ) (hv.subst hθ)
+      (hAs.subst (Subst.LevelEquiv.liftN _ hθ)) (ht.subst hθ) (hgs.subst hθ)
 
 theorem Args.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {θ₁ θ₂ : Subst k Γ Δ}
     (hθ : Subst.LevelEquiv θ₁ θ₂) {ts₁ ts₂ : Args k Δ ps} :
