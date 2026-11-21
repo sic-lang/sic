@@ -23,6 +23,9 @@ so that its transitivity needs their uniqueness, which the induction gives with 
 equivalence relations.
 The uniqueness of the equality of the terms of a type also shows that the truth of an equality is
 the clause of the equality of its two terms in the meaning of the judgments.
+The proofs of the soundness use two consequences: the relations of the destructors of a block of
+codata types grow with the relations of its instances, and a type of a universe does not compute to
+a proposition.
 -/
 
 @[expose] public section
@@ -209,6 +212,7 @@ The partial equivalences of the levels make the relations of the destructors of 
 types grow with the relations of its instances, and the uniqueness of the computations keeps a type
 of a universe apart from the propositions. -/
 
+-- ADE: none.
 /-- The relations of the destructors of a block of codata types, given for every relation of its
 instances, grow with them, in a signature whose names are distinct. -/
 theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
@@ -224,6 +228,7 @@ theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Disti
   fun X Y hXY T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS X T hT) _ _ _ (hS Y T hT)
     fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
 
+-- ADE: none.
 /-- The relations of the destructors of a block of codata types that are propositions, given for
 every truth of its instances, grow with them, in a signature whose names are distinct. -/
 theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
@@ -239,6 +244,7 @@ theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.
   fun B B' hB T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS B T hT) _ _ _ (hS B' T hT)
     fun _ => Option.rel_map (fun D _ _ => hB D) _
 
+-- ADE: none.
 /-- A closed type that computes to a type of a universe does not compute to a proposition, in a
 signature whose names are distinct. -/
 theorem Computesι.not_computesToProp {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)

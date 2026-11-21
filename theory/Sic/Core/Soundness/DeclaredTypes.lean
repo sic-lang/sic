@@ -1425,15 +1425,17 @@ The meaning of a type declaration holds at the values of its levels, which the p
 types read at the values of levels without variables: the facts that relate the two are stated
 once, for every instance of the declaration at equal arguments of its parameters. -/
 
-/-- The facts of a type declaration of codata types at the values `ρ` of levels `ls` without
-variables, at equal arguments `a₁` and `a₂` of its parameters. -/
+-- ADE: none.
+/-- The facts of a type declaration of codata types at the values of levels `ls` without variables,
+at equal arguments `a₁` and `a₂` of its parameters. -/
 structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
     (decl : TypeDeclaration) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (a₁ a₂ : InstanceArgs 0 [] decl.scope) : Prop where
-  /-- The numerals of the values `ρ` equal the levels `ls`. -/
+  /-- The numerals of the values of `ls` are equal to `ls` up to their levels. -/
   levels : ∀ i, (Level.ofNat (ls.getFin hl i).closedValue : Level 0) ≈ ls.getFin hl i
-  /-- The destructors of each codata type of the block are meaningful at `ρ`, at `a₁` and `a₂`. -/
+  /-- The destructors of each codata type of the block are meaningful at the values of `ls`, at
+  `a₁` and `a₂`. -/
   destructors : ∀ T ∈ decl.codataTypes,
     ValidEqDestructors₀ sig ι
       ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
@@ -1443,24 +1445,27 @@ structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
       ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
       ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
       a₁.toSubst a₂.toSubst
-  /-- The level of the sort has the same value at `ρ` and at `ls`. -/
+  /-- The level of the sort has the same value at the values of `ls` and at `ls`. -/
   sort : ((decl.sort (.ofLists qs ps hq hp)).atLevels
       fun i => (ls.getFin hl i).closedValue).level.closedValue =
     ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
   /-- The relations of the levels below the sort are partial equivalence relations. -/
   per : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
     (levelRel sig ι m).IsPer
-  /-- The instances of the block at `ρ`, at any arguments, equal those at `ls`. -/
+  /-- The instances of the block at the values of `ls`, at any arguments, are equal to those at
+  `ls` up to their levels. -/
   instances : ∀ (a : InstanceArgs 0 [] decl.scope) D, Term.LevelEquiv
     (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
       fun i => (ls.getFin hl i).closedValue).subst a.toSubst) (.inst D qs ls ps a)
-  /-- The instances of the block at `ρ`, at any arguments, compute to themselves. -/
+  /-- The instances of the block at the values of `ls`, at any arguments, compute to
+  themselves. -/
   computes : ∀ (a : InstanceArgs 0 [] decl.scope) D, Computesι sig ι
     (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
       fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
     (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
       fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
-  /-- A relation of the destructors of a codata type of the block at `ls` is one at `ρ`. -/
+  /-- A relation of the destructors of a codata type of the block at `ls` is one at the values of
+  `ls`. -/
   desRel : ∀ {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {s : Quality}
       {rs : Nat → Option TermRel} {θ : Subst 0 [] decl.scope} {S : ObsRel},
     DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
@@ -1468,7 +1473,7 @@ structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
       DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
         ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
   /-- A relation of run time of the destructors of a codata type of the block at `ls` is one at
-  `ρ`. -/
+  the values of `ls`. -/
   runDesRel : ∀ {P : Program} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
       {n : Nat} {D : Name} {rs : Nat → Option RunRel} {θ : Subst 0 [] decl.scope} {S : RunObsRel},
     RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
@@ -1476,6 +1481,7 @@ structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
       RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
         ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
 
+-- ADE: none.
 /-- A meaningful type declaration of codata types, at equal arguments of its parameters, has its
 facts at the values of levels without variables, in a signature whose names are distinct. -/
 theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDeclaration}
