@@ -1592,4 +1592,41 @@ export Derivable.WfDestructors (nil cons nested recursive)
 export Derivable.WfTypeDeclaration (data codata)
 end Derivable
 
+-- The goals, the hovers and the documentation show a derivation of a form as its judgment,
+-- `HasType sig ctx t A` rather than `Derivable (Judgment.hasType sig ctx t A)`: the proofs unfold the
+-- abbreviations wherever they read the rules, so that only this unexpander keeps the judgments in
+-- what is shown. It names the abbreviation of each form by a table rather than by capitalizing the
+-- name of the form, whose functions on strings depend on `Classical.choice`.
+/-- Shows the derivation of a form of judgment as the judgment. -/
+@[app_unexpander Derivable] meta def Derivable.unexpand : Lean.PrettyPrinter.Unexpander
+  | `($_ $j) => do
+    let `($f:ident $xs*) := j | throw ()
+    let .str p c := f.getId | throw ()
+    let g : String ← match c with
+      | "wfSig" => pure "WfSig"
+      | "wfConstantDefinition" => pure "WfConstantDefinition"
+      | "wfConstantDeclaration" => pure "WfConstantDeclaration"
+      | "wfCtx" => pure "WfCtx"
+      | "wfType" => pure "WfType"
+      | "eqType" => pure "EqType"
+      | "hasType" => pure "HasType"
+      | "eqTerm" => pure "EqTerm"
+      | "hasArgs" => pure "HasArgs"
+      | "eqArgs" => pure "EqArgs"
+      | "hasInstanceArgs" => pure "HasInstanceArgs"
+      | "eqInstanceArgs" => pure "EqInstanceArgs"
+      | "wfTelescope" => pure "WfTelescope"
+      | "wfTelescopeSorts" => pure "WfTelescopeSorts"
+      | "eqTelescope" => pure "EqTelescope"
+      | "wfFields" => pure "WfFields"
+      | "wfDestructors" => pure "WfDestructors"
+      | "wfTypeDeclaration" => pure "WfTypeDeclaration"
+      | _ => throw ()
+    let n ← match p with
+      | .anonymous => pure (Lean.Name.mkSimple g)
+      | .str q "Judgment" => pure (Lean.Name.str q g)
+      | _ => throw ()
+    `($(Lean.mkIdent n) $xs*)
+  | _ => throw ()
+
 end Sic.Core
