@@ -1141,7 +1141,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst
         (Subst.LevelEquiv.refl _)
-        (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+        (Term.substLevels_levelEquiv_atLevels L B))
   have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
   cases hs : (decl.sort I).quality
@@ -1796,7 +1796,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         (Telescope.substLevels_levelEquiv hls Θ))) hτ
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+        (Term.substLevels_levelEquiv_atLevels L B))
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
     have hmono := DesRel.blockMono hd hS
