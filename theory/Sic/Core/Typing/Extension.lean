@@ -121,9 +121,6 @@ RFC: `\mathsf{ext}_\vdash.\Theta_\equiv`
 RFC: `\mathsf{ext}_\vdash.\bar d` -/
 theorem stableUnderExtension : StableUnderExtension := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
       (wfCtx := fun sig {k Γ} ctx _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → WfCtx sig' ctx)
       (wfType := fun sig {k Γ} ctx A _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → WfType sig' ctx A)
       (eqType := fun sig {k Γ} ctx A B _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → EqType sig' ctx A B)
@@ -145,10 +142,8 @@ theorem stableUnderExtension : StableUnderExtension := by
         WfTelescopeSorts sig' ctx Θ κs l)
       (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
         EqTelescope sig' ctx Θ₁ Θ₂ κ)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
       (wfDestructors := fun sig decl ι {Γ ns} ν as ctx ds κ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
-        WfDestructors sig' decl ι @ν as ctx ds κ)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+        WfDestructors sig' decl ι @ν as ctx ds κ) from
     ⟨fun hs hw h => H.wfCtx h hs hw, fun hs hw h => H.wfType h hs hw,
       fun hs hw h => H.eqType h hs hw, fun hs hw h => H.hasType h hs hw,
       fun hs hw h => H.eqTerm h hs hw, fun hs hw h => H.hasArgs h hs hw,

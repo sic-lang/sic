@@ -247,10 +247,8 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
 distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem soundnessIn : SoundnessIn := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
       (wfConstantDefinition := fun sig d _ => ∀ {ι sigM}, sigM.Distinct → sigM.LiftsInOrder →
         sigM.ValidEntries ι sig → ValidConstantDefinition sigM ι d)
-      (wfConstantDeclaration := fun _ _ _ => True)
       (wfCtx := fun sig {k Γ} ctx _ => ∀ {ι sigM}, sigM.Distinct → sigM.LiftsInOrder →
         sigM.ValidEntries ι sig → ValidCtx sigM ι ctx)
       (wfType := fun sig {k Γ} ctx A _ => ∀ {ι sigM}, sigM.Distinct → sigM.LiftsInOrder →
@@ -271,12 +269,8 @@ theorem soundnessIn : SoundnessIn := by
         sigM.LiftsInOrder → sigM.ValidEntries ι sig → ValidEqInstanceArgs sigM ι ctx as₁ as₂ params)
       (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => ∀ {ι sigM}, sigM.Distinct → sigM.LiftsInOrder →
         sigM.ValidEntries ι sig → ValidTelescope sigM ι ctx Θ κ)
-      (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
       (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => ∀ {ι sigM}, sigM.Distinct →
-        sigM.LiftsInOrder → sigM.ValidEntries ι sig → ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-      (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+        sigM.LiftsInOrder → sigM.ValidEntries ι sig → ValidEqTelescope sigM ι ctx Θ₁ Θ₂ κ) from
     ⟨fun hdis hord hι h => H.wfConstantDefinition h hdis hord hι,
       fun hdis hord hι h => H.wfCtx h hdis hord hι, fun hdis hord hι h => H.wfType h hdis hord hι,
       fun hdis hord hι h => H.eqType h hdis hord hι, fun hdis hord hι h => H.hasType h hdis hord hι,
@@ -1059,21 +1053,6 @@ structure DeclarationSoundnessIn : Prop where
 are distinct and that gives the entries of `Σ_T` their meaning. -/
 theorem declarationSoundnessIn : DeclarationSoundnessIn := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
-      (wfCtx := fun _ _ _ _ _ => True)
-      (wfType := fun _ _ _ _ _ _ => True)
-      (eqType := fun _ _ _ _ _ _ _ => True)
-      (hasType := fun _ _ _ _ _ _ _ => True)
-      (eqTerm := fun _ _ _ _ _ _ _ _ => True)
-      (hasArgs := fun _ _ _ _ _ _ _ _ => True)
-      (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
-      (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
-      (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
-      (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
       (wfFields := fun sig decl I {Γ} as ctx {ps} Θ κ _ => ∀ {ι sigM}, sigM.Distinct →
         sigM.LiftsInOrder → sigM.ValidEntries ι sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
         ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)

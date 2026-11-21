@@ -119,9 +119,6 @@ RFC: `\mathsf{lvl}_\vdash.\Theta_{\bar\kappa}`
 RFC: `\mathsf{lvl}_\vdash.\Theta_\equiv` -/
 theorem stableUnderLevels : StableUnderLevels := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
       (wfCtx := fun sig {k Γ} ctx _ => ∀ {k'} (ls' : Fin k → Level k'),
         WfCtx sig (ctx.substLevels ls'))
       (wfType := fun sig {k Γ} ctx A _ => ∀ {k'} (ls' : Fin k → Level k'),
@@ -150,10 +147,7 @@ theorem stableUnderLevels : StableUnderLevels := by
           (κs.map (Universe.substLevels ls')) (l.subst ls'))
       (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => ∀ {k'} (ls' : Fin k → Level k'),
         EqTelescope sig (ctx.substLevels ls') (Θ₁.substLevels ls') (Θ₂.substLevels ls')
-          (κ.substLevels ls'))
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-      (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+          (κ.substLevels ls')) from
     ⟨fun ls' => fun h => H.wfCtx h ls', fun ls' => fun h => H.wfType h ls',
       fun ls' => fun h => H.eqType h ls', fun ls' => fun h => H.hasType h ls',
       fun ls' => fun h => H.eqTerm h ls', fun ls' => fun h => H.hasArgs h ls',

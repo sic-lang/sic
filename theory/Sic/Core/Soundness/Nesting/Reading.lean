@@ -699,22 +699,6 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂' := by
   intro h hrec hn hν₀ hpos hE hNS
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
-      (wfCtx := fun _ _ _ _ _ => True)
-      (wfType := fun _ _ _ _ _ _ => True)
-      (eqType := fun _ _ _ _ _ _ _ => True)
-      (hasType := fun _ _ _ _ _ _ _ => True)
-      (eqTerm := fun _ _ _ _ _ _ _ _ => True)
-      (hasArgs := fun _ _ _ _ _ _ _ _ => True)
-      (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
-      (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
-      (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
-      (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
       (wfDestructors := fun sigT decl _ {Γ _} ν₀ _ ctx ds κ _ =>
         sig.ValidEntries ι sigT → ReadsNested sig ι R.rd sigT →
         (∀ e ∈ sigT, ∀ D ∈ decl.names, D ∉ e.names) → ∀ (ρ : Fin decl.levels → Nat) {Γ' : Scope}
@@ -725,8 +709,7 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
           Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
         EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
         NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
-        R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂')
-      (wfTypeDeclaration := fun _ _ _ => True) from
+        R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂') from
     H.wfDestructors h hent hread fresh ρ hrec hn hν₀ hpos hE hNS
   apply Derivations.induction
   case wfDestructors_nil =>

@@ -27,62 +27,72 @@ namespace Sic.Core
 
 -- ADE: none.
 /-- The motives, one for each judgment, hold of every derivation of their judgments.
-The arguments of each motive are those of its judgment, then a derivation of it. -/
+The arguments of each motive are those of its judgment, then a derivation of it; a motive left out
+is the trivial one, true of every derivation. -/
 structure Derivations.Conclusion
-    (wfSig : ∀ (sig : Signature), WfSig sig → Prop)
+    (wfSig : ∀ (sig : Signature), WfSig sig → Prop := fun _ _ => True)
     (wfConstantDefinition :
-      ∀ (sig : Signature) (d : ConstantDefinition), WfConstantDefinition sig d → Prop)
+      ∀ (sig : Signature) (d : ConstantDefinition), WfConstantDefinition sig d → Prop :=
+        fun _ _ _ => True)
     (wfConstantDeclaration :
-      ∀ (sig : Signature) (c : ConstantDeclaration), WfConstantDeclaration sig c → Prop)
-    (wfCtx : ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ), WfCtx sig ctx → Prop)
+      ∀ (sig : Signature) (c : ConstantDeclaration), WfConstantDeclaration sig c → Prop :=
+        fun _ _ _ => True)
+    (wfCtx : ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ), WfCtx sig ctx → Prop :=
+        fun _ _ _ _ _ => True)
     (wfType :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ),
-        WfType sig ctx A → Prop)
+        WfType sig ctx A → Prop := fun _ _ _ _ _ _ => True)
     (eqType :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A B : Term k Γ),
-        EqType sig ctx A B → Prop)
+        EqType sig ctx A B → Prop := fun _ _ _ _ _ _ _ => True)
     (hasType :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (t A : Term k Γ),
-        HasType sig ctx t A → Prop)
+        HasType sig ctx t A → Prop := fun _ _ _ _ _ _ _ => True)
     (eqTerm :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (t u A : Term k Γ),
-        EqTerm sig ctx t u A → Prop)
+        EqTerm sig ctx t u A → Prop := fun _ _ _ _ _ _ _ _ => True)
     (hasArgs :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-        (ts : Args k Γ ps) (Θ : Telescope k Γ ps), HasArgs sig ctx ts Θ → Prop)
+        (ts : Args k Γ ps) (Θ : Telescope k Γ ps), HasArgs sig ctx ts Θ → Prop :=
+        fun _ _ _ _ _ _ _ _ => True)
     (eqArgs :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-        (ts us : Args k Γ ps) (Θ : Telescope k Γ ps), EqArgs sig ctx ts us Θ → Prop)
+        (ts us : Args k Γ ps) (Θ : Telescope k Γ ps), EqArgs sig ctx ts us Θ → Prop :=
+        fun _ _ _ _ _ _ _ _ _ => True)
     (hasInstanceArgs :
       ∀ (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ) (as : InstanceArgs k Γ Δ)
-        (params : Context k Δ), HasInstanceArgs sig ctx as params → Prop)
+        (params : Context k Δ), HasInstanceArgs sig ctx as params → Prop :=
+        fun _ _ _ _ _ _ _ _ => True)
     (eqInstanceArgs :
       ∀ (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ)
         (as₁ as₂ : InstanceArgs k Γ Δ) (params : Context k Δ),
-        EqInstanceArgs sig ctx as₁ as₂ params → Prop)
+        EqInstanceArgs sig ctx as₁ as₂ params → Prop := fun _ _ _ _ _ _ _ _ _ => True)
     (wfTelescope :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-        (Θ : Telescope k Γ ps) (κ : Universe k), WfTelescope sig ctx Θ κ → Prop)
+        (Θ : Telescope k Γ ps) (κ : Universe k), WfTelescope sig ctx Θ κ → Prop :=
+        fun _ _ _ _ _ _ _ _ => True)
     (wfTelescopeSorts :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
         (Θ : Telescope k Γ ps) (κs : List (Universe k)) (l : Level k),
-        WfTelescopeSorts sig ctx Θ κs l → Prop)
+        WfTelescopeSorts sig ctx Θ κs l → Prop := fun _ _ _ _ _ _ _ _ _ => True)
     (eqTelescope :
       ∀ (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-        (Θ₁ Θ₂ : Telescope k Γ ps) (κ : Universe k), EqTelescope sig ctx Θ₁ Θ₂ κ → Prop)
+        (Θ₁ Θ₂ : Telescope k Γ ps) (κ : Universe k), EqTelescope sig ctx Θ₁ Θ₂ κ → Prop :=
+        fun _ _ _ _ _ _ _ _ _ => True)
     (wfFields :
       ∀ (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
         {Γ : Scope} (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
         {ps : List Parameter} (Θ : Telescope decl.levels Γ ps) (κ : Universe decl.levels),
-        WfFields sig decl ι as ctx Θ κ → Prop)
+        WfFields sig decl ι as ctx Θ κ → Prop := fun _ _ _ _ _ _ _ _ _ _ => True)
     (wfDestructors :
       ∀ (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
         {Γ : Scope} {ns : List Name} (ν : Nesting Nat Γ)
         (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
         (ds : Destructors decl.levels Γ ns) (κ : Universe decl.levels),
-        WfDestructors sig decl ι ν as ctx ds κ → Prop)
+        WfDestructors sig decl ι ν as ctx ds κ → Prop := fun _ _ _ _ _ _ _ _ _ _ _ => True)
     (wfTypeDeclaration :
-      ∀ (sig : Signature) (decl : TypeDeclaration), WfTypeDeclaration sig decl → Prop) :
+      ∀ (sig : Signature) (decl : TypeDeclaration), WfTypeDeclaration sig decl → Prop :=
+        fun _ _ _ => True) :
     Prop where
   /-- The motive of `WfSig` holds of its derivations. -/
   wfSig : ∀ {sig : Signature} (h : WfSig sig), wfSig sig h

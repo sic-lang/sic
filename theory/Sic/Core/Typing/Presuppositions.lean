@@ -352,10 +352,6 @@ RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}`
 RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
 theorem contextPresuppositions : ContextPresuppositions := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
-      (wfCtx := fun _ _ _ _ _ => True)
       (wfType := fun sig {k Γ} ctx A _ => WfCtx sig ctx)
       (eqType := fun sig {k Γ} ctx A B _ => WfCtx sig ctx)
       (hasType := fun sig {k Γ} ctx t A _ => WfCtx sig ctx)
@@ -366,10 +362,7 @@ theorem contextPresuppositions : ContextPresuppositions := by
       (eqInstanceArgs := fun sig {k Γ Δ} ctx as₁ as₂ params _ => WfCtx sig ctx)
       (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => WfCtx sig ctx)
       (wfTelescopeSorts := fun sig {k Γ ps} ctx Θ κs l _ => WfCtx sig ctx)
-      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => WfCtx sig ctx)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-      (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => WfCtx sig ctx) from
     ⟨H.wfType, H.eqType, H.hasType, H.eqTerm, H.hasArgs, H.eqArgs, H.hasInstanceArgs,
       H.eqInstanceArgs, H.wfTelescope, H.wfTelescopeSorts, H.eqTelescope⟩
   apply Derivations.induction

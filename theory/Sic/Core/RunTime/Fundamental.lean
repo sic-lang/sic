@@ -177,30 +177,14 @@ a renaming, in a well-formed signature `Σ` that gives the entries of `Σ_T` the
 program realizes the constants of `Σ_T` of the mode `11ᵐ`. -/
 theorem fundamentalIn : FundamentalIn := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
-      (wfCtx := fun _ _ _ _ _ => True)
-      (wfType := fun _ _ _ _ _ _ => True)
-      (eqType := fun _ _ _ _ _ _ _ => True)
       (hasType := fun sig {k Γ} ctx t A _ => ∀ {ι P sigM} {hΓ : Γ.FirstOrder}
         {γ : GradeVector Γ.length}, WfSig sigM → sigM.ValidEntries ι sig → P.Realizes sigM ι sig →
           Usage sig γ .oneOne t →
             ∀ ρ, RunValidRen sigM ι P hΓ (ctx.atLevels ρ) γ (t.atLevels ρ) (A.atLevels ρ))
-      (eqTerm := fun _ _ _ _ _ _ _ _ => True)
       (hasArgs := fun sig {k Γ ps} ctx ts Θ _ => ∀ {ι P sigM} {hΓ : Γ.FirstOrder}
         {γ : GradeVector Γ.length}, WfSig sigM → sigM.ValidEntries ι sig → P.Realizes sigM ι sig →
           UsageArgs sig γ .oneOne ts →
-            ∀ ρ, RunValidArgsRen sigM ι P hΓ (ctx.atLevels ρ) γ (ts.atLevels ρ) (Θ.atLevels ρ))
-      (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
-      (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
-      (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
-      (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-      (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+            ∀ ρ, RunValidArgsRen sigM ι P hΓ (ctx.atLevels ρ) γ (ts.atLevels ρ) (Θ.atLevels ρ)) from
     ⟨fun hw hι hP h hU => H.hasType h hw hι hP hU, fun hw hι hP h hU => H.hasArgs h hw hι hP hU⟩
   apply Derivations.induction
   case hasType_var =>

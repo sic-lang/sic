@@ -51,27 +51,10 @@ where
       ∃ (Θ : Telescope k Γ ps) (A : Term k (Γ.extend ps.length)),
         ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ := by
     suffices H : Derivations.Conclusion
-        (wfSig := fun _ _ => True)
-        (wfConstantDefinition := fun _ _ _ => True)
-        (wfConstantDeclaration := fun _ _ _ => True)
-        (wfCtx := fun _ _ _ _ _ => True)
-        (wfType := fun _ _ _ _ _ _ => True)
-        (eqType := fun _ _ _ _ _ _ _ => True)
         (hasType := fun sig {k Γ} ctx t _ _ => ∀ {ps : List Parameter}
           {ψ : ResultOwnership Grade ps.length} {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps},
           t = .var X ts → ∃ (Θ : Telescope k Γ ps) (A : Term k (Γ.extend ps.length)),
-            ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ)
-        (eqTerm := fun _ _ _ _ _ _ _ _ => True)
-        (hasArgs := fun _ _ _ _ _ _ _ _ => True)
-        (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
-        (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
-        (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
-        (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
-        (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
-        (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
-        (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-        (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-        (wfTypeDeclaration := fun _ _ _ => True) from
+            ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ) from
       fun {_ _} h e => H.hasType h e
     apply Derivations.induction
     case hasType_secondOrder =>
@@ -125,12 +108,6 @@ where
           HasInstanceArgs sig ctx (hΔ ▸ as)
             ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
     suffices H : Derivations.Conclusion
-        (wfSig := fun _ _ => True)
-        (wfConstantDefinition := fun _ _ _ => True)
-        (wfConstantDeclaration := fun _ _ _ => True)
-        (wfCtx := fun _ _ _ _ _ => True)
-        (wfType := fun _ _ _ _ _ _ => True)
-        (eqType := fun _ _ _ _ _ _ _ => True)
         (hasType := fun sig {k Γ} ctx t _ _ => ∀ {Δ : Scope} {D : Name} {qs : List Quality}
           {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}, t = .inst D qs ls ps as →
           ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
@@ -138,18 +115,7 @@ where
               (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
             sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
               HasInstanceArgs sig ctx (hΔ ▸ as)
-                ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
-        (eqTerm := fun _ _ _ _ _ _ _ _ => True)
-        (hasArgs := fun _ _ _ _ _ _ _ _ => True)
-        (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
-        (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
-        (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
-        (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
-        (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
-        (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
-        (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-        (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-        (wfTypeDeclaration := fun _ _ _ => True) from
+                ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) from
       fun {_ _} h e => H.hasType h e
     apply Derivations.induction
     case hasType_inst =>

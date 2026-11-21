@@ -210,9 +210,6 @@ structure Subst.Stable (sig : Signature)
 `Subst.Liftable` says. -/
 theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig @Base := by
   suffices H : Derivations.Conclusion
-      (wfSig := fun _ _ => True)
-      (wfConstantDefinition := fun _ _ _ => True)
-      (wfConstantDeclaration := fun _ _ _ => True)
       (wfCtx := fun sig {k Δ} ctx _ => ∀ {Base Γ ctx'} {θ : Subst k Γ Δ},
         Subst.Liftable sig @Base → Subst.Lifted @Base ctx' @θ ctx → WfCtx sig ctx')
       (wfType := fun sig {k Δ} ctx A _ => ∀ {Base Γ ctx'} {θ : Subst k Γ Δ},
@@ -247,10 +244,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
           WfTelescopeSorts sig ctx' (Θ.subst θ) κs l)
       (eqTelescope := fun sig {k Δ _} ctx Θ₁ Θ₂ κ _ => ∀ {Base Γ ctx'} {θ : Subst k Γ Δ},
         Subst.Liftable sig @Base → Subst.Lifted @Base ctx' @θ ctx →
-          EqTelescope sig ctx' (Θ₁.subst θ) (Θ₂.subst θ) κ)
-      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
-      (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
-      (wfTypeDeclaration := fun _ _ _ => True) from
+          EqTelescope sig ctx' (Θ₁.subst θ) (Θ₂.subst θ) κ) from
     ⟨fun h => H.wfType h hB, fun h => H.eqType h hB, fun h => H.hasType h hB,
       fun h => H.eqTerm h hB, fun h => H.hasArgs h hB, fun h => H.eqArgs h hB,
       fun h => H.hasInstanceArgs h hB, fun h => H.eqInstanceArgs h hB,
