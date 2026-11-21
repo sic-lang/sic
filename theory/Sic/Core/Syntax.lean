@@ -314,8 +314,10 @@ inductive States (k : Nat) : Scope → Type where
 /-- `ḡ`: the branches of the destructors: one for each destructor of each type of a block, in the
 order of the declaration; for a corecursor, the branch `D.d(x̄; ȳ; z̄) ⇒ g` is a term over a new
 variable for each non-uniform parameter, for each entry of the state and for each argument of the
-destructor, of which the indices only keep the numbers `n` of non-uniform parameters, `m` of entries
-of the state and `a` of arguments.
+destructor; for a proof by coinduction, over no variable of the first group, a variable for each of
+two terms of the type of the destructor and one for the hypothesis that the relation of this type
+relates them, then a variable for each argument of the destructor; the indices only keep the numbers
+`n`, `m` and `a` of variables of the three groups.
 RFC: `\mathsf{syntax}_{\bar g}` -/
 inductive DestructorBranches (k : Nat) : Scope → Type where
   /-- `()`. -/
