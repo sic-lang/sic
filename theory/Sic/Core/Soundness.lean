@@ -315,7 +315,7 @@ where
       exact ValidTermΓ.propExt (hasType hd hord hι hA ρ) (hasType hd hord hι hB ρ) ht' hu'
     | .coind (k := k) (Γ := Γ) (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as)
         (t₁ := t₁) (t₂ := t₂) (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm
-        has hh hA _ hAs hAt ht₁ ht₂ ht _ hgs hΘ hB hBt hgt hgr => fun ρ => by
+        has hh hA hAl hAt ht₁ ht₂ ht _ hgs hΘ hB hBt hgt hgr => fun ρ => by
       let L' : Fin k → Level 0 := fun i => .ofNat (ρ i)
       have hl' : (ls.map (Level.subst L')).length = _ := (List.length_map _).trans hl
       have has' := hasInstanceArgs hd hord hι has ρ
@@ -345,11 +345,8 @@ where
       rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
         (ls.getFin hl)).level.subst L' = _ from hsort]
       refine ValidTermΓ.coind (l' := l'.subst L') (κs := fun i => (κs i).substLevels L') hι h hq hl'
-        hp hadm (by rw [List.getFin_map]; exact has') hh (Terms.get_substLevels_of _ hA) ?_ ?_
-        (hasType hd hord hι ht₁ ρ) (hasType hd hord hι ht₂ ρ) ?_ ?_ ?_ ?_ ?_ ?_ ?_
-      · intro j T' hj
-        obtain ⟨A', hA'⟩ := hAs j T' hj
-        exact ⟨_, Terms.get_substLevels_of _ hA'⟩
+        hp hadm (by rw [List.getFin_map]; exact has') hh (Terms.get_substLevels_of _ hA)
+        ((Terms.length_substLevels _ As).trans hAl) ?_ (hasType hd hord hι ht₁ ρ) (hasType hd hord hι ht₂ ρ) ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro j T' A' hj hA'
         obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels _ hA'
         have ih := hasType hd hord hι (hAt j T' A₀ hj hA₀) ρ

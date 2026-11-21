@@ -268,7 +268,6 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hA : As.get h' = some A)
       (hAl : As.length = decl.codataTypes.length)
-      (hAs : ∀ j T', decl.codataTypes[j]? = some T' → ∃ A', As.get j = some A')
       (hAt : ∀ j T' A', decl.codataTypes[j]? = some T' → As.get j = some A' →
         HasType sig ((ctx.var (.inst T'.name qs ls ps as)).var
           ((Term.inst T'.name qs ls ps as).rename Ren.weaken)) A' (.sort ⟨.prop, l'⟩))

@@ -154,8 +154,8 @@ where
         (hasType hs hw ht) (hasType hs hw hu)
     | .propExt hA hB ht hu =>
       .propExt (hasType hs hw hA) (hasType hs hw hB) (hasType hs hw ht) (hasType hs hw hu)
-    | .coind h hq hl hp hadm has hh hA hAl hAs hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr =>
-      .coind ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) hh hA hAl hAs
+    | .coind h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr =>
+      .coind ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) hh hA hAl
         (fun j T' A' hj hA' => hasType hs hw (hAt j T' A' hj hA')) (hasType hs hw ht₁)
         (hasType hs hw ht₂) (hasType hs hw ht) hgl hgs hΘ hB
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn =>

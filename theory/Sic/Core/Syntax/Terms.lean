@@ -146,6 +146,13 @@ theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
   | .cons .., 0, _, _ => Nat.zero_lt_succ _
   | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
 
+/-- The terms at a position below the number of terms is there. -/
+theorem Terms.get_of_lt_length {k : Nat} {Γ : Scope} :
+    {ts : Terms k Γ} → {j : Nat} → j < ts.length → ∃ t, ts.get j = some t
+  | .nil, _, h => absurd h (Nat.not_lt_zero _)
+  | .cons t _, 0, _ => ⟨t, rfl⟩
+  | .cons _ ts, _ + 1, h => Terms.get_of_lt_length (ts := ts) (Nat.lt_of_succ_lt_succ h)
+
 /-- The grades of the recursive results of the branch at a position of branches are as many as its
 recursive results. -/
 theorem Branches.length_grades {k : Nat} {Γ : Scope} :

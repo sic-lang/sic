@@ -261,7 +261,7 @@ where
       rw [Term.subst_lift_rename_weaken] at ht' hu'
       exact .propExt (hasType hA hθ) (hasType hB hθ) ht' hu'
     | .coind (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (t₁ := t₁) (t₂ := t₂)
-        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAs hAt
+        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAt
         ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr, hθ => by
       let p₀ : Parameter := ⟨Grading.Grade.one, Grading.Grade.one⟩
       -- The observations of the variables of a branch, substituted under them.
@@ -297,11 +297,8 @@ where
       rw [Term.subst]
       refine .coind (l' := l') (κs := κs) h hq hl hp hadm (hasInstanceArgs has hθ) hh
         (Terms.get_subst _ hA)
-        ((Terms.length_subst _ As).trans hAl) ?_ ?_ (hasType ht₁ hθ) (hasType ht₂ hθ) ?_
+        ((Terms.length_subst _ As).trans hAl) ?_ (hasType ht₁ hθ) (hasType ht₂ hθ) ?_
         ((DestructorBranches.length_subst _ gs).trans hgl) ?_ ?_ ?_ ?_ ?_ ?_
-      · intro j T' hj
-        obtain ⟨A', hA'⟩ := hAs j T' hj
-        exact ⟨_, Terms.get_subst _ hA'⟩
       · intro j T' A' hj hA'
         obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_subst_inv _ hA'
         have ih := hasType (hAt j T' A₀ hj hA₀) ((hθ.var _).var _)

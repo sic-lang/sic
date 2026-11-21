@@ -174,7 +174,7 @@ where
       rw [Term.substLevels_rename] at ht' hu'
       exact .propExt (hasType ls' hA) (hasType ls' hB) ht' hu'
     | .coind (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (t₁ := t₁) (t₂ := t₂)
-        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAs hAt
+        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAt
         ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
@@ -202,12 +202,9 @@ where
       rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
         (ls.getFin hl)).level.subst ls' = _ from hsort]
       refine .coind (l' := l'.subst ls') (κs := fun i => (κs i).substLevels ls') h hq _ hp hadm has'
-        hh (Terms.get_substLevels_of ls' hA) ((Terms.length_substLevels ls' As).trans hAl) ?_ ?_
+        hh (Terms.get_substLevels_of ls' hA) ((Terms.length_substLevels ls' As).trans hAl) ?_
         (hasType ls' ht₁) (hasType ls' ht₂) ?_
         ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_ ?_ ?_ ?_ ?_
-      · intro j T' hj
-        obtain ⟨A', hA'⟩ := hAs j T' hj
-        exact ⟨_, Terms.get_substLevels_of ls' hA'⟩
       · intro j T' A' hj hA'
         obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels ls' hA'
         have ih := hasType ls' (hAt j T' A₀ hj hA₀)

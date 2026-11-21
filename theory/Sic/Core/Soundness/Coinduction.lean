@@ -54,7 +54,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {l' : Level 0} {t₁ t₂ t : Term 0 Γ} {As : Terms 0 (Γ.extend 2)}
     {gs : DestructorBranches 0 Γ} {h' : Nat} {A : Term 0 (Γ.extend 2)} {κs : Nat → Universe 0}
     (hh : decl.codataTypes[h']? = some T) (hA : As.get h' = some A)
-    (hAs : ∀ j T', decl.codataTypes[j]? = some T' → ∃ A', As.get j = some A')
+    (hAl : As.length = decl.codataTypes.length)
     (hAt : ∀ j T' A', decl.codataTypes[j]? = some T' → As.get j = some A' →
       ValidTermΓ sig ι ((ctx.var (.inst T'.name qs ls ps as)).var
         ((Term.inst T'.name qs ls ps as).rename Ren.weaken)) A' (.sort ⟨.prop, l'⟩))
@@ -459,7 +459,8 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               (Destructors.recursionAt_mem hD')
             obtain ⟨j', hj'⟩ := List.mem_iff_getElem?.1 hT''
             have hidx := TypeDeclaration.idxOf?_codataTypes hnames hj'
-            obtain ⟨A'', hA''⟩ := hAs j' T'' hj'
+            obtain ⟨A'', hA''⟩ := Terms.get_of_lt_length
+              (hAl ▸ (List.getElem?_eq_some_iff.1 hj').1)
             obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
             -- The result of the destructor is the instance of the type of the block it names.
             have hty : Term.LevelEquiv ((B.substLevels L).subst (Subst.append
