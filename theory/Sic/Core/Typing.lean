@@ -257,7 +257,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   one.
   There are as many relations as types and as many branches as cases.
   The positions `h'` of the type of the terms in the block, `j` of a type and `i` of a case give the
-  relations and the branches, as the order of the declaration does. -/
+  relations and the branches, as the order of the declaration does.
+  RFC: `\mathsf{coind}` -/
   | coind {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {l' : Level k}
