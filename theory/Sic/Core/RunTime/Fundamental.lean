@@ -544,13 +544,13 @@ theorem fundamentalIn : FundamentalIn := by
     intro sig k Γ ps ctx q p t A ts Θ ht hts ht_ih hts_ih ι P sigM hΓ γ hw hι hP hU
     cases hU with
     | cons hu hus =>
-    exact fun ρ => by
-      have hts' := hts_ih (hΓ := hΓ) hw hι hP hus ρ
-      simp only [Telescope.atLevels] at hts'
-      rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
-        (fun x => by cases x <;> rfl)] at hts'
-      exact RunValidArgsRen.cons hw.distinct (fun hp => ht_ih hw hι hP
-        ((Mode.erasesUncounted .oneOne).mode _ hp ▸ hu) ρ) hts'
+      exact fun ρ => by
+        have hts' := hts_ih (hΓ := hΓ) hw hι hP hus ρ
+        simp only [Telescope.atLevels] at hts'
+        rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
+          (fun x => by cases x <;> rfl)] at hts'
+        exact RunValidArgsRen.cons hw.distinct (fun hp => ht_ih hw hι hP
+          ((Mode.erasesUncounted .oneOne).mode _ hp ▸ hu) ρ) hts'
   all_goals intros; trivial
 
 end Sic.Core

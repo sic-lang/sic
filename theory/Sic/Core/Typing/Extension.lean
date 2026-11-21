@@ -252,8 +252,8 @@ theorem stableUnderExtension : StableUnderExtension := by
     exact .transp (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
         (ht_ih hs hw) (hu_ih hs hw)
   case eqTerm_transpSame =>
-    refine fun hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih => fun hs
-        hw => ?_
+    refine fun hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih =>
+        fun hs hw => ?_
     exact .transpSame (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
         (ht_ih hs hw) (hu_ih hs hw) (hCC_ih hs hw)
   case eqTerm_ctor =>

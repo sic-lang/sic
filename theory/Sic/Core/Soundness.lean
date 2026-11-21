@@ -24,10 +24,10 @@ level variables, in a signature whose constant declarations the interpretation g
 types, `(hyp_ι)`.
 
 The proof is by the induction on the derivations, `Derivations.induction`, with the fields of the
-record as its motives: each case takes the values `ρ` of
-the level variables, instantiates the levels of its premises by them, which commutes with the
-substitutions and the entries of the contexts and of the signature, and concludes by the rule of
-the same name in `Rules`, `Recursors`, `Corecursors`, `Transport` or `Coinduction`.
+record as its motives: each case takes the values `ρ` of the level variables, instantiates the
+levels of its premises by them, which commutes with the substitutions and the entries of the
+contexts and of the signature, and concludes by the rule of the same name in `Rules`, `Recursors`,
+`Corecursors`, `Transport` or `Coinduction`.
 A premise that is not a subterm of the derivation, such as the well-formed signature that
 `presuppositions` gives, has no hypothesis of the induction: the meaningful signature and context
 of a case come from the meaning of one of its premises.
