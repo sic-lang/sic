@@ -612,9 +612,9 @@ where
         hgt => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
-      have ho₀ {a : Scope.Entry} (x : Var Ξ₀ a) := hd.obsSubst_substLevels ls'
-        (Term.observation_substLevels ls' D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs))
-        (fun x => InstanceArgs.toSubst_substLevels ls' as x) x
+      have ho₀ {a : Scope.Entry} (x : Var Ξ₀ a) :=
+        hd.obsSubst_observation_substLevels ls' D qs ls ps as
+          (.corec r D qs ls ps as ss.terms Ss gs) x
       have hbs' := hasArgs ls' hbs
       rw [Telescope.substLevels_subst_of ho₀, Telescope.substLevels_substLevels_getFin,
         Term.corec_substLevels] at hbs'
