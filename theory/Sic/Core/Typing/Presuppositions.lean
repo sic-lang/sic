@@ -209,8 +209,8 @@ theorem presuppositions : Presuppositions := by
       has_ih
   case hasType_obs => exact fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => has_ih
   case hasType_corec =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih
-        =>
+    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
+        hgt_ih =>
       has_ih
   case hasType_conv => exact fun ht h ht_ih h_ih => ht_ih
   case eqTerm_refl => exact fun h h_ih => h_ih
@@ -403,8 +403,8 @@ theorem contextPresuppositions : ContextPresuppositions := by
       has_ih
   case hasType_obs => exact fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => has_ih
   case hasType_corec =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih
-        =>
+    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
+        hgt_ih =>
       has_ih
   case hasType_conv => exact fun ht h ht_ih h_ih => ht_ih
   case eqTerm_refl => exact fun h h_ih => h_ih

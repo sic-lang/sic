@@ -421,7 +421,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     rw [Term.substLevels_instantiate]
     exact .secondOrder (hX.substLevels ls') (hts_ih ls')
   case eqTerm_delta =>
-    intro sig k Γ ctx d qs ls ps hctx h hq hl hp hctx_ih _ ls'
+    intro sig k Γ ctx d qs ls ps hctx h hq hl hp hctx_ih k' ls'
     rw [Signature.instanceType_substLevels, Signature.instanceType_substLevels,
       ← Level.getFin_map_subst ls' ls hl]
     exact .delta (hctx_ih ls') h hq _ hp
