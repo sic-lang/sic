@@ -61,8 +61,8 @@ theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclara
     (hI : decl.constraint I) : WfCtx sig (decl.params I) := by
   obtain ⟨_, hs, hdecl⟩ := h.wfTypeDeclaration hd
   cases hdecl with
-  | WfTypeDeclaration.data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
-  | WfTypeDeclaration.codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
+  | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
+  | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
 
 -- ADE: none.
 /-- A destructor of destructors that live in a sort of propositions has a grade whose mode is not
@@ -80,19 +80,19 @@ theorem WfDestructors.mode_of_grade {sig : Signature} {decl : TypeDeclaration}
     split at hg
     · cases hg
       exact hp (hκ.1 hq)
-    · exact (WfDestructors.mode_of_grade hds) hg hq
+    · exact hds.mode_of_grade hg hq
   | _, d' :: _, _, _, _, _, _, .nested _ _ _ _ hκ hp hds, hg, hq => by
     simp only [Destructors.grade, Destructors.grade_rename] at hg
     split at hg
     · cases hg
       exact hp (hκ.1 hq)
-    · exact (WfDestructors.mode_of_grade hds) hg hq
+    · exact hds.mode_of_grade hg hq
   | _, d' :: _, _, _, _, _, _, .recursive _ _ hp hds, hg, hq => by
     simp only [Destructors.grade, Destructors.grade_rename] at hg
     split at hg
     · cases hg
       exact hp hq
-    · exact (WfDestructors.mode_of_grade hds) hg hq
+    · exact hds.mode_of_grade hg hq
 
 -- ADE: none.
 /-- A destructor of a codata type of a well-formed signature, at an instance that the constraint
@@ -106,9 +106,9 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
     (decl.sort I).quality = .prop → p.mode ≠ .oneOne := by
   obtain ⟨_, _, hdecl⟩ := h.wfTypeDeclaration hT.1
   cases hdecl with
-  | WfTypeDeclaration.data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
-  | WfTypeDeclaration.codata hb _ _ hds _ _ _ =>
-    exact WfDestructors.mode_of_grade (hds I hI T hT.2.1)
+  | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
+  | codata hb _ _ hds _ _ _ =>
+    exact (hds I hI T hT.2.1).mode_of_grade
       (hpos.grade (h.distinct.destructors_nodup hT))
 
 -- ADE: none.

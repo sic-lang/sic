@@ -105,7 +105,7 @@ theorem TypedSubst.Base.varIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst 
     exact .var hctx .zero
   | .var B h, .succVar hy, hctx => by
     cases hctx with
-    | WfCtx.var hB =>
+    | var hB =>
       have ih := TypedSubst.Base.varIn h hy (contextPresuppositions.wfType hB)
       rw [Term.subst_lift_rename_weaken]
       exact stableUnderRenaming.hasType ih (TypedRen.weaken (.var hB))
@@ -284,7 +284,7 @@ theorem HasType.instantiate {Γ : Scope} :
 theorem WfType.instantiate {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
     {Θ : Telescope k Γ ps} {ts : Args k Γ ps} {B : Term k (Γ.extend ps.length)}
     (hts : HasArgs sig ctx ts Θ) : WfType sig (ctx.append Θ) B → WfType sig ctx (B.instantiate ts)
-  | .univType h => .univType (Term.sort_instantiate _ ts ▸ (HasType.instantiate h) hts)
-  | .propType h => .propType (Term.sort_instantiate _ ts ▸ (HasType.instantiate h) hts)
+  | .univType h => .univType (Term.sort_instantiate _ ts ▸ h.instantiate hts)
+  | .propType h => .propType (Term.sort_instantiate _ ts ▸ h.instantiate hts)
 
 end Sic.Core

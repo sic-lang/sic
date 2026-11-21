@@ -29,16 +29,6 @@ instances that its constraint admits.
 A variable `x` is fresh in its context by construction, being a de Bruijn index, so that the
 conditions `x ∉ Γ` disappear; the condition that the names of a signature are fresh remains.
 
-The judgments are one inductive `Derivable`, indexed by the form of the judgment, `Judgment`, rather
-than a family of mutual inductives, one for each judgment: `induction` works on one inductive, not on
-a family of mutual ones, and a structural recursion on mutual inductives of propositions costs, to
-compile, much more than an induction, more with each rule.
-Each judgment is an abbreviation of `Derivable` at its form, such as `HasType sig ctx t A` for
-`Derivable (.hasType sig ctx t A)`, and its rules are the constructors `HasType.var`, … of
-`Derivable`, which the namespace of the judgment exports.
-A property of the derivations of several judgments is one theorem on `Derivable`, by induction,
-whose statement is a property of each form, defined by cases on the form.
-
 ADE have no second-order variables, no constants, no sorts of propositions and no declarations,
 and their typing has a context of definitions instead of a signature.
 -/
@@ -51,205 +41,133 @@ open Sic.Grading
 
 /-! ## Judgments -/
 
-/-- The forms of the judgments, one for each judgment, with what it is about. -/
-inductive Judgment : Type where
-  /-- The form of `⊢ Σ`. -/
-  | wfSig (sig : Signature)
-  /-- The form of `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`. -/
-  | wfConstantDefinition (sig : Signature) (d : ConstantDefinition)
-  /-- The form of `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`. -/
-  | wfConstantDeclaration (sig : Signature) (c : ConstantDeclaration)
-  /-- The form of `Σ ⊢ Γ`. -/
-  | wfCtx (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
-  /-- The form of `Σ; Γ ⊢ A`. -/
-  | wfType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ)
-  /-- The form of `Σ; Γ ⊢ A ≡ B`. -/
-  | eqType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A B : Term k Γ)
-  /-- The form of `Σ; Γ ⊢ t : A`. -/
-  | hasType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (t A : Term k Γ)
-  /-- The form of `Σ; Γ ⊢ t ≡ u : A`. -/
-  | eqTerm (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (t u A : Term k Γ)
-  /-- The form of `Σ; Γ ⊢ t̄ : Θ`. -/
-  | hasArgs (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-      (ts : Args k Γ ps) (Θ : Telescope k Γ ps)
-  /-- The form of `Σ; Γ ⊢ t̄ ≡ ū : Θ`. -/
-  | eqArgs (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-      (ts us : Args k Γ ps) (Θ : Telescope k Γ ps)
-  /-- The form of `Σ; Γ ⊢ ā : Δ`. -/
-  | hasInstanceArgs (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ)
-      (as : InstanceArgs k Γ Δ) (params : Context k Δ)
-  /-- The form of `Σ; Γ ⊢ ā₁ ≡ ā₂ : Δ`. -/
-  | eqInstanceArgs (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ)
-      (as₁ as₂ : InstanceArgs k Γ Δ) (params : Context k Δ)
-  /-- The form of `Σ; Γ ⊢ Θ : κ`. -/
-  | wfTelescope (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-      (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k)
-  /-- The form of `Σ; Γ ⊢ Θ : κ̄ ≤ l`. -/
-  | wfTelescopeSorts (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-      (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κs : List (Universe k)) (l : Level k)
-  /-- The form of `Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`. -/
-  | eqTelescope (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-      (ctx : Context k Γ) (Θ₁ Θ₂ : Telescope k Γ ps) (κ : Universe k)
-  /-- The form of `Σ; Γ ⊢_𝒟 Θ : κ`. -/
-  | wfFields (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
-      {Γ : Scope} (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
-      {ps : List Parameter} (Θ : Telescope decl.levels Γ ps) (κ : Universe decl.levels)
-  /-- The form of `Σ; Γ ⊢_{𝒟; Π} d̄ : κ`. -/
-  | wfDestructors (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
-      {Γ : Scope} {ns : List Name} (ν : Nesting Nat Γ)
-      (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
-      (ds : Destructors decl.levels Γ ns) (κ : Universe decl.levels)
-  /-- The form of `Σ ⊢ 𝒟`. -/
-  | wfTypeDeclaration (sig : Signature) (decl : TypeDeclaration)
+mutual
 
-section
-
--- The rules write their premises and their conclusions as the judgments that the abbreviations
--- below name, which only exist once `Derivable` does: these notations stand for them in the rules,
--- without hygiene, so that `Derivable` in them is the inductive that the rules define, which does
--- not exist yet where the notations are declared.
-set_option hygiene false
-local notation "WfSig " sig:max =>
-    Derivable (Judgment.wfSig sig)
-local notation "WfConstantDefinition " sig:max d:max =>
-    Derivable (Judgment.wfConstantDefinition sig d)
-local notation "WfConstantDeclaration " sig:max c:max =>
-    Derivable (Judgment.wfConstantDeclaration sig c)
-local notation "WfCtx " sig:max ctx:max =>
-    Derivable (Judgment.wfCtx sig ctx)
-local notation "WfType " sig:max ctx:max A:max =>
-    Derivable (Judgment.wfType sig ctx A)
-local notation "EqType " sig:max ctx:max A:max B:max =>
-    Derivable (Judgment.eqType sig ctx A B)
-local notation "HasType " sig:max ctx:max t:max A:max =>
-    Derivable (Judgment.hasType sig ctx t A)
-local notation "EqTerm " sig:max ctx:max t:max u:max A:max =>
-    Derivable (Judgment.eqTerm sig ctx t u A)
-local notation "HasArgs " sig:max ctx:max ts:max Θ:max =>
-    Derivable (Judgment.hasArgs sig ctx ts Θ)
-local notation "EqArgs " sig:max ctx:max ts:max us:max Θ:max =>
-    Derivable (Judgment.eqArgs sig ctx ts us Θ)
-local notation "HasInstanceArgs " sig:max ctx:max as:max params:max =>
-    Derivable (Judgment.hasInstanceArgs sig ctx as params)
-local notation "EqInstanceArgs " sig:max ctx:max as₁:max as₂:max params:max =>
-    Derivable (Judgment.eqInstanceArgs sig ctx as₁ as₂ params)
-local notation "WfTelescope " sig:max ctx:max Θ:max κ:max =>
-    Derivable (Judgment.wfTelescope sig ctx Θ κ)
-local notation "WfTelescopeSorts " sig:max ctx:max Θ:max κs:max l:max =>
-    Derivable (Judgment.wfTelescopeSorts sig ctx Θ κs l)
-local notation "EqTelescope " sig:max ctx:max Θ₁:max Θ₂:max κ:max =>
-    Derivable (Judgment.eqTelescope sig ctx Θ₁ Θ₂ κ)
-local notation "WfFields " sig:max decl:max ι:max as:max ctx:max Θ:max κ:max =>
-    Derivable (Judgment.wfFields sig decl ι as ctx Θ κ)
-local notation "WfDestructors " sig:max decl:max ι:max ν:max as:max ctx:max ds:max κ:max =>
-    Derivable (Judgment.wfDestructors sig decl ι ν as ctx ds κ)
-local notation "WfTypeDeclaration " sig:max decl:max =>
-    Derivable (Judgment.wfTypeDeclaration sig decl)
-
-/-- The derivations of the judgments: one inductive, indexed by the form of the judgment, so that
-the proofs on the derivations of all the judgments are one `induction`, which a family of mutual
-inductives does not allow; the rule `R` of a judgment `J` is the constructor `J.R`. -/
-inductive Derivable : Judgment → Prop where
+-- ADE: `»_`, in `Definition/Typed.agda`, for contexts of definitions.
+/-- `⊢ Σ`: the signature is well formed. -/
+inductive WfSig : Signature → Prop where
   /-- The empty signature.
   RFC: `\mathsf{sig}_\varnothing` -/
-  | WfSig.empty : WfSig []
+  | empty : WfSig []
   /-- A constant definition, whose name is fresh.
   RFC: `\mathsf{sig}_{\mathsf{def}}` -/
-  | WfSig.constantDefinition {sig : Signature} {d : ConstantDefinition}
+  | constantDefinition {sig : Signature} {d : ConstantDefinition}
       (h : WfConstantDefinition sig d)
       (fresh : ∀ e ∈ sig, d.name ∉ e.names) : WfSig (.constantDefinition d :: sig)
   /-- A constant declaration, whose name is fresh.
   RFC: `\mathsf{sig}_{\mathsf{decl}}` -/
-  | WfSig.constantDeclaration {sig : Signature} {c : ConstantDeclaration}
+  | constantDeclaration {sig : Signature} {c : ConstantDeclaration}
       (h : WfConstantDeclaration sig c)
       (fresh : ∀ e ∈ sig, c.name ∉ e.names) : WfSig (.constantDeclaration c :: sig)
   /-- A type declaration, whose names of types are distinct, and none of them the name of a
   lifting.
   RFC: `\mathsf{sig}_{\mathsf{data}}`
   RFC: `\mathsf{sig}_{\mathsf{codata}}` -/
-  | WfSig.typeDeclaration {sig : Signature} {decl : TypeDeclaration}
+  | typeDeclaration {sig : Signature} {decl : TypeDeclaration}
       (h : WfTypeDeclaration sig decl) (hn : decl.names.Nodup)
       (hL : ∀ F S, Lifting.name F S ∉ decl.names) :
       WfSig (.typeDeclaration decl :: sig)
   /-- The lifting of a codata type of a block of the signature, with the destructors of this type
   lifted.
   RFC: `\mathsf{sig}_{\mathsf{lift}}` -/
-  | WfSig.lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
+  | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       (h : WfTypeDeclaration sig (decl.lifting F S ns body)) (hd : .typeDeclaration decl ∈ sig)
       (hl : decl.Lifts sig F S body) :
       WfSig (.typeDeclaration (decl.lifting F S ns body) :: sig)
 
+/--
+`Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
+type of some sort and the body `t` a term of it, both in the empty context.
+-/
+inductive WfConstantDefinition : Signature → ConstantDefinition → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.
   RFC: `\mathsf{def}` -/
-  | WfConstantDefinition.intro {sig : Signature} {d : ConstantDefinition}
+  | intro {sig : Signature} {d : ConstantDefinition}
       (κ : Instance d.sorts d.grades → Universe d.levels)
       (hA : ∀ ι, HasType sig .empty (d.type ι) (.sort (κ ι)))
       (ht : ∀ ι, HasType sig .empty (d.body ι) (d.type ι)) :
       WfConstantDefinition sig d
 
+/-- `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`: for each instance of the sort and grade variables, the type `A` is a
+type of some sort in the empty context. -/
+inductive WfConstantDeclaration : Signature → ConstantDeclaration → Prop where
   /-- The rule, with a sort `κ ι` of the type at each instance `ι`.
   RFC: `\mathsf{decl}` -/
-  | WfConstantDeclaration.intro {sig : Signature} {c : ConstantDeclaration}
+  | intro {sig : Signature} {c : ConstantDeclaration}
       (κ : Instance c.sorts c.grades → Universe c.levels)
       (hA : ∀ ι, HasType sig .empty (c.type ι) (.sort (κ ι))) :
       WfConstantDeclaration sig c
 
+-- ADE: `_»⊢_`, in `Definition/Typed.agda`.
+/-- `Σ ⊢ Γ`: the context is well formed. -/
+inductive WfCtx : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → Prop where
   /-- The empty context, in a well-formed signature.
   RFC: `\mathsf{ctx}_\varepsilon` -/
-  | WfCtx.empty {sig : Signature} {k : Nat} (h : WfSig sig) : WfCtx sig (.empty : Context k [])
+  | empty {sig : Signature} {k : Nat} (h : WfSig sig) : WfCtx sig (.empty : Context k [])
   /-- A variable, whose type is a type in the context.
   RFC: `\mathsf{ctx}_x` -/
-  | WfCtx.var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
+  | var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       (h : WfType sig ctx A) : WfCtx sig (ctx.var A)
   /-- A second-order variable, whose type is a type in the context extended by its telescope.
   RFC: `\mathsf{ctx}_X` -/
-  | WfCtx.secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       (h : WfType sig (ctx.append Θ) A) : WfCtx sig (ctx.secondOrder Θ A ψ)
 
+-- ADE: `_⊢_`, in `Definition/Typed.agda`.
+/-- `Σ; Γ ⊢ A`: `A` is a type. -/
+inductive WfType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → Term k Γ → Prop where
   -- ADE: `univ`, in `Definition/Typed.agda`.
   /-- A term of a universe is a type.
   RFC: `U_{\mathsf{type}}` -/
-  | WfType.univType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
+  | univType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       {l : Level k} (h : HasType sig ctx A (.sort ⟨.type, l⟩)) : WfType sig ctx A
   /-- A proposition is a type.
   RFC: `\Omega_{\mathsf{type}}` -/
-  | WfType.propType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
+  | propType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       {l : Level k} (h : HasType sig ctx A (.sort ⟨.prop, l⟩)) : WfType sig ctx A
 
+-- ADE: `_⊢_≡_`, in `Definition/Typed.agda`.
+/-- `Σ; Γ ⊢ A ≡ B`: `A` and `B` are equal types. -/
+inductive EqType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → Term k Γ → Term k Γ →
+    Prop where
   /-- The equality of types is reflexive.
   RFC: `\mathsf{refl}_{\mathsf{type}}` -/
-  | EqType.refl {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
+  | refl {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
       (h : WfType sig ctx A) : EqType sig ctx A A
   /-- The equality of types is symmetric.
   RFC: `\mathsf{sym}_{\mathsf{type}}` -/
-  | EqType.symm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
+  | symm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
       (h : EqType sig ctx A B) : EqType sig ctx B A
   /-- The equality of types is transitive.
   RFC: `\mathsf{trans}_{\mathsf{type}}` -/
-  | EqType.trans {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A₁ A₂ A₃ : Term k Γ}
+  | trans {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A₁ A₂ A₃ : Term k Γ}
       (h₁ : EqType sig ctx A₁ A₂) (h₂ : EqType sig ctx A₂ A₃) : EqType sig ctx A₁ A₃
   -- ADE: `univ`, in `Definition/Typed.agda`.
   /-- Equal terms of a universe are equal types.
   RFC: `U_{\mathsf{type}\equiv}` -/
-  | EqType.univType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
+  | univType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
       {l : Level k} (h : EqTerm sig ctx A B (.sort ⟨.type, l⟩)) : EqType sig ctx A B
   /-- Equal propositions are equal types.
   RFC: `\Omega_{\mathsf{type}\equiv}` -/
-  | EqType.propType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
+  | propType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
       {l : Level k} (h : EqTerm sig ctx A B (.sort ⟨.prop, l⟩)) : EqType sig ctx A B
 
+-- ADE: `_⊢_∷_`, in `Definition/Typed.agda`.
+/-- `Σ; Γ ⊢ t : A`: `t` is a term of type `A`. -/
+inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → Term k Γ → Term k Γ →
+    Prop where
   -- ADE: `var`, in `Definition/Typed.agda`.
   /-- A variable has the type of its declaration.
   RFC: `\mathsf{var}` -/
-  | HasType.var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {x : Var Γ .var} {A : Term k Γ}
+  | var {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {x : Var Γ .var} {A : Term k Γ}
       (hctx : WfCtx sig ctx) (hx : ctx.VarIn x A) : HasType sig ctx (.var₀ x) A
   /-- An application of a second-order variable to arguments of its telescope has its type, in
   which the arguments are substituted for the variables of the telescope.
   RFC: `\mathsf{var}_X` -/
-  | HasType.secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)} {ts : Args k Γ ps}
       (hX : ctx.SecondOrderIn X Θ A) (hts : HasArgs sig ctx ts Θ) :
       HasType sig ctx (.var X ts) (A.instantiate ts)
@@ -257,7 +175,7 @@ inductive Derivable : Judgment → Prop where
   /-- A constant, defined or declared, at an instance of its variables, has its type at this
   instance.
   RFC: `f` -/
-  | HasType.const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
+  | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
       {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
       (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
@@ -266,16 +184,16 @@ inductive Derivable : Judgment → Prop where
   -- ADE: `Uⱼ`, in `Definition/Typed.agda`.
   /-- A universe is in the universe above its level.
   RFC: `U` -/
-  | HasType.univ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+  | univ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       (hctx : WfCtx sig ctx) : HasType sig ctx (.sort ⟨.type, l⟩) (.sort ⟨.type, .succ l⟩)
   /-- A universe of propositions is in the universe above its level.
   RFC: `\Omega` -/
-  | HasType.prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+  | prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       (hctx : WfCtx sig ctx) : HasType sig ctx (.sort ⟨.prop, l⟩) (.sort ⟨.type, .succ l⟩)
   /-- An instance of a declared type that its constraint admits, whose arguments are arguments of its
   parameters, is in the sort of its type declaration.
   RFC: `D` -/
-  | HasType.inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
@@ -288,14 +206,14 @@ inductive Derivable : Judgment → Prop where
   -- ADE: `Idⱼ`, in `Definition/Typed.agda`.
   /-- The equality of two terms of a type is a proposition at the level of the sort of this type.
   RFC: `\sim` -/
-  | HasType.equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {A t u : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) (hu : HasType sig ctx u A) :
       HasType sig ctx (.equality s l A t u) (.sort ⟨.prop, l⟩)
   -- ADE: `rflⱼ`, in `Definition/Typed.agda`.
   /-- The proof by reflexivity of the equality of a term of a type with itself.
   RFC: `\mathsf{refl}_\sim` -/
-  | HasType.reflProof {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | reflProof {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {A t : Term k Γ} (hA : HasType sig ctx A (.sort ⟨s, l⟩))
       (ht : HasType sig ctx t A) : HasType sig ctx (.refl s l A t) (.equality s l A t t)
   -- ADE: `Jⱼ`, in `Definition/Typed.agda`, whose motive also binds the proof.
@@ -303,7 +221,7 @@ inductive Derivable : Judgment → Prop where
   proof of their equality, is a term of the motive at the second; the motive is a type of a sort `κ`
   over a term of the type.
   RFC: `\mathsf{transp}` -/
-  | HasType.transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
       (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)
       (ht₂ : HasType sig ctx t₂ A) (hC : HasType sig (ctx.var A) C (.sort κ))
@@ -315,7 +233,7 @@ inductive Derivable : Judgment → Prop where
   other, by a proof `t` of `B` from a proof `x` of `A` and a proof `u` of `A` from a proof `y` of
   `B`, as terms of `Ω_l`.
   RFC: `\mathsf{propext}` -/
-  | HasType.propExt {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+  | propExt {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       {A B : Term k Γ} {t u : Term k (.var :: Γ)} (hA : HasType sig ctx A (.sort ⟨.prop, l⟩))
       (hB : HasType sig ctx B (.sort ⟨.prop, l⟩))
       (ht : HasType sig (ctx.var A) t (B.rename Ren.weaken))
@@ -341,7 +259,7 @@ inductive Derivable : Judgment → Prop where
   The positions `h'` of the type of the terms in the block, `j` of a type and `i` of a case give the
   relations and the branches, as the order of the declaration does.
   RFC: `\mathsf{coind}` -/
-  | HasType.coind {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | coind {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {l' : Level k}
       {t₁ t₂ t : Term k Γ} {As : Terms k (Γ.extend 2)} {gs : DestructorBranches k Γ} {h' : Nat}
@@ -463,7 +381,7 @@ inductive Derivable : Judgment → Prop where
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
   instance.
   RFC: `c` -/
-  | HasType.ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
@@ -485,7 +403,7 @@ inductive Derivable : Judgment → Prop where
   The positions `h'` of the type of the term in the block, `j` of a type and `i` of a case give the
   motives and the branches, as the order of the declaration does.
   RFC: `\mathsf{rec}` -/
-  | HasType.recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
@@ -525,7 +443,7 @@ inductive Derivable : Judgment → Prop where
   it being the observations of the term by them, and the arguments substituted for the variables of
   the telescope.
   RFC: `d` -/
-  | HasType.obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
@@ -553,7 +471,7 @@ inductive Derivable : Judgment → Prop where
   The positions `h'` of the type of the corecursor in the block, `j` of a type and `i` of a case
   give the states and the branches, as the order of the declaration does.
   RFC: `\mathsf{corec}` -/
-  | HasType.corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat}
@@ -604,40 +522,44 @@ inductive Derivable : Judgment → Prop where
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
   RFC: `\mathsf{conv}` -/
-  | HasType.conv {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A B : Term k Γ}
+  | conv {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A B : Term k Γ}
       (ht : HasType sig ctx t A) (h : EqType sig ctx A B) : HasType sig ctx t B
 
+-- ADE: `_⊢_≡_∷_`, in `Definition/Typed.agda`.
+/-- `Σ; Γ ⊢ t ≡ u : A`: `t` and `u` are equal terms of type `A`. -/
+inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ → Term k Γ → Term k Γ →
+    Term k Γ → Prop where
   /-- The equality of terms is reflexive.
   RFC: `\mathsf{refl}` -/
-  | EqTerm.refl {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
+  | refl {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
       (h : HasType sig ctx t A) : EqTerm sig ctx t t A
   /-- The equality of terms is symmetric.
   RFC: `\mathsf{sym}` -/
-  | EqTerm.symm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ}
+  | symm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ}
       (h : EqTerm sig ctx t u A) : EqTerm sig ctx u t A
   /-- The equality of terms is transitive.
   RFC: `\mathsf{trans}` -/
-  | EqTerm.trans {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t₁ t₂ t₃ A : Term k Γ}
+  | trans {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t₁ t₂ t₃ A : Term k Γ}
       (h₁ : EqTerm sig ctx t₁ t₂ A) (h₂ : EqTerm sig ctx t₂ t₃ A) : EqTerm sig ctx t₁ t₃ A
   /-- An equality holds at every type equal to its own.
   RFC: `\mathsf{conv}_\equiv` -/
-  | EqTerm.conv {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A B : Term k Γ}
+  | conv {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A B : Term k Γ}
       (h : EqTerm sig ctx t u A) (hA : EqType sig ctx A B) : EqTerm sig ctx t u B
   /-- Two proofs of a proposition are equal.
   RFC: `\mathsf{irr}` -/
-  | EqTerm.irr {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ}
+  | irr {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ}
       {l : Level k} (ht : HasType sig ctx t A) (hu : HasType sig ctx u A)
       (hA : HasType sig ctx A (.sort ⟨.prop, l⟩)) : EqTerm sig ctx t u A
   /-- Equal arguments give equal applications of a second-order variable.
   RFC: `\mathsf{var}_{X\equiv}` -/
-  | EqTerm.secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope k Γ ps} {A : Term k (Γ.extend ps.length)}
       {ts us : Args k Γ ps} (hX : ctx.SecondOrderIn X Θ A) (hts : EqArgs sig ctx ts us Θ) :
       EqTerm sig ctx (.var X ts) (.var X us) (A.instantiate ts)
   -- ADE: `δ-red`, in `Definition/Typed.agda`.
   /-- A constant definition, at an instance of its variables, unfolds to its body at this instance.
   RFC: `\delta` -/
-  | EqTerm.delta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {d : ConstantDefinition}
+  | delta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {d : ConstantDefinition}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx)
       (h : .constantDefinition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
       (hp : ps.length = d.grades) :
@@ -646,7 +568,7 @@ inductive Derivable : Judgment → Prop where
         (Signature.instanceType d.type (.ofLists qs ps hq hp) (ls.getFin hl))
   /-- Two instances of a constant at equal levels are equal.
   RFC: `f_\equiv` -/
-  | EqTerm.const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
+  | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
       {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
       (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k') (hp : ps.length = g)
@@ -656,17 +578,17 @@ inductive Derivable : Judgment → Prop where
   -- ADE: `U-cong`, in `Definition/Typed.agda`.
   /-- Universes at equal levels are equal.
   RFC: `U_\equiv` -/
-  | EqTerm.univ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l₁ l₂ : Level k}
+  | univ {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l₁ l₂ : Level k}
       (hctx : WfCtx sig ctx) (hl : l₁ ≈ l₂) :
       EqTerm sig ctx (.sort ⟨.type, l₁⟩) (.sort ⟨.type, l₂⟩) (.sort ⟨.type, .succ l₁⟩)
   /-- Universes of propositions at equal levels are equal.
   RFC: `\Omega_\equiv` -/
-  | EqTerm.prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l₁ l₂ : Level k}
+  | prop {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l₁ l₂ : Level k}
       (hctx : WfCtx sig ctx) (hl : l₁ ≈ l₂) :
       EqTerm sig ctx (.sort ⟨.prop, l₁⟩) (.sort ⟨.prop, l₂⟩) (.sort ⟨.type, .succ l₁⟩)
   /-- Two instances of a declared type with equal arguments at equal levels are equal.
   RFC: `D_\equiv` -/
-  | EqTerm.inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | inst {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
       {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
@@ -681,7 +603,7 @@ inductive Derivable : Judgment → Prop where
   -- ADE: `Id-cong`, in `Definition/Typed.agda`.
   /-- Two equalities of equal terms of equal types, at equal levels, are equal.
   RFC: `\sim_\equiv` -/
-  | EqTerm.equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | equality {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l₁ l₂ : Level k} {A₁ A₂ t₁ t₂ u₁ u₂ : Term k Γ}
       (hA : EqTerm sig ctx A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : EqTerm sig ctx t₁ t₂ A₁)
       (hu : EqTerm sig ctx u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
@@ -690,7 +612,7 @@ inductive Derivable : Judgment → Prop where
   /-- Two transports of equal terms, along equal proofs of the equality of equal terms of equal
   types, with equal motives of a sort `κ`, are equal.
   RFC: `\mathsf{transp}_\equiv` -/
-  | EqTerm.transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | transp {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A A' t₁ t₁' t₂ t₂' t t' u u' : Term k Γ}
       {C C' : Term k (.var :: Γ)} (hA : EqTerm sig ctx A A' (.sort ⟨s, l⟩))
       (ht₁ : EqTerm sig ctx t₁ t₁' A) (ht₂ : EqTerm sig ctx t₂ t₂' A)
@@ -703,7 +625,7 @@ inductive Derivable : Judgment → Prop where
   /-- A transport between two equal instances of its motive, those at the two terms of the
   equality, is its term.
   RFC: `\mathsf{transp}_\mathsf{same}` -/
-  | EqTerm.transpSame {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
+  | transpSame {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {s : Quality}
       {l : Level k} {κ : Universe k} {A t₁ t₂ t u : Term k Γ} {C : Term k (.var :: Γ)}
       (hA : HasType sig ctx A (.sort ⟨s, l⟩)) (ht₁ : HasType sig ctx t₁ A)
       (ht₂ : HasType sig ctx t₂ A) (hC : HasType sig (ctx.var A) C (.sort κ))
@@ -715,7 +637,7 @@ inductive Derivable : Judgment → Prop where
   /-- Two applications of the same constructor, at equal arguments of the instance, at equal levels
   and at equal arguments of its fields, are equal.
   RFC: `c_\equiv` -/
-  | EqTerm.ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | ctor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
@@ -737,7 +659,7 @@ inductive Derivable : Judgment → Prop where
   nested fields, are equal, when the fields have the recursive results of both; the branches are
   equal in the context of the results of the first.
   RFC: `\mathsf{rec}_\equiv` -/
-  | EqTerm.recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | recursor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {r ς χ : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
@@ -791,7 +713,7 @@ inductive Derivable : Judgment → Prop where
   /-- Two observations by the same destructor, at equal arguments of the instance, at equal levels,
   of equal terms, at equal arguments of its telescope, are equal.
   RFC: `d_\equiv` -/
-  | EqTerm.obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | obs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {t₁ t₂ : Term k Γ} {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
@@ -818,7 +740,7 @@ inductive Derivable : Judgment → Prop where
   `d`, the destructors before it being the observations of the first corecursor of `T'` from the
   variables of its state, as `(corec)` types it.
   RFC: `\mathsf{corec}_\equiv` -/
-  | EqTerm.corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
@@ -885,7 +807,7 @@ inductive Derivable : Judgment → Prop where
   recursive results of these arguments, where the result of a term of a type of the block is the
   recursor on it, at the same instance, with the same motives and the same branches.
   RFC: `\iota` -/
-  | EqTerm.iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | iota {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
@@ -935,7 +857,7 @@ inductive Derivable : Judgment → Prop where
   the type is that of `e` and whose branch of the constructor is `e` at the constructor applied to its
   fields.
   RFC: `\eta_c` -/
-  | EqTerm.etaCtor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | etaCtor {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
@@ -980,7 +902,7 @@ inductive Derivable : Judgment → Prop where
   is equal to the branch of the destructor, with the terms of the state substituted for the
   variables of the state and the arguments for those of the telescope.
   RFC: `\beta` -/
-  | EqTerm.beta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | beta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' i : Nat}
@@ -1052,7 +974,7 @@ inductive Derivable : Judgment → Prop where
   of the first term by them, are equal. The premise `hr` is not needed by the soundness: comparing two
   terms by their observations ends only when no observation gives a term of the block again.
   RFC: `\eta_d` -/
-  | EqTerm.etaObs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+  | etaObs {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
       (h : sig.HasCodataType D decl T)
@@ -1072,45 +994,56 @@ inductive Derivable : Judgment → Prop where
             (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
       EqTerm sig ctx t u (.inst D qs ls ps as)
 
+/-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
+after it, whose grades typing ignores. -/
+inductive HasArgs : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
+    Args k Γ ps → Telescope k Γ ps → Prop where
   /-- No argument for the empty telescope.
   RFC: `\mathsf{tel}_\varepsilon` -/
-  | HasArgs.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
       HasArgs sig ctx .nil .nil
   /-- The first argument, of the type of the first entry, and the others, of the telescope that
   it instantiates.
   RFC: `\mathsf{tel}_{,}` -/
-  | HasArgs.cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade} {p : Parameter}
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade} {p : Parameter}
       {t A : Term k Γ} {ts : Args k Γ ps} {Θ : Telescope k (.var :: Γ) ps}
       (ht : HasType sig ctx t A) (hts : HasArgs sig ctx ts (Θ.subst₀ (Subst₀.single t))) :
       HasArgs sig ctx (.cons t ts) (.cons q p A Θ)
 
+/-- `Σ; Γ ⊢ t̄ ≡ ū : Θ`: the arguments are equal, typed by the telescope. -/
+inductive EqArgs : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
+    Args k Γ ps → Args k Γ ps → Telescope k Γ ps → Prop where
   /-- No argument for the empty telescope.
   RFC: `\mathsf{tel}_{\varepsilon\equiv}` -/
-  | EqArgs.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
       EqArgs sig ctx .nil .nil .nil
   /-- The first arguments, equal at the type of the first entry, and the others, equal in the
   telescope that the first argument instantiates.
   RFC: `\mathsf{tel}_{,\equiv}` -/
-  | EqArgs.cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade} {p : Parameter}
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade} {p : Parameter}
       {t u A : Term k Γ} {ts us : Args k Γ ps} {Θ : Telescope k (.var :: Γ) ps}
       (ht : EqTerm sig ctx t u A) (hts : EqArgs sig ctx ts us (Θ.subst₀ (Subst₀.single t))) :
       EqArgs sig ctx (.cons t ts) (.cons u us) (.cons q p A Θ)
 
+/-- `Σ; Γ ⊢ ā : Δ`: the arguments of an instance are typed by its parameters, each argument
+instantiating the types after it. -/
+inductive HasInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Context k Γ →
+    InstanceArgs k Γ Δ → Context k Δ → Prop where
   /-- No argument for the empty parameters.
   RFC: `\mathsf{arg}_\varepsilon` -/
-  | HasInstanceArgs.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
       HasInstanceArgs sig ctx .nil .empty
   /-- The arguments of the parameters before a variable, and the argument of its type, which they
   instantiate.
   RFC: `\mathsf{arg}_x` -/
-  | HasInstanceArgs.var {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ} {as : InstanceArgs k Γ Δ}
+  | var {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ} {as : InstanceArgs k Γ Δ}
       {params : Context k Δ} {a : Term k Γ} {A : Term k Δ}
       (has : HasInstanceArgs sig ctx as params) (ha : HasType sig ctx a (A.subst as.toSubst)) :
       HasInstanceArgs sig ctx (.snoc (e := .var) as a) (params.var A)
   /-- The arguments of the parameters before a second-order variable, and the abstraction for it, a
   term of its type under the variables of its telescope, which they instantiate.
   RFC: `\mathsf{arg}_X` -/
-  | HasInstanceArgs.secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ}
       {as : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B : Term k (Γ.extend ps.length)}
@@ -1120,14 +1053,17 @@ inductive Derivable : Judgment → Prop where
       HasInstanceArgs sig ctx (.snoc (e := .secondOrder ps ψ) as B)
         (params.secondOrder Θ A ψ)
 
+/-- `Σ; Γ ⊢ ā₁ ≡ ā₂ : Δ`: the arguments of two instances are equal, typed by the parameters. -/
+inductive EqInstanceArgs : Signature → {k : Nat} → {Γ Δ : Scope} → Context k Γ →
+    InstanceArgs k Γ Δ → InstanceArgs k Γ Δ → Context k Δ → Prop where
   /-- No argument for the empty parameters.
   RFC: `\mathsf{arg}_{\varepsilon\equiv}` -/
-  | EqInstanceArgs.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hctx : WfCtx sig ctx) :
       EqInstanceArgs sig ctx .nil .nil .empty
   /-- Equal arguments of the parameters before a variable, and equal arguments of its type, which
   the first ones instantiate.
   RFC: `\mathsf{arg}_{x\equiv}` -/
-  | EqInstanceArgs.var {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
+  | var {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
       {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} {a₁ a₂ : Term k Γ} {A : Term k Δ}
       (has : EqInstanceArgs sig ctx as₁ as₂ params)
       (ha : EqTerm sig ctx a₁ a₂ (A.subst as₁.toSubst)) :
@@ -1135,7 +1071,7 @@ inductive Derivable : Judgment → Prop where
   /-- Equal arguments of the parameters before a second-order variable, and equal abstractions for
   it, under the variables of its telescope, which the first ones instantiate.
   RFC: `\mathsf{arg}_{X\equiv}` -/
-  | EqInstanceArgs.secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+  | secondOrder {sig : Signature} {k : Nat} {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {ctx : Context k Γ}
       {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} {Θ : Telescope k Δ ps}
       {A : Term k (Δ.extend ps.length)} {B₁ B₂ : Term k (Γ.extend ps.length)}
@@ -1145,268 +1081,45 @@ inductive Derivable : Judgment → Prop where
       EqInstanceArgs sig ctx (.snoc (e := .secondOrder ps ψ) as₁ B₁)
         (.snoc (e := .secondOrder ps ψ) as₂ B₂) (params.secondOrder Θ A ψ)
 
-  /-- The empty telescope lives in every sort.
-  RFC: `\mathsf{tel}_{\kappa\varepsilon}` -/
-  | WfTelescope.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
-      (hctx : WfCtx sig ctx) : WfTelescope sig ctx .nil κ
-  /-- The first entry, whose type lives in a sort that `κ₂` bounds, with a grade without use at
-  run time if it is a proposition, and the others.
-  RFC: `\mathsf{tel}_{\kappa,}` -/
-  | WfTelescope.cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade}
-      {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ₁ κ₂ : Universe k}
-      (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ₂) (hΘ : WfTelescope sig (ctx.var A) Θ κ₂)
-      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfTelescope sig ctx (.cons q p A Θ) κ₂
-
-  /-- The empty telescope, of no sort, below every level.
-  RFC: `\mathsf{tel}_{\bar\kappa\varepsilon}` -/
-  | WfTelescopeSorts.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
-      (hctx : WfCtx sig ctx) : WfTelescopeSorts sig ctx .nil [] l
-  /-- The first entry, whose type lives in the sort `κ` of a level below `l`, with a grade without
-  use at run time if it is a proposition, and the others.
-  RFC: `\mathsf{tel}_{\bar\kappa,}` -/
-  | WfTelescopeSorts.cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {q : Grade} {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ : Universe k}
-      {κs : List (Universe k)} {l : Level k} (hA : HasType sig ctx A (.sort κ))
-      (hl : κ.level ≤ l) (hΘ : WfTelescopeSorts sig (ctx.var A) Θ κs l)
-      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
-
-  /-- The empty telescope is equal to itself in every sort.
-  RFC: `\mathsf{tel}_{\kappa\varepsilon\equiv}` -/
-  | EqTelescope.nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
-      (hctx : WfCtx sig ctx) : EqTelescope sig ctx .nil .nil κ
-  /-- The first entries, with the same grades, whose types are equal types of a sort that `κ₂`
-  bounds, with a grade without use at run time if they are propositions, and the others, equal in
-  the context extended by the first entry of the first telescope.
-  RFC: `\mathsf{tel}_{\kappa,\equiv}` -/
-  | EqTelescope.cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {q : Grade} {p : Parameter} {A₁ A₂ : Term k Γ} {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps}
-      {κ₁ κ₂ : Universe k} (hA : EqTerm sig ctx A₁ A₂ (.sort κ₁)) (hκ : κ₁ ≼ κ₂)
-      (hΘ : EqTelescope sig (ctx.var A₁) Θ₁ Θ₂ κ₂)
-      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
-      EqTelescope sig ctx (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂) κ₂
-
-  /-- No field.
-  RFC: `\mathsf{fields}_\varepsilon` -/
-  | WfFields.nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {κ : Universe decl.levels}
-      (hctx : WfCtx sig ctx) : WfFields sig decl ι as ctx .nil κ
-  /-- A first field whose type has no position and lives in a sort that `κ` bounds, and the
-  others, in the context extended by it.
-  RFC: `\mathsf{fields}_{,}` -/
-  | WfFields.cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
-      {q : Grade} {p : Parameter} {A : Term decl.levels Γ}
-      {Θ : Telescope decl.levels (.var :: Γ) ps} {κ₁ κ : Universe decl.levels}
-      (hn : A.blockNest decl.names = .plain) (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ)
-      (hΘ : WfFields sig decl ι (as.rename Ren.weaken) (ctx.var A) Θ κ)
-      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfFields sig decl ι as ctx (.cons q p A Θ) κ
-  /-- A first field that is recursive, a type `D` of the block at the instance of the block and at
-  the parameters, with a grade without use at run time if the block is a block of propositions, and
-  the others, which do not depend on it, in the same context.
-  RFC: `\mathsf{fields}_{\mathsf{rec}}` -/
-  | WfFields.recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
-      {q : Grade} {p : Parameter} {D : Name} {Θ : Telescope decl.levels Γ ps}
-      {κ : Universe decl.levels} (hD : D ∈ decl.names) (hΘ : WfFields sig decl ι as ctx Θ κ)
-      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfFields sig decl ι as ctx (.cons q p (decl.blockInstance ι D as) (Θ.rename Ren.weaken)) κ
-  /-- A first field that is nested, the type `A₀` at the types of the block, at the instance of the
-  block and at the parameters, in place of its type variables `X̄`, one of the universe `κ` for each
-  type of the block: its nesting is that of an instance, `A₀` lives in a sort that `κ` bounds, in
-  the context extended by `X̄`, and is strictly positive in each of them, in a signature that holds
-  the prelude, with a grade without use at run time if it is a proposition, and the others, which do
-  not depend on it, in the same context.
-  RFC: `\mathsf{fields}_\lambda` -/
-  | WfFields.nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
-      {q : Grade} {p : Parameter}
-      {A₀ : Term decl.levels
-        (Γ.extend (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length)}
-      {Θ : Telescope decl.levels Γ ps} {κ₁ κ : Universe decl.levels} {νs : List (Nest Name)}
-      (hn : (A₀.instantiate (decl.blockArgs ι as)).blockNest decl.names = .inst νs)
-      (hA₀ : HasType sig (ctx.append (Telescope.sorts κ decl.names.length)) A₀ (.sort κ₁))
-      (hκ : κ₁ ≼ κ) (hq : κ.quality = .type)
-      (hpos : ∀ z : Var (Scope.extend []
-          (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length) .var,
-        Term.Positive (sig.PositiveIn decl) (Ren.liftN _ Ren.empty z) A₀)
-      (hpre : sig.HasPrelude) (hΘ : WfFields sig decl ι as ctx Θ κ)
-      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
-      WfFields sig decl ι as ctx
-        (.cons q p (A₀.instantiate (decl.blockArgs ι as)) (Θ.rename Ren.weaken)) κ
-
-  /-- No destructor lives in every sort.
-  RFC: `\bar d_{\kappa\varepsilon}` -/
-  | WfDestructors.nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
-      {ctx : Context decl.levels Γ} {κ : Universe decl.levels} (hctx : WfCtx sig ctx) :
-      WfDestructors sig decl ι @ν as ctx .nil κ
-  /-- A first destructor that is not recursive and whose result has no position, whose arguments
-  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
-  grade without use at run time if it is a proposition, and the others, in the context extended by
-  it.
-  RFC: `\bar d_{\kappa|}` -/
-  | WfDestructors.cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
-      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
-      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
-      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
-      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
-      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
-      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
-      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
-      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig decl ι (Nesting.lift @ν) (as.rename Ren.weaken)
-        (ctx.secondOrder Θ B ψ) ds κ) :
-      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ ds) κ
-  /-- A first destructor that is not recursive and whose result has a position, whose arguments
-  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
-  grade without use at run time if it is a proposition, and the others, which do not depend on it,
-  in the same context.
-  RFC: `\bar d_{\kappa\lambda}` -/
-  | WfDestructors.nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
-      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
-      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
-      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels Γ ns}
-      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
-      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
-      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
-      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
-      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
-      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken)) κ
-  /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
-  and whose result is a type `D` of the block at the instance of the block and at the parameters,
-  with a grade without use at run time if the block is a block of propositions, and the others, which
-  do not depend on it, in the same context.
-  RFC: `\bar d_{\kappa\mathsf{rec}}` -/
-  | WfDestructors.recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
-      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
-      {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership Grade ps.length} {D : Name}
-      {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
-      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
-      (hp : κ.quality = .prop → p.mode ≠ .oneOne)
-      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
-      WfDestructors sig decl ι @ν as ctx
-        (.cons (d := d) p q ς Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
-          (ds.rename Ren.weaken)) κ
-
-  /-- A block of data types.
-  RFC: `\mathsf{data}` -/
-  | WfTypeDeclaration.data {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
-      decl.levels decl.scope)} (hb : decl.body = .data Ts)
-      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
-      (hΘ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-        WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
-      (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ {e : Scope.Entry}
-        (x : Var decl.scope e), T.positive x.level → ∀ c ∈ T.constructors,
-          (c.fields ι).Positive (sig.PositiveIn decl) x)
-      (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup)
-      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
-      WfTypeDeclaration sig decl
-  /-- A block of codata types.
-  RFC: `\mathsf{codata}` -/
-  | WfTypeDeclaration.codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
-      decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
-      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
-      (hd : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes,
-        WfDestructors sig decl ι (Nesting.ofPositive T.positive) (.identity decl.scope)
-          (decl.params ι) (T.body ι) (decl.sort ι))
-      (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ {e : Scope.Entry}
-        (x : Var decl.scope e), T.positive x.level →
-          (T.body ι).Positive (sig.PositiveIn decl) x)
-      (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup)
-      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
-      WfTypeDeclaration sig decl
-
-end
-
--- ADE: `»_`, in `Definition/Typed.agda`, for contexts of definitions.
-/-- `⊢ Σ`: the signature is well formed. -/
-abbrev WfSig (sig : Signature) : Prop :=
-  Derivable (.wfSig sig)
-
-/--
-`Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`: for each instance of the sort and grade variables, the type `A` is a
-type of some sort and the body `t` a term of it, both in the empty context.
--/
-abbrev WfConstantDefinition (sig : Signature) (d : ConstantDefinition) : Prop :=
-  Derivable (.wfConstantDefinition sig d)
-
-/-- `Σ ⊢ f.{s̄; l̄; p̄} : A ▶ m ◀ p`: for each instance of the sort and grade variables, the type `A` is a
-type of some sort in the empty context. -/
-abbrev WfConstantDeclaration (sig : Signature) (c : ConstantDeclaration) : Prop :=
-  Derivable (.wfConstantDeclaration sig c)
-
--- ADE: `_»⊢_`, in `Definition/Typed.agda`.
-/-- `Σ ⊢ Γ`: the context is well formed. -/
-abbrev WfCtx (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) : Prop :=
-  Derivable (.wfCtx sig ctx)
-
--- ADE: `_⊢_`, in `Definition/Typed.agda`.
-/-- `Σ; Γ ⊢ A`: `A` is a type. -/
-abbrev WfType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A : Term k Γ) : Prop :=
-  Derivable (.wfType sig ctx A)
-
--- ADE: `_⊢_≡_`, in `Definition/Typed.agda`.
-/-- `Σ; Γ ⊢ A ≡ B`: `A` and `B` are equal types. -/
-abbrev EqType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ) (A B : Term k Γ) : Prop :=
-  Derivable (.eqType sig ctx A B)
-
--- ADE: `_⊢_∷_`, in `Definition/Typed.agda`.
-/-- `Σ; Γ ⊢ t : A`: `t` is a term of type `A`. -/
-abbrev HasType (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
-    (t A : Term k Γ) : Prop :=
-  Derivable (.hasType sig ctx t A)
-
--- ADE: `_⊢_≡_∷_`, in `Definition/Typed.agda`.
-/-- `Σ; Γ ⊢ t ≡ u : A`: `t` and `u` are equal terms of type `A`. -/
-abbrev EqTerm (sig : Signature) {k : Nat} {Γ : Scope} (ctx : Context k Γ)
-    (t u A : Term k Γ) : Prop :=
-  Derivable (.eqTerm sig ctx t u A)
-
-/-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types
-after it, whose grades typing ignores. -/
-abbrev HasArgs (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-    (ts : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
-  Derivable (.hasArgs sig ctx ts Θ)
-
-/-- `Σ; Γ ⊢ t̄ ≡ ū : Θ`: the arguments are equal, typed by the telescope. -/
-abbrev EqArgs (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter} (ctx : Context k Γ)
-    (ts us : Args k Γ ps) (Θ : Telescope k Γ ps) : Prop :=
-  Derivable (.eqArgs sig ctx ts us Θ)
-
-/-- `Σ; Γ ⊢ ā : Δ`: the arguments of an instance are typed by its parameters, each argument
-instantiating the types after it. -/
-abbrev HasInstanceArgs (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ)
-    (as : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
-  Derivable (.hasInstanceArgs sig ctx as params)
-
-/-- `Σ; Γ ⊢ ā₁ ≡ ā₂ : Δ`: the arguments of two instances are equal, typed by the parameters. -/
-abbrev EqInstanceArgs (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx : Context k Γ)
-    (as₁ as₂ : InstanceArgs k Γ Δ) (params : Context k Δ) : Prop :=
-  Derivable (.eqInstanceArgs sig ctx as₁ as₂ params)
-
 /--
 `Σ; Γ ⊢ Θ : κ`: the telescope lives in the sort `κ`, each of its types living in a sort that `κ`
 bounds, and an entry whose type is a proposition has a grade without use at run time.
 -/
-abbrev WfTelescope (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-    (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κ : Universe k) : Prop :=
-  Derivable (.wfTelescope sig ctx Θ κ)
+inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} → Context k Γ →
+    Telescope k Γ ps → Universe k → Prop where
+  /-- The empty telescope lives in every sort.
+  RFC: `\mathsf{tel}_{\kappa\varepsilon}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
+      (hctx : WfCtx sig ctx) : WfTelescope sig ctx .nil κ
+  /-- The first entry, whose type lives in a sort that `κ₂` bounds, with a grade without use at
+  run time if it is a proposition, and the others.
+  RFC: `\mathsf{tel}_{\kappa,}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ} {q : Grade}
+      {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ₁ κ₂ : Universe k}
+      (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ₂) (hΘ : WfTelescope sig (ctx.var A) Θ κ₂)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfTelescope sig ctx (.cons q p A Θ) κ₂
 
 -- ADE: none.
 /-- `Σ; Γ ⊢ Θ : κ̄ ≤ l`: the types of the telescope `Θ` live in the sorts `κ̄`, one for each entry,
 whose levels are below `l`, and an entry whose type is a proposition has a grade without use at run
 time, as in a telescope in a sort; the packing of `Θ` needs the sort of each entry, which the
 telescope does not give. -/
-abbrev WfTelescopeSorts (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-    (ctx : Context k Γ) (Θ : Telescope k Γ ps) (κs : List (Universe k)) (l : Level k) : Prop :=
-  Derivable (.wfTelescopeSorts sig ctx Θ κs l)
+inductive WfTelescopeSorts : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
+    Context k Γ → Telescope k Γ ps → List (Universe k) → Level k → Prop where
+  /-- The empty telescope, of no sort, below every level.
+  RFC: `\mathsf{tel}_{\bar\kappa\varepsilon}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
+      (hctx : WfCtx sig ctx) : WfTelescopeSorts sig ctx .nil [] l
+  /-- The first entry, whose type lives in the sort `κ` of a level below `l`, with a grade without
+  use at run time if it is a proposition, and the others.
+  RFC: `\mathsf{tel}_{\bar\kappa,}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {q : Grade} {p : Parameter} {A : Term k Γ} {Θ : Telescope k (.var :: Γ) ps} {κ : Universe k}
+      {κs : List (Universe k)} {l : Level k} (hA : HasType sig ctx A (.sort κ))
+      (hl : κ.level ≤ l) (hΘ : WfTelescopeSorts sig (ctx.var A) Θ κs l)
+      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
 
 -- ADE: none.
 /--
@@ -1414,9 +1127,22 @@ abbrev WfTelescopeSorts (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Para
 their types being equal types of a sort that `κ` bounds, and an entry whose type is a proposition has
 a grade without use at run time.
 -/
-abbrev EqTelescope (sig : Signature) {k : Nat} {Γ : Scope} {ps : List Parameter}
-    (ctx : Context k Γ) (Θ₁ Θ₂ : Telescope k Γ ps) (κ : Universe k) : Prop :=
-  Derivable (.eqTelescope sig ctx Θ₁ Θ₂ κ)
+inductive EqTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
+    Context k Γ → Telescope k Γ ps → Telescope k Γ ps → Universe k → Prop where
+  /-- The empty telescope is equal to itself in every sort.
+  RFC: `\mathsf{tel}_{\kappa\varepsilon\equiv}` -/
+  | nil {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {κ : Universe k}
+      (hctx : WfCtx sig ctx) : EqTelescope sig ctx .nil .nil κ
+  /-- The first entries, with the same grades, whose types are equal types of a sort that `κ₂`
+  bounds, with a grade without use at run time if they are propositions, and the others, equal in
+  the context extended by the first entry of the first telescope.
+  RFC: `\mathsf{tel}_{\kappa,\equiv}` -/
+  | cons {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
+      {q : Grade} {p : Parameter} {A₁ A₂ : Term k Γ} {Θ₁ Θ₂ : Telescope k (.var :: Γ) ps}
+      {κ₁ κ₂ : Universe k} (hA : EqTerm sig ctx A₁ A₂ (.sort κ₁)) (hκ : κ₁ ≼ κ₂)
+      (hΘ : EqTelescope sig (ctx.var A₁) Θ₁ Θ₂ κ₂)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      EqTelescope sig ctx (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂) κ₂
 
 -- ADE: none.
 /--
@@ -1438,10 +1164,59 @@ The RFC writes the parameters themselves as the variables `x̄_Δ`, the same und
 Lean carries them as the arguments `ā` of the parameters in the scope of the fields, the identity
 renamed under the fields before, since de Bruijn indices shift under each field.
 -/
-abbrev WfFields (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
-    {Γ : Scope} (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
-    {ps : List Parameter} (Θ : Telescope decl.levels Γ ps) (κ : Universe decl.levels) : Prop :=
-  Derivable (.wfFields sig decl ι as ctx Θ κ)
+inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
+    {Γ : Scope} → InstanceArgs decl.levels Γ decl.scope → Context decl.levels Γ →
+    {ps : List Parameter} →
+    Telescope decl.levels Γ ps → Universe decl.levels → Prop where
+  /-- No field.
+  RFC: `\mathsf{fields}_\varepsilon` -/
+  | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {κ : Universe decl.levels}
+      (hctx : WfCtx sig ctx) : WfFields sig decl ι as ctx .nil κ
+  /-- A first field whose type has no position and lives in a sort that `κ` bounds, and the
+  others, in the context extended by it.
+  RFC: `\mathsf{fields}_{,}` -/
+  | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter} {A : Term decl.levels Γ}
+      {Θ : Telescope decl.levels (.var :: Γ) ps} {κ₁ κ : Universe decl.levels}
+      (hn : A.blockNest decl.names = .plain) (hA : HasType sig ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hΘ : WfFields sig decl ι (as.rename Ren.weaken) (ctx.var A) Θ κ)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx (.cons q p A Θ) κ
+  /-- A first field that is recursive, a type `D` of the block at the instance of the block and at
+  the parameters, with a grade without use at run time if the block is a block of propositions, and
+  the others, which do not depend on it, in the same context.
+  RFC: `\mathsf{fields}_{\mathsf{rec}}` -/
+  | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter} {D : Name} {Θ : Telescope decl.levels Γ ps}
+      {κ : Universe decl.levels} (hD : D ∈ decl.names) (hΘ : WfFields sig decl ι as ctx Θ κ)
+      (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx (.cons q p (decl.blockInstance ι D as) (Θ.rename Ren.weaken)) κ
+  /-- A first field that is nested, the type `A₀` at the types of the block, at the instance of the
+  block and at the parameters, in place of its type variables `X̄`, one of the universe `κ` for each
+  type of the block: its nesting is that of an instance, `A₀` lives in a sort that `κ` bounds, in
+  the context extended by `X̄`, and is strictly positive in each of them, in a signature that holds
+  the prelude, with a grade without use at run time if it is a proposition, and the others, which do
+  not depend on it, in the same context.
+  RFC: `\mathsf{fields}_\lambda` -/
+  | nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
+      {q : Grade} {p : Parameter}
+      {A₀ : Term decl.levels
+        (Γ.extend (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length)}
+      {Θ : Telescope decl.levels Γ ps} {κ₁ κ : Universe decl.levels} {νs : List (Nest Name)}
+      (hn : (A₀.instantiate (decl.blockArgs ι as)).blockNest decl.names = .inst νs)
+      (hA₀ : HasType sig (ctx.append (Telescope.sorts κ decl.names.length)) A₀ (.sort κ₁))
+      (hκ : κ₁ ≼ κ) (hq : κ.quality = .type)
+      (hpos : ∀ z : Var (Scope.extend []
+          (List.replicate decl.names.length (⟨.zero, .zero⟩ : Parameter)).length) .var,
+        Term.Positive (sig.PositiveIn decl) (Ren.liftN _ Ren.empty z) A₀)
+      (hpre : sig.HasPrelude) (hΘ : WfFields sig decl ι as ctx Θ κ)
+      (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
+      WfFields sig decl ι as ctx
+        (.cons q p (A₀.instantiate (decl.blockArgs ι as)) (Θ.rename Ren.weaken)) κ
 
 -- ADE: none.
 /--
@@ -1466,11 +1241,66 @@ The RFC writes the parameters themselves as the variables `x̄_Δ`; the Lean car
 arguments `ā` of the parameters, renamed under the destructors before and under the arguments, as for
 the fields.
 -/
-abbrev WfDestructors (sig : Signature) (decl : TypeDeclaration) (ι : Instance decl.sorts decl.grades)
-    {Γ : Scope} {ns : List Name} (ν : Nesting Nat Γ)
-    (as : InstanceArgs decl.levels Γ decl.scope) (ctx : Context decl.levels Γ)
-    (ds : Destructors decl.levels Γ ns) (κ : Universe decl.levels) : Prop :=
-  Derivable (.wfDestructors sig decl ι ν as ctx ds κ)
+inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance decl.sorts decl.grades →
+    {Γ : Scope} → {ns : List Name} → Nesting Nat Γ → InstanceArgs decl.levels Γ decl.scope →
+    Context decl.levels Γ → Destructors decl.levels Γ ns → Universe decl.levels → Prop where
+  /-- No destructor lives in every sort.
+  RFC: `\bar d_{\kappa\varepsilon}` -/
+  | nil {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
+      {ctx : Context decl.levels Γ} {κ : Universe decl.levels} (hctx : WfCtx sig ctx) :
+      WfDestructors sig decl ι @ν as ctx .nil κ
+  /-- A first destructor that is not recursive and whose result has no position, whose arguments
+  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
+  grade without use at run time if it is a proposition, and the others, in the context extended by
+  it.
+  RFC: `\bar d_{\kappa|}` -/
+  | cons {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
+      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels (.secondOrder ps ψ :: Γ) ns}
+      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) = .plain)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig decl ι (Nesting.lift @ν) (as.rename Ren.weaken)
+        (ctx.secondOrder Θ B ψ) ds κ) :
+      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ ds) κ
+  /-- A first destructor that is not recursive and whose result has a position, whose arguments
+  live in the universe of the level of `κ` and whose result lives in a sort that `κ` bounds, with a
+  grade without use at run time if it is a proposition, and the others, which do not depend on it,
+  in the same context.
+  RFC: `\bar d_{\kappa\lambda}` -/
+  | nested {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Θ : Telescope decl.levels Γ ps} {B : Term decl.levels (Γ.extend ps.length)}
+      {ψ : ResultOwnership Grade ps.length} {ds : Destructors decl.levels Γ ns}
+      {κ₁ κ : Universe decl.levels} (hn : B.blockName decl.names = none)
+      (hν : B.nest (fun _ => none) (Nesting.liftN ps.length @ν) ≠ .plain)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hB : HasType sig (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+      (hp : κ₁.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
+      WfDestructors sig decl ι @ν as ctx (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken)) κ
+  /-- A first destructor that is recursive, whose arguments live in the universe of the level of `κ`
+  and whose result is a type `D` of the block at the instance of the block and at the parameters,
+  with a grade without use at run time if the block is a block of propositions, and the others, which
+  do not depend on it, in the same context.
+  RFC: `\bar d_{\kappa\mathsf{rec}}` -/
+  | recursive {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
+      {Γ : Scope} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope} {d : Name}
+      {ns : List Name} {ps : List Parameter} {ctx : Context decl.levels Γ} {p q ς : Grade}
+      {Θ : Telescope decl.levels Γ ps} {ψ : ResultOwnership Grade ps.length} {D : Name}
+      {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hD : D ∈ decl.names)
+      (hΘ : WfTelescope sig ctx Θ ⟨.type, κ.level⟩)
+      (hp : κ.quality = .prop → p.mode ≠ .oneOne)
+      (hds : WfDestructors sig decl ι @ν as ctx ds κ) :
+      WfDestructors sig decl ι @ν as ctx
+        (.cons (d := d) p q ς Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
+          (ds.rename Ren.weaken)) κ
 
 -- ADE: none.
 /--
@@ -1488,145 +1318,35 @@ The strict positivity reads the parameters that the types of the block itself de
 recursive fields and destructors, and those that the codata types of the signature without recursive
 destructor declare.
 -/
-abbrev WfTypeDeclaration (sig : Signature) (decl : TypeDeclaration) : Prop :=
-  Derivable (.wfTypeDeclaration sig decl)
+inductive WfTypeDeclaration : Signature → TypeDeclaration → Prop where
+  /-- A block of data types.
+  RFC: `\mathsf{data}` -/
+  | data {sig : Signature} {decl : TypeDeclaration} {Ts : List (DataType decl.sorts decl.grades
+      decl.levels decl.scope)} (hb : decl.body = .data Ts)
+      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
+      (hΘ : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
+        WfFields sig decl ι (.identity decl.scope) (decl.params ι) (c.fields ι) (decl.sort ι))
+      (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.dataTypes, ∀ {e : Scope.Entry}
+        (x : Var decl.scope e), T.positive x.level → ∀ c ∈ T.constructors,
+          (c.fields ι).Positive (sig.PositiveIn decl) x)
+      (hc : ∀ T ∈ decl.dataTypes, (T.constructors.map (·.name)).Nodup)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
+      WfTypeDeclaration sig decl
+  /-- A block of codata types.
+  RFC: `\mathsf{codata}` -/
+  | codata {sig : Signature} {decl : TypeDeclaration} {Ts : List (CodataType decl.sorts
+      decl.grades decl.levels decl.scope)} (hb : decl.body = .codata Ts)
+      (hadm : ∃ ι, decl.constraint ι) (hΔ : ∀ ι, decl.constraint ι → WfCtx sig (decl.params ι))
+      (hd : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes,
+        WfDestructors sig decl ι (Nesting.ofPositive T.positive) (.identity decl.scope)
+          (decl.params ι) (T.body ι) (decl.sort ι))
+      (hp : ∀ ι, decl.constraint ι → ∀ T ∈ decl.codataTypes, ∀ {e : Scope.Entry}
+        (x : Var decl.scope e), T.positive x.level →
+          (T.body ι).Positive (sig.PositiveIn decl) x)
+      (hc : ∀ T ∈ decl.codataTypes, T.destructors.Nodup)
+      (fresh : ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) :
+      WfTypeDeclaration sig decl
 
--- The rules of each judgment are in the namespace of the judgment too, so that `HasType.conv` and
--- `h.conv`, for `h : HasType sig ctx t A`, name the rule.
-namespace WfSig
-export Derivable.WfSig (empty constantDefinition constantDeclaration typeDeclaration lifting)
-end WfSig
-
-namespace WfConstantDefinition
-export Derivable.WfConstantDefinition (intro)
-end WfConstantDefinition
-
-namespace WfConstantDeclaration
-export Derivable.WfConstantDeclaration (intro)
-end WfConstantDeclaration
-
-namespace WfCtx
-export Derivable.WfCtx (empty var secondOrder)
-end WfCtx
-
-namespace WfType
-export Derivable.WfType (univType propType)
-end WfType
-
-namespace EqType
-export Derivable.EqType (refl symm trans univType propType)
-end EqType
-
-namespace HasType
-export Derivable.HasType (var secondOrder const univ prop inst equality reflProof transp propExt
-    coind ctor recursor obs corec conv)
-end HasType
-
-namespace EqTerm
-export Derivable.EqTerm (refl symm trans conv irr secondOrder delta const univ prop inst equality
-    transp transpSame ctor recursor obs corec iota etaCtor beta etaObs)
-end EqTerm
-
-namespace HasArgs
-export Derivable.HasArgs (nil cons)
-end HasArgs
-
-namespace EqArgs
-export Derivable.EqArgs (nil cons)
-end EqArgs
-
-namespace HasInstanceArgs
-export Derivable.HasInstanceArgs (nil var secondOrder)
-end HasInstanceArgs
-
-namespace EqInstanceArgs
-export Derivable.EqInstanceArgs (nil var secondOrder)
-end EqInstanceArgs
-
-namespace WfTelescope
-export Derivable.WfTelescope (nil cons)
-end WfTelescope
-
-namespace WfTelescopeSorts
-export Derivable.WfTelescopeSorts (nil cons)
-end WfTelescopeSorts
-
-namespace EqTelescope
-export Derivable.EqTelescope (nil cons)
-end EqTelescope
-
-namespace WfFields
-export Derivable.WfFields (nil cons recursive nested)
-end WfFields
-
-namespace WfDestructors
-export Derivable.WfDestructors (nil cons nested recursive)
-end WfDestructors
-
-namespace WfTypeDeclaration
-export Derivable.WfTypeDeclaration (data codata)
-end WfTypeDeclaration
-
--- The rules are in the namespace `Derivable` under their short names too, so that `.conv` names the
--- rule where the expected type is a judgment unfolded to `Derivable`.
-namespace Derivable
-export Derivable.WfSig (empty constantDefinition constantDeclaration typeDeclaration lifting)
-export Derivable.WfConstantDefinition (intro)
-export Derivable.WfConstantDeclaration (intro)
-export Derivable.WfCtx (empty var secondOrder)
-export Derivable.WfType (univType propType)
-export Derivable.EqType (refl symm trans univType propType)
-export Derivable.HasType (var secondOrder const univ prop inst equality reflProof transp propExt
-    coind ctor recursor obs corec conv)
-export Derivable.EqTerm (refl symm trans conv irr secondOrder delta const univ prop inst equality
-    transp transpSame ctor recursor obs corec iota etaCtor beta etaObs)
-export Derivable.HasArgs (nil cons)
-export Derivable.EqArgs (nil cons)
-export Derivable.HasInstanceArgs (nil var secondOrder)
-export Derivable.EqInstanceArgs (nil var secondOrder)
-export Derivable.WfTelescope (nil cons)
-export Derivable.WfTelescopeSorts (nil cons)
-export Derivable.EqTelescope (nil cons)
-export Derivable.WfFields (nil cons recursive nested)
-export Derivable.WfDestructors (nil cons nested recursive)
-export Derivable.WfTypeDeclaration (data codata)
-end Derivable
-
--- The goals, the hovers and the documentation show a derivation of a form as its judgment,
--- `HasType sig ctx t A` rather than `Derivable (Judgment.hasType sig ctx t A)`: the proofs unfold the
--- abbreviations wherever they read the rules, so that only this unexpander keeps the judgments in
--- what is shown. It names the abbreviation of each form by a table, so that it rewrites only the
--- 18 forms of `Judgment`, and `Derivable (f t)` for another `f` is shown unchanged.
-/-- Shows the derivation of a form of judgment as the judgment. -/
-@[app_unexpander Derivable] meta def Derivable.unexpand : Lean.PrettyPrinter.Unexpander
-  | `($_ $j) => do
-    let `($f:ident $xs*) := j | throw ()
-    let .str p c := f.getId | throw ()
-    let g : String ← match c with
-      | "wfSig" => pure "WfSig"
-      | "wfConstantDefinition" => pure "WfConstantDefinition"
-      | "wfConstantDeclaration" => pure "WfConstantDeclaration"
-      | "wfCtx" => pure "WfCtx"
-      | "wfType" => pure "WfType"
-      | "eqType" => pure "EqType"
-      | "hasType" => pure "HasType"
-      | "eqTerm" => pure "EqTerm"
-      | "hasArgs" => pure "HasArgs"
-      | "eqArgs" => pure "EqArgs"
-      | "hasInstanceArgs" => pure "HasInstanceArgs"
-      | "eqInstanceArgs" => pure "EqInstanceArgs"
-      | "wfTelescope" => pure "WfTelescope"
-      | "wfTelescopeSorts" => pure "WfTelescopeSorts"
-      | "eqTelescope" => pure "EqTelescope"
-      | "wfFields" => pure "WfFields"
-      | "wfDestructors" => pure "WfDestructors"
-      | "wfTypeDeclaration" => pure "WfTypeDeclaration"
-      | _ => throw ()
-    let n ← match p with
-      | .anonymous => pure (Lean.Name.mkSimple g)
-      | .str q "Judgment" => pure (Lean.Name.str q g)
-      | _ => throw ()
-    `($(Lean.mkIdent n) $xs*)
-  | _ => throw ()
+end
 
 end Sic.Core

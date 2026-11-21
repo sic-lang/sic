@@ -124,9 +124,9 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
     | constantDefinition hc =>
       rcases List.mem_cons.1 hc with rfl | hc'
       · cases h with
-        | WfSig.constantDefinition hdef _ =>
+        | constantDefinition hdef _ =>
         cases hdef with
-        | WfConstantDefinition.intro _ _ ht =>
+        | intro _ _ ht =>
         cases hu with
         | constantDefinition _ hus =>
         rename_i d

@@ -160,10 +160,10 @@ theorem WfTypeDeclaration.step {sig : Signature} (h : WfSig sig)
 RFC: `\mathsf{prelude}_{\vdash}` -/
 theorem WfSig.prelude : WfSig Signature.prelude :=
   have hu : WfSig [.typeDeclaration Prelude.unit] :=
-    .typeDeclaration (WfTypeDeclaration.unit .empty nofun) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
+    .typeDeclaration (.unit .empty nofun) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
   have hp : WfSig [.typeDeclaration Prelude.pair, .typeDeclaration Prelude.unit] :=
-    .typeDeclaration (WfTypeDeclaration.pair hu (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
-  .typeDeclaration (WfTypeDeclaration.step hp (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
+    .typeDeclaration (.pair hu (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
+  .typeDeclaration (.step hp (by decide)) (by decide) fun _ _ h => nomatch List.mem_singleton.1 h
 
 /-! ## Packing -/
 
@@ -797,7 +797,7 @@ theorem EqTerm.unpackEta (hpre : sig.HasPrelude) (r : Grade) : {Γ : Scope} →
     have h₂ := EqTerm.pairRecursorBranch (r := r) (ς := Grade.one) (χ := Grade.one) hpre hp hA hB hu hC' (by
       rw [Term.atCtor_rename_weaken]
       exact ih)
-    have h := EqTerm.trans h₁ h₂
+    have h := h₁.trans h₂
     rw [Term.subst₀_single_rename_weaken] at h
     exact h
 
