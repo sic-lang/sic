@@ -12,6 +12,7 @@ import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Inversion
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature
+import Sic.Core.Typing.Induction
 
 /-!
 # Types Read at Their Nestings
@@ -695,10 +696,46 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
         Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
       EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
       NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
-      R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂'
-  | .nil _, _, _, _, _, _, _ => R.nil
-  | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (κ₁ := κ₁) _ hνB hΘ hB hκ _ hds,
-      hrec, hn, hν₀, hpos, hE, hNS => by
+      R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂' := by
+  intro h hrec hn hν₀ hpos hE hNS
+  suffices H : Derivations.Conclusion
+      (wfSig := fun _ _ => True)
+      (wfConstantDefinition := fun _ _ _ => True)
+      (wfConstantDeclaration := fun _ _ _ => True)
+      (wfCtx := fun _ _ _ _ _ => True)
+      (wfType := fun _ _ _ _ _ _ => True)
+      (eqType := fun _ _ _ _ _ _ _ => True)
+      (hasType := fun _ _ _ _ _ _ _ => True)
+      (eqTerm := fun _ _ _ _ _ _ _ _ => True)
+      (hasArgs := fun _ _ _ _ _ _ _ _ => True)
+      (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
+      (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
+      (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
+      (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
+      (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
+      (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
+      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
+      (wfDestructors := fun sigT decl _ {Γ _} ν₀ _ ctx ds κ _ =>
+        sig.ValidEntries ι sigT → ReadsNested sig ι R.rd sigT →
+        (∀ e ∈ sigT, ∀ D ∈ decl.names, D ∉ e.names) → ∀ (ρ : Fin decl.levels → Nat) {Γ' : Scope}
+        {β : Ren Γ' Γ} {ν₁ ν₂ : Nesting α Γ'} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ'},
+        (∀ r ∈ ds.recursion decl.names, r = none) → R.ok i (κ.atLevels ρ) →
+        (∀ (e : Scope.Entry) (x : Var Γ e), (ν₀ x).isPlain = true → (ν₁ (β x)).isPlain = true) →
+        (∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
+          Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
+        EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
+        NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
+        R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂')
+      (wfTypeDeclaration := fun _ _ _ => True) from
+    H.wfDestructors h hent hread fresh ρ hrec hn hν₀ hpos hE hNS
+  apply Derivations.induction
+  case wfDestructors_nil =>
+    exact fun hctx hctx_ih => fun hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE
+        hNS =>
+      R.nil
+  case wfDestructors_cons =>
+    intro sigT decl J Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ _ hν hΘ hB hκ hp hds hΘ_ih hB_ih
+      hds_ih hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
     -- What the strict positivity gives of the destructor.
     have hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx => by
@@ -752,7 +789,7 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       rw [Term.nest_rename _ (Ren.liftN ps.length @β)
         (Nesting.liftN_rename ps.length (ν := fun x => ν₁ (β x)) fun _ _ => rfl) B]
       exact Nest.eq_plain_of_isPlain
-        (Term.nest_isPlain_mono (Nesting.liftN_isPlain_mono _ hν₀) B (by rw [hνB]; rfl))
+        (Term.nest_isPlain_mono (Nesting.liftN_isPlain_mono _ hν₀) B (by rw [hν]; rfl))
     have hpl₂ : (B.rename (Ren.liftN ps.length @β)).nest (fun _ => none)
         (Nesting.liftN ps.length @ν₂) = .plain :=
       Nest.eq_plain_of_isPlain ((Term.nest_isPlain_congr
@@ -777,7 +814,7 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
           (fun x => Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift @β x))
           (Subst.snoc (e := .secondOrder ps ψ) (fun x => θ (β x)) f) := fun θ f =>
       Subst.ext fun x => by cases x <;> rfl
-    refine WfDestructors.reads R hS hent hread fresh ρ i (β := Ren.lift @β) hds
+    refine hds_ih hent hread fresh ρ (β := Ren.lift @β)
       (fun r hr => hrec r (List.mem_cons_of_mem _ hr)) hn
       (fun e z => match z with
         | .zero => fun _ => rfl
@@ -793,8 +830,9 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
     rw [Term.subst_append, ← hBe]
     exact hf τ₁ τ₂ ((congrArg (fun Θ' => EqSubst sig ι (Context.empty.append Θ') τ₁ τ₂)
       (hΘe θ₁)).mpr hτ)
-  | .nested (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (κ₁ := κ₁) _ _ hΘ hB hκ _ hds,
-      hrec, hn, hν₀, hpos, hE, hNS => by
+  case wfDestructors_nested =>
+    intro sigT decl J Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ _ hν hΘ hB hκ hp hds hΘ_ih hB_ih
+      hds_ih hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
     have hds_eq : (ds.rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) @β) =
         ds.rename (fun x => .succ (β x)) := Destructors.rename_rename_of (fun _ => rfl) ds
     -- What the strict positivity gives of the destructor.
@@ -860,8 +898,8 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
           (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
           (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) := fun f₁ f₂ => by
       rw [hds_eq]
-      exact WfDestructors.reads R hS hent hread fresh ρ i
-        (β := fun x => .succ (e' := .secondOrder ps ψ) (β x)) hds
+      exact hds_ih hent hread fresh ρ
+        (β := fun x => .succ (e' := .secondOrder ps ψ) (β x))
         (fun r hr => hrec r (List.mem_cons_of_mem _
           (by rw [Destructors.recursion_rename]; exact hr))) hn hν₀
         (fun e z hz => match z, hz with
@@ -932,11 +970,28 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       · rw [Context.atLevels, Context.substLevels_append]
         exact hNS.append (Θ.atLevels ρ) τ₁ τ₂
       · exact R.plain hn hκ' (hBv τ₁ τ₂ hτ)
-  | .recursive (D := D) hD _ _ _, hrec, _, _, _, _, _ => by
+  case wfDestructors_recursive =>
+    refine fun hD hΘ hp hds hΘ_ih hds_ih => fun hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn
+        hν₀ hpos hE hNS => ?_
     have h := hrec _ (List.mem_cons_self ..)
     simp only [TypeDeclaration.blockInstance, Term.blockName, hD, ite_true] at h
     exact nomatch h
-termination_by structural h => h
+  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
+      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfCtx_empty |
+      wfCtx_var | wfCtx_secondOrder | wfType_univType | wfType_propType | eqType_refl |
+      eqType_symm | eqType_trans | eqType_univType | eqType_propType | hasType_var |
+      hasType_secondOrder | hasType_const | hasType_univ | hasType_prop | hasType_inst |
+      hasType_equality | hasType_reflProof | hasType_transp | hasType_propExt | hasType_coind |
+      hasType_ctor | hasType_recursor | hasType_obs | hasType_corec | hasType_conv | eqTerm_refl |
+      eqTerm_symm | eqTerm_trans | eqTerm_conv | eqTerm_irr | eqTerm_secondOrder | eqTerm_delta |
+      eqTerm_const | eqTerm_univ | eqTerm_prop | eqTerm_inst | eqTerm_equality | eqTerm_transp |
+      eqTerm_transpSame | eqTerm_ctor | eqTerm_recursor | eqTerm_obs | eqTerm_corec | eqTerm_iota |
+      eqTerm_etaCtor | eqTerm_beta | eqTerm_etaObs | hasArgs_nil | hasArgs_cons | eqArgs_nil |
+      eqArgs_cons | hasInstanceArgs_nil | hasInstanceArgs_var | hasInstanceArgs_secondOrder |
+      eqInstanceArgs_nil | eqInstanceArgs_var | eqInstanceArgs_secondOrder | wfTelescope_nil |
+      wfTelescope_cons | wfTelescopeSorts_nil | wfTelescopeSorts_cons | eqTelescope_nil |
+      eqTelescope_cons | wfFields_nil | wfFields_cons | wfFields_recursive | wfFields_nested |
+      wfTypeDeclaration_data | wfTypeDeclaration_codata => intros; trivial
 
 end
 
