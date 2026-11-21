@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Typing
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Induction
 import Sic.Core.Typing.Presuppositions
 
 /-!
@@ -47,23 +48,55 @@ where
       {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps} : {t B : Term k Γ} →
       HasType sig ctx t B → t = .var X ts →
       ∃ (Θ : Telescope k Γ ps) (A : Term k (Γ.extend ps.length)),
-        ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ
-    | _, _, .var .., e => by cases e
-    | _, _, .secondOrder hX hts, e => by cases e; exact ⟨_, _, hX, hts⟩
-    | _, _, .const .., e => by cases e
-    | _, _, .univ .., e => by cases e
-    | _, _, .prop .., e => by cases e
-    | _, _, .inst .., e => by cases e
-    | _, _, .equality .., e => by cases e
-    | _, _, .reflProof .., e => by cases e
-    | _, _, .transp .., e => by cases e
-    | _, _, .propExt .., e => by cases e
-    | _, _, .coind .., e => by cases e
-    | _, _, .ctor .., e => by cases e
-    | _, _, .recursor .., e => by cases e
-    | _, _, .obs .., e => by cases e
-    | _, _, .corec .., e => by cases e
-    | _, _, .conv ht _, e => go ht e
+        ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ := by
+    suffices H : Derivations.Conclusion
+        (wfSig := fun _ _ => True)
+        (wfConstantDefinition := fun _ _ _ => True)
+        (wfConstantDeclaration := fun _ _ _ => True)
+        (wfCtx := fun _ _ _ _ _ => True)
+        (wfType := fun _ _ _ _ _ _ => True)
+        (eqType := fun _ _ _ _ _ _ _ => True)
+        (hasType := fun sig {k Γ} ctx t _ _ => ∀ {ps : List Parameter}
+          {ψ : ResultOwnership Grade ps.length} {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps},
+          t = .var X ts → ∃ (Θ : Telescope k Γ ps) (A : Term k (Γ.extend ps.length)),
+            ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ)
+        (eqTerm := fun _ _ _ _ _ _ _ _ => True)
+        (hasArgs := fun _ _ _ _ _ _ _ _ => True)
+        (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
+        (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
+        (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
+        (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
+        (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
+        (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
+        (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
+        (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
+        (wfTypeDeclaration := fun _ _ _ => True) from
+      fun {_ _} h e => H.hasType h e
+    apply Derivations.induction
+    case hasType_secondOrder =>
+      refine fun hX hts hts_ih => fun e => ?_
+      cases e; exact ⟨_, _, hX, hts⟩
+    case hasType_conv => exact fun ht _ ht_ih _ => fun e => ht_ih e
+    case hasType_var | hasType_const | hasType_univ | hasType_prop | hasType_inst |
+        hasType_equality | hasType_reflProof | hasType_transp | hasType_propExt | hasType_coind |
+        hasType_ctor | hasType_recursor | hasType_obs | hasType_corec =>
+      intros; cases ‹_ = _›
+    case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration |
+        wfSig_typeDeclaration | wfSig_lifting | wfConstantDefinition_intro |
+        wfConstantDeclaration_intro | wfCtx_empty | wfCtx_var | wfCtx_secondOrder |
+        wfType_univType | wfType_propType | eqType_refl | eqType_symm | eqType_trans |
+        eqType_univType | eqType_propType | eqTerm_refl | eqTerm_symm | eqTerm_trans | eqTerm_conv |
+        eqTerm_irr | eqTerm_secondOrder | eqTerm_delta | eqTerm_const | eqTerm_univ | eqTerm_prop |
+        eqTerm_inst | eqTerm_equality | eqTerm_transp | eqTerm_transpSame | eqTerm_ctor |
+        eqTerm_recursor | eqTerm_obs | eqTerm_corec | eqTerm_iota | eqTerm_etaCtor | eqTerm_beta |
+        eqTerm_etaObs | hasArgs_nil | hasArgs_cons | eqArgs_nil | eqArgs_cons |
+        hasInstanceArgs_nil | hasInstanceArgs_var | hasInstanceArgs_secondOrder |
+        eqInstanceArgs_nil | eqInstanceArgs_var | eqInstanceArgs_secondOrder | wfTelescope_nil |
+        wfTelescope_cons | wfTelescopeSorts_nil | wfTelescopeSorts_cons | eqTelescope_nil |
+        eqTelescope_cons | wfFields_nil | wfFields_cons | wfFields_recursive | wfFields_nested |
+        wfDestructors_nil | wfDestructors_cons | wfDestructors_nested | wfDestructors_recursive |
+        wfTypeDeclaration_data | wfTypeDeclaration_codata =>
+      intros; trivial
 
 -- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Consequences/Inversion.agda`, for the types of
 -- functions and of pairs, with the equality of the sorts.
@@ -89,24 +122,59 @@ where
           (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
         sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
           HasInstanceArgs sig ctx (hΔ ▸ as)
-            ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-    | _, _, .var .., e => by cases e
-    | _, _, .secondOrder .., e => by cases e
-    | _, _, .const .., e => by cases e
-    | _, _, .univ .., e => by cases e
-    | _, _, .prop .., e => by cases e
-    | _, _, .inst h hq hl hp hadm has, e => by
+            ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
+    suffices H : Derivations.Conclusion
+        (wfSig := fun _ _ => True)
+        (wfConstantDefinition := fun _ _ _ => True)
+        (wfConstantDeclaration := fun _ _ _ => True)
+        (wfCtx := fun _ _ _ _ _ => True)
+        (wfType := fun _ _ _ _ _ _ => True)
+        (eqType := fun _ _ _ _ _ _ _ => True)
+        (hasType := fun sig {k Γ} ctx t _ _ => ∀ {Δ : Scope} {D : Name} {qs : List Quality}
+          {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}, t = .inst D qs ls ps as →
+          ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
+              GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hq : qs.length = decl.sorts)
+              (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
+            sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+              HasInstanceArgs sig ctx (hΔ ▸ as)
+                ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        (eqTerm := fun _ _ _ _ _ _ _ _ => True)
+        (hasArgs := fun _ _ _ _ _ _ _ _ => True)
+        (eqArgs := fun _ _ _ _ _ _ _ _ _ => True)
+        (hasInstanceArgs := fun _ _ _ _ _ _ _ _ => True)
+        (eqInstanceArgs := fun _ _ _ _ _ _ _ _ _ => True)
+        (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
+        (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
+        (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
+        (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
+        (wfDestructors := fun _ _ _ _ _ _ _ _ _ _ _ => True)
+        (wfTypeDeclaration := fun _ _ _ => True) from
+      fun {_ _} h e => H.hasType h e
+    apply Derivations.induction
+    case hasType_inst =>
+      refine fun h hq hl hp hadm has has_ih => fun e => ?_
       cases e; exact ⟨_, _, rfl, hq, hl, hp, h, hadm, has⟩
-    | _, _, .equality .., e => by cases e
-    | _, _, .reflProof .., e => by cases e
-    | _, _, .transp .., e => by cases e
-    | _, _, .propExt .., e => by cases e
-    | _, _, .coind .., e => by cases e
-    | _, _, .ctor .., e => by cases e
-    | _, _, .recursor .., e => by cases e
-    | _, _, .obs .., e => by cases e
-    | _, _, .corec .., e => by cases e
-    | _, _, .conv ht _, e => by exact go ht e
+    case hasType_conv => exact fun ht _ ht_ih _ => fun e => ht_ih e
+    case hasType_var | hasType_secondOrder | hasType_const | hasType_univ | hasType_prop |
+        hasType_equality | hasType_reflProof | hasType_transp | hasType_propExt | hasType_coind |
+        hasType_ctor | hasType_recursor | hasType_obs | hasType_corec =>
+      intros; cases ‹_ = _›
+    case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration |
+        wfSig_typeDeclaration | wfSig_lifting | wfConstantDefinition_intro |
+        wfConstantDeclaration_intro | wfCtx_empty | wfCtx_var | wfCtx_secondOrder |
+        wfType_univType | wfType_propType | eqType_refl | eqType_symm | eqType_trans |
+        eqType_univType | eqType_propType | eqTerm_refl | eqTerm_symm | eqTerm_trans | eqTerm_conv |
+        eqTerm_irr | eqTerm_secondOrder | eqTerm_delta | eqTerm_const | eqTerm_univ | eqTerm_prop |
+        eqTerm_inst | eqTerm_equality | eqTerm_transp | eqTerm_transpSame | eqTerm_ctor |
+        eqTerm_recursor | eqTerm_obs | eqTerm_corec | eqTerm_iota | eqTerm_etaCtor | eqTerm_beta |
+        eqTerm_etaObs | hasArgs_nil | hasArgs_cons | eqArgs_nil | eqArgs_cons |
+        hasInstanceArgs_nil | hasInstanceArgs_var | hasInstanceArgs_secondOrder |
+        eqInstanceArgs_nil | eqInstanceArgs_var | eqInstanceArgs_secondOrder | wfTelescope_nil |
+        wfTelescope_cons | wfTelescopeSorts_nil | wfTelescopeSorts_cons | eqTelescope_nil |
+        eqTelescope_cons | wfFields_nil | wfFields_cons | wfFields_recursive | wfFields_nested |
+        wfDestructors_nil | wfDestructors_cons | wfDestructors_nested | wfDestructors_recursive |
+        wfTypeDeclaration_data | wfTypeDeclaration_codata =>
+      intros; trivial
 
 -- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
