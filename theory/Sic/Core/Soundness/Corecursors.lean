@@ -1628,9 +1628,9 @@ On a proposition, the observations of the first term, related to themselves, mak
 /-- The equality of destructors relates the observations `o₁` and `o₂` when it relates observations
 `f₁` and `f₂` that compute as them, at relations of the recursive destructors that relate alike
 the terms that compute alike, or any terms when the quality is that of the propositions, as the
-equalities of the terms of the types of the graph do: the abstractions for each destructor compute as each other, so
-that the equality of its result relates them, and the destructors after it are the same for
-abstractions that the equality of the destructor relates. -/
+equalities of the terms of the types of the graph do: the abstractions for each destructor
+compute as each other, so that the equality of its result relates them, and the destructors after
+it are the same for abstractions that the equality of the destructor relates. -/
 theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
     {rs : Nat → Option TermRel} → {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} →
       {θ : Subst 0 [] Γ} → {S : ObsRel} →
