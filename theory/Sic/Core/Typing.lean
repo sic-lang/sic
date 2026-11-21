@@ -1595,8 +1595,8 @@ end Derivable
 -- The goals, the hovers and the documentation show a derivation of a form as its judgment,
 -- `HasType sig ctx t A` rather than `Derivable (Judgment.hasType sig ctx t A)`: the proofs unfold the
 -- abbreviations wherever they read the rules, so that only this unexpander keeps the judgments in
--- what is shown. It names the abbreviation of each form by a table rather than by capitalizing the
--- name of the form, whose functions on strings depend on `Classical.choice`.
+-- what is shown. It names the abbreviation of each form by a table, so that it rewrites only the
+-- 18 forms of `Judgment`, and `Derivable (f t)` for another `f` is shown unchanged.
 /-- Shows the derivation of a form of judgment as the judgment. -/
 @[app_unexpander Derivable] meta def Derivable.unexpand : Lean.PrettyPrinter.Unexpander
   | `($_ $j) => do
