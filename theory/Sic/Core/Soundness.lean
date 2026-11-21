@@ -1074,16 +1074,16 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
       (wfTelescope := fun _ _ _ _ _ _ _ _ => True)
       (wfTelescopeSorts := fun _ _ _ _ _ _ _ _ _ => True)
       (eqTelescope := fun _ _ _ _ _ _ _ _ _ => True)
-      (wfFields := fun sig decl I {Γ} as ctx {ps} Θ κ _ => ∀ {ιM sigM}, sigM.Distinct →
-        sigM.LiftsInOrder → sigM.ValidEntries ιM sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
-        ValidFields sigM ιM ctx decl.names (fun D => decl.blockInstance I D as)
+      (wfFields := fun sig decl I {Γ} as ctx {ps} Θ κ _ => ∀ {ι sigM}, sigM.Distinct →
+        sigM.LiftsInOrder → sigM.ValidEntries ι sig → (∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names) →
+        ValidFields sigM ι ctx decl.names (fun D => decl.blockInstance I D as)
           (Θ.nestAt decl.names) Θ κ)
-      (wfDestructors := fun sig decl I {Γ ns} ν as ctx ds κ _ => ∀ {ιM sigM}, sigM.Distinct →
-        sigM.LiftsInOrder → sigM.ValidEntries ιM sig →
-          ValidDestructors sigM ιM ctx (fun D => decl.blockInstance I D as)
+      (wfDestructors := fun sig decl I {Γ ns} ν as ctx ds κ _ => ∀ {ι sigM}, sigM.Distinct →
+        sigM.LiftsInOrder → sigM.ValidEntries ι sig →
+          ValidDestructors sigM ι ctx (fun D => decl.blockInstance I D as)
             (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ)
-      (wfTypeDeclaration := fun sig decl _ => ∀ {ιM sigM}, sigM.Distinct → sigM.LiftsInOrder →
-        sigM.ValidEntries ιM sig → ValidTypeDeclaration sigM ιM decl) from
+      (wfTypeDeclaration := fun sig decl _ => ∀ {ι sigM}, sigM.Distinct → sigM.LiftsInOrder →
+        sigM.ValidEntries ι sig → ValidTypeDeclaration sigM ι decl) from
     ⟨fun hdis hord hι fresh h => H.wfFields h hdis hord hι fresh,
       fun hdis hord hι h => H.wfDestructors h hdis hord hι,
       fun hdis hord hι h => H.wfTypeDeclaration h hdis hord hι⟩
@@ -1092,25 +1092,25 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
     exact fun hctx hctx_ih => fun hdis hord hι fresh => fun ρ =>
       ValidFieldsΓ.nil (soundnessIn.wfCtx hdis hord hι hctx ρ)
   case wfFields_cons =>
-    intro sig decl ι Γ as ctx ps q p A Θ κ₁ κ hn hA hκ hΘ hp hA_ih hΘ_ih ιM sigM hdis hord hι fresh
+    intro sig decl I Γ as ctx ps q p A Θ κ₁ κ hn hA hκ hΘ hp hA_ih hΘ_ih ι sigM hdis hord hι fresh
     exact fun ρ => by
       have hΘ' := hΘ_ih hdis hord hι fresh ρ
-      rw [show (fun D => (decl.blockInstance ι D (as.rename Ren.weaken)).atLevels ρ) =
-          fun D => ((decl.blockInstance ι D as).atLevels ρ).rename Ren.weaken from
-        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance ι D as)] at hΘ'
+      rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
+          fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
+        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hΘ'
       exact ValidFieldsΓ.cons (soundnessIn.hasType hdis hord hι hA ρ) (Universe.substLevels_bounded _ hκ)
         hn hΘ'
   case wfFields_recursive =>
-    intro sig decl ι Γ as ctx ps q p D Θ κ hD hΘ hp hΘ_ih ιM sigM hdis hord hι fresh
+    intro sig decl I Γ as ctx ps q p D Θ κ hD hΘ hp hΘ_ih ι sigM hdis hord hι fresh
     exact fun ρ => by
       have hΘ' := hΘ_ih hdis hord hι fresh ρ
-      show ValidFieldsΓ sigM ιM _ _ _ _ (.cons _ _ ((decl.blockInstance ι D as).atLevels ρ)
+      show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
         ((Θ.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
       refine ValidFieldsΓ.recursive (D := D)
         ((Term.blockNest_eq_direct _).2 (by simp [TypeDeclaration.blockInstance, Term.blockName,
           hD])) ?_
-      have hr : (fun i => (Telescope.cons q p (decl.blockInstance ι D as)
+      have hr : (fun i => (Telescope.cons q p (decl.blockInstance I D as)
           (Θ.rename Ren.weaken)).nestAt decl.names (i + 1)) = Θ.nestAt decl.names := by
         funext i
         simp only [Telescope.nestAt, Telescope.nest, Telescope.nest_rename,
@@ -1118,20 +1118,20 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
       rw [hr]
       exact hΘ'
   case wfFields_nested =>
-    intro sig decl ι Γ as ctx ps q p A₀ Θ κ₁ κ νs hn hA₀ hκ hq hpos hpre hΘ hp hA₀_ih hΘ_ih ιM sigM
+    intro sig decl I Γ as ctx ps q p A₀ Θ κ₁ κ νs hn hA₀ hκ hq hpos hpre hΘ hp hA₀_ih hΘ_ih ι sigM
       hdis hord hι fresh
     exact fun ρ => by
       have hΘ' := hΘ_ih hdis hord hι fresh ρ
-      show ValidFieldsΓ sigM ιM _ _ _ _ (.cons _ _ ((A₀.instantiate (decl.blockArgs ι as)).atLevels ρ)
+      show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((A₀.instantiate (decl.blockArgs I as)).atLevels ρ)
         ((Θ.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Telescope.substLevels_rename]
       refine ValidFieldsΓ.nested (νs := νs)
         (by simp [Telescope.nestAt, Telescope.nest, hn]) (fun σ₁ σ₂ hσ => ?_) ?_
-      · have h := Term.validBlockNest (soundnessIn.typingSound hdis hord) hdis hι hpre fresh ι as hA₀ hκ hq
+      · have h := Term.validBlockNest (soundnessIn.typingSound hdis hord) hdis hι hpre fresh I as hA₀ hκ hq
           hpos ρ hσ
         rw [hn] at h
         exact ⟨h.1, fun _ => h.2.1, h.2.2⟩
-      · have hr : (fun i => (Telescope.cons q p (A₀.instantiate (decl.blockArgs ι as))
+      · have hr : (fun i => (Telescope.cons q p (A₀.instantiate (decl.blockArgs I as))
             (Θ.rename Ren.weaken)).nestAt decl.names (i + 1)) = Θ.nestAt decl.names := by
           funext i
           simp only [Telescope.nestAt, Telescope.nest, Telescope.nest_rename,
@@ -1142,27 +1142,27 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
     exact fun hctx hctx_ih => fun hdis hord hι => fun ρ =>
       ValidDestructorsΓ.nil (soundnessIn.wfCtx hdis hord hι hctx ρ)
   case wfDestructors_cons =>
-    intro sig decl ι Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih
-      ιM sigM hdis hord hι
+    intro sig decl I Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih
+      ι sigM hdis hord hι
     exact fun ρ => by
       have hB' := soundnessIn.hasType hdis hord hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
       have hds' := hds_ih hdis hord hι ρ
-      rw [show (fun D => (decl.blockInstance ι D (as.rename Ren.weaken)).atLevels ρ) =
-          fun D => ((decl.blockInstance ι D as).atLevels ρ).rename Ren.weaken from
-        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance ι D as)] at hds'
+      rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
+          fun D => ((decl.blockInstance I D as).atLevels ρ).rename Ren.weaken from
+        funext fun D => Term.substLevels_rename _ _ (decl.blockInstance I D as)] at hds'
       exact ValidDestructorsΓ.cons
         (by simp [Destructors.recursionAt, Destructors.recursion, hn])
         (by simp [Destructors.nestedAt, Destructors.nested, hν, Nest.isPlain])
         (soundnessIn.wfTelescope hdis hord hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
   case wfDestructors_nested =>
-    intro sig decl ι Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih
-      ιM sigM hdis hord hι
+    intro sig decl I Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih
+      ι sigM hdis hord hι
     exact fun ρ => by
       have hB' := soundnessIn.hasType hdis hord hι hB ρ
       simp only [Context.atLevels, Context.substLevels_append] at hB'
       have hds' := hds_ih hdis hord hι ρ
-      show ValidDestructorsΓ sigM ιM _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
+      show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
         (B.substLevels fun i => .ofNat (ρ i)) ψ
         ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Destructors.substLevels_rename]
@@ -1186,28 +1186,28 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
       rw [hr, hr']
       exact hds'
   case wfDestructors_recursive =>
-    intro sig decl ι Γ ν as d ns ps ctx p q ς Θ ψ D ds κ hD hΘ hp hds hΘ_ih hds_ih ιM sigM hdis hord
+    intro sig decl I Γ ν as d ns ps ctx p q ς Θ ψ D ds κ hD hΘ hp hds hΘ_ih hds_ih ι sigM hdis hord
       hι
     exact fun ρ => by
       have hds' := hds_ih hdis hord hι ρ
-      show ValidDestructorsΓ sigM ιM _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
-        ((decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
+      show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
+        ((decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ) ψ
         ((ds.rename Ren.weaken).substLevels fun i => .ofNat (ρ i))) _
       rw [Destructors.substLevels_rename,
-        show (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))).atLevels ρ =
-          ((decl.blockInstance ι D as).atLevels ρ).rename (Ren.weakenN ps.length) from
-        Term.substLevels_rename _ _ (decl.blockInstance ι D as)]
+        show (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))).atLevels ρ =
+          ((decl.blockInstance I D as).atLevels ρ).rename (Ren.weakenN ps.length) from
+        Term.substLevels_rename _ _ (decl.blockInstance I D as)]
       refine ValidDestructorsΓ.recursive (D := D)
         (by simp [Destructors.recursionAt, Destructors.recursion, TypeDeclaration.blockInstance,
           Term.blockName, hD]) (soundnessIn.wfTelescope hdis hord hι hΘ ρ) ?_
       have hr : (fun i => (Destructors.cons (d := d) p q ς Θ
-          (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
+          (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)).recursionAt decl.names (i + 1)) = ds.recursionAt decl.names := by
         funext i
         simp only [Destructors.recursionAt, Destructors.recursion, Destructors.recursion_rename,
           List.getElem?_cons_succ]
       have hr' : (fun i => (Destructors.cons (d := d) p q ς Θ
-          (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
+          (decl.blockInstance I D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)).nestedAt @ν (i + 1)) = ds.nestedAt @ν := by
         funext i
         simp only [Destructors.nestedAt, Destructors.nested,
@@ -1221,14 +1221,14 @@ theorem declarationSoundnessIn : DeclarationSoundnessIn := by
     refine fun hb hadm hΔ hΘ hp hc fresh hΔ_ih hΘ_ih => fun hdis hord hι => ?_
     unfold ValidTypeDeclaration
     rw [hb]
-    exact fun ι hI T hT c hc =>
-      hΘ_ih ι hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc hdis hord hι fresh
+    exact fun I hI T hT c hc =>
+      hΘ_ih I hI T (by simp only [TypeDeclaration.dataTypes, hb]; exact hT) c hc hdis hord hι fresh
   case wfTypeDeclaration_codata =>
     refine fun hb hadm hΔ hd hp hc fresh hΔ_ih hd_ih => fun hdis hord hι => ?_
     unfold ValidTypeDeclaration
     rw [hb]
-    exact fun ι hI T hT =>
-      hd_ih ι hI T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT) hdis hord hι
+    exact fun I hI T hT =>
+      hd_ih I hI T (by simp only [TypeDeclaration.codataTypes, hb]; exact hT) hdis hord hι
   case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
       wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfCtx_empty |
       wfCtx_var | wfCtx_secondOrder | wfType_univType | wfType_propType | eqType_refl |
