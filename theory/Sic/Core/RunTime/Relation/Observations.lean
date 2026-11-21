@@ -473,22 +473,15 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I hadm hT ρ).2 _ _ hθ
-  have hn := Level.closedValue_subst_equiv hls (decl.sort I).level
+  obtain ⟨hls, hmean, hn, -, hX, hcX, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst
-  have hX : ∀ D', Term.LevelEquiv (X D') (.inst D' qs ls ps as) := fun D' =>
-    decl.blockInstance_atLevels_subst hq hl hp as D'
-  have hcX : ∀ D', Computesι sig ι (X D') (X D') := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
   have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X D') (X D') (.sort κ₁) :=
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-        (hX _).symm (hX _).symm (Term.LevelEquiv.refl _)⟩
+        (hX as _).symm (hX as _).symm (Term.LevelEquiv.refl _)⟩
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
     ⟨.refl _, .inst _ _ _ _ _⟩
   -- The instance is a type, since the destructor of a proposition has no use at run time.
@@ -519,11 +512,9 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (fun i => ((T.body I).recursionAt decl.names i).map fun D' => (Y D').computed sig ι)
       ((T.body I).atLevels ρ) as.toSubst (S Y T) := by
     rw [e]
-    exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hS Y T hT)
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _)
+    exact hrunLev (hS Y T hT)
   -- The observation by the destructor, at arguments related by the relation of its telescope.
-  obtain ⟨i, RΘ, hi, hRΘ, hobsR⟩ := (hpos.substLevels Lρ).run hd hmean
+  obtain ⟨i, RΘ, hi, hRΘ, hobsR⟩ := (hpos.substLevels Lρ).run hd (hmean T hT)
     (fun i hi => by rw [hi]; rfl) (fun i D' hi => ⟨_, by rw [hi]; rfl, fun H₀ t₀ b htb => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
         (Destructors.recursionAt_mem hi)
@@ -531,7 +522,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       have hU : RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
           (CodataType.runBlockRel decl.codataTypes S T'.name) :=
         .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs hnS S hS
-      exact RunsAs.levelEquiv hd (hX _).symm
+      exact RunsAs.levelEquiv hd (hX as _).symm
         ⟨_, ⟨.refl _, .inst _ _ _ _ _⟩, .inr ⟨_, .univ n (levelRel_run_iff.2 hU), w, hw, Y, hY,
           hYw⟩⟩⟩) hSρ hSo hpr
   -- The equality of the term relates its observations to those of the corecursor.
@@ -587,18 +578,17 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockRel decl.codataTypes Se T'.name) :=
       .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs rfl Se hSe
-    have e' : ((decl.sort I).atLevels ρ).level.closedValue =
-        ((decl.sort I).level.subst L).closedValue := hn
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
-    rw [hi, e', hq']
-    exact ⟨_, _, rfl, hcX _,
-      FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (.univ rfl hU) (hX _).symm⟩
+    rw [hi, hn, hq']
+    exact ⟨_, _, rfl, hcX as _,
+      FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (.univ rfl hU)
+        (hX as _).symm⟩
   -- The telescope and the result of the destructor at both observations are equal.
-  obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq hmean
+  obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq (hmean T hT)
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi))
-    (fun _ _ _ _ _ _ _ _ _ hpos' => (hpos'.sound hd hmean (fun i hi => by rw [hi]; rfl) hRr
-      (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2)
-  have hres := ((hpos.substLevels Lρ).sound hd hmean (fun i hi => by rw [hi]; rfl) hRr
+    (fun _ _ _ _ _ _ _ _ _ hpos' => (hpos'.sound hd (hmean T hT) (fun i hi => by rw [hi]; rfl)
+      hRr (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2)
+  have hres := ((hpos.substLevels Lρ).sound hd (hmean T hT) (fun i hi => by rw [hi]; rfl) hRr
       (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2
   -- The arguments, at the levels without variables, are related by the relation of the telescope.
   have hcE : Subst.LevelEquiv

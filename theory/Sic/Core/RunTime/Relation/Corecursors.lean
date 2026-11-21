@@ -156,11 +156,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) hasσ
-  have hmean : ∀ T₁ ∈ decl.codataTypes, _ := fun T₁ hT₁ =>
-    (hv.destructors I hadm hT₁ ρ).2 _ _ hθ
+  obtain ⟨hls, hmean, hsort, -, hX, -, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm hasσ
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
   cases hs : (decl.sort I).quality with
@@ -181,12 +177,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         ∀ T₁ ∈ decl.codataTypes, ∀ H₁ o b, S X T₁ H₁ o b → S Y T₁ H₁ o b :=
       fun X Y hXY T₁ hT₁ H₁ => RunDesRel.mono hd (List.prefix_refl H₁) (hS X T₁ hT₁) _ _
         (hS Y T₁ hT₁) (fun _ => Option.rel_map (fun D' H₂ _ _ => RunRel.computed_mono (hXY D' H₂)) _)
-    have e : ((decl.sort I).atLevels ρ).level.closedValue = n :=
-      (Level.closedValue_subst_equiv hls (decl.sort I).level).trans hnS
-    have hX : ∀ D', Term.LevelEquiv
-        (((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst (as.subst σ).toSubst)
-        (.inst D' qs ls ps (as.subst σ)) := fun D' =>
-      decl.blockInstance_atLevels_subst hq hl hp (as.subst σ) D'
+    have e : ((decl.sort I).atLevels ρ).level.closedValue = n := hsort.trans hnS
     -- The grades of the destructors and the resumptions that the erasure of the closure reads.
     obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h hq hp
     have hrt := hd.resumedTypes h hq hp
@@ -229,9 +220,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (fun i => ((T₂.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
           ((T₂.body I).substLevels Lρ) (as.subst σ).toSubst (S X T₂) := by
         rw [e]
-        exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hS X T₂ hT₁)
-          (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-          (Subst.LevelEquiv.refl _)
+        exact hrunLev (hS X T₂ hT₁)
       -- The case of a destructor of the type and its branch.
       have hcase : ∀ {d p q ς ps' Ξ} {Θ : Telescope decl.levels Ξ ps'}
           {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length},
@@ -243,7 +232,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hm
         obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ς ps' Ξ Θ B ψ hpos
         exact ⟨i, g, hi, hg⟩
-      refine RunDesRel.of_obs hd Lρ (T₂.body I) (hmean T₂ hT₁) (fun i hi => by rw [hi]; rfl)
+      refine RunDesRel.of_obs hd Lρ (T₂.body I) (rs := (T₂.body I).recursionAt decl.names)
+        (hmean T₂ hT₁) (fun i hi => by rw [hi]; rfl)
         (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) hSρ ?_ ?_
       · -- The observations by a destructor that is not recursive step to its branch, whose
         -- premise makes it a term of the result of the destructor.
@@ -488,7 +478,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
                   (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
               rw [he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
-                (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _) (h₁.levelEquiv hd (hX T₃.name)))
+                (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
+                  (h₁.levelEquiv hd (hX (as.subst σ) T₃.name)))
     -- The corecursor is related to the closure.
     exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
       hnS S hS)), _, ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩, X, hcons,

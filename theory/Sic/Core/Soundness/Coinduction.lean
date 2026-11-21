@@ -180,26 +180,8 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hn := TypeDeclaration.codataTypes_nodup hnames
     let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
     let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
-    have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-    have hθ := EqSubst.levelEquiv
-      (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has'
-    have hmean : ∀ T' ∈ decl.codataTypes, _ := fun T' hT' =>
-      (hv.destructors I hadm hT' ρ).2 _ _ hθ
-    have hlev : ∀ {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {s : Quality}
-        {rs : Nat → Option TermRel} {S : ObsRel},
-        DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-          ((T'.body I).substLevels L) a.toSubst S →
-        DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-          ((T'.body I).substLevels Lρ) a.toSubst S := fun hS =>
-      DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
-        (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-        (Subst.LevelEquiv.refl _)
+    obtain ⟨hls, hmean, -, -, hX, -, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has'
     have hmono := DesRel.blockMono hd hS
-    -- The instances of the block at the levels without variables, at the arguments.
-    let Xi : Name → Term 0 [] := fun D' =>
-      ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a.toSubst
-    have hX : ∀ D', Term.LevelEquiv (Xi D') (.inst D' qs ls ps a) := fun D' =>
-      decl.blockInstance_atLevels_subst hq hl hp a D'
     -- The instances of the block are types of the universe, not propositions.
     have hcI : ∀ D', Computesι sig ι (.inst D' qs ls ps a) (.inst D' qs ls ps a) :=
       fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
@@ -459,7 +441,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
                   (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
                 (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B)
               rw [e] at hE
-              exact hE.trans (hX _)
+              exact hE.trans (hX a _)
             have hxD := hox.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hyD := hoy.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hx'v := hxD.left

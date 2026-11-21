@@ -34,6 +34,90 @@ section
 
 variable {sig : Signature} {ι : Interpretation}
 
+/-! ## Levels Without Variables
+
+The meaning of a type declaration holds at the values of its levels, which the proofs on its codata
+types read at the values of levels without variables: the facts that relate the two are stated
+once, for every instance of the declaration at equal arguments of its parameters. -/
+
+/-- The facts of a type declaration of codata types at the values `ρ` of levels `ls` without
+variables, at equal arguments `a₁` and `a₂` of its parameters. -/
+structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
+    (decl : TypeDeclaration) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (a₁ a₂ : InstanceArgs 0 [] decl.scope) : Prop where
+  /-- The numerals of the values `ρ` equal the levels `ls`. -/
+  levels : ∀ i, (Level.ofNat (ls.getFin hl i).closedValue : Level 0) ≈ ls.getFin hl i
+  /-- The destructors of each codata type of the block are meaningful at `ρ`, at `a₁` and `a₂`. -/
+  destructors : ∀ T ∈ decl.codataTypes,
+    ValidEqDestructors₀ sig ι
+      ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+      (fun D => (decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue)
+      ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names)
+      ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
+      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+      a₁.toSubst a₂.toSubst
+  /-- The level of the sort has the same value at `ρ` and at `ls`. -/
+  sort : ((decl.sort (.ofLists qs ps hq hp)).atLevels
+      fun i => (ls.getFin hl i).closedValue).level.closedValue =
+    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+  /-- The relations of the levels below the sort are partial equivalence relations. -/
+  per : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+    (levelRel sig ι m).IsPer
+  /-- The instances of the block at `ρ`, at any arguments, equal those at `ls`. -/
+  instances : ∀ (a : InstanceArgs 0 [] decl.scope) D, Term.LevelEquiv
+    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+      fun i => (ls.getFin hl i).closedValue).subst a.toSubst) (.inst D qs ls ps a)
+  /-- The instances of the block at `ρ`, at any arguments, compute to themselves. -/
+  computes : ∀ (a : InstanceArgs 0 [] decl.scope) D, Computesι sig ι
+    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+      fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
+    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+      fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
+  /-- A relation of the destructors of a codata type of the block at `ls` is one at `ρ`. -/
+  desRel : ∀ {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {s : Quality}
+      {rs : Nat → Option TermRel} {θ : Subst 0 [] decl.scope} {S : ObsRel},
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S →
+      DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
+        ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
+  /-- A relation of run time of the destructors of a codata type of the block at `ls` is one at
+  `ρ`. -/
+  runDesRel : ∀ {P : Program} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+      {n : Nat} {D : Name} {rs : Nat → Option RunRel} {θ : Subst 0 [] decl.scope} {S : RunObsRel},
+    RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S →
+      RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
+        ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
+
+/-- A meaningful type declaration of codata types, at equal arguments of its parameters, has its
+facts at the values of levels without variables, in a signature whose names are distinct. -/
+theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
+    {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+    (hp : ps.length = decl.grades) (hadm : decl.constraint (.ofLists qs ps hq hp))
+    {a₁ a₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      a₁.toSubst a₂.toSubst) :
+    decl.AtClosedLevels sig ι hq hl hp a₁ a₂ :=
+  have hls : ∀ i, (Level.ofNat (ls.getFin hl i).closedValue : Level 0) ≈ ls.getFin hl i :=
+    fun _ => Level.ofNat_closedValue _
+  have hθ := EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
+  { levels := hls
+    destructors := fun _ hT => (hv.destructors _ hadm hT _).2 _ _ hθ
+    sort := Level.closedValue_subst_equiv hls _
+    per := fun m _ => levelRel_isPer hd m
+    instances := fun a D => decl.blockInstance_atLevels_subst hq hl hp a D
+    computes := fun _ _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    desRel := fun hS => DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
+      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+      (Subst.LevelEquiv.refl _)
+    runDesRel := fun hS => RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
+      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
+      (Subst.LevelEquiv.refl _) }
+
 /-! ## Observations
 
 An observation of two equal closed terms of an instance of a codata type of a meaningful declaration
@@ -410,17 +494,10 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I hadm h.2.1 ρ).2 _ _ hθ
-  have hn := Level.closedValue_subst_equiv hls (decl.sort I).level
+  obtain ⟨hls, hmean, hn, -, hX, hcX, hlev₀, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : InstanceArgs 0 [] decl.scope → Name → Term 0 [] := fun a D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a.toSubst
-  have hX : ∀ a D', Term.LevelEquiv (X a D') (.inst D' qs ls ps a) := fun a D' =>
-    decl.blockInstance_atLevels_subst hq hl hp a D'
-  have hcX : ∀ a D', Computesι sig ι (X a D') (X a D') := fun _ _ => ⟨.refl _, .inst _ _ _ _ _⟩
   have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X a₁ D') (X a₂ D') (.sort κ₁) :=
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1 hD'
@@ -448,21 +525,13 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
           ((T.body I).substLevels L) a₁.toSubst S →
         DesRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m) s
-          rs ((T.body I).atLevels ρ) a₁.toSubst S := fun hS => by
-      have e : ((decl.sort I).atLevels ρ).level.closedValue =
-          ((decl.sort I).level.subst L).closedValue := hn
-      rw [e]
-      exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
-        (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-        (Subst.LevelEquiv.refl _)
+          rs ((T.body I).atLevels ρ) a₁.toSubst S := fun hS => hn ▸ hlev₀ hS
     have hF : ∀ {s : Quality} {R' : TermRel} {D' : Name},
         FieldRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s
           (.inst D' qs ls ps a₁) R' →
         FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
           s (X a₁ D') R' := fun hF' => by
-      have e : ((decl.sort I).atLevels ρ).level.closedValue =
-          ((decl.sort I).level.subst L).closedValue := hn
-      rw [e]
+      rw [hn]
       exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF' (hX a₁ _).symm
     rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
     · have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
@@ -508,7 +577,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
       rw [hi]
       exact ⟨_, _, rfl, hcX _ _, hs ▸ hF (.prop hP')⟩
   obtain ⟨rsR, S, o₁, o₂, hSρ, ho, hf₁, hf₂, hN, hRr⟩ := hobs
-  obtain ⟨⟨κ₁, hBeq⟩, hres⟩ := (hpos.substLevels Lρ).sound hd hmean hN hRr
+  obtain ⟨⟨κ₁, hBeq⟩, hres⟩ := (hpos.substLevels Lρ).sound hd (hmean T h.2.1) hN hRr
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hSρ ho hf₁ hf₂
   -- The substitutions of the scope of the destructor, at the levels of the declaration and at the
   -- levels without variables, are the same.
@@ -1039,28 +1108,10 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean : ∀ T' ∈ decl.codataTypes, _ := fun T' hT' =>
-    (hv.destructors I hadm hT' ρ).2 _ _ hθ
-  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
-    fun m _ => levelRel_isPer hd m
+  obtain ⟨hls, hmean, -, ih, hX, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the first arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a₁.toSubst
-  have hX : ∀ D', Term.LevelEquiv (X D') (.inst D' qs ls ps a₁) := fun D' =>
-    decl.blockInstance_atLevels_subst hq hl hp a₁ D'
-  have hcX : ∀ D', Computesι sig ι (X D') (X D') := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
-  have hlev : ∀ {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {s : Quality}
-      {rs : Nat → Option TermRel} {S : ObsRel},
-      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-        ((T'.body I).substLevels L) a₁.toSubst S →
-      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-        ((T'.body I).substLevels Lρ) a₁.toSubst S := fun hS =>
-    DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _)
   -- The observations of a pair of `P`, at the levels without variables.
   have hobs : ∀ T' ∈ decl.codataTypes, ∀ v w, P T'.name v w →
       ∃ (r₁ r₂ : Grade) (ss₁ ss₂ : Terms 0 []) (Ss₁ Ss₂ : States 0 []) (gs₁ gs₂ : DestructorBranches 0 []),
@@ -1104,7 +1155,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         ((CodataType.blockRel decl.codataTypes S D').computed sig ι) := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
-        (.univ rfl (hU T' hT').1) (hX _).symm
+        (.univ rfl (hU T' hT').1) (hX a₁ _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, ∀ a b, P T'.name a b →
         corecRel T'.name (S Y T') a b := by
       intro T' hT' a b hab
@@ -1120,7 +1171,8 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       cases hR
       rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
       · exact TermRel.computed_mono (fun _ _ h => .inl h)
-          ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D') (by rw [e] at he; exact he))
+          ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX a₁ D')
+            (by rw [e] at he; exact he))
       · rw [← hpos.recursionAt_index, hD'] at hD''
         cases hD''
         exact ⟨v', w', hv', hw', .inr hP'⟩
@@ -1149,7 +1201,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (fun _ _ => CodataType.blockTruth decl.codataTypes S D') := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
-        (.prop (hPr T' hT').1) (hX _).symm
+        (.prop (hPr T' hT').1) (hX a₁ _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, (∃ a b, P T'.name a b) → (S Y T').truth := by
       intro T' hT' ⟨a, b, hab⟩
       obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, hob⟩ := hobs T' hT' a b hab
@@ -1162,7 +1214,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           rw [hD'] at hR
           cases hR
           rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', -, -, hP'⟩
-          · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D')
+          · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX a₁ D')
               (by rw [e] at he; exact he))
           · rw [← hpos.recursionAt_index, hD'] at hD''
             cases hD''
@@ -1727,18 +1779,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hls : ∀ i, Lρ i ≈ L i := fun i => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  have hmean := (hv.destructors I hadm h.2.1 ρ).2 _ _ hθ
-  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
-    fun m _ => levelRel_isPer hd m
-  -- The instances of the block, at the levels without variables and at the arguments.
-  let X : Name → Term 0 [] := fun D' =>
-    ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst
-  have hX : ∀ D', Term.LevelEquiv (X D') (.inst D' qs ls ps as) := fun D' =>
-    decl.blockInstance_atLevels_subst hq hl hp as D'
-  have hcX : ∀ D', Computesι sig ι (X D') (X D') := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+  obtain ⟨hls, hmean, -, ih, hX, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The observations at the levels without variables.
   have hobs' : ∀ (d : Name) (p q ς : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
@@ -1758,14 +1799,6 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
         (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
-  have hlev : ∀ {s : Quality} {rs : Nat → Option TermRel} {S : ObsRel},
-      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-        ((T.body I).substLevels L) as.toSubst S →
-      DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
-        ((T.body I).substLevels Lρ) as.toSubst S := fun hS =>
-    DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _)
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
     have hmono := DesRel.blockMono hd hS
@@ -1778,13 +1811,13 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
       levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
     have hnp := Computesι.not_computesToProp hd hI hU₀
     have hDS := hlev (hS (CodataType.blockRel decl.codataTypes S) T h.2.1)
-    have hS₁ := DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+    have hS₁ := DesRel.of_obs hd Lρ (T.body I) (hmean T h.2.1) (fun i hi => by rw [hi]; rfl)
       (fun i D' hi => by
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
           (Destructors.recursionAt_mem hi)
         rw [hi]
-        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
-          (.univ rfl (hU T' hT')) (hX _).symm⟩)
+        exact ⟨_, _, rfl, hcX as _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+          (.univ rfl (hU T' hT')) (hX as _).symm⟩)
       hDS hobs'
     have hU₁ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
         (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes S T.name) := by
@@ -1815,13 +1848,13 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         (.inst D qs ls ps as) (CodataType.blockTruth decl.codataTypes S D) :=
       levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
     have hDS := hlev (hS (CodataType.blockTruth decl.codataTypes S) T h.2.1)
-    have hS₁ := DesRel.of_obs hd Lρ (T.body I) hmean (fun i hi => by rw [hi]; rfl)
+    have hS₁ := DesRel.of_obs hd Lρ (T.body I) (hmean T h.2.1) (fun i hi => by rw [hi]; rfl)
       (fun i D' hi => by
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
           (Destructors.recursionAt_mem hi)
         rw [hi]
-        exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
-          (.prop (hP T' hT')) (hX _).symm⟩)
+        exact ⟨_, _, rfl, hcX as _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+          (.prop (hP T' hT')) (hX as _).symm⟩)
       hDS hobs'
     have hSp := DesRel.isPer hd ih (fun i x hx => by
       cases hr : (T.body I).recursionAt decl.names i with
