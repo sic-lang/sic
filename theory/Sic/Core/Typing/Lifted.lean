@@ -21,7 +21,7 @@ and its type, substituted, is one, by the rules `(var_X)` and `(var_X≡)`.
 The proof is by induction on the derivations of all the judgments, `Derivable.substStable`.
 Under the binders of a rule, the substitution is lifted, and the context extended by the type
 substituted is well formed: the relation `Subst.Lifted` lifts a substitution under variables without
-this condition, and the clause of the judgment `Σ ⊢ Γ` builds the context extended at the leaves of
+this condition, and the case of the judgment `Σ ⊢ Γ` builds the context extended at the leaves of
 the derivation, from the derivation of the context extended, which the rule `(ctx_x)` gives with a
 derivation of its type, a subderivation substituted by the substitution before the lift.
 
