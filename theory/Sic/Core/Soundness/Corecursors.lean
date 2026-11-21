@@ -1009,11 +1009,9 @@ theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe
 types of `Σ`, whose type declaration is meaningful, at the same levels and at equal arguments of its
 parameters, are equal terms of their instance, when the observations of each pair by each
 destructor, at equal arguments of its telescope, are equal terms of its result, or, for a recursive
-destructor, compute to a pair of `P` of the type of its result; each obligation receives that the
-result of a recursive destructor is, up to its levels, the instance of the type of the block that it
-names: the relations that `(eq_ν)` gives the instances, joined with `P`, are consistent with the
-clauses of the destructors, so that `(eq_ν)` relates the pairs, or their observations make the
-instance true, for propositions. -/
+destructor, compute to a pair of `P` of the type of its result: the relations that `(eq_ν)` gives
+the instances, joined with `P`, are consistent with the clauses of the destructors, so that `(eq_ν)`
+relates the pairs, or their observations make the instance true, for propositions. -/
 theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
@@ -1032,10 +1030,6 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (ts us : Args 0 [] ps'),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
             (hpos.obsSubst (v.observation T.name qs ls ps a₁) a₁.toSubst))) ts.toSubst us.toSubst →
-          (∀ D', B.blockName decl.names = some D' →
-            Term.LevelEquiv ((B.substLevels (ls.getFin hl)).subst (Subst.append
-              (hpos.obsSubst (v.observation T.name qs ls ps a₁) a₁.toSubst) ts.toSubst))
-              (.inst D' qs ls ps a₁)) →
           ValidEqTerm₀ sig ι (.obs T.name qs ls ps a₁ v d ts.terms)
               (.obs T.name qs ls ps a₂ w d us.terms)
               ((B.substLevels (ls.getFin hl)).subst (Subst.append
@@ -1087,9 +1081,6 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           (hpos : (T'.body I).Pos d p q ς Ξ Θ B ψ) (ts us : Args 0 [] ps'),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
             (hpos.obsSubst (v.observation T'.name qs ls ps a₁) a₁.toSubst))) ts.toSubst us.toSubst →
-          (∀ D', B.blockName decl.names = some D' →
-            (B.substLevels Lρ).subst (Subst.append
-              (hpos.obsSubst (v.observation T'.name qs ls ps a₁) a₁.toSubst) ts.toSubst) = X D') →
           ValidEqTerm₀ sig ι (((v.observation T'.name qs ls ps a₁) d ps').subst ts.toSubst)
               (((w.observation T'.name qs ls ps a₂) d ps').subst us.toSubst)
               ((B.substLevels Lρ).subst (Subst.append
@@ -1101,23 +1092,12 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
                 P D' v' w' := fun T' hT' v w h => by
     obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, hv₁, hw₂, hob⟩ := hP T' hT' v w h
     refine ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, hv₁, hw₂,
-      fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hrec => ?_⟩
+      fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ => ?_⟩
     rw [Term.observation_subst_args, Term.observation_subst_args]
     have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
       (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
         (Telescope.substLevels_levelEquiv hls Θ))) hτ
-    -- The result of a recursive destructor, at the levels of the declaration, is the instance of
-    -- the block up to its levels.
-    have hrec' : ∀ D', B.blockName decl.names = some D' →
-        Term.LevelEquiv ((B.substLevels (ls.getFin hl)).subst (Subst.append
-          (hpos.obsSubst (v.observation T'.name qs ls ps a₁) a₁.toSubst) ts.toSubst))
-          (.inst D' qs ls ps a₁) := fun D' hD' => by
-      have hE := Term.LevelEquiv.subst (Subst.LevelEquiv.refl
-          (Subst.append (hpos.obsSubst (v.observation T'.name qs ls ps a₁) a₁.toSubst) ts.toSubst))
-        (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B)
-      rw [hrec D' hD'] at hE
-      exact hE.trans (hX D')
-    exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ' hrec').imp_left fun he => he.levelEquiv
+    exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst
         (Subst.LevelEquiv.refl _)
         (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
@@ -1149,16 +1129,12 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           ⟨r₂, qs, ls, ps, _, a₂, ss₂, Ss₂, gs₂, rfl, rfl⟩, ?_⟩
         refine DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT') (fun i hi => by rw [hi]; rfl)
           (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) (hlev (hS Y T' hT'))
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ
-            fun D' hD' => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD').resolve_right
+          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
             fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
           (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => ?_)
         rw [hD'] at hR
         cases hR
-        rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ (fun D'' hD'' => by
-            rw [← hpos.recursionAt_index, hD'] at hD''
-            cases hD''
-            exact e) with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
+        rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
         · exact TermRel.computed_mono (fun _ _ h => .inl h)
             ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D') (by rw [e] at he; exact he))
         · rw [← hpos.recursionAt_index, hD'] at hD''
@@ -1201,16 +1177,12 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         have hS₁ := DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT')
           (fun i hi => by rw [hi]; rfl) (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩)
           (hlev (hS Y T' hT'))
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ
-            fun D' hD' => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD').resolve_right
+          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
             fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
           (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => by
             rw [hD'] at hR
             cases hR
-            rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ (fun D'' hD'' => by
-            rw [← hpos.recursionAt_index, hD'] at hD''
-            cases hD''
-            exact e) with he | ⟨D'', hD'', v', w', -, -, hP'⟩
+            rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', -, -, hP'⟩
             · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D')
                 (by rw [e] at he; exact he))
             · rw [← hpos.recursionAt_index, hD'] at hD''
@@ -1499,7 +1471,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     rintro T' hT' v w ⟨j, T'', ps'', S', ts₁, ts₂, hj, hn', hSj, hts, rfl, rfl⟩
     cases List.eq_of_nodup_map hn (List.mem_of_getElem? hj) hT' hn'
     refine ⟨r, r, ts₁.terms, ts₂.terms, Ss₁.subst σ₁, Ss₂.subst σ₂, gs₁.subst σ₁, gs₂.subst σ₂,
-      rfl, rfl, fun d p q ς ps₁ Ξ Θ B ψ hpos bs₁ bs₂ hbs _ => ?_⟩
+      rfl, rfl, fun d p q ς ps₁ Ξ Θ B ψ hpos bs₁ bs₂ hbs => ?_⟩
     have h₀' : sig.HasCodataType T'.name decl T' := ⟨h₀.1, List.mem_of_getElem? hj, rfl⟩
     have hmem : (j, T', d) ∈ decl.codataCases := by
       have := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj hpos.mem
