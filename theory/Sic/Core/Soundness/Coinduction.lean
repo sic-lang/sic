@@ -185,8 +185,6 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has'
     have hmean : ∀ T' ∈ decl.codataTypes, _ := fun T' hT' =>
       (hv.destructors I hadm hT' ρ).2 _ _ hθ
-    have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
-      fun m _ => levelRel_isPer hd m
     have hlev : ∀ {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {s : Quality}
         {rs : Nat → Option TermRel} {S : ObsRel},
         DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
@@ -196,10 +194,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
         (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
         (Subst.LevelEquiv.refl _)
-    have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
-        ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, S X T' o₁ o₂ → S Y T' o₁ o₂ :=
-      fun X Y hXY T' hT' => DesRel.mono hd ih (hS X T' hT') _ _ _ (hS Y T' hT')
-        fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+    have hmono := DesRel.blockMono hd hS
     -- The instances of the block at the levels without variables, at the arguments.
     let Xi : Name → Term 0 [] := fun D' =>
       ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a.toSubst
@@ -209,9 +204,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hcI : ∀ D', Computesι sig ι (.inst D' qs ls ps a) (.inst D' qs ls ps a) :=
       fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
     have hnp : ∀ T' ∈ decl.codataTypes, ¬ ComputesToProp sig ι (.inst T'.name qs ls ps a) :=
-      fun T' hT' ⟨v', hv', k', b, hk⟩ => by
-        cases Computesι.det hd (hcI _) hv'
-        exact HasEq.univ_not_prop hd (levelRel_univ_iff.2 (hU T' hT').1) hk
+      fun T' hT' => Computesι.not_computesToProp hd (hcI _) (levelRel_univ_iff.2 (hU T' hT').1)
     -- A closed term of an instance computes to a corecursor, whose observations it has.
     have hcan : ∀ T' ∈ decl.codataTypes, ∀ {x v : Term 0 []},
         ValidEqTerm₀ sig ι x x (.inst T'.name qs ls ps a) → Computesι sig ι x v →

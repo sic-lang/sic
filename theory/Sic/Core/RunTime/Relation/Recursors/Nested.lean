@@ -643,18 +643,11 @@ theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
       ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue).univ
       (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes Se D) :=
     levelRel_univ_iff.2 (.codata h hq hl hp rfl hκ rfl Se hSe)
-  have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps as) := fun ⟨v, hv, k, b, hk⟩ => by
-    cases Computesι.det hd hI hv
-    exact HasEq.univ_not_prop hd hU₀ hk
+  have hnp := Computesι.not_computesToProp hd hI hU₀
   obtain ⟨v₁, w₁, w₂, R', hv₁, hw₁, hw₂, hR', hrel⟩ := ht.2.1 hnp
   cases Computesι.det hd hI hv₁
   cases Computesι.det hd hw₁ hw₂
-  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-  have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
-      ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, Se X T' o₁ o₂ → Se Y T' o₁ o₂ :=
-    fun X Y hXY T' hT' => DesRel.mono hd ih (hSe X T' hT') _ _ _ (hSe Y T' hT')
-      fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+  have hmono := DesRel.blockMono hd hSe
   have hrel' := (HasEq.unique hd hR' hR₀ w₁ w₁).1 hrel
   rw [← h.2.2] at hrel'
   obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel'

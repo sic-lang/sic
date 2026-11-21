@@ -369,10 +369,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       have hb' := hb.conv ((hCv j T' C' hj ((hidx j T' hj) ▸ hC')).motive hσ₁ hca)
       exact (ValidEqTerm₀.red_iff hd hr₁).2 ((ValidEqTerm₀.red_iff hd hr₂).2 hb'.symm).symm
     have hU' := levelRel_univ_iff.2 (hU T hT).1
-    have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
-      fun ⟨v, hv, k, b, hk⟩ => by
-        cases Computesι.det hd (hI _) hv
-        exact HasEq.univ_not_prop hd hU' hk
+    have hnp := Computesι.not_computesToProp hd (hI _) hU'
     obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht'.2.1 hnp
     cases Computesι.det hd (hI _) hv'
     have hrel' := (HasEq.unique hd hR' (.univ _ hU') w₁ w₂).1 hrel
@@ -639,10 +636,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
   · -- An instance in a universe: the term computes to the constructor, at both substitutions.
     obtain ⟨S, hU, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
     have hU' := levelRel_univ_iff.2 (hU T hT).1
-    have hnp : ¬ ComputesToProp sig ι (.inst T.name qs ls ps (as.subst σ₁)) :=
-      fun ⟨v, hv, k, b, hk⟩ => by
-        cases Computesι.det hd hI hv
-        exact HasEq.univ_not_prop hd hU' hk
+    have hnp := Computesι.not_computesToProp hd hI hU'
     obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht'.2.1 hnp
     cases Computesι.det hd hI hv'
     have hrel' := (HasEq.unique hd hR' (.univ _ hU') w₁ w₂).1 hrel

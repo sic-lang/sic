@@ -478,8 +478,6 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
   have hmean := (hv.destructors I hadm hT ρ).2 _ _ hθ
   have hn := Level.closedValue_subst_equiv hls (decl.sort I).level
-  have ih : ∀ m, m < ((decl.sort I).level.subst L).closedValue → (levelRel sig ι m).IsPer :=
-    fun m _ => levelRel_isPer hd m
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst
@@ -544,15 +542,10 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
       (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes Se D) :=
     levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl Se hSe)
-  have hnp : ¬ ComputesToProp sig ι (.inst D qs ls ps as) := fun ⟨v, hv, k, b, hk⟩ => by
-    cases Computesι.det hd hI hv
-    exact HasEq.univ_not_prop hd hU₀ hk
+  have hnp := Computesι.not_computesToProp hd hI hU₀
   obtain ⟨v₀, w₁, w₂, R', hv₀, hw₁, hw₂, hR', hrel⟩ := htv.2.1 hnp
   cases Computesι.det hd hI hv₀
-  have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
-      ∀ T' ∈ decl.codataTypes, ∀ o₁ o₂, Se X T' o₁ o₂ → Se Y T' o₁ o₂ :=
-    fun X Y hXY T' hT' => DesRel.mono hd ih (hSe X T' hT') _ _ _ (hSe Y T' hT')
-      fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+  have hmono := DesRel.blockMono hd hSe
   have hrel' := (HasEq.unique hd hR' hReq w₁ w₂).1 hrel
   rw [← hD] at hrel'
   obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono hT hrel'

@@ -203,6 +203,50 @@ theorem HasRun.prop_iff {sig : Signature} {ι : Interpretation} {P : Program} {v
   ⟨fun h => (h.eq hd (.prop k b hp fun _ _ _ => trivial)) ▸ fun _ _ _ => trivial,
     fun hR => .prop k b hp hR⟩
 
+/-! ## Consequences for the Proofs
+
+The partial equivalences of the levels make the relations of the destructors of a block of codata
+types grow with the relations of its instances, and the uniqueness of the computations keeps a type
+of a universe apart from the propositions. -/
+
+/-- The relations of the destructors of a block of codata types, given for every relation of its
+instances, grow with them, in a signature whose names are distinct. -/
+theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades} {n : Nat}
+    {L : Fin decl.levels → Level 0} {θ : Subst 0 [] decl.scope}
+    {S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel}
+    (hS : ∀ X, ∀ T ∈ decl.codataTypes,
+      DesRel sig ι n (fun m _ => levelRel sig ι m) .type
+        (fun i => ((T.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
+        ((T.body I).substLevels L) θ (S X T)) :
+    ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
+      ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S X T o₁ o₂ → S Y T o₁ o₂ :=
+  fun X Y hXY T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS X T hT) _ _ _ (hS Y T hT)
+    fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
+
+/-- The relations of the destructors of a block of codata types that are propositions, given for
+every truth of its instances, grow with them, in a signature whose names are distinct. -/
+theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades} {n : Nat}
+    {L : Fin decl.levels → Level 0} {θ : Subst 0 [] decl.scope}
+    {S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel}
+    (hS : ∀ B, ∀ T ∈ decl.codataTypes,
+      DesRel sig ι n (fun m _ => levelRel sig ι m) .prop
+        (fun i => ((T.body I).recursionAt decl.names i).map fun D' => fun _ _ => B D')
+        ((T.body I).substLevels L) θ (S B T)) :
+    ∀ B B' : Name → Prop, (∀ D, B D → B' D) →
+      ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S B T o₁ o₂ → S B' T o₁ o₂ :=
+  fun B B' hB T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS B T hT) _ _ _ (hS B' T hT)
+    fun _ => Option.rel_map (fun D _ _ => hB D) _
+
+/-- A closed type that computes to a type of a universe does not compute to a proposition, in a
+signature whose names are distinct. -/
+theorem Computesι.not_computesToProp {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+    {A v : Term 0 []} {n : Nat} {R : TermRel} (hA : Computesι sig ι A v)
+    (hR : (levelRel sig ι n).univ v R) : ¬ ComputesToProp sig ι A := fun ⟨_, hA', _, _, hk⟩ => by
+  cases Computesι.det hd hA hA'
+  exact HasEq.univ_not_prop hd hR hk
+
 /-! ## Truth of the Equality
 
 The truth that `ty(Ω_n)` gives an equality is the clause of the equality of its terms in the meaning
@@ -219,8 +263,7 @@ theorem levelRel_prop_equality {sig : Signature} {ι : Interpretation} {n : Nat}
   have htype : ∀ {w : Term 0 []} {R : TermRel}, Computesι sig ι A w →
       (levelRel sig ι n).univ w R → (R.computed sig ι t u ↔ EqTermClause sig ι t u A) :=
     fun {w R} hA hR =>
-      have hnp : ¬ ComputesToProp sig ι A := fun ⟨_, hA', _, _, hp⟩ =>
-        HasEq.univ_not_prop hd hR (Computesι.det hd hA hA' ▸ hp)
+      have hnp := Computesι.not_computesToProp hd hA hR
       ⟨fun ⟨w₁, w₂, ht, hu, htu⟩ => ⟨fun _ => ⟨w, w₁, w₂, R, hA, ht, hu, .univ n hR, htu⟩,
           fun hp => (hnp hp).elim⟩,
         fun ⟨hc, _⟩ =>

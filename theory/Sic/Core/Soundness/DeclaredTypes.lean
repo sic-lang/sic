@@ -450,9 +450,7 @@ theorem FieldRel.of_validEqTerm {n : Nat} {s : Quality} {A v t u : Term 0 []} {F
     (h : ValidEqTerm₀ sig ι t u A) : F t u := by
   have hd := h.1.1
   have huniv : ∀ m R, (levelRel sig ι m).univ v R → R.computed sig ι t u := fun m R hR => by
-    have hnp : ¬ ComputesToProp sig ι A := fun ⟨v', hv', _, _, hP⟩ => by
-      cases Computesι.det hd hA hv'
-      exact HasEq.univ_not_prop hd hR hP
+    have hnp := Computesι.not_computesToProp hd hA hR
     obtain ⟨v', w₁, w₂, R', hv', ht, hu, hR', hw⟩ := h.2.1 hnp
     cases Computesι.det hd hA hv'
     exact ⟨w₁, w₂, ht, hu, (HasEq.unique hd hR' (.univ m hR) w₁ w₂).1 hw⟩
