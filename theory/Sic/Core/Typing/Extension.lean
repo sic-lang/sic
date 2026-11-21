@@ -3,6 +3,7 @@ module
 public import Sic.Core.Typing
 import Sic.Core.Results.Extension
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Induction
 
 /-!
 # Typing Along the Signatures
@@ -118,194 +119,258 @@ RFC: `\mathsf{ext}_\vdash.\Theta`
 RFC: `\mathsf{ext}_\vdash.\Theta_{\bar\kappa}`
 RFC: `\mathsf{ext}_\vdash.\Theta_\equiv`
 RFC: `\mathsf{ext}_\vdash.\bar d` -/
-theorem stableUnderExtension : StableUnderExtension :=
-  ⟨wfCtx, wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs, eqInstanceArgs,
-    wfTelescope, wfTelescopeSorts, eqTelescope, wfDestructors⟩
-where
-  wfCtx {sig sig' : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} (hs : sig ⊆ sig')
-      (hw : WfSig sig') : WfCtx sig ctx → WfCtx sig' ctx
-    | .empty _ => .empty hw
-    | .var h => .var (wfType hs hw h)
-    | .secondOrder h => .secondOrder (wfType hs hw h)
-  wfType {sig sig' : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
-      (hs : sig ⊆ sig') (hw : WfSig sig') : WfType sig ctx A → WfType sig' ctx A
-    | .univType h => .univType (hasType hs hw h)
-    | .propType h => .propType (hasType hs hw h)
-  eqType {sig sig' : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ}
-      (hs : sig ⊆ sig') (hw : WfSig sig') : EqType sig ctx A B → EqType sig' ctx A B
-    | .refl h => .refl (wfType hs hw h)
-    | .symm h => .symm (eqType hs hw h)
-    | .trans h₁ h₂ => .trans (eqType hs hw h₁) (eqType hs hw h₂)
-    | .univType h => .univType (eqTerm hs hw h)
-    | .propType h => .propType (eqTerm hs hw h)
-  hasType {sig sig' : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
-      (hs : sig ⊆ sig') (hw : WfSig sig') : HasType sig ctx t A → HasType sig' ctx t A
-    | .var hctx hx => .var (wfCtx hs hw hctx) hx
-    | .secondOrder hX hts => .secondOrder hX (hasArgs hs hw hts)
-    | .const hctx h hq hl hp => .const (wfCtx hs hw hctx) (h.mono hs) hq hl hp
-    | .univ hctx => .univ (wfCtx hs hw hctx)
-    | .prop hctx => .prop (wfCtx hs hw hctx)
-    | .inst h hq hl hp hadm has =>
-      .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has)
-    | .equality hA ht hu => .equality (hasType hs hw hA) (hasType hs hw ht) (hasType hs hw hu)
-    | .reflProof hA ht => .reflProof (hasType hs hw hA) (hasType hs hw ht)
-    | .transp hA ht₁ ht₂ hC ht hu =>
-      .transp (hasType hs hw hA) (hasType hs hw ht₁) (hasType hs hw ht₂) (hasType hs hw hC)
-        (hasType hs hw ht) (hasType hs hw hu)
-    | .propExt hA hB ht hu =>
-      .propExt (hasType hs hw hA) (hasType hs hw hB) (hasType hs hw ht) (hasType hs hw hu)
-    | .coind h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr =>
-      .coind ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) hh hA hAl
-        (fun j T' A' hj hA' => hasType hs hw (hAt j T' A' hj hA')) (hasType hs hw ht₁)
-        (hasType hs hw ht₂) (hasType hs hw ht) hgl hgs hΘ hB
+theorem stableUnderExtension : StableUnderExtension := by
+  suffices H : Derivations.Conclusion
+      (wfSig := fun _ _ => True)
+      (wfConstantDefinition := fun _ _ _ => True)
+      (wfConstantDeclaration := fun _ _ _ => True)
+      (wfCtx := fun sig {k Γ} ctx _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → WfCtx sig' ctx)
+      (wfType := fun sig {k Γ} ctx A _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → WfType sig' ctx A)
+      (eqType := fun sig {k Γ} ctx A B _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' → EqType sig' ctx A B)
+      (hasType := fun sig {k Γ} ctx t A _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        HasType sig' ctx t A)
+      (eqTerm := fun sig {k Γ} ctx t u A _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        EqTerm sig' ctx t u A)
+      (hasArgs := fun sig {k Γ ps} ctx ts Θ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        HasArgs sig' ctx ts Θ)
+      (eqArgs := fun sig {k Γ ps} ctx ts us Θ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        EqArgs sig' ctx ts us Θ)
+      (hasInstanceArgs := fun sig {k Γ Δ} ctx as params _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        HasInstanceArgs sig' ctx as params)
+      (eqInstanceArgs := fun sig {k Γ Δ} ctx as₁ as₂ params _ => ∀ {sig'}, sig ⊆ sig' →
+        WfSig sig' → EqInstanceArgs sig' ctx as₁ as₂ params)
+      (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        WfTelescope sig' ctx Θ κ)
+      (wfTelescopeSorts := fun sig {k Γ ps} ctx Θ κs l _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        WfTelescopeSorts sig' ctx Θ κs l)
+      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        EqTelescope sig' ctx Θ₁ Θ₂ κ)
+      (wfFields := fun _ _ _ _ _ _ _ _ _ _ => True)
+      (wfDestructors := fun sig decl ι {Γ ns} ν as ctx ds κ _ => ∀ {sig'}, sig ⊆ sig' → WfSig sig' →
+        WfDestructors sig' decl ι @ν as ctx ds κ)
+      (wfTypeDeclaration := fun _ _ _ => True) from
+    ⟨fun hs hw h => H.wfCtx h hs hw, fun hs hw h => H.wfType h hs hw,
+      fun hs hw h => H.eqType h hs hw, fun hs hw h => H.hasType h hs hw,
+      fun hs hw h => H.eqTerm h hs hw, fun hs hw h => H.hasArgs h hs hw,
+      fun hs hw h => H.eqArgs h hs hw, fun hs hw h => H.hasInstanceArgs h hs hw,
+      fun hs hw h => H.eqInstanceArgs h hs hw, fun hs hw h => H.wfTelescope h hs hw,
+      fun hs hw h => H.wfTelescopeSorts h hs hw, fun hs hw h => H.eqTelescope h hs hw,
+      fun hs hw h => H.wfDestructors h hs hw⟩
+  apply Derivations.induction
+  case wfCtx_empty => exact fun h h_ih => fun hs hw => .empty hw
+  case wfCtx_var => exact fun h h_ih => fun hs hw => .var (h_ih hs hw)
+  case wfCtx_secondOrder => exact fun h h_ih => fun hs hw => .secondOrder (h_ih hs hw)
+  case wfType_univType => exact fun h h_ih => fun hs hw => .univType (h_ih hs hw)
+  case wfType_propType => exact fun h h_ih => fun hs hw => .propType (h_ih hs hw)
+  case eqType_refl => exact fun h h_ih => fun hs hw => .refl (h_ih hs hw)
+  case eqType_symm => exact fun h h_ih => fun hs hw => .symm (h_ih hs hw)
+  case eqType_trans =>
+    exact fun h₁ h₂ h₁_ih h₂_ih => fun hs hw =>
+      .trans (h₁_ih hs hw) (h₂_ih hs hw)
+  case eqType_univType => exact fun h h_ih => fun hs hw => .univType (h_ih hs hw)
+  case eqType_propType => exact fun h h_ih => fun hs hw => .propType (h_ih hs hw)
+  case hasType_var => exact fun hctx hx hctx_ih => fun hs hw => .var (hctx_ih hs hw) hx
+  case hasType_secondOrder => exact fun hX hts hts_ih => fun hs hw => .secondOrder hX (hts_ih hs hw)
+  case hasType_const =>
+    exact fun hctx h hq hl hp hctx_ih => fun hs hw =>
+      .const (hctx_ih hs hw) (h.mono hs) hq hl hp
+  case hasType_univ => exact fun hctx hctx_ih => fun hs hw => .univ (hctx_ih hs hw)
+  case hasType_prop => exact fun hctx hctx_ih => fun hs hw => .prop (hctx_ih hs hw)
+  case hasType_inst =>
+    exact fun h hq hl hp hadm has has_ih => fun hs hw =>
+      .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw)
+  case hasType_equality =>
+    exact fun hA ht hu hA_ih ht_ih hu_ih => fun hs hw =>
+      .equality (hA_ih hs hw) (ht_ih hs hw) (hu_ih hs hw)
+  case hasType_reflProof =>
+    exact fun hA ht hA_ih ht_ih => fun hs hw =>
+      .reflProof (hA_ih hs hw) (ht_ih hs hw)
+  case hasType_transp =>
+    refine fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih => fun hs hw => ?_
+    exact .transp (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
+        (ht_ih hs hw) (hu_ih hs hw)
+  case hasType_propExt =>
+    exact fun hA hB ht hu hA_ih hB_ih ht_ih hu_ih => fun hs hw =>
+      .propExt (hA_ih hs hw) (hB_ih hs hw) (ht_ih hs hw) (hu_ih hs hw)
+  case hasType_coind =>
+    refine fun h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
+        ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih => fun hs hw => ?_
+    exact .coind ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw) hh hA hAl
+        (fun j T' A' hj hA' => hAt_ih j T' A' hj hA' hs hw) (ht₁_ih hs hw)
+        (ht₂_ih hs hw) (ht_ih hs hw) hgl hgs hΘ hB
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn =>
-          hasType hs hw (hBt i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn))
+          hBt_ih i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn hs hw)
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' g hi hA' hd hn hg =>
-          hasType hs hw (hgt i j T' d p q ς ps₁ Ξ Θ B ψ A' g hi hA' hd hn hg))
+          hgt_ih i j T' d p q ς ps₁ Ξ Θ B ψ A' g hi hA' hd hn hg hs hw)
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg =>
-          hasType hs hw (hgr i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg))
-    | .ctor h hc hq hl hp hadm has hts =>
-      .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts)
-    | .recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ =>
-      .recursor ⟨hs h.1, h.2⟩ hq hl hp hadm (hasInstanceArgs hs hw has) (hasType hs hw ht) hh hC
-        hCl hCs (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
+          hgr_ih i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg hs hw)
+  case hasType_ctor =>
+    exact fun h hc hq hl hp hadm has _ hts has_ih hts_ih => fun hs hw =>
+      .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (has_ih hs hw) (hts_ih hs hw)
+  case hasType_recursor =>
+    refine fun h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
+        hut_ih => fun hs hw => ?_
+    exact .recursor ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw) (ht_ih hs hw) hh hC
+        hCl hCs (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
-        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
-    | .obs h hq hl hp hadm hd has ht hbs =>
-      .obs ⟨hs h.1, h.2⟩ hq hl hp hadm hd (hasInstanceArgs hs hw has) (hasType hs hw ht)
-        (hasArgs hs hw hbs)
-    | .corec h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt =>
-      .corec ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
-        (hasInstanceArgs hs hw has) hh hS (hasArgs hs hw hss) hSl hSs
-        (fun j T' ps'' S' hj hS' => wfTelescopeSorts hs hw (hSt j T' ps'' S' hj hS')) hgl hgs
+        (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
+  case hasType_obs =>
+    refine fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
+    exact .obs ⟨hs h.1, h.2⟩ hq hl hp hadm hd (has_ih hs hw) (ht_ih hs hw)
+        (hbs_ih hs hw)
+  case hasType_corec =>
+    refine fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
+        hgt_ih => fun hs hw => ?_
+    exact .corec ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
+        (has_ih hs hw) hh hS (hss_ih hs hw) hSl hSs
+        (fun j T' ps'' S' hj hS' => hSt_ih j T' ps'' S' hj hS' hs hw) hgl hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg =>
-          hasType hs hw (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg))
-    | .conv ht h => .conv (hasType hs hw ht) (eqType hs hw h)
-  eqTerm {sig sig' : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ}
-      (hs : sig ⊆ sig') (hw : WfSig sig') : EqTerm sig ctx t u A → EqTerm sig' ctx t u A
-    | .refl h => .refl (hasType hs hw h)
-    | .symm h => .symm (eqTerm hs hw h)
-    | .trans h₁ h₂ => .trans (eqTerm hs hw h₁) (eqTerm hs hw h₂)
-    | .conv h hA => .conv (eqTerm hs hw h) (eqType hs hw hA)
-    | .irr ht hu hA => .irr (hasType hs hw ht) (hasType hs hw hu) (hasType hs hw hA)
-    | .secondOrder hX hts => .secondOrder hX (eqArgs hs hw hts)
-    | .delta hctx h hq hl hp => .delta (wfCtx hs hw hctx) (hs h) hq hl hp
-    | .const hctx h hq hl₁ hl₂ hp hls =>
-      .const (wfCtx hs hw hctx) (h.mono hs) hq hl₁ hl₂ hp hls
-    | .univ hctx hl => .univ (wfCtx hs hw hctx) hl
-    | .prop hctx hl => .prop (wfCtx hs hw hctx) hl
-    | .inst h hq hl₁ hl₂ hp hadm has hls =>
-      .inst ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
-    | .equality hA ht hu hl =>
-      .equality (eqTerm hs hw hA) (eqTerm hs hw ht) (eqTerm hs hw hu) hl
-    | .transp hA ht₁ ht₂ hC ht hu =>
-      .transp (eqTerm hs hw hA) (eqTerm hs hw ht₁) (eqTerm hs hw ht₂) (eqTerm hs hw hC)
-        (eqTerm hs hw ht) (eqTerm hs hw hu)
-    | .transpSame hA ht₁ ht₂ hC ht hu hCC =>
-      .transpSame (hasType hs hw hA) (hasType hs hw ht₁) (hasType hs hw ht₂) (hasType hs hw hC)
-        (hasType hs hw ht) (hasType hs hw hu) (eqTerm hs hw hCC)
-    | .ctor h hc hq hl₁ hl₂ hp hadm has hls hts =>
-      .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
-        (eqArgs hs hw hts)
-    | .recursor h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂
-        hes hRs₁ hRs₂ hut hκ =>
-      .recursor ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (eqInstanceArgs hs hw has) hls
-        (eqTerm hs hw ht) hh hC hCl₁ hCl₂ hCs₁ hCs₂
-        (fun j T' C₁' C₂' hj hC₁ hC₂ => eqTerm hs hw (hCt j T' C₁' C₂' hj hC₁ hC₂)) hul₁ hul₂
+          hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hs hw)
+  case hasType_conv => exact fun ht h ht_ih h_ih => fun hs hw => .conv (ht_ih hs hw) (h_ih hs hw)
+  case eqTerm_refl => exact fun h h_ih => fun hs hw => .refl (h_ih hs hw)
+  case eqTerm_symm => exact fun h h_ih => fun hs hw => .symm (h_ih hs hw)
+  case eqTerm_trans =>
+    exact fun h₁ h₂ h₁_ih h₂_ih => fun hs hw =>
+      .trans (h₁_ih hs hw) (h₂_ih hs hw)
+  case eqTerm_conv => exact fun h hA h_ih hA_ih => fun hs hw => .conv (h_ih hs hw) (hA_ih hs hw)
+  case eqTerm_irr =>
+    exact fun ht hu hA ht_ih hu_ih hA_ih => fun hs hw =>
+      .irr (ht_ih hs hw) (hu_ih hs hw) (hA_ih hs hw)
+  case eqTerm_secondOrder => exact fun hX hts hts_ih => fun hs hw => .secondOrder hX (hts_ih hs hw)
+  case eqTerm_delta =>
+    exact fun hctx h hq hl hp hctx_ih => fun hs hw =>
+      .delta (hctx_ih hs hw) (hs h) hq hl hp
+  case eqTerm_const =>
+    exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => fun hs hw =>
+      .const (hctx_ih hs hw) (h.mono hs) hq hl₁ hl₂ hp hls
+  case eqTerm_univ => exact fun hctx hl hctx_ih => fun hs hw => .univ (hctx_ih hs hw) hl
+  case eqTerm_prop => exact fun hctx hl hctx_ih => fun hs hw => .prop (hctx_ih hs hw) hl
+  case eqTerm_inst =>
+    exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => fun hs hw =>
+      .inst ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+  case eqTerm_equality =>
+    exact fun hA ht hu hl hA_ih ht_ih hu_ih => fun hs hw =>
+      .equality (hA_ih hs hw) (ht_ih hs hw) (hu_ih hs hw) hl
+  case eqTerm_transp =>
+    refine fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih => fun hs hw => ?_
+    exact .transp (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
+        (ht_ih hs hw) (hu_ih hs hw)
+  case eqTerm_transpSame =>
+    refine fun hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih => fun hs
+        hw => ?_
+    exact .transpSame (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
+        (ht_ih hs hw) (hu_ih hs hw) (hCC_ih hs hw)
+  case eqTerm_ctor =>
+    refine fun h hc hq hl₁ hl₂ hp hadm has hls _ _ hts has_ih hts_ih => fun hs hw => ?_
+    exact .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+        (hts_ih hs hw)
+  case eqTerm_recursor =>
+    refine fun h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
+        _ _ hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih => fun hs hw => ?_
+    exact .recursor ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+        (ht_ih hs hw) hh hC hCl₁ hCl₂ hCs₁ hCs₂
+        (fun j T' C₁' C₂' hj hC₁ hC₂ => hCt_ih j T' C₁' C₂' hj hC₁ hC₂ hs hw) hul₁ hul₂
         hus₁ hus₂ hes
         (fun i j T' con hi =>
           (hRs₁ i j T' con hi).imp fun _ => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con hi =>
           (hRs₂ i j T' con hi).imp fun _ => Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ =>
-          eqTerm hs hw (hut i j T' con C' u₁ u₂ hi hC' hu₁ hu₂)) hκ
-    | .obs h hq hl₁ hl₂ hp hadm hd has hls ht hbs =>
-      .obs ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm hd (eqInstanceArgs hs hw has) hls (eqTerm hs hw ht)
-        (eqArgs hs hw hbs)
-    | .corec h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
-        hgs hgt =>
-      .corec ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (fun hr e he => hs (hpre hr e he))
-        (eqInstanceArgs hs hw has) hls hh hS₁ hS₂ (eqArgs hs hw hss) hSl₁ hSl₂ hSs hSk
-        (fun j T' ps'' S₁' hj hS' => wfTelescopeSorts hs hw (hSt j T' ps'' S₁' hj hS'))
+          hut_ih i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ hs hw) hκ
+  case eqTerm_obs =>
+    refine fun h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
+    exact .obs ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm hd (has_ih hs hw) hls (ht_ih hs hw)
+        (hbs_ih hs hw)
+  case eqTerm_corec =>
+    refine fun h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
+        hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih => fun hs hw => ?_
+    exact .corec ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (fun hr e he => hs (hpre hr e he))
+        (has_ih hs hw) hls hh hS₁ hS₂ (hss_ih hs hw) hSl₁ hSl₂ hSs hSk
+        (fun j T' ps'' S₁' hj hS' => hSt_ih j T' ps'' S₁' hj hS' hs hw)
         (fun j T' ps'' S₁' S₂' hj hS₁' hS₂' =>
-          eqTelescope hs hw (hSe j T' ps'' S₁' S₂' hj hS₁' hS₂')) hgl₁ hgl₂ hgs
+          hSe_ih j T' ps'' S₁' S₂' hj hS₁' hS₂' hs hw) hgl₁ hgl₂ hgs
         (fun i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂ =>
-          eqTerm hs hw (hgt i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂))
-    | .iota h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus hRs hut hκ =>
-      .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (hasInstanceArgs hs hw has) (hasArgs hs hw hts) hi hC
+          hgt_ih i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂ hs hw)
+  case eqTerm_iota =>
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hq hl hp hadm u has ts hts
+      hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih sig' hs hw
+    exact .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (has_ih hs hw) (hts_ih hs hw) hi hC
         hu (Terms.ResultTerms.ofTypeDeclarations (fun _ h => hs h) hrs) hCl hCs
-        (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
+        (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
-        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
-    | .etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ =>
-      .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (hasInstanceArgs hs hw has) (hasType hs hw ht)
-        (hasType hs hw he) hi hC hu hCl hCs
-        (fun j T' C' hj hC' => hasType hs hw (hCt j T' C' hj hC')) hul hus
+        (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
+  case eqTerm_etaCtor =>
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hq hl hp hadm hr has ht
+      he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih sig' hs hw
+    exact .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (has_ih hs hw) (ht_ih hs hw)
+        (he_ih hs hw) hi hC hu hCl hCs
+        (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
-        (fun i j T' con C' u hi hC' hu => hasType hs hw (hut i j T' con C' u hi hC' hu)) hκ
-    | .beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt =>
-      .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
-        (hasInstanceArgs hs hw has) hh hS (hasArgs hs hw hss) hi hd hg (hasArgs hs hw hbs) hSl hSs
-        (fun j T' ps'' S' hj hS' => wfTelescopeSorts hs hw (hSt j T' ps'' S' hj hS')) hgl hgs
+        (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
+  case eqTerm_beta =>
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hq
+      hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
+      hgt_ih sig' hs hw
+    exact .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
+        (has_ih hs hw) hh hS (hss_ih hs hw) hi hd hg (hbs_ih hs hw) hSl hSs
+        (fun j T' ps'' S' hj hS' => hSt_ih j T' ps'' S' hj hS' hs hw) hgl hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg =>
-          hasType hs hw (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg))
-    | .etaObs h hq hl hp hadm hr has ht hu hobs =>
-      .etaObs ⟨hs h.1, h.2⟩ hq hl hp hadm hr (hasInstanceArgs hs hw has) (hasType hs hw ht)
-        (hasType hs hw hu)
-        (fun d p q ς ps' Ξ Θ B ψ hd => eqTerm hs hw (hobs d p q ς ps' Ξ Θ B ψ hd))
-  hasArgs {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts : Args k Γ ps} {Θ : Telescope k Γ ps} (hs : sig ⊆ sig') (hw : WfSig sig') :
-      HasArgs sig ctx ts Θ → HasArgs sig' ctx ts Θ
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons ht hts => .cons (hasType hs hw ht) (hasArgs hs hw hts)
-  eqArgs {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts us : Args k Γ ps} {Θ : Telescope k Γ ps} (hs : sig ⊆ sig') (hw : WfSig sig') :
-      EqArgs sig ctx ts us Θ → EqArgs sig' ctx ts us Θ
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons ht hts => .cons (eqTerm hs hw ht) (eqArgs hs hw hts)
-  hasInstanceArgs {sig sig' : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as : InstanceArgs k Γ Δ} {params : Context k Δ} (hs : sig ⊆ sig') (hw : WfSig sig') :
-      HasInstanceArgs sig ctx as params → HasInstanceArgs sig' ctx as params
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .var has ha => .var (hasInstanceArgs hs hw has) (hasType hs hw ha)
-    | .secondOrder has hB => .secondOrder (hasInstanceArgs hs hw has) (hasType hs hw hB)
-  eqInstanceArgs {sig sig' : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} (hs : sig ⊆ sig') (hw : WfSig sig') :
-      EqInstanceArgs sig ctx as₁ as₂ params → EqInstanceArgs sig' ctx as₁ as₂ params
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .var has ha => .var (eqInstanceArgs hs hw has) (eqTerm hs hw ha)
-    | .secondOrder has hB => .secondOrder (eqInstanceArgs hs hw has) (eqTerm hs hw hB)
-  wfTelescope {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
-      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k} (hs : sig ⊆ sig')
-      (hw : WfSig sig') : WfTelescope sig ctx Θ κ → WfTelescope sig' ctx Θ κ
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons hA hκ hΘ hp => .cons (hasType hs hw hA) hκ (wfTelescope hs hw hΘ) hp
-  wfTelescopeSorts {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
-      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k}
-      (hs : sig ⊆ sig') (hw : WfSig sig') :
-      WfTelescopeSorts sig ctx Θ κs l → WfTelescopeSorts sig' ctx Θ κs l
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons hA hl hΘ hp => .cons (hasType hs hw hA) hl (wfTelescopeSorts hs hw hΘ) hp
-  eqTelescope {sig sig' : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
-      {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} (hs : sig ⊆ sig')
-      (hw : WfSig sig') : EqTelescope sig ctx Θ₁ Θ₂ κ → EqTelescope sig' ctx Θ₁ Θ₂ κ
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons hA hκ hΘ hp => .cons (eqTerm hs hw hA) hκ (eqTelescope hs hw hΘ) hp
-  wfDestructors {sig sig' : Signature} {decl : TypeDeclaration}
-      {ι : Instance decl.sorts decl.grades} {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ}
-      {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
-      {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} (hs : sig ⊆ sig')
-      (hw : WfSig sig') :
-      WfDestructors sig decl ι @ν as ctx ds κ → WfDestructors sig' decl ι @ν as ctx ds κ
-    | .nil hctx => .nil (wfCtx hs hw hctx)
-    | .cons hn hν hΘ hB hκ hp hds =>
-      .cons hn hν (wfTelescope hs hw hΘ) (hasType hs hw hB) hκ hp (wfDestructors hs hw hds)
-    | .nested hn hν hΘ hB hκ hp hds =>
-      .nested hn hν (wfTelescope hs hw hΘ) (hasType hs hw hB) hκ hp (wfDestructors hs hw hds)
-    | .recursive hD hΘ hp hds =>
-      .recursive hD (wfTelescope hs hw hΘ) hp (wfDestructors hs hw hds)
+          hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hs hw)
+  case eqTerm_etaObs =>
+    refine fun h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih => fun hs hw => ?_
+    exact .etaObs ⟨hs h.1, h.2⟩ hq hl hp hadm hr (has_ih hs hw) (ht_ih hs hw)
+        (hu_ih hs hw)
+        (fun d p q ς ps' Ξ Θ B ψ hd => hobs_ih d p q ς ps' Ξ Θ B ψ hd hs hw)
+  case hasArgs_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case hasArgs_cons =>
+    exact fun ht hts ht_ih hts_ih => fun hs hw =>
+      .cons (ht_ih hs hw) (hts_ih hs hw)
+  case eqArgs_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case eqArgs_cons =>
+    exact fun ht hts ht_ih hts_ih => fun hs hw =>
+      .cons (ht_ih hs hw) (hts_ih hs hw)
+  case hasInstanceArgs_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case hasInstanceArgs_var =>
+    exact fun has ha has_ih ha_ih => fun hs hw =>
+      .var (has_ih hs hw) (ha_ih hs hw)
+  case hasInstanceArgs_secondOrder =>
+    exact fun has hB has_ih hB_ih => fun hs hw =>
+      .secondOrder (has_ih hs hw) (hB_ih hs hw)
+  case eqInstanceArgs_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case eqInstanceArgs_var =>
+    exact fun has ha has_ih ha_ih => fun hs hw =>
+      .var (has_ih hs hw) (ha_ih hs hw)
+  case eqInstanceArgs_secondOrder =>
+    exact fun has hB has_ih hB_ih => fun hs hw =>
+      .secondOrder (has_ih hs hw) (hB_ih hs hw)
+  case wfTelescope_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case wfTelescope_cons =>
+    exact fun hA hκ hΘ hp hA_ih hΘ_ih => fun hs hw =>
+      .cons (hA_ih hs hw) hκ (hΘ_ih hs hw) hp
+  case wfTelescopeSorts_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case wfTelescopeSorts_cons =>
+    exact fun hA hl hΘ hp hA_ih hΘ_ih => fun hs hw =>
+      .cons (hA_ih hs hw) hl (hΘ_ih hs hw) hp
+  case eqTelescope_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case eqTelescope_cons =>
+    exact fun hA hκ hΘ hp hA_ih hΘ_ih => fun hs hw =>
+      .cons (hA_ih hs hw) hκ (hΘ_ih hs hw) hp
+  case wfDestructors_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)
+  case wfDestructors_cons =>
+    exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => fun hs hw =>
+      .cons hn hν (hΘ_ih hs hw) (hB_ih hs hw) hκ hp (hds_ih hs hw)
+  case wfDestructors_nested =>
+    exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => fun hs hw =>
+      .nested hn hν (hΘ_ih hs hw) (hB_ih hs hw) hκ hp (hds_ih hs hw)
+  case wfDestructors_recursive =>
+    exact fun hD hΘ hp hds hΘ_ih hds_ih => fun hs hw =>
+      .recursive hD (hΘ_ih hs hw) hp (hds_ih hs hw)
+  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
+      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfFields_nil |
+      wfFields_cons | wfFields_recursive | wfFields_nested | wfTypeDeclaration_data |
+      wfTypeDeclaration_codata => intros; trivial
 
 end Sic.Core
