@@ -67,7 +67,7 @@ time with the grades `δs i` of the variables of the context, those of the entri
 `r` times their grades and those of the arguments their grades, at the results of their
 destructors, as the usage of `(corec)` premises them in the mode `11ᵐ`, in every environment that
 binds their scope through a renaming: the premise that the Lean of `(corec)` at run time reads. -/
-def RunValidDestructorBranches (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
+def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality)
     (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -121,8 +121,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {δs : Nat → GradeVector Γ.length}
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hgv : DestructorBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
-    (hgr : RunValidDestructorBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
     (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
@@ -252,7 +252,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
             (Telescope.substLevels_levelEquiv hls Θ))) hτ
-        have hb := ValidEqTerm₀.destructorBranch hpos
+        have hb := ValidEqTerm₀.corecBranch hpos
           (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
         have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
@@ -423,7 +423,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           simp only [Term.branchResult, hbn] at hrun
           simp only [Term.observed, hbn] at hred
           refine ⟨w₀, H₃, tr, .beta hclo
-            (by rw [TargetDestructorBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂ hϱ₁ hϱ₂ rfl
+            (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂ hϱ₁ hϱ₂ rfl
             (Multiplicity.le_refl' _) hev .none,
             fun _ => ?_,
             fun D' R hD' => ?_⟩
@@ -453,7 +453,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               hS₃]
             rfl
           rw [hk] at hget
-          have hb := ValidEqTerm₀.destructorBranch hpos
+          have hb := ValidEqTerm₀.corecBranch hpos
             (hgv.2 i' j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
           simp only [Term.branchResult, hbn, hst] at hb hrun
           simp only [Term.observed, hbn, hst] at hred
@@ -462,7 +462,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           · -- A new state: a new closure of the branches.
             obtain ⟨ts₃, bs₃, ϱs₃, hred', hτ₃, hbs₃, rfl, hϱs₃, rfl⟩ := hnext
             refine ⟨_, _, tr, .beta hclo
-              (by rw [TargetDestructorBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
+              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
               hϱ₁ hϱ₂ rfl
               (Multiplicity.le_refl' _) hev hres,
               fun hr0 => ?_,
@@ -477,7 +477,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
                 hbs₃.mono hd (List.prefix_append _ _), hg₁, by simp, hϱs₃.1, hϱs₃.2, rfl⟩⟩
           · -- A term already built, related at the instance of the type of the result.
             refine ⟨_, _, tr, .beta hclo
-              (by rw [TargetDestructorBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
+              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
               hϱ₁ hϱ₂ rfl
               (Multiplicity.le_refl' _) hev hres,
               fun hr0 => ?_, fun D' R hD' hR he => ?_⟩
@@ -524,8 +524,8 @@ theorem RunValidRen.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name
     (hssr : r ∉ Mode.oneOne.erased → RunValidArgsRen sig ι P hΓ ctx γ ss S)
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hgv : DestructorBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
-    (hgr : RunValidDestructorBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
     (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →

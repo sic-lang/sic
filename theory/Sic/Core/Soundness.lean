@@ -135,7 +135,7 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
 
 /-- The premises of `(corec_≡)` on its branches, each pair of branches meaningful for every value of
 the level variables, are meaningful at the levels without variables `ρ`. -/
-theorem DestructorBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
@@ -168,7 +168,7 @@ theorem DestructorBranchesEqValid.atLevels {sig : Signature} {ι : Interpretatio
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
-    DestructorBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
+    CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs₁.substLevels fun i => .ofNat (ρ i)) (gs₂.substLevels fun i => .ofNat (ρ i)) := by
@@ -197,7 +197,7 @@ theorem DestructorBranchesEqValid.atLevels {sig : Signature} {ι : Interpretatio
 /-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
 variables, are meaningful at the levels without variables `ρ`: those of `(corec_≡)` at the same
 branches. -/
-theorem DestructorBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
@@ -227,11 +227,11 @@ theorem DestructorBranchesValid.atLevels {sig : Signature} {ι : Interpretation}
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
-    DestructorBranchesValid sig ι (ctx.atLevels ρ) decl qs
+    CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) :=
-  DestructorBranchesEqValid.atLevels hq hl hp
+  CorecBranchesEqValid.atLevels hq hl hp
     (fun i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos =>
       have ⟨g, hg⟩ := hgs i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos
       ⟨g, g, hg, hg⟩)
@@ -412,7 +412,7 @@ where
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (DestructorBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
     | .conv ht h => fun ρ => (hasType hd hord hι ht ρ).conv (eqType hd hord hι h ρ)
@@ -592,7 +592,7 @@ where
         (fun j T' hj =>
           have ⟨ps'', S₁', S₂', hS₁', hS₂'⟩ := hSs j T' hj
           ⟨ps'', _, _, States.get_substLevels_of _ hS₁', States.get_substLevels_of _ hS₂'⟩)
-        (DestructorBranchesEqValid.atLevels hq hl₁ hp hgs
+        (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             eqTerm hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
     | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (ς := ς) (χ := χ) (κ := κ)
@@ -695,7 +695,7 @@ where
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (DestructorBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc

@@ -148,7 +148,7 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
     {κs : List (Universe 0)} {T g : Term 0 []}
     (hgv : ValidTerm₀ sig ι g (Term.positions κ r χ S κs T)) {H : Heap} {w : Nat}
     (hg : RunsAs sig ι P H g w (Term.positions κ r χ S κs T)) (n : Nat) (E : List Nat)
-    (Ps : TargetDestructorBranches n) (D' : Name) (qs : List Quality) (ls : List (Level 0))
+    (Ps : TargetCorecBranches n) (D' : Name) (qs : List Quality) (ls : List (Level 0))
     (ps : List Grade) {Δ : Scope} (as : InstanceArgs 0 [] Δ) (Ss : States 0 [])
     (gs : DestructorBranches 0 []) {c : Nat} (ψ : ResultOwnership Multiplicity c)
     (hψ : ψ.constant.getD .omega ≤ χ.run) :

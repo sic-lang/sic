@@ -94,7 +94,7 @@ inductive Value where
   /-- `cᵢ(ℓ̄ ▶ π̄ ◀ ϱ̄)`. -/
   | ctor (i : Nat) (πs ϱs : List Multiplicity) (as : List Nat)
   /-- `⟨E; P̄; ℓ̄ ▶ π̄ ◀ ϱ̄⟩`. -/
-  | corec (n : Nat) (E : List Nat) (Ps : TargetDestructorBranches n) (πs ϱs : List Multiplicity)
+  | corec (n : Nat) (E : List Nat) (Ps : TargetCorecBranches n) (πs ϱs : List Multiplicity)
       (as : List Nat)
   /-- `bind_π(ℓ)`: the cell of a variable bound to the address `ℓ` by a binder of multiplicity
   `π`. -/
@@ -159,7 +159,7 @@ def TargetBranches.get {n : Nat} : TargetBranches n → Nat →
   | .cons _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
 /-- The branch at a position of the branches of a corecursor of the target language. -/
-def TargetDestructorBranches.get {n : Nat} : TargetDestructorBranches n → Nat →
+def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
     Option (Resumption × Σ b c, (Fin b → Multiplicity) × (Fin b → Multiplicity) ×
       (Fin c → Multiplicity) × (Fin c → Multiplicity) × ResultOwnership Multiplicity c ×
       Multiplicity × Target (n + (b + c)))
@@ -191,15 +191,15 @@ state, a new closure of the same branches from the state of `k` entries that `ne
 the multiplicity and the requirement at which the pack stores it, times those of the field of
 `next`, or from `k` erased entries, which stand at the address of the new state without reading it,
 at the multiplicity and the requirement `0`, or the term already built that `done` holds. -/
-inductive EvalResume : Heap → (n : Nat) → List Nat → TargetDestructorBranches n → Resumption →
+inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n → Resumption →
     {c : Nat} → ResultOwnership Multiplicity c → Nat → Nat → Heap → Prop where
   /-- The branch resumes no state.
   RFC: `\mathsf{resume}_\Downarrow.\bot` -/
-  | none {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n} {c : Nat}
+  | none {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {c : Nat}
       {ψ : ResultOwnership Multiplicity c} {w : Nat} : EvalResume H n E Ps .none ψ w w H
   /-- `next(x)`: a new closure from the state that `x` packs.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{next}` -/
-  | next {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n} {c : Nat}
+  | next {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {c : Nat}
       {ψ : ResultOwnership Multiplicity c} {π ϱ : Multiplicity} {πs ϱs : List Multiplicity}
       {k w x : Nat} {ss : List Nat} (h : H[w]? = some (.ctor 0 [π] [ϱ] [x]))
       (hs : Unpack H k x πs ϱs ss) :
@@ -209,7 +209,7 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetDestructorBranc
   which is not read, at the multiplicity `0`, the multiplicity of the field of `next`, so that the
   state is never used, and at the requirement `0`; the evaluation is stuck otherwise.
   RFC: `\mathsf{resume}_\Downarrow.\text{↯}` -/
-  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n} {c : Nat}
+  | erased {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {c : Nat}
       {ψ : ResultOwnership Multiplicity c} {ϱ : Multiplicity} {k w x : Nat}
       (h : H[w]? = some (.ctor 0 [.zero] [ϱ] [x])) :
       EvalResume H n E Ps (.erased k) ψ w H.length
@@ -220,7 +220,7 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetDestructorBranc
   constant of the ownership of the result, `ω` when it has none, which the observation gives it; the
   evaluation is stuck otherwise.
   RFC: `\mathsf{resume}_\Downarrow.\mathsf{done}` -/
-  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n} {c : Nat}
+  | done {H : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {c : Nat}
       {ψ : ResultOwnership Multiplicity c} {π ϱ : Multiplicity} {o : Resumption} {w x : Nat}
       (ho : o ≠ .none) (h : H[w]? = some (.ctor 1 [π] [ϱ] [x])) (hπ : π ≠ .zero)
       (hϱ : ψ.constant.getD .omega ≤ ϱ) : EvalResume H n E Ps o ψ w x H
@@ -308,7 +308,7 @@ inductive Eval (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat 
   and allocates its closure, with the multiplicities of the entries.
   RFC: `\mathsf{eval}_{\mathsf{corec}}` -/
   | corec {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat} {Ms : Targets n}
-      {Ps : TargetDestructorBranches n} {as : List Nat} {R : List Nat}
+      {Ps : TargetCorecBranches n} {as : List Nat} {R : List Nat}
       (hs : EvalAll P ϖ H E Ms as H' R) :
       Eval P ϖ H E (.corec Ms Ps) H'.length
         (H' ++ [.corec n E Ps Ms.multiplicities Ms.requirements as]) R
@@ -424,7 +424,7 @@ inductive EvalObs (P : Program) : Multiplicity → Heap → Nat → Nat → {c :
   | beta {ϖ : Multiplicity} {H₁ H₂ H₃ : Heap} {a i c₀ : Nat}
       {ψ₀ : ResultOwnership Multiplicity c₀} {ς₀ : Multiplicity}
       {πs₁ ϱs₁ πs₂ ϱs₂ : List Multiplicity}
-      {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n}
+      {bs : List Nat} {v w : Nat} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
       {ss : List Nat} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
       {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
       {N : Target (n + (b + c))} {R : List Nat}
@@ -485,13 +485,13 @@ theorem TargetBranches.get_rename {n m : Nat} (α : TargetRen n m) :
 -- ADE: none.
 /-- The branch at a position of the branches of a corecursor renamed is the branch renamed under its
 new variables. -/
-theorem TargetDestructorBranches.get_rename {n m : Nat} (α : TargetRen n m) :
-    (Ps : TargetDestructorBranches m) → (i : Nat) →
+theorem TargetCorecBranches.get_rename {n m : Nat} (α : TargetRen n m) :
+    (Ps : TargetCorecBranches m) → (i : Nat) →
       (Ps.rename α).get i = (Ps.get i).map fun ⟨o, b, c, πs, ϱs, πs', ϱs', ψ, ς, N⟩ =>
         (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, ς, N.rename (α.lift (b + c))⟩)
   | .nil, _ => rfl
   | .cons .., 0 => rfl
-  | .cons _ _ _ _ _ _ _ _ _ _ Ps, i + 1 => TargetDestructorBranches.get_rename α Ps i
+  | .cons _ _ _ _ _ _ _ _ _ _ Ps, i + 1 => TargetCorecBranches.get_rename α Ps i
 
 /-! ## Determinism -/
 
@@ -507,7 +507,7 @@ theorem Unpack.det {H : Heap} {k x : Nat} {πs₁ πs₂ ϱs₁ ϱs₂ : List Mu
     exact ⟨rfl, rfl, rfl⟩
 
 /-- The resumption of a value is unique. -/
-theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n}
+theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
     {o : Resumption} {c : Nat} {ψ : ResultOwnership Multiplicity c} {w v₁ v₂ : Nat} :
     EvalResume H n E Ps o ψ w v₁ H₁ → EvalResume H n E Ps o ψ w v₂ H₂ → v₁ = v₂ ∧ H₁ = H₂
   | .none, .none => ⟨rfl, rfl⟩

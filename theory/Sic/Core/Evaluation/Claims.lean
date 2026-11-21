@@ -49,7 +49,7 @@ inductive Heap.Claims (H : Heap) (g : Heap.Annotation) : Nat → Nat → Prop wh
   /-- A closure claims what each entry of its state that it stores at the requirement `1` and at a
   multiplicity other than `0` claims.
   RFC: `\mathsf{claim}.\mathsf{state}` -/
-  | state {ℓ n k a b : Nat} {E : List Nat} {Ps : TargetDestructorBranches n}
+  | state {ℓ n k a b : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
       {πs ϱs : List Multiplicity} {as : List Nat} {π : Multiplicity}
       (h : H[ℓ]? = some (.corec n E Ps πs ϱs as)) (ha : as[k]? = some a) (hπ : πs[k]? = some π)
       (hπ₀ : π ≠ .zero) (hϱ : ϱs[k]? = some .one) (hb : Heap.Claims H g a b) :
@@ -57,7 +57,7 @@ inductive Heap.Claims (H : Heap) (g : Heap.Annotation) : Nat → Nat → Prop wh
   /-- A closure claims what the cell of each variable of its scope that it owns alone and reads,
   as the annotation gives the ownership and the usage of its scope, claims.
   RFC: `\mathsf{claim}.\mathsf{scope}` -/
-  | scope {ℓ n c b : Nat} {E : List Nat} {Ps : TargetDestructorBranches n}
+  | scope {ℓ n c b : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
       {πs ϱs : List Multiplicity} {as : List Nat} (x : Fin n)
       (h : H[ℓ]? = some (.corec n E Ps πs ϱs as)) (hc : E[(x : Nat)]? = some c)
       (hδ : g.usage ℓ n x ≠ .zero) (hφ : g.ownership ℓ n x = .one) (hb : Heap.Claims H g c b) :
@@ -84,7 +84,7 @@ their usage under the usage of its scope.
 RFC: `\mathsf{valid}_g` -/
 def Heap.Annotation.Valid (Ω : Name → Multiplicity) (H : Heap) (g : Heap.Annotation) : Prop :=
   ∀ ℓ n E Ps πs ϱs as, H[ℓ]? = some (.corec n E Ps πs ϱs as) →
-    TargetDestructorBranches.Ownership Ω (g.ownership ℓ n) Ps ∧ TargetDestructorBranches.Usage (g.usage ℓ n) Ps
+    TargetCorecBranches.Ownership Ω (g.ownership ℓ n) Ps ∧ TargetCorecBranches.Usage (g.usage ℓ n) Ps
 
 -- ADE: none.
 /-- `⊢ 𝒫 ◀ Ω`: each body of the program, a closed term, has the ownership that `Ω` gives its

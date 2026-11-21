@@ -85,8 +85,8 @@ theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
 
 /-- The state of a corecursor satisfies the requirements of its positions, and its branches have
 their ownerships. -/
-theorem corec_inv {Ms : Targets n} {Ps : TargetDestructorBranches n} : {o : Multiplicity} → {M' : Target n} → Target.Ownership Ω φ o M' → M' = .corec Ms Ps →
-      ∃ os, Targets.Ownership Ω φ os Ms ∧ TargetDestructorBranches.Ownership Ω φ Ps
+theorem corec_inv {Ms : Targets n} {Ps : TargetCorecBranches n} : {o : Multiplicity} → {M' : Target n} → Target.Ownership Ω φ o M' → M' = .corec Ms Ps →
+      ∃ os, Targets.Ownership Ω φ os Ms ∧ TargetCorecBranches.Ownership Ω φ Ps
   | _, _, .corec hMs hPs, h => by
     cases h
     exact ⟨_, hMs, hPs⟩
@@ -146,9 +146,9 @@ theorem TargetBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
   | _, .cons _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Ownership.get hNs i h
 
 /-- The ownership of the branches of a corecursor gives that of each branch. -/
-theorem TargetDestructorBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
-    {φ : MultiplicityVector n} : {Ps : TargetDestructorBranches n} →
-    TargetDestructorBranches.Ownership Ω φ Ps → (i : Nat) → {k : Resumption} → {b c : Nat} →
+theorem TargetCorecBranches.Ownership.get {Ω : Name → Multiplicity} {n : Nat}
+    {φ : MultiplicityVector n} : {Ps : TargetCorecBranches n} →
+    TargetCorecBranches.Ownership Ω φ Ps → (i : Nat) → {k : Resumption} → {b c : Nat} →
       {πs ϱs : Fin b → Multiplicity} → {πs' ϱs' : Fin c → Multiplicity} →
       {ψ : ResultOwnership Multiplicity c} → {ς : Multiplicity} → {P : Target (n + (b + c))} →
       Ps.get i = some (k, ⟨b, c, πs, ϱs, πs', ϱs', ψ, ς, P⟩) →
@@ -162,6 +162,6 @@ theorem TargetDestructorBranches.Ownership.get {Ω : Name → Multiplicity} {n :
     cases h
     exact ⟨hP, hψ⟩
   | _, .cons _ _ hPs, i + 1, _, _, _, _, _, _, _, _, _, _, h =>
-    TargetDestructorBranches.Ownership.get hPs i h
+    TargetCorecBranches.Ownership.get hPs i h
 
 end Sic.Core

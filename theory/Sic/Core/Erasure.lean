@@ -142,7 +142,7 @@ inductive Target : Nat → Type where
       (ς : Multiplicity) (Ms : Targets n) : Target n
   /-- `corec from M̄ with P̄`: the corecursor from the state `M̄`, each entry at the multiplicity of
   its entry, with a branch for each destructor, in order. -/
-  | corec {n : Nat} (Ms : Targets n) (Ns : TargetDestructorBranches n) : Target n
+  | corec {n : Nat} (Ms : Targets n) (Ns : TargetCorecBranches n) : Target n
 
 -- ADE: none.
 /-- `M̄ = (M₁ ▶ π₁ ◀ ϱ₁, …, Mₐ ▶ πₐ ◀ ϱₐ)`: terms of the target language, the first one first, each
@@ -181,13 +181,13 @@ requirements `ϱ̄` and `ϱ̄'` of their entries at run time, `k` is its resumpt
 the result of its destructor and `ς` the ownership that its destructor requires of the value that it
 observes, at run time.
 RFC: `\mathsf{syntax}_{\bar P}` -/
-inductive TargetDestructorBranches : Nat → Type where
+inductive TargetCorecBranches : Nat → Type where
   /-- `()`. -/
-  | nil {n : Nat} : TargetDestructorBranches n
+  | nil {n : Nat} : TargetCorecBranches n
   /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ ς). P, P̄)`. -/
   | cons {n : Nat} (o : Resumption) (b c : Nat) (πs ϱs : Fin b → Multiplicity)
       (πs' ϱs' : Fin c → Multiplicity) (ψ : ResultOwnership Multiplicity c) (ς : Multiplicity)
-      (N : Target (n + (b + c))) (Ns : TargetDestructorBranches n) : TargetDestructorBranches n
+      (N : Target (n + (b + c))) (Ns : TargetCorecBranches n) : TargetCorecBranches n
 
 end
 
@@ -223,12 +223,12 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
       Target.Occurs x (.obs M i ψ ς Ms)
   /-- In the state of a corecursor.
   RFC: `\mathsf{occurs}_M.\mathsf{from}` -/
-  | corec {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetDestructorBranches n}
+  | corec {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
       (h : Targets.Occurs x Ms) : Target.Occurs x (.corec Ms Ns)
   /-- In a branch of a corecursor.
   RFC: `\mathsf{occurs}_M.\mathsf{with}_{\bar P}` -/
-  | cobranch {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetDestructorBranches n}
-      (h : TargetDestructorBranches.Occurs x Ns) : Target.Occurs x (.corec Ms Ns)
+  | cobranch {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
+      (h : TargetCorecBranches.Occurs x Ns) : Target.Occurs x (.corec Ms Ns)
 
 -- ADE: none.
 /-- The variable `x` occurs in one of the terms. -/
@@ -261,22 +261,22 @@ inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → P
 -- ADE: none.
 /-- The variable `x` occurs in one of the branches of a corecursor, under their new variables,
 which shift it. -/
-inductive TargetDestructorBranches.Occurs : {n : Nat} → Fin n → TargetDestructorBranches n →
+inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranches n →
     Prop where
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar P}.P` -/
   | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
       {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
-      {N : Target (n + (b + c))} {Ns : TargetDestructorBranches n}
+      {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
       (h : Target.Occurs (x.addNat (b + c)) N) :
-      TargetDestructorBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
   /-- In the others.
   RFC: `\mathsf{occurs}_{\bar P}.\bar P` -/
   | tail {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
       {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
-      {N : Target (n + (b + c))} {Ns : TargetDestructorBranches n}
-      (h : TargetDestructorBranches.Occurs x Ns) :
-      TargetDestructorBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
+      {N : Target (n + (b + c))} {Ns : TargetCorecBranches n}
+      (h : TargetCorecBranches.Occurs x Ns) :
+      TargetCorecBranches.Occurs x (.cons o b c πs ϱs πs' ϱs' ψ ς N Ns)
 
 end
 
@@ -348,8 +348,8 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
       Target.LessDefined (.obs M i ψ ς Ms) (.obs N i ψ ς Ns)
   /-- A corecursor is less defined than a corecursor of a more defined state and branches.
   RFC: `{\sqsubseteq}.\mathsf{corec}` -/
-  | corec {n : Nat} {Ms Ns : Targets n} {Ms' Ns' : TargetDestructorBranches n}
-      (h : Targets.LessDefined Ms Ns) (hs : TargetDestructorBranches.LessDefined Ms' Ns') :
+  | corec {n : Nat} {Ms Ns : Targets n} {Ms' Ns' : TargetCorecBranches n}
+      (h : Targets.LessDefined Ms Ns) (hs : TargetCorecBranches.LessDefined Ms' Ns') :
       Target.LessDefined (.corec Ms Ms') (.corec Ns Ns')
 
 -- ADE: none.
@@ -381,19 +381,19 @@ inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → Target
 
 -- ADE: none.
 /-- The branches of a corecursor are less defined, one by one. -/
-inductive TargetDestructorBranches.LessDefined :
-    {n : Nat} → TargetDestructorBranches n → TargetDestructorBranches n → Prop where
+inductive TargetCorecBranches.LessDefined :
+    {n : Nat} → TargetCorecBranches n → TargetCorecBranches n → Prop where
   /-- `()`.
   RFC: `{\sqsubseteq}_{\bar P}.\varepsilon` -/
-  | nil {n : Nat} : TargetDestructorBranches.LessDefined (n := n) .nil .nil
+  | nil {n : Nat} : TargetCorecBranches.LessDefined (n := n) .nil .nil
   /-- `((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₁ ◀ ψ). P₁, P̄₁) ⊑ ((ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k₂ ◀ ψ). P₂, P̄₂)`.
   RFC: `{\sqsubseteq}_{\bar P}.{,}` -/
   | cons {n : Nat} {o₁ o₂ : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
       {πs' ϱs' : Fin c → Multiplicity} {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity}
-      {M N : Target (n + (b + c))} {Ms Ns : TargetDestructorBranches n}
+      {M N : Target (n + (b + c))} {Ms Ns : TargetCorecBranches n}
       (ho : Resumption.LessDefined o₁ o₂) (h : Target.LessDefined M N)
-      (hs : TargetDestructorBranches.LessDefined Ms Ns) :
-      TargetDestructorBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ ς M Ms)
+      (hs : TargetCorecBranches.LessDefined Ms Ns) :
+      TargetCorecBranches.LessDefined (.cons o₁ b c πs ϱs πs' ϱs' ψ ς M Ms)
         (.cons o₂ b c πs ϱs πs' ϱs' ψ ς N Ns)
 
 end
@@ -634,7 +634,7 @@ def DestructorBranches.erase (sig : Signature) (S : Set Grade) [DecidablePred (�
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
     DestructorBranches k Γ → List Grade → List Resumption →
       List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) →
-      TargetDestructorBranches Γ.length
+      TargetCorecBranches Γ.length
   | .nil, _, _, _ => .nil
   | .cons 0 b c v vs, p :: ps, ks, pss =>
     .cons (ks.headD .none) b c
@@ -844,7 +844,7 @@ theorem DestructorBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set 
       (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
       (ks₁ ks₂ : List Resumption) →
       (∀ i, Resumption.LessDefined (ks₂.getD i .none) (ks₁.getD i .none)) →
-      TargetDestructorBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ pss)
+      TargetCorecBranches.LessDefined (vs.erase sig S₂ hΓ ps ks₂ pss)
         (vs.erase sig S₁ hΓ ps ks₁ pss)
   | .nil, _, _, _, _, _ => .nil
   | .cons 0 b c v vs, p :: ps, pss, ks₁, ks₂, hk => by

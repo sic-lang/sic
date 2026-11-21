@@ -1309,7 +1309,7 @@ theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
 of the context, equal closed arguments of the state and equal arguments of the telescope of the
 destructor, are equal terms of the result of the destructor at the first ones, the positions of the
 state of the type it names if it is recursive. -/
-theorem ValidEqTerm₀.destructorBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : TypeDeclaration}
+theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {hq : qs.length = decl.sorts}
     {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
@@ -1364,7 +1364,7 @@ theorem ValidEqTerm₀.destructorBranch {Γ : Scope} {ctx : Context 0 Γ} {decl 
 /-- The branches `gs₁` and `gs₂` of two corecursors are equal terms of the results of their
 destructors, as `(corec_≡)` premises them, over the states `Ss` and the corecursors of the first
 branches: the premise that the Lean of `(corec_≡)` reads, at the levels without variables. -/
-def DestructorBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
+def CorecBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ)
@@ -1400,12 +1400,12 @@ def DestructorBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scop
 /-- The branches of a corecursor are terms of the results of their destructors, as `(corec)`
 premises them: the premise that the Lean of `(corec)` and of `(β)` reads, at the levels without
 variables. -/
-def DestructorBranchesValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
+def CorecBranchesValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
     (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : DestructorBranches 0 Γ) :
     Prop :=
-  DestructorBranchesEqValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs gs
+  CorecBranchesEqValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs gs
 
 -- ADE: `prod-congᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Sigma.agda`.
 /-- `(corec_≡)` keeps the meaning: at equal substitutions of the context, the corecursors of the
@@ -1437,7 +1437,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S₁' S₂' : Telescope 0 Γ ps''),
         Ss₁.get j = some ⟨0, ps'', S₁'⟩ ∧ Ss₂.get j = some ⟨0, ps'', S₂'⟩)
-    (hg : DestructorBranchesEqValid sig ι ctx decl qs ls₁ ps hq hl₁ hp as₁ r Ss₁ gs₁ gs₂) :
+    (hg : CorecBranchesEqValid sig ι ctx decl qs ls₁ ps hq hl₁ hp as₁ r Ss₁ gs₁ gs₂) :
     ValidEqTermΓ sig ι ctx (.corec r D qs ls₁ ps as₁ ss₁.terms Ss₁ gs₁)
       (.corec r D qs ls₂ ps as₂ ss₂.terms Ss₂ gs₂) (.inst D qs ls₁ ps as₁) := by
   obtain ⟨h₀, hv⟩ := hent.hasCodataType h
@@ -1478,7 +1478,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       rwa [Nat.zero_add] at this
     obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
     obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hg.1 i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos
-    have hb := ValidEqTerm₀.destructorBranch hpos
+    have hb := ValidEqTerm₀.corecBranch hpos
       (hg.2 i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂) hσ hts hbs
     have hred₁ := Red.beta_corec (ι := ι) hd h₀' hq hl₁ hp hi hpos hg₁ σ₁ ts₁ bs₁
       (D' := T'.name) (qs' := qs) (ls' := ls₁) (ps'' := ps) (as' := as₁.subst σ₁)
@@ -1558,7 +1558,7 @@ theorem ValidTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hS : Ss.get h' = some ⟨0, ps', S⟩) (hss : ValidArgsΓ sig ι ctx ss S)
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hg : DestructorBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
+    (hg : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
     ValidTermΓ sig ι ctx (.corec r D qs ls ps as ss.terms Ss gs) (.inst D qs ls ps as) :=
   ValidEqTermΓ.corec hent h hq hl hl hp hadm hpre has (fun _ => Level.equivalence.refl _) hh hS
     hss (fun j T' hj => have ⟨ps'', S', hS'⟩ := hSs j T' hj; ⟨ps'', S', S', hS', hS'⟩) hg
@@ -1594,7 +1594,7 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         as.toSubst)))
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hg : DestructorBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
+    (hg : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs) :
     ValidEqTermΓ sig ι ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
       (Term.observed decl.names (B₀.blockName decl.names) r qs ls ps as Ss gs
         ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))

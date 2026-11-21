@@ -83,9 +83,9 @@ inductive Target.Ownership (Ω : Name → Multiplicity) :
   /-- A corecursor builds a new value, of the ownership `1`, whose state satisfies the requirements of
   its positions, and whose branches have the ownerships of the results of their destructors.
   RFC: `\mathsf{own}_M.\mathsf{corec}` -/
-  | corec {n : Nat} {φ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetDestructorBranches n}
+  | corec {n : Nat} {φ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetCorecBranches n}
       {os : List Multiplicity} (hMs : Targets.Ownership Ω φ os Ms)
-      (hPs : TargetDestructorBranches.Ownership Ω φ Ps) : Target.Ownership Ω φ .one (.corec Ms Ps)
+      (hPs : TargetCorecBranches.Ownership Ω φ Ps) : Target.Ownership Ω φ .one (.corec Ms Ps)
   /-- A term may be given an ownership lower than its own, which states less.
   RFC: `\mathsf{own}_M.\mathsf{sub}` -/
   | sub {n : Nat} {φ : MultiplicityVector n} {p q : Multiplicity} {M : Target n}
@@ -147,24 +147,24 @@ each entry of the state, of the requirement `ς` of the destructor on the value 
 the requirement `ϱ` and of the multiplicity `π`, and `o · π'` of the variable of each argument, of the
 ownership `o` and the multiplicity `π'`; the ownership `ψ` of the result of a destructor whose branch
 resumes the corecursor is a constant, which the term already built of its position requires. -/
-inductive TargetDestructorBranches.Ownership (Ω : Name → Multiplicity) :
-    {n : Nat} → MultiplicityVector n → TargetDestructorBranches n → Prop where
+inductive TargetCorecBranches.Ownership (Ω : Name → Multiplicity) :
+    {n : Nat} → MultiplicityVector n → TargetCorecBranches n → Prop where
   /-- No branch.
   RFC: `\mathsf{own}_{\bar P}.\varepsilon` -/
-  | nil {n : Nat} {φ : MultiplicityVector n} : TargetDestructorBranches.Ownership Ω φ .nil
+  | nil {n : Nat} {φ : MultiplicityVector n} : TargetCorecBranches.Ownership Ω φ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{own}_{\bar P}.{,}` -/
   | cons {n b c : Nat} {φ : MultiplicityVector n} {k : Resumption}
       {πs ϱs : Fin b → Multiplicity} {πs' ϱs' : Fin c → Multiplicity}
       {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity} {P : Target (n + (b + c))}
-      {Ps : TargetDestructorBranches n}
+      {Ps : TargetCorecBranches n}
       (hP : ∀ (os : Fin c → Multiplicity) (v : Multiplicity), (∀ l, ϱs' l ≤ os l) →
         (k = .none ∧ ψ.value (List.ofFn os) = some v ∨ k ≠ .none ∧ v = .one) →
         Target.Ownership Ω
           (MultiplicityVector.extendBinders (ς ·ᶜ φ) (fun l => ς * ϱs l * πs l) (fun l => os l * πs' l)) v P)
       (hψ : k ≠ .none → ∃ χ, ψ = ⟨some χ, fun _ => none⟩)
-      (hPs : TargetDestructorBranches.Ownership Ω φ Ps) :
-      TargetDestructorBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ ς P Ps)
+      (hPs : TargetCorecBranches.Ownership Ω φ Ps) :
+      TargetCorecBranches.Ownership Ω φ (.cons k b c πs ϱs πs' ϱs' ψ ς P Ps)
 
 end
 

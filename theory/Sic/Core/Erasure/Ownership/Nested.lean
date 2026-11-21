@@ -99,13 +99,13 @@ branch of another observes the path at the ownerships of its arguments, which ke
 the recursor, of the ownership `χ`, or the corecursor of the next lifting, of the ownership `1`,
 and when the recursor runs no recursion through its result, this result does not read the
 observation, the recursor of the multiplicity `0` running on the term of a skeleton. -/
-theorem TargetDestructorBranches.Ownership.branches {Ω : Name → Multiplicity}
+theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
     {ρ ϱ o ς χ : Multiplicity} (hϱ : o * ϱ = o) (hz : ρ = .zero → ∃ o₀, o₀ ≤ .one ∧ o₀ * ϱ = o) :
     {m : Nat} → {φ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
       (σ : Shape) → (ρ * σ.factor ≠ .zero → Target.Ownership Ω (ς ·ᶜ φ) o M) →
         TargetBranches.Ownership Ω (ς ·ᶜ φ) ρ o χ ς χ Ns → σ.Uniform ς χ →
           (ρ * σ.factor ≠ .zero → σ.Requires o ς) →
-            TargetDestructorBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
+            TargetCorecBranches.Ownership Ω φ (σ.branches ρ ϱ M Ns)
   | _, _, _, _, .nil, _, _, _, _ => .nil
   | m, φ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' ψ ς' ψ₀ ς₀ next rest, hM, hNs, hσ, hR => by
     have hg₁ : ρ * (ρᵢ * next.factor) ≠ .zero →
@@ -122,7 +122,7 @@ theorem TargetDestructorBranches.Ownership.branches {Ω : Name → Multiplicity}
     obtain ⟨hς', rfl, hnext, hrest⟩ := hσ
     subst ς'
     refine .cons (fun os v hos hv => ?_) (fun h => absurd rfl h)
-      (TargetDestructorBranches.Ownership.branches hϱ hz rest (fun hn => hM (hg₂ hn)) hNs hrest
+      (TargetCorecBranches.Ownership.branches hϱ hz rest (fun hn => hM (hg₂ hn)) hNs hrest
         fun hn => ⟨(hR (hg₂ hn)).1.2, (hR (hg₂ hn)).2.2⟩)
     have hv' : v = next.ownership χ := by
       rcases hv with ⟨_, hv⟩ | ⟨h, _⟩
@@ -195,7 +195,7 @@ theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Mult
       exact .recursor (hO fun h0 => h ((Multiplicity.modality.semiring.mul_one ρ).symm.trans h0))
         (by rw [hϱ]; exact hNs)
   | .lifting σ, hO, hNs, hσ, hreq =>
-    .corec (os := []) .nil (TargetDestructorBranches.Ownership.branches hϱ hz σ hO hNs hσ hreq)
+    .corec (os := []) .nil (TargetCorecBranches.Ownership.branches hϱ hz σ hO hNs hσ hreq)
 
 end
 
@@ -218,7 +218,7 @@ theorem Target.Ownership.nested {Ω : Name → Multiplicity} {ρ ϱ o o' ς χ :
     show ς * φ' _ = ς * φ x
     rw [hφ x]
   exact .corec (os := []) .nil
-    (TargetDestructorBranches.Ownership.branches hϱ hz σ (fun h => .sub (.var 0) (hf h))
+    (TargetCorecBranches.Ownership.branches hϱ hz σ (fun h => .sub (.var 0) (hf h))
       hNs' hσ hreq)
 
 end Sic.Core

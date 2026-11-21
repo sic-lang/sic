@@ -363,7 +363,7 @@ theorem DestructorBranches.erase_ownership {sig : Signature} {S : Set Grade} [De
       ((ks.drop i).headD .none ≠ .none → ∃ χ,
         ((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.1.toArity c).map
           Grade.run) = ⟨some χ, fun _ => none⟩)) →
-    TargetDestructorBranches.Ownership Ω φ' (vs.erase sig S hΓ ps ks pss)
+    TargetCorecBranches.Ownership Ω φ' (vs.erase sig S hΓ ps ks pss)
   | .nil, _, _, _, _ => .nil
   | .cons n b c v vs, ps, ks, pss, h => by
     obtain ⟨b', c', v', p, hg, hp, hP⟩ := h 0 (Nat.zero_lt_succ _)

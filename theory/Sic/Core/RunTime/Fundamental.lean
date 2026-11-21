@@ -73,8 +73,8 @@ def Program.Realizes (sig : Signature) (ι : Interpretation) (P : Program) (sigT
 /-- The premise of `(corec)` at run time on its branches, each branch valid at run time for every
 value of the level variables, in every environment that binds its scope through a renaming, when the
 grade of its destructor is used at run time, holds at the levels without variables `ρ`, as
-`DestructorBranchesEqValid.atLevels` does for the meaning. -/
-theorem RunValidDestructorBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
+`CorecBranchesEqValid.atLevels` does for the meaning. -/
+theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
     {k : Nat} {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context k Γ} {decl : TypeDeclaration}
     {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
@@ -102,7 +102,7 @@ theorem RunValidDestructorBranches.atLevels {sig : Signature} {ι : Interpretati
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))).atLevels ρ))
     (ρ : Fin k → Nat) :
-    RunValidDestructorBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
+    RunValidCorecBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) δs := by
@@ -484,11 +484,11 @@ where
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (DestructorBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             soundnessIn.hasType hw.distinct hw.liftsInOrder hι
               (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
-        (RunValidDestructorBranches.atLevels hq hl hp
+        (RunValidCorecBranches.atLevels hq hl hp
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
             hasType hw hι hP (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)
               ((Mode.erasesUncounted .oneOne).mode _ hpr ▸

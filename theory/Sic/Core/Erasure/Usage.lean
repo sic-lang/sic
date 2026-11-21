@@ -72,8 +72,8 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
       (hMs : Targets.Usage ν₂ Ms) : Target.Usage (ν₁ +ᶜ ν₂) (.obs M i ψ ς Ms)
   /-- A corecursor reads the variables of its state once, and those of its branches as `δ` allows.
   RFC: `\mathsf{usage}_M.\mathsf{corec}` -/
-  | corec {n : Nat} {ν δ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetDestructorBranches n}
-      (hMs : Targets.Usage ν Ms) (hPs : TargetDestructorBranches.Usage δ Ps) :
+  | corec {n : Nat} {ν δ : MultiplicityVector n} {Ms : Targets n} {Ps : TargetCorecBranches n}
+      (hMs : Targets.Usage ν Ms) (hPs : TargetCorecBranches.Usage δ Ps) :
       Target.Usage (ν +ᶜ δ) (.corec Ms Ps)
   /-- A term may be given multiplicities lower than its reads.
   RFC: `\mathsf{usage}_M.\mathsf{sub}` -/
@@ -127,21 +127,21 @@ the variables of the scope as `δ` allows: an observation runs one branch, which
 allows and its new variables as their binders allow, and a branch that resumes the corecursor
 captures the scope again in a new closure, so that `δ` bounds `δᵢ`, and `δᵢ` plus `δ` for such a
 branch. -/
-inductive TargetDestructorBranches.Usage : {n : Nat} → MultiplicityVector n →
-    TargetDestructorBranches n →
+inductive TargetCorecBranches.Usage : {n : Nat} → MultiplicityVector n →
+    TargetCorecBranches n →
     Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar P}.\varepsilon` -/
-  | nil {n : Nat} {δ : MultiplicityVector n} : TargetDestructorBranches.Usage δ .nil
+  | nil {n : Nat} {δ : MultiplicityVector n} : TargetCorecBranches.Usage δ .nil
   /-- The first branch and the others.
   RFC: `\mathsf{usage}_{\bar P}.{,}` -/
   | cons {n b c : Nat} {δ δᵢ : MultiplicityVector n} {o : Resumption}
       {πs ϱs : Fin b → Multiplicity} {πs' ϱs' : Fin c → Multiplicity}
       {ψ : ResultOwnership Multiplicity c}
-      {ς : Multiplicity} {P : Target (n + (b + c))} {Ps : TargetDestructorBranches n}
+      {ς : Multiplicity} {P : Target (n + (b + c))} {Ps : TargetCorecBranches n}
       (hP : Target.Usage (δᵢ.extendBinders πs πs') P) (hδ : δ ≤ᶜ δᵢ)
-      (hr : o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ) (hPs : TargetDestructorBranches.Usage δ Ps) :
-      TargetDestructorBranches.Usage δ (.cons o b c πs ϱs πs' ϱs' ψ ς P Ps)
+      (hr : o ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ) (hPs : TargetCorecBranches.Usage δ Ps) :
+      TargetCorecBranches.Usage δ (.cons o b c πs ϱs πs' ϱs' ψ ς P Ps)
 
 end
 

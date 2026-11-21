@@ -332,7 +332,7 @@ theorem DestructorBranches.erase_usage {sig : Signature} {S : Set Grade} [Decida
           (if p ∈ S then .erased else
             Scope.length_extend_extend Γ b c ▸ v.erase sig S ((hΓ.extend b).extend c)) ∧
         δ ≤ᶜ δᵢ ∧ ((ks.drop i).headD .none ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ)) →
-    TargetDestructorBranches.Usage δ (vs.erase sig S hΓ ps ks pss)
+    TargetCorecBranches.Usage δ (vs.erase sig S hΓ ps ks pss)
   | .nil, _, _, _, _ => .nil
   | .cons n b c v vs, ps, ks, pss, h => by
     obtain ⟨b', c', v', p, hg, hp, δᵢ, hu, hδ, hr⟩ := h 0 (Nat.zero_lt_succ _)
