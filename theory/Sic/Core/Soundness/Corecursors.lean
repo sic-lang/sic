@@ -1118,29 +1118,27 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
         (.univ rfl (hU T' hT').1) (hX _).symm
-    have hcons : ∀ T' ∈ decl.codataTypes, ∀ a b, Y T'.name a b →
+    have hcons : ∀ T' ∈ decl.codataTypes, ∀ a b, P T'.name a b →
         corecRel T'.name (S Y T') a b := by
       intro T' hT' a b hab
-      rcases hab with hab | hab
-      · exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T' hT') _ _
-          (CodataType.blockRel_unfold hmono hT' hab)
-      · obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, hob⟩ := hobs T' hT' a b hab
-        refine ⟨_, _, ⟨r₁, qs, ls, ps, _, a₁, ss₁, Ss₁, gs₁, rfl, rfl⟩,
-          ⟨r₂, qs, ls, ps, _, a₂, ss₂, Ss₂, gs₂, rfl, rfl⟩, ?_⟩
-        refine DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT') (fun i hi => by rw [hi]; rfl)
-          (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) (hlev (hS Y T' hT'))
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
-            fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => ?_)
-        rw [hD'] at hR
-        cases hR
-        rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
-        · exact TermRel.computed_mono (fun _ _ h => .inl h)
-            ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D') (by rw [e] at he; exact he))
-        · rw [← hpos.recursionAt_index, hD'] at hD''
-          cases hD''
-          exact ⟨v', w', hv', hw', .inr hP'⟩
-    have hrel : CodataType.blockRel decl.codataTypes S T.name v w := ⟨Y, hcons, .inr hvw⟩
+      obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, hob⟩ := hobs T' hT' a b hab
+      refine ⟨_, _, ⟨r₁, qs, ls, ps, _, a₁, ss₁, Ss₁, gs₁, rfl, rfl⟩,
+        ⟨r₂, qs, ls, ps, _, a₂, ss₂, Ss₂, gs₂, rfl, rfl⟩, ?_⟩
+      refine DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT') (fun i hi => by rw [hi]; rfl)
+        (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) (hlev (hS Y T' hT'))
+        (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
+          fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
+        (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => ?_)
+      rw [hD'] at hR
+      cases hR
+      rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
+      · exact TermRel.computed_mono (fun _ _ h => .inl h)
+          ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D') (by rw [e] at he; exact he))
+      · rw [← hpos.recursionAt_index, hD'] at hD''
+        cases hD''
+        exact ⟨v', w', hv', hw', .inr hP'⟩
+    have hrel : CodataType.blockRel decl.codataTypes S T.name v w :=
+      CodataType.blockRel_coind hmono hcons hvw
     have hU' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
         (.inst T.name qs ls ps a₁) (CodataType.blockRel decl.codataTypes S T.name) :=
       levelRel_univ_iff.2 (hU T hT).1
@@ -1168,33 +1166,31 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
         (.prop (hPr T' hT').1) (hX _).symm
-    have hcons : ∀ T' ∈ decl.codataTypes, Y T'.name → (S Y T').truth := by
-      intro T' hT' hY
-      rcases hY with hY | ⟨a, b, hab⟩
-      · exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T' hT')
-          (CodataType.blockTruth_unfold hmono hT' hY)
-      · obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, hob⟩ := hobs T' hT' a b hab
-        have hS₁ := DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT')
-          (fun i hi => by rw [hi]; rfl) (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩)
-          (hlev (hS Y T' hT'))
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
-            fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
-          (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => by
-            rw [hD'] at hR
-            cases hR
-            rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', -, -, hP'⟩
-            · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D')
-                (by rw [e] at he; exact he))
-            · rw [← hpos.recursionAt_index, hD'] at hD''
-              cases hD''
-              exact .inr ⟨v', w', hP'⟩)
-        have hSp := DesRel.isPer hd ih (fun i x hx => by
-          cases hr : (T'.body I).recursionAt decl.names i with
-          | none => rw [hr] at hx; cases hx
-          | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩)
-          (hlev (hS Y T' hT'))
-        exact ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
-    have htrue : CodataType.blockTruth decl.codataTypes S T.name := ⟨Y, hcons, .inr ⟨v, w, hvw⟩⟩
+    have hcons : ∀ T' ∈ decl.codataTypes, (∃ a b, P T'.name a b) → (S Y T').truth := by
+      intro T' hT' ⟨a, b, hab⟩
+      obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, hob⟩ := hobs T' hT' a b hab
+      have hS₁ := DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT')
+        (fun i hi => by rw [hi]; rfl) (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩)
+        (hlev (hS Y T' hT'))
+        (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ hr => (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ).resolve_right
+          fun ⟨D', hD', _⟩ => by rw [← hpos.recursionAt_index, hr] at hD'; cases hD')
+        (fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => by
+          rw [hD'] at hR
+          cases hR
+          rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', -, -, hP'⟩
+          · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (hcX D')
+              (by rw [e] at he; exact he))
+          · rw [← hpos.recursionAt_index, hD'] at hD''
+            cases hD''
+            exact .inr ⟨v', w', hP'⟩)
+      have hSp := DesRel.isPer hd ih (fun i x hx => by
+        cases hr : (T'.body I).recursionAt decl.names i with
+        | none => rw [hr] at hx; cases hx
+        | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩)
+        (hlev (hS Y T' hT'))
+      exact ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
+    have htrue : CodataType.blockTruth decl.codataTypes S T.name :=
+      CodataType.blockTruth_coind hmono (B := fun D' => ∃ a b, P D' a b) hcons ⟨v, w, hvw⟩
     have hP' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).prop
         (.inst T.name qs ls ps a₁) (CodataType.blockTruth decl.codataTypes S T.name) :=
       levelRel_prop_iff.2 (hPr T hT).1

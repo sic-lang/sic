@@ -485,6 +485,27 @@ theorem CodataType.blockRel_unfold
   have ⟨X, hX, hv⟩ := h
   corecRel_mono (hmono X _ (fun _ _ _ h => ⟨X, hX, h⟩) T hT) _ _ (hX T hT v w hv)
 
+/-- `(eq_ν)` relates the pairs of a relation `P` of each type of the block, when the clauses of the
+destructors relate the pairs of `P` at the relations that `(eq_ν)` joined with `P` gives the
+recursive destructors, and when the equality of the destructors grows with these relations: the
+relations that `(eq_ν)` joined with `P` gives the types are consistent with the clauses, a proof
+by coinduction up to `(eq_ν)`. -/
+theorem CodataType.blockRel_coind
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S Y T o₁ o₂)
+    {P : Name → TermRel}
+    (hP : ∀ T' ∈ Ts, ∀ v w, P T'.name v w →
+      corecRel T'.name (S (fun D a b => CodataType.blockRel Ts S D a b ∨ P D a b) T') v w)
+    {T : CodataType j g k Δ} {v w : Term 0 []} (h : P T.name v w) :
+    CodataType.blockRel Ts S T.name v w :=
+  ⟨fun D a b => CodataType.blockRel Ts S D a b ∨ P D a b,
+    fun T' hT' a b hab => by
+      rcases hab with hab | hab
+      · exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T' hT') _ _
+          (CodataType.blockRel_unfold hmono hT' hab)
+      · exact hP T' hT' a b hab,
+    .inr h⟩
+
 /-- `(eq_ν)` is closed under the clauses of the destructors, when the equality of the destructors
 grows with the relations of the recursive destructors, and when the names of the types are
 distinct. -/
@@ -494,15 +515,12 @@ theorem CodataType.blockRel_fold
     (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
     (h : corecRel T.name (S (CodataType.blockRel Ts S) T) v w) :
     CodataType.blockRel Ts S T.name v w :=
-  ⟨fun D a b => CodataType.blockRel Ts S D a b ∨
-      (D = T.name ∧ corecRel T.name (S (CodataType.blockRel Ts S) T) a b),
-    fun T' hT' a b hab => by
-      rcases hab with hab | ⟨hD, hab⟩
-      · exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T' hT') _ _
-          (CodataType.blockRel_unfold hmono hT' hab)
-      · cases List.eq_of_nodup_map hn hT hT' hD.symm
-        exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T hT) _ _ hab,
-    .inr ⟨rfl, h⟩⟩
+  CodataType.blockRel_coind hmono
+    (P := fun D a b => D = T.name ∧ corecRel T.name (S (CodataType.blockRel Ts S) T) a b)
+    (fun T' hT' a b ⟨hD, hab⟩ => by
+      cases List.eq_of_nodup_map hn hT hT' hD.symm
+      exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T hT) _ _ hab)
+    ⟨rfl, h⟩
 
 /-- `(eq_ν)` relates in the other order the terms that `(eq_ν)` relates for another equality of the
 destructors, when the second one inverts the first one, at relations of the recursive destructors
@@ -554,6 +572,25 @@ theorem CodataType.blockTruth_unfold {S' : (Name → Prop) → CodataType j g k 
   have ⟨B, hB, hb⟩ := h
   ObsRel.truth_mono (hmono B _ (fun _ h => ⟨B, hB, h⟩) T hT) (hB T hT hb)
 
+/-- `(true_ν)` holds of the types of the block that some truths `B` hold of, when the clauses of the
+destructors make the truths of `B` true at the truths that `(true_ν)` joined with `B` gives the
+recursive destructors, and when the equality of the destructors grows with these truths: the truths
+that `(true_ν)` joined with `B` gives the types are consistent with the clauses, a proof by
+coinduction up to `(true_ν)`. -/
+theorem CodataType.blockTruth_coind {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
+    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    {B : Name → Prop}
+    (hB : ∀ T' ∈ Ts, B T'.name → (S' (fun D => CodataType.blockTruth Ts S' D ∨ B D) T').truth)
+    {T : CodataType j g k Δ} (h : B T.name) : CodataType.blockTruth Ts S' T.name :=
+  ⟨fun D => CodataType.blockTruth Ts S' D ∨ B D,
+    fun T' hT' hb => by
+      rcases hb with hb | hb
+      · exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T' hT')
+          (CodataType.blockTruth_unfold hmono hT' hb)
+      · exact hB T' hT' hb,
+    .inr h⟩
+
 /-- `(true_ν)` holds by the clause of the destructors of its type, when the equality of the
 destructors grows with the truths of the recursive destructors, and when the names of the types are
 distinct. -/
@@ -562,14 +599,12 @@ theorem CodataType.blockTruth_fold {S' : (Name → Prop) → CodataType j g k Δ
       S' B T o₁ o₂ → S' B' T o₁ o₂)
     (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts)
     (h : (S' (CodataType.blockTruth Ts S') T).truth) : CodataType.blockTruth Ts S' T.name :=
-  ⟨fun D => CodataType.blockTruth Ts S' D ∨ (D = T.name ∧ (S' (CodataType.blockTruth Ts S') T).truth),
-    fun T' hT' hb => by
-      rcases hb with hb | ⟨hD, hb⟩
-      · exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T' hT')
-          (CodataType.blockTruth_unfold hmono hT' hb)
-      · cases List.eq_of_nodup_map hn hT hT' hD.symm
-        exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T hT) hb,
-    .inr ⟨rfl, h⟩⟩
+  CodataType.blockTruth_coind hmono
+    (B := fun D => D = T.name ∧ (S' (CodataType.blockTruth Ts S') T).truth)
+    (fun T' hT' ⟨hD, hb⟩ => by
+      cases List.eq_of_nodup_map hn hT hT' hD.symm
+      exact ObsRel.truth_mono (hmono _ _ (fun _ h => .inl h) T hT) hb)
+    ⟨rfl, h⟩
 
 end GreatestFixedPoints
 

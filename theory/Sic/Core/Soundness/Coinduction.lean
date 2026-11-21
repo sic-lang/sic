@@ -301,11 +301,9 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         · exact ⟨fun ⟨v, w, hv, hw, h⟩ => ⟨v, w, (ha v).1 hv, (hb w).1 hw, h⟩,
             fun ⟨v, w, hv, hw, h⟩ => ⟨v, w, (ha v).2 hv, (hb w).2 hw, h⟩⟩
     -- The relations are consistent with the clauses of the destructors.
-    have hcons : ∀ T' ∈ decl.codataTypes, ∀ v w, Y T'.name v w → corecRel T'.name (S Y T') v w := by
+    have hcons : ∀ T' ∈ decl.codataTypes, ∀ v w, X T'.name v w → corecRel T'.name (S Y T') v w := by
       intro T' hT' v w hvw
-      rcases hvw with hvw | ⟨j, T'', A', x, y, z, hj, hn', hA', hx, hy, hz, hxv, hyw⟩
-      · exact corecRel_mono (hmono _ _ (fun _ _ _ h => .inl h) T' hT') _ _
-          (CodataType.blockRel_unfold hmono hT' hvw)
+      obtain ⟨j, T'', A', x, y, z, hj, hn', hA', hx, hy, hz, hxv, hyw⟩ := hvw
       cases List.eq_of_nodup_map hn (List.mem_of_getElem? hj) hT' hn'
       have h'' : sig.HasCodataType T'.name decl T' := ⟨hdecl, hT', rfl⟩
       have hσ3' := hσ3 T' A' x y z hx hy hz
@@ -529,7 +527,8 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       ((Term.instantiate_subst (ps := [p₀, p₀]) σ A (Args.cons t₁ (Args.cons t₂ .nil))).trans
         (hinst A _ _))).mp (ht.2 σ σ hσ)
     have hrel : CodataType.blockRel decl.codataTypes S T.name v w :=
-      ⟨Y, hcons, .inr ⟨h', T, A, _, _, _, hh, rfl, hA, hT1, hT2, htv.left, hv₁, hw₂⟩⟩
+      CodataType.blockRel_coind hmono hcons
+        ⟨h', T, A, _, _, _, hh, rfl, hA, hT1, hT2, htv.left, hv₁, hw₂⟩
     exact ⟨fun _ => ⟨_, v, w, _, hcI _, hv₁, hw₂, .univ _ (levelRel_univ_iff.2 (hU T hT).1), hrel⟩,
       fun hp => absurd hp (hnp T hT)⟩
   · -- On a proposition, any two proofs are equal.
