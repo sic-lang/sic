@@ -1,6 +1,6 @@
 module
 
-public import Sic.Order
+public import Sic.Math.Order
 
 /-!
 # Levels
@@ -82,7 +82,9 @@ The equality is an equivalence and the order a preorder, whose equivalence is th
 
 -- ADE: none.
 /-- The equality is an equivalence.
-RFC: `\mathsf{equiv}_l.\mathsf{refl}`, `\mathsf{equiv}_l.\mathsf{symm}`, `\mathsf{equiv}_l.\mathsf{trans}` -/
+RFC: `\mathsf{equiv}_l.\mathsf{refl}`
+RFC: `\mathsf{equiv}_l.\mathsf{symm}`
+RFC: `\mathsf{equiv}_l.\mathsf{trans}` -/
 theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
   refl _ _ := rfl
   symm h ρ := (h ρ).symm
@@ -90,8 +92,9 @@ theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
 
 -- ADE: none.
 /-- The order is a preorder.
-RFC: `\mathsf{preorder}_l.\mathsf{refl}`, `\mathsf{preorder}_l.\mathsf{trans}` -/
-theorem preorder : IsPreorder (α := Level k) (· ≤ ·) where
+RFC: `\mathsf{preorder}_l.\mathsf{refl}`
+RFC: `\mathsf{preorder}_l.\mathsf{trans}` -/
+theorem preorder : Math.IsPreorder (α := Level k) (· ≤ ·) where
   refl _ _ := Nat.le_refl _
   trans h₁ h₂ ρ := Nat.le_trans (h₁ ρ) (h₂ ρ)
 
