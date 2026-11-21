@@ -363,9 +363,6 @@ theorem stableUnderExtension : StableUnderExtension := by
   case wfDestructors_recursive =>
     exact fun hD hΘ hp hds hΘ_ih hds_ih => fun hs hw =>
       .recursive hD (hΘ_ih hs hw) hp (hds_ih hs hw)
-  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
-      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfFields_nil |
-      wfFields_cons | wfFields_recursive | wfFields_nested | wfTypeDeclaration_data |
-      wfTypeDeclaration_codata => intros; trivial
+  all_goals intros; trivial
 
 end Sic.Core

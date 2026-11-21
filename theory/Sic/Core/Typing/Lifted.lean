@@ -799,10 +799,6 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     intro sig k Δ ps ctx q p A₁ A₂ Θ₁ Θ₂ κ₁ κ₂ hA hκ hΘ hp hA_ih hΘ_ih Base Γ ctx' θ hL hθ
     refine .cons (hA_ih hL hθ) hκ ?_ hp
     exact hΘ_ih hL (hθ.var A₁)
-  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
-      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfFields_nil |
-      wfFields_cons | wfFields_recursive | wfFields_nested | wfDestructors_nil |
-      wfDestructors_cons | wfDestructors_nested | wfDestructors_recursive | wfTypeDeclaration_data |
-      wfTypeDeclaration_codata => intros; trivial
+  all_goals intros; trivial
 
 end Sic.Core

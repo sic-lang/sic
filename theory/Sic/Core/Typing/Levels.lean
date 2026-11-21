@@ -791,9 +791,5 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTelescope_cons =>
     exact fun hA hκ hΘ hp hA_ih hΘ_ih => fun ls' =>
       .cons (hA_ih ls') (Universe.substLevels_bounded ls' hκ) (hΘ_ih ls') hp
-  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
-      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfFields_nil |
-      wfFields_cons | wfFields_recursive | wfFields_nested | wfDestructors_nil |
-      wfDestructors_cons | wfDestructors_nested | wfDestructors_recursive | wfTypeDeclaration_data |
-      wfTypeDeclaration_codata => intros; trivial
+  all_goals intros; trivial
 end Sic.Core

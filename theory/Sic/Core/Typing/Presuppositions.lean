@@ -457,11 +457,7 @@ theorem contextPresuppositions : ContextPresuppositions := by
   case wfTelescopeSorts_cons => exact fun hA hl hΘ hp hA_ih hΘ_ih => hA_ih
   case eqTelescope_nil => exact fun hctx hctx_ih => hctx
   case eqTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
-      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfCtx_empty |
-      wfCtx_var | wfCtx_secondOrder | wfFields_nil | wfFields_cons | wfFields_recursive |
-      wfFields_nested | wfDestructors_nil | wfDestructors_cons | wfDestructors_nested |
-      wfDestructors_recursive | wfTypeDeclaration_data | wfTypeDeclaration_codata => intros; trivial
+  all_goals intros; trivial
 
 -- ADE: none.
 /-- A well-formed type declaration introduces names of types that no entry of the signature does. -/

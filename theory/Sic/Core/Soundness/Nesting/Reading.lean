@@ -959,22 +959,7 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
     have h := hrec _ (List.mem_cons_self ..)
     simp only [TypeDeclaration.blockInstance, Term.blockName, hD, ite_true] at h
     exact nomatch h
-  case wfSig_empty | wfSig_constantDefinition | wfSig_constantDeclaration | wfSig_typeDeclaration |
-      wfSig_lifting | wfConstantDefinition_intro | wfConstantDeclaration_intro | wfCtx_empty |
-      wfCtx_var | wfCtx_secondOrder | wfType_univType | wfType_propType | eqType_refl |
-      eqType_symm | eqType_trans | eqType_univType | eqType_propType | hasType_var |
-      hasType_secondOrder | hasType_const | hasType_univ | hasType_prop | hasType_inst |
-      hasType_equality | hasType_reflProof | hasType_transp | hasType_propExt | hasType_coind |
-      hasType_ctor | hasType_recursor | hasType_obs | hasType_corec | hasType_conv | eqTerm_refl |
-      eqTerm_symm | eqTerm_trans | eqTerm_conv | eqTerm_irr | eqTerm_secondOrder | eqTerm_delta |
-      eqTerm_const | eqTerm_univ | eqTerm_prop | eqTerm_inst | eqTerm_equality | eqTerm_transp |
-      eqTerm_transpSame | eqTerm_ctor | eqTerm_recursor | eqTerm_obs | eqTerm_corec | eqTerm_iota |
-      eqTerm_etaCtor | eqTerm_beta | eqTerm_etaObs | hasArgs_nil | hasArgs_cons | eqArgs_nil |
-      eqArgs_cons | hasInstanceArgs_nil | hasInstanceArgs_var | hasInstanceArgs_secondOrder |
-      eqInstanceArgs_nil | eqInstanceArgs_var | eqInstanceArgs_secondOrder | wfTelescope_nil |
-      wfTelescope_cons | wfTelescopeSorts_nil | wfTelescopeSorts_cons | eqTelescope_nil |
-      eqTelescope_cons | wfFields_nil | wfFields_cons | wfFields_recursive | wfFields_nested |
-      wfTypeDeclaration_data | wfTypeDeclaration_codata => intros; trivial
+  all_goals intros; trivial
 
 end
 
