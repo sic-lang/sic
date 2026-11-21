@@ -320,10 +320,9 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact .reflProof (hA_ih Base hL hθ) (ht_ih Base hL hθ)
   | HasType.transp hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t₁ t₂ _ _ _
     have hu' := hu_ih Base hL hθ
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu'
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)]
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)] at hu'
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)]
     exact .transp (hA_ih Base hL hθ) (ht₁_ih Base hL hθ) (ht₂_ih Base hL hθ) (hC_ih Base hL (hθ.var _))
       (ht_ih Base hL hθ) hu'
   | HasType.propExt hA hB ht hu hA_ih hB_ih ht_ih hu_ih =>
@@ -334,8 +333,18 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact .propExt (hA_ih Base hL hθ) (hB_ih Base hL hθ) ht' hu'
   | HasType.coind h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih
       hAt_ih ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih =>
+    rename_i k _ _ _ _ _ _ _ _ _ _ t₁ t₂ _ _ _ _ A κs
+    rename Signature => sig
+    rename Scope => Δ
+    rename TypeDeclaration => decl
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Level _ => l'
+    rename Terms _ _ => As
+    rename DestructorBranches _ _ => gs
     intro Base hL Γ ctx' θ hθ
-    rename_i sig k Δ _ decl _ _ qs ls ps as l' t₁ t₂ _ As gs _ A κs
     let p₀ : Parameter := ⟨Grading.Grade.one, Grading.Grade.one⟩
     -- The observations of the variables of a branch, substituted under them.
     have hc : ∀ (X : Var (Δ.extend 3) .var) (Y : Var (Γ.extend 3) .var),
@@ -442,9 +451,11 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact hts_ih Base hL hθ
   | HasType.recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ has_ih ht_ih hCt_ih
       hut_ih =>
+    rename_i Rs
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
     intro Base hL Γ ctx' θ hθ
-    rename_i t Cs us _ _ _ Rs
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t _)]
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
     refine .recursor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hq hl hp hadm
       (has_ih Base hL hθ) (ht_ih Base hL hθ) hh
       (Motives.get_subst _ hC) ((Motives.length_subst _ Cs).trans hCl) ?_ ?_
@@ -469,8 +480,12 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst _ C₀] at ih
       exact ih
   | HasType.obs h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ _ _ _ t _ _ _ _ _ _ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro Base hL Γ ctx' θ hθ
-    rename_i D _ qs ls ps as t _ _ _ _ _ _ _ _ _ _
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
       (hd.obsSubst_observation_subst θ D qs ls ps as t)), Term.obs_subst]
     refine .obs h hq hl hp hadm hd (has_ih Base hL hθ) (ht_ih Base hL hθ) ?_
@@ -478,8 +493,14 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact hbs_ih Base hL hθ
   | HasType.corec h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
       hgt_ih =>
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Grading.Grade => r
+    rename States _ _ => Ss
+    rename DestructorBranches _ _ => gs
     intro Base hL Γ ctx' θ hθ
-    rename_i qs ls ps as r Ss gs _ _ _ _
     rw [Term.corec_subst]
     refine .corec h hq hl hp hadm hpre (has_ih Base hL hθ) hh (States.get_subst _ hS)
       (hss_ih Base hL hθ) ((States.length_subst _ Ss).trans hSl) ?_ ?_
@@ -553,19 +574,17 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact .equality (hA_ih Base hL hθ) (ht_ih Base hL hθ) (hu_ih Base hL hθ) hl
   | EqTerm.transp hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t₁ _ t₂ _ _ _ _ _ _ _
     have hu' := hu_ih Base hL hθ
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu'
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)]
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)] at hu'
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)]
     exact .transp (hA_ih Base hL hθ) (ht₁_ih Base hL hθ) (ht₂_ih Base hL hθ) (hC_ih Base hL (hθ.var _))
       (ht_ih Base hL hθ) hu'
   | EqTerm.transpSame hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t₁ t₂ _ _ _
     have hu' := hu_ih Base hL hθ
     have hCC' := hCC_ih Base hL hθ
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)] at hu' hCC'
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₂ θ)] at hCC' ⊢
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)] at hu' hCC'
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)] at hCC' ⊢
     exact .transpSame (hA_ih Base hL hθ) (ht₁_ih Base hL hθ) (ht₂_ih Base hL hθ) (hC_ih Base hL (hθ.var _))
       (ht_ih Base hL hθ) hu' hCC'
   | EqTerm.ctor h hc hq hl₁ hl₂ hp hadm has hls hts has_ih hts_ih =>
@@ -577,8 +596,8 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
   | EqTerm.recursor h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁
       hus₂ hes hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t _ Cs₁ Cs₂ us₁ us₂ _ _ _ Rs₁ Rs₂
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
+    rename_i Cs₁ Cs₂ us₁ us₂ _ _ _ Rs₁ Rs₂
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)]
     refine .recursor (Rs₁ := fun con => (Rs₁ con).subst (Subst.liftN _ θ))
       (Rs₂ := fun con => (Rs₂ con).subst (Subst.liftN _ θ)) h hq hl₁ hl₂ hp hadm (has_ih Base hL hθ) hls (ht_ih Base hL hθ) hh
       (Motives.get_subst θ hC) ((Motives.length_subst θ Cs₁).trans hCl₁)
@@ -617,8 +636,10 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
       exact ih
   | EqTerm.obs h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ ls _ _ as _ t _ _ _ _ _ _ _ _ _ _ _ _
+    rename List Quality => qs
+    rename List Grading.Grade => ps
     intro Base hL Γ ctx' θ hθ
-    rename_i D _ qs ls _ ps as _ t _ _ _ _ _ _ _ _ _ _ _ _
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
       (hd.obsSubst_observation_subst θ D qs ls ps as t)), Term.obs_subst, Term.obs_subst]
     refine .obs h hq hl₁ hl₂ hp hadm hd (has_ih Base hL hθ) hls (ht_ih Base hL hθ) ?_
@@ -626,8 +647,11 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact hbs_ih Base hL hθ
   | EqTerm.corec h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁
       hgl₂ hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih =>
+    rename_i ls _ _ as _ _ Ss₁ Ss₂ gs₁ gs₂ _ _ _ _ _ _
+    rename List Quality => qs
+    rename List Grading.Grade => ps
+    rename Grading.Grade => r
     intro Base hL Γ ctx' θ hθ
-    rename_i qs ls _ ps as _ r Ss₁ Ss₂ gs₁ gs₂ _ _ _ _ _ _
     rw [Term.corec_subst, Term.corec_subst]
     refine .corec h hq hl₁ hl₂ hp hadm hpre (has_ih Base hL hθ) hls hh
       (States.get_subst θ hS₁) (States.get_subst θ hS₂) (hss_ih Base hL hθ)
@@ -667,8 +691,11 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
       exact ih
   | EqTerm.iota h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus hRs hut hκ has_ih hts_ih
       hCt_ih hut_ih =>
+    rename_i Rs
+    rename Signature => sig
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
     intro Base hL Γ ctx' θ hθ
-    rename_i sig _ _ _ _ _ _ con _ _ _ _ _ _ _ Cs us _ i j _ u _ _ Rs
     rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ), Term.instantiate_subst,
       Term.instantiate_subst, Args.subst_liftN_rename_weakenN]
     show EqTerm sig ctx' (.recursor _ _ _ _ _ _ _ _ (Term.subst θ (.ctor _ _ _ _ _ _ _)) _ _ _) _ _
@@ -700,10 +727,19 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
       exact ih
   | EqTerm.etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ has_ih
       ht_ih he_ih hCt_ih hut_ih =>
+    rename_i k _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ e Rs
+    rename Name => D
+    rename DataType _ _ _ _ => T
+    rename Constructor _ _ _ _ => con
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
     intro Base hL Γ ctx' θ hθ
-    rename_i k _ _ _ D T con qs ls ps as _ _ _ t Cs us _ i j _ e Rs
-    rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ),
-      Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
+    rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ),
+      Term.subst_subst₀_of (Subst₀.Swaps.single _ θ)]
     have hu' := Branches.get_subst θ hu
     rw [show ((e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).subst
           (Subst.liftN 0 (Subst.liftN _ θ)) :
@@ -736,8 +772,14 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
       exact ih
   | EqTerm.beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih
       hss_ih hbs_ih hSt_ih hgt_ih =>
+    rename_i D _ _ _ _ _ r _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename States _ _ => Ss
+    rename DestructorBranches _ _ => gs
     intro Base hL Γ ctx' θ hθ
-    rename_i D _ qs ls ps as r Ss gs _ i _ _ _ d p q ς _ _ _ _ _ g _
     rw [Term.obs_subst, Term.corec_subst, Term.observed_subst, Term.instantiate_subst, Term.instantiate_subst,
       Args.subst_liftN_rename_weakenN, Term.instantiate_subst, Term.subst_subst_of
         (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
@@ -775,8 +817,13 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
           (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
       exact ih
   | EqTerm.etaObs h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
+    rename_i t u
+    rename Name => D
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grading.Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro Base hL Γ ctx' θ hθ
-    rename_i D _ qs ls ps as t u
     refine .etaObs h hq hl hp hadm hr (has_ih Base hL hθ) (ht_ih Base hL hθ) (hu_ih Base hL hθ) ?_
     intro d p q ς ps' Ξ Θ B ψ hd
     have ih := (hobs_ih d p q ς ps' Ξ Θ B ψ hd Base hL)  (hθ.append _)
@@ -790,31 +837,30 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     exact .nil (hctx_ih Base hL hθ)
   | HasArgs.cons ht hts ht_ih hts_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t _ _ _
     refine .cons (ht_ih Base hL hθ) ?_
-    rw [← Telescope.subst_subst₀_of (Subst₀.Swaps.single t _)]
+    rw [← Telescope.subst_subst₀_of (Subst₀.Swaps.single _ _)]
     exact hts_ih Base hL hθ
   | EqArgs.nil hctx hctx_ih =>
     intro Base hL Γ ctx' θ hθ
     exact .nil (hctx_ih Base hL hθ)
   | EqArgs.cons ht hts ht_ih hts_ih =>
     intro Base hL Γ ctx' θ hθ
-    rename_i t _ _ _ _ _
     refine .cons (ht_ih Base hL hθ) ?_
-    rw [← Telescope.subst_subst₀_of (Subst₀.Swaps.single t _)]
+    rw [← Telescope.subst_subst₀_of (Subst₀.Swaps.single _ _)]
     exact hts_ih Base hL hθ
   | HasInstanceArgs.nil hctx hctx_ih =>
     intro Base hL Γ ctx' θ hθ
     exact .nil (hctx_ih Base hL hθ)
   | HasInstanceArgs.var has ha has_ih ha_ih =>
+    rename_i A
+    rename InstanceArgs _ _ _ => as
     intro Base hL Γ ctx' θ hθ
-    rename_i as _ _ A
     refine .var (has_ih Base hL hθ) ?_
     rw [← Term.subst_subst_of (InstanceArgs.toSubst_subst θ as) A]
     exact ha_ih Base hL hθ
   | HasInstanceArgs.secondOrder has hB has_ih hB_ih =>
+    rename InstanceArgs _ _ _ => as
     intro Base hL Γ ctx' θ hθ
-    rename_i as _ _ _ _
     refine .secondOrder (has_ih Base hL hθ) ?_
     have ih := hB_ih Base hL (hθ.append _)
     rw [Telescope.subst_subst_of (InstanceArgs.toSubst_subst θ as),
@@ -841,16 +887,16 @@ theorem Derivable.substStable {J : Judgment} (h : Derivable J) : J.SubstStable :
     intro Base hL Γ ctx' θ hθ
     exact .nil (hctx_ih Base hL hθ)
   | WfTelescope.cons hA hκ hΘ hp hA_ih hΘ_ih =>
+    rename Term _ _ => A
     intro Base hL Γ ctx' θ hθ
-    rename_i A _ _ _
     refine .cons (hA_ih Base hL hθ) hκ ?_ hp
     exact hΘ_ih Base hL (hθ.var A)
   | WfTelescopeSorts.nil hctx hctx_ih =>
     intro Base hL Γ ctx' θ hθ
     exact .nil (hctx_ih Base hL hθ)
   | WfTelescopeSorts.cons hA hl hΘ hp hA_ih hΘ_ih =>
+    rename Term _ _ => A
     intro Base hL Γ ctx' θ hθ
-    rename_i A _ _ _ _
     refine .cons (hA_ih Base hL hθ) hl ?_ hp
     exact hΘ_ih Base hL (hθ.var A)
   | EqTelescope.nil hctx hctx_ih =>

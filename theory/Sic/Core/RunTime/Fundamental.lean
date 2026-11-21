@@ -201,19 +201,21 @@ theorem Derivable.fundamental {J : Judgment} (h : Derivable J) : J.Fundamental :
     simp [GradeVector.add, GradeVector.update, Sic.Math.Vector.zero, Mode.grade, Mode.erased]
     rfl
   | HasType.secondOrder _ _ _ =>
-    rename_i X _ _ _ _ _ _
+    rename Var _ _ => X
     intro ι P sigM hΓ γ hw hι hP _
     exact nomatch hΓ _ X.mem
   | HasType.const hctx h hq hl hp hctx_ih =>
+    rename Context _ _ => ctx
+    rename List Quality => qs
+    rename List Grade => ps
     intro ι P sigM hΓ γ hw hι hP hu
-    rename_i ctx _ _ _ _ m _ _ qs ls ps
     intro ρ
     have hdT := (presuppositions.wfCtx hctx).distinct
     obtain ⟨-, hm⟩ := Usage.inv_const hdT h hu rfl
     have hm' : _ = Mode.oneOne := (by decide : ∀ m : Mode, Mode.oneOne ·ᵐ m = .oneOne →
       m = .oneOne) _ hm
     subst hm'
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have hc := RunValidRen.const (hΓ := hΓ) (ctx := ctx.atLevels ρ) (γ := γ)
       (hP h qs _ ps hq hl' hp)
@@ -252,12 +254,11 @@ theorem Derivable.fundamental {J : Judgment} (h : Derivable J) : J.Fundamental :
       (.equality (.inst h.hasDeclaredType hq hl hp hadm has) ht₁ ht₂) ρ) rfl
   | HasType.ctor h hc hq hl hp hadm has hts has_ih hts_ih =>
     intro ι P sigM hΓ γ hw hι hP hu
-    rename_i ls _ _ _
     intro ρ
     have hdT := (presuppositions.hasArgs hts).distinct
     obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc hq hp hu rfl
     obtain ⟨hM, hv⟩ := hι.hasDataType h
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -272,15 +273,24 @@ theorem Derivable.fundamental {J : Judgment} (h : Derivable J) : J.Fundamental :
     exact RunValidRen.sub hγ hc'
   | HasType.recursor h hq hl hp hadm has ht hh hC _ hCs hCt _ hus hRs hut hκ has_ih ht_ih hCt_ih
       hut_ih =>
+    rename_i r ς χ' t _ _ _ _ _ _ _ Rs
+    rename Context _ _ => ctx
+    rename TypeDeclaration => decl
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
+    rename Universe _ => κ
     intro ι P sigM hΓ γ hw hι hP hu
-    rename_i ctx decl _ _ qs ls ps as r ς χ' t Cs us κ _ _ _ _ Rs
     intro ρ
     rename_i Rs
     have hdT := (presuppositions.hasType ht).distinct
     obtain ⟨γ', χ, δs, gs, πs, hγ, -, htu, hRU, hbu, hg, hχ, hr, hprop, -⟩ :=
       Usage.inv_recursor hdT h hq hl hp hu rfl
     obtain ⟨hM, hv⟩ := hι.hasDataType h
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -460,15 +470,19 @@ theorem Derivable.fundamental {J : Judgment} (h : Derivable J) : J.Fundamental :
     simp only [Term.substLevels]
     exact RunValidRen.sub hγ hc
   | HasType.obs h hq hl hp hadm hpos has ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ _ _ _ t _ _ _ _ _ Ξ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro ι P sigM hΓ γ hw hι hP hu
-    rename_i D _ qs ls ps as t d p _ _ ps' Ξ _ _ _ _
     intro ρ
     have hWf := presuppositions.hasType ht
     obtain ⟨γ', δ, hγ, hut, hbus, hm⟩ := Usage.inv_obs hWf.distinct h hq hp hpos hu rfl
     have hpr : _ ∉ Mode.oneOne.erased := (by decide : ∀ p : Grade,
       Mode.oneOne ·ᵐ p.mode = .oneOne → p ∉ Mode.oneOne.erased) _ hm
     obtain ⟨hM, hv⟩ := hι.hasCodataType h
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -502,12 +516,11 @@ theorem Derivable.fundamental {J : Judgment} (h : Derivable J) : J.Fundamental :
     exact RunValidRen.sub hγ hc
   | HasType.corec h hq hl hp hadm hpre has hh hS hss _ hSs _ _ hgs hgt has_ih hss_ih _ hgt_ih =>
     intro ι P sigM hΓ γ hw hι hP hu
-    rename_i ls _ _ _ _ _ _ _ _ _ _ _ _ _
     intro ρ
     have hdT := (presuppositions.hasArgs hss).distinct
     obtain ⟨γ', δ, δs, hγ, -, hssu, hgu, hδ, -⟩ := Usage.inv_corec hdT h hq hp hh hS hu rfl
     obtain ⟨hM, hv⟩ := hι.hasCodataType h
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'

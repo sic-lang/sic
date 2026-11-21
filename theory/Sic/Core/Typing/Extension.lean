@@ -254,7 +254,6 @@ theorem Derivable.extensionStable {J : Judgment} (h : Derivable J) : J.Extension
   | EqTerm.iota h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus hRs hut hκ has_ih hts_ih
       hCt_ih hut_ih =>
     intro sig' hs hw
-    rename_i con _ _ _ _ _ _ _ _ _ _ i j _ u _ _ _
     exact
     .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (has_ih hs hw) (hts_ih hs hw) hi hC
       hu (Terms.ResultTerms.ofTypeDeclarations (fun _ h => hs h) hrs) hCl hCs
@@ -265,7 +264,6 @@ theorem Derivable.extensionStable {J : Judgment} (h : Derivable J) : J.Extension
   | EqTerm.etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ has_ih
       ht_ih he_ih hCt_ih hut_ih =>
     intro sig' hs hw
-    rename_i con _ _ _ _ _ _ _ _ _ _ _ i j _ _ _
     exact
     .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (has_ih hs hw) (ht_ih hs hw)
       (he_ih hs hw) hi hC hu hCl hCs
@@ -276,7 +274,6 @@ theorem Derivable.extensionStable {J : Judgment} (h : Derivable J) : J.Extension
   | EqTerm.beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih
       hss_ih hbs_ih hSt_ih hgt_ih =>
     intro sig' hs hw
-    rename_i i _ _ _ d p q ς _ _ _ _ _ g _
     exact
     .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
       (has_ih hs hw) hh hS (hss_ih hs hw) hi hd hg (hbs_ih hs hw) hSl hSs

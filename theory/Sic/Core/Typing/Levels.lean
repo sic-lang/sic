@@ -180,8 +180,7 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact .secondOrder (hX.substLevels ls') (hts_ih ls')
   | HasType.const hctx h hq hl hp hctx_ih =>
     intro k' ls'
-    rename_i ls _
-    rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' ls hl]
+    rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' _ hl]
     exact .const (hctx_ih ls') h hq _ hp
   | HasType.univ hctx hctx_ih =>
     intro k' ls'
@@ -202,8 +201,9 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     intro k' ls'
     exact .reflProof (hA_ih ls') (ht_ih ls')
   | HasType.transp hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih =>
+    rename_i t₁ t₂ _ _ _
+    rename Universe _ => κ
     intro k' ls'
-    rename_i κ _ t₁ t₂ _ _ _
     have hu' := (hu_ih ls')
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
       (fun x => by cases x <;> rfl)] at hu'
@@ -219,8 +219,18 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact .propExt (hA_ih ls') (hB_ih ls') ht' hu'
   | HasType.coind h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih
       hAt_ih ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih =>
+    rename_i k _ _ _ _ _ _ _ _ _ _ t₁ t₂ _ _ _ _ A κs
+    rename Signature => sig
+    rename Scope => Γ
+    rename TypeDeclaration => decl
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Level _ => l'
+    rename Terms _ _ => As
+    rename DestructorBranches _ _ => gs
     intro k' ls'
-    rename_i sig k Γ _ decl _ _ qs ls ps as l' t₁ t₂ _ As gs _ A κs
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     let p₀ : Parameter := ⟨Grade.one, Grade.one⟩
@@ -318,17 +328,19 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       exact ih
   | HasType.ctor h hc hq hl hp hadm has hts has_ih hts_ih =>
     intro k' ls'
-    rename_i ls _ _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have hts' := (hts_ih ls')
-    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
+    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' _ hl] at hts'
     rw [Term.ctor_substLevels]
     exact .ctor h hc hq _ hp hadm has' hts'
   | HasType.recursor h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus hRs hut hκ has_ih ht_ih hCt_ih
       hut_ih =>
+    rename_i t _ _ _ _ _ Rs
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
+    rename Universe _ => κ
     intro k' ls'
-    rename_i ls _ _ _ _ _ t Cs us κ _ _ Rs
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
@@ -355,11 +367,15 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       rw [Context.substLevels_append, Context.substLevels_append,
         Constructor.fieldsAt_substLevels, Term.substLevels_rename,
         Term.atCtor_substLevels ls' C₀,
-        ← Level.getFin_map_subst ls' ls hl] at ih
+        ← Level.getFin_map_subst ls' _ hl] at ih
       exact ih
   | HasType.obs h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ _ _ _ t _ _ _ _ _ Ξ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro k' ls'
-    rename_i D _ qs ls ps as t _ _ _ _ _ Ξ _ _ _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
@@ -371,8 +387,15 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact .obs h hq _ hp hadm hd has' (ht_ih ls') hbs'
   | HasType.corec h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
       hgt_ih =>
+    rename Context _ _ => ctx
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Grade => r
+    rename States _ _ => Ss
+    rename DestructorBranches _ _ => gs
     intro k' ls'
-    rename_i ctx _ _ _ qs ls ps as r Ss gs _ ps' _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     rw [Term.corec_substLevels]
@@ -436,14 +459,12 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact .secondOrder (hX.substLevels ls') (hts_ih ls')
   | EqTerm.delta hctx h hq hl hp hctx_ih =>
     intro k' ls'
-    rename_i ls _
     rw [Signature.instanceType_substLevels, Signature.instanceType_substLevels,
-      ← Level.getFin_map_subst ls' ls hl]
+      ← Level.getFin_map_subst ls' _ hl]
     exact .delta (hctx_ih ls') h hq _ hp
   | EqTerm.const hctx h hq hl₁ hl₂ hp hls hctx_ih =>
     intro k' ls'
-    rename_i ls _ _
-    rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' ls hl₁]
+    rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' _ hl₁]
     exact .const (hctx_ih ls') h hq _ _ hp (Level.getFin_map_subst_equal ls' hls)
   | EqTerm.univ hctx hl hctx_ih =>
     intro k' ls'
@@ -463,8 +484,9 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact
     .equality (hA_ih ls') (ht_ih ls') (hu_ih ls') (Level.subst_equal ls' hl)
   | EqTerm.transp hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih =>
+    rename_i t₁ _ t₂ _ _ _ _ _ _ _
+    rename Universe _ => κ
     intro k' ls'
-    rename_i κ _ _ t₁ _ t₂ _ _ _ _ _ _ _
     have hu' := (hu_ih ls')
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
       (fun x => by cases x <;> rfl)] at hu'
@@ -473,8 +495,9 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     exact .transp (κ := κ.substLevels ls') (hA_ih ls') (ht₁_ih ls') (ht₂_ih ls')
       (hC_ih ls') (ht_ih ls') hu'
   | EqTerm.transpSame hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih =>
+    rename_i t₁ t₂ _ _ _
+    rename Universe _ => κ
     intro k' ls'
-    rename_i κ _ t₁ t₂ _ _ _
     have hu' := (hu_ih ls')
     have hCC' := (hCC_ih ls')
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
@@ -485,17 +508,17 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       (ht₂_ih ls') (hC_ih ls') (ht_ih ls') hu' hCC'
   | EqTerm.ctor h hc hq hl₁ hl₂ hp hadm has hls hts has_ih hts_ih =>
     intro k' ls'
-    rename_i ls _ _ _ _ _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have hts' := (hts_ih ls')
-    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl₁] at hts'
+    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' _ hl₁] at hts'
     rw [Term.ctor_substLevels, Term.ctor_substLevels]
     exact .ctor h hc hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls) hts'
   | EqTerm.recursor h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁
       hus₂ hes hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih =>
+    rename_i t _ Cs₁ Cs₂ us₁ us₂ _ _ _ Rs₁ Rs₂
+    rename Universe _ => κ
     intro k' ls'
-    rename_i ls _ _ _ _ _ _ _ t _ Cs₁ Cs₂ us₁ us₂ κ _ _ Rs₁ Rs₂
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
@@ -535,11 +558,13 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       have ih := (hut_ih i j T' con C₀ u₁₀ u₂₀ hi hC₀ hu₁₀ hu₂₀ ls')
       rw [Context.substLevels_append, Context.substLevels_append,
         Constructor.fieldsAt_substLevels, Term.substLevels_rename,
-        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl₁] at ih
+        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' _ hl₁] at ih
       exact ih
   | EqTerm.obs h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ ls _ _ as _ t _ _ _ _ _ _ Ξ _ _ _ _ _
+    rename List Quality => qs
+    rename List Grade => ps
     intro k' ls'
-    rename_i D _ qs ls _ ps as _ t _ _ _ _ _ _ Ξ _ _ _ _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
@@ -552,8 +577,13 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       hbs'
   | EqTerm.corec h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁
       hgl₂ hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih =>
+    rename_i ls _ _ as _ _ Ss₁ Ss₂ gs₁ gs₂ _ _ _ _ _ _
+    rename Signature => sig
+    rename Context _ _ => ctx
+    rename List Quality => qs
+    rename List Grade => ps
+    rename Grade => r
     intro k' ls'
-    rename_i sig _ _ ctx _ _ _ qs ls _ ps as _ r Ss₁ Ss₂ gs₁ gs₂ _ ps' _ _ _ _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     rw [Term.corec_substLevels, Term.corec_substLevels]
@@ -609,12 +639,16 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       exact ih
   | EqTerm.iota h hc hq hl hp hadm has hts hi hC hu hrs hCl hCs hCt hul hus hRs hut hκ has_ih hts_ih
       hCt_ih hut_ih =>
+    rename_i Rs
+    rename Signature => sig
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
+    rename Universe _ => κ
     intro k' ls'
-    rename_i sig _ _ _ _ _ _ con _ ls _ _ _ _ _ Cs us κ i j _ u _ _ Rs
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have hts' := (hts_ih ls')
-    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
+    rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' _ hl] at hts'
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels ls' _))
         (fun x => by cases x <;> rfl),
       Term.substLevels_instantiate, Term.substLevels_instantiate, Args.substLevels_rename]
@@ -643,12 +677,22 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       have ih := (hut_ih i j T' con C₀ u₀ hi hC₀ hu₀ ls')
       rw [Context.substLevels_append, Context.substLevels_append,
         Constructor.fieldsAt_substLevels, Term.substLevels_rename,
-        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl] at ih
+        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' _ hl] at ih
       exact ih
   | EqTerm.etaCtor h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus hRs hut hκ has_ih
       ht_ih he_ih hCt_ih hut_ih =>
+    rename_i k _ _ _ _ _ _ _ _ _ _ _ _ _ t _ _ _ _ _ _ e Rs
+    rename Scope => Γ
+    rename DataType _ _ _ _ => T
+    rename Constructor _ _ _ _ => con
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Motives _ _ => Cs
+    rename Branches _ _ => us
+    rename Universe _ => κ
     intro k' ls'
-    rename_i k Γ _ _ _ T con qs ls ps as _ _ _ t Cs us κ i j _ e Rs
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have hu' := Branches.get_substLevels_of ls' hu
@@ -683,12 +727,19 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
       have ih := (hut_ih i j T' con C₀ u₀ hi hC₀ hu₀ ls')
       rw [Context.substLevels_append, Context.substLevels_append,
         Constructor.fieldsAt_substLevels, Term.substLevels_rename,
-        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' ls hl] at ih
+        Term.atCtor_substLevels ls' C₀, ← Level.getFin_map_subst ls' _ hl] at ih
       exact ih
   | EqTerm.beta h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih
       hss_ih hbs_ih hSt_ih hgt_ih =>
+    rename_i D _ _ _ _ _ r _ _ _ _ _ _ ss _ _ _ _ _ Ξ₀ _ _ _ _ _
+    rename Context _ _ => ctx
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename States _ _ => Ss
+    rename DestructorBranches _ _ => gs
     intro k' ls'
-    rename_i ctx _ D _ qs ls ps as r Ss gs _ i ps' _ ss d p q ς _ Ξ₀ _ _ _ g _
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     have ho₀ {a : Scope.Entry} (x : Var Ξ₀ a) :=
@@ -740,8 +791,13 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
         Term.substLevels_substLevels_getFin] at ih
       exact ih
   | EqTerm.etaObs h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
+    rename_i t u
+    rename Name => D
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro k' ls'
-    rename_i D _ qs ls ps as t u
     have has' := (has_ih ls')
     rw [Context.substLevels_substLevels_getFin] at has'
     rw [Term.substLevels]
@@ -782,15 +838,15 @@ theorem Derivable.levelsStable {J : Judgment} (h : Derivable J) : J.LevelsStable
     intro k' ls'
     exact .nil (hctx_ih ls')
   | HasInstanceArgs.var has ha has_ih ha_ih =>
+    rename InstanceArgs _ _ _ => as
     intro k' ls'
-    rename_i as _ _ _
     refine .var (has_ih ls') ?_
     have ih := (ha_ih ls')
     rw [Term.substLevels_subst_of (fun x => InstanceArgs.toSubst_substLevels ls' as x)] at ih
     exact ih
   | HasInstanceArgs.secondOrder has hB has_ih hB_ih =>
+    rename InstanceArgs _ _ _ => as
     intro k' ls'
-    rename_i as _ _ _ _
     refine .secondOrder (has_ih ls') ?_
     have ih := (hB_ih ls')
     rw [Context.substLevels_append,

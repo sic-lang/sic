@@ -700,9 +700,9 @@ theorem Derivable.reads {J : Judgment} (h : Derivable J) : J.Reads := by
   | WfDestructors.nil _ _ =>
     intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' _ _ _ _ _ _
     exact R.nil
-  | WfDestructors.cons _ hνB hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+  | @WfDestructors.cons sigT decl _ Γ _ _ _ _ ps _ _ _ _ Θ B ψ ds κ₁ κ _ hνB hΘ hB hκ _ hds hΘ_ih
+      hB_ih hds_ih =>
     intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
-    rename_i sigT decl _ Γ _ _ _ _ ps _ _ _ _ Θ B ψ ds κ₁ κ _ _
     -- What the strict positivity gives of the destructor.
     have hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx => by
@@ -797,9 +797,9 @@ theorem Derivable.reads {J : Judgment} (h : Derivable J) : J.Reads := by
     rw [Term.subst_append, ← hBe]
     exact hf τ₁ τ₂ ((congrArg (fun Θ' => EqSubst sig ι (Context.empty.append Θ') τ₁ τ₂)
       (hΘe θ₁)).mpr hτ)
-  | WfDestructors.nested _ _ hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+  | @WfDestructors.nested sigT decl _ Γ _ _ _ _ ps ctx _ _ _ Θ B ψ ds κ₁ κ _ _ hΘ hB hκ _ hds hΘ_ih
+      hB_ih hds_ih =>
     intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
-    rename_i sigT decl _ Γ _ _ _ _ ps ctx _ _ _ Θ B ψ ds κ₁ κ _ _ _
     have hds_eq : (ds.rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) @β) =
         ds.rename (fun x => .succ (β x)) := Destructors.rename_rename_of (fun _ => rfl) ds
     -- What the strict positivity gives of the destructor.

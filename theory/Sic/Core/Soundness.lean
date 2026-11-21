@@ -326,9 +326,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
   | HasType.const hctx h hq hl hp hctx_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have hc := ValidTermΓ.const (hctx_ih hd hord hι ρ) hι h hq hl' hp
     rw [List.getFin_map] at hc
@@ -342,9 +341,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact ValidEqTermΓ.sort (q := .prop) (hctx_ih hd hord hι ρ) (Level.equivalence.refl _)
   | HasType.inst h hq hl hp hadm has has_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -380,8 +378,16 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact ValidTermΓ.propExt (hA_ih hd hord hι ρ) (hB_ih hd hord hι ρ) ht' hu'
   | HasType.coind h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht _ hgs hΘ hB hBt hgt hgr has_ih hAt_ih
       ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih =>
+    rename_i k _ _ _ _ _ _ _ _ _ _ t₁ t₂ _ _ _ _ A κs _
+    rename Scope => Γ
+    rename TypeDeclaration => decl
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename Level _ => l'
+    rename Terms _ _ => As
     intro ι sigM hd hord hι
-    rename_i k Γ _ decl _ _ qs ls ps as l' t₁ t₂ _ As _ _ A κs _
     intro ρ
     let L' : Fin k → Level 0 := fun i => .ofNat (ρ i)
     have hl' : (ls.map (Level.subst L')).length = _ := (List.length_map _).trans hl
@@ -486,9 +492,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
       exact ih
   | HasType.ctor h hc hq hl hp hadm has hts has_ih hts_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -501,9 +506,9 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
   | HasType.recursor h hq hl hp hadm has ht hh hC _ hCs hCt _ hus hRs hut hκ has_ih ht_ih hCt_ih
       hut_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _ _ _ _ _ t _ _ _ _ _ _ _ _
+    rename_i t _ _ _ _ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -543,10 +548,14 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
         exact hb)
       hκ
   | HasType.obs h hq hl hp hadm hpos has ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ _ _ _ t _ _ _ _ _ Ξ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι
-    rename_i D _ qs ls ps as t _ _ _ _ _ Ξ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -566,9 +575,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact hc
   | HasType.corec h hq hl hp hadm hpre has hh hS hss _ hSs _ _ hgs hgt has_ih hss_ih _ hgt_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _ _ _ _ _ _ _ _ _ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -607,9 +615,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
   | EqTerm.delta hctx h hq hl hp hctx_ih =>
     intro ι sigM hd hord hι
-    rename_i ls _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have hc := ValidEqTermΓ.delta (hctx_ih hd hord hι ρ) hι h hq hl' hp
     rw [List.getFin_map] at hc
@@ -617,11 +624,10 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact hc
   | EqTerm.const hctx h hq hl₁ hl₂ hp hls hctx_ih =>
     intro ι sigM hd hord hι
-    rename_i ls₁ ls₂ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have hc := ValidEqTermΓ.const (hctx_ih hd hord hι ρ) hι h hq hl₁' hl₂' hp (by
         rw [List.getFin_map, List.getFin_map]
@@ -637,11 +643,10 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact fun ρ => ValidEqTermΓ.sort (hctx_ih hd hord hι ρ) (Level.subst_equal _ hl)
   | EqTerm.inst h hq hl₁ hl₂ hp hadm has hls has_ih =>
     intro ι sigM hd hord hι
-    rename_i ls₁ ls₂ _ _ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -681,11 +686,10 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     exact ValidEqTermΓ.transpSame hu' hCC'
   | EqTerm.ctor h hc hq hl₁ hl₂ hp hadm has hls hts has_ih hts_ih =>
     intro ι sigM hd hord hι
-    rename_i ls₁ ls₂ _ _ _ _ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -701,11 +705,11 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
   | EqTerm.recursor h hq hl₁ hl₂ hp hadm has _ ht hh hC _ _ hCs₁ hCs₂ hCt _ _ hus₁ hus₂ _ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih =>
     intro ι sigM hd hord hι
-    rename_i ls₁ ls₂ _ _ _ _ _ _ t₁ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    rename_i t₁ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -745,12 +749,14 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
         exact hb)
       hκ
   | EqTerm.obs h hq hl₁ hl₂ hp hadm hpos has hls ht hbs has_ih ht_ih hbs_ih =>
+    rename_i D _ _ ls₁ _ _ as₁ _ t₁ _ _ _ _ _ _ Ξ _ _ _ _ _
+    rename List Quality => qs
+    rename List Grade => ps
     intro ι sigM hd hord hι
-    rename_i D _ qs ls₁ ls₂ ps as₁ _ t₁ _ _ _ _ _ _ Ξ _ _ _ _ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -774,11 +780,10 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
   | EqTerm.corec h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ _ hss _ _ hSs _ _ _ _ _ hgs hgt has_ih
       hss_ih _ _ hgt_ih =>
     intro ι sigM hd hord hι
-    rename_i ls₁ ls₂ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     intro ρ
-    have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₁' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₁
-    have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl₂' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl₂
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -798,9 +803,8 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
   | EqTerm.iota h hc hq hl hp hadm has hts hi hC hu hrs _ hCs hCt _ hus hRs hut hκ has_ih hts_ih
       hCt_ih hut_ih =>
     intro ι sigM hd hord hι
-    rename_i con _ ls _ _ _ _ _ _ _ _ i j _ u _ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -837,10 +841,11 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
         (Constructor.ResultTerms.substLevels_recursorAt _ hrs))
   | EqTerm.etaCtor h hc hq hl hp hadm hr has ht he hi hC hu _ _ hCt _ _ _ _ hκ has_ih ht_ih he_ih
       hCt_ih _ =>
+    rename_i t _ _ _ _ _ C _ _ _ _ _ _ _ _ _
+    rename DataType _ _ _ _ => T
     intro ι sigM hd hord hι
-    rename_i T _ _ ls _ _ _ _ _ t _ _ _ i _ C _ _ _ _ _ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -864,10 +869,16 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
       hCv hi hu' hκ
   | EqTerm.beta h hq hl hp hadm hpre has hh hS hss hi hpos hg hbs _ hSs _ _ hgs hgt has_ih hss_ih
       hbs_ih _ hgt_ih =>
+    rename_i D _ _ _ _ _ r _ _ _ _ _ _ ss _ _ _ _ _ Ξ₀ _ _ _ _ _ _ _ _ _
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
+    rename States _ _ => Ss
+    rename DestructorBranches _ _ => gs
     intro ι sigM hd hord hι
-    rename_i D _ qs ls ps as r Ss gs _ i ps' _ ss d p q ς _ Ξ₀ _ _ _ g _ _ _ _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -905,10 +916,15 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     rw [List.getFin_map] at hc
     exact hc
   | EqTerm.etaObs h hq hl hp hadm _ has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
+    rename_i t _ _
+    rename Name => D
+    rename List Quality => qs
+    rename List (Level _) => ls
+    rename List Grade => ps
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι
-    rename_i D _ qs ls ps as t _ _
     intro ρ
-    have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
+    have hl' : (List.map (Level.subst fun i => (.ofNat (ρ i) : Level 0)) _).length = _ :=
       (List.length_map _).trans hl
     have has' := has_ih hd hord hι ρ
     simp only [Context.atLevels, Context.substLevels_substLevels] at has'
@@ -954,16 +970,16 @@ theorem Derivable.sound {J : Judgment} (h : Derivable J) : J.Sound := by
     intro ι sigM hd hord hι
     exact fun ρ => ValidEqInstanceArgsΓ.nil (hctx_ih hd hord hι ρ)
   | HasInstanceArgs.var has ha has_ih ha_ih =>
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι
-    rename_i as _ _ _
     intro ρ
     have ha' := ha_ih hd hord hι ρ
     simp only [Term.atLevels, Term.substLevels_subst_of (InstanceArgs.toSubst_substLevels _ as)]
       at ha'
     exact ValidEqInstanceArgsΓ.var (has_ih hd hord hι ρ) ha'
   | HasInstanceArgs.secondOrder has hB has_ih hB_ih =>
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι
-    rename_i as _ _ _ _
     intro ρ
     have hB' := hB_ih hd hord hι ρ
     simp only [Context.atLevels, Term.atLevels, Context.substLevels_append,
@@ -1088,8 +1104,10 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
     intro ι sigM hd hord hι fresh
     exact fun ρ => ValidFieldsΓ.nil (soundnessIn.wfCtx hd hord hι hctx ρ)
   | WfFields.cons hn hA hκ hΘ _ hA_ih hΘ_ih =>
+    rename TypeDeclaration => decl
+    rename Instance _ _ => I
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι fresh
-    rename_i decl I _ as _ _ _ _ _ _ _ _ _
     intro ρ
     have hΘ' := hΘ_ih hd hord hι fresh ρ
     rw [show (fun D => (decl.blockInstance I D (as.rename Ren.weaken)).atLevels ρ) =
@@ -1098,8 +1116,14 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
     exact ValidFieldsΓ.cons (soundnessIn.hasType hd hord hι hA ρ) (Universe.substLevels_bounded _ hκ)
       hn hΘ'
   | WfFields.recursive hD hΘ _ hΘ_ih =>
+    rename TypeDeclaration => decl
+    rename Instance _ _ => I
+    rename InstanceArgs _ _ _ => as
+    rename Grade => q
+    rename Parameter => p
+    rename Name => D
+    rename Telescope _ _ _ => Θ'
     intro ι sigM hd hord hι fresh
-    rename_i decl I _ as _ _ q p D Θ' _ _
     intro ρ
     have hΘ' := hΘ_ih hd hord hι fresh ρ
     show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((decl.blockInstance I D as).atLevels ρ)
@@ -1116,8 +1140,15 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
     rw [hr]
     exact hΘ'
   | WfFields.nested hn hA₀ hκ hq hpos hpre hΘ _ hA₀_ih hΘ_ih =>
+    rename TypeDeclaration => decl
+    rename Instance _ _ => I
+    rename InstanceArgs _ _ _ => as
+    rename Grade => q
+    rename Parameter => p
+    rename Term _ _ => A₀
+    rename Telescope _ _ _ => Θ'
+    rename List (Nest Name) => νs
     intro ι sigM hd hord hι fresh
-    rename_i decl I _ as _ _ q p A₀ Θ' _ _ νs _
     intro ρ
     have hΘ' := hΘ_ih hd hord hι fresh ρ
     show ValidFieldsΓ sigM ι _ _ _ _ (.cons _ _ ((A₀.instantiate (decl.blockArgs I as)).atLevels ρ)
@@ -1140,8 +1171,10 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
     intro ι sigM hd hord hι
     exact fun ρ => ValidDestructorsΓ.nil (soundnessIn.wfCtx hd hord hι hctx ρ)
   | WfDestructors.cons hn hν hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+    rename TypeDeclaration => decl
+    rename Instance _ _ => I
+    rename InstanceArgs _ _ _ => as
     intro ι sigM hd hord hι
-    rename_i decl I _ _ as _ _ _ _ _ _ _ _ _ _ _ _ _ _
     intro ρ
     have hB' := soundnessIn.hasType hd hord hι hB ρ
     simp only [Context.atLevels, Context.substLevels_append] at hB'
@@ -1154,8 +1187,16 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
       (by simp [Destructors.nestedAt, Destructors.nested, hν, Nest.isPlain])
       (soundnessIn.wfTelescope hd hord hι hΘ ρ) hB' (Universe.substLevels_bounded _ hκ) hds'
   | WfDestructors.nested hn hν hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+    rename_i p q ς _ _ _ _ _ _ _
+    rename TypeDeclaration => decl
+    rename Nesting Nat _ => ν
+    rename Name => d
+    rename List Parameter => ps
+    rename Telescope _ _ _ => Θ
+    rename Term _ _ => B
+    rename ResultOwnership Grade _ => ψ
+    rename Destructors _ _ _ => ds
     intro ι sigM hd hord hι
-    rename_i decl _ _ ν _ d _ ps _ p q ς Θ B ψ ds _ _ _
     intro ρ
     have hB' := soundnessIn.hasType hd hord hι hB ρ
     simp only [Context.atLevels, Context.substLevels_append] at hB'
@@ -1184,8 +1225,16 @@ theorem Derivable.declarationSound {J : Judgment} (h : Derivable J) : J.Declarat
     rw [hr, hr']
     exact hds'
   | WfDestructors.recursive hD hΘ _ hds hΘ_ih hds_ih =>
+    rename_i d _ _ _ p q ς _ _ D _ _ _
+    rename TypeDeclaration => decl
+    rename Instance _ _ => I
+    rename Nesting Nat _ => ν
+    rename InstanceArgs _ _ _ => as
+    rename List Parameter => ps
+    rename Telescope _ _ _ => Θ
+    rename ResultOwnership Grade _ => ψ
+    rename Destructors _ _ _ => ds
     intro ι sigM hd hord hι
-    rename_i decl I _ ν as d _ ps _ p q ς Θ ψ D ds _ _
     intro ρ
     have hds' := hds_ih hd hord hι ρ
     show ValidDestructorsΓ sigM ι _ _ _ _ (.cons p q ς (Θ.substLevels fun i => .ofNat (ρ i))
