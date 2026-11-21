@@ -151,7 +151,7 @@ abbrev ObsRel : Type := Observations → Observations → Prop
 it carries are `o`. -/
 def Term.CorecObservations (D : Name) (v : Term 0 []) (o : Observations) : Prop :=
   ∃ (r : Grade) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (Δ : Scope)
-    (as : InstanceArgs 0 [] Δ) (ss : Terms 0 []) (Ss : States 0 []) (gs : CorecBranches 0 []),
+    (as : InstanceArgs 0 [] Δ) (ss : Terms 0 []) (Ss : States 0 []) (gs : DestructorBranches 0 []),
     v = .corec r D qs ls ps as ss Ss gs ∧ o = v.observation D qs ls ps as
 
 /-- `(eq_d)`: the equality of the canonical terms of an instance of the codata type named `D`, which

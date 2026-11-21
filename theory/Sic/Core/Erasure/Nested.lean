@@ -58,7 +58,7 @@ observed at run time; the term and the branches are shifted under the arguments,
 names by fresh variables instead.
 RFC: `\mathsf{branches}_\Xi` -/
 def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → TargetBranches m →
-    TargetCorecBranches m
+    TargetDestructorBranches m
   | .nil, _, _ => .nil
   | .cons i c ρᵢ πs ϱs πs' ϱs' ψ ς ψ₀ ς₀ next rest, M, Ns =>
     .cons .none 0 c Fin.elim0 Fin.elim0 πs' ϱs' ψ ς

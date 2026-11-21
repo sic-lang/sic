@@ -85,9 +85,9 @@ inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ �
   equal up to their levels. -/
   | corec {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)}
       (ps : List Grade) {as₁ as₂ : InstanceArgs k Γ Δ} {ss₁ ss₂ : Terms k Γ}
-      {Ss₁ Ss₂ : States k Γ} {vs₁ vs₂ : CorecBranches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
+      {Ss₁ Ss₂ : States k Γ} {vs₁ vs₂ : DestructorBranches k Γ} (hl : Level.ListEquiv ls₁ ls₂)
       (has : InstanceArgs.LevelEquiv as₁ as₂) (hss : Terms.LevelEquiv ss₁ ss₂)
-      (hSs : States.LevelEquiv Ss₁ Ss₂) (hvs : CorecBranches.LevelEquiv vs₁ vs₂) :
+      (hSs : States.LevelEquiv Ss₁ Ss₂) (hvs : DestructorBranches.LevelEquiv vs₁ vs₂) :
       Term.LevelEquiv (.corec r D qs ls₁ ps as₁ ss₁ Ss₁ vs₁) (.corec r D qs ls₂ ps as₂ ss₂ Ss₂ vs₂)
   /-- An equality at the same quality and at equal levels, with a type and terms equal up to their
   levels. -/
@@ -180,16 +180,16 @@ inductive States.LevelEquiv {k : Nat} : {Γ : Scope} → States k Γ → States 
       (hκ : Universe.ListEquiv κs₁ κs₂) (hs : States.LevelEquiv Ss₁ Ss₂) :
       States.LevelEquiv (.cons n S₁ κs₁ Ss₁) (.cons n S₂ κs₂ Ss₂)
 
-/-- The branches of a corecursor, equal up to their levels one by one. -/
-inductive CorecBranches.LevelEquiv {k : Nat} :
-    {Γ : Scope} → CorecBranches k Γ → CorecBranches k Γ → Prop where
+/-- The branches of the destructors, equal up to their levels one by one. -/
+inductive DestructorBranches.LevelEquiv {k : Nat} :
+    {Γ : Scope} → DestructorBranches k Γ → DestructorBranches k Γ → Prop where
   /-- No branch. -/
-  | nil {Γ : Scope} : CorecBranches.LevelEquiv (Γ := Γ) .nil .nil
+  | nil {Γ : Scope} : DestructorBranches.LevelEquiv (Γ := Γ) .nil .nil
   /-- Two branches equal up to their levels, then the others. -/
   | cons {Γ : Scope} {n m a : Nat} {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)}
-      {vs₁ vs₂ : CorecBranches k Γ} (h : Term.LevelEquiv v₁ v₂)
-      (hs : CorecBranches.LevelEquiv vs₁ vs₂) :
-      CorecBranches.LevelEquiv (.cons n m a v₁ vs₁) (.cons n m a v₂ vs₂)
+      {vs₁ vs₂ : DestructorBranches k Γ} (h : Term.LevelEquiv v₁ v₂)
+      (hs : DestructorBranches.LevelEquiv vs₁ vs₂) :
+      DestructorBranches.LevelEquiv (.cons n m a v₁ vs₁) (.cons n m a v₂ vs₂)
 
 end
 
@@ -243,7 +243,7 @@ theorem Term.LevelEquiv.refl {k : Nat} {Γ : Scope} : (t : Term k Γ) → Term.L
       (InstanceArgs.LevelEquiv.refl as) (Term.LevelEquiv.refl t) (Terms.LevelEquiv.refl bs)
   | .corec r D qs ls ps as ss Ss vs => .corec r D qs ps (Level.ListEquiv.refl ls)
       (InstanceArgs.LevelEquiv.refl as) (Terms.LevelEquiv.refl ss) (States.LevelEquiv.refl Ss)
-      (CorecBranches.LevelEquiv.refl vs)
+      (DestructorBranches.LevelEquiv.refl vs)
   | .equality s l A t u => .equality s (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
       (Term.LevelEquiv.refl t) (Term.LevelEquiv.refl u)
   | .refl s l A t => .reflProof s (Level.equivalence.refl l) (Term.LevelEquiv.refl A)
@@ -290,10 +290,10 @@ theorem States.LevelEquiv.refl {k : Nat} {Γ : Scope} :
   | .cons _ S κs Ss =>
     .cons (Telescope.LevelEquiv.refl S) (Universe.ListEquiv.refl κs) (States.LevelEquiv.refl Ss)
 
-theorem CorecBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
-    (vs : CorecBranches k Γ) → CorecBranches.LevelEquiv vs vs
+theorem DestructorBranches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
+    (vs : DestructorBranches k Γ) → DestructorBranches.LevelEquiv vs vs
   | .nil => .nil
-  | .cons _ _ _ v vs => .cons (Term.LevelEquiv.refl v) (CorecBranches.LevelEquiv.refl vs)
+  | .cons _ _ _ v vs => .cons (Term.LevelEquiv.refl v) (DestructorBranches.LevelEquiv.refl vs)
 
 end
 
@@ -359,8 +359,9 @@ theorem States.LevelEquiv.symm {k : Nat} {Γ : Scope} {Ss₁ Ss₂ : States k Γ
   | .nil => .nil
   | .cons h hκ hs => .cons h.symm hκ.symm hs.symm
 
-theorem CorecBranches.LevelEquiv.symm {k : Nat} {Γ : Scope} {vs₁ vs₂ : CorecBranches k Γ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv vs₂ vs₁
+theorem DestructorBranches.LevelEquiv.symm {k : Nat} {Γ : Scope}
+    {vs₁ vs₂ : DestructorBranches k Γ} :
+    DestructorBranches.LevelEquiv vs₁ vs₂ → DestructorBranches.LevelEquiv vs₂ vs₁
   | .nil => .nil
   | .cons h hs => .cons h.symm hs.symm
 
@@ -452,9 +453,10 @@ theorem States.LevelEquiv.trans {k : Nat} {Γ : Scope} {Ss₁ Ss₂ Ss₃ : Stat
   | .cons h hκ hs, .cons h' hκ' hs' => .cons (h.trans h') (hκ.trans hκ') (hs.trans hs')
 termination_by structural h _ => h
 
-theorem CorecBranches.LevelEquiv.trans {k : Nat} {Γ : Scope} {vs₁ vs₂ vs₃ : CorecBranches k Γ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv vs₂ vs₃ →
-      CorecBranches.LevelEquiv vs₁ vs₃
+theorem DestructorBranches.LevelEquiv.trans {k : Nat} {Γ : Scope}
+    {vs₁ vs₂ vs₃ : DestructorBranches k Γ} :
+    DestructorBranches.LevelEquiv vs₁ vs₂ → DestructorBranches.LevelEquiv vs₂ vs₃ →
+      DestructorBranches.LevelEquiv vs₁ vs₃
   | .nil, .nil => .nil
   | .cons h hs, .cons h' hs' => .cons (h.trans h') (hs.trans hs')
 termination_by structural h _ => h

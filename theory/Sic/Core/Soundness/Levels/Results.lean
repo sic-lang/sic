@@ -86,10 +86,10 @@ theorem Motives.LevelEquiv.get {k : Nat} {Γ : Scope} : {Cs₁ Cs₂ : Motives k
   | _, _, .cons h _, 0 => .inr ⟨_, _, _, rfl, rfl, h⟩
   | _, _, .cons _ hs, i + 1 => hs.get i
 
-/-- The branches of corecursors equal up to their levels have, at a position, branches equal up to
+/-- Branches of the destructors equal up to their levels have, at a position, branches equal up to
 their levels. -/
-theorem CorecBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :
-    {vs₁ vs₂ : CorecBranches k Γ} → CorecBranches.LevelEquiv vs₁ vs₂ → {i n m a : Nat} →
+theorem DestructorBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :
+    {vs₁ vs₂ : DestructorBranches k Γ} → DestructorBranches.LevelEquiv vs₁ vs₂ → {i n m a : Nat} →
       {v₁ : Term k (((Γ.extend n).extend m).extend a)} → vs₁.get i = some ⟨n, m, a, v₁⟩ →
         ∃ v₂, vs₂.get i = some ⟨n, m, a, v₂⟩ ∧ Term.LevelEquiv v₁ v₂
   | _, _, .nil, _, _, _, _, _, he => nomatch he
@@ -98,24 +98,25 @@ theorem CorecBranches.LevelEquiv.get {k : Nat} {Γ : Scope} :
     exact ⟨_, rfl, h⟩
   | _, _, .cons _ hs, _ + 1, _, _, _, _, he => hs.get he
 
-/-- Branches of corecursors equal up to their levels are as many. -/
-theorem CorecBranches.LevelEquiv.length_eq {k : Nat} {Γ : Scope} : {gs₁ gs₂ : CorecBranches k Γ} →
-    CorecBranches.LevelEquiv gs₁ gs₂ → gs₁.length = gs₂.length
+/-- Branches of the destructors equal up to their levels are as many. -/
+theorem DestructorBranches.LevelEquiv.length_eq {k : Nat} {Γ : Scope} :
+    {gs₁ gs₂ : DestructorBranches k Γ} →
+    DestructorBranches.LevelEquiv gs₁ gs₂ → gs₁.length = gs₂.length
   | _, _, .nil => rfl
   | _, _, .cons _ hs => congrArg (· + 1) hs.length_eq
 
-/-- Branches of a corecursor, each of which is equal up to its levels to a branch that has a
+/-- Branches of the destructors, each of which is equal up to its levels to a branch that has a
 property of its position, are equal up to their levels to branches that have this property. -/
-theorem CorecBranches.LevelEquiv.exists_of_forall {k : Nat} {Γ : Scope} :
-    (gs₁ : CorecBranches k Γ) →
+theorem DestructorBranches.LevelEquiv.exists_of_forall {k : Nat} {Γ : Scope} :
+    (gs₁ : DestructorBranches k Γ) →
       (Q : Nat → (Σ n m a, Term k (((Γ.extend n).extend m).extend a)) → Prop) →
       (∀ i n m a (g₁ : Term k (((Γ.extend n).extend m).extend a)),
         gs₁.get i = some ⟨n, m, a, g₁⟩ → ∃ g₂, Term.LevelEquiv g₁ g₂ ∧ Q i ⟨n, m, a, g₂⟩) →
-      ∃ gs₂, CorecBranches.LevelEquiv gs₁ gs₂ ∧ ∀ i b, gs₂.get i = some b → Q i b
+      ∃ gs₂, DestructorBranches.LevelEquiv gs₁ gs₂ ∧ ∀ i b, gs₂.get i = some b → Q i b
   | .nil, _, _ => ⟨.nil, .nil, fun _ _ h => nomatch h⟩
   | .cons n m a g gs, Q, h => by
     obtain ⟨g₂, hg, hq⟩ := h 0 n m a g rfl
-    obtain ⟨gs₂, hgs, hqs⟩ := CorecBranches.LevelEquiv.exists_of_forall gs (fun i => Q (i + 1))
+    obtain ⟨gs₂, hgs, hqs⟩ := DestructorBranches.LevelEquiv.exists_of_forall gs (fun i => Q (i + 1))
       (fun i n m a g₁ hi => h (i + 1) n m a g₁ hi)
     refine ⟨.cons n m a g₂ gs₂, .cons hg hgs, fun i b hb => ?_⟩
     cases i with
@@ -410,7 +411,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
       have ho : ∀ d ps', Term.LevelEquiv (t₁.observation D qs ls₁ ps as₁ d ps')
           (t₂.observation D qs ls₂ ps as₂ d ps') := fun d ps' =>
         .obs _ _ _ _ hls (hase.rename _) (ht.rename _) (Terms.LevelEquiv.refl _)
-      obtain ⟨gs₂, hgse, hQ⟩ := CorecBranches.LevelEquiv.exists_of_forall gs₁
+      obtain ⟨gs₂, hgse, hQ⟩ := DestructorBranches.LevelEquiv.exists_of_forall gs₁
         (fun i b => ∀ d, ns[i]? = some d → ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length)

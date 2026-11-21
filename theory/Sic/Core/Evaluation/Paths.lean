@@ -81,7 +81,7 @@ inductive Heap.ValueReach (H : Heap) (g : Heap.Annotation) : Nat → Demand → 
   the variables of its scope as the usage `δ_ℓ` that the annotation gives it allows, and to its
   state, each entry once unless its multiplicity is `0`.
   RFC: `\mathsf{reach}_\ell.\mathsf{corec}` -/
-  | corec {ℓ n : Nat} {E : List Nat} {Ps : TargetCorecBranches n} {πs ϱs : List Multiplicity}
+  | corec {ℓ n : Nat} {E : List Nat} {Ps : TargetDestructorBranches n} {πs ϱs : List Multiplicity}
       {as : List Nat} {U₁ U₂ : Demand} (h : H[ℓ]? = some (.corec n E Ps πs ϱs as))
       (hE : Heap.EnvReach H g E (g.usage ℓ n) U₁) (hs : Heap.PositionsReach H g πs as U₂) :
       Heap.ValueReach H g ℓ (Demand.unit ℓ +ᶜ (U₁ +ᶜ U₂))

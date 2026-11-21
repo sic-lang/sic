@@ -63,9 +63,10 @@ theorem Heap.Annotation.Valid.concat {Ω : Name → Multiplicity} {H : Heap} {g 
 /-- An annotation valid for a heap, with the ownership and the usage of the branches of a new
 closure, is valid for the heap with the closure. -/
 theorem Heap.Annotation.Valid.concat_corec {Ω : Name → Multiplicity} {H : Heap}
-    {g : Heap.Annotation} (hg : g.Valid Ω H) {n : Nat} {E : List Nat} {Ps : TargetCorecBranches n}
+    {g : Heap.Annotation} (hg : g.Valid Ω H) {n : Nat} {E : List Nat}
+    {Ps : TargetDestructorBranches n}
     {πs ϱs : List Multiplicity} {as : List Nat} {φ δ : MultiplicityVector n}
-    (hφ : TargetCorecBranches.Ownership Ω φ Ps) (hδ : TargetCorecBranches.Usage δ Ps) :
+    (hφ : TargetDestructorBranches.Ownership Ω φ Ps) (hδ : TargetDestructorBranches.Usage δ Ps) :
     (g.set H.length n φ δ).Valid Ω (H ++ [.corec n E Ps πs ϱs as]) :=
   fun ℓ n' E' Ps' πs' ϱs' as' h => by
     by_cases hℓ : ℓ < H.length

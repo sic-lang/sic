@@ -230,7 +230,7 @@ where
       rw [Term.corec_substLevels]
       refine .corec h hq _ hp hadm hpre has' hh (States.get_substLevels_of ls' hS)
         (hasArgs ls' hss) ((States.length_substLevels ls' Ss).trans hSl) ?_ ?_
-        ((CorecBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
+        ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
         exact ⟨ps'', _, States.get_substLevels_of ls' hS'⟩
@@ -242,10 +242,10 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, CorecBranches.get_substLevels_of ls' hg⟩
+        exact ⟨_, DestructorBranches.get_substLevels_of ls' hg⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
-        obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels ls' hg
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg
         have ho {a : Scope.Entry} (x : Var Ξ a) := hd.obsSubst_substLevels ls'
           (o' := (Term.corecAt r T'.name qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
             (Ss.substLevels ls') (gs.substLevels ls') ps'').observation T'.name qs
@@ -387,8 +387,8 @@ where
         ((States.length_substLevels ls' Ss₁).trans hSl₁)
         ((States.length_substLevels ls' Ss₂).trans hSl₂) ?_
         (fun j => by rw [States.sorts_substLevels, States.sorts_substLevels, hSk j]) ?_ ?_
-        ((CorecBranches.length_substLevels ls' gs₁).trans hgl₁)
-        ((CorecBranches.length_substLevels ls' gs₂).trans hgl₂) ?_ ?_
+        ((DestructorBranches.length_substLevels ls' gs₁).trans hgl₁)
+        ((DestructorBranches.length_substLevels ls' gs₂).trans hgl₂) ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S₁', S₂', h₁, h₂⟩ := hSs j T' hj
         exact ⟨ps'', _, _, States.get_substLevels_of ls' h₁, States.get_substLevels_of ls' h₂⟩
@@ -408,12 +408,12 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
         obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, _, CorecBranches.get_substLevels_of ls' hg₁,
-          CorecBranches.get_substLevels_of ls' hg₂⟩
+        exact ⟨_, _, DestructorBranches.get_substLevels_of ls' hg₁,
+          DestructorBranches.get_substLevels_of ls' hg₂⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
-        obtain ⟨g₁₀, hg₁₀, rfl⟩ := CorecBranches.get_substLevels ls' hg₁
-        obtain ⟨g₂₀, hg₂₀, rfl⟩ := CorecBranches.get_substLevels ls' hg₂
+        obtain ⟨g₁₀, hg₁₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg₁
+        obtain ⟨g₂₀, hg₂₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg₂
         have ho {a : Scope.Entry} (x : Var Ξ a) := hd.obsSubst_substLevels ls'
           (o' := (Term.corecAt r T'.name qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
             (Ss₁.substLevels ls') (gs₁.substLevels ls') ps'').observation T'.name qs
@@ -528,9 +528,9 @@ where
         Term.substLevels_substLevels_getFin, Universe.substLevels_substLevels_getFin,
         Term.corec_substLevels]
       refine .beta h hq _ hp hadm hpre has' hh (States.get_substLevels_of ls' hS)
-        (hasArgs ls' hss) hi hd (CorecBranches.get_substLevels_of ls' hg) hbs'
+        (hasArgs ls' hss) hi hd (DestructorBranches.get_substLevels_of ls' hg) hbs'
         ((States.length_substLevels ls' Ss).trans hSl) ?_ ?_
-        ((CorecBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
+        ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
         exact ⟨ps'', _, States.get_substLevels_of ls' hS'⟩
@@ -542,10 +542,10 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, CorecBranches.get_substLevels_of ls' hg⟩
+        exact ⟨_, DestructorBranches.get_substLevels_of ls' hg⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels ls' hS'
-        obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels ls' hg
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg
         have ho {a : Scope.Entry} (x : Var Ξ a) := hd.obsSubst_substLevels ls'
           (o' := (Term.corecAt r T'.name qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
             (Ss.substLevels ls') (gs.substLevels ls') ps'').observation T'.name qs

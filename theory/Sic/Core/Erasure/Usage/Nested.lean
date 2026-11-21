@@ -153,11 +153,11 @@ time runs the recursor once on the observation of the path, or on the term of th
 motive when `ρ` is `0`, or captures it in the corecursor of the next lifting, whose factor bounds
 its reads in turn, and the factor of the shape is the meet of these factors, each times the
 multiplicity of its destructor. -/
-theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
+theorem TargetDestructorBranches.Usage.branches {ρ ϱ : Multiplicity} :
     {m : Nat} → {ν χ : MultiplicityVector m} → {M : Target m} → {Ns : TargetBranches m} →
       (σ : Shape) → {π : Multiplicity} → Target.Usage ν M → TargetBranches.Usage ρ χ Ns →
         σ.Fits ρ → (σ ≠ .nil → π ≤ σ.factor) →
-          TargetCorecBranches.Usage (π ·ᶜ ((ρ ·ᶜ ν) +ᶜ χ)) (σ.branches ρ ϱ M Ns)
+          TargetDestructorBranches.Usage (π ·ᶜ ((ρ ·ᶜ ν) +ᶜ χ)) (σ.branches ρ ϱ M Ns)
   | _, _, _, _, _, .nil, _, _, _, _, _ => .nil
   | m, ν, χ, M, Ns, .cons i c ρᵢ πs ϱs πs' ϱs' ψ ς ψ₀ ς₀ next rest, π, hM, hNs,
       ⟨hfit, hnext, hrest⟩, hπ => by
@@ -167,7 +167,7 @@ theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
       · exact hπ
       · exact Multiplicity.le_trans' _ _ _ hπ
           ((by decide : ∀ a b : Multiplicity, a ⊓ b ≤ a) _ _)
-    have hrest' := TargetCorecBranches.Usage.branches (ϱ := ϱ) rest hM hNs hrest fun hn => by
+    have hrest' := TargetDestructorBranches.Usage.branches (ϱ := ϱ) rest hM hNs hrest fun hn => by
       cases rest
       · exact absurd rfl hn
       · exact Multiplicity.le_trans' _ _ _ hπ ((by decide : ∀ a b : Multiplicity, a ⊓ b ≤ b) _ _)
@@ -224,7 +224,8 @@ theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
       exact .recursor hO (fun h => absurd h hρ) hNs
   | .lifting σ, hO, hNs, hσ => by
     have h := Target.Usage.corec .nil
-      (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ hO hNs hσ fun _ => Multiplicity.le_refl' _)
+      (TargetDestructorBranches.Usage.branches (ϱ := ϱ) σ hO hNs hσ fun _ =>
+        Multiplicity.le_refl' _)
     rwa [MultiplicityVector.zero_add] at h
 
 end
@@ -242,7 +243,7 @@ theorem Target.Usage.nested {ρ ϱ : Multiplicity} {n : Nat}
         MultiplicityVector.rename (TargetRen.shift n 1) χ))
       (Target.nested ρ ϱ σ Ns) := by
   have h := Target.Usage.corec .nil
-    (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ (.var 0)
+    (TargetDestructorBranches.Usage.branches (ϱ := ϱ) σ (.var 0)
       (hNs.rename (TargetRen.shift n 1)) hσ fun _ => Multiplicity.le_refl' _)
   rwa [MultiplicityVector.zero_add] at h
 

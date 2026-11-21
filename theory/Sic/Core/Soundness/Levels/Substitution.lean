@@ -88,9 +88,10 @@ theorem States.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {Ss�
   | .nil => .nil
   | .cons h hκ hs => .cons (h.rename (Ren.liftN _ α)) hκ (hs.rename α)
 
-theorem CorecBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ)
-    {vs₁ vs₂ : CorecBranches k Δ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.rename α) (vs₂.rename α)
+theorem DestructorBranches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ)
+    {vs₁ vs₂ : DestructorBranches k Δ} :
+    DestructorBranches.LevelEquiv vs₁ vs₂ → DestructorBranches.LevelEquiv (vs₁.rename α)
+        (vs₂.rename α)
   | .nil => .nil
   | .cons (n := n) (m := m) (a := a) h hs =>
     .cons (h.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n α)))) (hs.rename α)
@@ -140,7 +141,7 @@ theorem Term.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : Fin
   | .corec r D qs ls ps as ss Ss vs =>
     .corec r D qs ps (Level.ListEquiv.map_subst h ls) (InstanceArgs.substLevels_levelEquiv h as)
       (Terms.substLevels_levelEquiv h ss) (States.substLevels_levelEquiv h Ss)
-      (CorecBranches.substLevels_levelEquiv h vs)
+      (DestructorBranches.substLevels_levelEquiv h vs)
   | .equality s l A t u =>
     .equality s (Level.subst_equiv h l) (Term.substLevels_levelEquiv h A)
       (Term.substLevels_levelEquiv h t) (Term.substLevels_levelEquiv h u)
@@ -204,12 +205,12 @@ theorem States.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ : F
     .cons (Telescope.substLevels_levelEquiv h S) (Universe.ListEquiv.map_subst h κs)
       (States.substLevels_levelEquiv h Ss)
 
-theorem CorecBranches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope}
-    {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (vs : CorecBranches k Γ) →
-    CorecBranches.LevelEquiv (vs.substLevels ls₁) (vs.substLevels ls₂)
+theorem DestructorBranches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope}
+    {ls₁ ls₂ : Fin k → Level k'} (h : ∀ i, ls₁ i ≈ ls₂ i) : (vs : DestructorBranches k Γ) →
+    DestructorBranches.LevelEquiv (vs.substLevels ls₁) (vs.substLevels ls₂)
   | .nil => .nil
   | .cons _ _ _ v vs =>
-    .cons (Term.substLevels_levelEquiv h v) (CorecBranches.substLevels_levelEquiv h vs)
+    .cons (Term.substLevels_levelEquiv h v) (DestructorBranches.substLevels_levelEquiv h vs)
 
 end
 
@@ -404,9 +405,10 @@ theorem States.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subs
   | .nil => .nil
   | .cons h hκ hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ hσ)) hκ (hs.subst₀ hσ)
 
-theorem CorecBranches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
-    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {vs₁ vs₂ : CorecBranches k Δ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst₀ σ₁) (vs₂.subst₀ σ₂)
+theorem DestructorBranches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Subst₀ k Γ Δ}
+    (hσ : Subst₀.LevelEquiv σ₁ σ₂) {vs₁ vs₂ : DestructorBranches k Δ} :
+    DestructorBranches.LevelEquiv vs₁ vs₂ → DestructorBranches.LevelEquiv (vs₁.subst₀ σ₁)
+        (vs₂.subst₀ σ₂)
   | .nil => .nil
   | .cons h hs => .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ (Subst₀.LevelEquiv.liftN _
       (Subst₀.LevelEquiv.liftN _ hσ)))) (hs.subst₀ hσ)
@@ -555,9 +557,10 @@ theorem States.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k
   | .nil => .nil
   | .cons h hκ hs => .cons (h.subst (Subst.LevelEquiv.liftN _ hθ)) hκ (hs.subst hθ)
 
-theorem CorecBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
-    (hθ : Subst.LevelEquiv θ₁ θ₂) {vs₁ vs₂ : CorecBranches k Δ} :
-    CorecBranches.LevelEquiv vs₁ vs₂ → CorecBranches.LevelEquiv (vs₁.subst θ₁) (vs₂.subst θ₂)
+theorem DestructorBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst k Γ Δ}
+    (hθ : Subst.LevelEquiv θ₁ θ₂) {vs₁ vs₂ : DestructorBranches k Δ} :
+    DestructorBranches.LevelEquiv vs₁ vs₂ → DestructorBranches.LevelEquiv (vs₁.subst θ₁)
+        (vs₂.subst θ₂)
   | .nil => .nil
   | .cons h hs => .cons (h.subst (Subst.LevelEquiv.liftN _ (Subst.LevelEquiv.liftN _
       (Subst.LevelEquiv.liftN _ hθ)))) (hs.subst hθ)

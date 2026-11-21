@@ -81,7 +81,7 @@ theorem Term.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Leve
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       InstanceArgs.substLevels_rename ls' α as, Terms.substLevels_rename ls' α ss,
-      States.substLevels_rename ls' α Ss, CorecBranches.substLevels_rename ls' α vs]
+      States.substLevels_rename ls' α Ss, DestructorBranches.substLevels_rename ls' α vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.substLevels, Term.substLevels, Term.rename,
       Term.substLevels_rename ls' α A, Term.substLevels_rename ls' α t,
@@ -167,14 +167,14 @@ theorem States.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Le
     rw [States.rename, States.substLevels, States.substLevels, States.rename,
       States.substLevels_rename ls' α Ss, Telescope.substLevels_rename]
 
-theorem CorecBranches.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
+theorem DestructorBranches.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
     (α : Ren Γ Δ) :
-    (vs : CorecBranches k Δ) → (vs.rename α).substLevels ls' = (vs.substLevels ls').rename α
+    (vs : DestructorBranches k Δ) → (vs.rename α).substLevels ls' = (vs.substLevels ls').rename α
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.substLevels, CorecBranches.substLevels,
-      CorecBranches.rename,
-      CorecBranches.substLevels_rename ls' α vs, Term.substLevels_rename]
+    rw [DestructorBranches.rename, DestructorBranches.substLevels, DestructorBranches.substLevels,
+      DestructorBranches.rename,
+      DestructorBranches.substLevels_rename ls' α vs, Term.substLevels_rename]
 
 end
 
@@ -231,7 +231,7 @@ theorem Term.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k →
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       InstanceArgs.substLevels_subst₀_of h as, Terms.substLevels_subst₀_of h ss,
-      States.substLevels_subst₀_of h Ss, CorecBranches.substLevels_subst₀_of h vs]
+      States.substLevels_subst₀_of h Ss, DestructorBranches.substLevels_subst₀_of h vs]
   | .equality s l A t u => by
     rw [Term.subst₀, Term.substLevels, Term.substLevels, Term.subst₀,
       Term.substLevels_subst₀_of h A, Term.substLevels_subst₀_of h t,
@@ -323,14 +323,14 @@ theorem States.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k �
       States.subst₀, States.substLevels_subst₀_of h Ss,
       Telescope.substLevels_subst₀_of (Subst₀.liftN_substLevels_of _ h) S]
 
-theorem CorecBranches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+theorem DestructorBranches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
     {σ : Subst₀ k Γ Δ} {σ' : Subst₀ k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).substLevels ls' = σ' x) :
-    (vs : CorecBranches k Δ) → (vs.subst₀ σ).substLevels ls' = (vs.substLevels ls').subst₀ σ'
+    (vs : DestructorBranches k Δ) → (vs.subst₀ σ).substLevels ls' = (vs.substLevels ls').subst₀ σ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst₀, CorecBranches.substLevels, CorecBranches.substLevels,
-      CorecBranches.subst₀, CorecBranches.substLevels_subst₀_of h vs,
+    rw [DestructorBranches.subst₀, DestructorBranches.substLevels, DestructorBranches.substLevels,
+      DestructorBranches.subst₀, DestructorBranches.substLevels_subst₀_of h vs,
       Term.substLevels_subst₀_of
         (Subst₀.liftN_substLevels_of _ (Subst₀.liftN_substLevels_of _
           (Subst₀.liftN_substLevels_of _ h))) v]
@@ -393,7 +393,8 @@ theorem Term.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k 
   | .corec r D qs ls ps as ss Ss vs => by
     simp only [Term.substLevels, List.map_map, Function.comp_def, Level.subst_subst,
       InstanceArgs.substLevels_substLevels ls₁ ls₂ as, Terms.substLevels_substLevels ls₁ ls₂ ss,
-      States.substLevels_substLevels ls₁ ls₂ Ss, CorecBranches.substLevels_substLevels ls₁ ls₂ vs]
+      States.substLevels_substLevels ls₁ ls₂ Ss, DestructorBranches.substLevels_substLevels
+          ls₁ ls₂ vs]
   | .equality s l A t u => by
     simp only [Term.substLevels, Level.subst_subst, Term.substLevels_substLevels ls₁ ls₂ A,
       Term.substLevels_substLevels ls₁ ls₂ t, Term.substLevels_substLevels ls₁ ls₂ u]
@@ -479,14 +480,16 @@ theorem States.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin 
       List.map_map]
     simp only [Function.comp_def, Universe.substLevels_substLevels]
 
-theorem CorecBranches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope} (ls₁ : Fin k → Level k')
+theorem DestructorBranches.substLevels_substLevels {k' k'' : Nat} {Γ : Scope}
+    (ls₁ : Fin k → Level k')
     (ls₂ : Fin k' → Level k'') :
-    (vs : CorecBranches k Γ) →
+    (vs : DestructorBranches k Γ) →
       (vs.substLevels ls₁).substLevels ls₂ = vs.substLevels fun i => (ls₁ i).subst ls₂
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.substLevels, CorecBranches.substLevels, CorecBranches.substLevels,
-      CorecBranches.substLevels_substLevels ls₁ ls₂ vs, Term.substLevels_substLevels ls₁ ls₂ v]
+    rw [DestructorBranches.substLevels, DestructorBranches.substLevels,
+      DestructorBranches.substLevels,
+      DestructorBranches.substLevels_substLevels ls₁ ls₂ vs, Term.substLevels_substLevels ls₁ ls₂ v]
 
 end
 
@@ -643,7 +646,7 @@ theorem Term.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Le
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst,
       InstanceArgs.substLevels_subst_of h as, Terms.substLevels_subst_of h ss,
-      States.substLevels_subst_of h Ss, CorecBranches.substLevels_subst_of h vs]
+      States.substLevels_subst_of h Ss, DestructorBranches.substLevels_subst_of h vs]
   | .equality s l A t u => by
     rw [Term.subst, Term.substLevels, Term.substLevels, Term.subst, Term.substLevels_subst_of h A,
       Term.substLevels_subst_of h t, Term.substLevels_subst_of h u]
@@ -732,14 +735,14 @@ theorem States.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → 
       States.subst, States.substLevels_subst_of h Ss,
       Telescope.substLevels_subst_of (Subst.liftN_substLevels_of _ h) S]
 
-theorem CorecBranches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
+theorem DestructorBranches.substLevels_subst_of {k' : Nat} {Γ Δ : Scope} {ls' : Fin k → Level k'}
     {θ : Subst k Γ Δ} {θ' : Subst k' Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (θ x).substLevels ls' = θ' x) :
-    (vs : CorecBranches k Δ) → (vs.subst θ).substLevels ls' = (vs.substLevels ls').subst θ'
+    (vs : DestructorBranches k Δ) → (vs.subst θ).substLevels ls' = (vs.substLevels ls').subst θ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst, CorecBranches.substLevels, CorecBranches.substLevels,
-      CorecBranches.subst, CorecBranches.substLevels_subst_of h vs,
+    rw [DestructorBranches.subst, DestructorBranches.substLevels, DestructorBranches.substLevels,
+      DestructorBranches.subst, DestructorBranches.substLevels_subst_of h vs,
       Term.substLevels_subst_of
         (Subst.liftN_substLevels_of _ (Subst.liftN_substLevels_of _
           (Subst.liftN_substLevels_of _ h))) v]
@@ -783,7 +786,7 @@ theorem Term.obs_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (D : Name) (qs : 
 substituted. -/
 theorem Term.corec_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
-    {ps' : List Parameter} (ss : Args k Δ ps') (Ss : States k Δ) (gs : CorecBranches k Δ) :
+    {ps' : List Parameter} (ss : Args k Δ ps') (Ss : States k Δ) (gs : DestructorBranches k Δ) :
     (Term.corec r D qs ls ps as ss.terms Ss gs).subst θ =
       .corec r D qs ls ps (as.subst θ) (ss.subst θ).terms (Ss.subst θ) (gs.subst θ) := by
   rw [Args.terms_subst]
@@ -832,7 +835,7 @@ theorem Term.obs_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k
 levels. -/
 theorem Term.corec_substLevels {k' : Nat} {Γ Ξ : Scope} (ls' : Fin k → Level k') (r : Grade)
     (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Ξ)
-    {ps' : List Parameter} (ss : Args k Γ ps') (Ss : States k Γ) (gs : CorecBranches k Γ) :
+    {ps' : List Parameter} (ss : Args k Γ ps') (Ss : States k Γ) (gs : DestructorBranches k Γ) :
     (Term.corec r D qs ls ps as ss.terms Ss gs).substLevels ls' =
       .corec r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (ss.substLevels ls').terms
         (Ss.substLevels ls') (gs.substLevels ls') := by

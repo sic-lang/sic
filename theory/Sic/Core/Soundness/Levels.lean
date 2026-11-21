@@ -200,11 +200,11 @@ theorem States.LevelEquiv.stateOf {k : Nat} {Γ : Scope} (names : List Name) (D 
 sorts of the same quality at equal levels, is equal up to its levels. -/
 theorem Term.LevelEquiv.resume {k : Nat} {Γ Δ : Scope} {ps' : List Parameter} (r : Grade)
     (D : Name) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
     (s : Quality) {l₁ l₂ : Level k} (χ : Grade) {S₁ S₂ : Telescope k Γ ps'}
     {κs₁ κs₂ : List (Universe k)} {v₁ v₂ : Term k Γ} (hl : Level.ListEquiv ls₁ ls₂)
     (has : InstanceArgs.LevelEquiv as₁ as₂) (hSs : States.LevelEquiv Ss₁ Ss₂)
-    (hgs : CorecBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hS : Telescope.LevelEquiv S₁ S₂)
+    (hgs : DestructorBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hS : Telescope.LevelEquiv S₁ S₂)
     (hκs : Universe.ListEquiv κs₁ κs₂) (hv : Term.LevelEquiv v₁ v₂) :
     Term.LevelEquiv (Term.resume r D qs ls₁ ps as₁ Ss₁ gs₁ ⟨s, l₁⟩ χ S₁ κs₁ v₁)
       (Term.resume r D qs ls₂ ps as₂ Ss₂ gs₂ ⟨s, l₂⟩ χ S₂ κs₂ v₂) := by
@@ -223,10 +223,10 @@ theorem Term.LevelEquiv.resume {k : Nat} {Γ Δ : Scope} {ps' : List Parameter} 
 equal levels, at branches equal up to their levels, are equal up to their levels. -/
 theorem Term.LevelEquiv.observed {k : Nat} {Γ Δ : Scope} (names : List Name) (rec : Option Name)
     (r : Grade) (qs : List Quality) {ls₁ ls₂ : List (Level k)} (ps : List Grade)
-    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    {as₁ as₂ : InstanceArgs k Γ Δ} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
     (s : Quality) {l₁ l₂ : Level k} (χ : Grade) {v₁ v₂ : Term k Γ} (hl : Level.ListEquiv ls₁ ls₂)
     (has : InstanceArgs.LevelEquiv as₁ as₂) (hSs : States.LevelEquiv Ss₁ Ss₂)
-    (hgs : CorecBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hv : Term.LevelEquiv v₁ v₂) :
+    (hgs : DestructorBranches.LevelEquiv gs₁ gs₂) (hκ : l₁ ≈ l₂) (hv : Term.LevelEquiv v₁ v₂) :
     Term.LevelEquiv (Term.observed names rec r qs ls₁ ps as₁ Ss₁ gs₁ ⟨s, l₁⟩ χ v₁)
       (Term.observed names rec r qs ls₂ ps as₂ Ss₂ gs₂ ⟨s, l₂⟩ χ v₂) := by
   unfold Term.observed

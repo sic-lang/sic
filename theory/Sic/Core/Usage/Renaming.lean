@@ -363,7 +363,7 @@ where
       rw [Term.corec_subst, GradeVector.rename_commutes.rename_add,
         GradeVector.rename_commutes.rename_smul]
       refine .corec (δs := fun i => (δs i).rename α) h hq hp hh (States.get_subst _ hS) ?_
-        (usageArgs hss hθ) ((CorecBranches.length_subst _ gs).trans hgl)
+        (usageArgs hss hθ) ((DestructorBranches.length_subst _ gs).trans hgl)
         ((States.length_subst _ Ss).trans hSl) ?_ ?_ ?_ ?_ ?_
       · intro j ps'' S' hS'
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
@@ -376,10 +376,10 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, CorecBranches.get_subst _ hg⟩
+        exact ⟨_, DestructorBranches.get_subst _ hg⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_subst_inv _ hg
         have ih := usage (hgu i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           (Subst.liftN_eta_of _ (Subst.liftN_eta_of _ hθ))
         rw [GradeVector.rename_extendParams _ _ ps₁ (Ren.liftN ps''.length α),

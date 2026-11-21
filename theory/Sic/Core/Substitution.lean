@@ -128,8 +128,9 @@ def States.rename {Γ Δ : Scope} (α : Ren Γ Δ) : States k Δ → States k Γ
   | .nil => .nil
   | .cons n S κs Ss => .cons n (S.rename (Ren.liftN _ α)) κs (Ss.rename α)
 
-/-- The branches `ḡ` of a corecursor renamed by `α`, under the variables of each branch. -/
-def CorecBranches.rename {Γ Δ : Scope} (α : Ren Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
+/-- The branches `ḡ` of the destructors renamed by `α`, under the variables of each branch. -/
+def DestructorBranches.rename {Γ Δ : Scope} (α : Ren Γ Δ) : DestructorBranches k Δ →
+    DestructorBranches k Γ
   | .nil => .nil
   | .cons n m a v vs =>
     .cons n m a (v.rename (Ren.liftN a (Ren.liftN m (Ren.liftN n α)))) (vs.rename α)
@@ -350,9 +351,10 @@ def States.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : States k Δ → St
   | .nil => .nil
   | .cons n S κs Ss => .cons n (S.subst₀ (Subst₀.liftN _ σ)) κs (Ss.subst₀ σ)
 
-/-- The branches `ḡ` of a corecursor substituted by `σ`, under the variables of each branch.
+/-- The branches `ḡ` of the destructors substituted by `σ`, under the variables of each branch.
 RFC: `\mathsf{subst}_\sigma.\bar g` -/
-def CorecBranches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
+def DestructorBranches.subst₀ {Γ Δ : Scope} (σ : Subst₀ k Γ Δ) : DestructorBranches k Δ →
+    DestructorBranches k Γ
   | .nil => .nil
   | .cons n m a v vs =>
     .cons n m a (v.subst₀ (Subst₀.liftN a (Subst₀.liftN m (Subst₀.liftN n σ)))) (vs.subst₀ σ)
@@ -481,9 +483,10 @@ def States.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : States k Δ → States k
   | .nil => .nil
   | .cons n S κs Ss => .cons n (S.subst (Subst.liftN _ θ)) κs (Ss.subst θ)
 
-/-- The branches `ḡ` of a corecursor substituted by `θ`, under the variables of each branch.
+/-- The branches `ḡ` of the destructors substituted by `θ`, under the variables of each branch.
 RFC: `\mathsf{subst}_\theta.\bar g` -/
-def CorecBranches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : CorecBranches k Δ → CorecBranches k Γ
+def DestructorBranches.subst {Γ Δ : Scope} (θ : Subst k Γ Δ) : DestructorBranches k Δ →
+    DestructorBranches k Γ
   | .nil => .nil
   | .cons n m a v vs =>
     .cons n m a (v.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))) (vs.subst θ)
@@ -622,11 +625,11 @@ def States.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') : Stat
   | .cons n S κs Ss =>
     .cons n (S.substLevels ls') (κs.map (Universe.substLevels ls')) (Ss.substLevels ls')
 
-/-- The branches `ḡ` of a corecursor in which the levels `ls'` replace the level variables, under
+/-- The branches `ḡ` of the destructors in which the levels `ls'` replace the level variables, under
 the variables of each branch.
 RFC: `\mathsf{inst}_l.\bar g` -/
-def CorecBranches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
-    CorecBranches k Γ → CorecBranches k' Γ
+def DestructorBranches.substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
+    DestructorBranches k Γ → DestructorBranches k' Γ
   | .nil => .nil
   | .cons n m a v vs => .cons n m a (v.substLevels ls') (vs.substLevels ls')
 
@@ -758,7 +761,7 @@ theorem Term.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ
       Terms.rename_id_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, InstanceArgs.rename_id_of h as, Terms.rename_id_of h ss,
-      States.rename_id_of h Ss, CorecBranches.rename_id_of h vs]
+      States.rename_id_of h Ss, DestructorBranches.rename_id_of h vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.rename_id_of h A, Term.rename_id_of h t, Term.rename_id_of h u]
   | .refl s l A t => by rw [Term.rename, Term.rename_id_of h A, Term.rename_id_of h t]
@@ -813,11 +816,12 @@ theorem States.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Var 
   | .cons n S κs Ss => by
     rw [States.rename, States.rename_id_of h Ss, Telescope.rename_id_of (Ren.liftN_id_of _ h) S]
 
-theorem CorecBranches.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), α x = x) :
-    (vs : CorecBranches k Γ) → vs.rename α = vs
+theorem DestructorBranches.rename_id_of {Γ : Scope} {α : Ren Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), α x = x) :
+    (vs : DestructorBranches k Γ) → vs.rename α = vs
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.rename_id_of h vs,
+    rw [DestructorBranches.rename, DestructorBranches.rename_id_of h vs,
       Term.rename_id_of (Ren.liftN_id_of _ (Ren.liftN_id_of _ (Ren.liftN_id_of _ h))) v]
 
 end
@@ -866,7 +870,7 @@ theorem Term.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ} (h : ∀ {a} (x
       Terms.subst₀_id_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, InstanceArgs.subst₀_id_of h as, Terms.subst₀_id_of h ss,
-      States.subst₀_id_of h Ss, CorecBranches.subst₀_id_of h vs]
+      States.subst₀_id_of h Ss, DestructorBranches.subst₀_id_of h vs]
   | .equality s l A t u => by
     rw [Term.subst₀, Term.subst₀_id_of h A, Term.subst₀_id_of h t, Term.subst₀_id_of h u]
   | .refl s l A t => by rw [Term.subst₀, Term.subst₀_id_of h A, Term.subst₀_id_of h t]
@@ -922,11 +926,11 @@ theorem States.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
   | .cons n S κs Ss => by
     rw [States.subst₀, States.subst₀_id_of h Ss, Telescope.subst₀_id_of (Subst₀.liftN_id_of _ h) S]
 
-theorem CorecBranches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (vs : CorecBranches k Γ) → vs.subst₀ σ = vs
+theorem DestructorBranches.subst₀_id_of {Γ : Scope} {σ : Subst₀ k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), σ x = .var x) : (vs : DestructorBranches k Γ) → vs.subst₀ σ = vs
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst₀, CorecBranches.subst₀_id_of h vs,
+    rw [DestructorBranches.subst₀, DestructorBranches.subst₀_id_of h vs,
       Term.subst₀_id_of (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ (Subst₀.liftN_id_of _ h))) v]
 
 end

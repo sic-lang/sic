@@ -170,7 +170,7 @@ corecursor at the variables of a state, substituted by `σ` followed by closed a
 state, is the corecursor substituted by `σ`, from these arguments. -/
 theorem Term.corecAt_subst_append {Γ Δ : Scope} (σ : Subst k [] Γ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
-    (Ss : States k Γ) (gs : CorecBranches k Γ) {ps' : List Parameter} (ss : Args k [] ps') :
+    (Ss : States k Γ) (gs : DestructorBranches k Γ) {ps' : List Parameter} (ss : Args k [] ps') :
     (Term.corecAt r D qs ls ps as Ss gs ps').subst (Subst.append σ ss.toSubst) =
       .corec r D qs ls ps (as.subst σ) ss.terms (Ss.subst σ) (gs.subst σ) := by
   rw [← Term.subst_append, Term.corecAt_subst, ← Term.instantiate_eq_subst,

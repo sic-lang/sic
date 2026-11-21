@@ -135,9 +135,9 @@ theorem Heap.ValueDemand.ctor_inv {H : Heap} {ℓ i : Nat} {πs ϱs : List Multi
 /-- The demand of a closure is that of its environment, for the reads of its branches, and that of
 its state. -/
 theorem Heap.ValueDemand.corec_inv {H : Heap} {ℓ n : Nat} {E : List Nat}
-    {Ps : TargetCorecBranches n} {πs ϱs : List Multiplicity} {as : List Nat} {D : Demand}
+    {Ps : TargetDestructorBranches n} {πs ϱs : List Multiplicity} {as : List Nat} {D : Demand}
     (hℓ : H[ℓ]? = some (.corec n E Ps πs ϱs as)) :
-    Heap.ValueDemand H ℓ D → ∃ δ D₁ D₂, TargetCorecBranches.Usage δ Ps ∧
+    Heap.ValueDemand H ℓ D → ∃ δ D₁ D₂, TargetDestructorBranches.Usage δ Ps ∧
       Heap.EnvDemand H E δ D₁ ∧ Heap.PositionsDemand H πs as D₂ ∧ D = D₁ +ᶜ D₂
   | .erased h | .ctor h _ => by
     rw [hℓ] at h

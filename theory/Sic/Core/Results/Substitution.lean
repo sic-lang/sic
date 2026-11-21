@@ -181,12 +181,12 @@ theorem Term.NestedResult.subst :
     rw [Term.subst, Term.subst]
     simp only [InstanceArgs.subst, States.subst, Telescope.subst]
     refine Term.NestedResult.inst h hn hq hl hp (has.subst hs) hS hL
-      ((CorecBranches.length_subst θ gs).trans hgl) ?_ ?_
+      ((DestructorBranches.length_subst θ gs).trans hgl) ?_ ?_
     · intro i d hi
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g, hg⟩ := hgs i d hi
-      exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, _, CorecBranches.get_subst θ hg⟩
+      exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, _, DestructorBranches.get_subst θ hg⟩
     · intro i d p q ς ps₁ Ξ Θ B ψ g' hi hd hg'
-      obtain ⟨g, hg, rfl⟩ := CorecBranches.get_subst_inv θ hg'
+      obtain ⟨g, hg, rfl⟩ := DestructorBranches.get_subst_inv θ hg'
       have ih := (hgt i d p q ς ps₁ Ξ Θ B ψ g hi hd hg).subst (hs.liftN ps₁.length)
       rw [Term.observation_subst,
         Term.subst_subst_of (Subst.liftN_subst_of ps₁.length
@@ -366,12 +366,12 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
       Telescope.substLevels, List.map_append, List.map_nil]
     rw [← Lifting.Result.levels_substLevels ls' ms, ← Lifting.Variables.grades_substLevels v ps ls' ms]
     refine Term.NestedResult.inst h hn hq ((List.length_map _).trans hl) hp (has.substLevels ls')
-      hS hL ((CorecBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
+      hS hL ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
     · intro i d hi
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g, hg⟩ := hgs i d hi
-      exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, _, CorecBranches.get_substLevels_of ls' hg⟩
+      exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, _, DestructorBranches.get_substLevels_of ls' hg⟩
     · intro i d p q ς ps₁ Ξ Θ B ψ g' hi hd hg'
-      obtain ⟨g, hg, rfl⟩ := CorecBranches.get_substLevels ls' hg'
+      obtain ⟨g, hg, rfl⟩ := DestructorBranches.get_substLevels ls' hg'
       have ho {a : Scope.Entry} (x : Var Ξ a) :=
         hd.obsSubst_substLevels ls' (Term.observation_substLevels ls' D qs ls ps as t)
           (fun x => InstanceArgs.toSubst_substLevels ls' as x) x

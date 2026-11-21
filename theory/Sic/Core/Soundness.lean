@@ -117,7 +117,7 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
     {Ξ : Scope} {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)}
     {ψ : ResultOwnership Grade ps₁.length} (hpos : ds.Pos d p q ς Ξ Θ B ψ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
-    (Ss : States k Γ) (gs : CorecBranches k Γ) (ps' : List Parameter) :
+    (Ss : States k Γ) (gs : DestructorBranches k Γ) (ps' : List Parameter) :
     ∀ {a} (x : Var Ξ a),
       (hpos.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps').observation D qs ls ps
           (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst x).substLevels
@@ -135,11 +135,11 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
 
 /-- The premises of `(corec_≡)` on its branches, each pair of branches meaningful for every value of
 the level variables, are meaningful at the levels without variables `ρ`. -/
-theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+theorem DestructorBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
-    {r : Grade} {Ss : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+    {r : Grade} {Ss : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
@@ -168,7 +168,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
-    CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
+    DestructorBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs₁.substLevels fun i => .ofNat (ρ i)) (gs₂.substLevels fun i => .ofNat (ρ i)) := by
@@ -176,10 +176,11 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
     fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ => ?_⟩
   · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
     obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hpos
-    exact ⟨_, _, CorecBranches.get_substLevels_of _ hg₁, CorecBranches.get_substLevels_of _ hg₂⟩
+    exact ⟨_, _, DestructorBranches.get_substLevels_of _ hg₁,
+      DestructorBranches.get_substLevels_of _ hg₂⟩
   · obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
-    obtain ⟨g₁₀, hg₁₀, rfl⟩ := CorecBranches.get_substLevels _ hg₁
-    obtain ⟨g₂₀, hg₂₀, rfl⟩ := CorecBranches.get_substLevels _ hg₂
+    obtain ⟨g₁₀, hg₁₀, rfl⟩ := DestructorBranches.get_substLevels _ hg₁
+    obtain ⟨g₂₀, hg₂₀, rfl⟩ := DestructorBranches.get_substLevels _ hg₂
     have hb := hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hpos hg₁₀ hg₂₀ ρ
     have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
       hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs₁ ps'' x
@@ -196,11 +197,11 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
 /-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
 variables, are meaningful at the levels without variables `ρ`: those of `(corec_≡)` at the same
 branches. -/
-theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+theorem DestructorBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
-    {r : Grade} {Ss : States k Γ} {gs : CorecBranches k Γ}
+    {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
@@ -226,16 +227,16 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
-    CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
+    DestructorBranchesValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) :=
-  CorecBranchesEqValid.atLevels hq hl hp
+  DestructorBranchesEqValid.atLevels hq hl hp
     (fun i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos =>
       have ⟨g, hg⟩ := hgs i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos
       ⟨g, g, hg, hg⟩)
     (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ => by
-      cases CorecBranches.get_inj hg₁ hg₂
+      cases DestructorBranches.get_inj hg₁ hg₂
       exact hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ hi hSj hpos hg₁) ρ
 
 -- ADE: `fundamental`, in `Definition/LogicalRelation/Fundamental.agda`, for the judgments in a
@@ -411,7 +412,7 @@ where
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (DestructorBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
     | .conv ht h => fun ρ => (hasType hd hord hι ht ρ).conv (eqType hd hord hι h ρ)
@@ -591,7 +592,7 @@ where
         (fun j T' hj =>
           have ⟨ps'', S₁', S₂', hS₁', hS₂'⟩ := hSs j T' hj
           ⟨ps'', _, _, States.get_substLevels_of _ hS₁', States.get_substLevels_of _ hS₂'⟩)
-        (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
+        (DestructorBranchesEqValid.atLevels hq hl₁ hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             eqTerm hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂)) ρ)
     | .iota (qs := qs) (ls := ls) (ps := ps) (as := as) (r := r) (ς := ς) (χ := χ) (κ := κ)
@@ -688,12 +689,13 @@ where
         Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
       have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has')
-        hh (States.get_substLevels_of _ hS) hss' hi hpos (CorecBranches.get_substLevels_of _ hg)
+        hh (States.get_substLevels_of _ hS) hss' hi hpos
+            (DestructorBranches.get_substLevels_of _ hg)
         (by rw [List.getFin_map]; exact hbs')
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (DestructorBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hasType hd hord hι (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
       rw [List.getFin_map] at hc

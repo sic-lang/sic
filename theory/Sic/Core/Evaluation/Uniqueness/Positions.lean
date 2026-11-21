@@ -230,7 +230,7 @@ theorem Heap.ValueReach.ctor_inv {H : Heap} {g : Heap.Annotation} {ℓ i : Nat}
 /-- The reach of a closure is itself, the reach of its scope and the sum of the reaches of the
 entries of its state. -/
 theorem Heap.ValueReach.corec_inv {H : Heap} {g : Heap.Annotation} {ℓ n : Nat} {E : List Nat}
-    {Ps : TargetCorecBranches n} {πs ϱs : List Multiplicity} {as : List Nat} {U : Demand}
+    {Ps : TargetDestructorBranches n} {πs ϱs : List Multiplicity} {as : List Nat} {U : Demand}
     (h : H[ℓ]? = some (.corec n E Ps πs ϱs as)) (hU : Heap.ValueReach H g ℓ U) :
     ∃ U₁ Us, Heap.EnvReach H g E (g.usage ℓ n) U₁ ∧
       List.Pointwise (Heap.ValueReach H g) as Us ∧

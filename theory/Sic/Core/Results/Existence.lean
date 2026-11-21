@@ -417,7 +417,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     refine ⟨⟨0, 0, ps₁.length, g⟩, fun d hd'' => ?_⟩
     cases (List.getElem?_eq_getElem hi).symm.trans hd''
     exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g, rfl, hg⟩
-  obtain ⟨gs, hgl, hgs⟩ := CorecBranches.exists_of_forall ns.length _ key
+  obtain ⟨gs, hgl, hgs⟩ := DestructorBranches.exists_of_forall ns.length _ key
   refine ⟨_, .inst hTs hn hq hl hp has hS hL hgl ?_ ?_⟩
   · intro i d hi
     obtain ⟨b, hb', hP⟩ := hgs i (List.getElem?_eq_some_iff.1 hi).1
@@ -437,7 +437,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
             ((B₂.substLevels (ls.getFin hl)).subst
               (Subst.liftN _ (h.obsSubst (t.observation D qs ls ps as) as.toSubst)))
             (t.observation D qs ls ps as d ps₂) g')
-      hpos₀ (fun g' hg' => CorecBranches.get_inj hb' hg' ▸ hN) hpos g hg
+      hpos₀ (fun g' hg' => DestructorBranches.get_inj hb' hg' ▸ hN) hpos g hg
 
 /-! ## Signatures Whose Liftings Have Results -/
 

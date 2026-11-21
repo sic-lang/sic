@@ -322,7 +322,7 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
       {ns : List Name}
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-      {gs : CorecBranches k Γ}
+      {gs : DestructorBranches k Γ}
       (h : sig.HasCodataType D decl T) (hn : ∀ E, n ≠ .direct E)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
       (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])

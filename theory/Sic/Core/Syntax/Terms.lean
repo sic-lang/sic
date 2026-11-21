@@ -79,37 +79,38 @@ theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Na
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
-/-- The branch at a position of the branches of a corecursor is one term. -/
-theorem CorecBranches.get_inj {k : Nat} {Γ : Scope} {vs : CorecBranches k Γ} {i n m a : Nat}
+/-- The branch at a position of the branches of the destructors is one term. -/
+theorem DestructorBranches.get_inj {k : Nat} {Γ : Scope} {vs : DestructorBranches k Γ}
+    {i n m a : Nat}
     {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)} (h₁ : vs.get i = some ⟨n, m, a, v₁⟩)
     (h₂ : vs.get i = some ⟨n, m, a, v₂⟩) : v₁ = v₂ := by
   have h := Option.some.inj (h₁.symm.trans h₂)
   simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
   exact h
 
-/-- Branches of corecursors are the same when they are as many and the same at each position. -/
-theorem CorecBranches.ext {k : Nat} {Γ : Scope} :
-    {vs₁ vs₂ : CorecBranches k Γ} → vs₁.length = vs₂.length →
+/-- Branches of the destructors are the same when they are as many and the same at each position. -/
+theorem DestructorBranches.ext {k : Nat} {Γ : Scope} :
+    {vs₁ vs₂ : DestructorBranches k Γ} → vs₁.length = vs₂.length →
       (∀ i, i < vs₁.length → vs₁.get i = vs₂.get i) → vs₁ = vs₂
   | .nil, .nil, _, _ => rfl
   | .nil, .cons .., h, _ => nomatch h
   | .cons .., .nil, h, _ => nomatch h
   | .cons _ _ _ _ vs₁, .cons _ _ _ _ vs₂, hl, h => by
     cases Option.some.inj (h 0 (Nat.zero_lt_succ _))
-    rw [CorecBranches.ext (vs₁ := vs₁) (vs₂ := vs₂) (Nat.succ.inj hl) fun i hi =>
+    rw [DestructorBranches.ext (vs₁ := vs₁) (vs₂ := vs₂) (Nat.succ.inj hl) fun i hi =>
       h (i + 1) (Nat.succ_lt_succ hi)]
 
-/-- Branches of a corecursor exist, as many as a number, each of which has a property of its
+/-- Branches of the destructors exist, as many as a number, each of which has a property of its
 position, when a branch with this property exists for each position. -/
-theorem CorecBranches.exists_of_forall {k : Nat} {Γ : Scope} :
+theorem DestructorBranches.exists_of_forall {k : Nat} {Γ : Scope} :
     (n : Nat) →
       (P : Nat → (Σ n m a, Term k (((Γ.extend n).extend m).extend a)) → Prop) →
       (∀ i, i < n → ∃ b, P i b) →
-        ∃ vs : CorecBranches k Γ, vs.length = n ∧ ∀ i, i < n → ∃ b, vs.get i = some b ∧ P i b
+        ∃ vs : DestructorBranches k Γ, vs.length = n ∧ ∀ i, i < n → ∃ b, vs.get i = some b ∧ P i b
   | 0, _, _ => ⟨.nil, rfl, fun _ hi => nomatch hi⟩
   | n + 1, P, h => by
     obtain ⟨⟨n₀, m₀, a₀, v⟩, hb⟩ := h 0 (Nat.zero_lt_succ n)
-    obtain ⟨vs, hl, hvs⟩ := CorecBranches.exists_of_forall n (fun i => P (i + 1))
+    obtain ⟨vs, hl, hvs⟩ := DestructorBranches.exists_of_forall n (fun i => P (i + 1))
       fun i hi => h (i + 1) (Nat.succ_lt_succ hi)
     refine ⟨.cons n₀ m₀ a₀ v vs, congrArg Nat.succ hl, fun i hi => ?_⟩
     cases i with

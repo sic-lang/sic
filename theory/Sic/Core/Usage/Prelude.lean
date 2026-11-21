@@ -299,7 +299,7 @@ grades allow, uses the others as `δ` allows.
 RFC: `\mathsf{resume}_{▶}` -/
 theorem Usage.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Parameter} {r : Grade}
     {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ Δ} {Ss : States k Γ} {gs : CorecBranches k Γ} {κ : Universe k}
+    {as : InstanceArgs k Γ Δ} {Ss : States k Γ} {gs : DestructorBranches k Γ} {κ : Universe k}
     {χ : Grade} {S : Telescope k Γ ps'} {κs : List (Universe k)} {v : Term k Γ} {m : Mode}
     {γ δ η : GradeVector Γ.length}
     (hT : Usage sig 𝟘ᶜ .zeroZero (Term.inst D qs ls ps as)) (hv : Usage sig γ m v)

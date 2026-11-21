@@ -315,9 +315,9 @@ theorem Branches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (�
 each branch, without non-uniform parameters and with a grade, reads them as some `δᵢ` allows, and
 its new variables as the multiplicities that the erasure gives their binders allow, `δ` being below
 `δᵢ`, and below `δᵢ` plus `δ` when the branch resumes the corecursor. -/
-theorem CorecBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
+theorem DestructorBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) (δ : MultiplicityVector Γ.length) :
-    (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
+    (vs : DestructorBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
     (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
     (∀ i, i < vs.length → ∃ (b c : Nat) (v : Term k ((Γ.extend b).extend c)) (p : Grade),
       vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧
@@ -332,11 +332,11 @@ theorem CorecBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePr
           (if p ∈ S then .erased else
             Scope.length_extend_extend Γ b c ▸ v.erase sig S ((hΓ.extend b).extend c)) ∧
         δ ≤ᶜ δᵢ ∧ ((ks.drop i).headD .none ≠ .none → δ ≤ᶜ δᵢ +ᶜ δ)) →
-    TargetCorecBranches.Usage δ (vs.erase sig S hΓ ps ks pss)
+    TargetDestructorBranches.Usage δ (vs.erase sig S hΓ ps ks pss)
   | .nil, _, _, _, _ => .nil
   | .cons n b c v vs, ps, ks, pss, h => by
     obtain ⟨b', c', v', p, hg, hp, δᵢ, hu, hδ, hr⟩ := h 0 (Nat.zero_lt_succ _)
-    simp only [CorecBranches.get, Option.some.injEq] at hg
+    simp only [DestructorBranches.get, Option.some.injEq] at hg
     have hn : n = 0 := by
       have := congrArg Sigma.fst hg
       simp only at this
@@ -348,7 +348,7 @@ theorem CorecBranches.erase_usage {sig : Signature} {S : Set Grade} [DecidablePr
     | cons p' ps =>
       cases hp
       simp only [List.drop_zero] at hu hr
-      refine .cons hu hδ hr (CorecBranches.erase_usage hΓ δ vs ps ks.tail pss.tail
+      refine .cons hu hδ hr (DestructorBranches.erase_usage hΓ δ vs ps ks.tail pss.tail
         fun i hi => ?_)
       obtain ⟨b₁, c₁, v₁, p₁, hg₁, hp₁, δ₁, hu₁, hδ₁, hr₁⟩ := h (i + 1) (Nat.succ_lt_succ hi)
       have e₁ : ks.drop (i + 1) = ks.tail.drop i := by cases ks <;> simp
@@ -513,7 +513,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
       Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
     rw [GradeVector.run_commutes.run_add]
     refine .corec (UsageArgs.erase_usage_mul hd hord hΓ hm rfl hss)
-      (CorecBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
+      (DestructorBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     have hi' : i < decl.codataCases.length := hgl ▸ hi
     obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=

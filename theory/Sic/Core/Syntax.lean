@@ -199,7 +199,7 @@ inductive Term (k : Nat) : Scope → Type where
   declaration; the corecursor carries its instance, so that the term determines its type. -/
   | corec {Γ : Scope} {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
       (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ)
-      (Ss : States k Γ) (vs : CorecBranches k Γ) : Term k Γ
+      (Ss : States k Γ) (vs : DestructorBranches k Γ) : Term k Γ
   /-- `t ∼.{s; l}_A u`: the equality of the terms `t` and `u` of the type `A`, whose sort has the
   quality `s` and the level `l`; the equality carries the type of its terms and the quality and the
   level of the sort of this type, so that the term determines its type and its sort. -/
@@ -301,20 +301,20 @@ inductive States (k : Nat) : Scope → Type where
   | cons {Γ : Scope} (n : Nat) {ps : List Parameter} (S : Telescope k (Γ.extend n) ps)
       (κs : List (Universe k)) (Ss : States k Γ) : States k Γ
 
-/-- `ḡ`: the branches of a corecursor, one for each destructor of each type of the block, in the
-order of the declaration; the branch `D.d(x̄; ȳ; z̄) ⇒ g` is a term over a new variable for each
-non-uniform parameter, for each entry of the state and for each argument of the destructor, of which
-the indices only keep the numbers `n` of non-uniform parameters, `m` of entries of the state and
-`a` of arguments.
+/-- `ḡ`: the branches of the destructors: one for each destructor of each type of a block, in the
+order of the declaration; for a corecursor, the branch `D.d(x̄; ȳ; z̄) ⇒ g` is a term over a new
+variable for each non-uniform parameter, for each entry of the state and for each argument of the
+destructor, of which the indices only keep the numbers `n` of non-uniform parameters, `m` of entries
+of the state and `a` of arguments.
 RFC: `\mathsf{syntax}_{\bar g}` -/
-inductive CorecBranches (k : Nat) : Scope → Type where
+inductive DestructorBranches (k : Nat) : Scope → Type where
   /-- `()`. -/
-  | nil {Γ : Scope} : CorecBranches k Γ
+  | nil {Γ : Scope} : DestructorBranches k Γ
   /-- `((x̄; ȳ; z̄). g, ḡ)`, with `n` non-uniform parameters, `m` entries of the state and
   `a` arguments. -/
   | cons {Γ : Scope} (n m a : Nat) (v : Term k (((Γ.extend n).extend m).extend a))
-      (vs : CorecBranches k Γ) :
-      CorecBranches k Γ
+      (vs : DestructorBranches k Γ) :
+      DestructorBranches k Γ
 
 end
 
@@ -385,15 +385,15 @@ def Branches.grades {k : Nat} {Γ : Scope} : Branches k Γ → Nat → List Grad
   | .cons _ _ es _ _, 0 => es.toList
   | .cons _ _ _ _ us, i + 1 => us.grades i
 
-/-- The number of the branches `ḡ` of a corecursor. -/
-def CorecBranches.length {k : Nat} {Γ : Scope} : CorecBranches k Γ → Nat
+/-- The number of the branches `ḡ` of the destructors. -/
+def DestructorBranches.length {k : Nat} {Γ : Scope} : DestructorBranches k Γ → Nat
   | .nil => 0
   | .cons _ _ _ _ vs => vs.length + 1
 
-/-- The branch at the position `i` of the branches `ḡ` of a corecursor, the first one at `0`, with
-its numbers of non-uniform parameters, of entries of the state and of arguments. -/
-def CorecBranches.get {k : Nat} {Γ : Scope} :
-    CorecBranches k Γ → Nat → Option (Σ n m a, Term k (((Γ.extend n).extend m).extend a))
+/-- The branch at the position `i` of the branches `ḡ` of the destructors, the first one at `0`,
+with its numbers of non-uniform parameters, of entries of the state and of arguments. -/
+def DestructorBranches.get {k : Nat} {Γ : Scope} :
+    DestructorBranches k Γ → Nat → Option (Σ n m a, Term k (((Γ.extend n).extend m).extend a))
   | .nil, _ => none
   | .cons n m a v _, 0 => some ⟨n, m, a, v⟩
   | .cons _ _ _ _ vs, i + 1 => vs.get i

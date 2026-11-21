@@ -337,7 +337,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' : Nat}
+      {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat}
       {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
@@ -606,7 +606,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | corec {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
-      {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : CorecBranches k Γ}
+      {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
       {h' : Nat} {ps' : List Parameter} {S₁ S₂ : Telescope k Γ ps'} {ss₁ ss₂ : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
@@ -768,7 +768,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   | beta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' i : Nat}
+      {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' i : Nat}
       {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {d : Name} {p q ς : Grade} {ps₀ : List Parameter}
       {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}

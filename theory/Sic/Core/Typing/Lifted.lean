@@ -301,7 +301,7 @@ where
       rw [Term.corec_subst]
       refine .corec h hq hl hp hadm hpre (hasInstanceArgs has hθ) hh (States.get_subst _ hS)
         (hasArgs hss hθ) ((States.length_subst _ Ss).trans hSl) ?_ ?_
-        ((CorecBranches.length_subst _ gs).trans hgl) ?_ ?_
+        ((DestructorBranches.length_subst _ gs).trans hgl) ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
         exact ⟨ps'', _, States.get_subst _ hS'⟩
@@ -312,10 +312,10 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, CorecBranches.get_subst _ hg⟩
+        exact ⟨_, DestructorBranches.get_subst _ hg⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv _ hS'
-        obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv _ hg
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_subst_inv _ hg
         have ih := hasType (hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
@@ -426,7 +426,7 @@ where
         (States.get_subst θ hS₁) (States.get_subst θ hS₂) (eqArgs hss hθ)
         ((States.length_subst θ Ss₁).trans hSl₁) ((States.length_subst θ Ss₂).trans hSl₂) ?_
         (fun j => by rw [States.sorts_subst, States.sorts_subst]; exact hSk j) ?_ ?_
-        ((CorecBranches.length_subst θ gs₁).trans hgl₁) ((CorecBranches.length_subst θ gs₂).trans hgl₂)
+        ((DestructorBranches.length_subst θ gs₁).trans hgl₁) ((DestructorBranches.length_subst θ gs₂).trans hgl₂)
         ?_ ?_
       · intro j T' hj
         obtain ⟨ps'', S₁', S₂', h₁, h₂⟩ := hSs j T' hj
@@ -443,11 +443,11 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, _, CorecBranches.get_subst θ hg₁, CorecBranches.get_subst θ hg₂⟩
+        exact ⟨_, _, DestructorBranches.get_subst θ hg₁, DestructorBranches.get_subst θ hg₂⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
-        obtain ⟨g₁₀, hg₁₀, rfl⟩ := CorecBranches.get_subst_inv θ hg₁
-        obtain ⟨g₂₀, hg₂₀, rfl⟩ := CorecBranches.get_subst_inv θ hg₂
+        obtain ⟨g₁₀, hg₁₀, rfl⟩ := DestructorBranches.get_subst_inv θ hg₁
+        obtain ⟨g₂₀, hg₂₀, rfl⟩ := DestructorBranches.get_subst_inv θ hg₂
         have ih := eqTerm (hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hd hg₁₀ hg₂₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih
@@ -535,8 +535,9 @@ where
           (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
         Term.corec_subst]
       refine .beta h hq hl hp hadm hpre (hasInstanceArgs has hθ) hh (States.get_subst θ hS)
-        (hasArgs hss hθ) hi hd (CorecBranches.get_subst θ hg) ?_
-        ((States.length_subst θ Ss).trans hSl) ?_ ?_ ((CorecBranches.length_subst θ gs).trans hgl)
+        (hasArgs hss hθ) hi hd (DestructorBranches.get_subst θ hg) ?_
+        ((States.length_subst θ Ss).trans hSl) ?_ ?_
+        ((DestructorBranches.length_subst θ gs).trans hgl)
         ?_ ?_
       · dsimp only [Subst.liftN, Scope.extend]
         rw [← Term.corec_subst,
@@ -552,10 +553,10 @@ where
       · intro i j T' d ps'' S' hi hS' p q ς ps₁ Ξ Θ B ψ hd
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
         obtain ⟨g, hg⟩ := hgs i j T' d ps'' S₀ hi hS₀ p q ς ps₁ Ξ Θ B ψ hd
-        exact ⟨_, CorecBranches.get_subst θ hg⟩
+        exact ⟨_, DestructorBranches.get_subst θ hg⟩
       · intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg
         obtain ⟨S₀, hS₀, rfl⟩ := States.get_subst_inv θ hS'
-        obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_subst_inv θ hg
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_subst_inv θ hg
         have ih := hasType (hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hd hg₀)
           ((hθ.append S₀).append _)
         dsimp only [Scope.extend] at ih

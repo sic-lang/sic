@@ -246,7 +246,7 @@ uses it, has the ownership `11ᵖ` of a new value.
 RFC: `\mathsf{resume}_{◀}` -/
 theorem Ownership.resume (hpre : sig.HasPrelude) {Γ Δ : Scope} {ps' : List Parameter} {r : Grade}
     {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ Δ} {Ss : States k Γ} {gs : CorecBranches k Γ} {κ : Universe k}
+    {as : InstanceArgs k Γ Δ} {Ss : States k Γ} {gs : DestructorBranches k Γ} {κ : Universe k}
     {χ : Grade} {S : Telescope k Γ ps'} {κs : List (Universe k)} {v : Term k Γ} {m : Mode}
     {φ : Var Γ .var → Grade} {o p' : Grade} (hv : Ownership sig φ m o v)
     (hc : Ownership sig (Ownership.extendFields φ (o * (m.grade * r)) (m.grade * r) ps') m

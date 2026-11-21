@@ -665,7 +665,7 @@ such fields.
 RFC: `\mathsf{resume}` -/
 def Term.resume {Γ Δ : Scope} {ps' : List Parameter} (r : Grade) (D : Name) (qs : List Quality)
     (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
-    (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (S : Telescope k Γ ps')
+    (gs : DestructorBranches k Γ) (κ : Universe k) (χ : Grade) (S : Telescope k Γ ps')
     (κs : List (Universe k)) (v : Term k Γ) : Term k Γ :=
   .recursor Grade.one Grade.one Grade.one "Step" [κ.quality]
     [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level]
@@ -687,7 +687,7 @@ the instance of `rec`, if the destructor is recursive, and `v` otherwise.
 RFC: `\mathsf{resume}_B` -/
 def Term.observed {Γ Δ : Scope} (names : List Name) (rec : Option Name) (r : Grade)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
-    (Ss : States k Γ) (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
+    (Ss : States k Γ) (gs : DestructorBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
     Term k Γ :=
   match rec with
   | none => v
@@ -773,7 +773,7 @@ theorem Term.branchResult_subst {k' : Nat} {Ψ Γ Δ : Scope} (θ : Subst k Γ �
 substituted. -/
 theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst k Γ Δ) (r : Grade)
     (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
-    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : CorecBranches k Δ) (κ : Universe k)
+    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : DestructorBranches k Δ) (κ : Universe k)
     (χ : Grade) (S : Telescope k Δ ps') (κs : List (Universe k)) (v : Term k Δ) :
     (Term.resume r D qs ls ps as Ss gs κ χ S κs v).subst θ =
       Term.resume r D qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) κ χ (S.subst θ) κs
@@ -788,8 +788,8 @@ theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst 
     (States.subst_rename_of hw Ss).trans (States.rename_subst_of (fun _ => rfl) Ss).symm
   have hg : (gs.rename Ren.weaken).subst (Subst.lift (e := .var) θ) =
       (gs.subst θ).rename Ren.weaken :=
-    (CorecBranches.subst_rename_of hw gs).trans
-      (CorecBranches.rename_subst_of (fun _ => rfl) gs).symm
+    (DestructorBranches.subst_rename_of hw gs).trans
+      (DestructorBranches.rename_subst_of (fun _ => rfl) gs).symm
   have hb := Term.corecAt_subst (Subst.lift (e := .var) θ) r D qs ls ps (as.rename Ren.weaken)
     (Ss.rename Ren.weaken) (gs.rename Ren.weaken) ps'
   rw [ha, hS, hg] at hb
@@ -817,7 +817,7 @@ theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst 
 substituted. -/
 theorem Term.observed_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (names : List Name)
     (rec : Option Name) (r : Grade) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
-    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : CorecBranches k Δ) (κ : Universe k)
+    (as : InstanceArgs k Δ Ξ) (Ss : States k Δ) (gs : DestructorBranches k Δ) (κ : Universe k)
     (χ : Grade) (v : Term k Δ) :
     (Term.observed names rec r qs ls ps as Ss gs κ χ v).subst θ =
       Term.observed names rec r qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) κ χ
@@ -950,7 +950,7 @@ theorem Term.unpack_substLevels {k' : Nat} (ls' : Fin k → Level k') (r : Grade
 instantiated, of the sort instantiated. -/
 theorem Term.resume_substLevels {k' : Nat} {Γ Δ : Scope} {ps' : List Parameter}
     (ls' : Fin k → Level k') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
-    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : CorecBranches k Γ)
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : DestructorBranches k Γ)
     (κ : Universe k) (χ : Grade) (S : Telescope k Γ ps') (κs : List (Universe k))
     (v : Term k Γ) :
     (Term.resume r D qs ls ps as Ss gs κ χ S κs v).substLevels ls' =
@@ -962,7 +962,7 @@ theorem Term.resume_substLevels {k' : Nat} {Γ Δ : Scope} {ps' : List Parameter
   erw [Term.unpack_substLevels, Term.corecAt_substLevels, Telescope.pack_substLevels,
     Telescope.packLevel_subst, Telescope.packLevel_subst, Telescope.substLevels_rename,
     Term.substLevels_rename, InstanceArgs.substLevels_rename, States.substLevels_rename,
-    CorecBranches.substLevels_rename]
+    DestructorBranches.substLevels_rename]
   rfl
 
 -- ADE: none.
@@ -971,7 +971,7 @@ branch instantiated. -/
 theorem Term.observed_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')
     (names : List Name) (rec : Option Name) (r : Grade) (qs : List Quality)
     (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
-    (gs : CorecBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
+    (gs : DestructorBranches k Γ) (κ : Universe k) (χ : Grade) (v : Term k Γ) :
     (Term.observed names rec r qs ls ps as Ss gs κ χ v).substLevels ls' =
       Term.observed names rec r qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
         (Ss.substLevels ls') (gs.substLevels ls') (κ.substLevels ls') χ (v.substLevels ls') := by

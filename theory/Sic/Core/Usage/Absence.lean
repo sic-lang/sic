@@ -63,9 +63,9 @@ theorem _root_.Sic.Grading.GradeVector.extendParams_addNat {Γ : Scope} (γ : Gr
 /-- A variable occurs in the erasure of the branches of a corecursor when it occurs, as an old
 variable of the scope of a branch whose grade is not erased, in the erasure of the term of this
 branch. -/
-theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
+theorem DestructorBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) {x : Fin Γ.length} :
-    (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
+    (vs : DestructorBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
       (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
       (vs.erase sig S hΓ ps ks pss).Occurs x →
         ∃ i b c v p, vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧ p ∉ S ∧
@@ -73,7 +73,7 @@ theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidableP
             ((x.addNat (b + c)).cast (Scope.length_extend_extend Γ b c).symm)
   | .nil, _, _, _, h => nomatch h
   | .cons 0 b c v vs, p :: ps, ks, pss, h => by
-    simp only [CorecBranches.erase] at h
+    simp only [DestructorBranches.erase] at h
     cases h with
     | head h =>
       by_cases hp : p ∈ S
@@ -83,34 +83,35 @@ theorem CorecBranches.occurs_erase {sig : Signature} {S : Set Grade} [DecidableP
         exact ⟨0, b, c, v, p, rfl, rfl, hp, Target.occurs_cast _ _ _ h⟩
     | tail h =>
       obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
-        CorecBranches.occurs_erase hΓ vs ps ks.tail pss.tail h
+        DestructorBranches.occurs_erase hΓ vs ps ks.tail pss.tail h
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
   | .cons 0 _ _ _ vs, [], ks, pss, h => by
-    simp only [CorecBranches.erase] at h
+    simp only [DestructorBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
-      obtain ⟨_, _, _, _, _, _, hp, _⟩ := CorecBranches.occurs_erase hΓ vs [] ks.tail pss.tail h
+      obtain ⟨_, _, _, _, _, _, hp, _⟩ := DestructorBranches.occurs_erase hΓ vs [] ks.tail
+          pss.tail h
       simp at hp
   | .cons (_ + 1) _ _ _ vs, ps, ks, pss, h => by
-    simp only [CorecBranches.erase] at h
+    simp only [DestructorBranches.erase] at h
     cases h with
     | head h => exact nomatch h
     | tail h =>
       obtain ⟨i, b', c', v', p', hv, hp, hpS, ho⟩ :=
-        CorecBranches.occurs_erase hΓ vs _ ks.tail pss.tail h
+        DestructorBranches.occurs_erase hΓ vs _ ks.tail pss.tail h
       rw [List.getElem?_tail] at hp
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
 
 /-- The branch at a position of the branches of a corecursor is before their end. -/
-theorem CorecBranches.lt_length_of_get {k : Nat} {Γ : Scope} :
-    {vs : CorecBranches k Γ} → {i : Nat} →
+theorem DestructorBranches.lt_length_of_get {k : Nat} {Γ : Scope} :
+    {vs : DestructorBranches k Γ} → {i : Nat} →
       {a : Σ n m a, Term k (((Γ.extend n).extend m).extend a)} → vs.get i = some a →
         i < vs.length
   | .nil, _, _, h => nomatch h
   | .cons .., 0, _, _ => Nat.zero_lt_succ _
   | .cons _ _ _ _ vs, _ + 1, _, h =>
-    Nat.succ_lt_succ (CorecBranches.lt_length_of_get (vs := vs) h)
+    Nat.succ_lt_succ (DestructorBranches.lt_length_of_get (vs := vs) h)
 
 /-- The grades extended by the variables of two telescopes, one after the other, give each old
 variable its grade. -/
@@ -261,8 +262,8 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     cases ho with
     | corec ho => exact UsageArgs.absent_mul hd hS hΓ rfl hss (hS.add _ _ hx') ho
     | cobranch ho =>
-      obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := CorecBranches.occurs_erase hΓ _ _ _ _ ho
-      have hi : i < _ := hgl ▸ CorecBranches.lt_length_of_get hget
+      obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := DestructorBranches.occurs_erase hΓ _ _ _ _ ho
+      have hi : i < _ := hgl ▸ DestructorBranches.lt_length_of_get hget
       obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
       have hcm := List.mem_of_getElem? hc
       obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm

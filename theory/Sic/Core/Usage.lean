@@ -171,7 +171,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   | corec {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
-      {Ss : States k Γ} {gs : CorecBranches k Γ} {h' : Nat} {ps' : List Parameter}
+      {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat} {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {m : Mode} {γ δ : GradeVector Γ.length}
       {δs : Nat → GradeVector Γ.length} (h : sig.HasCodataType D decl T)
       (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)

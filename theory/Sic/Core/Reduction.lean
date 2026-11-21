@@ -81,7 +81,7 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   /-- `corec_r T from t̄ return Θ̄ with ḡ`, a corecursor, which computes only when it is observed. -/
   | corec {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ) (Ss : States k Γ)
-      (gs : CorecBranches k Γ) : Whnf sig (.corec r D qs ls ps as ss Ss gs)
+      (gs : DestructorBranches k Γ) : Whnf sig (.corec r D qs ls ps as ss Ss gs)
   -- ADE: none.
   /-- `t ∼.{s; l}_A u`, an equality. -/
   | equality (s : Quality) (l : Level k) (A t u : Term k Γ) : Whnf sig (.equality s l A t u)
@@ -145,7 +145,7 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {Δ Δ' : Scope} {r : Grade}
       {D D' : Name} {qs qs' : List Quality} {ls ls' : List (Level k)} {ps ps' : List Grade}
       {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ Δ'} {ss : Terms k Γ} {Ss : States k Γ}
-      {gs : CorecBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
+      {gs : DestructorBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
       {g : Term k (((Γ.extend 0).extend m).extend a)} {v : Term k Γ}
       (h : .typeDeclaration decl ∈ sig) (hi : decl.codataCases[i]? = some (j, T, d))
       (hD : T.name = D) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)

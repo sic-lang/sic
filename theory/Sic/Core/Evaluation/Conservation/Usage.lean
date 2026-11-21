@@ -91,9 +91,9 @@ theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
 
 -- ADE: none.
 /-- A corecursor reads the variables of its state, and those of its branches. -/
-theorem corec_inv {Ms : Targets n} {Ps : TargetCorecBranches n} :
+theorem corec_inv {Ms : Targets n} {Ps : TargetDestructorBranches n} :
     {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .corec Ms Ps →
-      ∃ ν₁ δ, ν ≤ᶜ ν₁ +ᶜ δ ∧ Targets.Usage ν₁ Ms ∧ TargetCorecBranches.Usage δ Ps
+      ∃ ν₁ δ, ν ≤ᶜ ν₁ +ᶜ δ ∧ Targets.Usage ν₁ Ms ∧ TargetDestructorBranches.Usage δ Ps
   | _, _, .corec hMs hPs, h => by
     cases h
     exact ⟨_, _, MultiplicityVector.le_refl _, hMs, hPs⟩
@@ -123,8 +123,8 @@ theorem TargetBranches.Usage.get {n : Nat} {ρ : Multiplicity} {χ : Multiplicit
   | _, .cons _ _ _ _ hNs, i + 1, _, _, _, _, _, _, _, h => TargetBranches.Usage.get hNs i h
 
 /-- The usage of the branches of a corecursor gives that of each branch. -/
-theorem TargetCorecBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :
-    {Ps : TargetCorecBranches n} → TargetCorecBranches.Usage δ Ps → (i : Nat) →
+theorem TargetDestructorBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :
+    {Ps : TargetDestructorBranches n} → TargetDestructorBranches.Usage δ Ps → (i : Nat) →
       {o : Resumption} → {b c : Nat} → {πs ϱs : Fin b → Multiplicity} →
       {πs' ϱs' : Fin c → Multiplicity} → {ψ : ResultOwnership Multiplicity c} →
       {ς : Multiplicity} → {P : Target (n + (b + c))} →
@@ -136,6 +136,6 @@ theorem TargetCorecBranches.Usage.get {n : Nat} {δ : MultiplicityVector n} :
     cases h
     exact ⟨_, hP, hδ, hr⟩
   | _, .cons _ _ _ hPs, i + 1, _, _, _, _, _, _, _, _, _, _, h =>
-    TargetCorecBranches.Usage.get hPs i h
+    TargetDestructorBranches.Usage.get hPs i h
 
 end Sic.Core

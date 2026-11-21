@@ -95,8 +95,8 @@ def TargetBranches.rename {n m : Nat} (α : TargetRen n m) : TargetBranches m �
 -- ADE: none.
 /-- The branches of a corecursor with the variables of the scope renamed by `α`, under the new
 variables of each branch. -/
-def TargetCorecBranches.rename {n m : Nat} (α : TargetRen n m) :
-    TargetCorecBranches m → TargetCorecBranches n
+def TargetDestructorBranches.rename {n m : Nat} (α : TargetRen n m) :
+    TargetDestructorBranches m → TargetDestructorBranches n
   | .nil => .nil
   | .cons o b c πs ϱs πs' ϱs' ψ ς P Ps =>
     .cons o b c πs ϱs πs' ϱs' ψ ς (P.rename (α.lift (b + c))) (Ps.rename α)
@@ -133,7 +133,8 @@ theorem Target.rename_id {n : Nat} : (M : Target n) → M.rename id = M
   | .ctor _ Ms => by rw [Target.rename, Targets.rename_id Ms]
   | .recursor _ _ M Ns => by rw [Target.rename, Target.rename_id M, TargetBranches.rename_id Ns]
   | .obs M _ _ _ Ms => by rw [Target.rename, Target.rename_id M, Targets.rename_id Ms]
-  | .corec Ms Ps => by rw [Target.rename, Targets.rename_id Ms, TargetCorecBranches.rename_id Ps]
+  | .corec Ms Ps => by
+    rw [Target.rename, Targets.rename_id Ms, TargetDestructorBranches.rename_id Ps]
 
 -- ADE: none.
 /-- The identity renaming leaves terms unchanged. -/
@@ -150,11 +151,12 @@ theorem TargetBranches.rename_id {n : Nat} : (Ns : TargetBranches n) → Ns.rena
 
 -- ADE: none.
 /-- The identity renaming leaves the branches of a corecursor unchanged. -/
-theorem TargetCorecBranches.rename_id {n : Nat} : (Ps : TargetCorecBranches n) → Ps.rename id = Ps
+theorem TargetDestructorBranches.rename_id {n : Nat} : (Ps : TargetDestructorBranches n) →
+    Ps.rename id = Ps
   | .nil => rfl
   | .cons _ _ _ _ _ _ _ _ _ P Ps => by
-    rw [TargetCorecBranches.rename, TargetRen.lift_id, Target.rename_id P,
-      TargetCorecBranches.rename_id Ps]
+    rw [TargetDestructorBranches.rename, TargetRen.lift_id, Target.rename_id P,
+      TargetDestructorBranches.rename_id Ps]
 
 end
 
@@ -174,7 +176,7 @@ theorem Target.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen 
       Targets.rename_rename α β Ms]
   | .corec Ms Ps => by
     rw [Target.rename, Target.rename, Target.rename, Targets.rename_rename α β Ms,
-      TargetCorecBranches.rename_rename α β Ps]
+      TargetDestructorBranches.rename_rename α β Ps]
 
 -- ADE: none.
 /-- Two renamings of terms, one after the other, are the renaming by their composition. -/
@@ -198,12 +200,14 @@ theorem TargetBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : Ta
 -- ADE: none.
 /-- Two renamings of the branches of a corecursor, one after the other, are the renaming by their
 composition. -/
-theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) :
-    (Ps : TargetCorecBranches l) → (Ps.rename β).rename α = Ps.rename (α ∘ β)
+theorem TargetDestructorBranches.rename_rename {n m l : Nat} (α : TargetRen n m)
+    (β : TargetRen m l) :
+    (Ps : TargetDestructorBranches l) → (Ps.rename β).rename α = Ps.rename (α ∘ β)
   | .nil => rfl
   | .cons _ _ _ _ _ _ _ _ _ P Ps => by
-    rw [TargetCorecBranches.rename, TargetCorecBranches.rename, TargetCorecBranches.rename,
-      Target.rename_rename, TargetRen.lift_comp, TargetCorecBranches.rename_rename α β Ps]
+    rw [TargetDestructorBranches.rename, TargetDestructorBranches.rename,
+      TargetDestructorBranches.rename, Target.rename_rename, TargetRen.lift_comp,
+      TargetDestructorBranches.rename_rename α β Ps]
 
 end
 

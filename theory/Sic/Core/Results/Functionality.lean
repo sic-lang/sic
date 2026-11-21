@@ -87,7 +87,7 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
       cases has
       obtain rfl := TypeDeclaration.lifting_destructors (Entry.typeDeclaration.inj
         (hd.entry_unique hL₁ hL₂ (n := Lifting.name D S) List.mem_cons_self List.mem_cons_self))
-      refine congrArg _ (CorecBranches.ext (hgl₁.trans hgl₂.symm) fun i hi => ?_)
+      refine congrArg _ (DestructorBranches.ext (hgl₁.trans hgl₂.symm) fun i hi => ?_)
       have hi' := hgl₁ ▸ hi
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd₁, g₁, hg₁⟩ := hgs₁ i _ (List.getElem?_eq_getElem hi')
       obtain ⟨_, _, _, ps₂, _, _, _, _, hd₂, g₂, hg₂⟩ := hgs₂ i _ (List.getElem?_eq_getElem hi')

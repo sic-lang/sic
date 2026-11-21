@@ -155,7 +155,7 @@ theorem Term.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ
       Terms.subst₀_isVar h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.subst₀, InstanceArgs.subst₀_isVar h as, Terms.subst₀_isVar h ss,
-      States.subst₀_isVar h Ss, CorecBranches.subst₀_isVar h vs]
+      States.subst₀_isVar h Ss, DestructorBranches.subst₀_isVar h vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.subst₀, Term.subst₀_isVar h A, Term.subst₀_isVar h t,
       Term.subst₀_isVar h u]
@@ -217,12 +217,12 @@ theorem States.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren 
     rw [States.rename, States.subst₀, States.subst₀_isVar h Ss,
       Telescope.subst₀_isVar (Subst₀.liftN_isVar _ h) S]
 
-theorem CorecBranches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
+theorem DestructorBranches.subst₀_isVar {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), (σ x).IsVar (α x)) :
-    (vs : CorecBranches k Δ) → vs.subst₀ σ = vs.rename α
+    (vs : DestructorBranches k Δ) → vs.subst₀ σ = vs.rename α
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.subst₀, CorecBranches.subst₀_isVar h vs,
+    rw [DestructorBranches.rename, DestructorBranches.subst₀, DestructorBranches.subst₀_isVar h vs,
       Term.subst₀_isVar (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ (Subst₀.liftN_isVar _ h))) v]
 
 end

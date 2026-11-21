@@ -333,10 +333,10 @@ their requirements, the ownership of the result of its destructor at them, or `1
 corecursor, given the requirement of its destructor on the observed value times that of each entry of
 the state and times the ownership of each variable of the scope, and when the ownership of the result
 of the destructor of each branch that resumes the corecursor is a constant. -/
-theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
+theorem DestructorBranches.erase_ownership {sig : Signature} {S : Set Grade} [DecidablePred (· ∈ S)]
     {Ω : Name → Multiplicity} {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder)
     (φ' : MultiplicityVector Γ.length) :
-    (vs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
+    (vs : DestructorBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
     (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
     (∀ i, i < vs.length → ∃ (b c : Nat) (v : Term k ((Γ.extend b).extend c)) (p : Grade),
       vs.get i = some ⟨0, b, c, v⟩ ∧ ps[i]? = some p ∧
@@ -363,11 +363,11 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
       ((ks.drop i).headD .none ≠ .none → ∃ χ,
         ((((pss.drop i).headD ([], ResultOwnership.noArguments)).2.2.1.toArity c).map
           Grade.run) = ⟨some χ, fun _ => none⟩)) →
-    TargetCorecBranches.Ownership Ω φ' (vs.erase sig S hΓ ps ks pss)
+    TargetDestructorBranches.Ownership Ω φ' (vs.erase sig S hΓ ps ks pss)
   | .nil, _, _, _, _ => .nil
   | .cons n b c v vs, ps, ks, pss, h => by
     obtain ⟨b', c', v', p, hg, hp, hP⟩ := h 0 (Nat.zero_lt_succ _)
-    simp only [CorecBranches.get, Option.some.injEq] at hg
+    simp only [DestructorBranches.get, Option.some.injEq] at hg
     have hn : n = 0 := by
       have := congrArg Sigma.fst hg
       simp only at this
@@ -380,7 +380,7 @@ theorem CorecBranches.erase_ownership {sig : Signature} {S : Set Grade} [Decidab
       cases hp
       simp only [List.drop_zero] at hP
       refine .cons (fun os w hr hk => hP.1 os w hr hk) hP.2
-        (CorecBranches.erase_ownership hΓ φ' vs ps ks.tail pss.tail fun i hi => ?_)
+        (DestructorBranches.erase_ownership hΓ φ' vs ps ks.tail pss.tail fun i hi => ?_)
       obtain ⟨b₁, c₁, v₁, p₁, hg₁, hp₁, hP₁⟩ := h (i + 1) (Nat.succ_lt_succ hi)
       have e₁ : ks.drop (i + 1) = ks.tail.drop i := by cases ks <;> simp
       have e₂ : pss.drop (i + 1) = pss.tail.drop i := by cases pss <;> simp
@@ -657,7 +657,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ (r * ·)
       (fun u hu => by rw [hm]; exact Mode.oneOne_odot_mul _ _ hu) hss
-    refine .corec hos (CorecBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
+    refine .corec hos (DestructorBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     have hi' : i < decl.codataCases.length := hgl ▸ hi
     obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=

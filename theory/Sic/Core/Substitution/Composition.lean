@@ -75,7 +75,7 @@ theorem Term.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : Re
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.rename, Term.rename, InstanceArgs.rename_rename_of h as,
       Terms.rename_rename_of h ss, States.rename_rename_of h Ss,
-      CorecBranches.rename_rename_of h vs]
+      DestructorBranches.rename_rename_of h vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.rename, Term.rename, Term.rename_rename_of h A, Term.rename_rename_of h t,
       Term.rename_rename_of h u]
@@ -146,13 +146,13 @@ theorem States.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : 
     rw [States.rename, States.rename, States.rename,
       States.rename_rename_of h Ss, Telescope.rename_rename_of (Ren.liftN_comp_of _ h) S]
 
-theorem CorecBranches.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : Ren Δ Ξ}
+theorem DestructorBranches.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ : Ren Δ Ξ}
     {α₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), α₁ (α₂ x) = α₃ x) :
-    (vs : CorecBranches k Ξ) → (vs.rename α₂).rename α₁ = vs.rename α₃
+    (vs : DestructorBranches k Ξ) → (vs.rename α₂).rename α₁ = vs.rename α₃
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.rename, CorecBranches.rename,
-      CorecBranches.rename_rename_of h vs,
+    rw [DestructorBranches.rename, DestructorBranches.rename, DestructorBranches.rename,
+      DestructorBranches.rename_rename_of h vs,
       Term.rename_rename_of
         (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ h))) v]
 
@@ -222,7 +222,7 @@ theorem Term.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α :
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_rename_of h as,
       Terms.subst₀_rename_of h ss, States.subst₀_rename_of h Ss,
-      CorecBranches.subst₀_rename_of h vs]
+      DestructorBranches.subst₀_rename_of h vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.subst₀, Term.subst₀, Term.subst₀_rename_of h A, Term.subst₀_rename_of h t,
       Term.subst₀_rename_of h u]
@@ -294,13 +294,13 @@ theorem States.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α
     rw [States.rename, States.subst₀, States.subst₀,
       States.subst₀_rename_of h Ss, Telescope.subst₀_rename_of (Subst₀.liftN_rename_of _ h) S]
 
-theorem CorecBranches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Δ Ξ}
+theorem DestructorBranches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Δ Ξ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (α x) = σ' x) :
-    (vs : CorecBranches k Ξ) → (vs.rename α).subst₀ σ = vs.subst₀ σ'
+    (vs : DestructorBranches k Ξ) → (vs.rename α).subst₀ σ = vs.subst₀ σ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.subst₀, CorecBranches.subst₀,
-      CorecBranches.subst₀_rename_of h vs,
+    rw [DestructorBranches.rename, DestructorBranches.subst₀, DestructorBranches.subst₀,
+      DestructorBranches.subst₀_rename_of h vs,
       Term.subst₀_rename_of
         (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ h))) v]
 
@@ -361,7 +361,7 @@ theorem Term.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α :
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, Term.rename, Term.subst₀, InstanceArgs.rename_subst₀_of h as,
       Terms.rename_subst₀_of h ss, States.rename_subst₀_of h Ss,
-      CorecBranches.rename_subst₀_of h vs]
+      DestructorBranches.rename_subst₀_of h vs]
   | .equality s l A t u => by
     rw [Term.subst₀, Term.rename, Term.subst₀, Term.rename_subst₀_of h A, Term.rename_subst₀_of h t,
       Term.rename_subst₀_of h u]
@@ -440,13 +440,13 @@ theorem States.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α
       States.rename_subst₀_of h Ss,
       Telescope.rename_subst₀_of (Subst₀.liftN_rename_after_of _ h) S]
 
-theorem CorecBranches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α : Ren Γ Δ}
+theorem DestructorBranches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {α : Ren Γ Δ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).rename α = σ' x) :
-    (vs : CorecBranches k Ξ) → (vs.subst₀ σ).rename α = vs.subst₀ σ'
+    (vs : DestructorBranches k Ξ) → (vs.subst₀ σ).rename α = vs.subst₀ σ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst₀, CorecBranches.rename, CorecBranches.subst₀,
-      CorecBranches.rename_subst₀_of h vs,
+    rw [DestructorBranches.subst₀, DestructorBranches.rename, DestructorBranches.subst₀,
+      DestructorBranches.rename_subst₀_of h vs,
       Term.rename_subst₀_of
         (Subst₀.liftN_rename_after_of _ (Subst₀.liftN_rename_after_of _
           (Subst₀.liftN_rename_after_of _ h))) v]
@@ -513,7 +513,7 @@ theorem Term.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, InstanceArgs.subst₀_subst₀_of h as,
       Terms.subst₀_subst₀_of h ss, States.subst₀_subst₀_of h Ss,
-      CorecBranches.subst₀_subst₀_of h vs]
+      DestructorBranches.subst₀_subst₀_of h vs]
   | .equality s l A t u => by
     rw [Term.subst₀, Term.subst₀, Term.subst₀, Term.subst₀_subst₀_of h A, Term.subst₀_subst₀_of h t,
       Term.subst₀_subst₀_of h u]
@@ -586,13 +586,13 @@ theorem States.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {
     rw [States.subst₀, States.subst₀, States.subst₀,
       States.subst₀_subst₀_of h Ss, Telescope.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ h) S]
 
-theorem CorecBranches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ}
+theorem DestructorBranches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ}
     {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ x).subst₀ τ = σ' x) :
-    (vs : CorecBranches k Ξ) → (vs.subst₀ σ).subst₀ τ = vs.subst₀ σ'
+    (vs : DestructorBranches k Ξ) → (vs.subst₀ σ).subst₀ τ = vs.subst₀ σ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst₀, CorecBranches.subst₀, CorecBranches.subst₀,
-      CorecBranches.subst₀_subst₀_of h vs, Term.subst₀_subst₀_of
+    rw [DestructorBranches.subst₀, DestructorBranches.subst₀, DestructorBranches.subst₀,
+      DestructorBranches.subst₀_subst₀_of h vs, Term.subst₀_subst₀_of
         (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ h))) v]
 
 end
@@ -833,7 +833,8 @@ theorem Term.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren �
       Term.subst_rename_of h t, Terms.subst_rename_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.rename, Term.subst, Term.subst, InstanceArgs.subst_rename_of h as,
-      Terms.subst_rename_of h ss, States.subst_rename_of h Ss, CorecBranches.subst_rename_of h vs]
+      Terms.subst_rename_of h ss, States.subst_rename_of h Ss,
+          DestructorBranches.subst_rename_of h vs]
   | .equality s l A t u => by
     rw [Term.rename, Term.subst, Term.subst, Term.subst_rename_of h A, Term.subst_rename_of h t,
       Term.subst_rename_of h u]
@@ -904,13 +905,13 @@ theorem States.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren
     rw [States.rename, States.subst, States.subst,
       States.subst_rename_of h Ss, Telescope.subst_rename_of (Subst.liftN_rename_of _ h) S]
 
-theorem CorecBranches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren Δ Ξ}
+theorem DestructorBranches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : Ren Δ Ξ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (α x) = θ' x) :
-    (vs : CorecBranches k Ξ) → (vs.rename α).subst θ = vs.subst θ'
+    (vs : DestructorBranches k Ξ) → (vs.rename α).subst θ = vs.subst θ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.rename, CorecBranches.subst, CorecBranches.subst,
-      CorecBranches.subst_rename_of h vs,
+    rw [DestructorBranches.rename, DestructorBranches.subst, DestructorBranches.subst,
+      DestructorBranches.subst_rename_of h vs,
       Term.subst_rename_of
         (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ h))) v]
 
@@ -972,7 +973,8 @@ theorem Term.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren �
       Term.rename_subst_of h t, Terms.rename_subst_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst, Term.rename, Term.subst, InstanceArgs.rename_subst_of h as,
-      Terms.rename_subst_of h ss, States.rename_subst_of h Ss, CorecBranches.rename_subst_of h vs]
+      Terms.rename_subst_of h ss, States.rename_subst_of h Ss,
+          DestructorBranches.rename_subst_of h vs]
   | .equality s l A t u => by
     rw [Term.subst, Term.rename, Term.subst, Term.rename_subst_of h A, Term.rename_subst_of h t,
       Term.rename_subst_of h u]
@@ -1044,13 +1046,13 @@ theorem States.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren
     rw [States.subst, States.rename, States.subst,
       States.rename_subst_of h Ss, Telescope.rename_subst_of (Subst.liftN_rename_after_of _ h) S]
 
-theorem CorecBranches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren Γ Δ}
+theorem DestructorBranches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : Ren Γ Δ}
     {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ x).rename (Ren.liftN a.params.length α) = θ' x) :
-    (vs : CorecBranches k Ξ) → (vs.subst θ).rename α = vs.subst θ'
+    (vs : DestructorBranches k Ξ) → (vs.subst θ).rename α = vs.subst θ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst, CorecBranches.rename, CorecBranches.subst,
-      CorecBranches.rename_subst_of h vs,
+    rw [DestructorBranches.subst, DestructorBranches.rename, DestructorBranches.subst,
+      DestructorBranches.rename_subst_of h vs,
       Term.rename_subst_of
         (Subst.liftN_rename_after_of _ (Subst.liftN_rename_after_of _
           (Subst.liftN_rename_after_of _ h))) v]
@@ -1152,7 +1154,8 @@ theorem Term.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ} {θ
       Term.subst_subst₀_of h t, Terms.subst_subst₀_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, InstanceArgs.subst_subst₀_of h as,
-      Terms.subst_subst₀_of h ss, States.subst_subst₀_of h Ss, CorecBranches.subst_subst₀_of h vs]
+      Terms.subst_subst₀_of h ss, States.subst_subst₀_of h Ss,
+          DestructorBranches.subst_subst₀_of h vs]
   | .equality s l A t u => by
     rw [Term.subst₀, Term.subst, Term.subst, Term.subst₀, Term.subst_subst₀_of h A,
       Term.subst_subst₀_of h t, Term.subst_subst₀_of h u]
@@ -1227,13 +1230,14 @@ theorem States.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
     rw [States.subst₀, States.subst, States.subst, States.subst₀,
       States.subst_subst₀_of h Ss, Telescope.subst_subst₀_of (Subst₀.Swaps.liftN _ h) S]
 
-theorem CorecBranches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
+theorem DestructorBranches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
     {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ} (h : Subst₀.Swaps σ θ₁ θ₂ σ') :
-    (vs : CorecBranches k Ξ) → (vs.subst₀ σ).subst θ₁ = (vs.subst θ₂).subst₀ σ'
+    (vs : DestructorBranches k Ξ) → (vs.subst₀ σ).subst θ₁ = (vs.subst θ₂).subst₀ σ'
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst₀, CorecBranches.subst, CorecBranches.subst, CorecBranches.subst₀,
-      CorecBranches.subst_subst₀_of h vs,
+    rw [DestructorBranches.subst₀, DestructorBranches.subst, DestructorBranches.subst,
+      DestructorBranches.subst₀,
+      DestructorBranches.subst_subst₀_of h vs,
       Term.subst_subst₀_of
         (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ h))) v]
 
@@ -1396,7 +1400,7 @@ theorem Term.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : 
       Term.subst_subst_of h t, Terms.subst_subst_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst, Term.subst, Term.subst, InstanceArgs.subst_subst_of h as,
-      Terms.subst_subst_of h ss, States.subst_subst_of h Ss, CorecBranches.subst_subst_of h vs]
+      Terms.subst_subst_of h ss, States.subst_subst_of h Ss, DestructorBranches.subst_subst_of h vs]
   | .equality s l A t u => by
     rw [Term.subst, Term.subst, Term.subst, Term.subst_subst_of h A, Term.subst_subst_of h t,
       Term.subst_subst_of h u]
@@ -1470,13 +1474,13 @@ theorem States.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ 
     rw [States.subst, States.subst, States.subst,
       States.subst_subst_of h Ss, Telescope.subst_subst_of (Subst.liftN_subst_of _ h) S]
 
-theorem CorecBranches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
+theorem DestructorBranches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ Ξ} {θ₂ : Subst k Γ Δ}
     {θ₃ : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), (θ₁ x).subst (Subst.liftN a.params.length θ₂) = θ₃ x) :
-    (vs : CorecBranches k Ξ) → (vs.subst θ₁).subst θ₂ = vs.subst θ₃
+    (vs : DestructorBranches k Ξ) → (vs.subst θ₁).subst θ₂ = vs.subst θ₃
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst, CorecBranches.subst, CorecBranches.subst,
-      CorecBranches.subst_subst_of h vs,
+    rw [DestructorBranches.subst, DestructorBranches.subst, DestructorBranches.subst,
+      DestructorBranches.subst_subst_of h vs,
       Term.subst_subst_of
         (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ (Subst.liftN_subst_of _ h))) v]
 
@@ -1562,7 +1566,7 @@ theorem Term.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var
     rw [Term.subst, InstanceArgs.subst_id_of h as, Term.subst_id_of h t, Terms.subst_id_of h bs]
   | .corec r D qs ls ps as ss Ss vs => by
     rw [Term.subst, InstanceArgs.subst_id_of h as, Terms.subst_id_of h ss, States.subst_id_of h Ss,
-      CorecBranches.subst_id_of h vs]
+      DestructorBranches.subst_id_of h vs]
   | .equality s l A t u => by
     rw [Term.subst, Term.subst_id_of h A, Term.subst_id_of h t, Term.subst_id_of h u]
   | .refl s l A t => by
@@ -1618,11 +1622,11 @@ theorem States.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
   | .cons n S κs Ss => by
     rw [States.subst, States.subst_id_of h Ss, Telescope.subst_id_of (Subst.liftN_id_of _ h) S]
 
-theorem CorecBranches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
-    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (vs : CorecBranches k Γ) → vs.subst θ = vs
+theorem DestructorBranches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
+    (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) : (vs : DestructorBranches k Γ) → vs.subst θ = vs
   | .nil => rfl
   | .cons n m a v vs => by
-    rw [CorecBranches.subst, CorecBranches.subst_id_of h vs,
+    rw [DestructorBranches.subst, DestructorBranches.subst_id_of h vs,
       Term.subst_id_of (Subst.liftN_id_of _ (Subst.liftN_id_of _ (Subst.liftN_id_of _ h))) v]
 
 end

@@ -73,12 +73,12 @@ def Program.Realizes (sig : Signature) (ι : Interpretation) (P : Program) (sigT
 /-- The premise of `(corec)` at run time on its branches, each branch valid at run time for every
 value of the level variables, in every environment that binds its scope through a renaming, when the
 grade of its destructor is used at run time, holds at the levels without variables `ρ`, as
-`CorecBranchesEqValid.atLevels` does for the meaning. -/
-theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
+`DestructorBranchesEqValid.atLevels` does for the meaning. -/
+theorem RunValidDestructorBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
     {k : Nat} {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context k Γ} {decl : TypeDeclaration}
     {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
-    {r : Grade} {Ss : States k Γ} {gs : CorecBranches k Γ} {δs : Nat → GradeVector Γ.length}
+    {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ} {δs : Nat → GradeVector Γ.length}
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
@@ -102,13 +102,13 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
               ls ps (as.rename (Ren.weakenN ps''.length)))
               (as.rename (Ren.weakenN ps''.length)).toSubst)))).atLevels ρ))
     (ρ : Fin k → Nat) :
-    RunValidCorecBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
+    RunValidDestructorBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
       (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) δs := by
   intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr
   obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
-  obtain ⟨g₀, hg₀, rfl⟩ := CorecBranches.get_substLevels _ hg
+  obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels _ hg
   have hb := hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ hpr ρ
   have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
     hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
@@ -484,11 +484,11 @@ where
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (DestructorBranchesValid.atLevels hq hl hp hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             soundnessIn.hasType hw.distinct hw.liftsInOrder hι
               (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
-        (RunValidCorecBranches.atLevels hq hl hp
+        (RunValidDestructorBranches.atLevels hq hl hp
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
             hasType hw hι hP (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)
               ((Mode.erasesUncounted .oneOne).mode _ hpr ▸

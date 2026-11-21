@@ -147,7 +147,7 @@ theorem Red.beta_stateless {decl : TypeDeclaration}
     (h₀ : sig.HasCodataType T.name decl T) {qs : List Quality} {ls : List (Level 0)}
     {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
     (hp : ps.length = decl.grades) {Δ : Scope} {as : InstanceArgs 0 [] Δ} {r : Grade}
-    {Ss : States 0 []} {gs : CorecBranches 0 []} {j i : Nat} {d : Name}
+    {Ss : States 0 []} {gs : DestructorBranches 0 []} {j i : Nat} {d : Name}
     (hi : decl.codataCases[i]? = some (j, T, d))
     (hrec : (T.body (.ofLists qs ps hq hp)).resultName decl.names d = none)
     {ps₁ : List Parameter} {g : Term 0 (Scope.extend [] ps₁.length)}
@@ -287,7 +287,7 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
       (nms : List Name)
       (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms)
-      (gs : CorecBranches k Γ),
+      (gs : DestructorBranches k Γ),
       e = .corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level))
         (v.grades ps ms) (.snoc (e := .var) as' t) .nil (.cons 0 .nil [] .nil) gs ∧
       InstanceArgs.Lifts sig v ρ ns as S ms as' ∧

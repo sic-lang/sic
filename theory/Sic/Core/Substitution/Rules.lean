@@ -203,58 +203,62 @@ theorem States.sorts_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level 
   | .cons .., 0 => rfl
   | .cons _ _ _ Ss, j + 1 => States.sorts_substLevels ls' Ss j
 
-/-- The branch at a position of the branches of a corecursor substituted is the branch
+/-- The branch at a position of the branches of the destructors substituted is the branch
 substituted, under its variables. -/
-theorem CorecBranches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
-    {vs : CorecBranches k Δ} → {i n m a : Nat} → {v : Term k (((Δ.extend n).extend m).extend a)} →
+theorem DestructorBranches.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {vs : DestructorBranches k Δ} → {i n m a : Nat} →
+    {v : Term k (((Δ.extend n).extend m).extend a)} →
       vs.get i = some ⟨n, m, a, v⟩ →
         (vs.subst θ).get i =
           some ⟨n, m, a, v.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))⟩
   | .nil, _, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, _, h => by cases h; rfl
-  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_subst θ (vs := vs) h
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => DestructorBranches.get_subst θ (vs := vs) h
 
-/-- The branch at a position of the branches of a corecursor whose levels are instantiated is a
+/-- The branch at a position of the branches of the destructors whose levels are instantiated is a
 branch of the branches, instantiated. -/
-theorem CorecBranches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
-    {vs : CorecBranches k Γ} → {i n m a : Nat} → {v : Term k' (((Γ.extend n).extend m).extend a)} →
+theorem DestructorBranches.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {vs : DestructorBranches k Γ} → {i n m a : Nat} →
+    {v : Term k' (((Γ.extend n).extend m).extend a)} →
       (vs.substLevels ls').get i = some ⟨n, m, a, v⟩ →
         ∃ v₀, vs.get i = some ⟨n, m, a, v₀⟩ ∧ v = v₀.substLevels ls'
   | .nil, _, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_substLevels ls' (vs := vs) h
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => DestructorBranches.get_substLevels ls' (vs := vs) h
 
-/-- The branch at a position of the branches of a corecursor is there once their levels are
+/-- The branch at a position of the branches of the destructors is there once their levels are
 instantiated. -/
-theorem CorecBranches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
-    {vs : CorecBranches k Γ} → {i n m a : Nat} → {v : Term k (((Γ.extend n).extend m).extend a)} →
+theorem DestructorBranches.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {vs : DestructorBranches k Γ} → {i n m a : Nat} →
+    {v : Term k (((Γ.extend n).extend m).extend a)} →
       vs.get i = some ⟨n, m, a, v⟩ → (vs.substLevels ls').get i = some ⟨n, m, a, v.substLevels ls'⟩
   | .nil, _, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, _, h => by cases h; rfl
-  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_substLevels_of ls' (vs := vs) h
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => DestructorBranches.get_substLevels_of ls' (vs := vs) h
 
-/-- A branch at a position of the branches of a corecursor substituted is a branch of the branches,
-substituted. -/
-theorem CorecBranches.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
-    {vs : CorecBranches k Δ} → {i n m a : Nat} → {v : Term k (((Γ.extend n).extend m).extend a)} →
+/-- A branch at a position of the branches of the destructors substituted is a branch of the
+branches, substituted. -/
+theorem DestructorBranches.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {vs : DestructorBranches k Δ} → {i n m a : Nat} →
+    {v : Term k (((Γ.extend n).extend m).extend a)} →
       (vs.subst θ).get i = some ⟨n, m, a, v⟩ →
         ∃ v₀, vs.get i = some ⟨n, m, a, v₀⟩ ∧
           v = v₀.subst (Subst.liftN a (Subst.liftN m (Subst.liftN n θ)))
   | .nil, _, _, _, _, _, h => nomatch h
   | .cons .., 0, _, _, _, _, h => by cases h; exact ⟨_, rfl, rfl⟩
-  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => CorecBranches.get_subst_inv θ (vs := vs) h
+  | .cons _ _ _ _ vs, _ + 1, _, _, _, _, h => DestructorBranches.get_subst_inv θ (vs := vs) h
 
-/-- Branches of a corecursor substituted are as many. -/
-theorem CorecBranches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
-    (vs : CorecBranches k Δ) → (vs.subst θ).length = vs.length
+/-- Branches of the destructors substituted are as many. -/
+theorem DestructorBranches.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (vs : DestructorBranches k Δ) → (vs.subst θ).length = vs.length
   | .nil => rfl
-  | .cons _ _ _ _ vs => congrArg (· + 1) (CorecBranches.length_subst θ vs)
+  | .cons _ _ _ _ vs => congrArg (· + 1) (DestructorBranches.length_subst θ vs)
 
-/-- The branches of a corecursor whose levels are instantiated are as many. -/
-theorem CorecBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
-    (vs : CorecBranches k Γ) → (vs.substLevels ls').length = vs.length
+/-- The branches of the destructors whose levels are instantiated are as many. -/
+theorem DestructorBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (vs : DestructorBranches k Γ) → (vs.substLevels ls').length = vs.length
   | .nil => rfl
-  | .cons _ _ _ _ vs => congrArg (· + 1) (CorecBranches.length_substLevels ls' vs)
+  | .cons _ _ _ _ vs => congrArg (· + 1) (DestructorBranches.length_substLevels ls' vs)
 
 /-! ## Motives at a Constructor -/
 
@@ -554,7 +558,7 @@ theorem Destructors.Pos.obsSubst_observation_rename {k' : Nat} {Γ' Γ'' Δ : Sc
 new variables `ȳ` of a state, whose entries have the parameters `ps`, as its state, the term whose
 observations the types of the branches of the type `D` observe. -/
 def Term.corecAt {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
-    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : CorecBranches k Γ)
+    (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ) (gs : DestructorBranches k Γ)
     (ps' : List Parameter) : Term k (Γ.extend ps'.length) :=
   .corec r D qs ls ps (as.rename (Ren.weakenN ps'.length)) (Args.bound ps').terms
     (Ss.rename (Ren.weakenN ps'.length)) (gs.rename (Ren.weakenN ps'.length))
@@ -563,22 +567,23 @@ def Term.corecAt {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls 
 corecursor substituted, at the variables of the state. -/
 theorem Term.corecAt_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
-    (Ss : States k Δ) (gs : CorecBranches k Δ) (ps' : List Parameter) :
+    (Ss : States k Δ) (gs : DestructorBranches k Δ) (ps' : List Parameter) :
     (Term.corecAt r D qs ls ps as Ss gs ps').subst (Subst.liftN ps'.length θ) =
       Term.corecAt r D qs ls ps (as.subst θ) (Ss.subst θ) (gs.subst θ) ps' := by
   have h : ∀ {a} (x : Var Δ a), Subst.liftN ps'.length θ (Ren.weakenN ps'.length x) =
       (θ x).rename (Ren.liftN a.params.length (Ren.weakenN ps'.length)) :=
     fun x => Subst.liftN_weakenN _ θ x
   simp only [Term.corecAt, Term.subst, ← Args.terms_subst, Args.bound_subst]
-  rw [InstanceArgs.subst_rename_of h, States.subst_rename_of h, CorecBranches.subst_rename_of h,
+  rw [InstanceArgs.subst_rename_of h, States.subst_rename_of h,
+    DestructorBranches.subst_rename_of h,
     InstanceArgs.rename_subst_of (fun _ => rfl), States.rename_subst_of (fun _ => rfl),
-    CorecBranches.rename_subst_of (fun _ => rfl)]
+    DestructorBranches.rename_subst_of (fun _ => rfl)]
 
 /-- `(corec_r T from ȳ return Θ̄ with ḡ)[t̄ / ȳ] = corec_r T from t̄ return Θ̄ with ḡ`: the corecursor at
 the variables of a state, instantiated by arguments of the state, is the corecursor from them. -/
 theorem Term.corecAt_instantiate {Γ Δ : Scope} (r : Grade) (D : Name) (qs : List Quality)
     (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) (Ss : States k Γ)
-    (gs : CorecBranches k Γ) {ps' : List Parameter} (ss : Args k Γ ps') :
+    (gs : DestructorBranches k Γ) {ps' : List Parameter} (ss : Args k Γ ps') :
     (Term.corecAt r D qs ls ps as Ss gs ps').instantiate ss = .corec r D qs ls ps as ss.terms Ss gs := by
   have h : ∀ {a} (y : Var Γ a), ss.toSubst₀ (Ren.weakenN ps'.length y) = Subst₀.id y :=
     fun y => Args.toSubst₀_weakenN ss y
@@ -586,27 +591,28 @@ theorem Term.corecAt_instantiate {Γ Δ : Scope} (r : Grade) (D : Name) (qs : Li
     InstanceArgs.subst₀_rename_of (σ' := Subst₀.id) h,
     InstanceArgs.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
     States.subst₀_rename_of (σ' := Subst₀.id) h, States.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl),
-    CorecBranches.subst₀_rename_of (σ' := Subst₀.id) h,
-    CorecBranches.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl), ← Args.terms_subst₀,
+    DestructorBranches.subst₀_rename_of (σ' := Subst₀.id) h,
+    DestructorBranches.subst₀_id_of (σ := Subst₀.id) (fun _ => rfl), ← Args.terms_subst₀,
     Args.bound_toSubst₀]
 
 /-- The corecursor at the variables of a state, at instantiated levels, is the corecursor at these
 levels, at the variables of the state. -/
 theorem Term.corecAt_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k') (r : Grade)
     (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
-    (Ss : States k Γ) (gs : CorecBranches k Γ) (ps' : List Parameter) :
+    (Ss : States k Γ) (gs : DestructorBranches k Γ) (ps' : List Parameter) :
     (Term.corecAt r D qs ls ps as Ss gs ps').substLevels ls' =
       Term.corecAt r D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (Ss.substLevels ls')
         (gs.substLevels ls') ps' := by
   simp only [Term.corecAt, Term.substLevels, ← Args.terms_substLevels, Args.substLevels_bound,
-    InstanceArgs.substLevels_rename, States.substLevels_rename, CorecBranches.substLevels_rename]
+    InstanceArgs.substLevels_rename, States.substLevels_rename,
+        DestructorBranches.substLevels_rename]
 
 -- ADE: none.
 /-- The corecursor from the variables of a state, renamed under the variables of the state, is the
 corecursor from these variables of its instance, states and branches renamed. -/
 theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (r : Grade) (D : Name)
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Δ Ξ)
-    (Ss : States k Δ) (gs : CorecBranches k Δ) (ps' : List Parameter) :
+    (Ss : States k Δ) (gs : DestructorBranches k Δ) (ps' : List Parameter) :
     (Term.corecAt r D qs ls ps as Ss gs ps').rename (Ren.liftN ps'.length α) =
       Term.corecAt r D qs ls ps (as.rename α) (Ss.rename α) (gs.rename α) ps' := by
   rw [Term.rename_eq_subst_of (θ := Subst.liftN ps'.length (Ren.toSubst α))
@@ -614,8 +620,9 @@ theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (r : Grade) (D :
     Term.corecAt_subst, ← InstanceArgs.rename_eq_subst,
     (States.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (Ss.rename α)).symm.trans
       (States.subst_rename_of (fun _ => rfl) Ss),
-    (CorecBranches.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl) (gs.rename α)).symm.trans
-      (CorecBranches.subst_rename_of (fun _ => rfl) gs)]
+    (DestructorBranches.subst_id_of (θ := fun x => Var.eta x) (fun _ => rfl)
+      (gs.rename α)).symm.trans
+      (DestructorBranches.subst_rename_of (fun _ => rfl) gs)]
   rfl
 
 /-- The substitution of the destructors before a position by the observations of a corecursor at
@@ -623,7 +630,7 @@ the variables of its state, substituted under them, is the substitution by the o
 corecursor substituted. -/
 theorem Destructors.Pos.obsSubst_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     (σ : Subst k Γ'' Γ') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
-    (ps : List Grade) (as : InstanceArgs k Γ' Δ) (Ss : States k Γ') (gs : CorecBranches k Γ')
+    (ps : List Grade) (as : InstanceArgs k Γ' Δ) (Ss : States k Γ') (gs : DestructorBranches k Γ')
     (ps'' : List Parameter) {d : Name} {p q ς : Grade} {ps' : List Parameter} {ns : List Name}
     {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}

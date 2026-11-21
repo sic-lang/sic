@@ -194,7 +194,7 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {r : Grade} {Ss : States k Γ} {gs : CorecBranches k Γ}
+    (hp : ps.length = decl.grades) {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ}
     {h' : Nat} {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
     (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩) {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →

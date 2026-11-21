@@ -148,9 +148,9 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
     {κs : List (Universe 0)} {T g : Term 0 []}
     (hgv : ValidTerm₀ sig ι g (Term.positions κ r χ S κs T)) {H : Heap} {w : Nat}
     (hg : RunsAs sig ι P H g w (Term.positions κ r χ S κs T)) (n : Nat) (E : List Nat)
-    (Ps : TargetCorecBranches n) (D' : Name) (qs : List Quality) (ls : List (Level 0))
+    (Ps : TargetDestructorBranches n) (D' : Name) (qs : List Quality) (ls : List (Level 0))
     (ps : List Grade) {Δ : Scope} (as : InstanceArgs 0 [] Δ) (Ss : States 0 [])
-    (gs : CorecBranches 0 []) {c : Nat} (ψ : ResultOwnership Multiplicity c)
+    (gs : DestructorBranches 0 []) {c : Nat} (ψ : ResultOwnership Multiplicity c)
     (hψ : ψ.constant.getD .omega ≤ χ.run) :
     ∃ v H', EvalResume H n E Ps
         (Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (some ps'.length)) ψ w v H' ∧
@@ -289,9 +289,9 @@ the resumption at this position, the multiplicities `run(⌜11ᵐ ⊙ p⌝ · q)
 run time of its binders, for the parameters of the entries of the state and of the arguments at this
 position, the ownership at run time of the result and the requirement at run time on the observed
 value at this position. -/
-theorem CorecBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
+theorem DestructorBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k : Nat}
     {Γ : Scope} (hΓ : Γ.FirstOrder) :
-    (gs : CorecBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
+    (gs : DestructorBranches k Γ) → (ps : List Grade) → (ks : List Resumption) →
       (pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) →
       {i b c : Nat} →
       {g : Term k ((Γ.extend b).extend c)} → gs.get i = some ⟨0, b, c, g⟩ → {p : Grade} →
@@ -320,14 +320,14 @@ theorem CorecBranches.get_erase (S : Math.Set Grade) [DecidablePred (· ∈ S)] 
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
     have e' : pss.drop (i + 1) = pss.tail.drop i := by cases pss <;> simp
     rw [← e, e']
-    exact CorecBranches.get_erase S hΓ vs ps ks.tail pss.tail h hp
+    exact DestructorBranches.get_erase S hΓ vs ps ks.tail pss.tail h hp
   | .cons 0 _ _ _ _, [], _, _, _ + 1, _, _, _, _, _, hp => nomatch hp
   | .cons (_ + 1) _ _ _ vs, ps, ks, pss, i + 1, _, _, _, h, p, hp => by
     have e : ks.tail.getD i .none = ks.getD (i + 1) .none := by cases ks <;> simp
     have e' : pss.drop (i + 1) = pss.tail.drop i := by cases pss <;> simp
     have hp' : ps.tail[i]? = some p := by cases ps <;> simp_all
     rw [← e, e']
-    exact CorecBranches.get_erase S hΓ vs ps.tail ks.tail pss.tail h hp'
+    exact DestructorBranches.get_erase S hΓ vs ps.tail ks.tail pss.tail h hp'
 
 /-- The erasure of terms at the parameters `us` whose grades are multiplied by `r`, renamed by `g`,
 evaluates, at a weight, as their erasure at `us`, renamed, at the weight times `r`, when `r` is used
