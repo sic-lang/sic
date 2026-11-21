@@ -231,7 +231,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
       · exact (show v.quality = .prop from hs) ▸ Lifting.resultGrade_prop_mode p
       · exact Destructors.Lifts.wfDestructors hT hadm hα ht hκ ds _ _ _ _ _ _
           (as'.rename Ren.weaken) (Nesting.lift @ν') (Nesting.lift_plain hν) hds
-          (hρ.weakenSecondOrder (.secondOrder (.ofSort hB')))
+          (hρ.weakenSecondOrder (.secondOrder (WfType.ofSort hB')))
           (fun D => by show (ρ.block D).map _ = none; rw [hk D]; rfl)
           (hθ.snoc (.obs ..)) hrec'
           (fun h' => link (.there h'))

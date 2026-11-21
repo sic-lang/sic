@@ -104,6 +104,6 @@ theorem HasInstanceArgs.identity : {Δ : Scope} → {ctx : Context k Δ} → WfC
         (fun x => InstanceArgs.identity_rename_toSubst Ren.weaken x) Θ,
       ← Term.rename_eq_subst_of (Subst.liftN_eta_of ps.length
         (fun x => InstanceArgs.identity_rename_toSubst Ren.weaken x)) A]
-    exact .eta .zero (hw.liftN (contextPresuppositions.wfType hA)).wfCtx
+    exact HasType.eta .zero (hw.liftN (contextPresuppositions.wfType hA)).wfCtx
 
 end Sic.Core

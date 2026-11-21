@@ -122,6 +122,118 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.e` -/
   tail : ∀ {e : Entry} {sig : Signature}, WfSig (e :: sig) → WfSig sig
 
+-- ADE: none.
+/-- The signature of a judgment. -/
+def Judgment.signature : Judgment → Signature
+  | .wfSig s .. => s
+  | .wfConstantDefinition s .. => s
+  | .wfConstantDeclaration s .. => s
+  | .wfCtx s .. => s
+  | .wfType s .. => s
+  | .eqType s .. => s
+  | .hasType s .. => s
+  | .eqTerm s .. => s
+  | .hasArgs s .. => s
+  | .eqArgs s .. => s
+  | .hasInstanceArgs s .. => s
+  | .eqInstanceArgs s .. => s
+  | .wfTelescope s .. => s
+  | .wfTelescopeSorts s .. => s
+  | .eqTelescope s .. => s
+  | .wfFields s .. => s
+  | .wfDestructors s .. => s
+  | .wfTypeDeclaration s .. => s
+
+-- ADE: none.
+/-- Every judgment holds in its signature, which is well formed, by induction on its derivation. -/
+theorem Derivable.wfSig {J : Judgment} (h : Derivable J) : WfSig J.signature := by
+  induction h with
+  | WfSig.empty => exact .empty
+  | WfSig.constantDefinition h hf _ => exact .constantDefinition h hf
+  | WfSig.constantDeclaration h hf _ => exact .constantDeclaration h hf
+  | WfSig.typeDeclaration h hn hL _ => exact .typeDeclaration h hn hL
+  | WfSig.lifting h hd hl _ => exact .lifting h hd hl
+  | WfConstantDefinition.intro _ hA _ hA_ih _ => exact hA_ih (.default _ _)
+  | WfConstantDeclaration.intro _ hA hA_ih => exact hA_ih (.default _ _)
+  | WfCtx.empty h h_ih => exact h
+  | WfCtx.var h h_ih => exact h_ih
+  | WfCtx.secondOrder h h_ih => exact h_ih
+  | WfType.univType h h_ih => exact h_ih
+  | WfType.propType h h_ih => exact h_ih
+  | EqType.refl h h_ih => exact h_ih
+  | EqType.symm h h_ih => exact h_ih
+  | EqType.trans h _ h_ih _ => exact h_ih
+  | EqType.univType h h_ih => exact h_ih
+  | EqType.propType h h_ih => exact h_ih
+  | HasType.var hctx _ hctx_ih => exact hctx_ih
+  | HasType.secondOrder _ hts hts_ih => exact hts_ih
+  | HasType.const hctx _ _ _ _ hctx_ih => exact hctx_ih
+  | HasType.univ hctx hctx_ih => exact hctx_ih
+  | HasType.prop hctx hctx_ih => exact hctx_ih
+  | HasType.inst _ _ _ _ _ has has_ih => exact has_ih
+  | HasType.equality hA _ _ hA_ih _ _ => exact hA_ih
+  | HasType.reflProof hA _ hA_ih _ => exact hA_ih
+  | HasType.transp hA _ _ _ _ _ hA_ih _ _ _ _ _ => exact hA_ih
+  | HasType.propExt hA _ _ _ hA_ih _ _ _ => exact hA_ih
+  | HasType.coind _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ _ _ _ => exact has_ih
+  | HasType.ctor _ _ _ _ _ _ has _ has_ih _ => exact has_ih
+  | HasType.recursor _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | HasType.obs _ _ _ _ _ _ has _ _ has_ih _ _ => exact has_ih
+  | HasType.corec _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | HasType.conv ht _ ht_ih _ => exact ht_ih
+  | EqTerm.refl h h_ih => exact h_ih
+  | EqTerm.symm h h_ih => exact h_ih
+  | EqTerm.trans h _ h_ih _ => exact h_ih
+  | EqTerm.conv h _ h_ih _ => exact h_ih
+  | EqTerm.irr ht _ _ ht_ih _ _ => exact ht_ih
+  | EqTerm.secondOrder _ hts hts_ih => exact hts_ih
+  | EqTerm.delta hctx _ _ _ _ hctx_ih => exact hctx_ih
+  | EqTerm.const hctx _ _ _ _ _ _ hctx_ih => exact hctx_ih
+  | EqTerm.univ hctx _ hctx_ih => exact hctx_ih
+  | EqTerm.prop hctx _ hctx_ih => exact hctx_ih
+  | EqTerm.inst _ _ _ _ _ _ has _ has_ih => exact has_ih
+  | EqTerm.equality hA _ _ _ hA_ih _ _ => exact hA_ih
+  | EqTerm.transp hA _ _ _ _ _ hA_ih _ _ _ _ _ => exact hA_ih
+  | EqTerm.transpSame hA _ _ _ _ _ _ hA_ih _ _ _ _ _ _ => exact hA_ih
+  | EqTerm.ctor _ _ _ _ _ _ _ has _ _ has_ih _ => exact has_ih
+  | EqTerm.recursor _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | EqTerm.obs _ _ _ _ _ _ _ has _ _ _ has_ih _ _ => exact has_ih
+  | EqTerm.corec _ _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.iota _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | EqTerm.etaCtor _ _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.beta _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.etaObs _ _ _ _ _ _ has _ _ _ has_ih _ _ _ => exact has_ih
+  | HasArgs.nil hctx hctx_ih => exact hctx_ih
+  | HasArgs.cons ht _ ht_ih _ => exact ht_ih
+  | EqArgs.nil hctx hctx_ih => exact hctx_ih
+  | EqArgs.cons ht _ ht_ih _ => exact ht_ih
+  | HasInstanceArgs.nil hctx hctx_ih => exact hctx_ih
+  | HasInstanceArgs.var has _ has_ih _ => exact has_ih
+  | HasInstanceArgs.secondOrder has _ has_ih _ => exact has_ih
+  | EqInstanceArgs.nil hctx hctx_ih => exact hctx_ih
+  | EqInstanceArgs.var has _ has_ih _ => exact has_ih
+  | EqInstanceArgs.secondOrder has _ has_ih _ => exact has_ih
+  | WfTelescope.nil hctx hctx_ih => exact hctx_ih
+  | WfTelescope.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | WfTelescopeSorts.nil hctx hctx_ih => exact hctx_ih
+  | WfTelescopeSorts.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | EqTelescope.nil hctx hctx_ih => exact hctx_ih
+  | EqTelescope.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | WfFields.nil hctx hctx_ih => exact hctx_ih
+  | WfFields.cons _ hA _ _ _ hA_ih _ => exact hA_ih
+  | WfFields.recursive _ hΘ _ hΘ_ih => exact hΘ_ih
+  | WfFields.nested _ _ _ _ _ _ hΘ _ _ hΘ_ih => exact hΘ_ih
+  | WfDestructors.nil hctx hctx_ih => exact hctx_ih
+  | WfDestructors.cons _ _ hΘ _ _ _ _ hΘ_ih _ _ => exact hΘ_ih
+  | WfDestructors.nested _ _ hΘ _ _ _ _ hΘ_ih _ _ => exact hΘ_ih
+  | WfDestructors.recursive _ hΘ _ _ hΘ_ih _ => exact hΘ_ih
+  | WfTypeDeclaration.data _ _p4 hΔ _ _ _ _ hΔ_ih _ =>
+    obtain ⟨_, hadm⟩ := _p4
+    exact (hΔ_ih _ hadm)
+  | WfTypeDeclaration.codata _ _p4 hΔ _ _ _ _ hΔ_ih _ =>
+    obtain ⟨_, hadm⟩ := _p4
+    exact (hΔ_ih _ hadm)
+
 -- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
 -- the judgments in a context of definitions.
 /-- The judgments hold in well-formed signatures.
@@ -145,131 +257,14 @@ RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
 RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`
 RFC: `\mathsf{presup}_\Sigma.e` -/
 theorem presuppositions : Presuppositions :=
-  ⟨wfConstantDefinition, wfConstantDeclaration, wfCtx, wfType, eqType, hasType, eqTerm, hasArgs,
-    eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope, wfTelescopeSorts, eqTelescope, wfFields,
-    wfDestructors, wfTypeDeclaration, tail⟩
-where
-  wfConstantDefinition {sig : Signature} {d : ConstantDefinition} :
-      WfConstantDefinition sig d → WfSig sig
-    | .intro _ hA _ => hasType (hA (.default _ _))
-  wfConstantDeclaration {sig : Signature} {c : ConstantDeclaration} :
-      WfConstantDeclaration sig c → WfSig sig
-    | .intro _ hA => hasType (hA (.default _ _))
-  wfCtx {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} : WfCtx sig ctx → WfSig sig
-    | .empty h => h
-    | .var h => wfType h
-    | .secondOrder h => wfType h
-  wfType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
-      WfType sig ctx A → WfSig sig
-    | .univType h => hasType h
-    | .propType h => hasType h
-  eqType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ} :
-      EqType sig ctx A B → WfSig sig
-    | .refl h => wfType h
-    | .symm h => eqType h
-    | .trans h _ => eqType h
-    | .univType h => eqTerm h
-    | .propType h => eqTerm h
-  hasType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ} :
-      HasType sig ctx t A → WfSig sig
-    | .var hctx _ => wfCtx hctx
-    | .secondOrder _ hts => hasArgs hts
-    | .const hctx _ _ _ _ => wfCtx hctx
-    | .univ hctx => wfCtx hctx
-    | .prop hctx => wfCtx hctx
-    | .inst _ _ _ _ _ has => hasInstanceArgs has
-    | .equality hA _ _ => hasType hA
-    | .reflProof hA _ => hasType hA
-    | .transp hA .. => hasType hA
-    | .propExt hA .. => hasType hA
-    | .coind _ _ _ _ _ has .. => hasInstanceArgs has
-    | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
-    | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
-    | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .conv ht _ => hasType ht
-  eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
-      EqTerm sig ctx t u A → WfSig sig
-    | .refl h => hasType h
-    | .symm h => eqTerm h
-    | .trans h _ => eqTerm h
-    | .conv h _ => eqTerm h
-    | .irr ht _ _ => hasType ht
-    | .secondOrder _ hts => eqArgs hts
-    | .delta hctx _ _ _ _ => wfCtx hctx
-    | .const hctx .. => wfCtx hctx
-    | .univ hctx _ => wfCtx hctx
-    | .prop hctx _ => wfCtx hctx
-    | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
-    | .equality hA _ _ _ => eqTerm hA
-    | .transp hA .. => eqTerm hA
-    | .transpSame hA .. => hasType hA
-    | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
-    | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ _ _ has .. => hasInstanceArgs has
-  hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons ht _ => hasType ht
-  eqArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts us : Args k Γ ps} {Θ : Telescope k Γ ps} : EqArgs sig ctx ts us Θ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons ht _ => eqTerm ht
-  hasInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as : InstanceArgs k Γ Δ} {params : Context k Δ} :
-      HasInstanceArgs sig ctx as params → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .var has _ => hasInstanceArgs has
-    | .secondOrder has _ => hasInstanceArgs has
-  eqInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} :
-      EqInstanceArgs sig ctx as₁ as₂ params → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .var has _ => eqInstanceArgs has
-    | .secondOrder has _ => eqInstanceArgs has
-  wfTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons hA _ _ _ => hasType hA
-  wfTelescopeSorts {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
-      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k} :
-      WfTelescopeSorts sig ctx Θ κs l → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons hA _ _ _ => hasType hA
-  eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons hA _ _ _ => eqTerm hA
-  wfFields {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ} {ps : List Parameter}
-      {Θ : Telescope decl.levels Γ ps} {κ : Universe decl.levels} :
-      WfFields sig decl ι as ctx Θ κ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons _ hA _ _ _ => hasType hA
-    | .recursive _ hΘ _ => wfFields hΘ
-    | .nested _ _ _ _ _ _ hΘ _ => wfFields hΘ
-  wfDestructors {sig : Signature} {decl : TypeDeclaration} {ι : Instance decl.sorts decl.grades}
-      {Γ : Scope} {ns : List Name} {ν : Nesting Nat Γ} {as : InstanceArgs decl.levels Γ decl.scope}
-      {ctx : Context decl.levels Γ} {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} :
-      WfDestructors sig decl ι @ν as ctx ds κ → WfSig sig
-    | .nil hctx => wfCtx hctx
-    | .cons _ _ hΘ .. => wfTelescope hΘ
-    | .nested _ _ hΘ .. => wfTelescope hΘ
-    | .recursive _ hΘ .. => wfTelescope hΘ
-  wfTypeDeclaration {sig : Signature} {decl : TypeDeclaration} :
-      WfTypeDeclaration sig decl → WfSig sig
-    | .data _ ⟨_, hadm⟩ hΔ _ _ _ _ => wfCtx (hΔ _ hadm)
-    | .codata _ ⟨_, hadm⟩ hΔ _ _ _ _ => wfCtx (hΔ _ hadm)
-  tail {e : Entry} {sig : Signature} : WfSig (e :: sig) → WfSig sig
-    | .constantDefinition h _ => wfConstantDefinition h
-    | .constantDeclaration h _ => wfConstantDeclaration h
-    | .typeDeclaration h _ _ => wfTypeDeclaration h
-    | .lifting h _ _ => wfTypeDeclaration h
+  ⟨(·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig),
+    (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig), (·.wfSig),
+    fun h => by
+      cases h with
+      | WfSig.constantDefinition h _ => exact h.wfSig
+      | WfSig.constantDeclaration h _ => exact h.wfSig
+      | WfSig.typeDeclaration h _ _ => exact h.wfSig
+      | WfSig.lifting h _ _ => exact h.wfSig⟩
 
 -- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- Every judgment in a context holds in a well-formed context. -/
@@ -323,6 +318,89 @@ structure ContextPresuppositions : Prop where
     {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
     EqTelescope sig ctx Θ₁ Θ₂ κ → WfCtx sig ctx
 
+-- ADE: none.
+/-- The well-formedness of the context of a judgment in a context. -/
+def Judgment.ContextWf : Judgment → Prop
+  | wfType sig ctx _ => WfCtx sig ctx
+  | eqType sig ctx _ _ => WfCtx sig ctx
+  | hasType sig ctx _ _ => WfCtx sig ctx
+  | eqTerm sig ctx _ _ _ => WfCtx sig ctx
+  | hasArgs sig ctx _ _ => WfCtx sig ctx
+  | eqArgs sig ctx _ _ _ => WfCtx sig ctx
+  | hasInstanceArgs sig ctx _ _ => WfCtx sig ctx
+  | eqInstanceArgs sig ctx _ _ _ => WfCtx sig ctx
+  | wfTelescope sig ctx _ _ => WfCtx sig ctx
+  | wfTelescopeSorts sig ctx _ _ _ => WfCtx sig ctx
+  | eqTelescope sig ctx _ _ _ => WfCtx sig ctx
+  | _ => True
+
+-- ADE: none.
+/-- Every judgment in a context holds in a well-formed context, by induction on its derivation. -/
+theorem Derivable.contextWf {J : Judgment} (h : Derivable J) : J.ContextWf := by
+  induction h with
+  | WfType.univType h h_ih => exact h_ih
+  | WfType.propType h h_ih => exact h_ih
+  | EqType.refl h h_ih => exact h_ih
+  | EqType.symm h h_ih => exact h_ih
+  | EqType.trans h _ h_ih _ => exact h_ih
+  | EqType.univType h h_ih => exact h_ih
+  | EqType.propType h h_ih => exact h_ih
+  | HasType.var hctx _ hctx_ih => exact hctx
+  | HasType.secondOrder _ hts hts_ih => exact hts_ih
+  | HasType.const hctx _ _ _ _ hctx_ih => exact hctx
+  | HasType.univ hctx hctx_ih => exact hctx
+  | HasType.prop hctx hctx_ih => exact hctx
+  | HasType.inst _ _ _ _ _ has has_ih => exact has_ih
+  | HasType.equality hA _ _ hA_ih _ _ => exact hA_ih
+  | HasType.reflProof hA _ hA_ih _ => exact hA_ih
+  | HasType.transp hA _ _ _ _ _ hA_ih _ _ _ _ _ => exact hA_ih
+  | HasType.propExt hA _ _ _ hA_ih _ _ _ => exact hA_ih
+  | HasType.coind _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ _ _ _ => exact has_ih
+  | HasType.ctor _ _ _ _ _ _ has _ has_ih _ => exact has_ih
+  | HasType.recursor _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | HasType.obs _ _ _ _ _ _ has _ _ has_ih _ _ => exact has_ih
+  | HasType.corec _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | HasType.conv ht _ ht_ih _ => exact ht_ih
+  | EqTerm.refl h h_ih => exact h_ih
+  | EqTerm.symm h h_ih => exact h_ih
+  | EqTerm.trans h _ h_ih _ => exact h_ih
+  | EqTerm.conv h _ h_ih _ => exact h_ih
+  | EqTerm.irr ht _ _ ht_ih _ _ => exact ht_ih
+  | EqTerm.secondOrder _ hts hts_ih => exact hts_ih
+  | EqTerm.delta hctx _ _ _ _ hctx_ih => exact hctx
+  | EqTerm.const hctx _ _ _ _ _ _ hctx_ih => exact hctx
+  | EqTerm.univ hctx _ hctx_ih => exact hctx
+  | EqTerm.prop hctx _ hctx_ih => exact hctx
+  | EqTerm.inst _ _ _ _ _ _ has _ has_ih => exact has_ih
+  | EqTerm.equality hA _ _ _ hA_ih _ _ => exact hA_ih
+  | EqTerm.transp hA _ _ _ _ _ hA_ih _ _ _ _ _ => exact hA_ih
+  | EqTerm.transpSame hA _ _ _ _ _ _ hA_ih _ _ _ _ _ _ => exact hA_ih
+  | EqTerm.ctor _ _ _ _ _ _ _ has _ _ has_ih _ => exact has_ih
+  | EqTerm.recursor _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | EqTerm.obs _ _ _ _ _ _ _ has _ _ _ has_ih _ _ => exact has_ih
+  | EqTerm.corec _ _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.iota _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ => exact has_ih
+  | EqTerm.etaCtor _ _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.beta _ _ _ _ _ _ has _ _ _ _ _ _ _ _ _ _ _ _ _ has_ih _ _ _ _ => exact has_ih
+  | EqTerm.etaObs _ _ _ _ _ _ has _ _ _ has_ih _ _ _ => exact has_ih
+  | HasArgs.nil hctx hctx_ih => exact hctx
+  | HasArgs.cons ht _ ht_ih _ => exact ht_ih
+  | EqArgs.nil hctx hctx_ih => exact hctx
+  | EqArgs.cons ht _ ht_ih _ => exact ht_ih
+  | HasInstanceArgs.nil hctx hctx_ih => exact hctx
+  | HasInstanceArgs.var has _ has_ih _ => exact has_ih
+  | HasInstanceArgs.secondOrder has _ has_ih _ => exact has_ih
+  | EqInstanceArgs.nil hctx hctx_ih => exact hctx
+  | EqInstanceArgs.var has _ has_ih _ => exact has_ih
+  | EqInstanceArgs.secondOrder has _ has_ih _ => exact has_ih
+  | WfTelescope.nil hctx hctx_ih => exact hctx
+  | WfTelescope.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | WfTelescopeSorts.nil hctx hctx_ih => exact hctx
+  | WfTelescopeSorts.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | EqTelescope.nil hctx hctx_ih => exact hctx
+  | EqTelescope.cons hA _ _ _ hA_ih _ => exact hA_ih
+  | _ => trivial
+
 -- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- The judgments in a context hold in a well-formed context.
 RFC: `\mathsf{presup}_\Gamma.A`
@@ -337,95 +415,8 @@ RFC: `\mathsf{presup}_\Gamma.\Theta`
 RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}`
 RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
 theorem contextPresuppositions : ContextPresuppositions :=
-  ⟨wfType, eqType, hasType, eqTerm, hasArgs, eqArgs, hasInstanceArgs, eqInstanceArgs, wfTelescope,
-    wfTelescopeSorts, eqTelescope⟩
-where
-  wfType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ} :
-      WfType sig ctx A → WfCtx sig ctx
-    | .univType h => hasType h
-    | .propType h => hasType h
-  eqType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {A B : Term k Γ} :
-      EqType sig ctx A B → WfCtx sig ctx
-    | .refl h => wfType h
-    | .symm h => eqType h
-    | .trans h _ => eqType h
-    | .univType h => eqTerm h
-    | .propType h => eqTerm h
-  hasType {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ} :
-      HasType sig ctx t A → WfCtx sig ctx
-    | .var hctx _ => hctx
-    | .secondOrder _ hts => hasArgs hts
-    | .const hctx _ _ _ _ => hctx
-    | .univ hctx => hctx
-    | .prop hctx => hctx
-    | .inst _ _ _ _ _ has => hasInstanceArgs has
-    | .equality hA _ _ => hasType hA
-    | .reflProof hA _ => hasType hA
-    | .transp hA .. => hasType hA
-    | .propExt hA .. => hasType hA
-    | .coind _ _ _ _ _ has .. => hasInstanceArgs has
-    | .ctor _ _ _ _ _ _ has _ => hasInstanceArgs has
-    | .recursor _ _ _ _ _ has .. => hasInstanceArgs has
-    | .obs _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .conv ht _ => hasType ht
-  eqTerm {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {t u A : Term k Γ} :
-      EqTerm sig ctx t u A → WfCtx sig ctx
-    | .refl h => hasType h
-    | .symm h => eqTerm h
-    | .trans h _ => eqTerm h
-    | .conv h _ => eqTerm h
-    | .irr ht _ _ => hasType ht
-    | .secondOrder _ hts => eqArgs hts
-    | .delta hctx _ _ _ _ => hctx
-    | .const hctx .. => hctx
-    | .univ hctx _ => hctx
-    | .prop hctx _ => hctx
-    | .inst _ _ _ _ _ _ has _ => eqInstanceArgs has
-    | .equality hA _ _ _ => eqTerm hA
-    | .transp hA .. => eqTerm hA
-    | .transpSame hA .. => hasType hA
-    | .ctor _ _ _ _ _ _ _ has _ _ => eqInstanceArgs has
-    | .recursor _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .obs _ _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .iota _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaCtor _ _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .corec _ _ _ _ _ _ _ has .. => eqInstanceArgs has
-    | .beta _ _ _ _ _ _ has .. => hasInstanceArgs has
-    | .etaObs _ _ _ _ _ _ has .. => hasInstanceArgs has
-  hasArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts : Args k Γ ps} {Θ : Telescope k Γ ps} : HasArgs sig ctx ts Θ → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .cons ht _ => hasType ht
-  eqArgs {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {ts us : Args k Γ ps} {Θ : Telescope k Γ ps} : EqArgs sig ctx ts us Θ → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .cons ht _ => eqTerm ht
-  hasInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as : InstanceArgs k Γ Δ} {params : Context k Δ} :
-      HasInstanceArgs sig ctx as params → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .var has _ => hasInstanceArgs has
-    | .secondOrder has _ => hasInstanceArgs has
-  eqInstanceArgs {sig : Signature} {k : Nat} {Γ Δ : Scope} {ctx : Context k Γ}
-      {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ} :
-      EqInstanceArgs sig ctx as₁ as₂ params → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .var has _ => eqInstanceArgs has
-    | .secondOrder has _ => eqInstanceArgs has
-  wfTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {Θ : Telescope k Γ ps} {κ : Universe k} : WfTelescope sig ctx Θ κ → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .cons hA _ _ _ => hasType hA
-  wfTelescopeSorts {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
-      {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κs : List (Universe k)} {l : Level k} :
-      WfTelescopeSorts sig ctx Θ κs l → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .cons hA _ _ _ => hasType hA
-  eqTelescope {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter} {ctx : Context k Γ}
-      {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k} : EqTelescope sig ctx Θ₁ Θ₂ κ → WfCtx sig ctx
-    | .nil hctx => hctx
-    | .cons hA _ _ _ => eqTerm hA
+  ⟨(·.contextWf), (·.contextWf), (·.contextWf), (·.contextWf), (·.contextWf), (·.contextWf),
+    (·.contextWf), (·.contextWf), (·.contextWf), (·.contextWf), (·.contextWf)⟩
 
 -- ADE: none.
 /-- A well-formed type declaration introduces names of types that no entry of the signature does. -/
@@ -452,8 +443,8 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
   | .constantDeclaration _ h, e', he', n, hn => by
     simp only [Entry.names, List.mem_singleton] at hn
     exact hn ▸ h e' he'
-  | .typeDeclaration h _ _, e', he', n, hn => h.fresh e' he' n hn
-  | .lifting h _ _, e', he', n, hn => h.fresh e' he' n hn
+  | .typeDeclaration h _ _, e', he', n, hn => (WfTypeDeclaration.fresh h) e' he' n hn
+  | .lifting h _ _, e', he', n, hn => (WfTypeDeclaration.fresh h) e' he' n hn
 
 -- ADE: none.
 /-- The names of a well-formed signature are distinct.
@@ -462,17 +453,17 @@ theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct
   | [], _ => trivial
   | _ :: _, h => ⟨(Presuppositions.tail presuppositions h).distinct,
       by cases h with
-        | typeDeclaration _ hn => exact hn
+        | WfSig.typeDeclaration _ hn => exact hn
         | _ => exact List.pairwise_singleton _ _, h.fresh,
       by
         rename_i e _
         cases e with
         | typeDeclaration decl => cases h.typeDeclaration_inv.1 with
-          | data hb _ _ _ _ hc _ =>
+          | WfTypeDeclaration.data hb _ _ _ _ hc _ =>
             refine ⟨hc, fun T hT => ?_⟩
             simp only [TypeDeclaration.codataTypes, hb] at hT
             nomatch hT
-          | codata hb _ _ _ _ hc _ =>
+          | WfTypeDeclaration.codata hb _ _ _ _ hc _ =>
             refine ⟨fun T hT => ?_, hc⟩
             simp only [TypeDeclaration.dataTypes, hb] at hT
             nomatch hT

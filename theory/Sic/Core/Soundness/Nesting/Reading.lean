@@ -674,31 +674,35 @@ section
 variable {α I : Type}
 
 -- ADE: none.
-/-- The destructors of a codata type none of which is recursive, well formed in a signature `Σ_T`
-whose nested types a reading reads, and strictly positive in the variables with a position, are
-read by the reading, at the second pair of two pairs of substitutions, the first of which are equal
-substitutions of their context, given the soundness of the typing in `Σ_T`: by induction on their
-formation, where the destructors after a destructor whose result has a position are read whatever
-the abstractions for it, on which they do not depend. -/
-theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) {sigT : Signature}
-    (hent : sig.ValidEntries ι sigT) (hread : ReadsNested sig ι R.rd sigT)
-    {decl : TypeDeclaration}
-    (fresh : ∀ e ∈ sigT, ∀ D ∈ decl.names, D ∉ e.names) {J : Instance decl.sorts decl.grades}
-    (ρ : Fin decl.levels → Nat) (i : I) {Γ : Scope} {ns : List Name} {ν₀ : Nesting Nat Γ}
-    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
-    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} {Γ' : Scope} {β : Ren Γ' Γ}
-    {ν₁ ν₂ : Nesting α Γ'} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ'} :
-    WfDestructors sigT decl J @ν₀ as ctx ds κ → (∀ r ∈ ds.recursion decl.names, r = none) →
-      R.ok i (κ.atLevels ρ) →
-      (∀ (e : Scope.Entry) (x : Var Γ e), (ν₀ x).isPlain = true → (ν₁ (β x)).isPlain = true) →
-      (∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
-        Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
-      EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
-      NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
-      R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂'
-  | .nil _, _, _, _, _, _, _ => R.nil
-  | .cons (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (κ₁ := κ₁) _ hνB hΘ hB hκ _ hds,
-      hrec, hn, hν₀, hpos, hE, hNS => by
+/-- What the formation of destructors none of which is recursive, in a signature `Σ_T` whose nested
+types a reading reads, and strictly positive in the variables with a position, says: that the
+reading reads them, as `WfDestructors.reads` states. -/
+def Judgment.Reads : Judgment → Prop
+  | @wfDestructors sigT decl _ Γ _ ν₀ _ ctx ds κ =>
+      ∀ {sig : Signature} {ι : Interpretation} {α I : Type} (R : Reading sig ι α I),
+        TypingSound sig ι → sig.ValidEntries ι sigT → ReadsNested sig ι R.rd sigT →
+        (∀ e ∈ sigT, ∀ D ∈ decl.names, D ∉ e.names) → ∀ (ρ : Fin decl.levels → Nat) (i : I)
+        {Γ' : Scope} {β : Ren Γ' Γ} {ν₁ ν₂ : Nesting α Γ'} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ'},
+        (∀ r ∈ ds.recursion decl.names, r = none) → R.ok i (κ.atLevels ρ) →
+        (∀ (e : Scope.Entry) (x : Var Γ e), (ν₀ x).isPlain = true → (ν₁ (β x)).isPlain = true) →
+        (∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
+          Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
+        EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
+        NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
+        R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂'
+  | _ => True
+
+-- ADE: none.
+/-- The destructors of a codata type none of which is recursive are read by a reading, as
+`Judgment.Reads` says, by induction on their formation. -/
+theorem Derivable.reads {J : Judgment} (h : Derivable J) : J.Reads := by
+  induction h with
+  | WfDestructors.nil _ _ =>
+    intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' _ _ _ _ _ _
+    exact R.nil
+  | WfDestructors.cons _ hνB hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+    intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
+    rename_i sigT decl _ Γ _ _ _ _ ps _ _ _ _ Θ B ψ ds κ₁ κ _ _
     -- What the strict positivity gives of the destructor.
     have hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx => by
@@ -777,7 +781,7 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
           (fun x => Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift @β x))
           (Subst.snoc (e := .secondOrder ps ψ) (fun x => θ (β x)) f) := fun θ f =>
       Subst.ext fun x => by cases x <;> rfl
-    refine WfDestructors.reads R hS hent hread fresh ρ i (β := Ren.lift @β) hds
+    refine hds_ih (β := Ren.lift @β) R hS hent hread fresh ρ i
       (fun r hr => hrec r (List.mem_cons_of_mem _ hr)) hn
       (fun e z => match z with
         | .zero => fun _ => rfl
@@ -793,8 +797,9 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
     rw [Term.subst_append, ← hBe]
     exact hf τ₁ τ₂ ((congrArg (fun Θ' => EqSubst sig ι (Context.empty.append Θ') τ₁ τ₂)
       (hΘe θ₁)).mpr hτ)
-  | .nested (ps := ps) (Θ := Θ) (B := B) (ψ := ψ) (ds := ds) (κ₁ := κ₁) _ _ hΘ hB hκ _ hds,
-      hrec, hn, hν₀, hpos, hE, hNS => by
+  | WfDestructors.nested _ _ hΘ hB hκ _ hds hΘ_ih hB_ih hds_ih =>
+    intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
+    rename_i sigT decl _ Γ _ _ _ _ ps ctx _ _ _ Θ B ψ ds κ₁ κ _ _ _
     have hds_eq : (ds.rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) @β) =
         ds.rename (fun x => .succ (β x)) := Destructors.rename_rename_of (fun _ => rfl) ds
     -- What the strict positivity gives of the destructor.
@@ -860,8 +865,8 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
           (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
           (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) := fun f₁ f₂ => by
       rw [hds_eq]
-      exact WfDestructors.reads R hS hent hread fresh ρ i
-        (β := fun x => .succ (e' := .secondOrder ps ψ) (β x)) hds
+      exact hds_ih R hS hent hread fresh ρ i
+        (β := fun x => .succ (e' := .secondOrder ps ψ) (β x))
         (fun r hr => hrec r (List.mem_cons_of_mem _
           (by rw [Destructors.recursion_rename]; exact hr))) hn hν₀
         (fun e z hz => match z, hz with
@@ -932,11 +937,37 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       · rw [Context.atLevels, Context.substLevels_append]
         exact hNS.append (Θ.atLevels ρ) τ₁ τ₂
       · exact R.plain hn hκ' (hBv τ₁ τ₂ hτ)
-  | .recursive (D := D) hD _ _ _, hrec, _, _, _, _, _ => by
+  | WfDestructors.recursive hD _ _ _ _ _ =>
+    intro sig ι α I R hS hent hread fresh ρ i Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec _ _ _ _ _
     have h := hrec _ (List.mem_cons_self ..)
     simp only [TypeDeclaration.blockInstance, Term.blockName, hD, ite_true] at h
     exact nomatch h
-termination_by structural h => h
+  | _ => trivial
+
+-- ADE: none.
+/-- The destructors of a codata type none of which is recursive, well formed in a signature `Σ_T`
+whose nested types a reading reads, and strictly positive in the variables with a position, are
+read by the reading, at the second pair of two pairs of substitutions, the first of which are equal
+substitutions of their context, given the soundness of the typing in `Σ_T`: by induction on their
+formation, where the destructors after a destructor whose result has a position are read whatever
+the abstractions for it, on which they do not depend. -/
+theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) {sigT : Signature}
+    (hent : sig.ValidEntries ι sigT) (hread : ReadsNested sig ι R.rd sigT)
+    {decl : TypeDeclaration}
+    (fresh : ∀ e ∈ sigT, ∀ D ∈ decl.names, D ∉ e.names) {J : Instance decl.sorts decl.grades}
+    (ρ : Fin decl.levels → Nat) (i : I) {Γ : Scope} {ns : List Name} {ν₀ : Nesting Nat Γ}
+    {as : InstanceArgs decl.levels Γ decl.scope} {ctx : Context decl.levels Γ}
+    {ds : Destructors decl.levels Γ ns} {κ : Universe decl.levels} {Γ' : Scope} {β : Ren Γ' Γ}
+    {ν₁ ν₂ : Nesting α Γ'} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ'} :
+    WfDestructors sigT decl J @ν₀ as ctx ds κ → (∀ r ∈ ds.recursion decl.names, r = none) →
+      R.ok i (κ.atLevels ρ) →
+      (∀ (e : Scope.Entry) (x : Var Γ e), (ν₀ x).isPlain = true → (ν₁ (β x)).isPlain = true) →
+      (∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
+        Destructors.Positive (sigT.PositiveIn decl) x (ds.rename β)) →
+      EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)) →
+      NestSubst sig ι R.rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂' →
+      R.dr i @ν₁ @ν₂ ((ds.rename β).atLevels ρ) @θ₁' @θ₂' :=
+  fun h => Derivable.reads h R hS hent hread fresh ρ i
 
 end
 
@@ -1229,8 +1260,8 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
       fun e he => hent e (Signature.subset_of_cons_suffix hsuf he)
     have freshF : ∀ e ∈ sigF, ∀ D' ∈ declF.names, D' ∉ e.names := hdecl.fresh
     cases hdecl with
-    | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
-    | codata hb _ _ hds hpF _ _ =>
+    | WfTypeDeclaration.data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
+    | WfTypeDeclaration.codata hb _ _ hds hpF _ _ =>
       have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length =
           declF.levels := (List.length_map _).trans hl
       have hTm := (hent.hasCodataType hT).1

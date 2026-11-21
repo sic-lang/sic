@@ -58,8 +58,8 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
   obtain ⟨_, _, hdecl⟩ := hsig.wfTypeDeclaration hd
   have hdecl' : (∃ ι, decl.constraint ι) ∧ T.destructors.Nodup := by
     cases hdecl with
-    | data hb' => simp [TypeDeclaration.codataTypes, hb'] at hT
-    | codata _ hadm _ _ _ hc _ => exact ⟨hadm, hc T hT⟩
+    | WfTypeDeclaration.data hb' => simp [TypeDeclaration.codataTypes, hb'] at hT
+    | WfTypeDeclaration.codata _ hadm _ _ _ hc _ => exact ⟨hadm, hc T hT⟩
   obtain ⟨⟨ι, hι⟩, hc⟩ := hdecl'
   refine .codata rfl ?_
     (fun I hI => (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI)).ren.wfCtx)
@@ -127,8 +127,8 @@ theorem WfSig.lifting_inv {E : TypeDeclaration} {F : Name} {S : List Nat} :
     rcases List.mem_cons.1 he with he | he
     · subst he
       cases h with
-      | typeDeclaration _ _ hL => exact absurd hn (hL F S)
-      | lifting _ hd hl =>
+      | WfSig.typeDeclaration _ _ hL => exact absurd hn (hL F S)
+      | WfSig.lifting _ hd hl =>
         exact ⟨_, _, _, _, _, rfl, List.mem_cons_of_mem _ hd,
           hl.extend (List.subset_cons_self _ _)⟩
     · obtain ⟨decl, F', S', ns, body, rfl, hd, hl⟩ :=
@@ -172,8 +172,8 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
           decl.Lifts sig₁ F' S' body
   | [], h, hn => by
     cases h with
-    | typeDeclaration _ _ hL => exact absurd hn (hL F S)
-    | lifting _ hd hl => exact ⟨_, _, _, _, _, rfl, hd, hl⟩
+    | WfSig.typeDeclaration _ _ hL => exact absurd hn (hL F S)
+    | WfSig.lifting _ hd hl => exact ⟨_, _, _, _, _, rfl, hd, hl⟩
   | _ :: pre, h, hn =>
     WfSig.lifting_inv_before pre (Presuppositions.tail presuppositions h) hn
 
