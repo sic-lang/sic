@@ -189,10 +189,11 @@ theorem Derivations.induction :
       -- The types of the hypotheses are those of the minor premises of the recursors, which Lean
       -- infers from the type of the conclusion, ascribed with the recursor of `WfSig` applied to the
       -- motives and to the hypotheses, so that the rules are read from `Sic/Core/Typing.lean` and
-      -- not restated. The hypotheses are given in the order of the rules in `Sic/Core/Typing.lean`,
-      -- the judgments in their order, then the rules of each judgment in their order, so that a rule
-      -- added or moved there is added or moved here: a hypothesis out of this order would be given
-      -- the type of another rule.
+      -- not restated; the recursor applied is ascribed its full type, the motive of `WfSig` of every
+      -- derivation, so that a hypothesis missing or extra fails here. The hypotheses are given in
+      -- the order of the rules in `Sic/Core/Typing.lean`, the judgments in their order, then the
+      -- rules of each judgment in their order, so that a rule added or moved there is added or moved
+      -- here: a hypothesis out of this order would be given the type of another rule.
       (Derivations.Conclusion wfSig wfConstantDefinition wfConstantDeclaration wfCtx wfType eqType
           hasType eqTerm hasArgs eqArgs hasInstanceArgs eqInstanceArgs wfTelescope wfTelescopeSorts
           eqTelescope wfFields wfDestructors wfTypeDeclaration :
@@ -214,7 +215,8 @@ theorem Derivations.induction :
           wfTelescope_cons wfTelescopeSorts_nil wfTelescopeSorts_cons eqTelescope_nil
           eqTelescope_cons wfFields_nil wfFields_cons wfFields_recursive wfFields_nested
           wfDestructors_nil wfDestructors_cons wfDestructors_nested wfDestructors_recursive
-          wfTypeDeclaration_data wfTypeDeclaration_codata)) := by
+          wfTypeDeclaration_data wfTypeDeclaration_codata :
+          ∀ {sig : Signature} (h : WfSig sig), wfSig sig h)) := by
   intros
   constructor
   · apply WfSig.rec <;> assumption
