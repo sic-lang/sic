@@ -1630,14 +1630,17 @@ On a proposition, the observations of the first term, related to themselves, mak
 
 -- ADE: none.
 /-- The equality of destructors relates the observations `o₁` and `o₂` when it relates observations
-`f₁` and `f₂` that compute as them, at relations of the recursive destructors that are equalities
-of the terms of types of the graph: the abstractions for each destructor compute as each other, so
+`f₁` and `f₂` that compute as them, at relations of the recursive destructors that relate alike
+the terms that compute alike, or any terms when the quality is that of the propositions, as the
+equalities of the terms of the types of the graph do: the abstractions for each destructor compute as each other, so
 that the equality of its result relates them, and the destructors after it are the same for
 abstractions that the equality of the destructor relates. -/
 theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
     {rs : Nat → Option TermRel} → {Γ : Scope} → {ns : List Name} → {ds : Destructors 0 Γ ns} →
       {θ : Subst 0 [] Γ} → {S : ObsRel} →
-      (∀ i R, rs i = some R → ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R) →
+      (∀ i R, rs i = some R → ∀ {a a' b b' : Term 0 []},
+        (s = .prop ∨ ((∀ w, Computesι sig ι a w ↔ Computesι sig ι a' w) ∧
+          ∀ w, Computesι sig ι b w ↔ Computesι sig ι b' w)) → (R a b ↔ R a' b')) →
       DesRel sig ι n (fun m _ => levelRel sig ι m) s rs ds @θ S →
       {f₁ f₂ o₁ o₂ : Observations} → S f₁ f₂ → ObsEquiv sig ι s f₁ o₁ →
       ObsEquiv sig ι s f₂ o₂ → S o₁ o₂
@@ -1648,8 +1651,10 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
     have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
         ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
       fun hf => hf.imp_right fun h τ w => h d ps τ w
-    have hRF' : ∀ i R, rs (i + 1) = some R →
-        ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v R := fun i => hRF (i + 1)
+    have hRF' : ∀ i R, rs (i + 1) = some R → ∀ {a a' b b' : Term 0 []},
+        (s = .prop ∨ ((∀ w, Computesι sig ι a w ↔ Computesι sig ι a' w) ∧
+          ∀ w, Computesι sig ι b w ↔ Computesι sig ι b' w)) → (R a b ↔ R a' b') :=
+      fun i => hRF (i + 1)
     cases h with
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
       obtain ⟨hA, hGf⟩ := hS
@@ -1678,8 +1683,7 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
       exact ⟨hA', (hresp _ _ hfo o₁ o₂).1 (DesRel.obsEquiv hd hRF' (hG _ hff) hGf hf₁ hf₂)⟩
     | @recursive _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ R hrs hΘ G hG =>
       obtain ⟨hA, hGf⟩ := hS
-      obtain ⟨v, hv⟩ := hRF 0 R hrs
-      refine ⟨fun ts us hts => (hv.congr_computes ?_).1 (hA ts us hts),
+      refine ⟨fun ts us hts => (hRF 0 R hrs ?_).1 (hA ts us hts),
         DesRel.obsEquiv hd hRF' (hG (o₁ d ps)) hGf hf₁ hf₂⟩
       rcases hc hf₁ with h₁ | h₁
       · exact .inl h₁
@@ -1805,7 +1809,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           cases hi
           obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
             (Destructors.recursionAt_mem hr)
-          exact ⟨_, .univ rfl (hU T' hT')⟩)
+          exact FieldRel.congr_computes (.univ rfl (hU T' hT')))
       hDS hS₁ (ObsEquiv.of_computes hd hw₁ hc₁) (ObsEquiv.of_computes hd hw₂ hc₂)
     have hrel := CodataType.blockRel_fold hmono hnd h.2.1 ⟨o₁, o₂, hc₁, hc₂, hS₂⟩
     rw [h.2.2] at hrel
