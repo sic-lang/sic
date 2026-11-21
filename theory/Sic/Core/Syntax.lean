@@ -218,7 +218,7 @@ inductive Term (k : Nat) : Scope → Type where
   from a proof `y` of `B`; the proof carries the level and the two propositions, so that the term
   determines its type, and the two implications are terms over a new variable, the hypothesis. -/
   | propExt {Γ : Scope} (l : Level k) (A B : Term k Γ) (t u : Term k (Γ.extend 1)) : Term k Γ
-  /-- `coind(T, t₁, t₂, x₁ x₂. Ā, t, ḡ)`: the proof by coinduction of the equality of the terms
+  /-- `coind(T, t₁, t₂, (x₁, x₂). Ā, t, ḡ)`: the proof by coinduction of the equality of the terms
   `t₁` and `t₂` of the instance `T = D.{s̄; l̄; p̄} ā` of a codata type, with a relation `A_j` for
   each type of the block, a proposition over two new variables, the two terms it relates, the proof
   `t` that the relation of `T` relates `t₁` and `t₂`, and a branch `g_ji` for each destructor of

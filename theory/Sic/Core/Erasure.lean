@@ -529,7 +529,7 @@ its destructor, the ownership at run time of its result and its arguments, each 
 its argument, a corecursor keeps its state, each entry at its grade times the grade of the
 corecursor, and its branches, without its instance and its states, an equality `t ∼.{s; l}_A u` and
 the proofs `refl.{s; l}_A(t)`, `propext.{l}(A, B, x. t, y. u)` and
-`coind(T, t₁, t₂, x₁ x₂. Ā, t, ḡ)` are erased, and a transport `transp(A, t₁, t₂, x. C, t, u)` keeps
+`coind(T, t₁, t₂, (x₁, x₂). Ā, t, ḡ)` are erased, and a transport `transp(A, t₁, t₂, x. C, t, u)` keeps
 only its term `u`; a second-order variable has no erasure, since the scope has none.
 The cases, the parameters of the fields, of the arguments and of the entries of the state, the
 ownerships of the results of the destructors, the recursive results of the branches, with the
