@@ -129,6 +129,15 @@ theorem HasEq.prop_any {sig : Signature} {ι : Interpretation} {v t u t' u' : Te
   have hR : ∀ t u, R t u ↔ b := hA.unique hd (.prop k b hk fun _ _ => .rfl)
   exact (hR _ _).2 ((hR t u).1 htu)
 
+/-- Two equal closed terms of a type that computes to a proposition are proofs of it, which is then
+true. -/
+theorem ValidEqTerm₀.prop_true {sig : Signature} {ι : Interpretation} {t u A v : Term 0 []}
+    {n : Nat} {b : Prop} (h : ValidEqTerm₀ sig ι t u A) (hA : Computesι sig ι A v)
+    (hb : (levelRel sig ι n).prop v b) : b := by
+  obtain ⟨v', R, hv', hR, htu⟩ := h.2.2 ⟨_, hA, n, b, hb⟩
+  cases Computesι.det h.1.1 hv' hA
+  exact (hR.unique h.1.1 (.prop n b hb fun _ _ => .rfl) _ _).1 htu
+
 /-- The canonical form of a type that computes to a proposition is a proposition, in a signature
 whose names are distinct. -/
 theorem ComputesToProp.isProp {sig : Signature} {ι : Interpretation} {A v : Term 0 []}

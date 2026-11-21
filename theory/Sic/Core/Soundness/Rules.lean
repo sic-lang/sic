@@ -1425,9 +1425,7 @@ theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B
         (hs.2 _ _ ((EqSubst.var_iff ctx X
           (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))
           (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))).2 ⟨hσ₁, hp⟩))
-      obtain ⟨v', R', hv', hR', hss⟩ := hs'.2.2 ⟨_, hwY, _, _, hbY⟩
-      cases Computesι.det hd hv' hwY
-      exact (hR'.unique hd (.prop _ bY hbY fun _ _ => .rfl) _ _).1 hss
+      exact hs'.prop_true hwY hbY
   obtain ⟨w₁, b₁, hw₁, hb₁⟩ := hprop (hA.2 σ₁ σ₁ hσ₁)
   obtain ⟨w₂, b₂, hw₂, hb₂⟩ := hprop (hB.2 σ₁ σ₁ hσ₁)
   exact ⟨fun _ => ⟨_, w₁, w₂, _, Computes.sort _ _, hw₁, hw₂, hU, b₁, b₂, hb₁, hb₂,

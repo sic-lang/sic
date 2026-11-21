@@ -51,10 +51,7 @@ theorem ValidTermΓ.equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} 
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
   cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
   -- The proof is a proof of it, so that it is true.
-  obtain ⟨v', R', hv', hR', htt⟩ := (ht.2 σ σ hσ).2.2 ⟨_, hv, n, b, hb⟩
-  cases Computesι.det hd hv' hv
-  have htrue : b := (hR'.unique hd (.prop n b hb fun _ _ => .rfl) _ _).1 htt
-  exact ⟨(ht₁.2 σ σ hσ).1, (levelRel_prop_equality hd hb).1 htrue⟩
+  exact ⟨(ht₁.2 σ σ hσ).1, (levelRel_prop_equality hd hb).1 ((ht.2 σ σ hσ).prop_true hv hb)⟩
 
 -- ADE: `J-congᵛ` and `Jᵛ`, in
 -- `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
