@@ -241,17 +241,19 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       HasType sig ctx (.propExt l A B t u) (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B)
   -- ADE: none.
   /-- The proof by coinduction of the equality of two terms `t₁` and `t₂` of the instance
-  `T_h = D.{s̄; l̄; p̄} ā` it carries, which the constraint admits and whose arguments are arguments
-  of the parameters, of the sort `s_l`, with a relation `A_j` for each type `T_j` of the block, a
-  proposition of `Ω_l'` over two terms `x₁` and `x₂` of `T_j`, a proof `t` that `A_h` relates `t₁`
-  and `t₂`, and a branch `g` for each case of the block: the branch of a destructor `d`, at the
-  position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς | d̄₂)` of its type `T_j`
-  at the instance, is a term over `x₁`, `x₂`, a proof `y` of `A_j` and the variables `z̄` of the
-  telescope of `d`, of the equality `x₁.d(z̄) ∼.{s″; l″}_B x₂.d(z̄)`, at a sort `κs i` of the result
-  `B`, if `d` is not recursive, and of `A_j'` at `x₁.d(z̄)` and `x₂.d(z̄)` if the result of `d` is
-  the type `T_j'` of the block.
-  The telescope and the result of each destructor `d` are the same at the observations of `x₁` by
-  the destructors `d̄₁` before it and at those of `x₂`, so that no destructor depends on an earlier
+  `T_h = D_h.{s̄'; l̄'; p̄'} ā` it carries, which the constraint admits and whose arguments are
+  arguments of the parameters, at the sort `s_l` of the block at the instance, with a relation
+  `A_j` for each instance `T_j = D_j.{s̄'; l̄'; p̄'} ā` of a type of the block, a proposition of
+  `Ω_l'` over two terms `x₁` and `x₂` of `T_j`, a proof `t` that `A_h` relates `t₁` and `t₂`, and a
+  branch `g_ji` for each case of the block: the branch of a destructor `d_ji`, at the position
+  `hd` in the destructors `(d̄_ji,1 | d_ji : (Θ_ji ⊢ B_ji ◀ ψ_ji) ▶ p_ji; q_ji ◀ ς_ji | d̄_ji,2)`
+  of `T_j` at the instance, is a term over `x₁`, `x₂`, a proof `y` of `A_j` and the variables
+  `z̄_ji` of the telescope of `d_ji`, of the equality
+  `x₁.d_ji(z̄_ji) ∼.{s_ji; l_ji}_B_ji x₂.d_ji(z̄_ji)`, at the sort `κs i = (s_ji)_l_ji` of the
+  result, if `d_ji` is not recursive, and of `A_j'` at `x₁.d_ji(z̄_ji)` and `x₂.d_ji(z̄_ji)` if the
+  result of `d_ji` is the type `D_j'` of the block.
+  The telescope and the result of each destructor are the same at the observations of `x₁` by the
+  destructors `d̄_ji,1` before it and at those of `x₂`, so that no destructor depends on an earlier
   one.
   There are as many relations as types and as many branches as cases.
   The positions `h'` of the type of the terms in the block, `j` of a type and `i` of a case give the
