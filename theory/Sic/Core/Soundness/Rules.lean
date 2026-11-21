@@ -1350,37 +1350,44 @@ theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {
       (ValidEqTerm₀.sort hA.1.1.distinct (q := .prop) (Level.equivalence.refl l₁)).univType⟩,
     fun σ₁ σ₂ hσ => ValidEqTerm₀.equality (hA.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) (hu.2 σ₁ σ₂ hσ) hl⟩
 
--- ADE: `rflᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
-/-- `(refl_∼)` keeps the meaning: at two equal substitutions, the equality of the term with itself
-is a proposition, by `(∼)` at the first substitution, with the term on both sides, whose truth,
-which `(ty_∼)` gives, is the equality of the term with itself, so that any two closed terms, the two
-proofs among them, are equal proofs of it. -/
-theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
-    {A t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
-    (ht : ValidTermΓ sig ι ctx t A) :
-    ValidTermΓ sig ι ctx (.refl s l A t) (.equality s l A t t) := by
-  have hE := ValidEqTermΓ.equality hA ht ht (Level.equivalence.refl l)
-  have hd := hA.1.1.distinct
+-- ADE: none.
+/-- Every term is a proof of the equality of two terms of a type of a sort that are equal at every
+closed substitution: at two equal substitutions, the equality is a proposition, by `(∼)` at the
+first, whose truth, which `(ty_∼)` gives, is the equality of the terms, so that any two closed
+terms, the two proofs among them, are equal proofs of it. -/
+theorem ValidTermΓ.of_equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t₁ t₂ p : Term 0 Γ}
+    (hE : ValidEqTermΓ sig ι ctx (.equality s l A t₁ t₂) (.equality s l A t₁ t₂) (.sort ⟨.prop, l⟩))
+    (htrue : ∀ σ : Subst 0 [] Γ, EqSubst sig ι ctx σ σ →
+      EqTermClause sig ι (t₁.subst σ) (t₂.subst σ) (A.subst σ)) :
+    ValidTermΓ sig ι ctx p (.equality s l A t₁ t₂) := by
+  have hd := hE.1.1.distinct
   refine ⟨hE.propType, fun σ₁ _ hσ => ?_⟩
-  have hσ₁ := hσ.left hA.1.1
+  have hσ₁ := hσ.left hE.1.1
   have hE₁ := hE.2 σ₁ σ₁ hσ₁
   refine ⟨hE₁.propType, ?_⟩
-  -- The proposition computes to itself, whose truth `b` is the equality of the term with itself.
+  -- The proposition computes to itself, whose truth `b` is the equality of the two terms.
   obtain ⟨-, hcl, -⟩ := hE₁
   obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
   cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
   exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
-    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (ht.2 σ₁ σ₁ hσ₁).2⟩⟩
+    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (htrue σ₁ hσ₁)⟩⟩
+
+-- ADE: `rflᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(refl_∼)` keeps the meaning: the term is equal to itself at every closed substitution. -/
+theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
+    (ht : ValidTermΓ sig ι ctx t A) :
+    ValidTermΓ sig ι ctx (.refl s l A t) (.equality s l A t t) :=
+  .of_equality_eq (ValidEqTermΓ.equality hA ht ht (Level.equivalence.refl l))
+    fun σ hσ => (ht.2 σ σ hσ).2
 
 -- ADE: none.
-/-- `(propext)` keeps the meaning: at two equal substitutions, the equality of the two propositions
-at `Ω_l` is a proposition, by `(∼)` at the first substitution, whose truth, which `(ty_∼)` gives,
-is the equality of the two propositions as terms of `Ω_l`, that of their truths; each closed term is
-a proof of a true proposition, so that each implication, at the first substitution followed by a
-proof of its hypothesis, makes its conclusion true when its hypothesis is, and any two closed terms,
-the two proofs among them, are equal proofs of the equality. -/
+/-- `(propext)` keeps the meaning: at a closed substitution, the two propositions of `Ω_l` have the
+same truth, since each implication, at the substitution followed by a proof of its hypothesis, makes
+its conclusion true when its hypothesis is. -/
 theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B : Term 0 Γ}
     {t u : Term 0 (.var :: Γ)} (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩))
     (hB : ValidTermΓ sig ι ctx B (.sort ⟨.prop, l⟩))
@@ -1390,20 +1397,9 @@ theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B
       (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B) := by
   have hctx := hA.1.1
   have hd := hctx.distinct
-  have hE := ValidEqTermΓ.equality (ValidEqTermΓ.sort hctx (q := .prop) (Level.equivalence.refl l))
-    hA hB (Level.equivalence.refl _)
-  refine ⟨hE.propType, fun σ₁ _ hσ => ?_⟩
-  have hσ₁ := hσ.left hctx
-  have hE₁ := hE.2 σ₁ σ₁ hσ₁
-  refine ⟨hE₁.propType, ?_⟩
-  -- The proposition computes to itself, whose truth `b` is the equality of the two propositions.
-  obtain ⟨-, hcl, -⟩ := hE₁
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
-  obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
-  cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
-  refine ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
-    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 ?_⟩⟩
+  refine .of_equality_eq (ValidEqTermΓ.equality
+    (ValidEqTermΓ.sort hctx (q := .prop) (Level.equivalence.refl l)) hA hB
+    (Level.equivalence.refl _)) fun σ₁ hσ₁ => ?_
   -- `Ω_l` relates two propositions with the same truth, and a proposition of `Ω_l` computes to one.
   have hU := HasEq.univ (sig := sig) (ι := ι) (l.closedValue + 1)
     (levelRel_univ_iff.2 (.prop (l := l) rfl rfl))
