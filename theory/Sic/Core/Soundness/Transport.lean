@@ -35,23 +35,33 @@ section
 variable {sig : Signature} {ι : Interpretation}
 
 -- ADE: none.
-/-- A proof of the equality of two terms of a type of a sort makes them, at a closed substitution,
-equal terms of the type: the equality is a proposition, by `(∼)`, whose closed terms are equal
-proofs only when it is true, and `(ty_∼)` makes its truth the equality of the terms. -/
-theorem ValidTermΓ.equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
-    {A t₁ t₂ t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
-    (ht₁ : ValidTermΓ sig ι ctx t₁ A) (ht₂ : ValidTermΓ sig ι ctx t₂ A)
-    (ht : ValidTermΓ sig ι ctx t (.equality s l A t₁ t₂)) {σ : Subst 0 [] Γ}
-    (hσ : EqSubst sig ι ctx σ σ) : ValidEqTerm₀ sig ι (t₁.subst σ) (t₂.subst σ) (A.subst σ) := by
-  have hd := hA.1.1.distinct
+/-- A closed proof of a closed equality, a proposition of `Ω_l`, makes its two terms equal terms of
+its type: the equality computes to itself, a proposition whose truth `b` the proof makes true, and
+`(ty_∼)` makes `b` the equality of the terms. -/
+theorem ValidEqTerm₀.equality_eq {s : Quality} {l : Level 0} {A t₁ t₂ p p' : Term 0 []}
+    (hE : ValidEqTerm₀ sig ι (.equality s l A t₁ t₂) (.equality s l A t₁ t₂) (.sort ⟨.prop, l⟩))
+    (hp : ValidEqTerm₀ sig ι p p' (.equality s l A t₁ t₂)) : EqTermClause sig ι t₁ t₂ A := by
+  have hd := hE.1.1
   -- The equality computes to itself, a proposition whose truth is `b`.
-  obtain ⟨-, hcl, -⟩ := (ValidEqTermΓ.equality hA ht₁ ht₂ (Level.equivalence.refl l)).2 σ σ hσ
+  obtain ⟨-, hcl, -⟩ := hE
   obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
   cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
   -- The proof is a proof of it, so that it is true.
-  exact ⟨(ht₁.2 σ σ hσ).1, (levelRel_prop_equality hd hb).1 ((ht.2 σ σ hσ).prop_true hv hb)⟩
+  exact (levelRel_prop_equality hd hb).1 (hp.prop_true hv hb)
+
+-- ADE: none.
+/-- A proof of the equality of two terms of a type of a sort makes them, at a closed substitution,
+equal terms of the type: the equality is a proposition, by `(∼)`, whose closed proofs make its
+terms equal, `ValidEqTerm₀.equality_eq`. -/
+theorem ValidTermΓ.equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t₁ t₂ t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
+    (ht₁ : ValidTermΓ sig ι ctx t₁ A) (ht₂ : ValidTermΓ sig ι ctx t₂ A)
+    (ht : ValidTermΓ sig ι ctx t (.equality s l A t₁ t₂)) {σ : Subst 0 [] Γ}
+    (hσ : EqSubst sig ι ctx σ σ) : ValidEqTerm₀ sig ι (t₁.subst σ) (t₂.subst σ) (A.subst σ) :=
+  ⟨(ht₁.2 σ σ hσ).1, ValidEqTerm₀.equality_eq
+    ((ValidEqTermΓ.equality hA ht₁ ht₂ (Level.equivalence.refl l)).2 σ σ hσ) (ht.2 σ σ hσ)⟩
 
 -- ADE: `J-congᵛ` and `Jᵛ`, in
 -- `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
