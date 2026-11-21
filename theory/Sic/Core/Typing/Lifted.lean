@@ -203,6 +203,9 @@ structure Subst.Stable (sig : Signature)
     EqTelescope sig ctx Θ₁ Θ₂ κ → Lifted @Base ctx' @θ ctx →
       EqTelescope sig ctx' (Θ₁.subst θ) (Θ₂.subst θ) κ
 
+-- The structural recursion on the derivations, whose rule `(coind)` has many premises under
+-- binders, takes more than the default number of heartbeats to elaborate.
+set_option maxHeartbeats 400000 in
 -- ADE: `wk`, `wkEq`, `wkTerm` and `wkEqTerm`, in `Definition/Typed/Weakening.agda`, and `subst-⊢`,
 -- `subst-⊢≡`, `subst-⊢∷` and `subst-⊢≡∷`, in `Definition/Typed/Substitution/Primitive/Primitive.agda`.
 /-- The judgments in a context are stable under the lifted substitutions of a family that gives what
@@ -257,6 +260,110 @@ where
       have hu' := hasType hu (hθ.var _)
       rw [Term.subst_lift_rename_weaken] at ht' hu'
       exact .propExt (hasType hA hθ) (hasType hB hθ) ht' hu'
+    | .coind (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (t₁ := t₁) (t₂ := t₂)
+        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAs hAt
+        ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr, hθ => by
+      let p₀ : Parameter := ⟨Grading.Grade.one, Grading.Grade.one⟩
+      -- The observations of the variables of a branch, substituted under them.
+      have hc : ∀ (X : Var (Δ.extend 3) .var) (Y : Var (Γ.extend 3) .var),
+          (Term.var₀ X).subst (Subst.liftN 3 θ) = Term.var₀ Y →
+          ∀ {T' : CodataType decl.sorts decl.grades decl.levels
+          decl.scope} {d : Name} {p q ς : Grading.Grade} {ps₁ : List Parameter} {Ξ : Scope}
+          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+          {ψ : ResultOwnership Grading.Grade ps₁.length}
+          (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {a'} (v : Var Ξ a'),
+          ((hd.obsSubst ((Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
+            (as.rename (Ren.weakenN 3)).toSubst) v).subst (Subst.liftN a'.params.length
+              (Subst.liftN 3 θ)) =
+          hd.obsSubst ((Term.var₀ Y).observation T'.name qs ls ps
+            ((as.subst θ).rename (Ren.weakenN 3)))
+            ((as.subst θ).rename (Ren.weakenN 3)).toSubst v :=
+        fun X Y hX {T' _ _ _ _ _ _ _ _ _} hd {_} v =>
+        hd.obsSubst_subst _
+          (o := (Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
+          (o' := (Term.var₀ Y).observation T'.name qs ls ps
+            ((as.subst θ).rename (Ren.weakenN 3)))
+          (fun d ps' => by
+            rw [Term.observation_subst, InstanceArgs.subst_liftN_rename_weakenN, hX])
+          (θ' := ((as.subst θ).rename (Ren.weakenN 3)).toSubst)
+          (fun v => by rw [InstanceArgs.toSubst_subst, InstanceArgs.subst_liftN_rename_weakenN]) v
+      -- A term over two variables renamed under them commutes with a substitution lifted.
+      have hcomm : ∀ (m : Nat) {Δ Ψ : Scope} (σ' : Subst k Δ Ψ) (t' : Term k (Ψ.extend 2)),
+          (t'.rename (Ren.liftN 2 (Ren.weakenN m))).subst (Subst.liftN 2 (Subst.liftN m σ')) =
+            (t'.subst (Subst.liftN 2 σ')).rename (Ren.liftN 2 (Ren.weakenN m)) := fun m _ _ σ' t' =>
+        (Term.subst_rename_of (Subst.liftN_rename_comm_of 2 (θ₂ := σ')
+          (fun x => Subst.liftN_weakenN m σ' x)) t').trans
+          (Term.rename_subst_of (fun _ => rfl) t').symm
+      rw [Term.subst]
+      refine .coind (l' := l') (κs := κs) h hq hl hp hadm (hasInstanceArgs has hθ) hh
+        (Terms.get_subst _ hA)
+        ((Terms.length_subst _ As).trans hAl) ?_ ?_ (hasType ht₁ hθ) (hasType ht₂ hθ) ?_
+        ((DestructorBranches.length_subst _ gs).trans hgl) ?_ ?_ ?_ ?_ ?_ ?_
+      · intro j T' hj
+        obtain ⟨A', hA'⟩ := hAs j T' hj
+        exact ⟨_, Terms.get_subst _ hA'⟩
+      · intro j T' A' hj hA'
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_subst_inv _ hA'
+        have ih := hasType (hAt j T' A₀ hj hA₀) ((hθ.var _).var _)
+        rw [Term.subst_lift_rename_weaken] at ih
+        exact ih
+      · have ih := hasType ht hθ
+        rw [show ((A.subst₀ (Subst₀.liftN 1 (Subst₀.single t₁))).subst₀ (Subst₀.single t₂)) =
+            A.instantiate (Args.cons (p := p₀) t₁ (Args.cons (p := p₀) t₂ .nil)) from rfl,
+          Term.instantiate_subst] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        exact ⟨_, DestructorBranches.get_subst _ hg⟩
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        have e := congrArg (Telescope.subst (Subst.liftN 3 θ))
+          (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+        rw [Telescope.subst_subst_of (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd),
+          Telescope.subst_subst_of (hc (.succ .zero) (.succ .zero) rfl hd)] at e
+        exact e
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        have e := congrArg (Term.subst (Subst.liftN ps₁.length (Subst.liftN 3 θ)))
+          (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+        rw [Term.subst_subst_of (Subst.liftN_subst_of _ (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd)),
+          Term.subst_subst_of (Subst.liftN_subst_of _ (hc (.succ .zero) (.succ .zero) rfl hd))] at e
+        exact e
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_subst_inv _ hA'
+        have ih := hasType (hBt i j T' d p q ς ps₁ Ξ Θ B ψ A₀ hi hA₀ hd hn)
+          ((((hθ.var _).var _).var _).append _)
+        erw [Term.subst_lift_rename_weaken, Telescope.subst_subst_of (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd),
+          Term.subst_subst_of (Subst.liftN_subst_of _ (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd))] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' g hi hA' hd hn hg
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_subst_inv _ hA'
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_subst_inv _ hg
+        have ih := hasType (hgt i j T' d p q ς ps₁ Ξ Θ B ψ A₀ g₀ hi hA₀ hd hn hg₀)
+          ((((hθ.var _).var _).var _).append _)
+        erw [Term.subst_lift_rename_weaken, Telescope.subst_subst_of (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd)] at ih
+        simp only [Term.subst] at ih
+        erw [Term.subst_subst_of (Subst.liftN_subst_of _ (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd)),
+          Term.observation_subst, Term.observation_subst,
+          InstanceArgs.subst_liftN_rename_weakenN 3 θ as] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_subst_inv _ hA'
+        obtain ⟨A₀', hA₀', rfl⟩ := Terms.get_subst_inv _ hA''
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_subst_inv _ hg
+        have ih := hasType (hgr i j T' d p q ς ps₁ Ξ Θ B ψ A₀ D' j' A₀' g₀ hi hA₀ hd hn hj' hA₀'
+          hg₀) ((((hθ.var _).var _).var _).append _)
+        replace ih : HasType sig _ _ ((((A₀'.rename (Ren.liftN 2 (Ren.weakenN 3))).rename
+            (Ren.liftN 2 (Ren.weakenN ps₁.length))).instantiate
+              (Args.cons (p := p₀) ((Term.var₀ (.succ (.succ .zero)) : Term k (Δ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁)
+              (Args.cons (p := p₀) ((Term.var₀ (.succ .zero) : Term k (Δ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁) .nil))).subst
+              (Subst.liftN ps₁.length (Subst.liftN 3 θ))) := ih
+        erw [Term.instantiate_subst, hcomm, hcomm, Term.subst_lift_rename_weaken,
+          Telescope.subst_subst_of (hc (.succ (.succ .zero)) (.succ (.succ .zero)) rfl hd)] at ih
+        simp only [Args.subst] at ih
+        erw [Term.observation_subst, Term.observation_subst,
+          InstanceArgs.subst_liftN_rename_weakenN] at ih
+        exact ih
     | .ctor h hc hq hl hp hadm has hts, hθ => by
       rw [Term.ctor_subst]
       refine .ctor h hc hq hl hp hadm (hasInstanceArgs has hθ) ?_

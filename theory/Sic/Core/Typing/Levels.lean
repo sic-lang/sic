@@ -173,6 +173,105 @@ where
       have hu' := hasType ls' hu
       rw [Term.substLevels_rename] at ht' hu'
       exact .propExt (hasType ls' hA) (hasType ls' hB) ht' hu'
+    | .coind (decl := decl) (qs := qs) (ls := ls) (ps := ps) (as := as) (t₁ := t₁) (t₂ := t₂)
+        (As := As) (gs := gs) (A := A) (l' := l') (κs := κs) h hq hl hp hadm has hh hA hAl hAs hAt
+        ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr => by
+      have has' := hasInstanceArgs ls' has
+      rw [Context.substLevels_substLevels_getFin] at has'
+      let p₀ : Parameter := ⟨Grade.one, Grade.one⟩
+      -- The observations of the variables of a branch, at instantiated levels.
+      have ho : ∀ (X : Var (Γ.extend 3) .var) {T' : CodataType decl.sorts decl.grades decl.levels
+          decl.scope} {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
+          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+          {ψ : ResultOwnership Grade ps₁.length}
+          (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {a'} (v : Var Ξ a'),
+          ((hd.obsSubst ((Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
+            (as.rename (Ren.weakenN 3)).toSubst) v).substLevels ls' =
+          hd.obsSubst ((Term.var₀ X).observation T'.name qs (ls.map (Level.subst ls')) ps
+            ((as.substLevels ls').rename (Ren.weakenN 3)))
+            ((as.substLevels ls').rename (Ren.weakenN 3)).toSubst v :=
+        fun X {T' _ _ _ _ _ _ _ _ _} hd {_} v =>
+        hd.obsSubst_substLevels ls'
+          (o' := (Term.var₀ X).observation T'.name qs (ls.map (Level.subst ls')) ps
+            ((as.substLevels ls').rename (Ren.weakenN 3)))
+          (fun d ps' => by rw [Term.observation_substLevels, InstanceArgs.substLevels_rename]; rfl)
+          (θ' := ((as.substLevels ls').rename (Ren.weakenN 3)).toSubst)
+          (fun v => by rw [InstanceArgs.toSubst_substLevels, InstanceArgs.substLevels_rename]) v
+      have hsort := congrArg Universe.level
+        (Universe.substLevels_substLevels_getFin ls' (decl.sort (.ofLists qs ps hq hp)) ls hl)
+      rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
+        (ls.getFin hl)).level.subst ls' = _ from hsort]
+      refine .coind (l' := l'.subst ls') (κs := fun i => (κs i).substLevels ls') h hq _ hp hadm has'
+        hh (Terms.get_substLevels_of ls' hA) ((Terms.length_substLevels ls' As).trans hAl) ?_ ?_
+        (hasType ls' ht₁) (hasType ls' ht₂) ?_
+        ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_ ?_ ?_ ?_ ?_
+      · intro j T' hj
+        obtain ⟨A', hA'⟩ := hAs j T' hj
+        exact ⟨_, Terms.get_substLevels_of ls' hA'⟩
+      · intro j T' A' hj hA'
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels ls' hA'
+        have ih := hasType ls' (hAt j T' A₀ hj hA₀)
+        simp only [Context.substLevels, Term.substLevels_rename] at ih
+        exact ih
+      · have ih := hasType ls' ht
+        rw [show ((A.subst₀ (Subst₀.liftN 1 (Subst₀.single t₁))).subst₀ (Subst₀.single t₂)) =
+            A.instantiate (Args.cons (p := p₀) t₁ (Args.cons (p := p₀) t₂ .nil)) from rfl,
+          Term.substLevels_instantiate] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        exact ⟨_, DestructorBranches.get_substLevels_of ls' hg⟩
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        have e := congrArg (Telescope.substLevels ls') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+        rw [Telescope.substLevels_subst_of (ho (.succ (.succ .zero)) hd),
+          Telescope.substLevels_subst_of (ho (.succ .zero) hd),
+          Telescope.substLevels_substLevels_getFin] at e
+        exact e
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
+        have e := congrArg (Term.substLevels ls') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+        rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (ho (.succ (.succ .zero)) hd)),
+          Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (ho (.succ .zero) hd)),
+          Term.substLevels_substLevels_getFin] at e
+        exact e
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels ls' hA'
+        have ih := hasType ls' (hBt i j T' d p q ς ps₁ Ξ Θ B ψ A₀ hi hA₀ hd hn)
+        erw [Context.substLevels_append, Telescope.substLevels_subst_of (ho (.succ (.succ .zero)) hd),
+          Telescope.substLevels_substLevels_getFin,
+          Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (ho (.succ (.succ .zero)) hd)),
+          Term.substLevels_substLevels_getFin] at ih
+        simp only [Context.substLevels, Term.substLevels_rename] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' g hi hA' hd hn hg
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels ls' hA'
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg
+        have ih := hasType ls' (hgt i j T' d p q ς ps₁ Ξ Θ B ψ A₀ g₀ hi hA₀ hd hn hg₀)
+        erw [Context.substLevels_append, Telescope.substLevels_subst_of (ho (.succ (.succ .zero)) hd),
+          Telescope.substLevels_substLevels_getFin, Term.substLevels,
+          Term.substLevels_subst_of (Subst.liftN_substLevels_of _ (ho (.succ (.succ .zero)) hd)),
+          Term.substLevels_substLevels_getFin, Term.observation_substLevels,
+          Term.observation_substLevels, InstanceArgs.substLevels_rename] at ih
+        simp only [Context.substLevels, Term.substLevels_rename] at ih
+        exact ih
+      · intro i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg
+        obtain ⟨A₀, hA₀, rfl⟩ := Terms.get_substLevels ls' hA'
+        obtain ⟨A₀', hA₀', rfl⟩ := Terms.get_substLevels ls' hA''
+        obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels ls' hg
+        have ih := hasType ls' (hgr i j T' d p q ς ps₁ Ξ Θ B ψ A₀ D' j' A₀' g₀ hi hA₀ hd hn hj' hA₀'
+          hg₀)
+        replace ih : HasType sig _ _ ((((A₀'.rename (Ren.liftN 2 (Ren.weakenN 3))).rename
+            (Ren.liftN 2 (Ren.weakenN ps₁.length))).instantiate
+              (Args.cons (p := p₀) ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁)
+              (Args.cons (p := p₀) ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁) .nil))).substLevels ls') := ih
+        erw [Term.substLevels_instantiate, Context.substLevels_append,
+          Telescope.substLevels_subst_of (ho (.succ (.succ .zero)) hd),
+          Telescope.substLevels_substLevels_getFin] at ih
+        simp only [Context.substLevels, Term.substLevels_rename, Args.substLevels] at ih
+        rw [Term.observation_substLevels, Term.observation_substLevels,
+          InstanceArgs.substLevels_rename] at ih
+        exact ih
     | .ctor (ls := ls) h hc hq hl hp hadm has hts => by
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'

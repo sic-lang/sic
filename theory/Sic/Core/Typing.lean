@@ -240,6 +240,141 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (hu : HasType sig (ctx.var B) u (A.rename Ren.weaken)) :
       HasType sig ctx (.propExt l A B t u) (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B)
   -- ADE: none.
+  /-- The proof by coinduction of the equality of two terms `t₁` and `t₂` of the instance
+  `T_h = D.{s̄; l̄; p̄} ā` it carries, which the constraint admits and whose arguments are arguments
+  of the parameters, of the sort `s_l`, with a relation `A_j` for each type `T_j` of the block, a
+  proposition of `Ω_l'` over two terms `x₁` and `x₂` of `T_j`, a proof `t` that `A_h` relates `t₁`
+  and `t₂`, and a branch `g` for each case of the block: the branch of a destructor `d`, at the
+  position `hd` in the destructors `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς | d̄₂)` of its type `T_j`
+  at the instance, is a term over `x₁`, `x₂`, a proof `y` of `A_j` and the variables `z̄` of the
+  telescope of `d`, of the equality `x₁.d(z̄) ∼.{s″; l″}_B x₂.d(z̄)`, at a sort `κs i` of the result
+  `B`, if `d` is not recursive, and of `A_j'` at `x₁.d(z̄)` and `x₂.d(z̄)` if the result of `d` is
+  the type `T_j'` of the block.
+  The telescope and the result of each destructor `d` are the same at the observations of `x₁` by
+  the destructors `d̄₁` before it and at those of `x₂`, so that no destructor depends on an earlier
+  one.
+  There are as many relations as types and as many branches as cases.
+  The positions `h'` of the type of the terms in the block, `j` of a type and `i` of a case give the
+  relations and the branches, as the order of the declaration does. -/
+  | coind {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration}
+      {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
+      {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {l' : Level k}
+      {t₁ t₂ t : Term k Γ} {As : Terms k (Γ.extend 2)} {gs : DestructorBranches k Γ} {h' : Nat}
+      {A : Term k (Γ.extend 2)} {κs : Nat → Universe k}
+      (h : sig.HasCodataType D decl T)
+      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (has : HasInstanceArgs sig ctx as
+        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      (hh : decl.codataTypes[h']? = some T) (hA : As.get h' = some A)
+      (hAl : As.length = decl.codataTypes.length)
+      (hAs : ∀ j T', decl.codataTypes[j]? = some T' → ∃ A', As.get j = some A')
+      (hAt : ∀ j T' A', decl.codataTypes[j]? = some T' → As.get j = some A' →
+        HasType sig ((ctx.var (.inst T'.name qs ls ps as)).var
+          ((Term.inst T'.name qs ls ps as).rename Ren.weaken)) A' (.sort ⟨.prop, l'⟩))
+      (ht₁ : HasType sig ctx t₁ (.inst D qs ls ps as))
+      (ht₂ : HasType sig ctx t₂ (.inst D qs ls ps as))
+      (ht : HasType sig ctx t ((A.subst₀ (Subst₀.liftN 1 (Subst₀.single t₁))).subst₀
+        (Subst₀.single t₂)))
+      (hgl : gs.length = decl.codataCases.length)
+      (hgs : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length),
+        decl.codataCases[i]? = some (j, T', d) →
+        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        ∃ g, gs.get i = some ⟨0, 3, ps₁.length, g⟩)
+      (hΘ : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length),
+        decl.codataCases[i]? = some (j, T', d) →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (Θ.substLevels (ls.getFin hl)).subst
+            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst) =
+          (Θ.substLevels (ls.getFin hl)).subst
+            (hd.obsSubst ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation
+              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst))
+      (hB : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length),
+        decl.codataCases[i]? = some (j, T', d) →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)) =
+          (B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation
+              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+      (hBt : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2)),
+        decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        B.blockName decl.names = none →
+        HasType sig ((((ctx.var (.inst T'.name qs ls ps as)).var
+            ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
+            ((Θ.substLevels (ls.getFin hl)).subst
+              (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          (.sort (κs i)))
+      (hgt : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2))
+          (g : Term k ((Γ.extend 3).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        B.blockName decl.names = none →
+        gs.get i = some ⟨0, 3, ps₁.length, g⟩ →
+        HasType sig ((((ctx.var (.inst T'.name qs ls ps as)).var
+            ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
+            ((Θ.substLevels (ls.getFin hl)).subst
+              (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          g
+          (.equality (κs i).quality (κs i).level
+            ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
+              (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+            ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation T'.name qs ls ps
+              (as.rename (Ren.weakenN 3)) d ps₁)
+            ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation T'.name qs ls ps
+              (as.rename (Ren.weakenN 3)) d ps₁)))
+      (hgr : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
+          (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2)) (D' : Name) (j' : Nat)
+          (A'' : Term k (Γ.extend 2)) (g : Term k ((Γ.extend 3).extend ps₁.length)),
+        decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
+        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        B.blockName decl.names = some D' → decl.names.idxOf? D' = some j' →
+        As.get j' = some A'' →
+        gs.get i = some ⟨0, 3, ps₁.length, g⟩ →
+        HasType sig ((((ctx.var (.inst T'.name qs ls ps as)).var
+            ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
+            ((Θ.substLevels (ls.getFin hl)).subst
+              (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
+                T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          g
+          ((((A''.rename (Ren.liftN 2 (Ren.weakenN 3))).rename
+              (Ren.liftN 2 (Ren.weakenN ps₁.length))).subst₀
+            (Subst₀.liftN 1 (Subst₀.single
+              ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation T'.name qs ls
+                ps (as.rename (Ren.weakenN 3)) d ps₁)))).subst₀
+            (Subst₀.single ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation T'.name
+              qs ls ps (as.rename (Ren.weakenN 3)) d ps₁)))) :
+      HasType sig ctx (.coind D qs ls ps as t₁ t₂ As t gs)
+        (.equality ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).quality
+          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level
+          (.inst D qs ls ps as) t₁ t₂)
+  -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
   instance.

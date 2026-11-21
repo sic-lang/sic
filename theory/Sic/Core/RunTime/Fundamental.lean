@@ -218,6 +218,9 @@ where
     | .propExt hA hB .., _ => fun ρ =>
       RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
         (.equality (.prop (contextPresuppositions.hasType hA)) hA hB) ρ) rfl
+    | .coind h hq hl hp hadm has _ _ _ _ _ ht₁ ht₂ .., _ => fun ρ =>
+      RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
+        (.equality (.inst h.hasDeclaredType hq hl hp hadm has) ht₁ ht₂) ρ) rfl
     | .transp .., hu => (Usage.inv_transp hu rfl).elim
     | .conv ht h, hu => fun ρ =>
       RunValidRen.conv (soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ)

@@ -31,6 +31,9 @@ open Sic.Grading
 
 variable {sig : Signature} {k : Nat}
 
+-- The recursion on the derivations, whose rule `(coind)` has many premises under binders, takes
+-- more than the default number of heartbeats to elaborate.
+set_option maxHeartbeats 400000 in
 -- ADE: `inversion-app`, in `Definition/Typed/Consequences/Inversion.agda`, for the applications,
 -- with the equality of the types.
 /-- An application of a second-order variable that has a type is typed by `(var_X)`: the variable is
@@ -60,7 +63,11 @@ where
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
     | _, _, .transp .., e => by cases e
+    | _, _, .coind .., e => by cases e
 
+-- The recursion on the derivations, whose rule `(coind)` has many premises under binders, takes
+-- more than the default number of heartbeats to elaborate.
+set_option maxHeartbeats 400000 in
 -- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Consequences/Inversion.agda`, for the types of
 -- functions and of pairs, with the equality of the sorts.
 /-- An instance of a declared type that has a type is typed by `(D)`: the signature has the declared
@@ -99,6 +106,7 @@ where
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
     | _, _, .transp .., e => by cases e
+    | _, _, .coind .., e => by cases e
 
 -- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
