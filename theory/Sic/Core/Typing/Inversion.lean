@@ -63,7 +63,6 @@ where
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
     | _, _, .transp .., e => by cases e
-    | _, _, .coind .., e => by cases e
 
 -- The recursion on the derivations, whose rule `(coind)` has many premises under binders, takes
 -- more than the default number of heartbeats to elaborate.
@@ -106,7 +105,6 @@ where
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
     | _, _, .transp .., e => by cases e
-    | _, _, .coind .., e => by cases e
 
 -- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
