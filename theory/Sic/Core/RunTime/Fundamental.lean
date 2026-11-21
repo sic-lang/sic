@@ -36,6 +36,8 @@ the grades of the rule of its form above those of the judgment, and concludes by
 same name in `Rules`, `DeclaredTypes`, `Recursors` or `Corecursors`, from the validity at run time
 of the subterms, at the usages that the inversion gives them, and from the meaning of their
 typings, which the soundness gives, then by the subsumption `RunValidRen.sub`.
+A proof, which the erasure erases, ignores its usage and concludes by `RunValidRen.proof`, from the
+meaning of its type, a proposition.
 The recursion proves the validity at run time in every environment that binds the scope through a
 renaming, `RunValidRen`, since the erasure of a nested result copies the branches of its recursor,
 renamed, under new binders; `RunValidRen.runValid` gives back `RunValid` at the identity.
