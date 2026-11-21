@@ -377,6 +377,11 @@ def Terms.get {k : Nat} {Γ : Scope} : Terms k Γ → Nat → Option (Term k Γ)
   | .cons t _, 0 => some t
   | .cons _ ts, j + 1 => ts.get j
 
+/-- The number of the terms `t̄`. -/
+def Terms.length {k : Nat} {Γ : Scope} : Terms k Γ → Nat
+  | .nil => 0
+  | .cons _ ts => ts.length + 1
+
 /-- The number of the branches `ū`. -/
 def Branches.length {k : Nat} {Γ : Scope} : Branches k Γ → Nat
   | .nil => 0
