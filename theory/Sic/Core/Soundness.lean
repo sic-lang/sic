@@ -10,9 +10,9 @@ import Sic.Core.Soundness.Coinduction
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Transport
-import Sic.Core.Typing.Induction
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Induction
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
 

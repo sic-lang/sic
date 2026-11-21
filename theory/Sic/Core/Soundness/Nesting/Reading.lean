@@ -9,10 +9,10 @@ import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Induction
 import Sic.Core.Typing.Inversion
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature
-import Sic.Core.Typing.Induction
 
 /-!
 # Types Read at Their Nestings

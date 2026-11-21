@@ -8,7 +8,6 @@ public import Sic.Core.Usage
 import Sic.Core.Results.Extension
 import Sic.Core.Results.Functionality
 import Sic.Core.Results.Substitution
-import Sic.Core.Typing.Induction
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.RunTime.Relation.Recursors
@@ -18,6 +17,7 @@ import Sic.Core.Soundness
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
+import Sic.Core.Typing.Induction
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Signature
