@@ -260,6 +260,51 @@ theorem DestructorBranches.length_substLevels {k' : Nat} (ls' : Fin k → Level 
   | .nil => rfl
   | .cons _ _ _ _ vs => congrArg (· + 1) (DestructorBranches.length_substLevels ls' vs)
 
+/-- The term at a position of terms substituted is the term substituted. -/
+theorem Terms.get_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {ts : Terms k Δ} → {j : Nat} → {t : Term k Δ} → ts.get j = some t →
+      (ts.subst θ).get j = some (t.subst θ)
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, h => by cases h; rfl
+  | .cons _ ts, _ + 1, _, h => Terms.get_subst θ (ts := ts) h
+
+/-- A term at a position of terms substituted is a term of the terms, substituted. -/
+theorem Terms.get_subst_inv {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    {ts : Terms k Δ} → {j : Nat} → {t : Term k Γ} → (ts.subst θ).get j = some t →
+      ∃ t₀, ts.get j = some t₀ ∧ t = t₀.subst θ
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ ts, _ + 1, _, h => Terms.get_subst_inv θ (ts := ts) h
+
+/-- Terms substituted are as many. -/
+theorem Terms.length_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
+    (ts : Terms k Δ) → (ts.subst θ).length = ts.length
+  | .nil => rfl
+  | .cons _ ts => congrArg (· + 1) (Terms.length_subst θ ts)
+
+/-- The term at a position of terms is there once their levels are instantiated. -/
+theorem Terms.get_substLevels_of {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {ts : Terms k Γ} → {j : Nat} → {t : Term k Γ} → ts.get j = some t →
+      (ts.substLevels ls').get j = some (t.substLevels ls')
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, h => by cases h; rfl
+  | .cons _ ts, _ + 1, _, h => Terms.get_substLevels_of ls' (ts := ts) h
+
+/-- A term at a position of terms whose levels are instantiated is a term of the terms,
+instantiated. -/
+theorem Terms.get_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    {ts : Terms k Γ} → {j : Nat} → {t : Term k' Γ} → (ts.substLevels ls').get j = some t →
+      ∃ t₀, ts.get j = some t₀ ∧ t = t₀.substLevels ls'
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, h => by cases h; exact ⟨_, rfl, rfl⟩
+  | .cons _ ts, _ + 1, _, h => Terms.get_substLevels ls' (ts := ts) h
+
+/-- Terms whose levels are instantiated are as many. -/
+theorem Terms.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} :
+    (ts : Terms k Γ) → (ts.substLevels ls').length = ts.length
+  | .nil => rfl
+  | .cons _ ts => congrArg (· + 1) (Terms.length_substLevels ls' ts)
+
 /-! ## Motives at a Constructor -/
 
 -- ADE: none.
