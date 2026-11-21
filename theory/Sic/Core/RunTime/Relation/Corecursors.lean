@@ -462,8 +462,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           · -- A new state: a new closure of the branches.
             obtain ⟨ts₃, bs₃, ϱs₃, hred', hτ₃, hbs₃, rfl, hϱs₃, rfl⟩ := hnext
             refine ⟨_, _, tr, .beta hclo
-              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
-              hϱ₁ hϱ₂ rfl
+              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂ hϱ₁ hϱ₂ rfl
               (Multiplicity.le_refl' _) hev hres,
               fun hr0 => ?_,
               fun D' R hD' hR _ => ?_⟩
@@ -477,8 +476,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
                 hbs₃.mono hd (List.prefix_append _ _), hg₁, by simp, hϱs₃.1, hϱs₃.2, rfl⟩⟩
           · -- A term already built, related at the instance of the type of the result.
             refine ⟨_, _, tr, .beta hclo
-              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂
-              hϱ₁ hϱ₂ rfl
+              (by rw [TargetCorecBranches.get_rename, hget]; rfl) hlen₁ hlen₂ hπ₁ hπ₂ hϱ₁ hϱ₂ rfl
               (Multiplicity.le_refl' _) hev hres,
               fun hr0 => ?_, fun D' R hD' hR he => ?_⟩
             · simp only [hpos.recursionAt_index, hbn] at hr0

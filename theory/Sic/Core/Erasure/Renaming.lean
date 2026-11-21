@@ -133,8 +133,7 @@ theorem Target.rename_id {n : Nat} : (M : Target n) → M.rename id = M
   | .ctor _ Ms => by rw [Target.rename, Targets.rename_id Ms]
   | .recursor _ _ M Ns => by rw [Target.rename, Target.rename_id M, TargetBranches.rename_id Ns]
   | .obs M _ _ _ Ms => by rw [Target.rename, Target.rename_id M, Targets.rename_id Ms]
-  | .corec Ms Ps => by
-    rw [Target.rename, Targets.rename_id Ms, TargetCorecBranches.rename_id Ps]
+  | .corec Ms Ps => by rw [Target.rename, Targets.rename_id Ms, TargetCorecBranches.rename_id Ps]
 
 -- ADE: none.
 /-- The identity renaming leaves terms unchanged. -/
@@ -151,8 +150,7 @@ theorem TargetBranches.rename_id {n : Nat} : (Ns : TargetBranches n) → Ns.rena
 
 -- ADE: none.
 /-- The identity renaming leaves the branches of a corecursor unchanged. -/
-theorem TargetCorecBranches.rename_id {n : Nat} : (Ps : TargetCorecBranches n) →
-    Ps.rename id = Ps
+theorem TargetCorecBranches.rename_id {n : Nat} : (Ps : TargetCorecBranches n) → Ps.rename id = Ps
   | .nil => rfl
   | .cons _ _ _ _ _ _ _ _ _ P Ps => by
     rw [TargetCorecBranches.rename, TargetRen.lift_id, Target.rename_id P,
@@ -200,14 +198,12 @@ theorem TargetBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : Ta
 -- ADE: none.
 /-- Two renamings of the branches of a corecursor, one after the other, are the renaming by their
 composition. -/
-theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m)
-    (β : TargetRen m l) :
+theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) :
     (Ps : TargetCorecBranches l) → (Ps.rename β).rename α = Ps.rename (α ∘ β)
   | .nil => rfl
   | .cons _ _ _ _ _ _ _ _ _ P Ps => by
-    rw [TargetCorecBranches.rename, TargetCorecBranches.rename,
-      TargetCorecBranches.rename, Target.rename_rename, TargetRen.lift_comp,
-      TargetCorecBranches.rename_rename α β Ps]
+    rw [TargetCorecBranches.rename, TargetCorecBranches.rename, TargetCorecBranches.rename,
+      Target.rename_rename, TargetRen.lift_comp, TargetCorecBranches.rename_rename α β Ps]
 
 end
 

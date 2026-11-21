@@ -218,7 +218,6 @@ theorem Target.Ownership.nested {Ω : Name → Multiplicity} {ρ ϱ o o' ς χ :
     show ς * φ' _ = ς * φ x
     rw [hφ x]
   exact .corec (os := []) .nil
-    (TargetCorecBranches.Ownership.branches hϱ hz σ (fun h => .sub (.var 0) (hf h))
-      hNs' hσ hreq)
+    (TargetCorecBranches.Ownership.branches hϱ hz σ (fun h => .sub (.var 0) (hf h)) hNs' hσ hreq)
 
 end Sic.Core

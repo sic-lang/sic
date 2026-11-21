@@ -127,8 +127,7 @@ the variables of the scope as `δ` allows: an observation runs one branch, which
 allows and its new variables as their binders allow, and a branch that resumes the corecursor
 captures the scope again in a new closure, so that `δ` bounds `δᵢ`, and `δᵢ` plus `δ` for such a
 branch. -/
-inductive TargetCorecBranches.Usage : {n : Nat} → MultiplicityVector n →
-    TargetCorecBranches n →
+inductive TargetCorecBranches.Usage : {n : Nat} → MultiplicityVector n → TargetCorecBranches n →
     Prop where
   /-- No branch.
   RFC: `\mathsf{usage}_{\bar P}.\varepsilon` -/

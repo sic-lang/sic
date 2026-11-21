@@ -224,8 +224,7 @@ theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
       exact .recursor hO (fun h => absurd h hρ) hNs
   | .lifting σ, hO, hNs, hσ => by
     have h := Target.Usage.corec .nil
-      (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ hO hNs hσ fun _ =>
-        Multiplicity.le_refl' _)
+      (TargetCorecBranches.Usage.branches (ϱ := ϱ) σ hO hNs hσ fun _ => Multiplicity.le_refl' _)
     rwa [MultiplicityVector.zero_add] at h
 
 end

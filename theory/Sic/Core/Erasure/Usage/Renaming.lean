@@ -231,8 +231,7 @@ theorem TargetBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
 -- ADE: none.
 /-- The branches of a corecursor renamed by `α` read the variables of the scope as `α_* δ`. -/
 theorem TargetCorecBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
-    {δ : MultiplicityVector m} → {Ps : TargetCorecBranches m} →
-    TargetCorecBranches.Usage δ Ps →
+    {δ : MultiplicityVector m} → {Ps : TargetCorecBranches m} → TargetCorecBranches.Usage δ Ps →
       TargetCorecBranches.Usage (MultiplicityVector.rename α δ) (Ps.rename α)
   | _, _, .nil => .nil
   | _, _, .cons hP hδ hr hPs => by

@@ -261,8 +261,7 @@ inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → P
 -- ADE: none.
 /-- The variable `x` occurs in one of the branches of a corecursor, under their new variables,
 which shift it. -/
-inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranches n →
-    Prop where
+inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranches n → Prop where
   /-- In the first branch.
   RFC: `\mathsf{occurs}_{\bar P}.P` -/
   | head {n : Nat} {x : Fin n} {o : Resumption} {b c : Nat} {πs ϱs : Fin b → Multiplicity}
