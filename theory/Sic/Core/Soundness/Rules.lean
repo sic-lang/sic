@@ -1374,6 +1374,70 @@ theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l
   exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
     .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (ht.2 σ₁ σ₁ hσ₁).2⟩⟩
 
+-- ADE: none.
+/-- `(propext)` keeps the meaning: at two equal substitutions, the equality of the two propositions
+at `Ω_l` is a proposition, by `(∼)` at the first substitution, whose truth, which `(ty_∼)` gives,
+is the equality of the two propositions as terms of `Ω_l`, that of their truths; each closed term is
+a proof of a true proposition, so that each implication, at the first substitution followed by a
+proof of its hypothesis, makes its conclusion true when its hypothesis is, and any two closed terms,
+the two proofs among them, are equal proofs of the equality. -/
+theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B : Term 0 Γ}
+    {t u : Term 0 (.var :: Γ)} (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩))
+    (hB : ValidTermΓ sig ι ctx B (.sort ⟨.prop, l⟩))
+    (ht : ValidTermΓ sig ι (ctx.var A) t (B.rename Ren.weaken))
+    (hu : ValidTermΓ sig ι (ctx.var B) u (A.rename Ren.weaken)) :
+    ValidTermΓ sig ι ctx (.propExt l A B t u)
+      (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B) := by
+  have hctx := hA.1.1
+  have hd := hctx.distinct
+  have hE := ValidEqTermΓ.equality (ValidEqTermΓ.sort hctx (q := .prop) (Level.equivalence.refl l))
+    hA hB (Level.equivalence.refl _)
+  refine ⟨hE.propType, fun σ₁ _ hσ => ?_⟩
+  have hσ₁ := hσ.left hctx
+  have hE₁ := hE.2 σ₁ σ₁ hσ₁
+  refine ⟨hE₁.propType, ?_⟩
+  -- The proposition computes to itself, whose truth `b` is the equality of the two propositions.
+  obtain ⟨-, hcl, -⟩ := hE₁
+  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
+  cases hc.sort_inv
+  obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
+  cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
+  refine ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
+    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 ?_⟩⟩
+  -- `Ω_l` relates two propositions with the same truth, and a proposition of `Ω_l` computes to one.
+  have hU := HasEq.univ (sig := sig) (ι := ι) (l.closedValue + 1)
+    (levelRel_univ_iff.2 (.prop (l := l) rfl rfl))
+  have hprop : ∀ {X : Term 0 []}, ValidEqTerm₀ sig ι X X (.sort ⟨.prop, l⟩) →
+      ∃ w b, Computesι sig ι X w ∧ (levelRel sig ι l.closedValue).prop w b := fun hX => by
+    obtain ⟨-, hcl, -⟩ := hX
+    obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
+    cases hc.sort_inv
+    obtain ⟨b, -, hb, -⟩ := (hR.unique hd hU v w).1 hvw
+    exact ⟨v, b, hv, hb⟩
+  -- An implication makes its conclusion true when its hypothesis is, which every closed term
+  -- proves then.
+  have himp : ∀ {X Y : Term 0 Γ} {s : Term 0 (.var :: Γ)} {wX wY : Term 0 []} {bX bY : Prop},
+      ValidTermΓ sig ι ctx X (.sort ⟨.prop, l⟩) →
+      ValidTermΓ sig ι (ctx.var X) s (Y.rename Ren.weaken) →
+      Computesι sig ι (X.subst σ₁) wX → (levelRel sig ι l.closedValue).prop wX bX →
+      Computesι sig ι (Y.subst σ₁) wY → (levelRel sig ι l.closedValue).prop wY bY → bX → bY :=
+    fun {X Y s wX wY bX bY} hX hs hwX hbX hwY hbY hx => by
+      have hp : ValidEqTerm₀ sig ι (X.subst σ₁) (X.subst σ₁) (X.subst σ₁) :=
+        ⟨(hX.2 σ₁ σ₁ hσ₁).propType, fun hn => absurd ⟨_, hwX, _, _, hbX⟩ hn,
+          fun _ => ⟨wX, fun _ _ => bX, hwX, .prop _ bX hbX fun _ _ => .rfl, hx⟩⟩
+      have hs' := (congrArg (ValidEqTerm₀ sig ι _ _) (Term.subst_weaken _ Y)).mp
+        (hs.2 _ _ ((EqSubst.var_iff ctx X
+          (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))
+          (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))).2 ⟨hσ₁, hp⟩))
+      obtain ⟨v', R', hv', hR', hss⟩ := hs'.2.2 ⟨_, hwY, _, _, hbY⟩
+      cases Computesι.det hd hv' hwY
+      exact (hR'.unique hd (.prop _ bY hbY fun _ _ => .rfl) _ _).1 hss
+  obtain ⟨w₁, b₁, hw₁, hb₁⟩ := hprop (hA.2 σ₁ σ₁ hσ₁)
+  obtain ⟨w₂, b₂, hw₂, hb₂⟩ := hprop (hB.2 σ₁ σ₁ hσ₁)
+  exact ⟨fun _ => ⟨_, w₁, w₂, _, Computes.sort _ _, hw₁, hw₂, hU, b₁, b₂, hb₁, hb₂,
+      himp hA ht hw₁ hb₁ hw₂ hb₂, himp hB hu hw₂ hb₂ hw₁ hb₁⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+
 /-! ## Entries of the Signature -/
 
 /-- A judgment in the empty context is its closed judgment, at the substitution of no variable. -/
