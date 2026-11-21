@@ -31,11 +31,6 @@ open Sic.Grading
 
 variable {sig : Signature} {k : Nat}
 
--- The compilation of the structural recursion over the mutual judgments, which grows with the
--- premises under binders of their rules, the rule `(coind)` above all, takes more than the default
--- number of heartbeats; the tactics take little, and no rewrite of the recursion or of the rules
--- lowers it.
-set_option maxHeartbeats 400000 in
 -- ADE: `inversion-app`, in `Definition/Typed/Consequences/Inversion.agda`, for the applications,
 -- with the equality of the types.
 /-- An application of a second-order variable that has a type is typed by `(var_X)`: the variable is
@@ -53,24 +48,23 @@ where
       HasType sig ctx t B → t = .var X ts →
       ∃ (Θ : Telescope k Γ ps) (A : Term k (Γ.extend ps.length)),
         ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ
-    | _, _, .secondOrder hX hts, e => by cases e; exact ⟨_, _, hX, hts⟩
-    | _, _, .conv ht _, e => go ht e
     | _, _, .var .., e => by cases e
+    | _, _, .secondOrder hX hts, e => by cases e; exact ⟨_, _, hX, hts⟩
     | _, _, .const .., e => by cases e
     | _, _, .univ .., e => by cases e
     | _, _, .prop .., e => by cases e
     | _, _, .inst .., e => by cases e
+    | _, _, .equality .., e => by cases e
+    | _, _, .reflProof .., e => by cases e
+    | _, _, .transp .., e => by cases e
+    | _, _, .propExt .., e => by cases e
+    | _, _, .coind .., e => by cases e
     | _, _, .ctor .., e => by cases e
     | _, _, .recursor .., e => by cases e
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
-    | _, _, .transp .., e => by cases e
+    | _, _, .conv ht _, e => go ht e
 
--- The compilation of the structural recursion over the mutual judgments, which grows with the
--- premises under binders of their rules, the rule `(coind)` above all, takes more than the default
--- number of heartbeats; the tactics take little, and no rewrite of the recursion or of the rules
--- lowers it.
-set_option maxHeartbeats 400000 in
 -- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Consequences/Inversion.agda`, for the types of
 -- functions and of pairs, with the equality of the sorts.
 /-- An instance of a declared type that has a type is typed by `(D)`: the signature has the declared
@@ -96,19 +90,23 @@ where
         sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
           HasInstanceArgs sig ctx (hΔ ▸ as)
             ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-    | _, _, .inst h hq hl hp hadm has, e => by
-      cases e; exact ⟨_, _, rfl, hq, hl, hp, h, hadm, has⟩
-    | _, _, .conv ht _, e => by exact go ht e
     | _, _, .var .., e => by cases e
     | _, _, .secondOrder .., e => by cases e
     | _, _, .const .., e => by cases e
     | _, _, .univ .., e => by cases e
     | _, _, .prop .., e => by cases e
+    | _, _, .inst h hq hl hp hadm has, e => by
+      cases e; exact ⟨_, _, rfl, hq, hl, hp, h, hadm, has⟩
+    | _, _, .equality .., e => by cases e
+    | _, _, .reflProof .., e => by cases e
+    | _, _, .transp .., e => by cases e
+    | _, _, .propExt .., e => by cases e
+    | _, _, .coind .., e => by cases e
     | _, _, .ctor .., e => by cases e
     | _, _, .recursor .., e => by cases e
     | _, _, .obs .., e => by cases e
     | _, _, .corec .., e => by cases e
-    | _, _, .transp .., e => by cases e
+    | _, _, .conv ht _, e => by exact go ht e
 
 -- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
