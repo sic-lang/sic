@@ -216,12 +216,10 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hcan : ∀ T' ∈ decl.codataTypes, ∀ {x v : Term 0 []},
         ValidEqTerm₀ sig ι x x (.inst T'.name qs ls ps a) → Computesι sig ι x v →
         ∃ o, v.CorecObservations T'.name o := fun T' hT' {x v} hx hxv => by
-      obtain ⟨v', w₁, w₂, R, hv', hw₁, -, hR, hrel⟩ := hx.2.1 (hnp T' hT')
-      cases Computesι.det hd (hcI _) hv'
-      have hrel' := (HasEq.unique hd hR (.univ _ (levelRel_univ_iff.2 (hU T' hT').1)) w₁ w₂).1 hrel
-      obtain ⟨o₁, -, hc₁, -, -⟩ := CodataType.blockRel_unfold hmono hT' hrel'
-      cases Computesι.det hd hw₁ hxv
-      exact ⟨o₁, hc₁⟩
+      obtain ⟨w, o, hw, hc⟩ := ValidEqTerm₀.computes_corec hd hmono hT' (hcI _)
+        (levelRel_univ_iff.2 (hU T' hT').1) hx
+      cases Computesι.det hd hw hxv
+      exact ⟨o, hc⟩
     -- A closed term of an instance computes.
     have hcomp : ∀ T' ∈ decl.codataTypes, ∀ {x y : Term 0 []},
         ValidEqTerm₀ sig ι x y (.inst T'.name qs ls ps a) → ∃ v, Computesι sig ι x v :=

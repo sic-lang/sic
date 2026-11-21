@@ -1688,6 +1688,28 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
       exact .inr ⟨h₁ _, h₂ _⟩
 
 -- ADE: none.
+/-- A closed term of a type that computes to itself, a type of a universe whose equality is
+`(eq_ν)` at a codata type of the block, computes to a corecursor of this type, whose observations
+it has: the type is not a proposition, the term computes to a canonical term that `(eq_ν)` relates,
+and `(eq_ν)` relates corecursors of the type. -/
+theorem ValidEqTerm₀.computes_corec (hd : sig.Distinct) {j g k : Nat} {Δ : Scope}
+    {Ts : List (CodataType j g k Δ)} {S : (Name → TermRel) → CodataType j g k Δ → ObsRel}
+    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
+      S X T o₁ o₂ → S Y T o₁ o₂)
+    {T : CodataType j g k Δ} (hT : T ∈ Ts) {A t u : Term 0 []} {n : Nat}
+    (hA : Computesι sig ι A A) (hU : (levelRel sig ι n).univ A (CodataType.blockRel Ts S T.name))
+    (ht : ValidEqTerm₀ sig ι t u A) :
+    ∃ w o, Computesι sig ι t w ∧ w.CorecObservations T.name o := by
+  have hnp : ¬ ComputesToProp sig ι A := fun ⟨v, hv, _, _, hk⟩ => by
+    cases Computesι.det hd hA hv
+    exact HasEq.univ_not_prop hd hU hk
+  obtain ⟨v, w₁, w₂, R, hv, hw₁, -, hR, hrel⟩ := ht.2.1 hnp
+  cases Computesι.det hd hA hv
+  have hrel' := (HasEq.unique hd hR (.univ _ hU) w₁ w₂).1 hrel
+  obtain ⟨o₁, -, hc₁, -, -⟩ := CodataType.blockRel_unfold hmono hT hrel'
+  exact ⟨w₁, o₁, hw₁, hc₁⟩
+
+-- ADE: none.
 /-- `(η_d)`, closed: two closed terms of an instance of a codata type of `Σ`, whose type
 declaration is meaningful, at arguments of its parameters, whose observations by each destructor,
 at equal arguments of its telescope, are equal terms of its result, whatever the instance that the
@@ -1787,16 +1809,12 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         exact ⟨_, _, rfl, hcX _, FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
           (.univ rfl (hU T' hT')) (hX _).symm⟩)
       hDS hobs'
-    obtain ⟨v₁, w₁, w₁', R₁, hv₁, hw₁, -, hR₁, hrel₁⟩ := ht.2.1 hnp
-    cases Computesι.det hd hI hv₁
-    have hrel₁' := (HasEq.unique hd hR₁ hR w₁ w₁').1 hrel₁
-    rw [← h.2.2] at hrel₁'
-    obtain ⟨o₁, -, hc₁, -, -⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel₁'
-    obtain ⟨v₂, w₂, w₂', R₂, hv₂, hw₂, -, hR₂, hrel₂⟩ := hu.2.1 hnp
-    cases Computesι.det hd hI hv₂
-    have hrel₂' := (HasEq.unique hd hR₂ hR w₂ w₂').1 hrel₂
-    rw [← h.2.2] at hrel₂'
-    obtain ⟨o₂, -, hc₂, -, -⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel₂'
+    have hU₁ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+        (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes S T.name) := by
+      rw [h.2.2]
+      exact hU₀
+    obtain ⟨w₁, o₁, hw₁, hc₁⟩ := ValidEqTerm₀.computes_corec hd hmono h.2.1 hI hU₁ ht
+    obtain ⟨w₂, o₂, hw₂, hc₂⟩ := ValidEqTerm₀.computes_corec hd hmono h.2.1 hI hU₁ hu
     have hS₂ := DesRel.obsEquiv hd (fun i R' hi => by
         cases hr : (T.body I).recursionAt decl.names i with
         | none => rw [hr] at hi; cases hi
