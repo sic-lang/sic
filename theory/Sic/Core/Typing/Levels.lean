@@ -314,8 +314,7 @@ where
       have has' := hasInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       have ho {a : Scope.Entry} (x : Var Ξ a) :=
-        hd.obsSubst_substLevels ls' (Term.observation_substLevels ls' D qs ls ps as t)
-          (fun x => InstanceArgs.toSubst_substLevels ls' as x) x
+        hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
       have hbs' := hasArgs ls' hbs
       rw [Telescope.substLevels_subst_of ho, Telescope.substLevels_substLevels_getFin] at hbs'
       rw [Term.substLevels_instantiate, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
@@ -466,8 +465,7 @@ where
       have has' := eqInstanceArgs ls' has
       rw [Context.substLevels_substLevels_getFin] at has'
       have ho {a : Scope.Entry} (x : Var Ξ a) :=
-        hd.obsSubst_substLevels ls' (Term.observation_substLevels ls' D qs ls ps as t)
-          (fun x => InstanceArgs.toSubst_substLevels ls' as x) x
+        hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
       have hbs' := eqArgs ls' hbs
       rw [Telescope.substLevels_subst_of ho, Telescope.substLevels_substLevels_getFin] at hbs'
       rw [Term.substLevels_instantiate, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
@@ -670,8 +668,7 @@ where
       refine .etaObs h hq _ hp hadm hr has' (hasType ls' ht) (hasType ls' hu) ?_
       intro d p q ς ps' Ξ Θ B ψ hd
       have ho {a : Scope.Entry} (x : Var Ξ a) :=
-        hd.obsSubst_substLevels ls' (Term.observation_substLevels ls' D qs ls ps as t)
-          (fun x => InstanceArgs.toSubst_substLevels ls' as x) x
+        hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
       have ih := eqTerm ls' (hobs d p q ς ps' Ξ Θ B ψ hd)
       rw [Context.substLevels_append, Telescope.substLevels_subst_of ho,
         Telescope.substLevels_substLevels_getFin, Term.observation_substLevels ls' D qs ls ps as t,

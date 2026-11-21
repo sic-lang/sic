@@ -490,12 +490,8 @@ where
       have ht' := hasType hd hord hι ht ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
       have hbs' := hasArgs hd hord hι hbs ρ
-      have hcl : ∀ {a} (x : Var Ξ a),
-          ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
-            hpos.obsSubst ((t.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs (ls.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
-              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0)))) (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))).toSubst x := fun x =>
-        hpos.obsSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) (fun d ps' => Term.observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t d ps')
-          (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as) x
+      have hcl := fun {a} (x : Var Ξ a) =>
+        hpos.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
       have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hadm hpos (by rw [List.getFin_map]; exact has')
@@ -660,13 +656,8 @@ where
       have ht' := eqTerm hd hord hι ht ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
       have hbs' := eqArgs hd hord hι hbs ρ
-      have hcl : ∀ {a} (x : Var Ξ a),
-          ((hpos.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
-            hpos.obsSubst ((t₁.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs (ls₁.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
-              (as₁.substLevels (fun i => (.ofNat (ρ i) : Level 0)))) (as₁.substLevels (fun i => (.ofNat (ρ i) : Level 0))).toSubst x := fun x =>
-        hpos.obsSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0))
-          (fun d ps' => Term.observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ d ps')
-          (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as₁) x
+      have hcl := fun {a} (x : Var Ξ a) =>
+        hpos.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
       have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hadm hpos (by rw [List.getFin_map]; exact has')
@@ -819,17 +810,8 @@ where
       refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hu'
         fun d p q ς ps' Ξ Θ B ψ hpos => ?_
       have hb := eqTerm hd hord hι (hobs d p q ς ps' Ξ Θ B ψ hpos) ρ
-      have hcl : ∀ {a} (x : Var Ξ a),
-          ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels
-              (fun i => (.ofNat (ρ i) : Level 0)) =
-            hpos.obsSubst ((t.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs
-              (ls.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
-              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))))
-              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))).toSubst x := fun x =>
-        hpos.obsSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0))
-          (fun d ps' => Term.observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps
-            as t d ps')
-          (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as) x
+      have hcl := fun {a} (x : Var Ξ a) =>
+        hpos.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Context.atLevels, Context.substLevels_append,
         Telescope.substLevels_subst_of hcl, Telescope.substLevels_substLevels, Term.atLevels,
         Term.observation_substLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl),
