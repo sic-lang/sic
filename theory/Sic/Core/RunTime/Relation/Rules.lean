@@ -26,7 +26,7 @@ it, as the meaning of its typing says.
 ADE prove these cases in `Graded/Erasure/LogicalRelation/Fundamental.agda` and in the modules of
 `Graded/Erasure/LogicalRelation/Fundamental/`, by recursion on the typing, with the validity of the
 logical relation of the typing as an argument; the cases here are lemmas on the meaning, and the
-recursion on the typing is in `Fundamental`, since the relation of run time reads no judgment.
+induction on the typing is in `Fundamental`, since the relation of run time reads no judgment.
 -/
 
 @[expose] public section
