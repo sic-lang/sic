@@ -231,7 +231,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   -- ADE: none.
   /-- The proof by extensionality of the equality of two propositions of `Ω_l` that imply each
   other, by a proof `t` of `B` from a proof `x` of `A` and a proof `u` of `A` from a proof `y` of
-  `B`, at the universe `Ω_l`. -/
+  `B`, as terms of `Ω_l`. -/
   | propExt {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {l : Level k}
       {A B : Term k Γ} {t u : Term k (.var :: Γ)} (hA : HasType sig ctx A (.sort ⟨.prop, l⟩))
       (hB : HasType sig ctx B (.sort ⟨.prop, l⟩))
