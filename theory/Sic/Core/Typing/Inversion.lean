@@ -31,8 +31,10 @@ open Sic.Grading
 
 variable {sig : Signature} {k : Nat}
 
--- The recursion on the derivations, whose rule `(coind)` has many premises under binders, takes
--- more than the default number of heartbeats to elaborate.
+-- The compilation of the structural recursion over the mutual judgments, which grows with the
+-- premises under binders of their rules, the rule `(coind)` above all, takes more than the default
+-- number of heartbeats; the tactics take little, and no rewrite of the recursion or of the rules
+-- lowers it.
 set_option maxHeartbeats 400000 in
 -- ADE: `inversion-app`, in `Definition/Typed/Consequences/Inversion.agda`, for the applications,
 -- with the equality of the types.
@@ -64,8 +66,10 @@ where
     | _, _, .corec .., e => by cases e
     | _, _, .transp .., e => by cases e
 
--- The recursion on the derivations, whose rule `(coind)` has many premises under binders, takes
--- more than the default number of heartbeats to elaborate.
+-- The compilation of the structural recursion over the mutual judgments, which grows with the
+-- premises under binders of their rules, the rule `(coind)` above all, takes more than the default
+-- number of heartbeats; the tactics take little, and no rewrite of the recursion or of the rules
+-- lowers it.
 set_option maxHeartbeats 400000 in
 -- ADE: `inversion-ΠΣ-U`, in `Definition/Typed/Consequences/Inversion.agda`, for the types of
 -- functions and of pairs, with the equality of the sorts.
