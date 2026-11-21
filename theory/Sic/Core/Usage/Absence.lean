@@ -103,7 +103,7 @@ theorem DestructorBranches.occurs_erase {sig : Signature} {S : Set Grade} [Decid
       rw [List.getElem?_tail] at hp
       exact ⟨i + 1, b', c', v', p', hv, hp, hpS, ho⟩
 
-/-- The branch at a position of the branches of a corecursor is before their end. -/
+/-- The branch at a position of the branches of the destructors is before their end. -/
 theorem DestructorBranches.lt_length_of_get {k : Nat} {Γ : Scope} :
     {vs : DestructorBranches k Γ} → {i : Nat} →
       {a : Σ n m a, Term k (((Γ.extend n).extend m).extend a)} → vs.get i = some a →
