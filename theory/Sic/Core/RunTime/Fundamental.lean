@@ -31,19 +31,19 @@ a context whose variables are all of the first order, is valid at run time with 
 `Σ; γ; Γ ⊨^® t : A`, at every value of its level variables, when the program `𝒫` realizes the
 constants of the mode `11ᵐ` of the signature, `(hyp_𝒫)`.
 
-The proof is by mutual structural recursion on the typing, in the clause `where` of the theorem, as
-the soundness of the typing is: each case inverts the usage of the term, `Usage.inv_…`, which gives
+The proof is by the induction on the derivations, `Derivations.induction`, on the typing, as the
+soundness of the typing is: each case inverts the usage of the term, `Usage.inv_…`, which gives
 the grades of the rule of its form above those of the judgment, and concludes by the lemma of the
 same name in `Rules`, `DeclaredTypes`, `Recursors` or `Corecursors`, from the validity at run time
 of the subterms, at the usages that the inversion gives them, and from the meaning of their
 typings, which the soundness gives, then by the subsumption `RunValidRen.sub`.
 A proof, which the erasure erases, ignores its usage and concludes by `RunValidRen.proof`, from the
 meaning of its type, a proposition.
-The recursion proves the validity at run time in every environment that binds the scope through a
+The induction proves the validity at run time in every environment that binds the scope through a
 renaming, `RunValidRen`, since the erasure of a nested result copies the branches of its recursor,
 renamed, under new binders; `RunValidRen.runValid` gives back `RunValid` at the identity.
 The usage checks in the mode `11ᵐ` again each subterm of a grade that `S^{11ᵐ}` does not erase, and
-the erasure replaces the others, so that the recursion stays in the mode `11ᵐ`.
+the erasure replaces the others, so that the induction stays in the mode `11ᵐ`.
 
 ADE prove their fundamental lemma, `fundamental`, in
 `Graded/Erasure/LogicalRelation/Fundamental.agda`, by recursion on the typing, with the inversion

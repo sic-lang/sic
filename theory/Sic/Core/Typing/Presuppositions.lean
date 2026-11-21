@@ -9,9 +9,9 @@ import Sic.Core.Typing.Induction
 The presuppositions of the judgments of annex 15 of RFC 36: every judgment holds in a well-formed
 signature, and the signature that a well-formed signature extends is well formed, so that the names
 of a well-formed signature are distinct.
-The proof is by mutual structural recursion on the derivations, through a premise that is a judgment
-in the same signature, down to the rule `(ctx_ε)`, whose premise is `⊢ Σ`, in the clause `where` of
-the theorem, whose auxiliary theorems give the fields of the record.
+The proof is by the induction on the derivations, `Derivations.induction`, through a premise that is
+a judgment in the same signature, down to the rule `(ctx_ε)`, whose premise is `⊢ Σ`, with the
+fields of the record as its motives.
 
 ADE prove the well-formedness of the contexts of their judgments, for contexts of definitions.
 -/
@@ -29,8 +29,8 @@ variable {sig : Signature} {k : Nat}
 Every judgment holds in a well-formed signature, and the signature that a well-formed signature
 extends is well formed: each rule has a premise that is a judgment in the same signature, down to the
 rule `(ctx_ε)`, whose premise is `⊢ Σ`.
-The proof is by mutual structural recursion on the derivations, through such a premise, in the
-clause `where` of the theorem, whose auxiliary theorems give the fields of the record.
+The proof is by the induction on the derivations, through such a premise, with the fields of the
+record as its motives.
 -/
 
 -- ADE: none.

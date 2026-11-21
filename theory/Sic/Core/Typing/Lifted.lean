@@ -19,8 +19,8 @@ arguments, equal at equal arguments, and the image of each variable a term of it
 in the context lifted when it is well formed.
 A family whose substitutions give each second-order variable a variable declared with its telescope
 and its type, substituted, is one, by the rules `(var_X)` and `(var_X≡)`.
-The proof is by mutual structural recursion on the derivations, in the clause `where` of the
-theorem.
+The proof is by the induction on the derivations, `Derivations.induction`, with the fields of
+`Subst.Stable` as its motives.
 Under the binders of a rule, the substitution is lifted, and the context extended by the type
 substituted is well formed: the relation `Subst.Lifted` lifts a substitution under variables without
 this condition, and the clause of the judgment `Σ ⊢ Γ` builds the context extended at the leaves of
@@ -29,7 +29,7 @@ derivation of its type, a subderivation substituted by the substitution before t
 
 ADE prove the weakening and the substitution apart, each by cases on the rules, and build the
 context extended from the derivation of the type, which the rules of a binder do not always have, by
-a well-founded recursion on the sizes of the derivations; here the recursion is structural.
+a well-founded recursion on the sizes of the derivations; here the induction is on the derivations.
 -/
 
 @[expose] public section

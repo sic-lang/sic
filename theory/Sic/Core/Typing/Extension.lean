@@ -17,8 +17,8 @@ of the empty context is the only one that asks that the signature be well formed
 The judgment `⊢ Σ` checks each entry in the signature before it, while a later entry reads it in
 its own signature, which has more entries: the lifting of a codata type is declared after the
 type, whose parameters and destructors it reads.
-The proof is by mutual structural recursion on the derivations, in the clause `where` of the
-theorem.
+The proof is by the induction on the derivations, `Derivations.induction`, with the fields of
+`StableUnderExtension` as its motives.
 
 ADE prove that their judgments hold in every extension of their context of definitions.
 -/

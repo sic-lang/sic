@@ -15,8 +15,8 @@ entries of the signature, whose levels are instantiated in turn.
 The entries of the signature are checked once with their level variables, and the rules use them
 at the levels of each instance; the lifting of a codata type has more level variables than the
 type, whose parameters and destructors it reads at its own.
-The proof is by mutual structural recursion on the derivations, in the clause `where` of the
-theorem.
+The proof is by the induction on the derivations, `Derivations.induction`, with the fields of
+`StableUnderLevels` as its motives.
 
 ADE have no level variables: their levels are terms, which their substitutions instantiate.
 -/

@@ -23,15 +23,15 @@ Every judgment of annex 15 of RFC 36 is meaningful, as annex 21 defines it, at e
 level variables, in a signature whose constant declarations the interpretation gives terms of their
 types, `(hyp_ι)`.
 
-The proof is by mutual structural recursion on the derivations, in the clause `where` of the
-theorem, whose auxiliary theorems give the fields of the record: each case takes the values `ρ` of
+The proof is by the induction on the derivations, `Derivations.induction`, with the fields of the
+record as its motives: each case takes the values `ρ` of
 the level variables, instantiates the levels of its premises by them, which commutes with the
 substitutions and the entries of the contexts and of the signature, and concludes by the rule of
 the same name in `Rules`, `Recursors`, `Corecursors`, `Transport` or `Coinduction`.
 A premise that is not a subterm of the derivation, such as the well-formed signature that
-`presuppositions` gives, would stop the recursion: the meaningful signature and context of a case
-come from the meaning of one of its premises.
-The type declarations, their fields and their destructors have a recursion of their own, after that
+`presuppositions` gives, has no hypothesis of the induction: the meaningful signature and context
+of a case come from the meaning of one of its premises.
+The type declarations, their fields and their destructors have an induction of their own, after that
 of the judgments in a context: a nested field reads the soundness of the typing on derivations that
 are no subterms of its own, those of the types that it goes through.
 

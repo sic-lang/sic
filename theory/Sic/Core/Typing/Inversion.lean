@@ -12,7 +12,8 @@ The inversion of the rules `(var_X)` and `(D)` of annex 15 of RFC 36: a typing o
 a second-order variable, or of an instance of a declared type, has the premises of its rule, since
 the rule of its term and the rule `(conv)`, which keeps the term and its premises, are the only ones
 that conclude it.
-The proof is by structural recursion on the derivation, through the premise of `(conv)`.
+The proof is by the induction on the derivations, `Derivations.induction`, through the premise of
+`(conv)`.
 
 The type of the typing is left out: it is the type that the rule gives or a type equal to it, which
 nothing reads so far.
@@ -43,7 +44,7 @@ theorem HasType.secondOrder_inv {Γ : Scope} {ctx : Context k Γ} {ps : List Par
       ctx.SecondOrderIn X Θ A ∧ HasArgs sig ctx ts Θ :=
   go h rfl
 where
-  /-- The inversion, by recursion on the derivation of a term equal to the application. -/
+  /-- The inversion, by induction on the derivation of a term equal to the application. -/
   go {Γ : Scope} {ctx : Context k Γ} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
       {X : Var Γ (.secondOrder ps ψ)} {ts : Args k Γ ps} : {t B : Term k Γ} →
       HasType sig ctx t B → t = .var X ts →
@@ -113,7 +114,7 @@ theorem HasType.inst_inv {Γ Δ : Scope} {ctx : Context k Γ} {D : Name} {qs : L
           ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) :=
   go h rfl
 where
-  /-- The inversion, by recursion on the derivation of a term equal to the instance. -/
+  /-- The inversion, by induction on the derivation of a term equal to the instance. -/
   go {Γ Δ : Scope} {ctx : Context k Γ} {D : Name} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} {as : InstanceArgs k Γ Δ} : {t B : Term k Γ} →
       HasType sig ctx t B → t = .inst D qs ls ps as →
