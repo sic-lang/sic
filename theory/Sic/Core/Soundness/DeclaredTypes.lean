@@ -38,7 +38,8 @@ variable {sig : Signature} {ι : Interpretation}
 
 The meaning of a type declaration holds at the values of its levels, which the proofs on its data
 types and its codata types read at the values of levels without variables: the facts that relate
-the two are stated once, for every instance of the declaration at equal arguments of its
+the two are stated once, those of the syntax, the instances, the fields and the sort, at any
+arguments, and those of the meaning, the destructors and the fields, at equal arguments of its
 parameters. -/
 
 -- ADE: none.
@@ -64,122 +65,157 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
       exact Level.ofNat_closedValue _) (InstanceArgs.LevelEquiv.refl as)
 
 -- ADE: none.
-/-- The facts of a type declaration at the values of levels `ls` without variables, at equal
-arguments `a₁` and `a₂` of its parameters. -/
-structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
-    (decl : TypeDeclaration) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    (a₁ a₂ : InstanceArgs 0 [] decl.scope) : Prop where
-  /-- The numerals of the values of `ls` are equal to `ls` up to their levels. -/
-  levels : ∀ i, (Level.ofNat (ls.getFin hl i).closedValue : Level 0) ≈ ls.getFin hl i
-  /-- The destructors of each codata type of the block are meaningful at the values of `ls`, at
-  `a₁` and `a₂`. -/
-  destructors : ∀ T ∈ decl.codataTypes,
-    ValidEqDestructors₀ sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
-      (fun D => (decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-        fun i => (ls.getFin hl i).closedValue)
-      ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names)
-      ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
-      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
-      a₁.toSubst a₂.toSubst
-  /-- The fields of each constructor of each data type of the block are meaningful at the values
-  of `ls`, at `a₁` and `a₂`. -/
-  fields : ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-    ValidEqFields₀ sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
-      decl.names
-      (fun D => ((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
-      (fun D => ((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst)
-      ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names)
-      (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
-      (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst)
-  /-- The level of the sort has the same value at the values of `ls` and at `ls`. -/
-  sort : ((decl.sort (.ofLists qs ps hq hp)).atLevels
-      fun i => (ls.getFin hl i).closedValue).level.closedValue =
-    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-  /-- The instances of the block at the values of `ls`, at any arguments, are equal to those at
-  `ls` up to their levels. -/
-  instances : ∀ (a : InstanceArgs 0 [] decl.scope) D, Term.LevelEquiv
-    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-      fun i => (ls.getFin hl i).closedValue).subst a.toSubst) (.inst D qs ls ps a)
-  /-- The fields of a constructor at the values of `ls`, at any arguments, are equal to those at
-  `ls` up to their levels. -/
-  telescopes : ∀ (c : Constructor decl.sorts decl.grades decl.levels decl.scope)
-      (a : InstanceArgs 0 [] decl.scope),
+/-- The fields of a constructor at the values of the levels `ls`, substituted by the arguments `ā`,
+are its fields at `ls` and `ā`, up to the levels. -/
+theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
+    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (as : InstanceArgs 0 [] decl.scope) :
     Telescope.LevelEquiv (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
-      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) a)
-  /-- The instances of the block at the values of `ls`, at any arguments, compute to
-  themselves. -/
-  computes : ∀ (a : InstanceArgs 0 [] decl.scope) D, Computesι sig ι
-    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-      fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
-    (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-      fun i => (ls.getFin hl i).closedValue).subst a.toSubst)
-  /-- A relation of the destructors of a codata type of the block at `ls` is one at the values of
-  `ls`. -/
-  desRel : ∀ {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {s : Quality}
-      {rs : Nat → Option TermRel} {θ : Subst 0 [] decl.scope} {S : ObsRel},
-    DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S →
-      DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
-        ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
-  /-- A relation of run time of the destructors of a codata type of the block at `ls` is one at
-  the values of `ls`. -/
-  runDesRel : ∀ {P : Program} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
-      {n : Nat} {D : Name} {rs : Nat → Option RunRel} {θ : Subst 0 [] decl.scope} {S : RunObsRel},
-    RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S →
-      RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
-        ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S
+        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
+  (Telescope.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _).subst
+    (Subst.LevelEquiv.refl _)
 
 -- ADE: none.
-/-- A meaningful type declaration, at equal arguments of its parameters, has its facts at the values
-of levels without variables, in a signature whose names are distinct. -/
-theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDeclaration}
-    (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) (hadm : decl.constraint (.ofLists qs ps hq hp))
-    {a₁ a₂ : InstanceArgs 0 [] decl.scope}
-    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-      a₁.toSubst a₂.toSubst) :
-    decl.AtClosedLevels sig ι hq hl hp a₁ a₂ :=
-  have hls : ∀ i, (Level.ofNat (ls.getFin hl i).closedValue : Level 0) ≈ ls.getFin hl i :=
-    fun _ => Level.ofNat_closedValue _
-  have hθ := EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _) has
-  { levels := hls
-    destructors := fun _ hT => (hv.destructors _ hadm hT _).2 _ _ hθ
-    fields := fun _ hT _ hc => (hv.fields _ hadm hT hc _).2 _ _ hθ
-    sort := Level.closedValue_subst_equiv hls _
-    instances := fun a D => decl.blockInstance_atLevels_subst hq hl hp a D
-    telescopes := fun _ _ => (Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _)
-    computes := fun _ _ => (Whnf.inst ..).computes
-    desRel := fun hS => DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hS
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _)
-    runDesRel := fun hS => RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hS
-      (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
-      (Subst.LevelEquiv.refl _) }
+/-- The level of the sort of a type declaration has the same value at the values of the levels
+`ls` and at `ls`. -/
+theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) :
+    ((decl.sort (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).level.closedValue =
+      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
+  Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
+
+-- ADE: none.
+/-- A telescope at the numerals of the values of the levels `ls`, substituted by `σ`, is the
+telescope at `ls` substituted by `σ`, up to the levels. -/
+theorem Telescope.closedValues_levelEquiv {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
+    {Ξ : Scope} {ps' : List Parameter} (Θ : Telescope k Ξ ps') (σ : Subst 0 [] Ξ) :
+    Telescope.LevelEquiv
+      ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)
+      ((Θ.substLevels (ls.getFin hl)).subst σ) :=
+  Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+    (Telescope.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) Θ)
+
+-- ADE: none.
+/-- Two closed substitutions equal for a telescope at the numerals of the values of the levels
+`ls`, substituted by `σ`, are equal for the telescope at `ls` substituted by `σ`, as the arguments
+of a destructor of a codata type. -/
+theorem Telescope.eqSubst_closedValues {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
+    {Ξ : Scope} {ps' : List Parameter} (Θ : Telescope k Ξ ps') (σ : Subst 0 [] Ξ)
+    {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append
+        ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)) σ₁ σ₂ →
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst σ)) σ₁ σ₂ :=
+  EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv hl σ))
+
+-- ADE: none.
+/-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
+`ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
+theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
+    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (as : InstanceArgs 0 [] decl.scope) {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append (((c.fields (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
+      EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+        σ₁ σ₂ :=
+  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as)),
+    EqSubst.levelEquiv
+      (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as).symm)⟩
 
 section
 
 variable {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
   {hq : qs.length = decl.sorts} {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
-  {a₁ a₂ : InstanceArgs 0 [] decl.scope}
+
+-- ADE: none.
+/-- The destructors of each codata type of a meaningful type declaration are meaningful at the
+values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its parameters. -/
+theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaration sig ι decl)
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {a₁ a₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      a₁.toSubst a₂.toSubst) :
+    ∀ T ∈ decl.codataTypes,
+      ValidEqDestructors₀ sig ι
+        ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+        (fun D => (decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+          fun i => (ls.getFin hl i).closedValue)
+        ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names)
+        ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
+        ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+        a₁.toSubst a₂.toSubst := fun _ hT =>
+  (hv.destructors _ hadm hT _).2 _ _ (EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv
+      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _) has)
+
+-- ADE: none.
+/-- The fields of each constructor of each data type of a meaningful type declaration are
+meaningful at the values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its
+parameters. -/
+theorem ValidTypeDeclaration.fieldsAtClosedLevels (hv : ValidTypeDeclaration sig ι decl)
+    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hadm : decl.constraint (.ofLists qs ps hq hp)) {a₁ a₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+      a₁.toSubst a₂.toSubst) :
+    ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
+      ValidEqFields₀ sig ι
+        ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
+        decl.names
+        (fun D => ((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+          fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
+        (fun D => ((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+          fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst)
+        ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names)
+        (((c.fields (.ofLists qs ps hq hp)).atLevels
+          fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
+        (((c.fields (.ofLists qs ps hq hp)).atLevels
+          fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst) := fun _ hT _ hc =>
+  (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv
+      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _) has)
+
+-- ADE: none.
+/-- A relation of the destructors of a codata type of a block at the levels `ls` is one at the
+values of `ls`, in a signature whose names are distinct. -/
+theorem DesRel.atLevels_of_substLevels (hd : sig.Distinct)
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {s : Quality}
+    {rs : Nat → Option TermRel} {θ : Subst 0 [] decl.scope} {S : ObsRel}
+    (h : DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S) :
+    DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
+      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S :=
+  DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv
+      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
+    (Subst.LevelEquiv.refl _)
+
+-- ADE: none.
+/-- A relation of run time of the destructors of a codata type of a block at the levels `ls` is one
+at the values of `ls`, in a signature whose names are distinct. -/
+theorem RunDesRel.atLevels_of_substLevels (hd : sig.Distinct) {P : Program}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {D : Name}
+    {rs : Nat → Option RunRel} {θ : Subst 0 [] decl.scope} {S : RunObsRel}
+    (h : RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S) :
+    RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
+      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S :=
+  RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv
+      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
+    (Subst.LevelEquiv.refl _)
 
 -- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
 the graph of a sort at the value of its level there, whose positions hold the instances of the
 block there, are telescopes of the graph at `ls`, whose positions hold the instances at `ls`, with
 the same equality of their terms, in a signature whose names are distinct. -/
-theorem TypeDeclaration.AtClosedLevels.telRel (hd : sig.Distinct)
-    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂)
+theorem TelRel.fieldsAt_of_atLevels (hd : sig.Distinct)
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope}
     {as : InstanceArgs 0 [] decl.scope} {s : Quality} {Rf : Name → TermRel} {S : FieldsRel}
     (h : TelRel sig ι (((decl.sort (.ofLists qs ps hq hp)).atLevels
@@ -195,14 +231,15 @@ theorem TypeDeclaration.AtClosedLevels.telRel (hd : sig.Distinct)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) S :=
-  hA.sort ▸ TelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
-    (hA.telescopes c as)
+  decl.sort_atLevels_closedValue hq hl hp ▸ TelRel.levelEquiv hd
+    (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (c.fields_atLevels_subst hq hl hp as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
         (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
         as.toSubst, Rf D))
       (g := fun D => (.inst D qs ls ps as, Rf D)) (h := fun D => (.inst D qs ls ps as, Rf D))
-      (fun D => ⟨hA.instances as D, rfl⟩) _)
+      (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as D, rfl⟩) _)
 
 -- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
@@ -210,8 +247,7 @@ the graph of run time of a sort at the value of its level there, whose positions
 instances of the block there, are telescopes of the graph at `ls`, whose positions hold the
 instances at `ls`, with the same relation of their terms, in a signature whose names are
 distinct. -/
-theorem TypeDeclaration.AtClosedLevels.runTelRel (hd : sig.Distinct)
-    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂) {P : Program}
+theorem RunTelRel.fieldsAt_of_atLevels (hd : sig.Distinct) {P : Program}
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope}
     {as : InstanceArgs 0 [] decl.scope} {Rf : Name → RunRel} {S : RunFieldsRel}
     (h : RunTelRel sig ι P (((decl.sort (.ofLists qs ps hq hp)).atLevels
@@ -227,52 +263,22 @@ theorem TypeDeclaration.AtClosedLevels.runTelRel (hd : sig.Distinct)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) S :=
-  hA.sort ▸ RunTelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
-    (hA.telescopes c as)
+  decl.sort_atLevels_closedValue hq hl hp ▸ RunTelRel.levelEquiv hd
+    (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (c.fields_atLevels_subst hq hl hp as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
         (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
         as.toSubst, Rf D))
       (g := fun D => (.inst D qs ls ps as, Rf D)) (h := fun D => (.inst D qs ls ps as, Rf D))
-      (fun D => ⟨hA.instances as D, rfl⟩) _)
-
--- ADE: none.
-/-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
-`ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
-theorem TypeDeclaration.AtClosedLevels.eqSubst_fields (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂)
-    (c : Constructor decl.sorts decl.grades decl.levels decl.scope)
-    (as : InstanceArgs 0 [] decl.scope) {σ₁ σ₂ : Subst 0 [] _} :
-    EqSubst sig ι (Context.empty.append (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
-      EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
-        σ₁ σ₂ :=
-  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hA.telescopes c as)),
-    EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hA.telescopes c as).symm)⟩
-
--- ADE: none.
-/-- Two closed substitutions are equal for the arguments `Θ` of a destructor of a codata type at
-the numerals of the values of the levels `ls`, at a substitution `σ` of its scope, if and only if
-they are equal for them at `ls`. -/
-theorem TypeDeclaration.AtClosedLevels.eqSubst_destructor
-    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂) {Ξ : Scope} {ps' : List Parameter}
-    (Θ : Telescope decl.levels Ξ ps') (σ : Subst 0 [] Ξ) {σ₁ σ₂ : Subst 0 [] _} :
-    EqSubst sig ι (Context.empty.append
-        ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)) σ₁ σ₂ ↔
-      EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst σ)) σ₁ σ₂ :=
-  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Telescope.substLevels_levelEquiv hA.levels Θ))),
-    EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Telescope.substLevels_levelEquiv hA.levels Θ)).symm)⟩
+      (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as D, rfl⟩) _)
 
 -- ADE: none.
 /-- The positions of the fields of a constructor of a block of data types, at the values of the
 levels `ls` and at arguments `ā`, hold the instances of the block there, which the graph of run
 time relates by relations `X`, when the instances at `ls` are types of a universe with these
 relations, in a signature whose names are distinct. -/
-theorem TypeDeclaration.AtClosedLevels.runNestRel_instances (hd : sig.Distinct)
-    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂) {P : Program}
+theorem Constructor.runNestRel_instances (hd : sig.Distinct) {P : Program}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
     (c : Constructor decl.sorts decl.grades decl.levels decl.scope)
     {as : InstanceArgs 0 [] decl.scope} {X : Name → RunRel}
@@ -290,8 +296,10 @@ theorem TypeDeclaration.AtClosedLevels.runNestRel_instances (hd : sig.Distinct)
             (X D').computed sig ι)) := fun j =>
   Nest.All.map_rel₃ (fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-      exact hA.sort ▸ RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
-        (.plain (Whnf.inst ..).computes (.univ (hU T' hT'))) (hA.instances as T'.name).symm .plain)
+      exact decl.sort_atLevels_closedValue hq hl hp ▸
+        RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+          (.plain (Whnf.inst ..).computes (.univ (hU T' hT')))
+          (decl.blockInstance_atLevels_subst hq hl hp as T'.name).symm .plain)
     (Telescope.nestAt_all decl.names _ j)
 
 end
@@ -1065,7 +1073,6 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
             ts.terms = fs₁ ∧ us.terms = fs₂ ∧ EqSubst sig ι
               (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁))
               ts.toSubst us.toSubst) := by
-  have hA := hv.atClosedLevels hd hq hl hp hadm has
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun Rf c ts us =>
     ∃ S', TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
@@ -1074,10 +1081,10 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         fun D => (.inst D qs ls ps as₁, Rf D))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' ts us
   refine ⟨S, fun Rf T hT c hc => ?_⟩
-  have hF := hA.fields T hT c hc
+  have hF := hv.fieldsAtClosedLevels hq hl hp hadm has T hT c hc
   obtain ⟨S', h₁, h₂⟩ := hF.telRel hd Rf
-  have h₁' := hA.telRel hd h₁
-  have h₂' := hA.telRel hd h₂
+  have h₁' := TelRel.fieldsAt_of_atLevels hd h₁
+  have h₂' := TelRel.fieldsAt_of_atLevels hd h₂
   have hS : S Rf c = S' := funext fun ts => funext fun us => propext
     ⟨fun ⟨_, h', hs⟩ => (TelRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁' ts us).1
       hs,
@@ -1093,21 +1100,22 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
       (((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map fun D =>
         (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D)) := fun i =>
-    Nest.All.map_rel₃ (fun D hD => hA.sort ▸
+    Nest.All.map_rel₃ (fun D hD => decl.sort_atLevels_closedValue hq hl hp ▸
         NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hRf D hD)
-          (hA.instances as₁ D).symm .plain)
+          (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm .plain)
       (Telescope.nestAt_all decl.names _ i)
   -- The types of the nested fields are terms of a sort, since the instances of the block are.
   have hH := hF.nestHeads fun D hD =>
-    (hI D hD).levelEquiv (hA.instances as₁ D).symm (hA.instances as₂ D).symm
-      (.sort _ (Level.equivalence.symm (Level.subst_equiv hA.levels _)))
+    (hI D hD).levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm
+      (decl.blockInstance_atLevels_subst hq hl hp as₂ D).symm
+      (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
   refine ⟨fun ts us => (TelRel.eqSubst_iff hd h₁
     (hH.imp fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ ts us).trans
-      (hA.eqSubst_fields c as₁),
+      (c.eqSubst_fields_atLevels hq hl hp as₁),
     fun fs₁ fs₂ hs => ?_⟩
   obtain ⟨ts, us, rfl, rfl, hts⟩ := TelRel.to_eqSubst hd h₁
     (hH.imp fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ fs₁ fs₂ hs
-  exact ⟨ts, us, rfl, rfl, (hA.eqSubst_fields c as₁).1 hts⟩
+  exact ⟨ts, us, rfl, rfl, (c.eqSubst_fields_atLevels hq hl hp as₁).1 hts⟩
 
 -- ADE: none.
 /-- The instances of the types of a meaningful block of data types in a universe, at equal closed
@@ -1140,7 +1148,6 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) := by
-  have hA := hv.atClosedLevels hd hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
@@ -1161,9 +1168,10 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
         (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
           fun D' => (.inst D' qs ls ps as₂, (X D').computed sig ι))
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S X c) := fun X T hT c hc => by
-    obtain ⟨S', h₁, h₂⟩ := (hA.fields T hT c hc).runTelRel hd P hs fun D' => (X D').computed sig ι
-    have h₁' := hA.runTelRel hd h₁
-    have h₂' := hA.runTelRel hd h₂
+    obtain ⟨S', h₁, h₂⟩ := (hv.fieldsAtClosedLevels hq hl hp hadm has T hT c hc).runTelRel hd P hs
+      fun D' => (X D').computed sig ι
+    have h₁' := RunTelRel.fieldsAt_of_atLevels hd h₁
+    have h₂' := RunTelRel.fieldsAt_of_atLevels hd h₂
     have hSS : S X c = S' := funext fun H => funext fun ts => funext fun bs => propext
       ⟨fun ⟨_, h', hs⟩ => (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
           (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts bs).1 hs,
@@ -1433,12 +1441,12 @@ theorem ValidTypeDeclaration.nestHeads (hd : sig.Distinct) {decl : TypeDeclarati
       (fun i => ∃ νs, (c.fields (.ofLists qs ps hq hp)).nestAt decl.names i = .inst νs)
       (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst) := by
-  have hA := hv.atClosedLevels hd hq hl hp hadm has
-  exact (hA.fields T hT c hc).nestHeads fun D hD => by
+  exact (hv.fieldsAtClosedLevels hq hl hp hadm has T hT c hc).nestHeads fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
     exact (ValidEqTerm₀.inst hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-      (hA.instances as₁ T'.name).symm (hA.instances as₂ T'.name).symm
-      (.sort _ (Level.equivalence.symm (Level.subst_equiv hA.levels _)))
+      (decl.blockInstance_atLevels_subst hq hl hp as₁ T'.name).symm
+        (decl.blockInstance_atLevels_subst hq hl hp as₂ T'.name).symm
+      (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
 
 -- ADE: none.
 /-- `(c)` and `(c_≡)`, closed: two applications of a constructor of a declared type of `Σ`, whose

@@ -416,17 +416,18 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       DataType.runBlockRel_fold hmono hT ⟨con, hc, i, ts.terms, bs, ⟨qs, ls, ps, _, as, rfl⟩, hi, ha,
         ?_⟩⟩⟩
     -- The fields at the values of the levels, which the meaning of the declaration gives.
-    have hA := hv.atClosedLevels hd hq hl hp hadm has
     let X : Name → RunRel := DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S
-    obtain ⟨S', h₁, -⟩ := (hA.fields T hT con hc).runTelRel hd P hs fun D' => (X D').computed sig ι
+    obtain ⟨S', h₁, -⟩ := (hv.fieldsAtClosedLevels hq hl hp hadm has T hT con hc).runTelRel hd P hs
+      fun D' => (X D').computed sig ι
     have hS' := RunTelRel.of_runsAsArgs hd h₁
       ((hs ▸ hv.nestHeads hd hdecl hT hc hq hl hp hadm has).imp
         fun _ h => h.elim fun _ h => Nest.map_eq_inst h)
-      (hA.runNestRel_instances hd hT con fun T' hT' => (hU T' hT').1) _
+      (Constructor.runNestRel_instances hd hT con fun T' hT' => (hU T' hT').1) _
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts
-      ((hA.eqSubst_fields con as).2 hts) bs (RunsAsArgs.levelEquiv hd (hA.telescopes con as).symm hbs)
+      ((con.eqSubst_fields_atLevels hq hl hp as).2 hts) bs
+        (RunsAsArgs.levelEquiv hd (con.fields_atLevels_subst hq hl hp as).symm hbs)
     exact (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS X T hT con hc) _ _
-      (hA.runTelRel hd h₁)
+      (RunTelRel.fieldsAt_of_atLevels hd h₁)
       (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hP T hT).1⟩⟩
@@ -472,7 +473,6 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   -- The fields at the values of the levels, which the meaning of the declaration gives.
-  have hA := hv.atClosedLevels hd hq hl hp hadm has
   -- The relations `(®_μ)` of the block relate the fields that the relations `X` within them do.
   let Y : Name → RunRel := DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S
   have hY : S Y con H ts.terms bs :=
@@ -480,13 +480,16 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
       (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
       (fun D H _ _ => RunRel.computed_mono (hX D H)) T hT con hc H _ _ h
-  obtain ⟨S', h₁, -⟩ := (hA.fields T hT con hc).runTelRel hd P hs fun D' => (Y D').computed sig ι
+  obtain ⟨S', h₁, -⟩ := (hv.fieldsAtClosedLevels hq hl hp hadm has T hT con hc).runTelRel hd P hs
+    fun D' => (Y D').computed sig ι
   have hS' := (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS Y T hT con hc) _ _
-    (hA.runTelRel hd h₁) (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 hY
-  exact RunsAsArgs.levelEquiv hd (hA.telescopes con as) (RunsAsArgs.of_runTelRel h₁
+    (RunTelRel.fieldsAt_of_atLevels hd h₁) (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H
+      ts.terms bs).1 hY
+  exact RunsAsArgs.levelEquiv hd (con.fields_atLevels_subst hq hl hp as) (RunsAsArgs.of_runTelRel h₁
     ((hs ▸ hv.nestHeads hd hdecl hT hc hq hl hp hadm has).imp
       fun _ h => h.elim fun _ h => Nest.map_eq_inst h)
-    (hA.runNestRel_instances hd hT con hU) g hg ts ((hA.eqSubst_fields con as).2 hts) bs hS')
+    (Constructor.runNestRel_instances hd hT con hU) g hg ts
+      ((con.eqSubst_fields_atLevels hq hl hp as).2 hts) bs hS')
 
 -- ADE: none.
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,

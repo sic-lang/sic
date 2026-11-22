@@ -473,7 +473,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  have hA := hv.atClosedLevels hd hq hl hp hadm has
+  have hDs := hv.destructorsAtClosedLevels hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst
@@ -481,7 +481,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
       exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-        (hA.instances as _).symm (hA.instances as _).symm (Term.LevelEquiv.refl _)⟩
+        (decl.blockInstance_atLevels_subst hq hl hp as _).symm
+          (decl.blockInstance_atLevels_subst hq hl hp as _).symm (Term.LevelEquiv.refl _)⟩
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
     (Whnf.inst ..).computes
   -- The instance is a type, since the destructor of a proposition has no use at run time.
@@ -506,15 +507,16 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   obtain ⟨v', hv', Y, hY, hYD⟩ := htR
   rw [← hD] at hYD
   obtain ⟨o', hco', hSo⟩ := hY T hT H v' a hYD
-  have e : ((decl.sort I).atLevels ρ).level.closedValue = n := hA.sort.trans hnS
+  have e : ((decl.sort I).atLevels ρ).level.closedValue = n :=
+    (decl.sort_atLevels_closedValue hq hl hp).trans hnS
   have hSρ : RunDesRel sig ι P ((decl.sort I).atLevels ρ).level.closedValue
       (fun m _ => levelRel sig ι m) T.name
       (fun i => ((T.body I).recursionAt decl.names i).map fun D' => (Y D').computed sig ι)
       ((T.body I).atLevels ρ) as.toSubst (S Y T) := by
     rw [e]
-    exact hA.runDesRel (hS Y T hT)
+    exact RunDesRel.atLevels_of_substLevels hd (hS Y T hT)
   -- The observation by the destructor, at arguments related by the relation of its telescope.
-  obtain ⟨i, RΘ, hi, hRΘ, hobsR⟩ := (hpos.substLevels Lρ).run hd (hA.destructors T hT)
+  obtain ⟨i, RΘ, hi, hRΘ, hobsR⟩ := (hpos.substLevels Lρ).run hd (hDs T hT)
     (fun i hi => by rw [hi]; rfl) (fun i D' hi => ⟨_, by rw [hi]; rfl, fun H₀ t₀ b htb => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
         (Destructors.recursionAt_mem hi)
@@ -522,7 +524,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       have hU : RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
           (CodataType.runBlockRel decl.codataTypes S T'.name) :=
         .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs hnS S hS
-      exact RunsAs.levelEquiv hd (hA.instances as _).symm
+      exact RunsAs.levelEquiv hd (decl.blockInstance_atLevels_subst hq hl hp as _).symm
         ⟨_, (Whnf.inst ..).computes, .inr ⟨_, .univ n (levelRel_run_iff.2 hU), w, hw, Y, hY,
           hYw⟩⟩⟩) hSρ hSo hpr
   -- The equality of the term relates its observations to those of the corecursor.
@@ -560,8 +562,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         fun D' => (CodataType.blockRel decl.codataTypes Se D').computed sig ι)
       ((T.body I).atLevels ρ) as.toSubst (Se (CodataType.blockRel decl.codataTypes Se) T) := by
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
-    rw [hA.sort, hq']
-    exact hA.desRel (hSe _ T hT)
+    rw [decl.sort_atLevels_closedValue hq hl hp, hq']
+    exact DesRel.atLevels_of_substLevels hd (hSe _ T hT)
   have hRr : ∀ i D', (T.body I).recursionAt decl.names i = some D' → ∃ R v,
       ((T.body I).recursionAt decl.names i).map
         (fun D' => (CodataType.blockRel decl.codataTypes Se D').computed sig ι) = some R ∧
@@ -575,17 +577,17 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (CodataType.blockRel decl.codataTypes Se T'.name) :=
       .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs rfl Se hSe
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
-    rw [hi, hA.sort, hq']
-    exact ⟨_, _, rfl, hA.computes as _,
+    rw [hi, decl.sort_atLevels_closedValue hq hl hp, hq']
+    exact ⟨_, _, rfl, (Whnf.inst ..).computes,
       FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (.univ rfl hU)
-        (hA.instances as _).symm⟩
+        (decl.blockInstance_atLevels_subst hq hl hp as _).symm⟩
   -- The telescope and the result of the destructor at both observations are equal.
-  obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq (hA.destructors T hT)
+  obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq (hDs T hT)
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi))
-    (fun _ _ _ _ _ _ _ _ _ hpos' => (hpos'.sound hd (hA.destructors T hT)
+    (fun _ _ _ _ _ _ _ _ _ hpos' => (hpos'.sound hd (hDs T hT)
       (fun i hi => by rw [hi]; rfl) hRr
       (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2)
-  have hres := ((hpos.substLevels Lρ).sound hd (hA.destructors T hT)
+  have hres := ((hpos.substLevels Lρ).sound hd (hDs T hT)
     (fun i hi => by rw [hi]; rfl) hRr
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2
   -- The arguments, at the levels without variables, are related by the relation of the telescope.
@@ -601,7 +603,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ((Θ.substLevels Lρ).subst
         ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst))
       ((Θ.substLevels L).subst (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) :=
-    Telescope.LevelEquiv.subst hcE (Telescope.substLevels_levelEquiv hA.levels Θ)
+    Telescope.LevelEquiv.subst hcE
+      (Telescope.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i)) Θ)
   have htsρ := EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘE.symm) hts
   have hbsρ := RunsAsArgs.levelEquiv hd hΘE.symm hbs
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
@@ -638,7 +641,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   rw [Term.observation_subst_args] at hres'
   have hw₂ := RunsAs.conv hd (ValidEqTerm₀.conv hres'.left hBT).2 hBT.symm.2 hw₁
   exact hw₂.levelEquiv hd (Term.LevelEquiv.subst (Subst.LevelEquiv.append hcE (Subst.LevelEquiv.refl _))
-    (Term.substLevels_levelEquiv hA.levels B))
+    (Term.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i)) B))
 
 -- ADE: none.
 /-- `(d)` at run time: an observation of a term of an instance of a codata type of `Σ`, whose type
