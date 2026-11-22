@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Meaning.Equality.Properties
+public import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
@@ -1102,6 +1103,121 @@ theorem TelRel.eqSubst_iff_plain (hd : sig.Distinct) {n : Nat} {s : Quality} {ps
     (ts us : Args 0 [] ps) :
     S ts.terms us.terms ↔ EqSubst sig ι (Context.empty.append Θ) ts.toSubst us.toSubst :=
   h.eqSubst_iff hd (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) ts us
+
+/-- The head of a destructor without position whose arguments are a closed telescope `Θ` of the
+graph of a sort, with the equality `SΘ`, and whose results `B` are equal types of a sort `κ₁` at
+two substitutions `θ₁` and `θ₂` and equal arguments: the equality of its result at the arguments
+`ts`, `FieldRel.atArgs` of the results at `θ₁`, is the equality of the terms of the results at
+`θ₁` and at `θ₂`, the same at equal arguments, and equal abstractions for the destructor have equal
+instances at equal arguments. -/
+theorem FieldRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {SΘ : FieldsRel}
+    (hT₁ : TelRel sig ι m (fun k _ => levelRel sig ι k) .type (fun _ => .plain) Θ SΘ) {Γ : Scope}
+    {B : Term 0 (Γ.extend ps.length)} {θ₁ θ₂ : Subst 0 [] Γ} {κ₁ : Universe 0}
+    (hq : κ₁.quality ≤ s) (hn : κ₁.level.closedValue ≤ n)
+    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append Θ) τ₁ τ₂ →
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
+        (.sort κ₁)) :
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      (∃ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v) ∧
+      ∀ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v →
+        FieldRel sig ι n (fun k _ => levelRel sig ι k) s v
+          (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts.terms)) ∧
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      (∃ v, Computesι sig ι (B.subst (Subst.append θ₂ ts.toSubst)) v) ∧
+      ∀ v, Computesι sig ι (B.subst (Subst.append θ₂ ts.toSubst)) v →
+        FieldRel sig ι n (fun k _ => levelRel sig ι k) s v
+          (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts.terms)) ∧
+    (∀ ts us, SΘ ts us → ∀ t u,
+      FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts t u ↔
+        FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) us t u) ∧
+    ∀ f₁ f₂, AbstractionRel SΘ
+        (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst))) f₁ f₂ →
+      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append Θ) τ₁ τ₂ →
+        ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) := by
+  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
+  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) m) (fun _ => .plain) hT₁
+  -- A type equal to the result at `θ₁` and the arguments `ts` has the equality at `ts`.
+  have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
+      (∃ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v) ∧
+      (∀ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v →
+        FieldRel sig ι n (fun k _ => levelRel sig ι k) s v
+          (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts.terms)) ∧
+      ∀ v, Computesι sig ι A v → FieldRel sig ι n (fun k _ => levelRel sig ι k) s v
+        (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts.terms) :=
+    fun ts A hA => by
+      obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hq hn
+      rw [FieldRel.atArgs_eq hd ih hw₁ hF₁]
+      exact ⟨⟨w₁, hw₁⟩, fun v hv => (Computesι.det hd hw₁ hv) ▸ hF₁,
+        fun v hv => (Computesι.det hd hw₂ hv) ▸ hF₂⟩
+  -- The results at `θ₁` and equal arguments are equal types.
+  have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
+        (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
+    have huu := hSp.trans (hSp.symm hts) hts
+    (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+  refine ⟨fun ts hts => ⟨(hres ts _ (hBB ts ts hts)).1, (hres ts _ (hBB ts ts hts)).2.1⟩,
+    fun ts hts => ?_, fun ts us hts t u => ?_, fun f₁ f₂ hf τ₁ τ₂ hτ => ?_⟩
+  · have h := hres ts _ (hB _ _ ((hT ts ts).1 hts))
+    obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hq hn
+    exact ⟨⟨w₂, hw₂⟩, h.2.2⟩
+  · obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
+    have huu := hSp.trans (hSp.symm hts) hts
+    obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
+    rw [FieldRel.atArgs_eq hd ih (ts := us') hw' ((hres ts' _ (hBB ts' us' hts)).2.2 w' hw')]
+  · obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
+    obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
+    have hts := (hT ts us).2 hτ
+    have htt := hSp.trans hts (hSp.symm hts)
+    obtain ⟨⟨w, hw⟩, hF, -⟩ := hres ts _ (hBB ts ts htt)
+    exact (hF w hw).validEqTerm hd hw (hf _ _ hts)
+
+/-- The relation of run time of the result at the arguments `ts`, `RunFieldRel.atArgs` of the
+results at `θ₁`, of a destructor without position whose arguments are a closed telescope `Θ` of
+the graph of a sort, with the equality `SΘ`, and whose results are equal types of a sort `κ₁` at
+two substitutions `θ₁` and `θ₂` and equal arguments: it is the relation of run time of the terms
+of the results at `θ₁` and at `θ₂`. -/
+theorem RunFieldRel.atArgs_head (hd : sig.Distinct) (P : Program) {m n : Nat}
+    {ps : List Parameter} {Θ : Telescope 0 [] ps} {SΘ : FieldsRel}
+    (hT₁ : TelRel sig ι m (fun k _ => levelRel sig ι k) .type (fun _ => .plain) Θ SΘ) {Γ : Scope}
+    {B : Term 0 (Γ.extend ps.length)} {θ₁ θ₂ : Subst 0 [] Γ} {κ₁ : Universe 0}
+    (hn : κ₁.level.closedValue ≤ n)
+    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append Θ) τ₁ τ₂ →
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
+        (.sort κ₁)) :
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      ∀ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v →
+        RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v
+          (RunFieldRel.atArgs sig ι P n (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+            ts.terms)) ∧
+    ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      ∀ v, Computesι sig ι (B.subst (Subst.append θ₂ ts.toSubst)) v →
+        RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v
+          (RunFieldRel.atArgs sig ι P n (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+            ts.terms) := by
+  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih : ∀ k, k < n → RunLevelRel.Unique ((levelRel sig ι k).run P) :=
+    Nat.forall_lt (levelRel_run_unique hd) _
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
+  have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
+      (∀ v, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) v →
+        RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v
+          (RunFieldRel.atArgs sig ι P n (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+            ts.terms)) ∧
+      ∀ v, Computesι sig ι A v → RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v
+        (RunFieldRel.atArgs sig ι P n (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+          ts.terms) :=
+    fun ts A hA => by
+      obtain ⟨w₁, w₂, R₀, hw₁, hw₂, hR₁, hR₂⟩ := hA.runFieldRel P hn
+      rw [RunFieldRel.atArgs_eq hd ihm ih hw₁ hR₁]
+      exact ⟨fun v hv => (Computesι.det hd hw₁ hv) ▸ hR₁,
+        fun v hv => (Computesι.det hd hw₂ hv) ▸ hR₂⟩
+  exact ⟨fun ts hts => (hrun ts _ ((hB _ _ ((hT ts ts).1 hts)).trans
+      (hB _ _ ((hT ts ts).1 hts)).symm)).1,
+    fun ts hts => (hrun ts _ (hB _ _ ((hT ts ts).1 hts))).2⟩
 
 /-- Two closed terms that compute to types of `U_l` with the same equality of their terms and, for each
 program, a common relation of run time are equal terms of `U_l`, in a signature whose names are

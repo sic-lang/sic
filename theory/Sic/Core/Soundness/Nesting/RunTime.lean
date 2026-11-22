@@ -83,56 +83,16 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-  have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
   have hκs : κ₁.quality ≤ Quality.type := fun h => nomatch h
-  -- The results at the first substitution and equal arguments are equal types.
-  have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
-        (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
-    have huu := hSp.trans (hSp.symm hts) hts
-    (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+  obtain ⟨hF₁, hF₂, -, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκs hκn hB
+  obtain ⟨hR₁, hR₂⟩ := RunFieldRel.atArgs_head hd P hT₁ hκn hB
   let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n .type fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  -- A type equal to the result at the first substitution and the arguments `ts` has the
-  -- equality `F ts`.
-  have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-      (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-        FieldRel sig ι n (fun m _ => levelRel sig ι m) .type w (F ts.terms)) ∧
-      ∃ v, Computesι sig ι A v ∧
-        FieldRel sig ι n (fun m _ => levelRel sig ι m) .type v (F ts.terms) :=
-    fun ts A hA => by
-      obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκs hκn
-      rw [show F ts.terms = _ from FieldRel.atArgs_eq hd ihm hw₁ hF₁]
-      exact ⟨⟨w₁, hw₁, hF₁⟩, w₂, hw₂, hF₂⟩
   let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P n fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  -- A type equal to the result at the first substitution and the arguments `ts` has the
-  -- relation of run time `R ts`.
-  have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-      (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-        RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w (R ts.terms)) ∧
-      ∃ v, Computesι sig ι A v ∧
-        RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v (R ts.terms) :=
-    fun ts A hA => by
-      obtain ⟨w₁, w₂, R₀, hw₁, hw₂, hR₁, hR₂⟩ := hA.runFieldRel P hκn
-      rw [show R ts.terms = _ from RunFieldRel.atArgs_eq hd ihm ih hw₁ hR₁]
-      exact ⟨⟨w₁, hw₁, hR₁⟩, w₂, hw₂, hR₂⟩
-  -- Equal abstractions for the destructor have equal instances at equal arguments.
-  have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
-      EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
-    fun f₁ f₂ hf τ₁ τ₂ hτ => by
-      obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
-      obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
-      have hts := (hT ts us).2 hτ
-      have htt := hSp.trans hts (hSp.symm hts)
-      obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
-      exact hF.validEqTerm hd hw (hf _ _ hts)
   let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := fun f H o a => ∃ S',
     RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
@@ -159,8 +119,8 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
     fun f₁ f₂ hf H o a => by
       have hf₂ : AbstractionRel SΘ F f₂ f₂ := fun ts us hts => by
         have htt := hSp.trans hts (hSp.symm hts)
-        obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
-        have hP := FieldRel.isPer hd ihm hF
+        obtain ⟨⟨w, hw⟩, hF⟩ := hF₁ ts htt
+        have hP := FieldRel.isPer hd ihm (hF w hw)
         exact hP.trans (hP.symm (hf ts ts htt)) (hf ts us hts)
       obtain ⟨S₁, h₁, h₂⟩ := hds f₁ f₂ (hcond f₁ f₂ hf) D hcase'
       obtain ⟨S₂, h₁', h₂'⟩ := hds f₂ f₂ (hcond f₂ f₂ hf₂) D hcase'
@@ -170,18 +130,18 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
       (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).1) hresp,
     .cons hi hν₂ (hΘ₂ ▸ hT₂.levelLe hn) (hΘ₂ ▸ hRT₂.levelLe hn) F R
       (fun ts hts => ?_) (fun ts hts => ?_) G (fun f hf => (hG f hf).2) hresp⟩
-  · obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts hts)
+  · obtain ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
     rw [hB₁]
-    exact .plain hw hF
-  · obtain ⟨⟨w, hw, hR⟩, -⟩ := hrun ts _ (hBB ts ts hts)
+    exact .plain hw (hF w hw)
+  · obtain ⟨⟨w, hw⟩, -⟩ := hF₁ ts hts
     rw [hB₁]
-    exact .plain hw hR
-  · obtain ⟨-, v, hv, hF⟩ := hres ts _ (hB _ _ ((hT ts ts).1 hts))
+    exact .plain hw (hR₁ ts hts w hw)
+  · obtain ⟨⟨v, hv⟩, hF⟩ := hF₂ ts hts
     rw [hB₂]
-    exact .plain hv hF
-  · obtain ⟨-, v, hv, hR⟩ := hrun ts _ (hB _ _ ((hT ts ts).1 hts))
+    exact .plain hv (hF v hv)
+  · obtain ⟨⟨v, hv⟩, -⟩ := hF₂ ts hts
     rw [hB₂]
-    exact .plain hv hR
+    exact .plain hv (hR₂ ts hts v hv)
 
 /-- The clause `Reading.NestedHead` of the graph of the nestings of run time: a destructor whose
 arguments are equal telescopes at two equal closed substitutions, and are the same at two other

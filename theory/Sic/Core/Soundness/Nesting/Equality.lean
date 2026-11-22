@@ -108,48 +108,12 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   unfold NestDesReads at hds ⊢
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-  have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
-  -- The results at the first substitution and equal arguments are equal types.
-  have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
-        (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
-    have huu := hSp.trans (hSp.symm hts) hts
-    (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+  obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 hκn hB
   let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n κ.quality fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  -- A type equal to the result at the first substitution and the arguments `ts` has the
-  -- equality `F ts`.
-  have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-      (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-        FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality w (F ts.terms)) ∧
-      ∃ v, Computesι sig ι A v ∧
-        FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality v (F ts.terms) :=
-    fun ts A hA => by
-      obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 hκn
-      rw [show F ts.terms = _ from FieldRel.atArgs_eq hd ih hw₁ hF₁]
-      exact ⟨⟨w₁, hw₁, hF₁⟩, w₂, hw₂, hF₂⟩
-  have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-    obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
-    have huu := hSp.trans (hSp.symm hts) hts
-    obtain ⟨⟨w', hw', -⟩, -⟩ := hres us' _ (hBB us' us' huu)
-    obtain ⟨-, v, hv, hFv⟩ := hres ts' _ (hBB ts' us' hts)
-    cases Computesι.det hd hw' hv
-    rw [show F us'.terms = _ from FieldRel.atArgs_eq hd ih hw' hFv]
-  -- Equal abstractions for the destructor have equal instances at equal arguments.
-  have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
-      EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
-    fun f₁ f₂ hf τ₁ τ₂ hτ => by
-      obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
-      obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
-      have hts := (hT ts us).2 hτ
-      have htt := hSp.trans hts (hSp.symm hts)
-      obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
-      exact hF.validEqTerm hd hw (hf _ _ hts)
   let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
     NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
@@ -173,8 +137,8 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂ :=
     fun f₁ f₂ hf o₁ o₂ => by
       have hEp := AbstractionRel.isPer hSp (fun ts hts =>
-        have ⟨⟨_, _, hF⟩, _⟩ := hres ts _ (hBB ts ts hts)
-        FieldRel.isPer hd ih hF) hBresp
+        have ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
+        FieldRel.isPer hd ih (hF w hw)) hBresp
       obtain ⟨S', h₁, h₂⟩ := hds f₁ f₂ (hcond f₁ f₂ hf)
       have hf₂ := hEp.trans (hEp.symm hf) hf
       obtain ⟨S'', h₁', h₂'⟩ := hds f₂ f₂ (hcond f₂ f₂ hf₂)
@@ -184,12 +148,12 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
       (fun f hf => (hG f hf).1) hresp,
     .cons hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F (fun ts hts => ?_) hBresp G
       (fun f hf => (hG f hf).2) hresp⟩
-  · obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts hts)
+  · obtain ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
     rw [hB₁]
-    exact .plain hw hF
-  · obtain ⟨-, v, hv, hF⟩ := hres ts _ (hB _ _ ((hT ts ts).1 hts))
+    exact .plain hw (hF w hw)
+  · obtain ⟨⟨v, hv⟩, hF⟩ := hF₂ ts hts
     rw [hB₂]
-    exact .plain hv hF
+    exact .plain hv (hF v hv)
 
 /-- The clause `Reading.NestedHead` of the graph of the nestings: a destructor whose arguments are
 equal telescopes at two equal closed substitutions, and are the same at two other substitutions, at

@@ -674,49 +674,13 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
     obtain ⟨hΘ, h⟩ := h
     have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-    have hT := TelRel.eqSubst_iff_plain hd hT₁
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
-      -- The results at the first substitution and equal arguments are equal types.
-      have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
-          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
-            (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
-        have huu := hSp.trans (hSp.symm hts) hts
-        (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+      obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 (hκ.2 Fin.elim0) hB
       let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
         B.subst (Subst.append θ₁ ts.toSubst)
-      -- A type equal to the result at the first substitution and the arguments `ts` has the
-      -- equality `F ts`.
-      have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-          (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w) ∧
-          ∀ v, Computesι sig ι A v →
-            FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
-              (F ts.terms) := fun ts A hA => by
-        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
-        refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
-        cases Computesι.det hd hw₂ hv
-        rw [show F ts.terms = _ from FieldRel.atArgs_eq hd ih hw₁ hF₁]
-        exact hF₂
-      have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-        obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
-        have huu := hSp.trans (hSp.symm hts) hts
-        obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
-        rw [show F us'.terms = _ from
-          FieldRel.atArgs_eq hd ih hw' ((hres ts' _ (hBB ts' us' hts)).2 w' hw')]
-      -- Equal abstractions for the destructor have equal instances at equal arguments.
-      have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
-          EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-          ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
-        fun f₁ f₂ hf τ₁ τ₂ hτ => by
-          obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
-          obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
-          have hts := (hT ts us).2 hτ
-          have htt := hSp.trans hts (hSp.symm hts)
-          obtain ⟨⟨w, hw⟩, hF⟩ := hres ts _ (hBB ts ts htt)
-          exact (hF w hw).validEqTerm hd hw (hf _ _ hts)
       let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
         DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
           (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧
@@ -738,7 +702,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
       have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂ :=
         fun f₁ f₂ hf o₁ o₂ => by
           have hEp := AbstractionRel.isPer hSp (fun ts hts =>
-            have ⟨⟨w, hw⟩, hF⟩ := hres ts _ (hBB ts ts hts)
+            have ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
             FieldRel.isPer hd ih (hF w hw)) hBresp
           obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₁ f₂ (hcond f₁ f₂ hf))
           have hf₂ := hEp.trans (hEp.symm hf) hf
@@ -746,12 +710,10 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
           rw [hGeq f₁ S' h₁, hGeq f₂ S'' h₁']
           exact DesRel.unique hd ih h₂ _ _ h₂' o₁ o₂
       have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
-      refine ⟨_, .cons hT₁ F (fun ts hts => (hres ts _ (hBB ts ts hts)).1)
-        (fun ts hts => (hres ts _ (hBB ts ts hts)).2) hBresp G (fun f hf => (hG f hf).1) hresp hr',
-        .cons hT₂ F (fun ts hts => ?_) (fun ts hts => (hres ts _ (hB _ _ ((hT ts ts).1 hts))).2)
-          hBresp G (fun f hf => (hG f hf).2) hresp hr'⟩
-      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ.1 (hκ.2 Fin.elim0)
-      exact ⟨w₂, hw₂⟩
+      exact ⟨_, .cons hT₁ F (fun ts hts => (hF₁ ts hts).1) (fun ts hts => (hF₁ ts hts).2) hBresp G
+          (fun f hf => (hG f hf).1) hresp hr',
+        .cons hT₂ F (fun ts hts => (hF₂ ts hts).1) (fun ts hts => (hF₂ ts hts).2) hBresp G
+          (fun f hf => (hG f hf).2) hresp hr'⟩
     · rename_i D hr
       obtain ⟨-, hds⟩ := h
       let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
@@ -799,56 +761,15 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
     have hcase' := fun d' (hd' : d' ∈ _) => hcase d' (List.mem_cons_of_mem _ hd')
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-    have hT := TelRel.eqSubst_iff_plain hd hT₁
-    have hSp := TelRel.isPer hd ihm (fun _ => .plain) hT₁
     split at h
     · rename_i hr
       obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
-      -- The results at the first substitution and equal arguments are equal types.
-      have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
-          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
-            (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
-        have huu := hSp.trans (hSp.symm hts) hts
-        (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
+      obtain ⟨hF₁, hF₂, -, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 (hκ.2 Fin.elim0) hB
+      obtain ⟨hR₁, hR₂⟩ := RunFieldRel.atArgs_head hd P hT₁ (hκ.2 Fin.elim0) hB
       let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
         B.subst (Subst.append θ₁ ts.toSubst)
-      -- A type equal to the result at the first substitution and the arguments `ts` has the
-      -- equality `F ts`.
-      have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-          (∃ w, Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w) ∧
-          ∀ v, Computesι sig ι A v →
-            FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality v
-              (F ts.terms) := fun ts A hA => by
-        obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 (hκ.2 Fin.elim0)
-        refine ⟨⟨w₁, hw₁⟩, fun v hv => ?_⟩
-        cases Computesι.det hd hw₂ hv
-        rw [show F ts.terms = _ from FieldRel.atArgs_eq hd ihm hw₁ hF₁]
-        exact hF₂
       let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P κ.level.closedValue fun ts =>
         B.subst (Subst.append θ₁ ts.toSubst)
-      -- A type equal to the result at the first substitution and the arguments `ts` has the
-      -- relation of run time `R ts`.
-      have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
-          ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
-          ∀ v, Computesι sig ι A v →
-            RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) v
-              (R ts.terms) := fun ts A hA v hv => by
-        obtain ⟨w₁, w₂, R₀, hw₁, hw₂, hR₁, hR₂⟩ := hA.runFieldRel P (hκ.2 Fin.elim0)
-        cases Computesι.det hd hw₂ hv
-        rw [show R ts.terms = _ from RunFieldRel.atArgs_eq hd ihm ih hw₁ hR₁]
-        exact hR₂
-      -- Equal abstractions for the destructor have equal instances at equal arguments.
-      have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
-          EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-          ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
-        fun f₁ f₂ hf τ₁ τ₂ hτ => by
-          obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
-          obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
-          have hts := (hT ts us).2 hτ
-          have htt := hSp.trans hts (hSp.symm hts)
-          obtain ⟨⟨w, hw⟩, hF⟩ := hres ts _ (hBB ts ts htt)
-          exact (hF w hw).validEqTerm hd hw (hf _ _ hts)
       let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := fun f H o a => ∃ S',
         RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
           (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧
@@ -870,14 +791,10 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
         rw [hGeq f S' h₁]
         exact ⟨h₁, h₂⟩
       have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
-      refine ⟨_, .cons hi hT₁ hRT₁ F R (fun ts hts => (hres ts _ (hBB ts ts hts)).1)
-        (fun ts hts => hs ▸ (hres ts _ (hBB ts ts hts)).2) (fun ts hts => hrun ts _ (hBB ts ts hts))
-        G (fun f hf => (hG f hf).1) hr',
-        .cons hi hT₂ hRT₂ F R (fun ts hts => ?_)
-          (fun ts hts => hs ▸ (hres ts _ (hB _ _ ((hT ts ts).1 hts))).2)
-          (fun ts hts => hrun ts _ (hB _ _ ((hT ts ts).1 hts))) G (fun f hf => (hG f hf).2) hr'⟩
-      obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hκ.1 (hκ.2 Fin.elim0)
-      exact ⟨w₂, hw₂⟩
+      exact ⟨_, .cons hi hT₁ hRT₁ F R (fun ts hts => (hF₁ ts hts).1)
+          (fun ts hts => hs ▸ (hF₁ ts hts).2) hR₁ G (fun f hf => (hG f hf).1) hr',
+        .cons hi hT₂ hRT₂ F R (fun ts hts => (hF₂ ts hts).1)
+          (fun ts hts => hs ▸ (hF₂ ts hts).2) hR₂ G (fun f hf => (hG f hf).2) hr'⟩
     · rename_i D' hr
       obtain ⟨-, hds⟩ := h
       let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
