@@ -44,14 +44,17 @@ types, by the graph of the nestings, which follows the nesting of the type, read
 declaration, and takes the given relations at its positions.
 
 The graph of Pujet relates a type in a context to three relations, the equality of the types, the
-terms and their equality, by the typed reduction, at two levels, and has the natural numbers, the
-types of functions, quantified over the weakenings of the context, and the neutral types.
+terms and their equality, by the typed reduction, at two levels, and has the universe of the level
+below, the natural numbers, the types of functions, quantified over the weakenings of the context,
+the neutral types, and the types of the level below, embedded in the level.
 The graph here relates a closed canonical type to the equality of its terms alone, at every level:
 its terms are those that the equality relates to themselves, and two types are equal when they have
 the same equality of terms; the canonical terms are those that the computation gives, without
 typing, and the closed types need no weakenings and no neutral types.
-Its types are the sorts and the instances of the declared types, the functions being codata, and
-each level also has the truth of its propositions and the relations of run time of its types, which
+Its types are the universes of the level below, of types and of propositions, and the instances of
+the declared types, the functions being codata; a type has one level, without embedding of the
+levels below, whose types enter a level only as the types of the fields of its instances.
+Each level also has the truth of its propositions and the relations of run time of its types, which
 the graph of Pujet has no counterpart for.
 -/
 
