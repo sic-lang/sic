@@ -790,83 +790,21 @@ theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct
 /-- A type of a universe has one level, in a signature whose names are distinct. -/
 theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
     {below₂ : LevelRel.Below m} {v : Term 0 []} {R R' : TermRel} (hd : sig.Distinct)
-    (h : UnivRel sig ι n below₁ v R) (h' : UnivRel sig ι m below₂ v R') : n = m := by
-  cases h with
-  | univ hl hk => cases h' with
-    | univ hl' hk' => omega
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
-  | prop hl hk => cases h' with
-    | prop hl' hk' => omega
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
-  | data h _ _ _ hv _ hn => cases h' with
-    | univ => cases hv
-    | prop => cases hv
-    | data h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
-      exact hn.symm.trans hn'
-    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-  | codata h _ _ _ hv _ hn => cases h' with
-    | univ => cases hv
-    | prop => cases hv
-    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
-      exact hn.symm.trans hn'
+    (h : UnivRel sig ι n below₁ v R) (h' : UnivRel sig ι m below₂ v R') : n = m :=
+  (h.isTypeOfSort.unique hd h'.isTypeOfSort).2
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
     {below₁ : LevelRel.Below n} {below₂ : LevelRel.Below m} {v : Term 0 []} {R : TermRel} {b : Prop}
     (hd : sig.Distinct) (h : UnivRel sig ι n below₁ v R) (h' : PropRel sig ι m below₂ v b) :
-    False := by
-  cases h' with
-  | data h' _ _ _ hv' hs' =>
-    subst hv'
-    cases h with
-    | data h _ _ _ hv hs =>
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv.symm
-      exact nomatch hs.symm.trans hs'
-    | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
-  | codata h' _ _ _ hv' hs' =>
-    subst hv'
-    cases h with
-    | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
-    | codata h _ _ _ hv hs =>
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv.symm
-      exact nomatch hs.symm.trans hs'
-  | equalityUniv | equalityProp =>
-    cases h with
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    False :=
+  nomatch (h.isTypeOfSort.unique hd h'.isTypeOfSort).1
 
 /-- A proposition has one level, in a signature whose names are distinct. -/
 theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
     {below₂ : LevelRel.Below m} {v : Term 0 []} {b b' : Prop} (hd : sig.Distinct)
-    (h : PropRel sig ι n below₁ v b) (h' : PropRel sig ι m below₂ v b') : n = m := by
-  cases h with
-  | data h _ _ _ hv _ hn => cases h' with
-    | data h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
-      exact hn.symm.trans hn'
-    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-    | equalityUniv | equalityProp => cases hv
-  | codata h _ _ _ hv _ hn => cases h' with
-    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
-      exact hn.symm.trans hn'
-    | equalityUniv | equalityProp => cases hv
-  | equalityUniv hl => cases h' with
-    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
-    | equalityUniv hl' => exact hl.symm.trans hl'
-  | equalityProp hl => cases h' with
-    | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
-    | equalityProp hl' => exact hl.symm.trans hl'
+    (h : PropRel sig ι n below₁ v b) (h' : PropRel sig ι m below₂ v b') : n = m :=
+  (h.isTypeOfSort.unique hd h'.isTypeOfSort).2
 
 /-! ### The Relations of a Level
 

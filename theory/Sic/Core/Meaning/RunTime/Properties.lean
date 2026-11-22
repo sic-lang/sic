@@ -143,58 +143,16 @@ theorem RunUnivRel.isTypeOfSort {sig : Signature} {ι : Interpretation} {P : Pro
 theorem RunUnivRel.level {sig : Signature} {ι : Interpretation} {P : Program} {n m : Nat}
     {below₁ : LevelRel.Below n} {below₂ : LevelRel.Below m} {v : Term 0 []} {R R' : RunRel}
     (hd : sig.Distinct) (h : RunUnivRel sig ι P n below₁ v R)
-    (h' : RunUnivRel sig ι P m below₂ v R') : n = m := by
-  cases h with
-  | univ hl hk => cases h' with
-    | univ hl' hk' => omega
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
-  | prop hl hk => cases h' with
-    | prop hl' hk' => omega
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
-  | data h _ _ _ hv _ hn => cases h' with
-    | univ => cases hv
-    | prop => cases hv
-    | data h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
-      exact hn.symm.trans hn'
-    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-  | codata h _ _ _ hv _ hn => cases h' with
-    | univ => cases hv
-    | prop => cases hv
-    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' _ hn' =>
-      subst hv
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
-      exact hn.symm.trans hn'
+    (h' : RunUnivRel sig ι P m below₂ v R') : n = m :=
+  (h.isTypeOfSort.unique hd h'.isTypeOfSort).2
 
 /-- A type of a universe of run time is not a proposition, in a signature whose names are
 distinct. -/
 theorem RunUnivRel.not_prop {sig : Signature} {ι : Interpretation} {P : Program} {n m : Nat}
     {below₁ : LevelRel.Below n} {below₂ : LevelRel.Below m} {v : Term 0 []} {R : RunRel}
     {b : Prop} (hd : sig.Distinct) (h : RunUnivRel sig ι P n below₁ v R)
-    (h' : PropRel sig ι m below₂ v b) : False := by
-  cases h' with
-  | data h' _ _ _ hv' hs' =>
-    subst hv'
-    cases h with
-    | data h _ _ _ hv hs =>
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv.symm
-      exact nomatch hs.symm.trans hs'
-    | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
-  | codata h' _ _ _ hv' hs' =>
-    subst hv'
-    cases h with
-    | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
-    | codata h _ _ _ hv hs =>
-      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv.symm
-      exact nomatch hs.symm.trans hs'
-  | equalityUniv | equalityProp =>
-    cases h with
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    (h' : PropRel sig ι m below₂ v b) : False :=
+  nomatch (h.isTypeOfSort.unique hd h'.isTypeOfSort).1
 
 /-! ## The Relation of Run Time Reads the Equality -/
 
