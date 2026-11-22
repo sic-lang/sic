@@ -170,16 +170,12 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The relations of run time of the block at the arguments substituted.
   obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hq hl hp hadm hasσ hs P
-  have ihmono : ∀ m,
-      m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-      RunLevelRel.Monotone ((levelRel sig ι m).run P) := fun m _ => levelRel_run_mono hd m
   have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
       ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-    fun X Y hXY T hT c hc H =>
-      RunTelRel.mono hd ihmono (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl)
-        (hS X T hT c hc) _ _ (hS Y T hT c hc)
-        (fun _ => Nest.map_rel₃
-          (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
+    fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+      (Θ := fun c => ⟨_, c.fieldsAt _ _ (as.subst σ)⟩)
+      (F := fun X D => (.inst D qs ls ps (as.subst σ), (X D).computed sig ι)) hS X Y
+      fun D H _ _ => RunRel.computed_mono (hXY D H)
   let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
     ((sig.caseFieldParams T.name qs ps).getD [])
   let ϱ := (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run
@@ -205,7 +201,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hD' : D' ∈ decl.names := hX.1 (fun D'' _ _ _ => D'' ∈ decl.names)
       (fun T' hT' _ _ _ _ => TypeDeclaration.name_mem_names hT')
     obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-    exact ⟨RunUnivRel.mono hd ihmono (hU T₃ hT₃).1 hH₀ hX.1,
+    exact ⟨RunUnivRel.mono hd (fun m _ => levelRel_run_mono hd m) (hU T₃ hT₃).1 hH₀ hX.1,
       fun ϖ' H' hH' hHH' => hX.2 ϖ' H' (hH₀.trans hH') hHH'⟩
   -- The leaves of the nested results: the recursor on a term of a type of the block, on the address
   -- of a path that runs to it, in a heap that extends `H`.

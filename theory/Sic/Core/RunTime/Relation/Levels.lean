@@ -136,11 +136,10 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
           (fun D' H _ _ _ => RunRel.computed_levelEquiv hd (hXY D' H)) _) H
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-      fun X Y hXY T hT c hc H => RunTelRel.mono hd (fun m _ => levelRel_run_mono hd m)
-        (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl) (hS X T hT c hc) _ _
-        (hS Y T hT c hc)
-        (fun _ => Nest.map_rel₃
-          (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
+      fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
+        (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
+        fun D H _ _ => RunRel.computed_mono (hXY D H)
     exact h (fun D H w a => ∀ w', Term.LevelEquiv w w' →
         DataType.runBlockRel sig _ decl.dataTypes S D H w' a)
       (fun T hT H w a ⟨c, hc, i, ts, as, hw, hi, ha, hs⟩ w' hww => by

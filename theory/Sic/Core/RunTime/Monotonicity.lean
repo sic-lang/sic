@@ -366,6 +366,25 @@ termination_by structural h _ _ _ _ => h
 
 end
 
+/-- The relations of run time of the fields of the constructors of a block of data types, given by
+telescopes of the graph of run time at relations of their recursive fields, grow with them: the
+monotonicity of `RunTelRel.mono` in one heap, for every constructor of the block. -/
+theorem RunTelRel.block_mono {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P))
+    {j g k : Nat} {Δ : Scope} {α : Type} {Ts : List (DataType j g k Δ)}
+    {rec : Constructor j g k Δ → Nat → Nest Name}
+    {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps}
+    {F : α → Name → RunNestLeaf} {S : α → Constructor j g k Δ → RunFieldsRel}
+    (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, RunTelRel sig ι P n (fun m _ => levelRel sig ι m)
+      (fun i => (rec c i).map (F X)) (Θ c).2 (S X c))
+    (X Y : α) (hXY : ∀ D H t a, (F X D).2 H t a → (F Y D).2 H t a) (T : DataType j g k Δ)
+    (hT : T ∈ Ts) (c : Constructor j g k Δ) (hc : c ∈ T.constructors) (H : Heap)
+    (ts : Terms 0 []) (as : List Nat) :
+    S X c H ts as → S Y c H ts as :=
+  RunTelRel.mono hd ih (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl)
+    (hS X T hT c hc) _ _ (hS Y T hT c hc)
+    (fun _ => Nest.map_rel₃ (fun D H _ e _ _ => e ▸ hXY D H _ _) _) H H rfl ts as
+
 /-- The relations of run time of every level are monotone in the heap, in a signature whose names
 are distinct. -/
 theorem levelRel_run_mono {sig : Signature} {ι : Interpretation} {P : Program}
