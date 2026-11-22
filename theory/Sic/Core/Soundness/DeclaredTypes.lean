@@ -263,6 +263,36 @@ theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
 
+
+-- ADE: none.
+/-- A relation that the graph of the nestings gives the destructors of a codata type of a block at
+the values of the levels `ls` is one at `ls`, in a signature whose names are distinct. -/
+theorem NestDesRel.substLevels_of_atLevels (hd : sig.Distinct)
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {sT s : Quality}
+    {ν : Nesting NestLeaf decl.scope} {θ : Subst 0 [] decl.scope} {S : ObsRel}
+    (h : NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν
+      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) @θ S) :
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) @θ S :=
+  NestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
+    (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
+
+-- ADE: none.
+/-- A relation that the graph of the nestings of run time gives the destructors of a codata type of
+a block at the values of the levels `ls` is one at `ls`, in a signature whose names are
+distinct. -/
+theorem RunNestDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {n : Nat} {D : Name}
+    {ν : Nesting RunNestLeaf decl.scope} {θ : Subst 0 [] decl.scope} {S : RunObsRel}
+    (h : RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν
+      ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) @θ S) :
+    RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) @θ S :=
+  RunNestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
+    (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
+
 -- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
 the graph of a sort at the value of its level there, whose positions hold the instances of the

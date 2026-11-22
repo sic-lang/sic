@@ -358,20 +358,12 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
     | plain hc hR =>
       cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
       have hn := RunFieldRel.codata_inv hd hT hq hl hp hR
-      have hls := fun i => Level.ofNat_closedValue (ls.getFin hl i)
       refine ⟨(), Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hq hl hp)) hn,
         fun hdr => ?_⟩
       obtain ⟨S, hS₁, hS₂⟩ := hdr D fun d hdm =>
         hT.2.2 ▸ Signature.destructorCase_of_mem hT.1 hT.2.1 hdm
-      have hinv : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
-        Nat.forall_lt (levelRel_levelInvariant hd) _
-      have hrel : ∀ ν : Nesting RunNestLeaf decl.scope,
-          Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν :=
-        fun ν _ x => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _
-      have hS₁' := RunNestDesRel.levelEquiv hd hinv hS₁
-        (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
-      have hS₂' := RunNestDesRel.levelEquiv hd hinv hS₂
-        (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
+      have hS₁' := RunNestDesRel.substLevels_of_atLevels hd hS₁
+      have hS₂' := RunNestDesRel.substLevels_of_atLevels hd hS₂
       cases hκ : (decl.sort (.ofLists qs ps hq hp)).quality with
       | type =>
         exact ⟨_, .codata hT hq hl hp rfl hκ hn hrec S hS₁',

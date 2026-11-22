@@ -368,19 +368,11 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
     | plain hc hF =>
       cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
       obtain ⟨hn, hs⟩ := FieldRel.codata_inv hd hT hq hl hp hF
-      have hls := fun i => Level.ofNat_closedValue (ls.getFin hl i)
       refine ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
         ⟨Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hq hl hp)) hn, rfl⟩,
         fun ⟨S, hS₁, hS₂⟩ => ?_⟩
-      have hinv : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
-        Nat.forall_lt (levelRel_levelInvariant hd) _
-      have hrel : ∀ ν : Nesting NestLeaf decl.scope,
-          Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν :=
-        fun ν _ x => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _
-      have hS₁' := NestDesRel.levelEquiv hd hinv hS₁
-        (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
-      have hS₂' := NestDesRel.levelEquiv hd hinv hS₂
-        (Destructors.substLevels_levelEquiv hls (T.body _)) (Subst.LevelEquiv.refl _) (hrel _)
+      have hS₁' := NestDesRel.substLevels_of_atLevels hd hS₁
+      have hS₂' := NestDesRel.substLevels_of_atLevels hd hS₂
       cases hκ : (decl.sort (.ofLists qs ps hq hp)).quality with
       | type =>
         rw [hκ] at hS₁' hS₂'
