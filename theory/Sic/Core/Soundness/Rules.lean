@@ -1046,11 +1046,11 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   obtain ⟨h', hv⟩ := hent.hasDataType h
   have hd := has.1.distinct
   have hI : ValidEqTermΓ sig ι ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₁ ps as₂)
-      (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-        (decl.sort (.ofLists qs ps hq hp)).level.subst (ls₁.getFin hl₁)⟩) :=
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁))) :=
     ValidEqTermΓ.inst hent h.hasDeclaredType hq hl₁ hl₁ hp hadm has fun _ => Level.equivalence.refl _
   have hA : ValidTypeΓ sig ι ctx (.inst D qs ls₁ ps as₁) := by
-    cases hs : (decl.sort (.ofLists qs ps hq hp)).quality <;> rw [hs] at hI
+    cases hs : (decl.sort (.ofLists qs ps hq hp)).quality <;>
+      rw [TypeDeclaration.sortAt, Universe.substLevels, hs] at hI
     · exact hI.univType.left
     · exact hI.propType.left
   refine ⟨hA, fun σ₁ σ₂ hσ => ?_⟩
