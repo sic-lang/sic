@@ -77,7 +77,7 @@ distinct and whose liftings are those of its types, in their order, when the sha
 the block follow `ρ₁`, and the relation at each position runs as the leaf of the position says and
 does not read the computation. -/
 theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F →
       Nest.All (fun x => LeafCongr sig ι sT x.2) τ →
@@ -134,7 +134,7 @@ its telescope relates to themselves, a term whose recursive result of the multip
 its result: the destructors before it are equal abstractions, or have a result with a position, on
 which the destructors after them do not depend. -/
 theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     {n : Nat} {sT s : Quality} {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
@@ -202,7 +202,7 @@ heap `Hb` of the cells of `E₀`, evaluates to a value related to the recursive 
 the type lifted, when the hypotheses of `NestRel.skeletonRuns` hold and the equality of the type
 relates the field to a term: the field is never read. -/
 theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
     (hF : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All (fun x => LeafCongr sig ι sT x.2) τ)

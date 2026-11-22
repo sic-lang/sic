@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Monotonicity
+public import Sic.Core.Shape.Results.Substitution
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Syntax.Signature
 import Sic.Core.Lifting.Functionality
@@ -275,7 +276,7 @@ the shapes of the types of the block carry the factor `11ᵖ` and the ownerships
 shape of the instance is that of the lifting of the result. -/
 theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : ρ ≠ .zero → v.recursion ∉ Mode.oneOne.erased)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     {n : Nat} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
@@ -659,7 +660,7 @@ is used at run time, the shapes of the types of the block follow `ρ₁`, and th
 position runs as the leaf of the position says and does not read the computation. -/
 theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     (hprop : sig.ErasesPropDestructors)
     {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
     RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R →
@@ -704,7 +705,7 @@ observation of an address related to observations that `f` computes as runs to a
 to the observations by `f`, and the recursive results of these observations run. -/
 theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     (hprop : sig.ErasesPropDestructors)
     {n : Nat} {D : Name} {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
@@ -830,7 +831,7 @@ value related to the recursive result of the field at the type lifted, when the 
 from the field is the field itself. -/
 theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
-    (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
+    (hb : ρ₁.BlockShapes block)
     (hprop : sig.ErasesPropDestructors)
     {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel}
     (hR : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)

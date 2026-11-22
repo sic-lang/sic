@@ -91,7 +91,7 @@ theorem Term.Lifts.shape
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
       {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig₁ v ρ n e A A' m →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
-        (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
+        (ρ.BlockShapes block) →
           ∃ m', A.shape v (Signature.shapes v md ax sig₁) block @ν n = some m' ∧ m'.Of m
   | _, _, _, _, _, _, _, _, .var (x := x) hx _, ν, hν, _ => by
     rcases hν x with ⟨h₁, -⟩ | ⟨y, m, m', h₁, h₂, h₃⟩
@@ -124,7 +124,7 @@ theorem InstanceArgs.Lifts.shapes
       {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Δ' : Scope} →
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig₁ v ρ ns as S ms as' →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
-        (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
+        (ρ.BlockShapes block) →
           ∃ ms', as.shapes v (Signature.shapes v md ax sig₁) block @ν ns = some (S.zip ms') ∧
             Shape.Motive.AllOf ms' ms
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => ⟨[], rfl, rfl⟩
@@ -185,7 +185,7 @@ theorem Term.Lifts.shape_append {sig₀ pre : Signature} (hsig : (pre ++ sig₁)
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
       {A' : Term k Γ'} → {m : Lifting.Result k} → Term.Lifts sig₁ v ρ n e A A' m →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
-        (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
+        (ρ.BlockShapes block) →
           A.shape v (Signature.shapes v md ax sig₁) block @ν n =
             A.shape v (Signature.shapes v md ax (pre ++ sig₁)) block @ν n
   | _, _, _, _, _, _, _, _, .var _ _, _, _, _ => rfl
@@ -216,7 +216,7 @@ theorem InstanceArgs.Lifts.shapes_append {sig₀ pre : Signature} (hsig : (pre +
       {as : InstanceArgs k Γ Δ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Δ' : Scope} →
       {as' : InstanceArgs k Γ' Δ'} → InstanceArgs.Lifts sig₁ v ρ ns as S ms as' →
       ∀ {ν : Nesting Shape.Motive Γ}, ρ.Shapes @ν →
-        (∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) →
+        (ρ.BlockShapes block) →
           as.shapes v (Signature.shapes v md ax sig₁) block @ν ns =
             as.shapes v (Signature.shapes v md ax (pre ++ sig₁)) block @ν ns
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _ => rfl
@@ -759,7 +759,7 @@ theorem Term.Lifts.shape_eq (hsig : sig.Distinct) (hord : sig.LiftsInOrder)
     {block : Name → Option Shape.Motive} {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n : Nest Name}
     {e : Term k Γ'} {A : Term k Γ} {A' : Term k Γ'} {m : Lifting.Result k}
     (h : Term.Lifts sig v ρ n e A A' m) {ν : Nesting Shape.Motive Γ} (hν : ρ.Shapes @ν)
-    (hb : ∀ D b, ρ.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩) :
+    (hb : ρ.BlockShapes block) :
     ∃ m', A.shape v (Signature.shapes v md ax sig) block @ν n = some m' ∧ m'.Of m :=
   h.shape (fun _ h => h) (hord.liftingsHaveShapes hsig sig [] rfl) hν hb
 
