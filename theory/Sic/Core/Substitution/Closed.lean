@@ -359,6 +359,18 @@ theorem Subst.append_liftN_empty {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
     Subst.append θ₁ θ₂ (Ren.liftN n Ren.empty z) = θ₂ z := by
   simp only [Subst.append, Var.split_liftN_empty]
 
+/-- A closed substitution followed by closed arguments gives a renamed variable under the arguments
+what a substitution that the renaming composes gives the variable. -/
+theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (α : Ren Γ Δ) {θ : Subst 0 [] Γ}
+    {θ' : Subst 0 [] Δ} (h : ∀ {a} (x : Var Δ a), θ (α x) = θ' x)
+    (τ : Subst 0 [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var (Δ.extend n) a) :
+    Subst.append θ τ (Ren.liftN n α x) = Subst.append θ' τ x := by
+  rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
+  · rw [Ren.liftN_weakenN, Subst.append_weakenN, Subst.append_weakenN]
+    exact h y
+  · rw [Ren.liftN_comp_of n (α₃ := Ren.empty) (fun y => nomatch y) z, Subst.append_liftN_empty,
+      Subst.append_liftN_empty]
+
 /-- `[t / x]`: the closed substitution of one variable by the closed term `t`. -/
 def Subst.closedSingle (t : Term k []) : Subst k [] [.var] := fun x =>
   match x with

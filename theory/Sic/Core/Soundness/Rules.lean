@@ -513,18 +513,6 @@ theorem ValidFieldsΓ.nested {Γ : Scope} {ps : List Parameter} {ctx : Context 0
 
 /-! ## Formation of the Destructors of a Block -/
 
-/-- A closed substitution followed by closed arguments gives a renamed variable under the arguments
-what a substitution that the renaming composes gives the variable. -/
-theorem Subst.append_liftN_rename {Γ Δ : Scope} {n : Nat} (α : Ren Γ Δ) {θ : Subst 0 [] Γ}
-    {θ' : Subst 0 [] Δ} (h : ∀ {a} (x : Var Δ a), θ (α x) = θ' x)
-    (τ : Subst 0 [] (Scope.extend [] n)) {a : Scope.Entry} (x : Var (Δ.extend n) a) :
-    Subst.append θ τ (Ren.liftN n α x) = Subst.append θ' τ x := by
-  rcases Var.cases_extend n x with ⟨y, rfl⟩ | ⟨z, rfl⟩
-  · rw [Ren.liftN_weakenN, Subst.append_weakenN, Subst.append_weakenN]
-    exact h y
-  · rw [Ren.liftN_comp_of n (α₃ := Ren.empty) (fun y => nomatch y) z, Subst.append_liftN_empty,
-      Subst.append_liftN_empty]
-
 /-- Renamed destructors, at closed substitutions that the renaming composes, are equal when the
 destructors are, at the composed substitutions, with the instances of the block renamed. -/
 theorem ValidEqDestructors₀.rename {κ : Universe 0} :

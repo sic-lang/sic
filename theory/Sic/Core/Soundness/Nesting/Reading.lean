@@ -5,7 +5,6 @@ public import Sic.Core.Soundness.Signature
 public import Sic.Core.Typing
 import Sic.Core.Positivity.Nesting
 import Sic.Core.Positivity.Substitution
-import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Typing.Induction
