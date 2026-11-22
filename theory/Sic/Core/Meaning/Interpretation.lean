@@ -56,6 +56,22 @@ def Level.ofNat {k : Nat} : Nat → Level k
 /-- The value of a level without variables. -/
 def Level.closedValue (l : Level 0) : Nat := l.value Fin.elim0
 
+/-- `l[ρ]`: the level `l` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
+def Level.atLevels {k : Nat} (ρ : Fin k → Nat) (l : Level k) : Level 0 :=
+  l.subst fun i => .ofNat (ρ i)
+
+/-- The substitution of the levels without variables of the values `ρ` for the level variables is
+the instantiation `[ρ]` of the levels. -/
+@[simp] theorem Level.subst_ofNat {k : Nat} (ρ : Fin k → Nat) :
+    (Level.subst fun i => (.ofNat (ρ i) : Level 0)) = Level.atLevels ρ :=
+  rfl
+
+/-- The levels instantiated by `ρ` are as many as the levels. -/
+theorem Level.length_atLevels {k n : Nat} (ρ : Fin k → Nat) {ls : List (Level k)}
+    (hl : ls.length = n) : (ls.map (Level.atLevels ρ)).length = n :=
+  (List.length_map _).trans hl
+
 /-- `t[ρ]`: the term `t` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/
 def Term.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (t : Term k Γ) : Term 0 Γ :=
@@ -78,6 +94,14 @@ RFC: `\mathsf{inst}_\rho` -/
 def InstanceArgs.atLevels {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (as : InstanceArgs k Γ Δ) :
     InstanceArgs 0 Γ Δ :=
   as.substLevels fun i => .ofNat (ρ i)
+
+/-- An instance at the values `ρ` of the level variables is the instance at its levels and its
+arguments at these values. -/
+theorem Term.atLevels_inst {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ) :
+    (Term.inst D qs ls ps as).atLevels ρ =
+      .inst D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ) :=
+  rfl
 
 /-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/

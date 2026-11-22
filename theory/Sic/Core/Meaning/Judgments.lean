@@ -140,4 +140,34 @@ theorem ValidTypeDeclaration.destructors {sig : Signature} {ι : Interpretation}
   · exact nomatch hT
   · exact h I hadm T hT
 
+/-- Arguments of the parameters of a type declaration at an instance, meaningful for every value of
+the level variables, are meaningful at the values `ρ`, as arguments of the parameters at the
+levels instantiated by `ρ`: the induction hypothesis of the arguments of an instance, at `ρ`. -/
+theorem ValidInstanceArgs.atLevels {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
+    {ctx : Context k Γ} {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades}
+    {ls : List (Level k)} (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
+    (h : ValidInstanceArgs sig ι ctx as ((decl.params I).substLevels (ls.getFin hl)))
+    (ρ : Fin k → Nat) :
+    ValidInstanceArgsΓ sig ι (ctx.atLevels ρ) (as.atLevels ρ)
+      ((decl.params I).substLevels
+        ((ls.map (Level.atLevels ρ)).getFin (Level.length_atLevels ρ hl))) := by
+  have h' := h ρ
+  simp only [Context.atLevels, Context.substLevels_substLevels_getFin] at h'
+  exact h'
+
+/-- Equal arguments of the parameters of a type declaration at an instance, for every value of the
+level variables, are equal at the values `ρ`, as arguments of the parameters at the levels
+instantiated by `ρ`: the induction hypothesis of the arguments of two equal instances, at `ρ`. -/
+theorem ValidEqInstanceArgs.atLevels {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
+    {ctx : Context k Γ} {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades}
+    {ls : List (Level k)} (hl : ls.length = decl.levels) {as₁ as₂ : InstanceArgs k Γ decl.scope}
+    (h : ValidEqInstanceArgs sig ι ctx as₁ as₂ ((decl.params I).substLevels (ls.getFin hl)))
+    (ρ : Fin k → Nat) :
+    ValidEqInstanceArgsΓ sig ι (ctx.atLevels ρ) (as₁.atLevels ρ) (as₂.atLevels ρ)
+      ((decl.params I).substLevels
+        ((ls.map (Level.atLevels ρ)).getFin (Level.length_atLevels ρ hl))) := by
+  have h' := h ρ
+  simp only [Context.atLevels, Context.substLevels_substLevels_getFin] at h'
+  exact h'
+
 end Sic.Core
