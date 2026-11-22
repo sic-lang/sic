@@ -689,6 +689,98 @@ theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct
   subst hD
   exact hd.not_hasDataType_hasCodataType h₁ h₂
 
+/-- In a signature whose names are distinct, two equal instances of data types are in sorts of the
+same quality. The lengths of the lists of the instances default to the hypotheses that state
+them. -/
+theorem Signature.Distinct.dataInst_quality_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasDataType D₁ decl₁ T₁) (h₂ : sig.HasDataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
+    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
+    (hp₁ : ps₁.length = decl₁.grades := by assumption)
+    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
+    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
+    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).quality =
+      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).quality := by
+  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
+  subst hD hqs hls hps
+  obtain ⟨rfl, -⟩ := hd.hasDataType_unique h₁ h₂
+  rfl
+
+/-- In a signature whose names are distinct, two equal instances of data types are in sorts of the
+same level at their levels. The lengths of the lists of the instances default to the hypotheses
+that state them. -/
+theorem Signature.Distinct.dataInst_level_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasDataType D₁ decl₁ T₁) (h₂ : sig.HasDataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
+    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
+    (hl₁ : ls₁.length = decl₁.levels := by assumption)
+    (hp₁ : ps₁.length = decl₁.grades := by assumption)
+    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
+    (hl₂ : ls₂.length = decl₂.levels := by assumption)
+    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
+    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).level.subst (ls₁.getFin hl₁) =
+      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).level.subst (ls₂.getFin hl₂) := by
+  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
+  subst hD hqs hls hps
+  obtain ⟨rfl, -⟩ := hd.hasDataType_unique h₁ h₂
+  rfl
+
+/-- In a signature whose names are distinct, two equal instances of codata types are in sorts of the
+same quality. The lengths of the lists of the instances default to the hypotheses that state
+them. -/
+theorem Signature.Distinct.codataInst_quality_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasCodataType D₁ decl₁ T₁) (h₂ : sig.HasCodataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
+    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
+    (hp₁ : ps₁.length = decl₁.grades := by assumption)
+    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
+    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
+    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).quality =
+      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).quality := by
+  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
+  subst hD hqs hls hps
+  obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h₁ h₂
+  rfl
+
+/-- In a signature whose names are distinct, two equal instances of codata types are in sorts of the
+same level at their levels. The lengths of the lists of the instances default to the hypotheses
+that state them. -/
+theorem Signature.Distinct.codataInst_level_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasCodataType D₁ decl₁ T₁) (h₂ : sig.HasCodataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
+    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
+    (hl₁ : ls₁.length = decl₁.levels := by assumption)
+    (hp₁ : ps₁.length = decl₁.grades := by assumption)
+    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
+    (hl₂ : ls₂.length = decl₂.levels := by assumption)
+    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
+    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).level.subst (ls₁.getFin hl₁) =
+      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).level.subst (ls₂.getFin hl₂) := by
+  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
+  subst hD hqs hls hps
+  obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h₁ h₂
+  rfl
+
 /-- A type of a universe has one level, in a signature whose names are distinct. -/
 theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
     {below₂ : LevelRel.Below m} {v : Term 0 []} {R R' : TermRel} (hd : sig.Distinct)
