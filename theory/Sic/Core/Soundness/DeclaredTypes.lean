@@ -169,7 +169,7 @@ theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaratio
         ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
         ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
         a₁.toSubst a₂.toSubst := fun _ hT =>
-  (hv.destructors _ hadm hT _).2 _ _ (EqSubst.atLevels_of_substLevels hl has)
+  (hv.destructors _ hadm hT _).2 _ _ (EqSubst.atLevels_of_substLevels (ls.getFin hl) has)
 
 -- ADE: none.
 /-- The fields of each constructor of each data type of a meaningful type declaration are
@@ -193,7 +193,7 @@ theorem ValidTypeDeclaration.fieldsAtClosedLevels (hv : ValidTypeDeclaration sig
           fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
         (((c.fields (.ofLists qs ps hq hp)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst) := fun _ hT _ hc =>
-  (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.atLevels_of_substLevels hl has)
+  (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.atLevels_of_substLevels (ls.getFin hl) has)
 
 -- ADE: none.
 /-- A relation of the destructors of a codata type of a block at the levels `ls` is one at the
