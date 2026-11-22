@@ -144,7 +144,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
-  obtain ⟨hCs, hCv, hus⟩ := hprem
+  have ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
   have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
@@ -250,8 +250,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rw [hre] at he
       exact Grade.used_of_result r p.usage (gs i l) e₀ πT hr hgl he (hfπ ▸ hfw)
     obtain ⟨v, H₃, tr, hev, hH₃, hrun⟩ := RunsAs.recursor_ctor (ϱ := ϱ) hd hord ⟨hdecl, hT, rfl⟩
-      hv hadm has ⟨hCs, hCv, hus⟩ hRs hctx hsorts hrec husr hg hχ hs hσ hEV hE g' E'' hg' hj hcon
-      hi' hw hwv hHH' ϖ' (hH'.getElem? ha)
+      hv hadm has hprem hRs hctx hsorts hrec husr hg hχ hs hσ hEV hE g' E'' hg' hj hcon hi' hw hwv
+      hHH' ϖ' (hH'.getElem? ha)
       (fun l p hlp => ⟨_, by rw [List.getElem?_map, hlp]; rfl,
         (by decide : ∀ π π' : Multiplicity, π * π' ≤ π * π') _ _⟩)
       (fun l p hlp => ⟨_, _, by rw [List.getElem?_map, hlp]; rfl,
@@ -434,7 +434,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         ((sig.caseFieldParams D qs ps).getD [])).rename g) a b H₃ tr ∧ H₁.Extends H₃ ∧
       RunsAs sig ι P H₃ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
-  obtain ⟨hCs, hCv, hus⟩ := hprem
+  have ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
   have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
@@ -577,7 +577,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rw [Targets.requirements_ofList, List.getElem?_map, List.getElem?_eq_getElem (by simpa using hl)]
       rfl
     obtain ⟨b, H₄, tr, hevr, hH₄, hrun⟩ := RunsAs.recursor_ctor hd hord ⟨hdecl, hT, rfl⟩ hv hadm
-      has ⟨hCs, hCv, hus⟩ hRs hctx hsorts hrec husr hg hχ hs hσ hEV hE g' E'' hg' hj hcon hi hvc hvv
+      has hprem hRs hctx hsorts hrec husr hg hχ hs hσ hEV hE g' E'' hg' hj hcon hi hvc hvv
       hHH' ϖ''
       (hH'.getElem? List.getElem?_concat_length) hπv hκv
       (fun l _ hl => by
