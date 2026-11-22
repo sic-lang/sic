@@ -5,6 +5,8 @@ module
 
 Properties of the relations that Lean does not provide: an element accessible for a relation is not
 above itself by its transitive closure, so that a path down from it never comes back to it.
+
+ADE have no counterpart of this property.
 -/
 
 @[expose] public section

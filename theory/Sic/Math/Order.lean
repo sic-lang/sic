@@ -8,6 +8,11 @@ that each law is stated once and named, and each relation proves that it satisfi
 They are stated on a relation, as the record `Equivalence` of Lean, which states the laws of the
 equivalences, so that they apply to any relation, whether it is the instance `LE` of its type or
 not.
+
+ADE reach the preorders of the standard library of Agda through `Tools/Relation.agda`, whose
+record `IsPreorder` states the reflexivity for an underlying equivalence rather than for each
+element; they state the least upper bounds by lemmas, as `⊔-lub` of the natural numbers, rather
+than as a record.
 -/
 
 @[expose] public section

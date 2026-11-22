@@ -5,6 +5,8 @@ module
 
 Properties of the natural numbers that Lean does not provide: a fact of every number restricted to
 the numbers below a bound, as the recursions on a number read the facts of the numbers below it.
+
+ADE have no counterpart of this restriction.
 -/
 
 @[expose] public section
