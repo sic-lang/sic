@@ -66,7 +66,7 @@ theorem Red.iota_subst {decl : TypeDeclaration} {D : Name}
       (Term.recursorAt r ς χ qs ls ps as' κ Cs (us.subst σ)) ts rs) :
     Red (sig.interpret ι) (.recursor r ς χ D' qs ls ps as' (.ctor D qs'' ls'' ps'' as con.name ts.terms) κ
       Cs (us.subst σ)) (u.subst (Subst.append (Subst.append σ ts.toSubst) rs.toSubst)) :=
-  .iota (List.mem_map_of_mem (f := Entry.interpret ι) h.1) hi h.2.2 rfl hq hl hp
+  .iota (List.mem_map_of_mem (f := Entry.interpret ι) h.1) hi h.2.2 rfl ⟨hq, hp⟩ hl
     (Branches.get_subst σ hu)
     (Terms.ResultTerms.ofTypeDeclarations
       (fun _ hdecl => List.mem_map_of_mem (f := Entry.interpret ι) hdecl) hrs)

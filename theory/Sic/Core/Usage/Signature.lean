@@ -62,17 +62,17 @@ where
     | .var hts => .var (usageArgs hs hts)
     | .const h hm => .const (h.mono hs) hm
     | .sort => .sort
-    | .inst h hq hp has => .inst ⟨hs h.1, h.2⟩ hq hp (usageInstanceArgs hs has)
-    | .ctor h hc hq hp hts => .ctor ⟨hs h.1, h.2⟩ hc hq hp (usageArgs hs hts)
-    | .recursor h hq hl hp hC ht hul hus hR hu hg hχ hr hprop =>
-      .recursor ⟨hs h.1, h.2⟩ hq hl hp (fun j n C hC' => usage hs (hC j n C hC')) (usage hs ht)
+    | .inst h hqp has => .inst ⟨hs h.1, h.2⟩ hqp (usageInstanceArgs hs has)
+    | .ctor h hc hqp hts => .ctor ⟨hs h.1, h.2⟩ hc hqp (usageArgs hs hts)
+    | .recursor h hqp hl hC ht hul hus hR hu hg hχ hr hprop =>
+      .recursor ⟨hs h.1, h.2⟩ hqp hl (fun j n C hC' => usage hs (hC j n C hC')) (usage hs ht)
         hul hus
         (fun i j T' con hi => (hR i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con u hi hu' => usage hs (hu i j T' con u hi hu')) hg hχ hr hprop
-    | .obs h hq hp hd ht hbs hm => .obs ⟨hs h.1, h.2⟩ hq hp hd (usage hs ht) (usageArgs hs hbs) hm
-    | .corec h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr =>
-      .corec ⟨hs h.1, h.2⟩ hq hp hh hS (fun j ps'' S' hS' => usageTelescope hs (hSu j ps'' S' hS'))
+    | .obs h hqp hd ht hbs hm => .obs ⟨hs h.1, h.2⟩ hqp hd (usage hs ht) (usageArgs hs hbs) hm
+    | .corec h hqp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr =>
+      .corec ⟨hs h.1, h.2⟩ hqp hh hS (fun j ps'' S' hS' => usageTelescope hs (hSu j ps'' S' hS'))
         (usageArgs hs hss) hgl hSl hSs hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg =>
           usage hs (hgu i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg)) hδ hδr

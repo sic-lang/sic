@@ -282,8 +282,8 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
   case hasType_univ => exact fun hctx hctx_ih => fun hL hθ => .univ (hctx_ih hL hθ)
   case hasType_prop => exact fun hctx hctx_ih => fun hL hθ => .prop (hctx_ih hL hθ)
   case hasType_inst =>
-    exact fun h hq hl hp hadm has has_ih => fun hL hθ =>
-      .inst h hq hl hp hadm (has_ih hL hθ)
+    exact fun h hqp hl hadm has has_ih => fun hL hθ =>
+      .inst h hqp hl hadm (has_ih hL hθ)
   case hasType_equality =>
     exact fun hA ht hu hA_ih ht_ih hu_ih => fun hL hθ =>
       .equality (hA_ih hL hθ) (ht_ih hL hθ) (hu_ih hL hθ)
@@ -305,7 +305,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     rw [Term.subst_lift_rename_weaken] at ht' hu'
     exact .propExt (hA_ih hL hθ) (hB_ih hL hθ) ht' hu'
   case hasType_coind =>
-    intro sig k Δ ctx decl D T qs ls ps as l' t₁ t₂ t As gs h' A κs h hq hl hp hadm has hh hA hAl
+    intro sig k Δ ctx decl D T qs ls ps as l' t₁ t₂ t As gs h' A κs h hqp hl hadm has hh hA hAl
       hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih
       hgr_ih Base Γ ctx' θ hL hθ
     let p₀ : Parameter := ⟨Grading.Grade.one, Grading.Grade.one⟩
@@ -316,7 +316,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
         decl.scope} {d : Name} {p q ς : Grading.Grade} {ps₁ : List Parameter} {Ξ : Scope}
         {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
         {ψ : ResultOwnership Grading.Grade ps₁.length}
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {a'} (v : Var Ξ a'),
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) {a'} (v : Var Ξ a'),
         ((hd.obsSubst ((Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
           (as.rename (Ren.weakenN 3)).toSubst) v).subst (Subst.liftN a'.params.length
             (Subst.liftN 3 θ)) =
@@ -340,7 +340,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
         (fun x => Subst.liftN_weakenN m σ' x)) t').trans
         (Term.rename_subst_of (fun _ => rfl) t').symm
     rw [Term.subst]
-    refine .coind (l' := l') (κs := κs) h hq hl hp hadm (has_ih hL hθ) hh
+    refine .coind (l' := l') (κs := κs) h hqp hl hadm (has_ih hL hθ) hh
       (Terms.get_subst _ hA)
       ((Terms.length_subst _ As).trans hAl) ?_ (ht₁_ih hL hθ) (ht₂_ih hL hθ) ?_
       ((DestructorBranches.length_subst _ gs).trans hgl) ?_ ?_ ?_ ?_ ?_ ?_
@@ -407,16 +407,16 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
         InstanceArgs.subst_liftN_rename_weakenN] at ih
       exact ih
   case hasType_ctor =>
-    refine fun h hc hq hl hp hadm has _ hts has_ih hts_ih => fun hL hθ => ?_
+    refine fun h hc hqp hl hadm has _ hts has_ih hts_ih => fun hL hθ => ?_
     rw [Term.ctor_subst]
-    refine .ctor h hc hq hl hp hadm (has_ih hL hθ) ?_
+    refine .ctor h hc hqp hl hadm (has_ih hL hθ) ?_
     rw [← Constructor.fieldsAt_subst]
     exact hts_ih hL hθ
   case hasType_recursor =>
-    intro sig k Δ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hq hl hp hadm has ht hh hC hCl hCs
+    intro sig k Δ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hqp hl hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih Base Γ ctx' θ hL hθ
     rw [Term.subst_subst₀_of (Subst₀.Swaps.single t _)]
-    refine .recursor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hq hl hp hadm
+    refine .recursor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hqp hl hadm
       (has_ih hL hθ) (ht_ih hL hθ) hh
       (Motives.get_subst _ hC) ((Motives.length_subst _ Cs).trans hCl) ?_ ?_
       ((Branches.length_subst _ us).trans hul) ?_ ?_ ?_ hκ
@@ -440,18 +440,18 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst _ C₀] at ih
       exact ih
   case hasType_obs =>
-    intro sig k Δ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hq hl hp hadm hd has ht hbs
+    intro sig k Δ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hqp hl hadm hd has ht hbs
       has_ih ht_ih hbs_ih Base Γ ctx' θ hL hθ
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
       (hd.obsSubst_observation_subst θ D qs ls ps as t)), Term.obs_subst]
-    refine .obs h hq hl hp hadm hd (has_ih hL hθ) (ht_ih hL hθ) ?_
+    refine .obs h hqp hl hadm hd (has_ih hL hθ) (ht_ih hL hθ) ?_
     rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
     exact hbs_ih hL hθ
   case hasType_corec =>
-    intro sig k Δ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hq hl hp hadm hpre has hh hS hss
+    intro sig k Δ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hqp hl hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih Base Γ ctx' θ hL hθ
     rw [Term.corec_subst]
-    refine .corec h hq hl hp hadm hpre (has_ih hL hθ) hh (States.get_subst _ hS)
+    refine .corec h hqp hl hadm hpre (has_ih hL hθ) hh (States.get_subst _ hS)
       (hss_ih hL hθ) ((States.length_subst _ Ss).trans hSl) ?_ ?_
       ((DestructorBranches.length_subst _ gs).trans hgl) ?_ ?_
     · intro j T' hj
@@ -503,8 +503,8 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
   case eqTerm_univ => exact fun hctx hl hctx_ih => fun hL hθ => .univ (hctx_ih hL hθ) hl
   case eqTerm_prop => exact fun hctx hl hctx_ih => fun hL hθ => .prop (hctx_ih hL hθ) hl
   case eqTerm_inst =>
-    exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => fun hL hθ =>
-      .inst h hq hl₁ hl₂ hp hadm (has_ih hL hθ) hls
+    exact fun h hqp hl₁ hl₂ hadm has hls has_ih => fun hL hθ =>
+      .inst h hqp hl₁ hl₂ hadm (has_ih hL hθ) hls
   case eqTerm_equality =>
     exact fun hA ht hu hl hA_ih ht_ih hu_ih => fun hL hθ =>
       .equality (hA_ih hL hθ) (ht_ih hL hθ) (hu_ih hL hθ) hl
@@ -526,18 +526,18 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     exact .transpSame (hA_ih hL hθ) (ht₁_ih hL hθ) (ht₂_ih hL hθ) (hC_ih hL (hθ.var _))
       (ht_ih hL hθ) hu' hCC'
   case eqTerm_ctor =>
-    refine fun h hc hq hl₁ hl₂ hp hadm has hls _ _ hts has_ih hts_ih => fun hL hθ => ?_
+    refine fun h hc hqp hl₁ hl₂ hadm has hls _ _ hts has_ih hts_ih => fun hL hθ => ?_
     rw [Term.ctor_subst, Term.ctor_subst]
-    refine .ctor h hc hq hl₁ hl₂ hp hadm (has_ih hL hθ) hls ?_
+    refine .ctor h hc hqp hl₁ hl₂ hadm (has_ih hL hθ) hls ?_
     rw [← Constructor.fieldsAt_subst]
     exact hts_ih hL hθ
   case eqTerm_recursor =>
-    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r ς χ t₁ t₂ Cs₁ Cs₂ us₁ us₂ κ h' C₁ h hq hl₁
-      hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
+    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r ς χ t₁ t₂ Cs₁ Cs₂ us₁ us₂ κ h' C₁ h hqp hl₁
+      hl₂ hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih Base Γ ctx' θ hL hθ
     rw [Term.subst_subst₀_of (Subst₀.Swaps.single t₁ θ)]
     refine .recursor (Rs₁ := fun con => (Rs₁ con).subst (Subst.liftN _ θ))
-      (Rs₂ := fun con => (Rs₂ con).subst (Subst.liftN _ θ)) h hq hl₁ hl₂ hp hadm (has_ih hL hθ) hls
+      (Rs₂ := fun con => (Rs₂ con).subst (Subst.liftN _ θ)) h hqp hl₁ hl₂ hadm (has_ih hL hθ) hls
       (ht_ih hL hθ) hh
       (Motives.get_subst θ hC) ((Motives.length_subst θ Cs₁).trans hCl₁)
       ((Motives.length_subst θ Cs₂).trans hCl₂) ?_ ?_ ?_ ((Branches.length_subst θ us₁).trans hul₁)
@@ -575,19 +575,20 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
       exact ih
   case eqTerm_obs =>
-    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hq hl₁ hl₂
-      hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih Base Γ ctx' θ hL hθ
+    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hqp hl₁ hl₂
+      hadm hd has hls ht hbs has_ih ht_ih hbs_ih Base Γ ctx' θ hL hθ
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
       (hd.obsSubst_observation_subst θ D qs ls₁ ps as₁ t₁)), Term.obs_subst, Term.obs_subst]
-    refine .obs h hq hl₁ hl₂ hp hadm hd (has_ih hL hθ) hls (ht_ih hL hθ) ?_
+    refine .obs h hqp hl₁ hl₂ hadm hd (has_ih hL hθ) hls (ht_ih hL hθ) ?_
     rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls₁ ps as₁ t₁)]
     exact hbs_ih hL hθ
   case eqTerm_corec =>
-    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h hq hl₁
-      hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt has_ih
+    intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h hqp
+      hl₁
+      hl₂ hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt has_ih
       hss_ih hSt_ih hSe_ih hgt_ih Base Γ ctx' θ hL hθ
     rw [Term.corec_subst, Term.corec_subst]
-    refine .corec h hq hl₁ hl₂ hp hadm hpre (has_ih hL hθ) hls hh
+    refine .corec h hqp hl₁ hl₂ hadm hpre (has_ih hL hθ) hls hh
       (States.get_subst θ hS₁) (States.get_subst θ hS₂) (hss_ih hL hθ)
       ((States.length_subst θ Ss₁).trans hSl₁) ((States.length_subst θ Ss₂).trans hSl₂) ?_
       (fun j => by rw [States.sorts_subst, States.sorts_subst]; exact hSk j) ?_ ?_
@@ -624,14 +625,14 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
           (hd.obsSubst_corecAt_subst θ r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps''))] at ih
       exact ih
   case eqTerm_iota =>
-    intro sig k Δ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hq hl hp hadm u has ts hts
+    intro sig k Δ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hqp hl hadm u has ts hts
       hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih Base Γ ctx' θ
       hL hθ
     rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ θ), Term.instantiate_subst,
       Term.instantiate_subst, Args.subst_liftN_rename_weakenN]
     show EqTerm sig ctx' (.recursor _ _ _ _ _ _ _ _ (Term.subst θ (.ctor _ _ _ _ _ _ _)) _ _ _) _ _
     rw [Term.ctor_subst]
-    refine .iota (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hq hl hp hadm
+    refine .iota (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hqp hl hadm
       (has_ih hL hθ) ?_ hi (Motives.get_subst θ hC) (Branches.get_subst θ hu)
       (Constructor.ResultTerms.subst_recursorAt θ hrs) ((Motives.length_subst θ Cs).trans hCl)
       ?_ ?_ ((Branches.length_subst θ us).trans hul) ?_ ?_ ?_ hκ
@@ -657,19 +658,19 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
       exact ih
   case eqTerm_etaCtor =>
-    intro sig k Δ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hq hl hp hadm hr has ht
+    intro sig k Δ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hqp hl hadm hr has ht
       he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih Base Γ ctx' θ
       hL hθ
     rw [Term.subst_subst₀_of (Subst₀.Swaps.single t θ),
       Term.subst_subst₀_of (Subst₀.Swaps.single t θ)]
     have hu' := Branches.get_subst θ hu
-    rw [show ((e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).subst
+    rw [show ((e.atCtor T.name qs ls ps as con.name (con.params hqp.inst)).subst
           (Subst.liftN 0 (Subst.liftN _ θ)) :
-            Term k ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend 0)) =
+            Term k ((Γ.extend (con.params hqp.inst).length).extend 0)) =
         (e.subst (Subst.lift θ)).atCtor T.name qs ls ps (as.subst θ) con.name
-          (con.params (.ofLists qs ps hq hp)) from Term.atCtor_subst θ e _ _ _ _ _ _ _] at hu'
+          (con.params hqp.inst) from Term.atCtor_subst θ e _ _ _ _ _ _ _] at hu'
     have he' := he_ih hL (hθ.var (.inst D qs ls ps as))
-    refine .etaCtor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hq hl hp hadm hr
+    refine .etaCtor (Rs := fun con => (Rs con).subst (Subst.liftN _ θ)) h hc hqp hl hadm hr
       (has_ih hL hθ) (ht_ih hL hθ) he' hi (Motives.get_subst θ hC) hu'
       ((Motives.length_subst θ Cs).trans hCl) ?_ ?_ ((Branches.length_subst θ us).trans hul) ?_
       ?_ ?_ hκ
@@ -693,14 +694,14 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       rw [Constructor.fieldsAt_subst, Term.subst_liftN_rename_weakenN, Term.atCtor_subst θ C₀] at ih
       exact ih
   case eqTerm_beta =>
-    intro sig k Δ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hq
-      hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
+    intro sig k Δ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hqp
+      hl hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
       hgt_ih Base Γ ctx' θ hL hθ
     rw [Term.obs_subst, Term.corec_subst, Term.observed_subst, Term.instantiate_subst, Term.instantiate_subst,
       Args.subst_liftN_rename_weakenN, Term.instantiate_subst, Term.subst_subst_of
         (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
       Term.corec_subst]
-    refine .beta h hq hl hp hadm hpre (has_ih hL hθ) hh (States.get_subst θ hS)
+    refine .beta h hqp hl hadm hpre (has_ih hL hθ) hh (States.get_subst θ hS)
       (hss_ih hL hθ) hi hd (DestructorBranches.get_subst θ hg) ?_
       ((States.length_subst θ Ss).trans hSl) ?_ ?_
       ((DestructorBranches.length_subst θ gs).trans hgl)
@@ -733,9 +734,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
           (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
       exact ih
   case eqTerm_etaObs =>
-    intro sig k Δ ctx decl D T qs ls ps as t u h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih
+    intro sig k Δ ctx decl D T qs ls ps as t u h hqp hl hadm hr has ht hu hobs has_ih ht_ih hu_ih
       hobs_ih Base Γ ctx' θ hL hθ
-    refine .etaObs h hq hl hp hadm hr (has_ih hL hθ) (ht_ih hL hθ) (hu_ih hL hθ) ?_
+    refine .etaObs h hqp hl hadm hr (has_ih hL hθ) (ht_ih hL hθ) (hu_ih hL hθ) ?_
     intro d p q ς ps' Ξ Θ B ψ hd
     have ih := hobs_ih d p q ς ps' Ξ Θ B ψ hd hL (hθ.append _)
     rw [Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t),

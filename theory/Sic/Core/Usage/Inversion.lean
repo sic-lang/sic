@@ -73,11 +73,11 @@ theorem Usage.inv_ctor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sco
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
-    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
-    {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} {m : Mode} :
+    (hqp : decl.AsMany qs ps)
+    {ts : Args k Γ (con.params hqp.inst)} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {t : Term k Γ}, Usage sig γ m t →
       t = .ctor D qs ls ps as con.name ts.terms → ∃ γ', γ ≤ᶜ γ' ∧ UsageArgs sig γ' m ts
-  | _, _, .ctor (con := con') (ts := ts') h' hc' _ _ hts, he => by
+  | _, _, .ctor (con := con') (ts := ts') h' hc' _ hts, he => by
     injection he with _ hΔ hD hqs hls hps has hn hts'
     subst hD hqs hls hps
     obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
@@ -86,7 +86,7 @@ theorem Usage.inv_ctor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sco
     cases Args.terms_inj hts'
     exact ⟨_, (Sic.Math.Vector.preorder Grade.modality).refl _, hts⟩
   | _, _, .sub h' hle, he =>
-    have ⟨γ', hγ, hts⟩ := Usage.inv_ctor hd h hc hq hp h' he
+    have ⟨γ', hγ, hts⟩ := Usage.inv_ctor hd h hc hqp h' he
     ⟨γ', (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hts⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
@@ -100,15 +100,15 @@ theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scop
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
+    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) {d : Name} {p q ς : Grade}
+    {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
-    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
     {t : Term k Γ} {bs : Args k Γ ps'} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {u : Term k Γ}, Usage sig γ m u →
       u = .obs D qs ls ps as t d bs.terms →
         ∃ γ' δ, γ ≤ᶜ γ' +ᶜ δ ∧ Usage sig γ' m t ∧ UsageArgs sig δ m bs ∧ m ·ᵐ p.mode = m
-  | _, _, .obs (bs := bs') h' _ _ hpos' ht hbs hm, he => by
+  | _, _, .obs (bs := bs') h' _ hpos' ht hbs hm, he => by
     injection he with _ hΔ hD hqs hls hps has ht' hd' hbs'
     subst hD hqs hls hps ht' hd'
     obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h' h
@@ -117,7 +117,7 @@ theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scop
     cases Args.terms_inj hbs'
     exact ⟨_, _, (Sic.Math.Vector.preorder Grade.modality).refl _, ht, hbs, hm⟩
   | _, _, .sub h' hle, he =>
-    have ⟨γ', δ, hγ, ht, hbs, hm⟩ := Usage.inv_obs hd h hq hp hpos h' he
+    have ⟨γ', δ, hγ, ht, hbs, hm⟩ := Usage.inv_obs hd h hqp hpos h' he
     ⟨γ', δ, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, ht, hbs, hm⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .corec .., he => nomatch he
@@ -129,8 +129,8 @@ variables as the premises of `(rec_▶)` allow, with grades above those of the j
 theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
     {decl : TypeDeclaration} {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {r ς χ' : Grade} {t : Term k Γ} {κ : Universe k}
+    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {r ς χ' : Grade} {t : Term k Γ} {κ : Universe k}
     {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
       v = .recursor r ς χ' D qs ls ps as t κ Cs us →
@@ -141,35 +141,35 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
           Usage sig 𝟘ᶜ .zeroZero C) ∧
         Usage sig γ' (m ⊙ r) t ∧
         (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-          ∃ R : Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-              (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
-            Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          ∃ R : Telescope k (Γ.extend (con.params hqp.inst).length)
+              (con.nestResultParams hqp.inst decl.names),
+            Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
               (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) R (πs i)) ∧
         (∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
-          us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-          Usage sig (((δs i).extendGrades (gs i) (con.params (.ofLists qs ps hq hp))).extendResults
-            (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+          us.get i = some ⟨(con.params hqp.inst).length,
+            (con.nestResultParams hqp.inst decl.names).length, u⟩ →
+          Usage sig (((δs i).extendGrades (gs i) (con.params hqp.inst)).extendResults
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
               (us.grades i))
-            ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
-            (con.params (.ofLists qs ps hq hp))) m u) ∧
+            ((con.fields hqp.inst).nest decl.names)
+            (con.params hqp.inst)) m u) ∧
         (∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
-          (con.params (.ofLists qs ps hq hp))[l]? = some p →
+          (con.params hqp.inst)[l]? = some p →
           m.grade * r * p.usage ≤ gs i l +
-            (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
               (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r) ∧
         (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
           χ ≤ᶜ δs i +ᶜ Telescope.resultSum
-            (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
               (List.zipWith (· * ·) (us.grades i) (πs i)))
-            ((con.fields (.ofLists qs ps hq hp)).nest decl.names) ·ᶜ χ) ∧
+            ((con.fields hqp.inst).nest decl.names) ·ᶜ χ) ∧
         (m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) →
           r.mode = .oneOne) ∧
-        ((decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne) ∧
+        ((decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne) ∧
         (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-          ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
-  | _, _, .recursor h' _ _ _ hC ht _ hus' hR hu hg hχ hr hprop, he => by
+          ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+            (con.nestResultParams hqp.inst decl.names).length, u⟩)
+  | _, _, .recursor h' _ _ hC ht _ hus' hR hu hg hχ hr hprop, he => by
     injection he with _ hΔ hr' hς hχ' hD hqs hls hps has ht' hκ hCs hus
     subst hr' hς hχ' hD hqs hls hps ht' hκ hCs hus
     obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
@@ -179,7 +179,7 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
       hr, hprop, hus'⟩
   | _, _, .sub h' hle, he =>
     have ⟨γ', χ, δs, gs, πs, hγ, hC, ht, hR, hu, hg, hχ, hr, hprop, hus'⟩ :=
-      Usage.inv_recursor hd h hq hl hp h' he
+      Usage.inv_recursor hd h hqp hl h' he
     ⟨γ', χ, δs, gs, πs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hC, ht, hR, hu, hg,
       hχ, hr, hprop, hus'⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
@@ -192,8 +192,8 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ}
+    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) {r : Grade} {Ss : States k Γ}
+    {gs : DestructorBranches k Γ}
     {h' : Nat} {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
     (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩) {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
@@ -208,20 +208,20 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
           (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
           decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
           gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
           Usage sig (((δs i).extendParams ((m ⊙ p).grade * r) ps'').extendParams (m ⊙ p).grade ps₁)
             (m ⊙ p) g) ∧
         (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
         (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
-          (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → B.blockName decl.names = some D' →
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → B.blockName decl.names = some D' →
           δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ))
-  | _, _, .corec (ss := ss') h₁ _ _ hh₁ hS₁ hSu hss _ _ _ _ hgu hδ hδr, he => by
+  | _, _, .corec (ss := ss') h₁ _ hh₁ hS₁ hSu hss _ _ _ _ hgu hδ hδr, he => by
     injection he with _ hΔ hr' hD hqs hls hps has hss' hSs hgs
     subst hr' hD hqs hls hps hSs hgs
     obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h₁ h
@@ -233,7 +233,7 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
     cases Args.terms_inj hss'
     exact ⟨_, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hSu, hss, hgu, hδ, hδr⟩
   | _, _, .sub h₁ hle, he =>
-    have ⟨γ', δ, δs, hγ, hSu, hss, hgu, hδ, hδr⟩ := Usage.inv_corec hd h hq hp hh hS h₁ he
+    have ⟨γ', δ, δs, hγ, hSu, hss, hgu, hδ, hδr⟩ := Usage.inv_corec hd h hqp hh hS h₁ he
     ⟨γ', δ, δs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hSu, hss, hgu, hδ, hδr⟩
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .obs .., he => nomatch he

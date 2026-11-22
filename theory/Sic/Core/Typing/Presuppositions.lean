@@ -232,7 +232,7 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
   case hasType_const => exact fun hctx h hq hl hp hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_univ => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_prop => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
-  case hasType_inst => exact fun h hq hl hp hadm has has_ih => has_ih
+  case hasType_inst => exact fun h hqp hl hadm has has_ih => has_ih
   case hasType_equality => exact fun hA ht hu hA_ih ht_ih hu_ih => hA_ih
   case hasType_reflProof => exact fun hA ht hA_ih ht_ih => hA_ih
   case hasType_transp =>
@@ -240,17 +240,17 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
       hA_ih
   case hasType_propExt => exact fun hA hB ht hu hA_ih hB_ih ht_ih hu_ih => hA_ih
   case hasType_coind =>
-    exact fun h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
+    exact fun h hqp hl hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
         ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih =>
       has_ih
-  case hasType_ctor => exact fun h hc hq hl hp hadm has _ hts has_ih hts_ih => has_ih
+  case hasType_ctor => exact fun h hc hqp hl hadm has _ hts has_ih hts_ih => has_ih
   case hasType_recursor =>
-    exact fun h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
+    exact fun h hqp hl hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
         hut_ih =>
       has_ih
-  case hasType_obs => exact fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => has_ih
+  case hasType_obs => exact fun h hqp hl hadm hd has ht hbs has_ih ht_ih hbs_ih => has_ih
   case hasType_corec =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
+    exact fun h hqp hl hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
         hgt_ih =>
       has_ih
   case hasType_conv => exact fun ht h ht_ih h_ih => ht_ih
@@ -264,36 +264,36 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
   case eqTerm_const => exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_univ => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_prop => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
-  case eqTerm_inst => exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => has_ih
+  case eqTerm_inst => exact fun h hqp hl₁ hl₂ hadm has hls has_ih => has_ih
   case eqTerm_equality => exact fun hA ht hu hl hA_ih ht_ih hu_ih => hA_ih
   case eqTerm_transp => exact fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih => hA_ih
   case eqTerm_transpSame =>
     exact fun hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih =>
       hA_ih
-  case eqTerm_ctor => exact fun h hc hq hl₁ hl₂ hp hadm has hls _ _ hts has_ih hts_ih => has_ih
+  case eqTerm_ctor => exact fun h hc hqp hl₁ hl₂ hadm has hls _ _ hts has_ih hts_ih => has_ih
   case eqTerm_recursor =>
-    exact fun h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
+    exact fun h hqp hl₁ hl₂ hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
         _ _ hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih =>
       has_ih
-  case eqTerm_obs => exact fun h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih => has_ih
+  case eqTerm_obs => exact fun h hqp hl₁ hl₂ hadm hd has hls ht hbs has_ih ht_ih hbs_ih => has_ih
   case eqTerm_corec =>
-    exact fun h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
+    exact fun h hqp hl₁ hl₂ hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
         hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih =>
       has_ih
   case eqTerm_iota =>
-    exact fun h hc hq hl hp hadm _ has _ hts hi hC hu _ hrs hCl hCs hCt hul hus _ hRs hut hκ has_ih
+    exact fun h hc hqp hl hadm _ has _ hts hi hC hu _ hrs hCl hCs hCt hul hus _ hRs hut hκ has_ih
         hts_ih hCt_ih hut_ih =>
       has_ih
   case eqTerm_etaCtor =>
-    exact fun h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih
+    exact fun h hc hqp hl hadm hr has ht he hi hC hu hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih
         he_ih hCt_ih hut_ih =>
       has_ih
   case eqTerm_beta =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih
+    exact fun h hqp hl hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih
         hbs_ih hSt_ih hgt_ih =>
       has_ih
   case eqTerm_etaObs =>
-    exact fun h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
+    exact fun h hqp hl hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
       has_ih
   case hasArgs_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasArgs_cons => exact fun ht hts ht_ih hts_ih => ht_ih

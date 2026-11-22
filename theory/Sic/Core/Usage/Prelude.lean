@@ -80,7 +80,7 @@ theorem Usage.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} {m : M
       (Θ : Telescope k Γ ps) → (κs : List (Universe k)) → (l : Level k) →
       UsageArgs sig γ m ts → Usage sig γ m (ts.pack Θ κs l)
   | [], _, .nil, .nil, _, l, .nil =>
-    Usage.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl rfl
+    Usage.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) ⟨rfl, rfl⟩
       .nil
   | p :: _, _, .cons t ts, .cons _ _ A Θ, κs, l, .cons (γ := γ) (δ := δ) ht hts => by
     have hr := Usage.pack hpre (Θ.subst₀ (Subst₀.single t)) κs.tail l hts
@@ -88,7 +88,7 @@ theorem Usage.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} {m : M
     refine .sub (Usage.ctor (con := Prelude.pairMk)
       (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
       (qs := [(κs.headD ⟨.type, l⟩).quality]) (ps := [p.usage, p.requirement])
-      hpre.pair (List.mem_singleton_self _) rfl rfl (.cons ht (.cons (hm ▸ hr) .nil))) ?_
+      hpre.pair (List.mem_singleton_self _) ⟨rfl, rfl⟩ (.cons ht (.cons (hm ▸ hr) .nil))) ?_
     intro x
     show p.usage * γ x + δ x ≤ p.usage * γ x + (Grade.one * δ x + Grade.zero)
     generalize p.usage * γ x = a
@@ -113,7 +113,7 @@ theorem Usage.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
       (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
   have hz : ∀ a b c : Grade, a ≤ b → a ≤ b + Grade.zero * c := by decide
   refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) (δs := fun _ => δ)
-    (gs := fun _ l => if l = 0 then g₀ else g₁) (πs := fun _ => []) hpre.pair rfl hl rfl
+    (gs := fun _ l => if l = 0 then g₀ else g₁) (πs := fun _ => []) hpre.pair ⟨rfl, rfl⟩ hl
     ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
@@ -157,7 +157,7 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
     Usage sig ((r ·ᶜ γ) +ᶜ δ) m
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
   refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) (δs := fun _ => δ)
-    (gs := fun _ _ => Grade.zero) (πs := fun _ => []) hpre.unit rfl rfl rfl
+    (gs := fun _ _ => Grade.zero) (πs := fun _ => []) hpre.unit ⟨rfl, rfl⟩ rfl
     ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
@@ -209,7 +209,7 @@ theorem Usage.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {q : 
   have hle : ∀ a b : Grade, a ≤ b → a ≤ b + Grade.zero * a := by decide
   refine .recursor (decl := Prelude.step) (T := Prelude.stepType)
     (δs := fun i => if i = 0 then δ₀ else δ₁) (gs := fun i _ => if i = 0 then g₀ else g₁)
-    (πs := fun _ => []) hpre.step rfl hl rfl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    (πs := fun _ => []) hpre.step ⟨rfl, rfl⟩ hl ?_ ht rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro j n C' hj
     match j, hj with
     | 0, hj => cases hj; exact hC

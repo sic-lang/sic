@@ -73,7 +73,7 @@ theorem Computesι.obs_corec_iff {Δ₁ Δ₂ Δ : Scope} {D₁ D₂ D : Name} {
   | refl => cases hv with | ne hn => cases hn with | obs hn => cases hn
   | step h hs =>
     cases h with
-    | beta h hi hD hq hl hp hg hv' => exact ⟨.step (.beta h hi hD hq hl hp hg hv') hs, hv⟩
+    | beta h hi hD hqp hl hg hv' => exact ⟨.step (.beta h hi hD hqp hl hg hv') hs, hv⟩
     | obs h => exact nomatch h
 
 /-- The observations `f` compute as the observations `o` at all closed arguments, or the quality `s`
@@ -1175,7 +1175,7 @@ theorem Red.beta_corec (hd : sig.Distinct) {Γ : Scope} {decl : TypeDeclaration}
         (g.subst (Subst.append (Subst.append σ ss.toSubst) ts.toSubst))) := by
   rw [← hpos.resultName decl.names (hd.destructors_nodup h₀),
     ← hpos.resultConstant (hd.destructors_nodup h₀)]
-  exact .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl hq hl hp
+  exact .beta (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl ⟨hq, hp⟩ hl
     (DestructorBranches.get_subst σ hg) (Term.instantiateTerms₂_subst_append σ g _ _)
 
 /-- The type of the branch of a destructor, over the state of a corecursor, at the corecursor from the

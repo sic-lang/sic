@@ -75,11 +75,11 @@ theorem HasType.inst_inv {Γ Δ : Scope} {ctx : Context k Γ} {D : Name} {qs : L
     {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ} {B : Term k Γ}
     (h : HasType sig ctx (.inst D qs ls ps as) B) :
     ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-        GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hq : qs.length = decl.sorts)
-        (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
-      sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+        GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+        (hl : ls.length = decl.levels),
+      sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
         HasInstanceArgs sig ctx (hΔ ▸ as)
-          ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) :=
+          ((decl.params hqp.inst).substLevels (ls.getFin hl)) :=
   go h rfl
 where
   /-- The inversion, by induction on the derivation of a term equal to the instance. -/
@@ -87,25 +87,25 @@ where
       {ps : List Grade} {as : InstanceArgs k Γ Δ} : {t B : Term k Γ} →
       HasType sig ctx t B → t = .inst D qs ls ps as →
       ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-          GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hq : qs.length = decl.sorts)
-          (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
-        sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+          GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+          (hl : ls.length = decl.levels),
+        sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
           HasInstanceArgs sig ctx (hΔ ▸ as)
-            ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
+            ((decl.params hqp.inst).substLevels (ls.getFin hl)) := by
     suffices H : Derivations.Conclusion
         (hasType := fun sig {k Γ} ctx t _ _ => ∀ {Δ : Scope} {D : Name} {qs : List Quality}
           {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}, t = .inst D qs ls ps as →
           ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-              GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hq : qs.length = decl.sorts)
-              (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
-            sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+              GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+              (hl : ls.length = decl.levels),
+            sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
               HasInstanceArgs sig ctx (hΔ ▸ as)
-                ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) from
+                ((decl.params hqp.inst).substLevels (ls.getFin hl))) from
       fun {_ _} h e => H.hasType h e
     apply Derivations.induction
     case hasType_inst =>
-      refine fun h hq hl hp hadm has has_ih => fun e => ?_
-      cases e; exact ⟨_, _, rfl, hq, hl, hp, h, hadm, has⟩
+      refine fun h hqp hl hadm has has_ih => fun e => ?_
+      cases e; exact ⟨_, _, rfl, hqp, hl, h, hadm, has⟩
     case hasType_conv => exact fun ht _ ht_ih _ => fun e => ht_ih e
     case hasType_var | hasType_secondOrder | hasType_const | hasType_univ | hasType_prop |
         hasType_equality | hasType_reflProof | hasType_transp | hasType_propExt | hasType_coind |
@@ -120,11 +120,11 @@ theorem HasType.inst_inv_of_mem {Γ : Scope} {ctx : Context k Γ} {decl : TypeDe
     {B : Term k Γ} (h : HasType sig ctx (.inst D qs ls ps as) B)
     (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) :
     ∃ (ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length)
-        (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
-      sig.HasDeclaredType D decl ζ ∧ decl.constraint (.ofLists qs ps hq hp) ∧
+        (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels),
+      sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
         HasInstanceArgs sig ctx as
-          ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
-  obtain ⟨decl', ζ, hΔ, hq, hl, hp, hD', hadm, has⟩ := h.inst_inv
+          ((decl.params hqp.inst).substLevels (ls.getFin hl)) := by
+  obtain ⟨decl', ζ, hΔ, hqp, hl, hD', hadm, has⟩ := h.inst_inv
   have hm : D ∈ decl'.names := by
     rcases hD'.2 with ⟨T, hT, rfl, -⟩ | ⟨T, hT, rfl, -⟩
     · exact TypeDeclaration.name_mem_names hT
@@ -133,6 +133,6 @@ theorem HasType.inst_inv_of_mem {Γ : Scope} {ctx : Context k Γ} {decl : TypeDe
     hD'.1 hd (n := D) hm hD
   injection he with he
   subst he
-  exact ⟨ζ, hq, hl, hp, hD', hadm, has⟩
+  exact ⟨ζ, hqp, hl, hD', hadm, has⟩
 
 end Sic.Core

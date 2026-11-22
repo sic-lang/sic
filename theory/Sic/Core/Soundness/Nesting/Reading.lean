@@ -1174,7 +1174,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
     (sigT : Signature) → sig.ValidEntries ι sigT → ReadsInstances sig ι R.rd sigT
   | sigT, hent => fun hA decl fresh ρ _ β _ _ _ _ _ _ hposA hE hiso ih hpl s hr => by
     rename_i k Γ Δ ctx D qs ls ps as _ Γ' ν₁ ν₂ σ₁ σ₂ σ₁' σ₂'
-    obtain ⟨declF, ζ, hΔ, hq, hl, hp, hD, hadm, has⟩ := hA.inst_inv
+    obtain ⟨declF, ζ, hΔ, ⟨hq, hp⟩, hl, hD, hadm, has⟩ := hA.inst_inv
     subst hΔ
     have hsigT : WfSig sigT := presuppositions.wfCtx (contextPresuppositions.hasType hA)
     have hdT := hsigT.distinct

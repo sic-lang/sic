@@ -218,10 +218,10 @@ theorem fundamentalIn : FundamentalIn := by
     exact fun ρ =>
       RunValidRen.erased (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.prop hctx) ρ) rfl
   case hasType_inst =>
-    refine fun h hq hl hp hadm has has_ih => fun hw hι hP hU => ?_
+    refine fun h ⟨hq, hp⟩ hl hadm has has_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
       RunValidRen.erased
-        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h hq hl hp hadm has) ρ) rfl
+        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h ⟨hq, hp⟩ hl hadm has) ρ) rfl
   case hasType_equality =>
     refine fun hA ht hu hA_ih ht_ih hu_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
@@ -241,17 +241,19 @@ theorem fundamentalIn : FundamentalIn := by
       RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
         (.equality (.prop (contextPresuppositions.hasType hA)) hA hB) ρ) rfl
   case hasType_coind =>
-    refine fun h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
+    refine fun h ⟨hq, hp⟩ hl hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih
+      hAt_ih
         ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
       RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
-        (.equality (.inst h.hasDeclaredType hq hl hp hadm has) ht₁ ht₂) ρ) rfl
+        (.equality (.inst h.hasDeclaredType ⟨hq, hp⟩ hl hadm has) ht₁ ht₂) ρ) rfl
   case hasType_ctor =>
-    intro sig k Γ ctx decl D T con qs ls ps as h hc hq hl hp hadm has ts hts has_ih hts_ih ι P sigM
+    intro sig k Γ ctx decl D T con qs ls ps as h hc ⟨hq, hp⟩ hl hadm has ts hts has_ih hts_ih ι P
+      sigM
       hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasArgs hts).distinct
-      obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc hq hp hU rfl
+      obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc ⟨hq, hp⟩ hU rfl
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl
@@ -266,12 +268,13 @@ theorem fundamentalIn : FundamentalIn := by
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact RunValidRen.sub hγ hc'
   case hasType_recursor =>
-    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hq hl hp hadm has ht hh hC hCl hCs
+    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h ⟨hq, hp⟩ hl hadm has ht hh hC hCl
+      hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasType ht).distinct
       obtain ⟨γ', _, δs, gs, πs, hγ, -, htu, hRU, hbu, hg, hχ, hr, hprop, -⟩ :=
-        Usage.inv_recursor hdT h hq hl hp hU rfl
+        Usage.inv_recursor hdT h ⟨hq, hp⟩ hl hU rfl
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl
@@ -441,11 +444,11 @@ theorem fundamentalIn : FundamentalIn := by
       simp only [Term.substLevels]
       exact RunValidRen.sub hγ hc
   case hasType_obs =>
-    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hq hl hp hadm hd has ht hbs
+    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h ⟨hq, hp⟩ hl hadm hd has ht hbs
       has_ih ht_ih hbs_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hWf := presuppositions.hasType ht
-      obtain ⟨γ', δ, hγ, hut, hbus, hm⟩ := Usage.inv_obs hWf.distinct h hq hp hd hU rfl
+      obtain ⟨γ', δ, hγ, hut, hbus, hm⟩ := Usage.inv_obs hWf.distinct h ⟨hq, hp⟩ hd hU rfl
       have hpr : _ ∉ Mode.oneOne.erased := (by decide : ∀ p : Grade,
         Mode.oneOne ·ᵐ p.mode = .oneOne → p ∉ Mode.oneOne.erased) _ hm
       obtain ⟨hM, hv⟩ := hι.hasCodataType h
@@ -472,11 +475,11 @@ theorem fundamentalIn : FundamentalIn := by
         Term.substLevels, ← Args.terms_substLevels]
       exact RunValidRen.sub hγ hc
   case hasType_corec =>
-    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hq hl hp hadm hpre has hh hS hss
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h ⟨hq, hp⟩ hl hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasArgs hss).distinct
-      obtain ⟨γ', δ, δs, hγ, -, hssu, hgu, hδ, -⟩ := Usage.inv_corec hdT h hq hp hh hS hU rfl
+      obtain ⟨γ', δ, δs, hγ, -, hssu, hgu, hδ, -⟩ := Usage.inv_corec hdT h ⟨hq, hp⟩ hh hS hU rfl
       obtain ⟨hM, hv⟩ := hι.hasCodataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl

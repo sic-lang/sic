@@ -291,13 +291,13 @@ of the signature itself.
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
   | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
-  | .iota h hi hD hc hq hl hp hu hrs hv =>
-    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hq hl hp hu
+  | .iota h hi hD hc hqp hl hu hrs hv =>
+    .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hqp hl hu
       (Terms.ResultTerms.ofTypeDeclarations
         (fun _ hdecl => List.mem_map_of_mem (f := Entry.interpret ι) hdecl) hrs) hv
   | .recursor h => .recursor h.interpret
-  | .beta h hi hD hq hl hp hg hv =>
-    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hq hl hp hg hv
+  | .beta h hi hD hqp hl hg hv =>
+    .beta (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hqp hl hg hv
   | .obs h => .obs h.interpret
   | .transp => .transp
 
@@ -319,7 +319,7 @@ theorem Red.iota_plain {sig : Signature} {k : Nat} {Γ : Scope} {decl : TypeDecl
     (hu : us.get i = some ⟨n, 0, u⟩) (hv : u.instantiateTerms₂ fs .nil = some v) :
     Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c fs) κ Cs us) v := by
   subst hts
-  exact .iota h hi hD hc hq hl hp hu (Telescope.resultTerms_of_plain _ _ _ ts hpl) hv
+  exact .iota h hi hD hc ⟨hq, hp⟩ hl hu (Telescope.resultTerms_of_plain _ _ _ ts hpl) hv
 
 open Sic.Grading in
 /-- A recursor reduces as its term does. -/

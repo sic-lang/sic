@@ -172,8 +172,8 @@ theorem stableUnderExtension : StableUnderExtension := by
   case hasType_univ => exact fun hctx hctx_ih => fun hs hw => .univ (hctx_ih hs hw)
   case hasType_prop => exact fun hctx hctx_ih => fun hs hw => .prop (hctx_ih hs hw)
   case hasType_inst =>
-    exact fun h hq hl hp hadm has has_ih => fun hs hw =>
-      .inst ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw)
+    exact fun h hqp hl hadm has has_ih => fun hs hw =>
+      .inst ⟨hs h.1, h.2⟩ hqp hl hadm (has_ih hs hw)
   case hasType_equality =>
     exact fun hA ht hu hA_ih ht_ih hu_ih => fun hs hw =>
       .equality (hA_ih hs hw) (ht_ih hs hw) (hu_ih hs hw)
@@ -188,9 +188,9 @@ theorem stableUnderExtension : StableUnderExtension := by
     exact fun hA hB ht hu hA_ih hB_ih ht_ih hu_ih => fun hs hw =>
       .propExt (hA_ih hs hw) (hB_ih hs hw) (ht_ih hs hw) (hu_ih hs hw)
   case hasType_coind =>
-    refine fun h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
+    refine fun h hqp hl hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
         ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih => fun hs hw => ?_
-    exact .coind ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw) hh hA hAl
+    exact .coind ⟨hs h.1, h.2⟩ hqp hl hadm (has_ih hs hw) hh hA hAl
         (fun j T' A' hj hA' => hAt_ih j T' A' hj hA' hs hw) (ht₁_ih hs hw)
         (ht₂_ih hs hw) (ht_ih hs hw) hgl hgs hΘ hB
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' hi hA' hd hn =>
@@ -200,24 +200,24 @@ theorem stableUnderExtension : StableUnderExtension := by
         (fun i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg =>
           hgr_ih i j T' d p q ς ps₁ Ξ Θ B ψ A' D' j' A'' g hi hA' hd hn hj' hA'' hg hs hw)
   case hasType_ctor =>
-    exact fun h hc hq hl hp hadm has _ hts has_ih hts_ih => fun hs hw =>
-      .ctor ⟨hs h.1, h.2⟩ hc hq hl hp hadm (has_ih hs hw) (hts_ih hs hw)
+    exact fun h hc hqp hl hadm has _ hts has_ih hts_ih => fun hs hw =>
+      .ctor ⟨hs h.1, h.2⟩ hc hqp hl hadm (has_ih hs hw) (hts_ih hs hw)
   case hasType_recursor =>
-    refine fun h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
+    refine fun h hqp hl hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
         hut_ih => fun hs hw => ?_
-    exact .recursor ⟨hs h.1, h.2⟩ hq hl hp hadm (has_ih hs hw) (ht_ih hs hw) hh hC
+    exact .recursor ⟨hs h.1, h.2⟩ hqp hl hadm (has_ih hs hw) (ht_ih hs hw) hh hC
         hCl hCs (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
   case hasType_obs =>
-    refine fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
-    exact .obs ⟨hs h.1, h.2⟩ hq hl hp hadm hd (has_ih hs hw) (ht_ih hs hw)
+    refine fun h hqp hl hadm hd has ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
+    exact .obs ⟨hs h.1, h.2⟩ hqp hl hadm hd (has_ih hs hw) (ht_ih hs hw)
         (hbs_ih hs hw)
   case hasType_corec =>
-    refine fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
+    refine fun h hqp hl hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
         hgt_ih => fun hs hw => ?_
-    exact .corec ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
+    exact .corec ⟨hs h.1, h.2⟩ hqp hl hadm (fun hr e he => hs (hpre hr e he))
         (has_ih hs hw) hh hS (hss_ih hs hw) hSl hSs
         (fun j T' ps'' S' hj hS' => hSt_ih j T' ps'' S' hj hS' hs hw) hgl hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg =>
@@ -242,8 +242,8 @@ theorem stableUnderExtension : StableUnderExtension := by
   case eqTerm_univ => exact fun hctx hl hctx_ih => fun hs hw => .univ (hctx_ih hs hw) hl
   case eqTerm_prop => exact fun hctx hl hctx_ih => fun hs hw => .prop (hctx_ih hs hw) hl
   case eqTerm_inst =>
-    exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => fun hs hw =>
-      .inst ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+    exact fun h hqp hl₁ hl₂ hadm has hls has_ih => fun hs hw =>
+      .inst ⟨hs h.1, h.2⟩ hqp hl₁ hl₂ hadm (has_ih hs hw) hls
   case eqTerm_equality =>
     exact fun hA ht hu hl hA_ih ht_ih hu_ih => fun hs hw =>
       .equality (hA_ih hs hw) (ht_ih hs hw) (hu_ih hs hw) hl
@@ -257,13 +257,13 @@ theorem stableUnderExtension : StableUnderExtension := by
     exact .transpSame (hA_ih hs hw) (ht₁_ih hs hw) (ht₂_ih hs hw) (hC_ih hs hw)
         (ht_ih hs hw) (hu_ih hs hw) (hCC_ih hs hw)
   case eqTerm_ctor =>
-    refine fun h hc hq hl₁ hl₂ hp hadm has hls _ _ hts has_ih hts_ih => fun hs hw => ?_
-    exact .ctor ⟨hs h.1, h.2⟩ hc hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+    refine fun h hc hqp hl₁ hl₂ hadm has hls _ _ hts has_ih hts_ih => fun hs hw => ?_
+    exact .ctor ⟨hs h.1, h.2⟩ hc hqp hl₁ hl₂ hadm (has_ih hs hw) hls
         (hts_ih hs hw)
   case eqTerm_recursor =>
-    refine fun h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
+    refine fun h hqp hl₁ hl₂ hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
         _ _ hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih => fun hs hw => ?_
-    exact .recursor ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (has_ih hs hw) hls
+    exact .recursor ⟨hs h.1, h.2⟩ hqp hl₁ hl₂ hadm (has_ih hs hw) hls
         (ht_ih hs hw) hh hC hCl₁ hCl₂ hCs₁ hCs₂
         (fun j T' C₁' C₂' hj hC₁ hC₂ => hCt_ih j T' C₁' C₂' hj hC₁ hC₂ hs hw) hul₁ hul₂
         hus₁ hus₂ hes
@@ -274,13 +274,13 @@ theorem stableUnderExtension : StableUnderExtension := by
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ =>
           hut_ih i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ hs hw) hκ
   case eqTerm_obs =>
-    refine fun h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
-    exact .obs ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm hd (has_ih hs hw) hls (ht_ih hs hw)
+    refine fun h hqp hl₁ hl₂ hadm hd has hls ht hbs has_ih ht_ih hbs_ih => fun hs hw => ?_
+    exact .obs ⟨hs h.1, h.2⟩ hqp hl₁ hl₂ hadm hd (has_ih hs hw) hls (ht_ih hs hw)
         (hbs_ih hs hw)
   case eqTerm_corec =>
-    refine fun h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
+    refine fun h hqp hl₁ hl₂ hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
         hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih => fun hs hw => ?_
-    exact .corec ⟨hs h.1, h.2⟩ hq hl₁ hl₂ hp hadm (fun hr e he => hs (hpre hr e he))
+    exact .corec ⟨hs h.1, h.2⟩ hqp hl₁ hl₂ hadm (fun hr e he => hs (hpre hr e he))
         (has_ih hs hw) hls hh hS₁ hS₂ (hss_ih hs hw) hSl₁ hSl₂ hSs hSk
         (fun j T' ps'' S₁' hj hS' => hSt_ih j T' ps'' S₁' hj hS' hs hw)
         (fun j T' ps'' S₁' S₂' hj hS₁' hS₂' =>
@@ -288,35 +288,35 @@ theorem stableUnderExtension : StableUnderExtension := by
         (fun i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂ =>
           hgt_ih i j T' d ps'' S₁' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hS' hd hg₁ hg₂ hs hw)
   case eqTerm_iota =>
-    intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hq hl hp hadm u has ts hts
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hqp hl hadm u has ts hts
       hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih sig' hs hw
-    exact .iota ⟨hs h.1, h.2⟩ hc hq hl hp hadm (has_ih hs hw) (hts_ih hs hw) hi hC
+    exact .iota ⟨hs h.1, h.2⟩ hc hqp hl hadm (has_ih hs hw) (hts_ih hs hw) hi hC
         hu (Terms.ResultTerms.ofTypeDeclarations (fun _ h => hs h) hrs) hCl hCs
         (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
   case eqTerm_etaCtor =>
-    intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hq hl hp hadm hr has ht
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hqp hl hadm hr has ht
       he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih sig' hs hw
-    exact .etaCtor ⟨hs h.1, h.2⟩ hc hq hl hp hadm hr (has_ih hs hw) (ht_ih hs hw)
+    exact .etaCtor ⟨hs h.1, h.2⟩ hc hqp hl hadm hr (has_ih hs hw) (ht_ih hs hw)
         (he_ih hs hw) hi hC hu hCl hCs
         (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hs hw) hul hus
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ h => hs h))
         (fun i j T' con C' u hi hC' hu => hut_ih i j T' con C' u hi hC' hu hs hw) hκ
   case eqTerm_beta =>
-    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hq
-      hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hqp
+      hl hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
       hgt_ih sig' hs hw
-    exact .beta ⟨hs h.1, h.2⟩ hq hl hp hadm (fun hr e he => hs (hpre hr e he))
+    exact .beta ⟨hs h.1, h.2⟩ hqp hl hadm (fun hr e he => hs (hpre hr e he))
         (has_ih hs hw) hh hS (hss_ih hs hw) hi hd hg (hbs_ih hs hw) hSl hSs
         (fun j T' ps'' S' hj hS' => hSt_ih j T' ps'' S' hj hS' hs hw) hgl hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg =>
           hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hs hw)
   case eqTerm_etaObs =>
-    refine fun h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih => fun hs hw => ?_
-    exact .etaObs ⟨hs h.1, h.2⟩ hq hl hp hadm hr (has_ih hs hw) (ht_ih hs hw)
+    refine fun h hqp hl hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih => fun hs hw => ?_
+    exact .etaObs ⟨hs h.1, h.2⟩ hqp hl hadm hr (has_ih hs hw) (ht_ih hs hw)
         (hu_ih hs hw)
         (fun d p q ς ps' Ξ Θ B ψ hd => hobs_ih d p q ς ps' Ξ Θ B ψ hd hs hw)
   case hasArgs_nil => exact fun hctx hctx_ih => fun hs hw => .nil (hctx_ih hs hw)

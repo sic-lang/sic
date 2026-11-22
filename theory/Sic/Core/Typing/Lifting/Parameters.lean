@@ -175,18 +175,19 @@ theorem TypeDeclaration.liftedInstance_wfType {decl : TypeDeclaration} {F : Name
     WfType sig ((decl.params ι).substLevels (Level.lifted n))
       (decl.liftedInstance F n ι (.identity decl.scope)) := by
   have hP := stableUnderLevels.wfCtx (Level.lifted n) (hsig.wfCtx_params hT.1 hadm)
-  have hq : (List.ofFn ι.sorts).length = decl.sorts := List.length_ofFn
+  have hqp : decl.AsMany (List.ofFn ι.sorts) (List.ofFn ι.grades) :=
+    ⟨List.length_ofFn, List.length_ofFn⟩
   have hl : (List.ofFn (Level.lifted (k := decl.levels) n)).length = decl.levels :=
     List.length_ofFn
-  have hp : (List.ofFn ι.grades).length = decl.grades := List.length_ofFn
   have has : HasInstanceArgs sig ((decl.params ι).substLevels (Level.lifted n))
       (.identity decl.scope)
-      ((decl.params (.ofLists _ _ hq hp)).substLevels
-        ((List.ofFn (Level.lifted n)).getFin hl)) := by
-    rw [List.getFin_ofFn, Instance.ofLists_ofFn]
+      ((decl.params hqp.inst).substLevels ((List.ofFn (Level.lifted n)).getFin hl)) := by
+    rw [List.getFin_ofFn, TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
     exact HasInstanceArgs.identity hP
-  exact .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hq hl hp
-    ((Instance.ofLists_ofFn ι hq hp).symm ▸ hadm) has)
+  have hI : decl.constraint hqp.inst := by
+    rw [TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+    exact hadm
+  exact .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hqp hl hI has)
 
 /-- The lifting of the parameters of a codata type of a well-formed signature, under the term `y`
 of the type at them, is typed in the parameters of the lifting of the type, at an instance that the

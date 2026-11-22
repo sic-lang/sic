@@ -42,8 +42,8 @@ open Sic.Grading
 
 variable {sig : Signature} {k : Nat} {decl : TypeDeclaration} {D : Name}
   {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-  {ls : List (Level k)} {ps : List Grade} {hq : qs.length = decl.sorts}
-  {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
+  {ls : List (Level k)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+  {hl : ls.length = decl.levels}
 
 /-! ## Substitutions of Observations -/
 
@@ -55,13 +55,13 @@ the observations of `t` by the destructors before it, are this telescope and thi
 substituted. -/
 structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
     (T : CodataType decl.sorts decl.grades decl.levels decl.scope) (qs : List Quality)
-    (ls : List (Level k)) (ps : List Grade) (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {Γ Ξ : Scope}
+    (ls : List (Level k)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels) {Γ Ξ : Scope}
     (as : InstanceArgs k Γ decl.scope) (t : Term k Γ) (ctx' : Context k Γ) (θ : Subst k Γ Ξ)
     (ctx : Context k Ξ) : Prop where
   /-- The arguments of the instance are arguments of its parameters. -/
   args : HasInstanceArgs sig ctx' as
-    ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+    ((decl.params hqp.inst).substLevels (ls.getFin hl))
   /-- The term is a term of the instance. -/
   term : HasType sig ctx' t (.inst D qs ls ps as)
   /-- The image of a variable is a variable, declared with its type, substituted. -/
@@ -76,7 +76,7 @@ structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D
       (∃ Y, θ X = Var.eta Y ∧ ctx'.SecondOrderIn Y (Θ.subst θ) (A.subst (Subst.liftN _ θ))) ∨
       ∃ (d : Name) (p q ς : Grade) (Ξ' : Scope) (Θ' : Telescope decl.levels Ξ' ps')
         (B' : Term decl.levels (Ξ'.extend ps'.length))
-        (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ' Θ' B' ψ),
+        (hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ' B' ψ),
         θ X = t.observation D qs ls ps as d ps' ∧
         Θ.subst θ = (Θ'.substLevels (ls.getFin hl)).subst
           (hd.obsSubst (t.observation D qs ls ps as) as.toSubst) ∧
@@ -86,11 +86,11 @@ structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D
 /-- The substitutions that observe a term of an instance of the codata type `T`. -/
 def Subst.Observes.Base (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
     (T : CodataType decl.sorts decl.grades decl.levels decl.scope) (qs : List Quality)
-    (ls : List (Level k)) (ps : List Grade) (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {Γ Ξ : Scope}
+    (ls : List (Level k)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels) {Γ Ξ : Scope}
     (ctx' : Context k Γ) (θ : Subst k Γ Ξ) (ctx : Context k Ξ) : Prop :=
   ∃ (as : InstanceArgs k Γ decl.scope) (t : Term k Γ),
-    Subst.Observes sig D T qs ls ps hq hl hp as t ctx' @θ ctx
+    Subst.Observes sig D T qs ls ps hqp hl as t ctx' @θ ctx
 
 /-- A substitution that observes a term, followed by the observation of the term by a destructor,
 observes the term, in the context extended by a second-order variable whose telescope and type,
@@ -98,16 +98,16 @@ substituted, are the telescope and the result of the destructor, at the observat
 the destructors before it. -/
 theorem Subst.Observes.snoc {Γ Ξ : Scope} {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
     {ctx' : Context k Γ} {θ : Subst k Γ Ξ} {ctx : Context k Ξ}
-    (h : Subst.Observes sig D T qs ls ps hq hl hp as t ctx' @θ ctx) {d : Name} {p q ς : Grade}
+    (h : Subst.Observes sig D T qs ls ps hqp hl as t ctx' @θ ctx) {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {ψ : ResultOwnership Grade ps'.length} {Ξ' : Scope}
     {Θ' : Telescope decl.levels Ξ' ps'} {B' : Term decl.levels (Ξ'.extend ps'.length)}
-    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ' Θ' B' ψ) {Θ : Telescope k Ξ ps'}
+    (hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ' B' ψ) {Θ : Telescope k Ξ ps'}
     {B : Term k (Ξ.extend ps'.length)}
     (hΘ : Θ.subst θ = (Θ'.substLevels (ls.getFin hl)).subst
       (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))
     (hB : B.subst (Subst.liftN _ θ) = (B'.substLevels (ls.getFin hl)).subst
       (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
-    Subst.Observes sig D T qs ls ps hq hl hp as t ctx'
+    Subst.Observes sig D T qs ls ps hqp hl as t ctx'
       (Subst.snoc (e := .secondOrder ps' ψ) θ (t.observation D qs ls ps as d ps'))
       (ctx.secondOrder Θ B ψ) where
   args := h.args
@@ -133,8 +133,8 @@ theorem Subst.Observes.snoc {Γ Ξ : Scope} {as : InstanceArgs k Γ decl.scope} 
 the context of the substitution is well formed. -/
 theorem Subst.Observes.Base.lifted {Γ Ξ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Ξ}
     {ctx : Context k Ξ} :
-    Subst.Lifted (@Subst.Observes.Base sig k decl D T qs ls ps hq hl hp) ctx' @θ ctx →
-      WfCtx sig ctx' → Subst.Observes.Base sig D T qs ls ps hq hl hp ctx' @θ ctx
+    Subst.Lifted (@Subst.Observes.Base sig k decl D T qs ls ps hqp hl) ctx' @θ ctx →
+      WfCtx sig ctx' → Subst.Observes.Base sig D T qs ls ps hqp hl ctx' @θ ctx
   | .base h, _ => h
   | .var (θ := θ) _ h, .var hB => by
     obtain ⟨as, t, hO⟩ := Subst.Observes.Base.lifted h (contextPresuppositions.wfType hB)
@@ -178,8 +178,8 @@ theorem Subst.Observes.Base.lifted {Γ Ξ : Scope} {ctx' : Context k Γ} {θ : S
 its constraint admits, give what the stability of the typing asks of a family of substitutions: the
 rules `(d)` and `(d_≡)` type the observation of the term at arguments. -/
 theorem Subst.Observes.liftable (hT : sig.HasCodataType D decl T)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) :
-    Subst.Liftable sig (@Subst.Observes.Base sig k decl D T qs ls ps hq hl hp) where
+    (hadm : decl.constraint hqp.inst) :
+    Subst.Liftable sig (@Subst.Observes.Base sig k decl D T qs ls ps hqp hl) where
   wfCtx := fun ⟨_, _, h⟩ => contextPresuppositions.hasType h.term
   secondOrder := fun hθ hX hts => by
     obtain ⟨as, t, hO⟩ := Subst.Observes.Base.lifted hθ (contextPresuppositions.hasArgs hts)
@@ -187,14 +187,14 @@ theorem Subst.Observes.liftable (hT : sig.HasCodataType D decl T)
     · rw [hY, Var.eta_instantiate]
       exact .secondOrder hYin hts
     · rw [hθX, Term.observation_instantiate, hA]
-      exact .obs hT hq hl hp hadm hd hO.args hO.term (hΘ ▸ hts)
+      exact .obs hT hqp hl hadm hd hO.args hO.term (hΘ ▸ hts)
   eqSecondOrder := fun hθ hX hts => by
     obtain ⟨as, t, hO⟩ := Subst.Observes.Base.lifted hθ (contextPresuppositions.eqArgs hts)
     rcases hO.secondOrderIn hX with ⟨Y, hY, hYin⟩ | ⟨d, p, q, ς, Ξ', Θ', B', hd, hθX, hΘ, hA⟩
     · rw [hY, Var.eta_instantiate, Var.eta_instantiate]
       exact .secondOrder hYin hts
     · rw [hθX, Term.observation_instantiate, Term.observation_instantiate, hA]
-      exact .obs hT hq hl hl hp hadm hd (EqInstanceArgs.refl hO.args) (fun _ _ => rfl)
+      exact .obs hT hqp hl hl hadm hd (EqInstanceArgs.refl hO.args) (fun _ _ => rfl)
         (.refl hO.term) (hΘ ▸ hts)
   varIn := fun hθ hx hctx => by
     obtain ⟨as, t, hO⟩ := Subst.Observes.Base.lifted hθ hctx
@@ -212,7 +212,7 @@ when the destructor is not recursive, is in a sort that the sort bounds.
 The observations are those of the destructors of `T`, of which the destructors renamed are the last
 ones, as `link` states. -/
 theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {ctx' : Context k Γ}
+    (hadm : decl.constraint hqp.inst) {Γ : Scope} {ctx' : Context k Γ}
     {as : InstanceArgs k Γ decl.scope} {t : Term k Γ} {ι : Instance decl.sorts decl.grades} :
     {Δ : Scope} → {ns : List Name} → {ν : Nesting Nat Δ} →
       {as₀ : InstanceArgs decl.levels Δ decl.scope} →
@@ -220,11 +220,11 @@ theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
       {κ : Universe decl.levels} → WfDestructors sig decl ι @ν as₀ ctx ds κ →
       ∀ (Ξ₀ : Scope) (ds' : Destructors decl.levels Ξ₀ ns) (β : Ren Ξ₀ Δ), ds' = ds.rename β →
       ∀ (θ' : Subst k Γ Ξ₀) (θ : Subst k Γ Δ), (∀ {a} (x : Var Δ a), θ' (β x) = θ x) →
-      Subst.Observes sig D T qs ls ps hq hl hp as t ctx' @θ (ctx.substLevels (ls.getFin hl)) →
+      Subst.Observes sig D T qs ls ps hqp hl as t ctx' @θ (ctx.substLevels (ls.getFin hl)) →
       (∀ {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
         {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
         {ψ : ResultOwnership Grade ps'.length} (h : Destructors.Pos d p q ς ds' Ξ Θ B ψ),
-        ∃ hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ, ∀ {a} (x : Var Ξ a),
+        ∃ hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ, ∀ {a} (x : Var Ξ a),
           hd.obsSubst (t.observation D qs ls ps as) as.toSubst x =
             h.obsSubst (t.observation D qs ls ps as) @θ' x) →
       ∀ {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
@@ -346,22 +346,22 @@ and at the observations of a term of this instance by the destructors before it:
 a telescope in the universe of the level of the sort of the type, and the result, when the
 destructor is not recursive, is in a sort that this sort bounds. -/
 theorem Destructors.Pos.hasType_observations (hT : sig.HasCodataType D decl T)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {ctx' : Context k Γ}
+    (hadm : decl.constraint hqp.inst) {Γ : Scope} {ctx' : Context k Γ}
     {α : Ren Γ decl.scope}
-    (hα : TypedRen sig ctx' α ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+    (hα : TypedRen sig ctx' α ((decl.params hqp.inst).substLevels (ls.getFin hl)))
     {t : Term k Γ}
     (ht : HasType sig ctx' t (.inst D qs ls ps ((InstanceArgs.identity decl.scope).rename α)))
     {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length}
-    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) :
+    (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) :
     WfTelescope sig ctx'
         ((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst
             (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
             ((InstanceArgs.identity decl.scope).rename α).toSubst))
-        ⟨.type, ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level⟩ ∧
-      (B.blockName decl.names = none → ∃ κ₁, κ₁ ≼ decl.sort (.ofLists qs ps hq hp) ∧
+        ⟨.type, ((decl.sort hqp.inst).substLevels (ls.getFin hl)).level⟩ ∧
+      (B.blockName decl.names = none → ∃ κ₁, κ₁ ≼ decl.sort hqp.inst ∧
         HasType sig
           (ctx'.append ((Θ.substLevels (ls.getFin hl)).subst
             (hd.obsSubst

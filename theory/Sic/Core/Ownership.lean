@@ -160,8 +160,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {os : List Grade}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
-      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))} (hts : OwnershipArgs sig φ m ts os) :
+      (hqp : decl.AsMany qs ps)
+      {ts : Args k Γ (con.params hqp.inst)} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
   times the requirement `r̂` of its recursion, times the requirement of the entry of each field,
@@ -194,47 +194,46 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
-      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (ht : Ownership sig φ (m ⊙ r) o t)
-      (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
+      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (ht : Ownership sig φ (m ⊙ r) o t)
+      (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps hqp.inst)
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       (hu : ∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields φ
-          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
-          (m.grade * r) (con.params (.ofLists qs ps hq hp)))
-          (Telescope.resultOwnerships p ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
-          (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m p u)
-      (hu' : decl.HasNestedField (.ofLists qs ps hq hp) → ∀ i j T' con u,
+          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps hqp.inst)
+          (m.grade * r) (con.params hqp.inst))
+          (Telescope.resultOwnerships p ((con.fields hqp.inst).nest decl.names))
+          (us.grades i) (con.nestResultParams hqp.inst decl.names).length) m p u)
+      (hu' : decl.HasNestedField hqp.inst → ∀ i j T' con u,
         decl.cases[i]? = some (j, T', con) →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
+        us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩ →
         Ownership sig (Ownership.extendResults (Ownership.extendFields (fun x => ς * φ x)
-          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps (.ofLists qs ps hq hp))
-          (m.grade * r) (con.params (.ofLists qs ps hq hp)))
-          (Telescope.resultOwnerships χ ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
-          (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) m χ u)
+          (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps hqp.inst)
+          (m.grade * r) (con.params hqp.inst))
+          (Telescope.resultOwnerships χ ((con.fields hqp.inst).nest decl.names))
+          (us.grades i) (con.nestResultParams hqp.inst decl.names).length) m χ u)
       (hmeets : ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
         (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
         decl.cases[i]? = some (j, T', con) →
         ∀ ax ∈ [Grade.run, Grade.total], ∀ (l : Nat) (σ : Shape),
           (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m ax decl.names qs ps χ
-            (.ofLists qs ps hq hp))[l]? = some (some σ) →
+            hqp.inst)[l]? = some (some σ) →
           σ.Meets (ax (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps
-            (.ofLists qs ps hq hp))) (ax ς))
+            hqp.inst)) (ax ς))
       (hused : ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
         (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
         decl.cases[i]? = some (j, T', con) →
         ∀ (l : Nat) (σ : Shape) (p' : Parameter),
           (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m Grade.run decl.names qs ps χ
-            (.ofLists qs ps hq hp))[l]? = some (some σ) →
-          (con.params (.ofLists qs ps hq hp))[l]? = some p' →
+            hqp.inst)[l]? = some (some σ) →
+          (con.params hqp.inst)[l]? = some p' →
           (m.grade * r * Telescope.resultGrades
-            ((con.fields (.ofLists qs ps hq hp)).nest decl.names) (us.grades i) l).run *
+            ((con.fields hqp.inst).nest decl.names) (us.grades i) l).run *
               σ.factor ≠ .zero →
           (m.grade * r * p'.usage).run ≠ .zero) :
       Ownership sig φ m p (.recursor r ς χ D qs ls ps as t κ Cs us)
@@ -255,8 +254,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {o v : Grade} {os : List Grade}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+      (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (ht : Ownership sig φ m o t) {bs : Args k Γ ps'} (hbs : OwnershipArgs sig φ m bs os)
       (hv : ψ.value os = some v)
       (hf : ∀ i : Fin ps'.length, (ψ.coefficient i).isSome → m ⊙ ps'[i].usage = m)
@@ -281,8 +280,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat} {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {os : List Grade}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-      (hp : ps.length = decl.grades) (hh : decl.codataTypes[h']? = some T)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+      (hh : decl.codataTypes[h']? = some T)
       (hS : Ss.get h' = some ⟨0, ps', S⟩) (hss : OwnershipArgs sig φ (m ⊙ r) ss os)
       (hSl : Ss.length = decl.codataTypes.length)
       (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
@@ -292,14 +291,14 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
       (hgo : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = none →
         ∀ os' v, Parameter.Allow (m ⊙ p) ps₁ os' → ψ.value os' = some v →
         Ownership sig (Ownership.extendArgs (Ownership.extendFields (fun x => ς * φ x) ς
@@ -309,7 +308,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)) (D' : Name),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → B.blockName decl.names = some D' →
         ∀ os', Parameter.Allow (m ⊙ p) ps₁ os' →
         Ownership sig (Ownership.extendArgs (Ownership.extendFields (fun x => ς * φ x) ς

@@ -460,7 +460,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     exact .const _ _ _
   | .sort => .erased _
   | .inst => .erased _
-  | .ctor (con := con) h hc hq hp hts => by
+  | .ctor (con := con) h hc ⟨hq, hp⟩ hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
@@ -469,7 +469,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     rw [Parameter.map_eta] at hos
     exact .ctor hos
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ := χ) (κ := κ)
-      (us := us) (o := o) (p := p) h hq hp ht hns hul hus hu hu' hmeets hused => by
+      (us := us) (o := o) (p := p) h ⟨hq, hp⟩ ht hns hul hus hu hu' hmeets hused => by
     -- The branches, whose variables have the run-time multiplicities of their ownerships.
     have hbr : ∀ o',
         (r ∉ Mode.oneOne.erased →
@@ -630,7 +630,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       obtain ⟨_, _, hNs⟩ := hbr _ (fun _ => rfl) fun h' => absurd h' hr
       exact .recursor (Ownership.erase_ownership hd hs hΩ hΓ hφ hm' ht) hNs
-  | .obs (ψ := ψ) (os := os) h hq hp hpos ht hbs hv hf hς => by
+  | .obs (ψ := ψ) (os := os) h ⟨hq, hp⟩ hpos ht hbs hv hf hς => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
     simp only [Term.erase, hi]
@@ -647,7 +647,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       (List.getElem?_eq_getElem i.2) (Mode.not_erased_of_odot hm (hf i hi)), hv]
     rfl
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
-      h hq hp hh hS hss _ hSs hgl hgs hgo hgr => by
+      h ⟨hq, hp⟩ hh hS hss _ hSs hgl hgs hgo hgr => by
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ (r * ·)
       (fun u hu => by rw [hm]; exact Mode.oneOne_odot_mul _ _ hu) hss

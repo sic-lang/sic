@@ -251,7 +251,8 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
       have hl' := hls.length_eq.symm.trans hl
       exact ⟨_, .delta hd hq hl' hp,
         (Term.substLevels_levelEquiv (hls.getFin hl hl') _).rename _⟩
-  | iota hdecl hi hD hc hq hl hp hu hrs hv =>
+  | iota hdecl hi hD hc hqp hl hu hrs hv =>
+    obtain ⟨hq, hp⟩ := hqp
     cases h with
     | recursor _ _ _ _ _ _ s hls has ht hκ hCs hus =>
       cases ht with
@@ -266,13 +267,14 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
           hrs ((Constructor.fieldsAt_levelEquiv _ _ (hls.getFin hl hl₂) has).typesAt htse)
           htse.terms
         obtain ⟨v', hv', hvv⟩ := huu.instantiateTerms₂ htse.terms hrse.terms hv
-        exact ⟨v', .iota hdecl hi hD hc hq hl₂ hp hu' hrs₂ hv', hvv⟩
+        exact ⟨v', .iota hdecl hi hD hc ⟨hq, hp⟩ hl₂ hu' hrs₂ hv', hvv⟩
   | recursor _ ih =>
     cases h with
     | recursor _ _ _ _ _ _ _ hl has ht hκ hCs hus =>
       obtain ⟨u', hr', hu⟩ := ih ht
       exact ⟨_, .recursor hr', .recursor _ _ _ _ _ _ _ hl has hu hκ hCs hus⟩
-  | beta hdecl hi hD hq hl hp hg hv =>
+  | beta hdecl hi hD hqp hl hg hv =>
+    obtain ⟨hq, hp⟩ := hqp
     cases h with
     | obs _ _ _ _ _ _ ht hbs =>
       cases ht with
@@ -280,7 +282,7 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
         obtain ⟨g', hg', hgg⟩ := hgs.get hg
         obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms₂ hss hbs hv
         have hl' := hls.length_eq.symm.trans hl
-        exact ⟨_, .beta hdecl hi hD hq hl' hp hg' hv',
+        exact ⟨_, .beta hdecl hi hD ⟨hq, hp⟩ hl' hg' hv',
           Term.LevelEquiv.observed _ _ _ _ _ _ _ hls has hSs hgs
             (Level.subst_equiv (hls.getFin hl hl') _) hvv⟩
   | obs _ ih =>

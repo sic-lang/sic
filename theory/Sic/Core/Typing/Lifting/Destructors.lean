@@ -89,21 +89,21 @@ theorem HasType.append_scale {Γ : Scope} (r : Grade) {κ : Universe k} :
 
 variable {decl : TypeDeclaration} {D : Name}
   {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-  {ls : List (Level k)} {ps : List Grade} {hq : qs.length = decl.sorts}
-  {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
+  {ls : List (Level k)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+  {hl : ls.length = decl.levels}
 
 /-- The observation of a term of an instance of a codata type by a destructor, as an abstraction
 over the variables of its telescope, is a term of its result, in the context extended by this
 telescope, both at the observations of the term by the destructors before it. -/
 theorem HasType.observation (hT : sig.HasCodataType D decl T)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {ctx : Context k Γ}
+    (hadm : decl.constraint hqp.inst) {Γ : Scope} {ctx : Context k Γ}
     {as : InstanceArgs k Γ decl.scope} {t : Term k Γ}
     (has : HasInstanceArgs sig ctx as
-      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      ((decl.params hqp.inst).substLevels (ls.getFin hl)))
     (ht : HasType sig ctx t (.inst D qs ls ps as)) {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
     {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
-    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+    (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
     (hΘ : WfCtx sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
       (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
     HasType sig
@@ -116,7 +116,7 @@ theorem HasType.observation (hT : sig.HasCodataType D decl T)
   have hbs := HasArgs.bound hΘ
   rw [Telescope.rename_subst_of
     (fun x => hd.obsSubst_observation_rename (Ren.weakenN ps'.length) D qs ls ps as t x)] at hbs
-  have h := HasType.obs hT hq hl hp hadm hd (stableUnderRenaming.hasInstanceArgs has hw)
+  have h := HasType.obs hT hqp hl hadm hd (stableUnderRenaming.hasInstanceArgs has hw)
     (stableUnderRenaming.hasType ht hw) hbs
   rw [← Term.rename_subst_of (Subst.liftN_rename_after_of ps'.length
       (fun x => hd.obsSubst_observation_rename (Ren.weakenN ps'.length) D qs ls ps as t x)),
@@ -153,16 +153,16 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₀}
     {I : Instance (decl.sorts + 1) (decl.liftingGrades S)} {qs : List Quality}
-    {ls : List (Level (decl.levels + S.length))} {ps : List Grade} {hq : qs.length = decl.sorts}
-    {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
-    (hT : sig.HasCodataType D decl T) (hadm : decl.constraint (.ofLists qs ps hq hp))
+    {ls : List (Level (decl.levels + S.length))} {ps : List Grade} {hqp : decl.AsMany qs ps}
+    {hl : ls.length = decl.levels}
+    (hT : sig.HasCodataType D decl T) (hadm : decl.constraint hqp.inst)
     {Γ₀ : Scope} {ctx₀ : Context (decl.levels + S.length) Γ₀} {α : Ren Γ₀ decl.scope}
     (hα : TypedRen sig ctx₀ α
-      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      ((decl.params hqp.inst).substLevels (ls.getFin hl)))
     {t : Term (decl.levels + S.length) Γ₀}
     (ht : HasType sig ctx₀ t (.inst D qs ls ps ((InstanceArgs.identity decl.scope).rename α)))
     {v : Lifting.Variables} {κ : Universe (decl.levels + S.length)}
-    (hκ : ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level ≤ κ.level) :
+    (hκ : ((decl.sort hqp.inst).substLevels (ls.getFin hl)).level ≤ κ.level) :
     {Ξ : Scope} → {ns : List Name} → (ds : Destructors decl.levels Ξ ns) →
       ∀ (Γ' : Scope) (ρ : Lifting (decl.levels + S.length) Γ' Γ₀)
         (θ : Subst (decl.levels + S.length) Γ₀ Ξ) (ns' : List Name)
@@ -178,7 +178,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
         (∀ {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ' : Scope}
           {Θ : Telescope decl.levels Ξ' ps'} {B : Term decl.levels (Ξ'.extend ps'.length)}
           {ψ : ResultOwnership Grade ps'.length} (h : Destructors.Pos d p q ς ds Ξ' Θ B ψ),
-          ∃ hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ' Θ B ψ, ∀ {a} (x : Var Ξ' a),
+          ∃ hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ B ψ, ∀ {a} (x : Var Ξ' a),
             hd.obsSubst
                 (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
                 ((InstanceArgs.identity decl.scope).rename α).toSubst x =
@@ -215,7 +215,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
       have hB' := HasType.append_scale (v.recursion * m.factor) (List.length_map _).symm
         (Term.Lifts.hasType (hρ.liftN hΘctx)
           (fun D => by rw [Lifting.liftN_block, hk D]; rfl) hB hBσ (by rw [Lifting.liftN_ren]; exact he))
-      have hκ₀ : (⟨.type, ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level⟩ :
+      have hκ₀ : (⟨.type, ((decl.sort hqp.inst).substLevels (ls.getFin hl)).level⟩ :
           Universe (decl.levels + S.length)) ≼ ⟨.type, κ.level⟩ := ⟨fun h => h, hκ⟩
       refine .cons ?_ (Term.nest_plain (Nesting.liftN_plain _ hν) _)
         (((stableUnderRenaming.wfTelescope hΘ₀ hρ.ren).mono hκ₀).scale (v.recursion * m.factor))

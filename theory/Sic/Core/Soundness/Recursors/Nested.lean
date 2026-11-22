@@ -167,7 +167,7 @@ theorem Red.beta_stateless {decl : TypeDeclaration}
       fun t => Term.instantiateTerms (n := 0) t .nil) e₁).trans e₂
   have h := Red.beta (sig := sig.interpret ι) (D' := D') (qs' := qs') (ls' := ls') (ps' := ps'')
     (as' := as') (r := r) (as := as) (Ss := Ss)
-    (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl hq hl hp hg hv
+    (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl ⟨hq, hp⟩ hl hg hv
   rw [hrec] at h
   exact h
 

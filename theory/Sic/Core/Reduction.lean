@@ -114,11 +114,11 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ decl.scope} {c : Name}
       {Cs : Motives k Γ} {us : Branches k Γ} {n m : Nat} {u : Term k ((Γ.extend n).extend m)}
       {v : Term k Γ} (h : .typeDeclaration decl ∈ sig) (hi : decl.cases[i]? = some (j, T, con))
-      (hD : T.name = D) (hc : con.name = c) (hq : qs'.length = decl.sorts)
-      (hl : ls'.length = decl.levels) (hp : ps'.length = decl.grades)
-      {ts : Args k Γ (con.params (.ofLists qs' ps' hq hp))} {psr : List Parameter}
+      (hD : T.name = D) (hc : con.name = c) (hqp : decl.AsMany qs' ps')
+      (hl : ls'.length = decl.levels)
+      {ts : Args k Γ (con.params hqp.inst)} {psr : List Parameter}
       {rs : Args k Γ psr} (hu : us.get i = some ⟨n, m, u⟩)
-      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con (.ofLists qs' ps' hq hp)
+      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con hqp.inst
         decl.names (ls'.getFin hl) as' (Lifting.ofMotives decl.names qs' ls' ps' as' κ.level χ Cs)
         (Term.recursorAt r ς χ qs' ls' ps' as' κ Cs us) ts rs)
       (hv : u.instantiateTerms₂ ts.terms rs.terms = some v) :
@@ -146,13 +146,13 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {gs : DestructorBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
       {g : Term k (((Γ.extend 0).extend m).extend a)} {v : Term k Γ}
       (h : .typeDeclaration decl ∈ sig) (hi : decl.codataCases[i]? = some (j, T, d))
-      (hD : T.name = D) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hg : gs.get i = some ⟨0, m, a, g⟩)
+      (hD : T.name = D) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hg : gs.get i = some ⟨0, m, a, g⟩)
       (hv : g.instantiateTerms₂ ss bs = some v) :
       Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs)
-        (Term.observed decl.names ((T.body (.ofLists qs ps hq hp)).resultName decl.names d) r qs ls
-          ps as Ss gs ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
-          (((T.body (.ofLists qs ps hq hp)).resultConstant d).getD .unrestrictedUnrestricted) v)
+        (Term.observed decl.names ((T.body hqp.inst).resultName decl.names d) r qs ls
+          ps as Ss gs ((decl.sort hqp.inst).substLevels (ls.getFin hl))
+          (((T.body hqp.inst).resultConstant d).getD .unrestrictedUnrestricted) v)
   -- ADE: `app-subst`, `fst-subst` and `snd-subst`, in `Definition/Typed.agda`.
   /-- An observation reduces the term it observes.
   RFC: `d_{\longrightarrow}` -/
@@ -227,10 +227,10 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
         (by simp [Entry.names, hx])
       cases he
       rfl
-  | iota h₁ hi₁ hD₁ hc₁ _ _ _ hu₁ hrs₁ hv₁ =>
+  | iota h₁ hi₁ hD₁ hc₁ _ _ hu₁ hrs₁ hv₁ =>
     generalize hx : Term.recursor _ _ _ _ _ _ _ _ _ _ _ _ = x at h₂
     cases h₂ with
-    | iota h₂ hi₂ hD₂ hc₂ _ _ _ hu₂ hrs₂ hv₂ =>
+    | iota h₂ hi₂ hD₂ hc₂ _ _ hu₂ hrs₂ hv₂ =>
       simp only [Term.recursor.injEq, Term.ctor.injEq] at hx
       obtain ⟨-, rfl, rfl, rfl, rfl, rfl, rfl, rfl, has, ⟨rfl, rfl, rfl, rfl, rfl, -, rfl, hts⟩,
         rfl, rfl, rfl⟩ := hx
@@ -260,9 +260,9 @@ theorem Red.det {sig : Signature} {k : Nat} {Γ : Scope} {t u₁ u₂ : Term k �
     cases h₂ with
     | iota => exact (Whnf.not_red hsig (.ctor ..) h₁).elim
     | recursor h₂ => rw [ih h₂]
-  | beta h₁ hi₁ hD₁ _ _ _ hg₁ hv₁ =>
+  | beta h₁ hi₁ hD₁ _ _ hg₁ hv₁ =>
     cases h₂ with
-    | beta h₂ hi₂ hD₂ _ _ _ hg₂ hv₂ =>
+    | beta h₂ hi₂ hD₂ _ _ hg₂ hv₂ =>
       have hT₁ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₁)).1
       have hT₂ := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi₂)).1
       have he := hsig.entry_unique h₁ h₂ (TypeDeclaration.codata_name_mem_names hT₁)

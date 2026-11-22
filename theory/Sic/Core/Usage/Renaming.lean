@@ -319,15 +319,15 @@ where
       exact .var (usageArgs hts hθ)
     | .const h hm, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .const h hm
     | .sort, _ => by rw [GradeVector.rename_commutes.rename_zero]; exact .sort
-    | .inst h hq hp has, hθ => by
-      rw [GradeVector.rename_commutes.rename_smul]; exact .inst h hq hp (usageInstanceArgs has hθ)
-    | .ctor h hc hq hp hts, hθ => by
+    | .inst h hqp has, hθ => by
+      rw [GradeVector.rename_commutes.rename_smul]; exact .inst h hqp (usageInstanceArgs has hθ)
+    | .ctor h hc hqp hts, hθ => by
       rw [Term.ctor_subst]
-      exact .ctor h hc hq hp (usageArgs hts hθ)
-    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hq hl hp hC ht hul hus hR hu
+      exact .ctor h hc hqp (usageArgs hts hθ)
+    | .recursor (Cs := Cs) (us := us) (δs := δs) (gs := gs) h hqp hl hC ht hul hus hR hu
         hg hχ hr hprop, hθ => by
       rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul]
-      refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hq hl hp ?_
+      refine .recursor (δs := fun i => (δs i).rename α) (gs := gs) h hqp hl ?_
         (usage ht hθ) ((Branches.length_subst _ us).trans hul) ?_ ?_ ?_
         (by simp only [Branches.grades_subst]; exact hg) ?_ hr hprop
       · intro j n C hC'
@@ -355,14 +355,14 @@ where
         rw [GradeVector.rename_commutes.rename_add, GradeVector.rename_commutes.rename_smul] at this
         rw [Branches.grades_subst]
         exact this
-    | .obs h hq hp hd ht hbs hm, hθ => by
+    | .obs h hqp hd ht hbs hm, hθ => by
       rw [Term.obs_subst, GradeVector.rename_commutes.rename_add]
-      exact .obs h hq hp hd (usage ht hθ) (usageArgs hbs hθ) hm
-    | .corec (Ss := Ss) (gs := gs) (δs := δs) h hq hp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr,
+      exact .obs h hqp hd (usage ht hθ) (usageArgs hbs hθ) hm
+    | .corec (Ss := Ss) (gs := gs) (δs := δs) h hqp hh hS hSu hss hgl hSl hSs hgs hgu hδ hδr,
         hθ => by
       rw [Term.corec_subst, GradeVector.rename_commutes.rename_add,
         GradeVector.rename_commutes.rename_smul]
-      refine .corec (δs := fun i => (δs i).rename α) h hq hp hh (States.get_subst _ hS) ?_
+      refine .corec (δs := fun i => (δs i).rename α) h hqp hh (States.get_subst _ hS) ?_
         (usageArgs hss hθ) ((DestructorBranches.length_subst _ gs).trans hgl)
         ((States.length_subst _ Ss).trans hSl) ?_ ?_ ?_ ?_ ?_
       · intro j ps'' S' hS'

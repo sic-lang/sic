@@ -166,7 +166,7 @@ theorem Term.nest_of_fresh {α : Type} {sigT : Signature} (mark : Name → Optio
   | _, _, _, _, .var _ _, _ => rfl
   | _, ctx, _, _, .inst D qs ls ps as, hA => by
     have h : mark D = none ∧ ∃ params, HasInstanceArgs sigT ctx as params := by
-      obtain ⟨decl, ζ, hΔ, hq, hl, hp, hD, -, has⟩ := hA.inst_inv
+      obtain ⟨decl, ζ, hΔ, ⟨hq, hp⟩, hl, hD, -, has⟩ := hA.inst_inv
       subst hΔ
       have hm : D ∈ decl.names := by
         rcases hD.2 with ⟨T, hT, rfl, -⟩ | ⟨T, hT, rfl, -⟩
@@ -417,7 +417,7 @@ theorem Term.validBlockNest {sigT : Signature} (hS : TypingSound sig ι) (hd : s
   have hctx : WfCtx sigT ctx := WfCtx.of_append (contextPresuppositions.hasType hA₀)
   have hUnit : HasType sigT ctx (.inst "Unit" [] [l] [] .nil) (.sort ⟨.type, l⟩) :=
     .inst hpre.unit.hasDeclaredType
-      rfl rfl rfl trivial (by exact .nil hctx)
+      ⟨rfl, rfl⟩ rfl trivial (by exact .nil hctx)
   have hU : ValidEqTerm₀ sig ι (((Term.inst "Unit" [] [l] [] .nil).atLevels ρ).subst σ₁)
       (((Term.inst "Unit" [] [l] [] .nil).atLevels ρ).subst σ₂)
       (.sort (Universe.atLevels ρ ⟨.type, l⟩)) := (hS.hasType hent hUnit ρ).2 σ₁ σ₂ hσ

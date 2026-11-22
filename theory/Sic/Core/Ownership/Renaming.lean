@@ -107,11 +107,11 @@ where
     | .const h, _, _ => .const h
     | .sort, _, _ => .sort
     | .inst, _, _ => .inst
-    | .ctor h hc hq hp hts, hθ, hφ => by
+    | .ctor h hc hqp hts, hθ, hφ => by
       rw [Term.ctor_subst]
-      exact .ctor h hc hq hp (ownershipArgs hts hθ hφ)
-    | .recursor (us := us) h hq hp ht hns hul hus hu hu' hmeets hused, hθ, hφ => by
-      refine .recursor h hq hp (ownership ht hθ hφ) hns ((Branches.length_subst _ us).trans hul)
+      exact .ctor h hc hqp (ownershipArgs hts hθ hφ)
+    | .recursor (us := us) h hqp ht hns hul hus hu hu' hmeets hused, hθ, hφ => by
+      refine .recursor h hqp (ownership ht hθ hφ) hns ((Branches.length_subst _ us).trans hul)
         ?_ ?_ ?_ hmeets ?_
       · intro i j T' con hi
         obtain ⟨u, hu'⟩ := hus i j T' con hi
@@ -131,12 +131,12 @@ where
       · intro i j T' con hi l σ p' hσ hp'
         rw [Branches.grades_subst]
         exact hused i j T' con hi l σ p' hσ hp'
-    | .obs h hq hp hd ht hbs hv hf hς, hθ, hφ => by
+    | .obs h hqp hd ht hbs hv hf hς, hθ, hφ => by
       rw [Term.obs_subst]
-      exact .obs h hq hp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf hς
-    | .corec (Ss := Ss) (gs := gs) h hq hp hh hS hss hSl hSs hgl hgs hgo hgr, hθ, hφ => by
+      exact .obs h hqp hd (ownership ht hθ hφ) (ownershipArgs hbs hθ hφ) hv hf hς
+    | .corec (Ss := Ss) (gs := gs) h hqp hh hS hss hSl hSs hgl hgs hgo hgr, hθ, hφ => by
       rw [Term.corec_subst]
-      refine .corec h hq hp hh (States.get_subst _ hS) (ownershipArgs hss hθ hφ)
+      refine .corec h hqp hh (States.get_subst _ hS) (ownershipArgs hss hθ hφ)
         ((States.length_subst _ Ss).trans hSl) ?_ ((DestructorBranches.length_subst _ gs).trans hgl)
         ?_ ?_ ?_
       · intro j T' hj

@@ -52,14 +52,15 @@ theorem Ownership.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
       (Θ : Telescope k Γ ps) → (κs : List (Universe k)) → (l : Level k) →
       OwnershipArgs sig φ m ts os → Ownership sig φ m .linearLinear (ts.pack Θ κs l)
   | [], .nil, _, .nil, _, l, .nil =>
-    Ownership.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _) rfl
-      rfl .nil
+    Ownership.ctor (con := Prelude.unitMk) (ts := .nil) hpre.unit (List.mem_singleton_self _)
+      ⟨rfl, rfl⟩
+      .nil
   | p :: _, .cons t ts, _, .cons _ _ A Θ, κs, l, .cons ht hr hts => by
     have hm : m ⊙ Grade.one = m := by cases m <;> decide
     exact Ownership.ctor (con := Prelude.pairMk)
       (ts := .cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
       (qs := [(κs.headD ⟨.type, l⟩).quality]) (ps := [p.usage, p.requirement])
-      hpre.pair (List.mem_singleton_self _) rfl rfl
+      hpre.pair (List.mem_singleton_self _) ⟨rfl, rfl⟩
       (.cons ht hr (.cons (hm ▸ Ownership.pack hpre (Θ.subst₀ (Subst₀.single t)) κs.tail l hts)
         (fun _ => by decide) .nil))
 
@@ -76,7 +77,8 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
       (Ownership.extendFields φ o (m.grade * r) [⟨p, ρ⟩, ⟨Grade.one, Grade.one⟩]) m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Pair" [q] ls [p, ρ] as t κ (.cons 0 C .nil) (.cons 2 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.pair) (T := Prelude.pairType) hpre.pair ⟨rfl, rfl⟩ ht ?_ rfl ?_
+    ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl =>
@@ -109,7 +111,8 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     (ht : Ownership sig φ (m ⊙ r) o t) (hu : Ownership sig φ m p' u) :
     Ownership sig φ m p'
       (.recursor r ς χ "Unit" [] [l] [] .nil t κ (.cons 0 C .nil) (.cons 0 0 #v[] u .nil)) := by
-  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.unit) (T := Prelude.unitType) hpre.unit ⟨rfl, rfl⟩ ht ?_ rfl ?_
+    ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl =>
@@ -147,7 +150,8 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     Ownership sig φ m p'
       (.recursor r ς χ "Step" [q] ls [p, q', ρ] as t κ (.cons 0 C .nil)
         (.cons 1 0 #v[] u₀ (.cons 1 0 #v[] u₁ .nil))) := by
-  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step rfl rfl ht ?_ rfl ?_ ?_ ?_ ?_ ?_
+  refine .recursor (decl := Prelude.step) (T := Prelude.stepType) hpre.step ⟨rfl, rfl⟩ ht ?_ rfl ?_
+    ?_ ?_ ?_ ?_
   · intro i j T' con hi ax _ l ns hl
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ns ∈ [Nest.plain] from List.mem_of_getElem? hl)

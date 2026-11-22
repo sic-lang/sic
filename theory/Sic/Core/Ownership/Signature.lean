@@ -95,10 +95,10 @@ where
     | .const h => .const (h.mono fun _ h => List.mem_append_right pre h)
     | .sort => .sort
     | .inst => .inst
-    | .ctor h hc hq hp hts =>
-      .ctor ⟨List.mem_append_right pre h.1, h.2⟩ hc hq hp (ownershipArgs hds hts)
-    | .recursor h hq hp ht hns hul hus hu hu' hmeets hused =>
-      .recursor ⟨List.mem_append_right pre h.1, h.2⟩ hq hp (ownership hds ht)
+    | .ctor h hc hqp hts =>
+      .ctor ⟨List.mem_append_right pre h.1, h.2⟩ hc hqp (ownershipArgs hds hts)
+    | .recursor h hqp ht hns hul hus hu hu' hmeets hused =>
+      .recursor ⟨List.mem_append_right pre h.1, h.2⟩ hqp (ownership hds ht)
         (hns.append hds h.1) hul hus
         (fun i j T' con u hi hget => by
           rw [TypeDeclaration.recursionRequirement_append hds h.1 hns]
@@ -114,11 +114,11 @@ where
           rw [Constructor.nestedShapes_append hds h.1 _ _ _
             (hns i j T' con hi Grade.run List.mem_cons_self)] at hσ
           exact hused i j T' con hi l σ p' hσ hp')
-    | .obs h hq hp hd ht hbs hv hf hς =>
-      .obs ⟨List.mem_append_right pre h.1, h.2⟩ hq hp hd (ownership hds ht) (ownershipArgs hds hbs)
+    | .obs h hqp hd ht hbs hv hf hς =>
+      .obs ⟨List.mem_append_right pre h.1, h.2⟩ hqp hd (ownership hds ht) (ownershipArgs hds hbs)
         hv hf hς
-    | .corec h hq hp hh hS hss hSl hSs hgl hgs hgo hgr =>
-      .corec ⟨List.mem_append_right pre h.1, h.2⟩ hq hp hh hS (ownershipArgs hds hss) hSl hSs hgl
+    | .corec h hqp hh hS hss hSl hSs hgl hgs hgo hgr =>
+      .corec ⟨List.mem_append_right pre h.1, h.2⟩ hqp hh hS (ownershipArgs hds hss) hSl hSs hgl
         hgs
         (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hB os' v hA hv =>
           ownership hds (hgo i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hS' hd hg hB os' v hA hv))

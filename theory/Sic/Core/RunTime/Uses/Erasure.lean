@@ -393,13 +393,14 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     simp only [Term.erase]
     rw [GradeVector.run_smul_of_erased Grade.noneLinear_erased]
     exact .erased
-  | .ctor (con := con) h hc hq hp hts => by
+  | .ctor (con := con) h hc ⟨hq, hp⟩ hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hord hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
-      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hu hg hχ _ _ =>
+      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h ⟨hq, hp⟩ _ _ ht hul hus hR hu hg hχ _
+      _ =>
       by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
@@ -496,14 +497,14 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       exact .recursor (Usage.erase_usage hd hord hΓ hm' ht)
         (fun h0 => absurd ((Mode.erased_values.1 r).2 h0) hr) hbr
-  | .obs (d := d) h hq hp hpos ht hbs _ => by
+  | .obs (d := d) h ⟨hq, hp⟩ hpos ht hbs _ => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
     simp only [Term.erase, hi, hd.argumentParams h ⟨hq, hp⟩ hpos, Option.getD_some]
     rw [GradeVector.run_commutes.run_add]
     exact .obs (Usage.erase_usage hd hord hΓ hm ht) (UsageArgs.erase_usage hd hord hΓ hm hbs)
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
-      (δ := δ) (δs := δs) h hq hp hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
+      (δ := δ) (δs := δs) h ⟨hq, hp⟩ hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     rw [GradeVector.run_commutes.run_add]
     refine .corec (UsageArgs.erase_usage_mul hd hord hΓ hm rfl hss)

@@ -197,12 +197,12 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) :
+        ((decl.params hqp.inst).substLevels (ls.getFin hl))) :
       HasType sig ctx (.inst D qs ls ps as)
-        (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        (.sort ((decl.sort hqp.inst).substLevels (ls.getFin hl)))
   -- ADE: `Idⱼ`, in `Definition/Typed.agda`.
   /-- The equality of two terms of a type is a proposition at the level of the sort of this type.
   RFC: `\sim` -/
@@ -263,10 +263,10 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {t₁ t₂ t : Term k Γ} {As : Terms k (Γ.extend 2)} {gs : DestructorBranches k Γ} {h' : Nat}
       {A : Term k (Γ.extend 2)} {κs : Nat → Universe k}
       (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hA : As.get h' = some A)
       (hAl : As.length = decl.codataTypes.length)
       (hAt : ∀ j T' A', decl.codataTypes[j]? = some T' → As.get j = some A' →
@@ -282,14 +282,14 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length),
         decl.codataCases[i]? = some (j, T', d) →
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, 3, ps₁.length, g⟩)
       (hΘ : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
           (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length),
         decl.codataCases[i]? = some (j, T', d) →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         (Θ.substLevels (ls.getFin hl)).subst
             (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
               T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst) =
@@ -301,7 +301,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length),
         decl.codataCases[i]? = some (j, T', d) →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         (B.substLevels (ls.getFin hl)).subst (Subst.liftN _
             (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)).observation
               T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)) =
@@ -313,7 +313,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2)),
         decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         B.blockName decl.names = none →
         HasType sig ((((ctx.var (.inst T'.name qs ls ps as)).var
             ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
@@ -330,7 +330,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2))
           (g : Term k ((Γ.extend 3).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         B.blockName decl.names = none →
         gs.get i = some ⟨0, 3, ps₁.length, g⟩ →
         HasType sig ((((ctx.var (.inst T'.name qs ls ps as)).var
@@ -353,7 +353,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
           (ψ : ResultOwnership Grade ps₁.length) (A' : Term k (Γ.extend 2)) (D' : Name) (j' : Nat)
           (A'' : Term k (Γ.extend 2)) (g : Term k ((Γ.extend 3).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → As.get j = some A' →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         B.blockName decl.names = some D' → decl.names.idxOf? D' = some j' →
         As.get j' = some A'' →
         gs.get i = some ⟨0, 3, ps₁.length, g⟩ →
@@ -371,8 +371,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
             (Subst₀.single ((Term.var₀ (.succ .zero) : Term k (Γ.extend 3)).observation T'.name
               qs ls ps (as.rename (Ren.weakenN 3)) d ps₁)))) :
       HasType sig ctx (.coind D qs ls ps as t₁ t₂ As t gs)
-        (.equality ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).quality
-          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level
+        (.equality ((decl.sort hqp.inst).substLevels (ls.getFin hl)).quality
+          ((decl.sort hqp.inst).substLevels (ls.getFin hl)).level
           (.inst D qs ls ps as) t₁ t₂)
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
@@ -383,12 +383,12 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
-      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
-      (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
+      {ts : Args k Γ (con.params hqp.inst)}
+      (hts : HasArgs sig ctx ts (con.fieldsAt hqp.inst (ls.getFin hl) as)) :
       HasType sig ctx (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as)
   -- ADE: `natrecⱼ`, `prodrecⱼ`, `unitrecⱼ` and `emptyrecⱼ`, in `Definition/Typed.agda`.
   /-- A recursor on a term of the instance it carries, which the constraint admits and whose
@@ -404,11 +404,11 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
-      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts)
-      (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps)
+      (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hh : decl.dataTypes[h']? = some T)
       (hC : Cs.get h' = some ⟨0, C⟩) (hCl : Cs.length = decl.dataTypes.length)
       (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
@@ -416,20 +416,21 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
-        Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
+        Telescope k (Γ.extend (con.params hqp.inst).length)
+          (con.nestResultParams hqp.inst decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con) πs)
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
-          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+        us.get i = some
+          ⟨(con.params hqp.inst).length, (con.nestResultParams hqp.inst decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)).append (Rs con))
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params hqp.inst)).rename
             (Ren.weakenN _)))
-      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      (hκ : (decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       HasType sig ctx (.recursor r ς χ D qs ls ps as t κ Cs us) (C.subst₀ (Subst₀.single t))
   -- ADE: `_∘ⱼ_`, `fstⱼ` and `sndⱼ`, in `Definition/Typed.agda`.
@@ -446,11 +447,11 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
-      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
+      (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as))
       (hbs : HasArgs sig ctx bs ((Θ.substLevels (ls.getFin hl)).subst
         (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
@@ -473,14 +474,14 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat}
       {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (i : Nat) (D' : Name),
         decl.codataTypes[j]? = some T' ∧
-        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+        (T'.body hqp.inst).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
       (hss : HasArgs sig ctx ss S) (hSl : Ss.length = decl.codataTypes.length)
       (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
@@ -493,21 +494,21 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
         HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
             ps (as.rename (Ren.weakenN ps''.length)))
             (as.rename (Ren.weakenN ps''.length)).toSubst))) g
           (Term.branchResult decl.names B
-            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+            ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -588,14 +589,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
       {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
-      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
-        (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        (.sort ((decl.sort hqp.inst).substLevels (ls₁.getFin hl₁)))
   -- ADE: `Id-cong`, in `Definition/Typed.agda`.
   /-- Two equalities of equal terms of equal types, at equal levels, are equal.
   RFC: `\sim_\equiv` -/
@@ -636,14 +637,14 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
-      {ts us : Args k Γ (con.params (.ofLists qs ps hq hp))}
-      (hts : EqArgs sig ctx ts us (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)) :
+      {ts us : Args k Γ (con.params hqp.inst)}
+      (hts : EqArgs sig ctx ts us (con.fieldsAt hqp.inst (ls₁.getFin hl₁) as₁)) :
       EqTerm sig ctx (.ctor D qs ls₁ ps as₁ con.name ts.terms)
         (.ctor D qs ls₂ ps as₂ con.name us.terms) (.inst D qs ls₁ ps as₁)
   -- ADE: `natrec-cong`, `prodrec-cong`, `unitrec-cong` and `emptyrec-cong`, in
@@ -658,11 +659,11 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {r ς χ : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
       {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
-      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
       (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.dataTypes[h']? = some T)
       (hC : Cs₁.get h' = some ⟨0, C₁⟩) (hCl₁ : Cs₁.length = decl.dataTypes.length)
@@ -674,32 +675,34 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         EqTerm sig (ctx.var (.inst T'.name qs ls₁ ps as₁)) C₁' C₂' (.sort κ))
       (hul₁ : us₁.length = decl.cases.length) (hul₂ : us₂.length = decl.cases.length)
       (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us₁.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us₂.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       (hes : us₁.grades = us₂.grades)
       {Rs₁ Rs₂ : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
-        Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
+        Telescope k (Γ.extend (con.params hqp.inst).length)
+          (con.nestResultParams hqp.inst decl.names)}
       (hRs₁ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls₁.getFin hl₁) as₁ (Lifting.ofMotives decl.names qs ls₁ ps as₁ κ.level χ Cs₁)
           (Rs₁ con) πs)
       (hRs₂ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls₂.getFin hl₂) as₂ (Lifting.ofMotives decl.names qs ls₂ ps as₂ κ.level χ Cs₂)
           (Rs₂ con) πs)
       (hut : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) → Cs₁.get j = some ⟨0, C'⟩ →
-        us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
-        us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
+        us₁.get i = some
+          ⟨(con.params hqp.inst).length, (con.nestResultParams hqp.inst decl.names).length, u₁⟩ →
+        us₂.get i = some
+          ⟨(con.params hqp.inst).length, (con.nestResultParams hqp.inst decl.names).length, u₂⟩ →
         EqTerm sig
-          ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls₁.getFin hl₁) as₁)).append (Rs₁ con)) u₁
+          ((ctx.append (con.fieldsAt hqp.inst (ls₁.getFin hl₁) as₁)).append (Rs₁ con)) u₁
           u₂
-          ((C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params (.ofLists qs ps hq hp))).rename
+          ((C'.atCtor T'.name qs ls₁ ps as₁ con.name (con.params hqp.inst)).rename
             (Ren.weakenN _)))
-      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      (hκ : (decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r ς χ D qs ls₁ ps as₁ t₁ κ Cs₁ us₁)
         (.recursor r ς χ D qs ls₂ ps as₂ t₂ κ Cs₂ us₂) (C₁.subst₀ (Subst₀.single t₁))
@@ -713,12 +716,12 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {t₁ t₂ : Term k Γ} {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
-      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
+      (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (has : EqInstanceArgs sig ctx as₁ as₂
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
       (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁))
       (hbs : EqArgs sig ctx bs₁ bs₂ ((Θ.substLevels (ls₁.getFin hl₁)).subst
@@ -740,15 +743,15 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
       {h' : Nat} {ps' : List Parameter} {S₁ S₂ : Telescope k Γ ps'} {ss₁ ss₂ : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl₁ : ls₁.length = decl.levels)
-      (hl₂ : ls₂.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hl₂ : ls₂.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (i : Nat) (D' : Name),
         decl.codataTypes[j]? = some T' ∧
-        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+        (T'.body hqp.inst).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : EqInstanceArgs sig ctx as₁ as₂
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
+        ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
       (hh : decl.codataTypes[h']? = some T) (hS₁ : Ss₁.get h' = some ⟨0, ps', S₁⟩)
       (hS₂ : Ss₂.get h' = some ⟨0, ps', S₂⟩) (hss : EqArgs sig ctx ss₁ ss₂ S₁)
@@ -769,7 +772,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
         ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
           gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S₁' : Telescope k Γ ps'') (p q ς : Grade)
@@ -777,7 +780,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss₁.get j = some ⟨0, ps'', S₁'⟩ →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
         gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
         EqTerm sig ((ctx.append S₁').append ((Θ.substLevels (ls₁.getFin hl₁)).subst
@@ -785,7 +788,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
             qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
             (as₁.rename (Ren.weakenN ps''.length)).toSubst))) g₁ g₂
           (Term.branchResult decl.names B
-            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)) r
+            ((decl.sort hqp.inst).substLevels (ls₁.getFin hl₁)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss₁.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls₁.getFin hl₁)).subst (Subst.liftN _
@@ -807,18 +810,19 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
-      {u : Term k ((Γ.extend (con.params (.ofLists qs ps hq hp)).length).extend
-        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length)}
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
+      {u : Term k ((Γ.extend (con.params hqp.inst).length).extend
+        (con.nestResultParams hqp.inst decl.names).length)}
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
-      {ts : Args k Γ (con.params (.ofLists qs ps hq hp))}
-      (hts : HasArgs sig ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
+      {ts : Args k Γ (con.params hqp.inst)}
+      (hts : HasArgs sig ctx ts (con.fieldsAt hqp.inst (ls.getFin hl) as))
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
-      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
-      {rs : Args k Γ (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
-      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+      (hu : us.get i = some ⟨(con.params hqp.inst).length,
+        (con.nestResultParams hqp.inst decl.names).length, u⟩)
+      {rs : Args k Γ (con.nestResultParams hqp.inst decl.names)}
+      (hrs : Constructor.ResultTerms sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
         (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs)
         (Term.recursorAt r ς χ qs ls ps as κ Cs us) ts rs)
       (hCl : Cs.length = decl.dataTypes.length)
@@ -827,20 +831,21 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
-        Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
+        Telescope k (Γ.extend (con.params hqp.inst).length)
+          (con.nestResultParams hqp.inst decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con) πs)
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
-          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+        us.get i = some
+          ⟨(con.params hqp.inst).length, (con.nestResultParams hqp.inst decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)).append (Rs con))
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params hqp.inst)).rename
             (Ren.weakenN _)))
-      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      (hκ : (decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (.recursor r ς χ D qs ls ps as (.ctor D qs ls ps as con.name ts.terms) κ Cs us)
         ((u.instantiate (rs.rename (Ren.weakenN _))).instantiate ts)
@@ -857,36 +862,37 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
-      (hr : ∀ ν ∈ (con.fields (.ofLists qs ps hq hp)).nest decl.names, ν = .plain)
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
+      (hr : ∀ ν ∈ (con.fields hqp.inst).nest decl.names, ν = .plain)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as))
       (he : HasType sig (ctx.var (.inst D qs ls ps as)) e C)
       (hi : decl.cases[i]? = some (j, T, con)) (hC : Cs.get j = some ⟨0, C⟩)
-      (hu : us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, 0,
-        e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))⟩)
+      (hu : us.get i = some ⟨(con.params hqp.inst).length, 0,
+        e.atCtor T.name qs ls ps as con.name (con.params hqp.inst)⟩)
       (hCl : Cs.length = decl.dataTypes.length)
       (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
       (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
         HasType sig (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+        ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+          (con.nestResultParams hqp.inst decl.names).length, u⟩)
       {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
-        Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
+        Telescope k (Γ.extend (con.params hqp.inst).length)
+          (con.nestResultParams hqp.inst decl.names)}
       (hRs : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+        ∃ πs, Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con) πs)
       (hut : ∀ i j T' con C' u, decl.cases[i]? = some (j, T', con) → Cs.get j = some ⟨0, C'⟩ →
-        us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length, (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩ →
-        HasType sig ((ctx.append (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)).append (Rs con))
-          u ((C'.atCtor T'.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp))).rename
+        us.get i = some
+          ⟨(con.params hqp.inst).length, (con.nestResultParams hqp.inst decl.names).length, u⟩ →
+        HasType sig ((ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)).append (Rs con))
+          u ((C'.atCtor T'.name qs ls ps as con.name (con.params hqp.inst)).rename
             (Ren.weakenN _)))
-      (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases ≠ [] →
+      (hκ : (decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] →
         κ.quality = .prop) :
       EqTerm sig ctx (e.subst₀ (Subst₀.single t)) (.recursor r ς χ D qs ls ps as t κ Cs us)
         (C.subst₀ (Subst₀.single t))
@@ -905,17 +911,17 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
       {ψ₀ : ResultOwnership Grade ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
       {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (i : Nat) (D' : Name),
         decl.codataTypes[j]? = some T' ∧
-        (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+        (T'.body hqp.inst).recursionAt decl.names i = some D') → sig.HasPrelude)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
       (hss : HasArgs sig ctx ss S) (hi : decl.codataCases[i]? = some (h', T, d))
-      (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ₀ Θ₀ B₀ ψ₀)
+      (hd : (T.body hqp.inst).Pos d p q ς Ξ₀ Θ₀ B₀ ψ₀)
       (hg : gs.get i = some ⟨0, ps'.length, ps₀.length, g⟩)
       (hbs : HasArgs sig ctx bs ((Θ₀.substLevels (ls.getFin hl)).subst
         (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
@@ -931,21 +937,21 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
         ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-        (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+        (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
         ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
       (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
         (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
         (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
         decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-        (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
         HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
             ps (as.rename (Ren.weakenN ps''.length)))
             (as.rename (Ren.weakenN ps''.length)).toSubst))) g
           (Term.branchResult decl.names B
-            ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+            ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -954,7 +960,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
                 (as.rename (Ren.weakenN ps''.length)).toSubst))))) :
       EqTerm sig ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
         (Term.observed decl.names (B₀.blockName decl.names) r qs ls ps as Ss gs
-          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
+          ((decl.sort hqp.inst).substLevels (ls.getFin hl))
           (ψ₀.constant.getD .unrestrictedUnrestricted)
           ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss))
         (((B₀.substLevels (ls.getFin hl)).subst
@@ -972,15 +978,15 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
       (h : sig.HasCodataType D decl T)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-      (hadm : decl.constraint (.ofLists qs ps hq hp))
-      (hr : ∀ R ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, R = none)
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hadm : decl.constraint hqp.inst)
+      (hr : ∀ R ∈ (T.body hqp.inst).recursion decl.names, R = none)
       (has : HasInstanceArgs sig ctx as
-        ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+        ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as)) (hu : HasType sig ctx u (.inst D qs ls ps as))
       (hobs : ∀ (d : Name) (p q ς : Grade) (ps' : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
-        (ψ : ResultOwnership Grade ps'.length) (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ),
+        (ψ : ResultOwnership Grade ps'.length) (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ),
         EqTerm sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
           (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
           (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')
