@@ -7,6 +7,7 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Substitution
+import Sic.Core.Syntax.Signature
 import Sic.Math.Nat
 
 /-!
@@ -263,7 +264,8 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
       cases hu with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
       | codata h' _ _ _ hv' _ hn' =>
-        exact (hd.codataInst_level_unique h h' hv') ▸ hn'
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+        exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
       ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m ∧
         (decl.sort (.ofLists qs ps hq hp)).quality = .prop :=
@@ -271,8 +273,9 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
       cases hb with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
       | codata h' _ _ _ hv' hs' hn' =>
-        exact ⟨(hd.codataInst_level_unique h h' hv') ▸ hn',
-          (hd.codataInst_quality_unique h h' hv') ▸ hs'⟩
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+        exact ⟨hn',
+          hs'⟩
   cases hF with
   | univ hs hu' => exact ⟨Nat.le_of_eq (hu n _ hu'), fun _ => hs⟩
   | univBelow hs m hm hu' =>

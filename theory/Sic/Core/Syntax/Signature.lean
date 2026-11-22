@@ -197,6 +197,21 @@ theorem Signature.Distinct.hasDataType_unique {sig : Signature} (hd : sig.Distin
   exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm₁)) hT₁
     hT₂ (hn₁.trans hn₂.symm))⟩
 
+/-- In a signature whose names are distinct, two equal instances of data types are instances of
+one data type of one type declaration, with the same sorts, levels, grades and arguments. -/
+theorem Signature.Distinct.dataInst_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasDataType D₁ decl₁ T₁) (h₂ : sig.HasDataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂) :
+    D₁ = D₂ ∧ decl₁ = decl₂ ∧ HEq T₁ T₂ ∧ qs₁ = qs₂ ∧ ls₁ = ls₂ ∧ ps₁ = ps₂ ∧ HEq as₁ as₂ := by
+  obtain ⟨-, rfl, rfl, rfl, rfl, has⟩ := Term.inst.inj he
+  obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h₁ h₂
+  exact ⟨rfl, rfl, hT, rfl, rfl, rfl, has⟩
+
 /-- In a signature whose names are distinct, the constructors of a declared type have distinct
 names. -/
 theorem Signature.Distinct.constructors_nodup : {sig : Signature} → sig.Distinct → {D : Name} →
@@ -256,6 +271,21 @@ theorem Signature.Distinct.hasCodataType_unique {sig : Signature} (hd : sig.Dist
   subst he
   exact ⟨rfl, heq_of_eq (List.eq_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm₁))
     hT₁ hT₂ (hn₁.trans hn₂.symm))⟩
+
+/-- In a signature whose names are distinct, two equal instances of codata types are instances of
+one codata type of one type declaration, with the same sorts, levels, grades and arguments. -/
+theorem Signature.Distinct.codataInst_unique {sig : Signature} (hd : sig.Distinct)
+    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
+    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
+    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
+    (h₁ : sig.HasCodataType D₁ decl₁ T₁) (h₂ : sig.HasCodataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
+    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
+    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
+    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂) :
+    D₁ = D₂ ∧ decl₁ = decl₂ ∧ HEq T₁ T₂ ∧ qs₁ = qs₂ ∧ ls₁ = ls₂ ∧ ps₁ = ps₂ ∧ HEq as₁ as₂ := by
+  obtain ⟨-, rfl, rfl, rfl, rfl, has⟩ := Term.inst.inj he
+  obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h₁ h₂
+  exact ⟨rfl, rfl, hT, rfl, rfl, rfl, has⟩
 
 /-- In a signature whose names are distinct, a declared type is not both a data type and a codata
 type. -/

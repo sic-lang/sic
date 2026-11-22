@@ -276,15 +276,13 @@ theorem HasRun.data (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   | prop n b hb _ =>
     cases levelRel_prop_iff.1 hb with
     | data h' _ _ _ hv' hs' =>
-      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
+      exact nomatch hs.symm.trans hs'
     | codata hc _ _ _ hv' => exact (hd.inst_data_codata h hc hv').elim
   | univ n hn =>
     cases levelRel_run_iff.1 hn with
     | data h' _ _ _ hv' _ _ S hS =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, -⟩ := hd.hasDataType_unique h h'
-      cases eq_of_heq has
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, ⟨⟩⟩ := hd.dataInst_unique h h' hv'
       exact ⟨n, S, hS, rfl⟩
     | codata hc _ _ _ hv' => exact (hd.inst_data_codata h hc hv').elim
 
@@ -310,15 +308,13 @@ theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     cases levelRel_prop_iff.1 hb with
     | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hs.symm.trans hs'
   | univ n hn =>
     cases levelRel_run_iff.1 hn with
     | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn S hS =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h h'
-      cases eq_of_heq has
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
       exact ⟨n, S, hn, hS, rfl⟩
 
 /-- A closed term of an instance of a data type of a type, whose constructors have no field with a
@@ -360,7 +356,8 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   rcases hor with ⟨k, b, hk⟩ | ⟨R, hR, w, htw, hrel⟩
   · cases levelRel_prop_iff.1 hk with
     | data h' _ _ _ hv' hs' =>
-      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
+      exact nomatch hs.symm.trans hs'
     | codata hc' _ _ _ hv' => exact (hd.inst_data_codata h hc' hv').elim
   obtain ⟨n, S, hS, rfl⟩ := HasRun.data hd h hq hl hp hR hs
   cases Computesι.det hd htw hct

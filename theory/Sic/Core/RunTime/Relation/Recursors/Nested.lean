@@ -392,7 +392,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       cases levelRel_run_iff.1 hU with
       | data hc _ _ _ hv' => exact (hd.inst_data_codata hc hTL hv'.symm).elim
       | codata h' _ _ _ hv' hs' =>
-        exact (hd.codataInst_quality_unique hTL h' hv') ▸ hs'
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hTL h' hv'
+        exact hs'
     have hnp : ¬ ComputesToProp sig ι
         (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
           (v.grades ps ms₁) (.snoc (e := .var) as' t)) := fun ⟨v', hv', k, b, hk⟩ => by

@@ -136,12 +136,14 @@ theorem FieldRel.codata_type {sig : Signature} {ι : Interpretation} {n : Nat} (
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
 
 /-- An instance of a codata type in a universe of propositions is a type of a field by the clauses
 of `ty(Ω_m)`, at its level `m`, which the level of the field bounds. -/
@@ -163,12 +165,14 @@ theorem FieldRel.codata_prop {sig : Signature} {ι : Interpretation} {n : Nat} (
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
   | univBelow _ m hm hu =>
     cases levelRel_univ_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
 
 mutual
 
@@ -202,11 +206,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
         | codata h' _ _ _ hv' _ _ _ hS' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-          cases hT
-          cases has
+          obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact TermRel.computed_congr fun v w => ((CodataType.blockRel_iff_corecRel
             (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun X o₁ o₂ =>
@@ -226,11 +226,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
         | codata h' _ _ _ hv' _ _ _ hS' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-          cases hT
-          cases has
+          obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact fun _ _ => (CodataType.blockTruth_iff_truth
             (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun B o₁ o₂ =>

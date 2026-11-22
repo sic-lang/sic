@@ -514,11 +514,7 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       cases h' with
       | codata hD' _ _ _ hA' _ _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         obtain ⟨v₁, w₁, hc₁, hc₂, o₁, o₂, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩,
           ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩, hoo⟩ := h
         obtain ⟨v₂, hc₁', hv₂⟩ := Computes.levelEquiv hd.interpret hc₁ ht
@@ -537,21 +533,19 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
                 (.corec _ _ _ _ hl₂ has₂ ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
       | codataProp hD' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp hD _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata hD' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp hD' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         obtain ⟨o, ho⟩ := h
         exact ⟨o, NestDesRel.rel_levelEquiv hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs) ho
           (fun _ _ => Term.LevelEquiv.refl _) (fun _ _ => Term.LevelEquiv.refl _)⟩

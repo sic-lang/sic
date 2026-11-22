@@ -236,11 +236,7 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
       cases h' with
       | codata hD' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         refine fun H _ _ _ => RunRel.computed_levelEquiv hd fun v v' a hv hvv => ?_
         obtain ⟨o, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩, ho⟩ := hv
         cases hvv with
@@ -252,14 +248,16 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
             (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _)
       | codataProp hD' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp hD _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
       | codata hD' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp => exact fun _ _ _ _ _ _ => trivial
 termination_by structural h _ _ _ _ => h
 

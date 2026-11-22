@@ -271,23 +271,21 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun H _ hH _ _ => RunRel.computed_mono fun _ _ => runCorecRel_mono
           (RunNestDesRel.mono hd ih hK hKr hS _ _ hS' (Nesting.ofArgs_rel₃ hνs) H _ hH)
       | codataProp h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp => exact fun _ _ _ _ _ _ => trivial
 termination_by structural h _ _ _ _ => h
 

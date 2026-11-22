@@ -259,14 +259,16 @@ theorem RunFieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclara
       cases hu with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
       | codata h' _ _ _ hv' _ hn' =>
-        exact (hd.codataInst_level_unique h h' hv') ▸ hn'
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+        exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
       ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m :=
     fun m b hb => by
       cases hb with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
       | codata h' _ _ _ hv' _ hn' =>
-        exact (hd.codataInst_level_unique h h' hv') ▸ hn'
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+        exact hn'
   cases hR with
   | univ hu' => exact Nat.le_of_eq (hu n _ hu')
   | univBelow m hm hu' =>

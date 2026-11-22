@@ -700,97 +700,6 @@ theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct
   subst hD
   exact hd.not_hasDataType_hasCodataType h₁ h₂
 
-/-- In a signature whose names are distinct, two equal instances of data types are in sorts of the
-same quality. The lengths of the lists of the instances default to the hypotheses that state
-them. -/
-theorem Signature.Distinct.dataInst_quality_unique {sig : Signature} (hd : sig.Distinct)
-    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
-    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
-    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
-    (h₁ : sig.HasDataType D₁ decl₁ T₁) (h₂ : sig.HasDataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
-    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
-    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
-    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
-    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
-    (hp₁ : ps₁.length = decl₁.grades := by assumption)
-    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
-    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
-    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).quality =
-      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).quality := by
-  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
-  subst hD hqs hls hps
-  obtain ⟨rfl, -⟩ := hd.hasDataType_unique h₁ h₂
-  rfl
-
-/-- In a signature whose names are distinct, two equal instances of data types are in sorts of the
-same level at their levels. The lengths of the lists of the instances default to the hypotheses
-that state them. -/
-theorem Signature.Distinct.dataInst_level_unique {sig : Signature} (hd : sig.Distinct)
-    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
-    {T₁ : DataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
-    {T₂ : DataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
-    (h₁ : sig.HasDataType D₁ decl₁ T₁) (h₂ : sig.HasDataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
-    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
-    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
-    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
-    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
-    (hl₁ : ls₁.length = decl₁.levels := by assumption)
-    (hp₁ : ps₁.length = decl₁.grades := by assumption)
-    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
-    (hl₂ : ls₂.length = decl₂.levels := by assumption)
-    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
-    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).level.subst (ls₁.getFin hl₁) =
-      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).level.subst (ls₂.getFin hl₂) := by
-  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
-  subst hD hqs hls hps
-  obtain ⟨rfl, -⟩ := hd.hasDataType_unique h₁ h₂
-  rfl
-
-/-- In a signature whose names are distinct, two equal instances of codata types are in sorts of the
-same quality. The lengths of the lists of the instances default to the hypotheses that state
-them. -/
-theorem Signature.Distinct.codataInst_quality_unique {sig : Signature} (hd : sig.Distinct)
-    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
-    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
-    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
-    (h₁ : sig.HasCodataType D₁ decl₁ T₁) (h₂ : sig.HasCodataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
-    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
-    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
-    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
-    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
-    (hp₁ : ps₁.length = decl₁.grades := by assumption)
-    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
-    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
-    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).quality =
-      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).quality := by
-  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
-  subst hD hqs hls hps
-  obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h₁ h₂
-  rfl
-
-/-- In a signature whose names are distinct, two equal instances of codata types are in sorts of the
-same level at their levels. The lengths of the lists of the instances default to the hypotheses
-that state them. -/
-theorem Signature.Distinct.codataInst_level_unique {sig : Signature} (hd : sig.Distinct)
-    {decl₁ decl₂ : TypeDeclaration} {D₁ D₂ : Name}
-    {T₁ : CodataType decl₁.sorts decl₁.grades decl₁.levels decl₁.scope}
-    {T₂ : CodataType decl₂.sorts decl₂.grades decl₂.levels decl₂.scope}
-    (h₁ : sig.HasCodataType D₁ decl₁ T₁) (h₂ : sig.HasCodataType D₂ decl₂ T₂) {k : Nat} {Γ : Scope}
-    {qs₁ qs₂ : List Quality} {ls₁ ls₂ : List (Level k)} {ps₁ ps₂ : List Grade}
-    {as₁ : InstanceArgs k Γ decl₁.scope} {as₂ : InstanceArgs k Γ decl₂.scope}
-    (he : Term.inst D₁ qs₁ ls₁ ps₁ as₁ = Term.inst D₂ qs₂ ls₂ ps₂ as₂)
-    (hq₁ : qs₁.length = decl₁.sorts := by assumption)
-    (hl₁ : ls₁.length = decl₁.levels := by assumption)
-    (hp₁ : ps₁.length = decl₁.grades := by assumption)
-    (hq₂ : qs₂.length = decl₂.sorts := by assumption)
-    (hl₂ : ls₂.length = decl₂.levels := by assumption)
-    (hp₂ : ps₂.length = decl₂.grades := by assumption) :
-    (decl₁.sort (.ofLists qs₁ ps₁ hq₁ hp₁)).level.subst (ls₁.getFin hl₁) =
-      (decl₂.sort (.ofLists qs₂ ps₂ hq₂ hp₂)).level.subst (ls₂.getFin hl₂) := by
-  obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj he
-  subst hD hqs hls hps
-  obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h₁ h₂
-  rfl
 
 /-- A type of a universe has one level, in a signature whose names are distinct. -/
 theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
@@ -810,7 +719,8 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
     | prop => cases hv
     | data h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.dataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
+      exact hn.symm.trans hn'
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | codata h _ _ _ hv _ hn => cases h' with
     | univ => cases hv
@@ -818,7 +728,8 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.codataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact hn.symm.trans hn'
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
@@ -830,14 +741,16 @@ theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
     subst hv'
     cases h with
     | data h _ _ _ hv hs =>
-      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv.symm).trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv.symm
+      exact nomatch hs.symm.trans hs'
     | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
   | codata h' _ _ _ hv' hs' =>
     subst hv'
     cases h with
     | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
     | codata h _ _ _ hv hs =>
-      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv.symm).trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv.symm
+      exact nomatch hs.symm.trans hs'
   | equalityUniv | equalityProp =>
     cases h with
     | data _ _ _ _ hv => cases hv
@@ -851,14 +764,16 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
   | data h _ _ _ hv _ hn => cases h' with
     | data h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.dataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
+      exact hn.symm.trans hn'
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
     | equalityUniv | equalityProp => cases hv
   | codata h _ _ _ hv _ hn => cases h' with
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.codataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact hn.symm.trans hn'
     | equalityUniv | equalityProp => cases hv
   | equalityUniv hl => cases h' with
     | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
@@ -1291,11 +1206,7 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     | prop => cases hv
     | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.dataInst_unique h h' hv'
       exact DataType.blockRel_congr (fun X T hT c hc => TelRel.congr hd ih (hS X T hT c hc) _ _ _
         (hS' X T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
@@ -1306,11 +1217,7 @@ theorem UnivRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
       exact CodataType.blockRel_congr (fun X T hT => DesRel.congr hd ih (hS X T hT) _ _ _
         (hS' X T hT) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
 termination_by structural h _ _ => h
@@ -1324,11 +1231,7 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     cases h' with
     | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.dataInst_unique h h' hv'
       exact DataType.blockTruth_congr (fun B T hT c hc => TelRel.congr hd ih (hS B T hT c hc) _ _ _
         (hS' B T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
@@ -1338,11 +1241,7 @@ theorem PropRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
       exact CodataType.blockTruth_congr (fun B T hT => DesRel.congr hd ih (hS B T hT) _ _ _
         (hS' B T hT) fun _ => Option.rel_refl (fun _ _ _ => .rfl) _) _
     | equalityUniv | equalityProp => cases hv
@@ -1431,30 +1330,24 @@ theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun _ _ => TermRel.computed_mono
           (corecRel_mono (NestDesRel.mono hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun _ _ => ObsRel.truth_mono (NestDesRel.mono hd ih hS _ _ _ hS'
           (Nesting.ofArgs_rel₃ hνs))
 termination_by structural h _ _ _ _ _ => h
@@ -1488,30 +1381,24 @@ theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun _ _ => TermRel.computed_symm
           (corecRel_symm (NestDesRel.symm_of hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun _ _ ⟨o, ho⟩ =>
           ⟨o, NestDesRel.symm_of hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs) o o ho⟩
 termination_by structural h _ _ _ _ _ => h
@@ -1545,30 +1432,24 @@ theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact TermRel.computed_congr (corecRel_congr
           (NestDesRel.congr hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         have hc := NestDesRel.congr hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)
         exact fun _ _ => ⟨ObsRel.truth_mono fun o₁ o₂ => (hc o₁ o₂).1,
           ObsRel.truth_mono fun o₁ o₂ => (hc o₁ o₂).2⟩
@@ -1614,48 +1495,36 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         cases h'' with
         | codata h'' _ _ _ hA'' _ _ _ _ _ hS'' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
-          cases hT
-          cases has
+          obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h'' hA''
           exact fun _ _ _ => TermRel.computed_trans hd (corecRel_trans
             (NestDesRel.trans_of hd ih hS _ _ _ hS' _ _ _ hS'' (Nesting.ofArgs_rel₃ hνs)))
         | codataProp h'' _ _ _ hA'' hκ'' =>
-          exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h'' hA'').trans hκ'')
+          obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h'' hA''
+          exact nomatch hκ.symm.trans hκ''
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', _, _, _, h'', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp h' _ _ _ hA' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         cases h'' with
         | codata h'' _ _ _ hA'' _ hκ'' =>
-          exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h'' hA'').trans hκ'')
+          obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h'' hA''
+          exact nomatch hκ.symm.trans hκ''
         | codataProp h'' _ _ _ hA'' _ _ _ _ hS'' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
-          cases hT
-          cases has
+          obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h'' hA''
           exact fun _ _ _ h₁ _ => ObsRel.truth_mono (NestDesRel.mono hd ih hS _ _ _ hS''
             (Nesting.ofArgs_rel₃ (hνs.outer fun _ _ _ hr => hr.2))) h₁
 termination_by structural h _ _ _ _ _ _ _ _ _ => h

@@ -143,12 +143,14 @@ theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Pro
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
 
 /-- An instance of a codata type in `Ω_n` has the relation of run time of the propositions, which
 relates every term to every address. -/
@@ -165,12 +167,14 @@ theorem RunFieldRel.codata_prop {sig : Signature} {ι : Interpretation} {P : Pro
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
   | univBelow m hm hu =>
     cases levelRel_run_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact nomatch hκ.symm.trans hs'
   | prop _ => exact fun _ _ _ => trivial
   | propBelow _ _ _ => exact fun _ _ _ => trivial
 
@@ -209,11 +213,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
         | codata h' _ _ _ hv' _ _ _ hS' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-          cases hT
-          cases has
+          obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           have hTn := h.2.2
           exact fun H _ a ⟨v, ht, X, hX, hx⟩ => ⟨v, ht, runCorecRel_mono (fun o a =>
             RunNestDesRel.of_plain hd ihm ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ (by
@@ -324,19 +324,11 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
           cases hu with
           | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
           | codata h' _ _ _ hv' _ _ _ hS' =>
-            obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-            subst hD hqs hls hps
-            obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-            cases hT
-            cases has
+            obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
             cases hue with
             | data h'' _ _ _ hv'' => exact (hd.inst_data_codata h'' h hv''.symm).elim
             | codata h'' _ _ _ hv'' _ _ _ hSE =>
-              obtain ⟨-, hD', hqs', hls', hps', has'⟩ := Term.inst.inj hv''
-              subst hD' hqs' hls' hps'
-              obtain ⟨rfl, hT'⟩ := hd.hasCodataType_unique h h''
-              cases hT'
-              cases has'
+              obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h'' hv''
               have hTn := h.2.2
               have hT := h.2.1
               have hnd := TypeDeclaration.codataTypes_nodup (hd.nodup h.1)

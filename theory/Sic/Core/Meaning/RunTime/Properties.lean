@@ -148,7 +148,8 @@ theorem RunUnivRel.level {sig : Signature} {ι : Interpretation} {P : Program} {
     | prop => cases hv
     | data h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.dataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv'
+      exact hn.symm.trans hn'
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | codata h _ _ _ hv _ hn => cases h' with
     | univ => cases hv
@@ -156,7 +157,8 @@ theorem RunUnivRel.level {sig : Signature} {ι : Interpretation} {P : Program} {
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
       subst hv
-      exact hn.symm.trans ((hd.codataInst_level_unique h h' hv') ▸ hn')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
+      exact hn.symm.trans hn'
 
 /-- A type of a universe of run time is not a proposition, in a signature whose names are
 distinct. -/
@@ -169,14 +171,16 @@ theorem RunUnivRel.not_prop {sig : Signature} {ι : Interpretation} {P : Program
     subst hv'
     cases h with
     | data h _ _ _ hv hs =>
-      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv.symm).trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.dataInst_unique h h' hv.symm
+      exact nomatch hs.symm.trans hs'
     | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
   | codata h' _ _ _ hv' hs' =>
     subst hv'
     cases h with
     | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
     | codata h _ _ _ hv hs =>
-      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv.symm).trans hs')
+      obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv.symm
+      exact nomatch hs.symm.trans hs'
   | equalityUniv | equalityProp =>
     cases h with
     | data _ _ _ _ hv => cases hv
@@ -249,11 +253,7 @@ theorem RunUnivRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
     | prop => cases hv
     | data h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.dataInst_unique h h' hv'
       exact DataType.runBlockRel_congr (fun X T hT c hc => RunTelRel.congr hd ihm ih (hS X T hT c hc)
         _ _ (hS' X T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) _
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
@@ -264,11 +264,7 @@ theorem RunUnivRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ _ _ hS' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      cases hT
-      cases has
+      obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
       exact CodataType.runBlockRel_congr (fun X T hT => RunDesRel.congr hd ihm ih (hS X T hT) _ _
         (hS' X T hT) fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) _
 termination_by structural h _ _ => h
@@ -425,24 +421,22 @@ theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
       cases h' with
       | codata h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        cases hT
-        cases has
+        obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         have hc := RunNestDesRel.congr hd ihm ih hS _ _ hS' (Nesting.ofArgs_rel₃ hνs)
         exact RunRel.computed_congr fun H _ _ =>
           ⟨runCorecRel_mono fun o a => (hc H o a).1, runCorecRel_mono fun o a => (hc H o a).2⟩
       | codataProp h' _ _ _ hA' _ hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
   | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' hκ' =>
         subst hA
-        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
+        obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
+        exact nomatch hκ.symm.trans hκ'
       | codataProp => exact fun _ _ _ => .rfl
 termination_by structural h _ _ _ _ => h
 
