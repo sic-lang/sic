@@ -35,9 +35,7 @@ theorem Signature.Distinct.cases_of_constructorCase (hd : sig.Distinct) {decl : 
   rw [hd.constructorCase ⟨hdecl, hT, rfl⟩] at hi
   obtain ⟨⟨j', T', con'⟩, hx, hpx⟩ := List.getElem?_of_findIdx?_eq_some hi
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
-  have hm : (j, T, con) ∈ decl.cases := by
-    have := TypeDeclaration.mem_casesFrom_of (i := 0) (f := DataType.constructors) hj hc
-    rwa [Nat.zero_add] at this
+  have hm := TypeDeclaration.mem_cases_of hj hc
   have hn : T'.name = T.name ∧ con'.name = con.name := by
     simp only [Bool.and_eq_true, beq_iff_eq] at hpx
     exact hpx
@@ -53,9 +51,7 @@ theorem TypeDeclaration.exists_cases {decl : TypeDeclaration}
     (hcon : con ∈ T.constructors) :
     ∃ i j : Nat, decl.cases[i]? = some (j, T, con) ∧ decl.dataTypes[j]? = some T := by
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
-  have hmem : (j, T, con) ∈ decl.cases := by
-    have := TypeDeclaration.mem_casesFrom_of (i := 0) hj hcon
-    rwa [Nat.zero_add] at this
+  have hmem := TypeDeclaration.mem_cases_of hj hcon
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
   exact ⟨i, j, hi, hj⟩
 

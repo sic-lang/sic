@@ -225,9 +225,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length},
           (T₂.body I).Pos d p q ς Ξ Θ B ψ → ∃ i g, decl.codataCases[i]? = some (j₁, T₂, d) ∧
             gs.get i = some ⟨0, ps₁.length, ps'.length, g⟩ := fun {d p q ς ps' Ξ Θ B ψ} hpos => by
-        have hm := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj₁
-          hpos.mem
-        rw [Nat.zero_add] at hm
+        have hm := TypeDeclaration.mem_codataCases_of hj₁ hpos.mem
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hm
         obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ς ps' Ξ Θ B ψ hpos
         exact ⟨i, g, hi, hg⟩

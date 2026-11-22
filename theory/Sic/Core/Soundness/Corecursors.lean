@@ -1403,9 +1403,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     refine ⟨r, r, ts₁.terms, ts₂.terms, Ss₁.subst σ₁, Ss₂.subst σ₂, gs₁.subst σ₁, gs₂.subst σ₂,
       rfl, rfl, fun d p q ς ps₁ Ξ Θ B ψ hpos bs₁ bs₂ hbs => ?_⟩
     have h₀' : sig.HasCodataType T'.name decl T' := ⟨h₀.1, List.mem_of_getElem? hj, rfl⟩
-    have hmem : (j, T', d) ∈ decl.codataCases := by
-      have := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj hpos.mem
-      rwa [Nat.zero_add] at this
+    have hmem := TypeDeclaration.mem_codataCases_of hj hpos.mem
     obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
     obtain ⟨g₁, g₂, hg₁, hg₂⟩ := hg.1 i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos
     have hb := ValidEqTerm₀.corecBranch hpos

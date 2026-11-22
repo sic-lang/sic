@@ -332,6 +332,21 @@ theorem TypeDeclaration.codataTypes_getElem?_of_codataCases {decl : TypeDeclarat
     (h : (j, T, d) ∈ decl.codataCases) : decl.codataTypes[j]? = some T :=
   (TypeDeclaration.getElem?_of_mem_casesFrom h).2
 
+/-- A constructor of the data type at the position `j` of a block is a case of a recursor on it. -/
+theorem TypeDeclaration.mem_cases_of {decl : TypeDeclaration} {j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hj : decl.dataTypes[j]? = some T) (hc : con ∈ T.constructors) : (j, T, con) ∈ decl.cases :=
+  Nat.zero_add j ▸ TypeDeclaration.mem_casesFrom_of hj hc
+
+/-- A destructor of the codata type at the position `j` of a block is a case of a corecursor on
+it. -/
+theorem TypeDeclaration.mem_codataCases_of {decl : TypeDeclaration} {j : Nat}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {d : Name}
+    (hj : decl.codataTypes[j]? = some T) (hd : d ∈ T.destructors) :
+    (j, T, d) ∈ decl.codataCases :=
+  Nat.zero_add j ▸ TypeDeclaration.mem_casesFrom_of hj hd
+
 /-- Each constructor of a data type that an entry of the signature declares has a case. -/
 theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
@@ -339,7 +354,7 @@ theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclarati
     (hdecl : .typeDeclaration decl ∈ sig) (hT : T ∈ decl.dataTypes) (hc : con ∈ T.constructors) :
     ∃ i, sig.constructorCase T.name con.name = some i := by
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
-  have hm := TypeDeclaration.mem_casesFrom_of (i := 0) (f := DataType.constructors) hj hc
+  have hm := TypeDeclaration.mem_cases_of hj hc
   have he : (Entry.constructorCase T.name con.name (.typeDeclaration decl)).isSome := by
     simp only [Entry.constructorCase, List.findIdx?_isSome, List.any_eq_true]
     exact ⟨_, hm, show (T.name == T.name && con.name == con.name) = true by
@@ -366,7 +381,7 @@ theorem Signature.destructorCase_of_mem {sig : Signature} {decl : TypeDeclaratio
     (hdecl : .typeDeclaration decl ∈ sig) (hT : T ∈ decl.codataTypes) (hdm : d ∈ T.destructors) :
     ∃ i, sig.destructorCase T.name d = some i := by
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
-  have hc := TypeDeclaration.mem_casesFrom_of (i := 0) (f := CodataType.destructors) hj hdm
+  have hc := TypeDeclaration.mem_codataCases_of hj hdm
   have he : (Entry.destructorCase T.name d (.typeDeclaration decl)).isSome := by
     simp only [Entry.destructorCase, List.findIdx?_isSome, List.any_eq_true]
     exact ⟨_, hc, show (T.name == T.name && d == d) = true by

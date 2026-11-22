@@ -233,9 +233,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       ∃ i j : Nat, decl.cases[i]? = some (j, T', con) ∧ decl.dataTypes[j]? = some T' := by
     intro T' hT' con hcon
     obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT'
-    have hmem : (j, T', con) ∈ decl.cases := by
-      have := TypeDeclaration.mem_casesFrom_of (i := 0) hj hcon
-      rwa [Nat.zero_add] at this
+    have hmem := TypeDeclaration.mem_cases_of hj hcon
     obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
     exact ⟨i, j, hi, hj⟩
   -- The motive of a type of the block in the motives substituted is its motive, substituted.

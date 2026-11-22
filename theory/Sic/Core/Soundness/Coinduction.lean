@@ -317,10 +317,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               ((B.substLevels L).subst (Subst.append
                 (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) := by
         intro d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ
-        have hmem : (j, T', d) ∈ decl.codataCases := by
-          have := TypeDeclaration.mem_casesFrom_of (f := CodataType.destructors) (i := 0) hj
-            hpos.mem
-          rwa [Nat.zero_add] at this
+        have hmem := TypeDeclaration.mem_codataCases_of hj hpos.mem
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
         -- The scope of the destructor at the substitution is that of the observations of a term.
         have hc : ∀ (X₀ : Var (Γ.extend 3) .var) (w₀ : Term 0 []),
