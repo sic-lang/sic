@@ -713,7 +713,6 @@ theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct
   subst hD
   exact hd.not_hasDataType_hasCodataType h₁ h₂
 
-
 /-- A type of a universe has one level, in a signature whose names are distinct. -/
 theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below₁ : LevelRel.Below n}
     {below₂ : LevelRel.Below m} {v : Term 0 []} {R R' : TermRel} (hd : sig.Distinct)
