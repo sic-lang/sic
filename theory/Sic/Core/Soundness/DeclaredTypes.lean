@@ -972,6 +972,17 @@ theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} :
         exact key t u ts us hv (TelRel.to_eqSubst hd (hG t) (hH.2 t (hv.trans hv.symm))
           (fun i => hτ (i + 1)) ts us hts)
 
+/-- Terms of the fields of a closed telescope of the graph of a sort without nested position,
+related by the equality `S` of its fields, are the terms of equal arguments of the telescope. -/
+theorem TelRel.to_eqSubst_plain (hd : sig.Distinct) {n : Nat} {s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {S : FieldsRel}
+    (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s (fun _ => .plain) Θ S)
+    (ts us : Terms 0 []) (hS : S ts us) :
+    ∃ ts' us' : Args 0 [] ps, ts'.terms = ts ∧ us'.terms = us ∧
+      EqSubst sig ι (Context.empty.append Θ) ts'.toSubst us'.toSubst :=
+  h.to_eqSubst hd (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) ts us
+    hS
+
 /-- The terms `ts₁` and `ts₂` of fields are related by `Q D` at each recursive field of the type `D`
 that the types `rs` of the block mark. -/
 def Terms.RecRel (Q : Name → TermRel) : List (Option Name) → Terms 0 [] → Terms 0 [] → Prop
@@ -1104,6 +1115,15 @@ theorem TelRel.eqSubst_iff (hd : sig.Distinct) {n : Nat} {s : Quality} {ps : Lis
     rw [Args.terms_inj h₁, Args.terms_inj h₂] at hE
     exact hE,
   h.of_eqSubst hH hτ ts us⟩
+
+/-- Arguments related by the equality of the fields of a closed telescope of the graph of a sort
+without nested position are equal arguments of the telescope, and conversely. -/
+theorem TelRel.eqSubst_iff_plain (hd : sig.Distinct) {n : Nat} {s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {S : FieldsRel}
+    (h : TelRel sig ι n (fun m _ => levelRel sig ι m) s (fun _ => .plain) Θ S)
+    (ts us : Args 0 [] ps) :
+    S ts.terms us.terms ↔ EqSubst sig ι (Context.empty.append Θ) ts.toSubst us.toSubst :=
+  h.eqSubst_iff hd (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) ts us
 
 /-- Two closed terms that compute to types of `U_l` with the same equality of their terms and, for each
 program, a common relation of run time are equal terms of `U_l`, in a signature whose names are

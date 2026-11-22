@@ -114,8 +114,7 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-  have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-    (fun _ => .plain)
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
@@ -151,8 +150,7 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
       rw [hFeq ts w₁ F₀ hw₁ hF₁]
       exact ⟨⟨w₁, hw₁, hF₁⟩, w₂, hw₂, hF₂⟩
   have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-    obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst hd
-      (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) _ _ hts
+    obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
     have huu := hSp.trans (hSp.symm hts) hts
     obtain ⟨⟨w', hw', -⟩, -⟩ := hres us' _ (hBB us' us' huu)
     obtain ⟨-, v, hv, hFv⟩ := hres ts' _ (hBB ts' us' hts)
@@ -240,8 +238,7 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-  have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-    (fun _ => .plain)
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
   let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
@@ -258,8 +255,7 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {
         exact (NestRel.unique hd ih hF' _ _ hF₀ t u).1 h',
       fun h' => ⟨ts, rfl, F₀, hF₀, h'⟩⟩
   have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-    obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst hd
-      (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) _ _ hts
+    obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
     have huu := hSp.trans (hSp.symm hts) hts
     obtain ⟨F', h₁, h₂⟩ := hB _ _ hE
     obtain ⟨F'', h₁', h₂'⟩ := hB _ _ ((hT us' us').1 huu)

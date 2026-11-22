@@ -97,8 +97,7 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-  have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-    (fun _ => .plain)
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
@@ -251,8 +250,7 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Unive
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-  have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-    (fun _ => .plain)
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
   let R : Terms 0 [] → RunRel := fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
     ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m)
       (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))

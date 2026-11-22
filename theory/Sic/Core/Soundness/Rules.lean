@@ -695,8 +695,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
     obtain ⟨hΘ, h⟩ := h
     have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-      (fun _ => .plain)
+    have hT := TelRel.eqSubst_iff_plain hd hT₁
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
     split at h
     · rename_i hr
@@ -734,10 +733,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
         rw [hFeq ts w₁ F₀ hw₁ hF₁]
         exact hF₂
       have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-        obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst hd
-          (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-          (fun _ => .plain)
-          _ _ hts
+        obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
         have huu := hSp.trans (hSp.symm hts) hts
         obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
         rw [hFeq us' w' _ hw' ((hres ts' _ (hBB ts' us' hts)).2 w' hw')]
@@ -835,8 +831,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
     have hcase' := fun d' (hd' : d' ∈ _) => hcase d' (List.mem_cons_of_mem _ hd')
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-    have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-      (fun _ => .plain)
+    have hT := TelRel.eqSubst_iff_plain hd hT₁
     have hSp := TelRel.isPer hd ihm (fun _ => .plain) hT₁
     split at h
     · rename_i hr

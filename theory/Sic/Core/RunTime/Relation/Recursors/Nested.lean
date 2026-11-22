@@ -164,18 +164,14 @@ theorem RunTelRel.of_scale (hd : sig.Distinct) {n n' : Nat} {ps : List Parameter
   have hSS := TelRel.unique hd (ihm _) (TelRel.levelLe (Nat.le_max_left n' n) hΘ') _ _
     (TelRel.levelLe (Nat.le_max_right n' n) (hΘ.scale r))
   have hSΘ : SΘ ts.terms ts.terms := (hSS _ _).1 (hts ▸ hSΘ')
-  have heq' := (TelRel.eqSubst_iff hd hΘ'
-    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) ts' ts').1 hSΘ'
-  have hargs' := RunsAsArgs.of_runTelRel hRΘ'
-    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain)
+  have heq' := (TelRel.eqSubst_iff_plain hd hΘ' ts' ts').1 hSΘ'
+  have hargs' := RunsAsArgs.of_runTelRel_plain hRΘ'
     (Parameter.grades (ps.map (Parameter.scale r)))
     (fun _ _ h hu => by rw [Parameter.grades_of_getElem? h] at hu; exact hu) ts' heq' bs hbs
   have hlen : bs.length = ps.length := (RunsAsArgs.length hargs').trans (List.length_map _)
   refine ⟨hSΘ, hlen, fun RΘ hRΘ hus H' hH as hl hag => ?_⟩
-  have heqΘ := (TelRel.eqSubst_iff hd hΘ
-    (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h) (fun _ => .plain) ts ts).1 hSΘ
-  refine RunTelRel.of_runsAsArgs hd hRΘ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
-    (fun _ => .plain) (Parameter.grades ps)
+  have heqΘ := (TelRel.eqSubst_iff_plain hd hΘ ts ts).1 hSΘ
+  refine RunTelRel.of_runsAsArgs_plain hd hRΘ (Parameter.grades ps)
     (fun _ _ h hu => by rw [Parameter.grades_of_getElem? h]; exact hu) ts heqΘ as ?_
   -- A position whose grade is used at run time is a position of the telescope.
   have hpos : ∀ l, Parameter.grades ps l ∉ Mode.oneOne.erased →

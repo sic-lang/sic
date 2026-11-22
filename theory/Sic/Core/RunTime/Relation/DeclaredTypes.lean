@@ -133,6 +133,18 @@ theorem RunTelRel.of_runsAsArgs (hd : sig.Distinct) {n : Nat} {H : Heap} :
         (RunTelRel.of_runsAsArgs hd (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs
           hbs)
 
+/-- Arguments of a closed telescope of the graph of run time without nested position, which the
+meaning relates to themselves and which are related to addresses at its fields, are related to them
+by the relation of run time of the terms of its fields. -/
+theorem RunTelRel.of_runsAsArgs_plain (hd : sig.Distinct) {n : Nat} {H : Heap}
+    {ps : List Parameter} {Θ : Telescope 0 [] ps} {S : RunFieldsRel}
+    (h : RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ S) (g : Nat → Grade)
+    (hg : ∀ l p, ps[l]? = some p → p.usage ∉ Mode.oneOne.erased → g l ∉ Mode.oneOne.erased)
+    (ts : Args 0 [] ps) (hts : EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst)
+    (bs : List Nat) (hbs : RunsAsArgs sig ι P H g ts bs Θ) : S H ts.terms bs :=
+  RunTelRel.of_runsAsArgs hd h (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+    (fun _ => .plain) g hg ts hts bs hbs
+
 /-- The type of a field, or of the result of a destructor, of the graph of run time has a relation of
 run time. -/
 theorem RunFieldRel.hasRun {n : Nat} {v : Term 0 []} {R : RunRel}
@@ -224,6 +236,18 @@ theorem RunsAsArgs.of_runTelRel {n : Nat} {H : Heap} :
       obtain ⟨hb, hbs⟩ := hS
       exact And.intro (fun hp => hRn.runsAs (hτ 0) hH.1 ht (hb (hg 0 _ rfl hp)))
         (RunsAsArgs.of_runTelRel (hG t) (hH.2 t ht) (fun i => hτ (i + 1)) _ hg' ts hts bs hbs)
+
+/-- Arguments of a closed telescope of the graph of run time without nested position, which the
+meaning relates to themselves and which its relation of run time relates to addresses, are related
+to them at its fields: the converse of `RunTelRel.of_runsAsArgs_plain`. -/
+theorem RunsAsArgs.of_runTelRel_plain {n : Nat} {H : Heap} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {S : RunFieldsRel}
+    (h : RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ S) (g : Nat → Grade)
+    (hg : ∀ l p, ps[l]? = some p → g l ∉ Mode.oneOne.erased → p.usage ∉ Mode.oneOne.erased)
+    (ts : Args 0 [] ps) (hts : EqSubst sig ι (Context.empty.append Θ) ts.toSubst ts.toSubst)
+    (bs : List Nat) (hS : S H ts.terms bs) : RunsAsArgs sig ι P H g ts bs Θ :=
+  RunsAsArgs.of_runTelRel h (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
+    (fun _ => .plain) g hg ts hts bs hS
 
 /-- Arguments related to addresses are as many as the addresses. -/
 theorem RunsAsArgs.length {H : Heap} : {ps : List Parameter} → {g : Nat → Grade} →
