@@ -65,31 +65,6 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
       exact Level.ofNat_closedValue _) (InstanceArgs.LevelEquiv.refl as)
 
 -- ADE: none.
-/-- The fields of a constructor at the values of the levels `ls`, substituted by the arguments `ā`,
-are its fields at `ls` and `ā`, up to the levels. -/
-theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
-    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    (as : InstanceArgs 0 [] decl.scope) :
-    Telescope.LevelEquiv (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
-      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
-  (Telescope.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _).subst
-    (Subst.LevelEquiv.refl _)
-
--- ADE: none.
-/-- The level of the sort of a type declaration has the same value at the values of the levels
-`ls` and at `ls`. -/
-theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) :
-    ((decl.sort (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).level.closedValue =
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
-  Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
-
--- ADE: none.
 /-- A telescope at the numerals of the values of the levels `ls`, substituted by `σ`, is the
 telescope at `ls` substituted by `σ`, up to the levels. -/
 theorem Telescope.closedValues_levelEquiv {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
@@ -113,6 +88,30 @@ theorem Telescope.eqSubst_closedValues {k : Nat} {ls : List (Level 0)} (hl : ls.
   EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv hl σ))
 
 -- ADE: none.
+/-- The fields of a constructor at the values of the levels `ls`, substituted by the arguments `ā`,
+are its fields at `ls` and `ā`, up to the levels. -/
+theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
+    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (as : InstanceArgs 0 [] decl.scope) :
+    Telescope.LevelEquiv (((c.fields (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
+  (c.fields _).closedValues_levelEquiv hl as.toSubst
+
+-- ADE: none.
+/-- The level of the sort of a type declaration has the same value at the values of the levels
+`ls` and at `ls`. -/
+theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) :
+    ((decl.sort (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).level.closedValue =
+      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
+  Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
+
+-- ADE: none.
 /-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
 `ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
 theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
@@ -124,7 +123,7 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
       EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
         σ₁ σ₂ :=
-  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as)),
+  ⟨Telescope.eqSubst_closedValues hl _ _,
     EqSubst.levelEquiv
       (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as).symm)⟩
 
