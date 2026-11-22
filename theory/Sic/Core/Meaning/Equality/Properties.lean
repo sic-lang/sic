@@ -480,6 +480,21 @@ def CodataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k
   ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
     S X T o₁ o₂ → S Y T o₁ o₂
 
+/-- The equalities `S X T` of the destructors of the codata types `T` of `Ts` are inverted into the
+equalities `S' Y T` by relations `Y` of the recursive destructors that invert the relations `X`. -/
+def CodataType.BlockSymm {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S S' : (Name → TermRel) → CodataType j g k Δ → ObsRel) : Prop :=
+  ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts, ∀ o₁ o₂,
+    S X T o₁ o₂ → S' Y T o₂ o₁
+
+/-- The equalities `S X T` and `S' Y T` of the destructors of the codata types `T` of `Ts` compose
+into the equalities `S'' Z T` by relations `Z` of the recursive destructors that compose the
+relations `X` and `Y`. -/
+def CodataType.BlockTrans {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S S' S'' : (Name → TermRel) → CodataType j g k Δ → ObsRel) : Prop :=
+  ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
+    ∀ o₁ o₂ o₃, S X T o₁ o₂ → S' Y T o₂ o₃ → S'' Z T o₁ o₃
+
 section GreatestFixedPoints
 
 variable {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
@@ -534,8 +549,7 @@ theorem CodataType.blockRel_fold
 destructors, when the second one inverts the first one, at relations of the recursive destructors
 that do so. -/
 theorem CodataType.blockRel_symm {S' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
-    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S' Y T o₂ o₁)
+    (hsymm : CodataType.BlockSymm Ts S S')
     (D : Name) {v w : Term 0 []} :
     CodataType.blockRel Ts S D v w → CodataType.blockRel Ts S' D w v :=
   fun ⟨X, hX, h⟩ => ⟨fun D v w => X D w v, fun T hT v w hvw =>
@@ -546,8 +560,7 @@ theorem CodataType.blockRel_symm {S' : (Name → TermRel) → CodataType j g k �
 destructors, when the third one composes the two others, at relations of the recursive destructors
 that do so. -/
 theorem CodataType.blockRel_trans {S' S'' : (Name → TermRel) → CodataType j g k Δ → ObsRel}
-    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
-      ∀ o₁ o₂ o₃, S X T o₁ o₂ → S' Y T o₂ o₃ → S'' Z T o₁ o₃)
+    (htrans : CodataType.BlockTrans Ts S S' S'')
     (D : Name) {u v w : Term 0 []} :
     CodataType.blockRel Ts S D u v → CodataType.blockRel Ts S' D v w →
       CodataType.blockRel Ts S'' D u w :=
@@ -562,10 +575,8 @@ theorem CodataType.blockRel_trans {S' S'' : (Name → TermRel) → CodataType j 
 /-- `(eq_ν)` is a partial equivalence relation, when the equality of the destructors inverts and
 composes the relations of the recursive destructors. -/
 theorem CodataType.blockRel_isPer
-    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S Y T o₂ o₁)
-    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) → ∀ T ∈ Ts,
-      ∀ o₁ o₂ o₃, S X T o₁ o₂ → S Y T o₂ o₃ → S Z T o₁ o₃)
+    (hsymm : CodataType.BlockSymm Ts S S)
+    (htrans : CodataType.BlockTrans Ts S S S)
     (D : Name) : IsPer (CodataType.blockRel Ts S D) where
   symm := CodataType.blockRel_symm hsymm D
   trans := CodataType.blockRel_trans htrans D
