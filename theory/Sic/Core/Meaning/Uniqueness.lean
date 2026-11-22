@@ -129,10 +129,7 @@ theorem levelRel_runNest_agree_nest {sig : Signature} {ι : Interpretation} {P :
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R') :
     ∀ H t a, R' H t a → R H t a :=
-  RunNestRel.of_plain hd (levelRel_isPer_lt hd _)
-    (levelRel_run_unique_lt hd _)
-    (fun _ _ _ hT hTA =>
-      RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain) h hτ _ h'
+  RunNestRel.of_plain hd (levelRel_isPer_lt hd _) (levelRel_run_unique_lt hd _) h hτ _ h'
 
 /-- The graph of run time relates what `rt(U_n)[λ]` relates and the equality relates to itself: when
 each position of the nesting holds a type with its relation of run time, the relation that a type
