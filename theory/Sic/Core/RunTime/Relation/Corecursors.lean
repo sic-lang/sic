@@ -238,9 +238,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         -- premise makes it a term of the result of the destructor.
         intro d p q ς ps' Ξ Θ B ψ hpos ts₂ us₂ hτ hr0
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
-        have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-          (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
+        have hτ' := (hA.eqSubst_destructor Θ _).1 hτ
         have hb := ValidEqTerm₀.corecBranch hpos
           (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
         have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
@@ -265,9 +263,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
         obtain rfl : i' = i :=
           Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
-        have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-          (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
+        have hτ' := (hA.eqSubst_destructor Θ _).1 hτ
         have hbs₂' := RunsAsArgs.levelEquiv hd (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
           (Telescope.substLevels_levelEquiv hA.levels Θ)) hbs₂
         -- The branch in the closure, at the grade of its destructor.

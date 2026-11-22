@@ -1051,9 +1051,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     refine ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, hv₁, hw₂,
       fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ => ?_⟩
     rw [Term.observation_subst_args, Term.observation_subst_args]
-    have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
+    have hτ' := (hA.eqSubst_destructor Θ _).1 hτ
     exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst
         (Subst.LevelEquiv.refl _)
@@ -1707,9 +1705,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst)) :=
       fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ => by
     rw [Term.observation_subst_args, Term.observation_subst_args]
-    have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
+    have hτ' := (hA.eqSubst_destructor Θ _).1 hτ
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
         (Term.substLevels_levelEquiv_atLevels L B))

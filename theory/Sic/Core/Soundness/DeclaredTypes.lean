@@ -248,6 +248,23 @@ theorem TypeDeclaration.AtClosedLevels.eqSubst_fields (hA : decl.AtClosedLevels 
     EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hA.telescopes c as).symm)⟩
 
 -- ADE: none.
+/-- Two closed substitutions are equal for the arguments `Θ` of a destructor of a codata type at
+the numerals of the values of the levels `ls`, at a substitution `σ` of its scope, if and only if
+they are equal for them at `ls`. -/
+theorem TypeDeclaration.AtClosedLevels.eqSubst_destructor
+    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂) {Ξ : Scope} {ps' : List Parameter}
+    (Θ : Telescope decl.levels Ξ ps') (σ : Subst 0 [] Ξ) {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append
+        ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)) σ₁ σ₂ ↔
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst σ)) σ₁ σ₂ :=
+  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Telescope.substLevels_levelEquiv hA.levels Θ))),
+    EqSubst.levelEquiv (Context.LevelEquiv.append .empty
+      (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+        (Telescope.substLevels_levelEquiv hA.levels Θ)).symm)⟩
+
+-- ADE: none.
 /-- The positions of the fields of a constructor of a block of data types, at the values of the
 levels `ls` and at arguments `ā`, hold the instances of the block there, which the graph of run
 time relates by relations `X`, when the instances at `ls` are types of a universe with these
