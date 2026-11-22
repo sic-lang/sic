@@ -681,15 +681,11 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
       obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 (hκ.2 Fin.elim0) hB
       let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
         B.subst (Subst.append θ₁ ts.toSubst)
-      let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
+      let G : Term 0 (Scope.extend [] ps.length) → ObsRel := Math.Rel₂.ofGraph fun f S' =>
         DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
-          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧
-          S' o₁ o₂
-      have hGeq : ∀ f S', DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
-          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' →
-          G f = S' := fun f S' hS' =>
-        funext fun o₁ => funext fun o₂ => propext
-          ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd ih h' _ _ hS' o₁ o₂).1 hs, fun hs => ⟨S', hS', hs⟩⟩
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S'
+      have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+        Math.Rel₂.ofGraph_eq hS' fun _ h' => DesRel.unique hd ih h' _ _ hS'
       have hG : ∀ f, AbstractionRel SΘ F f f →
           DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
             (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) (G f) ∧
@@ -770,16 +766,11 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
         B.subst (Subst.append θ₁ ts.toSubst)
       let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P κ.level.closedValue fun ts =>
         B.subst (Subst.append θ₁ ts.toSubst)
-      let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := fun f H o a => ∃ S',
+      let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := Math.Rel₃.ofGraph fun f S' =>
         RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
-          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' ∧
-          S' H o a
-      have hGeq : ∀ f S', RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
-          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S' →
-          G f = S' := fun f S' hS' =>
-        funext fun H => funext fun o => funext fun a => propext
-          ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd ihm ih h' _ _ hS' hrr H o a).1 hs,
-            fun hs => ⟨S', hS', hs⟩⟩
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S'
+      have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+        Math.Rel₃.ofGraph_eq hS' fun _ h' => RunDesRel.congr hd ihm ih h' _ _ hS' hrr
       have hG : ∀ f, AbstractionRel SΘ F f f →
           RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
             (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) (G f) ∧

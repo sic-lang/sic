@@ -112,16 +112,12 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 hκn hB
   let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n κ.quality fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  let G : Term 0 (Scope.extend [] ps.length) → ObsRel := fun f o₁ o₂ => ∃ S',
+  let G : Term 0 (Scope.extend [] ps.length) → ObsRel := Math.Rel₂.ofGraph fun f S' =>
     NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' ∧ S' o₁ o₂
-  have hGeq : ∀ f S', NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-      (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' → G f = S' := fun f S' hS' =>
-    funext fun o₁ => funext fun o₂ => propext
-      ⟨fun ⟨_, h', hs⟩ => (NestDesRel.unique hd ih h' _ _ hS' o₁ o₂).1 hs,
-        fun hs => ⟨S', hS', hs⟩⟩
+      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S'
+  have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+    Math.Rel₂.ofGraph_eq hS' fun _ h' => NestDesRel.unique hd ih h' _ _ hS'
   have hG : ∀ f, AbstractionRel SΘ F f f →
       NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
         (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds

@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Meaning
 public import Sic.Core.Nesting.Relation
+public import Sic.Math.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Syntax.Signature
 
@@ -511,9 +512,8 @@ computes to a type with a relation of run time of its terms, and terms that are 
 arguments relate nothing. -/
 def RunFieldRel.atArgs (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
     {ps : List Parameter} (A : Args 0 [] ps → Term 0 []) : Terms 0 [] → RunRel :=
-  fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ w R, Computesι sig ι (A ts) w ∧ RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w R ∧
-      R H t a
+  Math.Rel₃.ofGraph fun tms R => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
+    ∃ w, Computesι sig ι (A ts) w ∧ RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w R
 
 /-- The relation of run time of the terms of the types at arguments is, at the terms of arguments,
 the relation of run time of the terms of the type at them, in a signature whose names are
@@ -524,12 +524,10 @@ theorem RunFieldRel.atArgs_eq {sig : Signature} {ι : Interpretation} {P : Progr
     {A : Args 0 [] ps → Term 0 []} {ts : Args 0 [] ps} {w : Term 0 []} {R : RunRel}
     (hw : Computesι sig ι (A ts) w) (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w R) :
     RunFieldRel.atArgs sig ι P n A ts.terms = R :=
-  funext fun H => funext fun t => funext fun a => propext
-    ⟨fun ⟨ts', hts', w', R', hw', hR', h'⟩ => by
-      cases Args.terms_inj hts'
-      cases Computesι.det hd hw hw'
-      exact (RunFieldRel.congr hd ihm ih hR' _ hR H t a).1 h',
-    fun h' => ⟨ts, rfl, w, R, hw, hR, h'⟩⟩
+  Math.Rel₃.ofGraph_eq ⟨ts, rfl, w, hw, hR⟩ fun _ ⟨_, hts', w', hw', hR'⟩ => by
+    cases Args.terms_inj hts'
+    cases Computesι.det hd hw hw'
+    exact RunFieldRel.congr hd ihm ih hR' _ hR
 
 /-- The relation of run time of the terms of the types `A t̄` at the arguments `t̄` of a telescope,
 by the graph of run time of the nestings at the nesting `τ`, indexed by the terms of the arguments:
@@ -537,8 +535,8 @@ terms that are not those of arguments relate nothing. -/
 def RunNestRel.atArgs (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
     (τ : Nest RunNestLeaf) {ps : List Parameter} (A : Args 0 [] ps → Term 0 []) :
     Terms 0 [] → RunRel :=
-  fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ R, RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ (A ts) R ∧ R H t a
+  Math.Rel₃.ofGraph fun tms R => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
+    RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ (A ts) R
 
 /-- The relation of run time of the terms of the types at arguments by the graph of run time of the
 nestings is, at the terms of arguments, the relation of run time of the terms of the type at them,
@@ -549,11 +547,9 @@ theorem RunNestRel.atArgs_eq {sig : Signature} {ι : Interpretation} {P : Progra
     {ps : List Parameter} {A : Args 0 [] ps → Term 0 []} {ts : Args 0 [] ps} {R : RunRel}
     (hR : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ (A ts) R) :
     RunNestRel.atArgs sig ι P n τ A ts.terms = R :=
-  funext fun H => funext fun t => funext fun a => propext
-    ⟨fun ⟨ts', hts', R', hR', h'⟩ => by
-      cases Args.terms_inj hts'
-      exact (RunNestRel.unique hd ihm ih hR' _ hR H t a).1 h',
-    fun h' => ⟨ts, rfl, R, hR, h'⟩⟩
+  Math.Rel₃.ofGraph_eq ⟨ts, rfl, hR⟩ fun _ ⟨_, hts', hR'⟩ => by
+    cases Args.terms_inj hts'
+    exact RunNestRel.unique hd ihm ih hR' _ hR
 
 /-- Two derivations of the equality and of the relation of run time of the same closed telescope `Θ`
 of arguments of a destructor: the relations of run time of the abstractions for it that they give

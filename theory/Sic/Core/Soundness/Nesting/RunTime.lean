@@ -91,16 +91,12 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
     B.subst (Subst.append θ₁ ts.toSubst)
   let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P n fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := fun f H o a => ∃ S',
+  let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := Math.Rel₃.ofGraph fun f S' =>
     RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D
       (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' ∧ S' H o a
-  have hGeq : ∀ f S', RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D
-      (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S' → G f = S' := fun f S' hS' =>
-    funext fun H => funext fun o => funext fun a => propext
-      ⟨fun ⟨_, h', hs⟩ => (RunNestDesRel.unique hd ihm ih h' _ hS' H o a).1 hs,
-        fun hs => ⟨S', hS', hs⟩⟩
+      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f) S'
+  have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+    Math.Rel₃.ofGraph_eq hS' fun _ h' => RunNestDesRel.unique hd ihm ih h' _ hS'
   have hG : ∀ f, AbstractionRel SΘ F f f →
       RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D
         (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
