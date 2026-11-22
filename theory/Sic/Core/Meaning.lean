@@ -37,6 +37,7 @@ open Sic.Grading
 
 /-! ## Relations of the Levels -/
 
+-- Pujet: `kit` and `logRelRec`, in `Definition/LogicalRelation.agda`.
 /-- The relations of the sorts of the level `n`, defined after those of the levels below it. -/
 def levelRel (sig : Signature) (ι : Interpretation) (n : Nat) : LevelRel :=
   ⟨UnivRel sig ι n fun m _ => levelRel sig ι m, PropRel sig ι n fun m _ => levelRel sig ι m,

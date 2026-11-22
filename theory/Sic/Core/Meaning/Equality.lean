@@ -67,6 +67,7 @@ abbrev RunRel : Type := Heap → Term 0 [] → Nat → Prop
 holds at each of its positions. -/
 abbrev NestLeaf : Type := Term 0 [] × TermRel
 
+-- Pujet: `LogRelKit`, in `Definition/LogicalRelation.agda`.
 /-- The relations of the sorts of one level `n`, given by their graphs: the equality of the terms of
 its types, the truth of its propositions and the relations of run time of its types. -/
 structure LevelRel where
@@ -78,6 +79,7 @@ structure LevelRel where
   addresses of the values that the program `P` computes. -/
   run : Program → Term 0 [] → RunRel → Prop
 
+-- Pujet: the argument `rec` of the module `LogRel`, in `Definition/LogicalRelation.agda`.
 /-- The relations of the sorts of the levels below `n`. -/
 abbrev LevelRel.Below (n : Nat) : Type := (m : Nat) → m < n → LevelRel
 
@@ -198,6 +200,7 @@ def CodataType.blockTruth {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g 
 
 mutual
 
+-- Pujet: `_⊩LR_▸_▸_▸_`, in `Definition/LogicalRelation.agda`.
 /--
 `ty(U_n)`: the least relation of the clauses of the universes and of the instances of the data
 types and of the codata types in `U_n`, given the relations `below` of the levels below `n`.
