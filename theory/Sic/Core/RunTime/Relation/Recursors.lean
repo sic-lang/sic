@@ -465,11 +465,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The equality of the block at the arguments substituted.
-  obtain ⟨SM, hUM, hmonoM, hrecM, hNM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
-  have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
-      (DataType.blockRel decl.dataTypes SM T'.name).computed sig ι a b →
-        ValidEqTerm₀ sig ι a b (.inst T'.name qs ls ps (as.subst σ)) :=
-    fun T' hT' _ _ hab => (FieldRel.univ rfl (hUM T' hT').1).validEqTerm hd (hI _) hab
+  obtain ⟨SM, hUM, hval, hmonoM, hrecM, hNM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
   let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
     ((sig.caseFieldParams T.name qs ps).getD [])

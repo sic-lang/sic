@@ -1132,8 +1132,9 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
 /-- The instances of the types of a meaningful block of data types in a universe, at equal closed
 arguments of its parameters, are types of the graph of its sort whose equality is `(eq_μ)`, at the
 equality `S` of the fields that the graph gives, which grows with the relations of the recursive
-fields; at the relations `(eq_μ)` of the recursive fields, `S` relates the terms of equal arguments
-of the fields at the first arguments, and only them, and each of them to itself. -/
+fields; two terms that compute to terms that `(eq_μ)` relates are equal terms of the instance at the
+first arguments; at the relations `(eq_μ)` of the recursive fields, `S` relates the terms of equal
+arguments of the fields at the first arguments, and only them, and each of them to itself. -/
 theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
@@ -1151,6 +1152,8 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
         UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.blockRel decl.dataTypes S T.name)) ∧
+      (∀ T ∈ decl.dataTypes, ∀ a b, (DataType.blockRel decl.dataTypes S T.name).computed sig ι a b →
+        ValidEqTerm₀ sig ι a b (.inst T.name qs ls ps as₁)) ∧
       (∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ decl.dataTypes,
         ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us) ∧
       (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts us, S X c ts us →
@@ -1202,8 +1205,8 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
       (fun m _ => levelRel sig ι m) .type (.inst T.name qs ls ps as₁)
       ((DataType.blockRel decl.dataTypes S T.name).computed sig ι) := fun T hT =>
     .univ rfl (hU T hT).1
-  refine ⟨S, hU, hmono, fun X T hT c hc ts us h =>
-    TelRel.recRel hd (hS₀ _ T hT c hc).1 _
+  refine ⟨S, hU, fun T hT _ _ hab => (hF T hT).validEqTerm hd (hI _) hab, hmono,
+    fun X T hT c hc ts us h => TelRel.recRel hd (hS₀ _ T hT c hc).1 _
       (fun i D h => ⟨_, by rw [(Telescope.nestAt_eq_direct _ i).2 h]; rfl⟩) ts us h,
     fun X T hT c hc ts us h =>
       TelRel.nestedRel hd (hs ▸ (hS₀ _ T hT c hc).1) _ (fun _ => rfl) ts us h,
@@ -1424,7 +1427,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     fun _ _ => (Whnf.ctor ..).computes
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · rw [hs] at hI
-    obtain ⟨S, hU, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
+    obtain ⟨S, hU, -, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
     have hU' := levelRel_univ_iff.2 (hU T hT).1
     have hrel : DataType.blockRel decl.dataTypes S T.name
         (.ctor T.name qs ls ps as₁ con.name ts.terms) (.ctor T.name qs ls ps as₂ con.name us.terms) :=
