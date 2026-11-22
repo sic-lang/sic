@@ -1798,6 +1798,21 @@ theorem TelRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
     ∀ ts us, S ts us ↔ S' ts us :=
   TelRel.congr hd ih h _ _ _ h' fun _ => Nest.rel₃_refl (fun _ _ _ => .rfl) _
 
+/-- Two derivations of the equality of the same closed telescope `Θ` of arguments of a destructor:
+the equalities of the abstractions for it that they give agree, when the equalities of its results
+agree at the arguments that both derivations relate to themselves. -/
+theorem AbstractionRel.unique_of_agree {sig : Signature} {ι : Interpretation} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {SΘ SΘ' : FieldsRel} {F F' : Terms 0 [] → TermRel}
+    (hΘ : TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain) Θ SΘ)
+    (hΘ' : TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain) Θ SΘ')
+    (hF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → SΘ' ts.terms ts.terms →
+      ∀ t u, F ts.terms t u ↔ F' ts.terms t u) :
+    ∀ f₁ f₂, AbstractionRel (ps := ps) SΘ F f₁ f₂ ↔ AbstractionRel SΘ' F' f₁ f₂ :=
+  have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
+  AbstractionRel.congr (TelRel.isPer hd ih (fun _ => .plain) hΘ) hSS fun ts hts =>
+    hF ts hts ((hSS _ _).1 hts)
+
 /-- Two derivations of the equality of the abstractions for a destructor, whose arguments are a
 closed telescope `Θ` and whose result type `A t̄` computes, at equal arguments `t̄`, to a type of
 fields: the equalities of the abstractions that they give agree. -/
@@ -1813,10 +1828,9 @@ theorem AbstractionRel.unique_of_fieldRel {sig : Signature} {ι : Interpretation
     (hF' : ∀ ts : Args 0 [] ps, SΘ' ts.terms ts.terms → ∀ v, Computesι sig ι (A ts) v →
       FieldRel sig ι n (fun m _ => levelRel sig ι m) s' v (F' ts.terms)) :
     ∀ f₁ f₂, AbstractionRel (ps := ps) SΘ F f₁ f₂ ↔ AbstractionRel SΘ' F' f₁ f₂ :=
-  have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
-  AbstractionRel.congr (TelRel.isPer hd ih (fun _ => .plain) hΘ) hSS fun ts hts =>
+  AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
     have ⟨_, hv⟩ := hB ts hts
-    FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
+    FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts hts' _ hv)
 
 /-- The equality of the abstractions for destructors is a partial equivalence relation, at relations
 of the recursive destructors that are. -/
@@ -1957,9 +1971,8 @@ theorem AbstractionRel.unique_of_nestRel {sig : Signature} {ι : Interpretation}
     (hF' : ∀ ts : Args 0 [] ps, SΘ' ts.terms ts.terms →
       NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain (A ts) (F' ts.terms)) :
     ∀ f₁ f₂, AbstractionRel (ps := ps) SΘ F f₁ f₂ ↔ AbstractionRel SΘ' F' f₁ f₂ :=
-  have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
-  AbstractionRel.congr (TelRel.isPer hd ih (fun _ => .plain) hΘ) hSS fun ts hts =>
-    NestRel.unique hd ih (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
+  AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
+    NestRel.unique hd ih (hF ts hts) _ _ (hF' ts hts')
 
 /-- The equality of the abstractions for destructors read at nestings is a partial equivalence
 relation, at positions whose relations are. -/

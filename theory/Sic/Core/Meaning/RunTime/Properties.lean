@@ -555,11 +555,33 @@ theorem RunNestRel.atArgs_eq {sig : Signature} {ι : Interpretation} {P : Progra
       exact (RunNestRel.unique hd ihm ih hR' _ hR H t a).1 h',
     fun h' => ⟨ts, rfl, R, hR, h'⟩⟩
 
+/-- Two derivations of the equality and of the relation of run time of the same closed telescope `Θ`
+of arguments of a destructor: the relations of run time of the abstractions for it that they give
+agree, when the relations of run time of its results agree at the arguments that both derivations
+of the equality relate to themselves. -/
+theorem RunAbstractionRel.unique_of_agree {sig : Signature} {ι : Interpretation} {P : Program}
+    {n : Nat} (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+    (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {ps : List Parameter}
+    {i : Nat} {ψ : ResultOwnership Grade ps.length} {ς : Grade} {Θ : Telescope 0 [] ps}
+    {SΘ SΘ' : FieldsRel} {RΘ RΘ' : RunFieldsRel} {R R' : Terms 0 [] → RunRel}
+    (hΘ : TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain) Θ SΘ)
+    (hRΘ : RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ RΘ)
+    (hΘ' : TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain) Θ SΘ')
+    (hRΘ' : RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain) Θ RΘ')
+    (hR : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → SΘ' ts.terms ts.terms →
+      ∀ H t a, R ts.terms H t a ↔ R' ts.terms H t a) :
+    ∀ f H a, RunAbstractionRel P i ψ ς RΘ R f H a ↔ RunAbstractionRel P i ψ ς RΘ' R' f H a :=
+  have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
+  fun _ _ _ => RunAbstractionRel.congr (RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain)
+    fun H ts bs hts =>
+      have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+      hR ts hts' ((hSS _ _).1 hts')
+
 /-- Two derivations of the relation of run time of the abstractions for a destructor, whose
 arguments are a closed telescope `Θ` and whose result type `A t̄` computes, at equal arguments `t̄`,
 to a type of fields: the relations of run time of the abstractions that they give agree. -/
-theorem RunAbstractionRel.unique_of_runFieldRel {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+theorem RunAbstractionRel.unique_of_runFieldRel {sig : Signature} {ι : Interpretation} {P : Program}
+    {n : Nat} (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {ps : List Parameter}
     {i : Nat} {ψ : ResultOwnership Grade ps.length} {ς : Grade} {Θ : Telescope 0 [] ps}
     {A : Args 0 [] ps → Term 0 []} {SΘ SΘ' : FieldsRel} {RΘ RΘ' : RunFieldsRel}
@@ -574,19 +596,16 @@ theorem RunAbstractionRel.unique_of_runFieldRel {sig : Signature} {ι : Interpre
     (hR' : ∀ ts : Args 0 [] ps, SΘ' ts.terms ts.terms → ∀ v, Computesι sig ι (A ts) v →
       RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) v (R' ts.terms)) :
     ∀ f H a, RunAbstractionRel P i ψ ς RΘ R f H a ↔ RunAbstractionRel P i ψ ς RΘ' R' f H a :=
-  have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-  fun _ _ _ => RunAbstractionRel.congr (RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain)
-    fun H ts bs hts =>
-      have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-      have ⟨_, hv⟩ := hB ts hts'
-      RunFieldRel.congr hd ihm ih (hR ts hts' _ hv) _ (hR' ts ((hSS _ _).1 hts') _ hv)
+  RunAbstractionRel.unique_of_agree hd ihm ih hΘ hRΘ hΘ' hRΘ' fun ts hts hts' =>
+    have ⟨_, hv⟩ := hB ts hts
+    RunFieldRel.congr hd ihm ih (hR ts hts _ hv) _ (hR' ts hts' _ hv)
 
 /-- Two derivations of the relation of run time of the abstractions for a destructor, whose
 arguments are a closed telescope `Θ` and whose result type `A t̄` is, at equal arguments `t̄`, a type
 of the graph of run time of the nestings without position: the relations of run time of the
 abstractions that they give agree. -/
-theorem RunAbstractionRel.unique_of_runNestRel {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
-    (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
+theorem RunAbstractionRel.unique_of_runNestRel {sig : Signature} {ι : Interpretation} {P : Program}
+    {n : Nat} (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P)) {ps : List Parameter}
     {i : Nat} {ψ : ResultOwnership Grade ps.length} {ς : Grade} {Θ : Telescope 0 [] ps}
     {A : Args 0 [] ps → Term 0 []} {SΘ SΘ' : FieldsRel} {RΘ RΘ' : RunFieldsRel}
@@ -600,11 +619,8 @@ theorem RunAbstractionRel.unique_of_runNestRel {sig : Signature} {ι : Interpret
     (hR' : ∀ ts : Args 0 [] ps, SΘ' ts.terms ts.terms →
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain (A ts) (R' ts.terms)) :
     ∀ f H a, RunAbstractionRel P i ψ ς RΘ R f H a ↔ RunAbstractionRel P i ψ ς RΘ' R' f H a :=
-  have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-  fun _ _ _ => RunAbstractionRel.congr (RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain)
-    fun H ts bs hts =>
-      have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-      RunNestRel.unique hd ihm ih (hR ts hts') _ (hR' ts ((hSS _ _).1 hts'))
+  RunAbstractionRel.unique_of_agree hd ihm ih hΘ hRΘ hΘ' hRΘ' fun ts hts hts' =>
+    RunNestRel.unique hd ihm ih (hR ts hts) _ (hR' ts hts')
 
 /-- Destructors read at nestings have a unique relation of run time of the observations by them, at
 given nestings of their variables. -/

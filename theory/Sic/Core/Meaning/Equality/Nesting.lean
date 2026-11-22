@@ -259,29 +259,20 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
       hBresp
     cases h' with
     | cons hΘ' F' hB' hF' _ _ hG' _ _ =>
-      have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have hts' := (hSS _ _).1 hts
+      have hEE := AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
         have ⟨_, hv⟩ := hB' ts hts'
         NestRel.agree hd ih hinv (hF ts hts) .plain _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
       exact ObsRel.cons_congr hEp hEE fun f hf =>
         NestDesRel.agree hd ih hinv (hG f hf) (Nesting.lift_rel₃ hν) _ _ (hG' f ((hEE f f).1 hf))
     | recursive hrs' => cases hrs'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) _ hΘ F hF _ _ hG, hν, _, _, h' => by
-    have hSΘp := TelRel.isPer hd ih (fun _ => .plain) hΘ
     cases h' with
     | cons hΘ' F' hB' hF' hBresp' _ hG' _ _ =>
-      have hSS := TelRel.unique hd ih hΘ _ _ hΘ'
       have hSΘp' := TelRel.isPer hd ih (fun _ => .plain) hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have hts' := (hSS _ _).1 hts
+      have hEE := AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
         have ⟨_, hv⟩ := hB' ts hts'
         NestRel.agree hd ih hinv (hF ts hts) (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _ _
           (.plain (sT := .type) hv (hF' ts hts' _ hv))
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
       have hEp' := AbstractionRel.isPer hSΘp'
         (fun ts hts => have ⟨_, hv⟩ := hB' ts hts; FieldRel.isPer hd ih (hF' ts hts _ hv)) hBresp'
       have hGG : ∀ f, AbstractionRel _ F' f f → ∀ o₁ o₂, _ ↔ _ := fun f hf =>
