@@ -11,7 +11,8 @@ signature, and the signature that a well-formed signature extends is well formed
 of a well-formed signature are distinct.
 The proof is by the induction on the derivations, `Derivations.induction`, through a premise that is
 a judgment in the same signature, down to the rule `(ctx_ε)`, whose premise is `⊢ Σ`, with the
-fields of the record as its motives.
+fields of the records as its motives; a judgment in a context also holds in a well-formed context,
+by the same induction, whose motives carry both for the judgments in a context.
 
 ADE prove the well-formedness of the contexts of their judgments, for contexts of definitions.
 -/
@@ -30,7 +31,7 @@ Every judgment holds in a well-formed signature, and the signature that a well-f
 extends is well formed: each rule has a premise that is a judgment in the same signature, down to the
 rule `(ctx_ε)`, whose premise is `⊢ Σ`.
 The proof is by the induction on the derivations, through such a premise, with the fields of the
-record as its motives.
+records as its motives, which also gives the well-formedness of the contexts.
 -/
 
 /-- An instance of `j` sort variables and `g` grade variables, which exists whatever `j` and `g`. -/
@@ -122,168 +123,6 @@ structure Presuppositions : Prop where
   RFC: `\mathsf{presup}_\Sigma.e` -/
   tail : ∀ {e : Entry} {sig : Signature}, WfSig (e :: sig) → WfSig sig
 
--- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
--- the judgments in a context of definitions.
-/-- The judgments hold in well-formed signatures.
-RFC: `\mathsf{presup}_\Sigma.\mathsf{def}`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{decl}`
-RFC: `\mathsf{presup}_\Sigma.\Gamma`
-RFC: `\mathsf{presup}_\Sigma.A`
-RFC: `\mathsf{presup}_\Sigma.A_\equiv`
-RFC: `\mathsf{presup}_\Sigma.t`
-RFC: `\mathsf{presup}_\Sigma.t_\equiv`
-RFC: `\mathsf{presup}_\Sigma.\bar t`
-RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`
-RFC: `\mathsf{presup}_\Sigma.\bar a`
-RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`
-RFC: `\mathsf{presup}_\Sigma.\Theta`
-RFC: `\mathsf{presup}_\Sigma.\Theta_{\bar\kappa}`
-RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`
-RFC: `\mathsf{presup}_\Sigma.\bar d`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
-RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`
-RFC: `\mathsf{presup}_\Sigma.e` -/
-theorem presuppositions : Presuppositions := by
-  suffices H : Derivations.Conclusion
-      (wfSig := fun l _ => WfSig l.tail)
-      (wfConstantDefinition := fun sig _ _ => WfSig sig)
-      (wfConstantDeclaration := fun sig _ _ => WfSig sig)
-      (wfCtx := fun sig {k Γ} ctx _ => WfSig sig)
-      (wfType := fun sig {k Γ} ctx A _ => WfSig sig)
-      (eqType := fun sig {k Γ} ctx A B _ => WfSig sig)
-      (hasType := fun sig {k Γ} ctx t A _ => WfSig sig)
-      (eqTerm := fun sig {k Γ} ctx t u A _ => WfSig sig)
-      (hasArgs := fun sig {k Γ ps} ctx ts Θ _ => WfSig sig)
-      (eqArgs := fun sig {k Γ ps} ctx ts us Θ _ => WfSig sig)
-      (hasInstanceArgs := fun sig {k Γ Δ} ctx as params _ => WfSig sig)
-      (eqInstanceArgs := fun sig {k Γ Δ} ctx as₁ as₂ params _ => WfSig sig)
-      (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => WfSig sig)
-      (wfTelescopeSorts := fun sig {k Γ ps} ctx Θ κs l _ => WfSig sig)
-      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => WfSig sig)
-      (wfFields := fun sig decl ι {Γ} as ctx {ps} Θ κ _ => WfSig sig)
-      (wfDestructors := fun sig decl ι {Γ ns} ν as ctx ds κ _ => WfSig sig)
-      (wfTypeDeclaration := fun sig decl _ => WfSig sig) from
-    ⟨H.wfConstantDefinition, H.wfConstantDeclaration, H.wfCtx, H.wfType, H.eqType, H.hasType,
-      H.eqTerm, H.hasArgs, H.eqArgs, H.hasInstanceArgs, H.eqInstanceArgs, H.wfTelescope,
-      H.wfTelescopeSorts, H.eqTelescope, H.wfFields, H.wfDestructors, H.wfTypeDeclaration, H.wfSig⟩
-  apply Derivations.induction
-  case wfSig_empty => exact .empty
-  case wfSig_constantDefinition => exact fun h fresh h_ih => h_ih
-  case wfSig_constantDeclaration => exact fun h fresh h_ih => h_ih
-  case wfSig_typeDeclaration => exact fun h hn hL h_ih => h_ih
-  case wfSig_lifting => exact fun h hd hl h_ih => h_ih
-  case wfConstantDefinition_intro => exact fun κ hA ht hA_ih ht_ih => hA_ih (.default _ _)
-  case wfConstantDeclaration_intro => exact fun κ hA hA_ih => hA_ih (.default _ _)
-  case wfCtx_empty => exact fun h h_ih => h
-  case wfCtx_var => exact fun h h_ih => h_ih
-  case wfCtx_secondOrder => exact fun h h_ih => h_ih
-  case wfType_univType => exact fun h h_ih => h_ih
-  case wfType_propType => exact fun h h_ih => h_ih
-  case eqType_refl => exact fun h h_ih => h_ih
-  case eqType_symm => exact fun h h_ih => h_ih
-  case eqType_trans => exact fun h₁ h₂ h₁_ih h₂_ih => h₁_ih
-  case eqType_univType => exact fun h h_ih => h_ih
-  case eqType_propType => exact fun h h_ih => h_ih
-  case hasType_var => exact fun hctx hx hctx_ih => hctx_ih
-  case hasType_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case hasType_const => exact fun hctx h hq hl hp hctx_ih => hctx_ih
-  case hasType_univ => exact fun hctx hctx_ih => hctx_ih
-  case hasType_prop => exact fun hctx hctx_ih => hctx_ih
-  case hasType_inst => exact fun h hq hl hp hadm has has_ih => has_ih
-  case hasType_equality => exact fun hA ht hu hA_ih ht_ih hu_ih => hA_ih
-  case hasType_reflProof => exact fun hA ht hA_ih ht_ih => hA_ih
-  case hasType_transp =>
-    exact fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih =>
-      hA_ih
-  case hasType_propExt => exact fun hA hB ht hu hA_ih hB_ih ht_ih hu_ih => hA_ih
-  case hasType_coind =>
-    exact fun h hq hl hp hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
-        ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih =>
-      has_ih
-  case hasType_ctor => exact fun h hc hq hl hp hadm has _ hts has_ih hts_ih => has_ih
-  case hasType_recursor =>
-    exact fun h hq hl hp hadm has ht hh hC hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih hCt_ih
-        hut_ih =>
-      has_ih
-  case hasType_obs => exact fun h hq hl hp hadm hd has ht hbs has_ih ht_ih hbs_ih => has_ih
-  case hasType_corec =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih
-        hgt_ih =>
-      has_ih
-  case hasType_conv => exact fun ht h ht_ih h_ih => ht_ih
-  case eqTerm_refl => exact fun h h_ih => h_ih
-  case eqTerm_symm => exact fun h h_ih => h_ih
-  case eqTerm_trans => exact fun h₁ h₂ h₁_ih h₂_ih => h₁_ih
-  case eqTerm_conv => exact fun h hA h_ih hA_ih => h_ih
-  case eqTerm_irr => exact fun ht hu hA ht_ih hu_ih hA_ih => ht_ih
-  case eqTerm_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case eqTerm_delta => exact fun hctx h hq hl hp hctx_ih => hctx_ih
-  case eqTerm_const => exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => hctx_ih
-  case eqTerm_univ => exact fun hctx hl hctx_ih => hctx_ih
-  case eqTerm_prop => exact fun hctx hl hctx_ih => hctx_ih
-  case eqTerm_inst => exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => has_ih
-  case eqTerm_equality => exact fun hA ht hu hl hA_ih ht_ih hu_ih => hA_ih
-  case eqTerm_transp => exact fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih => hA_ih
-  case eqTerm_transpSame =>
-    exact fun hA ht₁ ht₂ hC ht hu hCC hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih hCC_ih =>
-      hA_ih
-  case eqTerm_ctor => exact fun h hc hq hl₁ hl₂ hp hadm has hls _ _ hts has_ih hts_ih => has_ih
-  case eqTerm_recursor =>
-    exact fun h hq hl₁ hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes
-        _ _ hRs₁ hRs₂ hut hκ has_ih ht_ih hCt_ih hut_ih =>
-      has_ih
-  case eqTerm_obs => exact fun h hq hl₁ hl₂ hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih => has_ih
-  case eqTerm_corec =>
-    exact fun h hq hl₁ hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂
-        hgs hgt has_ih hss_ih hSt_ih hSe_ih hgt_ih =>
-      has_ih
-  case eqTerm_iota =>
-    exact fun h hc hq hl hp hadm _ has _ hts hi hC hu _ hrs hCl hCs hCt hul hus _ hRs hut hκ has_ih
-        hts_ih hCt_ih hut_ih =>
-      has_ih
-  case eqTerm_etaCtor =>
-    exact fun h hc hq hl hp hadm hr has ht he hi hC hu hCl hCs hCt hul hus _ hRs hut hκ has_ih ht_ih
-        he_ih hCt_ih hut_ih =>
-      has_ih
-  case eqTerm_beta =>
-    exact fun h hq hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih
-        hbs_ih hSt_ih hgt_ih =>
-      has_ih
-  case eqTerm_etaObs =>
-    exact fun h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
-      has_ih
-  case hasArgs_nil => exact fun hctx hctx_ih => hctx_ih
-  case hasArgs_cons => exact fun ht hts ht_ih hts_ih => ht_ih
-  case eqArgs_nil => exact fun hctx hctx_ih => hctx_ih
-  case eqArgs_cons => exact fun ht hts ht_ih hts_ih => ht_ih
-  case hasInstanceArgs_nil => exact fun hctx hctx_ih => hctx_ih
-  case hasInstanceArgs_var => exact fun has ha has_ih ha_ih => has_ih
-  case hasInstanceArgs_secondOrder => exact fun has hB has_ih hB_ih => has_ih
-  case eqInstanceArgs_nil => exact fun hctx hctx_ih => hctx_ih
-  case eqInstanceArgs_var => exact fun has ha has_ih ha_ih => has_ih
-  case eqInstanceArgs_secondOrder => exact fun has hB has_ih hB_ih => has_ih
-  case wfTelescope_nil => exact fun hctx hctx_ih => hctx_ih
-  case wfTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  case wfTelescopeSorts_nil => exact fun hctx hctx_ih => hctx_ih
-  case wfTelescopeSorts_cons => exact fun hA hl hΘ hp hA_ih hΘ_ih => hA_ih
-  case eqTelescope_nil => exact fun hctx hctx_ih => hctx_ih
-  case eqTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  case wfFields_nil => exact fun hctx hctx_ih => hctx_ih
-  case wfFields_cons => exact fun hn hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  case wfFields_recursive => exact fun hD hΘ hp hΘ_ih => hΘ_ih
-  case wfFields_nested => exact fun hn hA₀ hκ hq hpos hpre hΘ hp hA₀_ih hΘ_ih => hΘ_ih
-  case wfDestructors_nil => exact fun hctx hctx_ih => hctx_ih
-  case wfDestructors_cons => exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => hΘ_ih
-  case wfDestructors_nested => exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => hΘ_ih
-  case wfDestructors_recursive => exact fun hD hΘ hp hds hΘ_ih hds_ih => hΘ_ih
-  case wfTypeDeclaration_data =>
-    refine fun hb hadm hΔ hΘ hp hc fresh hΔ_ih hΘ_ih => ?_
-    obtain ⟨_, hadm⟩ := hadm; exact hΔ_ih _ hadm
-  case wfTypeDeclaration_codata =>
-    refine fun hb hadm hΔ hd hp hc fresh hΔ_ih hd_ih => ?_
-    obtain ⟨_, hadm⟩ := hadm; exact hΔ_ih _ hadm
-
 -- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
 /-- Every judgment in a context holds in a well-formed context. -/
 structure ContextPresuppositions : Prop where
@@ -336,35 +175,51 @@ structure ContextPresuppositions : Prop where
     {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
     EqTelescope sig ctx Θ₁ Θ₂ κ → WfCtx sig ctx
 
--- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
-/-- The judgments in a context hold in a well-formed context.
-RFC: `\mathsf{presup}_\Gamma.A`
-RFC: `\mathsf{presup}_\Gamma.A_\equiv`
-RFC: `\mathsf{presup}_\Gamma.t`
-RFC: `\mathsf{presup}_\Gamma.t_\equiv`
-RFC: `\mathsf{presup}_\Gamma.\bar t`
-RFC: `\mathsf{presup}_\Gamma.\bar t_\equiv`
-RFC: `\mathsf{presup}_\Gamma.\bar a`
-RFC: `\mathsf{presup}_\Gamma.\bar a_\equiv`
-RFC: `\mathsf{presup}_\Gamma.\Theta`
-RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}`
-RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
-theorem contextPresuppositions : ContextPresuppositions := by
+/-- The judgments hold in well-formed signatures, and those in a context in well-formed contexts,
+by one induction on the derivations: the judgments in a context carry both, since the rules
+`(ctx_x)` and `(ctx_X)`, the cases `wfCtx_var` and `wfCtx_secondOrder`, give the signature of a
+context from that of the type or of the telescope that extends it, which the well-formedness of
+the context of this type or telescope alone does not give. -/
+theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
   suffices H : Derivations.Conclusion
-      (wfType := fun sig {k Γ} ctx A _ => WfCtx sig ctx)
-      (eqType := fun sig {k Γ} ctx A B _ => WfCtx sig ctx)
-      (hasType := fun sig {k Γ} ctx t A _ => WfCtx sig ctx)
-      (eqTerm := fun sig {k Γ} ctx t u A _ => WfCtx sig ctx)
-      (hasArgs := fun sig {k Γ ps} ctx ts Θ _ => WfCtx sig ctx)
-      (eqArgs := fun sig {k Γ ps} ctx ts us Θ _ => WfCtx sig ctx)
-      (hasInstanceArgs := fun sig {k Γ Δ} ctx as params _ => WfCtx sig ctx)
-      (eqInstanceArgs := fun sig {k Γ Δ} ctx as₁ as₂ params _ => WfCtx sig ctx)
-      (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => WfCtx sig ctx)
-      (wfTelescopeSorts := fun sig {k Γ ps} ctx Θ κs l _ => WfCtx sig ctx)
-      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => WfCtx sig ctx) from
-    ⟨H.wfType, H.eqType, H.hasType, H.eqTerm, H.hasArgs, H.eqArgs, H.hasInstanceArgs,
-      H.eqInstanceArgs, H.wfTelescope, H.wfTelescopeSorts, H.eqTelescope⟩
+      (wfSig := fun l _ => WfSig l.tail)
+      (wfConstantDefinition := fun sig _ _ => WfSig sig)
+      (wfConstantDeclaration := fun sig _ _ => WfSig sig)
+      (wfCtx := fun sig {k Γ} ctx _ => WfSig sig)
+      (wfType := fun sig {k Γ} ctx A _ => WfCtx sig ctx ∧ WfSig sig)
+      (eqType := fun sig {k Γ} ctx A B _ => WfCtx sig ctx ∧ WfSig sig)
+      (hasType := fun sig {k Γ} ctx t A _ => WfCtx sig ctx ∧ WfSig sig)
+      (eqTerm := fun sig {k Γ} ctx t u A _ => WfCtx sig ctx ∧ WfSig sig)
+      (hasArgs := fun sig {k Γ ps} ctx ts Θ _ => WfCtx sig ctx ∧ WfSig sig)
+      (eqArgs := fun sig {k Γ ps} ctx ts us Θ _ => WfCtx sig ctx ∧ WfSig sig)
+      (hasInstanceArgs := fun sig {k Γ Δ} ctx as params _ => WfCtx sig ctx ∧ WfSig sig)
+      (eqInstanceArgs := fun sig {k Γ Δ} ctx as₁ as₂ params _ => WfCtx sig ctx ∧ WfSig sig)
+      (wfTelescope := fun sig {k Γ ps} ctx Θ κ _ => WfCtx sig ctx ∧ WfSig sig)
+      (wfTelescopeSorts := fun sig {k Γ ps} ctx Θ κs l _ => WfCtx sig ctx ∧ WfSig sig)
+      (eqTelescope := fun sig {k Γ ps} ctx Θ₁ Θ₂ κ _ => WfCtx sig ctx ∧ WfSig sig)
+      (wfFields := fun sig decl ι {Γ} as ctx {ps} Θ κ _ => WfSig sig)
+      (wfDestructors := fun sig decl ι {Γ ns} ν as ctx ds κ _ => WfSig sig)
+      (wfTypeDeclaration := fun sig decl _ => WfSig sig) from
+    ⟨⟨H.wfConstantDefinition, H.wfConstantDeclaration, H.wfCtx, (H.wfType · |>.2),
+      (H.eqType · |>.2), (H.hasType · |>.2), (H.eqTerm · |>.2), (H.hasArgs · |>.2),
+      (H.eqArgs · |>.2), (H.hasInstanceArgs · |>.2), (H.eqInstanceArgs · |>.2),
+      (H.wfTelescope · |>.2), (H.wfTelescopeSorts · |>.2), (H.eqTelescope · |>.2), H.wfFields, H.wfDestructors,
+      H.wfTypeDeclaration, H.wfSig⟩,
+     ⟨(H.wfType · |>.1), (H.eqType · |>.1), (H.hasType · |>.1), (H.eqTerm · |>.1),
+      (H.hasArgs · |>.1), (H.eqArgs · |>.1), (H.hasInstanceArgs · |>.1),
+      (H.eqInstanceArgs · |>.1), (H.wfTelescope · |>.1), (H.wfTelescopeSorts · |>.1),
+      (H.eqTelescope · |>.1)⟩⟩
   apply Derivations.induction
+  case wfSig_empty => exact .empty
+  case wfSig_constantDefinition => exact fun h fresh h_ih => h_ih
+  case wfSig_constantDeclaration => exact fun h fresh h_ih => h_ih
+  case wfSig_typeDeclaration => exact fun h hn hL h_ih => h_ih
+  case wfSig_lifting => exact fun h hd hl h_ih => h_ih
+  case wfConstantDefinition_intro => exact fun κ hA ht hA_ih ht_ih => (hA_ih (.default _ _)).2
+  case wfConstantDeclaration_intro => exact fun κ hA hA_ih => (hA_ih (.default _ _)).2
+  case wfCtx_empty => exact fun h h_ih => h
+  case wfCtx_var => exact fun h h_ih => h_ih.2
+  case wfCtx_secondOrder => exact fun h h_ih => h_ih.2
   case wfType_univType => exact fun h h_ih => h_ih
   case wfType_propType => exact fun h h_ih => h_ih
   case eqType_refl => exact fun h h_ih => h_ih
@@ -372,11 +227,11 @@ theorem contextPresuppositions : ContextPresuppositions := by
   case eqType_trans => exact fun h₁ h₂ h₁_ih h₂_ih => h₁_ih
   case eqType_univType => exact fun h h_ih => h_ih
   case eqType_propType => exact fun h h_ih => h_ih
-  case hasType_var => exact fun hctx hx hctx_ih => hctx
+  case hasType_var => exact fun hctx hx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case hasType_const => exact fun hctx h hq hl hp hctx_ih => hctx
-  case hasType_univ => exact fun hctx hctx_ih => hctx
-  case hasType_prop => exact fun hctx hctx_ih => hctx
+  case hasType_const => exact fun hctx h hq hl hp hctx_ih => ⟨hctx, hctx_ih⟩
+  case hasType_univ => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
+  case hasType_prop => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_inst => exact fun h hq hl hp hadm has has_ih => has_ih
   case hasType_equality => exact fun hA ht hu hA_ih ht_ih hu_ih => hA_ih
   case hasType_reflProof => exact fun hA ht hA_ih ht_ih => hA_ih
@@ -405,10 +260,10 @@ theorem contextPresuppositions : ContextPresuppositions := by
   case eqTerm_conv => exact fun h hA h_ih hA_ih => h_ih
   case eqTerm_irr => exact fun ht hu hA ht_ih hu_ih hA_ih => ht_ih
   case eqTerm_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case eqTerm_delta => exact fun hctx h hq hl hp hctx_ih => hctx
-  case eqTerm_const => exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => hctx
-  case eqTerm_univ => exact fun hctx hl hctx_ih => hctx
-  case eqTerm_prop => exact fun hctx hl hctx_ih => hctx
+  case eqTerm_delta => exact fun hctx h hq hl hp hctx_ih => ⟨hctx, hctx_ih⟩
+  case eqTerm_const => exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => ⟨hctx, hctx_ih⟩
+  case eqTerm_univ => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
+  case eqTerm_prop => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_inst => exact fun h hq hl₁ hl₂ hp hadm has hls has_ih => has_ih
   case eqTerm_equality => exact fun hA ht hu hl hA_ih ht_ih hu_ih => hA_ih
   case eqTerm_transp => exact fun hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih => hA_ih
@@ -440,23 +295,75 @@ theorem contextPresuppositions : ContextPresuppositions := by
   case eqTerm_etaObs =>
     exact fun h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih hobs_ih =>
       has_ih
-  case hasArgs_nil => exact fun hctx hctx_ih => hctx
+  case hasArgs_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasArgs_cons => exact fun ht hts ht_ih hts_ih => ht_ih
-  case eqArgs_nil => exact fun hctx hctx_ih => hctx
+  case eqArgs_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case eqArgs_cons => exact fun ht hts ht_ih hts_ih => ht_ih
-  case hasInstanceArgs_nil => exact fun hctx hctx_ih => hctx
+  case hasInstanceArgs_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasInstanceArgs_var => exact fun has ha has_ih ha_ih => has_ih
   case hasInstanceArgs_secondOrder => exact fun has hB has_ih hB_ih => has_ih
-  case eqInstanceArgs_nil => exact fun hctx hctx_ih => hctx
+  case eqInstanceArgs_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case eqInstanceArgs_var => exact fun has ha has_ih ha_ih => has_ih
   case eqInstanceArgs_secondOrder => exact fun has hB has_ih hB_ih => has_ih
-  case wfTelescope_nil => exact fun hctx hctx_ih => hctx
+  case wfTelescope_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case wfTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  case wfTelescopeSorts_nil => exact fun hctx hctx_ih => hctx
+  case wfTelescopeSorts_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case wfTelescopeSorts_cons => exact fun hA hl hΘ hp hA_ih hΘ_ih => hA_ih
-  case eqTelescope_nil => exact fun hctx hctx_ih => hctx
+  case eqTelescope_nil => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
-  all_goals intros; trivial
+  case wfFields_nil => exact fun hctx hctx_ih => hctx_ih
+  case wfFields_cons => exact fun hn hA hκ hΘ hp hA_ih hΘ_ih => hA_ih.2
+  case wfFields_recursive => exact fun hD hΘ hp hΘ_ih => hΘ_ih
+  case wfFields_nested => exact fun hn hA₀ hκ hq hpos hpre hΘ hp hA₀_ih hΘ_ih => hΘ_ih
+  case wfDestructors_nil => exact fun hctx hctx_ih => hctx_ih
+  case wfDestructors_cons => exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => hΘ_ih.2
+  case wfDestructors_nested => exact fun hn hν hΘ hB hκ hp hds hΘ_ih hB_ih hds_ih => hΘ_ih.2
+  case wfDestructors_recursive => exact fun hD hΘ hp hds hΘ_ih hds_ih => hΘ_ih.2
+  case wfTypeDeclaration_data =>
+    refine fun hb hadm hΔ hΘ hp hc fresh hΔ_ih hΘ_ih => ?_
+    obtain ⟨_, hadm⟩ := hadm; exact hΔ_ih _ hadm
+  case wfTypeDeclaration_codata =>
+    refine fun hb hadm hΔ hd hp hc fresh hΔ_ih hd_ih => ?_
+    obtain ⟨_, hadm⟩ := hadm; exact hΔ_ih _ hadm
+
+-- ADE: `wf` and `defn-wf`, in `Definition/Typed/Properties/Well-formed.agda`, for the contexts and
+-- the judgments in a context of definitions.
+/-- The judgments hold in well-formed signatures.
+RFC: `\mathsf{presup}_\Sigma.\mathsf{def}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{decl}`
+RFC: `\mathsf{presup}_\Sigma.\Gamma`
+RFC: `\mathsf{presup}_\Sigma.A`
+RFC: `\mathsf{presup}_\Sigma.A_\equiv`
+RFC: `\mathsf{presup}_\Sigma.t`
+RFC: `\mathsf{presup}_\Sigma.t_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\bar t`
+RFC: `\mathsf{presup}_\Sigma.\bar t_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\bar a`
+RFC: `\mathsf{presup}_\Sigma.\bar a_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\Theta`
+RFC: `\mathsf{presup}_\Sigma.\Theta_{\bar\kappa}`
+RFC: `\mathsf{presup}_\Sigma.\Theta_\equiv`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{fields}`
+RFC: `\mathsf{presup}_\Sigma.\bar d`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{data}`
+RFC: `\mathsf{presup}_\Sigma.\mathsf{codata}`
+RFC: `\mathsf{presup}_\Sigma.e` -/
+theorem presuppositions : Presuppositions := jointPresuppositions.1
+
+-- ADE: `wfTerm`, `wfEqTerm` and their kin, in `Definition/Typed/Properties/Well-formed.agda`.
+/-- The judgments in a context hold in a well-formed context.
+RFC: `\mathsf{presup}_\Gamma.A`
+RFC: `\mathsf{presup}_\Gamma.A_\equiv`
+RFC: `\mathsf{presup}_\Gamma.t`
+RFC: `\mathsf{presup}_\Gamma.t_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\bar t`
+RFC: `\mathsf{presup}_\Gamma.\bar t_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\bar a`
+RFC: `\mathsf{presup}_\Gamma.\bar a_\equiv`
+RFC: `\mathsf{presup}_\Gamma.\Theta`
+RFC: `\mathsf{presup}_\Gamma.\Theta_{\bar\kappa}`
+RFC: `\mathsf{presup}_\Gamma.\Theta_\equiv` -/
+theorem contextPresuppositions : ContextPresuppositions := jointPresuppositions.2
 
 /-- A well-formed type declaration introduces names of types that no entry of the signature does. -/
 theorem WfTypeDeclaration.fresh {sig : Signature} {decl : TypeDeclaration} :
