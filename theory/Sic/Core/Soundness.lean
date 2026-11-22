@@ -3,6 +3,7 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Nesting
+public import Sic.Core.Soundness.Recursors.Premises
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Results.Extension
 import Sic.Core.Results.Substitution
@@ -195,6 +196,51 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
     erw [Context.substLevels_append (fun i => (.ofNat (ρ i) : Level 0)) ctx S₀] at hb
     rw [List.getFin_map]
     exact hb
+
+/-- The premises of `(rec)` on the motives and on the branches, each motive meaningful at the levels
+without variables `ρ`, are meaningful at these levels: those of the motives and of the branches at
+these levels. -/
+theorem ValidRecursorPremises.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+    {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
+    {ls : List (Level k)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
+    {as : InstanceArgs k Γ decl.scope} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k}
+    (ρ : Fin k → Nat)
+    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
+    (hCt : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+      ValidTermΓ sig ι ((ctx.var (.inst T'.name qs ls ps as)).atLevels ρ) (C'.atLevels ρ)
+        ((Term.sort κ).atLevels ρ))
+    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+        (con.nestResultParams hqp.inst decl.names).length, u⟩) :
+    ValidRecursorPremises sig ι (ctx.atLevels ρ) decl qs (ls.map (Level.atLevels ρ)) ps hqp
+      (as.atLevels ρ) (Cs.atLevels ρ) (us.atLevels ρ) (κ.atLevels ρ) where
+  motives j T' hj := let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
+  motives_valid j T' C' hj hC' := by
+    obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+    have hCv := hCt j T' C₀ hj hC₀
+    simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
+    exact hCv
+  branches i j T' con hi := let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩
+
+/-- The types of the recursive results of a constructor at the motives of a recursor, in a
+signature whose type declarations another signature has, are those of the other signature at the
+levels `ls'`. -/
+theorem Constructor.ResultTypes.substLevels_ofTypeDeclarations {sig sig' : Signature}
+    {v : Lifting.Variables} {j g k' k k'' : Nat} {Δ' Δ : Scope} {c : Constructor j g k' Δ}
+    {I : Instance j g} {names : List Name} {qs : List Quality} {ls : List (Level k)}
+    {gs : List Grade} {as : InstanceArgs k Δ' Δ} {κ : Universe k} {Cs : Motives k Δ'}
+    {ps' : List Parameter} {hl : ls.length = k'} {χ : Grade}
+    {R : Telescope k (Δ'.extend (c.params I).length) ps'} {πs : List Grade}
+    (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig')
+    (ls' : Fin k → Level k'')
+    (h : Constructor.ResultTypes sig v c I names (ls.getFin hl) as
+      (Lifting.ofMotives names qs ls gs as κ.level χ Cs) R πs) :
+    Constructor.ResultTypes sig' v c I names
+      ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
+      (Lifting.ofMotives names qs (ls.map (Level.subst ls')) gs (as.substLevels ls')
+        (κ.substLevels ls').level χ (Cs.substLevels ls'))
+      (R.substLevels ls') πs :=
+  Terms.ResultTypes.ofTypeDeclarations hs (Constructor.ResultTypes.substLevels_ofMotives _ h)
 
 /-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
 variables, are meaningful at the levels without variables `ρ`: those of `(corec_≡)` at the same
@@ -513,23 +559,13 @@ theorem soundnessIn : SoundnessIn := by
       exact ValidEqTermΓ.recursor hι hord h hqp hl' hl' hadm has'
         ht' hh
         (Motives.get_substLevels_of _ hC)
-        { motives := fun j T' hj =>
-            let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
-          motives_valid := fun j T' C' hj hC' => by
-            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-            have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
-            simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels]
-              at hCv
-            exact hCv
-          branches := fun i j T' con hi =>
-            let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
+        (ValidRecursorPremises.atLevels ρ hCs
+          (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hdis hord hι ρ) hus)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -700,24 +736,15 @@ theorem soundnessIn : SoundnessIn := by
       exact ValidEqTermΓ.recursor hι hord h hqp hl₁' hl₂' hadm
         has' ht' hh
         (Motives.get_substLevels_of _ hC)
-        { motives := fun j T' hj =>
-            let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
-          motives_valid := fun j T' C' hj hC' => by
-            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-            obtain ⟨C₂, hC₂⟩ := hCs₂ j T' hj
-            have hCv := hCt_ih j T' C₀ C₂ hj hC₀ hC₂ hdis hord hι ρ
-            simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels]
-              at hCv
-            exact hCv.trans hCv.symm
-          branches := fun i j T' con hi =>
-            let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
+        (ValidRecursorPremises.atLevels ρ hCs₁ (fun j T' C' hj hC' =>
+          let ⟨_, hC₂⟩ := hCs₂ j T' hj
+          have hCv := hCt_ih j T' C' _ hj hC' hC₂ hdis hord hι ρ
+          hCv.trans hCv.symm) hus₁)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => (hRs₁ i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
         (fun i j T' con hi => (hRs₂ i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -791,18 +818,10 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.substLevels, ← Args.terms_substLevels]
       exact ValidEqTermΓ.iota hι hord h hc hqp hl' hadm has'
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
-        { motives := fun j T' hj =>
-            let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
-          motives_valid := fun j T' C' hj hC' => by
-            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-            have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
-            simp only [Context.atLevels, Term.atLevels, Term.substLevels] at hCv
-            exact hCv
-          branches := fun i j T' con hi =>
-            let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
+        (ValidRecursorPremises.atLevels ρ hCs
+          (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hdis hord hι ρ) hus)
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h))
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
         (fun i j T' con C' u hi hC' hu => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu

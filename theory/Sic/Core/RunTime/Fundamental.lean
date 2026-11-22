@@ -6,9 +6,7 @@ public import Sic.Core.RunTime.Relation.Recursors.Results
 public import Sic.Core.Typing
 public import Sic.Core.Usage
 import Sic.Core.Meaning.Judgments
-import Sic.Core.Results.Extension
 import Sic.Core.Results.Functionality
-import Sic.Core.Results.Substitution
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
 import Sic.Core.RunTime.Relation.Recursors
@@ -285,16 +283,8 @@ theorem fundamentalIn : FundamentalIn := by
           (Cs.atLevels ρ)
           (us.atLevels ρ)
           (κ.atLevels ρ) :=
-        { motives := fun j T' hj =>
-            let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
-          motives_valid := fun j T' C' hj hC' => by
-            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-            have hCv := soundnessIn.hasType hw.distinct hw.liftsInOrder hι (hCt j T' C₀ hj hC₀) ρ
-            simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels]
-              at hCv
-            exact hCv
-          branches := fun i j T' con hi =>
-            let ⟨_, hU⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hU⟩ }
+        ValidRecursorPremises.atLevels ρ hCs (fun j T' C' hj hC' =>
+          soundnessIn.hasType hw.distinct hw.liftsInOrder hι (hCt j T' C' hj hC') ρ) hus
       have hRs' : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
             ((ls.map (Level.atLevels ρ)).getFin hl')
@@ -306,8 +296,7 @@ theorem fundamentalIn : FundamentalIn := by
               (Cs.atLevels ρ))
             ((Rs con).atLevels ρ) πs :=
         fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h)
+          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h
       -- The factors of the results that the usage reads are those of the typing.
       have hRsπ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
@@ -324,8 +313,8 @@ theorem fundamentalIn : FundamentalIn := by
           obtain ⟨R, h₂⟩ := hRU i j T' con hi
           obtain ⟨-, hπ⟩ := Terms.ResultTypes.unique hdT h₁ h₂
           subst hπ
-          exact Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
-            (Constructor.ResultTypes.substLevels_ofMotives _ h₁)
+          exact Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1)
+            _ h₁
       have hut' : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
           (Cs.atLevels ρ).get j = some ⟨0, C'⟩ →
           (us.atLevels ρ).get i =
