@@ -117,16 +117,11 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       Nat.forall_lt (levelRel_run_unique hd) _
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
-    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have ⟨_, hv⟩ := hB ts hts
-        FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hEE := AbstractionRel.unique_of_fieldRel hd ihm hΘ hB hF hΘ' hF'
       have hRΘΘ := RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih hRΘ _ _ hRΘ'
         fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
@@ -321,16 +316,12 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       Nat.forall_lt (levelRel_run_unique hd) _
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
-    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
     | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' hF'
       have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
         (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>

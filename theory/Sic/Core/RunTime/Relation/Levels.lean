@@ -293,10 +293,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
     | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        NestRel.unique hd ihm (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' hF'
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
@@ -379,11 +376,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have ⟨_, hv⟩ := hB ts hts
-        FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hEE := AbstractionRel.unique_of_fieldRel hd ihm hΘ hB hF hΘ' hF'
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>

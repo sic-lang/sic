@@ -591,11 +591,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
     | cons _ hΘ' F' hF' _ _ hG' hresp' =>
-      have hSS := TelRel.unique hd hp hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        NestRel.unique hd hp (hF ts hts) _ _ (hF' ts ((hSS _ _).1 hts))
-      have hEE := AbstractionRel.congr hSp hSS hFF
+      have hEE := AbstractionRel.unique_of_nestRel hd hp hΘ hF hΘ' hF'
       exact ⟨(hEE _ _).1 (hE _ _ _ _ h₁ (e₁ d ps) (e₂ d ps)),
         (hresp' _ _ ((hEE _ _).1 hff') _ _).1
           (NestDesRel.rel_levelEquiv hd ih (hG _ hff) _ _ _ (hG' _ ((hEE _ _).1 hff))
@@ -650,12 +646,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     have hff' := hE _ _ _ _ hff (Term.LevelEquiv.refl _) (e₁ d ps)
     cases h' with
     | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>
-      have hSS := TelRel.unique hd hp hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have ⟨_, hv⟩ := hB ts hts
-        FieldRel.unique hd hp (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
-      have hEE := AbstractionRel.congr hSp hSS hFF
+      have hEE := AbstractionRel.unique_of_fieldRel hd hp hΘ hB hF hΘ' hF'
       exact ⟨(hEE _ _).1 (hE _ _ _ _ h₁ (e₁ d ps) (e₂ d ps)),
         (hresp' _ _ ((hEE _ _).1 hff') _ _).1
           (DesRel.rel_levelEquiv hd ih (hG _ hff) _ _ _ (hG' _ ((hEE _ _).1 hff))

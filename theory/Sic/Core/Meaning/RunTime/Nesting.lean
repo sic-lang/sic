@@ -244,17 +244,13 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
   | .nil, _, _, h' => by cases h'; exact fun _ _ _ _ => trivial
   | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG _, hν, _,
       h' => by
-    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' hB' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
       have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-      have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-          F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-        have hts' := (hSS _ _).1 hts
-        have ⟨_, hv⟩ := hB' ts hts'
-        NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
-      have hEE := AbstractionRel.congr hSΘp hSS hFF
+      have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' fun ts hts =>
+        have ⟨_, hv⟩ := hB' ts hts
+        .plain (sT := .type) hv (hF' ts hts _ hv)
       have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
         (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
@@ -403,26 +399,18 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
   | .nil, _, _, h', _, _, _ => by cases h'; exact fun _ _ _ _ _ => trivial
   | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi _ hΘ hRΘ F R hF hR _ hG _, hν, _,
       h', _, _, hE => by
-    have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' hB' hF' hR' _ hG' _ =>
       cases hE with
       | cons hΘE FE hBE hFE _ _ hGE _ _ =>
         obtain rfl := Option.some.inj (hi.symm.trans hi')
         have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-        have hFF : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-            F ts.terms t u ↔ F' ts.terms t u := fun ts hts =>
-          have hts' := (hSS _ _).1 hts
-          have ⟨_, hv⟩ := hB' ts hts'
-          NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
-        have hEE := AbstractionRel.congr hSΘp hSS hFF
-        have hSE := TelRel.unique hd ihm hΘ _ _ hΘE
-        have hFE : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms → ∀ t u,
-            F ts.terms t u ↔ FE ts.terms t u := fun ts hts =>
-          have hts' := (hSE _ _).1 hts
-          have ⟨_, hv⟩ := hBE ts hts'
-          NestRel.unique hd ihm (hF ts hts) _ _ (.plain (sT := .type) hv (hFE ts hts' _ hv))
-        have hEEE := AbstractionRel.congr hSΘp hSE hFE
+        have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' fun ts hts =>
+          have ⟨_, hv⟩ := hB' ts hts
+          .plain (sT := .type) hv (hF' ts hts _ hv)
+        have hEEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘE fun ts hts =>
+          have ⟨_, hv⟩ := hBE ts hts
+          .plain (sT := .type) hv (hFE ts hts _ hv)
         have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
           (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
@@ -444,11 +432,7 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
       | cons hΘE FE hBE hFE _ _ hGE _ _ =>
         obtain rfl := Option.some.inj (hi.symm.trans hi')
         have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
-        have hSΘEp := TelRel.isPer hd ihm (fun _ => .plain) hΘE
-        have hSSE := TelRel.unique hd ihm hΘE _ _ hΘ'
-        have hEE := AbstractionRel.congr hSΘEp hSSE fun ts hts =>
-          have ⟨_, hv⟩ := hBE ts hts
-          FieldRel.unique hd ihm (hFE ts hts _ hv) _ _ (hF' ts ((hSSE _ _).1 hts) _ hv)
+        have hEE := AbstractionRel.unique_of_fieldRel hd ihm hΘE hBE hFE hΘ' hF'
         have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
         exact fun H o a ⟨e₁, e₂⟩ ⟨h₁, h₂⟩ =>
           have e₁' := (hEE _ _).1 e₁
