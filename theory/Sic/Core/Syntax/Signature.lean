@@ -347,6 +347,17 @@ theorem TypeDeclaration.mem_codataCases_of {decl : TypeDeclaration} {j : Nat}
     (j, T, d) ∈ decl.codataCases :=
   Nat.zero_add j ▸ TypeDeclaration.mem_casesFrom_of hj hd
 
+/-- A constructor of a type of a block is in a case of the block, with the position of its type. -/
+theorem TypeDeclaration.exists_cases {decl : TypeDeclaration}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (hcon : con ∈ T.constructors) :
+    ∃ i j : Nat, decl.cases[i]? = some (j, T, con) ∧ decl.dataTypes[j]? = some T := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
+  have hmem := TypeDeclaration.mem_cases_of hj hcon
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
+  exact ⟨i, j, hi, hj⟩
+
 /-- Each constructor of a data type that an entry of the signature declares has a case. -/
 theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}

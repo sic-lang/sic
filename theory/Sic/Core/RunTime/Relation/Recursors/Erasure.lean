@@ -44,17 +44,6 @@ theorem Signature.Distinct.cases_of_constructorCase (hd : sig.Distinct) {decl : 
     (show (T'.name, con'.name) = (T.name, con.name) by rw [hn.1, hn.2])
   exact ⟨j, he ▸ hx⟩
 
-/-- A constructor of a type of a block is in a case of the block, with the position of its type. -/
-theorem TypeDeclaration.exists_cases {decl : TypeDeclaration}
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
-    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
-    (hcon : con ∈ T.constructors) :
-    ∃ i j : Nat, decl.cases[i]? = some (j, T, con) ∧ decl.dataTypes[j]? = some T := by
-  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
-  have hmem := TypeDeclaration.mem_cases_of hj hcon
-  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
-  exact ⟨i, j, hi, hj⟩
-
 /-- In a signature whose names are distinct, the case of a constructor of a block is its position in
 the cases of the block. -/
 theorem Entry.constructorCase_of_cases {decl : TypeDeclaration}

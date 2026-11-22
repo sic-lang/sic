@@ -229,13 +229,6 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT'
       rw [hidx j T' hj]
       exact hCs j T' hj
-  have hcase : ∀ T' ∈ decl.dataTypes, ∀ con ∈ T'.constructors,
-      ∃ i j : Nat, decl.cases[i]? = some (j, T', con) ∧ decl.dataTypes[j]? = some T' := by
-    intro T' hT' con hcon
-    obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT'
-    have hmem := TypeDeclaration.mem_cases_of hj hcon
-    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
-    exact ⟨i, j, hi, hj⟩
   -- The motive of a type of the block in the motives substituted is its motive, substituted.
   have hK : ∀ τ : Subst 0 [] Γ, ∀ D' ∈ decl.names, ∀ C,
       (Cs₁.subst τ).get (decl.names.idxOf D') = some ⟨0, C⟩ → ∃ j T' C',
@@ -281,7 +274,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
             (.ctor T'.name qs'' ls'' ps'' as'' con.name ts₂.terms) κ (Cs₂.subst τ₂)
             (us₂.subst τ₂)) v₂) := by
     intro τ₁ τ₂ hτ T' hT' con hcon C' hC' ts₁ ts₂ hts n s L hL hLc hN
-    obtain ⟨i, j, hi, hj⟩ := hcase T' hT' con hcon
+    obtain ⟨i, j, hi, hj⟩ := TypeDeclaration.exists_cases hT' hcon
     rw [hidx j T' hj] at hC'
     obtain ⟨u₁, hu₁⟩ := hus₁ i j T' con hi
     obtain ⟨u₂, hu₂⟩ := hus₂ i j T' con hi
@@ -353,7 +346,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
           · exact ⟨fun ⟨v, w, hv, hw, hx⟩ => ⟨v, w, (ha v).1 hv, (hb w).1 hw, hx⟩,
               fun ⟨v, w, hv, hw, hx⟩ => ⟨v, w, (ha v).2 hv, (hb w).2 hw, hx⟩⟩)
         (hnest X T' hT' con hcon _ _ hS)
-      obtain ⟨i, j, hi, hj⟩ := hcase T' hT' con hcon
+      obtain ⟨i, j, hi, hj⟩ := TypeDeclaration.exists_cases hT' hcon
       have hca : ValidEqTerm₀ sig ι (.ctor T'.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms)
           (.ctor T'.name qs₁' ls₁' ps₁' as₁'' con.name ts₁.terms)
           (.inst T'.name qs ls₁ ps (as₁.subst σ₁)) :=
@@ -383,7 +376,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     have htrue : DataType.blockTruth decl.dataTypes S T.name :=
       (HasEq.unique hd hR' (.prop _ _ hP' fun _ _ => .rfl) _ _).1 hrel
     obtain ⟨T₀, hT₀, -, con₀, hcon₀, -⟩ := DataType.blockTruth_inv hmono htrue
-    obtain ⟨i₀, j₀, hi₀, -⟩ := hcase T₀ hT₀ con₀ hcon₀
+    obtain ⟨i₀, j₀, hi₀, -⟩ := TypeDeclaration.exists_cases hT₀ hcon₀
     obtain ⟨s, l⟩ := κ
     have hs' : s = .prop := hκ hs (List.ne_nil_of_mem (List.mem_of_getElem? hi₀))
     subst hs'
@@ -422,7 +415,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       obtain ⟨v₁, v₂, hb, -, -⟩ := hbranch σ₁ σ₁ hσ₁ T' hT' con hcon C' hC' ts₁ ts₁
         (by rw [Constructor.fieldsAt_subst]; exact hts) _ .prop _ hQ
         (fun _ _ _ _ _ _ => Iff.rfl) (hnest B T' hT' con hcon _ _ hfs)
-      obtain ⟨i, j, hi, hj⟩ := hcase T' hT' con hcon
+      obtain ⟨i, j, hi, hj⟩ := TypeDeclaration.exists_cases hT' hcon
       have hCj := hCv j T' C' hj ((hidx j T' hj) ▸ hC')
       have hca : ValidEqTerm₀ sig ι (.ctor T'.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms) a
           (.inst T'.name qs ls₁ ps (as₁.subst σ₁)) :=
