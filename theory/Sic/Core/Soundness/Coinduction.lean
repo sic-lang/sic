@@ -383,7 +383,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) := by
         intro d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ hr
         rw [Term.observation_subst_args, Term.observation_subst_args]
-        have hτL := Telescope.eqSubst_closedValues hl Θ _ hτ
+        have hτL := EqSubst.substLevels_of_atLevels L Θ _ hτ
         obtain ⟨i, hi, hσB, hBx, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
         have hB0 : B.blockName decl.names = none := (hpos.recursionAt_index decl.names).symm.trans hr
         obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
@@ -404,7 +404,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         have hxy : ValidEqTerm₀ sig ι (.obs T'.name qs ls ps a x d ts.terms)
             (.obs T'.name qs ls ps a y d ts.terms) _ := ⟨hox.1, ValidEqTerm₀.equality_eq hE hgv'⟩
         exact (hxy.trans hoy).levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
-          (Term.substLevels_subst_levelEquiv_atLevels L B _)
+          (Term.closedValues_levelEquiv L B _)
       -- The observations of the two terms by each destructor are related: by the equality of its
       -- result if it is not recursive, and otherwise, computed, by the relations, since the branch
       -- makes the relation of the type of the result true at them.
@@ -417,7 +417,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             rw [hD'] at hR
             cases hR
             rw [Term.observation_subst_args, Term.observation_subst_args]
-            have hτL := Telescope.eqSubst_closedValues hl Θ _ hτ
+            have hτL := EqSubst.substLevels_of_atLevels L Θ _ hτ
             obtain ⟨i, hi, hσB, -, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
             have hBD : B.blockName decl.names = some D' :=
               (hpos.recursionAt_index decl.names).symm.trans hD'
@@ -432,7 +432,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             have hty : Term.LevelEquiv ((B.substLevels L).subst (Subst.append
                 (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
                 (.inst T''.name qs ls ps a) := by
-              have hE := Term.substLevels_subst_levelEquiv_atLevels L B (Subst.append
+              have hE := Term.closedValues_levelEquiv L B (Subst.append
                   (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)
               rw [Term.atLevels, e] at hE
               exact hE.trans (decl.blockInstance_atLevels_subst hq hl hp a _)

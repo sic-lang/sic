@@ -72,29 +72,6 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
       exact Level.ofNat_closedValue _) (InstanceArgs.LevelEquiv.refl as)
 
 -- ADE: none.
-/-- A telescope at the numerals of the values of the levels `ls`, substituted by `σ`, is the
-telescope at `ls` substituted by `σ`, up to the levels. -/
-theorem Telescope.closedValues_levelEquiv {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
-    {Ξ : Scope} {ps' : List Parameter} (Θ : Telescope k Ξ ps') (σ : Subst 0 [] Ξ) :
-    Telescope.LevelEquiv
-      ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)
-      ((Θ.substLevels (ls.getFin hl)).subst σ) :=
-  Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-    (Telescope.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) Θ)
-
--- ADE: none.
-/-- Two closed substitutions equal for a telescope at the numerals of the values of the levels
-`ls`, substituted by `σ`, are equal for the telescope at `ls` substituted by `σ`, as the arguments
-of a destructor of a codata type. -/
-theorem Telescope.eqSubst_closedValues {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
-    {Ξ : Scope} {ps' : List Parameter} (Θ : Telescope k Ξ ps') (σ : Subst 0 [] Ξ)
-    {σ₁ σ₂ : Subst 0 [] _} :
-    EqSubst sig ι (Context.empty.append
-        ((Θ.substLevels fun i => Level.ofNat (ls.getFin hl i).closedValue).subst σ)) σ₁ σ₂ →
-      EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst σ)) σ₁ σ₂ :=
-  EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv hl σ))
-
--- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, substituted by the arguments `ā`,
 are its fields at `ls` and `ā`, up to the levels. -/
 theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
@@ -105,7 +82,7 @@ theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
     Telescope.LevelEquiv (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
-  (c.fields _).closedValues_levelEquiv hl as.toSubst
+  ((c.fields _).closedValues_levelEquiv (ls.getFin hl) as.toSubst).symm
 
 -- ADE: none.
 /-- The level of the sort of a type declaration has the same value at the values of the levels
@@ -130,21 +107,9 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
       EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
         σ₁ σ₂ :=
-  ⟨Telescope.eqSubst_closedValues hl _ _,
+  ⟨EqSubst.substLevels_of_atLevels (ls.getFin hl) _ _,
     EqSubst.levelEquiv
       (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as).symm)⟩
-
--- ADE: none.
-/-- Two closed substitutions equal for a context at the levels `ls` without variables are equal for
-it at the values of `ls`, as the meaning of a type declaration reads the arguments of its
-parameters. -/
-theorem EqSubst.atLevels_of_substLevels {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
-    {Γ : Scope} {ctx : Context k Γ} {σ₁ σ₂ : Subst 0 [] Γ}
-    (h : EqSubst sig ι (ctx.substLevels (ls.getFin hl)) σ₁ σ₂) :
-    EqSubst sig ι (ctx.atLevels fun i => (ls.getFin hl i).closedValue) σ₁ σ₂ :=
-  EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
-    h
 
 section
 

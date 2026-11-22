@@ -1270,6 +1270,29 @@ decreasing_by
     | (simp only [Context.size]; omega)
     | (rw [Context.size_append]; simp only [Context.size]; omega)
 
+-- ADE: none.
+/-- Two closed substitutions equal for a telescope at the values of the levels `L`, substituted by
+`σ`, are equal for the telescope at `L` substituted by `σ`, as the arguments of a destructor of a
+codata type. -/
+theorem EqSubst.substLevels_of_atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+    (L : Fin k → Level 0) {Ξ : Scope} {ps : List Parameter} (Θ : Telescope k Ξ ps)
+    (σ : Subst 0 [] Ξ) {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append ((Θ.atLevels fun i => (L i).closedValue).subst σ)) σ₁ σ₂ →
+      EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst σ)) σ₁ σ₂ :=
+  EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L σ).symm)
+
+-- ADE: none.
+/-- Two closed substitutions equal for a context at the levels `ls` without variables are equal for
+it at the values of `ls`, as the meaning of a type declaration reads the arguments of its
+parameters. -/
+theorem EqSubst.atLevels_of_substLevels {sig : Signature} {ι : Interpretation} {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
+    {Γ : Scope} {ctx : Context k Γ} {σ₁ σ₂ : Subst 0 [] Γ}
+    (h : EqSubst sig ι (ctx.substLevels (ls.getFin hl)) σ₁ σ₂) :
+    EqSubst sig ι (ctx.atLevels fun i => (ls.getFin hl i).closedValue) σ₁ σ₂ :=
+  EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
+    h
+
 /-- Two closed telescopes equal in a sort stay so when their levels, and that of the sort, change for
 equal ones, which the meaning of the closed judgments does not tell apart. -/
 theorem ValidEqTelescope₀.levelEquiv {sig : Signature} {ι : Interpretation} {κ κ' : Universe 0}

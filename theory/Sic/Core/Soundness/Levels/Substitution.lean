@@ -581,6 +581,26 @@ theorem DestructorBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ�
 
 end
 
+-- ADE: none.
+/-- A term at levels `L` without variables, substituted by `σ`, is the term at the values of `L`
+substituted by `σ`, up to its levels. -/
+theorem Term.closedValues_levelEquiv {k : Nat} {Γ Δ : Scope} (L : Fin k → Level 0)
+    (t : Term k Δ) (σ : Subst 0 Γ Δ) :
+    Term.LevelEquiv ((t.substLevels L).subst σ)
+      ((t.atLevels fun i => (L i).closedValue).subst σ) :=
+  Term.LevelEquiv.subst (Subst.LevelEquiv.refl _) (Term.substLevels_levelEquiv_atLevels L t)
+
+-- ADE: none.
+/-- A telescope at levels `L` without variables, substituted by `σ`, is the telescope at the values
+of `L` substituted by `σ`, up to its levels. -/
+theorem Telescope.closedValues_levelEquiv {k : Nat} {Γ Ξ : Scope} {ps : List Parameter}
+    (L : Fin k → Level 0) (Θ : Telescope k Ξ ps) (σ : Subst 0 Γ Ξ) :
+    Telescope.LevelEquiv ((Θ.substLevels L).subst σ)
+      ((Θ.atLevels fun i => (L i).closedValue).subst σ) :=
+  Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+    (Telescope.substLevels_levelEquiv
+      (fun i => Level.equivalence.symm (Level.ofNat_closedValue (L i))) Θ)
+
 /-- The fields of a constructor at levels of the same values and at arguments equal up to their
 levels are equal up to their levels. -/
 theorem Constructor.fieldsAt_levelEquiv {j g k k' : Nat} {Γ Δ : Scope} (c : Constructor j g k Δ)
@@ -588,13 +608,4 @@ theorem Constructor.fieldsAt_levelEquiv {j g k k' : Nat} {Γ Δ : Scope} (c : Co
     (hls : ∀ i, ls₁ i ≈ ls₂ i) (has : InstanceArgs.LevelEquiv as₁ as₂) :
     Telescope.LevelEquiv (c.fieldsAt I ls₁ as₁) (c.fieldsAt I ls₂ as₂) :=
   (Telescope.substLevels_levelEquiv hls _).subst has.toSubst
-
--- ADE: none.
-/-- A term at levels `ls` without variables, substituted by `σ`, is the term at the values of `ls`
-substituted by `σ`, up to its levels. -/
-theorem Term.substLevels_subst_levelEquiv_atLevels {k : Nat} {Γ Δ : Scope} (ls : Fin k → Level 0)
-    (t : Term k Δ) (σ : Subst 0 Γ Δ) :
-    Term.LevelEquiv ((t.substLevels ls).subst σ)
-      ((t.atLevels fun i => (ls i).closedValue).subst σ) :=
-  Term.LevelEquiv.subst (Subst.LevelEquiv.refl _) (Term.substLevels_levelEquiv_atLevels ls t)
 end Sic.Core
