@@ -692,7 +692,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ih := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
+    have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
       (fun _ => .plain)
@@ -828,7 +828,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
+    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
     have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)
@@ -1005,7 +1005,8 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
     rw [← hA.sort]
     exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds (Subst.LevelEquiv.refl _)
   have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
-    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd (levelRel_isPer_lt hd _) h' _ _ h₁' o₁ o₂).1 hs,
+    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁' o₁ o₂).1
+      hs,
       fun hs => ⟨S', h₁', hs⟩⟩
   rw [hS]
   exact ⟨h₁', h₂'⟩
@@ -1114,7 +1115,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
       exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds
         (Subst.LevelEquiv.refl _)
     have hSS : S X T = S' := funext fun H => funext fun o => funext fun a => propext
-      ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd (levelRel_isPer_lt hd _) ih h' _ _ h₁'
+      ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
           (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H o a).1 hs,
         fun hs => ⟨S', h₁', hs⟩⟩
     rw [hSS]

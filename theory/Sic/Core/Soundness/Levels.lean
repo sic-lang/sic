@@ -401,7 +401,8 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     ⟨b₁, b₂, hL.prop h₁ ht, hL.prop h₂ hu, hb⟩
   | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
     have hmono := fun (X Y : Name → TermRel) (hXY : ∀ D v w, X D v w → Y D v w) =>
-      TelRel.block_mono hd (levelRel_isPer_lt hd _) (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
+      TelRel.block_mono hd (Nat.forall_lt (levelRel_isPer hd) _)
+        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
         (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
         fun D _ _ => TermRel.computed_mono (hXY D)
     refine hR (fun D v w => ∀ v' w', Term.LevelEquiv v v' → Term.LevelEquiv w w' →
@@ -462,7 +463,7 @@ theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         S₁ ts us → Terms.LevelEquiv ts ts' → Terms.LevelEquiv us us' → S₂ ts' us'
   | .nil, _, _, _, h', _, h, .nil, .nil => by cases h'; exact h
   | .cons hA hF _ hG _ hrs, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
-    have hp := levelRel_isPer_lt (ι := ι) hd n
+    have hp := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     cases h' with
     | cons hA' hF' _ hG' hresp' _ =>
       cases Computesι.det hd hA hA'
@@ -502,7 +503,7 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     cases h' with
     | plain hA' hF' =>
       cases Computesι.det hd hA hA'
-      exact (FieldRel.unique hd (levelRel_isPer_lt hd _) hF _ _ hF' _ _).1
+      exact (FieldRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) hF _ _ hF' _ _).1
         (FieldRel.rel_levelEquiv hd ih hF h ht hu)
   | .direct _ _, _, _, _, h', hR, h, ht, hu => by
     cases hR with
@@ -580,7 +581,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
   | .nil, _, _, _, h', _, _, _, _ => by cases h'; trivial
   | .cons (d := d) (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR,
       ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hp := levelRel_isPer_lt (ι := ι) hd n
+    have hp := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => NestRel.isPer hd hp .plain (hF ts hts)) hBresp
@@ -607,7 +608,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (d := d) (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF _ _ hG, _, _, _, h', hR,
       ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hp := levelRel_isPer_lt (ι := ι) hd n
+    have hp := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
@@ -640,7 +641,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .nil, _, _, _, h', _, _, _, _ => by cases h'; trivial
   | .cons (d := d) (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR, ⟨h₁, h₂⟩,
       e₁, e₂ => by
-    have hp := levelRel_isPer_lt (ι := ι) hd n
+    have hp := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd hp (hF ts hts _ hv)) hBresp
@@ -673,7 +674,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hSS := TelRel.unique hd (levelRel_isPer_lt hd _) hΘ _ _ hΘ'
+        have hSS := TelRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) hΘ _ _ hΘ'
         exact ⟨fun ts us hts => hr _ _ _ _ (h₁ ts us ((hSS _ _).2 hts))
             ((e₁ d ps).subst (Subst.LevelEquiv.refl _)) ((e₂ d ps).subst (Subst.LevelEquiv.refl _)),
           DesRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _

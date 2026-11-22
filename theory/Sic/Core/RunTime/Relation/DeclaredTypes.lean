@@ -424,7 +424,8 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (hA.runNestRel_instances hd hT con fun T' hT' => (hU T' hT').1) _
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts
       ((hA.eqSubst_fields con as).2 hts) bs (RunsAsArgs.levelEquiv hd (hA.telescopes con as).symm hbs)
-    exact (RunTelRel.congr hd (levelRel_isPer_lt hd _) ih (hS X T hT con hc) _ _ (hA.runTelRel hd h₁)
+    exact (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS X T hT con hc) _ _
+      (hA.runTelRel hd h₁)
       (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hP T hT).1⟩⟩
@@ -479,7 +480,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
       (fun D H _ _ => RunRel.computed_mono (hX D H)) T hT con hc H _ _ h
   obtain ⟨S', h₁, -⟩ := (hA.fields T hT con hc).runTelRel hd P hs fun D' => (Y D').computed sig ι
-  have hS' := (RunTelRel.congr hd (levelRel_isPer_lt hd _) ih (hS Y T hT con hc) _ _
+  have hS' := (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS Y T hT con hc) _ _
     (hA.runTelRel hd h₁) (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 hY
   exact RunsAsArgs.levelEquiv hd (hA.telescopes con as) (RunsAsArgs.of_runTelRel h₁
     ((hs ▸ hv.nestHeads hd hdecl hT hc hq hl hp hadm has).imp

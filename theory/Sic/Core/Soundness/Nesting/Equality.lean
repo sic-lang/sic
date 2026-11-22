@@ -111,11 +111,12 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
         (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
       NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
-  have ih := levelRel_isPer_lt (ι := ι) hd n
+  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
     (fun _ => .plain)
-  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd κ.level.closedValue) (fun _ => .plain) hT₁
+  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
+    (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
   -- The results at the first substitution and equal arguments are equal types.
   have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
@@ -240,11 +241,12 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {
         (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
       NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
         (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
-  have ih := levelRel_isPer_lt (ι := ι) hd n
+  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
     (fun _ => .plain)
-  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd κ.level.closedValue) (fun _ => .plain) hT₁
+  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
+    (fun _ => .plain) hT₁
   let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
     ∃ F', NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
       (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))

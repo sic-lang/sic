@@ -45,6 +45,12 @@ termination_by n
 decreasing_by all_goals assumption
 
 -- ADE: none.
+/-- A fact of every number holds of the numbers below `n`, as the relations of a level read those of
+the levels below it. -/
+theorem _root_.Nat.forall_lt {P : Nat → Prop} (h : ∀ m, P m) (n : Nat) : ∀ m, m < n → P m :=
+  fun m _ => h m
+
+-- ADE: none.
 /-- `eq(v) = R`: the closed canonical type `v` is a type of a sort, whose canonical terms are equal by
 `R`, or a proposition, whose closed terms are equal by `R`. -/
 inductive HasEq (sig : Signature) (ι : Interpretation) (v : Term 0 []) (R : TermRel) : Prop where
