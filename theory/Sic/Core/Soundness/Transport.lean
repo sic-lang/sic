@@ -41,9 +41,8 @@ theorem ValidEqTerm₀.equality_eq {s : Quality} {l : Level 0} {A t₁ t₂ p p'
     (hp : ValidEqTerm₀ sig ι p p' (.equality s l A t₁ t₂)) : EqTermClause sig ι t₁ t₂ A := by
   have hd := hE.1.1
   -- The equality computes to itself, a proposition whose truth is `b`.
-  obtain ⟨-, hcl, -⟩ := hE
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨-, hcl⟩ := hE
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
   cases Computesι.det hd hv (Whnf.equality ..).computes
   -- The proof is a proof of it, so that it is true.

@@ -1084,9 +1084,8 @@ theorem ValidEqTerm₀.equality {s : Quality} {l₁ l₂ : Level 0} {A₁ A₂ t
   have hl₂ : l₂.closedValue = l₁.closedValue := (hl Fin.elim0).symm
   -- The types compute to types of `s_l₁` that the relation of this sort relates, which `(ty_∼)`
   -- reads at the level of `l₁`, and so at that of `l₂`.
-  obtain ⟨-, hcl, -⟩ := hA
-  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨-, hcl⟩ := hA
+  obtain ⟨v, w, R, hv, hw, hR, hvw⟩ := hcl.sort_inv
   have hP : ∃ b₁ b₂, (levelRel sig ι l₁.closedValue).prop (.equality s l₁ A₁ t₁ u₁) b₁ ∧
       (levelRel sig ι l₁.closedValue).prop (.equality s l₂ A₂ t₂ u₂) b₂ := by
     cases hR with
@@ -1142,9 +1141,8 @@ theorem ValidTermΓ.of_equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Qualit
   have hE₁ := hE.2 σ₁ σ₁ hσ₁
   refine ⟨hE₁.propType, ?_⟩
   -- The proposition computes to itself, whose truth `b` is the equality of the two terms.
-  obtain ⟨-, hcl, -⟩ := hE₁
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨-, hcl⟩ := hE₁
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
   cases Computesι.det hd hv (Whnf.equality ..).computes
   exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
@@ -1179,9 +1177,8 @@ theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B
     (levelRel_univ_iff.2 (.prop (l := l) rfl rfl))
   have hprop : ∀ {X : Term 0 []}, ValidEqTerm₀ sig ι X X (.sort ⟨.prop, l⟩) →
       ∃ w b, Computesι sig ι X w ∧ (levelRel sig ι l.closedValue).prop w b := fun hX => by
-    obtain ⟨-, hcl, -⟩ := hX
-    obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-    cases hc.sort_inv
+    obtain ⟨-, hcl⟩ := hX
+    obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
     obtain ⟨b, -, hb, -⟩ := (hR.unique hd hU v w).1 hvw
     exact ⟨v, b, hv, hb⟩
   -- An implication makes its conclusion true when its hypothesis is, which every closed term

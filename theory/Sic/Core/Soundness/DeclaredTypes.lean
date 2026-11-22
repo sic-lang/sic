@@ -412,8 +412,7 @@ theorem ValidEqTerm₀.fieldRel {A₁ A₂ : Term 0 []} {κ₁ : Universe 0} {n 
   obtain ⟨s₁, l₁⟩ := κ₁
   have hd := h.1.1
   have hm : l₁.closedValue ≤ n := hκn
-  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨w₁, w₂, R, hw₁, hw₂, hR, hvw⟩ := h.2.sort_inv
   cases hR with
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
   | univ k hk =>
@@ -461,8 +460,7 @@ theorem ValidEqTerm₀.runFieldRel (P : Program) {A₁ A₂ : Term 0 []} {κ₁ 
       RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w₂ R := by
   obtain ⟨s₁, l₁⟩ := κ₁
   have hm : l₁.closedValue ≤ n := hκn
-  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨w₁, w₂, R, hw₁, hw₂, hR, hvw⟩ := h.2.sort_inv
   cases hR with
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
   | univ k hk =>

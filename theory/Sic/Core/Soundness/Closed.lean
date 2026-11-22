@@ -427,9 +427,8 @@ theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u
 /-- `(U_type≡)`, closed: equal terms of a universe are equal types. -/
 theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
     {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.type, l⟩)) : ValidEqType₀ sig ι A B := by
-  obtain ⟨⟨hd, -⟩, hcl, -⟩ := h
-  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨⟨hd, -⟩, hcl⟩ := h
+  obtain ⟨v, w, R, hv, hw, hR, hvw⟩ := hcl.sort_inv
   cases hR with
   | univ n hn =>
     cases levelRel_univ_iff.1 hn with
@@ -445,9 +444,8 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
 /-- `(Ω_type≡)`, closed: equal propositions are equal types. -/
 theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
     {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.prop, l⟩)) : ValidEqType₀ sig ι A B := by
-  obtain ⟨⟨hd, -⟩, hcl, -⟩ := h
-  obtain ⟨A₀, v, w, R, hc, hv, hw, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨⟨hd, -⟩, hcl⟩ := h
+  obtain ⟨v, w, R, hv, hw, hR, hvw⟩ := hcl.sort_inv
   cases hR with
   | univ n hn =>
     cases levelRel_univ_iff.1 hn with

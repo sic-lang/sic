@@ -50,9 +50,8 @@ of `Ω_l`, whose terms are related to every address. -/
 theorem ValidTerm₀.hasRun {sig : Signature} {ι : Interpretation} (P : Program) {A : Term 0 []}
     {κ : Universe 0} (h : ValidTerm₀ sig ι A (.sort κ)) :
     ∃ vA R, Computesι sig ι A vA ∧ HasRun sig ι P vA R := by
-  obtain ⟨-, hcl, -⟩ := h
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨-, hcl⟩ := h
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
   cases hR with
   | univ n hn =>
     cases levelRel_univ_iff.1 hn with
@@ -83,8 +82,8 @@ theorem RunValidRen.erased {sig : Signature} {ι : Interpretation} {P : Program}
     (he : t.erase sig Mode.oneOne.erased hΓ = .erased) :
     RunValidRen sig ι P hΓ ctx γ t (.sort κ) := by
   intro _ σ H _ _ hσ _ _ _ _ _ _
-  obtain ⟨-, hcl, -⟩ := ht.2 σ σ hσ
-  obtain ⟨_, v, -, -, hc, hv, -⟩ := hcl not_computesToProp_sort
+  obtain ⟨-, hcl⟩ := ht.2 σ σ hσ
+  obtain ⟨v, -, -, hv, -⟩ := hcl.sort_inv
   refine ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _, RunsAs.sort κ hv⟩
 
 -- ADE: `rflʳ`, in `Graded/Erasure/LogicalRelation/Fundamental/Identity.agda`, for the reflexivity.
@@ -97,9 +96,8 @@ theorem RunValidRen.proof {sig : Signature} {ι : Interpretation} {P : Program} 
     (he : t.erase sig Mode.oneOne.erased hΓ = .erased) :
     RunValidRen sig ι P hΓ ctx γ t A := by
   intro _ σ H _ _ hσ _ _ _ _ _ _
-  obtain ⟨-, hcl, -⟩ := hA.2 σ σ hσ
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨-, hcl⟩ := hA.2 σ σ hσ
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
   exact ⟨H.length, H ++ [.erased], [], he ▸ .erased, List.prefix_append _ _,
     ⟨v, hv, .inl (hR.prop_isProp hvw)⟩⟩
 

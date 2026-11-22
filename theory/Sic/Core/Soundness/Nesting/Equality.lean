@@ -69,8 +69,7 @@ theorem NestReads.quality_of_univ {A₁ A₂ : Term 0 []} {κ : Universe 0} {n :
   obtain ⟨q, l⟩ := κ
   obtain rfl : q = .type := hκ
   have hd := h.1.1
-  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, hw₂, hR, hvw⟩ := h.2.1 not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨w₁, w₂, R, hw₁, hw₂, hR, hvw⟩ := h.2.sort_inv
   cases hR with
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
   | univ k hk =>

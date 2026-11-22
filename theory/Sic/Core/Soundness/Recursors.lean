@@ -130,8 +130,7 @@ theorem ValidTermΓ.motive_prop {Γ : Scope} {ctx : Context 0 Γ} {A : Term 0 Γ
   rw [Term.subst_lift_single]
   have hC' := hC.2 _ _ ((EqSubst.var_iff ctx A (Subst.append (n := 1) σ (Subst.closedSingle a))
     (Subst.append (n := 1) σ (Subst.closedSingle a))).2 ⟨hσ, ha⟩)
-  obtain ⟨A₀, w₁, w₂, R, hc, hw₁, -, hR, hw⟩ := hC'.2.1 not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨w₁, w₂, R, hw₁, -, hR, hw⟩ := hC'.2.sort_inv
   exact ⟨w₁, hw₁, HasEq.prop_isProp hR hw⟩
 
 /-- Relations at the recursive fields grow with the relations. -/

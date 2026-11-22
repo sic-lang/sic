@@ -62,15 +62,23 @@ theorem not_computesToProp_sort {sig : Signature} {ι : Interpretation} {κ : Un
   cases hc.sort_inv
   exact not_isProp_sort hp
 
+/-- The clause of two equal terms of a sort, which is not a proposition: the terms compute to values
+that the equality of the sort relates. -/
+theorem EqTermClause.sort_inv {sig : Signature} {ι : Interpretation} {t u : Term 0 []}
+    {κ : Universe 0} (h : EqTermClause sig ι t u (.sort κ)) :
+    ∃ w₁ w₂ R, Computesι sig ι t w₁ ∧ Computesι sig ι u w₂ ∧ HasEq sig ι (.sort κ) R ∧ R w₁ w₂ := by
+  obtain ⟨_, w₁, w₂, R, hc, h₁, h₂, hR, hw⟩ := h.1 not_computesToProp_sort
+  cases hc.sort_inv
+  exact ⟨w₁, w₂, R, h₁, h₂, hR, hw⟩
+
 /-- `(exact_Ω)`: two closed terms are equal proofs of a proposition exactly when each of them is a
 proof of it.
 RFC: `\mathsf{exact}_\Omega` -/
 theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {l : Level 0}
     (hA : ValidTerm₀ sig ι A (.sort ⟨.prop, l⟩)) :
     ValidEqTerm₀ sig ι t u A ↔ ValidTerm₀ sig ι t A ∧ ValidTerm₀ sig ι u A := by
-  obtain ⟨⟨hd, -⟩, hcl, -⟩ := hA
-  obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
-  cases hc.sort_inv
+  obtain ⟨⟨hd, -⟩, hcl⟩ := hA
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
   have hvp := hR.prop_isProp hvw
   have hP : ComputesToProp sig ι A := ⟨v, hv, hvp⟩
   constructor
