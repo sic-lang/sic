@@ -38,6 +38,11 @@ def Multiplicity.references : Multiplicity → Multiplicity
   | .zero => .zero
   | _ => .one
 
+/-- The references of a multiplicity that is not `0`, times a multiplicity that is not `0`, are not
+`0`. -/
+theorem Multiplicity.references_mul_ne_zero :
+    ∀ x y : Multiplicity, x ≠ .zero → y ≠ .zero → x.references * y ≠ .zero := by decide
+
 end Sic.Grading
 
 namespace Sic.Core

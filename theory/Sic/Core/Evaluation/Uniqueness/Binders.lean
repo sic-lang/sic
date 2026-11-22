@@ -52,8 +52,7 @@ theorem Unpack.claims {g : Heap.Annotation} {b : Nat} : {H : Heap} → {k x : Na
     simp only [List.getElem?_cons_succ, List.getElem?_map] at hs hπ hϱ
     obtain ⟨π₃, hπ₃, rfl⟩ := Option.map_eq_some_iff.1 hπ
     obtain ⟨ϱ₃, hϱ₃, hϱe⟩ := Option.map_eq_some_iff.1 hϱ
-    obtain ⟨rfl, rfl⟩ := (by decide : ∀ x y : Multiplicity, x * y = .one →
-      x = .one ∧ y = .one) _ _ hϱe
+    obtain ⟨rfl, rfl⟩ := Multiplicity.mul_eq_one _ _ hϱe
     exact .ctor h (k := 1) rfl rfl
       ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → x ≠ .zero) _ _ hπ₀) rfl
       (hu.claims hs hπ₃

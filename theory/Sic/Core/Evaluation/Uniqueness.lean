@@ -80,7 +80,7 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
       rw [hb] at h'
       exact (by decide : ∀ u x : Multiplicity, Multiplicity.zero ≤ u + x → x = .zero) _ _ h'
     · have hφ : φ x = .one :=
-        (by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y → y = .one) _ (ho ▸ hM.var_inv rfl)
+        Multiplicity.eq_one_of_one_le _ (ho ▸ hM.var_inv rfl)
       have hνx : ν x ≠ .zero := by
         have h' := hle x
         simp only [MultiplicityVector.update, Sic.Math.Vector.update, ↓reduceIte] at h'
@@ -133,7 +133,7 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
         | ctor h' ha hπ hπ₀ hϱ hb' =>
           cases (List.getElem?_concat_length (l := H₂)).symm.trans h'
           obtain ⟨o', ho', hle'⟩ := hMs.get hϱ
-          cases (by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y → y = .one) _ hle'
+          cases Multiplicity.eq_one_of_one_le _ hle'
           obtain ⟨U'', -, hU''⟩ := hUs.getElem? ha
           have h := hB b _ _ _ ha ho' hπ hπ₀ (hb'.of_extends hH₂ (.refl _ _) (.inl ⟨_, hU''⟩))
           exact (by decide : ∀ f x : Multiplicity, f + x ≠ .omega → f + (.zero + x) ≠ .omega)
@@ -162,7 +162,7 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
         | iota hlook => simp at hlook
       | ctor _ => exact hoM.ctor_le rfl, rfl⟩
     obtain ⟨g₃, U, hg₂₃, hg₃, hU, hA, hB⟩ := EvalRec.reach hΩ hP hr hoNs hχ
-      ((by decide : ∀ o ϱ : Multiplicity, o * ϱ = .one → ϱ = .one) _ _)
+      (fun h => (Multiplicity.mul_eq_one _ _ h).2)
       ((by decide : ∀ o ϱ : Multiplicity, o * ϱ * ϱ = o * ϱ) _ _) hθz hg₂ hEχ₂ hUa (F := F)
       (fun b hb => hF b (Nat.le_trans hH₁₂.length_le hb))
       (fun b hb => by
@@ -177,16 +177,16 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
           f + (r * .zero + v) ≠ .omega) _ _ _ _ h hρU)
       (fun hθ _ b hb => by
         have h : (F b + Uχ b) + U_a b ≠ .omega := hB₁
-          ((by decide : ∀ o ϱ : Multiplicity, o * ϱ = .one → o = .one) _ _ hθ) b hb
+          (Multiplicity.mul_eq_one _ _ hθ).1 b hb
         exact (by decide : ∀ f c u : Multiplicity, f + c + u ≠ .omega → f + (u + c) ≠ .omega)
           _ _ _ h)
     refine ⟨g₃, U, hg₁₂.trans hH₁₂ hg₂₃, hg₃, hU, fun b hb hb0 => ?_, fun ho => hB
-      ((by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y → y = .one) _ (ho ▸ hoo))⟩
+      (Multiplicity.eq_one_of_one_le _ (ho ▸ hoo))⟩
     have h0 : ρ * U₁ b + Uχ b = .zero := h0' b hb0
     have hρU : ρ * U₁ b = .zero :=
-      (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0
+      Multiplicity.add_eq_zero_left _ _ h0
     have hχ0 : Uχ b = .zero :=
-      (by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0
+      Multiplicity.add_eq_zero_right _ _ h0
     refine hA b (Nat.lt_of_lt_of_le hb hH₁₂.length_le) ?_
     rw [hA₁ b hb (hzero b hρU), hχ0]
     cases ρ <;> rfl
@@ -243,12 +243,12 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
           _ _ _ h)
     refine ⟨g₄, U, (hg₁₂.trans hH₁₂ hg₂₃).trans (hH₁₂.trans hH₂₃) hg₃₄, hg₄, hU,
       fun b hb hb0 => ?_, fun ho' => hB
-        ((by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y → y = .one) _ (ho' ▸ hoo))⟩
+        (Multiplicity.eq_one_of_one_le _ (ho' ▸ hoo))⟩
     have h0 : U₁ b + U₂ b = .zero := h0' b hb0
     have h1 : U₁ b = .zero :=
-      (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0
+      Multiplicity.add_eq_zero_left _ _ h0
     have h2 : U₂ b = .zero :=
-      (by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0
+      Multiplicity.add_eq_zero_right _ _ h0
     refine hA b (Nat.lt_of_lt_of_le hb (hH₁₂.trans hH₂₃).length_le) ?_
     rw [hA₁ b hb h1, Demand.positions_eq_zero _ _
       (hA₂ b (Nat.lt_of_lt_of_le hb hH₁₂.length_le) h2)]
@@ -285,9 +285,9 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
       fun b hb hb0 => ?_, fun _ b hb => ?_⟩
     · have h0 : U₁ b + Uδ b = .zero := h0' b hb0
       have h1 : U₁ b = .zero :=
-        (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0
+        Multiplicity.add_eq_zero_left _ _ h0
       have h2 : Uδ b = .zero :=
-        (by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0
+        Multiplicity.add_eq_zero_right _ _ h0
       show Demand.unit _ b + (Uδ b + _) = _
       rw [Demand.positions_eq_zero _ _ (hA b hb h1), h2]
       have : b ≠ H₂.length := Nat.ne_of_lt (Nat.lt_of_lt_of_le hb hH₁₂.length_le)
@@ -307,7 +307,7 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
         | state h' ha hπ hπ₀ hϱ hb' =>
           cases (List.getElem?_concat_length (l := H₂)).symm.trans h'
           obtain ⟨o', ho', hle'⟩ := hMs.get hϱ
-          cases (by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y → y = .one) _ hle'
+          cases Multiplicity.eq_one_of_one_le _ hle'
           obtain ⟨U'', -, hU''⟩ := hUs.getElem? ha
           have h : (F b + Uδ b) + _ ≠ .omega :=
             hB b _ _ _ ha ho' hπ hπ₀ (hb'.of_extends hH₂ hgs (.inl ⟨_, hU''⟩))
@@ -385,9 +385,9 @@ theorem EvalAll.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
       fun b hb hb0 U hU => ?_, fun b k a' π' ha ho hπ' hπ'₀ hcl => ?_⟩
     · have h0 : π * U₁ b + U₂ b = .zero := hb0
       have h1 : π * U₁ b = .zero :=
-        (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0
+        Multiplicity.add_eq_zero_left _ _ h0
       have h2 : U₂ b = .zero :=
-        (by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0
+        Multiplicity.add_eq_zero_right _ _ h0
       rcases List.mem_cons.1 hU with rfl | hU
       · exact hA₁ b hb (hzero b h1)
       · exact hA₂ b (Nat.lt_of_lt_of_le hb hH₁₂.length_le) h2 U hU
@@ -708,8 +708,7 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
               Demand.positions_eq_zero _ _ (hA_R b hblt hn0)]
             decide
         · -- The variable of a recursive result that the branch owns alone.
-          obtain ⟨hw1, hπ1⟩ := (by decide : ∀ o π : Multiplicity, o * π = .one →
-            o = .one ∧ π = .one) _ _ hφj
+          obtain ⟨hw1, hπ1⟩ := Multiplicity.mul_eq_one _ _ hφj
           obtain ⟨r_j, hrj⟩ : ∃ r_j, rs[(j : Nat)]? = some r_j :=
             ⟨_, List.getElem?_eq_getElem (hlrs ▸ j.2)⟩
           have hπsj : (List.ofFn πs ++ List.ofFn πs')[a' + (j : Nat)]? =
@@ -760,8 +759,8 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
     refine ⟨g₃, U, hg₁₂.trans (hH₁₂.trans hH₂') hg₂₃, hg₃, hU, fun b hb h0 => ?_, hB_N⟩
     have h0' : ρ.references * (Demand.unit a b +
         Demand.positions (πs₀.map Multiplicity.references) Us b) + U_χ b = .zero := h0
-    have hra := (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0'
-    have hχ0 := (by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0'
+    have hra := Multiplicity.add_eq_zero_left _ _ h0'
+    have hχ0 := Multiplicity.add_eq_zero_right _ _ h0'
     have hδ0 : U_δ b = .zero := (by decide : ∀ c d s : Multiplicity, c ≤ d + s * c →
       c = .zero → d = .zero) _ _ _ (hχpt b) hχ0
     refine hA_N b (Nat.lt_of_lt_of_le hb (hH₁₂.trans hH₂').length_le) ?_
@@ -920,8 +919,7 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
         have hu' : U' b ≠ .zero := hb₁.reach_ne_zero.1 _ hUa'
         have hnf : Demand.need ρ Us U_χ ks' b ≠ .zero := Demand.need_ne_zero_field hj' (by
           rw [List.getD_eq_getElem?_getD, hU']
-          exact (by decide : ∀ ρ u : Multiplicity, ρ ≠ .zero → u ≠ .zero →
-            ρ.references * u ≠ .zero) _ _ hρ hu')
+          exact Multiplicity.references_mul_ne_zero _ _ hρ hu')
         have h := hca hθ' hρ (j + 1) l' a' hj' ha' b hb₁
         rw [hneed] at h
         have hx := (by decide : ∀ f x n : Multiplicity, f + (x + n) ≠ .omega → n ≠ .zero →
@@ -949,9 +947,9 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
       fun b hb h0 V' hV' => ?_, fun b j r' hr' hπ' ho' hcl => ?_⟩
     · rw [hneed] at h0
       rcases List.mem_cons.1 hV' with rfl | hV'
-      · exact hA₁ b hb ((by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0)
+      · exact hA₁ b hb (Multiplicity.add_eq_zero_left _ _ h0)
       · exact hA₂ b (Nat.lt_of_lt_of_le hb hH₁₂.length_le)
-          ((by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0) V' hV'
+          (Multiplicity.add_eq_zero_right _ _ h0) V' hV'
     · show F b + (π * V b + Demand.positions πs'' Vs b) ≠ _
       cases j with
       | zero =>
@@ -1101,8 +1099,7 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
         have hu' : U' b ≠ .zero := hb₁.reach_ne_zero.1 _ hUa'
         have hnf : Demand.need ρ Us U_χ ks' b ≠ .zero := Demand.need_ne_zero_field hj' (by
           rw [List.getD_eq_getElem?_getD, hU']
-          exact (by decide : ∀ ρ u : Multiplicity, ρ ≠ .zero → u ≠ .zero →
-            ρ.references * u ≠ .zero) _ _ hρ hu')
+          exact Multiplicity.references_mul_ne_zero _ _ hρ hu')
         have h := hca hθ' hρ (j + 1) l' a' hj' ha' b hb₁
         rw [hneed] at h
         have hx := (by decide : ∀ f x n : Multiplicity, f + (x + n) ≠ .omega → n ≠ .zero →
@@ -1130,9 +1127,9 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
       fun b hb h0 V' hV' => ?_, fun b j r' hr' hπ' ho' hcl => ?_⟩
     · rw [hneed] at h0
       rcases List.mem_cons.1 hV' with rfl | hV'
-      · exact hV0 b hb ((by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h0)
+      · exact hV0 b hb (Multiplicity.add_eq_zero_left _ _ h0)
       · exact hA₂ b (Nat.lt_of_lt_of_le hb hH₀.length_le)
-          ((by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h0) V' hV'
+          (Multiplicity.add_eq_zero_right _ _ h0) V' hV'
     · show F b + (π * V b + Demand.positions πs'' Vs b) ≠ _
       cases j with
       | zero =>
@@ -1288,7 +1285,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           Demand.positions (List.ofFn πb') Us b) = .zero := fun b hb h0 => by
       obtain ⟨hd, hp, hq⟩ := (by decide : ∀ u d p q : Multiplicity, (u + (d + p)) + q = .zero →
         d = .zero ∧ p = .zero ∧ q = .zero) _ _ _ _ h0
-      rw [(by decide : ∀ d di : Multiplicity, d ≤ di → d = .zero → di = .zero) _ _ (hle_i b) hd,
+      rw [Multiplicity.eq_zero_of_le_of_eq_zero _ _ (hle_i b) hd,
         hC0 b hb, hS0 b hp, hU0 b hq]
       rfl
     -- The branch.
@@ -1335,13 +1332,12 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             have hsl0 : S_l b ≠ .zero := hcl₀.reach_ne_zero.1 _ hSal
             have hp0 : Demand.positions (πs₁.map Multiplicity.references) Ss b ≠ .zero :=
               Demand.positions_ne_zero _ _ (by rw [List.getElem?_map, hπ₁']; rfl) hSl
-                ((by decide : ∀ π₁ u : Multiplicity, π₁ ≠ .zero → u ≠ .zero →
-                  π₁.references * u ≠ .zero) _ _ hπ₁0 hsl0)
+                (Multiplicity.references_mul_ne_zero _ _ hπ₁0 hsl0)
             obtain ⟨hf, hd, hq, hpω⟩ := (by decide : ∀ f u d p q : Multiplicity,
               f + ((u + (d + p)) + q) ≠ .omega → p ≠ .zero →
               f = .zero ∧ d = .zero ∧ q = .zero ∧ p ≠ .omega) _ _ _ _ _ h hp0
             rw [hf, hΦ0 b hd,
-              (by decide : ∀ d di : Multiplicity, d ≤ di → d = .zero → di = .zero) _ _
+              Multiplicity.eq_zero_of_le_of_eq_zero _ _
                 (hle_i b) hd,
               hC0 b (hSal.lt hsl0), hU0 b hq,
               Demand.positions_eq_references_of_le πs₁ (List.ofFn πb) Ss hlS hπ₁L hπbl hSl hsl0
@@ -1349,8 +1345,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             exact (by decide : ∀ p : Multiplicity, p ≠ .omega →
               (.zero + .zero) + (.zero + .zero + (p + .zero)) ≠ .omega) _ hpω
         · -- The variable of an argument that the branch owns alone.
-          obtain ⟨ho1, hπ1⟩ := (by decide : ∀ x y : Multiplicity, x * y = .one →
-            x = .one ∧ y = .one) _ _ hφj
+          obtain ⟨ho1, hπ1⟩ := Multiplicity.mul_eq_one _ _ hφj
           obtain ⟨π₂, hπ₂', hπle⟩ := hπ₂ j
           rw [hπ1] at hπle
           have hπ₂0 := (by decide : ∀ y : Multiplicity, y ≤ .one → y ≠ .zero) _ hπle
@@ -1379,13 +1374,12 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             have huj0 : U_j b ≠ .zero := hcl₀.reach_ne_zero.1 _ hUbj
             have hq0 : Demand.positions (πs.map Multiplicity.references) Us b ≠ .zero :=
               Demand.positions_ne_zero _ _ (by rw [List.getElem?_map, hπ₂']; rfl) hUj
-                ((by decide : ∀ π₁ u : Multiplicity, π₁ ≠ .zero → u ≠ .zero →
-                  π₁.references * u ≠ .zero) _ _ hπ₂0 huj0)
+                (Multiplicity.references_mul_ne_zero _ _ hπ₂0 huj0)
             obtain ⟨hf, hd, hp, hqω⟩ := (by decide : ∀ f u d p q : Multiplicity,
               f + ((u + (d + p)) + q) ≠ .omega → q ≠ .zero →
               f = .zero ∧ d = .zero ∧ p = .zero ∧ q ≠ .omega) _ _ _ _ _ h hq0
             rw [hf, hΦ0 b hd,
-              (by decide : ∀ d di : Multiplicity, d ≤ di → d = .zero → di = .zero) _ _
+              Multiplicity.eq_zero_of_le_of_eq_zero _ _
                 (hle_i b) hd,
               hC0 b (hUbj.lt huj0), hS0 b hp,
               Demand.positions_eq_references_of_le πs (List.ofFn πb') Us hlU hπ₂L hπbj hUj huj0
@@ -1394,8 +1388,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
               (.zero + .zero) + (.zero + .zero + (.zero + q)) ≠ .omega) _ hqω
         · -- A variable of the scope that the branch owns alone and reads.
           obtain ⟨x, cx, hcx, hφx, hδx, hclx⟩ := hsc.of_extends hH' hgr hEi.toEnvReach
-          obtain ⟨hς1, hφ1⟩ := (by decide : ∀ x y : Multiplicity, x * y = .one →
-            x = .one ∧ y = .one) _ _ hφx
+          obtain ⟨hς1, hφ1⟩ := Multiplicity.mul_eq_one _ _ hφx
           have hδcx : g.usage a n x ≠ .zero := (by decide : ∀ d di : Multiplicity, d ≤ di →
             di ≠ .zero → d ≠ .zero) _ _ (hδ x) hδx
           obtain ⟨hf, hd0, hdω, hp, hq, hk⟩ := hscope x cx b hcx hδcx hφ1 hclx (ho₁ hς1)
@@ -1419,7 +1412,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
       rcases hvN with ⟨-, rfl⟩ | ⟨hk, -⟩
       · rcases hΦ with ⟨-, rfl⟩ | ⟨hk, -⟩
         · have h : (F b + Multiplicity.zero) + U_w b ≠ .omega := hB_N
-            ((by decide : ∀ x y : Multiplicity, x * y = .one → y = .one) _ _ ho) b hb
+            (Multiplicity.mul_eq_one _ _ ho).2 b hb
           exact (by decide : ∀ f x : Multiplicity, f + .zero + x ≠ .omega → f + x ≠ .omega)
             _ _ h
         · exact absurd rfl hk
@@ -1466,10 +1459,10 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
         have hd := (by decide : ∀ u d p q : Multiplicity, (u + (d + p)) + q = .zero →
           d = .zero) _ _ _ _ h0
         show Demand.unit H₂.length b + (U_δc b + _) = _
-        rw [hd, (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ hw0]
+        rw [hd, Multiplicity.add_eq_zero_left _ _ hw0]
         have : b ≠ H₂.length := Nat.ne_of_lt (Nat.lt_of_lt_of_le hb hH₁₂.length_le)
         simp [Demand.unit, this] <;> decide
-      · have ho1 := (by decide : ∀ x y : Multiplicity, x * y = .one → x = .one) _ _ ho
+      · have ho1 := (Multiplicity.mul_eq_one _ _ ho).1
         show F b + (Demand.unit H₂.length b + (U_δc b +
           Demand.positions ((πsn.map (π * ·)).map Multiplicity.references) Ss' b)) ≠ _
         by_cases hbℓ : b = H₂.length
@@ -1487,8 +1480,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             rw [List.getElem?_map] at hπj hϱj
             obtain ⟨π₃, hπ₃, rfl⟩ := Option.map_eq_some_iff.1 hπj
             obtain ⟨ϱ₃, hϱ₃, hϱe⟩ := Option.map_eq_some_iff.1 hϱj
-            obtain ⟨rfl, rfl⟩ := (by decide : ∀ x y : Multiplicity, x * y = .one →
-              x = .one ∧ y = .one) _ _ hϱe
+            obtain ⟨rfl, rfl⟩ := Multiplicity.mul_eq_one _ _ hϱe
             obtain ⟨S, -, hS⟩ := hSs'.getElem? hsj
             have hclx := hs.claims hsj hπ₃
               ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → y ≠ .zero) _ _ hπ₀) hϱ₃
@@ -1537,7 +1529,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
         rw [hd, hP0 _ b]
         have : b ≠ H₂.length := Nat.ne_of_lt (Nat.lt_of_lt_of_le hb hH₁₂.length_le)
         simp [Demand.unit, this] <;> decide
-      · have ho1 := (by decide : ∀ x y : Multiplicity, x * y = .one → x = .one) _ _ ho
+      · have ho1 := (Multiplicity.mul_eq_one _ _ ho).1
         show F b + (Demand.unit H₂.length b + (U_δc b + _)) ≠ _
         rw [hP0 _ b]
         by_cases hbℓ : b = H₂.length
@@ -1571,13 +1563,12 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
       · have hw0 : Demand.unit w b + (π.references * U_x b + .zero) = .zero := hwzero b hb h0
         exact (by decide : ∀ uw π x : Multiplicity, π ≠ .zero →
           uw + (π.references * x + .zero) = .zero → x = .zero) _ _ _ hπw hw0
-      · have hu1 := (by decide : ∀ x y : Multiplicity, x * y = .one → y = .one) _ _ ho
+      · have hu1 := (Multiplicity.mul_eq_one _ _ ho).2
         obtain ⟨χ, hψχ⟩ := hψc hk
         rw [hψχ] at hu' hϱw
         rw [ResultOwnership.value_const] at hu'
         cases hu'
-        have hϱ1 : ϱ = .one := (by decide : ∀ y : Multiplicity, Multiplicity.one ≤ y →
-          y = .one) _ (hu1 ▸ hϱw)
+        have hϱ1 : ϱ = .one := Multiplicity.eq_one_of_one_le _ (hu1 ▸ hϱw)
         have hvk : vN = .one := by
           rcases hvN with ⟨hk', -⟩ | ⟨-, rfl⟩
           · exact absurd hk' hk

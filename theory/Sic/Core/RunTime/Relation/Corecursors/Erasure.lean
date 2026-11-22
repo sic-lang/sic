@@ -97,7 +97,7 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
         | nil => rfl
         | cons π πs ih =>
           rw [List.map_cons, ih]
-          exact congrArg (· :: πs) ((by decide : ∀ π : Multiplicity, .one * π = π) π)
+          exact congrArg (· :: πs) (Multiplicity.modality.semiring.one_mul π)
       have hu' := Unpack.pair ha' hu
       rw [hone, hone] at hu'
       refine ⟨.cons t ts', b :: as', ?_, EqSubst.args_cons_iff.2 ⟨ht, hτ⟩, hu', hb, hrs⟩
@@ -216,7 +216,7 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
           | nil => rfl
           | cons π πs ih =>
             rw [List.map_cons, ih]
-            exact congrArg (· :: πs) ((by decide : ∀ π : Multiplicity, .one * π = π) π)
+            exact congrArg (· :: πs) (Multiplicity.modality.semiring.one_mul π)
         rwa [List.map_map, hone] at hev
   · -- A term already built.
     obtain rfl := hd.doneCase hpre hi

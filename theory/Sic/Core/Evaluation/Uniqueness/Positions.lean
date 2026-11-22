@@ -56,10 +56,10 @@ theorem Demand.positions_get_zero {b : Nat} : (πs : List Multiplicity) → (Us 
   | π' :: πs, U' :: Us, h, 0, _, _, hπ, hU => by
     cases hπ
     cases hU
-    exact (by decide : ∀ x y : Multiplicity, x + y = .zero → x = .zero) _ _ h
+    exact Multiplicity.add_eq_zero_left _ _ h
   | π' :: πs, U' :: Us, h, j + 1, _, _, hπ, hU =>
     Demand.positions_get_zero πs Us
-      ((by decide : ∀ x y : Multiplicity, x + y = .zero → y = .zero) _ _ h)
+      (Multiplicity.add_eq_zero_right _ _ h)
       (by simpa using hπ) (by simpa using hU)
   | [], _, _, _, _, _, hπ, _ => by simp at hπ
   | _ :: _, [], _, _, _, _, _, hU => by simp at hU

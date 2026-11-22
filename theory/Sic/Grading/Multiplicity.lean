@@ -203,6 +203,22 @@ theorem add_ne_zero_left : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .ze
 theorem add_ne_zero_right : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero := by
   decide
 
+/-- A sum that is `0` has its first operand `0`. -/
+theorem add_eq_zero_left : ∀ x y : Multiplicity, x + y = .zero → x = .zero := by decide
+
+/-- A sum that is `0` has its second operand `0`. -/
+theorem add_eq_zero_right : ∀ x y : Multiplicity, x + y = .zero → y = .zero := by decide
+
+/-- A multiplicity at least `1` is `1`, the order being that of the precision. -/
+theorem eq_one_of_one_le : ∀ π : Multiplicity, .one ≤ π → π = .one := by decide
+
+/-- A product that is `1` has both its operands `1`. -/
+theorem mul_eq_one : ∀ x y : Multiplicity, x * y = .one → x = .one ∧ y = .one := by decide
+
+/-- A multiplicity above `0` is `0`: `0` is not below the others in the order of the precision. -/
+theorem eq_zero_of_le_of_eq_zero : ∀ x y : Multiplicity, x ≤ y → x = .zero → y = .zero := by
+  decide
+
 /-! ## Sums -/
 
 /-- The sum of multiplicities that are all `0` is `0`. -/
@@ -249,7 +265,7 @@ theorem sum_single : {n : Nat} → (f : Fin n → Multiplicity) → (i : Fin n) 
     | succ i =>
       rw [h 0 (Fin.succ_ne_zero i).symm, sum_single (fun j => f j.succ) i
         (fun j hj => h j.succ fun e => hj (Fin.succ_inj.mp e))]
-      exact (by decide : ∀ a : Multiplicity, zero + a = a) _
+      exact Multiplicity.modality.semiring.zero_add _
 
 /-- A sum over `m + k` indices whose `k` first multiplicities are `0` is the sum of the others. -/
 theorem sum_addNat {m : Nat} : (k : Nat) → (f : Fin (m + k) → Multiplicity) →
@@ -260,7 +276,7 @@ theorem sum_addNat {m : Nat} : (k : Nat) → (f : Fin (m + k) → Multiplicity) 
       (fun j hj => h j.succ (by simp only [Fin.val_succ]; omega))
     show f 0 + sum (fun j : Fin (m + k) => f j.succ) = _
     rw [h 0 (Nat.succ_pos k), ih]
-    exact (by decide : ∀ a : Multiplicity, zero + a = a) _
+    exact Multiplicity.modality.semiring.zero_add _
 
 end Multiplicity
 

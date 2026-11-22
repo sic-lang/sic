@@ -30,7 +30,7 @@ theorem Heap.EnvReach.sub {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List N
       (by decide : ∀ x y : Multiplicity, x ≤ y → y ≠ .zero → x ≠ .zero) _ _ (hle x) hx)
     exact (by decide : ∀ f x y : Multiplicity, x ≤ y → f + x ≠ .omega → f + y ≠ .omega) _ _ _
       (hU' b) h
-  · exact (by decide : ∀ x y : Multiplicity, x ≤ y → x = .zero → y = .zero) _ _ (hU' b) hb
+  · exact Multiplicity.eq_zero_of_le_of_eq_zero _ _ (hU' b) hb
 
 /-- The term of a position of the multiplicity `π`, in an environment whose reach is that of the
 position and of the rest: its usage, `0` for data at the multiplicity `0`, the reach of the

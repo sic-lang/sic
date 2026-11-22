@@ -191,7 +191,7 @@ theorem ResultOwnership.value_mono :
     show Option.Rel _ ψ.constant ψ.constant
     cases ψ.constant with
     | none => exact .none
-    | some c => exact .some ((by decide : ∀ a : Multiplicity, a ≤ a) c)
+    | some c => exact .some (Multiplicity.le_refl' c)
   | _ + 1, ψ, os, os', h => by
     have ih := ResultOwnership.value_mono ψ.tail (fun k => os k.succ) (fun k => os' k.succ)
       fun k => h k.succ
@@ -231,7 +231,7 @@ theorem Shape.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero)
       exact List.mem_append_right _ h)
     refine ⟨fun hρ => ?_, Shape.keeps_of_prefixes hR rest a hmr hyr⟩
     obtain ⟨_, hargs, hmn⟩ := hm hρ
-    obtain ⟨-, w, hw⟩ := hargs ϱs' fun k => (by decide : ∀ x : Multiplicity, x ≤ x) _
+    obtain ⟨-, w, hw⟩ := hargs ϱs' fun k => Multiplicity.le_refl' _
     have hy' : ∀ y ∈ (a * w) :: next.prefixes ς (a * w), R ≤ ϱ * y * π := fun y h => hy y (by
       simp only [Shape.prefixes, hρ, ↓reduceIte, hw, Option.getD_some]
       exact List.mem_append_left _ h)
@@ -245,7 +245,7 @@ theorem Shape.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero)
       (Shape.argOwnerships (next.scale ς) os πs ϱs πs') fun k => by
         unfold Shape.argOwnerships
         split
-        · exact (by decide : ∀ x : Multiplicity, x ≤ x) _
+        · exact Multiplicity.le_refl' _
         · exact (by decide : ∀ s x y q : Multiplicity, x ≤ y → s * (x * q) ≤ s * (y * q))
             _ _ _ _ (hos k)
     rw [hw, hv] at hmono

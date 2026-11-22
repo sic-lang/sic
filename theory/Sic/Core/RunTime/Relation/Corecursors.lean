@@ -284,7 +284,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           ⟨_, List.getElem?_eq_getElem (by simp), by
             simp only [List.getElem?_map, List.getElem?_eq_getElem j.2, Option.map_some,
               Option.getD_some, List.getElem_map, Grade.modality.semiring.one_mul]
-            exact (by decide : ∀ π : Multiplicity, π ≤ π) _⟩
+            exact Multiplicity.le_refl' _⟩
         have hπ₂ : ∀ j : Fin ps'.length, ∃ π₂,
             (ps'.map (·.usage.run))[(j : Nat)]? = some π₂ ∧
             π₂ ≤ (ps'[(j : Nat)]?.map
@@ -292,7 +292,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           ⟨_, List.getElem?_eq_getElem (by simp), by
             simp only [List.getElem?_eq_getElem j.2, Option.map_some,
               Option.getD_some, List.getElem_map, Grade.modality.semiring.one_mul]
-            exact (by decide : ∀ π : Multiplicity, π ≤ π) _⟩
+            exact Multiplicity.le_refl' _⟩
         -- The ownership that the branch gives each entry of the state is within the requirement
         -- that the closure stores, which is that of the entry when `r` is used at run time, and
         -- the multiplicity of the entry is `0` otherwise.
@@ -314,19 +314,19 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             exact (by decide : ∀ π π' : Multiplicity, π * .zero ≤ π' * .zero) _ _
           · rw [hϱs₁ hr, List.getElem?_map, List.getElem?_eq_getElem j.2] at hϱ₁
             cases hϱ₁
-            exact (by decide : ∀ π : Multiplicity, π ≤ π) _
+            exact Multiplicity.le_refl' _
         have hϱ₂ : ∀ j : Fin ps'.length, ∃ ϱ₂, (ps'.map (·.requirement.run))[(j : Nat)]? = some ϱ₂ ∧
             (ps'[(j : Nat)]?.map (·.requirement.run)).getD .omega ≤ ϱ₂ := fun j =>
           ⟨_, List.getElem?_eq_getElem (by simp), by
             simp only [List.getElem?_eq_getElem j.2, Option.map_some, Option.getD_some,
               List.getElem_map]
-            exact (by decide : ∀ π : Multiplicity, π ≤ π) _⟩
+            exact Multiplicity.le_refl' _⟩
         -- The constant of the ownership of the result at run time is that of the type of the
         -- positions.
         have hψc : (ψ.map Grade.run).constant.getD .omega ≤
             (ψ.constant.getD .unrestrictedUnrestricted).run := by
           simp only [ResultOwnership.map]
-          cases ψ.constant <;> exact (by decide : ∀ π : Multiplicity, π ≤ π) _
+          cases ψ.constant <;> exact Multiplicity.le_refl' _
         -- The context of the branch, at the grades of its variables.
         have hc := fun (a' : Scope.Entry) (x : Var Ξ a') =>
           hpos.obsSubst_corecAt σ r T₂.name qs ls ps as Ss gs ts₁
