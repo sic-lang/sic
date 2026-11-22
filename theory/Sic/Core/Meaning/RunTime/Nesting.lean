@@ -143,18 +143,12 @@ theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Pro
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
 
 /-- An instance of a codata type in `Ω_n` has the relation of run time of the propositions, which
 relates every term to every address. -/
@@ -171,18 +165,12 @@ theorem RunFieldRel.codata_prop {sig : Signature} {ι : Interpretation} {P : Pro
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | univBelow m hm hu =>
     cases levelRel_run_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | prop _ => exact fun _ _ _ => trivial
   | propBelow _ _ _ => exact fun _ _ _ => trivial
 

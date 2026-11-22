@@ -136,18 +136,12 @@ theorem FieldRel.codata_type {sig : Signature} {ι : Interpretation} {n : Nat} (
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
 
 /-- An instance of a codata type in a universe of propositions is a type of a field by the clauses
 of `ty(Ω_m)`, at its level `m`, which the level of the field bounds. -/
@@ -169,18 +163,12 @@ theorem FieldRel.codata_prop {sig : Signature} {ι : Interpretation} {n : Nat} (
     cases hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | univBelow _ m hm hu =>
     cases levelRel_univ_iff.1 hu with
     | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hκ.symm.trans hs'
+      exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
 
 mutual
 

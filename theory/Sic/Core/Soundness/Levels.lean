@@ -540,20 +540,14 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
                 (.corec _ _ _ _ hl₂ has₂ ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
       | codataProp hD' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
   | .codataProp hD _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata hD' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
       | codataProp hD' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'

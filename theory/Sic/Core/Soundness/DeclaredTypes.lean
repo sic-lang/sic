@@ -1621,10 +1621,7 @@ theorem HasEq.dataInst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     rw [levelRel_prop_iff] at hP
     cases hP with
     | data h' _ _ _ hv hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv).trans hs')
     | codata h' _ _ _ hv => exact (hd.inst_data_codata h h' hv).elim
 
 /-- A proposition that is an instance of a data type of `Σ` is an instance in a universe of
@@ -1639,10 +1636,7 @@ theorem PropRel.dataInst_quality (hd : sig.Distinct) {decl : TypeDeclaration} {D
   rw [levelRel_prop_iff] at hP
   cases hP with
   | data h' _ _ _ hv hs' =>
-    obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
-    subst hD hqs hls hps
-    obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-    exact hs'
+    exact (hd.dataInst_quality_unique h h' hv) ▸ hs'
   | codata h' _ _ _ hv => exact (hd.inst_data_codata h h' hv).elim
 
 /-- Two equal terms of an instance in a universe of a data type of `Σ` whose constructors have no

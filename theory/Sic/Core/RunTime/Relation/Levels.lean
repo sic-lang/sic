@@ -256,20 +256,14 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
             (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _)
       | codataProp hD' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
   | .codataProp hD _ _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
       | codata hD' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hDD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hDD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique hD hD'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique hD hD' hA').trans hκ')
       | codataProp => exact fun _ _ _ _ _ _ => trivial
 termination_by structural h _ _ _ _ => h
 

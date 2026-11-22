@@ -277,10 +277,7 @@ theorem HasRun.data (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   | prop n b hb _ =>
     cases levelRel_prop_iff.1 hb with
     | data h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, -⟩ := hd.hasDataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv').trans hs')
     | codata hc _ _ _ hv' => exact (hd.inst_data_codata h hc hv').elim
   | univ n hn =>
     cases levelRel_run_iff.1 hn with
@@ -314,10 +311,7 @@ theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     cases levelRel_prop_iff.1 hb with
     | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   | univ n hn =>
     cases levelRel_run_iff.1 hn with
     | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
@@ -367,10 +361,7 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   rcases hor with ⟨k, b, hk⟩ | ⟨R, hR, w, htw, hrel⟩
   · cases levelRel_prop_iff.1 hk with
     | data h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD, hqs, hls, hps, -⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, -⟩ := hd.hasDataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv').trans hs')
     | codata hc' _ _ _ hv' => exact (hd.inst_data_codata h hc' hv').elim
   obtain ⟨n, S, hS, rfl⟩ := HasRun.data hd h hq hl hp hR hs
   cases Computesι.det hd htw hct

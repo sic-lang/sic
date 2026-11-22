@@ -474,10 +474,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   · cases levelRel_prop_iff.1 hk with
     | data hc _ _ _ hv' => exact (hd.inst_data_codata hc h hv'.symm).elim
     | codata h' _ _ _ hv' hs' =>
-      obtain ⟨-, hD', hqs, hls₂, hps, -⟩ := Term.inst.inj hv'
-      subst hD' hqs hls₂ hps
-      obtain ⟨rfl, -⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv').trans hs')
   obtain ⟨n, S, hnS, hS, rfl⟩ := HasRun.codata hd h hq hl hp hR hs
   obtain ⟨v', hv', Y, hY, hYD⟩ := htR
   rw [← hD] at hYD

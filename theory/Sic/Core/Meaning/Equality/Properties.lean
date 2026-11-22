@@ -699,10 +699,7 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
     | prop => cases hv
     | data h' _ _ _ hv' _ hn' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      exact hn.symm.trans hn'
+      exact hn.symm.trans ((hd.dataInst_level_unique h h' hv') ▸ hn')
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
   | codata h _ _ _ hv _ hn => cases h' with
     | univ => cases hv
@@ -710,10 +707,7 @@ theorem UnivRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact hn.symm.trans hn'
+      exact hn.symm.trans ((hd.codataInst_level_unique h h' hv') ▸ hn')
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
@@ -725,20 +719,14 @@ theorem UnivRel.not_prop {sig : Signature} {ι : Interpretation} {n m : Nat}
     subst hv'
     cases h with
     | data h _ _ _ hv hs =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.dataInst_quality_unique h h' hv.symm).trans hs')
     | codata h _ _ _ hv => exact hd.inst_data_codata h' h hv
   | codata h' _ _ _ hv' hs' =>
     subst hv'
     cases h with
     | data h _ _ _ hv => exact hd.inst_data_codata h h' hv.symm
     | codata h _ _ _ hv hs =>
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact nomatch hs.symm.trans hs'
+      exact nomatch hs.symm.trans ((hd.codataInst_quality_unique h h' hv.symm).trans hs')
   | equalityUniv | equalityProp =>
     cases h with
     | data _ _ _ _ hv => cases hv
@@ -752,20 +740,14 @@ theorem PropRel.level {sig : Signature} {ι : Interpretation} {n m : Nat} {below
   | data h _ _ _ hv _ hn => cases h' with
     | data h' _ _ _ hv' _ hn' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h h'
-      exact hn.symm.trans hn'
+      exact hn.symm.trans ((hd.dataInst_level_unique h h' hv') ▸ hn')
     | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
     | equalityUniv | equalityProp => cases hv
   | codata h _ _ _ hv _ hn => cases h' with
     | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
     | codata h' _ _ _ hv' _ hn' =>
       subst hv
-      obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hv'
-      subst hD hqs hls hps
-      obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-      exact hn.symm.trans hn'
+      exact hn.symm.trans ((hd.codataInst_level_unique h h' hv') ▸ hn')
     | equalityUniv | equalityProp => cases hv
   | equalityUniv hl => cases h' with
     | data _ _ _ _ hv' | codata _ _ _ _ hv' => cases hv'
@@ -1347,20 +1329,14 @@ theorem NestRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig
           (corecRel_mono (NestDesRel.mono hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1410,20 +1386,14 @@ theorem NestRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
           (corecRel_symm (NestDesRel.symm_of hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1473,20 +1443,14 @@ theorem NestRel.congr {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
           (NestDesRel.congr hd ih hS _ _ _ hS' (Nesting.ofArgs_rel₃ hνs)))
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
       | codataProp h' _ _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1554,26 +1518,17 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
           exact fun _ _ _ => TermRel.computed_trans hd (corecRel_trans
             (NestDesRel.trans_of hd ih hS _ _ _ hS' _ _ _ hS'' (Nesting.ofArgs_rel₃ hνs)))
         | codataProp h'' _ _ _ hA'' hκ'' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
-          exact nomatch hκ.symm.trans hκ''
+          exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h'' hA'').trans hκ'')
       | codataProp h' _ _ _ hA' hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
   | .codataProp h _ _ _ hA hκ _ _ _ hS, _, _, _, h', _, _, _, h'', hR => by
     cases hR with
     | inst hνs =>
       cases h' with
       | codata h' _ _ _ hA' _ hκ' =>
         subst hA
-        obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
-        subst hD hqs hls hps
-        obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h'
-        exact nomatch hκ.symm.trans hκ'
+        exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h' hA').trans hκ')
       | codataProp h' _ _ _ hA' =>
         subst hA
         obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA'
@@ -1583,10 +1538,7 @@ theorem NestRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
         cases has
         cases h'' with
         | codata h'' _ _ _ hA'' _ hκ'' =>
-          obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
-          subst hD hqs hls hps
-          obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h''
-          exact nomatch hκ.symm.trans hκ''
+          exact nomatch hκ.symm.trans ((hd.codataInst_quality_unique h h'' hA'').trans hκ'')
         | codataProp h'' _ _ _ hA'' _ _ _ _ hS'' =>
           obtain ⟨-, hD, hqs, hls, hps, has⟩ := Term.inst.inj hA''
           subst hD hqs hls hps
