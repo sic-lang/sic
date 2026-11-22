@@ -4,7 +4,6 @@ public import Sic.Core.RunTime.Relation.Recursors.Constructor
 public import Sic.Core.RunTime.Relation.Recursors.Nested
 public import Sic.Core.RunTime.Relation.Recursors.Skeleton
 import Sic.Core.Erasure.Fields
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Relation.Data
 import Sic.Core.RunTime.Relation.DeclaredTypes
@@ -160,12 +159,10 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The relations of run time of the block at the arguments substituted.
   obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hq hl hp hadm hasσ hs P
-  have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
-      ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-    fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
+  have hmono : DataType.RunBlockMono decl.dataTypes S :=
+    DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ (as.subst σ)⟩)
-      (F := fun X D => (.inst D qs ls ps (as.subst σ), (X D).computed sig ι)) hS X Y
-      fun D H _ _ => RunRel.computed_mono (hXY D H)
+      (inst := fun D => .inst D qs ls ps (as.subst σ)) hS
   let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
     ((sig.caseFieldParams T.name qs ps).getD [])
   let ϱ := (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run

@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Soundness.Signature
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness

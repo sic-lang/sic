@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 
 /-!

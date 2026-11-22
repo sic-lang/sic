@@ -1,9 +1,9 @@
 module
 
+public import Sic.Core.Meaning.Equality.Properties
 public import Sic.Core.Meaning.RunTime.Properties
-import Sic.Core.Meaning.RunTime.Nesting
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Equality.Properties
+import Sic.Core.Meaning.RunTime.Nesting
 import Sic.Math.Nat
 
 /-!
@@ -227,8 +227,7 @@ theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Disti
       DesRel sig ι n (fun m _ => levelRel sig ι m) .type
         (fun i => ((T.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
         ((T.body I).substLevels L) θ (S X T)) :
-    ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
-      ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S X T o₁ o₂ → S Y T o₁ o₂ :=
+    CodataType.BlockMono decl.codataTypes S :=
   fun X Y hXY T hT => DesRel.mono hd (Nat.forall_lt (levelRel_isPer hd) _) (hS X T hT) _ _ _
     (hS Y T hT)
     fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _

@@ -3,7 +3,6 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Relation.Recursors.Results
 import Sic.Core.Erasure.Fields
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Existence
 import Sic.Core.Results.Substitution

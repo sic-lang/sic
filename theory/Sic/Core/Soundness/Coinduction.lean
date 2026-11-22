@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Soundness.Signature
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Corecursors

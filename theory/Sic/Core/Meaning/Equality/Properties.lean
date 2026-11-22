@@ -261,6 +261,13 @@ under them itself, and is a partial equivalence relation, when the equality of t
 fields grows with the relations of the recursive fields, and inverts and composes them, by the
 strict positivity of their occurrences. -/
 
+/-- The equalities `S X c` of the fields of the constructors `c` of the data types `Ts` grow with
+the relations `X` of the recursive fields. -/
+def DataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → TermRel) → Constructor j g k Δ → FieldsRel) : Prop :=
+  ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
+    ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us
+
 section LeastFixedPoints
 
 variable {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
@@ -269,8 +276,7 @@ variable {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
 /-- `(eq_μ)` is closed under the clauses of the constructors, when the equality of the terms of the
 fields grows with the relations of the recursive fields. -/
 theorem DataType.blockRel_closed
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    (hmono : DataType.BlockMono Ts S)
     {T : DataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
     (h : T.ctorRel T.name (S (DataType.blockRel Ts S)) v w) :
     DataType.blockRel Ts S T.name v w :=
@@ -281,8 +287,7 @@ theorem DataType.blockRel_closed
 /-- `(eq_μ)` relates the constructors that the clauses relate only, when the equality of the terms
 of the fields grows with the relations of the recursive fields. -/
 theorem DataType.blockRel_inv
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    (hmono : DataType.BlockMono Ts S)
     {D : Name} {v w : Term 0 []} (h : DataType.blockRel Ts S D v w) :
     ∃ T ∈ Ts, T.name = D ∧ T.ctorRel T.name (S (DataType.blockRel Ts S)) v w :=
   h (fun D v w => ∃ T ∈ Ts, T.name = D ∧ T.ctorRel T.name (S (DataType.blockRel Ts S)) v w)
@@ -295,8 +300,7 @@ theorem DataType.blockRel_inv
 with the relations of the recursive fields, and inverts and composes them, and when the names of the
 types and of the constructors of each type are distinct. -/
 theorem DataType.blockRel_isPer
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us)
+    (hmono : DataType.BlockMono Ts S)
     (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts,
       ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c us ts)
     (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) →
@@ -469,6 +473,13 @@ with them; it is consistent with them itself, closed under them, and a partial e
 relation, when the equality of the destructors grows with the relations of the recursive
 destructors, and inverts and composes them, by the strict positivity of their occurrences. -/
 
+/-- The equalities `S X T` of the destructors of the codata types `T` of `Ts` grow with the
+relations `X` of the recursive destructors. -/
+def CodataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S : (Name → TermRel) → CodataType j g k Δ → ObsRel) : Prop :=
+  ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
+    S X T o₁ o₂ → S Y T o₁ o₂
+
 section GreatestFixedPoints
 
 variable {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
@@ -477,8 +488,7 @@ variable {j g k : Nat} {Δ : Scope} {Ts : List (CodataType j g k Δ)}
 /-- `(eq_ν)` is consistent with the clauses of the destructors, when the equality of the destructors
 grows with the relations of the recursive destructors. -/
 theorem CodataType.blockRel_unfold
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S Y T o₁ o₂)
+    (hmono : CodataType.BlockMono Ts S)
     {T : CodataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
     (h : CodataType.blockRel Ts S T.name v w) :
     corecRel T.name (S (CodataType.blockRel Ts S) T) v w :=
@@ -491,8 +501,7 @@ recursive destructors, and when the equality of the destructors grows with these
 relations that `(eq_ν)` joined with `P` gives the types are consistent with the clauses, a proof
 by coinduction up to `(eq_ν)`. -/
 theorem CodataType.blockRel_coind
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S Y T o₁ o₂)
+    (hmono : CodataType.BlockMono Ts S)
     {P : Name → TermRel}
     (hP : ∀ T' ∈ Ts, ∀ v w, P T'.name v w →
       corecRel T'.name (S (fun D a b => CodataType.blockRel Ts S D a b ∨ P D a b) T') v w)
@@ -510,8 +519,7 @@ theorem CodataType.blockRel_coind
 grows with the relations of the recursive destructors, and when the names of the types are
 distinct. -/
 theorem CodataType.blockRel_fold
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S Y T o₁ o₂)
+    (hmono : CodataType.BlockMono Ts S)
     (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts) {v w : Term 0 []}
     (h : corecRel T.name (S (CodataType.blockRel Ts S) T) v w) :
     CodataType.blockRel Ts S T.name v w :=
@@ -1976,6 +1984,20 @@ theorem TelRel.block_mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd 
     S X c ts us → S Y c ts us :=
   TelRel.mono hd ih (hS X T hT c hc) _ _ _ (hS Y T hT c hc)
     (fun _ => Nest.map_rel₃ (fun D => hXY D) _) ts us
+
+/-- The equalities of the fields of the constructors of a block, graphs of telescopes whose
+recursive fields, at the instances `inst D`, have the equalities computed from the relations `X`,
+grow with these relations. -/
+theorem DataType.BlockMono.of_telRel {sig : Signature} {ι : Interpretation} {n : Nat}
+    (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {j g k : Nat} {Δ : Scope}
+    {Ts : List (DataType j g k Δ)} {s : Quality} {rec : Constructor j g k Δ → Nat → Nest Name}
+    {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps} {inst : Name → Term 0 []}
+    {S : (Name → TermRel) → Constructor j g k Δ → FieldsRel}
+    (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, TelRel sig ι n (fun m _ => levelRel sig ι m) s
+      (fun i => (rec c i).map fun D => (inst D, (X D).computed sig ι)) (Θ c).2 (S X c)) :
+    DataType.BlockMono Ts S := fun X Y hXY =>
+  TelRel.block_mono hd ih (F := fun X D => (inst D, (X D).computed sig ι)) hS X Y
+    fun D _ _ => TermRel.computed_mono (hXY D)
 
 /-- A type of a universe is not a proposition, in a signature whose names are distinct. -/
 theorem HasEq.univ_not_prop {sig : Signature} {ι : Interpretation} {v : Term 0 []} {n k : Nat}

@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Lifting.Substitution
-public import Sic.Core.Nesting.Relation
 public import Sic.Core.Soundness.Corecursors
 public import Sic.Core.Soundness.Recursors.Similar
 import Sic.Core.Lifting.Functionality
@@ -10,7 +9,6 @@ import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Substitution
 import Sic.Core.Soundness.Closed

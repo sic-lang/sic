@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.RunTime.Relation.Recursors.Nested
 public import Sic.Core.Soundness.Recursors.Nested
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Math.Nat
 

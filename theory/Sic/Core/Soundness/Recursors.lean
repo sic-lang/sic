@@ -3,7 +3,6 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Soundness.DeclaredTypes
 public import Sic.Core.Soundness.Signature
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Existence

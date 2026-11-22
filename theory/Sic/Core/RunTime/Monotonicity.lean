@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Syntax.Signature
 import Sic.Math.Nat
@@ -59,12 +58,18 @@ theorem DataType.runCtorRel_mono {j g k : Nat} {Δ : Scope} {sig : Signature} {I
     {v : Term 0 []} {a : Nat} : T.runCtorRel sig I D S H v a → T.runCtorRel sig I D S' H' v a :=
   fun ⟨c, hc, i, ts, as, hv, hi, ha, hs⟩ => ⟨c, hc, i, ts, as, hv, hi, hH.getElem? ha, h c hc ts as hs⟩
 
+/-- The relations of run time `S X c` of the fields of the constructors `c` of the data types `Ts`
+grow with the relations `X` of the recursive fields. -/
+def DataType.RunBlockMono {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel) : Prop :=
+  ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
+    ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as
+
 /-- `(®_μ)` is closed under the clauses of the constructors, when the relation of the terms of the
 fields grows with the relations of the recursive fields. -/
 theorem DataType.runBlockRel_fold {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
     {Ts : List (DataType j g k Δ)} {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
-    (hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as)
+    (hmono : DataType.RunBlockMono Ts S)
     {T : DataType j g k Δ} (hT : T ∈ Ts) {H : Heap} {v : Term 0 []} {a : Nat}
     (h : T.runCtorRel sig I T.name (S (DataType.runBlockRel sig I Ts S)) H v a) :
     DataType.runBlockRel sig I Ts S T.name H v a :=
@@ -75,8 +80,7 @@ theorem DataType.runBlockRel_fold {j g k : Nat} {Δ : Scope} {sig : Signature} {
 grows with the relations of the recursive fields: the converse of `DataType.runBlockRel_fold`. -/
 theorem DataType.runBlockRel_unfold {j g k : Nat} {Δ : Scope} {sig : Signature} {I : Instance j g}
     {Ts : List (DataType j g k Δ)} {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
-    (hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as)
+    (hmono : DataType.RunBlockMono Ts S)
     {D : Name} {H : Heap} {v : Term 0 []} {a : Nat} (h : DataType.runBlockRel sig I Ts S D H v a) :
     ∃ T ∈ Ts, T.name = D ∧ T.runCtorRel sig I T.name (S (DataType.runBlockRel sig I Ts S)) H v a :=
   h (fun D H v a => ∃ T ∈ Ts, T.name = D ∧
@@ -168,8 +172,7 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
         RunTelRel.mono hd ih hK hKr (hS X T hT c hc) _ _ (hS Y T hT c hc)
           (fun _ => Nest.map_rel₃
             (fun D' H H' hH _ _ => RunRel.computed_mono (hXY D' H H' hH)) _)
-    have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
-        ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
+    have hmono : DataType.RunBlockMono decl.dataTypes S :=
       fun X Y hXY T hT c hc H =>
         hstep Eq (fun e => e ▸ List.prefix_refl _) (fun _ => rfl) X Y
           (fun D H _ e t a => e ▸ hXY D H t a) T hT c hc H H rfl
@@ -364,6 +367,22 @@ theorem RunTelRel.block_mono {sig : Signature} {ι : Interpretation} {P : Progra
   RunTelRel.mono hd ih (K := Eq) (fun e => e ▸ List.prefix_refl _) (fun _ => rfl)
     (hS X T hT c hc) _ _ (hS Y T hT c hc)
     (fun _ => Nest.map_rel₃ (fun D H _ e _ _ => e ▸ hXY D H _ _) _) H H rfl ts as
+
+/-- The relations of run time of the fields of the constructors of a block, graphs of telescopes
+whose recursive fields, at the instances `inst D`, have the relations computed from the relations
+`X`, grow with these relations. -/
+theorem DataType.RunBlockMono.of_runTelRel {sig : Signature} {ι : Interpretation} {P : Program}
+    {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P))
+    {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
+    {rec : Constructor j g k Δ → Nat → Nest Name}
+    {Θ : Constructor j g k Δ → (ps : List Parameter) × Telescope 0 [] ps} {inst : Name → Term 0 []}
+    {S : (Name → RunRel) → Constructor j g k Δ → RunFieldsRel}
+    (hS : ∀ X, ∀ T ∈ Ts, ∀ c ∈ T.constructors, RunTelRel sig ι P n (fun m _ => levelRel sig ι m)
+      (fun i => (rec c i).map fun D => (inst D, (X D).computed sig ι)) (Θ c).2 (S X c)) :
+    DataType.RunBlockMono Ts S := fun X Y hXY =>
+  RunTelRel.block_mono hd ih (F := fun X D => (inst D, (X D).computed sig ι)) hS X Y
+    fun D H _ _ => RunRel.computed_mono (hXY D H)
 
 /-- The relations of run time of every level are monotone in the heap, in a signature whose names
 are distinct. -/

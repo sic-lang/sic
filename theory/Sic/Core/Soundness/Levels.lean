@@ -3,7 +3,6 @@ module
 public import Sic.Core.Meaning
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.Soundness.Levels.Substitution
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Levels.Results
 import Sic.Core.Soundness.Substitution
@@ -401,11 +400,9 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     have hL := ih k (hk ▸ Nat.lt_succ_self k)
     ⟨b₁, b₂, hL.prop h₁ ht, hL.prop h₂ hu, hb⟩
   | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
-    have hmono := fun (X Y : Name → TermRel) (hXY : ∀ D v w, X D v w → Y D v w) =>
-      TelRel.block_mono hd (Nat.forall_lt (levelRel_isPer hd) _)
-        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
-        (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
-        fun D _ _ => TermRel.computed_mono (hXY D)
+    have hmono : DataType.BlockMono _ S :=
+      DataType.BlockMono.of_telRel hd (Nat.forall_lt (levelRel_isPer hd) _)
+        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩) (inst := fun D => .inst D _ _ _ _) hS
     refine hR (fun D v w => ∀ v' w', Term.LevelEquiv v v' → Term.LevelEquiv w w' →
         DataType.blockRel _ S D v' w')
       (fun T hT v w ⟨c, hcm, ts, us, hv, hw, hcS⟩ v' w' hv' hw' => ?_) _ _ ht hu

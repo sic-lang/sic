@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Levels
@@ -365,12 +364,9 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     | codata hc' _ _ _ hv' => exact (hd.inst_data_codata h hc' hv').elim
   obtain ⟨n, S, hS, rfl⟩ := HasRun.data hd h hq hl hp hR hs
   cases Computesι.det hd htw hct
-  have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
-      ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-    fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
-      (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
-      (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
-      fun D H _ _ => RunRel.computed_mono (hXY D H)
+  have hmono : DataType.RunBlockMono decl.dataTypes S :=
+    DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+      (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩) (inst := fun D => .inst D qs ls ps as) hS
   obtain ⟨T'', hT'', hn'', c, hc', i, fs, bs, hIs, hi, ha, hSc⟩ :=
     DataType.runBlockRel_unfold hmono hrel
   have e₁ : T'' = T' := List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup h.1))
@@ -420,12 +416,9 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       .univ _ (levelRel_run_iff.2 (hU T' hT').1)
     have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
         RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
-    have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
-        ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-      fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
-        (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
-        (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
-        fun D H _ _ => RunRel.computed_mono (hXY D H)
+    have hmono : DataType.RunBlockMono decl.dataTypes S :=
+      DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+        (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩) (inst := fun D => .inst D qs ls ps as) hS
     refine ⟨_, hw _, .inr ⟨_, hR T hT, _, (Whnf.ctor ..).computes,
       DataType.runBlockRel_fold hmono hT ⟨con, hc, i, ts.terms, bs, ⟨qs, ls, ps, _, as, rfl⟩, hi, ha,
         ?_⟩⟩⟩

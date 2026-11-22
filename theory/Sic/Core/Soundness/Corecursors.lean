@@ -1,7 +1,7 @@
 module
 
+public import Sic.Core.Meaning.Equality.Properties
 public import Sic.Core.Soundness.Signature
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
@@ -1602,8 +1602,7 @@ it has: the type is not a proposition, the term computes to a canonical term tha
 and `(eq_ν)` relates corecursors of the type. -/
 theorem ValidEqTerm₀.computes_corec (hd : sig.Distinct) {j g k : Nat} {Δ : Scope}
     {Ts : List (CodataType j g k Δ)} {S : (Name → TermRel) → CodataType j g k Δ → ObsRel}
-    (hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S X T o₁ o₂ → S Y T o₁ o₂)
+    (hmono : CodataType.BlockMono Ts S)
     {T : CodataType j g k Δ} (hT : T ∈ Ts) {A t u : Term 0 []} {n : Nat}
     (hA : Computesι sig ι A A) (hU : (levelRel sig ι n).univ A (CodataType.blockRel Ts S T.name))
     (ht : ValidEqTerm₀ sig ι t u A) :

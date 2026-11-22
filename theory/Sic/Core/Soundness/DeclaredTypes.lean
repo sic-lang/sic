@@ -1,8 +1,6 @@
 module
 
-public import Sic.Core.Meaning
-public import Sic.Core.Nesting.Relation
-import Sic.Core.Meaning.Equality.Properties
+public import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
@@ -1303,8 +1301,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
           (DataType.blockRel decl.dataTypes S T.name)) ∧
       (∀ T ∈ decl.dataTypes, ∀ a b, (DataType.blockRel decl.dataTypes S T.name).computed sig ι a b →
         ValidEqTerm₀ sig ι a b (.inst T.name qs ls ps as₁)) ∧
-      (∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ decl.dataTypes,
-        ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us) ∧
+      DataType.BlockMono decl.dataTypes S ∧
       (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts us, S X c ts us →
         Terms.RecRel (fun D => (X D).computed sig ι)
           ((c.fields (.ofLists qs ps hq hp)).recursion decl.names) ts us) ∧
@@ -1341,12 +1338,10 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => hs ▸ (hS₀ _ T' hT' c hc).1,
       .data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc =>
         hs ▸ (hS₀ _ T' hT' c hc).2.1⟩
-  have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ decl.dataTypes,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us := fun X Y hXY =>
-    TelRel.block_mono hd ih (Θ := fun c => ⟨_, c.fieldsAt _ _ as₁⟩)
-      (F := fun X D => (.inst D qs ls ps as₁, (X D).computed sig ι))
-      (fun X T hT c hc => (hS₀ (fun D => (X D).computed sig ι) T hT c hc).1) X Y
-      fun D _ _ => TermRel.computed_mono (hXY D)
+  have hmono : DataType.BlockMono decl.dataTypes S :=
+    DataType.BlockMono.of_telRel hd ih (Θ := fun c => ⟨_, c.fieldsAt _ _ as₁⟩)
+      (inst := fun D => .inst D qs ls ps as₁)
+      (fun X T hT c hc => (hS₀ (fun D => (X D).computed sig ι) T hT c hc).1)
   have hI : ∀ D, Computesι sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₁) :=
     fun _ => (Whnf.inst ..).computes
   have hF : ∀ T ∈ decl.dataTypes, FieldRel sig ι
@@ -1668,12 +1663,10 @@ theorem ValidEqTerm₀.ctor_inv {decl : TypeDeclaration} {D : Name}
     (Whnf.inst ..).computes
   cases Computesι.det hd hw hv
   obtain ⟨n, S, hS, hiff⟩ := HasEq.dataInst hd h hq hl hp hs hR
-  have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ decl.dataTypes,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us := fun X Y hXY =>
-    TelRel.block_mono hd (Nat.forall_lt (levelRel_isPer hd) _)
+  have hmono : DataType.BlockMono decl.dataTypes S :=
+    DataType.BlockMono.of_telRel hd (Nat.forall_lt (levelRel_isPer hd) _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
-      (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
-      fun D _ _ => TermRel.computed_mono (hXY D)
+      (inst := fun D => .inst D qs ls ps as) hS
   obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := hne fun ⟨v', hv', _, _, hP⟩ => by
     cases Computesι.det hd hw hv'
     exact nomatch hs.symm.trans (PropRel.dataInst_quality hd h hq hp hP)

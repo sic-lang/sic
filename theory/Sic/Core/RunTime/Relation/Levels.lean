@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.Soundness.Levels
@@ -133,12 +132,9 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
           (r := fun (x y _ : RunNestLeaf) => ∀ H t t' a, x.2 H t a → Term.LevelEquiv t t' →
             y.2 H t' a)
           (fun D' H _ _ _ => RunRel.computed_levelEquiv hd (hXY D' H)) _) H
-    have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
-        ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-      fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
-        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
-        (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
-        fun D H _ _ => RunRel.computed_mono (hXY D H)
+    have hmono : DataType.RunBlockMono decl.dataTypes S :=
+      DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+        (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩) (inst := fun D => .inst D _ _ _ _) hS
     exact h (fun D H w a => ∀ w', Term.LevelEquiv w w' →
         DataType.runBlockRel sig _ decl.dataTypes S D H w' a)
       (fun T hT H w a ⟨c, hc, i, ts, as, hw, hi, ha, hs⟩ w' hww => by

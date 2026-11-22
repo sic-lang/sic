@@ -8,7 +8,6 @@ import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Substitution
 import Sic.Core.RunTime.Relation.Recursors.Nested.Branches

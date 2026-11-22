@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.RunTime.Nesting
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Closed
