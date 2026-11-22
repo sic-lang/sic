@@ -215,12 +215,10 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   refine ⟨_, .nested hν₁ (hΘ₁ ▸ hT₁.levelLe hn) F hF₁ hBresp G (fun f => ?_),
     .nested hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F hF₂ hBresp G (fun f => ?_)⟩
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀
-    have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
-      (NestDesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
+    have hSG : S = G := Math.Rel₂.ext_of_iff (NestDesRel.unique hd ih h₂ _ _ h₀₂)
     exact hSG ▸ h₁
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f
-    have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
-      (NestDesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
+    have hSG : S = G := Math.Rel₂.ext_of_iff (NestDesRel.unique hd ih h₁ _ _ h₀₁)
     exact hSG ▸ h₂
 
 /-- An instance of a codata type that is a type of a field of the sort of the quality `s` at the

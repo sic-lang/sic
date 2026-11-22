@@ -546,12 +546,10 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {names : L
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hF₁ G fun a => ?_,
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hF₂ G fun a => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := hcommon a a₀
-        have hSG : S = G := Math.Rel₂.ext_of_iff fun ts us =>
-          (TelRel.unique hd ih h₂ _ _ h₀₂ ts us)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (TelRel.unique hd ih h₂ _ _ h₀₂)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := hcommon a₀ a
-        have hSG : S = G := Math.Rel₂.ext_of_iff fun ts us =>
-          (TelRel.unique hd ih h₁ _ _ h₀₁ ts us)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (TelRel.unique hd ih h₁ _ _ h₀₁)
         exact hSG ▸ h₂
     rw [ValidEqFields₀] at h
     split at h
@@ -665,12 +663,12 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hR₁ G fun a => ?_,
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hR₂ G fun a => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := hcommon a a₀
-        have hSG : S = G := Math.Rel₃.ext_of_iff fun H ts bs =>
-          (RunTelRel.congr hd ihm ih h₂ _ _ h₀₂ (hrr inst₂) H ts bs)
+        have hSG : S = G :=
+          Math.Rel₃.ext_of_iff (RunTelRel.congr hd ihm ih h₂ _ _ h₀₂ (hrr inst₂))
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := hcommon a₀ a
-        have hSG : S = G := Math.Rel₃.ext_of_iff fun H ts bs =>
-          (RunTelRel.congr hd ihm ih h₁ _ _ h₀₁ (hrr inst₁) H ts bs)
+        have hSG : S = G :=
+          Math.Rel₃.ext_of_iff (RunTelRel.congr hd ihm ih h₁ _ _ h₀₁ (hrr inst₁))
         exact hSG ▸ h₂
     rw [ValidEqFields₀] at h
     split at h

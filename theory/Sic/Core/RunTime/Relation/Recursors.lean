@@ -144,7 +144,6 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
-  have ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
   have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
@@ -201,7 +200,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     obtain ⟨a, H₅, tr₁, hevO, hH₅, v, hcv, hXv⟩ := hO hρ (by decide : Grade.linearLinear.run ≠ .zero) id E₂ (fun _ => rfl)
       (ϖ * r.run) H₄ hH₄
     rw [Target.rename_id] at hevO
-    obtain ⟨j₃, T₃, C₃, hj₃, rfl, hC₃, rfl⟩ := Motives.get_subst_idxOf hT hnd hCs σ hD' hC₀
+    obtain ⟨j₃, T₃, C₃, hj₃, rfl, hC₃, rfl⟩ :=
+      Motives.get_subst_idxOf hT hnd hprem.motives σ hD' hC₀
     have hvv := (ValidEqTerm₀.redStar_iff hd hcv.1).1 hvt
     obtain ⟨b', H₆, tr₂, hev, hH₆, hrun⟩ := hXv.2 ϖ H₅ (List.prefix_refl _)
       (hHH₃.trans (hH₄.trans hH₅)) (g₂ ∘ g₁) E₂ (fun x => (hE₂ (g₁ x)).trans (hE₁ x))
@@ -212,7 +212,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rw [ite_eq_right_of_eq_false _ _ (eq_false hρ), TargetBranches.rename_rename]
       exact .recursor hevO hev
     · rw [Term.recursorAt_subst₀]
-      exact RunsAs.recursor_of_redStar hd hCv hrec hσ hj₃ hC₃ hcv.1 hvt hrun
+      exact RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hj₃ hC₃ hcv.1 hvt hrun
   have hclosed : ∀ T' ∈ decl.dataTypes, ∀ H₀ w a, T'.runCtorRel sig (.ofLists qs ps hq hp) T'.name (S X) H₀ w a →
       X T'.name H₀ w a := by
     intro T' hT' H₀ w a hc
@@ -228,7 +228,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rw [hidx j T' hj] at hC'
     have hRt := hRs i j T' con hi'
     have hfac := Constructor.ResultTypes.factors_recursiveResults hd hord hRt
-    obtain ⟨u₁, hu₁⟩ := hus i j T' con hi'
+    obtain ⟨u₁, hu₁⟩ := hprem.branches i j T' con hi'
     have hlg := Branches.length_grades hu₁
     -- A field of a recursive result used at run time, whose factor is, is used at run time.
     have hused : ∀ l (p : Parameter) (j' : Nat) (w' : RecursiveResult),
@@ -290,9 +290,9 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           refine ⟨(_, (X D).computed sig ι), by rw [hr']; rfl,
             fun t b ⟨v, hcv, hXv⟩ hVt ϖ'' H'' hH'' _ g₂ E₂ hg₂ => ?_⟩
           have hDn := Telescope.mem_names_of_direct_mem (List.mem_of_getElem? hD)
-          obtain ⟨C₃, hC₃⟩ := Motives.get_idxOf hT hnd hCs hDn
+          obtain ⟨C₃, hC₃⟩ := Motives.get_idxOf hT hnd hprem.motives hDn
           obtain ⟨j₃, T₃, C₃', hj₃, rfl, hC₃', -⟩ :=
-            Motives.get_subst_idxOf hT hnd hCs σ hDn (Motives.get_subst σ hC₃)
+            Motives.get_subst_idxOf hT hnd hprem.motives σ hDn (Motives.get_subst σ hC₃)
           rw [hidx j₃ T₃ hj₃, hC₃'] at hC₃
           cases hC₃
           have hvv := (ValidEqTerm₀.redStar_iff hd hcv.1).1 hVt
@@ -300,13 +300,14 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
             (hHH'.trans hH'') g₂ E₂ hg₂ (hvv.trans hvv.symm) C₃ ((hidx j₃ T₃ hj₃).symm ▸ hC₃')
           refine ⟨b', H₃, tr', hev, hH₃, fun b₁ hb₁ => ?_⟩
           obtain ⟨-, C₄, hC₄, rfl⟩ := Lifting.ofMotives_block_inv hb₁
-          obtain ⟨j₄, T₄, C₄', hj₄, hT₄, hC₄', rfl⟩ := Motives.get_subst_idxOf hT hnd hCs σ hDn hC₄
+          obtain ⟨j₄, T₄, C₄', hj₄, hT₄, hC₄', rfl⟩ :=
+            Motives.get_subst_idxOf hT hnd hprem.motives σ hDn hC₄
           have hj₄₃ : j₄ = j₃ :=
             List.getElem?_inj_of_nodup_map (TypeDeclaration.dataTypes_nodup hnd) hj₄ hj₃ hT₄
           rw [hj₄₃, hC₃'] at hC₄'
           cases hC₄'
           rw [Term.recursorAt_subst₀]
-          exact RunsAs.recursor_of_redStar hd hCv hrec hσ hj₃ hC₃' hcv.1 hVt hrun
+          exact RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hj₃ hC₃' hcv.1 hVt hrun
         · -- A nested field has a position.
           have hn : (con.fields (.ofLists qs ps hq hp)).nestAt decl.names l = .inst ms := by
             simp only [Telescope.nestAt, hms, Option.getD_some]
@@ -374,7 +375,8 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hC₀ : Cs.get (decl.names.idxOf T.name) = some ⟨0, C⟩ := (hidx h' T hh).symm ▸ hC
     obtain ⟨b, H₂, tr, hev, hH₂, hrun⟩ :=
       (hRw X hclosed).2 ϖ₀ H₁ (List.prefix_refl _) hH₁ g E' hgE (hwv.trans hwv.symm) C hC₀
-    exact ⟨b, H₂, tr, hev, hH₂, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC htw.1 htv hrun⟩
+    exact ⟨b, H₂, tr, hev, hH₂,
+      RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hh hC htw.1 htv hrun⟩
 
 /-- `r ∈ S`, by induction on `(eq_μ)`: the term of the skeleton of the instance evaluates to an
 address that the erased recursor, its branches renamed by `g` in an environment `E'` that binds
@@ -434,7 +436,6 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         ((sig.caseFieldParams D qs ps).getD [])).rename g) a b H₃ tr ∧ H₁.Extends H₃ ∧
       RunsAs sig ι P H₃ (.recursor r ς χ' D qs ls ps (as.subst σ) t κ (Cs.subst σ) (us.subst σ)) b
         ((C.subst (Subst.lift σ)).subst₀ (Subst₀.single t)) := by
-  have ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
   have hidx : ∀ j T', decl.dataTypes[j]? = some T' → decl.names.idxOf T'.name = j :=
@@ -490,7 +491,8 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hvv := (ValidEqTerm₀.redStar_iff hd hcv.1).1 hvt
     obtain ⟨a, H₅, hev, hH₅⟩ := (decl.skeleton I decl.names.length T₃.name).target_isData.eval
       (n := m₂) P (ϖ * .zero) H₄ E₂
-    obtain ⟨j₃, T₄, C₃, hj₃, hT₄, hC₃, rfl⟩ := Motives.get_subst_idxOf hT hnd hCs σ hD' hC₀
+    obtain ⟨j₃, T₄, C₃, hj₃, hT₄, hC₃, rfl⟩ :=
+      Motives.get_subst_idxOf hT hnd hprem.motives σ hD' hC₀
     obtain rfl : T₄ = T₃ := List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup hnd)
       (List.mem_of_getElem? hj₃) hT₃ hT₄
     obtain ⟨b', H₆, tr, hevr, hH₆, hrun⟩ := hXv.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
@@ -504,7 +506,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       rw [hr0] at hevr
       exact .recursor hev hevr
     · rw [Term.recursorAt_subst₀]
-      exact RunsAs.recursor_of_redStar hd hCv hrec hσ hj₃ hC₃ hcv.1 hvt
+      exact RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hj₃ hC₃ hcv.1 hvt
         (hrun C₃ ((hidx j₃ _ hj₃).symm ▸ hC₃))
   have hclosed : ∀ T' ∈ decl.dataTypes, ∀ v w, T'.ctorRel T'.name (SM X) v w →
       X T'.name v w := by
@@ -640,11 +642,11 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         refine ⟨b'', H₅, tr', hev', hH₅, fun b₁ hb₁ => ?_⟩
         obtain ⟨-, C₄, hC₄, rfl⟩ := Lifting.ofMotives_block_inv hb₁
         obtain ⟨j₄, T₄, C₄', hj₄, hT₄, hC₄', rfl⟩ :=
-          Motives.get_subst_idxOf hT hnd hCs σ hDn hC₄
+          Motives.get_subst_idxOf hT hnd hprem.motives σ hDn hC₄
         obtain rfl : T₄ = T₃ := List.eq_of_nodup_map (TypeDeclaration.dataTypes_nodup hnd)
           (List.mem_of_getElem? hj₄) hT₃ hT₄
         rw [Term.recursorAt_subst₀]
-        exact RunsAs.recursor_of_redStar hd hCv hrec hσ hj₄ hC₄' hcv.1 hVt
+        exact RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hj₄ hC₄' hcv.1 hVt
           (hrun' C₄' ((hidx j₄ _ hj₄).symm ▸ hC₄'))
     refine ⟨b, H₄, tr, hevr, hH₄, fun C' hC' => hrun C' ?_⟩
     rwa [hidx j T' hj] at hC'
@@ -661,8 +663,9 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   obtain ⟨b, H₃, tr, hevr, hH₃, hrun⟩ := hX.2.2 [] _ List.nodup_nil (fun _ h => nomatch h)
     (fun _ h => nomatch h) rfl _ E' H₁ a H₂ [] hH₁ hev (hww.trans hww.symm) ϖ₀ H₂
     (List.prefix_refl _) g E' hgE
-  refine ⟨a, H₂, b, H₃, tr, ?_, hevr, hH₂.trans hH₃, RunsAs.recursor_of_redStar hd hCv hrec hσ hh hC
-    hw₁.1 htv (hrun C ((hidx h' T hh).symm ▸ hC))⟩
+  refine ⟨a, H₂, b, H₃, tr, ?_, hevr, hH₂.trans hH₃,
+    RunsAs.recursor_of_redStar hd hprem.motives_valid hrec hσ hh hC hw₁.1 htv
+      (hrun C ((hidx h' T hh).symm ▸ hC))⟩
   rw [Skeleton.target_rename, hd.skeleton ⟨hdecl, hT, rfl⟩ hq hp]
   exact hev
 

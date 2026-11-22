@@ -193,7 +193,7 @@ theorem HasRun.unique {sig : Signature} {ι : Interpretation} {P : Program} {v :
 theorem HasRun.eq {sig : Signature} {ι : Interpretation} {P : Program} {v : Term 0 []}
     {R R' : RunRel} (hd : sig.Distinct) (h : HasRun sig ι P v R) (h' : HasRun sig ι P v R') :
     R = R' :=
-  Math.Rel₃.ext_of_iff fun H t a => (h.unique hd h' H t a)
+  Math.Rel₃.ext_of_iff (h.unique hd h')
 
 /-- Two types with a common relation of run time have the same relations of run time, in a signature
 whose names are distinct. -/

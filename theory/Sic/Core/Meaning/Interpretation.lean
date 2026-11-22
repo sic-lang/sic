@@ -78,6 +78,16 @@ RFC: `\mathsf{inst}_\rho` -/
 def Term.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (t : Term k Γ) : Term 0 Γ :=
   t.substLevels fun i => .ofNat (ρ i)
 
+/-- A term over `n` new variables, renamed under them then at levels, substituted by `θ` and by `τ`
+for the new variables, is the term at levels substituted by the renaming composed with `θ` and by
+`τ`. -/
+theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term k (Γ.extend n))
+    (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] n)) :
+    ((B.rename (Ren.liftN n β)).atLevels ρ).subst (Subst.append θ τ) =
+      (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := by
+  rw [Term.atLevels, Term.substLevels_rename]
+  exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
+
 /-- `Γ[ρ]`: the context `Γ` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/
 def Context.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (ctx : Context k Γ) : Context 0 Γ :=
@@ -114,16 +124,6 @@ theorem Term.atLevels_inst {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (D : N
     (Term.inst D qs ls ps as).atLevels ρ =
       .inst D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ) :=
   rfl
-
-/-- A term over `n` new variables, renamed under them then at levels, substituted by `θ` and by `τ`
-for the new variables, is the term at levels substituted by the renaming composed with `θ` and by
-`τ`. -/
-theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term k (Γ.extend n))
-    (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] n)) :
-    ((B.rename (Ren.liftN n β)).atLevels ρ).subst (Subst.append θ τ) =
-      (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := by
-  rw [Term.atLevels, Term.substLevels_rename]
-  exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
 
 /-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/

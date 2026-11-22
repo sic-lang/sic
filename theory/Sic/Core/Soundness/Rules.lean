@@ -705,12 +705,10 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
       have hr' : (rs 0).map Rf = some (Rf D) := by rw [hr]; rfl
       refine ⟨_, .recursive hr' hT₁ G fun f => ?_, .recursive hr' hT₂ G fun f => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f₀)
-        have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
-          (DesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (DesRel.unique hd ih h₂ _ _ h₀₂)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f)
-        have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
-          (DesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (DesRel.unique hd ih h₁ _ _ h₀₁)
         exact hSG ▸ h₂
 
 /-- Destructors of the codata type `D` equal in a sort `κ` of types at two closed substitutions of
@@ -781,12 +779,10 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
       have hr' : (rs 0).map Rf = some (Rf D') := by rw [hr]; rfl
       refine ⟨_, .recursive hi hr' hRT₁ G fun f => ?_, .recursive hi hr' hRT₂ G fun f => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f f₀)
-        have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
-          (RunDesRel.congr hd ihm ih h₂ _ _ h₀₂ hrr H o a)
+        have hSG : S = G := Math.Rel₃.ext_of_iff (RunDesRel.congr hd ihm ih h₂ _ _ h₀₂ hrr)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f₀ f)
-        have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
-          (RunDesRel.congr hd ihm ih h₁ _ _ h₀₁ hrr H o a)
+        have hSG : S = G := Math.Rel₃.ext_of_iff (RunDesRel.congr hd ihm ih h₁ _ _ h₀₁ hrr)
         exact hSG ▸ h₂
 
 /-- At equal closed arguments of the parameters of a meaningful type declaration, the destructors of

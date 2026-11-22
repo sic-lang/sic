@@ -188,7 +188,7 @@ theorem EqTypeClause.trans {sig : Signature} {ι : Interpretation} {A B C : Term
     EqTypeClause sig ι A B → EqTypeClause sig ι B C → EqTypeClause sig ι A C
   | ⟨A₀, B₀, R, hA, hB, hA₀, hB₀, hr⟩, ⟨B₁, C₀, R', hB', hC, hB₁, hC₀, hr'⟩ => by
     cases Computesι.det hd hB hB'
-    have hRR' : R = R' := Math.Rel₂.ext_of_iff fun t u => (hB₀.unique hd hB₁ t u)
+    have hRR' : R = R' := Math.Rel₂.ext_of_iff (hB₀.unique hd hB₁)
     subst hRR'
     exact ⟨A₀, C₀, R, hA, hC, hA₀, hC₀, fun P Q => (hr P Q).trans (hr' P Q)⟩
 

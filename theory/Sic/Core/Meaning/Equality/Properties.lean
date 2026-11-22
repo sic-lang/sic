@@ -73,12 +73,12 @@ theorem Computesι.det {sig : Signature} {ι : Interpretation} {t v₁ v₂ : Te
 /-- The equality that `ty(U_n)` gives a type is unique. -/
 theorem LevelRel.IsPer.univ_eq {L : LevelRel} (hL : L.IsPer) {v : Term 0 []} {R R' : TermRel}
     (h : L.univ v R) (h' : L.univ v R') : R = R' :=
-  Math.Rel₂.ext_of_iff fun t u => (hL.univ_unique h h' t u)
+  Math.Rel₂.ext_of_iff (hL.univ_unique h h')
 
 /-- The relation of run time that `rt(U_n)` gives a type is unique. -/
 theorem LevelRel.IsPer.run_eq {L : LevelRel} (hL : L.IsPer) {P : Program} {v : Term 0 []}
     {R R' : RunRel} (h : L.run P v R) (h' : L.run P v R') : R = R' :=
-  Math.Rel₃.ext_of_iff fun H t a => (hL.run_unique h h' H t a)
+  Math.Rel₃.ext_of_iff (hL.run_unique h h')
 
 /-- `ty(U_n)` at the level `n`, as the clauses of `UnivRel`. -/
 theorem levelRel_univ_iff {sig : Signature} {ι : Interpretation} {n : Nat} {v : Term 0 []}
@@ -708,11 +708,11 @@ theorem CodataType.blockTruth_iff_truth {j g k : Nat} {Δ : Scope} {Ts : List (C
 /-! ### A Type Has One Level and One Sort -/
 
 /-- The closed canonical type `v` is a type of the sort of the quality `s` at the level `n`, by its
-form alone, as the clauses of `ty(U_n)`, `ty(Ω_n)` and `rt(U_n)` read it: a universe of the level
-below `n`, an instance of a declared type whose sort at the instance has the quality `s` and the
-level `n`, or an equality at the level `n`, a proposition.
-The level and the quality of a type are read from it alone, so that `Term.IsTypeOfSort.unique` gives
-them once for all these relations. -/
+form and the declaration of its type in the signature, as the clauses of `ty(U_n)`, `ty(Ω_n)` and
+`rt(U_n)` read it: a universe of the level below `n`, an instance of a declared type whose sort at
+the instance has the quality `s` and the level `n`, or an equality at the level `n`, a proposition.
+The level and the quality of a type are read from it and from the signature alone, without the
+relations, so that `Term.IsTypeOfSort.unique` gives them once for all these relations. -/
 inductive Term.IsTypeOfSort (sig : Signature) (v : Term 0 []) : Quality → Nat → Prop where
   /-- The universe `U_k` or `Ω_k`, a type of `U_{k + 1}`. -/
   | univ {l : Level 0} {k : Nat} (s : Quality) (hl : l.closedValue = k) (hv : v = .sort ⟨s, l⟩) :
