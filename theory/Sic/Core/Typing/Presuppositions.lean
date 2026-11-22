@@ -203,9 +203,9 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
     ⟨⟨H.wfConstantDefinition, H.wfConstantDeclaration, H.wfCtx, (H.wfType · |>.2),
       (H.eqType · |>.2), (H.hasType · |>.2), (H.eqTerm · |>.2), (H.hasArgs · |>.2),
       (H.eqArgs · |>.2), (H.hasInstanceArgs · |>.2), (H.eqInstanceArgs · |>.2),
-      (H.wfTelescope · |>.2), (H.wfTelescopeSorts · |>.2), (H.eqTelescope · |>.2), H.wfFields, H.wfDestructors,
-      H.wfTypeDeclaration, H.wfSig⟩,
-     ⟨(H.wfType · |>.1), (H.eqType · |>.1), (H.hasType · |>.1), (H.eqTerm · |>.1),
+      (H.wfTelescope · |>.2), (H.wfTelescopeSorts · |>.2), (H.eqTelescope · |>.2), H.wfFields,
+      H.wfDestructors, H.wfTypeDeclaration, H.wfSig⟩,
+      ⟨(H.wfType · |>.1), (H.eqType · |>.1), (H.hasType · |>.1), (H.eqTerm · |>.1),
       (H.hasArgs · |>.1), (H.eqArgs · |>.1), (H.hasInstanceArgs · |>.1),
       (H.eqInstanceArgs · |>.1), (H.wfTelescope · |>.1), (H.wfTelescopeSorts · |>.1),
       (H.eqTelescope · |>.1)⟩⟩
