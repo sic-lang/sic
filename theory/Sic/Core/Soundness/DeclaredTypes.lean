@@ -251,6 +251,34 @@ theorem TypeDeclaration.AtClosedLevels.eqSubst_fields (hA : decl.AtClosedLevels 
   ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hA.telescopes c as)),
     EqSubst.levelEquiv (Context.LevelEquiv.append .empty (hA.telescopes c as).symm)⟩
 
+-- ADE: none.
+/-- The positions of the fields of a constructor of a block of data types, at the values of the
+levels `ls` and at arguments `ā`, hold the instances of the block there, which the graph of run
+time relates by relations `X`, when the instances at `ls` are types of a universe with these
+relations, in a signature whose names are distinct. -/
+theorem TypeDeclaration.AtClosedLevels.runNestRel_instances (hd : sig.Distinct)
+    (hA : decl.AtClosedLevels sig ι hq hl hp a₁ a₂) {P : Program}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
+    (c : Constructor decl.sorts decl.grades decl.levels decl.scope)
+    {as : InstanceArgs 0 [] decl.scope} {X : Name → RunRel}
+    (hU : ∀ T' ∈ decl.dataTypes,
+      RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as) (X T'.name)) :
+    ∀ j, Nest.All
+      (fun x : RunNestLeaf => RunNestRel sig ι P
+        (((decl.sort (.ofLists qs ps hq hp)).atLevels
+          fun i => (ls.getFin hl i).closedValue).level.closedValue)
+        (fun m _ => levelRel sig ι m) .plain x.1 x.2)
+      (((c.fields (.ofLists qs ps hq hp)).nestAt decl.names j).map fun D' =>
+          (((decl.blockInstance (.ofLists qs ps hq hp) D' (.identity decl.scope)).atLevels
+            fun i => (ls.getFin hl i).closedValue).subst as.toSubst,
+            (X D').computed sig ι)) := fun j =>
+  Nest.All.map_rel₃ (fun D' hD' => by
+      obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
+      exact hA.sort ▸ RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+        (.plain (Whnf.inst ..).computes (.univ (hU T' hT'))) (hA.instances as T'.name).symm .plain)
+    (Telescope.nestAt_all decl.names _ j)
+
 end
 
 /-! ## Declared Types
