@@ -404,7 +404,8 @@ theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclarati
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
   have hm := TypeDeclaration.mem_cases_of hj hc
   have he : (Entry.constructorCase T.name con.name (.typeDeclaration decl)).isSome := by
-    simp only [Entry.constructorCase, List.findIdx?_isSome, List.any_eq_true]
+    simp only [Entry.constructorCase, Entry.lookup, TypeDeclaration.name_mem_names hT, ↓reduceIte,
+      List.findIdx?_isSome, List.any_eq_true]
     exact ⟨_, hm, show (T.name == T.name && con.name == con.name) = true by
       rw [show (T.name == T.name) = true from decide_eq_true rfl,
         show (con.name == con.name) = true from decide_eq_true rfl]; rfl⟩
@@ -431,7 +432,8 @@ theorem Signature.destructorCase_of_mem {sig : Signature} {decl : TypeDeclaratio
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
   have hc := TypeDeclaration.mem_codataCases_of hj hdm
   have he : (Entry.destructorCase T.name d (.typeDeclaration decl)).isSome := by
-    simp only [Entry.destructorCase, List.findIdx?_isSome, List.any_eq_true]
+    simp only [Entry.destructorCase, Entry.lookup, TypeDeclaration.codata_name_mem_names hT,
+      ↓reduceIte, List.findIdx?_isSome, List.any_eq_true]
     exact ⟨_, hc, show (T.name == T.name && d == d) = true by
       rw [show (T.name == T.name) = true from decide_eq_true rfl,
         show (d == d) = true from decide_eq_true rfl]; rfl⟩
@@ -491,16 +493,8 @@ theorem Signature.Distinct.codataCases_nodup {sig : Signature} (hd : sig.Distinc
 
 /-- An entry that does not introduce the name `D` gives the case of no destructor of `D`. -/
 theorem Entry.destructorCase_of_not_mem {D d : Name} :
-    {e : Entry} → D ∉ e.names → Entry.destructorCase D d e = none
-  | .typeDeclaration decl, hD => by
-    simp only [Entry.destructorCase]
-    refine List.findIdx?_eq_none_iff.2 fun x hx => ?_
-    have hT := (TypeDeclaration.mem_casesFrom hx).1
-    cases h : (x.2.1.name == D) with
-    | false => rfl
-    | true => exact absurd (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT) hD
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.destructorCase D d e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- A signature none of whose entries introduces the name `D` gives the case of no destructor of
 `D`. -/
@@ -542,6 +536,8 @@ theorem Signature.Distinct.destructorCase_of_codataCases {sig : Signature} (hd :
     (hi : decl.codataCases[i]? = some (j, T, d)) : sig.destructorCase T.name d = some i := by
   have hT := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi)).1
   rw [hd.destructorCase ⟨hdecl, hT, rfl⟩]
+  simp only [Entry.destructorCase, Entry.lookup, TypeDeclaration.codata_name_mem_names hT,
+    ↓reduceIte]
   show decl.codataCases.findIdx? (fun x => x.2.1.name == T.name && x.2.2 == d) = some i
   have hs := List.findIdx?_isSome_of_mem (p := fun x => x.2.1.name == T.name && x.2.2 == d)
     (List.mem_of_getElem? hi) (by simp only [Bool.and_eq_true, beq_iff_eq, and_self])
@@ -564,7 +560,7 @@ theorem Entry.fieldParams_of_mem {decl : TypeDeclaration}
     (hp : ps.length = decl.grades) :
     Entry.fieldParams T.name con.name qs ps (.typeDeclaration decl) =
       some (con.params (.ofLists qs ps hq hp)) := by
-  simp only [Entry.fieldParams]
+  simp only [Entry.fieldParams, Entry.lookup, TypeDeclaration.name_mem_names hT, ↓reduceIte]
   split
   · try split
     all_goals first
@@ -576,19 +572,8 @@ theorem Entry.fieldParams_of_mem {decl : TypeDeclaration}
 /-- An entry that does not introduce the name `D` gives the parameters of the fields of no constructor
 of `D`. -/
 theorem Entry.fieldParams_of_not_mem {D c : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.fieldParams D c qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.fieldParams]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.bind_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.fieldParams D c qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the parameters of the fields of a constructor of a declared
 type are those of its telescope at the instance. -/
@@ -647,19 +632,8 @@ theorem Parameter.recursion_run_le {c : Grade} {es : List (List Nat)} {fs : List
 /-- An entry that does not introduce the name `D` gives the parameters of the fields of the cases of no
 data type named `D`. -/
 theorem Entry.caseFieldParams_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.caseFieldParams D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.caseFieldParams]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.caseFieldParams D qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the parameters of the fields of the constructors of the
 cases of the block of a data type are those of their telescopes at the instance. -/
@@ -675,7 +649,8 @@ theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct 
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.caseFieldParams D qs ps (.typeDeclaration decl) =
           some (decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)) := by
-        simp only [Entry.caseFieldParams, hq, hp, ↓reduceDIte, ← hD,
+        simp only [Entry.caseFieldParams, Entry.lookup, TypeDeclaration.name_mem_names hT,
+          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
@@ -685,19 +660,8 @@ theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct 
 /-- An entry that does not introduce the name `D` gives the arguments of the destructors of no
 codata type named `D`. -/
 theorem Entry.destructorArguments_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.destructorArguments D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
-    simp only [Entry.destructorArguments]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.destructorArguments D qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the arguments of the destructors of the cases of the
 block of a codata type are the positions of their types, the parameters of their arguments, the
@@ -718,7 +682,8 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
           some (decl.codataCases.map fun x =>
             (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD
               ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) := by
-        simp only [Entry.destructorArguments, hq, hp, ↓reduceDIte, ← hD,
+        simp only [Entry.destructorArguments, Entry.lookup,
+          TypeDeclaration.codata_name_mem_names hT, ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe =>
@@ -768,7 +733,8 @@ theorem Entry.argumentParams_of_mem {decl : TypeDeclaration}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length} (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) :
     Entry.argumentParams T.name d qs ps (.typeDeclaration decl) = some ⟨ps', ψ, ς⟩ := by
-  simp only [Entry.argumentParams]
+  simp only [Entry.argumentParams, Entry.lookup, TypeDeclaration.codata_name_mem_names hT,
+    ↓reduceIte]
   split
   · try split
     all_goals first
@@ -779,19 +745,8 @@ theorem Entry.argumentParams_of_mem {decl : TypeDeclaration}
 /-- An entry that does not introduce the name `D` gives the parameters of the arguments of no destructor
 of `D`. -/
 theorem Entry.argumentParams_of_not_mem {D d : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.argumentParams D d qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
-    simp only [Entry.argumentParams]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.bind_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.argumentParams D d qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the parameters of the arguments of a destructor of a
 declared type, the ownership of its result and the ownership that it requires of the value that it
@@ -953,7 +908,8 @@ theorem Entry.destructorGrades_of_mem {decl : TypeDeclaration}
       exact Destructors.isSome_grade _ (hc _ hT') _ hd
   obtain ⟨gs, hgs⟩ := List.exists_mapM_eq_some hall
   refine ⟨gs, ?_, fun i j T' d hi p hpg => ?_⟩
-  · simp only [Entry.destructorGrades]
+  · simp only [Entry.destructorGrades, Entry.lookup, TypeDeclaration.codata_name_mem_names hT,
+    ↓reduceIte]
     split
     · try split
       all_goals first
@@ -968,19 +924,8 @@ theorem Entry.destructorGrades_of_mem {decl : TypeDeclaration}
 /-- An entry that does not introduce the name `D` gives the grades of the destructors of no block
 of `D`. -/
 theorem Entry.destructorGrades_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.destructorGrades D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
-    simp only [Entry.destructorGrades]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.bind_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.destructorGrades D qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the grades of the destructors of the cases of the
 block of a codata type are those of its declaration, at the instance. -/
@@ -1008,19 +953,8 @@ theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct
 /-- An entry that does not introduce the name `D` gives the types resumed by the destructors of no
 block of `D`. -/
 theorem Entry.resumedTypes_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.resumedTypes D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
-    simp only [Entry.resumedTypes]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.resumedTypes D qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the types resumed by the destructors of the cases of the
 block of a codata type are the positions of the types that their results name, at the instance. -/
@@ -1037,7 +971,8 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
     · have hg : Entry.resumedTypes D qs ps (.typeDeclaration decl) = some (decl.codataCases.map
           fun x => ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind
             decl.names.idxOf?) := by
-        simp only [Entry.resumedTypes, hq, hp, ↓reduceDIte, ← hD,
+        simp only [Entry.resumedTypes, Entry.lookup, TypeDeclaration.codata_name_mem_names hT,
+          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
     · have hDe : D ∉ e.names := fun hDe =>
@@ -1108,17 +1043,14 @@ theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D 
         · rw [h]; rfl
         · rw [h] at hT; exact nomatch hT
       have hp : Entry.position D (.typeDeclaration decl) = some h' := by
-        simp only [Entry.position, hc, ← hD]
+        simp only [Entry.position, Entry.lookup, ← hD, TypeDeclaration.codata_name_mem_names hT,
+          ↓reduceIte]
+        simp only [hc]
         exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup hn) hh
       rw [List.findSome?_cons_of_isSome (by rw [hp]; rfl), hp]
     · have hDe : D ∉ e.names := fun hDe =>
         hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      have hp : Entry.position D e = none := by
-        cases e with
-        | typeDeclaration decl' =>
-          simp only [Entry.position]
-          exact List.idxOf?_eq_none_iff.2 hDe
-        | _ => rfl
+      have hp : Entry.position D e = none := Entry.lookup_of_not_mem hDe
       rw [List.findSome?_cons_of_isNone (by rw [hp]; rfl)]
       exact hd.position ⟨he', hT, hD⟩ hh
 

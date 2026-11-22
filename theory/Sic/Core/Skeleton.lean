@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Syntax
-import Sic.Core.Syntax.Signature
 
 /-!
 # Skeletons
@@ -55,15 +54,14 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
 within the depth of the number of the types of its block, when the entry declares it. -/
 def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option Skeleton
-  | .typeDeclaration decl =>
+    Entry → Option Skeleton :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
           decl.skeleton (.ofLists qs ps hq hp) decl.names.length D
       else none
     else none
-  | _ => none
 
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
 in the last entry of the signature that declares it, and `□` when the signature has no such entry,
@@ -80,18 +78,7 @@ def Signature.skeleton (sig : Signature) (D : Name) (qs : List Quality)
 
 /-- An entry that does not introduce the name `D` gives the skeleton of no data type named `D`. -/
 theorem Entry.skeleton_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
-    {e : Entry} → D ∉ e.names → Entry.skeleton D qs ps e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.skeleton]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.skeleton D qs ps e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 end Sic.Core

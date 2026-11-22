@@ -33,6 +33,8 @@ theorem Signature.Distinct.cases_of_constructorCase (hd : sig.Distinct) {decl : 
     ∃ j, decl.cases[i]? = some (j, T, con) := by
   obtain ⟨hdecl, hT, -⟩ := h
   rw [hd.constructorCase ⟨hdecl, hT, rfl⟩] at hi
+  simp only [Entry.constructorCase, Entry.lookup, TypeDeclaration.name_mem_names hT, ↓reduceIte]
+    at hi
   obtain ⟨⟨j', T', con'⟩, hx, hpx⟩ := List.getElem?_of_findIdx?_eq_some hi
   obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hT
   have hm := TypeDeclaration.mem_cases_of hj hc
@@ -52,6 +54,9 @@ theorem Entry.constructorCase_of_cases {decl : TypeDeclaration}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (hi : decl.cases[i]? = some (j, T, con)) :
     Entry.constructorCase T.name con.name (.typeDeclaration decl) = some i := by
+  simp only [Entry.constructorCase, Entry.lookup,
+    TypeDeclaration.name_mem_names (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hi)).1,
+    ↓reduceIte]
   show decl.cases.findIdx? (fun x => x.2.1.name == T.name && x.2.2.name == con.name) = some i
   have hs := List.findIdx?_isSome_of_mem
     (p := fun x => x.2.1.name == T.name && x.2.2.name == con.name) (List.mem_of_getElem? hi)

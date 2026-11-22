@@ -810,19 +810,41 @@ theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
   unfold Instance.ofLists
   rw [List.getFin_ofFn, List.getFin_ofFn]
 
+/-- The value `f decl` that the type declaration `decl` of an entry gives, when the entry is a type
+declaration that introduces the name `D`, and `none` otherwise: what the lookups of the declared
+type `D` read of the entry that declares it. -/
+def Entry.lookup {α : Type} (D : Name) (f : TypeDeclaration → Option α) : Entry → Option α
+  | .typeDeclaration decl => if D ∈ decl.names then f decl else none
+  | _ => none
+
+/-- An entry that does not introduce the name `D` gives nothing to a lookup of `D`. -/
+theorem Entry.lookup_of_not_mem {α : Type} {D : Name} {f : TypeDeclaration → Option α} :
+    {e : Entry} → D ∉ e.names → Entry.lookup D f e = none
+  | .typeDeclaration _, hD => by
+    simp only [Entry.lookup]
+    simp only [Entry.names] at hD
+    simp only [hD, ↓reduceIte]
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- A type declaration that introduces the name `D` gives a lookup of `D` its value. -/
+theorem Entry.lookup_typeDeclaration {α : Type} {D : Name} {f : TypeDeclaration → Option α}
+    {decl : TypeDeclaration} (hD : D ∈ decl.names) :
+    Entry.lookup D f (.typeDeclaration decl) = f decl := by
+  simp only [Entry.lookup, hD, ↓reduceIte]
+
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry
 declares them. -/
 def Entry.fieldParams (D c : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List Parameter)
-  | .typeDeclaration decl =>
+    Entry → Option (List Parameter) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).bind fun T =>
           (T.constructors.find? (·.name == c)).map fun con => con.params (.ofLists qs ps hq hp)
       else none
     else none
-  | _ => none
 
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, in the last entry of
@@ -845,15 +867,14 @@ declared type `D` at the instance of the qualities `qs` and of the grades `ps`, 
 its result and the ownership `ς` that it requires of the value that it observes, when the entry
 declares them. -/
 def Entry.argumentParams (D d : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)
-  | .typeDeclaration decl =>
+    Entry → Option (Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).bind fun T =>
           (T.body (.ofLists qs ps hq hp)).arguments d
       else none
     else none
-  | _ => none
 
 /-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, the ownership `ψ` of
@@ -888,15 +909,14 @@ def Destructors.resultConstant {k : Nat} : {Γ : Scope} → {ns : List Name} →
 order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, when the
 entry declares them. -/
 def Entry.destructorGrades (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List Grade)
-  | .typeDeclaration decl =>
+    Entry → Option (List Grade) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).bind fun _ =>
           decl.codataCases.mapM fun c => (c.2.1.body (.ofLists qs ps hq hp)).grade c.2.2
       else none
     else none
-  | _ => none
 
 /-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
 order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, in the last
@@ -907,9 +927,9 @@ def Signature.destructorGrades (sig : Signature) (D : Name) (qs : List Quality) 
   sig.findSome? (Entry.destructorGrades D qs ps)
 
 /-- The position of the declared type `D` in the block of the entry, when the entry declares it. -/
-def Entry.position (D : Name) : Entry → Option Nat
-  | .typeDeclaration decl => decl.names.idxOf? D
-  | _ => none
+def Entry.position (D : Name) : Entry → Option Nat :=
+  Entry.lookup D fun decl =>
+    decl.names.idxOf? D
 
 /-- The position of the declared type `D` in its block, in the last entry of the signature that
 declares it, which the erasure of a corecursor reads to find the state of `D`; the positions are
@@ -920,9 +940,9 @@ def Signature.position (sig : Signature) (D : Name) : Option Nat :=
 
 /-- The case of the constructor `c` of the data type `D` in its block, when the entry declares
 them. -/
-def Entry.constructorCase (D c : Name) : Entry → Option Nat
-  | .typeDeclaration decl => decl.cases.findIdx? fun x => x.2.1.name == D && x.2.2.name == c
-  | _ => none
+def Entry.constructorCase (D c : Name) : Entry → Option Nat :=
+  Entry.lookup D fun decl =>
+    decl.cases.findIdx? fun x => x.2.1.name == D && x.2.2.name == c
 
 /-- The case `i` of the constructor `c` of the data type `D` in its block, in the order of the
 declaration, which is that of the branches of a recursor, in the last entry of the signature that
@@ -934,9 +954,9 @@ def Signature.constructorCase (sig : Signature) (D c : Name) : Option Nat :=
 
 /-- The case of the destructor `d` of the codata type `D` in its block, when the entry declares
 them. -/
-def Entry.destructorCase (D d : Name) : Entry → Option Nat
-  | .typeDeclaration decl => decl.codataCases.findIdx? fun x => x.2.1.name == D && x.2.2 == d
-  | _ => none
+def Entry.destructorCase (D d : Name) : Entry → Option Nat :=
+  Entry.lookup D fun decl =>
+    decl.codataCases.findIdx? fun x => x.2.1.name == D && x.2.2 == d
 
 /-- The case `i` of the destructor `d` of the codata type `D` in its block, in the order of the
 declaration, which is that of the branches of a corecursor, in the last entry of the signature that
@@ -949,8 +969,8 @@ def Signature.destructorCase (sig : Signature) (D d : Name) : Option Nat :=
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, `none` for a destructor that is not recursive, when the entry declares them. -/
 def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (Option Nat))
-  | .typeDeclaration decl =>
+    Entry → Option (List (Option Nat)) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).map fun _ =>
@@ -959,7 +979,6 @@ def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
               decl.names.idxOf?
       else none
     else none
-  | _ => none
 
 /-- The position in the block of the type of the result of each destructor of the block of the
 codata type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
@@ -975,15 +994,14 @@ def Signature.resumedTypes (sig : Signature) (D : Name) (qs : List Quality) (ps 
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, when the entry declares them. -/
 def Entry.caseFieldParams (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (List Parameter))
-  | .typeDeclaration decl =>
+    Entry → Option (List (List Parameter)) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
           decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)
       else none
     else none
-  | _ => none
 
 /-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
@@ -1000,8 +1018,8 @@ the parameters of its arguments, the ownership of its result and the ownership t
 the value that it observes, at the instance of the qualities `qs` and of the grades `ps`, in the
 order of the declaration, when the entry declares them. -/
 def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
-    Entry → Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade))
-  | .typeDeclaration decl =>
+    Entry → Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.codataTypes.find? (·.name == D)).map fun _ =>
@@ -1010,7 +1028,6 @@ def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
               ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)
       else none
     else none
-  | _ => none
 
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,
 whose state the branch of the destructor binds, the parameters of its arguments, the ownership of

@@ -71,15 +71,14 @@ whose results that are motives have the ownership `χ`, on the block of the data
 instance of the qualities `qs` and of the grades `ps`, in the signature `sig`, when the entry
 declares it. -/
 def Entry.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
-    (v : Lifting.Variables) (χ : Grade) : Entry → Option Grade
-  | .typeDeclaration decl =>
+    (v : Lifting.Variables) (χ : Grade) : Entry → Option Grade :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
           decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp)
       else none
     else none
-  | _ => none
 
 /-- `recursion_Σ(T, r)`: the requirement `r̂` of the recursion of a recursor of the variables `v`,
 whose results that are motives have the ownership `χ`, on the block of the data type `D`, at the
@@ -114,19 +113,8 @@ theorem TypeDeclaration.recursionRequirement_run_le {decl : TypeDeclaration} {si
 block of no data type named `D`. -/
 theorem Entry.recursionRequirement_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
     {ps : List Grade} {v : Lifting.Variables} {χ : Grade} :
-    {e : Entry} → D ∉ e.names → Entry.recursionRequirement sig D qs ps v χ e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.recursionRequirement]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.recursionRequirement sig D qs ps v χ e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the requirement of the recursion that the erasure
 reads is the one of the block of the data type, in the mode `11ᵐ`, along the whole signature. -/
@@ -142,7 +130,8 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursionRequirement sig₀ D qs ps v χ (.typeDeclaration decl) =
           some (decl.recursionRequirement sig₀ v .oneOne χ qs ps (.ofLists qs ps hq hp)) := by
-        simp only [Entry.recursionRequirement, hq, hp, ↓reduceDIte, ← hD,
+        simp only [Entry.recursionRequirement, Entry.lookup, TypeDeclaration.name_mem_names hT,
+          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)

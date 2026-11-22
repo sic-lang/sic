@@ -97,15 +97,14 @@ recursor of the variables `v` whose results that are motives have the ownership 
 of the qualities `qs` and of the grades `ps`, in the signature `sig`, when the entry declares
 them. -/
 def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
-    (v : Lifting.Variables) (χ : Grade) : Entry → Option (List (List RecursiveResult))
-  | .typeDeclaration decl =>
+    (v : Lifting.Variables) (χ : Grade) : Entry → Option (List (List RecursiveResult)) :=
+  Entry.lookup D fun decl =>
     if hq : qs.length = decl.sorts then
       if hp : ps.length = decl.grades then
         (decl.dataTypes.find? (·.name == D)).map fun _ =>
           decl.recursiveResults sig v qs ps χ (.ofLists qs ps hq hp)
       else none
     else none
-  | _ => none
 
 /-- `results_Σ(T, κ_C, r, ς, χ)`: the recursive results `w̄̄` of the fields of each constructor of the
 block of the data type `D`, in the order of the declaration, which is that of the branches of a
@@ -125,19 +124,8 @@ def Signature.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) 
 `D`. -/
 theorem Entry.recursiveResults_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
     {ps : List Grade} {v : Lifting.Variables} {χ : Grade} :
-    {e : Entry} → D ∉ e.names → Entry.recursiveResults sig D qs ps v χ e = none
-  | .typeDeclaration decl, hD => by
-    have hnone : decl.dataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
-      hD (beq_iff_eq.1 h ▸ TypeDeclaration.name_mem_names hT)
-    simp only [Entry.recursiveResults]
-    split
-    · try split
-      all_goals first
-        | rfl
-        | rw [hnone, Option.map_none]
-    · rfl
-  | .constantDefinition _, _ => rfl
-  | .constantDeclaration _, _ => rfl
+    {e : Entry} → D ∉ e.names → Entry.recursiveResults sig D qs ps v χ e = none :=
+  fun h => Entry.lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the recursive results that the erasure reads are those
 of the block of the data type, along the whole signature. -/
@@ -153,7 +141,8 @@ theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : 
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursiveResults sig₀ D qs ps v χ (.typeDeclaration decl) =
           some (decl.recursiveResults sig₀ v qs ps χ (.ofLists qs ps hq hp)) := by
-        simp only [Entry.recursiveResults, hq, hp, ↓reduceDIte, ← hD,
+        simp only [Entry.recursiveResults, Entry.lookup, TypeDeclaration.name_mem_names hT,
+          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
