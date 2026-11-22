@@ -255,8 +255,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         rw [Term.observation_subst_args, Term.observation_subst_args]
         exact (((ValidEqTerm₀.red_iff hd hred₂).2
           ((ValidEqTerm₀.red_iff hd hred₁).2 hb).symm).symm).levelEquiv (Term.LevelEquiv.refl _)
-          (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Term.substLevels_levelEquiv_atLevels L B))
+          (Term.LevelEquiv.refl _) (Term.substLevels_subst_levelEquiv_atLevels L B _)
       · -- The observation by a destructor whose grade is used at run time runs its branch, valid
         -- at run time, and resumes its value.
         intro d p q ς ps' Ξ Θ B ψ hpos i' hpr hi' H₂ hH₂ ts₂ bs₂ hτ hbs₂ ϖ₀
@@ -412,8 +411,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             fun _ => ?_,
             fun D' R hD' => ?_⟩
           · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv hd
-              (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-                (Term.substLevels_levelEquiv_atLevels L B))
+              (Term.substLevels_subst_levelEquiv_atLevels L B _)
           · simp only [hpos.recursionAt_index, hbn] at hD'
             cases hD'
         | some D₃ =>

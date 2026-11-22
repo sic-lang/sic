@@ -588,4 +588,13 @@ theorem Constructor.fieldsAt_levelEquiv {j g k k' : Nat} {Γ Δ : Scope} (c : Co
     (hls : ∀ i, ls₁ i ≈ ls₂ i) (has : InstanceArgs.LevelEquiv as₁ as₂) :
     Telescope.LevelEquiv (c.fieldsAt I ls₁ as₁) (c.fieldsAt I ls₂ as₂) :=
   (Telescope.substLevels_levelEquiv hls _).subst has.toSubst
+
+-- ADE: none.
+/-- A term at levels `ls` without variables, substituted by `σ`, is the term at the values of `ls`
+substituted by `σ`, up to its levels. -/
+theorem Term.substLevels_subst_levelEquiv_atLevels {k : Nat} {Γ Δ : Scope} (ls : Fin k → Level 0)
+    (t : Term k Δ) (σ : Subst 0 Γ Δ) :
+    Term.LevelEquiv ((t.substLevels ls).subst σ)
+      ((t.atLevels fun i => (ls i).closedValue).subst σ) :=
+  Term.LevelEquiv.subst (Subst.LevelEquiv.refl _) (Term.substLevels_levelEquiv_atLevels ls t)
 end Sic.Core

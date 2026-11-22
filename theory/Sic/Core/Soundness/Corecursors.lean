@@ -1057,9 +1057,8 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     rw [Term.observation_subst_args, Term.observation_subst_args]
     have hτ' := Telescope.eqSubst_closedValues hl Θ _ hτ
     exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
-      (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst
-        (Subst.LevelEquiv.refl _)
-        (Term.substLevels_levelEquiv_atLevels L B))
+      (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
+      (Term.substLevels_subst_levelEquiv_atLevels L B _)
   have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
     (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality
@@ -1712,8 +1711,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     rw [Term.observation_subst_args, Term.observation_subst_args]
     have hτ' := Telescope.eqSubst_closedValues hl Θ _ hτ
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
-      (Term.LevelEquiv.refl _) (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-        (Term.substLevels_levelEquiv_atLevels L B))
+      (Term.LevelEquiv.refl _) (Term.substLevels_subst_levelEquiv_atLevels L B _)
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
     have hmono := DesRel.blockMono hd hS

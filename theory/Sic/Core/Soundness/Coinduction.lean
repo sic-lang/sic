@@ -404,8 +404,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         have hxy : ValidEqTerm₀ sig ι (.obs T'.name qs ls ps a x d ts.terms)
             (.obs T'.name qs ls ps a y d ts.terms) _ := ⟨hox.1, ValidEqTerm₀.equality_eq hE hgv'⟩
         exact (hxy.trans hoy).levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
-          (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Term.substLevels_levelEquiv_atLevels L B))
+          (Term.substLevels_subst_levelEquiv_atLevels L B _)
       -- The observations of the two terms by each destructor are related: by the equality of its
       -- result if it is not recursive, and otherwise, computed, by the relations, since the branch
       -- makes the relation of the type of the result true at them.
