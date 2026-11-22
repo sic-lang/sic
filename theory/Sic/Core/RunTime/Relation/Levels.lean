@@ -186,7 +186,7 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       cases Computesι.det hd hA hA'
       have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
       have hFF := FieldRel.unique hd ihm hF _ _ hF'
-      have hRR := RunFieldRel.congr hd ihm (fun m _ => levelRel_run_unique hd m) hR _ hR'
+      have hRR := RunFieldRel.congr hd ihm (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
       have hFt := fun t t' htt (ht : Term.LevelEquiv t t') =>
         (hFF t' t').1 (FieldRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF htt ht ht)
       exact fun H => RunFieldsRel.cons_levelEquiv
@@ -226,7 +226,7 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
     | plain hA' hR' =>
       cases Computesι.det hd hA hA'
       have hRR := RunFieldRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-        (fun m _ => levelRel_run_unique hd m) hR _ hR'
+        (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
       exact fun H t t' a h ht => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR h ht)
   | .direct _, _, _, h', hτ => by
     cases hτ with
@@ -290,7 +290,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
   | .cons (d := d) (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ
       hRΘ F R hF hR _ hG _, _, _, h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
@@ -336,7 +336,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
   | .nested (d := d) (ps := ps) (B := B) (SΘ := SΘ) (RΘ := RΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h',
       hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
     cases h' with
@@ -377,7 +377,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       _ hG hrs, _, _,
       h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
@@ -421,7 +421,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
     | recursive _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive (d := d) (ps := ps) hi hrs hRΘ _ hG, _, _, h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     cases h' with
     | cons _ _ _ _ _ _ _ _ _ _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
     | recursive hi' hrs' hRΘ' _ hG' =>

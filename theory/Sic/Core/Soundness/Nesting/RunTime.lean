@@ -91,7 +91,7 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
   intro D hcase
   have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-    fun m _ => levelRel_run_unique hd m
+    Nat.forall_lt (levelRel_run_unique hd) _
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
@@ -249,7 +249,7 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Unive
   intro D hcase
   have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-    fun m _ => levelRel_run_unique hd m
+    Nat.forall_lt (levelRel_run_unique hd) _
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd

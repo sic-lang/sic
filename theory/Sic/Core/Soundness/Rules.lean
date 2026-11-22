@@ -830,7 +830,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
     obtain ⟨hΘ, h⟩ := h
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)
         ((rs (i + 1)).map Rf) ((rs (i + 1)).map Rf) :=
       fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _
@@ -1072,7 +1072,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
           (CodataType.runBlockRel decl.codataTypes S T.name) := by
   have hA := hv.atClosedLevels hd hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-      RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
       RunObsRel := fun X T H o a => ∃ S',
     RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue

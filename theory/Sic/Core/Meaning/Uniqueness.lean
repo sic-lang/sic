@@ -126,7 +126,8 @@ theorem levelRel_runNest_unique {sig : Signature} {ι : Interpretation} {P : Pro
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
     ∀ H t a, R H t a ↔ R' H t a :=
-  RunNestRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) (fun m _ => levelRel_run_unique hd m) h
+  RunNestRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _)
+    (Nat.forall_lt (levelRel_run_unique hd) _) h
     _ h'
 
 /-- `rt(U_n)[λ]` relates what the graph of run time relates: when each position of the nesting
@@ -146,7 +147,8 @@ theorem levelRel_runNest_agree_nest {sig : Signature} {ι : Interpretation} {P :
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R') :
     ∀ H t a, R' H t a → R H t a :=
-  RunNestRel.of_plain hd (Nat.forall_lt (levelRel_isPer hd) _) (fun m _ => levelRel_run_unique hd m)
+  RunNestRel.of_plain hd (Nat.forall_lt (levelRel_isPer hd) _)
+    (Nat.forall_lt (levelRel_run_unique hd) _)
     hinv h hτ _ h'
 
 /-- The graph of run time relates what `rt(U_n)[λ]` relates and the equality relates to itself: when
@@ -167,7 +169,8 @@ theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P 
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R')
     (hE : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s .plain A E) :
     ∀ H t a, E t t → R H t a → R' H t a :=
-  RunNestRel.to_plain hd (Nat.forall_lt (levelRel_isPer hd) _) (fun m _ => levelRel_run_unique hd m)
+  RunNestRel.to_plain hd (Nat.forall_lt (levelRel_isPer hd) _)
+    (Nat.forall_lt (levelRel_run_unique hd) _)
     hinv h hτ _ h' _ _ hE
 
 -- ADE: `irrelevanceTerm`, in `Graded/Erasure/LogicalRelation/Irrelevance.agda`.

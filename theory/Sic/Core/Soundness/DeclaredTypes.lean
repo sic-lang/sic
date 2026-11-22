@@ -541,7 +541,7 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
   | _ :: _, rs, .cons q₁ p A₁ Θ₁, .cons q₂ _ A₂ Θ₂, h => by
     have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      fun m _ => levelRel_run_unique hd m
+      Nat.forall_lt (levelRel_run_unique hd) _
     have hrr : ∀ (inst : Name → Term 0 []) i,
         Nest.Rel (fun x y : RunNestLeaf => ∀ H t a, x.2 H t a ↔ y.2 H t a)
           ((rs (i + 1)).map fun D => (inst D, Rf D))
@@ -1138,7 +1138,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
           (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) := by
   have hA := hv.atClosedLevels hd hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-      RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       RunFieldsRel := fun X c H ts bs =>
     ∃ S', RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue

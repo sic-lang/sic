@@ -609,7 +609,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (fun _ => .plain) _
     (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts htsρ bs hbsρ
   have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-    (fun m _ => levelRel_run_unique hd m) h₂ _ _ hRΘ
+    (Nat.forall_lt (levelRel_run_unique hd) _) h₂ _ _ hRΘ
     (fun _ => .plain) H' ts.terms bs).1 hS'
   -- The observation evaluates to an address to which the observation of the corecursor is related.
   obtain ⟨w, H'', tr, hev, hw⟩ := hobsR H' hH' ts bs hRΘts ϖ₀
