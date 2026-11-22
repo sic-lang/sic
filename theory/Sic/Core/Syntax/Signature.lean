@@ -11,6 +11,13 @@ Properties of the signatures of annex 08 of RFC 36: the names of the type declar
 the types, the constructors and the destructors of a signature whose names are distinct are unique,
 and so are the parameters of the fields of a constructor, of the arguments of a destructor and the
 position of a declared type.
+The cases of a block are its constructors, or its destructors, each with the position of its type:
+a constructor or a destructor of a type is in a case, and a case holds the position of its type.
+In a signature whose names are distinct, what the erasure of a corecursor reads of its type at each
+case is found there: the grades and the arguments of the destructors and the types that they
+resume, and the case of each branch of a corecursor, with its destructor and its state.
+`Signature.ErasesPropDestructors` names the property, which well-formed signatures have, that the
+destructors of the blocks of propositions are erased.
 
 ADE have no signatures: their definitions are in their contexts.
 -/
