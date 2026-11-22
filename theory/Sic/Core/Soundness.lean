@@ -393,7 +393,7 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.atLevels]
       rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
         (ls.getFin hl)).level.subst L' = _ from hsort]
-      refine ValidTermΓ.coind (l' := l'.subst L') (κs := fun i => (κs i).substLevels L') hι h hq hl'
+      refine ValidTermΓ.coind (l' := l'.atLevels ρ) (κs := fun i => (κs i).atLevels ρ) hι h hq hl'
         hp hadm has' hh (Terms.get_substLevels_of _ hA)
         ((Terms.length_substLevels _ As).trans hAl) ?_ (ht₁_ih hdis hord hι ρ)
         (ht₂_ih hdis hord hι ρ) ?_ ?_ ?_ ?_ ?_ ?_ ?_

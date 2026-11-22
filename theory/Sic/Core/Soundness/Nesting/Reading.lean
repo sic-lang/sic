@@ -1260,13 +1260,14 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
         ((ls.map (Level.atLevels ρ)).getFin hl' i).closedValue
       have hget : ∀ i,
           (ls.map (Level.atLevels ρ)).getFin hl' i =
-            (ls.getFin hl i).subst fun i => .ofNat (ρ i) :=
+            (ls.getFin hl i).atLevels ρ :=
         fun i => congrFun (Level.getFin_map_subst _ ls hl) i
       have hctxEq : Context.LevelEquiv
           (((declF.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).atLevels ρ)
           ((declF.params (.ofLists qs ps hq hp)).atLevels ρF) := by
         rw [Context.atLevels, Context.substLevels_substLevels]
         refine Context.substLevels_levelEquiv (fun i => ?_) _
+        show (ls.getFin hl i).atLevels ρ ≈ _
         rw [← hget i]
         exact Level.equivalence.symm (Level.ofNat_closedValue _)
       -- The arguments at the first pair are equal arguments of the parameters.
