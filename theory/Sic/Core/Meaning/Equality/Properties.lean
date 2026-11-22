@@ -1926,6 +1926,51 @@ theorem NestRel.unique {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' τ A F') : ∀ t u, F t u ↔ F' t u :=
   NestRel.congr hd ih h _ _ _ h' (Nest.rel₃_refl (fun _ _ _ => .rfl) τ)
 
+/-- The equality of the terms of the types `A t̄` at the arguments `t̄` of a telescope, by the graph
+of a sort, indexed by the terms of the arguments: the type at arguments computes to a type with an
+equality of its terms, and terms that are not those of arguments relate nothing. -/
+def FieldRel.atArgs (sig : Signature) (ι : Interpretation) (n : Nat) (s : Quality)
+    {ps : List Parameter} (A : Args 0 [] ps → Term 0 []) : Terms 0 [] → TermRel :=
+  fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
+    ∃ w F, Computesι sig ι (A ts) w ∧ FieldRel sig ι n (fun m _ => levelRel sig ι m) s w F ∧ F t u
+
+/-- The equality of the terms of the types at arguments is, at the terms of arguments, the equality
+of the terms of the type at them, in a signature whose names are distinct. -/
+theorem FieldRel.atArgs_eq {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {s : Quality} {ps : List Parameter}
+    {A : Args 0 [] ps → Term 0 []} {ts : Args 0 [] ps} {w : Term 0 []} {F : TermRel}
+    (hw : Computesι sig ι (A ts) w) (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s w F) :
+    FieldRel.atArgs sig ι n s A ts.terms = F :=
+  funext fun t => funext fun u => propext
+    ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
+      cases Args.terms_inj hts'
+      cases Computesι.det hd hw hw'
+      exact (FieldRel.unique hd ih hF' _ _ hF t u).1 h',
+    fun h' => ⟨ts, rfl, w, F, hw, hF, h'⟩⟩
+
+/-- The equality of the terms of the types `A t̄` at the arguments `t̄` of a telescope, by the graph
+of the nestings at the nesting `τ`, indexed by the terms of the arguments: terms that are not those
+of arguments relate nothing. -/
+def NestRel.atArgs (sig : Signature) (ι : Interpretation) (n : Nat) (sT s : Quality)
+    (τ : Nest NestLeaf) {ps : List Parameter} (A : Args 0 [] ps → Term 0 []) :
+    Terms 0 [] → TermRel :=
+  fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
+    ∃ F, NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ (A ts) F ∧ F t u
+
+/-- The equality of the terms of the types at arguments by the graph of the nestings is, at the
+terms of arguments, the equality of the terms of the type at them, in a signature whose names are
+distinct. -/
+theorem NestRel.atArgs_eq {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
+    (ih : ∀ m, m < n → (levelRel sig ι m).IsPer) {sT s : Quality} {τ : Nest NestLeaf}
+    {ps : List Parameter} {A : Args 0 [] ps → Term 0 []} {ts : Args 0 [] ps} {F : TermRel}
+    (hF : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ (A ts) F) :
+    NestRel.atArgs sig ι n sT s τ A ts.terms = F :=
+  funext fun t => funext fun u => propext
+    ⟨fun ⟨ts', hts', F', hF', h'⟩ => by
+      cases Args.terms_inj hts'
+      exact (NestRel.unique hd ih hF' _ _ hF t u).1 h',
+    fun h' => ⟨ts, rfl, F, hF, h'⟩⟩
+
 /-- Two derivations of the equality of the abstractions for a destructor, whose arguments are a
 closed telescope `Θ` and whose result type `A t̄` is, at equal arguments `t̄`, a type of the graph
 of the nestings without position: the equalities of the abstractions that they give agree. -/

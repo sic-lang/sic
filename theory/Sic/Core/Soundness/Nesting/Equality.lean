@@ -122,19 +122,13 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
         (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
     have huu := hSp.trans (hSp.symm hts) hts
     (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
-  let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-      FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality w F' ∧ F' t u
+  let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n κ.quality fun ts =>
+    B.subst (Subst.append θ₁ ts.toSubst)
   have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
       Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
       FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality w F₀ →
-      F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
-    funext fun t => funext fun u => propext
-      ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
-        cases Args.terms_inj hts'
-        cases Computesι.det hd hw hw'
-        exact (FieldRel.unique hd ih hF' _ _ hF₀ t u).1 h',
-      fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
+      F ts.terms = F₀ :=
+    fun _ _ _ hw hF => FieldRel.atArgs_eq hd ih hw hF
   -- A type equal to the result at the first substitution and the arguments `ts` has the
   -- equality `F ts`.
   have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -239,19 +233,14 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {
   have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
     (fun _ => .plain) hT₁
-  let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ F', NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-      (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-      (B.subst (Subst.append θ₁' ts.toSubst)) F' ∧ F' t u
+  let F : Terms 0 [] → TermRel := NestRel.atArgs sig ι n sT κ.quality
+    (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁)) fun ts =>
+      B.subst (Subst.append θ₁' ts.toSubst)
   have hFeq : ∀ (ts : Args 0 [] ps) F₀,
       NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
         (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.subst (Subst.append θ₁' ts.toSubst)) F₀ → F ts.terms = F₀ := fun ts F₀ hF₀ =>
-    funext fun t => funext fun u => propext
-      ⟨fun ⟨ts', hts', F', hF', h'⟩ => by
-        cases Args.terms_inj hts'
-        exact (NestRel.unique hd ih hF' _ _ hF₀ t u).1 h',
-      fun h' => ⟨ts, rfl, F₀, hF₀, h'⟩⟩
+        (B.subst (Subst.append θ₁' ts.toSubst)) F₀ → F ts.terms = F₀ :=
+    fun _ _ hF => NestRel.atArgs_eq hd ih hF
   have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
     obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
     have huu := hSp.trans (hSp.symm hts) hts

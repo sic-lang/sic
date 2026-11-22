@@ -105,19 +105,13 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
         (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
     have huu := hSp.trans (hSp.symm hts) hts
     (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
-  let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-      FieldRel sig ι n (fun m _ => levelRel sig ι m) .type w F' ∧ F' t u
+  let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n .type fun ts =>
+    B.subst (Subst.append θ₁ ts.toSubst)
   have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
       Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
       FieldRel sig ι n (fun m _ => levelRel sig ι m) .type w F₀ →
-      F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
-    funext fun t => funext fun u => propext
-      ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
-        cases Args.terms_inj hts'
-        cases Computesι.det hd hw hw'
-        exact (FieldRel.unique hd ihm hF' _ _ hF₀ t u).1 h',
-      fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
+      F ts.terms = F₀ :=
+    fun _ _ _ hw hF => FieldRel.atArgs_eq hd ihm hw hF
   -- A type equal to the result at the first substitution and the arguments `ts` has the
   -- equality `F ts`.
   have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -130,19 +124,13 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
       obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκs hκn
       rw [hFeq ts w₁ F₀ hw₁ hF₁]
       exact ⟨⟨w₁, hw₁, hF₁⟩, w₂, hw₂, hF₂⟩
-  let R : Terms 0 [] → RunRel := fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ w R', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-      RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w R' ∧ R' H t a
+  let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P n fun ts =>
+    B.subst (Subst.append θ₁ ts.toSubst)
   have hReq : ∀ (ts : Args 0 [] ps) w R₀,
       Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
       RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) w R₀ →
-      R ts.terms = R₀ := fun ts w R₀ hw hR₀ =>
-    funext fun H => funext fun t => funext fun a => propext
-      ⟨fun ⟨ts', hts', w', R', hw', hR', h'⟩ => by
-        cases Args.terms_inj hts'
-        cases Computesι.det hd hw hw'
-        exact (RunFieldRel.congr hd ihm ih hR' _ hR₀ H t a).1 h',
-      fun h' => ⟨ts, rfl, w, R₀, hw, hR₀, h'⟩⟩
+      R ts.terms = R₀ :=
+    fun _ _ _ hw hF => RunFieldRel.atArgs_eq hd ihm ih hw hF
   -- A type equal to the result at the first substitution and the arguments `ts` has the
   -- relation of run time `R ts`.
   have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -248,19 +236,14 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Unive
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
   have hT := TelRel.eqSubst_iff_plain hd hT₁
-  let R : Terms 0 [] → RunRel := fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-    ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m)
-      (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-      (B.subst (Subst.append θ₁' ts.toSubst)) R' ∧ R' H t a
+  let R : Terms 0 [] → RunRel := RunNestRel.atArgs sig ι P n
+    (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁)) fun ts =>
+      B.subst (Subst.append θ₁' ts.toSubst)
   have hReq : ∀ (ts : Args 0 [] ps) R₀,
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m)
         (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.subst (Subst.append θ₁' ts.toSubst)) R₀ → R ts.terms = R₀ := fun ts R₀ hR₀ =>
-    funext fun H => funext fun t => funext fun a => propext
-      ⟨fun ⟨ts', hts', R', hR', h'⟩ => by
-        cases Args.terms_inj hts'
-        exact (RunNestRel.unique hd ihm ih hR' _ hR₀ H t a).1 h',
-      fun h' => ⟨ts, rfl, R₀, hR₀, h'⟩⟩
+        (B.subst (Subst.append θ₁' ts.toSubst)) R₀ → R ts.terms = R₀ :=
+    fun _ _ hF => RunNestRel.atArgs_eq hd ihm ih hF
   -- The destructors after it have one relation, whatever the abstractions for it.
   let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
   obtain ⟨G, h₀₁, h₀₂⟩ := hds f₀ f₀ D hcase'

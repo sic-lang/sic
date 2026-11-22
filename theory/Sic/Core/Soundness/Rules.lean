@@ -685,19 +685,13 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
             (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
         have huu := hSp.trans (hSp.symm hts) hts
         (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
-      let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-        ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F' ∧ F' t u
+      let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
       have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
           Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
           FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F₀ →
-          F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
-        funext fun t => funext fun u => propext
-          ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
-            cases Args.terms_inj hts'
-            cases Computesι.det hd hw hw'
-            exact (FieldRel.unique hd ih hF' _ _ hF₀ t u).1 h',
-          fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
+          F ts.terms = F₀ :=
+        fun _ _ _ hw hF => FieldRel.atArgs_eq hd ih hw hF
       -- A type equal to the result at the first substitution and the arguments `ts` has the
       -- equality `F ts`.
       have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -820,19 +814,13 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
             (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
         have huu := hSp.trans (hSp.symm hts) hts
         (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
-      let F : Terms 0 [] → TermRel := fun tms t u => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-        ∃ w F', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-          FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F' ∧ F' t u
+      let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
       have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
           Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
           FieldRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality w F₀ →
-          F ts.terms = F₀ := fun ts w F₀ hw hF₀ =>
-        funext fun t => funext fun u => propext
-          ⟨fun ⟨ts', hts', w', F', hw', hF', h'⟩ => by
-            cases Args.terms_inj hts'
-            cases Computesι.det hd hw hw'
-            exact (FieldRel.unique hd ihm hF' _ _ hF₀ t u).1 h',
-          fun h' => ⟨ts, rfl, w, F₀, hw, hF₀, h'⟩⟩
+          F ts.terms = F₀ :=
+        fun _ _ _ hw hF => FieldRel.atArgs_eq hd ihm hw hF
       -- A type equal to the result at the first substitution and the arguments `ts` has the
       -- equality `F ts`.
       have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -846,19 +834,13 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
         cases Computesι.det hd hw₂ hv
         rw [hFeq ts w₁ F₀ hw₁ hF₁]
         exact hF₂
-      let R : Terms 0 [] → RunRel := fun tms H t a => ∃ ts : Args 0 [] ps, ts.terms = tms ∧
-        ∃ w R', Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w ∧
-          RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w R' ∧ R' H t a
+      let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P κ.level.closedValue fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
       have hReq : ∀ (ts : Args 0 [] ps) w R₀,
           Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
           RunFieldRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) w R₀ →
-          R ts.terms = R₀ := fun ts w R₀ hw hR₀ =>
-        funext fun H => funext fun t => funext fun a => propext
-          ⟨fun ⟨ts', hts', w', R', hw', hR', h'⟩ => by
-            cases Args.terms_inj hts'
-            cases Computesι.det hd hw hw'
-            exact (RunFieldRel.congr hd ihm ih hR' _ hR₀ H t a).1 h',
-          fun h' => ⟨ts, rfl, w, R₀, hw, hR₀, h'⟩⟩
+          R ts.terms = R₀ :=
+        fun _ _ _ hw hF => RunFieldRel.atArgs_eq hd ihm ih hw hF
       -- A type equal to the result at the first substitution and the arguments `ts` has the
       -- relation of run time `R ts`.
       have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
