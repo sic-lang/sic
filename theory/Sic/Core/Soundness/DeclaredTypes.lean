@@ -127,6 +127,18 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
     EqSubst.levelEquiv
       (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as).symm)⟩
 
+-- ADE: none.
+/-- Two closed substitutions equal for a context at the levels `ls` without variables are equal for
+it at the values of `ls`, as the meaning of a type declaration reads the arguments of its
+parameters. -/
+theorem EqSubst.atLevels_of_substLevels {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
+    {Γ : Scope} {ctx : Context k Γ} {σ₁ σ₂ : Subst 0 [] Γ}
+    (h : EqSubst sig ι (ctx.substLevels (ls.getFin hl)) σ₁ σ₂) :
+    EqSubst sig ι (ctx.atLevels fun i => (ls.getFin hl i).closedValue) σ₁ σ₂ :=
+  EqSubst.levelEquiv
+    (Context.substLevels_levelEquiv (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
+    h
+
 section
 
 variable {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
@@ -149,9 +161,7 @@ theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaratio
         ((T.body (.ofLists qs ps hq hp)).nestedAt (Nesting.ofPositive T.positive))
         ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)
         a₁.toSubst a₂.toSubst := fun _ hT =>
-  (hv.destructors _ hadm hT _).2 _ _ (EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv
-      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _) has)
+  (hv.destructors _ hadm hT _).2 _ _ (EqSubst.atLevels_of_substLevels hl has)
 
 -- ADE: none.
 /-- The fields of each constructor of each data type of a meaningful type declaration are
@@ -175,9 +185,7 @@ theorem ValidTypeDeclaration.fieldsAtClosedLevels (hv : ValidTypeDeclaration sig
           fun i => (ls.getFin hl i).closedValue).subst a₁.toSubst)
         (((c.fields (.ofLists qs ps hq hp)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst) := fun _ hT _ hc =>
-  (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.levelEquiv
-    (Context.substLevels_levelEquiv
-      (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _) has)
+  (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.atLevels_of_substLevels hl has)
 
 -- ADE: none.
 /-- A relation of the destructors of a codata type of a block at the levels `ls` is one at the
