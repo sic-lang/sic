@@ -38,9 +38,16 @@ variable {sig : Signature} {ι : Interpretation}
 
 The meaning of a type declaration holds at the values of its levels, which the proofs on its data
 types and its codata types read at the values of levels without variables: the facts that relate
-the two are stated once, those of the syntax, the instances, the fields and the sort, at any
-arguments, and those of the meaning, the destructors and the fields, at equal arguments of its
-parameters. -/
+the two are stated once.
+Those of the syntax hold at any arguments: the instances of the block, the telescopes, the fields
+of the constructors and the sort of the declaration at the values of the levels are those at the
+levels, up to the levels, and equal substitutions for them are equal.
+Those of the meaning hold at equal arguments of the parameters, whose equality moves to the values
+of the levels: the destructors and the fields are meaningful there.
+Those of the graphs hold in a signature whose names are distinct: the relations of the
+destructors, and of run time, at the levels are ones at their values, and those of the fields at
+the values of the levels are ones at the levels, with the positions of their instances at run
+time. -/
 
 -- ADE: none.
 /-- The instance of a type of a block at the parameters themselves, at the values of the levels
