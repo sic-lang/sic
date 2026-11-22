@@ -50,6 +50,12 @@ theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinc
 termination_by n
 decreasing_by all_goals assumption
 
+/-- The relations of every level below a level are partial equivalence relations, in a signature
+whose names are distinct, as the relations of the graphs of a level need them. -/
+theorem levelRel_isPer_lt {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :
+    ∀ m, m < n → (levelRel sig ι m).IsPer :=
+  fun m _ => levelRel_isPer hd m
+
 /-- `eq(v)` is a partial equivalence relation, symmetric and transitive, in a signature whose names
 are distinct.
 RFC: `\mathsf{per}_{\mathsf{eq}}.\mathsf{symm}`
@@ -81,7 +87,7 @@ theorem levelRel_nest_isPer {sig : Signature} {ι : Interpretation} {n : Nat} {s
     {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} (hd : sig.Distinct)
     (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All (fun x => IsPer x.2) τ) : IsPer F :=
-  NestRel.isPer hd (fun m _ => levelRel_isPer hd m) hτ h
+  NestRel.isPer hd (levelRel_isPer_lt hd _) hτ h
 
 /-- `ty(s_n)[λ]` gives a type a unique equality of its terms: two equalities of a type at a nesting
 relate the same terms, in a signature whose names are distinct.
@@ -90,7 +96,7 @@ theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat}
     {sT sT' s s' : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
     (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' τ A F') : ∀ t u, F t u ↔ F' t u :=
-  NestRel.unique hd (fun m _ => levelRel_isPer hd m) h _ _ h'
+  NestRel.unique hd (levelRel_isPer_lt hd _) h _ _ h'
 
 /-- `ty(s_n)[λ]` agrees with the graph of the types: when each position of the nesting holds a type
 with the equality of its terms, the equality that it gives a type is the one that the type has
@@ -109,7 +115,7 @@ theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {s
       (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ)
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain A F') :
     ∀ t u, F t u ↔ F' t u :=
-  NestRel.agree hd (fun m _ => levelRel_isPer hd m) hinv h hτ _ _ h'
+  NestRel.agree hd (levelRel_isPer_lt hd _) hinv h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
 distinct. -/
@@ -126,7 +132,7 @@ theorem levelRel_runNest_unique {sig : Signature} {ι : Interpretation} {P : Pro
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R') :
     ∀ H t a, R H t a ↔ R' H t a :=
-  RunNestRel.unique hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m) h _ h'
+  RunNestRel.unique hd (levelRel_isPer_lt hd _) (fun m _ => levelRel_run_unique hd m) h _ h'
 
 /-- `rt(U_n)[λ]` relates what the graph of run time relates: when each position of the nesting
 holds a type with its relation of run time, the relation that it gives a type relates a term to an
@@ -145,7 +151,7 @@ theorem levelRel_runNest_agree_nest {sig : Signature} {ι : Interpretation} {P :
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R') :
     ∀ H t a, R' H t a → R H t a :=
-  RunNestRel.of_plain hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m)
+  RunNestRel.of_plain hd (levelRel_isPer_lt hd _) (fun m _ => levelRel_run_unique hd m)
     hinv h hτ _ h'
 
 /-- The graph of run time relates what `rt(U_n)[λ]` relates and the equality relates to itself: when
@@ -166,7 +172,7 @@ theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P 
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R')
     (hE : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s .plain A E) :
     ∀ H t a, E t t → R H t a → R' H t a :=
-  RunNestRel.to_plain hd (fun m _ => levelRel_isPer hd m) (fun m _ => levelRel_run_unique hd m)
+  RunNestRel.to_plain hd (levelRel_isPer_lt hd _) (fun m _ => levelRel_run_unique hd m)
     hinv h hτ _ h' _ _ hE
 
 -- ADE: `irrelevanceTerm`, in `Graded/Erasure/LogicalRelation/Irrelevance.agda`.
@@ -225,7 +231,7 @@ theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Disti
         ((T.body I).substLevels L) θ (S X T)) :
     ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) →
       ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S X T o₁ o₂ → S Y T o₁ o₂ :=
-  fun X Y hXY T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS X T hT) _ _ _ (hS Y T hT)
+  fun X Y hXY T hT => DesRel.mono hd (levelRel_isPer_lt hd _) (hS X T hT) _ _ _ (hS Y T hT)
     fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
 
 -- ADE: none.
@@ -241,7 +247,7 @@ theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.
         ((T.body I).substLevels L) θ (S B T)) :
     ∀ B B' : Name → Prop, (∀ D, B D → B' D) →
       ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S B T o₁ o₂ → S B' T o₁ o₂ :=
-  fun B B' hB T hT => DesRel.mono hd (fun m _ => levelRel_isPer hd m) (hS B T hT) _ _ _ (hS B' T hT)
+  fun B B' hB T hT => DesRel.mono hd (levelRel_isPer_lt hd _) (hS B T hT) _ _ _ (hS B' T hT)
     fun _ => Option.rel_map (fun D _ _ => hB D) _
 
 -- ADE: none.

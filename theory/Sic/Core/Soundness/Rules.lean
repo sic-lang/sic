@@ -692,8 +692,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ih : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
-      fun m _ => levelRel_isPer hd m
+    have ih := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
       (fun _ => .plain)
@@ -829,8 +828,7 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
-      fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
     have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)

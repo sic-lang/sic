@@ -134,7 +134,7 @@ theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Op
   | recursive hrs => rw [hr] at hrs; cases hrs
   | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
     obtain ⟨hA, hGo⟩ := hS
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ih := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
     have hFv : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
         ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v (F ts.terms) := fun ts hts =>
@@ -189,8 +189,7 @@ theorem DesRel.headRec (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat →
     rw [hr] at hrs
     cases hrs
     obtain ⟨hA, hGo⟩ := hS
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
+    have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
     have hc : ∀ {f o : Observations}, ObsEquiv sig ι s f o → s = .prop ∨
         ∀ τ w, Computesι sig ι ((f d ps).subst τ) w ↔ Computesι sig ι ((o d ps).subst τ) w :=
       fun hf => hf.imp_right fun h τ w => h d ps τ w
@@ -858,7 +857,7 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, _, θ, θ', hm, rsR, hN, hS, _, h, o₁, o₂,
       hv, hr => by
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ih := levelRel_isPer_lt (ι := ι) hd n
     rw [Destructors.substLevels] at hm
     replace hm := hm.cons_inv
     obtain ⟨-, hm⟩ := hm
@@ -1604,7 +1603,7 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
     cases h with
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
       obtain ⟨hA, hGf⟩ := hS
-      have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+      have ih := levelRel_isPer_lt (ι := ι) hd n
       have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
       have hFv : ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
           ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v (F ts.terms) := fun ts hts =>

@@ -157,7 +157,7 @@ theorem RunTelRel.of_scale (hd : sig.Distinct) {n n' : Nat} {ps : List Parameter
         ∀ H', H.Extends H' → ∀ as : List Nat, as.length = ps.length →
           (∀ l (h : l < ps.length), ps[l].usage.run ≠ .zero → as[l]? = bs[l]?) →
           RΘ H' ts.terms as := by
-  have ihm : ∀ k m, m < k → (levelRel sig ι m).IsPer := fun _ m _ => levelRel_isPer hd m
+  have ihm := fun k => levelRel_isPer_lt (ι := ι) hd k
   have hSΘ' : SΘ' ts'.terms ts'.terms :=
     RunTelRel.fieldsRel hd (ihm _) hRΘ' (fun _ => rfl) _ _ hΘ' (fun _ => rfl) H ts'.terms bs hbs
   have hSS := TelRel.unique hd (ihm _) (TelRel.levelLe (Nat.le_max_left n' n) hΘ') _ _
@@ -479,7 +479,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
             (v.recursion * mr.factor)) RΘ' := hΘeq ▸ hRΘ'
     obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ ts'
     obtain ⟨hSΘ, hlen, hrel⟩ := RunTelRel.of_scale hd hΘ hΘ'' hRΘ'' ts ts' hts hts'
-    have hSΘ' : SΘ' ts'.terms ts'.terms := RunTelRel.fieldsRel hd (fun m _ => levelRel_isPer hd m)
+    have hSΘ' : SΘ' ts'.terms ts'.terms := RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _)
       hRΘ' (fun _ => rfl) _ _ hΘ' (fun _ => rfl) H' ts'.terms bs hts'
     -- The recursive result of the observation, a term of the result of the destructor lifted.
     have hφ : (fun E => ((φ E).rename (Ren.lift (Ren.weakenN ps₁.length))).subst
@@ -793,11 +793,11 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       .cons (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ hRΘ _ R _ hR _ _ _, _, _, hRel, _, _, _, _,
       _, f, _, _, _, hσ, _, hνB => by
     subst hσ hνB
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     refine ⟨SΘ, RΘ, R, i, hi, hΘ, hRΘ, fun H o a ho hSo => ?_, fun ts _ => ?_⟩
     · -- The observation by `o` runs, and the observation by `f` computes as it.
       refine RunAbstractionRel.congr_computes (fun H' ts bs hts =>
-        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ
+        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _) hRΘ
+          (fun _ => rfl) _ _ hΘ
           (fun _ => rfl) H' ts.terms bs hts)) .plain) (fun τ w => ?_) (hSo.2.1 ‹_›)
       rcases ho with ho | ho
       · exact nomatch ho
@@ -810,13 +810,13 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       .nested (SΘ := SΘ) (RΘ := RΘ) (i := i) hi _ hΘ hRΘ R hR _ _, hAll, _, hRel, nE, _, hrs, _,
       hE, f, hSf, hpu, _, hσ, _, hνB => by
     subst hσ hνB
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hAllB := Term.nest_all (p := fun x : RunNestLeaf => RunLeafCongr sig ι x.2)
       (mark := fun _ => none) (fun _ _ h => nomatch h) (Nesting.liftN_rel₃ ps.length hAll) B
     refine ⟨SΘ, RΘ, R, i, hi, hΘ, hRΘ, fun H o a ho hSo => ?_, fun ts hts => ?_⟩
     · -- The observation by `o` runs, and the observation by `f` computes as it.
       refine RunAbstractionRel.congr_computes (fun H' ts bs hts =>
-        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ
+        RunNestRel.congr_computes (hR ts (RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _) hRΘ
+          (fun _ => rfl) _ _ hΘ
           (fun _ => rfl) H' ts.terms bs hts)) hAllB) (fun τ w => ?_) (hSo.1 hpu)
       rcases ho with ho | ho
       · exact nomatch ho
@@ -825,8 +825,8 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       cases hE with
       | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
       | cons hΘE _ hBE hFE _ _ _ _ _ =>
-        have ihE : ∀ m, m < max n nE → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-        have htE := (TelRel.unique hd ihE (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
+        have htE := (TelRel.unique hd (levelRel_isPer_lt hd _)
+          (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
           (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 hts
         obtain ⟨vB, hvB⟩ := hBE ts htE
         exact RunNestRel.nestedRuns hd hord hlifts hr hb hprop (hR ts hts) hAllB
@@ -838,9 +838,8 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     cases hE with
     | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘE hΘE FE _ hFE _ _ hGE _ _ =>
-      have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-      have ihE : ∀ m, m < max n nE → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-      have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
+      have ihE := levelRel_isPer_lt (ι := ι) hd (max n nE)
+      have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
       have hFv : ∀ ts : Args 0 [] ps', SΘ ts.terms ts.terms → ∃ v,
           Computesι sig ι _ v ∧ FieldRel sig ι n (fun m _ => levelRel sig ι m) .type v (F ts.terms) :=
         fun ts hts => by

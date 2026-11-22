@@ -98,8 +98,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, _, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
       a, hv, hr => by
-    have ihm : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
-      fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     rw [Destructors.substLevels] at hm
     replace hm := hm.cons_inv
     obtain ⟨hΘm, hm⟩ := hm
@@ -245,7 +244,7 @@ theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin
     cases h
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, rs, hN, D, θ, _, h, H, o, a, hv, hr => by
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     cases h with
     | recursive _ hrs => rw [hN 0] at hrs; cases hrs
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
@@ -305,7 +304,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         obtain ⟨-, hrun, -⟩ := ho
         refine ⟨_, _, hi, hRΘ, fun H' hH' ts bs hts ϖ' => ?_⟩
         obtain ⟨w, H'', tr, hev, hw⟩ := hrun hp H' hH' ts bs hts ϖ'
-        have htt := RunTelRel.fieldsRel hd (fun m _ => levelRel_isPer hd m) hRΘ (fun _ => rfl) _ _
+        have htt := RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _) hRΘ (fun _ => rfl) _ _
           hΘ (fun _ => rfl) H' ts.terms bs hts
         obtain ⟨v, hv'⟩ := hB ts htt
         exact ⟨w, H'', tr, hev, (hRv ts htt v hv').runsAs hv' hw⟩
@@ -342,7 +341,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
       | recursive _ hrs => rw [hN 0 hr] at hrs; cases hrs
       | cons _ hΘ _ _ _ hB hF _ _ hG _ =>
         obtain ⟨hA, -, hGo⟩ := ho
-        have hSp := TelRel.isPer hd (fun m _ => levelRel_isPer hd m) (fun _ => .plain) hΘ
+        have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
         refine h.run hd (hds _ _ fun τ₁ τ₂ hτ => ?_) hN' (hR' _) (hG _ hA) hGo hp
         obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
             @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
@@ -607,7 +606,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
     (fun _ => .plain) _
     (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts htsρ bs hbsρ
-  have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (fun m _ => levelRel_isPer hd m)
+  have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (levelRel_isPer_lt hd _)
     (fun m _ => levelRel_run_unique hd m) h₂ _ _ hRΘ
     (fun _ => .plain) H' ts.terms bs).1 hS'
   -- The observation evaluates to an address to which the observation of the corecursor is related.

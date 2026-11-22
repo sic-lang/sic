@@ -400,9 +400,8 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     have hL := ih k (hk ▸ Nat.lt_succ_self k)
     ⟨b₁, b₂, hL.prop h₁ ht, hL.prop h₂ hu, hb⟩
   | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have hmono := fun (X Y : Name → TermRel) (hXY : ∀ D v w, X D v w → Y D v w) =>
-      TelRel.block_mono hd hp (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
+      TelRel.block_mono hd (levelRel_isPer_lt hd _) (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
         (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
         fun D _ _ => TermRel.computed_mono (hXY D)
     refine hR (fun D v w => ∀ v' w', Term.LevelEquiv v v' → Term.LevelEquiv w w' →
@@ -463,7 +462,7 @@ theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
         S₁ ts us → Terms.LevelEquiv ts ts' → Terms.LevelEquiv us us' → S₂ ts' us'
   | .nil, _, _, _, h', _, h, .nil, .nil => by cases h'; exact h
   | .cons hA hF _ hG _ hrs, _, _, _, h', hR, h, .cons ht hts, .cons hu hus => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hp := levelRel_isPer_lt (ι := ι) hd n
     cases h' with
     | cons hA' hF' _ hG' hresp' _ =>
       cases Computesι.det hd hA hA'
@@ -499,12 +498,12 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
           Term.LevelEquiv u u' → y.2 t' u') τ₁ τ₂ →
         F₁ t u → Term.LevelEquiv t t' → Term.LevelEquiv u u' → F₂ t' u'
   | .plain hA hF, _, _, _, h', hR, h, ht, hu => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     cases hR
     cases h' with
     | plain hA' hF' =>
       cases Computesι.det hd hA hA'
-      exact (FieldRel.unique hd hp hF _ _ hF' _ _).1 (FieldRel.rel_levelEquiv hd ih hF h ht hu)
+      exact (FieldRel.unique hd (levelRel_isPer_lt hd _) hF _ _ hF' _ _).1
+        (FieldRel.rel_levelEquiv hd ih hF h ht hu)
   | .direct _ _, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | direct hr =>
@@ -581,7 +580,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
   | .nil, _, _, _, h', _, _, _, _ => by cases h'; trivial
   | .cons (d := d) (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF hBresp _ hG _, _, _, _, h', hR,
       ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hp := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => NestRel.isPer hd hp .plain (hF ts hts)) hBresp
@@ -608,7 +607,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (d := d) (ps := ps) (B := B) (SΘ := SΘ) hν hΘ F hF _ _ hG, _, _, _, h', hR,
       ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hp := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
@@ -641,7 +640,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .nil, _, _, _, h', _, _, _, _ => by cases h'; trivial
   | .cons (d := d) (ps := ps) (SΘ := SΘ) hΘ F hB hF hBresp _ hG _ hrs, _, _, _, h', hR, ⟨h₁, h₂⟩,
       e₁, e₂ => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have hp := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd hp (fun _ => .plain) hΘ
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => have ⟨_, hv⟩ := hB ts hts; FieldRel.isPer hd hp (hF ts hts _ hv)) hBresp
@@ -667,7 +666,6 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
             (fun i => hR (i + 1)) h₂ e₁ e₂)⟩
     | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive (d := d) (ps := ps) hrs hΘ _ hG, _, _, _, h', hR, ⟨h₁, h₂⟩, e₁, e₂ => by
-    have hp : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     cases h' with
     | cons _ _ _ _ _ _ _ _ hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0
     | recursive hrs' hΘ' _ hG' =>
@@ -675,7 +673,7 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hSS := TelRel.unique hd hp hΘ _ _ hΘ'
+        have hSS := TelRel.unique hd (levelRel_isPer_lt hd _) hΘ _ _ hΘ'
         exact ⟨fun ts us hts => hr _ _ _ _ (h₁ ts us ((hSS _ _).2 hts))
             ((e₁ d ps).subst (Subst.LevelEquiv.refl _)) ((e₂ d ps).subst (Subst.LevelEquiv.refl _)),
           DesRel.rel_levelEquiv hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _

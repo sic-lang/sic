@@ -200,7 +200,7 @@ theorem DesRel.of_positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Na
     cases h
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, rs, hN, θ, _, h, o₁, o₂, hv => by
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ih := levelRel_isPer_lt (ι := ι) hd n
     cases h with
     | recursive hrs => rw [hN 0] at hrs; cases hrs
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF hBresp G hG hresp =>
@@ -241,7 +241,7 @@ theorem DesRel.positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Nat}
     nomatch hpos
   | _, _, .cons _ _ _ _ _ _ ds, _, hN, _, _, h, _, ho, _, _, _, _, _, _, _, _, _, hpos, _, hΘ',
       ts, us, hts, v, _, hv, hF' => by
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     cases h with
     | recursive hrs => rw [hN 0] at hrs; cases hrs
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ hΘ F hB hF _ G hG _ =>
@@ -548,8 +548,8 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       have e := hΘeq
       rw [Telescope.rename_id_of hid₁] at e
       exact e ▸ hΘ'
-    have ihm : ∀ m, m < max nL n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSS := TelRel.unique hd ihm (TelRel.levelLe (Nat.le_max_left nL n) hΘ'') _ _
+    have hSS := TelRel.unique hd (levelRel_isPer_lt hd _)
+      (TelRel.levelLe (Nat.le_max_left nL n) hΘ'') _ _
       (TelRel.levelLe (Nat.le_max_right nL n) (hΘ.scale (v.recursion * mr.factor)))
     obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ ts'
     obtain ⟨us, hus⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ us'
@@ -771,8 +771,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
   | _, _, _, _, _, B, _, .here, _, _, _, .cons (SΘ := SΘ) hν hΘ F hF _ _ _ _, _, _, hRel, _, _, _,
       _, hSo, hf₁, hf₂, _, hσ, _, hνB => by
     subst hσ hνB
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
+    have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
     refine ⟨SΘ, hΘ, fun ts us hts => ?_⟩
     have htt := hSp.trans hts (hSp.symm hts)
     exact NestRel.resultSound hd hlifts (hF ts htt) .plain
@@ -781,8 +780,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
   | _, _, _, _, _, B, _, .here, _, _, _, .nested (SΘ := SΘ) _ hΘ F hF _ _ _, hAll, _, hRel, _, _, _,
       _, hSo, hf₁, hf₂, _, hσ, _, hνB => by
     subst hσ hνB
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-    have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
+    have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
     refine ⟨SΘ, hΘ, fun ts us hts => ?_⟩
     have htt := hSp.trans hts (hSp.symm hts)
     have hAllB := Term.nest_all (p := fun x : NestLeaf => LeafCongr sig ι sT x.2)
@@ -793,7 +791,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _,
       .cons (SΘ := SΘ) _ hΘ F hF hBresp G hG hresp, hAll, _, hRel, o₁, o₂, f₁, _, hSo, hf₁,
       hf₂, _, hσ, _, hνB => by
-    have ih : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ih := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
     have hFv : ∀ ts : Args 0 [] ps', SΘ ts.terms ts.terms →
         ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v (F ts.terms) := fun ts hts => by

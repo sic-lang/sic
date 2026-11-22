@@ -89,9 +89,7 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
         (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) :
     RunNestDesReads sig ι P n @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂' := by
   intro D hcase
-  have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
-  have ihκ : ∀ m, m < κ.level.closedValue → (levelRel sig ι m).IsPer :=
-    fun m _ => levelRel_isPer hd m
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
     fun m _ => levelRel_run_unique hd m
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
@@ -100,7 +98,7 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
   have hT := TelRel.eqSubst_iff hd hT₁ (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
     (fun _ => .plain)
-  have hSp := TelRel.isPer hd ihκ (fun _ => .plain) hT₁
+  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd κ.level.closedValue) (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
   have hκs : κ₁.quality ≤ Quality.type := fun h => nomatch h
   -- The results at the first substitution and equal arguments are equal types.
@@ -248,7 +246,7 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Unive
       (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) :
     RunNestDesReads sig ι P n @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂' := by
   intro D hcase
-  have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
     fun m _ => levelRel_run_unique hd m
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self

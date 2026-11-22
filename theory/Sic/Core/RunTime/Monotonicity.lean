@@ -114,7 +114,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
   | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
       _ hG hrs, _, _, h', hRs => by
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
@@ -125,13 +125,13 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
         have ⟨_, hv⟩ := hB ts hts
         FieldRel.unique hd ihm (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
-      have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' fun _ => .plain
+      have hRΘΘ := RunTelRel.congr hd (levelRel_isPer_lt hd _) ih hRΘ _ _ hRΘ' fun _ => .plain
       have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
         (f := f) (H := H)
         (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
-          have hts' := RunTelRel.fieldsRel hd (fun m _ => levelRel_isPer hd m) hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
+          have hts' := RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _) hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
           have ⟨_, hv⟩ := hB ts hts'
-          RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m) ih (hR ts hts' _ hv) _ (hR' ts ((hSS _ _).1 hts') _ hv)
+          RunFieldRel.congr hd (levelRel_isPer_lt hd _) ih (hR ts hts' _ hv) _ (hR' ts ((hSS _ _).1 hts') _ hv)
       exact fun o a ⟨h₁, h₂, h₃⟩ =>
         ⟨(hEE _ _).1 h₁,
           fun hp => (hAA _ H' a).1 fun H'' hH'' => h₂ hp H'' (hH.trans hH''),
@@ -148,7 +148,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hRΘΘ := RunTelRel.congr hd (fun m _ => levelRel_isPer hd m) ih hRΘ _ _ hRΘ' fun _ => .plain
+        have hRΘΘ := RunTelRel.congr hd (levelRel_isPer_lt hd _) ih hRΘ _ _ hRΘ' fun _ => .plain
         exact fun o a ⟨h₁, h₂⟩ =>
           ⟨fun hp H'' hH'' ts bs hts ϖ =>
             have ⟨w, H''', R, he, hw⟩ := h₁ hp H'' (hH.trans hH'') ts bs ((hRΘΘ _ _ _).2 hts) ϖ
@@ -216,8 +216,8 @@ theorem RunTelRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
     cases h' with
     | cons hA' hF' hR' _ hG' _ =>
       cases Computesι.det hd hA hA'
-      have hFF := FieldRel.unique hd (fun m _ => levelRel_isPer hd m) hF _ _ hF'
-      have hRR := RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m)
+      have hFF := FieldRel.unique hd (levelRel_isPer_lt hd _) hF _ _ hF'
+      have hRR := RunFieldRel.congr hd (levelRel_isPer_lt hd _)
         (fun m _ => levelRel_run_unique hd m) hR _ hR'
       exact fun H H' hH => RunFieldsRel.cons_mono
         (fun t a ⟨htt, hr⟩ => ⟨(hFF t t).1 htt,
@@ -261,7 +261,7 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
     cases h' with
     | plain hA' hR' =>
       cases Computesι.det hd hA hA'
-      have hRR := RunFieldRel.congr hd (fun m _ => levelRel_isPer hd m)
+      have hRR := RunFieldRel.congr hd (levelRel_isPer_lt hd _)
         (fun m _ => levelRel_run_unique hd m) hR _ hR'
       exact fun _ H' hH t a h => (hRR H' t a).1 (RunFieldRel.mono hd ih hR (hK hH) h)
   | .direct _, _, _, h', hτ => by
@@ -319,7 +319,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
       _, _, h', hτ => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
@@ -344,7 +344,7 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h', hτ => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
       fun m _ => levelRel_run_unique hd m
-    have ihm : ∀ m, m < n → (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
     | cons _ hν' => exact absurd (hB.eq_plain.1.1 hν') hν

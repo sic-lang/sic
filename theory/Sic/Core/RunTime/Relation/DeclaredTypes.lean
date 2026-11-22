@@ -405,8 +405,6 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hR : ∀ T' ∈ decl.dataTypes, HasRun sig ι P (.inst T'.name qs ls ps as)
         (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T'.name) := fun T' hT' =>
       .univ _ (levelRel_run_iff.2 (hU T' hT').1)
-    have ihm : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-        (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
     have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
         RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
     have ihmono : ∀ m,
@@ -471,7 +469,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ _
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts hE bs
       (RunsAsArgs.levelEquiv hd hΘ.symm hbs)
-    exact (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
+    exact (RunTelRel.congr hd (levelRel_isPer_lt hd _) (hn ▸ ih) (hS X T hT con hc) _ _ h₁'
       (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hP T hT).1⟩⟩
@@ -516,8 +514,6 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     RunsAsArgs sig ι P H g ts bs (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) := by
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps as) (.inst D' qs ls ps as) :=
     fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
-  have ihm : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-      (levelRel sig ι m).IsPer := fun m _ => levelRel_isPer hd m
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
   -- The fields at the values of the levels, which the meaning of the declaration gives.
@@ -551,7 +547,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       (g := fun D' => (.inst D' qs ls ps as, (Y D').computed sig ι))
       (h := fun D' => (.inst D' qs ls ps as, (Y D').computed sig ι))
       (fun D' => ⟨decl.blockInstance_atLevels_subst hq hl hp as D', rfl⟩) _)
-  have hS' := (RunTelRel.congr hd (hn ▸ ihm) (hn ▸ ih) (hS Y T hT con hc) _ _ h₁'
+  have hS' := (RunTelRel.congr hd (levelRel_isPer_lt hd _) (hn ▸ ih) (hS Y T hT con hc) _ _ h₁'
     (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).1 hY
   -- The positions hold the instances of the block, whose terms `(®_μ)` relates.
   have hτ : ∀ j, Nest.All
