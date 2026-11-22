@@ -3,6 +3,7 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Soundness.DeclaredTypes
 public import Sic.Core.Soundness.Signature
+public import Sic.Core.Soundness.Recursors.Premises
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Existence
@@ -172,12 +173,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     (hctx : ValidCtx₀ sig ι ctx)
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₁'
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
-    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
-    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs₁.get j = some ⟨0, C'⟩ →
-      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls₁ ps as₁)) C' (.sort κ))
-    (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hprem₁ : ValidRecursorPremises sig ι ctx decl qs ls₁ ps hq hp as₁ Cs₁ us₁ κ)
     (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
@@ -213,6 +209,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       (.recursor r ς χ T.name qs ls₁ ps (as₁.subst σ₁) t₁ κ (Cs₁.subst σ₁) (us₁.subst σ₁))
       (.recursor r ς χ T.name qs ls₂ ps (as₂.subst σ₂) t₂ κ (Cs₂.subst σ₂) (us₂.subst σ₂))
       ((C₁.subst (Subst.lift σ₁)).subst₀ (Subst₀.single t₁)) := by
+  obtain ⟨hCs, hCv, hus₁⟩ := hprem₁
   obtain ⟨hsig, hv⟩ := hent.hasDataType h
   obtain ⟨hdecl, -, -⟩ := id hsig
   have hT : T ∈ decl.dataTypes := List.mem_of_getElem? hh
@@ -445,12 +442,7 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls₁.getFin hl₁)))
     (ht : ValidEqTermΓ sig ι ctx t₁ t₂ (.inst D qs ls₁ ps as₁)) (hh : decl.dataTypes[h']? = some T)
     (hC : Cs₁.get h' = some ⟨0, C₁⟩)
-    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs₁.get j = some ⟨0, C'⟩)
-    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs₁.get j = some ⟨0, C'⟩ →
-      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls₁ ps as₁)) C' (.sort κ))
-    (hus₁ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ u, us₁.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hprem₁ : ValidRecursorPremises sig ι ctx decl qs ls₁ ps hq hp as₁ Cs₁ us₁ κ)
     (hus₂ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ u, us₂.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
@@ -488,9 +480,9 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
   refine ⟨⟨hctx, fun σ₁ σ₂ hσ => ?_⟩, fun σ₁ σ₂ hσ => ?_⟩
   · rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
       Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
-    exact (hCv h' T C₁ hh hC).motive hσ (ht₁.2 σ₁ σ₂ hσ)
+    exact (hprem₁.motives_valid h' T C₁ hh hC).motive hσ (ht₁.2 σ₁ σ₂ hσ)
   rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
-  exact ValidEqTerm₀.recursor_block hent hord h hq hl₁ hl₂ hp hadm hctx has hCs hCv hus₁ hus₂ hRs₁
+  exact ValidEqTerm₀.recursor_block hent hord h hq hl₁ hl₂ hp hadm hctx has hprem₁ hus₂ hRs₁
     hRs₂ hut hκ hσ hh hC (ht.2 σ₁ σ₂ hσ)
 
 -- ADE: `natrec-zeroᵛ`, `natrec-sucᵛ`, `prodrec-βᵛ` and `unitrec-βᵛ`, in
@@ -513,12 +505,7 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hts : ValidArgsΓ sig ι ctx ts (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
     {i j : Nat} (hi : decl.cases[i]? = some (j, T, con)) {r ς χ : Grade} {Cs : Motives 0 Γ}
     {us : Branches 0 Γ} {κ : Universe 0} {C : Term 0 (.var :: Γ)} (hC : Cs.get j = some ⟨0, C⟩)
-    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
-    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
-      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
-    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hprem : ValidRecursorPremises sig ι ctx decl qs ls ps hq hp as Cs us κ)
     {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
       Telescope 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names)}
@@ -551,8 +538,8 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   have hd := has.1.distinct
   have hct := ValidEqTermΓ.ctor hent h hc hq hl hl hp hadm has (fun _ => Level.equivalence.refl _) hts
   have hj := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
-  have hrec := ValidEqTermΓ.recursor hent hord h hq hl hl hp hadm has hct hj hC hCs hCv hus hus hRs
-    hRs
+  have hrec := ValidEqTermΓ.recursor hent hord h hq hl hl hp hadm has hct hj hC hprem
+    hprem.branches hRs hRs
     (fun i j T' con C' u₁ u₂ hi hC hu₁ hu₂ => by
       cases Branches.get_inj hu₁ hu₂
       exact hut i j T' con C' u₁ hi hC hu₁) hκ

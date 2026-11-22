@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Relation.Recursors.Results
+public import Sic.Core.Soundness.Recursors.Premises
 import Sic.Core.Erasure.Fields
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Existence
@@ -147,12 +148,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hv : ValidTypeDeclaration sig ι decl) (hadm : decl.constraint (.ofLists qs ps hq hp))
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
-    (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩)
-    (hCv : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
-      ValidTermΓ sig ι (ctx.var (.inst T'.name qs ls ps as)) C' (.sort κ))
-    (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-        (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩)
+    (hprem : ValidRecursorPremises sig ι ctx decl qs ls ps hq hp as Cs us κ)
     {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
       Telescope 0 (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
         (con.nestResultParams (.ofLists qs ps hq hp) decl.names)} {πs : Nat → List Grade}
@@ -251,6 +247,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
         RunsAs sig ι P H₃ (.recursor r ς χ' T'.name qs ls ps (as.subst σ) w κ (Cs.subst σ) (us.subst σ))
           v ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single w)) := by
+  obtain ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
   have hT' : T' ∈ decl.dataTypes := List.mem_of_getElem? hj

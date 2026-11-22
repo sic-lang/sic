@@ -513,13 +513,16 @@ theorem soundnessIn : SoundnessIn := by
       exact ValidEqTermΓ.recursor hι hord h hq hl' hl' hp hadm has'
         ht' hh
         (Motives.get_substLevels_of _ hC)
-        (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
-        (fun j T' C' hj hC' => by
-          obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
-          simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
-          exact hCv)
-        (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        { motives := fun j T' hj =>
+            let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
+          motives_valid := fun j T' C' hj hC' => by
+            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+            have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
+            simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels]
+              at hCv
+            exact hCv
+          branches := fun i j T' con hi =>
+            let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
@@ -697,14 +700,17 @@ theorem soundnessIn : SoundnessIn := by
       exact ValidEqTermΓ.recursor hι hord h hq hl₁' hl₂' hp hadm
         has' ht' hh
         (Motives.get_substLevels_of _ hC)
-        (fun j T' hj => let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
-        (fun j T' C' hj hC' => by
-          obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          obtain ⟨C₂, hC₂⟩ := hCs₂ j T' hj
-          have hCv := hCt_ih j T' C₀ C₂ hj hC₀ hC₂ hdis hord hι ρ
-          simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels] at hCv
-          exact hCv.trans hCv.symm)
-        (fun i j T' con hi => let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        { motives := fun j T' hj =>
+            let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
+          motives_valid := fun j T' C' hj hC' => by
+            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+            obtain ⟨C₂, hC₂⟩ := hCs₂ j T' hj
+            have hCv := hCt_ih j T' C₀ C₂ hj hC₀ hC₂ hdis hord hι ρ
+            simp only [Context.atLevels, Context.substLevels, Term.atLevels, Term.substLevels]
+              at hCv
+            exact hCv.trans hCv.symm
+          branches := fun i j T' con hi =>
+            let ⟨_, hu⟩ := hus₁ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
         (fun i j T' con hi => (hRs₁ i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
@@ -784,13 +790,15 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.substLevels, ← Args.terms_substLevels]
       exact ValidEqTermΓ.iota hι hord h hc hq hl' hp hadm has'
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
-        (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
-        (fun j T' C' hj hC' => by
-          obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
-          have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
-          simp only [Context.atLevels, Term.atLevels, Term.substLevels] at hCv
-          exact hCv)
-        (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
+        { motives := fun j T' hj =>
+            let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
+          motives_valid := fun j T' C' hj hC' => by
+            obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
+            have hCv := hCt_ih j T' C₀ hj hC₀ hdis hord hι ρ
+            simp only [Context.atLevels, Term.atLevels, Term.substLevels] at hCv
+            exact hCv
+          branches := fun i j T' con hi =>
+            let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩ }
         (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
             (Constructor.ResultTypes.substLevels_ofMotives _ h))

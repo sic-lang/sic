@@ -374,9 +374,8 @@ theorem fundamentalIn : FundamentalIn := by
             ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
             ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)) :=
         fun j T' C' hj hC' σ hσ t₁ t₂ ht₀ =>
-          ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has' hCs' hCv
-            husN husN
-            hRs' hRs' hut' hκ hσ hj hC' ht₀
+          ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has'
+            ⟨hCs', hCv, husN⟩ husN hRs' hRs' hut' hκ hσ hj hC' ht₀
       have htr : r ∉ Mode.oneOne.erased → RunValidRen sigM ι P hΓ (ctx.atLevels ρ) γ'
           (t.substLevels fun i => (.ofNat (ρ i) : Level 0)) _ := fun hr' => by
         have htr := ht_ih (hΓ := hΓ) hw hι hP
@@ -430,7 +429,8 @@ theorem fundamentalIn : FundamentalIn := by
             exact hθ)
           exact hs
       have hc := RunValidRen.recursor (P := P) (γ := γ') hw.distinct hw.liftsInOrder hM hv hadm
-        has' hh (Motives.get_substLevels_of _ hC) hCs' hCv husN hRsπ hctx hsorts hrec ht' htr husr
+        has' hh (Motives.get_substLevels_of _ hC) ⟨hCs', hCv, husN⟩ hRsπ hctx hsorts hrec ht' htr
+        husr
         (fun i j T' con l p hi hl => by
           simpa only [Branches.grades_substLevels] using hg i j T' con l p hi hl)
         (fun i j T' con hi => by
