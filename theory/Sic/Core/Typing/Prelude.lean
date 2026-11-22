@@ -22,7 +22,7 @@ instances of the prelude, whose premises on the block hold by computation.
 
 ADE have no prelude: their pairs and their unit are types of the theory, which a program names, and
 a program of their theory nests the eliminations of their pairs and of their unit itself; their weak
-pairs have no extensionality, which the unpacking has here.
+pairs lack the extensionality, `EqTerm.pairEta`, which the pairs of the prelude have here.
 -/
 
 @[expose] public section
