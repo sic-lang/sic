@@ -53,42 +53,6 @@ theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D 
       rw [List.findSome?_cons_of_isNone (by rw [Entry.skeleton_of_not_mem hDe]; rfl)]
       exact hd.skeleton ⟨he', hT, hD⟩ hq hp
 
-/-- An entry that does not introduce the name `D` gives the case of no constructor of `D`. -/
-theorem Entry.constructorCase_of_not_mem {D c : Name} :
-    {e : Entry} → D ∉ e.names → Entry.constructorCase D c e = none :=
-  fun h => Entry.lookup_of_not_mem h
-
-/-- A signature none of whose entries introduces the name `D` gives the case of no constructor of
-`D`. -/
-theorem Signature.constructorCase_of_not_mem {D c : Name} :
-    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.constructorCase D c = none
-  | [], _ => rfl
-  | e :: sig, h => by
-    unfold Signature.constructorCase
-    rw [List.findSome?_cons_of_isNone
-      (by rw [Entry.constructorCase_of_not_mem (h e List.mem_cons_self)]; rfl)]
-    exact Signature.constructorCase_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
-
-/-- In a signature whose names are distinct, the case of a constructor of a data type is its case in
-the block of its declaration. -/
-theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → sig.Distinct →
-    {D : Name} → {decl : TypeDeclaration} →
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasDataType D decl T →
-    sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl)
-  | [], _, _, _, _, h => nomatch h.1
-  | e :: sig, ⟨hd, _, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩ => by
-    unfold Signature.constructorCase
-    rcases List.mem_cons.1 he with rfl | he'
-    · cases hc : Entry.constructorCase D c (.typeDeclaration decl) with
-      | some i => rw [List.findSome?_cons_of_isSome (by rw [hc]; rfl), hc]
-      | none =>
-        rw [List.findSome?_cons_of_isNone (by rw [hc]; rfl)]
-        exact Signature.constructorCase_of_not_mem fun e' he'' hDe =>
-          hfresh _ he'' D (hD ▸ TypeDeclaration.name_mem_names hT) hDe
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.constructorCase_of_not_mem hDe]; rfl)]
-      exact hd.constructorCase ⟨he', hT, hD⟩
-
 /-! ## Unfolding -/
 
 /-- The term of the skeleton of a data type `D` with exactly one constructor `c`, of the case `i` of

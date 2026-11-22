@@ -2,7 +2,6 @@ module
 
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Erasure.Fields
-import Sic.Core.RunTime.Relation.Skeleton
 import Sic.Core.Syntax.Signature
 
 /-!
