@@ -318,19 +318,19 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       {gs : DestructorBranches k Γ}
       (h : sig.HasCodataType D decl T) (hn : ∀ E, n ≠ .direct E)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
       (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
       (hgl : gs.length = ns.length)
       (hgs : ∀ i d, ns[i]? = some d →
         ∃ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
-          (_ : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (g : _),
+          (_ : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) (g : _),
         gs.get i = some ⟨0, 0, ps₁.length, g⟩)
       (hgt : ∀ i d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership Grade ps₁.length) (g : Term k (Γ.extend ps₁.length)),
-        ns[i]? = some d → (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        ns[i]? = some d → (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, 0, ps₁.length, g⟩ →
         Term.NestedResult sig v (ρ.liftN ps₁.length)
           (fun E => (φ E).rename (Ren.lift (Ren.weakenN ps₁.length)))

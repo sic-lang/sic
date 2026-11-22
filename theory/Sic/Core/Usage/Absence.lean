@@ -209,7 +209,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
   | .const .., _, ho => nomatch ho
   | .sort, _, ho => nomatch ho
   | .ctor h hc hq hp hts, hx, ho => by
-    simp only [Term.erase, hd.fieldParams h hc hq hp, Option.getD_some] at ho
+    simp only [Term.erase, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some] at ho
     split at ho
     · cases ho with
       | ctor ho => exact UsageArgs.absent hd hS hΓ hts hx ho
@@ -243,7 +243,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
   | .obs (γ := γ₁) (δ := δ) h hq hp hpos ht hbs _, hx, ho => by
     have hx' : γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add] using hx
-    simp only [Term.erase, hd.argumentParams h hq hp hpos, Option.getD_some] at ho
+    simp only [Term.erase, hd.argumentParams h ⟨hq, hp⟩ hpos, Option.getD_some] at ho
     split at ho
     · cases ho with
       | obs ho => exact Usage.absent hd hS hΓ ht (hS.add _ _ hx') ho
@@ -262,7 +262,7 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
     | cobranch ho =>
       obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := DestructorBranches.occurs_erase hΓ _ _ _ _ ho
       obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, -, -⟩ :=
-        hd.corecCase h hq hp hSs hgl hgs (DestructorBranches.lt_length_of_get hget)
+        hd.corecCase h ⟨hq, hp⟩ hSs hgl hgs (DestructorBranches.lt_length_of_get hget)
       rw [Option.some.inj (hgi.symm.trans hpg)] at hpS
       cases Option.some.inj (hget.symm.trans hg)
       have hδx : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')

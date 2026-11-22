@@ -308,7 +308,8 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
           (t.observation D qs ls ps as d ps₁) g) := by
   generalize hA : Term.inst D qs ls ps as = A at hres
   cases hres with
-  | inst h₂ _ hq₂ hl₂ hp₂ has₂ _ hL₂ _ hgs₂ hgt₂ =>
+  | inst h₂ _ hqp₂ hl₂ has₂ _ hL₂ _ hgs₂ hgt₂ =>
+    obtain ⟨hq₂, hp₂⟩ := hqp₂
     injection hA with _ _ hD hqs hls hps has
     subst hD hqs hls hps
     obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h₂
@@ -329,7 +330,7 @@ theorem Term.Lifts.inst_inv {k : Nat} (hd : sig.Distinct) {Γ' Γ : Scope} {ρ :
       InstanceArgs.Lifts sig v ρ ns as S ms as' := by
   generalize hA : Term.inst D qs ls ps as = A at hL
   cases hL with
-  | inst h₂ hD₂ _ _ _ _ has₂ _ _ _ =>
+  | inst h₂ hD₂ _ _ _ has₂ _ _ _ =>
     injection hA with _ _ hD' hqs hls hps has
     subst hD' hqs hls hps
     cases Entry.typeDeclaration.inj (hd.entry_unique hdecl h₂ (n := D) hD hD₂)
@@ -527,7 +528,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨_, _, _, ps₂, _, _, _, _, hpos₂, g₂, hg₂⟩ := hgs₂ i d' hi
     obtain ⟨-, rfl⟩ := hpos.params_unique (hd.destructors_nodup h) hpos₂
     obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
-      (ρ := ρ₁) hρ₁ hq hl hp hq' hl' hp' has₁ t₁ hpos hpos' o₁'
+      (ρ := ρ₁) hρ₁ ⟨hq, hp⟩ hl hq' hl' hp' has₁ t₁ hpos hpos' o₁'
     subst hps
     have ht₁ : t₁.rename ρ₁.ren = t₁ := Term.rename_id_of hid₁ t₁
     rw (transparency := .default) [ht₁] at hΘeq hBL

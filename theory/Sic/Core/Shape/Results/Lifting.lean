@@ -62,7 +62,7 @@ def Signature.LiftingsHaveShapes (md : Mode) (ax : Grade → Multiplicity) (sig�
     ∀ {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} {ms : List (Lifting.Result k)} {Δ : Scope} {as : InstanceArgs k Γ' Δ}
       {π : Grade} {ms' : List Shape.Motive},
-      qs.length = decl.sorts → ps.length = decl.grades → S.Nodup → ms.length = S.length →
+      decl.AsMany qs ps → S.Nodup → ms.length = S.length →
       Shape.Motive.AllOf ms' ms →
       Term.Factor sig ρ (.inst (Lifting.name D S) (qs ++ [v.quality]) ls (v.grades ps ms) as) π →
         ∃ σ, Signature.shapes v md ax sig₁ D qs ps (S.zip ms') = some (σ, π)
@@ -103,14 +103,14 @@ theorem Term.Lifts.shape
   | _, _, _, _, _, _, _, _, .block (D := D) hD, _, _, hb => by
     obtain ⟨Υ, hΥ⟩ := hb D _ hD
     exact ⟨_, hΥ, rfl, rfl⟩
-  | _, _, _, n, _, _, _, _, .inst (S := S) h hD hn hq hl hp has hS hL hπ, ν, hν, hb => by
+  | _, _, _, n, _, _, _, _, .inst (S := S) h hD hn hqp hl has hS hL hπ, ν, hν, hb => by
     obtain ⟨ms', hms', hms⟩ := has.shapes hsub hM hν hb
     have hl' : S.zip ms' ≠ [] := by
       intro he
       have := congrArg List.length he
       rw [List.length_zip, hms.length_eq, has.length_eq, Nat.min_self] at this
       exact hS (List.eq_nil_of_length_eq_zero this)
-    obtain ⟨σ, hσ⟩ := hM _ v (hsub _ h) hD hL hq hp has.nodup
+    obtain ⟨σ, hσ⟩ := hM _ v (hsub _ h) hD hL hqp has.nodup
       has.length_eq hms (hπ.ofTypeDeclarations hsub)
     refine ⟨⟨.lifting σ, _, .linearLinear⟩, ?_, rfl, rfl⟩
     rw [Term.shape_inst hn hms' hl', hσ]
@@ -192,7 +192,7 @@ theorem Term.Lifts.shape_append {sig₀ pre : Signature} (hsig : (pre ++ sig₁)
             A.shape v (Signature.shapes v md ax (pre ++ sig₁)) block @ν n
   | _, _, _, _, _, _, _, _, .var _ _, _, _, _ => rfl
   | _, _, _, _, _, _, _, _, .block _, _, _, _ => rfl
-  | _, _, _, _, _, _, _, _, .inst (S := S) _ _ hn _ _ _ has hS hL _, _, hν, hb => by
+  | _, _, _, _, _, _, _, _, .inst (S := S) _ _ hn _ _ has hS hL _, _, hν, hb => by
     obtain ⟨ms', hms', hms⟩ := has.shapes hsub hM hν hb
     have hl' : S.zip ms' ≠ [] := by
       intro he
@@ -551,13 +551,13 @@ theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {
     (hT : sig₁.HasCodataType D decl T) {S : List Nat} {ns : List Name}
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) {ms' : List Shape.Motive} (hfst : (S.zip ms').map (·.1) = S) :
+    {qs : List Quality} {ps : List Grade} (hqp : decl.AsMany qs ps) {ms' : List Shape.Motive}
+    (hfst : (S.zip ms').map (·.1) = S) :
     Signature.shapes v md ax (.typeDeclaration (decl.lifting D S ns body) :: sig₁) D qs ps
         (S.zip ms') =
-      some (((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
+      some (((T.body hqp.inst).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
           (Shape.motives (S.zip ms'))).1,
-        ((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
+        ((T.body hqp.inst).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
           (Shape.motives (S.zip ms'))).2.getD .noneNone) := by
   obtain ⟨hdecl, hT, hTn⟩ := hT
   have hD : D ∈ decl.names := hTn ▸ TypeDeclaration.codata_name_mem_names hT
@@ -569,18 +569,16 @@ theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {
       (List.mem_of_find?_eq_some hT₀) hT (hT₀'.trans hTn.symm)]
   simp only [Signature.shapes, hfst, TypeDeclaration.lifting_names, ↓reduceIte]
   rw [hsig.findSome?_eq hdecl hD (fun e' _ he' => ?_)]
-  · simp only [hq, hp, ↓reduceDIte, hfind, Option.map_some]
+  · simp only [hqp, ↓reduceDIte, hfind, Option.map_some]
   · cases e' with
     | typeDeclaration decl' =>
       simp only at he'
       split at he'
-      · split at he'
-        · obtain ⟨T', hT'⟩ := Option.isSome_iff_exists.1
-            (Option.isSome_map.symm.trans he' : _)
-          have := List.find?_some hT'
-          exact (beq_iff_eq.1 this) ▸ TypeDeclaration.codata_name_mem_names
-            (List.mem_of_find?_eq_some hT')
-        · cases he'
+      · obtain ⟨T', hT'⟩ := Option.isSome_iff_exists.1
+          (Option.isSome_map.symm.trans he' : _)
+        have := List.find?_some hT'
+        exact (beq_iff_eq.1 this) ▸ TypeDeclaration.codata_name_mem_names
+          (List.mem_of_find?_eq_some hT')
       · cases he'
     | constantDefinition _ => cases he'
     | constantDeclaration _ => cases he'
@@ -599,7 +597,7 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
       (by rw [List.append_assoc]; exact he)
     have hsub : ∀ decl, Entry.typeDeclaration decl ∈ sig₁ → Entry.typeDeclaration decl ∈ sig :=
       fun _ h => he ▸ List.mem_append_right pre (List.mem_cons_of_mem _ h)
-    intro k v decl D S ns body hdecl hD hL Γ' Γ ρ qs ls ps ms Δ as π ms' hq hp hS hm hms hπ
+    intro k v decl D S ns body hdecl hD hL Γ' Γ ρ qs ls ps ms Δ as π ms' hqp hS hm hms hπ
     have hfst : (S.zip ms').map (·.1) = S :=
       List.map_fst_zip (by rw [hms.length_eq, hm]; exact Nat.le_refl _)
     rcases List.mem_cons.1 hL with rfl | hL'
@@ -611,15 +609,15 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         Signature.Distinct.suffix (pre ++ [.typeDeclaration (decl.lifting D S ns body)])
           (by rw [List.append_assoc]; exact he ▸ hsig)
       have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-        rw [List.length_append, hq]
+        rw [List.length_append, hqp.sorts]
         rfl
-      have hp' : (v.grades ps ms).length = decl.liftingGrades S := v.length_grades hp hm
+      have hp' : (v.grades ps ms).length = decl.liftingGrades S := v.length_grades hqp.grades hm
       -- The factor of the instance of the lifting is that of its destructors.
       generalize hI : Term.inst (Lifting.name D S) (qs ++ [v.quality]) ls (v.grades ps ms) as =
         B at hπ
       cases hπ with
       | var => cases hI
-      | inst hdecl₂ hD₂ hL₂ hq₂ hp₂ hds =>
+      | inst hdecl₂ hD₂ hL₂ hqp₂ hds =>
         injection hI with _ _ hD₃ hq₃ _ hp₃
         obtain ⟨hD₄, hS₄⟩ := Lifting.name_inj hD₃
         subst hD₄ hS₄ hq₃ hp₃
@@ -633,14 +631,14 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         let I : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
           .ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp'
         have hLd := hb I
-        rw [Instance.liftingVariables_ofLists qs ps v ms hq hp hq' hp',
-          show I.lifted = .ofLists qs ps hq hp from
-            Instance.lifted_ofLists qs ps v.quality _ hq hp hq' hp'] at hLd
+        rw [Instance.liftingVariables_ofLists qs ps v ms hqp.sorts hqp.grades hq' hp',
+          show I.lifted = hqp.inst from
+            Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades hq' hp'] at hLd
         have hF := hLd.shape_factor (sigC := sig₁) hsub ih D (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩)
           (ν := Shape.motives (S.zip ms')) (ν₀ := Nesting.lift (Shape.motives (S.zip ms')))
           (fun x => .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x,
             rfl⟩)
-          (TypeDeclaration.liftingScope_shapes hS hq' hp hm hp' hms)
+          (TypeDeclaration.liftingScope_shapes hS hq' hqp.grades hm hp' hms)
           (fun E => by
             show ((Lifting.base S _ decl.scope).block E).map _ = none
             rw [Lifting.base_block]
@@ -648,9 +646,9 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
         rw [Destructors.shape_substLevels] at hF
         have hu := Destructors.Factor.unique hsig
           (TypeDeclaration.liftingScope_distinctMotives _ _ _) hF hds
-        refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁)
+        refine ⟨((T.body hqp.inst).shape sig₁ v md ax (Signature.shapes v md ax sig₁)
           D (Shape.motives (S.zip ms'))).1, ?_⟩
-        rw [Signature.shapes_lifting hsig₁ ⟨hdecl₁, hT, hTn⟩ hq hp hfst, hu]
+        rw [Signature.shapes_lifting hsig₁ ⟨hdecl₁, hT, hTn⟩ hqp hfst, hu]
     · -- The entry is not the lifting: its names are not the name of the lifting.
       have hne : ∀ L, e = .typeDeclaration L → L.names ≠ [Lifting.name D S] := by
         rintro L rfl hLn
@@ -660,13 +658,13 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
       cases e with
       | typeDeclaration L =>
         simp only [Signature.shapes, hfst, hne L rfl, ↓reduceIte]
-        exact ih k v hdecl hD hL' hq hp hS hm hms hπ
+        exact ih k v hdecl hD hL' hqp hS hm hms hπ
       | constantDefinition _ =>
         simp only [Signature.shapes]
-        exact ih k v hdecl hD hL' hq hp hS hm hms hπ
+        exact ih k v hdecl hD hL' hqp hS hm hms hπ
       | constantDeclaration _ =>
         simp only [Signature.shapes]
-        exact ih k v hdecl hD hL' hq hp hS hm hms hπ
+        exact ih k v hdecl hD hL' hqp hS hm hms hπ
 
 /-! ## Elements of the Shapes of the Liftings -/
 
@@ -686,14 +684,14 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) (hS : S.Nodup) {qs : List Quality}
-    {ps : List Grade} {ms : List (Lifting.Result k)} (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades) (hm : ms.length = S.length)
+    {ps : List Grade} {ms : List (Lifting.Result k)} (hqp : decl.AsMany qs ps)
+    (hm : ms.length = S.length)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S) {ms' : List Shape.Motive}
     (hms : Shape.Motive.AllOf ms' ms) {d : Name} {p q ς : Grade} {ps₁ : List Parameter}
     {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
     {ψ : ResultOwnership Grade ps₁.length}
-    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {p' q' ς' : Grade}
+    (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) {p' q' ς' : Grade}
     {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
@@ -733,14 +731,14 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
   have hcase : ∀ d, Signature.destructorCase sig₁ D d = sig.destructorCase D d := fun d =>
     (hsig₁.destructorCase hT₁).trans (hsig.destructorCase hT).symm
   have hLd := hb (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
-  rw [Instance.liftingVariables_ofLists qs ps v ms hq hp hq' hp',
-    Instance.lifted_ofLists qs ps v.quality _ hq hp hq' hp'] at hLd
+  rw [Instance.liftingVariables_ofLists qs ps v ms hqp.sorts hqp.grades hq' hp',
+    Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades hq' hp'] at hLd
   obtain ⟨m, rest, h₁, h₂, h₃, h₄, h₅, h₆, π, h₇, h₈⟩ := hLd.shape_get (sigC := sig₁) hsub ih
     (hpre ▸ hsig) D
     (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩) (hsig.destructors_nodup hT)
     (ν := Shape.motives (S.zip ms')) (ν₀ := Nesting.lift (Shape.motives (S.zip ms')))
     (fun x => .inr ⟨.succ x, Args.bound _, InstanceArgs.identity_rename_toSubst Ren.weaken x, rfl⟩)
-    (TypeDeclaration.liftingScope_shapes hS hq' hp hm hp' hms)
+    (TypeDeclaration.liftingScope_shapes hS hq' hqp.grades hm hp' hms)
     (fun E => by
       show ((Lifting.base S _ decl.scope).block E).map _ = none
       rw [Lifting.base_block]
@@ -749,14 +747,14 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
   -- The shape of the lifting is the one that its entry declares.
   have hfst : (S.zip ms').map (·.1) = S :=
     List.map_fst_zip (by rw [hms.length_eq, hm]; exact Nat.le_refl _)
-  refine ⟨((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
-      (Shape.motives (S.zip ms'))).1, ((T.body (.ofLists qs ps hq hp)).shape sig₁ v md ax
+  refine ⟨((T.body hqp.inst).shape sig₁ v md ax (Signature.shapes v md ax sig₁) D
+      (Shape.motives (S.zip ms'))).1, ((T.body hqp.inst).shape sig₁ v md ax
       (Signature.shapes v md ax sig₁) D (Shape.motives (S.zip ms'))).2.getD .noneNone, m, rest, ?_, ?_, h₂, h₃,
     h₄, h₅, ?_, ?_⟩
   · exact (congrArg (fun s => Signature.shapes v md ax s D qs ps (S.zip ms')) he).trans
       ((Signature.shapes_append List.mem_cons_self
           (by rw [hfst]; exact TypeDeclaration.name_mem_lifting_names) pre (he ▸ hsig)).trans
-        (Signature.shapes_lifting hsig₁ hT₁ hq hp hfst))
+        (Signature.shapes_lifting hsig₁ hT₁ hqp hfst))
   · rw [← hpre, Term.shape_substLevels, Destructors.Pos.nesting_substLevels] at h₁
     exact h₁
   · rw [Destructors.shape_substLevels, hcase] at h₆

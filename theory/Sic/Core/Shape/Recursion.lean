@@ -73,11 +73,9 @@ declares it. -/
 def Entry.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
     (v : Lifting.Variables) (χ : Grade) : Entry → Option Grade :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp)
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.dataTypes.find? (·.name == D)).map fun _ =>
+        decl.recursionRequirement sig v .oneOne χ qs ps hqp.inst
     else none
 
 /-- `recursion_Σ(T, r)`: the requirement `r̂` of the recursion of a recursor of the variables `v`,
@@ -122,32 +120,32 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
     {χ : Grade} : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    (hqp : decl.AsMany qs ps) →
     sig.findSome? (Entry.recursionRequirement sig₀ D qs ps v χ) =
-      some (decl.recursionRequirement sig₀ v .oneOne χ qs ps (.ofLists qs ps hq hp))
-  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+      some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst)
+  | [], _, _, _, _, h, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursionRequirement sig₀ D qs ps v χ (.typeDeclaration decl) =
-          some (decl.recursionRequirement sig₀ v .oneOne χ qs ps (.ofLists qs ps hq hp)) := by
+          some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst) := by
         simp only [Entry.recursionRequirement,
-          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hq, hp, ↓reduceDIte,
+          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hqp, ↓reduceDIte,
           ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursionRequirement_of_not_mem hDe]; rfl)]
-      exact hd.recursionRequirement ⟨he', hT, hD⟩ hq hp
+      exact hd.recursionRequirement ⟨he', hT, hD⟩ hqp
 
 /-- In a signature whose names are distinct, the requirement of the recursion that the erasure of a
 recursor reads is the one of the block of its data type, in the mode `11ᵐ`. -/
 theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.Distinct) {D : Name}
     {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (v : Lifting.Variables)
+    (hqp : decl.AsMany qs ps) (v : Lifting.Variables)
     (χ : Grade) :
     sig.recursionRequirement D qs ps v χ =
-      decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp) := by
-  rw [Signature.recursionRequirement, hd.recursionRequirement h hq hp, Option.getD_some]
+      decl.recursionRequirement sig v .oneOne χ qs ps hqp.inst := by
+  rw [Signature.recursionRequirement, hd.recursionRequirement h hqp, Option.getD_some]
 
 /-- Each product along a prefix of a path of the shape of a nested field gives the requirement of
 the recursion a pair, of the requirement of the field times the product and of the grade with which

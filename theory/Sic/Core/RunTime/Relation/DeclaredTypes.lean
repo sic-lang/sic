@@ -515,7 +515,7 @@ theorem RunValidRen.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} 
       (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as)) :
     RunValidRen sig ι P hΓ ctx γ (.ctor D qs ls ps as con.name ts.terms) (.inst D qs ls ps as) := by
   intro w σ H E V hσ hEV hE _ g E' hg
-  have hfg := hd.fieldParams h hc hq hp
+  have hfg := hd.fieldParams h hc ⟨hq, hp⟩
   obtain ⟨hdecl, hT, rfl⟩ := h
   obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem hdecl hT hc
   have he : (Term.ctor T.name qs ls ps as con.name ts.terms).erase sig Mode.oneOne.erased hΓ =

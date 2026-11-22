@@ -431,12 +431,12 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hidx := hpos'.getElem?_index
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g₁, hg₁⟩ := hgs₁ _ d' hidx
     obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
-      (ρ := ρ₁) hρ₁ hq hl hp hq' hl' hp' has₁ t hpos hpos' o'
+      (ρ := ρ₁) hρ₁ ⟨hq, hp⟩ hl hq' hl' hp' has₁ t hpos hpos' o'
     subst hps
     have ht₁ : t.rename ρ₁.ren = t := Term.rename_id_of hid₁ t
     rw (transparency := .default) [ht₁] at hΘeq hBL
     obtain ⟨σ₂, π₂, mS, rest, hσ₂, hmS, hp'g, hς', hps', hψ', hdrop, hfac⟩ :=
-      hord.shapes_get hd h hLm has₁.nodup hq hp has₁.length_eq hq' hp' hmsA hpos hpos'
+      hord.shapes_get hd h hLm has₁.nodup ⟨hq, hp⟩ has₁.length_eq hq' hp' hmsA hpos hpos'
     rw [hσ] at hσ₂
     cases hσ₂
     have hiL : declL.codataCases[hpos'.index]? = some (0, TL, d') := by
@@ -475,7 +475,8 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hL'' := hBL.subst (Lifting.Substitutes.closedArgs ρ₁ ts)
     rw [Term.rename_id_of (Ren.liftN_id_of _ hid₁), Term.subst_append,
       Term.subst_toSubst_cast _ _ ts ts' hts, Term.subst_append] at hL''
-    have hshape := TypeDeclaration.Lifts.shape_result hd h hLf (ρ := ρ₁) hq hl hp hq' hl' hp' has₁
+    have hshape := TypeDeclaration.Lifts.shape_result hd h hLf (ρ := ρ₁) ⟨hq, hp⟩ hl hq' hl' hp'
+      has₁
       t hms' hpos hpos' ts (fun hA _ hν hbA =>
         (hA.shape_eq hd hord (md := .oneOne) (ax := Grade.run) hν hbA).imp fun _ h => h.1) hb
     rw [Term.subst_append] at hshape
@@ -706,7 +707,7 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     cases hν with
     | inst _ =>
       exact NestedRunsAt.inst (n := n) hd hord (fun _ => hr) hb h hq hl hp hrec
-        fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hadm hκ hpos) hpu
+        fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h ⟨hq, hp⟩ hadm hκ hpos) hpu
 termination_by structural h _ _ _ _ _ => h
 
 /-- At a position of a destructor, whose grade is used at run time, in destructors that the graph

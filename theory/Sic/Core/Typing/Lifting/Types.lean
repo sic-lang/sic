@@ -463,7 +463,7 @@ where
         (HasArgs.snoc (stableUnderRenaming.hasArgs hts hρ.ren) he')
     | .block (D := D) hD, _, hb, _, _ => nomatch (hb D).symm.trans hD
     | .inst (decl := decl) (D := D) (qs := qs) (ls := ls) (ms := ms) (ps := ps) (as := as)
-        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ hq hl hp has _ hL _, hρ, hb, hA,
+        (S := S) (as' := as') (ns := ns) (body := body) hd hD _ ⟨hq, hp⟩ hl has _ hL _, hρ, hb, hA,
         he => by
       obtain ⟨ζ, _, _, _, hDT, hadm, hargs⟩ := hA.inst_inv_of_mem hd hD
       have hlen := has.length_eq
@@ -509,12 +509,12 @@ where
               (decl.liftedInstance D S.length I'.lifted
                 ((InstanceArgs.identity decl.scope).rename
                   (Lifting.base S (decl.liftingMotive S I') decl.scope).ren)))) := by
-        rw [hI, decl.liftedInstance_substLevels D hq hp hl hl', InstanceArgs.substLevels_rename,
+        rw [hI, decl.liftedInstance_substLevels D ⟨hq, hp⟩ hl hl', InstanceArgs.substLevels_rename,
           InstanceArgs.identity_substLevels]
         show HasType sig ctx' e (.inst D qs ls ps _)
         rw [e₀]
         exact he
-      rw [← decl.liftingSort_substLevels S hq hp hl ((List.length_map _).trans hlen) hq' hp' hl']
+      rw [← decl.liftingSort_substLevels S ⟨hq, hp⟩ hl ((List.length_map _).trans hlen) hq' hp' hl']
       exact HasType.inst (decl := decl.lifting D S ns body)
         (ζ := fun _ _ => .unrestrictedUnrestricted)
         ⟨hL, .inr ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩ hq' hl' hp' hadm' (.var hargs' he')

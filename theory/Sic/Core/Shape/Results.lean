@@ -184,13 +184,11 @@ def Signature.shapes (v : Lifting.Variables) (m : Mode) (ax : Grade → Multipli
     if L.names = [Lifting.name D (ms.map (·.1))] then
       sig'.findSome? fun
         | .typeDeclaration decl =>
-          if hq : qs.length = decl.sorts then
-            if hp : ps.length = decl.grades then
-              (decl.codataTypes.find? (·.name == D)).map fun T =>
-                let σ := (T.body (.ofLists qs ps hq hp)).shape sig' v m ax
-                  (Signature.shapes v m ax sig') D (Shape.motives ms)
-                (σ.1, σ.2.getD .noneNone)
-            else none
+          if hqp : decl.AsMany qs ps then
+            (decl.codataTypes.find? (·.name == D)).map fun T =>
+              let σ := (T.body hqp.inst).shape sig' v m ax
+                (Signature.shapes v m ax sig') D (Shape.motives ms)
+              (σ.1, σ.2.getD .noneNone)
           else none
         | _ => none
     else Signature.shapes v m ax sig' D qs ps ms

@@ -186,7 +186,7 @@ theorem Term.Factor.unique (hd : sig.Distinct) :
       injection hB with _ he hy
       exact congrArg Lifting.Result.factor (hρ hx₁ hx₂ (Var.level_heq he hy))
     | inst => cases hB
-  | _, _, _, _, _, _, _, _, .inst hdecl₁ hD₁ h₁ hq hp hds₁, .inst hdecl₂ hD₂ h₂ _ _ hds₂ => by
+  | _, _, _, _, _, _, _, _, .inst hdecl₁ hD₁ h₁ hqp hds₁, .inst hdecl₂ hD₂ h₂ _ hds₂ => by
     obtain rfl := Entry.typeDeclaration.inj (hd.entry_unique hdecl₁ hdecl₂ hD₁ hD₂)
     have he := Entry.typeDeclaration.inj
       (hd.entry_unique h₁ h₂ TypeDeclaration.name_mem_lifting_names
@@ -226,7 +226,7 @@ theorem Term.Lifts.factor {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ D,
   cases h with
   | var hx _ => exact .var hx _
   | block hD => cases (hρ _).symm.trans hD
-  | inst _ _ _ _ _ _ _ _ _ hπ => exact hπ
+  | inst _ _ _ _ _ _ _ _ hπ => exact hπ
 
 /-! ## Variables Lifted -/
 
@@ -318,7 +318,7 @@ theorem Term.Lifts.not_avoidsLifted :
   | _, _, _, _, _, _, _, _, .var (x := x) (ts := ts) hx _, _ => fun h =>
     Term.not_avoids_var x ts (h x (hx ▸ rfl))
   | _, _, _, _, _, _, _, _, .block _, hn => nomatch hn
-  | _, _, _, _, _, _, _, _, .inst _ _ _ _ _ _ has hS _ _, hn => fun h => by
+  | _, _, _, _, _, _, _, _, .inst _ _ _ _ _ has hS _ _, hn => fun h => by
     subst hn
     exact has.not_avoidsLifted rfl hS fun x hx => (h x hx).inst_args
 
@@ -399,7 +399,7 @@ theorem Term.Lifts.unique (hd : sig.Distinct) :
       exact ⟨rfl, rfl⟩
     | inst _ _ hn => exact absurd rfl (hn _)
   | _, _, _, _, _, _, _, _, _, _,
-      .inst (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h₁ hD₁ hn₁ hq₁ hl₁ hp₁ has₁ _ _ hπ₁,
+      .inst (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h₁ hD₁ hn₁ hqp₁ hl₁ has₁ _ _ hπ₁,
       h₂ => by
     generalize hA : Term.inst D qs ls ps as = A at h₂
     cases h₂ with
@@ -408,7 +408,7 @@ theorem Term.Lifts.unique (hd : sig.Distinct) :
       injection hA with _ _ hD
       subst hD
       exact absurd rfl (hn₁ _)
-    | inst h₂ hD₂ _ hq₂ hl₂ hp₂ has₂ _ _ hπ₂ =>
+    | inst h₂ hD₂ _ hqp₂ hl₂ has₂ _ _ hπ₂ =>
       injection hA with _ _ hD hqs hls hps has
       subst hD hqs hls hps
       obtain rfl := Entry.typeDeclaration.inj (hd.entry_unique h₁ h₂ hD₁ hD₂)

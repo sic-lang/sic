@@ -169,11 +169,9 @@ theorem Signature.shapes_of_motives {P : Shape.Motive → Prop} (v : Lifting.Var
       split at he
       · rename_i decl
         split at he
-        · split at he
-          · obtain ⟨T, -, hT⟩ := Option.map_eq_some_iff.1 he
-            cases hT
-            exact hds sig' _ D _ (Nesting.motives_of_shapes ms hms) ih
-          · cases he
+        · obtain ⟨T, -, hT⟩ := Option.map_eq_some_iff.1 he
+          cases hT
+          exact hds sig' _ D _ (Nesting.motives_of_shapes ms hms) ih
         · cases he
       · cases he
     · exact ih D qs ps ms σ π hms h

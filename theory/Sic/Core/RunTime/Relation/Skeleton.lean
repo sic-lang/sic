@@ -46,7 +46,7 @@ theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D 
     · have hs : Entry.skeleton D qs ps (.typeDeclaration decl) =
           some (decl.skeleton (.ofLists qs ps hq hp) decl.names.length D) := by
         simp only [Entry.skeleton, Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT),
-          hq, hp, ↓reduceDIte, ← hD,
+          show decl.AsMany qs ps from ⟨hq, hp⟩, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs, Option.getD_some]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)

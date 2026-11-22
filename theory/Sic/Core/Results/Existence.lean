@@ -206,8 +206,8 @@ def Signature.LiftingsHaveResults (sig₁ sig : Signature) : Prop :=
     ∀ {Γ : Scope} {ρ : Lifting k Γ Γ}, (∀ {a} (x : Var Γ a), ρ.motive x = none) →
     ∀ {n : Nest Name} {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)}
       {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {Δ' : Scope} {as' : InstanceArgs k Γ Δ'},
-      (∀ E, n ≠ .direct E) → qs.length = decl.sorts → ls.length = decl.levels →
-      ps.length = decl.grades → InstanceArgs.Lifts sig v ρ n.args as S ms as' → S ≠ [] →
+      (∀ E, n ≠ .direct E) → decl.AsMany qs ps → ls.length = decl.levels → InstanceArgs.Lifts sig v
+      ρ n.args as S ms as' → S ≠ [] →
       Subst.HasResults sig v as.toSubst ρ (Nesting.ofArgs n.args) →
       ∀ (φ : Name → Term k (.var :: Γ)) (t : Term k Γ),
         ∃ e, Term.NestedResult sig v ρ φ n (.inst D qs ls ps as) t e
@@ -236,13 +236,13 @@ theorem Term.Lifts.hasResult_instantiate
     rw [Term.subst]
     exact (ho _ x hν).instantiate hI.motive' (ts.subst θ)
   | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _, _ => nomatch hn
-  | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL _, hn, _, _, _, _, _, _, hI, ho => by
+  | _, _, _, _, _, _, _, _, .inst h hD _ hqp hl has hS hL _, hn, _, _, _, _, _, _, hI, ho => by
     subst hn
     intro Γ₂ w w' ρ₂ hs φ t
     have has' := ((has.ofTypeDeclarations hsub).instantiate rfl hI).ofArgs_args.subst hs
     have ho' := ((has.hasResults_instantiate hsub hM rfl hI ho).ofArgs_args).substArgs hs
     simp only [Term.subst]
-    exact hM _ v (hsub _ h) hD hL hs.motive' (fun E => Nest.ofArgs_ne_direct _ E) hq hl hp has' hS
+    exact hM _ v (hsub _ h) hD hL hs.motive' (fun E => Nest.ofArgs_ne_direct _ E) hqp hl has' hS
       ho' φ t
 
 /-- The terms of the arguments of an instance lifted at no position, in a signature `Σ₁` whose
@@ -301,10 +301,10 @@ theorem Term.Lifts.hasResult (hM : Signature.LiftingsHaveResults sig sig) :
     refine ⟨_, Term.NestedResult.block (b := b.subst θ θ') ?_⟩
     rw [hs.block, hD]
     rfl
-  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL _ => by
+  | _, _, _, _, _, _, _, _, .inst h hD hn hqp hl has hS hL _ => by
     intro Γ₂ θ θ' ρ₂ hs φ t
     rw [Term.subst]
-    exact hM _ v h hD hL hs.motive' hn hq hl hp (has.subst hs) hS
+    exact hM _ v h hD hL hs.motive' hn hqp hl (has.subst hs) hS
       ((has.hasResults hM).substArgs hs) φ t
 
 /-- The terms of the arguments of an instance lifted, in a signature whose liftings have results,
@@ -354,8 +354,8 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {n : Nest Name} {qs : List Quality}
     {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} {Δ' : Scope}
-    {as' : InstanceArgs k Γ Δ'} (hn : ∀ E, n ≠ .direct E) (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {as' : InstanceArgs k Γ Δ'} (hn : ∀ E, n ≠ .direct E) (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels)
     (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
     (ho : Subst.HasResults sig v as.toSubst ρ (Nesting.ofArgs n.args))
     (φ : Name → Term k (.var :: Γ)) (t : Term k Γ) :
@@ -363,17 +363,18 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
   obtain ⟨T, hT, hn', hb⟩ := id hLd
   have hTs : sig.HasCodataType D decl T := ⟨hdecl, hT, hn'⟩
   have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-    rw [List.length_append, hq]
+    rw [List.length_append, hqp.sorts]
     rfl
   have hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has.length_eq]
   have hp' : (v.grades ps ms).length = decl.liftingGrades S :=
-    v.length_grades hp has.length_eq
+    v.length_grades hqp.grades has.length_eq
   obtain ⟨hΔ, -⟩ := has.instantiates hρ S
     (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
       i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl' hp
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl'
+      hqp.grades
       hp' j h₁ h₂)
   subst hΔ
   -- A branch for each destructor of the lifting: the result of the observation by it.
@@ -381,7 +382,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
       ∃ b : (Σ n m a, Term k (((Γ.extend n).extend m).extend a)), ∀ d, ns[i]? = some d →
         ∃ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
-          (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+          (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
           (g : Term k (Γ.extend ps₁.length)),
           b = ⟨0, 0, ps₁.length, g⟩ ∧
           Term.NestedResult sig v (ρ.liftN ps₁.length)
@@ -396,11 +397,11 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     obtain ⟨p', q', ς', ps₁', Ξ', Θ', B', ψ', ⟨hd'⟩⟩ := Destructors.exists_pos
       (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) hmem
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos
-      (T.body (.ofLists qs ps hq hp))
+      (T.body hqp.inst)
       ((Destructors.Lifts.sublist (hb (.ofLists (qs ++ [v.quality])
         (v.grades ps ms) hq' hp'))).subset hmem)
     obtain ⟨_, -, ρ₁, e₀, A₀, A₀', hL₁, hI, -, hnest, -, -, hA, -⟩ :=
-      hLd.result hsig hTs hρ hq hl hp hq' hl' hp' has t hpos hd'
+      hLd.result hsig hTs hρ hqp hl hq' hl' hp' has t hpos hd'
         (fun _ _ => .sort ⟨.prop, .zero⟩)
     have hres := hL₁.hasResult_instantiate hsub hM rfl (hI.liftN ps₁.length)
       ((ho.snocTerm t).liftN ps₁.length hρ)
@@ -413,7 +414,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     cases (List.getElem?_eq_getElem hi).symm.trans hd''
     exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g, rfl, hg⟩
   obtain ⟨gs, hgl, hgs⟩ := DestructorBranches.exists_of_forall ns.length _ key
-  refine ⟨_, .inst hTs hn hq hl hp has hS hL hgl ?_ ?_⟩
+  refine ⟨_, .inst hTs hn hqp hl has hS hL hgl ?_ ?_⟩
   · intro i d hi
     obtain ⟨b, hb', hP⟩ := hgs i (List.getElem?_eq_some_iff.1 hi).1
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g, rfl, -⟩ := hP d hi
@@ -448,14 +449,14 @@ theorem Signature.LiftsInOrder.liftingsHaveResults (hsig : sig.Distinct)
   | e :: sig₁, pre, he => by
     have ih := Signature.LiftsInOrder.liftingsHaveResults hsig hord sig₁ (pre ++ [e])
       (by rw [List.append_assoc]; exact he)
-    intro k v decl D S ns body hdecl hD hL Γ ρ hρ n qs ls ls' ps as Δ' as' hn hq hl hp has hS ho
+    intro k v decl D S ns body hdecl hD hL Γ ρ hρ n qs ls ls' ps as Δ' as' hn hqp hl has hS ho
       φ t
     rcases List.mem_cons.1 hL with heq | hL'
     · subst heq
       exact (hord pre sig₁ decl D S ns body he hdecl hD).2.hasResult hsig
         (fun _ h => he ▸ List.mem_append_right pre (List.mem_cons_of_mem _ h)) ih hdecl
-        (he ▸ List.mem_append_right pre List.mem_cons_self) hρ hn hq hl hp has hS ho φ t
-    · exact ih _ v hdecl hD hL' hρ hn hq hl hp has hS ho φ t
+        (he ▸ List.mem_append_right pre List.mem_cons_self) hρ hn hqp hl has hS ho φ t
+    · exact ih _ v hdecl hD hL' hρ hn hqp hl has hS ho φ t
 
 /-! ## Existence -/
 

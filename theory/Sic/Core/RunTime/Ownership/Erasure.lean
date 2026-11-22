@@ -463,7 +463,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
   | .ctor (con := con) h hc hq hp hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
+    simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
       (Mode.oneOne_odot_of_not_erased hm) hts
     rw [Parameter.map_eta] at hos
@@ -479,8 +479,8 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           (us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ)
             ((sig.caseFieldParams D qs ps).getD [])) := by
       intro o' ho₁ ho₂
-      rw [hd.recursionRequirement_eq h hq hp] at ho₁
-      rw [hd.recursiveResults h hq hp, hd.caseFieldParams h hq hp, Option.getD_some]
+      rw [hd.recursionRequirement_eq h ⟨hq, hp⟩] at ho₁
+      rw [hd.recursiveResults h ⟨hq, hp⟩, hd.caseFieldParams h ⟨hq, hp⟩, Option.getD_some]
       rw [hm] at hns hmeets hused
       -- The case of each branch.
       have hcase : ∀ i a b (u : Term k ((Γ.extend a).extend b)), us.get i = some ⟨a, b, u⟩ →
@@ -635,7 +635,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     rw [h.2.2] at hi
     simp only [Term.erase, hi]
     generalize hA : sig.argumentParams _ _ _ _ = A
-    rw [hd.argumentParams h hq hp hpos] at hA
+    rw [hd.argumentParams h ⟨hq, hp⟩ hpos] at hA
     subst hA
     simp only [Option.getD_some]
     obtain ⟨os', hos, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
@@ -654,7 +654,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     refine .corec hos (DestructorBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
-      hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
+      hres⟩ := hd.corecCase h ⟨hq, hp⟩ hSs hgl hgs hi
     have hT' := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hc)).1
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_map hargs, List.headD_drop_map hres]

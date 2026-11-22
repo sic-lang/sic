@@ -263,7 +263,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         refine ⟨_, _, by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl,
           by rw [List.getElem?_map, List.getElem?_eq_getElem hlt]; rfl, fun hne => ?_⟩
         show (sig.recursionRequirement T.name qs ps ⟨κ.quality, r, ς⟩ χ').run ≤ _
-        rw [hd.recursionRequirement_eq ⟨hdecl, hT, rfl⟩ hq hp]
+        rw [hd.recursionRequirement_eq ⟨hdecl, hT, rfl⟩ ⟨hq, hp⟩]
         have h1 : Mode.oneOne.grade * r = r := Grade.modality.semiring.one_mul r
         have hle := TypeDeclaration.recursionRequirement_run_le (sig := sig)
           (v := ⟨κ.quality, r, ς⟩) (m := .oneOne) (χ := χ') (qs := qs) (ps := ps) hi' hmem

@@ -47,8 +47,8 @@ theorem Term.NestedResult.ofTypeDeclarations
     Term.NestedResult sig' v ρ φ n A t e := by
   induction h with
   | block hD => exact .block hD
-  | inst h hn hq hl hp has hS hL hgl hgs _ ih =>
-    exact .inst ⟨hs _ h.1, h.2⟩ hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL) hgl hgs ih
+  | inst h hn hqp hl has hS hL hgl hgs _ ih =>
+    exact .inst ⟨hs _ h.1, h.2⟩ hn hqp hl (has.ofTypeDeclarations hs) hS (hs _ hL) hgl hgs ih
 
 /-- The recursive results of terms of fields are their results in a signature that has the type
 declarations of their signature. -/

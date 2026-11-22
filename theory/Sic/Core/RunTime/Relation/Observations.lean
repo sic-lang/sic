@@ -674,7 +674,7 @@ theorem RunValidRen.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {
   have he : (Term.obs D qs ls ps as t d bs.terms).erase sig Mode.oneOne.erased hΓ =
       .obs (t.erase sig Mode.oneOne.erased hΓ) i (ψ.map Grade.run) ς.run
         (bs.terms.erase sig Mode.oneOne.erased hΓ ps') := by
-    rw [Term.erase, hi, hd.argumentParams h hq hp hpos]
+    rw [Term.erase, hi, hd.argumentParams h ⟨hq, hp⟩ hpos]
     rfl
   refine ⟨w, H₃, tr₁ ++ (tr₂ ++ tr₃), by
     rw [he]

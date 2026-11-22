@@ -41,8 +41,8 @@ theorem Term.Factor.ofTypeDeclarations
     {k : Nat} → {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {B : Term k Γ'} → {π : Grade} →
       Term.Factor sig ρ B π → Term.Factor sig' ρ B π
   | _, _, _, _, _, _, .var hx ts => .var hx ts
-  | _, _, _, _, _, _, .inst hdecl hD h hq hp hds =>
-    .inst (hs _ hdecl) hD (hs _ h) hq hp (hds.ofTypeDeclarations hs)
+  | _, _, _, _, _, _, .inst hdecl hD h hqp hds =>
+    .inst (hs _ hdecl) hD (hs _ h) hqp (hds.ofTypeDeclarations hs)
 
 /-- Destructors have their meet likewise in a signature that has the type declarations of their
 signature. -/
@@ -75,8 +75,8 @@ theorem Term.Lifts.ofTypeDeclarations
         Term.Lifts sig' v ρ n e A A' m
   | _, _, _, _, _, _, _, _, .var hx hts => .var hx hts
   | _, _, _, _, _, _, _, _, .block hD => .block hD
-  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL hπ =>
-    .inst (hs _ h) hD hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL)
+  | _, _, _, _, _, _, _, _, .inst h hD hn hqp hl has hS hL hπ =>
+    .inst (hs _ h) hD hn hqp hl (has.ofTypeDeclarations hs) hS (hs _ hL)
       (hπ.ofTypeDeclarations hs)
 
 /-- The arguments of an instance lifted are lifted likewise in a signature that has the type

@@ -66,7 +66,7 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
     | block => rfl
     | inst _ hn => exact absurd rfl (hn _)
   | _, _, _, _, _, _, _, _,
-      .inst (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (S := S) h₁ hn₁ hq₁ hl₁ hp₁ has₁
+      .inst (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (S := S) h₁ hn₁ hqp₁ hl₁ has₁
         _ hL₁ hgl₁ hgs₁ hgt₁,
       h₂ => by
     generalize hA : Term.inst D qs ls ps as = A at h₂
@@ -75,7 +75,7 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
       injection hA with _ _ hD
       subst hD
       exact absurd rfl (hn₁ _)
-    | inst h₂ _ hq₂ hl₂ hp₂ has₂ _ hL₂ hgl₂ hgs₂ hgt₂ =>
+    | inst h₂ _ hqp₂ hl₂ has₂ _ hL₂ hgl₂ hgs₂ hgt₂ =>
       injection hA with _ _ hD hqs hls hps has
       subst hD hqs hls hps
       obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h₁ h₂

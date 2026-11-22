@@ -173,12 +173,12 @@ theorem Term.NestedResult.subst :
     rw [hs.block, hD]
     rfl
   | _, _, φ, _, _, _, _,
-      .inst (t := t) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (gs := gs) h hn hq hl hp
+      .inst (t := t) (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) (gs := gs) h hn hqp hl
         has hS hL hgl hgs hgt,
       _, θ, _, hs => by
     rw [Term.subst, Term.subst]
     simp only [InstanceArgs.subst, States.subst, Telescope.subst]
-    refine Term.NestedResult.inst h hn hq hl hp (has.subst hs) hS hL
+    refine Term.NestedResult.inst h hn hqp hl (has.subst hs) hS hL
       ((DestructorBranches.length_subst θ gs).trans hgl) ?_ ?_
     · intro i d hi
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g, hg⟩ := hgs i d hi
@@ -354,11 +354,11 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     rfl
   | _, _, φ, _, _, _, _,
       .inst (t := t) (D := D) (qs := qs) (ls := ls) (ms := ms) (ps := ps) (as := as) (gs := gs) h hn
-        hq hl hp has hS hL hgl hgs hgt => by
+        hqp hl has hS hL hgl hgs hgt => by
     simp only [Term.substLevels, InstanceArgs.substLevels, States.substLevels,
       Telescope.substLevels, List.map_append, List.map_nil]
     rw [← Lifting.Result.levels_substLevels ls' ms, ← Lifting.Variables.grades_substLevels v ps ls' ms]
-    refine Term.NestedResult.inst h hn hq ((List.length_map _).trans hl) hp (has.substLevels ls')
+    refine Term.NestedResult.inst h hn hqp ((List.length_map _).trans hl) (has.substLevels ls')
       hS hL ((DestructorBranches.length_substLevels ls' gs).trans hgl) ?_ ?_
     · intro i d hi
       obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, g, hg⟩ := hgs i d hi

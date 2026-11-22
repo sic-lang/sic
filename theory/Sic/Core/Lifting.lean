@@ -472,9 +472,10 @@ inductive Term.Factor (sig : Signature) :
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ' Δ}
       {π : Option Grade} (hdecl : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
-      (h : .typeDeclaration (decl.lifting D S ns body) ∈ sig) (hq : qs.length = decl.sorts + 1) (hp : ps.length = decl.liftingGrades S)
-      (hds : Destructors.Factor sig (decl.liftingScope S (.ofLists qs ps hq hp))
-        (body (.ofLists qs ps hq hp)) π) :
+      (h : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
+      (hqp : (decl.lifting D S ns body).AsMany qs ps)
+      (hds : Destructors.Factor sig (decl.liftingScope S hqp.inst)
+        (body hqp.inst) π) :
       Term.Factor sig ρ (.inst (Lifting.name D S) qs ls ps as) (π.getD .noneNone)
 
 /-- `Σ ⊢ factor(d̄) = π`: the destructors `d̄` have the meet `π` of their grades times the factors
@@ -548,7 +549,7 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       (h : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) (hn : ∀ E, n ≠ .direct E)
-      (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
       {π : Grade}
       (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
@@ -558,7 +559,7 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
       Term.Lifts sig v ρ n e (.inst D qs ls ps as)
         (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level)) (v.grades ps ms)
           (.snoc (e := .var) as' e))
-        ⟨((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).joins (ms.map (·.level)),
+        ⟨((decl.sort hqp.inst).level.subst (ls.getFin hl)).joins (ms.map (·.level)),
           π, .linearLinear⟩
 
 /--

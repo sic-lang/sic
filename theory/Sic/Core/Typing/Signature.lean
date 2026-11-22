@@ -120,6 +120,6 @@ theorem WfSig.destructor_erased {sig : Signature} (h : WfSig sig) {D : Name}
 /-- A well-formed signature erases the destructors of its blocks of propositions. -/
 theorem WfSig.erasesPropDestructors {sig : Signature} (h : WfSig sig) :
     sig.ErasesPropDestructors :=
-  fun {_ _ _} hT {_ _} _ _ hI hκ {_ _ _ _ _ _ _ _ _} hpos => h.destructor_erased hT hI hpos hκ
+  fun {_ _ _} hT {_ _} _ hI hκ {_ _ _ _ _ _ _ _ _} hpos => h.destructor_erased hT hI hpos hκ
 
 end Sic.Core

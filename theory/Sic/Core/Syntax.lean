@@ -822,22 +822,30 @@ structure TypeDeclaration.AsMany (decl : TypeDeclaration) (qs : List Quality) (p
 /-- `[s̄' / s̄, p̄' / p̄]`: the instance of the sort and grade variables of `decl` that gives them the
 qualities `qs` and the grades `ps`, as many as them. -/
 abbrev TypeDeclaration.AsMany.inst {decl : TypeDeclaration} {qs : List Quality} {ps : List Grade}
-    (hn : decl.AsMany qs ps) : Instance decl.sorts decl.grades :=
-  .ofLists qs ps hn.sorts hn.grades
+    (hqp : decl.AsMany qs ps) : Instance decl.sorts decl.grades :=
+  .ofLists qs ps hqp.sorts hqp.grades
 
 /-- The instance that the qualities `qs` give gives each sort variable the quality at its position in
 `qs`. -/
 theorem TypeDeclaration.AsMany.inst_sorts {decl : TypeDeclaration} {qs : List Quality}
-    {ps : List Grade} (hn : decl.AsMany qs ps) (i : Fin decl.sorts) :
-    hn.inst.sorts i = qs[(i : Nat)]'(by rw [hn.sorts]; exact i.isLt) :=
+    {ps : List Grade} (hqp : decl.AsMany qs ps) (i : Fin decl.sorts) :
+    hqp.inst.sorts i = qs[(i : Nat)]'(by rw [hqp.sorts]; exact i.isLt) :=
   rfl
 
 /-- The instance that the grades `ps` give gives each grade variable the grade at its position in
 `ps`. -/
 theorem TypeDeclaration.AsMany.inst_grades {decl : TypeDeclaration} {qs : List Quality}
-    {ps : List Grade} (hn : decl.AsMany qs ps) (i : Fin decl.grades) :
-    hn.inst.grades i = ps[(i : Nat)]'(by rw [hn.grades]; exact i.isLt) :=
+    {ps : List Grade} (hqp : decl.AsMany qs ps) (i : Fin decl.grades) :
+    hqp.inst.grades i = ps[(i : Nat)]'(by rw [hqp.grades]; exact i.isLt) :=
   rfl
+
+/-- Whether the qualities `qs` and the grades `ps` are as many as the sort and grade variables of
+`decl`, which the lookups of a declared type at an instance decide. -/
+instance TypeDeclaration.AsMany.decidable (decl : TypeDeclaration) (qs : List Quality)
+    (ps : List Grade) : Decidable (decl.AsMany qs ps) :=
+  if hq : qs.length = decl.sorts then
+    if hp : ps.length = decl.grades then .isTrue ⟨hq, hp⟩ else .isFalse fun hqp => hp hqp.grades
+  else .isFalse fun hqp => hq hqp.sorts
 
 /-- The value `f decl` that the type declaration `decl` of an entry gives, when the entry is a type
 declaration that introduces the name `D`, and `none` otherwise: what the lookups of the declared
@@ -868,11 +876,9 @@ declares them. -/
 def Entry.fieldParams (D c : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List Parameter) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.dataTypes.find? (·.name == D)).bind fun T =>
-          (T.constructors.find? (·.name == c)).map fun con => con.params (.ofLists qs ps hq hp)
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.dataTypes.find? (·.name == D)).bind fun T =>
+        (T.constructors.find? (·.name == c)).map fun con => con.params hqp.inst
     else none
 
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
@@ -898,11 +904,9 @@ declares them. -/
 def Entry.argumentParams (D d : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.codataTypes.find? (·.name == D)).bind fun T =>
-          (T.body (.ofLists qs ps hq hp)).arguments d
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.codataTypes.find? (·.name == D)).bind fun T =>
+        (T.body hqp.inst).arguments d
     else none
 
 /-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
@@ -940,11 +944,9 @@ entry declares them. -/
 def Entry.destructorGrades (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List Grade) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.codataTypes.find? (·.name == D)).bind fun _ =>
-          decl.codataCases.mapM fun c => (c.2.1.body (.ofLists qs ps hq hp)).grade c.2.2
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.codataTypes.find? (·.name == D)).bind fun _ =>
+        decl.codataCases.mapM fun c => (c.2.1.body hqp.inst).grade c.2.2
     else none
 
 /-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
@@ -1000,13 +1002,11 @@ declaration, `none` for a destructor that is not recursive, when the entry decla
 def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (Option Nat)) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.codataTypes.find? (·.name == D)).map fun _ =>
-          decl.codataCases.map fun x =>
-            ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind
-              decl.names.idxOf?
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.codataTypes.find? (·.name == D)).map fun _ =>
+        decl.codataCases.map fun x =>
+          ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind
+            decl.names.idxOf?
     else none
 
 /-- The position in the block of the type of the result of each destructor of the block of the
@@ -1025,11 +1025,9 @@ declaration, when the entry declares them. -/
 def Entry.caseFieldParams (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (List Parameter)) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.dataTypes.find? (·.name == D)).map fun _ =>
-          decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.dataTypes.find? (·.name == D)).map fun _ =>
+        decl.cases.map fun x => x.2.2.params hqp.inst
     else none
 
 /-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
@@ -1049,13 +1047,11 @@ order of the declaration, when the entry declares them. -/
 def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) :=
   Entry.lookup D fun decl =>
-    if hq : qs.length = decl.sorts then
-      if hp : ps.length = decl.grades then
-        (decl.codataTypes.find? (·.name == D)).map fun _ =>
-          decl.codataCases.map fun x =>
-            (x.1, ((x.2.1.body (.ofLists qs ps hq hp)).arguments x.2.2).getD
-              ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)
-      else none
+    if hqp : decl.AsMany qs ps then
+      (decl.codataTypes.find? (·.name == D)).map fun _ =>
+        decl.codataCases.map fun x =>
+          (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD
+            ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)
     else none
 
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,

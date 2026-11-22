@@ -174,8 +174,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have e : ((decl.sort I).atLevels ρ).level.closedValue = n :=
       (decl.sort_atLevels_closedValue hq hl hp).trans hnS
     -- The grades of the destructors and the resumptions that the erasure of the closure reads.
-    obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h hq hp
-    have hrt := hd.resumedTypes h hq hp
+    obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h ⟨hq, hp⟩
+    have hrt := hd.resumedTypes h ⟨hq, hp⟩
     let ks : List Resumption := ((sig.resumedTypes D qs ps).getD []).map
       fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity)
     let pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) :=
@@ -271,7 +271,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hpss : (pss.drop i').headD ([], ResultOwnership.noArguments) =
             (ps₁.map fun p => ⟨r * p.usage, p.requirement⟩, ⟨ps', ψ, ς⟩) :=
           List.headD_drop (by
-            simp [pss, hd.destructorArguments h hq hp, hi, hS₁]
+            simp [pss, hd.destructorArguments h ⟨hq, hp⟩, hi, hS₁]
             rw [hpos.arguments (hd.destructors_nodup h₀)]
             rfl)
         rw [hpss, Mode.grade_odot_of_not_erased p hpr, ResultOwnership.toArity_self] at hget

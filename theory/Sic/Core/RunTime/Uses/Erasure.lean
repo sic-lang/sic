@@ -396,7 +396,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
   | .ctor (con := con) h hc hq hp hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.fieldParams h hc hq hp, Option.getD_some]
+    simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hord hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
       (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hq _ hp _ ht hul hus hR hu hg hχ _ _ =>
@@ -405,7 +405,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
         (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
         ((sig.caseFieldParams D qs ps).getD [])) := by
-      rw [hd.recursiveResults h hq hp, hd.caseFieldParams h hq hp, Option.getD_some]
+      rw [hd.recursiveResults h ⟨hq, hp⟩, hd.caseFieldParams h ⟨hq, hp⟩, Option.getD_some]
       refine Branches.erase_usage hΓ r χ.run us _ _ fun i a b gs' u hget hgs' => ?_
       have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -499,7 +499,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
   | .obs (d := d) h hq hp hpos ht hbs _ => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.argumentParams h hq hp hpos, Option.getD_some]
+    simp only [Term.erase, hi, hd.argumentParams h ⟨hq, hp⟩ hpos, Option.getD_some]
     rw [GradeVector.run_commutes.run_add]
     exact .obs (Usage.erase_usage hd hord hΓ hm ht) (UsageArgs.erase_usage hd hord hΓ hm hbs)
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
@@ -510,7 +510,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
       (DestructorBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
-      hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
+      hres⟩ := hd.corecCase h ⟨hq, hp⟩ hSs hgl hgs hi
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_map hargs, List.headD_drop_map hres]
     simp only [hSj]

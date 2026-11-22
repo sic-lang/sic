@@ -43,7 +43,7 @@ theorem Term.Factor.inst_congr {sig : Signature} {k' : Nat} {Γ₁' Γ₁ Γ₂'
     (as₂ : InstanceArgs k' Γ₂' Δ₂) {π : Grade} (h : Term.Factor sig ρ₁ (.inst D qs ls₁ ps as₁) π) :
     Term.Factor sig ρ₂ (.inst D qs ls₂ ps as₂) π := by
   cases h with
-  | inst hdecl hD h hq hp hds => exact .inst hdecl hD h hq hp hds
+  | inst hdecl hD h hqp hds => exact .inst hdecl hD h hqp hds
 
 /-! ## Telescopes Followed by an Entry -/
 
@@ -332,32 +332,33 @@ motives. -/
 theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : List Nat)
     {qs : List Quality} {ps : List Grade} {s : Quality} {gs : List Grade}
     {ls ls' : List (Level k)}
-    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (hl : ls.length = decl.levels)
+    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     (hl' : ls'.length = S.length) (hq' : (qs ++ [s]).length = decl.sorts + 1)
     (hp' : (ps ++ gs).length = decl.liftingGrades S)
     (h : (ls ++ ls').length = decl.levels + S.length) :
     (decl.liftingSort S (.ofLists (qs ++ [s]) (ps ++ gs) hq' hp')).substLevels
         ((ls ++ ls').getFin h) =
-      ⟨s, ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).joins ls'⟩ := by
+      ⟨s, ((decl.sort hqp.inst).level.subst (ls.getFin hl)).joins ls'⟩ := by
   have e : (List.ofFn fun i : Fin S.length => Level.var (Fin.natAdd decl.levels i)).map
       (Level.subst ((ls ++ ls').getFin h)) = ls' := by
     rw [List.map_ofFn]
     exact (congrArg List.ofFn (funext fun i => List.getFin_append_natAdd ls ls' hl hl' h i)).trans
       (List.ofFn_getFin ls' hl')
   unfold TypeDeclaration.liftingSort Universe.substLevels
-  rw [Instance.lifted_ofLists qs ps s gs hq hp, Instance.sorts_last_ofLists qs _ s hq,
+  rw [Instance.lifted_ofLists qs ps s gs hqp.sorts hqp.grades,
+    Instance.sorts_last_ofLists qs _ s hqp.sorts,
     Level.subst_joins, Level.subst_subst, Level.lifted_subst ls ls' hl h, e]
 
 /-- The type of the parameter `y` of a lifting, at an instance of its variables, is the instance of
 the type lifted at the instance of the type declaration. -/
 theorem TypeDeclaration.liftedInstance_substLevels {Γ : Scope} (decl : TypeDeclaration) (F : Name)
     {n : Nat} {qs : List Quality} {ps : List Grade} {ls ls' : List (Level k)}
-    (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades) (hl : ls.length = decl.levels)
+    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     (h : (ls ++ ls').length = decl.levels + n)
     (as : InstanceArgs (decl.levels + n) Γ decl.scope) :
-    (decl.liftedInstance F n (.ofLists qs ps hq hp) as).substLevels ((ls ++ ls').getFin h) =
+    (decl.liftedInstance F n hqp.inst as).substLevels ((ls ++ ls').getFin h) =
       .inst F qs ls ps (as.substLevels ((ls ++ ls').getFin h)) := by
-  unfold TypeDeclaration.liftedInstance Instance.ofLists
+  unfold TypeDeclaration.liftedInstance TypeDeclaration.AsMany.inst Instance.ofLists
   rw [Term.substLevels, List.ofFn_getFin, List.ofFn_getFin, List.map_ofFn]
   exact congrArg (fun ls₀ => Term.inst F qs ls₀ ps _)
     ((congrArg List.ofFn (Level.lifted_subst ls ls' hl h)).trans (List.ofFn_getFin ls hl))
@@ -613,9 +614,9 @@ theorem Term.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
     refine Term.Lifts.block (b := b.subst θ θ') ?_
     rw [hs.block, hD]
     rfl
-  | _, _, _, _, _, _, _, _, .inst h hD hn hq hl hp has hS hL hπ, _, _, _, _, _, hs => by
+  | _, _, _, _, _, _, _, _, .inst h hD hn hqp hl has hS hL hπ, _, _, _, _, _, hs => by
     simp only [Term.subst, InstanceArgs.subst]
-    exact Term.Lifts.inst h hD hn hq hl hp (has.subst hs) hS hL (hπ.inst_congr _ _ _)
+    exact Term.Lifts.inst h hD hn hqp hl (has.subst hs) hS hL (hπ.inst_congr _ _ _)
 
 /-- The arguments of an instance lifted by a lifting that lifts no variable, substituted, are the
 arguments substituted, lifted by the lifting substituted, at the same nestings, at the same
@@ -820,12 +821,12 @@ theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variabl
     show (ρ.block D).map _ = _
     rw [hD]
     rfl
-  | _, _, _, _, _, _, _, _, .inst (ls := ls) (ms := ms) h hD hn hq hl hp has hS hL hπ => by
+  | _, _, _, _, _, _, _, _, .inst (ls := ls) (ms := ms) h hD hn hqp hl has hS hL hπ => by
     simp only [Term.substLevels, InstanceArgs.substLevels, List.map_append, Lifting.Result.substLevels]
     rw [Level.subst_joins, Level.subst_subst, ← Level.getFin_map_subst ls' ls hl,
       ← Lifting.Result.levels_substLevels ls' ms]
     rw [← Lifting.Variables.grades_substLevels v _ ls' ms] at hπ ⊢
-    exact Term.Lifts.inst h hD hn hq ((List.length_map _).trans hl) hp (has.substLevels ls') hS hL
+    exact Term.Lifts.inst h hD hn hqp ((List.length_map _).trans hl) (has.substLevels ls') hS hL
       (hπ.inst_congr _ _ _)
 
 /-- The arguments of an instance lifted, at instantiated levels, are the arguments at these levels,

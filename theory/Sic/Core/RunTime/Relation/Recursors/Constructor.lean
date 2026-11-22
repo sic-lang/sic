@@ -312,7 +312,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   -- The recursive results that the erasure reads, those of the fields of the constructor.
   have hws : ((sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ').drop i).headD [] =
       con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ' (.ofLists qs ps hq hp) := by
-    rw [hd.recursiveResults ⟨hdecl, hT, rfl⟩ hq hp, TypeDeclaration.recursiveResults]
+    rw [hd.recursiveResults ⟨hdecl, hT, rfl⟩ ⟨hq, hp⟩, TypeDeclaration.recursiveResults]
     exact List.headD_drop (by rw [List.getElem?_map, hi]; rfl)
   rw [hws] at hget
   rw [hgs] at hQ
@@ -430,7 +430,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   have hfs : ∀ (l : Nat) (p' : Parameter), (con.params (.ofLists qs ps hq hp))[l]? = some p' →
       ((((sig.caseFieldParams T.name qs ps).getD []).drop i).headD [])[l]? = some p' :=
     fun l p' hp' => by
-      rw [hd.caseFieldParams ⟨hdecl, hT, rfl⟩ hq hp, Option.getD_some,
+      rw [hd.caseFieldParams ⟨hdecl, hT, rfl⟩ ⟨hq, hp⟩, Option.getD_some,
         List.headD_drop (by rw [List.getElem?_map, hi]; rfl), hp']
   -- The uses of each field by the branch are within those that the constructor allows: by its
   -- variable and by the recursions of the recursive results on it.

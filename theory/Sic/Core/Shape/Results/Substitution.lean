@@ -334,7 +334,7 @@ theorem Term.Lifts.shape_subst :
     exact nomatch hx
   | _, _, _, _, _, _, _, _, .block _, _, _, _, _, _, _, _ => by
     simp only [Term.subst, Term.shape]
-  | _, _, _, n, _, _, _, _, .inst _ _ hn _ _ _ has _ _ _, hρ, _, θ, _, _, h₁, h₂ => by
+  | _, _, _, n, _, _, _, _, .inst _ _ hn _ _ has _ _ _, hρ, _, θ, _, _, h₁, h₂ => by
     cases n with
     | direct E => exact absurd rfl (hn E)
     | plain => simp only [Term.subst, Term.shape, InstanceArgs.Lifts.shapes_subst has hρ θ h₁ h₂]
@@ -462,7 +462,7 @@ theorem Term.Lifts.shape_instantiate {block₀ : Name → Option Shape.Motive}
     rw [hL.shape_instantiate_abstraction hI.motive' hνs']
     exact hθ x (by rw [hx]; rfl)
   | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch hn
-  | _, _, _, _, _, _, _, _, .inst (as := as) _ _ _ _ _ _ has _ _ _, hn, _, _, θ, _, _, ν, hI, νs,
+  | _, _, _, _, _, _, _, _, .inst (as := as) _ _ _ _ _ has _ _ _, hn, _, _, θ, _, _, ν, hI, νs,
       νs', hνs, hνs', hθ, hb => by
     subst hn
     have h := InstanceArgs.Lifts.shapes_instantiate (block₀ := block₀) hex has rfl hI hνs hνs' hθ
@@ -658,8 +658,8 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {ρ : Lifting 0 [] []} {qs : List Quality} {ls : List (Level 0)}
-    {ms : List (Lifting.Result 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    {ms : List (Lifting.Result 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S) {nsA : List (Nest Name)}
@@ -668,7 +668,7 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
     (hms : as.shapes v lookup block Nesting.plain nsA = some (S.zip ms')) {d : Name}
     {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
     {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
-    (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) {p' q' ς' : Grade}
+    (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) {p' q' ς' : Grade}
     {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
@@ -696,9 +696,9 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
       u.shape v lookup block (Nesting.liftN n Nesting.plain) .plain = none := fun u =>
     Term.shape_eq_none_of_avoids fun x hx => (hx (Nesting.liftN_plain _ h₀ _ x)).elim
   obtain ⟨_, _, ρ₁, _, A₀, _, hL₁, hI, -, hnest, ⟨β, hA₀, hN⟩, -, hA, -⟩ :=
-    hL.result hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+    hL.result hsig hT hρ hqp hl hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
   obtain ⟨_, _, _, hLo⟩ :=
-    hL.observation hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+    hL.observation hsig hT hρ hqp hl hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
   have hid : ∀ {a} (x : Var [] a), ρ.ren x = x := fun x => nomatch x
   rw [Term.rename_id_of (Ren.liftN_id_of _ hid)] at hLo
   -- The closed arguments do not change the shape, the lifting lifting no variable.

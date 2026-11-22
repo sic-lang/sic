@@ -468,7 +468,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     (hL : decl.Lifts sig₁ D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S)
@@ -477,7 +477,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
     {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
     {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
-    (hd : Destructors.Pos d p q ς (T.body (.ofLists qs ps hq hp)) Ξ Θ B ψ) {p' q' ς' : Grade}
+    (hd : Destructors.Pos d p q ς (T.body hqp.inst) Ξ Θ B ψ) {p' q' ς' : Grade}
     {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
@@ -521,8 +521,8 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
   obtain ⟨T₀, hT₀, hn₀, hb⟩ := hL
   cases eq_of_heq (hsig.hasCodataType_unique ⟨hT.1, hT₀, hn₀⟩ hT).2
   have hb' := hb (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
-  rw [Instance.liftingVariables_ofLists qs ps v ms hq hp,
-    Instance.lifted_ofLists qs ps v.quality _ hq hp] at hb'
+  rw [Instance.liftingVariables_ofLists qs ps v ms hqp.sorts hqp.grades,
+    Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades] at hb'
   obtain ⟨m, hps, ρ₁, β, hr, hm, ho, hΘ, hL₀⟩ :=
     hb'.pos (hsig.destructors_nodup hT) (hd.substLevels (Level.lifted S.length)) hd'
   subst hps
@@ -533,7 +533,8 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
       i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl' hp
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl'
+      hqp.grades
       hp' j h₁ h₂)
   have hI : Lifting.Instantiates sig v (InstanceArgs.snoc (e := .var) as t).toSubst
       (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)
@@ -553,7 +554,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     exact (InstanceArgs.subst_rename_of (α := Ren.weaken) (θ' := as.toSubst) (fun _ => rfl)
       _).trans (InstanceArgs.identity_subst_toSubst as)
   have hobs : ∀ d' ps',
-      ((decl.liftedObservation D S.length (.ofLists qs ps hq hp) d' ps').substLevels
+      ((decl.liftedObservation D S.length hqp.inst d' ps').substLevels
           ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN ps'.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
       t.observation D qs ls ps as d' ps' := fun d' ps' => by
@@ -561,8 +562,8 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
         (Level.subst ((ls ++ ms.map (·.level)).getFin hl')) = ls :=
       (List.map_ofFn ..).trans
         ((congrArg List.ofFn (Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl')).trans (List.ofFn_getFin ls hl))
-    show ((Term.observation D (List.ofFn (qs.getFin hq)) (List.ofFn (Level.lifted S.length))
-      (List.ofFn (ps.getFin hp)) ((InstanceArgs.identity decl.scope).rename Ren.weaken)
+    show ((Term.observation D (List.ofFn (qs.getFin hqp.sorts)) (List.ofFn (Level.lifted S.length))
+      (List.ofFn (ps.getFin hqp.grades)) ((InstanceArgs.identity decl.scope).rename Ren.weaken)
       (.var₀ .zero) d' ps').substLevels _).subst _ = _
     rw [Term.observation_substLevels, Term.observation_subst, hargs, e_l, List.ofFn_getFin,
       List.ofFn_getFin]
@@ -574,14 +575,14 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       as.toSubst y := fun y => by
     rw [InstanceArgs.toSubst_substLevels, InstanceArgs.toSubst_subst, hargs]
   have hσ : ∀ {a} (x : Var Ξ a),
-      ((hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+      ((hd.obsSubst (decl.liftedObservation D S.length hqp.inst)
           ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
           ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN a.params.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
       hd.obsSubst (t.observation D qs ls ps as) as.toSubst x := fun x => by
     have e₁ := hd.obsSubst_substLevels ((ls ++ ms.map (·.level)).getFin hl')
-      (o := decl.liftedObservation D S.length (.ofLists qs ps hq hp))
-      (o' := fun d' ps' => (decl.liftedObservation D S.length (.ofLists qs ps hq hp) d'
+      (o := decl.liftedObservation D S.length hqp.inst)
+      (o' := fun d' ps' => (decl.liftedObservation D S.length hqp.inst d'
         ps').substLevels ((ls ++ ms.map (·.level)).getFin hl'))
       (fun _ _ => rfl)
       (θ := ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
@@ -597,10 +598,10 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     ((ls ++ ms.map (·.level)).getFin hl')
   rw [Lifting.substLevels_liftN] at hL₁
   have hN : ∀ {α : Type} (ν : Nesting α decl.scope), Subst.Nests
-      (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+      (hd.obsSubst (decl.liftedObservation D S.length hqp.inst)
         ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
       (hd.nesting ν) (Nesting.lift ν) := fun ν =>
-    Destructors.Pos.nests (o := decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+    Destructors.Pos.nests (o := decl.liftedObservation D S.length hqp.inst)
       (ν' := Nesting.lift ν) (fun _ _ => ⟨_, _, _, _, _, _, _, _, _, rfl⟩) hd
       (θ := ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst)
       (ν := ν) fun x =>
@@ -619,7 +620,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
         (Telescope.rename_subst_of (fun x => (hθ' x).symm) _).symm,
       Telescope.substLevels_subst_of (ls' := (ls ++ ms.map (·.level)).getFin hl')
         (θ' := fun x =>
-          (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+          (hd.obsSubst (decl.liftedObservation D S.length hqp.inst)
             ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
             ((ls ++ ms.map (·.level)).getFin hl'))
         (fun _ => rfl),
@@ -632,7 +633,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     exact (hI.subst_rename ps₁.length _).trans (congrArg (Term.rename _) (hobs d ps₁))
   · rw [Term.substLevels_subst_of (ls' := (ls ++ ms.map (·.level)).getFin hl')
         (θ' := Subst.liftN ps₁.length fun x =>
-          (hd.obsSubst (decl.liftedObservation D S.length (.ofLists qs ps hq hp))
+          (hd.obsSubst (decl.liftedObservation D S.length hqp.inst)
             ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
             ((ls ++ ms.map (·.level)).getFin hl'))
         (Subst.liftN_substLevels_of ps₁.length fun _ => rfl),
@@ -660,7 +661,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S)
@@ -669,7 +670,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
     {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
     {B : Term decl.levels (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
-    (hd : Destructors.Pos d p q ς (T.body (.ofLists qs ps hq hp)) Ξ Θ B ψ) {p' q' ς' : Grade}
+    (hd : Destructors.Pos d p q ς (T.body hqp.inst) Ξ Θ B ψ) {p' q' ς' : Grade}
     {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
@@ -694,7 +695,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
               (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)))
         m := by
   obtain ⟨m, hps, _, _, _, _, hL₁, hI, hΘ, h₁, -, h₂, h₃, h₄⟩ :=
-    hL.result hsig hT hρ hq hl hp hq' hl' hp' has t hd hd' o'
+    hL.result hsig hT hρ hqp hl hq' hl' hp' has t hd hd' o'
   exact ⟨m, hps, hΘ, (hL₁.instantiate rfl (hI.liftN ps₁.length)).congr h₁ h₂ h₃ h₄⟩
 
 end Sic.Core

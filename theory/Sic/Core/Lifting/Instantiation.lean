@@ -476,10 +476,10 @@ theorem Term.Lifts.instantiate :
     rw [Term.subst, Term.subst, Args.subst_snoc, e₁, hB']
     exact hL.instantiateAbstraction hI.motive' (e.subst θ') (ts.subst θ)
   | _, _, _, _, _, _, _, _, .block _, hn, _, _, _, _, _, _, _ => nomatch hn
-  | _, _, _, _, _, _, _, _, .inst h hD _ hq hl hp has hS hL hπ, hn, _, _, _, _, _, _, hI => by
+  | _, _, _, _, _, _, _, _, .inst h hD _ hqp hl has hS hL hπ, hn, _, _, _, _, _, _, hI => by
     subst hn
     simp only [Term.subst, InstanceArgs.subst]
-    exact Term.Lifts.inst h hD (fun E => Nest.ofArgs_ne_direct _ E) hq hl hp
+    exact Term.Lifts.inst h hD (fun E => Nest.ofArgs_ne_direct _ E) hqp hl
       (has.instantiate rfl hI).ofArgs_args hS hL (hπ.inst_congr _ _ _)
 
 /-- The arguments of an instance lifted at no position, substituted by an instantiation of their
