@@ -125,10 +125,10 @@ theorem FieldsRel.cons_isPer {F : TermRel} {G : Term 0 [] → FieldsRel} (hF : I
     IsPer (FieldsRel.cons F G) where
   symm {ts us} h := match ts, us, h with
     | .cons t ts, .cons u us, ⟨h₁, h₂⟩ =>
-      ⟨hF.symm h₁, (hG u (hF.trans (hF.symm h₁) h₁)).symm ((hresp t u h₁ ts us).1 h₂)⟩
+      ⟨hF.symm h₁, (hG u (hF.right h₁)).symm ((hresp t u h₁ ts us).1 h₂)⟩
   trans {ts us ws} h h' := match ts, us, ws, h, h' with
     | .cons t _ts, .cons u us, .cons _w ws, ⟨h₁, h₂⟩, ⟨h₁', h₂'⟩ =>
-      ⟨hF.trans h₁ h₁', (hG t (hF.trans h₁ (hF.symm h₁))).trans h₂ ((hresp t u h₁ us ws).2 h₂')⟩
+      ⟨hF.trans h₁ h₁', (hG t (hF.left h₁)).trans h₂ ((hresp t u h₁ us ws).2 h₂')⟩
 
 /-- The equalities of the terms of the fields of two telescopes `x : A, Θ` relate the same terms,
 when those of `A` do, and those of `Θ[a / x]` do for each term `a` of `A`. -/
@@ -138,10 +138,10 @@ theorem FieldsRel.cons_congr {F F' : TermRel} {G G' : Term 0 [] → FieldsRel} (
   | .nil, _ => .rfl
   | .cons _ _, .nil => .rfl
   | .cons t ts, .cons u us =>
-    ⟨fun ⟨h₁, h₂⟩ => ⟨(hF t u).1 h₁, (hG t (hFp.trans h₁ (hFp.symm h₁)) ts us).1 h₂⟩,
+    ⟨fun ⟨h₁, h₂⟩ => ⟨(hF t u).1 h₁, (hG t (hFp.left h₁) ts us).1 h₂⟩,
       fun ⟨h₁, h₂⟩ =>
         have h₁' := (hF t u).2 h₁
-        ⟨h₁', (hG t (hFp.trans h₁' (hFp.symm h₁')) ts us).2 h₂⟩⟩
+        ⟨h₁', (hG t (hFp.left h₁') ts us).2 h₂⟩⟩
 
 /-- A closed term is a constructor of one declared type, one name, and one list of fields. -/
 theorem Term.IsCtor.inj {D D' c c' : Name} {ts ts' : Terms 0 []} {v : Term 0 []}
@@ -405,8 +405,8 @@ theorem AbstractionRel.isPer {ps : List Parameter} {SΘ : FieldsRel} {F : Terms 
     have hst := hS.symm hts
     (hresp _ _ hst _ _).1 ((hF us (hS.trans hst hts)).symm (h us ts hst))
   trans {_ _ _} h h' ts us hts :=
-    have huu := hS.trans (hS.symm hts) hts
-    (hF ts (hS.trans hts (hS.symm hts))).trans (h ts us hts) ((hresp _ _ hts _ _).2 (h' us us huu))
+    have huu := hS.right hts
+    (hF ts (hS.left hts)).trans (h ts us hts) ((hresp _ _ hts _ _).2 (h' us us huu))
 
 /-- The equalities of the abstractions for a destructor relate the same abstractions, when the
 equalities of its arguments relate the same arguments, and those of its result the same terms. -/
@@ -417,8 +417,8 @@ theorem AbstractionRel.congr {ps : List Parameter} {SΘ SΘ' : FieldsRel} {F F' 
   fun _ _ =>
     ⟨fun h ts us hts =>
       have hts' := (hS _ _).2 hts
-      (hF ts (hSp.trans hts' (hSp.symm hts')) _ _).1 (h ts us hts'),
-    fun h ts us hts => (hF ts (hSp.trans hts (hSp.symm hts)) _ _).2 (h ts us ((hS _ _).1 hts))⟩
+      (hF ts (hSp.left hts') _ _).1 (h ts us hts'),
+    fun h ts us hts => (hF ts (hSp.left hts) _ _).2 (h ts us ((hS _ _).1 hts))⟩
 
 /-- The equality of the abstractions for a destructor `d` followed by the destructors after it is a
 partial equivalence relation, when the equality `W` of the abstractions for `d` is one, and so is
@@ -430,9 +430,9 @@ theorem ObsRel.cons_isPer {d : Name} {ps : List Parameter}
     (hresp : ∀ f₁ f₂, W f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂) :
     IsPer (fun o₁ o₂ : Observations => W (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) where
   symm := fun ⟨h₁, h₂⟩ =>
-    ⟨hW.symm h₁, (hG _ (hW.trans (hW.symm h₁) h₁)).symm ((hresp _ _ h₁ _ _).1 h₂)⟩
+    ⟨hW.symm h₁, (hG _ (hW.right h₁)).symm ((hresp _ _ h₁ _ _).1 h₂)⟩
   trans := fun ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
-    ⟨hW.trans h₁ h₁', (hG _ (hW.trans h₁ (hW.symm h₁))).trans h₂ ((hresp _ _ h₁ _ _).2 h₂')⟩
+    ⟨hW.trans h₁ h₁', (hG _ (hW.left h₁)).trans h₂ ((hresp _ _ h₁ _ _).2 h₂')⟩
 
 /-- The equalities of the abstractions for a destructor `d` followed by the destructors after it
 relate the same abstractions, when those for `d` do, and those of the destructors after it do for
@@ -444,10 +444,10 @@ theorem ObsRel.cons_congr {d : Name} {ps : List Parameter}
     ∀ o₁ o₂ : Observations, (W (o₁ d ps) (o₂ d ps) ∧ G (o₁ d ps) o₁ o₂) ↔
       (W' (o₁ d ps) (o₂ d ps) ∧ G' (o₁ d ps) o₁ o₂) :=
   fun _ _ =>
-    ⟨fun ⟨h₁, h₂⟩ => ⟨(hW _ _).1 h₁, (hG _ (hWp.trans h₁ (hWp.symm h₁)) _ _).1 h₂⟩,
+    ⟨fun ⟨h₁, h₂⟩ => ⟨(hW _ _).1 h₁, (hG _ (hWp.left h₁) _ _).1 h₂⟩,
       fun ⟨h₁, h₂⟩ =>
         have h₁' := (hW _ _).2 h₁
-        ⟨h₁', (hG _ (hWp.trans h₁' (hWp.symm h₁')) _ _).2 h₂⟩⟩
+        ⟨h₁', (hG _ (hWp.left h₁') _ _).2 h₂⟩⟩
 
 /-- `(eq_d)` relates the terms that it relates for an equality of the destructors that relates
 fewer abstractions. -/
@@ -894,7 +894,7 @@ theorem DesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
         FieldRel.unique hd ih (hF ts hts _ hv) _ _ (hF' ts ((hSS _ _).1 hts) _ hv)
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
-        have hf := hEp.trans h₁ (hEp.symm h₁)
+        have hf := hEp.left h₁
         ⟨(hEE _ _).1 (hEp.symm h₁), (hresp' _ _ ((hEE _ _).1 h₁) _ _).1
           (DesRel.symm_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf)) (fun i => hR (i + 1))
             _ _ h₂)⟩
@@ -958,7 +958,7 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         have hEE' := AbstractionRel.congr hSΘp hSS' hFF'
         have hEE'' := AbstractionRel.congr hSΘp hSS'' hFF''
         exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
-          have hf := hEp.trans h₁ (hEp.symm h₁)
+          have hf := hEp.left h₁
           ⟨(hEE'' _ _).1 (hEp.trans h₁ ((hEE' _ _).2 h₁')),
             DesRel.trans_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE' _ _).1 hf)) _ _ _
               (hG'' _ ((hEE'' _ _).1 hf)) (fun i => hR (i + 1)) _ _ _ h₂
@@ -997,7 +997,7 @@ theorem DesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
           exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
             ⟨fun ts us hts =>
               have hts' := (hSS'' _ _).2 hts
-              have hus := hSΘp.trans (hSΘp.symm hts') hts'
+              have hus := hSΘp.right hts'
               hr _ _ _ (h₁ ts us hts') (h₁' us us ((hSS' _ _).1 hus)),
               DesRel.trans_of hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
                 _ _ _ (hG'' (.sort ⟨.type, .zero⟩)) (fun i => hR (i + 1)) _ _ _ h₂ h₂'⟩
@@ -1080,7 +1080,7 @@ theorem TelRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.
       cases Computesι.det hd hA hA'
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       refine FieldsRel.cons_mono (fun t u h => (hFF t u).1 h) fun t u htu ts us hg => ?_
-      have htt := hFp.trans htu (hFp.symm htu)
+      have htt := hFp.left htu
       exact TelRel.mono hd ih (hG t htt) _ _ _ (hG' t ((hFF t t).1 htt)) (fun i => hR (i + 1))
         ts us hg
     | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
@@ -1111,7 +1111,7 @@ theorem TelRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : s
       cases Computesι.det hd hA hA'
       have hFF := FieldRel.unique hd ih hF _ _ hF'
       refine FieldsRel.cons_symm (fun t u h => (hFF u t).1 (hFp.symm h)) fun t u htu ts us hg => ?_
-      have huu := hFp.trans (hFp.symm htu) htu
+      have huu := hFp.right htu
       exact TelRel.symm_of hd ih (hG u huu) _ _ _ (hG' u ((hFF u u).1 huu)) (fun i => hR (i + 1))
         ts us ((hresp t u htu ts us).1 hg)
     | nested hrs' _ _ _ => exact absurd ((hR 0).eq_plain.1.2 hrs) hrs'
@@ -1154,7 +1154,7 @@ theorem TelRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         refine FieldsRel.cons_trans
           (fun t u w h₁ h₂ => (hFF'' t w).1 (hFp.trans h₁ ((hFF' u w).2 h₂)))
           fun t u w htu huw ts us vs hg hg' => ?_
-        have htt := hFp.trans htu (hFp.symm htu)
+        have htt := hFp.left htu
         exact TelRel.trans_of hd ih (hG t htt) _ _ _ (hG' t ((hFF' t t).1 htt)) _ _ _
           (hG'' t ((hFF'' t t).1 htt)) (fun i => hR (i + 1)) ts us vs hg
           ((hresp' t u ((hFF' t u).1 htu) us vs).2 hg')
@@ -1585,7 +1585,7 @@ theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
         NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
-        have hf := hEp.trans h₁ (hEp.symm h₁)
+        have hf := hEp.left h₁
         ⟨(hEE _ _).1 h₁, NestDesRel.mono hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
             (Nesting.lift_rel₃ hR) _ _ h₂⟩
     | nested hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
@@ -1602,7 +1602,7 @@ theorem NestDesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : 
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
         ⟨fun ts us hts =>
           have hts' := (hSS _ _).2 hts
-          have htt := hSΘp.trans hts' (hSΘp.symm hts')
+          have htt := hSΘp.left hts'
           NestRel.mono hd ih (hF ts htt) _ _ _ (hF' ts ((hSS _ _).1 htt)) hB _ _ (h₁ ts us hts'),
           NestDesRel.mono hd ih (hG (.sort ⟨.type, .zero⟩)) _ _ _ (hG' (.sort ⟨.type, .zero⟩))
             (Nesting.lift_rel₃ hR) _ _ h₂⟩
@@ -1640,7 +1640,7 @@ theorem NestDesRel.symm_of {sig : Signature} {ι : Interpretation} {n : Nat} (hd
         NestRel.congr hd ih (hF ts hts) _ _ _ (hF' ts ((hSS _ _).1 hts)) .plain
       have hEE := AbstractionRel.congr hSΘp hSS hFF
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
-        have hf := hEp.trans h₁ (hEp.symm h₁)
+        have hf := hEp.left h₁
         ⟨(hEE _ _).1 (hEp.symm h₁), (hresp' _ _ ((hEE _ _).1 h₁) _ _).1
           (NestDesRel.symm_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
             (Nesting.lift_rel₃ hR) _ _ h₂)⟩
@@ -1763,7 +1763,7 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
         have hEE' := AbstractionRel.congr hSΘp hSS' hFF'
         have hEE'' := AbstractionRel.congr hSΘp hSS'' hFF''
         exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
-          have hf := hEp.trans h₁ (hEp.symm h₁)
+          have hf := hEp.left h₁
           ⟨(hEE'' _ _).1 (hEp.trans h₁ ((hEE' _ _).2 h₁')),
             NestDesRel.trans_of hd ih (hG _ hf) _ _ _ (hG' _ ((hEE' _ _).1 hf)) _ _ _
               (hG'' _ ((hEE'' _ _).1 hf)) (Nesting.lift_rel₃ hR) _ _ _ h₂
@@ -1788,8 +1788,8 @@ theorem NestDesRel.trans_of {sig : Signature} {ι : Interpretation} {n : Nat} (h
         exact fun o₁ o₂ o₃ ⟨h₁, h₂⟩ ⟨h₁', h₂'⟩ =>
           ⟨fun ts us hts =>
             have hts' := (hSS'' _ _).2 hts
-            have htt := hSΘp.trans hts' (hSΘp.symm hts')
-            have huu := hSΘp.trans (hSΘp.symm hts') hts'
+            have htt := hSΘp.left hts'
+            have huu := hSΘp.right hts'
             NestRel.trans_of hd ih (hF ts htt) _ _ _ (hF' ts ((hSS' _ _).1 htt)) _ _ _
               (hF'' ts ((hSS'' _ _).1 htt)) hB _ _ _ (h₁ ts us hts')
               ((hBresp' _ _ ((hSS' _ _).1 hts') _ _).2 (h₁' us us ((hSS' _ _).1 huu))),
@@ -1902,7 +1902,7 @@ theorem DesRel.mono {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.
     | cons hΘ' F' _ hF' _ _ hG' _ _ =>
       have hEE := AbstractionRel.unique_of_fieldRel hd ih hΘ hB hF hΘ' hF'
       exact fun o₁ o₂ ⟨h₁, h₂⟩ =>
-        have hf := hEp.trans h₁ (hEp.symm h₁)
+        have hf := hEp.left h₁
         ⟨(hEE _ _).1 h₁, DesRel.mono hd ih (hG _ hf) _ _ _ (hG' _ ((hEE _ _).1 hf))
           (fun i => hR (i + 1)) _ _ h₂⟩
     | recursive hrs' => have h0 := hR 0; rw [hrs, hrs'] at h0; cases h0

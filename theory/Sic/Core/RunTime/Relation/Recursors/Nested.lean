@@ -791,7 +791,7 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           | plain hA hF' => exact ⟨_, hA, hF'⟩
       -- The observations by `f` at `d'` are related to themselves by the clause of `d'`.
       have hAf : AbstractionRel SΘ F (f d' ps') (f d' ps') := fun ts us hts => by
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         obtain ⟨vB, hvB, hFB⟩ := hFv ts htt
         have htsE := (TelRel.unique hd ihE (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
           (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 hts

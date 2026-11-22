@@ -543,6 +543,17 @@ structure IsPer {α : Type} (R : α → α → Prop) : Prop where
   /-- `R` is transitive. -/
   trans {t u w : α} : R t u → R u w → R t w
 
+/-- A partial equivalence relation relates to itself the first term of each pair that it
+relates. -/
+theorem IsPer.left {α : Type} {R : α → α → Prop} (h : IsPer R) {t u : α} (htu : R t u) : R t t :=
+  h.trans htu (h.symm htu)
+
+/-- A partial equivalence relation relates to itself the second term of each pair that it
+relates. -/
+theorem IsPer.right {α : Type} {R : α → α → Prop} (h : IsPer R) {t u : α} (htu : R t u) :
+    R u u :=
+  h.trans (h.symm htu) htu
+
 /-- The relations of the sorts of a level give each type they relate a unique equality of its terms,
 itself a partial equivalence relation, each proposition a unique truth, and each type a unique
 relation of run time. -/

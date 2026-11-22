@@ -77,8 +77,8 @@ theorem exact_prop {sig : Signature} {ι : Interpretation} {A t u : Term 0 []} {
   · rintro ⟨hTA, -, hcl'⟩
     obtain ⟨A₁, R₁, hA₁, hR₁, htu⟩ := hcl' hP
     have hper := hR₁.isPer hd
-    exact ⟨⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans htu (hper.symm htu)⟩⟩,
-      ⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.trans (hper.symm htu) htu⟩⟩⟩
+    exact ⟨⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.left htu⟩⟩,
+      ⟨hTA, fun h => absurd hP h, fun _ => ⟨A₁, R₁, hA₁, hR₁, hper.right htu⟩⟩⟩
   · rintro ⟨⟨hTA, -, hclt⟩, -⟩
     refine ⟨hTA, fun h => absurd hP h, fun _ => ?_⟩
     obtain ⟨A₁, R₁, hA₁, hR₁, htt⟩ := hclt hP

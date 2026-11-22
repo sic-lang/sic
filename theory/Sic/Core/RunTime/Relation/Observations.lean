@@ -141,7 +141,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
         have hT := TelRel.eqSubst_iff_plain hd hΘ
         have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
-          have htt := hSp.trans hts (hSp.symm hts)
+          have htt := hSp.left hts
           obtain ⟨v, hv''⟩ := hB ts htt
           exact (hF ts htt v hv'').of_validEqTerm hv'' (hv d p q ς ps _ Θ B ψ .here ts us
             ((hT ts us).1 hts) hr0)
@@ -151,7 +151,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
           obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
           obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
           have hts := (hT ts us).2 hτ
-          have htt := hSp.trans hts (hSp.symm hts)
+          have htt := hSp.left hts
           obtain ⟨v, hv''⟩ := hB ts htt
           exact (hF ts htt v hv'').validEqTerm hd hv'' (hA ts us hts)
         refine ⟨hA, fun hp H' hH' ts bs hts ϖ' => ?_, RunDesRel.of_obs hd L ds (hds _ _ hcond)
@@ -237,7 +237,7 @@ theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
       have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
       have hA : AbstractionRel SΘ F (o d ps) (o d ps) := fun ts us hts => by
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         obtain ⟨v, hv'⟩ := hB ts htt
         exact hv d p q ς ps _ Θ B ψ .here SΘ hΘ ts us hts v _ hv' (hF ts htt v hv')
       refine ⟨hA, fun hp H' hH' ts bs hts ϖ' => ?_,
@@ -333,7 +333,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         obtain ⟨ts, rfl⟩ := Subst.exists_args ps' @τ₁
         obtain ⟨us, rfl⟩ := Subst.exists_args ps' @τ₂
         have hts := (TelRel.eqSubst_iff_plain hd hΘ ts us).2 hτ
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         obtain ⟨v, hv'⟩ := hB ts htt
         exact (hF ts htt v hv').validEqTerm hd hv' (hA ts us hts)
     · rename_i D' hr

@@ -688,7 +688,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
             have ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
             FieldRel.isPer hd ih (hF w hw)) hBresp
           obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₁ f₂ (hcond f₁ f₂ hf))
-          have hf₂ := hEp.trans (hEp.symm hf) hf
+          have hf₂ := hEp.right hf
           obtain ⟨S'', h₁', h₂'⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₂ f₂ (hcond f₂ f₂ hf₂))
           rw [hGeq f₁ S' h₁, hGeq f₂ S'' h₁']
           exact DesRel.unique hd ih h₂ _ _ h₂' o₁ o₂

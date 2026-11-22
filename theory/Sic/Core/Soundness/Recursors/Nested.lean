@@ -206,10 +206,10 @@ theorem DesRel.of_positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Na
         have ⟨v, hv'⟩ := hB ts hts
         FieldRel.isPer hd ih (hF ts hts v hv')) hBresp
       have hA : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) := fun ts us hts => by
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         obtain ⟨v, hv''⟩ := hB ts htt
         exact hv d p q ς ps _ Θ B ψ .here SΘ hΘ ts us hts v _ hv'' (hF ts htt v hv'')
-      have hff := hEp.trans hA (hEp.symm hA)
+      have hff := hEp.left hA
       exact ⟨hA, DesRel.of_positions hd L ds (fun i => hN (i + 1)) (hG _ hff)
         fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hv d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos)⟩
 
@@ -246,7 +246,7 @@ theorem DesRel.positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Nat}
       | here =>
         have hts' := (TelRel.unique hd ihm hΘ' _ _ hΘ _ _).1 hts
         have hSp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
-        have htt := hSp.trans hts' (hSp.symm hts')
+        have htt := hSp.left hts'
         exact (FieldRel.unique hd ihm (hF ts htt v hv) _ _ hF' _ _).1 (hA ts us hts')
       | there hpos' =>
         exact DesRel.positions hd L ds (fun i => hN (i + 1)) (hG _ hA) hGo _ _ _ _ _ _ _ _ _ hpos'
@@ -741,7 +741,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
     subst hσ hνB
     have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
     refine ⟨SΘ, hΘ, fun ts us hts => ?_⟩
-    have htt := hSp.trans hts (hSp.symm hts)
+    have htt := hSp.left hts
     exact NestRel.resultSound hd hord (hF ts htt) .plain
       ((Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B).cast hν hν) _ _
       ((NestRel.congr_computes (hF ts htt) .plain (hf₁.at hf₂ d ps _ _)).2 (hSo.1 ts us hts))
@@ -750,7 +750,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
     subst hσ hνB
     have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
     refine ⟨SΘ, hΘ, fun ts us hts => ?_⟩
-    have htt := hSp.trans hts (hSp.symm hts)
+    have htt := hSp.left hts
     have hAllB := Term.nest_all (p := fun x : NestLeaf => LeafCongr sig ι sT x.2)
       (mark := fun _ => none) (fun _ _ h => nomatch h) (Nesting.liftN_rel₃ ps.length hAll) B
     exact NestRel.resultSound hd hord (hF ts htt) hAllB
@@ -767,11 +767,11 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
       | plain _ hF' => exact ⟨_, hF'⟩
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => NestRel.isPer hd ih .plain (hF ts hts)) hBresp
-    have ho₁ := hEp.trans hSo.1 (hEp.symm hSo.1)
+    have ho₁ := hEp.left hSo.1
     have hfo : AbstractionRel SΘ F (f₁ d' ps') (o₁ d' ps') :=
       (AbstractionRel.congr_computes hSp hFv
         (hf₁.imp_right fun h => ⟨fun τ w => h d' ps' τ w, fun _ _ => .rfl⟩)).2 ho₁
-    exact NestDesRel.resultSound hd hord hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
+    exact NestDesRel.resultSound hd hord hp (hG _ (hEp.left hfo))
       (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel) ((hresp _ _ hfo o₁ o₂).2 hSo.2) hf₁ hf₂
       hσ hνB
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _, .nested _ _ _ _ _ _ hG, hAll,

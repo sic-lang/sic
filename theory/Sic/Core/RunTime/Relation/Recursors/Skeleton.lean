@@ -181,11 +181,11 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       | plain _ hF' => exact ⟨_, hF'⟩
     have hEp := AbstractionRel.isPer hSp
       (fun ts hts => NestRel.isPer hd ih .plain (hF ts hts)) hBresp
-    have ho₁ := hEp.trans hSo.1 (hEp.symm hSo.1)
+    have ho₁ := hEp.left hSo.1
     have hfo : AbstractionRel SΘ F (f₁ d' ps') (o₁ d' ps') :=
       (AbstractionRel.congr_computes hSp hFv
         (hf₁.imp_right fun h => ⟨fun τ w => h d' ps' τ w, fun _ _ => .rfl⟩)).2 ho₁
-    exact NestDesRel.skeletonRuns hd hord hb hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
+    exact NestDesRel.skeletonRuns hd hord hb hp (hG _ (hEp.left hfo))
       (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel) ((hresp _ _ hfo o₁ o₂).2 hSo.2) hf₁ hσ
       hνB
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _, .nested _ _ _ _ _ _ hG, hAll,

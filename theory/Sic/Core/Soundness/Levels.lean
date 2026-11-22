@@ -467,7 +467,7 @@ theorem TelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       obtain ⟨h₁, h₂⟩ := h
       have hFF := FieldRel.unique hd hp hF _ _ hF'
       have hFp := FieldRel.isPer hd hp hF
-      have htt := hFp.trans h₁ (hFp.symm h₁)
+      have htt := hFp.left h₁
       have htt' := FieldRel.rel_levelEquiv hd ih hF htt (Term.LevelEquiv.refl _) ht
       exact ⟨(hFF _ _).1 (FieldRel.rel_levelEquiv hd ih hF h₁ ht hu),
         (hresp' _ _ ((hFF _ _).1 htt') _ _).1
@@ -573,10 +573,10 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
     have hE : ∀ f₁ f₂ f₁' f₂', AbstractionRel (ps := ps) SΘ F f₁ f₂ → Term.LevelEquiv f₁ f₁' →
         Term.LevelEquiv f₂ f₂' → AbstractionRel (ps := ps) SΘ F f₁' f₂' :=
       fun _ _ _ _ h ef₁ ef₂ ts us hts =>
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         NestRel.rel_levelEquiv hd ih (hF ts htt) _ _ _ (hF ts htt) .plain (h ts us hts)
           (ef₁.subst (Subst.LevelEquiv.refl _)) (ef₂.subst (Subst.LevelEquiv.refl _))
-    have hff := hEp.trans h₁ (hEp.symm h₁)
+    have hff := hEp.left h₁
     have hff' := hE _ _ _ _ hff (Term.LevelEquiv.refl _) (e₁ d ps)
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hR) B
     cases h' with
@@ -598,7 +598,7 @@ theorem NestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : N
       have hSS := TelRel.unique hd hp hΘ _ _ hΘ'
       exact ⟨fun ts us hts =>
           have hts' := (hSS _ _).2 hts
-          have htt := hSp.trans hts' (hSp.symm hts')
+          have htt := hSp.left hts'
           NestRel.rel_levelEquiv hd ih (hF ts htt) _ _ _ (hF' ts ((hSS _ _).1 htt)) hB
             (h₁ ts us hts') ((e₁ d ps).subst (Subst.LevelEquiv.refl _))
             ((e₂ d ps).subst (Subst.LevelEquiv.refl _)),
@@ -629,10 +629,10 @@ theorem DesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     have hE : ∀ f₁ f₂ f₁' f₂', AbstractionRel (ps := ps) SΘ F f₁ f₂ → Term.LevelEquiv f₁ f₁' →
         Term.LevelEquiv f₂ f₂' → AbstractionRel (ps := ps) SΘ F f₁' f₂' :=
       fun _ _ _ _ h ef₁ ef₂ ts us hts =>
-        have ⟨_, hv⟩ := hB ts (hSp.trans hts (hSp.symm hts))
-        FieldRel.rel_levelEquiv hd ih (hF ts (hSp.trans hts (hSp.symm hts)) _ hv) (h ts us hts)
+        have ⟨_, hv⟩ := hB ts (hSp.left hts)
+        FieldRel.rel_levelEquiv hd ih (hF ts (hSp.left hts) _ hv) (h ts us hts)
           (ef₁.subst (Subst.LevelEquiv.refl _)) (ef₂.subst (Subst.LevelEquiv.refl _))
-    have hff := hEp.trans h₁ (hEp.symm h₁)
+    have hff := hEp.left h₁
     have hff' := hE _ _ _ _ hff (Term.LevelEquiv.refl _) (e₁ d ps)
     cases h' with
     | cons hΘ' F' _ hF' _ _ hG' hresp' _ =>

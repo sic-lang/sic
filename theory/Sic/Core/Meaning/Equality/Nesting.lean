@@ -278,9 +278,9 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
       exact fun o₁ o₂ =>
         ⟨fun ⟨h₁, h₂⟩ =>
           have h₁' := (hEE _ _).1 h₁
-          ⟨h₁', (hGG _ (hEp'.trans h₁' (hEp'.symm h₁')) o₁ o₂).1 h₂⟩,
+          ⟨h₁', (hGG _ (hEp'.left h₁') o₁ o₂).1 h₂⟩,
         fun ⟨h₁', h₂'⟩ =>
-          ⟨(hEE _ _).2 h₁', (hGG _ (hEp'.trans h₁' (hEp'.symm h₁')) o₁ o₂).2 h₂'⟩⟩
+          ⟨(hEE _ _).2 h₁', (hGG _ (hEp'.left h₁') o₁ o₂).2 h₂'⟩⟩
     | recursive hrs' => cases hrs'
 termination_by structural h _ _ _ _ => h
 

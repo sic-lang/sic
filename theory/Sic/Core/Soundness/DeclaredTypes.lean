@@ -575,7 +575,7 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {names : L
       have hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us := fun a₁ a₂ ha ts us => by
         have hFp := FieldRel.isPer hd ih hF₁
         obtain ⟨S, h₁, h₂⟩ := hcommon a₁ a₂ ha
-        obtain ⟨S', h₁', h₂'⟩ := hcommon a₂ a₂ (hFp.trans (hFp.symm ha) ha)
+        obtain ⟨S', h₁', h₂'⟩ := hcommon a₂ a₂ (hFp.right ha)
         rw [hG a₁ S h₁, hG a₂ S' h₁']
         exact TelRel.unique hd ih h₂ _ _ h₂' ts us
       refine ⟨FieldsRel.cons F G,
@@ -894,7 +894,7 @@ theorem TelRel.of_eqSubst {n : Nat} {s : Quality} :
     | cons hA hF G hG _ _ =>
       have hFtu := hF.of_validEqTerm hA ht
       have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
-      exact ⟨hFtu, TelRel.of_eqSubst (hG t (hFp.trans hFtu (hFp.symm hFtu))) (hH.2 t htt)
+      exact ⟨hFtu, TelRel.of_eqSubst (hG t (hFp.left hFtu)) (hH.2 t htt)
         (fun i => hτ (i + 1)) ts us hts⟩
     | nested hrs hF G hG =>
       exact ⟨(hF.validEqTerm_iff hd (hτ 0) hH.1 t u).2 ht, TelRel.of_eqSubst (hG t) (hH.2 t htt)
@@ -936,7 +936,7 @@ theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} :
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
         have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
         have hv := hF.validEqTerm hd hA htu
-        exact key t u ts us hv (TelRel.to_eqSubst hd (hG t (hFp.trans htu (hFp.symm htu)))
+        exact key t u ts us hv (TelRel.to_eqSubst hd (hG t (hFp.left htu))
           (hH.2 t (hv.trans hv.symm)) (fun i => hτ (i + 1)) ts us hts)
     | nested hrs hF G hG =>
       match ts₀, us₀, hS with
@@ -994,7 +994,7 @@ theorem TelRel.recRel (hd : sig.Distinct) {n : Nat} {s : Quality} {Rf : Name →
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
         have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
-        have ih := TelRel.recRel hd (hG t (hFp.trans htu (hFp.symm htu))) rs.tail htail ts us hts
+        have ih := TelRel.recRel hd (hG t (hFp.left htu)) rs.tail htail ts us hts
         match rs, hrs with
         | [], _ => trivial
         | none :: _, _ => exact ih
@@ -1052,7 +1052,7 @@ theorem TelRel.nestedRel (hd : sig.Distinct) {n : Nat} {s : Quality} {L : Name �
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
         have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
-        have ih := TelRel.nestedRel hd (L := L) (hG t (hFp.trans htu (hFp.symm htu))) ns.tail
+        have ih := TelRel.nestedRel hd (L := L) (hG t (hFp.left htu)) ns.tail
           htail ts us hts
         match ns, hrs with
         | [], _ => trivial
@@ -1151,7 +1151,7 @@ theorem FieldRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {s : Quality} {ps :
   have hBB : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
       ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst))
         (B.subst (Subst.append θ₁ us.toSubst)) (.sort κ₁) := fun ts us hts =>
-    have huu := hSp.trans (hSp.symm hts) hts
+    have huu := hSp.right hts
     (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
   refine ⟨fun ts hts => ⟨(hres ts _ (hBB ts ts hts)).1, (hres ts _ (hBB ts ts hts)).2.1⟩,
     fun ts hts => ?_, fun ts us hts t u => ?_, fun f₁ f₂ hf τ₁ τ₂ hτ => ?_⟩
@@ -1159,13 +1159,13 @@ theorem FieldRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {s : Quality} {ps :
     obtain ⟨w₁, w₂, -, -, hw₂, -⟩ := (hB _ _ ((hT ts ts).1 hts)).fieldRel hq hn
     exact ⟨⟨w₂, hw₂⟩, h.2.2⟩
   · obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
-    have huu := hSp.trans (hSp.symm hts) hts
+    have huu := hSp.right hts
     obtain ⟨⟨w', hw'⟩, -⟩ := hres us' _ (hBB us' us' huu)
     rw [FieldRel.atArgs_eq hd ih (ts := us') hw' ((hres ts' _ (hBB ts' us' hts)).2.2 w' hw')]
   · obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
     obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
     have hts := (hT ts us).2 hτ
-    have htt := hSp.trans hts (hSp.symm hts)
+    have htt := hSp.left hts
     obtain ⟨⟨w, hw⟩, hF, -⟩ := hres ts _ (hBB ts ts htt)
     exact (hF w hw).validEqTerm hd hw (hf _ _ hts)
 
@@ -1490,7 +1490,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
         obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
         exact FieldRel.isPer hd ih (hF T' hT')) (Telescope.nestAt_all decl.names _ i))
       (hS₀ _ T hT c hc).1
-  exact hper.trans h (hper.symm h)
+  exact hper.left h
 
 /-- The instances of the types of a meaningful block of data types in a universe of propositions,
 at equal closed arguments of its parameters, are propositions of the graph of its sort whose truth
@@ -1584,7 +1584,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
   have hper : IsPer (S (DataType.blockTruth decl.dataTypes S) c) :=
     TelRel.isPer hd ih (fun i => Nest.map_rel₃ (r := fun (x : NestLeaf) _ _ => IsPer x.2)
       (fun _ => ⟨id, fun h _ => h⟩) _) (hS₀ _ T hT c hc).1
-  exact ⟨hof, hto, fun _ _ h => hper.trans h (hper.symm h)⟩
+  exact ⟨hof, hto, fun _ _ h => hper.left h⟩
 
 /-- `(D)`, closed: two instances of a declared type of `Σ`, whose type declaration is meaningful, at
 the same levels and at equal arguments of its parameters, are equal terms of its sort: the fields

@@ -134,7 +134,7 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
         have ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
         FieldRel.isPer hd ih (hF w hw)) hBresp
       obtain ⟨S', h₁, h₂⟩ := hds f₁ f₂ (hcond f₁ f₂ hf)
-      have hf₂ := hEp.trans (hEp.symm hf) hf
+      have hf₂ := hEp.right hf
       obtain ⟨S'', h₁', h₂'⟩ := hds f₂ f₂ (hcond f₂ f₂ hf₂)
       rw [hGeq f₁ S' h₁, hGeq f₂ S'' h₁']
       exact NestDesRel.unique hd ih h₂ _ _ h₂' o₁ o₂
@@ -185,7 +185,7 @@ theorem NestRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {sT s : Quality} {ps
     rw [heq ts F' h₁]
     exact h₂
   · obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
-    have huu := hSp.trans (hSp.symm hts) hts
+    have huu := hSp.right hts
     obtain ⟨F', h₁, h₂⟩ := hB _ _ hE
     obtain ⟨F'', h₁', h₂'⟩ := hB _ _ ((hT us' us').1 huu)
     rw [heq ts' F' h₁, heq us' F'' h₁']

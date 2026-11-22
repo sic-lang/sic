@@ -112,7 +112,7 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
   have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ H o a, G f₁ H o a ↔ G f₂ H o a :=
     fun f₁ f₂ hf H o a => by
       have hf₂ : AbstractionRel SΘ F f₂ f₂ := fun ts us hts => by
-        have htt := hSp.trans hts (hSp.symm hts)
+        have htt := hSp.left hts
         obtain ⟨⟨w, hw⟩, hF⟩ := hF₁ ts htt
         have hP := FieldRel.isPer hd ihm (hF w hw)
         exact hP.trans (hP.symm (hf ts ts htt)) (hf ts us hts)

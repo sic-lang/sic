@@ -289,7 +289,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
-          have hts' := hSΘp.trans hts (hSΘp.symm hts)
+          have hts' := hSΘp.left hts
           NestRel.rel_levelEquiv hd (levelRel_levelInvariant_lt hd _) (hF ts hts')
             _ _ _ (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
             (ef.subst (Subst.LevelEquiv.refl _))
@@ -367,7 +367,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
-          have hts' := hSΘp.trans hts (hSΘp.symm hts)
+          have hts' := hSΘp.left hts
           have ⟨_, hv⟩ := hB ts hts'
           FieldRel.rel_levelEquiv hd (levelRel_levelInvariant_lt hd _)
             (hF ts hts' _ hv)

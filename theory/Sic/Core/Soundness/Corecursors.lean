@@ -108,7 +108,7 @@ theorem AbstractionRel.congr_computes {n : Nat} {s : Quality} {ps : List Paramet
   have key : ∀ ts us : Args 0 [] ps, SΘ ts.terms us.terms →
       (F ts.terms (f₁.subst ts.toSubst) (f₂.subst us.toSubst) ↔
         F ts.terms (g₁.subst ts.toSubst) (g₂.subst us.toSubst)) := fun ts us hts => by
-    obtain ⟨v, hv⟩ := hF ts (hSp.trans hts (hSp.symm hts))
+    obtain ⟨v, hv⟩ := hF ts (hSp.left hts)
     exact hv.congr_computes (h.imp_right fun ⟨h₁, h₂⟩ => ⟨h₁ _, h₂ _⟩)
   exact ⟨fun h' ts us hts => (key ts us hts).1 (h' ts us hts),
     fun h' ts us hts => (key ts us hts).2 (h' ts us hts)⟩
@@ -152,16 +152,16 @@ theorem DesRel.head (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat → Op
         rcases hc hf₂ with h₂ | h₂
         · exact .inl h₂
         exact .inr ⟨h₁, h₂⟩)).2 hA
-    have ho₁ : AbstractionRel SΘ F (o₁ d ps) (o₁ d ps) := hEp.trans hA (hEp.symm hA)
+    have ho₁ : AbstractionRel SΘ F (o₁ d ps) (o₁ d ps) := hEp.left hA
     have hfo : AbstractionRel SΘ F (f₁ d ps) (o₁ d ps) :=
       (AbstractionRel.congr_computes hSp hFv (by
         rcases hc hf₁ with h₁ | h₁
         · exact .inl h₁
         exact .inr ⟨h₁, fun _ _ => .rfl⟩)).2 ho₁
-    refine ⟨fun ts us hτ => ?_, G (f₁ d ps), hG _ (hEp.trans hfo (hEp.symm hfo)),
+    refine ⟨fun ts us hτ => ?_, G (f₁ d ps), hG _ (hEp.left hfo),
       (hresp _ _ hfo o₁ o₂).2 hGo⟩
     have hts := (TelRel.eqSubst_iff_plain hd hΘ ts us).2 hτ
-    have htt := hSp.trans hts (hSp.symm hts)
+    have htt := hSp.left hts
     obtain ⟨v, hv⟩ := hB ts htt
     exact (hF ts htt v hv).validEqTerm hd hv (hA' ts us hts)
 
@@ -883,18 +883,18 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
           FieldRel.isPer hd ih (hF ts hts v hv')) hBresp
         have hT := TelRel.eqSubst_iff_plain hd hΘ
         have hA : AbstractionRel SΘ F (o₁ d ps) (o₂ d ps) := fun ts us hts => by
-          have htt := hSp.trans hts (hSp.symm hts)
+          have htt := hSp.left hts
           obtain ⟨v, hv''⟩ := hB ts htt
           exact (hF ts htt v hv'').of_validEqTerm hv'' (hv d p q ς ps _ Θ B ψ .here ts us
             ((hT ts us).1 hts) hr0)
-        have hff := hEp.trans hA (hEp.symm hA)
+        have hff := hEp.left hA
         have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
             τ₁ τ₂ → ValidEqTerm₀ sig ι ((o₁ d ps).subst τ₁) ((o₁ d ps).subst τ₂)
               ((B.substLevels L).subst (Subst.append θ τ₁)) := fun τ₁ τ₂ hτ => by
           obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
           obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
           have hts := (hT ts us).2 hτ
-          have htt := hSp.trans hts (hSp.symm hts)
+          have htt := hSp.left hts
           obtain ⟨v, hv''⟩ := hB ts htt
           exact (hF ts htt v hv'').validEqTerm hd hv'' (hff ts us hts)
         exact ⟨hA, DesRel.of_obsRel hd L ds (hds _ _ hcond) (fun i => hN (i + 1))
@@ -1104,7 +1104,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         | none => rw [hr] at hx; cases hx
         | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩)
         (DesRel.atLevels_of_substLevels hd (hS Y T' hT'))
-      exact ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
+      exact ⟨_, hSp.left hS₁⟩
     have htrue : CodataType.blockTruth decl.codataTypes S T.name :=
       CodataType.blockTruth_coind hmono (B := fun D' => ∃ a b, P D' a b) hcons ⟨v, w, hvw⟩
     have hP' : (levelRel sig ι (decl.sortAt I L).level.closedValue).prop
@@ -1579,7 +1579,7 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
           rcases hc hf₂ with h₂ | h₂
           · exact .inl h₂
           exact .inr ⟨h₁, h₂⟩)).1 hA
-      have hff : AbstractionRel SΘ F (f₁ d ps) (f₁ d ps) := hEp.trans hA (hEp.symm hA)
+      have hff : AbstractionRel SΘ F (f₁ d ps) (f₁ d ps) := hEp.left hA
       have hfo : AbstractionRel SΘ F (f₁ d ps) (o₁ d ps) :=
         (AbstractionRel.congr_computes hSp hFv (by
           rcases hc hf₁ with h₁ | h₁
@@ -1731,7 +1731,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
       cases hr : (T.body I).recursionAt decl.names i with
       | none => rw [hr] at hx; cases hx
       | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩) hDS
-    have htrue := CodataType.blockTruth_fold hmono hnd h.2.1 ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
+    have htrue := CodataType.blockTruth_fold hmono hnd h.2.1 ⟨_, hSp.left hS₁⟩
     rw [h.2.2] at htrue
     exact ⟨ht.1, fun hn => absurd ⟨_, hI, _, _, hP₀⟩ hn,
       fun _ => ⟨_, R, hI, hR, (hRb _ _).2 htrue⟩⟩
