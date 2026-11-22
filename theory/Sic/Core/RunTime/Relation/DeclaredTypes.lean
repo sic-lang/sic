@@ -351,7 +351,7 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   cases Computesι.det hd htw hct
   have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
       ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-    fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+    fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
       (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
       fun D H _ _ => RunRel.computed_mono (hXY D H)
@@ -407,7 +407,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-      fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+      fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
         (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
         (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
         fun D H _ _ => RunRel.computed_mono (hXY D H)
@@ -475,7 +475,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
   -- The relations `(®_μ)` of the block relate the fields that the relations `X` within them do.
   let Y : Name → RunRel := DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S
   have hY : S Y con H ts.terms bs :=
-    RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+    RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
       (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
       (fun D H _ _ => RunRel.computed_mono (hX D H)) T hT con hc H _ _ h

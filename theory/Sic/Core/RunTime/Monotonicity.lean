@@ -423,7 +423,7 @@ theorem levelRel_runNest_mono {sig : Signature} {ι : Interpretation} {P : Progr
     {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} (hd : sig.Distinct)
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => x.2.Monotone) τ) : R.Monotone :=
-  RunNestRel.monotone hd (fun m _ => levelRel_run_mono hd m) hτ h
+  RunNestRel.monotone hd (Nat.forall_lt (levelRel_run_mono hd) _) hτ h
 
 -- ADE: none.
 /-- `®(v)` is monotone in the heap, in a signature whose names are distinct. -/

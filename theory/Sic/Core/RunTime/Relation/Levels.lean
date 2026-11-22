@@ -136,7 +136,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
           (fun D' H _ _ _ => RunRel.computed_levelEquiv hd (hXY D' H)) _) H
     have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-      fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+      fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
         (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩)
         (F := fun X D => (.inst D _ _ _ _, (X D).computed sig ι)) hS X Y
         fun D H _ _ => RunRel.computed_mono (hXY D H)

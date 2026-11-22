@@ -172,7 +172,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hq hl hp hadm hasσ hs P
   have hmono : ∀ X Y : Name → RunRel, (∀ D H v a, X D H v a → Y D H v a) →
       ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts as, S X c H ts as → S Y c H ts as :=
-    fun X Y hXY => RunTelRel.block_mono hd (fun m _ => levelRel_run_mono hd m)
+    fun X Y hXY => RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ (as.subst σ)⟩)
       (F := fun X D => (.inst D qs ls ps (as.subst σ), (X D).computed sig ι)) hS X Y
       fun D H _ _ => RunRel.computed_mono (hXY D H)
@@ -201,7 +201,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hD' : D' ∈ decl.names := hX.1 (fun D'' _ _ _ => D'' ∈ decl.names)
       (fun T' hT' _ _ _ _ => TypeDeclaration.name_mem_names hT')
     obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-    exact ⟨RunUnivRel.mono hd (fun m _ => levelRel_run_mono hd m) (hU T₃ hT₃).1 hH₀ hX.1,
+    exact ⟨RunUnivRel.mono hd (Nat.forall_lt (levelRel_run_mono hd) _) (hU T₃ hT₃).1 hH₀ hX.1,
       fun ϖ' H' hH' hHH' => hX.2 ϖ' H' (hH₀.trans hH') hHH'⟩
   -- The leaves of the nested results: the recursor on a term of a type of the block, on the address
   -- of a path that runs to it, in a heap that extends `H`.
