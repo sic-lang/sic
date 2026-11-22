@@ -50,6 +50,7 @@ theorem levelRel_isPer {sig : Signature} {ι : Interpretation} (hd : sig.Distinc
 termination_by n
 decreasing_by all_goals assumption
 
+-- ADE: none.
 /-- The relations of every level below a level are partial equivalence relations, in a signature
 whose names are distinct, as the relations of the graphs of a level need them. -/
 theorem levelRel_isPer_lt {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :

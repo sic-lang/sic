@@ -366,6 +366,7 @@ termination_by structural h _ _ _ _ => h
 
 end
 
+-- ADE: none.
 /-- The relations of run time of the fields of the constructors of a block of data types, given by
 telescopes of the graph of run time at relations of their recursive fields, grow with them: the
 monotonicity of `RunTelRel.mono` in one heap, for every constructor of the block. -/
