@@ -578,8 +578,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hq' : ((decl.sort I).atLevels ρ).quality = .type := hs
     rw [hi, decl.sort_atLevels_closedValue hq hl hp, hq']
     exact ⟨_, _, rfl, (Whnf.inst ..).computes,
-      FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (.univ rfl hU)
-        (decl.blockInstance_atLevels_subst hq hl hp as _).symm⟩
+      FieldRel.blockInstance_atLevels hd hq hl hp (.univ rfl hU)⟩
   -- The telescope and the result of the destructor at both observations are equal.
   obtain ⟨htel, hBeq⟩ := (hpos.substLevels Lρ).validEq (hDs T hT)
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi))
