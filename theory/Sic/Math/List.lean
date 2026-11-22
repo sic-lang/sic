@@ -13,6 +13,7 @@ element, and the elements of a list after the reverse of a range of numbers.
 
 @[expose] public section
 
+-- ADE: none.
 /-- Two elements of a list whose images by `f` are distinct, which have the same image, are equal. -/
 theorem List.eq_of_nodup_map {α β : Type} {f : α → β} :
     {l : List α} → (l.map f).Nodup → {a b : α} → a ∈ l → b ∈ l → f a = f b → a = b
@@ -25,6 +26,7 @@ theorem List.eq_of_nodup_map {α β : Type} {f : α → β} :
     · exact absurd (by rw [← hab]; exact List.mem_map_of_mem ha') h.1
     · exact List.eq_of_nodup_map h.2 ha' hb' hab
 
+-- ADE: none.
 /-- The element at a position of a list whose elements are distinct has the position as its first
 index. -/
 theorem List.idxOf?_of_getElem? {α : Type} [BEq α] [LawfulBEq α] :
@@ -39,6 +41,7 @@ theorem List.idxOf?_of_getElem? {α : Type} [BEq α] [LawfulBEq α] :
     rw [List.idxOf?_cons, hne, List.idxOf?_of_getElem? (List.nodup_cons.1 hn).2 h]
     rfl
 
+-- ADE: none.
 /-- Two positions of a list whose images by `f` are distinct, which hold elements with the same
 image, are equal. -/
 theorem List.getElem?_inj_of_nodup_map {α β : Type} {f : α → β} :
@@ -57,6 +60,7 @@ theorem List.getElem?_inj_of_nodup_map {α β : Type} {f : α → β} :
       exact absurd (hab.symm ▸ List.mem_map_of_mem (List.mem_of_getElem? ha)) h.1
     | i + 1, i' + 1, ha, hb => exact congrArg (· + 1) (List.getElem?_inj_of_nodup_map h.2 ha hb hab)
 
+-- ADE: none.
 /-- The position that `findIdx?` finds holds an element that satisfies the predicate, as
 `List.of_findIdx?_eq_some`, without its choice. -/
 theorem List.getElem?_of_findIdx?_eq_some {α : Type} {p : α → Bool} :
@@ -80,6 +84,7 @@ theorem List.getElem?_of_findIdx?_eq_some {α : Type} {p : α → Bool} :
         rw [List.getElem?_cons_succ]
         exact List.getElem?_of_findIdx?_eq_some hl
 
+-- ADE: none.
 /-- A list with an element that satisfies the predicate has a position that `findIdx?` finds, as
 `List.findIdx?_isSome`, without its choice. -/
 theorem List.findIdx?_isSome_of_mem {α : Type} {p : α → Bool} :
@@ -101,6 +106,7 @@ theorem List.findIdx?_isSome_of_mem {α : Type} {p : α → Bool} :
         | none => rw [hl] at hs; cases hs
         | some _ => rfl
 
+-- ADE: none.
 /-- A list of one element at most that holds `a` is `[a]`. -/
 theorem List.eq_singleton_of_mem_of_length_le_one {α : Type} :
     {l : List α} → {a : α} → a ∈ l → l.length ≤ 1 → l = [a]
@@ -109,12 +115,14 @@ theorem List.eq_singleton_of_mem_of_length_le_one {α : Type} :
   | [_], _, .tail _ h, _ => nomatch h
   | _ :: _ :: _, _, _, h => absurd h (Nat.not_succ_le_zero _ ∘ Nat.le_of_succ_le_succ)
 
+-- ADE: none.
 /-- The first element after the first `i` elements of a list is its element at the position `i`. -/
 theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]? = some a) :
     (l.drop i).headD d = a := by
   rw [List.headD_eq_head?_getD, List.head?_drop, h]
   rfl
 
+-- ADE: none.
 /-- The elements `ks j` of positions `j < m`, each `x` when the element `gs[j]` satisfies `p`, and
 `g` of the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length
 `m`. -/
@@ -129,10 +137,12 @@ theorem List.ofFn_ite_getElem? {α β γ : Type} {m : Nat} (p : α → Prop) [De
     simp [List.getElem_ofFn, List.getElem_zipWith, Vector.getElem_toList,
       List.getElem?_eq_getElem hj]
 
+-- ADE: `L.lookup`, of the standard library of Agda, in `Tools/List.agda`.
 /-- The `n` elements of a list of length `n`, numbered. -/
 def List.getFin {α : Type} (l : List α) {n : Nat} (h : l.length = n) : Fin n → α :=
   fun i => l.get (i.cast h.symm)
 
+-- ADE: none.
 /-- The elements of a list mapped by `f` are the elements of the list mapped by `f`. -/
 theorem List.getFin_map {α β : Type} (f : α → β) (l : List α) {n : Nat}
     (h : (l.map f).length = n) :
@@ -140,12 +150,14 @@ theorem List.getFin_map {α β : Type} (f : α → β) (l : List α) {n : Nat}
   funext i
   simp [List.getFin]
 
+-- ADE: `L.lookup-tabulate`, of the standard library of Agda, in `Tools/List.agda`.
 /-- The numbered elements of the list of the values of a function are these values. -/
 theorem List.getFin_ofFn {α : Type} {n : Nat} (f : Fin n → α) (h : (List.ofFn f).length = n) :
     (List.ofFn f).getFin h = f := by
   funext i
   simp [List.getFin]
 
+-- ADE: `L.tabulate-lookup`, of the standard library of Agda, in `Tools/List.agda`.
 /-- The numbered elements of a list are the list. -/
 theorem List.ofFn_getFin {α : Type} :
     (l : List α) → {n : Nat} → (h : l.length = n) → List.ofFn (l.getFin h) = l
@@ -155,6 +167,7 @@ theorem List.ofFn_getFin {α : Type} :
     rw [List.ofFn_succ]
     exact congrArg (a :: ·) (List.ofFn_getFin l rfl)
 
+-- ADE: none.
 /-- The first numbered elements of two lists appended are those of the first list. -/
 theorem List.getFin_append_castAdd {α : Type} (l₁ l₂ : List α) {n m : Nat} (h₁ : l₁.length = n)
     (h : (l₁ ++ l₂).length = n + m) (i : Fin n) :
@@ -162,6 +175,7 @@ theorem List.getFin_append_castAdd {α : Type} (l₁ l₂ : List α) {n m : Nat}
   subst h₁
   simp [List.getFin]
 
+-- ADE: none.
 /-- The last numbered elements of two lists appended are those of the second list. -/
 theorem List.getFin_append_natAdd {α : Type} (l₁ l₂ : List α) {n m : Nat} (h₁ : l₁.length = n)
     (h₂ : l₂.length = m) (h : (l₁ ++ l₂).length = n + m) (i : Fin m) :
@@ -169,6 +183,7 @@ theorem List.getFin_append_natAdd {α : Type} (l₁ l₂ : List α) {n m : Nat} 
   subst h₁ h₂
   simp [List.getFin]
 
+-- ADE: none.
 /-- An element of a list whose images by `f` are distinct is the first one with its image. -/
 theorem List.find?_of_nodup_map {α β : Type} [BEq β] [LawfulBEq β] {f : α → β} :
     {l : List α} → (l.map f).Nodup → {a : α} → a ∈ l → l.find? (f · == f a) = some a
@@ -182,6 +197,7 @@ theorem List.find?_of_nodup_map {α β : Type} [BEq β] [LawfulBEq β] {f : α �
       rw [List.find?_cons_of_neg (p := fun x => f x == f a) (l := l) hne]
       exact List.find?_of_nodup_map h.2 ha'
 
+-- ADE: none.
 /-- The results of a function at the elements of a list, all defined, are at the same positions as
 the elements. -/
 theorem List.getElem?_of_mapM {α β : Type} {f : α → Option β} :
@@ -205,6 +221,7 @@ theorem List.getElem?_of_mapM {α β : Type} {f : α → Option β} :
           exact ⟨b, hfa, rfl⟩
         | succ i => exact List.getElem?_of_mapM hl ha
 
+-- ADE: none.
 /-- A function defined at every element of a list is defined at the list. -/
 theorem List.exists_mapM_eq_some {α β : Type} {f : α → Option β} :
     {l : List α} → (∀ a ∈ l, ∃ b, f a = some b) → ∃ l', l.mapM f = some l'
@@ -215,6 +232,7 @@ theorem List.exists_mapM_eq_some {α β : Type} {f : α → Option β} :
       h a' (List.mem_cons_of_mem _ ha')
     exact ⟨b :: l', by simp [List.mapM_cons, hb, hl']⟩
 
+-- ADE: none.
 /-- The index of the image of an element in the images of a list, distinct, is its position. -/
 theorem List.idxOf?_map_of_nodup {α β : Type} [BEq β] [LawfulBEq β] {f : α → β} :
     {l : List α} → (l.map f).Nodup → {i : Nat} → {a : α} → l[i]? = some a →
@@ -232,6 +250,7 @@ theorem List.idxOf?_map_of_nodup {α β : Type} [BEq β] [LawfulBEq β] {f : α 
         ite_eq_right_of_eq_false _ _ (eq_false Bool.false_ne_true), List.idxOf?_map_of_nodup hn.2 ha]
       rfl
 
+-- ADE: none.
 /-- A list whose elements are distinct and all in a list `l₂` is not longer than `l₂`, as
 `List.Nodup.length_le_of_subset`, without its choice: removing the first element `a` of the list
 from `l₂` keeps the others in `l₂` and shortens it by one. -/
@@ -274,6 +293,7 @@ theorem List.length_le_of_nodup_subset {α : Type} [BEq α] [LawfulBEq α] :
     simp only [List.length_cons]
     omega
 
+-- ADE: `Pointwise.Pointwise`, of the standard library of Agda, in `Tools/List.agda`.
 /-- Two lists of the same length whose elements are related by `R`, one by one. -/
 inductive List.Pointwise {α β : Type} (R : α → β → Prop) : List α → List β → Prop where
   /-- The empty lists. -/
@@ -286,29 +306,34 @@ namespace List.Pointwise
 
 variable {α β : Type} {R : α → β → Prop}
 
+-- ADE: `Pointwise.map`, of the standard library of Agda, in `Tools/List.agda`.
 /-- Lists related by a relation are related by each relation that it implies. -/
 theorem imp {S : α → β → Prop} (hRS : ∀ a b, R a b → S a b) :
     {as : List α} → {bs : List β} → List.Pointwise R as bs → List.Pointwise S as bs
   | _, _, .nil => .nil
   | _, _, .cons h hs => .cons (hRS _ _ h) (hs.imp hRS)
 
+-- ADE: `Pointwise.Pointwise-length`, of the standard library of Agda, in `Tools/List.agda`.
 /-- Lists related one by one have the same length. -/
 theorem length : {as : List α} → {bs : List β} → List.Pointwise R as bs → as.length = bs.length
   | _, _, .nil => rfl
   | _, _, .cons _ hs => congrArg (· + 1) hs.length
 
+-- ADE: `Pointwise.++⁺`, of the standard library of Agda, in `Tools/List.agda`.
 /-- Lists related one by one, joined, are related one by one. -/
 theorem append : {as₁ : List α} → {bs₁ : List β} → {as₂ : List α} → {bs₂ : List β} →
     List.Pointwise R as₁ bs₁ → List.Pointwise R as₂ bs₂ → List.Pointwise R (as₁ ++ as₂) (bs₁ ++ bs₂)
   | _, _, _, _, .nil, h₂ => h₂
   | _, _, _, _, .cons h hs, h₂ => .cons h (hs.append h₂)
 
+-- ADE: `Pointwise.replicate⁺`, of the standard library of Agda, in `Tools/List.agda`.
 /-- Two related elements, as many times as wanted, are related one by one. -/
 theorem replicate {a : α} {b : β} (h : R a b) :
     (k : Nat) → List.Pointwise R (List.replicate k a) (List.replicate k b)
   | 0 => .nil
   | k + 1 => .cons h (replicate h k)
 
+-- ADE: none.
 /-- The elements at the same position of lists related one by one are related. -/
 theorem mem : {as : List α} → {bs : List β} → List.Pointwise R as bs → ∀ x ∈ as.zip bs, R x.1 x.2
   | _, _, .nil, _, h => nomatch h
@@ -317,6 +342,7 @@ theorem mem : {as : List α} → {bs : List β} → List.Pointwise R as bs → �
     · exact h
     · exact hs.mem x hx
 
+-- ADE: `Pointwise.lookup⁺`, of the standard library of Agda, in `Tools/List.agda`.
 /-- An element of the first of lists related one by one is related to the element at its position
 in the second. -/
 theorem getElem? : {as : List α} → {bs : List β} → List.Pointwise R as bs → {j : Nat} → {a : α} →
@@ -329,6 +355,7 @@ theorem getElem? : {as : List α} → {bs : List β} → List.Pointwise R as bs 
 
 end List.Pointwise
 
+-- ADE: none.
 /-- The elements of a list after the reverse of the `c` numbers from `a` are the elements of the
 list: its element at the position `x` is the element at the position `x + c` of the concatenation. -/
 theorem List.getElem?_reverse_range'_append_right (a c x : Nat) (E : List Nat) :
