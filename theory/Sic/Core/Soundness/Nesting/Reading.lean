@@ -713,6 +713,42 @@ theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term
   rw [Term.atLevels, Term.substLevels_rename]
   exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
 
+/-- The head of a first destructor well formed in `Σ_T`, renamed by `β` and at the values `ρ` of
+its levels, given the soundness of the typing in `Σ_T`, at two pairs of substitutions related as
+`NestSubst` relates them, the first of which are equal substitutions of its context, when its
+arguments avoid the variables with a position: its arguments are the same at both pairs and equal
+telescopes at the first, and its results at equal arguments are equal types. -/
+theorem WfDestructors.head_valid {α I : Type}
+    {rd : I → Nest α → Nest α → Term 0 [] → Term 0 [] → Prop} (hS : TypingSound sig ι)
+    {sigT : Signature} (hent : sig.ValidEntries ι sigT) {k : Nat}
+    {Γ : Scope} {ctx : Context k Γ} {ps : List Parameter} {Θ : Telescope k Γ ps}
+    {B : Term k (Γ.extend ps.length)} {κ₁ κ : Universe k}
+    (hΘ : WfTelescope sigT ctx Θ ⟨.type, κ.level⟩) (hB : HasType sigT (ctx.append Θ) B (.sort κ₁))
+    (ρ : Fin k → Nat) {Γ' : Scope} {β : Ren Γ' Γ} {ν₁ ν₂ : Nesting α Γ'}
+    {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ'}
+    (hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
+      ((Θ.rename β).atLevels ρ).Avoids x)
+    (hE : EqSubst sig ι (ctx.atLevels ρ) (fun x => θ₁ (β x)) (fun x => θ₂ (β x)))
+    (hNS : NestSubst sig ι rd (ctx.atLevels ρ) @β @ν₁ @ν₂ @θ₁ @θ₂ @θ₁' @θ₂') :
+    ((Θ.rename β).atLevels ρ).subst θ₁' = ((Θ.rename β).atLevels ρ).subst θ₁ ∧
+      ((Θ.rename β).atLevels ρ).subst θ₂' = ((Θ.rename β).atLevels ρ).subst θ₂ ∧
+      ValidEqTelescope₀ sig ι ⟨.type, (κ.atLevels ρ).level⟩
+        (((Θ.rename β).atLevels ρ).subst θ₁) (((Θ.rename β).atLevels ρ).subst θ₂) ∧
+      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (((Θ.rename β).atLevels ρ).subst θ₁)) τ₁ τ₂ →
+        ValidEqTerm₀ sig ι
+          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₁ τ₁))
+          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₂ τ₂))
+          (.sort (κ₁.atLevels ρ)) := by
+  obtain ⟨hΘ₁, hΘ₂⟩ := hNS.telescope_eq hΘav
+  refine ⟨hΘ₁, hΘ₂, ?_, fun τ₁ τ₂ hτ => ?_⟩
+  · rw [Θ.atLevels_rename_subst ρ @β, Θ.atLevels_rename_subst ρ @β]
+    exact (hS.wfTelescope hent hΘ ρ).2 _ _ hE
+  · rw [Θ.atLevels_rename_subst ρ @β] at hτ
+    rw [B.atLevels_rename_subst_append ρ @β, B.atLevels_rename_subst_append ρ @β]
+    have h := hS.hasType hent hB ρ
+    simp only [Context.atLevels, Context.substLevels_append] at h
+    exact h.2 _ _ ((EqSubst.append_append_iff _ _ _ _ τ₁ τ₂).2 ⟨hE, hτ⟩)
+
 /-- The destructors of a codata type none of which is recursive, well formed in a signature `Σ_T`
 whose nested types a reading reads, and strictly positive in the variables with a position, are
 read by the reading, at the second pair of two pairs of substitutions, the first of which are equal
@@ -768,30 +804,8 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
     have hdspos : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         Destructors.Positive (sigT.PositiveIn decl) (.succ x) (ds.rename (Ren.lift @β)) :=
       fun e x hx => (hpos e x hx).cons_inv.2.2
-    -- The arguments and the result, at the substitutions that the renaming composes.
-    have hΘe : ∀ θ : Subst 0 [] Γ', ((Θ.rename β).atLevels ρ).subst θ =
-        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ =>
-      Θ.atLevels_rename_subst ρ @β θ
-    have hBe : ∀ (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] ps.length)),
-        ((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ τ) =
-          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ =>
-      B.atLevels_rename_subst_append ρ @β θ τ
-    obtain ⟨hΘ₁, hΘ₂⟩ := hNS.telescope_eq hΘav
-    have hΘv : ValidEqTelescope₀ sig ι ⟨.type, (κ.atLevels ρ).level⟩
-        (((Θ.rename β).atLevels ρ).subst θ₁) (((Θ.rename β).atLevels ρ).subst θ₂) := by
-      rw [hΘe, hΘe]
-      exact (hS.wfTelescope hent hΘ ρ).2 _ _ hE
-    have hBv : ∀ τ₁ τ₂,
-        EqSubst sig ι (Context.empty.append (((Θ.rename β).atLevels ρ).subst θ₁)) τ₁ τ₂ →
-        ValidEqTerm₀ sig ι
-          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₁ τ₁))
-          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₂ τ₂))
-          (.sort (κ₁.atLevels ρ)) := fun τ₁ τ₂ hτ => by
-      rw [hΘe] at hτ
-      rw [hBe, hBe]
-      have h := hS.hasType hent hB ρ
-      simp only [Context.atLevels, Context.substLevels_append] at h
-      exact h.2 _ _ ((EqSubst.append_append_iff _ _ _ _ τ₁ τ₂).2 ⟨hE, hτ⟩)
+    -- The arguments and the result, at the substitutions.
+    obtain ⟨hΘ₁, hΘ₂, hΘv, hBv⟩ := WfDestructors.head_valid hS hent hΘ hB ρ hΘav hE hNS
     -- The result has no position, and the variables with a position do not occur in it.
     have hpl₁ : (B.rename (Ren.liftN ps.length @β)).nest (fun _ => none)
         (Nesting.liftN ps.length @ν₁) = .plain := by
@@ -836,9 +850,9 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       (hNS.lift _ _ ψ f₁ f₂)
     show ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂)
       (((B.atLevels ρ).subst (Subst.liftN _ fun x => θ₁ (β x))).subst τ₁)
-    rw [Term.subst_append, ← hBe]
+    rw [Term.subst_append, ← B.atLevels_rename_subst_append ρ @β]
     exact hf τ₁ τ₂ ((congrArg (fun Θ' => EqSubst sig ι (Context.empty.append Θ') τ₁ τ₂)
-      (hΘe θ₁)).mpr hτ)
+      (Θ.atLevels_rename_subst ρ @β θ₁)).mpr hτ)
   case wfDestructors_nested =>
     intro sigT decl J Γ ν as d ns ps ctx p q ς Θ B ψ ds κ₁ κ _ hν hΘ hB hκ hp hds hΘ_ih hB_ih
       hds_ih hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
@@ -856,36 +870,15 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
         Destructors.Positive (sigT.PositiveIn decl) (.succ x)
           (ds.rename (fun x => .succ (e' := .secondOrder ps ψ) (β x))) :=
       fun e x hx => hds_eq ▸ (hpos e x hx).cons_inv.2.2
-    -- The arguments and the result, at the substitutions that the renaming composes.
-    have hΘe : ∀ θ : Subst 0 [] Γ', ((Θ.rename β).atLevels ρ).subst θ =
-        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ =>
-      Θ.atLevels_rename_subst ρ @β θ
-    have hBe : ∀ (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] ps.length)),
-        ((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ τ) =
-          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ =>
-      B.atLevels_rename_subst_append ρ @β θ τ
-    obtain ⟨hΘ₁, hΘ₂⟩ := hNS.telescope_eq hΘav
-    have hΘv : ValidEqTelescope₀ sig ι ⟨.type, (κ.atLevels ρ).level⟩
-        (((Θ.rename β).atLevels ρ).subst θ₁) (((Θ.rename β).atLevels ρ).subst θ₂) := by
-      rw [hΘe, hΘe]
-      exact (hS.wfTelescope hent hΘ ρ).2 _ _ hE
+    -- The arguments and the result, at the substitutions.
+    obtain ⟨hΘ₁, hΘ₂, hΘv, hBv⟩ := WfDestructors.head_valid hS hent hΘ hB ρ hΘav hE hNS
     have hEa : ∀ τ₁ τ₂,
         EqSubst sig ι (Context.empty.append (((Θ.rename β).atLevels ρ).subst θ₁)) τ₁ τ₂ →
         EqSubst sig ι ((ctx.atLevels ρ).append (Θ.atLevels ρ))
           (Subst.append (fun x => θ₁ (β x)) τ₁) (Subst.append (fun x => θ₂ (β x)) τ₂) :=
       fun τ₁ τ₂ hτ => by
-        rw [hΘe] at hτ
+        rw [Θ.atLevels_rename_subst ρ @β] at hτ
         exact (EqSubst.append_append_iff _ _ _ _ τ₁ τ₂).2 ⟨hE, hτ⟩
-    have hBv : ∀ τ₁ τ₂,
-        EqSubst sig ι (Context.empty.append (((Θ.rename β).atLevels ρ).subst θ₁)) τ₁ τ₂ →
-        ValidEqTerm₀ sig ι
-          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₁ τ₁))
-          (((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ₂ τ₂))
-          (.sort (κ₁.atLevels ρ)) := fun τ₁ τ₂ hτ => by
-      rw [hBe, hBe]
-      have h := hS.hasType hent hB ρ
-      simp only [Context.atLevels, Context.substLevels_append] at h
-      exact h.2 _ _ (hEa τ₁ τ₂ hτ)
     have hκ' : κ₁.atLevels ρ ≼ κ.atLevels ρ := Universe.substLevels_bounded _ hκ
     -- The destructors after it, whatever the abstractions for it.
     have hrest : ∀ f₁ f₂ : Term 0 (Scope.extend [] ps.length),
