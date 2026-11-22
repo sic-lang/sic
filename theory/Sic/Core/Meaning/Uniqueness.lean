@@ -289,8 +289,8 @@ theorem levelRel_prop_equality {sig : Signature} {ι : Interpretation} {n : Nat}
           (HasEq.unique hd hE (.prop n b' (Computesι.det hd hA hA' ▸ hp) fun _ _ => .rfl) t u).1
             htu⟩
   cases levelRel_prop_iff.1 h with
-  | data _ _ _ _ hv => cases hv
-  | codata _ _ _ _ hv => cases hv
+  | data _ _ _ hv => cases hv
+  | codata _ _ _ hv => cases hv
   | equalityUniv _ hA hR => exact htype hA (levelRel_univ_iff.2 hR)
   | equalityProp _ hA hP => exact hprop hA (levelRel_prop_iff.2 hP)
 

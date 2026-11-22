@@ -62,8 +62,8 @@ theorem ValidTerm₀.hasRun {sig : Signature} {ι : Interpretation} (P : Program
     | prop =>
       obtain ⟨b, -, hb, -, -⟩ := hvw
       exact ⟨v, fun _ _ _ => True, hv, .prop _ b hb fun _ _ _ => trivial⟩
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: `U/Levelᵣ`, the relation of the universes, in `Graded/Erasure/LogicalRelation.agda`.

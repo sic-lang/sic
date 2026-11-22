@@ -76,10 +76,10 @@ theorem NestRel.levelLe {sig : Signature} {ι : Interpretation} {m n : Nat} (hmn
       NestRel sig ι n (fun k _ => levelRel sig ι k) sT s τ A F
   | .plain hA hF => .plain hA (hF.levelLe hmn)
   | .direct hs hA => .direct hs hA
-  | .codata h hq hl hp hA hs hκ hn hrec S hS =>
-    .codata h hq hl hp hA hs hκ (Nat.le_trans hn hmn) hrec S (NestDesRel.levelLe hmn hS)
-  | .codataProp h hq hl hp hA hκ hn hrec S hS =>
-    .codataProp h hq hl hp hA hκ (Nat.le_trans hn hmn) hrec S (NestDesRel.levelLe hmn hS)
+  | .codata h hqp hl hA hs hκ hn hrec S hS =>
+    .codata h hqp hl hA hs hκ (Nat.le_trans hn hmn) hrec S (NestDesRel.levelLe hmn hS)
+  | .codataProp h hqp hl hA hκ hn hrec S hS =>
+    .codataProp h hqp hl hA hκ (Nat.le_trans hn hmn) hrec S (NestDesRel.levelLe hmn hS)
 termination_by structural h => h
 
 /-- Destructors that the graph of the nestings reads at the level `m` are read at a level `n`
@@ -122,9 +122,8 @@ theorem FieldRel.codata_type {sig : Signature} {ι : Interpretation} {n : Nat} (
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades)
-    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (hκ : (decl.sort hqp.inst).quality = .type)
     {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
     ∃ m, m ≤ n ∧ ∃ R, UnivRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R ∧
@@ -134,14 +133,14 @@ theorem FieldRel.codata_type {sig : Signature} {ι : Interpretation} {n : Nat} (
   | univBelow _ m hm hu => exact ⟨m, Nat.le_of_lt hm, _, levelRel_univ_iff.1 hu, rfl⟩
   | prop hu =>
     cases hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
 
@@ -151,9 +150,8 @@ theorem FieldRel.codata_prop {sig : Signature} {ι : Interpretation} {n : Nat} (
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades)
-    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop)
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (hκ : (decl.sort hqp.inst).quality = .prop)
     {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
     ∃ m, m ≤ n ∧ ∃ b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b ∧
@@ -163,14 +161,14 @@ theorem FieldRel.codata_prop {sig : Signature} {ι : Interpretation} {n : Nat} (
   | propBelow m hm hu => exact ⟨m, Nat.le_of_lt hm, _, levelRel_prop_iff.1 hu, rfl⟩
   | univ _ hu =>
     cases hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
   | univBelow _ m hm hu =>
     cases levelRel_univ_iff.1 hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
 
@@ -194,7 +192,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
   | .direct _ hA, hτ, _, _, h' => by
     cases hτ with
     | direct hT => exact NestRel.unique hd ih (hinv _ _ _ hT hA) _ _ h'
-  | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA _ hκ hn hrec _ hS,
+  | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA _ hκ hn hrec _ hS,
       hτ, _, _, h' => by
     cases hτ with
     | inst hνs =>
@@ -202,10 +200,10 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       cases h' with
       | plain hA' hF' =>
         cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
-        obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_type hd h hq hp hκ hF'
+        obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_type hd h hqp hκ hF'
         cases hu with
-        | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-        | codata h' _ _ _ hv' _ _ _ hS' =>
+        | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+        | codata h' _ _ hv' _ _ _ hS' =>
           obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact TermRel.computed_congr fun v w => ((CodataType.blockRel_iff_corecRel
@@ -214,7 +212,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
                 have hS'' := hS' X _ hT
                 simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
                 exact hS''.levelLe hm) o₁ o₂).symm) v w).symm
-  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec _ hS,
+  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA hκ hn hrec _ hS,
       hτ, _, _, h' => by
     cases hτ with
     | inst hνs =>
@@ -222,10 +220,10 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       cases h' with
       | plain hA' hF' =>
         cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
-        obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_prop hd h hq hp hκ hF'
+        obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_prop hd h hqp hκ hF'
         cases hu with
-        | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-        | codata h' _ _ _ hv' _ _ _ hS' =>
+        | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+        | codata h' _ _ hv' _ _ _ hS' =>
           obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact fun _ _ => (CodataType.blockTruth_iff_truth

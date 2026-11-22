@@ -121,7 +121,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
     RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) v R → R.LevelInvariant
   | .univ _ _ => fun _ _ => trivial
   | .prop _ _ => fun _ _ => trivial
-  | .data (decl := decl) _ _ _ _ _ _ _ S hS => fun h ht => by
+  | .data (decl := decl) _ _ _ _ _ _ S hS => fun h ht => by
     have hstep : ∀ X Y : Name → RunRel,
         (∀ D H w w' a, X D H w a → Term.LevelEquiv w w' → Y D H w' a) →
         ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ H ts ts' as, S X c H ts as →
@@ -143,7 +143,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
         | ctor _ _ _ _ _ _ hts =>
           exact DataType.runBlockRel_fold hmono hT ⟨c, hc, i, _, as, ⟨_, _, _, _, _, rfl⟩, hi, ha,
             hstep _ _ (fun _ _ _ _ _ h hw => h _ hw) T hT c hc H _ _ as hs hts⟩) _ ht
-  | .codata (decl := decl) _ _ _ _ _ _ _ S hS => fun ⟨X, hX, hx⟩ ht =>
+  | .codata (decl := decl) _ _ _ _ _ _ S hS => fun ⟨X, hX, hx⟩ ht =>
     ⟨fun D H w' a => ∃ w, Term.LevelEquiv w w' ∧ X D H w a,
       fun T hT H w' a ⟨w, hww, hw⟩ => by
         obtain ⟨o, ⟨r, qs, ls, ps, Δ, as, ss, Ss, gs, rfl, rfl⟩, ho⟩ := hX T hT H w a hw
@@ -230,11 +230,11 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
     | direct hr =>
       cases h' with
       | direct _ => exact hr
-  | .codata hD _ _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
+  | .codata hD _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata hD' _ _ _ hA' _ _ _ _ hS' =>
+      | codata hD' _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         refine fun H _ _ _ => RunRel.computed_levelEquiv hd fun v v' a hv hvv => ?_
@@ -246,15 +246,15 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
               fun d _ => ?_⟩
           exact .obs _ _ _ d hl (has.rename _)
             (Term.LevelEquiv.rename _ (.corec _ _ _ _ hl has hss hSs hgs)) (Terms.LevelEquiv.refl _)
-      | codataProp hD' _ _ _ hA' _ hκ' =>
+      | codataProp hD' _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp hD _ _ _ hA _ hκ _ _, _, _, h', hτ => by
+  | .codataProp hD _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata hD' _ _ _ hA' hκ' =>
+      | codata hD' _ _ hA' hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
         exact nomatch hκ.symm.trans hκ'

@@ -75,15 +75,15 @@ grade of its destructor is used at run time, holds at the levels without variabl
 `CorecBranchesEqValid.atLevels` does for the meaning. -/
 theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
     {k : Nat} {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context k Γ} {decl : TypeDeclaration}
-    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ} {δs : Nat → GradeVector Γ.length}
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+      (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased → ∀ ρ,
       RunValidRen sig ι P ((hΓ.extend _).extend _)
         (((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
@@ -93,7 +93,7 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
         (((δs i).extendParams (Mode.oneOne.grade * r) ps'').extendParams Mode.oneOne.grade ps₁)
         (g.atLevels ρ)
         ((Term.branchResult decl.names B
-          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+          ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -102,7 +102,7 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
               (as.rename (Ren.weakenN ps''.length)).toSubst)))).atLevels ρ))
     (ρ : Fin k → Nat) :
     RunValidCorecBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
-      (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
+      (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)
       (as.atLevels ρ) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) δs := by
   intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr
@@ -218,10 +218,10 @@ theorem fundamentalIn : FundamentalIn := by
     exact fun ρ =>
       RunValidRen.erased (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.prop hctx) ρ) rfl
   case hasType_inst =>
-    refine fun h ⟨hq, hp⟩ hl hadm has has_ih => fun hw hι hP hU => ?_
+    refine fun h hqp hl hadm has has_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
       RunValidRen.erased
-        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h ⟨hq, hp⟩ hl hadm has) ρ) rfl
+        (soundnessIn.hasType hw.distinct hw.liftsInOrder hι (.inst h hqp hl hadm has) ρ) rfl
   case hasType_equality =>
     refine fun hA ht hu hA_ih ht_ih hu_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
@@ -241,19 +241,17 @@ theorem fundamentalIn : FundamentalIn := by
       RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
         (.equality (.prop (contextPresuppositions.hasType hA)) hA hB) ρ) rfl
   case hasType_coind =>
-    refine fun h ⟨hq, hp⟩ hl hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih
-      hAt_ih
+    refine fun h hqp hl hadm has hh hA hAl hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih
         ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih hgr_ih => fun hw hι hP hU => ?_
     exact fun ρ =>
       RunValidRen.proof (soundnessIn.hasType hw.distinct hw.liftsInOrder hι
-        (.equality (.inst h.hasDeclaredType ⟨hq, hp⟩ hl hadm has) ht₁ ht₂) ρ) rfl
+        (.equality (.inst h.hasDeclaredType hqp hl hadm has) ht₁ ht₂) ρ) rfl
   case hasType_ctor =>
-    intro sig k Γ ctx decl D T con qs ls ps as h hc ⟨hq, hp⟩ hl hadm has ts hts has_ih hts_ih ι P
-      sigM
+    intro sig k Γ ctx decl D T con qs ls ps as h hc hqp hl hadm has ts hts has_ih hts_ih ι P sigM
       hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasArgs hts).distinct
-      obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc ⟨hq, hp⟩ hU rfl
+      obtain ⟨γ', hγ, hus⟩ := Usage.inv_ctor hdT h hc hqp hU rfl
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl
@@ -262,19 +260,18 @@ theorem fundamentalIn : FundamentalIn := by
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       have hrun := hts_ih (hΓ := hΓ) hw hι hP hus ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hrun
-      have hc' := RunValidRen.ctor (P := P) hw.distinct hM hv hc hq hl' hp hadm
+      have hc' := RunValidRen.ctor (P := P) hw.distinct hM hv hc hqp hl' hadm
         has' (by rw [List.getFin_map]; exact hts')
         (by rw [List.getFin_map]; exact hrun)
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact RunValidRen.sub hγ hc'
   case hasType_recursor =>
-    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h ⟨hq, hp⟩ hl hadm has ht hh hC hCl
-      hCs
+    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hqp hl hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasType ht).distinct
       obtain ⟨γ', _, δs, gs, πs, hγ, -, htu, hRU, hbu, hg, hχ, hr, hprop, -⟩ :=
-        Usage.inv_recursor hdT h ⟨hq, hp⟩ hl hU rfl
+        Usage.inv_recursor hdT h hqp hl hU rfl
       obtain ⟨hM, hv⟩ := hι.hasDataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl
@@ -282,7 +279,7 @@ theorem fundamentalIn : FundamentalIn := by
       have ht' := soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ
       rw [Term.atLevels_inst] at ht'
       have hprem : ValidRecursorPremises sigM ι (ctx.atLevels ρ) decl qs (ls.map (Level.atLevels ρ))
-          ps hq hp (as.atLevels ρ)
+          ps hqp (as.atLevels ρ)
           (Cs.atLevels ρ)
           (us.atLevels ρ)
           (κ.atLevels ρ) :=
@@ -297,7 +294,7 @@ theorem fundamentalIn : FundamentalIn := by
           branches := fun i j T' con hi =>
             let ⟨_, hU⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hU⟩ }
       have hRs' : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
             ((ls.map (Level.atLevels ρ)).getFin hl')
             (as.atLevels ρ)
             (Lifting.ofMotives decl.names qs
@@ -311,7 +308,7 @@ theorem fundamentalIn : FundamentalIn := by
             (Constructor.ResultTypes.substLevels_ofMotives _ h)
       -- The factors of the results that the usage reads are those of the typing.
       have hRsπ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+          Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
             ((ls.map (Level.atLevels ρ)).getFin hl')
             (as.atLevels ρ)
             (Lifting.ofMotives decl.names qs
@@ -330,18 +327,18 @@ theorem fundamentalIn : FundamentalIn := by
       have hut' : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
           (Cs.atLevels ρ).get j = some ⟨0, C'⟩ →
           (us.atLevels ρ).get i =
-            some ⟨(con.params (.ofLists qs ps hq hp)).length,
-              (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
+            some ⟨(con.params hqp.inst).length,
+              (con.nestResultParams hqp.inst decl.names).length, u₁⟩ →
           (us.atLevels ρ).get i =
-            some ⟨(con.params (.ofLists qs ps hq hp)).length,
-              (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
-          ValidEqTermΓ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
+            some ⟨(con.params hqp.inst).length,
+              (con.nestResultParams hqp.inst decl.names).length, u₂⟩ →
+          ValidEqTermΓ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt hqp.inst
             ((ls.map (Level.atLevels ρ)).getFin hl')
             (as.atLevels ρ))).append
               ((Rs con).atLevels ρ)) u₁ u₂
             ((C'.atCtor T'.name qs (ls.map (Level.atLevels ρ)) ps
               (as.atLevels ρ) con.name
-              (con.params (.ofLists qs ps hq hp))).rename (Ren.weakenN _)) :=
+              (con.params hqp.inst)).rename (Ren.weakenN _)) :=
         fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -374,7 +371,7 @@ theorem fundamentalIn : FundamentalIn := by
             ((us.atLevels ρ).subst σ))
             ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)) :=
         fun j T' C' hj hC' σ hσ t₁ t₂ ht₀ =>
-          ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has'
+          ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hqp hl' hl' hadm ht'.1.1 has'
             hprem hprem.branches hRs' hRs' hut' hκ hσ hj hC' ht₀
       have htr : r ∉ Mode.oneOne.erased → RunValidRen sigM ι P hΓ (ctx.atLevels ρ) γ'
           (t.atLevels ρ) _ := fun hr' => by
@@ -383,7 +380,7 @@ theorem fundamentalIn : FundamentalIn := by
         simp only [Term.atLevels, Term.substLevels] at htr
         exact htr
       have husr : RunValidBranches sigM ι P hΓ (ctx.atLevels ρ) decl qs
-          (ls.map (Level.atLevels ρ)) ps hq hl' hp
+          (ls.map (Level.atLevels ρ)) ps hqp hl'
           (as.atLevels ρ)
           (Cs.atLevels ρ)
           (us.atLevels ρ) δs gs
@@ -402,7 +399,7 @@ theorem fundamentalIn : FundamentalIn := by
       -- The context of each branch is meaningful, and the types of its recursive results are
       -- terms of universes, by the typing of the branch.
       have hctx : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-          ValidCtx₀ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
+          ValidCtx₀ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt hqp.inst
             ((ls.map (Level.atLevels ρ)).getFin hl')
             (as.atLevels ρ))).append
               ((Rs con).atLevels ρ)) :=
@@ -412,7 +409,7 @@ theorem fundamentalIn : FundamentalIn := by
           obtain ⟨u, hu₁⟩ := hprem.branches i j T' con hi
           exact (hut' i j T' con C' u u hi hC' hu₁ hu₁).1.1
       have hsorts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) → ∀ θ,
-          EqSubst sigM ι ((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
+          EqSubst sigM ι ((ctx.atLevels ρ).append (con.fieldsAt hqp.inst
             ((ls.map (Level.atLevels ρ)).getFin hl')
             (as.atLevels ρ))) θ θ →
           Telescope.ValidSorts₀ sigM ι
@@ -444,11 +441,11 @@ theorem fundamentalIn : FundamentalIn := by
       simp only [Term.substLevels]
       exact RunValidRen.sub hγ hc
   case hasType_obs =>
-    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h ⟨hq, hp⟩ hl hadm hd has ht hbs
+    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hqp hl hadm hd has ht hbs
       has_ih ht_ih hbs_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hWf := presuppositions.hasType ht
-      obtain ⟨γ', δ, hγ, hut, hbus, hm⟩ := Usage.inv_obs hWf.distinct h ⟨hq, hp⟩ hd hU rfl
+      obtain ⟨γ', δ, hγ, hut, hbus, hm⟩ := Usage.inv_obs hWf.distinct h hqp hd hU rfl
       have hpr : _ ∉ Mode.oneOne.erased := (by decide : ∀ p : Grade,
         Mode.oneOne ·ᵐ p.mode = .oneOne → p ∉ Mode.oneOne.erased) _ hm
       obtain ⟨hM, hv⟩ := hι.hasCodataType h
@@ -465,7 +462,7 @@ theorem fundamentalIn : FundamentalIn := by
         hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs' hbr
-      have hc := RunValidRen.obs hw.distinct hM hv hq hl' hp hadm
+      have hc := RunValidRen.obs hw.distinct hM hv hqp hl' hadm
         has' hd
         hpr (hWf.destructor_mode h hadm hd) ht' htr (by rw [List.getFin_map]; exact hbs')
         (by rw [List.getFin_map]; exact hbr)
@@ -475,11 +472,11 @@ theorem fundamentalIn : FundamentalIn := by
         Term.substLevels, ← Args.terms_substLevels]
       exact RunValidRen.sub hγ hc
   case hasType_corec =>
-    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h ⟨hq, hp⟩ hl hadm hpre has hh hS hss
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hqp hl hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.hasArgs hss).distinct
-      obtain ⟨γ', δ, δs, hγ, -, hssu, hgu, hδ, -⟩ := Usage.inv_corec hdT h ⟨hq, hp⟩ hh hS hU rfl
+      obtain ⟨γ', δ, δs, hγ, -, hssu, hgu, hδ, -⟩ := Usage.inv_corec hdT h hqp hh hS hU rfl
       obtain ⟨hM, hv⟩ := hι.hasCodataType h
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := ValidInstanceArgs.atLevels hl
@@ -487,17 +484,17 @@ theorem fundamentalIn : FundamentalIn := by
       have hss' := soundnessIn.hasArgs hw.distinct hw.liftsInOrder hι hss ρ
       have hssr := fun hr => hss_ih (hΓ := hΓ) hw hι hP
         ((Mode.erasesUncounted .oneOne).mode _ hr ▸ hssu) ρ
-      have hc := RunValidRen.corec (P := P) (γ := γ') hw.distinct hM hv hq hl' hp hadm
+      have hc := RunValidRen.corec (P := P) (γ := γ') hw.distinct hM hv hqp hl' hadm
         has' (fun he e he' => (hι e (hpre he e he')).1) hh
         (States.get_substLevels_of _ hS) hss' hssr
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hqp hl hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             soundnessIn.hasType hw.distinct hw.liftsInOrder hι
               (hgt i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg)) ρ)
-        (RunValidCorecBranches.atLevels hq hl hp
+        (RunValidCorecBranches.atLevels hqp hl
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr =>
             hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hw hι hP
               ((Mode.erasesUncounted .oneOne).mode _ hpr ▸

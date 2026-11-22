@@ -65,8 +65,8 @@ destructors, as the usage of `(corec)` premises them in the mode `11ᵐ`, in eve
 binds their scope through a renaming: the premise that the Lean of `(corec)` at run time reads. -/
 def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality)
-    (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (ls : List (Level 0)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : DestructorBranches 0 Γ)
     (δs : Nat → GradeVector Γ.length) : Prop :=
   ∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps'') (p q ς : Grade)
@@ -74,7 +74,7 @@ def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) 
     (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
     (g : Term 0 ((Γ.extend ps''.length).extend ps₁.length)),
     decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-    (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+    (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
     gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased →
     RunValidRen sig ι P ((hΓ.extend _).extend _)
       ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
@@ -82,7 +82,7 @@ def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) 
           ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
       (((δs i).extendParams (Mode.oneOne.grade * r) ps'').extendParams Mode.oneOne.grade ps₁) g
       (Term.branchResult decl.names B
-        ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+        ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
         (ψ.constant.getD .unrestrictedUnrestricted)
         ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
         ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -102,26 +102,26 @@ built. -/
 theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {hΓ : Γ.FirstOrder}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst) {Γ : Scope} {hΓ : Γ.FirstOrder}
     {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
-      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      ((decl.params hqp.inst).substLevels (ls.getFin hl)))
     (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
       (i : Nat) (D' : Name),
       decl.codataTypes[j]? = some T' ∧
-      (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+      (T'.body hqp.inst).recursionAt decl.names i = some D') → sig.HasPrelude)
     {r : Grade} {Ss : States 0 Γ} {gs : DestructorBranches 0 Γ} {δ : GradeVector Γ.length}
     {δs : Nat → GradeVector Γ.length}
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
-    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hqp hl as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hqp hl as r Ss gs δs)
     (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
+      (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i)
     {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat} (hσ : EqSubst sig ι ctx σ σ)
     (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx δ σ V) {j : Nat}
     {T' : CodataType decl.sorts decl.grades decl.levels decl.scope} {ps'' : List Parameter}
@@ -150,32 +150,32 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let L := ls.getFin hl
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
-  let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
+  let I : Instance decl.sorts decl.grades := hqp.inst
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality with
   | prop =>
     -- A proposition, whose proofs are related to every address.
-    obtain ⟨_, -, hPr⟩ := hv.codataPropRel hd hdecl hq hl hp hadm hasσ hs
+    obtain ⟨_, -, hPr⟩ := hv.codataPropRel hd hdecl hqp hl hadm hasσ hs
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hPr T' hT').1⟩⟩
   | type =>
     -- The relations of run time of the instances of the block.
-    obtain ⟨Sr, hU⟩ := hv.codataRunUnivRel hd hdecl hq hl hp hadm hasσ hs P
-    obtain ⟨n, S, hnS, hS, -⟩ := HasRun.codata hd (D := T'.name) ⟨hdecl, hT', rfl⟩ hq hl hp
+    obtain ⟨Sr, hU⟩ := hv.codataRunUnivRel hd hdecl hqp hl hadm hasσ hs P
+    obtain ⟨n, S, hnS, hS, -⟩ := HasRun.codata hd (D := T'.name) ⟨hdecl, hT', rfl⟩ hqp hl
       (.univ _ (levelRel_run_iff.2 (hU T' hT').1)) hs
     have hFR : ∀ T₁ ∈ decl.codataTypes, RunFieldRel sig ι P n (fun m _ => levelRel sig ι m)
         (.inst T₁.name qs ls ps (as.subst σ))
         ((CodataType.runBlockRel decl.codataTypes S T₁.name).computed sig ι) := fun T₁ hT₁ =>
-      .univ (.codata ⟨hdecl, hT₁, rfl⟩ hq hl hp rfl hs hnS S hS)
+      .univ (.codata ⟨hdecl, hT₁, rfl⟩ hqp hl rfl hs hnS S hS)
     have hmono : ∀ X Y : Name → RunRel, (∀ D' H₁ v b, X D' H₁ v b → Y D' H₁ v b) →
         ∀ T₁ ∈ decl.codataTypes, ∀ H₁ o b, S X T₁ H₁ o b → S Y T₁ H₁ o b :=
       fun X Y hXY T₁ hT₁ H₁ => RunDesRel.mono hd (List.prefix_refl H₁) (hS X T₁ hT₁) _ _
         (hS Y T₁ hT₁) (fun _ => Option.rel_map (fun D' H₂ _ _ => RunRel.computed_mono (hXY D' H₂)) _)
     have e : ((decl.sort I).atLevels ρ).level.closedValue = n :=
-      (decl.sort_atLevels_closedValue hq hl hp).trans hnS
+      (decl.sort_atLevels_closedValue hqp hl).trans hnS
     -- The grades of the destructors and the resumptions that the erasure of the closure reads.
-    obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h ⟨hq, hp⟩
-    have hrt := hd.resumedTypes h ⟨hq, hp⟩
+    obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h hqp
+    have hrt := hd.resumedTypes h hqp
     let ks : List Resumption := ((sig.resumedTypes D qs ps).getD []).map
       fun h => Resumption.ofArity (decide (r ∈ Mode.oneOne.erased)) (h.bind Ss.arity)
     let pss : List (List Parameter × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) :=
@@ -226,7 +226,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ς ps' Ξ Θ B ψ hpos
         exact ⟨i, g, hi, hg⟩
       refine RunDesRel.of_obs hd Lρ (T₂.body I) (rs := (T₂.body I).recursionAt decl.names)
-        (hv.destructorsAtClosedLevels hq hl hp hadm hasσ T₂ hT₁) (fun i hi => by rw [hi]; rfl)
+        (hv.destructorsAtClosedLevels hqp hl hadm hasσ T₂ hT₁) (fun i hi => by rw [hi]; rfl)
         (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) hSρ ?_ ?_
       · -- The observations by a destructor that is not recursive step to its branch, whose
         -- premise makes it a term of the result of the destructor.
@@ -235,10 +235,10 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hτ' := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
         have hb := ValidEqTerm₀.corecBranch hpos
           (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
-        have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
+        have hred₁ := Red.beta_corec (ι := ι) hd h₀ hqp hl hi hpos hg σ ts₁ ts₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
           (Ss := Ss) (r := r)
-        have hred₂ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ us₂
+        have hred₂ := Red.beta_corec (ι := ι) hd h₀ hqp hl hi hpos hg σ ts₁ us₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
           (Ss := Ss) (r := r)
         have hbn : B.blockName decl.names = none := by
@@ -271,7 +271,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hpss : (pss.drop i').headD ([], ResultOwnership.noArguments) =
             (ps₁.map fun p => ⟨r * p.usage, p.requirement⟩, ⟨ps', ψ, ς⟩) :=
           List.headD_drop (by
-            simp [pss, hd.destructorArguments h ⟨hq, hp⟩, hi, hS₁]
+            simp [pss, hd.destructorArguments h hqp, hi, hS₁]
             rw [hpos.arguments (hd.destructors_nodup h₀)]
             rfl)
         rw [hpss, Mode.grade_odot_of_not_erased p hpr, ResultOwnership.toArity_self] at hget
@@ -384,7 +384,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         have hclo : H₂[b]? =
             some (.corec m E₁ (Ps.rename g₁) (ps₁.map fun p => (r * p.usage).run) ϱs₁ bs₁) :=
           hH₂.getElem? hb
-        have hred := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
+        have hred := Red.beta_corec (ι := ι) hd h₀ hqp hl hi hpos hg σ ts₁ ts₂
           (D' := T₂.name) (qs' := qs) (ls' := ls) (ps'' := ps) (as' := as.subst σ) (as := as)
           (Ss := Ss) (r := r)
         have hrn := hpos.resultName decl.names (hd.destructors_nodup h₀)
@@ -466,9 +466,9 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
                   (h₁.levelEquiv hd
-                    (decl.blockInstance_atLevels_subst hq hl hp (as.subst σ) T₃.name)))
+                    (decl.blockInstance_atLevels_subst hqp hl (as.subst σ) T₃.name)))
     -- The corecursor is related to the closure.
-    exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
+    exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hqp hl rfl hs
       hnS S hS)), _, (Whnf.corec ..).computes, X, hcons,
       .inr ⟨j, T', ps'', S', ts, bs, _, m, g, E', hj, rfl, hS', hts, List.prefix_refl _, hbs, hg,
         ha, List.length_map .., fun _ => rfl, rfl⟩⟩⟩
@@ -482,16 +482,16 @@ in every environment that binds the scope through a renaming. -/
 theorem RunValidRen.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    (hadm : decl.constraint (.ofLists qs ps hq hp)) {Γ : Scope} {hΓ : Γ.FirstOrder}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst) {Γ : Scope} {hΓ : Γ.FirstOrder}
     {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
-      ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))
+      ((decl.params hqp.inst).substLevels (ls.getFin hl)))
     (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
       (i : Nat) (D' : Name),
       decl.codataTypes[j]? = some T' ∧
-      (T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i = some D') → sig.HasPrelude)
+      (T'.body hqp.inst).recursionAt decl.names i = some D') → sig.HasPrelude)
     {r : Grade} {Ss : States 0 Γ} {gs : DestructorBranches 0 Γ} {γ δ : GradeVector Γ.length}
     {δs : Nat → GradeVector Γ.length} {h' : Nat} {ps' : List Parameter} {S : Telescope 0 Γ ps'}
     {ss : Args 0 Γ ps'} (hh : decl.codataTypes[h']? = some T)
@@ -499,12 +499,12 @@ theorem RunValidRen.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name
     (hssr : r ∉ Mode.oneOne.erased → RunValidArgsRen sig ι P hΓ ctx γ ss S)
     (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
       ∃ (ps'' : List Parameter) (S' : Telescope 0 Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
-    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hq hl hp as r Ss gs)
-    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hq hl hp as r Ss gs δs)
+    (hgv : CorecBranchesValid sig ι ctx decl qs ls ps hqp hl as r Ss gs)
+    (hgr : RunValidCorecBranches sig ι P hΓ ctx decl qs ls ps hqp hl as r Ss gs δs)
     (hδ : ∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
       (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
+      (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) :
     RunValidRen sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ δ) (.corec r D qs ls ps as ss.terms Ss gs)
       (.inst D qs ls ps as) := by
   intro ϖ₀ σ H E V hσ hEV hE _ g E' hg
@@ -563,7 +563,7 @@ theorem RunValidRen.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name
     rw [Term.erase, hst]
     exact hev'
   · rw [Term.corec_subst]
-    exact RunsAs.corec hd h hv hq hl hp hadm has hpre hSs hgv hgr hδ hσ
+    exact RunsAs.corec hd h hv hqp hl hadm has hpre hSs hgv hgr hδ hσ
       ((hEV.mono hH').mono (List.prefix_append _ _))
       ((hEδ.mono hd hH').mono hd (List.prefix_append _ _)) hh hS (hss.2 σ σ hσ)
       (hbs.mono hd (List.prefix_append _ _)) hg (by simp)

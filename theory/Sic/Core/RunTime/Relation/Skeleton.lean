@@ -36,22 +36,22 @@ declaration, at the instance, within the depth of the number of the types of the
 theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    (hqp : decl.AsMany qs ps) →
     sig.skeleton D qs ps =
-      decl.skeleton (.ofLists qs ps hq hp) decl.names.length D
-  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+      decl.skeleton hqp.inst decl.names.length D
+  | [], _, _, _, _, h, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
     unfold Signature.skeleton
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.skeleton D qs ps (.typeDeclaration decl) =
-          some (decl.skeleton (.ofLists qs ps hq hp) decl.names.length D) := by
+          some (decl.skeleton hqp.inst decl.names.length D) := by
         simp only [Entry.skeleton, Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT),
-          show decl.AsMany qs ps from ⟨hq, hp⟩, ↓reduceDIte, ← hD,
+          hqp, ↓reduceDIte, ← hD,
           List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs, Option.getD_some]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.skeleton_of_not_mem hDe]; rfl)]
-      exact hd.skeleton ⟨he', hT, hD⟩ hq hp
+      exact hd.skeleton ⟨he', hT, hD⟩ hqp
 
 /-! ## Unfolding -/
 

@@ -329,8 +329,7 @@ theorem Term.Lifts.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Variables
       · cases Option.some.inj (h₁.symm.trans hD)
         exact ⟨_, _, .block h₂, hb.motive.subst₀ (Subst₀.LevelEquiv.single he),
           ⟨hb.level, rfl, hb.ownership⟩⟩
-  | _, _, _, _, _, _, _, _, _, _, _, .inst (ps := ps) (ms := ms₁) h hD hn ⟨hq, hp⟩ hl has hS hL hπ,
-    hρ,
+  | _, _, _, _, _, _, _, _, _, _, _, .inst (ps := ps) (ms := ms₁) h hD hn hqp hl has hS hL hπ, hρ,
       hρ₁, he,
       hA => by
     cases hA with
@@ -341,7 +340,7 @@ theorem Term.Lifts.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Variables
         rw [Lifting.Variables.grades, Lifting.Variables.grades, hms.grades]
       rw [hg] at hπ
       rw [hg]
-      exact ⟨_, _, .inst h hD hn ⟨hq, hp⟩ hl₂ has₂ hS hL (hπ.inst_congr _ _ _),
+      exact ⟨_, _, .inst h hD hn hqp hl₂ has₂ hS hL (hπ.inst_congr _ _ _),
         .inst _ _ _ (hls.append hms.levels) (.snoc has' he),
         ⟨Level.joins_equiv hms.levels (Level.subst_equiv (hls.getFin hl hl₂) _), rfl, rfl⟩⟩
 
@@ -400,7 +399,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
       · exact ⟨_, .block h₂, (hφ D).subst₀ (Subst₀.LevelEquiv.single ht)⟩
   | Γ, _, ρ₂, _, φ₂, n, _, _, t₁, t₂, _,
       .inst (decl := decl) (T := T) (D := D) (qs := qs) (ls := ls₁) (ms := ms₁) (ps := ps)
-        (as := as₁) (ns := ns) (gs := gs₁) h hn ⟨hq, hp⟩ hl has hS hL hgl hgs hgt,
+        (as := as₁) (ns := ns) (gs := gs₁) h hn hqp hl has hS hL hgl hgs hgt,
       hρ, hρ₁, hφ, hA, ht => by
     cases hA with
     | @inst _ _ _ _ _ ls₂ _ _ as₂ hls hase =>
@@ -416,7 +415,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
         (fun i b => ∀ d, ns[i]? = some d → ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
           (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
           (ψ : ResultOwnership Grade ps₁.length)
-          (hd : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ)
+          (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
           (g : Term k (Γ.extend ps₁.length)), b = ⟨0, 0, ps₁.length, g⟩ →
           Term.NestedResult sig v (ρ₂.liftN ps₁.length)
             (fun E => (φ₂ E).rename (Ren.lift (Ren.weakenN ps₁.length)))
@@ -454,7 +453,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
                         (hd.obsSubst (t₂.observation D qs ls₂ ps as₂) as₂.toSubst)))
                     (t₂.observation D qs ls₂ ps as₂ d ps₁') g)
               hd (fun g hg' => by cases hg'; exact hres) hd₂)
-      refine ⟨_, .inst h hn ⟨hq, hp⟩ hl₂ has₂ hS hL (hgse.length_eq.symm.trans hgl)
+      refine ⟨_, .inst h hn hqp hl₂ has₂ hS hL (hgse.length_eq.symm.trans hgl)
           (fun i d hnd => ?_)
           (fun i d p q ς ps₁ Ξ Θ B ψ g hnd hd hg => hQ i _ hg d hnd p q ς ps₁ Ξ Θ B ψ hd g rfl),
         .corec _ _ _ _ (hls.append hms.levels) (.snoc has' ht) .nil (States.LevelEquiv.refl _) hgse⟩

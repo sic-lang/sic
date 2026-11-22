@@ -252,7 +252,6 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
       exact ⟨_, .delta hd hq hl' hp,
         (Term.substLevels_levelEquiv (hls.getFin hl hl') _).rename _⟩
   | iota hdecl hi hD hc hqp hl hu hrs hv =>
-    obtain ⟨hq, hp⟩ := hqp
     cases h with
     | recursor _ _ _ _ _ _ s hls has ht hκ hCs hus =>
       cases ht with
@@ -267,14 +266,13 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
           hrs ((Constructor.fieldsAt_levelEquiv _ _ (hls.getFin hl hl₂) has).typesAt htse)
           htse.terms
         obtain ⟨v', hv', hvv⟩ := huu.instantiateTerms₂ htse.terms hrse.terms hv
-        exact ⟨v', .iota hdecl hi hD hc ⟨hq, hp⟩ hl₂ hu' hrs₂ hv', hvv⟩
+        exact ⟨v', .iota hdecl hi hD hc hqp hl₂ hu' hrs₂ hv', hvv⟩
   | recursor _ ih =>
     cases h with
     | recursor _ _ _ _ _ _ _ hl has ht hκ hCs hus =>
       obtain ⟨u', hr', hu⟩ := ih ht
       exact ⟨_, .recursor hr', .recursor _ _ _ _ _ _ _ hl has hu hκ hCs hus⟩
   | beta hdecl hi hD hqp hl hg hv =>
-    obtain ⟨hq, hp⟩ := hqp
     cases h with
     | obs _ _ _ _ _ _ ht hbs =>
       cases ht with
@@ -282,7 +280,7 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
         obtain ⟨g', hg', hgg⟩ := hgs.get hg
         obtain ⟨v', hv', hvv⟩ := hgg.instantiateTerms₂ hss hbs hv
         have hl' := hls.length_eq.symm.trans hl
-        exact ⟨_, .beta hdecl hi hD ⟨hq, hp⟩ hl' hg' hv',
+        exact ⟨_, .beta hdecl hi hD hqp hl' hg' hv',
           Term.LevelEquiv.observed _ _ _ _ _ _ _ hls has hSs hgs
             (Level.subst_equiv (hls.getFin hl hl') _) hvv⟩
   | obs _ ih =>
@@ -401,7 +399,7 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .prop (k := k) _ hk, ⟨b₁, b₂, h₁, h₂, hb⟩, ht, hu =>
     have hL := ih k (hk ▸ Nat.lt_succ_self k)
     ⟨b₁, b₂, hL.prop h₁ ht, hL.prop h₂ hu, hb⟩
-  | .data h _ _ _ _ _ _ S hS, hR, ht, hu => by
+  | .data h _ _ _ _ _ S hS, hR, ht, hu => by
     have hmono : DataType.BlockMono _ S :=
       DataType.BlockMono.of_telRel hd (Nat.forall_lt (levelRel_isPer hd) _)
         (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩) (inst := fun D => .inst D _ _ _ _) hS
@@ -426,7 +424,7 @@ theorem UnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
               obtain ⟨w₂, hc₂', hw₂⟩ := Computes.levelEquiv hd.interpret hc₂ hu
               exact ⟨v₂, w₂, hc₁', hc₂', hX _ _ hv₂ hw₂⟩) _)
             hcS hts hus⟩
-  | .codata _ _ _ _ _ _ _ _ hS, hR, ht, hu => by
+  | .codata _ _ _ _ _ _ _ hS, hR, ht, hu => by
     obtain ⟨X, hX, hx⟩ := hR
     refine ⟨fun D a b => ∃ a₀ b₀, X D a₀ b₀ ∧ Term.LevelEquiv a₀ a ∧ Term.LevelEquiv b₀ b,
       fun T hT a b ⟨a₀, b₀, hab, ha, hb⟩ => ?_, _, _, hx, ht, hu⟩
@@ -510,11 +508,11 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     | direct hr =>
       cases h' with
       | direct _ _ => exact hr _ _ _ _ h ht hu
-  | .codata hD _ _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
+  | .codata hD _ _ hA _ hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | inst hνs =>
       cases h' with
-      | codata hD' _ _ _ hA' _ _ _ _ _ hS' =>
+      | codata hD' _ _ hA' _ _ _ _ _ hS' =>
         subst hA
         obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         obtain ⟨v₁, w₁, hc₁, hc₂, o₁, o₂, ⟨_, _, _, _, _, _, _, _, _, rfl, rfl⟩,
@@ -533,19 +531,19 @@ theorem NestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
                 (.corec _ _ _ _ hl₁ has₁ ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
             · exact .obs _ _ _ d hl₂ (has₂.rename _) (Term.LevelEquiv.rename _
                 (.corec _ _ _ _ hl₂ has₂ ‹_› ‹_› ‹_›)) (Terms.LevelEquiv.refl _)
-      | codataProp hD' _ _ _ hA' hκ' =>
+      | codataProp hD' _ _ hA' hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp hD _ _ _ hA hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
+  | .codataProp hD _ _ hA hκ _ _ _ hS, _, _, _, h', hR, h, ht, hu => by
     cases hR with
     | inst hνs =>
       cases h' with
-      | codata hD' _ _ _ hA' _ hκ' =>
+      | codata hD' _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique hD hD' hA'
         exact nomatch hκ.symm.trans hκ'
-      | codataProp hD' _ _ _ hA' _ _ _ _ hS' =>
+      | codataProp hD' _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique hD hD' hA'
         obtain ⟨o, ho⟩ := h
@@ -692,24 +690,24 @@ theorem UnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
   | .prop hl hk, h => by
     obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
     exact .prop hl' hk
-  | .data hD hq hl hp hv hs hn S hS, h => by
+  | .data hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .data hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv hd ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
           (fun _ => Nest.map_rel₃
             (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
             (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
-  | .codata hD hq hl hp hv hs hn S hS, h => by
+  | .codata hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .codata hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .codata hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT => DesRel.levelEquiv hd ih (hS X _ hT) (Destructors.substLevels_levelEquiv hls' _)
           has.toSubst
 
@@ -718,24 +716,24 @@ theorem PropRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     (hd : sig.Distinct) (ih : ∀ m, m < n → (levelRel sig ι m).LevelInvariant) {v v' : Term 0 []} {b : Prop} :
     PropRel sig ι n (fun m _ => levelRel sig ι m) v b → Term.LevelEquiv v v' →
       PropRel sig ι n (fun m _ => levelRel sig ι m) v' b
-  | .data hD hq hl hp hv hs hn S hS, h => by
+  | .data hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .data hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm => TelRel.levelEquiv hd ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
           (fun _ => Nest.map_rel₃
             (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
             (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
-  | .codata hD hq hl hp hv hs hn S hS, h => by
+  | .codata hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .codata hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .codata hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT => DesRel.levelEquiv hd ih (hS X _ hT) (Destructors.substLevels_levelEquiv hls' _)
           has.toSubst
   -- The truth `R.computed sig ι t u` of the case is a pattern of its index only once `R` is named:
@@ -795,7 +793,7 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
     | direct hr =>
       obtain ⟨hTT', rfl⟩ := hr
       exact .direct hs ((hTT'.symm.trans hT).trans h)
-  | .codata hD hq hl hp hA hs hκ hn hrec S hS, h, hτ => by
+  | .codata hD hqp hl hA hs hκ hn hrec S hS, h, hτ => by
     subst hA
     cases hτ with
     | inst hνs =>
@@ -803,11 +801,11 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       | inst _ _ _ hls has =>
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
-        exact .codata hD hq hl' hp rfl hs hκ
+        exact .codata hD hqp hl' rfl hs hκ
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (NestDesRel.levelEquiv hd ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
-  | .codataProp hD hq hl hp hA hκ hn hrec S hS, h, hτ => by
+  | .codataProp hD hqp hl hA hκ hn hrec S hS, h, hτ => by
     subst hA
     cases hτ with
     | inst hνs =>
@@ -815,7 +813,7 @@ theorem NestRel.levelEquiv {sig : Signature} {ι : Interpretation} {n : Nat}
       | inst _ _ _ hls has =>
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
-        exact .codataProp hD hq hl' hp rfl hκ
+        exact .codataProp hD hqp hl' rfl hκ
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (NestDesRel.levelEquiv hd ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
@@ -907,25 +905,25 @@ theorem RunUnivRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
   | .prop hl hk, h => by
     obtain ⟨_, rfl, hl'⟩ := h.sort_value hl
     exact .prop hl' hk
-  | .data hD hq hl hp hv hs hn S hS, h => by
+  | .data hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .data hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .data hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT c hcm =>
           RunTelRel.levelEquiv hd ih (hS X _ hT c hcm) (c.fieldsAt_levelEquiv _ hls' has)
             (fun _ => Nest.map_rel₃
               (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
               (fun D' => by exact ⟨.inst D' _ _ hls has, rfl⟩) _)
-  | .codata hD hq hl hp hv hs hn S hS, h => by
+  | .codata hD hqp hl hv hs hn S hS, h => by
     subst hv
     cases h with
     | inst _ _ _ hls has =>
       have hl' := hls.length_eq.symm.trans hl
       have hls' := hls.getFin hl hl'
-      exact .codata hD hq hl' hp rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
+      exact .codata hD hqp hl' rfl hs ((Level.closedValue_subst_equiv hls' _).symm.trans hn) S
         fun X _ hT => RunDesRel.levelEquiv hd ih (hS X _ hT)
           (Destructors.substLevels_levelEquiv hls' _) has.toSubst
 
@@ -970,7 +968,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
     | direct hr =>
       obtain ⟨hTT', rfl⟩ := hr
       exact .direct ((hTT'.symm.trans hT).trans h)
-  | .codata hD hq hl hp hA hκ hn hrec S hS, h, hτ => by
+  | .codata hD hqp hl hA hκ hn hrec S hS, h, hτ => by
     subst hA
     cases hτ with
     | inst hνs =>
@@ -978,11 +976,11 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
       | inst _ _ _ hls has =>
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
-        exact .codata hD hq hl' hp rfl hκ
+        exact .codata hD hqp hl' rfl hκ
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec S
           (RunNestDesRel.levelEquiv hd ih hS (Destructors.substLevels_levelEquiv hls' _) has.toSubst
             (Nesting.ofArgs_rel₃ hνs))
-  | .codataProp hD hq hl hp hA hadm hκ hn hrec, h, hτ => by
+  | .codataProp hD hqp hl hA hadm hκ hn hrec, h, hτ => by
     subst hA
     cases hτ with
     | inst hνs =>
@@ -990,7 +988,7 @@ theorem RunNestRel.levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
       | inst _ _ _ hls has =>
         have hl' := hls.length_eq.symm.trans hl
         have hls' := hls.getFin hl hl'
-        exact .codataProp hD hq hl' hp rfl hadm hκ
+        exact .codataProp hD hqp hl' rfl hadm hκ
           ((Level.closedValue_subst_equiv hls' _) ▸ hn) hrec
 
 /-- Destructors whose levels change for equal ones, at a closed substitution whose levels change for

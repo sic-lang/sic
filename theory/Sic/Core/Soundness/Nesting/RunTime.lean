@@ -214,24 +214,24 @@ level `n` lives at a level that `n` bounds. -/
 theorem RunFieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {R : RunRel}
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
-    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n := by
+    (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n := by
   have hu : ∀ m R, RunUnivRel sig ι P m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R →
-      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
+      (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = m :=
     fun m R hu => by
       cases hu with
-      | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-      | codata h' _ _ _ hv' _ hn' =>
+      | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+      | codata h' _ _ hv' _ hn' =>
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
-      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
+      (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = m :=
     fun m b hb => by
       cases hb with
-      | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-      | codata h' _ _ _ hv' _ hn' =>
+      | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+      | codata h' _ _ hv' _ hn' =>
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact hn'
   cases hR with
@@ -260,25 +260,25 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
   plain_head := RunNestDesReads.of_plain_head hd
   nested_head := RunNestDesReads.of_nested_head hd
   inst := by
-    intro _ decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec hadm hr
+    intro _ decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hqp hl hrec hadm hr
     obtain ⟨RE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hR =>
       cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
-      have hn := RunFieldRel.codata_inv hd hT hq hl hp hR
-      refine ⟨(), Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hq hl hp)) hn,
+      have hn := RunFieldRel.codata_inv hd hT hqp hl hR
+      refine ⟨(), Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hqp hl)) hn,
         fun hdr => ?_⟩
       obtain ⟨S, hS₁, hS₂⟩ := hdr D fun d hdm =>
         hT.2.2 ▸ Signature.destructorCase_of_mem hT.1 hT.2.1 hdm
       have hS₁' := RunNestDesRel.substLevels_of_atLevels hd hS₁
       have hS₂' := RunNestDesRel.substLevels_of_atLevels hd hS₂
-      cases hκ : (decl.sort (.ofLists qs ps hq hp)).quality with
+      cases hκ : (decl.sort hqp.inst).quality with
       | type =>
-        exact ⟨_, .codata hT hq hl hp rfl hκ hn hrec S hS₁',
-          .codata hT hq hl hp rfl hκ hn hrec S hS₂'⟩
+        exact ⟨_, .codata hT hqp hl rfl hκ hn hrec S hS₁',
+          .codata hT hqp hl rfl hκ hn hrec S hS₂'⟩
       | prop =>
-        exact ⟨_, .codataProp hT hq hl hp rfl hadm hκ hn hrec,
-          .codataProp hT hq hl hp rfl hadm hκ hn hrec⟩
+        exact ⟨_, .codataProp hT hqp hl rfl hadm hκ hn hrec,
+          .codataProp hT hqp hl rfl hadm hκ hn hrec⟩
 
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
 variables with a position, are read by the graph of the nestings of run time at their nestings,

@@ -139,14 +139,14 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
 the level variables, are meaningful at the levels without variables `ρ`. -/
 theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
+    {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+      (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
       ∃ g₁ g₂, gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ ∧
         gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩)
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
@@ -154,7 +154,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g₁ g₂ : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+      (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
       gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
       ValidEqTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
@@ -162,7 +162,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
           ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
         g₁ g₂
         (Term.branchResult decl.names B
-          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+          ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -171,7 +171,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
     CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
-      (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
+      (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)
       (as.atLevels ρ) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs₁.substLevels fun i => .ofNat (ρ i)) (gs₂.substLevels fun i => .ofNat (ρ i)) := by
   refine ⟨fun i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos => ?_,
@@ -201,27 +201,27 @@ variables, are meaningful at the levels without variables `ρ`: those of `(corec
 branches. -/
 theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level k)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {as : InstanceArgs k Γ decl.scope}
+    {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
       ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
         (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
-      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+      (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
       ∃ g, gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
       (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
       (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
       decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
-      (hd : (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+      (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
       ValidTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
         (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
           ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst))) g
         (Term.branchResult decl.names B
-          ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) r
+          ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
@@ -230,10 +230,10 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
     CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
-      (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
+      (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)
       (as.atLevels ρ) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) :=
-  CorecBranchesEqValid.atLevels hq hl hp
+  CorecBranchesEqValid.atLevels hqp hl
     (fun i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos =>
       have ⟨g, hg⟩ := hgs i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos
       ⟨g, g, hg, hg⟩)
@@ -342,11 +342,11 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ =>
       ValidEqTermΓ.sort (q := .prop) (hctx_ih hdis hord hι ρ) (Level.equivalence.refl _)
   case hasType_inst =>
-    intro sig k Γ ctx decl D ζ qs ls ps as h ⟨hq, hp⟩ hl hadm has has_ih ι sigM hdis hord hι
+    intro sig k Γ ctx decl D ζ qs ls ps as h hqp hl hadm has has_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := (has_ih hdis hord hι).atLevels hl ρ
-      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp hadm has'
+      have hc := ValidEqTermΓ.inst hι h hqp hl' hl' hadm has'
         fun _ => Level.equivalence.refl _
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
@@ -380,7 +380,7 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.atLevels, Term.substLevels_rename] at ht' hu'
       exact ValidTermΓ.propExt (hA_ih hdis hord hι ρ) (hB_ih hdis hord hι ρ) ht' hu'
   case hasType_coind =>
-    intro sig k Γ ctx decl D T qs ls ps as l' t₁ t₂ t As gs h' A κs h ⟨hq, hp⟩ hl hadm has hh hA hAl
+    intro sig k Γ ctx decl D T qs ls ps as l' t₁ t₂ t As gs h' A κs h hqp hl hadm has hh hA hAl
       hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih
       hgr_ih ι sigM hdis hord hι
     exact fun ρ => by
@@ -389,12 +389,12 @@ theorem soundnessIn : SoundnessIn := by
       have has' := (has_ih hdis hord hι).atLevels hl ρ
       let p₀ : Parameter := ⟨Grade.one, Grade.one⟩
       have hsort := congrArg Universe.level
-        (Universe.substLevels_substLevels_getFin L' (decl.sort (.ofLists qs ps hq hp)) ls hl)
+        (Universe.substLevels_substLevels_getFin L' (decl.sort hqp.inst) ls hl)
       simp only [Term.atLevels]
-      rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
+      rw [Term.substLevels, show ((decl.sort hqp.inst).substLevels
         (ls.getFin hl)).level.subst L' = _ from hsort]
-      refine ValidTermΓ.coind (l' := l'.atLevels ρ) (κs := fun i => (κs i).atLevels ρ) hι h hq hl'
-        hp hadm has' hh (Terms.get_substLevels_of _ hA)
+      refine ValidTermΓ.coind (l' := l'.atLevels ρ) (κs := fun i => (κs i).atLevels ρ) hι h hqp hl'
+        hadm has' hh (Terms.get_substLevels_of _ hA)
         ((Terms.length_substLevels _ As).trans hAl) ?_ (ht₁_ih hdis hord hι ρ)
         (ht₂_ih hdis hord hι ρ) ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro j T' A' hj hA'
@@ -487,20 +487,19 @@ theorem soundnessIn : SoundnessIn := by
           InstanceArgs.substLevels_rename] at ih
         exact ih
   case hasType_ctor =>
-    intro sig k Γ ctx decl D T con qs ls ps as h hc ⟨hq, hp⟩ hl hadm has ts hts has_ih hts_ih ι sigM
+    intro sig k Γ ctx decl D T con qs ls ps as h hc hqp hl hadm has ts hts has_ih hts_ih ι sigM
       hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp hadm has'
+      have hc' := ValidEqTermΓ.ctor hι h hc hqp hl' hl' hadm has'
         (fun _ => Level.equivalence.refl _) (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
   case hasType_recursor =>
-    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h ⟨hq, hp⟩ hl hadm has ht hh hC hCl
-      hCs
+    intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hqp hl hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
@@ -511,7 +510,7 @@ theorem soundnessIn : SoundnessIn := by
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι hord h hq hl' hl' hp hadm has'
+      exact ValidEqTermΓ.recursor hι hord h hqp hl' hl' hadm has'
         ht' hh
         (Motives.get_substLevels_of _ hC)
         { motives := fun j T' hj =>
@@ -544,7 +543,7 @@ theorem soundnessIn : SoundnessIn := by
           exact hb)
         hκ
   case hasType_obs =>
-    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h ⟨hq, hp⟩ hl hadm hd has ht hbs
+    intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hqp hl hadm hd has ht hbs
       has_ih ht_ih hbs_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
@@ -556,7 +555,7 @@ theorem soundnessIn : SoundnessIn := by
         hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hadm hd has'
+      have hc := ValidEqTermΓ.obs hι h hqp hl' hl' hadm hd has'
         (fun _ => Level.equivalence.refl _) ht' (by rw [List.getFin_map]; exact hbs')
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels_instantiate,
@@ -564,19 +563,19 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
   case hasType_corec =>
-    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h ⟨hq, hp⟩ hl hadm hpre has hh hS hss
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hqp hl hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hss' := hss_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidTermΓ.corec hι h hq hl' hp hadm hpre has' hh
+      exact ValidTermΓ.corec hι h hqp hl' hadm hpre has' hh
         (States.get_substLevels_of _ hS) hss'
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hqp hl hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg =>
             hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hdis hord hι) ρ)
   case hasType_conv =>
@@ -627,14 +626,13 @@ theorem soundnessIn : SoundnessIn := by
     exact fun hctx hl hctx_ih => fun hdis hord hι => fun ρ =>
       ValidEqTermΓ.sort (hctx_ih hdis hord hι ρ) (Level.subst_equal _ hl)
   case eqTerm_inst =>
-    intro sig k Γ ctx decl D ζ qs ls₁ ls₂ ps as₁ as₂ h ⟨hq, hp⟩ hl₁ hl₂ hadm has hls has_ih ι sigM
-      hdis
+    intro sig k Γ ctx decl D ζ qs ls₁ ls₂ ps as₁ as₂ h hqp hl₁ hl₂ hadm has hls has_ih ι sigM hdis
       hord hι
     exact fun ρ => by
       have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
       have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
       have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
-      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp hadm has' (by
+      have hc := ValidEqTermΓ.inst hι h hqp hl₁' hl₂' hadm has' (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
       rw [List.getFin_map] at hc
@@ -670,8 +668,7 @@ theorem soundnessIn : SoundnessIn := by
         (fun x => by cases x <;> rfl)] at hCC' ⊢
       exact ValidEqTermΓ.transpSame hu' hCC'
   case eqTerm_ctor =>
-    intro sig k Γ ctx decl D T con qs ls₁ ls₂ ps as₁ as₂ h hc ⟨hq, hp⟩ hl₁ hl₂ hadm has hls ts us
-      hts
+    intro sig k Γ ctx decl D T con qs ls₁ ls₂ ps as₁ as₂ h hc hqp hl₁ hl₂ hadm has hls ts us hts
       has_ih hts_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
@@ -679,7 +676,7 @@ theorem soundnessIn : SoundnessIn := by
       have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp hadm has'
+      have hc' := ValidEqTermΓ.ctor hι h hc hqp hl₁' hl₂' hadm has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -687,8 +684,7 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
   case eqTerm_recursor =>
-    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r ς χ t₁ t₂ Cs₁ Cs₂ us₁ us₂ κ h' C₁ h ⟨hq, hp⟩
-      hl₁
+    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r ς χ t₁ t₂ Cs₁ Cs₂ us₁ us₂ κ h' C₁ h hqp hl₁
       hl₂ hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih ι sigM hdis hord hι
     exact fun ρ => by
@@ -701,7 +697,7 @@ theorem soundnessIn : SoundnessIn := by
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι hord h hq hl₁' hl₂' hp hadm
+      exact ValidEqTermΓ.recursor hι hord h hqp hl₁' hl₂' hadm
         has' ht' hh
         (Motives.get_substLevels_of _ hC)
         { motives := fun j T' hj =>
@@ -734,8 +730,8 @@ theorem soundnessIn : SoundnessIn := by
           exact hb)
         hκ
   case eqTerm_obs =>
-    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h ⟨hq, hp⟩
-      hl₁ hl₂ hadm hd has hls ht hbs has_ih ht_ih hbs_ih ι sigM hdis hord hι
+    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hqp hl₁ hl₂
+      hadm hd has hls ht hbs has_ih ht_ih hbs_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
       have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
@@ -747,7 +743,7 @@ theorem soundnessIn : SoundnessIn := by
         hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hadm hd has'
+      have hc := ValidEqTermΓ.obs hι h hqp hl₁' hl₂' hadm hd has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -758,8 +754,8 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels, ← Args.terms_substLevels]
       exact hc
   case eqTerm_corec =>
-    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h
-      ⟨hq, hp⟩ hl₁
+    intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h hqp
+      hl₁
       hl₂ hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt has_ih
       hss_ih hSt_ih hSe_ih hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
@@ -768,7 +764,7 @@ theorem soundnessIn : SoundnessIn := by
       have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have hss' := hss_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm hpre has'
+      exact ValidEqTermΓ.corec hι h hqp hl₁' hl₂' hadm hpre has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -776,12 +772,11 @@ theorem soundnessIn : SoundnessIn := by
         (fun j T' hj =>
           have ⟨ps'', S₁', S₂', hS₁', hS₂'⟩ := hSs j T' hj
           ⟨ps'', _, _, States.get_substLevels_of _ hS₁', States.get_substLevels_of _ hS₂'⟩)
-        (CorecBranchesEqValid.atLevels hq hl₁ hp hgs
+        (CorecBranchesEqValid.atLevels hqp hl₁ hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ =>
             hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g₁ g₂ hi hSj hpos hg₁ hg₂ hdis hord hι) ρ)
   case eqTerm_iota =>
-    intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc ⟨hq, hp⟩ hl hadm u has ts
-      hts
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hqp hl hadm u has ts hts
       hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih ι sigM hdis hord
       hι
     exact fun ρ => by
@@ -794,7 +789,7 @@ theorem soundnessIn : SoundnessIn := by
         (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate,
         Term.substLevels_instantiate, Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.iota hι hord h hc hq hl' hp hadm has'
+      exact ValidEqTermΓ.iota hι hord h hc hqp hl' hadm has'
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
         { motives := fun j T' hj =>
             let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
@@ -821,8 +816,7 @@ theorem soundnessIn : SoundnessIn := by
         (Terms.ResultTerms.ofTypeDeclarations (fun _ he => (hι _ he).1)
           (Constructor.ResultTerms.substLevels_recursorAt _ hrs))
   case eqTerm_etaCtor =>
-    intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc ⟨hq, hp⟩ hl hadm hr has
-      ht
+    intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hqp hl hadm hr has ht
       he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih ι sigM hdis
       hord hι
     exact fun ρ => by
@@ -843,11 +837,10 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
           (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hadm hr has' ht' he'
+      exact ValidEqTermΓ.etaCtor hι h hc hqp hl' hadm hr has' ht' he'
         hCv hi hu' hκ
   case eqTerm_beta =>
-    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h
-      ⟨hq, hp⟩
+    intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hqp
       hl hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
       hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
@@ -875,21 +868,20 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm hpre has'
+      have hc := ValidEqTermΓ.beta hι h hqp hl' hadm hpre has'
         hh (States.get_substLevels_of _ hS) hss' hi hd
             (DestructorBranches.get_substLevels_of _ hg)
         (by rw [List.getFin_map]; exact hbs')
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
           ⟨ps'', _, States.get_substLevels_of _ hS'⟩)
-        (CorecBranchesValid.atLevels hq hl hp hgs
+        (CorecBranchesValid.atLevels hqp hl hgs
           (fun i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hd hg =>
             hgt_ih i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hd hg hdis hord hι) ρ)
       rw [List.getFin_map] at hc
       exact hc
   case eqTerm_etaObs =>
-    intro sig k Γ ctx decl D T qs ls ps as t u h ⟨hq, hp⟩ hl hadm hr has ht hu hobs has_ih ht_ih
-      hu_ih
+    intro sig k Γ ctx decl D T qs ls ps as t u h hqp hl hadm hr has ht hu hobs has_ih ht_ih hu_ih
       hobs_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
@@ -897,7 +889,7 @@ theorem soundnessIn : SoundnessIn := by
       have ht' := ht_ih hdis hord hι ρ
       have hu' := hu_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels] at ht' hu'
-      refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm has' ht' hu'
+      refine ValidEqTermΓ.etaObs hι h hqp hl' hadm has' ht' hu'
         fun d p q ς ps' Ξ Θ B ψ hpos => ?_
       have hb := hobs_ih d p q ς ps' Ξ Θ B ψ hpos hdis hord hι ρ
       have hcl := fun {a} (x : Var Ξ a) =>

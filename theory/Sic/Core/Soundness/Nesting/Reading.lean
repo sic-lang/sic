@@ -677,14 +677,14 @@ structure Reading (sig : Signature) (ι : Interpretation) (α I : Type) where
   inst : ∀ {i : I} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as₁ as₂ as₁' as₂' : InstanceArgs 0 [] decl.scope}
-    {νs₁ νs₂ : List (Nest α)} (_ : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades),
-    (∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none) →
-    decl.constraint (.ofLists qs ps hq hp) →
+    {νs₁ νs₂ : List (Nest α)} (_ : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (hl : ls.length = decl.levels),
+    (∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none) →
+    decl.constraint hqp.inst →
     rd i .plain .plain (.inst D qs ls ps as₁) (.inst D qs ls ps as₂) →
-    ∃ j, ok j ((decl.sort (.ofLists qs ps hq hp)).atLevels fun x => (ls.getFin hl x).closedValue) ∧
+    ∃ j, ok j ((decl.sort hqp.inst).atLevels fun x => (ls.getFin hl x).closedValue) ∧
       (dr j (Nesting.ofArgs νs₁) (Nesting.ofArgs νs₂)
-          ((T.body (.ofLists qs ps hq hp)).atLevels fun x => (ls.getFin hl x).closedValue)
+          ((T.body hqp.inst).atLevels fun x => (ls.getFin hl x).closedValue)
           as₁'.toSubst as₂'.toSubst →
         rd i (.inst νs₁) (.inst νs₂) (.inst D qs ls ps as₁') (.inst D qs ls ps as₂'))
 
@@ -1174,7 +1174,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
     (sigT : Signature) → sig.ValidEntries ι sigT → ReadsInstances sig ι R.rd sigT
   | sigT, hent => fun hA decl fresh ρ _ β _ _ _ _ _ _ hposA hE hiso ih hpl s hr => by
     rename_i k Γ Δ ctx D qs ls ps as _ Γ' ν₁ ν₂ σ₁ σ₂ σ₁' σ₂'
-    obtain ⟨declF, ζ, hΔ, ⟨hq, hp⟩, hl, hD, hadm, has⟩ := hA.inst_inv
+    obtain ⟨declF, ζ, hΔ, hqp, hl, hD, hadm, has⟩ := hA.inst_inv
     subst hΔ
     have hsigT : WfSig sigT := presuppositions.wfCtx (contextPresuppositions.hasType hA)
     have hdT := hsigT.distinct
@@ -1253,7 +1253,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
         (νs₁ := (as.rename β).nest (fun _ => none) @ν₁)
         (νs₂ := (as.rename β).nest (fun _ => none) @ν₂)
         (as₁' := ((as.rename β).atLevels ρ).subst σ₁')
-        (as₂' := ((as.rename β).atLevels ρ).subst σ₂') hTm hq hl' hp (hTrec _) hadm hr
+        (as₂' := ((as.rename β).atLevels ρ).subst σ₂') hTm hqp hl' (hTrec _) hadm hr
       refine hfin ?_
       -- The values of the levels of the instance.
       let ρF : Fin declF.levels → Nat := fun i =>
@@ -1263,8 +1263,8 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
             (ls.getFin hl i).atLevels ρ :=
         fun i => congrFun (Level.getFin_map_subst _ ls hl) i
       have hctxEq : Context.LevelEquiv
-          (((declF.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).atLevels ρ)
-          ((declF.params (.ofLists qs ps hq hp)).atLevels ρF) := by
+          (((declF.params hqp.inst).substLevels (ls.getFin hl)).atLevels ρ)
+          ((declF.params hqp.inst).atLevels ρF) := by
         rw [Context.atLevels, Context.substLevels_substLevels]
         refine Context.substLevels_levelEquiv (fun i => ?_) _
         show (ls.getFin hl i).atLevels ρ ≈ _
@@ -1275,7 +1275,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
           (as.atLevels ρ).subst (fun x => σ (β x)) := fun σ => by
         rw [InstanceArgs.atLevels, InstanceArgs.substLevels_rename]
         exact InstanceArgs.subst_rename_of (fun _ => rfl) _
-      have hEF : EqSubst sig ι ((declF.params (.ofLists qs ps hq hp)).atLevels ρF)
+      have hEF : EqSubst sig ι ((declF.params hqp.inst).atLevels ρF)
           (fun x => (((as.rename β).atLevels ρ).subst σ₁).toSubst x)
           (fun x => (((as.rename β).atLevels ρ).subst σ₂).toSubst x) := by
         rw [eas, eas]

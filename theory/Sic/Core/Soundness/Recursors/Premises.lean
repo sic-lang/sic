@@ -27,7 +27,7 @@ grades of the fields, which the soundness takes at some grades, as `(rec)` state
 run-time relation at the grades `π̄` of `(rec▶)`; `hut` is stated at these types. -/
 structure ValidRecursorPremises (sig : Signature) (ι : Interpretation) {Γ : Scope}
     (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0))
-    (ps : List Grade) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
+    (ps : List Grade) (hqp : decl.AsMany qs ps)
     (as : InstanceArgs 0 Γ decl.scope) (Cs : Motives 0 Γ) (us : Branches 0 Γ) (κ : Universe 0) :
     Prop where
   /-- `hCs`: a motive for each type of the block. -/
@@ -39,7 +39,7 @@ structure ValidRecursorPremises (sig : Signature) (ι : Interpretation) {Γ : Sc
   /-- `hus`: a branch for each case of the block, over the fields and the recursive results of its
   constructor. -/
   branches : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-    ∃ u, us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-      (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u⟩
+    ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+      (con.nestResultParams hqp.inst decl.names).length, u⟩
 
 end Sic.Core

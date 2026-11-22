@@ -77,10 +77,10 @@ theorem RunNestRel.levelLe {sig : Signature} {ι : Interpretation} {P : Program}
       RunNestRel sig ι P n (fun k _ => levelRel sig ι k) τ A R
   | .plain hA hR => .plain hA (hR.levelLe hmn)
   | .direct hA => .direct hA
-  | .codata h hq hl hp hA hκ hn hrec S hS =>
-    .codata h hq hl hp hA hκ (Nat.le_trans hn hmn) hrec S (RunNestDesRel.levelLe hmn hS)
-  | .codataProp h hq hl hp hA hadm hκ hn hrec =>
-    .codataProp h hq hl hp hA hadm hκ (Nat.le_trans hn hmn) hrec
+  | .codata h hqp hl hA hκ hn hrec S hS =>
+    .codata h hqp hl hA hκ (Nat.le_trans hn hmn) hrec S (RunNestDesRel.levelLe hmn hS)
+  | .codataProp h hqp hl hA hadm hκ hn hrec =>
+    .codataProp h hqp hl hA hadm hκ (Nat.le_trans hn hmn) hrec
 termination_by structural h => h
 
 /-- Destructors that the graph of the nestings of run time reads at the level `m` are read at a
@@ -127,9 +127,8 @@ theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Pro
     (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts)
-    (hp : ps.length = decl.grades)
-    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (hκ : (decl.sort hqp.inst).quality = .type)
     {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
     ∃ m, m ≤ n ∧ ∃ R₀,
@@ -140,14 +139,14 @@ theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Pro
   | univBelow m hm hu => exact ⟨m, Nat.le_of_lt hm, _, levelRel_run_iff.1 hu, rfl⟩
   | prop hu =>
     cases hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
   | propBelow m hm hu =>
     cases levelRel_prop_iff.1 hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
 
@@ -157,21 +156,21 @@ theorem RunFieldRel.codata_prop {sig : Signature} {ι : Interpretation} {P : Pro
     (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades)
-    (hκ : (decl.sort (.ofLists qs ps hq hp)).quality = .prop) {R : RunRel}
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (hκ : (decl.sort hqp.inst).quality = .prop) {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
     ∀ H t a, R H t a := by
   cases hR with
   | univ hu =>
     cases hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
   | univBelow m hm hu =>
     cases levelRel_run_iff.1 hu with
-    | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' hs' =>
+    | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' hs' =>
       obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
       exact nomatch hκ.symm.trans hs'
   | prop _ => exact fun _ _ _ => trivial
@@ -200,7 +199,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
     cases hτ with
     | direct hT =>
       exact fun H t a => (RunNestRel.unique hd ihm ih (hinv _ _ _ hT hA) _ h' H t a).2
-  | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec _ hS,
+  | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA hκ hn hrec _ hS,
       hτ, _, h' => by
     cases hτ with
     | inst hνs =>
@@ -208,10 +207,10 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
       cases h' with
       | plain hA' hR' =>
         cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
-        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
+        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hqp hκ hR'
         cases hu with
-        | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-        | codata h' _ _ _ hv' _ _ _ hS' =>
+        | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+        | codata h' _ _ hv' _ _ _ hS' =>
           obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
           have hTn := h.2.2
           exact fun H _ a ⟨v, ht, X, hX, hx⟩ => ⟨v, ht, runCorecRel_mono (fun o a =>
@@ -220,7 +219,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
               simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
               rw [hTn] at hS''
               exact hS''.levelLe hm) H o a) (hTn ▸ hX _ h.2.1 H v a (hTn ▸ hx))⟩
-  | .codataProp _ _ _ _ _ _ _ _ _, _, _, _ => fun _ _ _ _ => trivial
+  | .codataProp _ _ _ _ _ _ _ _, _, _, _ => fun _ _ _ _ => trivial
 termination_by structural h _ _ _ => h
 
 /-- The graph of the nestings of run time relates the observations by destructors to an address when
@@ -307,7 +306,7 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
     cases hτ with
     | direct hT =>
       exact fun H t a _ => (RunNestRel.unique hd ihm ih (hinv _ _ _ hT hA) _ h' H t a).1
-  | .codata (D := D) (T := T) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq hl hp hA hκ hn hrec
+  | .codata (D := D) (T := T) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA hκ hn hrec
       S hS, hτ, _, h', _, _, hE => by
     cases hτ with
     | inst hνs =>
@@ -315,18 +314,18 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
       cases h' with
       | plain hA' hR' =>
         cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
-        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
+        obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hqp hκ hR'
         cases hE with
         | plain hA'' hF =>
           cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA''
-          obtain ⟨m', hm', _, hue, rfl⟩ := FieldRel.codata_type hd h hq hp hκ hF
+          obtain ⟨m', hm', _, hue, rfl⟩ := FieldRel.codata_type hd h hqp hκ hF
           cases hu with
-          | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-          | codata h' _ _ _ hv' _ _ _ hS' =>
+          | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+          | codata h' _ _ hv' _ _ _ hS' =>
             obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
             cases hue with
-            | data h'' _ _ _ hv'' => exact (hd.inst_data_codata h'' h hv''.symm).elim
-            | codata h'' _ _ _ hv'' _ _ _ hSE =>
+            | data h'' _ _ hv'' => exact (hd.inst_data_codata h'' h hv''.symm).elim
+            | codata h'' _ _ hv'' _ _ _ hSE =>
               obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h'' hv''
               have hTn := h.2.2
               have hT := h.2.1
@@ -355,13 +354,13 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
                         simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hSE''
                         exact hSE''.levelLe hm') H o a hse hs⟩,
                   rfl, hx, hxe⟩
-  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hq _ hp hA _ hκ _ _, hτ, _,
+  | .codataProp (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp _ hA _ hκ _ _, hτ, _,
       h', _, _, _ => by
     subst hA
     cases h' with
     | plain hA' hR' =>
       cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
-      exact fun H t a _ _ => RunFieldRel.codata_prop hd h hq hp hκ hR' H t a
+      exact fun H t a _ _ => RunFieldRel.codata_prop hd h hqp hκ hR' H t a
 termination_by structural h _ _ _ _ _ _ => h
 
 /-- The graph of the destructors of run time relates the observations by destructors to an address

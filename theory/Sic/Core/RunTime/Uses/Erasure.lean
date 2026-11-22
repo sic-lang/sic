@@ -86,53 +86,52 @@ theorem Usage.recursor_used {sig : Signature} (hsig : sig.Distinct) (hord : sig.
     {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level k)}
     {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade} {κ : Universe k}
     {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} {gs : Nat → Nat → Grade}
-    {πs : Nat → List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades)
+    {πs : Nat → List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     (hR : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      ∃ R : Telescope k (Γ.extend (con.params (.ofLists qs ps hq hp)).length)
-          (con.nestResultParams (.ofLists qs ps hq hp) decl.names),
-        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
+      ∃ R : Telescope k (Γ.extend (con.params hqp.inst).length)
+          (con.nestResultParams hqp.inst decl.names),
+        Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
           (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) R (πs i))
     (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
-      (con.params (.ofLists qs ps hq hp))[l]? = some p →
+      (con.params hqp.inst)[l]? = some p →
       m.grade * r * p.usage ≤ gs i l +
-        (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+        (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
           (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r) :
     ∀ (i j : Nat) (T' : DataType decl.sorts decl.grades decl.levels decl.scope)
       (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
       decl.cases[i]? = some (j, T', con) →
       ∀ (l : Nat) (σ : Shape) (p' : Parameter),
         (con.nestedShapes sig ⟨κ.quality, r, ς⟩ m Grade.run decl.names qs ps χ
-          (.ofLists qs ps hq hp))[l]? = some (some σ) →
-        (con.params (.ofLists qs ps hq hp))[l]? = some p' →
+          hqp.inst)[l]? = some (some σ) →
+        (con.params hqp.inst)[l]? = some p' →
         (m.grade * r * Telescope.resultGrades
-          ((con.fields (.ofLists qs ps hq hp)).nest decl.names) (us.grades i) l).run *
+          ((con.fields hqp.inst).nest decl.names) (us.grades i) l).run *
             σ.factor ≠ .zero →
         (m.grade * r * p'.usage).run ≠ .zero := by
   intro i j T' con hc l σ p' hσ hp' hu
   obtain ⟨R, hR'⟩ := hR i j T' con hc
   -- The field is nested, the `i'`-th of the fields whose nestings have a position.
-  have hlen : l < ((con.fields (.ofLists qs ps hq hp)).nest decl.names).length := by
+  have hlen : l < ((con.fields hqp.inst).nest decl.names).length := by
     rw [Telescope.length_nest]
     exact (List.getElem?_eq_some_iff.1 hp').1
-  obtain ⟨n, hn⟩ : ∃ n, ((con.fields (.ofLists qs ps hq hp)).nest decl.names)[l]? = some n :=
+  obtain ⟨n, hn⟩ : ∃ n, ((con.fields hqp.inst).nest decl.names)[l]? = some n :=
     ⟨_, List.getElem?_eq_getElem hlen⟩
   have hnp : n.isPlain = false := by
     cases n with
     | plain =>
       obtain ⟨A, hA⟩ := Option.isSome_iff_exists.1
-        ((Telescope.get_types_isSome (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) l).2
+        ((Telescope.get_types_isSome (con.fieldsAt hqp.inst (ls.getFin hl) as) l).2
           (by rw [← Telescope.length_nest decl.names]; exact hlen))
       have h0 := Term.shape_eq_none_of_nest (v := ⟨κ.quality, r, ς⟩)
         (lookup := Signature.shapes ⟨κ.quality, r, ς⟩ m Grade.run sig)
         (block := sig.blockShapes decl.names qs ps χ) (ν := Nesting.plain) A
         (Term.nest_plain (fun _ _ => rfl) A)
       rw [Constructor.nestedShapes, Telescope.nestedShapes_types decl.names (ls.getFin hl)
-        (con.fields (.ofLists qs ps hq hp)) as.toSubst l hA hn, Option.some.injEq, h0] at hσ
+        (con.fields hqp.inst) as.toSubst l hA hn, Option.some.injEq, h0] at hσ
       cases hσ
     | direct _ | inst _ => rfl
   obtain ⟨i', hi'0⟩ := List.mem_iff_getElem?.1 (Telescope.mem_nestPositions.2 ⟨n, hn, hnp⟩ :
-    0 + l ∈ Telescope.nestPositions ((con.fields (.ofLists qs ps hq hp)).nest decl.names) 0)
+    0 + l ∈ Telescope.nestPositions ((con.fields hqp.inst).nest decl.names) 0)
   obtain ⟨π, hπ, hf⟩ := hR'.factor_nested hsig hord ((Nat.zero_add l) ▸ hi'0) hσ
   cases he : (us.grades i)[i']? with
   | none =>
@@ -393,20 +392,19 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     simp only [Term.erase]
     rw [GradeVector.run_smul_of_erased Grade.noneLinear_erased]
     exact .erased
-  | .ctor (con := con) h hc ⟨hq, hp⟩ hts => by
+  | .ctor (con := con) h hc hqp hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
+    simp only [Term.erase, hi, hd.fieldParams h hc hqp, Option.getD_some]
     exact .ctor (UsageArgs.erase_usage hd hord hΓ hm hts)
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ' := χ') (κ := κ)
-      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h ⟨hq, hp⟩ _ _ ht hul hus hR hu hg hχ _
-      _ =>
+      (us := us) (χ := χ) (δs := δs) (gs := gs) (πs := πs) h hqp _ _ ht hul hus hR hu hg hχ _ _ =>
       by
     -- The branches, whose binders have the multiplicities of their variables at run time.
     have hbr : TargetBranches.Usage r.run χ.run (us.erase sig Mode.oneOne.erased hΓ r
         (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ')
         ((sig.caseFieldParams D qs ps).getD [])) := by
-      rw [hd.recursiveResults h ⟨hq, hp⟩, hd.caseFieldParams h ⟨hq, hp⟩, Option.getD_some]
+      rw [hd.recursiveResults h hqp, hd.caseFieldParams h hqp, Option.getD_some]
       refine Branches.erase_usage hΓ r χ.run us _ _ fun i a b gs' u hget hgs' => ?_
       have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
       obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -414,18 +412,18 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
       obtain ⟨u', hu'⟩ := hus i j T' con hc
       cases Option.some.inj (hget.symm.trans hu')
       have hfs := List.headD_drop (d := []) (l := decl.cases.map fun x =>
-        x.2.2.params (.ofLists qs ps hq hp)) (i := i)
-        (a := con.params (.ofLists qs ps hq hp)) (by simp [hc])
+        x.2.2.params hqp.inst) (i := i)
+        (a := con.params hqp.inst) (by simp [hc])
       have hws := List.headD_drop (d := [])
-        (l := decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ' (.ofLists qs ps hq hp)) (i := i)
+        (l := decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ' hqp.inst) (i := i)
         (a := con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
-          (.ofLists qs ps hq hp)) (by simp [TypeDeclaration.recursiveResults, hc])
+          hqp.inst) (by simp [TypeDeclaration.recursiveResults, hc])
       rw [hfs, hws]
       -- The typing and the erasure give each recursive result the same factor.
       obtain ⟨R, hR'⟩ := hR i j T' con hc
       have hf := hR'.factors_recursiveResults hd hord
-      have hln := Telescope.length_nest decl.names (con.fields (.ofLists qs ps hq hp))
-      have hπl : (πs i).length = (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length :=
+      have hln := Telescope.length_nest decl.names (con.fields hqp.inst)
+      have hπl : (πs i).length = (con.nestResultParams hqp.inst decl.names).length :=
         Terms.ResultTypes.length_factors hR'
       refine ⟨(δs i).run, ?_, ?_, fun j hj h0 => hj ((Mode.erased_values.1 _).2 h0),
         fun j l σ hj => ?_⟩
@@ -435,7 +433,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
         rw [hgs', GradeVector.extendResults_resultGrades] at ih
         refine .sub (Target.Usage.cast _ ih) (MultiplicityVector.extendBinders_le_run _ _ _ _ _
           (fun l => ?_) (fun l => ?_))
-        · obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
+        · obtain ⟨p', hp'⟩ : ∃ p', (con.params hqp.inst)[(l : Nat)]? = some p' :=
             ⟨_, List.getElem?_eq_getElem l.2⟩
           have hgl := Grade.run_le (hg i j T' con l p' hc hp')
           rw [hgs', hm] at hgl
@@ -471,7 +469,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
             exact (by decide : ∀ b c : Multiplicity, Multiplicity.zero * b ≤ .zero * c) _ _
           · -- A computed result runs the recursion at its factor.
             have hlt : (j' : Nat) < (con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ'
-                (.ofLists qs ps hq hp)).length := by
+                hqp.inst).length := by
               rw [Constructor.length_recursiveResults]
               exact j'.2
             obtain ⟨π', hπ', hw⟩ := hf j' _ (List.getElem?_eq_getElem hlt)
@@ -497,21 +495,21 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       exact .recursor (Usage.erase_usage hd hord hΓ hm' ht)
         (fun h0 => absurd ((Mode.erased_values.1 r).2 h0) hr) hbr
-  | .obs (d := d) h ⟨hq, hp⟩ hpos ht hbs _ => by
+  | .obs (d := d) h hqp hpos ht hbs _ => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.argumentParams h ⟨hq, hp⟩ hpos, Option.getD_some]
+    simp only [Term.erase, hi, hd.argumentParams h hqp hpos, Option.getD_some]
     rw [GradeVector.run_commutes.run_add]
     exact .obs (Usage.erase_usage hd hord hΓ hm ht) (UsageArgs.erase_usage hd hord hΓ hm hbs)
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
-      (δ := δ) (δs := δs) h ⟨hq, hp⟩ hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
+      (δ := δ) (δs := δs) h hqp hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     rw [GradeVector.run_commutes.run_add]
     refine .corec (UsageArgs.erase_usage_mul hd hord hΓ hm rfl hss)
       (DestructorBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
-      hres⟩ := hd.corecCase h ⟨hq, hp⟩ hSs hgl hgs hi
+      hres⟩ := hd.corecCase h hqp hSs hgl hgs hi
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_map hargs, List.headD_drop_map hres]
     simp only [hSj]

@@ -76,7 +76,7 @@ theorem NestRel.congr_computes {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {
   | direct hs _ =>
     cases hτ with
     | direct hR => exact hR a a' b b' (hs ▸ h)
-  | codata _ _ _ _ _ hs =>
+  | codata _ _ _ _ hs =>
     rcases h with h | ⟨ha, hb⟩
     · exact absurd (hs.symm.trans h) (by decide)
     · simp only [TermRel.computed, ha, hb]
@@ -144,11 +144,11 @@ observation steps to the branch of its destructor at the arguments. -/
 theorem Red.beta_stateless {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h₀ : sig.HasCodataType T.name decl T) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {Δ : Scope} {as : InstanceArgs 0 [] Δ} {r : Grade}
+    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels) {Δ : Scope}
+    {as : InstanceArgs 0 [] Δ} {r : Grade}
     {Ss : States 0 []} {gs : DestructorBranches 0 []} {j i : Nat} {d : Name}
     (hi : decl.codataCases[i]? = some (j, T, d))
-    (hrec : (T.body (.ofLists qs ps hq hp)).resultName decl.names d = none)
+    (hrec : (T.body hqp.inst).resultName decl.names d = none)
     {ps₁ : List Parameter} {g : Term 0 (Scope.extend [] ps₁.length)}
     (hg : gs.get i = some ⟨0, 0, ps₁.length, g⟩) (ts : Args 0 [] ps₁) {Δ' : Scope} {D' : Name}
     {qs' : List Quality} {ls' : List (Level 0)} {ps'' : List Grade} {as' : InstanceArgs 0 [] Δ'} :
@@ -167,7 +167,7 @@ theorem Red.beta_stateless {decl : TypeDeclaration}
       fun t => Term.instantiateTerms (n := 0) t .nil) e₁).trans e₂
   have h := Red.beta (sig := sig.interpret ι) (D' := D') (qs' := qs') (ls' := ls') (ps' := ps'')
     (as' := as') (r := r) (as := as) (Ss := Ss)
-    (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl ⟨hq, hp⟩ hl hg hv
+    (List.mem_map_of_mem (f := Entry.interpret ι) h₀.1) hi rfl hqp hl hg hv
   rw [hrec] at h
   exact h
 
@@ -279,7 +279,7 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} {t e : Term k Γ}
     (hres : Term.NestedResult sig v ρ φ (.inst ns) (.inst D qs ls ps as) t e) :
-    ∃ (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    ∃ (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
       (S : List Nat) (ms : List (Lifting.Result k)) (Δ' : Scope) (as' : InstanceArgs k Γ Δ')
       (nms : List Name)
       (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
@@ -292,12 +292,12 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
       (∀ i d, nms[i]? = some d →
         ∃ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
           (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
-          (_ : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) (g : _),
+          (_ : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) (g : _),
         gs.get i = some ⟨0, 0, ps₁.length, g⟩) ∧
       (∀ i d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
         (ψ : ResultOwnership Grade ps₁.length) (g : Term k (Γ.extend ps₁.length)),
-        nms[i]? = some d → (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) →
+        nms[i]? = some d → (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, 0, ps₁.length, g⟩ →
         Term.NestedResult sig v (ρ.liftN ps₁.length)
           (fun E => (φ E).rename (Ren.lift (Ren.weakenN ps₁.length)))
@@ -309,13 +309,12 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
   generalize hA : Term.inst D qs ls ps as = A at hres
   cases hres with
   | inst h₂ _ hqp₂ hl₂ has₂ _ hL₂ _ hgs₂ hgt₂ =>
-    obtain ⟨hq₂, hp₂⟩ := hqp₂
     injection hA with _ _ hD hqs hls hps has
     subst hD hqs hls hps
     obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h h₂
     cases eq_of_heq hT
     cases eq_of_heq has
-    exact ⟨hq₂, hl₂, hp₂, _, _, _, _, _, _, _, rfl, has₂, hL₂, hgs₂, hgt₂⟩
+    exact ⟨hqp₂, hl₂, _, _, _, _, _, _, _, rfl, has₂, hL₂, hgs₂, hgt₂⟩
 
 /-- An instance of a declared type of `Σ` lifted at the nesting of an instance is the instance of
 a lifting of this type, as the rule gives it. -/
@@ -420,14 +419,14 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {decl : TypeDeclaration}
     {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope}
-    (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+    (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)
     {ns : List (Nest Name)} {t₁ t₂ : Term 0 []}
     (horacle : ∀ (ls₂ : List (Level 0)) (as₂ : InstanceArgs 0 [] decl.scope) (d : Name)
       (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
       (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
-      (hpos : (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ),
+      (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ),
       ∃ SΘ, TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
           ((Θ.substLevels (ls.getFin hl)).subst
             (hpos.obsSubst (t₁.observation D qs ls ps as) as.toSubst)) SΘ ∧
@@ -445,9 +444,9 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   have hρ₂ : ∀ {a} (x : Var [] a), ρ₂.motive x = none := fun x => nomatch x
   have hid₁ : ∀ {a} (x : Var [] a), ρ₁.ren x = x := fun x => nomatch x
   obtain ⟨ls₂, as₂, rfl, hsas⟩ := hsim.inst_inv
-  obtain ⟨_, _, _, S, ms₁, Δ', as', nms, body, gs₁, rfl, has₁, hLm, hgs₁, hgt₁⟩ :=
+  obtain ⟨_, _, S, ms₁, Δ', as', nms, body, gs₁, rfl, has₁, hLm, hgs₁, hgt₁⟩ :=
     h₁.inst_inv hd h
-  obtain ⟨_, hl₂, _, S₂, ms₂, Δ₂', as₂', nms₂, body₂, gs₂, rfl, has₂, hLm₂, hgs₂, hgt₂⟩ :=
+  obtain ⟨_, hl₂, S₂, ms₂, Δ₂', as₂', nms₂, body₂, gs₂, rfl, has₂, hLm₂, hgs₂, hgt₂⟩ :=
     h₂.inst_inv hd h
   obtain rfl := InstanceArgs.Lifts.positions_eq hρ₁ hρ₂ has₁ has₂
   have he := Entry.typeDeclaration.inj (hd.entry_unique hLm hLm₂ (n := Lifting.name D S)
@@ -459,10 +458,12 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
   cases hsg
   have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-    rw [List.length_append, hq]
+    rw [List.length_append, hqp.sorts]
     rfl
-  have hp' : (v.grades ps ms₁).length = decl.liftingGrades S := v.length_grades hp has₁.length_eq
-  have hp₂' : (v.grades ps ms₂).length = decl.liftingGrades S := v.length_grades hp has₂.length_eq
+  have hp' : (v.grades ps ms₁).length = decl.liftingGrades S := v.length_grades hqp.grades
+    has₁.length_eq
+  have hp₂' : (v.grades ps ms₂).length = decl.liftingGrades S := v.length_grades hqp.grades
+    has₂.length_eq
   have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has₁.length_eq]
   have hl₂' : (ls₂ ++ ms₂.map (·.level)).length = decl.levels + S.length := by
@@ -471,7 +472,8 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp')
       i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has₁.nodup hq' hl has₁.length_eq hl' hp
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has₁.nodup hq' hl has₁.length_eq hl'
+      hqp.grades
       hp' j h₁ h₂)
   subst hΔ
   -- The lifting, its type and its destructors.
@@ -494,7 +496,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
         ∀ r ∈ (T'.body (Instance.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hpm).lifted).recursion
           decl.names, r = none := fun ms hpm T' hT' hn' => by
     cases eq_of_heq (hd.hasCodataType_unique ⟨h.1, hT', hn'⟩ h).2
-    rw [Instance.lifted_ofLists qs ps v.quality _ hq hp]
+    rw [Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades]
     exact hrec
   have hFrec := hFrecAt ms₁ hp'
   have hrecL : ∀ r ∈ (TL.body I').recursion declL.names, r = none := hLf.recursion I' hFrec
@@ -528,7 +530,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨_, _, _, ps₂, _, _, _, _, hpos₂, g₂, hg₂⟩ := hgs₂ i d' hi
     obtain ⟨-, rfl⟩ := hpos.params_unique (hd.destructors_nodup h) hpos₂
     obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
-      (ρ := ρ₁) hρ₁ ⟨hq, hp⟩ hl hq' hl' hp' has₁ t₁ hpos hpos' o₁'
+      (ρ := ρ₁) hρ₁ hqp hl hq' hl' hp' has₁ t₁ hpos hpos' o₁'
     subst hps
     have ht₁ : t₁.rename ρ₁.ren = t₁ := Term.rename_id_of hid₁ t₁
     rw (transparency := .default) [ht₁] at hΘeq hBL
@@ -587,13 +589,13 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
         Computesι sig ι (g₁.subst ts.toSubst) w := fun w => by
       subst he₁
       rw [Term.observation_subst_args, ← hts]
-      exact Computesι.red_iff hd (Red.beta_stateless hTL hq' hl' hp' hiL hrecN hg₁ ts)
+      exact Computesι.red_iff hd (Red.beta_stateless hTL ⟨hq', hp'⟩ hl' hiL hrecN hg₁ ts)
     have hr₂ : s' = .prop ∨ ∀ w, Computesι sig ι ((o₂' d' _).subst us'.toSubst) w ↔
         Computesι sig ι (g₂.subst us.toSubst) w := hO.imp_right fun hO' w =>
       (hO' d' _ us'.toSubst w).trans (by
         subst he₂
         rw [Term.observation_subst_args, ← hus]
-        exact Computesι.red_iff hd (Red.beta_stateless hTL hq' hl₂' hp₂' hiL hrecN₂ hg₂ us))
+        exact Computesι.red_iff hd (Red.beta_stateless hTL ⟨hq', hp₂'⟩ hl₂' hiL hrecN₂ hg₂ us))
     exact (hF'.congr_computes (hr₂.elim .inl fun h₂ => .inr ⟨hr₁, h₂⟩)).2 hFg
   -- The meaning of the instance lifted.
   obtain ⟨-, vA, -, R, hcA, -, hR, -, -⟩ := id hA'
@@ -615,7 +617,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   have hc₂ : e₂.CorecObservations (Lifting.name D S) o₂ :=
     ⟨_, _, _, _, _, _, _, _, _, he₂.symm, by subst he₂; rfl⟩
   refine HasEq.validEqTerm_whnf hd hIA hR hw₁ hw₂ ?_
-  rcases HasEq.instCodata_inv hd hTL hq' hl' hp' hR with ⟨-, S', hS', rfl⟩ | ⟨-, S', hS', hRb⟩
+  rcases HasEq.instCodata_inv hd hTL ⟨hq', hp'⟩ hl' hR with ⟨-, S', hS', rfl⟩ | ⟨-, S', hS', hRb⟩
   · refine ⟨fun N a b => N = Lifting.name D S ∧ a = e₁ ∧ b = e₂, fun T' hT' a b hX => ?_,
       rfl, rfl, rfl⟩
     cases List.mem_singleton.1 hT'
@@ -693,28 +695,28 @@ theorem NestRel.resultSound (hd : sig.Distinct)
           | inst _ _ hn => exact absurd rfl (hn _)
         | inst _ hn => exact absurd rfl (hn _)
       | inst _ hn => exact absurd rfl (hn _)
-  | .codata (ls := ls) h hq hl hp hA _ _ _ hrec _ hS, hτ, _, hν, _, _, ht => by
+  | .codata (ls := ls) h hqp hl hA _ _ _ hrec _ hS, hτ, _, hν, _, _, ht => by
     subst hA
     cases hν with
     | inst hνs =>
       cases hτ with
       | inst hτs =>
         obtain ⟨w₁, w₂, hc₁, hc₂, o₁, o₂, hw₁, hw₂, hSo⟩ := ht
-        exact ResultSoundAt.inst hd hord h hq hl hp hrec
+        exact ResultSoundAt.inst hd hord h hqp hl hrec
           fun ls₂ as₂ d p q ς ps₁ Ξ Θ B ψ hpos =>
             NestDesRel.resultSound hd hord (hpos.substLevels (ls.getFin hl)) hS
               (Nesting.ofArgs_rel₃ hτs) (Nesting.ofArgs_rel₃ hνs) hSo
               (ObsEquiv.of_computes hd hc₁ hw₁) (ObsEquiv.of_computes hd hc₂ hw₂)
               (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
               (hpos.nest_substLevels _ _)
-  | .codataProp (ls := ls) h hq hl hp hA _ _ hrec _ hS, hτ, _, hν, _, _, ht => by
+  | .codataProp (ls := ls) h hqp hl hA _ _ hrec _ hS, hτ, _, hν, _, _, ht => by
     subst hA
     cases hν with
     | inst hνs =>
       cases hτ with
       | inst hτs =>
         obtain ⟨o, hSo⟩ := ht
-        exact ResultSoundAt.inst hd hord h hq hl hp hrec
+        exact ResultSoundAt.inst hd hord h hqp hl hrec
           fun ls₂ as₂ d p q ς ps₁ Ξ Θ B ψ hpos =>
             NestDesRel.resultSound hd hord (hpos.substLevels (ls.getFin hl)) hS
               (Nesting.ofArgs_rel₃ hτs) (Nesting.ofArgs_rel₃ hνs) hSo (.inl rfl) (.inl rfl)

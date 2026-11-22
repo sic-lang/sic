@@ -90,14 +90,14 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   | .direct _ _, _, _, hν, _, _, ht, _ => by
     cases hν with
     | direct hx => exact NestedRunsAt.skeleton_direct hx _ ht _
-  | .codata (ls := ls) h hq hl hp hA _ _ _ hrec _ hS, hτ, _, hν, t, t', ht, R => by
+  | .codata (ls := ls) h hqp hl hA _ _ _ hrec _ hS, hτ, _, hν, t, t', ht, R => by
     subst hA
     cases hν with
     | inst hνs =>
       cases hτ with
       | inst hτs =>
         obtain ⟨w₁, w₂, hc₁, -, o₁, o₂, hw₁, -, hSo⟩ := ht
-        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
+        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hqp hl hrec
           fun d p q ς ps₁ Ξ Θ B ψ hpos _ => by
             obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hb
               (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)
@@ -108,14 +108,14 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
               (List.mem_of_getElem? hpos.getElem?_index)
             exact ⟨SΘ, fun _ _ _ _ => False, i, hi, hΘ, fun h0 => (h0 rfl).elim,
               fun ts hts => hN ts hts _⟩
-  | .codataProp (ls := ls) h hq hl hp hA _ _ hrec _ hS, hτ, _, hν, t, _, ht, R => by
+  | .codataProp (ls := ls) h hqp hl hA _ _ hrec _ hS, hτ, _, hν, t, _, ht, R => by
     subst hA
     cases hν with
     | inst hνs =>
       cases hτ with
       | inst hτs =>
         obtain ⟨o, hSo⟩ := ht
-        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
+        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hqp hl hrec
           fun d p q ς ps₁ Ξ Θ B ψ hpos _ => by
             obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hb
               (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)

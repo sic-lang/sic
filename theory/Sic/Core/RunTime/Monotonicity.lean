@@ -163,7 +163,7 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
     {R : RunRel} : RunUnivRel sig ι P n (fun m _ => levelRel sig ι m) v R → R.Monotone
   | .univ _ _ => fun _ {_ _} _ => trivial
   | .prop _ _ => fun _ {_ _} _ => trivial
-  | .data (decl := decl) _ _ _ _ _ _ _ S hS => fun hH {_ _} h => by
+  | .data (decl := decl) _ _ _ _ _ _ S hS => fun hH {_ _} h => by
     have hstep : ∀ (K : Heap → Heap → Prop), (∀ {H H' : Heap}, K H H' → H.Extends H') →
         (∀ H, K H H) → ∀ (X Y : Name → RunRel),
           (∀ D H H', K H H' → ∀ t a, X D H t a → Y D H' t a) → ∀ T ∈ decl.dataTypes,
@@ -180,7 +180,7 @@ theorem RunUnivRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
       (fun T hT H t a hc H' hH' => DataType.runBlockRel_fold hmono hT
         (DataType.runCtorRel_mono hH' (fun c hc ts as => hstep Heap.Extends id List.prefix_refl
           _ _ (fun _ _ H₂ hH₂ _ _ h => h H₂ hH₂) T hT c hc H H' hH' ts as) hc)) _ hH
-  | .codata (decl := decl) _ _ _ _ _ _ _ S hS => fun hH {_ _} ⟨X, hX, hx⟩ =>
+  | .codata (decl := decl) _ _ _ _ _ _ S hS => fun hH {_ _} ⟨X, hX, hx⟩ =>
     ⟨fun (D : Name) (H' : Heap) (t : Term 0 []) (a : Nat) => ∃ H : Heap, H.Extends H' ∧ X D H t a,
       fun T hT H' t a ⟨H, hH, hx⟩ => runCorecRel_mono
         (RunDesRel.mono hd hH (hS X T hT) _ _ (hS _ T hT)
@@ -265,24 +265,24 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
     | direct hr =>
       cases h' with
       | direct _ => exact hr
-  | .codata h _ _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
+  | .codata h _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata h' _ _ _ hA' _ _ _ _ hS' =>
+      | codata h' _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         exact fun H _ hH _ _ => RunRel.computed_mono fun _ _ => runCorecRel_mono
           (RunNestDesRel.mono hd ih hK hKr hS _ _ hS' (Nesting.ofArgs_rel₃ hνs) H _ hH)
-      | codataProp h' _ _ _ hA' _ hκ' =>
+      | codataProp h' _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
+  | .codataProp h _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata h' _ _ _ hA' hκ' =>
+      | codata h' _ _ hA' hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
         exact nomatch hκ.symm.trans hκ'

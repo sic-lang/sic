@@ -134,10 +134,10 @@ theorem RunUnivRel.isTypeOfSort {sig : Signature} {ι : Interpretation} {P : Pro
   cases h with
   | univ hl hk => subst hk; exact .univ _ hl rfl
   | prop hl hk => subst hk; exact .univ _ hl rfl
-  | data h hq hl hp hv hs hn =>
-    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.name_mem_names h.2.1) hq hl hp hv
-  | codata h hq hl hp hv hs hn =>
-    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1) hq hl hp hv
+  | data h hqp hl hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.name_mem_names h.2.1) hqp hl hv
+  | codata h hqp hl hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1) hqp hl hv
 
 /-- A type of a universe has one level of run time, in a signature whose names are distinct. -/
 theorem RunUnivRel.level {sig : Signature} {ι : Interpretation} {P : Program} {n m : Nat}
@@ -208,29 +208,29 @@ theorem RunUnivRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
   | .univ hl _, _, h' => by
     cases h' with
     | univ => exact fun _ _ _ => .rfl
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
   | .prop hl _, _, h' => by
     cases h' with
     | prop => exact fun _ _ _ => .rfl
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
-  | .data h _ _ _ hv _ _ _ hS, _, h' => by
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
+  | .data h _ _ hv _ _ _ hS, _, h' => by
     cases h' with
     | univ => cases hv
     | prop => cases hv
-    | data h' _ _ _ hv' _ _ _ hS' =>
+    | data h' _ _ hv' _ _ _ hS' =>
       subst hv
       obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.dataInst_unique h h' hv'
       exact DataType.runBlockRel_congr (fun X T hT c hc => RunTelRel.congr hd ihm ih (hS X T hT c hc)
         _ _ (hS' X T hT c hc) fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) _
-    | codata h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
-  | .codata h _ _ _ hv _ _ _ hS, _, h' => by
+    | codata h' _ _ hv' => subst hv; exact (hd.inst_data_codata h h' hv').elim
+  | .codata h _ _ hv _ _ _ hS, _, h' => by
     cases h' with
     | univ => cases hv
     | prop => cases hv
-    | data h' _ _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
-    | codata h' _ _ _ hv' _ _ _ hS' =>
+    | data h' _ _ hv' => subst hv; exact (hd.inst_data_codata h' h hv'.symm).elim
+    | codata h' _ _ hv' _ _ _ hS' =>
       subst hv
       obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hv'
       exact CodataType.runBlockRel_congr (fun X T hT => RunDesRel.congr hd ihm ih (hS X T hT) _ _
@@ -383,25 +383,25 @@ theorem RunNestRel.congr {sig : Signature} {ι : Interpretation} {P : Program} {
     | direct hr =>
       cases h' with
       | direct _ => exact hr
-  | .codata h _ _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
+  | .codata h _ _ hA hκ _ _ _ hS, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata h' _ _ _ hA' _ _ _ _ hS' =>
+      | codata h' _ _ hA' _ _ _ _ hS' =>
         subst hA
         obtain ⟨rfl, rfl, ⟨⟩, rfl, rfl, rfl, ⟨⟩⟩ := hd.codataInst_unique h h' hA'
         have hc := RunNestDesRel.congr hd ihm ih hS _ _ hS' (Nesting.ofArgs_rel₃ hνs)
         exact RunRel.computed_congr fun H _ _ =>
           ⟨runCorecRel_mono fun o a => (hc H o a).1, runCorecRel_mono fun o a => (hc H o a).2⟩
-      | codataProp h' _ _ _ hA' _ hκ' =>
+      | codataProp h' _ _ hA' _ hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
         exact nomatch hκ.symm.trans hκ'
-  | .codataProp h _ _ _ hA _ hκ _ _, _, _, h', hτ => by
+  | .codataProp h _ _ hA _ hκ _ _, _, _, h', hτ => by
     cases hτ with
     | inst hνs =>
       cases h' with
-      | codata h' _ _ _ hA' hκ' =>
+      | codata h' _ _ hA' hκ' =>
         subst hA
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hA'
         exact nomatch hκ.symm.trans hκ'

@@ -50,7 +50,7 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
         RunsAsArgs sig ι P H (Parameter.grades ps) ts as Θ
   | [], .nil, _, l, _, _, hx, hr => by
     obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, -, ha, -, hruns⟩ := RunsAs.ctor_inv hd hpre.unit
-      (qs := []) (ls := [l]) (ps := []) rfl rfl rfl rfl
+      (qs := []) (ls := [l]) (ps := []) ⟨rfl, rfl⟩ rfl rfl
       (fun T' hT' c hc i => by
         obtain rfl := List.mem_singleton.1 hT'
         rcases hc with _ | ⟨_, ⟨⟩⟩
@@ -68,7 +68,7 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
     obtain ⟨T', hT', -, con, hc, ts, i, bs, hct, hi, ha, hts, hruns⟩ := RunsAs.ctor_inv hd hpre.pair
       (qs := [(κs.headD ⟨.type, l⟩).quality])
       (ls := [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l])
-      (ps := [p.usage, p.requirement]) rfl rfl rfl rfl
+      (ps := [p.usage, p.requirement]) ⟨rfl, rfl⟩ rfl rfl
       (fun T' hT' c hc i => by
         obtain rfl := List.mem_singleton.1 hT'
         rcases hc with _ | ⟨_, ⟨⟩⟩
@@ -163,7 +163,7 @@ theorem RunsAs.resume (hd : sig.Distinct) (hpre : sig.HasPrelude) {κ : Universe
   obtain ⟨T', hT', -, con, hc, ts, i, bs, ⟨qs', ls', ps'', Δ', as', hct⟩, hi, ha, hts, hruns⟩ :=
     RunsAs.ctor_inv hd hpre.step (qs := [κ.quality])
       (ls := [Telescope.packLevel κs (Telescope.packLevel κs .zero), κ.level])
-      (ps := [r, Prelude.doneGrade κ.quality, χ]) rfl rfl rfl rfl
+      (ps := [r, Prelude.doneGrade κ.quality, χ]) ⟨rfl, rfl⟩ rfl rfl
       (fun T' hT' c hc i => by
         obtain rfl := List.mem_singleton.1 hT'
         rcases hc with _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩ <;> cases i <;> rfl) hgv hg

@@ -244,16 +244,16 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
-      (hs : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .type)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = n)
+      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
       (S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         TelRel sig ι n below .type
-          (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
+          (fun i => ((c.fields hqp.inst).nestAt decl.names i).map
             fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
-          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c)) :
+          (c.fieldsAt hqp.inst (ls.getFin hl) as) (S X c)) :
       UnivRel sig ι n below v (DataType.blockRel decl.dataTypes S D)
   /-- `(ty_d)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `U_n`, whose
   block has types whose destructors are in `U_n` at the arguments `ā`, whatever the relations `X` of
@@ -263,16 +263,16 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
-      (hs : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .type)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = n)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
       (S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
       (hS : ∀ X, ∀ T' ∈ decl.codataTypes,
         DesRel sig ι n below .type
-          (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+          (fun i => ((T'.body hqp.inst).recursionAt decl.names i).map
             fun D' => (X D').computed sig ι)
-          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) :
+          ((T'.body hqp.inst).substLevels (ls.getFin hl)) as.toSubst (S X T')) :
       UnivRel sig ι n below v (CodataType.blockRel decl.codataTypes S D)
 
 /--
@@ -290,16 +290,16 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
-      (hs : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .prop)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = n)
+      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
       (S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel)
       (hS : ∀ B, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
         TelRel sig ι n below .prop
-          (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
+          (fun i => ((c.fields hqp.inst).nestAt decl.names i).map
             fun D' => (.inst D' qs ls ps as, fun _ _ => B D'))
-          (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S B c)) :
+          (c.fieldsAt hqp.inst (ls.getFin hl) as) (S B c)) :
       PropRel sig ι n below v (DataType.blockTruth decl.dataTypes S D)
   /-- `(ty_dΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type `T` of the signature in `Ω_n`, whose
   block has types whose destructors are in `Ω_n` at the arguments `ā`, whatever the truths `B` of
@@ -309,16 +309,16 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as)
-      (hs : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .prop)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = n)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hv : v = .inst D qs ls ps as)
+      (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
       (S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel)
       (hS : ∀ B, ∀ T' ∈ decl.codataTypes,
         DesRel sig ι n below .prop
-          (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
+          (fun i => ((T'.body hqp.inst).recursionAt decl.names i).map
             fun D' => fun _ _ => B D')
-          ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S B T')) :
+          ((T'.body hqp.inst).substLevels (ls.getFin hl)) as.toSubst (S B T')) :
       PropRel sig ι n below v (CodataType.blockTruth decl.codataTypes S D)
   /-- `(ty_∼)`, for a type of `U_n`: the equality `t ∼.{U; l}_A u`, if `⟦l⟧ = n`, whose type `A`
   computes to a type of `U_n` whose canonical terms are equal by `R`, and whose truth is that `t` and
@@ -493,14 +493,14 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest NestLeaf)}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as) (hs : s = .type)
-      (hκ : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .type)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n)
-      (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hA : A = .inst D qs ls ps as) (hs : s = .type)
+      (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n)
+      (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)
       (S : ObsRel)
       (hS : NestDesRel sig ι n below sT .type (Nesting.ofArgs νs)
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
+        ((T.body hqp.inst).substLevels (ls.getFin hl)) as.toSubst S) :
       NestRel sig ι n below sT s (.inst νs) A ((corecRel D S).computed sig ι)
   /-- `(ty_λDΩ)`: an instance `D.{s̄; l̄; p̄} ā` of a codata type of the signature in a universe of
   propositions that `Ω_n` bounds, none of whose destructors is recursive, and whose destructors are
@@ -510,14 +510,14 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest NestLeaf)}
-      (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-      (hp : ps.length = decl.grades) (hA : A = .inst D qs ls ps as)
-      (hκ : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality = .prop)
-      (hn : (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n)
-      (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
+      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hA : A = .inst D qs ls ps as)
+      (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
+      (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n)
+      (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)
       (S : ObsRel)
       (hS : NestDesRel sig ι n below sT .prop (Nesting.ofArgs νs)
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
+        ((T.body hqp.inst).substLevels (ls.getFin hl)) as.toSubst S) :
       NestRel sig ι n below sT s (.inst νs) A fun _ _ => S.truth
 
 /--

@@ -166,7 +166,7 @@ theorem Term.nest_of_fresh {α : Type} {sigT : Signature} (mark : Name → Optio
   | _, _, _, _, .var _ _, _ => rfl
   | _, ctx, _, _, .inst D qs ls ps as, hA => by
     have h : mark D = none ∧ ∃ params, HasInstanceArgs sigT ctx as params := by
-      obtain ⟨decl, ζ, hΔ, ⟨hq, hp⟩, hl, hD, -, has⟩ := hA.inst_inv
+      obtain ⟨decl, ζ, hΔ, hqp, hl, hD, -, has⟩ := hA.inst_inv
       subst hΔ
       have hm : D ∈ decl.names := by
         rcases hD.2 with ⟨T, hT, rfl, -⟩ | ⟨T, hT, rfl, -⟩

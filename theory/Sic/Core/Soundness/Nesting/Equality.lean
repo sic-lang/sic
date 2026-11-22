@@ -76,8 +76,8 @@ theorem NestReads.quality_of_univ {A₁ A₂ : Term 0 []} {κ : Universe 0} {n :
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
   | univ k hk =>
     cases levelRel_univ_iff.1 hk with
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
     | univ hl _ =>
       obtain ⟨⟨R', h₁, -⟩, -⟩ := hvw
       cases hF with
@@ -227,26 +227,26 @@ in a universe. -/
 theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
-    (hp : ps.length = decl.grades) {s : Quality} {F : TermRel}
+    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
-    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n ∧
-      ((decl.sort (.ofLists qs ps hq hp)).quality = .type → s = .type) := by
+    (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n ∧
+      ((decl.sort hqp.inst).quality = .type → s = .type) := by
   have hu : ∀ m R, UnivRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R →
-      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
+      (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = m :=
     fun m R hu => by
       cases hu with
-      | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-      | codata h' _ _ _ hv' _ hn' =>
+      | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+      | codata h' _ _ hv' _ hn' =>
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
-      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m ∧
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop :=
+      (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = m ∧
+        (decl.sort hqp.inst).quality = .prop :=
     fun m b hb => by
       cases hb with
-      | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
-      | codata h' _ _ _ hv' hs' hn' =>
+      | data h' _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
+      | codata h' _ _ hv' hs' hn' =>
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact ⟨hn',
           hs'⟩
@@ -283,26 +283,26 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
   plain_head := NestDesRel.of_plain_head hd
   nested_head := NestDesRel.of_nested_head hd
   inst := by
-    intro s decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec _ hr
+    intro s decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hqp hl hrec _ hr
     obtain ⟨FE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hF =>
       cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
-      obtain ⟨hn, hs⟩ := FieldRel.codata_inv hd hT hq hl hp hF
-      refine ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-        ⟨Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hq hl hp)) hn, rfl⟩,
+      obtain ⟨hn, hs⟩ := FieldRel.codata_inv hd hT hqp hl hF
+      refine ⟨(decl.sort hqp.inst).quality,
+        ⟨Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hqp hl)) hn, rfl⟩,
         fun ⟨S, hS₁, hS₂⟩ => ?_⟩
       have hS₁' := NestDesRel.substLevels_of_atLevels hd hS₁
       have hS₂' := NestDesRel.substLevels_of_atLevels hd hS₂
-      cases hκ : (decl.sort (.ofLists qs ps hq hp)).quality with
+      cases hκ : (decl.sort hqp.inst).quality with
       | type =>
         rw [hκ] at hS₁' hS₂'
-        exact ⟨_, .codata hT hq hl hp rfl (hs hκ) hκ hn hrec S hS₁',
-          .codata hT hq hl hp rfl (hs hκ) hκ hn hrec S hS₂'⟩
+        exact ⟨_, .codata hT hqp hl rfl (hs hκ) hκ hn hrec S hS₁',
+          .codata hT hqp hl rfl (hs hκ) hκ hn hrec S hS₂'⟩
       | prop =>
         rw [hκ] at hS₁' hS₂'
-        exact ⟨_, .codataProp hT hq hl hp rfl hκ hn hrec S hS₁',
-          .codataProp hT hq hl hp rfl hκ hn hrec S hS₂'⟩
+        exact ⟨_, .codataProp hT hqp hl rfl hκ hn hrec S hS₁',
+          .codataProp hT hqp hl rfl hκ hn hrec S hS₂'⟩
 
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
 variables with a position, are read by the graph of the nestings of the equality at their

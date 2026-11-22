@@ -460,16 +460,16 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     exact .const _ _ _
   | .sort => .erased _
   | .inst => .erased _
-  | .ctor (con := con) h hc ⟨hq, hp⟩ hts => by
+  | .ctor (con := con) h hc hqp hts => by
     obtain ⟨i, hi⟩ := Signature.constructorCase_of_mem h.1 h.2.1 hc
     rw [h.2.2] at hi
-    simp only [Term.erase, hi, hd.fieldParams h hc ⟨hq, hp⟩, Option.getD_some]
+    simp only [Term.erase, hi, hd.fieldParams h hc hqp, Option.getD_some]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
       (Mode.oneOne_odot_of_not_erased hm) hts
     rw [Parameter.map_eta] at hos
     exact .ctor hos
   | .recursor (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (ς := ς) (χ := χ) (κ := κ)
-      (us := us) (o := o) (p := p) h ⟨hq, hp⟩ ht hns hul hus hu hu' hmeets hused => by
+      (us := us) (o := o) (p := p) h hqp ht hns hul hus hu hu' hmeets hused => by
     -- The branches, whose variables have the run-time multiplicities of their ownerships.
     have hbr : ∀ o',
         (r ∉ Mode.oneOne.erased →
@@ -479,20 +479,20 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           (us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults D qs ps ⟨κ.quality, r, ς⟩ χ)
             ((sig.caseFieldParams D qs ps).getD [])) := by
       intro o' ho₁ ho₂
-      rw [hd.recursionRequirement_eq h ⟨hq, hp⟩] at ho₁
-      rw [hd.recursiveResults h ⟨hq, hp⟩, hd.caseFieldParams h ⟨hq, hp⟩, Option.getD_some]
+      rw [hd.recursionRequirement_eq h hqp] at ho₁
+      rw [hd.recursiveResults h hqp, hd.caseFieldParams h hqp, Option.getD_some]
       rw [hm] at hns hmeets hused
       -- The case of each branch.
       have hcase : ∀ i a b (u : Term k ((Γ.extend a).extend b)), us.get i = some ⟨a, b, u⟩ →
           ∃ j T' con u', decl.cases[i]? = some (j, T', con) ∧
-          us.get i = some ⟨(con.params (.ofLists qs ps hq hp)).length,
-            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u'⟩ ∧
-          ((decl.cases.map fun x => x.2.2.params (.ofLists qs ps hq hp)).drop i).headD [] =
-            con.params (.ofLists qs ps hq hp) ∧
-          ((decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ (.ofLists qs ps hq hp)).drop
+          us.get i = some ⟨(con.params hqp.inst).length,
+            (con.nestResultParams hqp.inst decl.names).length, u'⟩ ∧
+          ((decl.cases.map fun x => x.2.2.params hqp.inst).drop i).headD [] =
+            con.params hqp.inst ∧
+          ((decl.recursiveResults sig ⟨κ.quality, r, ς⟩ qs ps χ hqp.inst).drop
             i).headD [] =
             con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ
-              (.ofLists qs ps hq hp) := by
+              hqp.inst := by
         intro i a b u hget
         have hi : i < decl.cases.length := hul ▸ Branches.lt_length_of_get hget
         obtain ⟨⟨j, T', con⟩, hc⟩ : ∃ c, decl.cases[i]? = some c :=
@@ -504,24 +504,24 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       -- The run-time multiplicities of the ownerships of the variables of a branch, at the
       -- ownerships `φ₀` of the scope and `c` of the results of the recursor.
       have hagree : ∀ i j T' con (gs' : _root_.Vector Grade
-            (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length)
+            (con.nestResultParams hqp.inst decl.names).length)
           (φ₀ : Var Γ .var → Grade) (φ₀' : MultiplicityVector Γ.length) (c : Grade),
           decl.cases[i]? = some (j, T', con) → us.grades i = gs'.toList →
           Ownership.RunAgree φ₀' φ₀ →
           Ownership.RunAgree
             (fun x => φ₀'.extendBinders
-              (fun l => o' * r.fieldCoefficient (con.params (.ofLists qs ps hq hp))[(l : Nat)]?)
+              (fun l => o' * r.fieldCoefficient (con.params hqp.inst)[(l : Nat)]?)
               (fun j => (if gs'[j] ∈ Mode.oneOne.erased then RecursiveResult.erased
                 else ((con.recursiveResults sig ⟨κ.quality, r, ς⟩ decl.names qs ps χ
-                  (.ofLists qs ps hq hp))[(j : Nat)]?).getD .erased).ownership c.run *
+                  hqp.inst)[(j : Nat)]?).getD .erased).ownership c.run *
                   gs'[j].run)
               (x.cast (Scope.length_extend_extend Γ _ _)))
             (Ownership.extendResults (Ownership.extendFields φ₀
               (o * decl.recursionRequirement sig ⟨κ.quality, r, ς⟩ m χ qs ps
-                (.ofLists qs ps hq hp))
-              (m.grade * r) (con.params (.ofLists qs ps hq hp)))
-              (Telescope.resultOwnerships c ((con.fields (.ofLists qs ps hq hp)).nest decl.names))
-              (us.grades i) (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length) := by
+                hqp.inst)
+              (m.grade * r) (con.params hqp.inst))
+              (Telescope.resultOwnerships c ((con.fields hqp.inst).nest decl.names))
+              (us.grades i) (con.nestResultParams hqp.inst decl.names).length) := by
         intro i j T' con gs' φ₀ φ₀' c hc hgs' hφ₀
         rw [Ownership.extendResults_eq, Ownership.extendFields_eq]
         refine Ownership.RunAgree.extendBinders hφ₀ _ _ _ _ (fun l => ?_) (fun l => ?_)
@@ -549,10 +549,10 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           · congr 1
             rw [Constructor.recursiveResults_eq_map]
             refine (Telescope.resultOwnerships_getD (p := c) (d := .unrestrictedUnrestricted)
-              (f := (con.fields (.ofLists qs ps hq hp)).recursionAt decl.names)
+              (f := (con.fields hqp.inst).recursionAt decl.names)
               (s := fun l => (con.nestedShapes sig ⟨κ.quality, r, ς⟩ .oneOne Grade.run decl.names
-                qs ps χ (.ofLists qs ps hq hp))[l]?.join) _ _
-              (Telescope.length_nest decl.names (con.fields (.ofLists qs ps hq hp))) 0
+                qs ps χ hqp.inst)[l]?.join) _ _
+              (Telescope.length_nest decl.names (con.fields hqp.inst)) 0
               (fun i' D hD => ?_) (fun i' ms hms => ⟨?_, ?_⟩) l l.2).symm
             · rw [Nat.zero_add, Telescope.recursionAt, Telescope.recursion_eq_map_nest,
                 List.getElem?_map, hD]
@@ -563,7 +563,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
             · obtain ⟨σ, hσ⟩ := hns i j T' con hc Grade.run List.mem_cons_self i' ms hms
               rw [Nat.zero_add, hσ]
               rfl
-      rcases decl.hasNestedField_or_not (.ofLists qs ps hq hp) with hN | hN
+      rcases decl.hasNestedField_or_not hqp.inst with hN | hN
       · -- A block with a nested field: the second check, at `ς · φ` and the ownership `χ`.
         refine ⟨ς.run, χ.run, Branches.erase_ownership hΓ r φ' o' p.run ς.run χ.run us _ _
           fun i a b gs' u hget hgs' => ?_⟩
@@ -586,9 +586,9 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         have hr : r ∉ Mode.oneOne.erased := fun hr => by
           rw [(Mode.erased_values.1 r).1 hr] at hg
           exact hg rfl
-        obtain ⟨p', hp'⟩ : ∃ p', (con.params (.ofLists qs ps hq hp))[(l : Nat)]? = some p' :=
+        obtain ⟨p', hp'⟩ : ∃ p', (con.params hqp.inst)[(l : Nat)]? = some p' :=
           ⟨_, List.getElem?_eq_getElem l.2⟩
-        have hidx : (Telescope.nestPositions ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
+        have hidx : (Telescope.nestPositions ((con.fields hqp.inst).nest decl.names)
             0)[(j' : Nat)]? = some (0 + (l : Nat)) := by
           rw [Constructor.getElem?_recursiveResults] at hj
           obtain ⟨l', hl', he⟩ := Option.map_eq_some_iff.1 hj
@@ -630,12 +630,12 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       have hm' : m ⊙ r = .oneOne := hm ▸ (Mode.erasesUncounted .oneOne).mode _ hr
       obtain ⟨_, _, hNs⟩ := hbr _ (fun _ => rfl) fun h' => absurd h' hr
       exact .recursor (Ownership.erase_ownership hd hs hΩ hΓ hφ hm' ht) hNs
-  | .obs (ψ := ψ) (os := os) h ⟨hq, hp⟩ hpos ht hbs hv hf hς => by
+  | .obs (ψ := ψ) (os := os) h hqp hpos ht hbs hv hf hς => by
     obtain ⟨i, hi⟩ := Signature.destructorCase_of_mem h.1 h.2.1 hpos.mem
     rw [h.2.2] at hi
     simp only [Term.erase, hi]
     generalize hA : sig.argumentParams _ _ _ _ = A
-    rw [hd.argumentParams h ⟨hq, hp⟩ hpos] at hA
+    rw [hd.argumentParams h hqp hpos] at hA
     subst hA
     simp only [Option.getD_some]
     obtain ⟨os', hos, hl, ha⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ id
@@ -647,14 +647,14 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       (List.getElem?_eq_getElem i.2) (Mode.not_erased_of_odot hm (hf i hi)), hv]
     rfl
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
-      h ⟨hq, hp⟩ hh hS hss _ hSs hgl hgs hgo hgr => by
+      h hqp hh hS hss _ hSs hgl hgs hgo hgr => by
     simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ (r * ·)
       (fun u hu => by rw [hm]; exact Mode.oneOne_odot_mul _ _ hu) hss
     refine .corec hos (DestructorBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
     obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
-      hres⟩ := hd.corecCase h ⟨hq, hp⟩ hSs hgl hgs hi
+      hres⟩ := hd.corecCase h hqp hSs hgl hgs hi
     have hT' := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hc)).1
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
     rw [List.headD_drop_map hargs, List.headD_drop_map hres]

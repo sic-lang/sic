@@ -41,16 +41,16 @@ theorem UnivRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
   cases h with
   | univ => exact .sort _
   | prop => exact .sort _
-  | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
-  | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | data _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | codata _ _ _ hv => subst hv; exact .inst _ _ _ _ _
 
 /-- `ty(Ω_n)` gives canonical propositions: instances of declared types and equalities. -/
 theorem PropRel.whnf {sig sig' : Signature} {ι : Interpretation} {n : Nat}
     {below : LevelRel.Below n} {v : Term 0 []} {b : Prop} (h : PropRel sig ι n below v b) :
     Whnf sig' v := by
   cases h with
-  | data _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
-  | codata _ _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | data _ _ _ hv => subst hv; exact .inst _ _ _ _ _
+  | codata _ _ _ hv => subst hv; exact .inst _ _ _ _ _
   | equalityUniv | equalityProp => exact .equality _ _ _ _ _
 
 /-- `(eq_c)` relates canonical terms: constructors. -/
@@ -313,13 +313,13 @@ theorem Red.iota_plain {sig : Signature} {k : Nat} {Γ : Scope} {decl : TypeDecl
     {fs : Terms k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {n : Nat}
     {u : Term k ((Γ.extend n).extend 0)} {v : Term k Γ} (h : .typeDeclaration decl ∈ sig)
     (hi : decl.cases[i]? = some (j, T, con)) (hD : T.name = D) (hc : con.name = c)
-    (hq : qs'.length = decl.sorts) (hl : ls'.length = decl.levels) (hp : ps'.length = decl.grades)
-    (hpl : ∀ ν ∈ (con.fields (.ofLists qs' ps' hq hp)).nest decl.names, ν = .plain)
-    (ts : Args k Γ (con.params (.ofLists qs' ps' hq hp))) (hts : ts.terms = fs)
+    (hqp : decl.AsMany qs' ps') (hl : ls'.length = decl.levels)
+    (hpl : ∀ ν ∈ (con.fields hqp.inst).nest decl.names, ν = .plain)
+    (ts : Args k Γ (con.params hqp.inst)) (hts : ts.terms = fs)
     (hu : us.get i = some ⟨n, 0, u⟩) (hv : u.instantiateTerms₂ fs .nil = some v) :
     Red sig (.recursor r ς χ D' qs' ls' ps' as' (.ctor D qs ls ps as c fs) κ Cs us) v := by
   subst hts
-  exact .iota h hi hD hc ⟨hq, hp⟩ hl hu (Telescope.resultTerms_of_plain _ _ _ ts hpl) hv
+  exact .iota h hi hD hc hqp hl hu (Telescope.resultTerms_of_plain _ _ _ ts hpl) hv
 
 open Sic.Grading in
 /-- A recursor reduces as its term does. -/
@@ -438,8 +438,8 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
       exact ⟨hd, v, w, R', hv, hw, .univ _ h₁, .univ _ h₂, fun P =>
         have ⟨_, h₁, h₂⟩ := hr P
         HasRun.iff_of_common hd (.univ _ h₁) (.univ _ h₂)⟩
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 /-- `(Ω_type≡)`, closed: equal propositions are equal types. -/
@@ -456,8 +456,8 @@ theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : T
       exact ⟨hd, v, w, fun _ _ => b₁, hv, hw, .prop _ b₁ h₁ fun _ _ => .rfl,
         .prop _ b₂ h₂ fun _ _ => hb, fun _ Q =>
           (HasRun.prop_iff hd h₁ Q).trans (HasRun.prop_iff hd h₂ Q).symm⟩
-    | data _ _ _ _ hv => cases hv
-    | codata _ _ _ _ hv => cases hv
+    | data _ _ _ hv => cases hv
+    | codata _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
 -- ADE: `⊩U≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.

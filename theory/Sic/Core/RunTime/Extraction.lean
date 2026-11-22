@@ -72,8 +72,8 @@ theorem extraction_ctor {ι : Interpretation} {P : Program} {sig : Signature} {k
   | univ n hR =>
     rw [levelRel_run_iff] at hR
     cases hR with
-    | codata h' _ _ _ hv => exact (hd.inst_data_codata hD h' hv).elim
-    | data h' _ _ _ hv _ _ S _ =>
+    | codata h' _ _ hv => exact (hd.inst_data_codata hD h' hv).elim
+    | data h' _ _ hv _ _ S _ =>
       obtain ⟨-, rfl, -, -, -, -⟩ := Term.inst.inj hv
       refine hR' (fun D' H v a => ∃ c ts i πs ϱs bs, v.IsCtor D' c ts ∧
         sig.constructorCase D' c = some i ∧ H[a]? = some (.ctor i πs ϱs bs)) ?_
