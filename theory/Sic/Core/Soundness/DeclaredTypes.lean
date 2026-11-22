@@ -48,8 +48,9 @@ the block at the levels are equal at their values.
 Those of the meaning hold at equal arguments of the parameters, whose equality moves to the values
 of the levels: the destructors and the fields are meaningful there.
 Those of the graphs hold in a signature whose names are distinct: the relations of the
-destructors, plain, of run time and at nestings, go from the levels to their values and back, the
-level of the sort with them on the way back; the relations of the fields of the instances of the
+destructors, plain and of run time, go from the levels to their values and back, the level of the
+sort with them on the way back, while those at nestings, plain and of run time, only come back from
+the values to the levels; the relations of the fields of the instances of the
 block go to the values of the levels, and the telescopes of the fields of a constructor at the
 values of the levels are ones at the levels, with the positions of their instances at run
 time. -/
@@ -265,7 +266,6 @@ theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
   exact RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
-
 
 -- ADE: none.
 /-- A relation that the graph of the nestings gives the destructors of a codata type of a block at
