@@ -235,16 +235,15 @@ theorem CodataType.BlockMono.of_desRel {sig : Signature} {ι : Interpretation}
 
 /-- The relations of the destructors of a block of codata types that are propositions, given for
 every truth of its instances, grow with them, in a signature whose names are distinct. -/
-theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
-    {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades} {n : Nat}
+theorem CodataType.BlockTruthMono.of_desRel {sig : Signature} {ι : Interpretation}
+    (hd : sig.Distinct) {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades} {n : Nat}
     {L : Fin decl.levels → Level 0} {θ : Subst 0 [] decl.scope}
     {S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel}
     (hS : ∀ B, ∀ T ∈ decl.codataTypes,
       DesRel sig ι n (fun m _ => levelRel sig ι m) .prop
         (fun i => ((T.body I).recursionAt decl.names i).map fun D' => fun _ _ => B D')
         ((T.body I).substLevels L) θ (S B T)) :
-    ∀ B B' : Name → Prop, (∀ D, B D → B' D) →
-      ∀ T ∈ decl.codataTypes, ∀ o₁ o₂, S B T o₁ o₂ → S B' T o₁ o₂ :=
+    CodataType.BlockTruthMono decl.codataTypes S :=
   fun B B' hB T hT => DesRel.mono hd (Nat.forall_lt (levelRel_isPer hd) _) (hS B T hT) _ _ _
     (hS B' T hT)
     fun _ => Option.rel_map (fun D _ _ => hB D) _

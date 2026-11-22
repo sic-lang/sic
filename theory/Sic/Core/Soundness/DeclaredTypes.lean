@@ -1520,8 +1520,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
         PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.blockTruth decl.dataTypes S T.name)) ∧
-      (∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ decl.dataTypes,
-        ∀ c ∈ T.constructors, ∀ ts us, S B c ts us → S B' c ts us) ∧
+      DataType.BlockTruthMono decl.dataTypes S ∧
       (∀ B, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts us, S B c ts us →
         Terms.RecRel (fun D _ _ => B D)
           ((c.fields (.ofLists qs ps hq hp)).recursion decl.names) ts us) ∧
@@ -1558,8 +1557,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun B T' hT' c hc => hs ▸ (hS₀ _ T' hT' c hc).1,
       .data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun B T' hT' c hc =>
         hs ▸ (hS₀ _ T' hT' c hc).2.1⟩
-  have hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ decl.dataTypes,
-      ∀ c ∈ T.constructors, ∀ ts us, S B c ts us → S B' c ts us := fun B B' hB =>
+  have hmono : DataType.BlockTruthMono decl.dataTypes S := fun B B' hB =>
     TelRel.block_mono hd ih (Θ := fun c => ⟨_, c.fieldsAt _ _ as₁⟩)
       (F := fun B D => (.inst D qs ls ps as₁, fun _ _ => B D))
       (fun B T hT c hc => (hS₀ (fun D _ _ => B D) T hT c hc).1) B B' fun D _ _ => hB D

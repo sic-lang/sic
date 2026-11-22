@@ -269,6 +269,13 @@ def DataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ)
   ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
     ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us
 
+/-- The equalities `S B c` of the fields of the constructors `c` of the data types `Ts` grow with
+the truths `B` of the recursive fields. -/
+def DataType.BlockTruthMono {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → Prop) → Constructor j g k Δ → FieldsRel) : Prop :=
+  ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts,
+    ∀ c ∈ T.constructors, ∀ ts us, S B c ts us → S B' c ts us
+
 /-- The equalities `S X c` of the fields of the constructors `c` of the data types `Ts` are
 inverted by relations `Y` of the recursive fields that invert the relations `X`. -/
 def DataType.BlockSymm {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
@@ -341,8 +348,7 @@ theorem DataType.blockRel_isPer
 /-- `(true_μ)` is closed under the clauses of the constructors, when the equality of the terms of
 the fields grows with the truths of the recursive fields. -/
 theorem DataType.blockTruth_closed {S' : (Name → Prop) → Constructor j g k Δ → FieldsRel}
-    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us,
-      S' B c ts us → S' B' c ts us)
+    (hmono : DataType.BlockTruthMono Ts S')
     {T : DataType j g k Δ} (hT : T ∈ Ts) (h : T.truth (S' (DataType.blockTruth Ts S'))) :
     DataType.blockTruth Ts S' T.name :=
   fun B hB =>
@@ -352,8 +358,7 @@ theorem DataType.blockTruth_closed {S' : (Name → Prop) → Constructor j g k �
 /-- `(true_μ)` holds by the clause of a constructor only, when the equality of the terms of the
 fields grows with the truths of the recursive fields. -/
 theorem DataType.blockTruth_inv {S' : (Name → Prop) → Constructor j g k Δ → FieldsRel}
-    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ c ∈ T.constructors, ∀ ts us,
-      S' B c ts us → S' B' c ts us)
+    (hmono : DataType.BlockTruthMono Ts S')
     {D : Name} (h : DataType.blockTruth Ts S' D) :
     ∃ T ∈ Ts, T.name = D ∧ T.truth (S' (DataType.blockTruth Ts S')) :=
   h (fun D => ∃ T ∈ Ts, T.name = D ∧ T.truth (S' (DataType.blockTruth Ts S')))
@@ -493,6 +498,12 @@ def CodataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k
   ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts, ∀ o₁ o₂,
     S X T o₁ o₂ → S Y T o₁ o₂
 
+/-- The equalities `S B T` of the destructors of the codata types `T` of `Ts` grow with the truths
+`B` of the recursive destructors. -/
+def CodataType.BlockTruthMono {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
+    (S : (Name → Prop) → CodataType j g k Δ → ObsRel) : Prop :=
+  ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂, S B T o₁ o₂ → S B' T o₁ o₂
+
 /-- The equalities `S X T` of the destructors of the codata types `T` of `Ts` are inverted into the
 equalities `S' Y T` by relations `Y` of the recursive destructors that invert the relations `X`. -/
 def CodataType.BlockSymm {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g k Δ))
@@ -597,8 +608,7 @@ theorem CodataType.blockRel_isPer
 /-- `(true_ν)` is consistent with the clauses of the destructors, when the equality of the
 destructors grows with the truths of the recursive destructors. -/
 theorem CodataType.blockTruth_unfold {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
-    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    (hmono : CodataType.BlockTruthMono Ts S')
     {T : CodataType j g k Δ} (hT : T ∈ Ts) (h : CodataType.blockTruth Ts S' T.name) :
     (S' (CodataType.blockTruth Ts S') T).truth :=
   have ⟨B, hB, hb⟩ := h
@@ -610,8 +620,7 @@ recursive destructors, and when the equality of the destructors grows with these
 that `(true_ν)` joined with `B` gives the types are consistent with the clauses, a proof by
 coinduction up to `(true_ν)`. -/
 theorem CodataType.blockTruth_coind {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
-    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    (hmono : CodataType.BlockTruthMono Ts S')
     {B : Name → Prop}
     (hB : ∀ T' ∈ Ts, B T'.name → (S' (fun D => CodataType.blockTruth Ts S' D ∨ B D) T').truth)
     {T : CodataType j g k Δ} (h : B T.name) : CodataType.blockTruth Ts S' T.name :=
@@ -627,8 +636,7 @@ theorem CodataType.blockTruth_coind {S' : (Name → Prop) → CodataType j g k �
 destructors grows with the truths of the recursive destructors, and when the names of the types are
 distinct. -/
 theorem CodataType.blockTruth_fold {S' : (Name → Prop) → CodataType j g k Δ → ObsRel}
-    (hmono : ∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ Ts, ∀ o₁ o₂,
-      S' B T o₁ o₂ → S' B' T o₁ o₂)
+    (hmono : CodataType.BlockTruthMono Ts S')
     (hn : (Ts.map (·.name)).Nodup) {T : CodataType j g k Δ} (hT : T ∈ Ts)
     (h : (S' (CodataType.blockTruth Ts S') T).truth) : CodataType.blockTruth Ts S' T.name :=
   CodataType.blockTruth_coind hmono

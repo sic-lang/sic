@@ -467,7 +467,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         ⟨_, hI, _, _, levelRel_prop_iff.2 hP⟩
       obtain ⟨v', R', hv', hR', hrel⟩ := ht.2.2 hprop
       cases Computesι.det hd hI hv'
-      have hmono := DesRel.blockMono_prop hd hS
+      have hmono := CodataType.BlockTruthMono.of_desRel hd hS
       have htrue := (hRb _ _).1 ((HasEq.unique hd hR' hR _ _).1 hrel)
       rw [← h.2.2] at htrue
       obtain ⟨o, ho⟩ := CodataType.blockTruth_unfold hmono h.2.1 htrue
@@ -1074,7 +1074,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       fun hp => (Computesι.not_computesToProp hd hw hU' hp).elim⟩
   · rw [TypeDeclaration.sortAt, Universe.substLevels, hs] at hI
     obtain ⟨S, hS, hPr⟩ := hv.codataPropRel hd hdecl hq hl hp hadm has hs
-    have hmono := DesRel.blockMono_prop hd hS
+    have hmono := CodataType.BlockTruthMono.of_desRel hd hS
     -- The truths of the instances, joined with `P`.
     let Y : Name → Prop := fun D' => CodataType.blockTruth decl.codataTypes S D' ∨ ∃ a b, P D' a b
     have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι (decl.sortAt I L).level.closedValue
@@ -1706,7 +1706,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     rw [h.2.2] at hrel
     exact ⟨ht.1, fun _ => ⟨_, w₁, w₂, _, hI, hw₁, hw₂, hR, hrel⟩, fun hp => absurd hp hnp⟩
   · -- A proposition: the observations of the first term make it true.
-    have hmono := DesRel.blockMono_prop hd hS
+    have hmono := CodataType.BlockTruthMono.of_desRel hd hS
     have hP : ∀ T' ∈ decl.codataTypes, PropRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockTruth decl.codataTypes S T'.name) := fun T' hT' =>
