@@ -20,7 +20,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The ownerships of a branch at a variable renamed by `α` lifted are those of the branch before
 the renaming, when the ownerships of the scope agree along `α`. -/
 theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_lift {n m a b : Nat}
@@ -52,7 +51,6 @@ theorem _root_.Sic.Grading.MultiplicityVector.extendBinders_lift {n m a b : Nat}
 
 mutual
 
--- ADE: none.
 /-- A term renamed by `α` has the ownership of the term, given ownerships `φ'` of its variables that
 agree with `φ` along `α`. -/
 theorem Target.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : TargetRen n m)
@@ -70,7 +68,6 @@ theorem Target.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : T
   | _, _, .corec hMs hPs => .corec (hMs.rename α hφ) (hPs.rename α hφ)
   | _, _, .sub h hle => .sub (h.rename α hφ) hle
 
--- ADE: none.
 /-- Terms renamed by `α` have the ownerships of the terms, given ownerships `φ'` of their variables
 that agree with `φ` along `α`. -/
 theorem Targets.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : TargetRen n m)
@@ -80,7 +77,6 @@ theorem Targets.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : 
   | _, _, .nil => .nil
   | _, _, .cons hM hϱ hMs => .cons (hM.rename α hφ) hϱ (hMs.rename α hφ)
 
--- ADE: none.
 /-- The branches of a recursor renamed by `α` have the ownerships of the branches, given ownerships
 `φ'` of the variables of the scope that agree with `φ` along `α`. -/
 theorem TargetBranches.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat} (α : TargetRen n m)
@@ -95,7 +91,6 @@ theorem TargetBranches.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat}
         (fun x => congrArg (_ * ·) (hφ x)) _ _))
       hks (hNs.rename α hφ)
 
--- ADE: none.
 /-- The branches of a corecursor renamed by `α` have the ownerships of the branches, given
 ownerships `φ'` of the variables of the scope that agree with `φ` along `α`. -/
 theorem TargetCorecBranches.Ownership.rename {Ω : Name → Multiplicity} {n m : Nat}

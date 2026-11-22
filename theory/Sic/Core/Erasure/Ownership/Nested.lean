@@ -33,7 +33,6 @@ open Sic.Grading
 
 namespace MultiplicityVector
 
--- ADE: none.
 /-- The vector of a built branch at the variable of an argument is the ownership of the argument. -/
 theorem extendBinders_argVar {m c : Nat} (φ : MultiplicityVector m) (πs : Fin 0 → Multiplicity)
     (πs' : Fin c → Multiplicity) (k : Fin c) :
@@ -45,13 +44,11 @@ theorem extendBinders_argVar {m c : Nat} (φ : MultiplicityVector m) (πs : Fin 
 
 end MultiplicityVector
 
--- ADE: none.
 /-- The scale of a shape times `ς` is `ς`, since `ς · ς = ς`. -/
 theorem Shape.Next.scale_mul (ς : Multiplicity) : (next : Shape.Next) → next.scale ς * ς = ς
   | .recursor _ => by cases ς <;> rfl
   | .lifting _ => Multiplicity.mul_idem ς
 
--- ADE: none.
 /-- The variables as terms have the ownerships `ws`, which meet the requirements of their positions,
 when each variable at a position of a multiplicity other than `0` has the ownership at its
 position, `↯` having every ownership. -/
@@ -72,7 +69,6 @@ theorem Targets.Ownership.ofVars {Ω : Name → Multiplicity} {n : Nat} {φ : Mu
     rw [List.ofFn_succ]
     exact .cons hM (hϱ 0) hs
 
--- ADE: none.
 /-- The branches of a recursor checked a second time, with the scope at `ς · φ` and the ownership
 `χ`, have their ownerships, the scope of the second check at `ς · ς · φ = ς · φ`. -/
 theorem TargetBranches.Ownership.second {Ω : Name → Multiplicity} {n : Nat}
@@ -89,7 +85,6 @@ theorem TargetBranches.Ownership.second {Ω : Name → Multiplicity} {n : Nat}
 
 mutual
 
--- ADE: none.
 /-- The branches built from a shape of the ownerships `ς` and `χ` for the recursor
 `rec_ρ · ◀ ϱ with N̄` on the observations of the path `M` have their ownerships, when the branches
 of the recursor, checked a second time, keep `o` with the scope at `ς · φ`, and, when `ρ` times the
@@ -166,7 +161,6 @@ theorem TargetCorecBranches.Ownership.branches {Ω : Name → Multiplicity}
       exact key _ (fun x => MultiplicityVector.extendBinders_shift _ _ _ x)
         (fun k => MultiplicityVector.extendBinders_argVar _ _ _ k)
 
--- ADE: none.
 /-- The result of the observation `O` of a field, for the shape of a result of the ownerships `ς`
 and `χ`, has the ownership of the result of the lifted destructor, when the branches of the
 recursor keep `o` with the scope at the scale of the shape, and, when the recursor runs a recursion
@@ -199,7 +193,6 @@ theorem Target.Ownership.body {Ω : Name → Multiplicity} {ρ ϱ o ς χ : Mult
 
 end
 
--- ADE: none.
 /-- `n.Ξ` at run time, over the scope of the recursor and the field, the variable `0`, has the
 ownership `1` of a new value, when the branches of the recursor have their ownerships, of which `o`
 is the ownership of the term of each level of the recursion, the shape has their ownerships `ς` and

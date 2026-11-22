@@ -171,7 +171,6 @@ theorem Shape.Motive.nested_eq_some {m : Option Shape.Motive} {σ : Shape} :
   · rintro ⟨π, χ', rfl⟩
     rfl
 
--- ADE: none.
 /-- The shape that the erasure of a recursor gives the nested result of the field `l` of the
 constructor `con`, `Constructor.nestedShapes` in the mode `11ᵐ` on the axis of the uses at run time,
 is the shape of the lifting that the type `A` of the field at the instance, at the levels `ls`, at
@@ -204,7 +203,6 @@ theorem Telescope.exists_shape_of_nestedShapes {v : Lifting.Variables} {lookup :
     | some ⟨.lifting _, π, χ'⟩, rfl => exact ⟨_, A, _, π, χ', hA⟩
   | _, _ :: _, .cons _ _ _ Θ, l + 1, h => Telescope.exists_shape_of_nestedShapes Θ l h
 
--- ADE: none.
 /-- The shape that the erasure gives the nested result of a field, in the mode `11ᵐ` on the axis of
 the uses at run time, fits the recursor of the grade `r`. -/
 theorem Constructor.nestedShapes_fits {j g k' : Nat} {Δ : Scope} {sig : Signature}
@@ -215,7 +213,6 @@ theorem Constructor.nestedShapes_fits {j g k' : Nat} {Δ : Scope} {sig : Signatu
   obtain ⟨_, _, _, _, _, hA⟩ := Telescope.exists_shape_of_nestedShapes _ l h
   exact Shape.fits_of_shapes hA
 
--- ADE: none.
 /-- The shape of the nested result of a field, in the mode `md` on the axis of the uses at run time,
 has the ownerships `ς` and `χ` of the recursor, at their run-time multiplicities. -/
 theorem Constructor.nestedShapes_uniform {j g k' : Nat} {Δ : Scope} {sig : Signature}
@@ -228,7 +225,6 @@ theorem Constructor.nestedShapes_uniform {j g k' : Nat} {Δ : Scope} {sig : Sign
 
 /-! ## Shapes of the Block -/
 
--- ADE: none.
 /-- Each type of the block that the lifting of the scope of a recursor gives a motive has a shape,
 the recursor itself, of the factor `11ᵖ` and of the ownership of the results of the recursor. -/
 theorem Signature.blockShapes_of_block {sig : Signature} {Γ Δ : Scope}
@@ -274,7 +270,6 @@ theorem Signature.blockShapes_of_block_liftN {sig : Signature} {Γ Δ : Scope}
   obtain ⟨Υ, hΥ⟩ := Signature.blockShapes_of_block D b₀ h₀
   exact ⟨Υ, he ▸ hΥ⟩
 
--- ADE: none.
 /-- The recursive result of each field whose nesting has a position, the `j`-th of them, has the
 factor of the shape of its type: `11ᵖ` for a recursive field, and, for a nested field, the factor
 of the shape of the lifting of its type, which it has, in a signature whose names are distinct and
@@ -390,7 +385,6 @@ theorem Constructor.exists_nest_of_nestPositions {j g k' : Nat} {Δ Γ : Scope}
     ((Telescope.get_types_isSome (con.fieldsAt I ls as) l).2 hlt)
   exact ⟨n, A, hn, hp, hA⟩
 
--- ADE: none.
 /-- The `i`-th recursive result of the constructor `con`, at the field `l`, has the factor `π` of
 the typing, whose run-time multiplicity is the factor of the shape of the field that the erasure
 reads, when the field is nested, in a signature whose names are distinct and that declares each
@@ -423,7 +417,6 @@ theorem Constructor.ResultTypes.factor_nested {sig : Signature} {md : Mode}
     cases hm'
     exact ⟨π, hπ, Shape.factor_eq_run hm⟩
 
--- ADE: none.
 /-- The nested field that is the `i`-th field of the constructor `con` whose nesting has a position
 has a shape, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, when the typing gives it a recursive result: the type of the field

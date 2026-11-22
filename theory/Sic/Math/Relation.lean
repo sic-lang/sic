@@ -15,7 +15,6 @@ state it.
 
 @[expose] public section
 
--- ADE: none.
 /-- An element accessible for a relation is not above itself by its transitive closure. -/
 theorem Acc.not_transGen_self {α : Sort _} {r : α → α → Prop} {a : α} (h : Acc r a) :
     ¬ Relation.TransGen r a a := by

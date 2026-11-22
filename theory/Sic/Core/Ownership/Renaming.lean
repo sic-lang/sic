@@ -71,7 +71,6 @@ theorem Ownership.extendArgs_liftN :
 
 /-! ## Stability of the Ownership -/
 
--- ADE: none.
 /-- The judgments of ownership are stable under the renamings. -/
 structure OwnershipStableUnderRenaming : Prop where
   /-- A term, renamed, has the same ownership, given ownerships of the variables that give the image
@@ -88,7 +87,6 @@ structure OwnershipStableUnderRenaming : Prop where
     {os : List Grade} (α : Ren Γ Δ),
     (∀ x, φ' (α x) = φ x) → OwnershipArgs sig φ m ts os → OwnershipArgs sig φ' m (ts.rename α) os
 
--- ADE: none.
 /-- The judgments of ownership are stable under the renamings.
 RFC: `\mathsf{ren}_{◀}.t`
 RFC: `\mathsf{ren}_{◀}.\bar t` -/

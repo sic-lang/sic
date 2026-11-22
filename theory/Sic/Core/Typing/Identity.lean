@@ -72,7 +72,6 @@ theorem HasArgs.bound {Γ : Scope} : {ps : List Parameter} → {ctx : Context k 
             | .succ _ => rfl) Θ)
     exact e ▸ HasArgs.bound (Γ := .var :: Γ) h
 
--- ADE: none.
 /-- A second-order variable, as an abstraction over the variables of its telescope, is a term of its
 type, in the context extended by its telescope. -/
 theorem HasType.eta {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
@@ -85,7 +84,6 @@ theorem HasType.eta {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Gra
 
 /-! ## Parameters Themselves -/
 
--- ADE: none.
 /-- The parameters of a well-formed context, themselves, are arguments of the context. -/
 theorem HasInstanceArgs.identity : {Δ : Scope} → {ctx : Context k Δ} → WfCtx sig ctx →
     HasInstanceArgs sig ctx (.identity Δ) ctx

@@ -24,7 +24,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The pairs `c_l ◀ r_l · ς · ψ₁⁻ · … · ψ_h⁻` that the nested fields of the cases of the block give
 the requirement of the recursion on the axis `ax`, for a recursor of the variables `v`, checked in
 the mode `m`, whose results that are motives have the ownership `χ`, at the instance `I` of the
@@ -41,7 +40,6 @@ def TypeDeclaration.nestedPairs (decl : TypeDeclaration) (sig : Signature) (v : 
           (ax p.requirement * y, ax ((m.grade * v.recursion) * p.usage))
       | (none, _) => []).flatten
 
--- ADE: none.
 /-- The nested fields of the constructors of the block have shapes on the two axes of the grades,
 for a recursor of the variables `v`, checked in the mode `m`, whose results that are motives have
 the ownership `χ`, at the instance `I` of the qualities `qs` and of the grades `ps`: each lifting
@@ -55,7 +53,6 @@ def TypeDeclaration.NestedHaveShapes (decl : TypeDeclaration) (sig : Signature)
     decl.cases[i]? = some (j, T, con) → ∀ ax ∈ [Grade.run, Grade.total],
       con.NestedHaveShapes sig v m ax decl.names qs ps χ I
 
--- ADE: none.
 /-- `recursion_Σ;m(𝒟.{s̄'; p̄'}; s_C, r, ς, χ)`: the requirement `r̂` of the recursion of a recursor
 checked in the mode `m`, of the variables `v`, the quality `s_C` of the sorts of its motives, its
 grade `r` and the requirement `ς` of the lifted destructors, whose results that are motives have
@@ -69,7 +66,6 @@ def TypeDeclaration.recursionRequirement (decl : TypeDeclaration) (sig : Signatu
   Parameter.recursion (m.grade * v.recursion) (decl.recursivePositions I)
     (decl.cases.map fun x => x.2.2.params I) (decl.nestedPairs sig v m χ qs ps I)
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor of the variables `v`, checked in the mode `11ᵐ`,
 whose results that are motives have the ownership `χ`, on the block of the data type `D`, at the
 instance of the qualities `qs` and of the grades `ps`, in the signature `sig`, when the entry
@@ -85,7 +81,6 @@ def Entry.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality) 
     else none
   | _ => none
 
--- ADE: none.
 /-- `recursion_Σ(T, r)`: the requirement `r̂` of the recursion of a recursor of the variables `v`,
 whose results that are motives have the ownership `χ`, on the block of the data type `D`, at the
 instance of the qualities `qs` and of the grades `ps`, in the mode `11ᵐ`, read from the last entry
@@ -98,7 +93,6 @@ def Signature.recursionRequirement (sig : Signature) (D : Name) (qs : List Quali
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor on a block is below, at run time, the coefficient
 of each recursive field of each of its constructors that the recursor uses at run time, at each
 instance. -/
@@ -116,7 +110,6 @@ theorem TypeDeclaration.recursionRequirement_run_le {decl : TypeDeclaration} {si
   Parameter.recursion_run_le (by rw [TypeDeclaration.recursivePositions, List.getElem?_map, hi]; rfl)
     (by rw [List.getElem?_map, hi]; rfl) hl hp hc
 
--- ADE: none.
 /-- An entry that does not introduce the name `D` gives the requirement of the recursion on the
 block of no data type named `D`. -/
 theorem Entry.recursionRequirement_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
@@ -135,7 +128,6 @@ theorem Entry.recursionRequirement_of_not_mem {sig : Signature} {D : Name} {qs :
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
--- ADE: none.
 /-- In a signature whose names are distinct, the requirement of the recursion that the erasure
 reads is the one of the block of the data type, in the mode `11ᵐ`, along the whole signature. -/
 theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Lifting.Variables}
@@ -157,7 +149,6 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursionRequirement_of_not_mem hDe]; rfl)]
       exact hd.recursionRequirement ⟨he', hT, hD⟩ hq hp
 
--- ADE: none.
 /-- In a signature whose names are distinct, the requirement of the recursion that the erasure of a
 recursor reads is the one of the block of its data type, in the mode `11ᵐ`. -/
 theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.Distinct) {D : Name}
@@ -169,7 +160,6 @@ theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.D
       decl.recursionRequirement sig v .oneOne χ qs ps (.ofLists qs ps hq hp) := by
   rw [Signature.recursionRequirement, hd.recursionRequirement h hq hp, Option.getD_some]
 
--- ADE: none.
 /-- Each product along a prefix of a path of the shape of a nested field gives the requirement of
 the recursion a pair, of the requirement of the field times the product and of the grade with which
 the recursor uses the field. -/
@@ -190,7 +180,6 @@ theorem TypeDeclaration.mem_nestedPairs {decl : TypeDeclaration} {sig : Signatur
     exact ⟨hσ, hp⟩
   · exact List.mem_map.2 ⟨y, hy, rfl⟩
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor is never `0` at run time. -/
 theorem TypeDeclaration.recursionRequirement_run_ne_zero {decl : TypeDeclaration}
     {sig : Signature} {v : Lifting.Variables} {m : Mode} {χ : Grade} {qs : List Quality}
@@ -198,7 +187,6 @@ theorem TypeDeclaration.recursionRequirement_run_ne_zero {decl : TypeDeclaration
     (decl.recursionRequirement sig v m χ qs ps I).run ≠ .zero :=
   Parameter.recursionAxis_ne_zero _
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor on a block is below, at run time, the requirement
 of each nested field that the recursor uses at run time times the product along each prefix of the
 paths of its shape times the grade with which the recursor uses the field, at each instance. -/

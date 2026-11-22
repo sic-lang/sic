@@ -37,7 +37,6 @@ structure IsPreorder {α : Type} (r : α → α → Prop) : Prop where
   RFC: `\mathsf{preorder}_\mu.\mathsf{trans}` -/
   trans : ∀ {a b c}, r a b → r b c → r a c
 
--- ADE: none.
 /-- `j` is the least upper bound of `a` and `b` for the relation `r`: it is above both, and below
 every element above both. -/
 structure IsLeastUpperBound {α : Type} (r : α → α → Prop) (a b j : α) : Prop where

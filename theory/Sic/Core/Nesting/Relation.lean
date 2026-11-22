@@ -27,7 +27,6 @@ variable {k : Nat} {α β γ : Type}
 
 mutual
 
--- ADE: none.
 /-- Three nestings have the same positions, whose objects `r` relates. -/
 inductive Nest.Rel₃ (r : α → β → γ → Prop) : Nest α → Nest β → Nest γ → Prop where
   /-- No position. -/
@@ -38,7 +37,6 @@ inductive Nest.Rel₃ (r : α → β → γ → Prop) : Nest α → Nest β → 
   | inst {ns : List (Nest α)} {ms : List (Nest β)} {os : List (Nest γ)}
       (h : Nest.ListRel₃ r ns ms os) : Nest.Rel₃ r (.inst ns) (.inst ms) (.inst os)
 
--- ADE: none.
 /-- The nestings of the arguments of three instances are as many, and related one by one. -/
 inductive Nest.ListRel₃ (r : α → β → γ → Prop) :
     List (Nest α) → List (Nest β) → List (Nest γ) → Prop where

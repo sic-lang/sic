@@ -39,7 +39,6 @@ def _root_.Sic.Grading.GradeVector.extendTelescope {k : Nat} {Γ : Scope} (γ : 
   | [], .nil => γ
   | _ :: _, .cons q _ _ Θ => extendTelescope (Γ := .var :: Γ) (γ ∙ (r * q)) r Θ
 
--- ADE: none.
 /-- The grades of the entries whose parameters are `ps`, the grade `p l` of the entry at each
 position `l`, and `0`, erased, after them. -/
 def Parameter.grades (ps : List Parameter) : Nat → Grade :=

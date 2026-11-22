@@ -30,7 +30,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `w`: the recursive result of a branch of a recursor of the target language: `erased`, the RFC's
 `⊥`, when the result is erased, `field l` when it is the recursor on the recursive field `l`, and
 `nested l σ` when it is the corecursor of a lifting, of the shape `σ`, on the nested field `l`; the
@@ -44,14 +43,12 @@ inductive RecursiveResult where
   /-- `n.Ξ`. -/
   | nested (l : Nat) (σ : Shape)
 
--- ADE: none.
 /-- The position of the field on which a result recurses, by the recursor on the field itself or by
 the recursors on its observations, if any. -/
 def RecursiveResult.fieldPosition : RecursiveResult → Option Nat
   | .field l | .nested l _ => some l
   | .erased => none
 
--- ADE: none.
 /-- The factor of a result, the multiplicity by which it multiplies the uses of the scope by the
 recursion that computes it: `0` when it is erased, `1` for the recursor itself, and the factor of the
 shape of a nested result.
@@ -63,7 +60,6 @@ def RecursiveResult.factor : RecursiveResult → Multiplicity
 
 /-! ## Recursive Results of a Block -/
 
--- ADE: none.
 /-- What computes the recursive result of the field at the position `l`, whose nesting has a
 position: the recursor on the field itself when it is recursive, of the type `D` of the block that
 `recursion` gives, the corecursor of the lifting of its type when its type has the shape `shape`,
@@ -75,7 +71,6 @@ def RecursiveResult.ofField (recursion : Option Name) (shape : Option Shape) (l 
   | none, some σ => .nested l σ
   | none, none => .erased
 
--- ADE: none.
 /-- `w̄`: the recursive results of the fields of the constructor `con` at the instance `I`, in a
 block whose types are named `names`, for a recursor of the variables `v` whose results that are
 motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`, in
@@ -89,7 +84,6 @@ def Constructor.recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
     else some (RecursiveResult.ofField ((con.fields I).recursionAt names y.2)
       (con.nestedShapes sig v .oneOne Grade.run names qs ps χ I)[y.2]?.join y.2)
 
--- ADE: none.
 /-- The recursive results of the fields of each constructor of the block, in the order of the
 cases, for a recursor of the variables `v` whose results that are motives have the ownership `χ`, at
 the instance `I` of the qualities `qs` and of the grades `ps`, in the signature `sig`. -/
@@ -98,7 +92,6 @@ def TypeDeclaration.recursiveResults (decl : TypeDeclaration) (sig : Signature)
     (I : Instance decl.sorts decl.grades) : List (List RecursiveResult) :=
   decl.cases.map fun x => x.2.2.recursiveResults sig v decl.names qs ps χ I
 
--- ADE: none.
 /-- The recursive results of the fields of each constructor of the block of the data type `D`, for a
 recursor of the variables `v` whose results that are motives have the ownership `χ`, at the instance
 of the qualities `qs` and of the grades `ps`, in the signature `sig`, when the entry declares
@@ -114,7 +107,6 @@ def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps 
     else none
   | _ => none
 
--- ADE: none.
 /-- `results_Σ(T, κ_C, r, ς, χ)`: the recursive results `w̄̄` of the fields of each constructor of the
 block of the data type `D`, in the order of the declaration, which is that of the branches of a
 recursor, for a recursor of the variables `v`, which are the quality `s_C` of the sort `κ_C` of its
@@ -129,7 +121,6 @@ def Signature.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) 
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- An entry that does not introduce the name `D` gives the recursive results of no data type named
 `D`. -/
 theorem Entry.recursiveResults_of_not_mem {sig : Signature} {D : Name} {qs : List Quality}
@@ -148,7 +139,6 @@ theorem Entry.recursiveResults_of_not_mem {sig : Signature} {D : Name} {qs : Lis
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
--- ADE: none.
 /-- In a signature whose names are distinct, the recursive results that the erasure reads are those
 of the block of the data type, along the whole signature. -/
 theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : Lifting.Variables}
@@ -170,7 +160,6 @@ theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : 
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveResults_of_not_mem hDe]; rfl)]
       exact hd.findSome?_recursiveResults ⟨he', hT, hD⟩ hq hp
 
--- ADE: none.
 /-- In a signature whose names are distinct, the recursive results that the erasure of a recursor
 reads are those of the block of its data type, at the instance. -/
 theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct) {D : Name}
@@ -182,7 +171,6 @@ theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct
       decl.recursiveResults sig v qs ps χ (.ofLists qs ps hq hp) := by
   rw [Signature.recursiveResults, hd.findSome?_recursiveResults h hq hp, Option.getD_some]
 
--- ADE: none.
 /-- The recursive results of the fields of the constructor `con` are the results of the fields that
 have one, at their positions, in order. -/
 theorem Constructor.recursiveResults_eq_map {j g k' : Nat} {Δ : Scope} (sig : Signature)
@@ -198,7 +186,6 @@ theorem Constructor.recursiveResults_eq_map {j g k' : Nat} {Δ : Scope} (sig : S
 
 /-! ## Alignment With the Recursive Results of the Typing -/
 
--- ADE: none.
 /-- The constructor `con` has one recursive result in the erasure for each recursive result that
 the typing binds in its branch, so that the `j`-th results of both are those of the same field. -/
 theorem Constructor.length_recursiveResults {j g k' : Nat} {Δ : Scope} (sig : Signature)
@@ -208,7 +195,6 @@ theorem Constructor.length_recursiveResults {j g k' : Nat} {Δ : Scope} (sig : S
   rw [Constructor.recursiveResults_eq_map, List.length_map]
   exact Telescope.length_nestPositions _ _ (Telescope.length_nest names (con.fields I)) 0
 
--- ADE: none.
 /-- The `j`-th recursive result of the constructor `con` in the erasure is the one of the `j`-th of
 its fields whose nesting has a position, which the typing binds the `j`-th result of its branch:
 the recursor on the field when it is recursive, the corecursor of the shape of its type when the
@@ -240,7 +226,6 @@ theorem RecursiveResult.ofField_eq_nested {r : Option Name} {s : Option Shape} {
     {σ : Shape} : RecursiveResult.ofField r s l = .nested l' σ ↔ l' = l ∧ r = none ∧ s = some σ := by
   cases r <;> cases s <;> simp [RecursiveResult.ofField, eq_comm]
 
--- ADE: none.
 /-- The recursive result of the `j`-th field of the constructor `con` whose nesting has a
 position, the field `l`, is the corecursor of the shape `σ` exactly when the field is not recursive
 and the shape of its nested result is `σ`. -/
@@ -255,7 +240,6 @@ theorem Constructor.recursiveResults_eq_nested {j g k' : Nat} {Δ : Scope} {sig 
     RecursiveResult.ofField_eq_nested, Option.join_eq_some_iff]
   simp
 
--- ADE: none.
 /-- A recursive result of the constructor `con` that is the corecursor of the shape `σ` on the field
 `l` is that of a field at the nesting of an instance, a nested field, whose nested result has the
 shape `σ`. -/

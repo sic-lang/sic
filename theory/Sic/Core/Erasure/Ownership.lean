@@ -30,7 +30,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `own_{o'}(w)`: the ownership of the variable of a recursive result of the multiplicity `1` in a
 branch of a recursor of the ownership `o'`: `1` for a nested result, the corecursor of a lifting, a
 new value, and `o'` for the others, results of the recursor.
@@ -41,7 +40,6 @@ def RecursiveResult.ownership (o' : Multiplicity) : RecursiveResult → Multipli
 
 mutual
 
--- ADE: none.
 /-- `Ω; φ ⊢ M ◀ o`: the value of the term `M` of the target language has the ownership `o`, given
 the ownership `φ` of each variable and the ownership `Ω` of each constant. -/
 inductive Target.Ownership (Ω : Name → Multiplicity) :
@@ -91,7 +89,6 @@ inductive Target.Ownership (Ω : Name → Multiplicity) :
   | sub {n : Nat} {φ : MultiplicityVector n} {p q : Multiplicity} {M : Target n}
       (h : Target.Ownership Ω φ p M) (hle : q ≤ p) : Target.Ownership Ω φ q M
 
--- ADE: none.
 /-- `Ω; φ ⊢ M̄ ◀ ō`: the terms `M̄` have the ownerships `ō`, each satisfying the requirement of its
 position. -/
 inductive Targets.Ownership (Ω : Name → Multiplicity) :
@@ -106,7 +103,6 @@ inductive Targets.Ownership (Ω : Name → Multiplicity) :
       {Ms : Targets n} {os : List Multiplicity} (hM : Target.Ownership Ω φ o M) (hϱ : ϱ ≤ o)
       (hMs : Targets.Ownership Ω φ os Ms) : Targets.Ownership Ω φ (o :: os) (.cons π ϱ M Ms)
 
--- ADE: none.
 /-- `Ω; φ ⊢ N̄ ◀ ρ; o; o'; ς; χ`: each branch of a recursor of the multiplicity `ρ` whose term has the
 ownership `o` has the ownership `o'`, given the ownership `o · κ` of the variable of each field, of
 the coefficient `κ`, and the ownership of each recursive result times its multiplicity `π'`, `o' · π'`
@@ -138,7 +134,6 @@ inductive TargetBranches.Ownership (Ω : Name → Multiplicity) :
       (hNs : TargetBranches.Ownership Ω φ ρ o o' ς χ Ns) :
       TargetBranches.Ownership Ω φ ρ o o' ς χ (.cons a b πs κs πs' ks N Ns)
 
--- ADE: none.
 /-- `Ω; φ ⊢ P̄ ◀`: each branch of a corecursor has, for all the ownerships `ō` of its arguments that
 satisfy their requirements, the value of the ownership `ψ` of the result of its destructor at `ō`,
 or the ownership `1` of a new value when it resumes the corecursor, given the ownership `ς · φ(x)`
@@ -170,7 +165,6 @@ end
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The value of an ownership that is a constant is the constant, whatever the ownerships of the
 arguments. -/
 theorem ResultOwnership.value_const (χ : Multiplicity) : {n : Nat} → (os : List Multiplicity) →
@@ -185,14 +179,12 @@ theorem ResultOwnership.value_const (χ : Multiplicity) : {n : Nat} → (os : Li
 
 mutual
 
--- ADE: none.
 /-- The term that a skeleton stands for has the ownership `1` of a new value. -/
 theorem Skeleton.ownership {Ω : Name → Multiplicity} {n : Nat} {φ : MultiplicityVector n} :
     (k : Skeleton) → Target.Ownership Ω φ .one k.target
   | .empty => .erased _
   | .ctor _ ks => .ctor (Skeleton.ownership_targets ks)
 
--- ADE: none.
 /-- The terms that skeletons stand for have the ownership `1` of a new value, which satisfies the
 requirement `ω` at which they are stored. -/
 theorem Skeleton.ownership_targets {Ω : Name → Multiplicity} {n : Nat}

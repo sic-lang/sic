@@ -14,6 +14,8 @@ extends a vector, as the de Bruijn indices number the entries of a context, the 
 ADE define their vectors as sequences, extended one element at a time; here a vector is the function
 that gives each index its element, so that the laws of the operations follow from those of the
 modality at each index.
+That the extension commutes with the operations is a law here, while ADE need none, since their
+operations are defined by these cases, in `Graded/Context.agda`.
 The operations and their laws hold whatever the set of the indices, finite or not, so that they are
 stated on the functions from any type of indices, of which the vectors are those from the numbers
 below `n`: the demands of annex 20, which give each address of a heap a multiplicity, use them.
@@ -172,7 +174,6 @@ theorem le_meet_iff (h : IsModality α zero one) (μ₁ μ₂ μ₃ : ι → α)
     fun h' => ⟨fun i => ((h.le_meet_iff _ _ _).mpr (h' i)).1,
       fun i => ((h.le_meet_iff _ _ _).mpr (h' i)).2⟩⟩
 
--- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations. -/
 structure ExtendCommutes (α : Type) [Add α] [Mul α] (zero : α) : Prop where
   /-- The extension of the zero vector by the zero is the zero vector.
@@ -188,7 +189,6 @@ structure ExtendCommutes (α : Type) [Add α] [Mul α] (zero : α) : Prop where
     ξ₁ ·ᶜ (μ ∙ ξ₂) = (ξ₁ ·ᶜ μ) ∙ (ξ₁ * ξ₂)
 
 omit [Min α] in
--- ADE: none, since their operations are defined by these cases, in `Graded/Context.agda`.
 /-- The extension commutes with the operations, whatever the laws of `α`.
 RFC: `\mathsf{op}{\bullet}_\mu.0`
 RFC: `\mathsf{op}{\bullet}_\mu.{+}`

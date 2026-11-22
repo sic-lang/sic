@@ -898,7 +898,6 @@ theorem Signature.instanceType_substLevels {k k' k'' j g : Nat} {Γ : Scope}
   rw [Signature.instanceType, Signature.instanceType, Term.weakenClosed, Term.weakenClosed,
     Term.substLevels_rename, Term.substLevels_substLevels]
 
--- ADE: none.
 /-- The states at a position of states instantiated are the states at the position, instantiated. -/
 theorem States.get_substLevels_eq {k k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :
     (Ss : States k Γ) → (j : Nat) →

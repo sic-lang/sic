@@ -47,7 +47,6 @@ variable {sig : Signature} {k : Nat} {decl : TypeDeclaration} {D : Name}
 
 /-! ## Substitutions of Observations -/
 
--- ADE: none.
 /-- The substitution `θ` of the context `Ξ` in the context `Γ` observes the term `t` of the instance
 `D.{s̄; l̄; p̄} ā` of the codata type `T`: it gives each variable a variable, declared with its type,
 substituted, and each second-order variable either a variable, declared with its telescope and its
@@ -84,7 +83,6 @@ structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D
         A.subst (Subst.liftN _ θ) = (B'.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))
 
--- ADE: none.
 /-- The substitutions that observe a term of an instance of the codata type `T`. -/
 def Subst.Observes.Base (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
     (T : CodataType decl.sorts decl.grades decl.levels decl.scope) (qs : List Quality)
@@ -94,7 +92,6 @@ def Subst.Observes.Base (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D 
   ∃ (as : InstanceArgs k Γ decl.scope) (t : Term k Γ),
     Subst.Observes sig D T qs ls ps hq hl hp as t ctx' @θ ctx
 
--- ADE: none.
 /-- A substitution that observes a term, followed by the observation of the term by a destructor,
 observes the term, in the context extended by a second-order variable whose telescope and type,
 substituted, are the telescope and the result of the destructor, at the observations of the term by
@@ -132,7 +129,6 @@ theorem Subst.Observes.snoc {Γ Ξ : Scope} {as : InstanceArgs k Γ decl.scope} 
       rw [Telescope.subst_snoc_rename_weaken, Term.subst_liftN_snoc_rename_weaken]
       exact h.secondOrderIn hX
 
--- ADE: none.
 /-- A substitution that observes a term, lifted under variables, observes the term, renamed, when
 the context of the substitution is well formed. -/
 theorem Subst.Observes.Base.lifted {Γ Ξ : Scope} {ctx' : Context k Γ} {θ : Subst k Γ Ξ}
@@ -178,7 +174,6 @@ theorem Subst.Observes.Base.lifted {Γ Ξ : Scope} {ctx' : Context k Γ} {θ : S
             exact Term.rename_subst_of (Subst.liftN_rename_after_of ps'.length
               (fun x => hd.obsSubst_observation_rename Ren.weaken D qs ls ps as t x)) _
 
--- ADE: none.
 /-- The substitutions that observe a term of an instance of a codata type of the signature, which
 its constraint admits, give what the stability of the typing asks of a family of substitutions: the
 rules `(d)` and `(d_≡)` type the observation of the term at arguments. -/
@@ -209,7 +204,6 @@ theorem Subst.Observes.liftable (hT : sig.HasCodataType D decl T)
 
 /-! ## Destructors at the Observations of a Term -/
 
--- ADE: none.
 /-- The arguments and the result of a destructor at a position of destructors in a sort, renamed,
 at a substitution that gives each variable what a substitution that observes a term gives the
 variable that it renames, followed by the observations of the term by the destructors before the
@@ -346,7 +340,6 @@ theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
         (Subst.snoc (e := .secondOrder ps₀ ψ₀) @θ' (t.observation D qs ls ps as d₀ ps₀)) @θ
         (fun x => hβ x) hO (fun h'' => link (.there h'')) h'
 
--- ADE: none.
 /-- The arguments and the result of a destructor of a codata type of a well-formed signature, at an
 instance that its constraint admits, at variables that a typed renaming of its parameters gives,
 and at the observations of a term of this instance by the destructors before it: the arguments are

@@ -18,7 +18,6 @@ namespace Sic.Grading
 
 open Sic.Math
 
--- ADE: none.
 /--
 A grade, a pair of multiplicities whose first counts the uses at run time and whose second counts
 all the uses.

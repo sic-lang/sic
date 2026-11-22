@@ -396,7 +396,6 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (fun j => by rw [hnr T'' hT' c hc j]; exact .plain) _
       (fun _ _ hl' hgl => (Parameter.grades_of_getElem? hl') ▸ hgl) ts hts bs hSc⟩
 
--- ADE: none.
 /-- `(c)` at run time, closed: a constructor of a data type of `Σ`, whose type declaration is
 meaningful, applied to arguments of its fields that the meaning relates to themselves, is related at
 its instance to the address of a value of its case whose fields are the addresses to which the
@@ -456,7 +455,6 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hq hl hp hadm has hs
     exact ⟨_, hw _, .inl ⟨_, _, levelRel_prop_iff.2 (hP T hT).1⟩⟩
 
--- ADE: none.
 /-- The converse of `RunsAs.ctor`: the arguments of the fields of a constructor of a meaningful
 declaration, which `(®_c)` relates to addresses at relations `X` of the recursive fields within
 `(®_μ)`, are related to them, each at the type of its entry, when its grade is used at run time,
@@ -515,7 +513,6 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     (Constructor.runNestRel_instances hd hT con hU) g hg ts
       ((con.eqSubst_fields_atLevels hq hl hp as).2 hts) bs hS')
 
--- ADE: none.
 /-- `(c)` at run time: a constructor of a data type of `Σ`, whose type declaration is meaningful,
 applied to arguments of its fields valid at run time with the grades `γ`, is valid at run time at its
 instance with the grades `γ`, in a signature whose names are distinct: its erasure evaluates its

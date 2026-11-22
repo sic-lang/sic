@@ -60,7 +60,6 @@ inductive Name : Type where
 /-- A string is the name that a declaration gives. -/
 instance : Coe String Name := ⟨.base⟩
 
--- ADE: none.
 /--
 What the terms see of an entry of a telescope: the grade `p` with which the entry is used, and the
 requirement `r` on the ownership of its argument.
@@ -71,7 +70,6 @@ structure Parameter where
   /-- The requirement `r` on the ownership of the argument. -/
   requirement : Grade
 
--- ADE: none.
 /--
 `ψ = χ₀ ∧ x_{j₁} · χ_{j₁} ∧ … ∧ x_{jₙ} · χ_{jₙ}`: the ownership of the result of a second-order
 variable whose telescope has `n` entries, the meet of its constant `χ₀` and of a factor `xⱼ · χⱼ`
@@ -87,20 +85,17 @@ structure ResultOwnership (α : Type) (n : Nat) where
   /-- The coefficient `χⱼ` of the variable `xⱼ`, if it has a factor. -/
   coefficient : Fin n → Option α
 
--- ADE: none.
 /-- The ownership `ψ` of a result whose constant and coefficients are mapped by `f`, such as the
 multiplicities at run time of grades. -/
 def ResultOwnership.map {α β : Type} {n : Nat} (f : α → β) (ψ : ResultOwnership α n) :
     ResultOwnership β n :=
   ⟨ψ.constant.map f, fun j => (ψ.coefficient j).map f⟩
 
--- ADE: none.
 /-- `ψ'`: the ownership `ψ` of the result of a second-order variable without the factor of the first
 variable of its telescope, over the variables after it. -/
 def ResultOwnership.tail {α : Type} {n : Nat} (ψ : ResultOwnership α (n + 1)) : ResultOwnership α n :=
   ⟨ψ.constant, fun i => ψ.coefficient i.succ⟩
 
--- ADE: none.
 /-- `ψ[ō / x̄]`: the value of the ownership `ψ` of the result of a second-order variable, given the
 ownerships `os` of its arguments: the meet of its constant `ψ` and of the ownership `oⱼ` of each
 argument scaled by the coefficient `χⱼ` of its variable, over the factors present, and none if no
@@ -283,7 +278,6 @@ inductive Branches (k : Nat) : Scope → Type where
   | cons {Γ : Scope} (n m : Nat) (es : Vector Grade m) (u : Term k ((Γ.extend n).extend m))
       (us : Branches k Γ) : Branches k Γ
 
--- ADE: none.
 /--
 `Θ = (x₁ : A₁ ▶ p₁; q₁ ◀ r₁, …, xₐ : Aₐ ▶ pₐ; qₐ ◀ rₐ)`: a telescope in the scope `Γ`, whose
 entries have the parameters `ps`, each type in the scope of the entries before it; the entry
@@ -336,7 +330,6 @@ def Args.terms {k : Nat} {Γ : Scope} : {ps : List Parameter} → Args k Γ ps �
   | [], .nil => .nil
   | _ :: _, .cons t ts => .cons t ts.terms
 
--- ADE: none.
 /-- The type of the block whose names are `names` that the type `A` of a field, or of the result of a
 destructor, is an instance of, if any: the field or the destructor is then recursive.
 RFC: `\mathsf{recursive}_A` -/
@@ -344,7 +337,6 @@ def Term.blockName {k : Nat} {Γ : Scope} (names : List Name) : Term k Γ → Op
   | .inst D _ _ _ _ => if D ∈ names then some D else none
   | _ => none
 
--- ADE: none.
 /-- The types of the block whose names are `names` that the types of the entries of a telescope are
 instances of, in order: `some D` for a recursive field of the type `D`, `none` for the others.
 RFC: `\mathsf{recursive}_\Theta` -/
@@ -463,7 +455,6 @@ structure Instance (j g : Nat) where
   /-- The grade of each grade variable. -/
   grades : Fin g → Grade
 
--- ADE: none.
 /-- `f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, a constant definition, which defines the constant `f`. -/
 structure ConstantDefinition where
   /-- The name `f`. -/
@@ -483,7 +474,6 @@ structure ConstantDefinition where
   /-- The body `t`, for each instance. -/
   body : Instance sorts grades → Term levels []
 
--- ADE: none.
 /-- `f.{s̄; l̄; p̄} : A ▶ m ◀ p`, a constant declaration, which declares the constant `f`, without
 body. -/
 structure ConstantDeclaration where
@@ -502,7 +492,6 @@ structure ConstantDeclaration where
   /-- The type `A`, for each instance. -/
   type : Instance sorts grades → Term levels []
 
--- ADE: none.
 /-- `c : Θ`, a constructor of a data type, over `j` sort variables, `g` grade variables and `k`
 level variables, whose fields `Θ` are a telescope in the scope `Δ` of the parameters of the
 declaration, for each instance, since their grades may be grade variables. -/
@@ -514,7 +503,6 @@ structure Constructor (j g k : Nat) (Δ : Scope) where
   /-- The fields `Θ`, for each instance. -/
   fields : (I : Instance j g) → Telescope k Δ (params I)
 
--- ADE: none.
 /-- `D ▶ ζ ⊕ Π ≔ c₁ : Θ₁ | … | cₙ : Θₙ`, a data type of a declaration, the grades `ζ` with which it
 uses the parameters `Δ`, those `Π` of the parameters in which it is strictly positive, and its
 constructors, in order. -/
@@ -529,7 +517,6 @@ structure DataType (j g k : Nat) (Δ : Scope) where
   /-- The constructors `c₁ : Θ₁, …, cₙ : Θₙ`. -/
   constructors : List (Constructor j g k Δ)
 
--- ADE: none.
 /--
 `d₁ : (Θ₁ ⊢ B₁ ◀ ψ₁) ▶ p₁; q₁ ◀ ς₁ | … | dₙ : (Θₙ ⊢ Bₙ ◀ ψₙ) ▶ pₙ; qₙ ◀ ςₙ`: the destructors of a
 codata type, in the scope `Γ`, whose names are `ns`, in order.
@@ -547,7 +534,6 @@ inductive Destructors (k : Nat) : Scope → List Name → Type where
       (Θ : Telescope k Γ ps) (B : Term k (Γ.extend ps.length)) (ψ : ResultOwnership Grade ps.length)
       (ds : Destructors k (.secondOrder ps ψ :: Γ) ns) : Destructors k Γ (d :: ns)
 
--- ADE: none.
 /--
 `d̄ = (d̄₁ | d : (Θ ⊢ B ◀ ψ) ▶ p; q ◀ ς | d̄₂)`: a position of the destructor `d` in the
 destructors `d̄` of the scope `Γ`, as the rules of the observations decompose them, whose telescope
@@ -571,7 +557,6 @@ inductive Destructors.Pos {k : Nat} (d : Name) (p q ς : Grade) {ps : List Param
       (h : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
       Destructors.Pos d p q ς (.cons (d := d') p' q' ς' Θ' B' ψ' ds) Ξ Θ B ψ
 
--- ADE: none.
 /-- The types of the block whose names are `names` that the results of the destructors are instances
 of, in order: `some D` for a recursive destructor of the type `D`, `none` for the others.
 RFC: `\mathsf{recursive}_{\bar d}` -/
@@ -586,7 +571,6 @@ def Destructors.recursionAt {k : Nat} {Γ : Scope} {ns : List Name} (names : Lis
     (ds : Destructors k Γ ns) : Nat → Option Name :=
   fun i => ((ds.recursion names)[i]?).join
 
--- ADE: none.
 /-- `D ▶ ζ ⊕ Π ≔ d₁ : … | … | dₙ : …`, a codata type of a declaration, the grades `ζ` with which it
 uses the parameters `Δ`, those `Π` of the parameters in which it is strictly positive, and its
 destructors, in order. -/
@@ -604,7 +588,6 @@ structure CodataType (j g k : Nat) (Δ : Scope) where
   variables. -/
   body : Instance j g → Destructors k Δ destructors
 
--- ADE: none.
 /-- The types of a type declaration: a block of data types, or a block of codata types, so that a
 block is homogeneous.
 RFC: `\mathsf{syntax}_{\mathcal{D}}` -/
@@ -614,7 +597,6 @@ inductive TypeDeclaration.Body (j g k : Nat) (Δ : Scope) where
   /-- The codata types `D₁ ≔ …; …; Dₙ ≔ …` of a block of codata types. -/
   | codata (types : List (CodataType j g k Δ))
 
--- ADE: none.
 /--
 A type declaration, `data.{s̄; l̄; p̄ | C} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …` or
 `codata.{s̄; l̄; p̄ | C} Δ : κ where D₁ ≔ …; …; Dₙ ≔ …`, a block of data types or of codata types
@@ -687,7 +669,6 @@ def TypeDeclaration.recursivePositions (decl : TypeDeclaration)
   decl.cases.map fun x =>
     ((x.2.2.fields I).recursion decl.names).zipIdx.filterMap fun y => y.1.map fun _ => y.2
 
--- ADE: none.
 /-- The requirement of the recursion on one axis, the uses at run time or all the uses: the meet of
 `1` and of the coefficient `ϱ · π` of each recursive field of the requirement `ϱ` that the recursor
 uses with the multiplicity `π`, on this axis, other than `0`, a field that it does not use being
@@ -708,7 +689,6 @@ theorem Parameter.recursionAxis_ne_zero :
     · exact ih
     · exact (by decide : ∀ x y : Multiplicity, y ≠ .zero → x ⊓ y ≠ .zero) _ _ ih
 
--- ADE: none.
 /-- `r̂`: the requirement of the recursion of a recursor that uses its term with the grade `c`, on
 a block whose constructors have, in order, the recursive fields at the positions `es` and the
 parameters `fs` of their fields, and whose nested fields give on each axis `ax` the pairs
@@ -772,7 +752,6 @@ inductive Signature.HasConstant (sig : Signature) :
   | constantDeclaration {c : ConstantDeclaration} (h : .constantDeclaration c ∈ sig) :
       HasConstant sig c.name c.sorts c.levels c.grades c.mode c.ownership c.type
 
--- ADE: none.
 /--
 `D.{s̄; l̄; p̄ | C} Δ : κ ▶ ζ ∈ Σ`: the signature has the declared type `D`, a data type or a codata
 type of the type declaration `decl`, whose variables, constraint, parameters and sort are those of `D`, and whose grades
@@ -785,7 +764,6 @@ def Signature.HasDeclaredType (sig : Signature) (D : Name) (decl : TypeDeclarati
     ((∃ T ∈ decl.dataTypes, T.name = D ∧ T.usage = ζ) ∨
       ∃ T ∈ decl.codataTypes, T.name = D ∧ T.usage = ζ)
 
--- ADE: none.
 /--
 `(data.{s̄; l̄; p̄ | C} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the data type `T`, named
 `D`, of the type declaration `decl`, which the rules of the constructors and of the recursors share.
@@ -794,7 +772,6 @@ def Signature.HasDataType (sig : Signature) (D : Name) (decl : TypeDeclaration)
     (T : DataType decl.sorts decl.grades decl.levels decl.scope) : Prop :=
   .typeDeclaration decl ∈ sig ∧ T ∈ decl.dataTypes ∧ T.name = D
 
--- ADE: none.
 /--
 `(codata.{s̄; l̄; p̄ | C} Δ : κ where …; D ▶ ζ ≔ …; …) ∈ Σ`: the signature has the codata type `T`, named
 `D`, of the type declaration `decl`, which the meaning of its instances reads.
@@ -833,7 +810,6 @@ theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
   unfold Instance.ofLists
   rw [List.getFin_ofFn, List.getFin_ofFn]
 
--- ADE: none.
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry
 declares them. -/
@@ -848,7 +824,6 @@ def Entry.fieldParams (D c : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, in the last entry of
 the signature that declares them, which the erasure of a constructor reads.
@@ -865,7 +840,6 @@ def Destructors.arguments {k : Nat} : {Γ : Scope} → {ns : List Name} → Dest
   | _, d' :: _, .cons (ps := ps) _ _ ς _ _ ψ ds, d =>
     if d' = d then some ⟨ps, ψ, ς⟩ else ds.arguments d
 
--- ADE: none.
 /-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, the ownership `ψ` of
 its result and the ownership `ς` that it requires of the value that it observes, when the entry
@@ -881,7 +855,6 @@ def Entry.argumentParams (D d : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The parameters, grade `p` and requirement `r`, of the arguments of the destructor `d` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, the ownership `ψ` of
 its result and the ownership `ς` that it requires of the value that it observes, in the last entry
@@ -911,7 +884,6 @@ def Destructors.resultConstant {k : Nat} : {Γ : Scope} → {ns : List Name} →
   | _, [], .nil, _ => none
   | _, d' :: _, .cons _ _ _ _ _ ψ ds, d => if d' = d then ψ.constant else ds.resultConstant d
 
--- ADE: none.
 /-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
 order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, when the
 entry declares them. -/
@@ -926,7 +898,6 @@ def Entry.destructorGrades (D : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The grades `p` of the destructors of the cases of the block of the declared type `D`, in the
 order of the declaration, at the instance of the qualities `qs` and of the grades `ps`, in the last
 entry of the signature that declares them, which the erasure of a corecursor reads.
@@ -935,13 +906,11 @@ def Signature.destructorGrades (sig : Signature) (D : Name) (qs : List Quality) 
     Option (List Grade) :=
   sig.findSome? (Entry.destructorGrades D qs ps)
 
--- ADE: none.
 /-- The position of the declared type `D` in the block of the entry, when the entry declares it. -/
 def Entry.position (D : Name) : Entry → Option Nat
   | .typeDeclaration decl => decl.names.idxOf? D
   | _ => none
 
--- ADE: none.
 /-- The position of the declared type `D` in its block, in the last entry of the signature that
 declares it, which the erasure of a corecursor reads to find the state of `D`; the positions are
 counted from `0`, as the indices of the lists, while the RFC counts them from `1`.
@@ -949,14 +918,12 @@ RFC: `\mathsf{position}_D` -/
 def Signature.position (sig : Signature) (D : Name) : Option Nat :=
   sig.findSome? (Entry.position D)
 
--- ADE: none.
 /-- The case of the constructor `c` of the data type `D` in its block, when the entry declares
 them. -/
 def Entry.constructorCase (D c : Name) : Entry → Option Nat
   | .typeDeclaration decl => decl.cases.findIdx? fun x => x.2.1.name == D && x.2.2.name == c
   | _ => none
 
--- ADE: none.
 /-- The case `i` of the constructor `c` of the data type `D` in its block, in the order of the
 declaration, which is that of the branches of a recursor, in the last entry of the signature that
 declares them, which the erasure of a constructor reads; the cases are counted from `0`, as the
@@ -965,14 +932,12 @@ RFC: `\mathsf{case}_c` -/
 def Signature.constructorCase (sig : Signature) (D c : Name) : Option Nat :=
   sig.findSome? (Entry.constructorCase D c)
 
--- ADE: none.
 /-- The case of the destructor `d` of the codata type `D` in its block, when the entry declares
 them. -/
 def Entry.destructorCase (D d : Name) : Entry → Option Nat
   | .typeDeclaration decl => decl.codataCases.findIdx? fun x => x.2.1.name == D && x.2.2 == d
   | _ => none
 
--- ADE: none.
 /-- The case `i` of the destructor `d` of the codata type `D` in its block, in the order of the
 declaration, which is that of the branches of a corecursor, in the last entry of the signature that
 declares them, which the erasure of an observation reads; the cases are counted from `0`.
@@ -980,7 +945,6 @@ RFC: `\mathsf{case}_d` -/
 def Signature.destructorCase (sig : Signature) (D d : Name) : Option Nat :=
   sig.findSome? (Entry.destructorCase D d)
 
--- ADE: none.
 /-- The position in the block of the type of the result of each destructor of the block of the codata
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, `none` for a destructor that is not recursive, when the entry declares them. -/
@@ -997,7 +961,6 @@ def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The position in the block of the type of the result of each destructor of the block of the
 codata type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, which is that of the branches of a corecursor, `none` for a destructor that is not
@@ -1008,7 +971,6 @@ def Signature.resumedTypes (sig : Signature) (D : Name) (qs : List Quality) (ps 
     Option (List (Option Nat)) :=
   sig.findSome? (Entry.resumedTypes D qs ps)
 
--- ADE: none.
 /-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, when the entry declares them. -/
@@ -1023,7 +985,6 @@ def Entry.caseFieldParams (D : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The parameters, grade and requirement, of the fields of each constructor of the block of the data
 type `D`, at the instance of the qualities `qs` and of the grades `ps`, in the order of the
 declaration, which is that of the branches of a recursor, in the last entry of the signature that
@@ -1034,7 +995,6 @@ def Signature.caseFieldParams (sig : Signature) (D : Name) (qs : List Quality) (
     Option (List (List Parameter)) :=
   sig.findSome? (Entry.caseFieldParams D qs ps)
 
--- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,
 the parameters of its arguments, the ownership of its result and the ownership that it requires of
 the value that it observes, at the instance of the qualities `qs` and of the grades `ps`, in the
@@ -1052,7 +1012,6 @@ def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The position in the block of the type of each destructor of the block of the codata type `D`,
 whose state the branch of the destructor binds, the parameters of its arguments, the ownership of
 its result and the ownership that it requires of the value that it observes, at the instance of the

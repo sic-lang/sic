@@ -25,7 +25,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `⊢ ⌊Σ⌋ ◀ Ω`: each body of the program of a signature whose names are distinct and whose entries
 have their ownerships, erased at run time, has the ownership that `Ω` gives its constant, the
 run-time multiplicity of the ownership of its entry.

@@ -56,7 +56,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The program `𝒫` realizes the constants of the signature `Σ_T` of the mode `11ᵐ` of run time, in
 the signature `Σ`: each of them, at each closed instance of its variables, is valid at run time in
 the empty context, at its type at this instance. -/
@@ -69,7 +68,6 @@ def Program.Realizes (sig : Signature) (ι : Interpretation) (P : Program) (sigT
         RunValid sig ι P Scope.FirstOrder.nil .empty 𝟘ᶜ (.const f qs ls ps)
           (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl))
 
--- ADE: none.
 /-- The premise of `(corec)` at run time on its branches, each branch valid at run time for every
 value of the level variables, in every environment that binds its scope through a renaming, when the
 grade of its destructor is used at run time, holds at the levels without variables `ρ`, as
@@ -122,7 +120,6 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
   rw [List.getFin_map]
   exact hb
 
--- ADE: none.
 /-- The types of the entries of a telescope that extends a well-formed context, at every value of
 the level variables, and at every closed substitution of the context that the meaning relates to
 itself, are terms of universes at every term of the types of the entries before them, in a signature

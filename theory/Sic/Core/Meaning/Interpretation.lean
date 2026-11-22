@@ -23,7 +23,6 @@ open Sic.Grading
 
 /-! ## Interpretation of the Constants -/
 
--- ADE: none.
 /-- `ι`: an interpretation, which gives each constant a body, for each instance of its sort and grade
 variables. -/
 abbrev Interpretation : Type :=

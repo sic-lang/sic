@@ -104,7 +104,6 @@ theorem TypedRen.liftSecondOrder {Γ Δ : Scope} {ps : List Parameter}
 
 /-! ## Parameters Lifted -/
 
--- ADE: none.
 /-- Each parameter of the context at a position of `S`, the first parameter at `0`, is a type, at
 the variables of its telescope, in the context of the parameters before it, extended by it and by
 its telescope. -/
@@ -172,7 +171,6 @@ theorem TypedRen.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
     exact (TypedRen.weakenSecondOrder
       (.secondOrder (WfType.ofSort (HasType.sort (WfCtx.append_snoc hX') _)))).comp hρ
 
--- ADE: none.
 /-- The parameters of a lifting are well formed, and the renaming of the parameters in them is
 typed, when the parameters are well formed and each parameter lifted is a type. -/
 theorem Context.lifted_typedRen (S : List Nat) (s : Quality) (mv : Nat → Lifting.Result k) :

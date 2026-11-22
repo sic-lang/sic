@@ -71,7 +71,6 @@ variable {k : Nat}
 
 /-! ## Motives -/
 
--- ADE: none.
 /-- The ownership of a result that is the constant `χ`, without factor, whatever the `n` arguments
 are. -/
 def Lifting.resultOwnership (χ : Grade) (n : Nat) : ResultOwnership Grade n :=
@@ -81,7 +80,6 @@ def Lifting.resultOwnership (χ : Grade) (n : Nat) : ResultOwnership Grade n :=
 the motive is a type, which a type may use as it wants and of which it requires nothing. -/
 def Lifting.termParam : Parameter := ⟨.unrestrictedUnrestricted, .unrestrictedUnrestricted⟩
 
--- ADE: none.
 /-- The entry of the motive `C_Y : (Θ_Y, z : Y[Θ_Y] ⊢ κ_C)` of a parameter `Y : (Θ_Y ⊢ κ)`, whose
 entry is `e`: a second-order variable over the telescope of `Y` followed by a term of `Y`, whose
 result, a type, has the least ownership. -/
@@ -111,7 +109,6 @@ theorem Scope.extend_snoc : (Γ : Scope) → (ps : List Parameter) → (p : Para
 
 /-! ## Liftings of Scopes -/
 
--- ADE: none.
 /-- What a type lifted gives the result of a destructor of a lifting that has this type: the level
 of its sort, its factor, the grade that multiplies the uses of the scope by the recursive result
 that the destructor observes, and the ownership of this recursive result. -/
@@ -127,7 +124,6 @@ structure Lifting.Result (k : Nat) where
 def Lifting.Result.grades (ms : List (Lifting.Result k)) : List Grade :=
   ms.flatMap fun m => [m.factor, m.ownership]
 
--- ADE: none.
 /-- The motive of a type of a block, in a lifting of the scope `Γ` in the scope `Γ'`: the instance
 `T` of this type, a type of `Γ`, the motive `z. C`, a type of `Γ'` over a term `z` of `T`, the
 level of the sort of this motive, and the ownership `χ` of the results of the recursor, which this
@@ -191,12 +187,10 @@ def weaken {Γ' Γ : Scope} {e : Scope.Entry} (ρ : Lifting k Γ' Γ) : Lifting 
 
 end Lifting
 
--- ADE: none.
 /-- No variable lifted occurs in the term `t`. -/
 def Term.AvoidsLifted {Γ' Γ : Scope} (ρ : Lifting k Γ' Γ) (t : Term k Γ) : Prop :=
   ∀ {e : Scope.Entry} (x : Var Γ e), (ρ.motive x).isSome → t.Avoids x
 
--- ADE: none.
 /-- No variable lifted occurs in the arguments `t̄`. -/
 def Args.AvoidsLifted {Γ' Γ : Scope} {ps : List Parameter} (ρ : Lifting k Γ' Γ) (ts : Args k Γ ps) :
     Prop :=
@@ -232,12 +226,10 @@ abbrev Lifting.Variables.grades (v : Lifting.Variables) (ps : List Grade)
     (ms : List (Lifting.Result k)) : List Grade :=
   ps ++ v.recursion :: v.requirement :: Lifting.Result.grades ms
 
--- ADE: none.
 /-- `F^Π`: the name of the lifting of the type `F` at the set `Π` of its parameters at the positions
 `S`, in order, a name of the signature that `F` and `S` determine. -/
 def Lifting.name (F : Name) (S : List Nat) : Name := .lifting F S
 
--- ADE: none.
 /-- The name of a lifting determines the type that it lifts and the positions of the parameters at
 which it lifts it. -/
 theorem Lifting.name_inj {D F : Name} {S' S : List Nat}
@@ -245,7 +237,6 @@ theorem Lifting.name_inj {D F : Name} {S' S : List Nat}
   cases h
   exact ⟨rfl, rfl⟩
 
--- ADE: none.
 /-- `l ⊔ ⨆ l̄`: the level `l` joined to each of the levels `l̄`.
 RFC: `\textstyle\bigsqcup_l` -/
 def Level.joins (l : Level k) (ls : List (Level k)) : Level k := ls.foldl .max l
@@ -309,7 +300,6 @@ def Context.liftedSecondOrder {Δ' : Scope} {ps : List Parameter} (κ : Universe
       (Lifting.resultOwnership .unrestrictedUnrestricted _)
   | false, ctx, Θ, A, ψ => .secondOrder ctx Θ A ψ
 
--- ADE: none.
 /-- The parameters `Δ` in which each parameter at a position of `S` is followed by its motive, a
 type over the telescope of the parameter and a term of it, of the sort of the quality `s` and of
 the level that `mv` gives the position.
@@ -406,7 +396,6 @@ def TypeDeclaration.liftingSort (decl : TypeDeclaration) (S : List Nat)
     ((decl.sort I.lifted).level.subst (Level.lifted S.length)).joins
       (List.ofFn fun i : Fin S.length => .var (Fin.natAdd decl.levels i))⟩
 
--- ADE: none.
 /--
 `F^Π`: the lifting of the type `F` of the type declaration `decl` at its parameters at the positions
 `S`, with the destructors `d̄'`, whose names are `ns`: a block of one codata type, over the
@@ -461,7 +450,6 @@ theorem _root_.Sic.Grading.Grade.run_meetWith_eq_zero (p : Grade) :
 
 mutual
 
--- ADE: none.
 /-- `Σ ⊢ factor(B) = π`: the result `B` of a destructor of a lifting has the factor `π`, where `ρ`
 gives the variables lifted and their motives: the motive of a variable lifted, at its arguments, has
 the factor that `ρ` gives it, and an instance of a lifting that the signature declares the meet of
@@ -489,7 +477,6 @@ inductive Term.Factor (sig : Signature) :
         (body (.ofLists qs ps hq hp)) π) :
       Term.Factor sig ρ (.inst (Lifting.name D S) qs ls ps as) (π.getD .noneNone)
 
--- ADE: none.
 /-- `Σ ⊢ factor(d̄) = π`: the destructors `d̄` have the meet `π` of their grades times the factors
 of their results, absent when there is no destructor, where `ρ` gives the variables lifted and their
 motives. -/
@@ -516,7 +503,6 @@ end
 
 mutual
 
--- ADE: none.
 /--
 `Σ ⊢ A ↑_λ u = A' : (s_C)_l ▷ π; χ'`: the type `A'`, of the level `l`, is the type `A`, whose
 nesting is `n`, lifted at the term `e` of `A`, and the recursive result that it is the type of has
@@ -575,7 +561,6 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
         ⟨((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).joins (ms.map (·.level)),
           π, .linearLinear⟩
 
--- ADE: none.
 /--
 `Σ ⊢ ā ↑_λ̄ = (Π'; l̄; ḡ; ā')`: the arguments `ā'` are the arguments `ā` of an instance lifted,
 whose nestings are `ns`, the last one first, and none for the arguments after those of `ns`, `S` the
@@ -624,7 +609,6 @@ more, by the recursor of the grade `r` times the factor of the result lifted, an
 kept. -/
 def Parameter.scale (r : Grade) (p : Parameter) : Parameter := ⟨r * p.usage, p.requirement⟩
 
--- ADE: none.
 /-- `r · Θ`: the telescope `Θ` whose entries are used `r` times more, and whose variables the types
 after them use with the least grade, which states nothing: the result of a destructor of a lifting
 uses its arguments more than the result that it lifts.
@@ -634,7 +618,6 @@ def Telescope.scale (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Tel
   | _, _, .nil => .nil
   | _, _, .cons _ p A Θ => .cons .unrestrictedUnrestricted (p.scale r) A (Θ.scale r)
 
--- ADE: none.
 /-- `p'`: the grade of the result of a destructor of a lifting whose motives have the quality `s`,
 from the grade `p` of the destructor lifted: the grade of the mode of `p`, since an observation
 reads the grade of its destructor by its mode only, without use at run time when the motives are
@@ -651,7 +634,6 @@ theorem Lifting.resultGrade_run_eq_zero :
     ∀ (s : Quality) (p : Grade), p.run = .zero → (Lifting.resultGrade s p).run = .zero := by
   decide
 
--- ADE: none.
 /--
 `Σ ⊢ d̄ ↑ y = d̄'`: the destructors `d̄'` are the destructors `d̄` of a codata type lifted at the term
 `y` of this type, where `κ` is the sort of the lifting, `o` gives the observation of `y` by each
@@ -701,7 +683,6 @@ inductive Destructors.Lifts {Γ₀ : Scope} (sig : Signature) (v : Lifting.Varia
 
 /-! ## Signatures That Hold a Lifting -/
 
--- ADE: none.
 /-- `Σ; 𝒟 ⊢ D ↑_Π d̄'`: the destructors `d̄'` are those of the lifting of the type `F` of the type
 declaration `decl` at its parameters at the positions `S`: at each instance, they are the
 destructors of `F` lifted at the parameter `y`, in the sort of the lifting.
@@ -717,7 +698,6 @@ def TypeDeclaration.Lifts (sig : Signature) (decl : TypeDeclaration) (F : Name) 
         ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst
         ((T.body I.lifted).substLevels (Level.lifted S.length)) (body I)
 
--- ADE: none.
 /-- `F^Π ∈ Σ`: the signature holds the lifting of its codata type `F` at its parameters at the
 positions `S`.
 RFC: `\in_{\uparrow}` -/

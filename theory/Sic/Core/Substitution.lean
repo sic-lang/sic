@@ -152,14 +152,12 @@ RFC: `\mathsf{identity}_\theta` -/
 def Var.eta {Γ : Scope} {e : Scope.Entry} (x : Var Γ e) : Term k (Γ.extend e.params.length) :=
   .var (x.weakenN e.params.length) (Args.bound e.params)
 
--- ADE: none.
 /-- `x̄_Δ`: the parameters `Δ` themselves, as the arguments of an instance in their own scope, each
 one an abstraction over its telescope. -/
 def InstanceArgs.identity : (Δ : Scope) → InstanceArgs k Δ Δ
   | [] => .nil
   | _ :: Δ => .snoc ((InstanceArgs.identity Δ).rename Ren.weaken) (Var.eta .zero)
 
--- ADE: none.
 /-- `D.{s̄; l̄; p̄} ā`: the type `D` of the block of the type declaration `decl` at the instance `ι`
 of its sort and grade variables, at its level variables and at the arguments `ā`, the type of a
 recursive field when `ā` are the parameters themselves. -/
@@ -168,7 +166,6 @@ def TypeDeclaration.blockInstance {Γ : Scope} (decl : TypeDeclaration)
     Term decl.levels Γ :=
   .inst D (List.ofFn ι.sorts) (List.ofFn Level.var) (List.ofFn ι.grades) as
 
--- ADE: none.
 /-- `X̄ : κ`: the telescope of `n` type variables of the sort `κ`, which extends a context by one
 variable for each type of a block.
 A context ignores the grades and the parameters of the telescope that extends it, and nothing reads
@@ -185,7 +182,6 @@ def Args.ofNames {Γ : Scope} (f : Name → Term k Γ) :
   | [] => .nil
   | D :: names => .cons (f D) (Args.ofNames f names)
 
--- ADE: none.
 /-- `D̄ x̄_Δ`: the types of the block of the type declaration `decl`, in order, each at the instance
 `ι` of its sort and grade variables, at its level variables and at the arguments `ā`: the arguments
 of the telescope of the type variables of the block. -/

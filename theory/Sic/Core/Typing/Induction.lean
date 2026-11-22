@@ -25,7 +25,6 @@ ADE prove by recursion on their derivations, which Agda checks to terminate.
 
 namespace Sic.Core
 
--- ADE: none.
 /-- The motives, one for each judgment, hold of every derivation of their judgments.
 The arguments of each motive are those of its judgment, then a derivation of it; a motive left out
 is the trivial one, true of every derivation. -/
@@ -158,7 +157,6 @@ structure Derivations.Conclusion
   wfTypeDeclaration : ∀ {sig : Signature} {decl : TypeDeclaration} (h : WfTypeDeclaration sig decl),
       wfTypeDeclaration sig decl h
 
--- ADE: none.
 /-- Induction on the derivations of the judgments: the motives hold of every derivation,
 `Derivations.Conclusion` of the motives, when each holds of the conclusion of each rule of its
 judgment whenever they hold of its premises.

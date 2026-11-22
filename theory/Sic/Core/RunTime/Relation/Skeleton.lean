@@ -31,7 +31,6 @@ open Sic.Grading
 
 /-! ## Signatures -/
 
--- ADE: none.
 /-- In a signature whose names are distinct, the skeleton of a data type is that of the block of its
 declaration, at the instance, within the depth of the number of the types of the block. -/
 theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D : Name} →
@@ -77,7 +76,6 @@ theorem Signature.constructorCase_of_not_mem {D c : Name} :
       (by rw [Entry.constructorCase_of_not_mem (h e List.mem_cons_self)]; rfl)]
     exact Signature.constructorCase_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
 
--- ADE: none.
 /-- In a signature whose names are distinct, the case of a constructor of a data type is its case in
 the block of its declaration. -/
 theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → sig.Distinct →
@@ -100,7 +98,6 @@ theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → si
 
 /-! ## Unfolding -/
 
--- ADE: none.
 /-- The term of the skeleton of a data type `D` with exactly one constructor `c`, of the case `i` of
 its block, within the depth `d + 1`: the constructor of the case `i` applied to the term of the
 skeleton of the type of each recursive field within the depth `d`, and to `↯` for each other field,
@@ -126,7 +123,6 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
 
 /-! ## Acyclicity -/
 
--- ADE: none.
 /-- `D' ≺ D`: the data type `D` of the block of the type declaration `decl` has exactly one
 constructor, of which a recursive field, at the instance `I`, is of the type `D'`, so that a closed
 term of `D` holds one of `D'`. -/
@@ -135,7 +131,6 @@ def TypeDeclaration.Below (decl : TypeDeclaration) (I : Instance decl.sorts decl
   ∃ T ∈ decl.dataTypes, T.name = D ∧ ∃ c, T.constructors = [c] ∧
     some D' ∈ (c.fields I).recursion decl.names
 
--- ADE: none.
 /-- A data type `D` of the block accessible for `≺` is none of its ancestors, the types of the block
 that it is below by the transitive closure of `≺`, so that distinct ancestors are fewer than the
 types of the block: the depth of the skeleton, their number minus the number of the ancestors, is

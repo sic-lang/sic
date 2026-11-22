@@ -44,7 +44,6 @@ variable {k : Nat} {sig sig₁ : Signature} {v : Lifting.Variables}
 
 /-! ## Types Whose Terms Have Results -/
 
--- ADE: none.
 /-- Each term of the type `A`, whose nesting is `n`, substituted by a substitution of its lifting
 `ρ`, has a recursive result, whatever the results of the terms of the types of the block are. -/
 def Term.HasResult (sig : Signature) (v : Lifting.Variables) {Γ' Γ : Scope} (ρ : Lifting k Γ' Γ)
@@ -116,7 +115,6 @@ end Term.HasResult
 
 /-! ## Substitutions Whose Abstractions Have Results -/
 
--- ADE: none.
 /-- The terms of the abstraction that the substitution `θ` gives each variable with a position,
 where `ν` gives the nestings of the variables, have results at the nesting of the variable, by the
 lifting `ρ` under the variables of the abstraction. -/
@@ -195,7 +193,6 @@ end Subst.HasResults
 
 /-! ## Liftings Whose Instances Have Results -/
 
--- ADE: none.
 /-- Each term of an instance of a type lifted by a lifting that the signature `Σ₁` declares has a
 recursive result in the signature `Σ`, when the terms of the arguments of the instance with a
 position have. -/
@@ -290,7 +287,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- The terms of a type lifted, in a signature whose liftings have results, have results. -/
 theorem Term.Lifts.hasResult (hM : Signature.LiftingsHaveResults sig sig) :
     {Γ' Γ : Scope} → {ρ : Lifting k Γ' Γ} → {n : Nest Name} → {e : Term k Γ'} → {A : Term k Γ} →
@@ -341,7 +337,6 @@ end
 
 /-! ## Results of an Instance Lifted -/
 
--- ADE: none.
 /-- Each term of an instance of a codata type lifted, at a nesting that is not a position, has a
 recursive result in a signature `Σ` whose names are distinct, when the terms of the arguments of
 the instance with a position have, and when the destructors of the lifting are those of the type,
@@ -441,7 +436,6 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
 
 /-! ## Signatures Whose Liftings Have Results -/
 
--- ADE: none.
 /-- The liftings that a signature whose names are distinct declares, each after the destructors
 that it lifts, have results: those of the entries after a prefix of the signature, by induction on
 these entries, since the destructors of a lifting are lifted by the liftings before it. -/
@@ -465,7 +459,6 @@ theorem Signature.LiftsInOrder.liftingsHaveResults (hsig : sig.Distinct)
 
 /-! ## Existence -/
 
--- ADE: none.
 /-- A term of a type that is lifted, by a lifting that lifts no variable, has a recursive result,
 in a signature whose names are distinct and that declares each lifting after the destructors that
 it lifts, whatever the results of the terms of the types of the block are. -/
@@ -479,7 +472,6 @@ theorem Term.Lifts.exists_nestedResult (hsig : sig.Distinct) (hord : sig.LiftsIn
   rw [Term.subst_id_of (fun _ => rfl)] at he
   exact ⟨e, he⟩
 
--- ADE: none.
 /-- The terms of fields whose recursive results have types, substituted by a substitution of the
 lifting of these types, have recursive results, in a signature whose liftings have results: a
 recursive field has the result of its term, and a nested field, whose type is lifted, has one
@@ -525,7 +517,6 @@ theorem Lifting.Substitutes.args {Γ : Scope} {ρ : Lifting k Γ Γ}
     show Subst₀.toSubst ts.toSubst₀ (Ren.liftN ps.length ρ.ren x) = _
     rw [Ren.liftN_id_of ps.length hid x, Term.rename_id_of (Ren.liftN_id_of _ hid)]
 
--- ADE: none.
 /-- The terms of the fields of a telescope whose recursive results have types have recursive
 results, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, where the lifting of the block lifts no variable and renames none,
@@ -545,7 +536,6 @@ theorem Telescope.exists_resultTerms (hsig : sig.Distinct) (hord : sig.LiftsInOr
   obtain rfl : ps'' = ps' := hr.params_eq.trans h.params_eq.symm
   exact ⟨rs, hr⟩
 
--- ADE: none.
 /-- The terms of the fields of a constructor whose recursive results have types have recursive
 results, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, where the lifting of the block lifts no variable and renames none,

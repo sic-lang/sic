@@ -21,7 +21,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- A signature whose entries have their ownerships, followed by the lifting of a codata type
 without recursive destructor, has the ownerships of its entries.
 RFC: `\mathsf{lift}_{◀}` -/

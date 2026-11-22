@@ -61,7 +61,6 @@ theorem Heap.EnvSum.smul {H : Heap} {R : Nat → Demand → Prop} (π : Multipli
       exact (by decide : ∀ p v u d e : Multiplicity,
         p * v * (u + d) + p * e = p * (v * (u + d) + e)) _ _ _ _ _] at h'
 
--- ADE: none.
 /-- The demand of an environment for a vector multiplied by `π` is `π` times its demand for the
 vector. -/
 theorem Heap.EnvDemand.smul {H : Heap} (π : Multiplicity) {n : Nat} {E : List Nat}
@@ -69,13 +68,11 @@ theorem Heap.EnvDemand.smul {H : Heap} (π : Multiplicity) {n : Nat} {E : List N
     Heap.EnvDemand H E (π ·ᶜ ν) (π ·ᶜ D) :=
   (h.toEnvSum.smul π).toEnvDemand
 
--- ADE: none.
 /-- The demand of an environment for a vector of `0`s is `0`. -/
 theorem Heap.EnvDemand.eq_zero {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
     {D : Demand} (h : Heap.EnvDemand H E ν D) (hν : ∀ x, ν x = .zero) : D = 𝟘ᵛ :=
   h.toEnvSum.eq_zero hν
 
--- ADE: none.
 /-- The demand of an environment for the vector of one read of the variable `x` is that of one read
 of its cell, and of a use of its value. -/
 theorem Heap.EnvDemand.var_inv {H : Heap} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}

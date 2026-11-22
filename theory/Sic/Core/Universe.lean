@@ -20,7 +20,6 @@ ADE have the universes `U_l` only, and no universes of propositions.
 
 namespace Sic.Core
 
--- ADE: none.
 /-- The quality of a sort, as the sort qualities of Rocq: a universe or a universe of propositions.
 RFC: `\mathsf{syntax}_s` -/
 inductive Quality where
@@ -37,7 +36,6 @@ instance {P : Quality → Prop} [DecidablePred P] : Decidable (∀ s, P s) :=
   decidable_of_iff (P type ∧ P prop)
     ⟨fun ⟨h₁, h₂⟩ s => by cases s <;> assumption, fun h => ⟨h _, h _⟩⟩
 
--- ADE: none.
 /-- The join of two qualities, `Ω` when both are, and `U` otherwise.
 RFC: `\sqcup_s` -/
 def join : Quality → Quality → Quality
@@ -47,7 +45,6 @@ def join : Quality → Quality → Quality
 
 instance : Max Quality := ⟨join⟩
 
--- ADE: none.
 /-- A quality is below another when it is `Ω` whenever the other is.
 RFC: `\le_s` -/
 def Le (s₁ s₂ : Quality) : Prop := s₂ = prop → s₁ = prop
@@ -59,7 +56,6 @@ instance (s₁ s₂ : Quality) : Decidable (s₁ ≤ s₂) :=
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The join of two qualities is the least quality above both.
 RFC: `{\sqcup}{\le}_s.\mathsf{left}`
 RFC: `{\sqcup}{\le}_s.\mathsf{right}`
@@ -84,7 +80,6 @@ namespace Universe
 
 variable {k : Nat}
 
--- ADE: none.
 /--
 `κ₁ ≼ κ₂`: the sort `κ₂` bounds the sort `κ₁`, when the quality of `κ₁` is below the quality of
 `κ₂`, so that `κ₁` is a universe of propositions when `κ₂` is, and the level of `κ₁` below the level
@@ -99,7 +94,6 @@ instance (κ₁ κ₂ : Universe k) : Decidable (κ₁ ≼ κ₂) := inferInstan
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The relation `≼` is a preorder.
 RFC: `\mathsf{preorder}_\kappa.\mathsf{refl}`
 RFC: `\mathsf{preorder}_\kappa.\mathsf{trans}` -/
@@ -107,7 +101,6 @@ theorem preorder : Math.IsPreorder (α := Universe k) (· ≼ ·) where
   refl _ := ⟨fun h => h, Level.preorder.refl _⟩
   trans h₁ h₂ := ⟨fun h => h₁.1 (h₂.1 h), Level.preorder.trans h₁.2 h₂.2⟩
 
--- ADE: none.
 /-- The join of the qualities of two sorts at the same level is the least sort that bounds both.
 RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{left}`
 RFC: `{\sqcup}{\preceq}_\kappa.\mathsf{right}`

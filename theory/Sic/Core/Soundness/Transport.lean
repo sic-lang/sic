@@ -34,7 +34,6 @@ section
 
 variable {sig : Signature} {ι : Interpretation}
 
--- ADE: none.
 /-- A closed proof of a closed equality, a proposition of `Ω_l`, makes its two terms equal terms of
 its type: the equality computes to itself, a proposition whose truth `b` the proof makes true, and
 `(ty_∼)` makes `b` the equality of the terms. -/
@@ -51,7 +50,6 @@ theorem ValidEqTerm₀.equality_eq {s : Quality} {l : Level 0} {A t₁ t₂ p p'
   -- The proof is a proof of it, so that it is true.
   exact (levelRel_prop_equality hd hb).1 (hp.prop_true hv hb)
 
--- ADE: none.
 /-- A proof of the equality of two terms of a type of a sort makes them, at a closed substitution,
 equal terms of the type: the equality is a proposition, by `(∼)`, whose closed proofs make its
 terms equal, `ValidEqTerm₀.equality_eq`. -/
@@ -94,7 +92,6 @@ theorem ValidEqTermΓ.transp {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l 
   refine (ValidEqTerm₀.red_iff hd .transp).2 ?_
   exact ((ValidEqTerm₀.red_iff hd .transp).2 (hu'.conv (hCv.motive hσ₁ h₁₂)).symm).symm
 
--- ADE: none.
 /-- `(transp_same)` keeps the meaning: the term is a term of the motive at the second of the two
 terms of the equality, since the two instances of the motive are equal types, and at two equal
 substitutions the transport steps to it, by `(transp_⟶)`.

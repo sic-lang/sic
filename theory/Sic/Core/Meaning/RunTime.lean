@@ -74,13 +74,11 @@ abbrev RunLevelRel : Type := Term 0 [] → RunRel → Prop
 the relation of run time of its terms. -/
 abbrev RunNestLeaf : Type := Term 0 [] × RunRel
 
--- ADE: none.
 /-- `®⇓(R)`: a closed term that computes to a canonical term that `R` relates to the address.
 RFC: `\circledR_\Downarrow` -/
 def RunRel.computed (sig : Signature) (ι : Interpretation) (R : RunRel) : RunRel :=
   fun H t a => ∃ v, Computesι sig ι t v ∧ R H v a
 
--- ADE: none.
 /-- `R^p`: the relation `R` at the grade `p`, the relation `R` if the grade `p` is used at run time,
 and every term and address otherwise, since the erasure replaces by `↯` a position of this grade.
 RFC: `\circledR_p` -/
@@ -100,7 +98,6 @@ def RunFieldsRel.cons (F : RunRel) (G : Term 0 [] → RunFieldsRel) : RunFieldsR
   | H, .cons t ts, a :: as => F H t a ∧ G t H ts as
   | _, _, _ => False
 
--- ADE: none.
 /-- `(®_c)`: the relation of run time of the canonical terms of the instance `I` of the data type
 `T`, named `D`, which relates a constructor of `D` to a constructor of the target language of its
 case, whose fields are at the multiplicities at run time of their grades and at the requirements at
@@ -114,7 +111,6 @@ def DataType.runCtorRel {j g k : Nat} {Δ : Scope} (sig : Signature) (I : Instan
       H[a]? = some (.ctor i ((c.params I).map (·.usage.run)) ((c.params I).map (·.requirement.run))
         as) ∧ S c H ts as
 
--- ADE: none.
 /-- `(®_μ)`: the relations of run time of the canonical terms of the instances of the data types
 `Ts` of a block, the least relations, one for each type, that relate what `(®_c)` relates, when the
 relation `S X c` of the fields of each constructor `c` relates its recursive fields by the relations
@@ -126,7 +122,6 @@ def DataType.runBlockRel {j g k : Nat} {Δ : Scope} (sig : Signature) (I : Insta
   fun H v a => ∀ X : Name → RunRel,
     (∀ T ∈ Ts, ∀ H v a, T.runCtorRel sig I T.name (S X) H v a → X T.name H v a) → X D H v a
 
--- ADE: none.
 /-- `(®_d)`: the relation of run time of the canonical terms of an instance of the codata type
 named `D`, which relates a corecursor of `D` to an address when the relation `S` of the destructors
 of the type relates its observations to the address.
@@ -134,7 +129,6 @@ RFC: `\circledR_d` -/
 def runCorecRel (D : Name) (S : RunObsRel) : RunRel :=
   fun H v a => ∃ o, v.CorecObservations D o ∧ S H o a
 
--- ADE: none.
 /-- `(®_ν)`: the relations of run time of the canonical terms of the instances of the codata types
 `Ts` of a block, the greatest relations, one for each type, whose related terms and addresses
 `(®_d)` relates, when the relation `S X T` of the destructors of each type `T` relates the results
@@ -146,7 +140,6 @@ def CodataType.runBlockRel {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g
   fun H v a => ∃ X : Name → RunRel,
     (∀ T ∈ Ts, ∀ H v a, X T.name H v a → runCorecRel T.name (S X T) H v a) ∧ X D H v a
 
--- ADE: none.
 /-- `(®_x̄)`: the closed abstraction `x̄. B` for the destructor of the case `i`, whose arguments
 `ps` have the relation of run time `SΘ`, whose result has the ownership `ψ` and which requires the
 ownership `ς` of the value that it observes, and the value at the address `a`: in each heap `H'`
@@ -168,7 +161,6 @@ def RunAbstractionRel (P : Program) {ps : List Parameter} (i : Nat)
 
 mutual
 
--- ADE: none.
 /--
 `rt(U_n)`: the least relation of the clauses of the universes and of the instances of the data
 types and of the codata types in `U_n`, given the relations `below` of run time of the levels below
@@ -226,7 +218,6 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
           ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) :
       RunUnivRel sig ι P n below v (CodataType.runBlockRel decl.codataTypes S D)
 
--- ADE: none.
 /--
 `rt(U_n)` for the telescopes: `Θ` is a closed telescope in `U_n`, whose terms of the entries are
 related to addresses by `S` at run time, where `rs` gives the nesting of each entry; the relation of
@@ -268,7 +259,6 @@ inductive RunTelRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       RunTelRel sig ι P n below rs (.cons q p A Θ)
         (RunFieldsRel.cons (RunRel.atGrade p.usage R) fun _ => G)
 
--- ADE: none.
 /--
 `rt(U_n)` for the destructors: the destructors `d̄` of the codata type `D`, at the closed
 substitution `θ` of their scope, are of run time in `U_n`, and the observations of a term and an
@@ -335,7 +325,6 @@ inductive RunDesRel (sig : Signature) (ι : Interpretation) (P : Program) (n : N
       RunDesRel sig ι P n below D rs (.cons (d := d) p q ς Θ B ψ ds) @θ fun H o a =>
         (p ∉ Mode.oneOne.erased → RunAbstractionRel P i ψ ς RΘ (fun _ => R) (o d ps) H a) ∧ G H o a
 
--- ADE: none.
 /--
 The canonical type `v` of a field, or of the result of a destructor, is a type of a sort that `U_n`
 bounds, whose closed terms are related at run time by `R`: a type of `U_n` or of a universe below
@@ -357,7 +346,6 @@ inductive RunFieldRel (sig : Signature) (ι : Interpretation) (P : Program) (n :
   | propBelow {v : Term 0 []} {b : Prop} (m : Nat) (hm : m < n) (h : (below m hm).prop v b) :
       RunFieldRel sig ι P n below v fun _ _ _ => True
 
--- ADE: none.
 /--
 `rt(U_n)[λ]`: the closed type `A`, whose nesting is `λ`, is a type of a sort that `U_n` bounds,
 whose closed terms are related at run time by `R`, where the nesting gives, at each of its
@@ -410,7 +398,6 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none) :
       RunNestRel sig ι P n below (.inst νs) A fun _ _ _ => True
 
--- ADE: none.
 /--
 `rt_D(U_n)[Λ]` for the destructors: the destructors `d̄` of the codata type `D`, none of which is
 recursive, at the closed substitution `θ` of their scope, are of run time in `U_n`, and the

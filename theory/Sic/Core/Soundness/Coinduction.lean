@@ -38,7 +38,6 @@ section
 
 variable {sig : Signature} {ι : Interpretation}
 
--- ADE: none.
 /-- `(coind)` keeps the meaning: at a closed substitution of the context, the two terms are equal
 terms of their instance, which `ValidTermΓ.of_equality_eq` makes any term a proof of their
 equality. -/

@@ -61,7 +61,6 @@ theorem HasType.append_snoc {Γ : Scope} {p : Parameter} {q : Grade} {κ : Unive
 
 /-! ## Typed Liftings -/
 
--- ADE: none.
 /-- `Σ; Γ' ⊢ ρ : Γ`: the lifting `ρ` of the scope `Γ` in the scope `Γ'` is typed, with motives in
 the sorts of the quality `s`: its renaming is typed, each variable lifted is a type, at the
 variables of its telescope, and its motive is declared over this telescope followed by a term of the
@@ -257,7 +256,6 @@ theorem Lifting.Typed.liftN {s : Quality} {Γ' Γ : Scope} : {ps : List Paramete
 
 /-! ## Types That Are Lifted -/
 
--- ADE: none.
 /-- A type that is lifted, and typed, is a type: a variable lifted is one, at arguments of its
 telescope, and an instance of a declared type is in the sort of its type declaration.
 The variables lifted are those of a typed lifting, in any context. -/
@@ -436,7 +434,6 @@ theorem HasInstanceArgs.liftedSecondOrder_true {s : Quality} {Γ' Γ Δ₁ Δ : 
 
 /-! ## Typing of the Types Lifted -/
 
--- ADE: none.
 /-- A type lifted at a term of the type that it lifts, which is typed, is a type of the sort of its
 level, in the context of a typed lifting whose motives have the quality of the lifting, and which
 lifts no type of a block: the rule of such a type does not tell that the term is of the type that

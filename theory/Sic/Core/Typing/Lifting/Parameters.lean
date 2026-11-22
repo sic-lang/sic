@@ -146,7 +146,6 @@ theorem Lifting.Typed.liftedSecondOrder {Δ' Δ : Scope} {ps : List Parameter}
 
 /-! ## Typed Lifting of the Parameters -/
 
--- ADE: none.
 /-- The lifting of the parameters in the parameters lifted is typed, when the parameters are well
 formed and each parameter lifted is a type. -/
 theorem Context.lifted_typed (S : List Nat) (s : Quality) (mv : Nat → Lifting.Result k) :
@@ -166,7 +165,6 @@ theorem Context.lifted_typed (S : List Nat) (s : Quality) (mv : Nat → Lifting.
 
 /-! ## Parameters of a Lifting -/
 
--- ADE: none.
 /-- The instance of a codata type of a well-formed signature at its variables and at its parameters,
 among those of its lifting, of which the parameter `y` of the lifting is a term, is a type in these
 parameters, at an instance that the constraint of its type declaration admits. -/
@@ -190,7 +188,6 @@ theorem TypeDeclaration.liftedInstance_wfType {decl : TypeDeclaration} {F : Name
   exact .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hq hl hp
     ((Instance.ofLists_ofFn ι hq hp).symm ▸ hadm) has)
 
--- ADE: none.
 /-- The lifting of the parameters of a codata type of a well-formed signature, under the term `y`
 of the type at them, is typed in the parameters of the lifting of the type, at an instance that the
 constraint of its type declaration admits, when each parameter lifted is a type. -/

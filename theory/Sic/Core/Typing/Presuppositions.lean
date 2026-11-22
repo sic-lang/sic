@@ -33,7 +33,6 @@ The proof is by the induction on the derivations, through such a premise, with t
 record as its motives.
 -/
 
--- ADE: none.
 /-- An instance of `j` sort variables and `g` grade variables, which exists whatever `j` and `g`. -/
 def Instance.default (j g : Nat) : Instance j g := ⟨fun _ => .type, fun _ => Grade.zero⟩
 
@@ -459,14 +458,12 @@ theorem contextPresuppositions : ContextPresuppositions := by
   case eqTelescope_cons => exact fun hA hκ hΘ hp hA_ih hΘ_ih => hA_ih
   all_goals intros; trivial
 
--- ADE: none.
 /-- A well-formed type declaration introduces names of types that no entry of the signature does. -/
 theorem WfTypeDeclaration.fresh {sig : Signature} {decl : TypeDeclaration} :
     WfTypeDeclaration sig decl → ∀ e ∈ sig, ∀ D ∈ decl.names, D ∉ e.names
   | .data _ _ _ _ _ _ h => h
   | .codata _ _ _ _ _ _ h => h
 
--- ADE: none.
 /-- The type declaration that ends a well-formed signature is well formed in the signature before
 it, and names each of its types once. -/
 theorem WfSig.typeDeclaration_inv {decl : TypeDeclaration} {sig : Signature} :
@@ -474,7 +471,6 @@ theorem WfSig.typeDeclaration_inv {decl : TypeDeclaration} {sig : Signature} :
   | .typeDeclaration h hn _ => ⟨h, hn⟩
   | .lifting h _ _ => ⟨h, List.pairwise_singleton _ _⟩
 
--- ADE: none.
 /-- The last entry of a well-formed signature introduces names that no entry before it does. -/
 theorem WfSig.fresh {e : Entry} {sig : Signature} :
     WfSig (e :: sig) → ∀ e' ∈ sig, ∀ n ∈ e.names, n ∉ e'.names
@@ -487,7 +483,6 @@ theorem WfSig.fresh {e : Entry} {sig : Signature} :
   | .typeDeclaration h _ _, e', he', n, hn => h.fresh e' he' n hn
   | .lifting h _ _, e', he', n, hn => h.fresh e' he' n hn
 
--- ADE: none.
 /-- The names of a well-formed signature are distinct.
 RFC: `\mathsf{distinct}_\Sigma` -/
 theorem WfSig.distinct : {sig : Signature} → WfSig sig → sig.Distinct

@@ -30,7 +30,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- In a signature whose entries have their ownerships, the ownership of the result of each
 recursive destructor of a block of codata types is a constant, at each instance. -/
 theorem OwnershipSig.recursiveResult {sig : Signature} (hs : OwnershipSig sig)
@@ -63,7 +62,6 @@ theorem OwnershipSig.recursiveResult {sig : Signature} (hs : OwnershipSig sig)
       exact ⟨χ, hχ⟩
     · exact ih h
 
--- ADE: none.
 /-- The judgments of ownership hold in every signature that has more entries before theirs, all of
 distinct names: the requirement `r̂` of the recursion of a recursor reads the shapes of the nested
 fields of its block, which such a signature keeps. -/
@@ -81,7 +79,6 @@ structure OwnershipStableUnderExtension : Prop where
     {φ : Var Γ .var → Grade} {m : Mode} {ts : Args k Γ ps} {os : List Grade},
     (pre ++ sig).Distinct → OwnershipArgs sig φ m ts os → OwnershipArgs (pre ++ sig) φ m ts os
 
--- ADE: none.
 /-- The judgments of ownership hold in every signature that has more entries before theirs, all of
 distinct names, since the requirement `r̂` of the recursion reads the shapes, which such a
 signature keeps.

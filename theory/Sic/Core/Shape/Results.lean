@@ -65,7 +65,6 @@ variable {k : Nat}
 
 /-! ## Shapes of the Types Lifted -/
 
--- ADE: none.
 /-- What a type lifted gives the recursive result that it is the type of: the shape `Υ` of this
 result, its factor `π` and its ownership `χ'`, as grades, as the lifting gives them. -/
 structure Shape.Motive where
@@ -89,7 +88,6 @@ def Nest.motive : Nest Shape.Motive → Option Shape.Motive
 
 mutual
 
--- ADE: none.
 /-- The shape of the recursive result of a term of the type `A`, whose nesting is `n`, where `lookup`
 gives the shapes of the liftings, `block` the shapes of the types of the block and `ν` those of the
 variables lifted, as `Term.Lifts` lifts it: a variable lifted, applied to arguments, has its shape,
@@ -111,7 +109,6 @@ def Term.shape (v : Lifting.Variables) (lookup : Shape.Lookup) (block : Name →
   | _ => none
 termination_by structural A => A
 
--- ADE: none.
 /-- The positions and the shapes of the arguments `ā` of an instance that are lifted, whose nestings
 are `ns`, the last one first, the first argument first, as `InstanceArgs.Lifts` lifts them: the
 position of an argument is the number of the arguments before it; an argument without shape is
@@ -134,7 +131,6 @@ end
 
 /-! ## Shapes of the Liftings -/
 
--- ADE: none.
 /-- The shape of the lifting of the type `D` whose destructors are `d̄`, checked in the mode `m`,
 on the axis `ax` of the grades, where `ν` gives the shapes of the variables lifted, and the meet of
 the grades of its destructors times the factors of their results, absent without destructor, as
@@ -174,7 +170,6 @@ def Shape.motives {Δ : Scope} (ms : List (Nat × Shape.Motive)) : Nesting Shape
     | some m => .direct m
     | none => .plain
 
--- ADE: none.
 /-- The shapes of the liftings that the entries of a signature declare, checked in the mode `m`, on
 the axis `ax` of the grades: the shape of the lifting of the type `D` at the positions of `ms`, at
 the instance of the qualities `qs` and of the grades `ps`, is that of the destructors of `D` at this
@@ -204,7 +199,6 @@ termination_by structural sig => sig
 
 /-! ## Shapes of the Nested Fields -/
 
--- ADE: none.
 /-- The shapes of the types of the block whose names are `names`, for a recursor whose results that
 are motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`: the
 recursor itself, on the term of the skeleton of the type when its multiplicity is `0`, of the factor
@@ -221,7 +215,6 @@ def Shape.Motive.nested : Option Shape.Motive → Option Shape
   | some ⟨.lifting σ, _, _⟩ => some σ
   | _ => none
 
--- ADE: none.
 /-- The shapes of the nested results of the fields of a telescope, the first one first: the shape
 of the lifting of the type of each nested field, at the nesting of its type in the block whose names
 are `names`, where `lookup` gives the shapes of the liftings and `block` those of the types of the
@@ -236,7 +229,6 @@ def Telescope.nestedShapes (v : Lifting.Variables) (lookup : Shape.Lookup)
     Shape.Motive.nested (A.shape v lookup block Nesting.plain (A.blockNest names)) ::
       Θ.nestedShapes v lookup block names
 
--- ADE: none.
 /-- The shapes of the nested results of the fields of the constructor `con` at the instance `I`, in
 a block whose types are named `names`, of a recursor of the variables `v` whose results that are
 motives have the ownership `χ`, at the instance of the qualities `qs` and of the grades `ps`,
@@ -249,7 +241,6 @@ def Constructor.nestedShapes {j g k' : Nat} {Δ : Scope} (sig : Signature) (v : 
     List (Option Shape) :=
   (con.fields I).nestedShapes v (sig.shapes v m ax) (sig.blockShapes names qs ps χ) names
 
--- ADE: none.
 /-- Each nested field of the constructor `con` at the instance `I` has a shape, computed as
 `Constructor.nestedShapes` computes it: the field whose type is at the nesting of an instance, in
 the block whose types are named `names`, has the shape of a lifting that the signature declares. -/

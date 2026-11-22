@@ -83,7 +83,6 @@ theorem TypedSubst.single {Γ : Scope} {ctx : Context k Γ} {t A : Term k Γ}
           (Term.subst₀_id_of (σ := Subst₀.liftN _ Subst₀.id) (Subst₀.liftN_id_of _ fun _ => rfl) B)]
       exact hX⟩⟩
 
--- ADE: none.
 /-- The substitutions of the second order of the typed substitutions of the first order. -/
 def TypedSubst.Base (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx' : Context k Γ)
     (θ : Subst k Γ Δ) (ctx : Context k Δ) : Prop :=
@@ -110,7 +109,6 @@ theorem TypedSubst.Base.varIn {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst 
       rw [Term.subst_lift_rename_weaken]
       exact stableUnderRenaming.hasType ih (TypedRen.weaken (.var hB))
 
--- ADE: none.
 /-- The typed substitutions give what the stability of the typing asks of a family of
 substitutions. -/
 theorem TypedSubst.liftable : Subst.Liftable sig (@TypedSubst.Base sig k) :=

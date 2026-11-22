@@ -35,7 +35,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- `(hyp_𝒫)`: the program `𝒫` holds the erasure `⌊Σ⌋_{S^{11ᵐ}}` of the signature, and realizes its
 constant declarations of the mode `11ᵐ`: each of them, at each closed instance of its variables, is
 valid at run time in the empty context, at its type at this instance.
@@ -50,7 +49,6 @@ structure ValidProgram (ι : Interpretation) (P : Program) (sig : Signature) : P
       RunValid sig ι P Scope.FirstOrder.nil .empty 𝟘ᶜ (.const c.name qs ls ps)
         (Signature.instanceType c.type (.ofLists qs ps hq hp) (ls.getFin hl))
 
--- ADE: none.
 /-- The program of a signature whose names are distinct gives a constant of the mode `11ᵐ` that the
 signature defines the erasure of its body. -/
 theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· ∈ S)]
@@ -86,7 +84,6 @@ theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· 
         cases hc
         rfl
 
--- ADE: none.
 /-- A program that holds the erasure of a signature whose names are distinct gives a constant of the
 mode `11ᵐ` that the signature defines the erasure of its body. -/
 theorem ValidProgram.constantDefinition {ι : Interpretation} {P : Program} {sig : Signature}

@@ -76,7 +76,6 @@ theorem Nesting.motives_of_shapes {P : Shape.Motive → Prop} {Δ : Scope}
 
 mutual
 
--- ADE: none.
 /-- The shape of a type has a property that the shapes of the variables, those of the types of the
 block and the shapes of the liftings at arguments that have it have: the shape of a variable is
 its own, that of a type of the block is given, and that of an instance is a lifting at the shapes
@@ -107,7 +106,6 @@ theorem Term.shape_of_motives {P : Shape.Motive → Prop} {v : Lifting.Variables
   | _, _, _, _, .obs _ _ _ _ _ _ _ _, _, h => by simp [Term.shape] at h
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _, _, h => by simp [Term.shape] at h
 
--- ADE: none.
 /-- The shapes of the arguments of an instance that are lifted have a property that the shapes of
 the variables, those of the types of the block and the shapes of the liftings at arguments that
 have it have. -/
@@ -145,7 +143,6 @@ theorem InstanceArgs.shapes_of_motives {P : Shape.Motive → Prop} {v : Lifting.
 
 end
 
--- ADE: none.
 /-- The shapes of the liftings that the entries of a signature declare have a property, as the
 shapes of the liftings at arguments that have it, when the shape of the destructors of a type, at
 parameters whose shapes have it and where the liftings of the entries before have it, has it: the
@@ -189,7 +186,6 @@ theorem Signature.shapes_of_motives {P : Shape.Motive → Prop} (v : Lifting.Var
 
 /-! ## Factors -/
 
--- ADE: none.
 /-- The shape of the destructors of a type, on the axis of the uses at run time, has the factor that
 it gives as a grade, its run-time multiplicity, and gives one exactly when it has a destructor, when
 the shapes of the variables and those of the liftings have the factors that they carry. -/
@@ -246,7 +242,6 @@ theorem Signature.shapes_factor (v : Lifting.Variables) (md : Mode) (sig : Signa
   Signature.shapes_of_motives (P := fun m => m.next.factor = m.factor.run) v md Grade.run
     (fun sig' _ _ _ ds D ν hν hl => (Destructors.shape_factor sig' v md D hl ν hν ds).1) sig
 
--- ADE: none.
 /-- The factor of the shape of the lifting of the type of a nested field, read in the mode `md` on
 the axis of the uses at run time, is the run-time multiplicity of the grade factor that the shape
 carries: the factor of each destructor of a lifting is its multiplicity times the factor of its
@@ -282,7 +277,6 @@ theorem _root_.Sic.Grading.Multiplicity.mul_fits :
     ∀ g r f u : Multiplicity, g * ((r * f) * u) ≤ r * (g * f) * u := by
   decide
 
--- ADE: none.
 /-- The shape of the destructors of a type, in the mode `11ᵐ` on the axis of the uses at run time,
 fits the recursor of the grade `r` of the lifting, when the shapes of the variables and those of
 the liftings carry their factors and fit it: each argument of a lifted destructor is used `r` times
@@ -313,7 +307,6 @@ theorem Destructors.shape_fits (sig : Signature) (v : Lifting.Variables) {lookup
       simp only [Parameter.scale, Lifting.oneOne_odot_resultGrade, hf, (Grade.run_op _ _).2.1]
       exact Multiplicity.mul_fits _ _ _ _
 
--- ADE: none.
 /-- The shape of the lifting of the type of a nested field, read in the mode `11ᵐ` on the axis of
 the uses at run time, fits the recursor of the grade `r` of the lifting: the lifting scales the
 arguments of its destructors by `r` times the factors of their results, whose shapes fit it in
@@ -340,7 +333,6 @@ theorem Shape.fits_of_shapes {sig : Signature} {v : Lifting.Variables} {names : 
 
 /-! ## Ownerships -/
 
--- ADE: none.
 /-- The shape of the destructors of a type, on the axis of the uses at run time, has the ownerships
 `ς` and `χ`, `ς` the requirement of the lifting, when the shapes of the variables and those of the
 liftings have them and the ownership that each carries is the run-time multiplicity of the ownership
@@ -374,7 +366,6 @@ theorem Destructors.shape_uniform (sig : Signature) (v : Lifting.Variables) (md 
       rw [← ho]
       rfl
 
--- ADE: none.
 /-- The shape of the lifting of the type of a nested field, read on the axis of the uses at run
 time, has the ownerships `ς` and `χ` of the recursor, at their run-time multiplicities: each
 lifted destructor requires the requirement `ς` of the lifting, and its result has the ownership

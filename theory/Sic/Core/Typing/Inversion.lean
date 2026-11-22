@@ -113,7 +113,6 @@ where
       intros; cases ‹_ = _›
     all_goals intros; trivial
 
--- ADE: none.
 /-- An instance of a type of a type declaration of the signature, which has a type, has the
 premises of the rule `(D)` at this type declaration, the only one that declares its name. -/
 theorem HasType.inst_inv_of_mem {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {D : Name}

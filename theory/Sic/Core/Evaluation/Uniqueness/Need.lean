@@ -17,7 +17,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- The references that the recursions of a branch of a recursor of the multiplicity `ρ` need, for
 each recursive result that it computes, on the field at the position `l`, what its value refers to:
 one reference to the field, unless `ρ` is `0`, and the reads of the scope by the branches, `U_χ`,

@@ -76,7 +76,6 @@ theorem Computesι.obs_corec_iff {Δ₁ Δ₂ Δ : Scope} {D₁ D₂ D : Name} {
     | beta h hi hD hq hl hp hg hv' => exact ⟨.step (.beta h hi hD hq hl hp hg hv') hs, hv⟩
     | obs h => exact nomatch h
 
--- ADE: none.
 /-- The observations `f` compute as the observations `o` at all closed arguments, or the quality `s`
 is that of the propositions, whose proofs need not compute. -/
 def ObsEquiv (sig : Signature) (ι : Interpretation) (s : Quality) (f o : Observations) : Prop :=
@@ -202,7 +201,6 @@ theorem DesRel.headRec (hd : sig.Distinct) {n : Nat} {s : Quality} {rs : Nat →
     · exact .inl h₂
     exact .inr ⟨fun w => (h₁ _ w).symm, fun w => (h₂ _ w).symm⟩
 
--- ADE: none.
 /-- At a position of a destructor `d` in destructors equal in a sort `κ` at two closed substitutions
 of their scope, whose recursive destructors `rs` gives, of the instances `inst D` of the block,
 observations that compute as observations related by the equality of the destructors, at the
@@ -365,7 +363,6 @@ theorem ObsEquiv.of_computes (hd : sig.Distinct) {s : Quality} {Δ : Scope} {D D
     Computesι.redStar_iff hd (RedStar.obs ht.1)]
   exact ⟨Computesι.obs_corec_iff, Computesι.obs_corec_iff⟩
 
--- ADE: none.
 /-- `(d_≡)`, closed: the observations of two equal closed terms of an instance of a codata type of
 `Σ`, whose type declaration is meaningful, at equal arguments of its parameters, by a destructor at
 equal arguments of its telescope, are equal terms of its result, and their results are equal
@@ -594,7 +591,6 @@ the nested pairs of the arguments of the state: equal positions are the same con
 terms, and resume, by `(ι_⟶)` on the position and on each pair, to the corecursor from the new state,
 or to the term already built. -/
 
--- ADE: none.
 /-- Two equal closed positions compute to new states, equal terms of the packing of the state, or
 to terms already built, equal terms of their type: the constructors of the type of positions, which
 has no recursive field. -/
@@ -674,7 +670,6 @@ theorem Term.Packs.det (hd : sig.Distinct) :
     subst ht hy
     rw [Term.Packs.det hd hp₁ hp₂]
 
--- ADE: none.
 /-- Two equal closed terms of the packing of a closed telescope compute to the nested pairs of
 equal arguments of the telescope: the constructors of the pair and of the unit, which have no
 recursive field, at each entry. -/
@@ -726,7 +721,6 @@ theorem ValidEqTerm₀.pack_inv (hpre : sig.HasPrelude) :
       · simp only [Args.terms, Term.Packs]
         exact ⟨qs₂, ls₂, ps₂, Δ₂, as₂, y₂, hc₂, hp₂⟩
 
--- ADE: none.
 /-- The unpacking of a closed term that computes to the nested pairs of arguments of the telescope
 reduces to the term at the arguments, by `(ι_⟶)` on each pair, then on the unit. -/
 theorem RedStar.unpack (hpre : sig.HasPrelude) (r : Grade) :
@@ -751,7 +745,6 @@ theorem RedStar.unpack (hpre : sig.HasPrelude) (r : Grade) :
       (fun ν hν => by change ν ∈ [Nest.plain, Nest.plain] at hν; simpa using hν) (.cons t (.cons y .nil)) rfl rfl (congrArg some (Term.unpack_branch_instantiate (p := p) r t y Θ κs.tail l κ C b)))
       (RedStar.unpack hpre r (Θ.subst₀ (Subst₀.single t)) κs.tail l κ C _ ts hy))
 
--- ADE: none.
 /-- A closed position that reduces to a term already built resumes, by `(ι_⟶)`, to the term. -/
 theorem RedStar.resume_done (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {Δ : Scope} {as : InstanceArgs 0 [] Δ}
@@ -766,7 +759,6 @@ theorem RedStar.resume_done (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs :
     (fun ν hν => by change ν ∈ [Nest.plain] at hν; simpa using hν) (.cons t .nil) rfl rfl rfl)
     (.refl _))
 
--- ADE: none.
 /-- A closed position that reduces to a new state, which computes to the nested pairs of arguments
 of the state, resumes, by `(ι_⟶)` and the unpacking, to the corecursor from the arguments. -/
 theorem RedStar.resume_next (hpre : sig.HasPrelude) {r : Grade} {D : Name} {qs : List Quality}
@@ -810,7 +802,6 @@ destructor, whose telescope and result, over the state, observe the corecursor f
 the corecursor itself, once the state is substituted.
 On a proposition, the observations of the corecursor, related to themselves, make it true. -/
 
--- ADE: none.
 /-- Observations whose results are equal, destructor by destructor, at equal arguments, are related
 by the equality of the destructors, at instantiated levels: as terms of the result of each
 destructor that is not recursive, and by the relation `R` that `rsR` gives each recursive one,
@@ -923,7 +914,6 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
           rw [hBD, Term.subst_append_rename_weakenN]
         exact hr d p q ς ps _ Θ B ψ .here ts us ((hT ts us).1 hts) D R hr0 hR0 e
 
--- ADE: none.
 /-- Observations equal, destructor by destructor, at equal arguments, are related by the equality
 of the destructors, at instantiated levels, at relations of the recursive destructors that the
 equalities of the instances of the block relate: the destructors before each destructor being the
@@ -961,7 +951,6 @@ theorem DesRel.of_obs (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Universe
         rw [e] at he
         exact hFv.of_validEqTerm hcv he)
 
--- ADE: none.
 /-- `(corec)`, closed, by coinduction: pairs `P` of corecursors of the types of a block of codata
 types of `Σ`, whose type declaration is meaningful, at the same levels and at equal arguments of its
 parameters, are equal terms of their instance, when the observations of each pair by each
@@ -1149,7 +1138,6 @@ theorem Destructors.Pos.obsSubst_corecAt {k' : Nat} {Γ Δ : Scope} {d : Name} {
         (fun y => Subst.append_weakenN σ ss.toSubst y)])
     hΔ
 
--- ADE: none.
 /-- The arguments of an instance, renamed under the variables of a state, substituted by a closed
 substitution followed by closed arguments of the state, are the arguments substituted, as a
 substitution of the parameters. -/
@@ -1162,7 +1150,6 @@ theorem InstanceArgs.toSubst_rename_subst_append {Γ Δ : Scope} (σ : Subst 0 [
     InstanceArgs.subst_rename_of (α := Ren.weakenN ps'.length) (θ' := σ)
       (fun y => Subst.append_weakenN σ ss.toSubst y)]
 
--- ADE: none.
 /-- `(β_⟶)` for a corecursor whose states and branches are substituted by a closed substitution of
 the context, from closed arguments of a state: the observation steps to the branch of its
 destructor at the substitution, the state and the arguments, resumed if the destructor is
@@ -1228,7 +1215,6 @@ theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
   rw [Term.branchResult_subst, hS, ← Term.subst_append,
     Term.subst_subst_of (Subst.liftN_subst_of _ (fun x => hc _ x)), Term.subst_append]
 
--- ADE: none.
 /-- The branches of a destructor, as `(corec)` and `(corec_≡)` premise them, at equal substitutions
 of the context, equal closed arguments of the state and equal arguments of the telescope of the
 destructor, are equal terms of the result of the destructor at the first ones, the positions of the
@@ -1284,7 +1270,6 @@ theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : Typ
   rw [Term.branchResult_corecAt] at hb
   exact hb
 
--- ADE: none.
 /-- The branches `gs₁` and `gs₂` of two corecursors are equal terms of the results of their
 destructors, as `(corec_≡)` premises them, over the states `Ss` and the corecursors of the first
 branches: the premise that the Lean of `(corec_≡)` reads, at the levels without variables. -/
@@ -1460,7 +1445,6 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         (DestructorBranches.LevelEquiv.refl _))
       (Term.LevelEquiv.refl _)
 
--- ADE: none.
 /-- `(corec)` keeps the meaning: it is `(corec_≡)` at the same corecursor. -/
 theorem ValidTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
@@ -1550,7 +1534,6 @@ are equal: the equality of the destructors relates their observations, as it rel
 corecursors, and then the observations of the corecursors they compute to, which compute as theirs.
 On a proposition, the observations of the first term, related to themselves, make it true. -/
 
--- ADE: none.
 /-- The equality of destructors relates the observations `o₁` and `o₂` when it relates observations
 `f₁` and `f₂` that compute as them, at relations of the recursive destructors that relate alike
 the terms that compute alike, or any terms when the quality is that of the propositions, as the
@@ -1613,7 +1596,6 @@ theorem DesRel.obsEquiv (hd : sig.Distinct) {n : Nat} {s : Quality} :
       · exact .inl h₂
       exact .inr ⟨h₁ _, h₂ _⟩
 
--- ADE: none.
 /-- A closed term of a type that computes to itself, a type of a universe whose equality is
 `(eq_ν)` at a codata type of the block, computes to a corecursor of this type, whose observations
 it has: the type is not a proposition, the term computes to a canonical term that `(eq_ν)` relates,
@@ -1633,7 +1615,6 @@ theorem ValidEqTerm₀.computes_corec (hd : sig.Distinct) {j g k : Nat} {Δ : Sc
   obtain ⟨o₁, -, hc₁, -, -⟩ := CodataType.blockRel_unfold hmono hT hrel'
   exact ⟨w₁, o₁, hw₁, hc₁⟩
 
--- ADE: none.
 /-- `(η_d)`, closed: two closed terms of an instance of a codata type of `Σ`, whose type
 declaration is meaningful, at arguments of its parameters, whose observations by each destructor,
 at equal arguments of its telescope, are equal terms of its result, whatever the instance that the

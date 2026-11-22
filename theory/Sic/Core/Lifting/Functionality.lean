@@ -173,7 +173,6 @@ theorem TypeDeclaration.name_mem_lifting_names {decl : TypeDeclaration} {F : Nam
 
 mutual
 
--- ADE: none.
 /-- The result of a destructor of a lifting has one factor at most, in a signature whose names are
 distinct, where `ρ` gives distinct variables distinct motives.
 RFC: `\mathsf{unique}_{\mathsf{factor}}` -/
@@ -196,7 +195,6 @@ theorem Term.Factor.unique (hd : sig.Distinct) :
     obtain rfl := TypeDeclaration.lifting_body he
     rw [Destructors.Factor.unique hd (TypeDeclaration.liftingScope_distinctMotives _ _ _) hds₁ hds₂]
 
--- ADE: none.
 /-- Destructors have one meet at most, in a signature whose names are distinct, where `ρ` gives
 distinct variables distinct motives. -/
 theorem Destructors.Factor.unique (hd : sig.Distinct) :
@@ -219,7 +217,6 @@ theorem Term.Factor.unique_inst (hd : sig.Distinct) {Γ₁ Γ₂ Γ' Δ : Scope}
   Term.Factor.unique hd (ρ := { ρ₁ with motive := fun _ => none }) (fun _ _ _ _ _ _ _ _ hx => nomatch hx)
     (h₁.inst_congr _ ls as) (h₂.inst_congr _ ls as)
 
--- ADE: none.
 /-- In a lifting without block, the factor of the recursive result that a type lifted is the type
 of is the factor of this type lifted, so that the lifting of a destructor reads it from the lifting
 of its result. -/
@@ -383,7 +380,6 @@ theorem InstanceArgs.Lifts.positions_eq {Γ₁' Γ₁ Γ₂' Γ₂ : Scope} {ρ�
 
 mutual
 
--- ADE: none.
 /-- A type has one lifting at most at a term and at its nesting, of one result, in a signature
 whose names are distinct.
 RFC: `\mathsf{unique}_{\uparrow}` -/
@@ -422,7 +418,6 @@ theorem Term.Lifts.unique (hd : sig.Distinct) :
       obtain rfl := Term.Factor.unique_inst hd hπ₁ hπ₂
       exact ⟨rfl, rfl⟩
 
--- ADE: none.
 /-- The arguments of an instance are lifted in one way at most at their nestings: the parameters
 whose arguments are lifted, the results of these and the arguments lifted are unique, in a signature
 whose names are distinct.

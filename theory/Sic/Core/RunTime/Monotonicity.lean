@@ -373,7 +373,6 @@ termination_by structural h _ _ _ _ => h
 
 end
 
--- ADE: none.
 /-- The relation of run time of the terms of the fields of the constructors of a block, at
 relations `F X D` of the instances of its types `D` at the positions of the nestings of its fields,
 grows with `X` when they do, in one heap: the premise of `DataType.runBlockRel_fold` and
@@ -426,14 +425,12 @@ theorem levelRel_runNest_mono {sig : Signature} {ι : Interpretation} {P : Progr
     (hτ : Nest.All (fun x => x.2.Monotone) τ) : R.Monotone :=
   RunNestRel.monotone hd (Nat.forall_lt (levelRel_run_mono hd) _) hτ h
 
--- ADE: none.
 /-- `®(v)` is monotone in the heap, in a signature whose names are distinct. -/
 theorem HasRun.mono {sig : Signature} {ι : Interpretation} {P : Program} {v : Term 0 []}
     {R : RunRel} (hd : sig.Distinct) : HasRun sig ι P v R → R.Monotone
   | .univ n h => levelRel_run_mono hd n h
   | .prop _ _ _ hR => fun _ {_ _} _ => hR _ _ _
 
--- ADE: none.
 /-- `t ®_H a : A` holds in each heap `H'` that extends `H`, in a signature whose names are
 distinct.
 RFC: `\mathsf{ext}_\circledR` -/
@@ -444,7 +441,6 @@ theorem RunsAs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' 
   | ⟨v, hA, .inr ⟨R, hR, ht⟩⟩ =>
     ⟨v, hA, .inr ⟨R, hR, RunRel.computed_mono (fun _ _ hv => hR.mono hd hH hv) ht⟩⟩
 
--- ADE: none.
 /-- Addresses that stand for a substitution in the heap `H` stand for it in each heap `H'` that
 extends `H`, in a signature whose names are distinct. -/
 theorem RunsAsSubst.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}
@@ -457,7 +453,6 @@ theorem RunsAsSubst.mono {sig : Signature} {ι : Interpretation} {P : Program} {
     exact ⟨a, E', hE, RunsAsSubst.mono hd hH ctx hs, fun hγ => (hx hγ).mono hd hH⟩
   | _, .secondOrder .., _, _, _, h => h
 
--- ADE: none.
 /-- Arguments related to addresses at a telescope in the heap `H` are related to them in each heap
 `H'` that extends `H`, in a signature whose names are distinct. -/
 theorem RunsAsArgs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' : Heap}

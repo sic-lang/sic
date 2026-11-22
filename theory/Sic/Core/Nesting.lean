@@ -37,7 +37,6 @@ variable {k : Nat} {α : Type}
 
 /-! ## Nestings -/
 
--- ADE: none.
 /-- `⊥`, `h` or `(λ̄)`: the nesting of a type, the positions at which it holds what `α` gives for
 the types of a block.
 RFC: `\mathsf{syntax}_\lambda` -/
@@ -55,7 +54,6 @@ def Nest.isPlain : Nest α → Bool
   | .plain => true
   | _ => false
 
--- ADE: none.
 /-- `nest(λ̄)`: the nesting of an instance whose arguments have the nestings `λ̄`: no position when
 none of them has one.
 RFC: `\mathsf{nest}_{\bar\lambda}` -/
@@ -64,7 +62,6 @@ def Nest.ofArgs (ns : List (Nest α)) : Nest α :=
 
 mutual
 
--- ADE: none.
 /-- `λ ↦ h`: the nesting `λ` whose positions hold what `f` gives for the objects that those of
 `λ` hold.
 RFC: `\mathsf{map}_\lambda` -/
@@ -99,7 +96,6 @@ def liftN {Γ : Scope} : (n : Nat) → Nesting α Γ → Nesting α (Γ.extend n
   | 0, ν => ν
   | n + 1, ν => liftN n (lift ν)
 
--- ADE: none.
 /-- `Δ ↦ λ̄`: the nestings of the parameters of a declared type at an instance whose arguments have
 the nestings `λ̄`, the last one first.
 RFC: `\mathsf{nest}_\Delta` -/
@@ -114,7 +110,6 @@ end Nesting
 
 mutual
 
--- ADE: none.
 /-- `nest_Λ(A)`: the nesting of the type `A`, where `mark` gives the types of the block what their
 positions hold and `ν` the nestings of the variables: that of a variable applied to arguments is the nesting of the variable,
 that of an instance of a type of the block is this type, and that of an instance of another
@@ -128,7 +123,6 @@ def Term.nest {Γ : Scope} (mark : Name → Option α) (ν : Nesting α Γ) : Te
     | none => Nest.ofArgs (as.nest mark ν)
   | _ => .plain
 
--- ADE: none.
 /-- `nest_Λ(ā)`: the nesting of each of the arguments `ā` of an instance, the last one first,
 under the variables that its abstraction binds.
 RFC: `\mathsf{nest}_{\bar a}` -/
@@ -301,14 +295,12 @@ theorem InstanceArgs.exists_ofArgs (mark : Name → Option α) {Γ : Scope} {ν 
 
 /-! ## Nesting of the Fields of a Block -/
 
--- ADE: none.
 /-- `nest_𝒟(A)`: the nesting of the type `A` of a field of a block whose types are named `names`,
 whose positions hold the names of these types, and whose variables have no position.
 RFC: `\mathsf{nest}_{\mathcal{D}}` -/
 def Term.blockNest {Γ : Scope} (names : List Name) (A : Term k Γ) : Nest Name :=
   A.nest (fun D => if D ∈ names then some D else none) Nesting.plain
 
--- ADE: none.
 /-- `nest_𝒟(Θ)`: the nesting of the type of each entry of a telescope, in order.
 RFC: `\mathsf{nest}_\Theta` -/
 def Telescope.nest {Γ : Scope} (names : List Name) :
@@ -336,7 +328,6 @@ def Telescope.nestResultParams : List (Nest Name) → List Parameter → List Pa
   | _ :: ns, p :: ps => p :: Telescope.nestResultParams ns ps
   | [], _ | _ :: _, [] => []
 
--- ADE: none.
 /-- The positions of the fields whose nestings `ns` have a position, from the position `o`, in
 order: the positions of the fields that have a recursive result, whose parameters
 `Telescope.nestResultParams` gives. -/
@@ -415,7 +406,6 @@ abbrev Constructor.nestResultParams {j g k' : Nat} {Δ : Scope} (c : Constructor
 
 /-! ## Nesting of the Destructors of a Block -/
 
--- ADE: none.
 /-- `nest_Π`: the nestings of the variables of the scope of a type that is strictly positive in the
 parameters `positive`, by their positions: each of these parameters has a position that holds it,
 and the other variables have none.
@@ -423,7 +413,6 @@ RFC: `\mathsf{nest}_\Pi` -/
 def Nesting.ofPositive {Γ : Scope} (positive : Nat → Bool) : Nesting Nat Γ := fun x =>
   if positive x.level then .direct x.level else .plain
 
--- ADE: none.
 /-- `nest_{𝒟; Π}(d̄)`: whether the result of each destructor has a position, in order, where `ν`
 gives the nestings of the variables of the scope of the destructors, those of the parameters in
 which their type is strictly positive; a destructor has no position, as the variables that the

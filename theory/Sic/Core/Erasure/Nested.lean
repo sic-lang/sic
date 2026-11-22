@@ -30,7 +30,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `(x̄ ▶ π̄ ◀ ϱ̄)`: the variables `xs` as terms, the first one first, each at the multiplicity and the
 requirement of its position, and `↯` at a position of the multiplicity `0`, whose value is never
 read, which holds data. -/
@@ -41,7 +40,6 @@ def Targets.ofVars {n : Nat} : {c : Nat} → (Fin c → Multiplicity) → (Fin c
     .cons (πs 0) (ϱs 0) (if πs 0 = .zero then .erased else .var (xs 0))
       (Targets.ofVars (fun k => πs k.succ) (fun k => ϱs k.succ) (fun k => xs k.succ))
 
--- ADE: none.
 /-- The variable of the argument `k` of a built branch, over the `m` variables of its scope, no entry
 of a state and the `c` arguments, the last one first. -/
 def Shape.argVar (m c : Nat) (k : Fin c) : Fin (m + (0 + c)) :=
@@ -49,7 +47,6 @@ def Shape.argVar (m c : Nat) (k : Fin c) : Fin (m + (0 + c)) :=
 
 mutual
 
--- ADE: none.
 /-- `branches_{ρ,ϱ}(Ξ, O, N̄)`: the branches built from the shape `Ξ` for the recursor
 `rec_ρ · ◀ ϱ with N̄` on the observations of the term `O`, the path from the field: the branch of each
 destructor, without state, binds its arguments and observes `O` by the destructor that it lifts, at
@@ -69,7 +66,6 @@ def Shape.branches {m : Nat} (ρ ϱ : Multiplicity) : Shape → Target m → Tar
           (Ns.rename (TargetRen.shift m (0 + c))))
       (rest.branches ρ ϱ M Ns)
 
--- ADE: none.
 /-- `body_{ρ,ϱ}(Υ, O, N̄)`: the result of the observation `O` of a field: the recursor
 `rec_ρ O ◀ ϱ with N̄` for `⋆_Z`, or `rec_0 target(Z) ◀ ϱ with N̄` on the term of the skeleton `Z`
 of the motive when `ρ` is `0`, as the erasure of a recursor on an erased term, and the corecursor
@@ -107,7 +103,6 @@ theorem Shape.mul_factor_cons_eq_zero {ρ : Multiplicity} {i c : Nat} {ρᵢ : M
 
 mutual
 
--- ADE: none.
 /-- The branches built from a shape `σ` for a recursor of the multiplicity `ρ` do not depend on the
 path `O` that they observe when `ρ · factor(σ)` is `0`: each destructor is either never observed at
 run time, and its branch is `↯`, or gives a result through which the recursor runs no recursion, the
@@ -129,7 +124,6 @@ theorem Shape.branches_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Mult
       rw [Shape.Next.body_eq_of_mul_factor ϱ next
         (Multiplicity.mul_mul_eq_zero _ _ _ hρᵢ h'.1)]
 
--- ADE: none.
 /-- The result of an observation, for a recursor of the multiplicity `ρ`, does not depend on the
 observation when `ρ` times the factor of its shape is `0`. -/
 theorem Shape.Next.body_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Multiplicity) :
@@ -144,7 +138,6 @@ theorem Shape.Next.body_eq_of_mul_factor {m : Nat} {ρ : Multiplicity} (ϱ : Mul
 
 end
 
--- ADE: none.
 /-- `nested_{ρ,ϱ}(x, Ξ, N̄)`, `n.Ξ` at run time: the corecursor without state of the shape `σ` for the recursor
 `rec_ρ · ◀ ϱ with N̄`, over the variables of the scope of the recursor and the field, the variable
 `0`, whose branches observe the field, as `(res_D)` builds the result of a nested field.

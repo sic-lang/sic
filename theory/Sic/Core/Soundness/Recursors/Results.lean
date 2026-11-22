@@ -60,7 +60,6 @@ theorem Telescope.similar_typesAt {k k' : Nat} (names : List Name) (ls₁ ls₂ 
 
 /-! ## Equality of the Recursive Results -/
 
--- ADE: none.
 /-- The recursive results `r̄₁` and `r̄₂` of the closed terms `t̄₁` and `t̄₂` of fields are equal
 arguments of the telescope `R` of the recursive results of the fields, substituted by the closed
 substitution `θ'` of its scope, in a signature whose names are distinct and whose liftings are
@@ -235,7 +234,6 @@ theorem Lifting.Substitutes.appendArgs {Γ : Scope} {ρ : Lifting 0 Γ Γ} {ρ�
     Subst.ext fun x => (Subst.append_eq_liftN τ ts.toSubst x).symm
   e ▸ (h.liftN ps.length).comp (Lifting.Substitutes.closedArgs ρ₁ ts)
 
--- ADE: none.
 /-- The recursive results `r̄₁` and `r̄₂` of the closed terms `t̄₁` and `t̄₂` of the fields of a
 constructor, on two sides, are equal arguments of the telescope `R` of the recursive results of
 its fields, substituted by the closed substitution `τ` of the context followed by `t̄₁`, in a

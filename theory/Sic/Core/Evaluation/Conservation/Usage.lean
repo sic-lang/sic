@@ -21,7 +21,6 @@ namespace Target.Usage
 
 variable {n : Nat}
 
--- ADE: none.
 /-- A variable reads itself once, at most. -/
 theorem var_inv {x : Fin n} :
     {ν : MultiplicityVector n} → {M : Target n} → Target.Usage ν M → M = .var x →
@@ -33,7 +32,6 @@ theorem var_inv {x : Fin n} :
   | _, _, .const .., h | _, _, .erased, h | _, _, .ctor _, h | _, _, .recursor .., h
   | _, _, .obs .., h | _, _, .corec .., h => nomatch h
 
--- ADE: none.
 /-- A term that reads no variable, a constant or `↯`, reads none. -/
 theorem zero_inv : {ν : MultiplicityVector n} → {M : Target n} → Target.Usage ν M →
     (M = .erased ∨ ∃ f qs ps, M = .const f qs ps) → ν ≤ᶜ 𝟘ᵛ
@@ -43,7 +41,6 @@ theorem zero_inv : {ν : MultiplicityVector n} → {M : Target n} → Target.Usa
   | _, _, .corec .., h => by
     rcases h with h | ⟨_, _, _, h⟩ <;> exact nomatch h
 
--- ADE: none.
 /-- A constructor reads the variables of its fields. -/
 theorem ctor_inv {i : Nat} {Ms : Targets n} :
     {ν : MultiplicityVector n} → {M : Target n} → Target.Usage ν M →
@@ -57,7 +54,6 @@ theorem ctor_inv {i : Nat} {Ms : Targets n} :
   | _, _, .var _, h | _, _, .const .., h | _, _, .erased, h | _, _, .recursor .., h
   | _, _, .obs .., h | _, _, .corec .., h => nomatch h
 
--- ADE: none.
 /-- A recursor reads the variables of its term as its multiplicity allows, and those of its
 branches. -/
 theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches n} :
@@ -73,7 +69,6 @@ theorem recursor_inv {ρ ϱ : Multiplicity} {M : Target n} {Ns : TargetBranches 
   | _, _, .var _, h | _, _, .const .., h | _, _, .erased, h | _, _, .ctor _, h | _, _, .obs .., h
   | _, _, .corec .., h => nomatch h
 
--- ADE: none.
 /-- An observation reads the variables of its term and of its arguments. -/
 theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
     {ς : Multiplicity} {Ms : Targets n} :
@@ -89,7 +84,6 @@ theorem obs_inv {M : Target n} {i c : Nat} {ψ : ResultOwnership Multiplicity c}
   | _, _, .recursor .., h
   | _, _, .corec .., h => nomatch h
 
--- ADE: none.
 /-- A corecursor reads the variables of its state, and those of its branches. -/
 theorem corec_inv {Ms : Targets n} {Ps : TargetCorecBranches n} :
     {ν : MultiplicityVector n} → {M' : Target n} → Target.Usage ν M' → M' = .corec Ms Ps →

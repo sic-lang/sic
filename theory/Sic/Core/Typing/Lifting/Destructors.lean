@@ -92,7 +92,6 @@ variable {decl : TypeDeclaration} {D : Name}
   {ls : List (Level k)} {ps : List Grade} {hq : qs.length = decl.sorts}
   {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
 
--- ADE: none.
 /-- The observation of a term of an instance of a codata type by a destructor, as an abstraction
 over the variables of its telescope, is a term of its result, in the context extended by this
 telescope, both at the observations of the term by the destructors before it. -/
@@ -141,7 +140,6 @@ theorem Lifting.resultGrade_prop_mode (p : Grade) :
     (Lifting.resultGrade .prop p).mode ≠ .oneOne :=
   Mode.mul_zeroOne_grade_mode_ne_oneOne p.mode
 
--- ADE: none.
 /-- The destructors of a codata type of a well-formed signature, none of which is recursive, at an
 instance that its constraint admits, lifted at a term of this instance at variables that a typed
 renaming of its parameters gives, are destructors of the lifting of the type, in the sort of the

@@ -116,7 +116,6 @@ def Prelude.stepType : DataType 1 3 2 Prelude.stepScope :=
   { name := "Step", usage := fun ι => (𝟘ᶜ ∙ ι.grades 0) ∙ ι.grades 1,
     positive := fun _ => true, constructors := [Prelude.stepNext, Prelude.stepDone] }
 
--- ADE: none.
 /-- `data.{s; l₁, l₂; p, q, r | s = Ω → ⌞q⌟ ≠ 11ᵐ} (A : U_{l₁}, B : s_{l₂}) : U_{l₁ ⊔ l₂}
 where Step ▶ 00ᵞ • p • q ≔ next : (x : A ▶ p; 00ᵖ ◀ 11ᵖ) | done : (x : B ▶ q; 00ᵖ ◀ r)`: the type
 of the positions of a corecursor, either a new state of `A`, used with the grade `p`, of the
@@ -161,7 +160,6 @@ abbrev Prelude.pairArgs {Γ : Scope} (A : Term k Γ) (B : Term k (.var :: Γ)) :
     InstanceArgs k Γ Prelude.pairScope :=
   .snoc (.snoc .nil A) B
 
--- ADE: none.
 /-- `⟨Θ⟩_{κ̄; l}`: the telescope `Θ`, whose entries live in the sorts `κ̄`, packed in the universe
 `U_l`, the nested pairs of its entries, with their grades and their requirements, which end with
 the unit of `U_l`; the Lean takes `U_l` for a sort that `κ̄` lacks, a case that the judgment
@@ -175,7 +173,6 @@ def Telescope.pack {Γ : Scope} : {ps : List Parameter} → Telescope k Γ ps �
       [(κs.headD ⟨.type, l⟩).level, Telescope.packLevel κs.tail l] [p.usage, p.requirement]
       (Prelude.pairArgs A (Θ.pack κs.tail l))
 
--- ADE: none.
 /-- `⟨t̄⟩_{Θ; κ̄; l}`: the arguments `t̄` of the telescope `Θ`, whose entries live in the sorts `κ̄`,
 packed as a term of `⟨Θ⟩_{κ̄; l}`, the nested pairs of the arguments, which end with the unit of
 `U_l`; each pair carries its instance, which the rest of the telescope, instantiated by the
@@ -190,7 +187,6 @@ def Args.pack {Γ : Scope} : {ps : List Parameter} → Args k Γ ps → Telescop
       (Prelude.pairArgs A (Θ.pack κs.tail l)) "mk"
       (.cons t (.cons (ts.pack (Θ.subst₀ (Subst₀.single t)) κs.tail l) .nil))
 
--- ADE: none.
 /-- `Pair.{s; l₁, l₂; p, r} (A, x. B)`: the instance of the pair at the sort `κ = s_{l₁}`. -/
 abbrev Prelude.pairInst {Γ : Scope} (κ : Universe k) (l₂ : Level k) (p r : Grade) (A : Term k Γ)
     (B : Term k (.var :: Γ)) : Term k Γ :=
@@ -220,7 +216,6 @@ theorem Signature.HasPrelude.step {sig : Signature} (hpre : sig.HasPrelude) :
     sig.HasDataType "Step" Prelude.step Prelude.stepType :=
   hpre.of_mem
 
--- ADE: none.
 /-- The type `X[y]` of the second field of the pair, at the abstraction `x. B` for `X`, is `B`. -/
 theorem Prelude.pairSecond {Γ : Scope} (B : Term k (.var :: Γ)) :
     (B.rename (Ren.liftN 1 Ren.weaken)).instantiate
@@ -228,7 +223,6 @@ theorem Prelude.pairSecond {Γ : Scope} (B : Term k (.var :: Γ)) :
       B :=
   Term.subst₀_single_zero_rename_lift_weaken B
 
--- ADE: none.
 /-- The packing of a telescope, substituted, is the packing of the telescope substituted. -/
 theorem Telescope.pack_subst : {Γ Δ : Scope} → {ps : List Parameter} → (θ : Subst k Γ Δ) →
     (Θ : Telescope k Δ ps) → (κs : List (Universe k)) → (l : Level k) →
@@ -239,21 +233,18 @@ theorem Telescope.pack_subst : {Γ Δ : Scope} → {ps : List Parameter} → (θ
     rw [Telescope.pack_subst (Subst.lift θ) Θ]
     rfl
 
--- ADE: none.
 /-- The packing of a telescope, renamed, is the packing of the telescope renamed. -/
 theorem Telescope.pack_rename {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
     (Θ : Telescope k Δ ps) (κs : List (Universe k)) (l : Level k) :
     (Θ.pack κs l).rename α = (Θ.rename α).pack κs l := by
   rw [Term.rename_eq_subst, Telescope.rename_eq_subst, Telescope.pack_subst]
 
--- ADE: none.
 /-- The packing of a telescope, substituted, is the packing of the telescope substituted. -/
 theorem Telescope.pack_subst₀ {Γ Δ : Scope} {ps : List Parameter} (σ : Subst₀ k Γ Δ)
     (Θ : Telescope k Δ ps) (κs : List (Universe k)) (l : Level k) :
     (Θ.pack κs l).subst₀ σ = (Θ.subst₀ σ).pack κs l := by
   rw [Term.subst₀_eq_subst, Telescope.subst₀_eq_subst, Telescope.pack_subst]
 
--- ADE: none.
 /-- The packing of arguments, renamed, is the packing of the arguments renamed. -/
 theorem Args.pack_rename : {Γ Δ : Scope} → {ps : List Parameter} → (α : Ren Γ Δ) →
     (ts : Args k Δ ps) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) → (l : Level k) →
@@ -292,7 +283,6 @@ def Term.unpack (r : Grade) : {Γ : Scope} → {ps : List Parameter} → Term k 
       (.cons 2 0 #v[] (Term.unpack r (.var₀ .zero) (Θ.rename Ren.weaken) κs.tail l κ
         (C.rename (Ren.weakenN 2)) (b.rename (Ren.liftN ps.length Ren.weaken))) .nil)
 
--- ADE: none.
 /-- The unpacking, substituted, is the unpacking of the terms substituted. -/
 theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter} →
     (σ : Subst₀ k Γ Δ) → (u : Term k Δ) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) →
@@ -348,7 +338,6 @@ theorem Term.unpack_subst₀ (r : Grade) : {Γ Δ : Scope} → {ps : List Parame
     erw [h₆, h₇]
     rfl
 
--- ADE: none.
 /-- The unpacking in the branch of a pair, at the fields `t` and `P`, is the unpacking of `P` into
 the term at `t`. -/
 theorem Term.unpack_branch_instantiate (r : Grade) {Γ : Scope} {p : Parameter} {ps : List Parameter}
@@ -393,7 +382,6 @@ theorem Term.unpack_branch_instantiate (r : Grade) {Γ : Scope} {p : Parameter} 
   erw [h₅]
   rfl
 
--- ADE: none.
 /-- The unpacking, substituted, is the unpacking of the terms substituted. -/
 theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter} →
     (θ : Subst k Γ Δ) → (u : Term k Δ) → (Θ : Telescope k Δ ps) → (κs : List (Universe k)) →
@@ -444,7 +432,6 @@ theorem Term.unpack_subst (r : Grade) : {Γ Δ : Scope} → {ps : List Parameter
 
 /-! ### Packing of the Variables -/
 
--- ADE: none.
 /-- `e[⟨x̄⟩ / z]`: the term `e`, over a term `z` of the packing of the telescope `Θ`, at the packing
 of the variables of `Θ`, under them. -/
 def Term.atPack {Γ : Scope} {ps : List Parameter} (e : Term k (.var :: Γ)) (Θ : Telescope k Γ ps)
@@ -452,7 +439,6 @@ def Term.atPack {Γ : Scope} {ps : List Parameter} (e : Term k (.var :: Γ)) (Θ
   (e.rename (Ren.lift (Ren.weakenN ps.length))).subst₀
     (Subst₀.single ((Args.bound ps).pack (Θ.rename (Ren.weakenN ps.length)) κs l))
 
--- ADE: none.
 /-- The term `e` at the packing of the variables of a telescope that starts with an entry `x : A`, in
 the branch of the pair of `x` and `y`, is the term `e` at the pair of `x` and of the packing of the
 variables of the rest, which unpacks `y`. -/
@@ -617,7 +603,6 @@ abbrev Prelude.stepInst {Γ : Scope} (s : Quality) (l₁ l₂ : Level k) (p q r 
     (A B : Term k Γ) : Term k Γ :=
   .inst "Step" [s] [l₁, l₂] [p, q, r] (Prelude.stepArgs A B)
 
--- ADE: none.
 /-- `q_s`: the grade of a term already built of a position, of the quality `s`: `11ᵖ` in a universe,
 and `01ᵖ`, without use at run time, in a universe of propositions, as the constraint of the type of
 positions requires.
@@ -626,7 +611,6 @@ def Prelude.doneGrade : Quality → Grade
   | .type => Grade.one
   | .prop => Grade.noneLinear
 
--- ADE: none.
 /-- The state of the type `D` of a block, whose names are `names`, in the states `Ss` of a
 corecursor, with the sorts of its entries, when `D` has a state without non-uniform parameters. -/
 def States.stateOf {Γ : Scope} (names : List Name) (Ss : States k Γ) (D : Name) :
@@ -638,7 +622,6 @@ def States.stateOf {Γ : Scope} (names : List Name) (Ss : States k Γ) (D : Name
     | some ⟨0, ps, S⟩ => some ⟨ps, S, Ss.sorts j⟩
     | _ => none
 
--- ADE: none.
 /-- `Step.{s; level_κ̄(l), l'; r, q_s, χ} (⟨Θ⟩_{κ̄; l}, T)`, with `l = level_κ̄(0)`: the type of the
 positions of a corecursor of the grade `r` whose state `Θ`, whose entries live in the sorts `κ̄`,
 packs into a universe, and of the terms of `T`, of the sort `κ = s_{l'}`, that the ownership `χ`
@@ -649,7 +632,6 @@ def Term.positions {Γ : Scope} {ps : List Parameter} (κ : Universe k) (r χ : 
   Prelude.stepInst κ.quality (Telescope.packLevel κs (Telescope.packLevel κs .zero)) κ.level r
     (Prelude.doneGrade κ.quality) χ (S.pack κs (Telescope.packLevel κs .zero)) T
 
--- ADE: none.
 /-- `pos_{Θ̄}(B, T)`: the type of the branch of a destructor whose declared result is `B` and whose
 result is `T`, at the states `Ss` of the block whose names are `names`: the positions of the state of
 the type of the block that `B` names, of the sort `κ`, with the constant `χ` of the ownership of the
@@ -664,7 +646,6 @@ def Term.branchResult {k' : Nat} {Ψ Γ : Scope} (names : List Name) (B : Term k
     | none => T
     | some ⟨_, S, κs⟩ => Term.positions κ r χ S κs T
 
--- ADE: none.
 /-- `resume(v)`: the position `v` of a corecursor of the grade `r` of the instance
 `T = D.{s̄; l̄; p̄} ā` of the sort `κ`, with the states `Ss` and the branches `gs`, the state of `D`
 being `Θ`, whose entries live in the sorts `κ̄`, resumed: a recursor on `v`, which unpacks a new
@@ -687,7 +668,6 @@ def Term.resume {Γ Δ : Scope} {ps' : List Parameter} (r : Grade) (D : Name) (q
           (gs.rename Ren.weaken) ps'))
       (.cons 1 0 #v[] (.var₀ .zero) .nil))
 
--- ADE: none.
 /-- The observation of a corecursor of the grade `r` of the instance `D'.{s̄; l̄; p̄} ā`, of the sort
 `κ`, with the states `Ss` and the branches `gs`, by a destructor whose result is an instance of the
 type `rec` of the block whose names are `names`, if any, and the constant of the ownership of whose
@@ -707,7 +687,6 @@ def Term.observed {Γ Δ : Scope} (names : List Name) (rec : Option Name) (r : G
 
 /-! ### Commutation of the Positions with the Substitutions -/
 
--- ADE: none.
 /-- The states at a position of states substituted are the states at the position, substituted. -/
 theorem States.get_subst_eq {Γ Δ : Scope} (θ : Subst k Γ Δ) :
     (Ss : States k Δ) → (j : Nat) →
@@ -729,7 +708,6 @@ theorem States.stateOf_of_get {Γ : Scope} {decl : TypeDeclaration} (h : decl.na
   simp only [hS]
   rfl
 
--- ADE: none.
 /-- The state of a type in states substituted is its state, substituted, with the same sorts. -/
 theorem States.stateOf_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) (names : List Name)
     (Ss : States k Δ) (D : Name) :
@@ -747,7 +725,6 @@ theorem States.stateOf_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) (names : List 
       obtain ⟨n, ps, S⟩ := x
       cases n <;> rfl
 
--- ADE: none.
 /-- The positions of a state, substituted, are the positions of the state substituted. -/
 theorem Term.positions_subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k Γ Δ)
     (κ : Universe k) (r χ : Grade) (S : Telescope k Δ ps) (κs : List (Universe k))
@@ -758,7 +735,6 @@ theorem Term.positions_subst {Γ Δ : Scope} {ps : List Parameter} (θ : Subst k
   rw [← h]
   rfl
 
--- ADE: none.
 /-- The type of the result of a branch, substituted, is the type of the result of the branch
 substituted, at the states substituted. -/
 theorem Term.branchResult_subst {k' : Nat} {Ψ Γ Δ : Scope} (θ : Subst k Γ Δ) (names : List Name)
@@ -777,7 +753,6 @@ theorem Term.branchResult_subst {k' : Nat} {Ψ Γ Δ : Scope} (θ : Subst k Γ �
       obtain ⟨ps, S, κs⟩ := x
       exact Term.positions_subst θ κ r χ S κs T
 
--- ADE: none.
 /-- `resume(v)`, substituted, is `resume` of the position substituted, for the corecursor
 substituted. -/
 theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst k Γ Δ) (r : Grade)
@@ -821,7 +796,6 @@ theorem Term.resume_subst {Γ Δ Ξ : Scope} {ps' : List Parameter} (θ : Subst 
   erw [Term.subst_lift_rename_weaken, hu]
   rfl
 
--- ADE: none.
 /-- The observed term, substituted, is the observed term at the corecursor and the branch
 substituted. -/
 theorem Term.observed_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (names : List Name)
@@ -845,7 +819,6 @@ theorem Term.observed_subst {Γ Δ Ξ : Scope} (θ : Subst k Γ Δ) (names : Lis
 
 /-! ### Commutation of the Positions with the Instantiation of the Levels -/
 
--- ADE: none.
 /-- The level of a packing, instantiated, is the level of the packing at the sorts instantiated. -/
 theorem Telescope.packLevel_subst {k' : Nat} (ls' : Fin k → Level k') :
     (κs : List (Universe k)) → (l : Level k) →
@@ -854,7 +827,6 @@ theorem Telescope.packLevel_subst {k' : Nat} (ls' : Fin k → Level k') :
   | [], _ => rfl
   | _ :: κs, l => congrArg (Level.max _) (Telescope.packLevel_subst ls' κs l)
 
--- ADE: none.
 /-- The packing of a telescope, instantiated, is the packing of the telescope instantiated, at the
 sorts and the level instantiated. -/
 theorem Telescope.pack_substLevels {k' : Nat} (ls' : Fin k → Level k') : {Γ : Scope} →
@@ -875,7 +847,6 @@ theorem Telescope.pack_substLevels {k' : Nat} (ls' : Fin k → Level k') : {Γ :
     erw [h, Telescope.packLevel_subst]
     rfl
 
--- ADE: none.
 /-- The state of a type in states instantiated is its state, instantiated, at its sorts
 instantiated. -/
 theorem States.stateOf_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k')
@@ -896,7 +867,6 @@ theorem States.stateOf_substLevels {k' : Nat} {Γ : Scope} (ls' : Fin k → Leve
       obtain ⟨n, ps, S⟩ := x
       cases n <;> rfl
 
--- ADE: none.
 /-- The type of the result of a branch, instantiated, is the type of the result of the branch
 instantiated, at the sort and the states instantiated. -/
 theorem Term.branchResult_substLevels {k'' k' : Nat} {Ψ Γ : Scope} (ls' : Fin k → Level k')
@@ -920,7 +890,6 @@ theorem Term.branchResult_substLevels {k'' k' : Nat} {Ψ Γ : Scope} (ls' : Fin 
       erw [Telescope.pack_substLevels, Telescope.packLevel_subst]
       rfl
 
--- ADE: none.
 /-- The unpacking, instantiated, is the unpacking of the terms instantiated, at the sorts and the
 level instantiated. -/
 theorem Term.unpack_substLevels {k' : Nat} (ls' : Fin k → Level k') (r : Grade) :
@@ -954,7 +923,6 @@ theorem Term.unpack_substLevels {k' : Nat} (ls' : Fin k → Level k') (r : Grade
         Term.substLevels_rename, Term.substLevels_rename, Telescope.substLevels_rename]
       rfl
 
--- ADE: none.
 /-- `resume(v)`, instantiated, is `resume` of the position instantiated, for the corecursor
 instantiated, of the sort instantiated. -/
 theorem Term.resume_substLevels {k' : Nat} {Γ Δ : Scope} {ps' : List Parameter}
@@ -974,7 +942,6 @@ theorem Term.resume_substLevels {k' : Nat} {Γ Δ : Scope} {ps' : List Parameter
     DestructorBranches.substLevels_rename]
   rfl
 
--- ADE: none.
 /-- The observed term, instantiated, is the observed term at the corecursor, the sort and the
 branch instantiated. -/
 theorem Term.observed_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Level k')

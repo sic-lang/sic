@@ -16,17 +16,14 @@ ADE have no sets as predicates: their modalities have no meaning as sets of numb
 
 namespace Sic.Math
 
--- ADE: none.
 /-- A set of elements of `α`, given by the predicate that tells which elements belong to it. -/
 def Set (α : Type) : Type := α → Prop
 
 namespace Set
 
--- ADE: none.
 instance {α : Type} : Membership α (Set α) where
   mem S a := S a
 
--- ADE: none.
 /-- The set of the elements that satisfy `p`, written `{ a | p a }`. -/
 def ofPred {α : Type} (p : α → Prop) : Set α := p
 
@@ -36,21 +33,16 @@ syntax "{ " ident " | " term " }" : term
 macro_rules
   | `({ $a:ident | $p }) => `(Sic.Math.Set.ofPred fun $a => $p)
 
--- ADE: none.
 @[simp] theorem mem_ofPred {α : Type} {p : α → Prop} {a : α} : a ∈ ofPred p ↔ p a := Iff.rfl
 
--- ADE: none.
 instance {α : Type} : HasSubset (Set α) where
   Subset S T := ∀ a, a ∈ S → a ∈ T
 
--- ADE: none.
 @[simp] theorem subset_def {α : Type} {S T : Set α} : S ⊆ T ↔ ∀ a, a ∈ S → a ∈ T := Iff.rfl
 
--- ADE: none.
 instance {α : Type} : Union (Set α) where
   union S T := { a | a ∈ S ∨ a ∈ T }
 
--- ADE: none.
 @[simp] theorem mem_union {α : Type} {S T : Set α} {a : α} : a ∈ S ∪ T ↔ a ∈ S ∨ a ∈ T := Iff.rfl
 
 end Set

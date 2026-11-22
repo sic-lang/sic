@@ -39,7 +39,6 @@ variable {sig : Signature} {ι : Interpretation}
 
 /-! ## Types Read by the Graph of the Nestings -/
 
--- ADE: none.
 /-- The graph of the nestings of the sort of the quality `s` at the level `n` reads two closed
 types, each at its nesting, with the same equality of their terms, where the positions hold types
 of sorts of the quality `sT`. -/
@@ -327,7 +326,6 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
 
 /-! ## Reading of the Equality -/
 
--- ADE: none.
 /-- The reading of the graph of the nestings of the equality at the level `n`, of the sorts whose
 level `n` bounds, at positions that hold types of sorts of the quality `sT`: two types, or the
 destructors of a codata type at two substitutions, are read with one equality, in the sort of a
@@ -375,7 +373,6 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
         exact ⟨_, .codataProp hT hq hl hp rfl hκ hn hrec S hS₁',
           .codataProp hT hq hl hp rfl hκ hn hrec S hS₂'⟩
 
--- ADE: none.
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
 variables with a position, are read by the graph of the nestings of the equality at their
 nestings, with one equality of their terms, given the soundness of the typing. -/

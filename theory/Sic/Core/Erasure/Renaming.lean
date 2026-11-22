@@ -37,7 +37,6 @@ def TargetRen.lift {n m : Nat} (α : TargetRen n m) (k : Nat) : TargetRen (n + k
       let y := α ⟨i - k, by omega⟩
       ⟨y + k, by have := y.isLt; omega⟩
 
--- ADE: none.
 /-- The index of a variable renamed by a lift: itself when it is new, and the index that the
 renaming gives it, shifted by the new variables, otherwise. -/
 theorem TargetRen.lift_val {n m : Nat} (α : TargetRen n m) (k : Nat) (i : Fin (m + k)) :
@@ -46,7 +45,6 @@ theorem TargetRen.lift_val {n m : Nat} (α : TargetRen n m) (k : Nat) (i : Fin (
   simp only [TargetRen.lift]
   split <;> rfl
 
--- ADE: none.
 /-- An environment `E'` that binds each variable `α x` as `E` binds `x`, extended by the same cells
 `L` for `k` new variables, binds each variable `α.lift k x` as `L ++ E` binds `x`. -/
 theorem TargetRen.getElem?_lift {n m : Nat} {α : TargetRen n m} {E E' : List Nat}
@@ -79,20 +77,17 @@ def Target.rename {n m : Nat} (α : TargetRen n m) : Target m → Target n
   | .obs M i ψ ς Ms => .obs (M.rename α) i ψ ς (Ms.rename α)
   | .corec Ms Ps => .corec (Ms.rename α) (Ps.rename α)
 
--- ADE: none.
 /-- The terms with their variables renamed by `α`. -/
 def Targets.rename {n m : Nat} (α : TargetRen n m) : Targets m → Targets n
   | .nil => .nil
   | .cons π ϱ M Ms => .cons π ϱ (M.rename α) (Ms.rename α)
 
--- ADE: none.
 /-- The branches of a recursor with the variables of the scope renamed by `α`, under the new
 variables of each branch. -/
 def TargetBranches.rename {n m : Nat} (α : TargetRen n m) : TargetBranches m → TargetBranches n
   | .nil => .nil
   | .cons a b πs κs πs' ks N Ns => .cons a b πs κs πs' ks (N.rename (α.lift (a + b))) (Ns.rename α)
 
--- ADE: none.
 /-- The branches of a corecursor with the variables of the scope renamed by `α`, under the new
 variables of each branch. -/
 def TargetCorecBranches.rename {n m : Nat} (α : TargetRen n m) :
@@ -105,7 +100,6 @@ end
 
 /-! ## Validation -/
 
--- ADE: none.
 /-- The identity lifted is the identity. -/
 theorem TargetRen.lift_id {n : Nat} (k : Nat) : TargetRen.lift (n := n) (m := n) id k = id := by
   funext i
@@ -113,7 +107,6 @@ theorem TargetRen.lift_id {n : Nat} (k : Nat) : TargetRen.lift (n := n) (m := n)
   split <;> (apply Fin.ext; simp only)
   omega
 
--- ADE: none.
 /-- The composition of two renamings lifted is the composition of their lifts. -/
 theorem TargetRen.lift_comp {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) (k : Nat) :
     α.lift k ∘ β.lift k = TargetRen.lift (α ∘ β) k := by
@@ -135,20 +128,17 @@ theorem Target.rename_id {n : Nat} : (M : Target n) → M.rename id = M
   | .obs M _ _ _ Ms => by rw [Target.rename, Target.rename_id M, Targets.rename_id Ms]
   | .corec Ms Ps => by rw [Target.rename, Targets.rename_id Ms, TargetCorecBranches.rename_id Ps]
 
--- ADE: none.
 /-- The identity renaming leaves terms unchanged. -/
 theorem Targets.rename_id {n : Nat} : (Ms : Targets n) → Ms.rename id = Ms
   | .nil => rfl
   | .cons _ _ M Ms => by rw [Targets.rename, Target.rename_id M, Targets.rename_id Ms]
 
--- ADE: none.
 /-- The identity renaming leaves the branches of a recursor unchanged. -/
 theorem TargetBranches.rename_id {n : Nat} : (Ns : TargetBranches n) → Ns.rename id = Ns
   | .nil => rfl
   | .cons _ _ _ _ _ _ N Ns => by
     rw [TargetBranches.rename, TargetRen.lift_id, Target.rename_id N, TargetBranches.rename_id Ns]
 
--- ADE: none.
 /-- The identity renaming leaves the branches of a corecursor unchanged. -/
 theorem TargetCorecBranches.rename_id {n : Nat} : (Ps : TargetCorecBranches n) → Ps.rename id = Ps
   | .nil => rfl
@@ -176,7 +166,6 @@ theorem Target.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen 
     rw [Target.rename, Target.rename, Target.rename, Targets.rename_rename α β Ms,
       TargetCorecBranches.rename_rename α β Ps]
 
--- ADE: none.
 /-- Two renamings of terms, one after the other, are the renaming by their composition. -/
 theorem Targets.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) :
     (Ms : Targets l) → (Ms.rename β).rename α = Ms.rename (α ∘ β)
@@ -185,7 +174,6 @@ theorem Targets.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen
     rw [Targets.rename, Targets.rename, Targets.rename, Target.rename_rename α β M,
       Targets.rename_rename α β Ms]
 
--- ADE: none.
 /-- Two renamings of the branches of a recursor, one after the other, are the renaming by their
 composition. -/
 theorem TargetBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) :
@@ -195,7 +183,6 @@ theorem TargetBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : Ta
     rw [TargetBranches.rename, TargetBranches.rename, TargetBranches.rename,
       Target.rename_rename, TargetRen.lift_comp, TargetBranches.rename_rename α β Ns]
 
--- ADE: none.
 /-- Two renamings of the branches of a corecursor, one after the other, are the renaming by their
 composition. -/
 theorem TargetCorecBranches.rename_rename {n m l : Nat} (α : TargetRen n m) (β : TargetRen m l) :
@@ -209,7 +196,6 @@ end
 
 /-! ## Casts -/
 
--- ADE: none.
 /-- A term whose scope is cast to an equal one, renamed, is the term renamed by the renaming that
 reads each variable at its index in the cast scope: the indices are the same. -/
 theorem Target.rename_cast {n m m' : Nat} (h : m = m') (α : TargetRen n m') (M : Target m) :
@@ -219,7 +205,6 @@ theorem Target.rename_cast {n m m' : Nat} (h : m = m') (α : TargetRen n m') (M 
 
 /-! ## Multiplicities and Requirements -/
 
--- ADE: none.
 /-- The multiplicities at which terms are stored do not depend on their variables. -/
 theorem Targets.multiplicities_rename {n m : Nat} (α : TargetRen n m) :
     (Ms : Targets m) → (Ms.rename α).multiplicities = Ms.multiplicities
@@ -227,7 +212,6 @@ theorem Targets.multiplicities_rename {n m : Nat} (α : TargetRen n m) :
   | .cons _ _ _ Ms => by
     simp only [Targets.rename, Targets.multiplicities, Targets.multiplicities_rename α Ms]
 
--- ADE: none.
 /-- The requirements of the positions at which terms are stored do not depend on their variables. -/
 theorem Targets.requirements_rename {n m : Nat} (α : TargetRen n m) :
     (Ms : Targets m) → (Ms.rename α).requirements = Ms.requirements
@@ -239,7 +223,6 @@ theorem Targets.requirements_rename {n m : Nat} (α : TargetRen n m) :
 
 mutual
 
--- ADE: none.
 /-- The term of a skeleton mentions no variable: a renaming leaves it unchanged. -/
 theorem Skeleton.target_rename {n m : Nat} (α : TargetRen n m) :
     (K : Skeleton) → (K.target : Target m).rename α = K.target
@@ -247,7 +230,6 @@ theorem Skeleton.target_rename {n m : Nat} (α : TargetRen n m) :
   | .ctor _ ks => by
     simp only [Skeleton.target, Target.rename, Skeleton.targets_rename α ks]
 
--- ADE: none.
 /-- The terms of skeletons mention no variable: a renaming leaves them unchanged. -/
 theorem Skeleton.targets_rename {n m : Nat} (α : TargetRen n m) :
     (ks : List Skeleton) → (Skeleton.targets ks : Targets m).rename α = Skeleton.targets ks
@@ -262,14 +244,12 @@ end
 
 mutual
 
--- ADE: none.
 /-- Data renamed is data. -/
 theorem Target.IsData.rename {n m : Nat} (α : TargetRen n m) :
     {M : Target m} → M.IsData → (M.rename α).IsData
   | _, .erased => .erased
   | _, .ctor h => .ctor (h.rename α)
 
--- ADE: none.
 /-- Terms that are data, renamed, are data. -/
 theorem Targets.IsData.rename {n m : Nat} (α : TargetRen n m) :
     {Ms : Targets m} → Ms.IsData → (Ms.rename α).IsData

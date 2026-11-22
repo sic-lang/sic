@@ -69,7 +69,6 @@ theorem ResultOwnership.value_map_run : {n : Nat} → (ψ : ResultOwnership Grad
 
 /-! ## Extensions of the Ownerships of the Variables -/
 
--- ADE: none.
 /-- The ownerships `φ` of the variables of the scope `Γ`, extended by the ownership `v l` of the new
 variable of index `l` of `n` new variables, the first one at `0`. -/
 def Ownership.extendWith {Γ : Scope} (φ : Var Γ .var → Grade) (v : Nat → Grade) :
@@ -149,7 +148,6 @@ theorem Ownership.extendResults_eq {Γ : Scope} (φ : Var Γ .var → Grade) :
       Ownership.extendWith]
     cases os <;> cases es <;> rfl
 
--- ADE: none.
 /-- The ownership of the value of the `j`-th recursive result of the fields whose nestings are `ns`,
 in a branch of a recursor of the ownership `p`, has the run-time multiplicity of the ownership that
 the erasure gives the variable of the `j`-th recursive result of these fields from the position `o`
@@ -433,7 +431,6 @@ theorem Mode.not_erased_of_odot {m : Mode} {u : Grade} (hm : m = .oneOne) (h : m
 
 mutual
 
--- ADE: none.
 /--
 The erasure at run time of a term checked in the mode `11ᵐ` has, in the ownership of the target
 language, the run-time multiplicity of its ownership, given the run-time multiplicities `φ'` of the
@@ -759,7 +756,6 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
           (hgr i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g D' hc hSj hpos hg hbn gs hal))
   | .sub h hle => .sub (Ownership.erase_ownership hd hs hΩ hΓ hφ hm h) (Grade.run_le hle)
 
--- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in a mode `m'`, each at the
 parameter of its entry whose grade is mapped by `f`, satisfies the requirements of their positions,
 at ownerships that are the run-time multiplicities of theirs at each kept position, when `m'` checks

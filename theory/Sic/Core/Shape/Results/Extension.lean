@@ -29,7 +29,6 @@ variable {k : Nat} {v : Lifting.Variables} {md : Mode} {ax : Grade → Multiplic
 
 /-! ## Shapes of the Liftings -/
 
--- ADE: none.
 /-- A lifting that has a shape along the entries of a signature is declared by one of them. -/
 theorem Signature.mem_of_shapes {D : Name} {qs : List Quality} {ps : List Grade}
     {ms : List (Nat × Shape.Motive)} {σ : Shape × Grade} :
@@ -51,7 +50,6 @@ theorem Signature.mem_of_shapes {D : Name} {qs : List Quality} {ps : List Grade}
     obtain ⟨L', h₁, h₂⟩ := Signature.mem_of_shapes sig h
     exact ⟨L', List.mem_cons_of_mem _ h₁, h₂⟩
 
--- ADE: none.
 /-- A lifting that has a shape along the entries of a signature has the same shape along the
 entries of a signature with more entries before them, whose names are distinct. -/
 theorem Signature.shapes_append_of_eq_some {sig pre : Signature} (hd : (pre ++ sig).Distinct)
@@ -65,7 +63,6 @@ theorem Signature.shapes_append_of_eq_some {sig pre : Signature} (hd : (pre ++ s
 
 mutual
 
--- ADE: none.
 /-- A type, where no variable has a position, keeps the shape that it has where `lookup₁` gives the
 shapes of the liftings, where `lookup₂` gives them, when `lookup₂` gives each shape that `lookup₁`
 gives: each instance at a nesting with positions has its arguments at a position with shapes. -/
@@ -104,7 +101,6 @@ theorem Term.shape_of_extends {lookup₁ lookup₂ : Shape.Lookup}
   | _, _, _, _, .obs _ _ _ _ _ _ _ _, _, h => nomatch h
   | _, _, _, _, .corec _ _ _ _ _ _ _ _ _, _, h => nomatch h
 
--- ADE: none.
 /-- The arguments of an instance, where no variable has a position, keep the shapes that they have
 where `lookup₁` gives the shapes of the liftings, where `lookup₂` gives them, when `lookup₂` gives
 each shape that `lookup₁` gives: an argument at no position has no shape whatever the liftings. -/
@@ -139,7 +135,6 @@ end
 
 /-! ## Shapes of the Nested Fields -/
 
--- ADE: none.
 /-- The skeleton of a type that an entry of a signature declares is the same along the entries of a
 signature with more entries before them, whose names are distinct. -/
 theorem Signature.skeleton_append {sig pre : Signature} (hd : (pre ++ sig).Distinct) {e₀ : Entry}
@@ -152,7 +147,6 @@ theorem Signature.skeleton_append {sig pre : Signature} (hd : (pre ++ sig).Disti
     (Signature.Distinct.suffix pre hd).findSome?_eq he₀ hD
       fun e he => hf e (List.mem_append_right pre he)]
 
--- ADE: none.
 /-- The shapes of the types of a block that an entry of a signature declares are the same along the
 entries of a signature with more entries before them, whose names are distinct. -/
 theorem Signature.blockShapes_append {sig pre : Signature} (hd : (pre ++ sig).Distinct)
@@ -165,7 +159,6 @@ theorem Signature.blockShapes_append {sig pre : Signature} (hd : (pre ++ sig).Di
   · next hD => rw [Signature.skeleton_append hd hdecl hD]
   · rfl
 
--- ADE: none.
 /-- A type at a position has the shape that the shapes of the types of the block give it, or that of
 its variable, whatever the shapes of the liftings. -/
 theorem Term.shape_direct {lookup₁ lookup₂ : Shape.Lookup} {block : Name → Option Shape.Motive}
@@ -173,7 +166,6 @@ theorem Term.shape_direct {lookup₁ lookup₂ : Shape.Lookup} {block : Name →
     A.shape v lookup₁ block @ν (.direct E) = A.shape v lookup₂ block @ν (.direct E) := by
   cases A <;> rfl
 
--- ADE: none.
 /-- The shapes of the nested results of the fields of a telescope are the same where `lookup₂`
 gives the shapes of the liftings as where `lookup₁` does, when `lookup₂` gives each shape that
 `lookup₁` gives and each nested field has a shape where `lookup₁` gives them: a field at no
@@ -208,7 +200,6 @@ theorem Telescope.nestedShapes_of_extends {lookup₁ lookup₂ : Shape.Lookup}
       | none => rw [hA] at hσ; exact nomatch hσ
       | some s => rw [Term.shape_of_extends hl h₀ A hA]
 
--- ADE: none.
 /-- The shapes of the nested results of the fields of a constructor of a block that an entry of a
 signature declares are the same along the entries of a signature with more entries before them,
 whose names are distinct, when each nested field has a shape along the entries of the signature. -/
@@ -225,7 +216,6 @@ theorem Constructor.nestedShapes_append {sig pre : Signature} (hd : (pre ++ sig)
   exact Telescope.nestedShapes_of_extends
     (fun _ _ _ _ _ hσ => Signature.shapes_append_of_eq_some hd hσ) decl.names _ h
 
--- ADE: none.
 /-- Each nested field of a constructor of a block that an entry of a signature declares has a shape
 along the entries of a signature with more entries before them, whose names are distinct, when it
 has one along the entries of the signature. -/
@@ -240,7 +230,6 @@ theorem Constructor.NestedHaveShapes.append {sig pre : Signature} (hd : (pre ++ 
   rw [Constructor.nestedShapes_append hd hdecl qs ps χ h]
   exact h l ns hl
 
--- ADE: none.
 /-- A field of a telescope whose recursive result has the shape of a lifting is nested, when the
 types of the block have the shape of the recursor itself: a field at no position has no shape, and
 a recursive field the shape of the type of its block. -/
@@ -291,7 +280,6 @@ theorem Telescope.nest_of_nestedShapes {lookup : Shape.Lookup}
       | propExt _ _ _ _ _ => exact nomatch h
       | coind _ _ _ _ _ _ _ _ _ _ => exact nomatch h
 
--- ADE: none.
 /-- A field of a constructor whose recursive result has the shape of a lifting is nested. -/
 theorem Constructor.nest_of_nestedShapes {j g k' : Nat} {Δ : Scope} {sig : Signature}
     {names : List Name} {qs : List Quality} {ps : List Grade} {χ : Grade}
@@ -306,7 +294,6 @@ theorem Constructor.nest_of_nestedShapes {j g k' : Nat} {Δ : Scope} {sig : Sign
 
 /-! ## Requirement of the Recursion -/
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor on a block that an entry of a signature declares,
 whose nested fields have shapes, is the same along the entries of a signature with more entries
 before them, whose names are distinct. -/
@@ -328,7 +315,6 @@ theorem TypeDeclaration.recursionRequirement_append {sig pre : Signature}
   exact Grade.ext (by simp only [Parameter.recursion]; rw [hn Grade.run (by simp)])
     (by simp only [Parameter.recursion]; rw [hn Grade.total (by simp)])
 
--- ADE: none.
 /-- The nested fields of the constructors of a block that an entry of a signature declares have
 shapes along the entries of a signature with more entries before them, whose names are distinct,
 when they have shapes along the entries of the signature. -/

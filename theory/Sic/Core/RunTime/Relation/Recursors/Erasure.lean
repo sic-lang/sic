@@ -149,7 +149,6 @@ theorem RecursiveResult.recursionsAt_ofField_self (r : Option Name) (s : Option 
       rw [ite_eq_right nofun]
       exact (by decide : ∀ m : Multiplicity, Multiplicity.zero + .zero = m * .zero) _
 
--- ADE: none.
 /-- The recursions that the recursive results of the fields whose nestings are `ns`, from the
 position `o`, each erased when its grade in `es` is in `S`, run on the field at `o + l`, at the
 run-time multiplicities of their grades: the run-time multiplicity of the grade of the result of the

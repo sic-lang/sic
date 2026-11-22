@@ -39,7 +39,6 @@ def RunsAs (sig : Signature) (ι : Interpretation) (P : Program) (H : Heap) (t :
   ∃ v, Computesι sig ι A v ∧
     (IsProp sig ι v ∨ ∃ R, HasRun sig ι P v R ∧ R.computed sig ι H t a)
 
--- ADE: none.
 /-- `t̄ ®_H^{p̄} b̄ : Θ`: the closed arguments `t̄` of the closed telescope `Θ` and the addresses `b̄`
 of their values in the heap `H`, one for each entry, the first one first, at the grades `p̄`, the
 grade `p l` of the argument at each position `l`: each argument whose grade is not in `S^{11ᵐ}`, so
@@ -87,7 +86,6 @@ def RunValid (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope} 
     ∃ a H' R, Eval P ϖ H E (t.erase sig Mode.oneOne.erased hΓ) a H' R ∧ H.Extends H' ∧
       RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
 
--- ADE: none.
 /-- `Σ; γ; Γ ⊨® t̄ : Θ`, at levels without variables: for each closed substitution `σ` of the
 first-order context `Γ` that the meaning relates to itself, and each heap `H` in which the cells `E`
 bind the addresses `V` that stand for `σ` as `γ` requires, the erasure of the arguments `t̄` at the
@@ -114,7 +112,6 @@ run from the run of the term: the validity at run time is proved, by the fundame
 every environment that binds the variables of the renamed erasure as the environment binds those of
 the erasure, and gives back `RunValid` and `RunValidArgs` at the identity. -/
 
--- ADE: none.
 /-- `RunValid` of `t` where its erasure, renamed by any `g`, evaluates in any environment `E'` that
 binds each variable `g x` to the cell to which `E` binds `x`. -/
 def RunValidRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
@@ -125,7 +122,6 @@ def RunValidRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scop
       ∃ a H' R, Eval P ϖ H E' ((t.erase sig Mode.oneOne.erased hΓ).rename g) a H' R ∧
         H.Extends H' ∧ RunsAs sig ι P H' (t.subst σ) a (A.subst σ)
 
--- ADE: none.
 /-- `RunValidArgs` of `t̄` where its erasure is renamed and evaluated as `RunValidRen` does for a
 term. -/
 def RunValidArgsRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
@@ -138,7 +134,6 @@ def RunValidArgsRen (sig : Signature) (ι : Interpretation) (P : Program) {Γ : 
         EvalAll P ϖ H E' ((ts.terms.erase sig Mode.oneOne.erased hΓ ps).rename g) bs H' R ∧
         H.Extends H' ∧ RunsAsArgs sig ι P H' (Parameter.grades ps) (ts.subst σ) bs (Θ.subst σ)
 
--- ADE: none.
 /-- The renaming by the identity, in the same environment, gives back `RunValid`. -/
 theorem RunValidRen.runValid {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length} {t A : Term 0 Γ}
@@ -148,7 +143,6 @@ theorem RunValidRen.runValid {sig : Signature} {ι : Interpretation} {P : Progra
   rw [Target.rename_id] at hev
   exact ⟨a, H', R, hev, hH, hrun⟩
 
--- ADE: none.
 /-- The renaming by the identity, in the same environment, gives back `RunValidArgs`. -/
 theorem RunValidArgsRen.runValidArgs {sig : Signature} {ι : Interpretation} {P : Program}
     {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {γ : GradeVector Γ.length}

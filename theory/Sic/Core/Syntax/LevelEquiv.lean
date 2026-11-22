@@ -41,7 +41,6 @@ inductive Universe.ListEquiv {k : Nat} : List (Universe k) → List (Universe k)
 
 mutual
 
--- ADE: none.
 /-- `t` and `t'` are the same term, but for their levels, which are equal one by one. -/
 inductive Term.LevelEquiv {k : Nat} : {Γ : Scope} → Term k Γ → Term k Γ → Prop where
   /-- A variable, applied to arguments equal up to their levels. -/
@@ -203,7 +202,6 @@ inductive DestructorBranches.LevelEquiv {k : Nat} :
 
 end
 
--- ADE: none.
 /-- The destructors of a codata type, equal up to their levels one by one. -/
 inductive Destructors.LevelEquiv {k : Nat} :
     {Γ : Scope} → {ns : List Name} → Destructors k Γ ns → Destructors k Γ ns → Prop where

@@ -429,7 +429,6 @@ end Lifting.Instantiates
 
 mutual
 
--- ADE: none.
 /-- A type lifted at no position, substituted by an instantiation of its lifting, has, at its
 nesting, where the variables have the nestings of the instantiation, the shape of the type where
 each variable lifted has the shape of what the instantiation gives it, at its nesting, and the
@@ -477,7 +476,6 @@ theorem Term.Lifts.shape_instantiate {block₀ : Name → Option Shape.Motive}
     | plain => simp only [Term.shape, Nest.args] at h ⊢; rw [h]
     | inst _ => simp only [Term.shape, Nest.args] at h ⊢; rw [h]
 
--- ADE: none.
 /-- The arguments of an instance lifted at no position, substituted by an instantiation of their
 lifting, have, at their nestings, the shapes of the arguments where each variable lifted has the
 shape of what the instantiation gives it, at its nesting, and the others none, when no variable of
@@ -546,7 +544,6 @@ end
 
 /-! ## Shapes of the Arguments of an Instance -/
 
--- ADE: none.
 /-- The shapes of the arguments of an instance followed by an argument, when they are given, are
 those of the arguments before it, followed by the shape of the argument at its position when it
 has one. -/
@@ -646,7 +643,6 @@ theorem InstanceArgs.lookup_shapes {Γ : Scope} {ν : Nesting Shape.Motive Γ} :
 
 /-! ## Shapes of the Results of the Destructors at an Instance -/
 
--- ADE: none.
 /-- The result of a destructor `d` of the codata type `D`, at a closed instance `D.{s̄; l̄; p̄} ā`
 lifted at a term `t`, at the observations of `t` by the destructors before `d` and at closed
 arguments of `d`, has, at its nesting, where no variable has a position, the shape of the result of

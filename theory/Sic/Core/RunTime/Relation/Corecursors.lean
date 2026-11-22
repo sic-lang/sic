@@ -60,7 +60,6 @@ theorem _root_.Sic.Grading.GradeVector.extendParams_eq_extendGrades {Γ : Scope}
       extendParams_eq_extendGrades (Γ := .var :: Γ)]
     rfl
 
--- ADE: none.
 /-- The branches of a corecursor whose destructors have a grade used at run time are valid at run
 time with the grades `δs i` of the variables of the context, those of the entries of the state
 `r` times their grades and those of the arguments their grades, at the results of their
@@ -93,7 +92,6 @@ def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) 
             ls ps (as.rename (Ren.weakenN ps''.length)))
             (as.rename (Ren.weakenN ps''.length)).toSubst))))
 
--- ADE: none.
 /-- `(corec)` at run time, closed: a corecursor of a codata type of `Σ`, whose type declaration is
 meaningful, from a closed state related to the addresses of a closure of its branches erased, at a
 substitution of the context of its branches for which addresses stand as the grades `δ` require, the
@@ -477,7 +475,6 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       .inr ⟨j, T', ps'', S', ts, bs, _, m, g, E', hj, rfl, hS', hts, List.prefix_refl _, hbs, hg,
         ha, List.length_map .., fun _ => rfl, rfl⟩⟩⟩
 
--- ADE: none.
 /-- `(corec)` at run time: a corecursor of a codata type of `Σ`, whose type declaration is
 meaningful, from a state valid at run time with the grades `γ` when its grade `r` is used at run
 time, with branches valid at run time with the grades `δs i`, which `δ` bounds, is valid at run time

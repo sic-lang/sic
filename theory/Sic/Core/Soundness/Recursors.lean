@@ -155,7 +155,6 @@ theorem ValidEqTerm₀.prop_any (hd : sig.Distinct) {t u t' u' A : Term 0 []}
   obtain ⟨w, R, hw, hR, hrel⟩ := h.2.2 hA
   exact ⟨h.1, fun hn => absurd hA hn, fun _ => ⟨w, R, hw, hR, hR.prop_any hd (hA.isProp hd hw) hrel⟩⟩
 
--- ADE: none.
 /-- `(rec_≡)` at closed terms, for each type of the block: at equal substitutions `σ₁` and `σ₂` of the
 context, the recursors on equal closed terms `t₁` and `t₂` of the instance of a type `T` of the
 block are equal terms of its motive at `t₁`, the motive and the branches substituted, by induction

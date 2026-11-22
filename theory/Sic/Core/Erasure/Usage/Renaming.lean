@@ -88,7 +88,6 @@ theorem rename_update {n m : Nat} (α : TargetRen n m) (x : Fin m) :
     · simp [h]
     · simp [h, Ne.symm h]
 
--- ADE: none.
 /-- The vector of a branch at a variable of the scope, shifted under the binders of the branch, is
 the vector of the scope at this variable. -/
 theorem extendBinders_shift {m a b : Nat} (φ : MultiplicityVector m) (πs : Fin a → Multiplicity)
@@ -99,7 +98,6 @@ theorem extendBinders_shift {m a b : Nat} (φ : MultiplicityVector m) (πs : Fin
   simp only [MultiplicityVector.extendBinders, TargetRen.shift, h₁, h₂, ↓reduceDIte,
     Nat.add_sub_cancel, Fin.eta]
 
--- ADE: none.
 /-- The vector of a branch renamed under its new variables is the vector of the scope renamed,
 extended by the multiplicities of the new variables. -/
 theorem rename_extendBinders {n m a b : Nat} (α : TargetRen n m) (δ : MultiplicityVector m)
@@ -202,7 +200,6 @@ theorem Target.Usage.rename {n m : Nat} (α : TargetRen n m) :
     exact .corec (hMs.rename α) (hPs.rename α)
   | _, _, .sub h hle => .sub (h.rename α) (MultiplicityVector.rename_le α hle)
 
--- ADE: none.
 /-- Terms renamed by `α` read their variables as `α_* ν`. -/
 theorem Targets.Usage.rename {n m : Nat} (α : TargetRen n m) :
     {ν : MultiplicityVector m} → {Ms : Targets m} → Targets.Usage ν Ms →
@@ -214,7 +211,6 @@ theorem Targets.Usage.rename {n m : Nat} (α : TargetRen n m) :
     rw [MultiplicityVector.rename_add, MultiplicityVector.rename_smul]
     exact .cons (hM.rename α) (fun h => (hz h).rename α) (hMs.rename α)
 
--- ADE: none.
 /-- The branches of a recursor renamed by `α` read the variables of the scope as `α_* χ`. -/
 theorem TargetBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
     {ρ : Multiplicity} → {χ : MultiplicityVector m} → {Ns : TargetBranches m} →
@@ -228,7 +224,6 @@ theorem TargetBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
     have h := MultiplicityVector.rename_le α hχ
     rwa [MultiplicityVector.rename_add, MultiplicityVector.rename_smul] at h
 
--- ADE: none.
 /-- The branches of a corecursor renamed by `α` read the variables of the scope as `α_* δ`. -/
 theorem TargetCorecBranches.Usage.rename {n m : Nat} (α : TargetRen n m) :
     {δ : MultiplicityVector m} → {Ps : TargetCorecBranches m} → TargetCorecBranches.Usage δ Ps →

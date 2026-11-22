@@ -32,7 +32,6 @@ variable (sig : Signature) (ι : Interpretation) (P : Program) (ρ₁ : Lifting 
   (φ : Name → Term 0 [.var]) (block : Name → Option Shape.Motive) (ϱ : Multiplicity) {m₀ : Nat}
   (Ns₀ : TargetBranches m₀) (E₀ : List Nat) (Hb : Heap)
 
--- ADE: none.
 /-- The leaf `x` given at a position that holds the type `D` of the block, for the recursor of the
 multiplicity `0`: the recursor `rec_0 · ◀ ϱ with N̄₀` of the shape of `D`, on any path, which it
 does not evaluate, gives a value related to the result of a term that `x.2` relates, at the motive
@@ -73,7 +72,6 @@ theorem NestedRunsAt.skeleton_direct {D : Name} {x : NestLeaf}
 
 mutual
 
--- ADE: none.
 /-- The recursive result of the multiplicity `0` of a closed term that the equality of a type, by
 the graph of the nestings, relates to a term, runs, for any relation of the path: its shape, on any
 path, gives a value related to the result at the type lifted, in a signature whose names are
@@ -131,7 +129,6 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
               fun ts hts => hN ts hts _⟩
 termination_by structural h _ _ _ _ _ _ _ => h
 
--- ADE: none.
 /-- At a position of a destructor in destructors that the graph of the nestings reads, at
 instantiated levels, an observation `f₁` that computes as an observation that the equality of the
 destructors relates to an observation, gives, at arguments of the destructor that the equality of
@@ -201,7 +198,6 @@ termination_by structural _ _ _ _ _ _ _ _ _ _ _ h _ _ _ _ _ _ _ _ _ _ _ _ => h
 
 end
 
--- ADE: none.
 /-- `n.Ξ` at run time for the recursor of the multiplicity `0`: the corecursor without state of the
 shape of the type of a nested field, whose field is bound to any cell, in a heap that extends the
 heap `Hb` of the cells of `E₀`, evaluates to a value related to the recursive result of the field at

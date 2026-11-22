@@ -307,7 +307,6 @@ theorem Terms.length_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Sco
 
 /-! ## Motives at a Constructor -/
 
--- ADE: none.
 /-- `C[T.c(x̄) / z]`: the motive `C`, over the term `z` it eliminates, at the constructor `c` of the
 instance `T = D.{s̄; l̄; p̄} ā` applied to the new variables `x̄` of its fields, whose entries have the
 parameters `fs`, the type of the branch of `c`. -/
@@ -384,7 +383,6 @@ theorem Term.atCtor_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ Δ : S
   rw [Term.substLevels, InstanceArgs.substLevels_rename, ← Args.terms_substLevels,
     Args.substLevels_bound]
 
--- ADE: none.
 /-- A motive that does not depend on the term it eliminates, at a constructor, is the motive under
 the variables of the fields. -/
 theorem Term.atCtor_rename_weaken {Γ Δ : Scope} (C : Term k Γ) (D : Name) (qs : List Quality)
@@ -399,7 +397,6 @@ theorem Term.atCtor_rename_weaken {Γ Δ : Scope} (C : Term k Γ) (D : Name) (qs
 
 /-! ## Recursors at a Variable -/
 
--- ADE: none.
 /-- `z. rec_{r; ς; χ} T z return C̄ : κ with ū`: the recursor of the instance `T = D.{s̄; l̄; p̄} ā`
 on a new variable `z`, the recursive result `f(D, z)` of a term `z` of the type `D` of the block
 that the computation of a recursor gives. -/
@@ -614,7 +611,6 @@ theorem Destructors.Pos.obsSubst_observation_rename {k' : Nat} {Γ' Γ'' Δ : Sc
 
 /-! ## Corecursors at Their State -/
 
--- ADE: none.
 /-- `corec_r T from ȳ return Θ̄ with ḡ`: the corecursor of the instance `T = D.{s̄; l̄; p̄} ā` at the
 new variables `ȳ` of a state, whose entries have the parameters `ps`, as its state, the term whose
 observations the types of the branches of the type `D` observe. -/
@@ -668,7 +664,6 @@ theorem Term.corecAt_substLevels {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → Lev
     InstanceArgs.substLevels_rename, States.substLevels_rename,
         DestructorBranches.substLevels_rename]
 
--- ADE: none.
 /-- The corecursor from the variables of a state, renamed under the variables of the state, is the
 corecursor from these variables of its instance, states and branches renamed. -/
 theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (r : Grade) (D : Name)

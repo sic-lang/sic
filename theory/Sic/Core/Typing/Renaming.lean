@@ -40,7 +40,6 @@ structure TypedRen (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx' : Context k
 
 variable {sig : Signature} {k : Nat}
 
--- ADE: none.
 /-- The substitutions of the second order of the typed renamings, which give each variable the
 abstraction of its image. -/
 def TypedRen.Base (sig : Signature) {k : Nat} {Γ Δ : Scope} (ctx' : Context k Γ) (θ : Subst k Γ Δ)
@@ -62,7 +61,6 @@ theorem TypedRen.Base.lifted {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k
       | .zero => by rw [Term.subst_lift_rename_weaken]; exact .zero
       | .succVar hx => by rw [Term.subst_lift_rename_weaken]; exact .succVar (hv hx)⟩
 
--- ADE: none.
 /-- The typed renamings give what the stability of the typing asks of a family of substitutions. -/
 theorem TypedRen.liftable : Subst.Liftable sig (@TypedRen.Base sig k) :=
   .ofSecondOrderIn (fun ⟨_, h, _⟩ => h.wfCtx)

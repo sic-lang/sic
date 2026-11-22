@@ -53,7 +53,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   /-- A sort uses no variable.
   RFC: `\kappa_{▶}` -/
   | sort {k : Nat} {Γ : Scope} {κ : Universe k} {m : Mode} : Usage sig 𝟘ᶜ m (.sort κ : Term k Γ)
-  -- ADE: none.
   /-- An instance of a declared type, a type, which the run time erases, is a position of the grade
   `01ᵖ`: it uses the variables of its arguments as many times as the type uses its parameters, as
   the grades `ζ` of the type at the instance say, checked in the mode `m ⊙ 01ᵖ` and counted `01ᵖ`
@@ -66,7 +65,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (hp : ps.length = decl.grades)
       (has : UsageInstanceArgs sig δ (m ⊙ .noneLinear) (ζ (.ofLists qs ps hq hp)) as) :
       Usage sig (.noneLinear ·ᶜ δ) m (.inst D qs ls ps as)
-  -- ADE: none.
   /-- A constructor uses the variables of the terms of its fields, each checked in the mode of the
   grade of its field and counted with this grade, as the arguments of its telescope do; the
   instance it carries uses none.
@@ -154,7 +152,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       (ht : Usage sig γ m t) {bs : Args k Γ ps'} (hbs : UsageArgs sig δ m bs)
       (hm : m ·ᵐ p.mode = m) :
       Usage sig (γ +ᶜ δ) m (.obs D qs ls ps as t d bs.terms)
-  -- ADE: none.
   /-- A corecursor uses the variables of its state `r` times, the state checked in the mode `m ⊙ r`,
   and those of its branches, each checked in the mode `m' = m ⊙ p` of the grade `p` of its
   destructor, with uses `δs i` counted `p` times; one of them runs at each observation, so that the
@@ -213,7 +210,6 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   | sub {k : Nat} {Γ : Scope} {γ δ : GradeVector Γ.length} {m : Mode} {t : Term k Γ}
       (h : Usage sig γ m t) (hle : δ ≤ᶜ γ) : Usage sig δ m t
 
--- ADE: none.
 /-- `Σ; γ ⊢ t̄ ▶ p̄; m`: checked in the mode `m`, the arguments `t̄` of a telescope whose parameters have
 the grades `p̄` use the variables of their scope as `γ` allows. -/
 inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
@@ -228,7 +224,6 @@ inductive UsageArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : Lis
       (hts : UsageArgs sig δ m ts) :
       UsageArgs sig ((p.usage ·ᶜ γ) +ᶜ δ) m (.cons t ts : Args k Γ (p :: ps))
 
--- ADE: none.
 /-- `Σ; γ ⊢ ā ▶ ζ; m`: checked in the mode `m`, the arguments `ā` of an instance whose type uses its
 parameters with the grades `ζ` use the variables of their scope as `γ` allows. -/
 inductive UsageInstanceArgs (sig : Signature) : {k : Nat} → {Γ Δ : Scope} → GradeVector Γ.length →
@@ -281,7 +276,6 @@ inductive UsageTelescope (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps 
 
 end
 
--- ADE: none.
 /-- `Σ; γ ⊢ c̄ ▶ m`: checked in the mode `m`, the telescopes of the constructors `c̄` of a data type,
 at the instance `ι`, use the variables of their scope as `γ` allows, the uses of all the
 constructors added, since the type mentions all of them. -/
@@ -323,7 +317,6 @@ inductive UsageDestructors (sig : Signature) {k : Nat} : {Γ : Scope} → {ns : 
       {γ δ : GradeVector Γ.length} (h : UsageDestructors sig γ m ds) (hle : δ ≤ᶜ γ) :
       UsageDestructors sig δ m ds
 
--- ADE: none.
 /--
 `⊢ Σ ▶`: the entries of the signature use the variables as their grades allow: at each instance of
 its sort and grade variables, the body of a constant definition uses no variable, in the mode of the

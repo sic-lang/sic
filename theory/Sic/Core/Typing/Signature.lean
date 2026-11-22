@@ -22,7 +22,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- A type declaration of a well-formed signature is well formed in the signature before it: the
 signature ends with the declaration, followed by this signature. -/
 theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
@@ -37,7 +36,6 @@ theorem WfSig.wfTypeDeclaration {decl : TypeDeclaration} :
         (Presuppositions.tail presuppositions h).wfTypeDeclaration he
       exact ⟨sig', hs.trans (List.suffix_cons _ _), hdecl⟩
 
--- ADE: none.
 /-- A signature that ends a well-formed signature is well formed. -/
 theorem WfSig.of_suffix {sig' : Signature} :
     {sig : Signature} → WfSig sig → sig' <:+ sig → WfSig sig'
@@ -52,7 +50,6 @@ theorem Signature.subset_of_cons_suffix {e : Entry} {sig' sig : Signature}
     (h : (e :: sig') <:+ sig) : sig' ⊆ sig :=
   fun _ he => h.subset (List.mem_cons_of_mem _ he)
 
--- ADE: none.
 /-- The parameters of a type declaration of a well-formed signature, at an instance that its
 constraint admits, form a context of the signature. -/
 theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
@@ -63,7 +60,6 @@ theorem WfSig.wfCtx_params {sig : Signature} (h : WfSig sig) {decl : TypeDeclara
   | data _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
   | codata _ _ hΔ _ _ _ => exact stableUnderExtension.wfCtx (Signature.subset_of_cons_suffix hs) h (hΔ _ hI)
 
--- ADE: none.
 /-- A destructor of destructors that live in a sort of propositions has a grade whose mode is not
 `11ᵐ`. -/
 theorem WfDestructors.mode_of_grade {sig : Signature} {decl : TypeDeclaration}
@@ -93,7 +89,6 @@ theorem WfDestructors.mode_of_grade {sig : Signature} {decl : TypeDeclaration}
       exact hp hq
     · exact hds.mode_of_grade hg hq
 
--- ADE: none.
 /-- A destructor of a codata type of a well-formed signature, at an instance that the constraint
 admits, of a block of propositions, has a grade whose mode is not `11ᵐ`. -/
 theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
@@ -110,7 +105,6 @@ theorem WfSig.destructor_mode {sig : Signature} (h : WfSig sig) {D : Name}
     exact (hds I hI T hT.2.1).mode_of_grade
       (hpos.grade (h.distinct.destructors_nodup hT))
 
--- ADE: none.
 /-- A destructor of a codata type of a well-formed signature, at an instance that the constraint
 admits, of a block of propositions, has a grade without use at run time. -/
 theorem WfSig.destructor_erased {sig : Signature} (h : WfSig sig) {D : Name}
@@ -123,7 +117,6 @@ theorem WfSig.destructor_erased {sig : Signature} (h : WfSig sig) {D : Name}
   (by decide : ∀ p : Grade, p.mode ≠ .oneOne → p ∈ Mode.oneOne.erased) p
     (h.destructor_mode hT hI hpos hκ)
 
--- ADE: none.
 /-- A well-formed signature erases the destructors of its blocks of propositions. -/
 theorem WfSig.erasesPropDestructors {sig : Signature} (h : WfSig sig) :
     sig.ErasesPropDestructors :=

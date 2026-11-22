@@ -28,7 +28,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- In a well-formed signature, the terms of the fields of a telescope whose recursive results
 have types have recursive results, where the lifting of the block lifts no variable, whatever the
 results of the terms of the types of the block are.

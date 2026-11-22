@@ -226,7 +226,6 @@ theorem EqSubst.ofNames {κ : Universe 0} (f₁ f₂ : Name → Term 0 []) : (na
     exact ⟨h D List.mem_cons_self,
       EqSubst.ofNames f₁ f₂ names fun D' hD' => h D' (List.mem_cons_of_mem _ hD')⟩
 
--- ADE: none.
 /-- The type `A₀[D̄ ā / X̄]` of a nested field of a block, where `A₀` is typed in the signature
 before the block, in the context extended by a type variable of the sort `κ` for each type of the
 block, and strictly positive in these variables, is read by a reading `rd` of the nested types at
@@ -363,7 +362,6 @@ theorem Term.readsBlockNest {α J : Type} {rd : J → Nest α → Nest α → Te
   rw [hnest, hnest, Term.instantiate_atLevels_subst, Term.instantiate_atLevels_subst]
   exact hr
 
--- ADE: none.
 /-- The meaning of a nested field of a block, whose type is `A₀[D̄ ā / X̄]`, where `A₀` is typed in
 the signature before the block, which holds the prelude, in the context extended by a type variable
 of the universe `κ` for each type of the block, in a sort that `κ` bounds, and strictly positive in

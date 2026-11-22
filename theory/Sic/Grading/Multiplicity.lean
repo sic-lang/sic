@@ -80,7 +80,6 @@ theorem sub_def (π₁ π₂ : Multiplicity) : π₁ - π₂ = sub π₁ π₂ :
 
 theorem meet_def (π₁ π₂ : Multiplicity) : π₁ ⊓ π₂ = meet π₁ π₂ := rfl
 
--- ADE: none.
 /-- `Σπ̄`: the sum of the multiplicities `πs`, the first one first, `0` for none.
 RFC: `\mathsf{op}_\pi.\Sigma` -/
 def sum : {n : Nat} → (Fin n → Multiplicity) → Multiplicity

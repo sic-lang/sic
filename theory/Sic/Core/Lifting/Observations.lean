@@ -198,7 +198,6 @@ theorem Term.cast_cast {Γ : Scope} {n m : Nat} (h : n = m) (h' : m = n) (t : Te
   subst h
   rfl
 
--- ADE: none.
 /-- The destructor of a lifting at a position, which lifts the destructor of the same name at its
 position in destructors with distinct names: its arguments are the arguments of this destructor,
 at the observations by the destructors before it, used `r` times more, and its result is the result
@@ -338,7 +337,6 @@ theorem Lifting.Instantiates.consAbsent {Γ' Γ Δ' Δ : Scope} {ρ : Lifting k 
           exact ⟨B₀', hB₀', hL.congr (Nesting.ofArgs_succ ns x).symm rfl rfl rfl⟩ }⟩
   | true, hb => nomatch hb
 
--- ADE: none.
 /-- The arguments of an instance lifted, by a lifting that lifts no variable, are an instantiation
 of the lifting of the parameters at the positions of the arguments lifted, whose motives have the
 results of these: the arguments lifted are arguments of the parameters lifted, they give each
@@ -446,7 +444,6 @@ theorem Term.substLevels_subst_cast {k' : Nat} {Γ Δ : Scope} {n m : Nat} (h : 
   subst h
   rfl
 
--- ADE: none.
 /--
 The result of a destructor `d` of the lifting of the codata type `D` at its parameters at the
 positions `S`, as its declaration lifts it, in a signature `Σ₁`, at the levels of an instance of the
@@ -643,7 +640,6 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
       Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
   · exact Term.substLevels_subst_cast _ _ _ B'
 
--- ADE: none.
 /--
 The result of a destructor `d` of the lifting of the codata type `D` at its parameters at the
 positions `S`, in a signature whose names are distinct, at the instance of the lifting that the

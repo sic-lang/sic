@@ -47,19 +47,16 @@ def Var.skip : {Γ : Scope} → {e : Scope.Entry} → (x : Var Γ e) → Ren Γ 
   | _ :: _, _, .zero => Ren.weaken
   | _ :: _, _, .succ x => Ren.lift (Var.skip x)
 
--- ADE: none.
 /-- `x ∉ t`: the variable `x` does not occur in the term `t`, which is a term of the scope without
 `x`. -/
 def Term.Avoids {Γ : Scope} {e : Scope.Entry} (t : Term k Γ) (x : Var Γ e) : Prop :=
   ∃ t' : Term k (Scope.remove Γ x), t = t'.rename x.skip
 
--- ADE: none.
 /-- `x ∉ t̄`: the variable `x` does not occur in the arguments `t̄`. -/
 def Args.Avoids {Γ : Scope} {e : Scope.Entry} {ps : List Parameter} (ts : Args k Γ ps)
     (x : Var Γ e) : Prop :=
   ∃ ts' : Args k (Scope.remove Γ x) ps, ts = ts'.rename x.skip
 
--- ADE: none.
 /-- `x ∉ Θ`: the variable `x` does not occur in the telescope `Θ`. -/
 def Telescope.Avoids {Γ : Scope} {e : Scope.Entry} {ps : List Parameter} (Θ : Telescope k Γ ps)
     (x : Var Γ e) : Prop :=
@@ -69,7 +66,6 @@ def Telescope.Avoids {Γ : Scope} {e : Scope.Entry} {ps : List Parameter} (Θ : 
 
 mutual
 
--- ADE: none.
 /--
 `Σ ⊢ A ⊕ X`: the type `A` is strictly positive in the variable `X`, where `marks` gives the
 parameters in which each declared type of the signature is strictly positive, by their positions.
@@ -90,7 +86,6 @@ inductive Term.Positive (marks : Name → Nat → Prop) :
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}
       (h : InstanceArgs.Positive marks D x as) : Term.Positive marks x (.inst D qs ls ps as)
 
--- ADE: none.
 /--
 `Σ ⊢_D ā ⊕ X`: the arguments `ā` of an instance of the declared type `D` are strictly positive in
 the variable `X`: the argument of a parameter in which `D` is strictly positive is strictly positive
@@ -118,7 +113,6 @@ inductive InstanceArgs.Positive (marks : Name → Nat → Prop) :
 
 end
 
--- ADE: none.
 /-- `Σ ⊢ Θ ⊕ X`: the fields `Θ` of a constructor are strictly positive in the variable `X`, as the
 type of each of them is. -/
 inductive Telescope.Positive (marks : Name → Nat → Prop) :
@@ -133,7 +127,6 @@ inductive Telescope.Positive (marks : Name → Nat → Prop) :
       (hA : Term.Positive marks x A) (hΘ : Telescope.Positive marks (.succ x) Θ) :
       Telescope.Positive marks x (.cons q p A Θ)
 
--- ADE: none.
 /-- `Σ; 𝒟 ⊢ d̄ ⊕ X`: the destructors `d̄` of a codata type are strictly positive in the variable `X`,
 which does not occur in the arguments of any of them, and in which the result of each of them is
 strictly positive; the formation of the destructors checks that no destructor depends on a
@@ -162,7 +155,6 @@ def TypeDeclaration.Positive (decl : TypeDeclaration) (D : Name) (i : Nat) : Pro
   (∃ T ∈ decl.dataTypes, T.name = D ∧ T.positive i) ∨
     ∃ T ∈ decl.codataTypes, T.name = D ∧ T.positive i
 
--- ADE: none.
 /-- `D ⊕ X ∈ Σ; 𝒟`: the strict positivity of the block `𝒟` in the signature `Σ` reads that the type
 `D` is strictly positive in its parameter at the position `i`: a type of the block declares it,
 for its recursive fields and destructors, or a codata type of the signature does, none of whose

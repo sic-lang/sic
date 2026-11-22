@@ -122,13 +122,11 @@ theorem ValidEqTermΓ.univType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 �
     (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.type, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
   ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).univType⟩
 
--- ADE: none.
 /-- `(Ω_type≡)` keeps the meaning, and `(Ω_type)` with it. -/
 theorem ValidEqTermΓ.propType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 Γ} {l : Level 0}
     (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.prop, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
   ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).propType⟩
 
--- ADE: none.
 /-- `(irr)` keeps the meaning: at two equal substitutions, the first term is a proof of the
 proposition at the first, and so is the second term, by conversion, so that `(exact_Ω)` makes them
 equal proofs. -/
@@ -157,7 +155,6 @@ theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : T
     rw [Term.subst_weaken]
     exact ih ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
 
--- ADE: none.
 /-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
 instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
 arguments. -/
@@ -201,7 +198,6 @@ theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ 
     exact (ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ B _).1 hctx).1)).2 _ _
       ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
 
--- ADE: none.
 /-- The type of the second-order variable `X : (Θ ⊢ A) ∈ Γ` is a type in the context extended by its
 telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
 substitutions of `Θ[σ₁]`, it gives equal closed types. -/
@@ -238,7 +234,6 @@ theorem ValidTermΓ.var {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A :
     (hctx : ValidCtx₀ sig ι ctx) (hx : ctx.VarIn x A) : ValidTermΓ sig ι ctx (.var₀ x) A :=
   ⟨hx.validTypeΓ hctx, fun _ _ h => EqSubst.varIn hx h⟩
 
--- ADE: none.
 /-- `(var_X≡)` keeps the meaning, and `(var_X)` with it: equal substitutions give the second-order
 variable equal abstractions, whose instances by the equal substitutions that the arguments give its
 telescope are equal terms of its type.
@@ -262,14 +257,12 @@ theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {ψ : Resul
   · rw [hA, hX', hX']
     exact EqSubst.secondOrderIn hX h _ _ (hts.2 _ _ h)
 
--- ADE: none.
 /-- `(tel_ε≡)` keeps the meaning, and `(tel_ε)` with it: no arguments are equal substitutions of the
 empty telescope. -/
 theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
     ValidEqArgsΓ sig ι ctx .nil .nil .nil :=
   ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
 
--- ADE: none.
 /-- `(tel_,≡)` keeps the meaning, and `(tel_,)` with it: equal first arguments of `A`, and equal
 arguments of `Θ[t / x]`, are equal arguments of `x : A, Θ`. -/
 theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade} {p : Parameter}
@@ -300,7 +293,6 @@ does not tell apart: the constant is then a term of its type, as `(f)` says, whi
 step of reduction and `(f_≡)` at levels of the same values.
 -/
 
--- ADE: none.
 /-- `(f)`, closed: a constant of `Σ_T` at closed levels is a term of its type at these levels, in a
 signature `Σ` that gives the entries of `Σ_T` their meaning. -/
 theorem ValidTerm₀.const {sigT : Signature} (hd : sig.Distinct) (hent : sig.ValidEntries ι sigT)
@@ -352,7 +344,6 @@ theorem ValidEqTermΓ.delta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
     exact ((ValidEqTerm₀.red_iff hctx.distinct hr).1 hc).symm
 
--- ADE: none.
 /-- `(f_≡)` keeps the meaning: the instances of the constant at levels of the same values are the same
 term up to its levels. -/
 theorem ValidEqTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
@@ -369,14 +360,12 @@ theorem ValidEqTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
 
 /-! ## Arguments of Instances -/
 
--- ADE: none.
 /-- `(arg_ε≡)` keeps the meaning, and `(arg_ε)` with it: no arguments are equal substitutions of the
 empty parameters. -/
 theorem ValidEqInstanceArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
     ValidEqInstanceArgsΓ sig ι ctx .nil .nil .empty :=
   ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
 
--- ADE: none.
 /-- `(arg_x≡)` keeps the meaning, and `(arg_x)` with it: equal arguments of the parameters before a
 variable, and equal arguments of its type, which the first ones instantiate, are equal substitutions
 of the parameters. -/
@@ -391,7 +380,6 @@ theorem ValidEqInstanceArgsΓ.var {Γ Δ : Scope} {ctx : Context 0 Γ} {as₁ as
   rw [← Term.subst_subst_of (InstanceArgs.toSubst_subst σ₁ as₁) A]
   exact ha.2 σ₁ σ₂ h
 
--- ADE: none.
 /-- `(arg_X≡)` keeps the meaning, and `(arg_X)` with it: equal arguments of the parameters before a
 second-order variable, and equal abstractions for it, under the variables of its telescope, which
 the first ones instantiate, are equal substitutions of the parameters; the abstractions at equal
@@ -420,13 +408,11 @@ theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} 
 
 /-! ## Telescopes in a Sort -/
 
--- ADE: none.
 /-- `(tel_κε≡)` keeps the meaning, and `(tel_κε)` with it. -/
 theorem ValidEqTelescopeΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
     {κ : Universe 0} : ValidEqTelescopeΓ sig ι ctx .nil .nil κ :=
   ⟨hctx, fun _ _ _ => hctx.distinct⟩
 
--- ADE: none.
 /-- `(tel_κ,≡)` keeps the meaning, and `(tel_κ,)` with it: the first types are equal types of the
 sort `κ₁`, which `κ₂` bounds, and the rest of the telescopes at equal terms of them are the
 telescopes at equal substitutions of the context extended by the first entry of the first one; the
@@ -445,14 +431,12 @@ theorem ValidEqTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Contex
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single]
   exact hΘ.2 _ _ ((EqSubst.var_iff ctx A₁ _ _).2 ⟨h, hv⟩)
 
--- ADE: none.
 /-- `(fields_ε)` keeps the meaning: no field. -/
 theorem ValidFieldsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
     {names : List Name} {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {κ : Universe 0} :
     ValidFieldsΓ sig ι ctx names inst rs .nil κ :=
   ⟨hctx, fun _ _ _ => hctx.distinct⟩
 
--- ADE: none.
 /-- `(fields_,)` keeps the meaning: a first field without position, whose type is a type of the
 sort `κ₁`, which `κ` bounds, and the rest at equal terms of it, which are the fields at equal
 substitutions of the context extended by it, at which the instances of the block are the same. -/
@@ -479,7 +463,6 @@ theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 �
       (Subst.append (n := 1) σ₂ (Subst.closedSingle v₂)) from funext fun D => (heq σ₂ v₂ D).symm]
   exact this
 
--- ADE: none.
 /-- `(fields_rec)` keeps the meaning: a first field that is recursive, the instance of a type of the
 block, and the rest, which does not depend on it, at any terms of it. -/
 theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
@@ -496,7 +479,6 @@ theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Contex
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
   exact hΘ.2 σ₁ σ₂ h
 
--- ADE: none.
 /-- `(fields_λ)` keeps the meaning: a first field that is nested, which the graphs of the nestings
 read with one equality and with one relation of run time at equal substitutions of the context,
 and which is a type of a sort that `κ` bounds when the instances of the types of the block are types
@@ -672,7 +654,6 @@ theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {p
     ValidEqDestructors₀.rename (θ₁' := σ₁) (θ₂' := σ₂) Ren.weaken (fun _ => rfl) (fun _ => rfl)
       (hds.2 σ₁ σ₂ h)⟩
 
--- ADE: none.
 /-- Destructors equal in a sort `κ` at two closed substitutions of their scope are destructors of the
 graph of `κ` with the same equality of the abstractions for them, at these substitutions, whatever
 the relations `Rf D` of the results of their recursive destructors of the type `D`, in a signature
@@ -797,7 +778,6 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
           (DesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
         exact hSG ▸ h₂
 
--- ADE: none.
 /-- Destructors of the codata type `D` equal in a sort `κ` of types at two closed substitutions of
 their scope are destructors of the graph of run time of `U_n`, at the level `n` of `κ`, with the
 same relation of run time of the observations by them, at these substitutions, for each program
@@ -946,7 +926,6 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
           (RunDesRel.congr hd ihm ih h₁ _ _ h₀₁ hrr H o a)
         exact hSG ▸ h₂
 
--- ADE: none.
 /-- At equal closed arguments of the parameters of a meaningful type declaration, the destructors of
 each of its codata types, at relations `Rf D` of its recursive destructors of the type `D`, are
 destructors of the graph of its sort at the two arguments with one equality `S Rf T` of the
@@ -986,7 +965,6 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
   rw [hS]
   exact ⟨h₁', h₂'⟩
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of codata types in a universe, at equal closed
 arguments of its parameters, are types of the graph of its sort whose equality is `(eq_ν)`, at the
 equality `S` of the destructors that the graph gives, which grows with the relations of the
@@ -1021,7 +999,6 @@ theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDecla
     ⟨.codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').1,
       .codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').2⟩⟩
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of codata types in a universe, at equal closed
 arguments of its parameters, are types of the graph of run time of its sort whose relation of run
 time is `(®_ν)`, at a relation `S` of the destructors common to the two arguments, for each program
@@ -1082,7 +1059,6 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
     ⟨.codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => (hS X T' hT').1,
       .codata ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' => (hS X T' hT').2⟩⟩
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of codata types in a universe of propositions,
 at equal closed arguments of its parameters, are propositions of the graph of its sort whose truth
 is `(true_ν)`, at the equality `S` of the destructors that the graph gives, which grows with the
@@ -1123,7 +1099,6 @@ An instance of a codata type is a term of its sort, as `(D)` gives it, whose des
 of the graph of its sort at equal arguments, and the rules of the instances and of the constructors
 of the declared types keep the meaning. -/
 
--- ADE: none.
 /-- `(D)`, closed, for a codata type: two instances of a codata type of `Σ`, whose type declaration
 is meaningful, at the same levels and at equal arguments of its parameters, are equal terms of its
 sort: the destructors of the types of its block at the two arguments are destructors of the graph
@@ -1156,7 +1131,6 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
     exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
       (levelRel_prop_iff.2 (hP T hT).2)
 
--- ADE: none.
 /-- `(D_≡)` keeps the meaning, and `(D)` with it: equal arguments give, at equal substitutions of the
 context, equal arguments of the parameters, hence equal instances, and the second instance at levels
 of the same values is the same term up to its levels. -/
@@ -1189,7 +1163,6 @@ theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (.inst D qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls) (InstanceArgs.LevelEquiv.refl _))
     (Term.LevelEquiv.refl _)
 
--- ADE: none.
 /-- `(c_≡)` keeps the meaning, and `(c)` with it: equal arguments of the instance and of the fields
 give, at equal substitutions of the context, equal arguments of the parameters and equal arguments
 of the fields at the first ones, hence equal constructors, and the second constructor at levels of
@@ -1294,7 +1267,6 @@ theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {
       (ValidEqTerm₀.sort hA.1.1.distinct (q := .prop) (Level.equivalence.refl l₁)).univType⟩,
     fun σ₁ σ₂ hσ => ValidEqTerm₀.equality (hA.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) (hu.2 σ₁ σ₂ hσ) hl⟩
 
--- ADE: none.
 /-- Every term is a proof of the equality of two terms of a type of a sort that are equal at every
 closed substitution: at two equal substitutions, the equality is a proposition, by `(∼)` at the
 first, whose truth, which `(ty_∼)` gives, is the equality of the terms, so that any two closed
@@ -1328,7 +1300,6 @@ theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l
   .of_equality_eq (ValidEqTermΓ.equality hA ht ht (Level.equivalence.refl l))
     fun σ hσ => (ht.2 σ σ hσ).2
 
--- ADE: none.
 /-- `(propext)` keeps the meaning: at a closed substitution, the two propositions of `Ω_l` have the
 same truth, since each implication, at the substitution followed by a proof of its hypothesis, makes
 its conclusion true when its hypothesis is. -/

@@ -56,7 +56,6 @@ section
 
 variable {sig : Signature} {ι : Interpretation}
 
--- ADE: none.
 /-- Two pairs of closed substitutions of a scope `Γ'`, which the renaming `β` reaches from the
 scope of a context: `(σ₁, σ₂)`, at which the judgments of the context are meaningful, and
 `(σ₁', σ₂')`, which give the variables with a position, by the nestings `ν₁` and `ν₂`, types that
@@ -497,7 +496,6 @@ end
 
 /-! ## Soundness of the Typing -/
 
--- ADE: none.
 /-- The soundness of the typing, in the signatures whose entries the signature `Σ` gives their
 meaning, of the judgments that the nested types read: the hypothesis of the properties of the
 nested types, which the soundness of the typing reads at the signatures before, and proves of
@@ -522,7 +520,6 @@ structure TypingSound (sig : Signature) (ι : Interpretation) : Prop where
 
 /-! ## Nested Types of a Signature -/
 
--- ADE: none.
 /-- The types typed in the signature `Σ_T` and strictly positive in the variables with a position
 are read by `rd` at their nestings, at the second pair of two pairs of substitutions, when they are
 read without position at the first pair, whose substitutions of the context are equal; the strict
@@ -544,7 +541,6 @@ def ReadsNested {α I : Type} (sig : Signature) (ι : Interpretation)
         ((A.rename β).nest (fun _ => none) @ν₂) (((A.rename β).atLevels ρ).subst σ₁')
         (((A.rename β).atLevels ρ).subst σ₂')
 
--- ADE: none.
 /-- The clause of the instances of a reading `rd`: an instance of a declared type, typed in the
 signature `Σ_T`, whose arguments are strictly positive in the variables with a position, and one of
 whose arguments has a position, is read by `rd` at its nesting, at the second pair of two pairs of
@@ -584,7 +580,6 @@ variable {α I : Type} {rd : I → Nest α → Nest α → Term 0 [] → Term 0 
 
 /-! ## Readings -/
 
--- ADE: none.
 /-- A reading of the nested types: the property `rd` of two closed types and of their nestings,
 that a graph of the nestings reads both with one relation, the same property `dr` of the
 destructors of a codata type at two closed substitutions, and the sorts `ok` in which it reads
@@ -673,7 +668,6 @@ section
 
 variable {α I : Type}
 
--- ADE: none.
 /-- The destructors of a codata type none of which is recursive, well formed in a signature `Σ_T`
 whose nested types a reading reads, and strictly positive in the variables with a position, are
 read by the reading, at the second pair of two pairs of substitutions, the first of which are equal
@@ -966,7 +960,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- A type typed in the signature `Σ_T` and strictly positive in the variables with a position is
 read by `rd` at its nesting, given the soundness of the typing in `Σ_T` and the clause of the
 instances of `rd`: a type without position is the same at the two pairs of substitutions, a
@@ -1053,7 +1046,6 @@ theorem Term.nestReads (hS : TypingSound sig ι) {sigT : Signature}
   | .coind .., _, hpos, _, hNS, _, hr =>
     hNS.reads_of_plain ρ hpos rfl hr
 
--- ADE: none.
 /-- The arguments of an instance typed in the signature `Σ_T` and strictly positive in the
 variables with a position give the parameters, at the two pairs of substitutions, two pairs of
 substitutions of the parameters, at the nestings of the arguments: the argument of each parameter
@@ -1168,7 +1160,6 @@ theorem InstanceArgs.nestSubst (hS : TypingSound sig ι) {sigT : Signature}
 
 end
 
--- ADE: none.
 /-- The types typed in a signature are read by `rd`, given the soundness of the typing in it and
 the clause of the instances of `rd`. -/
 theorem ReadsInstances.readsNested (hS : TypingSound sig ι) {sigT : Signature}
@@ -1177,7 +1168,6 @@ theorem ReadsInstances.readsNested (hS : TypingSound sig ι) {sigT : Signature}
   fun hA decl fresh ρ _ β _ _ _ _ _ _ hpos hE hNS s hr =>
     Term.nestReads hS hent hinst decl fresh ρ β _ hA hpos hE hNS s hr
 
--- ADE: none.
 /-- The clause of the instances of a reading holds in the signatures whose entries have their
 meaning, given the soundness of the typing in them: an instance of a declared type one of whose
 arguments has a position is that of a codata type none of whose destructors is recursive, strictly

@@ -20,7 +20,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- The instantiation of the level variables keeps the arity of each state. -/
 theorem States.arity_substLevels {k k' : Nat} {Γ : Scope} (ls' : Fin k → Level k')
     (Ss : States k Γ) (j : Nat) : (Ss.substLevels ls').arity j = Ss.arity j := by
@@ -29,7 +28,6 @@ theorem States.arity_substLevels {k k' : Nat} {Γ : Scope} (ls' : Fin k → Leve
   | none => rfl
   | some x => obtain ⟨n, ps, S⟩ := x; cases n <;> rfl
 
--- ADE: none.
 /-- The instantiation of the level variables keeps the grades of the entries of the state of a
 corecursor, which its parameters give. -/
 theorem States.get_substLevels_elim {k k' : Nat} {Γ : Scope} {α : Type} (ls' : Fin k → Level k')
@@ -44,7 +42,6 @@ theorem States.get_substLevels_elim {k k' : Nat} {Γ : Scope} {α : Type} (ls' :
 
 mutual
 
--- ADE: none.
 /-- A term instantiated at other levels has the same erasure. -/
 theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
@@ -74,7 +71,6 @@ theorem Term.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred 
     simp only [h]
   | .transp _ _ _ _ _ u => Term.erase_substLevels sig S ls' hΓ u
 
--- ADE: none.
 /-- Fields instantiated at other levels have the same erasure. -/
 theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) :
@@ -87,7 +83,6 @@ theorem Terms.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred
     simp only [Terms.substLevels, Terms.erase, Term.erase_substLevels sig S ls' hΓ t,
       Terms.erase_substLevels sig S ls' hΓ ts ps]
 
--- ADE: none.
 /-- Branches of a recursor instantiated at other levels have the same erasure. -/
 theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
     {k k' : Nat} (ls' : Fin k → Level k') {Γ : Scope} (hΓ : Γ.FirstOrder) (r : Grade) :
@@ -99,7 +94,6 @@ theorem Branches.erase_substLevels (sig : Signature) (S : Set Grade) [DecidableP
       Term.erase_substLevels sig S ls' ((hΓ.extend a).extend b) u,
       Branches.erase_substLevels sig S ls' hΓ r us ws.tail fs.tail]
 
--- ADE: none.
 /-- Branches of a corecursor instantiated at other levels have the same erasure. -/
 theorem DestructorBranches.erase_substLevels (sig : Signature) (S : Set Grade)
     [DecidablePred (· ∈ S)]

@@ -122,7 +122,6 @@ theorem Telescope.typesAt_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 
 /-! ## Types of the Recursive Results -/
 
--- ADE: none.
 /-- The recursive results of fields, substituted, are those of the fields and of their types
 substituted, at the lifting of the block substituted. -/
 theorem Terms.ResultTypes.subst :
@@ -159,7 +158,6 @@ theorem Term.subst_lift_liftN_rename_lift_weakenN {Γ Δ : Scope} (n : Nat) (θ 
       (fun x => (Subst.lift_rename_comm_of (θ₁ := Subst.liftN n θ) (α₁ := Ren.weakenN n)
         (θ₂ := θ) (α₂ := Ren.weakenN n) (fun x => Subst.liftN_weakenN n θ x) x).symm) t).symm
 
--- ADE: none.
 /-- The recursive result of a term, substituted, is that of the term substituted, at its type
 substituted, at the lifting of the block substituted, where the result of a term of a type of the
 block is substituted under this term. -/
@@ -194,7 +192,6 @@ theorem Term.NestedResult.subst :
         funext fun E => Term.subst_lift_liftN_rename_lift_weakenN ps₁.length θ (φ E)] at ih
       exact ih
 
--- ADE: none.
 /-- The recursive results of the terms of fields, substituted, are those of the terms and of their
 types substituted, at the lifting of the block substituted. -/
 theorem Terms.ResultTerms.subst {Δ : Scope} {ρ : Lifting k Δ Δ}
@@ -224,7 +221,6 @@ variable {j g k' : Nat} {Ξ Δ Γ : Scope} {c : Constructor j g k' Ξ} {I : Inst
   {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Δ Ξ} {ρ : Lifting k Δ Δ}
   {ps' : List Parameter} {θ : Subst k Γ Δ} {ρ' : Lifting k Γ Γ}
 
--- ADE: none.
 /-- The recursive results of the fields of a constructor, substituted under the fields, are those
 of its fields at the arguments substituted, at the lifting of the block substituted. -/
 theorem Constructor.ResultTypes.subst {R : Telescope k (Δ.extend (c.params I).length) ps'}
@@ -237,7 +233,6 @@ theorem Constructor.ResultTypes.subst {R : Telescope k (Δ.extend (c.params I).l
     Args.bound_subst] at h'
   exact h'
 
--- ADE: none.
 /-- The recursive results of the terms of the fields of a constructor, substituted, are those of
 the terms substituted, at the arguments substituted, at the lifting of the block substituted. -/
 theorem Constructor.ResultTerms.subst {φ : Name → Term k (.var :: Δ)}
@@ -311,7 +306,6 @@ theorem Telescope.typesAt_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ 
         (fun y => by cases y <;> rfl) Θ]
     rfl
 
--- ADE: none.
 /-- The recursive results of fields, at instantiated levels, are those of the fields and of their
 types at these levels, at the lifting of the block at these levels. -/
 theorem Terms.ResultTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') :
@@ -343,7 +337,6 @@ theorem Terms.ResultTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     rw [Terms.substLevels, Terms.substLevels, Telescope.substLevels]
     exact .nested hA' ih
 
--- ADE: none.
 /-- The recursive result of a term, at instantiated levels, is that of the term at these levels, at
 its type at these levels, at the lifting of the block at these levels, where the result of a term
 of a type of the block is at these levels. -/
@@ -382,7 +375,6 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
       simp only [Term.substLevels_rename] at ih
       exact ih
 
--- ADE: none.
 /-- The recursive results of the terms of fields, at instantiated levels, are those of the terms
 and of their types at these levels, at the lifting of the block at these levels. -/
 theorem Terms.ResultTerms.substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ : Scope}
@@ -410,7 +402,6 @@ variable {j g k' k'' : Nat} {Δ Γ : Scope} {c : Constructor j g k' Δ} {I : Ins
   {names : List Name} {ls : Fin k' → Level k} {as : InstanceArgs k Γ Δ} {ρ : Lifting k Γ Γ}
   {ps' : List Parameter}
 
--- ADE: none.
 /-- The recursive results of the fields of a constructor, at instantiated levels, are those of its
 fields at the levels and at the arguments at these levels, at the lifting of the block at these
 levels. -/
@@ -424,7 +415,6 @@ theorem Constructor.ResultTypes.substLevels (ls' : Fin k → Level k'')
     ← Args.terms_substLevels, Args.bound_substLevels] at h'
   exact h'
 
--- ADE: none.
 /-- The recursive results of the terms of the fields of a constructor, at instantiated levels, are
 those of the terms at these levels, at the levels and at the arguments at these levels, at the
 lifting of the block at these levels. -/

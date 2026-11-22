@@ -597,7 +597,6 @@ theorem Term.var₀_zero_subst_lift {Γ Δ : Scope} (θ : Subst k Γ Δ) :
 
 mutual
 
--- ADE: none.
 /-- A type lifted by a lifting that lifts no variable, substituted, is the type substituted,
 lifted by the lifting substituted, at the term substituted and at the same nesting, of the same
 result. -/
@@ -618,7 +617,6 @@ theorem Term.Lifts.subst {sig : Signature} {v : Lifting.Variables} :
     simp only [Term.subst, InstanceArgs.subst]
     exact Term.Lifts.inst h hD hn hq hl hp (has.subst hs) hS hL (hπ.inst_congr _ _ _)
 
--- ADE: none.
 /-- The arguments of an instance lifted by a lifting that lifts no variable, substituted, are the
 arguments substituted, lifted by the lifting substituted, at the same nestings, at the same
 parameters and of the same results. -/
@@ -801,7 +799,6 @@ theorem Term.substLevels_cast {k' : Nat} {Γ₁ Γ₂ : Scope} (ls' : Fin k → 
 
 mutual
 
--- ADE: none.
 /-- A type lifted, at instantiated levels, is the type at these levels, lifted by the lifting at
 these levels, at the term at these levels and at the same nesting, of the result at these levels. -/
 theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variables}
@@ -831,7 +828,6 @@ theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variabl
     exact Term.Lifts.inst h hD hn hq ((List.length_map _).trans hl) hp (has.substLevels ls') hS hL
       (hπ.inst_congr _ _ _)
 
--- ADE: none.
 /-- The arguments of an instance lifted, at instantiated levels, are the arguments at these levels,
 lifted by the lifting at these levels, at the same nestings and at the same parameters, of the
 results at these levels. -/

@@ -55,7 +55,6 @@ block go to the values of the levels, and the telescopes of the fields of a cons
 values of the levels are ones at the levels, with the positions of their instances at run
 time. -/
 
--- ADE: none.
 /-- The instance of a type of a block at the parameters themselves, at the values of the levels
 `ls`, substituted by the arguments `ā`, is the instance of the type at `ls` and `ā`, up to the
 levels. -/
@@ -77,7 +76,6 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
         Level.subst]
       exact Level.ofNat_closedValue _) (InstanceArgs.LevelEquiv.refl as)
 
--- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, substituted by the arguments `ā`,
 are its fields at `ls` and `ā`, up to the levels. -/
 theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
@@ -90,7 +88,6 @@ theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
   ((c.fields _).closedValues_levelEquiv (ls.getFin hl) (Subst.LevelEquiv.refl _)).symm
 
--- ADE: none.
 /-- The level of the sort of a type declaration has the same value at the values of the levels
 `ls` and at `ls`. -/
 theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs : List Quality}
@@ -101,7 +98,6 @@ theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs :
       ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
   Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
 
--- ADE: none.
 /-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
 `ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
 theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
@@ -115,7 +111,6 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
         σ₁ σ₂ :=
   (EqSubst.substLevels_iff_atLevels (ls.getFin hl) _ (Subst.LevelEquiv.refl _)).symm
 
--- ADE: none.
 /-- Two instances of a type of a block at the levels `ls`, at arguments `ā₁` and `ā₂`, equal terms
 of a type, are equal terms of the type as the instances of the type at the values of `ls`,
 substituted by `ā₁` and `ā₂`. -/
@@ -132,7 +127,6 @@ theorem ValidEqTerm₀.blockInstance_atLevels {decl : TypeDeclaration} {qs : Lis
   h.levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm
     (decl.blockInstance_atLevels_subst hq hl hp as₂ D).symm (Term.LevelEquiv.refl _)
 
--- ADE: none.
 /-- Two instances of a type of a block at the levels `ls`, at arguments `ā₁` and `ā₂`, equal terms
 of the sort of the declaration at `ls`, are equal terms of the sort at the values of `ls` as the
 instances of the type at the values of `ls`, substituted by `ā₁` and `ā₂`. -/
@@ -156,7 +150,6 @@ section
 variable {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
   {hq : qs.length = decl.sorts} {hl : ls.length = decl.levels} {hp : ps.length = decl.grades}
 
--- ADE: none.
 /-- The destructors of each codata type of a meaningful type declaration are meaningful at the
 values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its parameters. -/
 theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaration sig ι decl)
@@ -175,7 +168,6 @@ theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaratio
         a₁.toSubst a₂.toSubst := fun _ hT =>
   (hv.destructors _ hadm hT _).2 _ _ (EqSubst.atLevels_of_substLevels (ls.getFin hl) has)
 
--- ADE: none.
 /-- The fields of each constructor of each data type of a meaningful type declaration are
 meaningful at the values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its
 parameters. -/
@@ -199,7 +191,6 @@ theorem ValidTypeDeclaration.fieldsAtClosedLevels (hv : ValidTypeDeclaration sig
           fun i => (ls.getFin hl i).closedValue).subst a₂.toSubst) := fun _ hT _ hc =>
   (hv.fields _ hadm hT hc _).2 _ _ (EqSubst.atLevels_of_substLevels (ls.getFin hl) has)
 
--- ADE: none.
 /-- A relation of the destructors of a codata type of a block at the levels `ls` is one at the
 values of `ls`, in a signature whose names are distinct. -/
 theorem DesRel.atLevels_of_substLevels (hd : sig.Distinct)
@@ -214,7 +205,6 @@ theorem DesRel.atLevels_of_substLevels (hd : sig.Distinct)
       (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
     (Subst.LevelEquiv.refl _)
 
--- ADE: none.
 /-- A relation of run time of the destructors of a codata type of a block at the levels `ls` is one
 at the values of `ls`, in a signature whose names are distinct. -/
 theorem RunDesRel.atLevels_of_substLevels (hd : sig.Distinct) {P : Program}
@@ -229,7 +219,6 @@ theorem RunDesRel.atLevels_of_substLevels (hd : sig.Distinct) {P : Program}
       (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
     (Subst.LevelEquiv.refl _)
 
--- ADE: none.
 /-- The converse of `DesRel.atLevels_of_substLevels`: a relation of the destructors of a codata
 type of a block, at the values of the levels `ls` and at the value there of the level of the sort,
 is one at `ls`, at the value of the level of the sort at `ls`, in a signature whose names are
@@ -248,7 +237,6 @@ theorem DesRel.substLevels_of_atLevels (hd : sig.Distinct)
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
 
--- ADE: none.
 /-- The converse of `RunDesRel.atLevels_of_substLevels`: a relation of run time of the destructors
 of a codata type of a block, at the values of the levels `ls` and at the value there of the level
 of the sort, is one at `ls`, at the value of the level of the sort at `ls`, in a signature whose
@@ -267,7 +255,6 @@ theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
 
--- ADE: none.
 /-- A relation that the graph of the nestings gives the destructors of a codata type of a block at
 the values of the levels `ls` is one at `ls`, in a signature whose names are distinct. -/
 theorem NestDesRel.substLevels_of_atLevels (hd : sig.Distinct)
@@ -281,7 +268,6 @@ theorem NestDesRel.substLevels_of_atLevels (hd : sig.Distinct)
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
 
--- ADE: none.
 /-- A relation that the graph of the nestings of run time gives the destructors of a codata type of
 a block at the values of the levels `ls` is one at `ls`, in a signature whose names are
 distinct. -/
@@ -296,7 +282,6 @@ theorem RunNestDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
 
--- ADE: none.
 /-- The relation that the graph of the fields gives an instance of a type of a block at the levels
 `ls` and at arguments `ā` is one of the instance of the type at the values of `ls`, substituted by
 `ā`, in a signature whose names are distinct. -/
@@ -311,7 +296,6 @@ theorem FieldRel.blockInstance_atLevels (hd : sig.Distinct) {decl : TypeDeclarat
   FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
     (decl.blockInstance_atLevels_subst hq hl hp as D).symm
 
--- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
 the graph of a sort at the value of its level there, whose positions hold the instances of the
 block there, are telescopes of the graph at `ls`, whose positions hold the instances at `ls`, with
@@ -342,7 +326,6 @@ theorem TelRel.fieldsAt_of_atLevels (hd : sig.Distinct)
       (g := fun D => (.inst D qs ls ps as, Rf D)) (h := fun D => (.inst D qs ls ps as, Rf D))
       (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as D, rfl⟩) _)
 
--- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
 the graph of run time of a sort at the value of its level there, whose positions hold the
 instances of the block there, are telescopes of the graph at `ls`, whose positions hold the
@@ -374,7 +357,6 @@ theorem RunTelRel.fieldsAt_of_atLevels (hd : sig.Distinct) {P : Program}
       (g := fun D => (.inst D qs ls ps as, Rf D)) (h := fun D => (.inst D qs ls ps as, Rf D))
       (fun D => ⟨decl.blockInstance_atLevels_subst hq hl hp as D, rfl⟩) _)
 
--- ADE: none.
 /-- The positions of the fields of a constructor of a block of data types, at the values of the
 levels `ls` and at arguments `ā`, hold the instances of the block there, which the graph of run
 time relates by relations `X`, when the instances at `ls` are types of a universe with these
@@ -753,7 +735,6 @@ theorem ValidEqTelescope₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Un
   ValidEqFields₀.runTelRel hd P hs (fun _ _ _ _ => False)
     (h.toFields [] (fun _ => .sort ⟨.type, .zero⟩) (fun _ => .sort ⟨.type, .zero⟩))
 
--- ADE: none.
 /-- The types of the fields of a closed telescope at the positions that `nested` holds of, those
 whose nesting is that of an instance, are terms of a sort that the sort of the quality `s` at the
 level `n` bounds, the rest being so at every term of each field: the graph of the nestings does not
@@ -1041,7 +1022,6 @@ theorem TelRel.recRel (hd : sig.Distinct) {n : Nat} {s : Quality} {Rf : Name →
           cases hF with
           | direct _ _ => exact ⟨htu, ih⟩
 
--- ADE: none.
 /-- The terms `ts₁` and `ts₂` of the fields of the closed telescope `Θ`, whose nestings are `ns`,
 are related, at each field whose nesting has a position, by an equality that the graph of the
 nestings of the sort of the quality `s` at the level `n` gives the type of the field, at the terms
@@ -1154,7 +1134,6 @@ theorem ValidEqTerm₀.ofProp (hd : sig.Distinct) {t u v w : Term 0 []} {l : Lev
     fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, ht, hu, hU, b, b, hv, hw, .rfl⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
 
--- ADE: none.
 /-- At equal closed arguments of the parameters of a meaningful type declaration, the fields of each
 constructor of one of its types, at relations `Rf D` given at the positions of their nestings for
 the instances of the type `D`, are telescopes of the graph of its sort with one equality `S Rf c`
@@ -1235,7 +1214,6 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
     (hH.imp fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ fs₁ fs₂ hs
   exact ⟨ts, us, rfl, rfl, (c.eqSubst_fields_atLevels hq hl hp as₁).1 hts⟩
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of data types in a universe, at equal closed
 arguments of its parameters, are types of the graph of run time of its sort whose relation of run
 time is `(®_μ)`, at a relation `S` of the fields common to the two arguments, for each program `P`:
@@ -1300,7 +1278,6 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => (hS X T' hT' c hc).1,
       .data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => (hS X T' hT' c hc).2⟩⟩
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of data types in a universe, at equal closed
 arguments of its parameters, are types of the graph of its sort whose equality is `(eq_μ)`, at the
 equality `S` of the fields that the graph gives, which grows with the relations of the recursive
@@ -1410,7 +1387,6 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
       (hS₀ _ T hT c hc).1
   exact hper.trans h (hper.symm h)
 
--- ADE: none.
 /-- The instances of the types of a meaningful block of data types in a universe of propositions,
 at equal closed arguments of its parameters, are propositions of the graph of its sort whose truth
 is `(true_μ)`, at the equality `S` of the fields that the graph gives, which grows with the truths
@@ -1506,7 +1482,6 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
       (fun _ => ⟨id, fun h _ => h⟩) _) (hS₀ _ T hT c hc).1
   exact ⟨hof, hto, fun _ _ h => hper.trans h (hper.symm h)⟩
 
--- ADE: none.
 /-- `(D)`, closed: two instances of a declared type of `Σ`, whose type declaration is meaningful, at
 the same levels and at equal arguments of its parameters, are equal terms of its sort: the fields
 of each constructor at the two arguments are telescopes of the graph of the sort with the same
@@ -1564,7 +1539,6 @@ theorem ValidTypeDeclaration.nestHeads (hd : sig.Distinct) {decl : TypeDeclarati
     exact (ValidEqTerm₀.inst hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).blockInstance_atLevels_sort
       hq hl hp
 
--- ADE: none.
 /-- `(c)` and `(c_≡)`, closed: two applications of a constructor of a declared type of `Σ`, whose
 type declaration is meaningful, at the same levels, at equal arguments of the parameters and at
 equal arguments of its fields, are equal terms of the instance: canonical terms that `(eq_c)`
@@ -1671,7 +1645,6 @@ theorem PropRel.dataInst_quality (hd : sig.Distinct) {decl : TypeDeclaration} {D
     exact hs'
   | codata h' _ _ _ hv => exact (hd.inst_data_codata h h' hv).elim
 
--- ADE: none.
 /-- Two equal terms of an instance in a universe of a data type of `Σ` whose constructors have no
 field with a position compute to the same constructor of a type of the block, applied to equal
 arguments of its fields: the canonical terms that `(eq_μ)` relates, which the equality of the instance, its

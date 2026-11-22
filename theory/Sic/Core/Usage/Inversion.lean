@@ -185,7 +185,6 @@ theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ :
   | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
   | _, _, .ctor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
 
--- ADE: none.
 /-- A corecursor of a block of codata types, from a state of the type at a position of the block,
 in a signature whose names are distinct, uses the variables as the premises of `(corec_▶)` allow,
 with grades above those of the judgment. -/
@@ -241,7 +240,6 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
 
 /-! ## Transports -/
 
--- ADE: none.
 /-- A transport has no usage: no rule of usage concludes it, and the subsumption keeps its term. -/
 theorem Usage.inv_transp {sig : Signature} {k : Nat} {Γ : Scope} {A t₁ t₂ : Term k Γ}
     {C : Term k (Γ.extend 1)} {t u : Term k Γ} {m : Mode} :

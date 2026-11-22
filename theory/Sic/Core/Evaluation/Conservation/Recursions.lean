@@ -21,14 +21,12 @@ open Sic.Grading Sic.Math
 theorem Multiplicity.field_le : ∀ ρ π₀ π r p₀ p q d : Multiplicity, ρ * π₀ ≤ π + ρ * r →
     ρ * p₀ ≤ p + ρ * q → ρ * (π₀ * d + p₀) ≤ π * d + p + ρ * (r * d + q) := by decide
 
--- ADE: none.
 /-- `Σ_{kⱼ ≠ ⊥} π'ⱼ · factor(kⱼ)`: the multiplicities of the binders of the results that a branch
 computes, each times the factor of its result. -/
 def Multiplicity.computed : List RecursiveResult → List Multiplicity → Multiplicity
   | k :: ks, π :: πs => π * k.factor + Multiplicity.computed ks πs
   | _, _ => .zero
 
--- ADE: none.
 /-- The demands of the fields that the recursions of a branch use, each as many times as the
 multiplicity of the binder of its result times the factor of the result. -/
 def Demand.recursions : List RecursiveResult → List Multiplicity → List Demand → Demand

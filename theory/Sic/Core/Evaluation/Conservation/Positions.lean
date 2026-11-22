@@ -18,25 +18,21 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- `H ⊢ ℓ̄ ▶ D̄`: the values at the addresses `ℓ̄` have the demands `D̄`, one by one. -/
 abbrev Heap.ValueDemands (H : Heap) : List Nat → List Demand → Prop :=
   List.Pointwise (Heap.ValueDemand H)
 
--- ADE: none.
 /-- `Σ π̄ · D̄`: the demands `Ds`, each times the multiplicity at its position in `πs`. -/
 def Demand.positions : List Multiplicity → List Demand → Demand
   | π :: πs, D :: Ds => π ·ᶜ D +ᶜ Demand.positions πs Ds
   | _, _ => 𝟘ᵛ
 
--- ADE: none.
 /-- The reads of the cells that a binder allocates from the address `c`, one for each binder, each
 as many times as its multiplicity. -/
 def Demand.cells (c : Nat) : List (Multiplicity × Nat × Demand) → Demand
   | b :: bs => b.1 ·ᶜ Demand.unit c +ᶜ Demand.cells (c + 1) bs
   | [] => 𝟘ᵛ
 
--- ADE: none.
 /-- The uses of the values that a binder binds, each as many times as its multiplicity. -/
 def Demand.values : List (Multiplicity × Nat × Demand) → Demand
   | b :: bs => b.1 ·ᶜ b.2.2 +ᶜ Demand.values bs

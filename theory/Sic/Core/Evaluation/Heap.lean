@@ -20,13 +20,11 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `H ⊑ H'`: the heap `H'` extends the heap `H`, with the same value at each address of `H`, as
 the list `H` is a prefix of `H'`.
 RFC: `\sqsubseteq_H` -/
 abbrev Heap.Extends (H H' : Heap) : Prop := H <+: H'
 
--- ADE: none.
 /-- A heap that extends `H` has the value of `H` at each address of `H`.
 RFC: `\sqsubseteq_H.\mathsf{get}` -/
 theorem Heap.Extends.getElem? {H H' : Heap} {a : Nat} {v : Value} (h : H.Extends H')
@@ -43,7 +41,6 @@ theorem EvalResume.extends {H H' : Heap} {n : Nat} {E : List Nat} {Ps : TargetCo
 
 mutual
 
--- ADE: none.
 /-- The evaluation extends the heap: it allocates new values and changes none.
 RFC: `\mathsf{ext}_\Downarrow` -/
 theorem Eval.extends {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap} {E : List Nat}
@@ -88,14 +85,12 @@ end
 
 /-! ## Cells -/
 
--- ADE: none.
 /-- The cells that bind addresses in a heap bind them in each heap that extends it. -/
 theorem Heap.Binds.mono {H H' : Heap} (hH : H.Extends H') :
     {E as : List Nat} → H.Binds E as → H'.Binds E as
   | [], [], _ => trivial
   | _ :: _, _ :: _, ⟨⟨π, hc⟩, hE⟩ => ⟨⟨π, hH.getElem? hc⟩, Heap.Binds.mono hH hE⟩
 
--- ADE: none.
 /-- The cell at a position of addresses that bind others binds the address at this position. -/
 theorem Heap.Binds.getElem? {H : Heap} :
     {E as : List Nat} → H.Binds E as → {i a : Nat} → as[i]? = some a →
@@ -106,7 +101,6 @@ theorem Heap.Binds.getElem? {H : Heap} :
   | _ :: _, _ :: _, ⟨_, hE⟩, _ + 1, _, ha => Heap.Binds.getElem? hE ha
   | [], [], _, _, _, ha => nomatch ha
 
--- ADE: none.
 /-- Cells that bind two lists of addresses bind the two lists joined. -/
 theorem Heap.Binds.append {H : Heap} :
     {E₁ as₁ : List Nat} → {E₂ as₂ : List Nat} → H.Binds E₁ as₁ → H.Binds E₂ as₂ →
@@ -114,7 +108,6 @@ theorem Heap.Binds.append {H : Heap} :
   | [], [], _, _, _, h => h
   | _ :: _, _ :: _, _, _, ⟨hc, hE⟩, h => ⟨hc, Heap.Binds.append hE h⟩
 
--- ADE: none.
 /-- Cells that bind addresses bind them in the reverse order when they are reversed. -/
 theorem Heap.Binds.reverse {H : Heap} :
     {E as : List Nat} → H.Binds E as → H.Binds E.reverse as.reverse
@@ -123,7 +116,6 @@ theorem Heap.Binds.reverse {H : Heap} :
     rw [List.reverse_cons, List.reverse_cons]
     exact Heap.Binds.append (Heap.Binds.reverse hE) ⟨hc, trivial⟩
 
--- ADE: none.
 /-- The cells that a binder allocates, at the addresses from `|H|`, bind the addresses of its
 variables, given as many multiplicities. -/
 theorem Heap.binds_bind (H : Heap) {πs : List Multiplicity} {as : List Nat}

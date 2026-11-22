@@ -280,7 +280,6 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
           hS.mul _ _ hpS hpδ) ho
   | .sub h hle, hx, ho => Usage.absent hd hS hΓ h (hS.le _ _ (hle x) hx) ho
 
--- ADE: none.
 /-- A variable whose grade is in `S` does not occur in the erasure by `S` of the arguments of a
 telescope checked in a mode `m` whose uses `S` does not erase, each at the parameter of its
 entry. -/
@@ -306,7 +305,6 @@ theorem UsageArgs.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : S
       rw [Grade.modality.semiring.add_comm] at hx'
       exact UsageArgs.absent hd hS hΓ hts (hS.add _ _ hx') ho
 
--- ADE: none.
 /-- A variable whose grade, times `r`, is in `S` does not occur in the erasure by `S` of the
 arguments of a telescope checked in the mode `m ⊙ r`, where `S` does not erase the uses of the mode
 `m`, each at the parameter of its entry whose grade is multiplied by `r`: the state of a

@@ -62,7 +62,6 @@ theorem _root_.Sic.Grading.Multiplicity.used_of_recursion_used :
       a * r * q ≠ .zero := by
   decide
 
--- ADE: none.
 /-- The arithmetic step of the premise `hused` of the rule of the recursor of the ownership, in
 every mode: when the uses `⌜m⌝ · r · q` of a field of the grade `q` that the recursor of the grade
 `r` gives are covered by the uses `g` of its variable plus those of the recursion through its
@@ -77,7 +76,6 @@ theorem _root_.Sic.Grading.Grade.used_of_usage (m : Mode) (r q g e π : Grade)
   simp only [(Grade.run_op _ _).1, (Grade.run_op _ _).2.1] at h ⊢
   exact Multiplicity.used_of_recursion_used _ _ _ _ _ _ h
 
--- ADE: none.
 /-- The premises `hR` and `hg` of the rule of the recursor of the usage give the premise `hused` of
 the rule of the recursor of the ownership, for the same mode `m`, grade `r`, branches `ūs` and
 ownership `χ` of the results that are motives, in a signature whose names are distinct and that
@@ -363,7 +361,6 @@ theorem Mode.grade_odot_mul_of_erased :
 
 mutual
 
--- ADE: none.
 /--
 The erasure at run time of a term checked in the mode `11ᵐ` reads its variables as the run-time
 multiplicities of their grades allow, in a signature whose names are distinct, so that the usage and
@@ -573,7 +570,6 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
   | .sub h hle =>
     .sub (Usage.erase_usage hd hord hΓ hm h) (GradeVector.run_commutes.run_le hle)
 
--- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in the mode `11ᵐ`, each at the
 parameter of its entry, reads their variables as the run-time multiplicities of their grades
 allow. -/
@@ -603,7 +599,6 @@ theorem UsageArgs.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.
         (fun h0 => absurd ((Mode.erased_values.1 _).2 h0) hp)
         (UsageArgs.erase_usage hd hord hΓ hm hts)
 
--- ADE: none.
 /-- The erasure at run time of the arguments of a telescope checked in the mode `11ᵐ ⊙ r`, each at
 the parameter of its entry whose grade is multiplied by `r`, reads their variables as the run-time multiplicities of their
 grades times `r` allow: the state of a corecursor. -/

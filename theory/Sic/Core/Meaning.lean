@@ -44,7 +44,6 @@ def levelRel (sig : Signature) (ι : Interpretation) (n : Nat) : LevelRel :=
 termination_by n
 decreasing_by all_goals assumption
 
--- ADE: none.
 /-- `eq(v) = R`: the closed canonical type `v` is a type of a sort, whose canonical terms are equal by
 `R`, or a proposition, whose closed terms are equal by `R`. -/
 inductive HasEq (sig : Signature) (ι : Interpretation) (v : Term 0 []) (R : TermRel) : Prop where
@@ -57,7 +56,6 @@ inductive HasEq (sig : Signature) (ι : Interpretation) (v : Term 0 []) (R : Ter
   RFC: `\mathsf{eq}_{\mathsf{false}}` -/
   | prop (n : Nat) (b : Prop) (h : (levelRel sig ι n).prop v b) (hR : ∀ t u, R t u ↔ b)
 
--- ADE: none.
 /-- `®(v) = R`: the closed canonical type `v` is a type of a sort, whose canonical terms are
 related at run time by `R`, or a proposition, whose closed terms are related to every address. -/
 inductive HasRun (sig : Signature) (ι : Interpretation) (P : Program) (v : Term 0 [])
@@ -117,12 +115,10 @@ def ConstantDeclaration.Clause (sig : Signature) (ι : Interpretation) (c : Cons
       EqTermClause sig ι ((ι c inst).atLevels ρ) ((ι c inst).atLevels ρ)
         ((c.type inst).atLevels ρ)
 
--- ADE: none.
 /-- `(⊨def)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p ≔ t`, in a signature whose names are distinct. -/
 def ValidConstantDefinition (sig : Signature) (ι : Interpretation) (d : ConstantDefinition) : Prop :=
   sig.Distinct ∧ d.Clause sig ι
 
--- ADE: none.
 /-- `(⊨decl)`: `Σ ⊨ f.{s̄; l̄; p̄} : A ▶ m ◀ p`, in a signature whose names are distinct. -/
 def ValidConstantDeclaration (sig : Signature) (ι : Interpretation) (c : ConstantDeclaration) :
     Prop :=
@@ -155,7 +151,6 @@ def ValidTerm₀ (sig : Signature) (ι : Interpretation) (t A : Term 0 []) : Pro
 def Subst.tail {k : Nat} {Γ Δ : Scope} {e : Scope.Entry} (σ : Subst k Γ (e :: Δ)) : Subst k Γ Δ :=
   fun x => σ x.succ
 
--- ADE: none.
 /--
 `(σ₁, σ₂) ∈ eq(Γ)`: two equal closed substitutions of `Γ`, which give each variable equal closed
 terms of its type, and each second-order variable abstractions whose instances by equal arguments are
@@ -183,7 +178,6 @@ decreasing_by
     | (simp only [Context.size]; omega)
     | (rw [Context.size_append]; simp only [Context.size]; omega)
 
--- ADE: none.
 /-- `Σ ⊨ Γ`, at levels without variables: the last type of the context is a type in the context
 before it.
 RFC: `{\vDash}\mathsf{ctx}_\varepsilon` -/
@@ -229,7 +223,6 @@ def ValidTermΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Cont
     (t A : Term 0 Γ) : Prop :=
   ValidEqTermΓ sig ι ctx t t A
 
--- ADE: none.
 /-- `(⊨Γ_tel≡)`: `Σ; Γ ⊨ t̄ ≡ ū : Θ`, at levels without variables: the arguments substituted by two
 equal closed substitutions `σ₁` and `σ₂` of the context are equal substitutions of the context that
 the telescope `Θ[σ₁]` forms.
@@ -247,7 +240,6 @@ def ValidArgsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : List 
     (ctx : Context 0 Γ) (ts : Args 0 Γ ps) (Θ : Telescope 0 Γ ps) : Prop :=
   ValidEqArgsΓ sig ι ctx ts ts Θ
 
--- ADE: none.
 /-- `(⊨Γ_arg≡)`: `Σ; Γ ⊨ ā₁ ≡ ā₂ : Δ`, at levels without variables: the arguments substituted by
 two equal closed substitutions of the context are equal substitutions of the parameters `Δ`.
 RFC: `{\vDash}\Gamma_{\mathsf{arg}\equiv}` -/
@@ -265,7 +257,6 @@ def ValidInstanceArgsΓ (sig : Signature) (ι : Interpretation) {Γ Δ : Scope} 
 
 /-! ## Telescopes -/
 
--- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ`: two closed telescopes are equal in the sort `κ`, their first types being
 equal types of a sort that `κ` bounds, and the rest of them equal for every pair of equal terms of
 these types; the meaning ignores their grades.
@@ -281,7 +272,6 @@ def ValidEqTelescope₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0
       ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ A₁ →
         ValidEqTelescope₀ sig ι κ (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
 
--- ADE: none.
 /-- `(⊨Γ_tel_κ≡)`: `Σ; Γ ⊨ Θ₁ ≡ Θ₂ : κ`, at levels without variables: the telescopes substituted by
 two equal closed substitutions of the context give equal closed telescopes in the sort `κ`.
 RFC: `{\vDash}\Gamma_{\mathsf{tel}\kappa\equiv}` -/
@@ -296,7 +286,6 @@ def ValidTelescopeΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ps : 
     (ctx : Context 0 Γ) (Θ : Telescope 0 Γ ps) (κ : Universe 0) : Prop :=
   ValidEqTelescopeΓ sig ι ctx Θ Θ κ
 
--- ADE: none.
 /-- `Σ ⊨ d̄[θ₁] ≡ d̄[θ₂] : κ` for the destructors of a codata type, whose recursive destructors `rs`
 gives, of the instances `inst D` of the block, and the results with a position of whose other
 destructors `nested` gives: the destructors at two closed substitutions `θ₁` and `θ₂` of their
@@ -346,7 +335,6 @@ def ValidEqDestructors₀ (sig : Signature) (ι : Interpretation) (κ : Universe
         (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds
         (Subst.snoc (e := .secondOrder ps ψ) θ₁ f₁) (Subst.snoc (e := .secondOrder ps ψ) θ₂ f₂)
 
--- ADE: none.
 /-- `Σ; Γ ⊨_𝒟 d̄ : κ`, at levels without variables, for the destructors of a codata type, whose
 recursive destructors `rs` gives, of the instances `inst D` of the block: the destructors at two
 equal closed substitutions of the context are equal in the sort `κ`.
@@ -357,7 +345,6 @@ def ValidDestructorsΓ (sig : Signature) (ι : Interpretation) {Γ : Scope} {ns 
   ValidCtx₀ sig ι ctx ∧
     ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ → ValidEqDestructors₀ sig ι κ inst rs nested ds σ₁ σ₂
 
--- ADE: none.
 /-- `Σ ⊨ Θ₁ ≡ Θ₂ : κ` for the fields of two constructors of a block whose types are named `names`,
 whose nestings `rs` gives: the fields without position are equal types of a sort that `κ` bounds, the recursive fields of the type `D`,
 whose nesting is the position that holds `D`, are the instances `inst₁ D` and `inst₂ D` of the
@@ -405,7 +392,6 @@ def ValidEqFields₀ (sig : Signature) (ι : Interpretation) (κ : Universe 0) (
       ∀ v₁ v₂, ValidEqFields₀ sig ι κ names inst₁ inst₂ (fun i => rs (i + 1))
         (Θ₁.subst₀ (Subst₀.single v₁)) (Θ₂.subst₀ (Subst₀.single v₂))
 
--- ADE: none.
 /-- `Σ; Γ ⊨ Θ : κ` for the fields of a constructor of a block whose types are named `names`, whose
 nestings `rs` gives, of the instances `inst D` of the block, at levels without variables: the
 fields substituted by two equal closed substitutions of the context give equal closed fields in the
@@ -506,7 +492,6 @@ def ValidFields (sig : Signature) (ι : Interpretation) {k : Nat} {Γ : Scope} {
 
 /-! ## Signatures and Entries -/
 
--- ADE: none.
 /-- `Σ ⊨ D`: the type declaration `D` is meaningful in the signature `Σ`.
 `(⊨data)`: `Σ ⊨ data.{s̄; l̄; p̄ | C} Δ : κ where D₁ ▶ ζ₁ ≔ …; …`: at each instance of the sort and
 grade variables that `C` admits, the fields of each constructor are fields in the sort `κ`, in the
@@ -532,14 +517,12 @@ def ValidTypeDeclaration (sig : Signature) (ι : Interpretation) (decl : TypeDec
         ((T.body I).recursionAt decl.names)
         ((T.body I).nestedAt (Nesting.ofPositive T.positive)) (T.body I) (decl.sort I)
 
--- ADE: none.
 /-- `Σ ⊨ e`: the entry `e` is meaningful in the signature `Σ`. -/
 def ValidEntry (sig : Signature) (ι : Interpretation) : Entry → Prop
   | .typeDeclaration decl => ValidTypeDeclaration sig ι decl
   | .constantDefinition d => ValidConstantDefinition sig ι d
   | .constantDeclaration c => ValidConstantDeclaration sig ι c
 
--- ADE: none.
 /-- `⊨ Σ`: the names of the signature are distinct, and each of its entries is meaningful in the
 whole signature.
 RFC: `{\vDash}\mathsf{sig}` -/

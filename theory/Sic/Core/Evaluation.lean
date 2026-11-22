@@ -79,7 +79,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- A value at run time: `↯`, the constructor of the case `i` of its block applied to the addresses
 of its fields, each at the multiplicity and the requirement of its field, the closure of a
 corecursor, with the addresses `E` of the cells of the `n` variables of its scope, its branches `P̄`
@@ -103,14 +102,12 @@ inductive Value where
 /-- `H`: the heap, the value at each address, the first one at `0`. -/
 abbrev Heap : Type := List Value
 
--- ADE: none.
 /-- `(H, bind_π̄(ℓ̄))`: the heap `H` followed by a cell for each address of `ℓ̄`, of the multiplicity
 at its position in `π̄`, which a binder allocates for its variables, at the addresses from `|H|`.
 RFC: `\mathsf{bind}_H` -/
 def Heap.bind (H : Heap) (πs : List Multiplicity) (as : List Nat) : Heap :=
   H ++ List.zipWith Value.cell πs as
 
--- ADE: none.
 /-- `H ⊢ E ↦ ℓ̄`: the addresses `E` are cells of the heap `H` that bind the addresses `ℓ̄`, one by
 one.
 RFC: `\mapsto_H` -/
@@ -126,7 +123,6 @@ abbrev Program : Type := Name → List Quality → List Grade → Option (Target
 /-- The empty scope has no second-order variable. -/
 theorem Scope.FirstOrder.nil : Scope.FirstOrder [] := fun _ h => nomatch h
 
--- ADE: none.
 /-- The body of the constant `f` at the instance of the qualities `qs` and of the grades `ps`, erased
 by `S`, when the entry defines it in the mode `11ᵐ`, the only constants that a term of this mode
 refers to. -/
@@ -142,7 +138,6 @@ def Entry.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] (
     else none
   | _ => none
 
--- ADE: none.
 /-- `⌊Σ⌋_S`: the program of the signature `sig`, erased by the set of grades `S`, which gives the
 constant `f.{s̄; p̄}` the erasure of the body of `f` at this instance, in the last entry of `sig`
 that defines it in the mode `11ᵐ`.
@@ -167,7 +162,6 @@ def TargetCorecBranches.get {n : Nat} : TargetCorecBranches n → Nat →
   | .cons o b c πs ϱs πs' ϱs' ψ ς N _, 0 => some (o, ⟨b, c, πs, ϱs, πs', ϱs', ψ, ς, N⟩)
   | .cons _ _ _ _ _ _ _ _ _ _ Ns, i + 1 => Ns.get i
 
--- ADE: none.
 /-- `H ⊢ unpack_k(x) = ℓ̄ ▶ π̄ ◀ ϱ̄`: the addresses of the `k` entries that the value at the address
 `x` packs, the first fields of `k` nested pairs, at the multiplicities and the requirements at which
 the pairs store them, each times those of the second fields that hold its pair, the pairs ending
@@ -184,7 +178,6 @@ inductive Unpack : Heap → Nat → Nat → List Multiplicity → List Multiplic
       (hs : Unpack H k z πs ϱs ss) :
       Unpack H (k + 1) x (π :: πs.map (π' * ·)) (ϱ :: ϱs.map (ϱ' * ·)) (y :: ss)
 
--- ADE: none.
 /-- `H ⊢ ⟨E; P̄⟩ ↻_k w ◀ ψ ⇓ v; H'`: the value at the address `w` that the branch of a destructor of
 the ownership at run time `ψ` of its result gives, resumed: itself when the branch resumes no
 state, a new closure of the same branches from the state of `k` entries that `next` packs, each at
@@ -225,7 +218,6 @@ inductive EvalResume : Heap → (n : Nat) → List Nat → TargetCorecBranches n
       (ho : o ≠ .none) (h : H[w]? = some (.ctor 1 [π] [ϱ] [x])) (hπ : π ≠ .zero)
       (hϱ : ψ.constant.getD .omega ≤ ϱ) : EvalResume H n E Ps o ψ w x H
 
--- ADE: none.
 /-- `recursions_{w̄,π̄'}(l)`: the multiplicity of the recursions that a branch of a recursor runs on
 its field at the position `l`, the multiplicity in `π̄'` of the binder of each recursive result
 whose field in `w̄` is `l`, times the factor of the result: the recursion runs once, but its result
@@ -313,7 +305,6 @@ inductive Eval (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat 
       Eval P ϖ H E (.corec Ms Ps) H'.length
         (H' ++ [.corec n E Ps Ms.multiplicities Ms.requirements as]) R
 
--- ADE: none.
 /-- `𝒫; ϖ; H; E ⊢ M̄ ⇓ ā; H'; R`: the terms evaluate, the first one first, to the addresses `ā`,
 each at the weight `ϖ` times its multiplicity. -/
 inductive EvalAll (P : Program) : {n : Nat} → Multiplicity → Heap → List Nat → Targets n →
@@ -329,7 +320,6 @@ inductive EvalAll (P : Program) : {n : Nat} → Multiplicity → Heap → List N
       (h : Eval P (ϖ * π) H₁ E M a H₂ R₁) (hs : EvalAll P ϖ H₂ E Ms as H₃ R₂) :
       EvalAll P ϖ H₁ E (.cons π ϱ M Ms) (a :: as) H₃ (R₁ ++ R₂)
 
--- ADE: none.
 /-- `𝒫; ϖ; H; E ⊢ rec_ρ a ◀ ϱ with N̄ ⇓ b; H'; R`: the recursor of the multiplicity `ρ`, of the
 requirement `ϱ` of the recursion of its block, with the branches `N̄`, in the environment `E`, at
 the weight `ϖ`, eliminates the value at the address `a`, a constructor: the branch of its case
@@ -363,7 +353,6 @@ inductive EvalRec (P : Program) : {n : Nat} → Multiplicity → Heap → List N
         ((List.range' H₂.length (as ++ rs).length).reverse ++ E) N v H₃ R₂) :
       EvalRec P ϖ H₁ E ρ ϱ Ns a v H₃ (R₁ ++ R₂)
 
--- ADE: none.
 /-- `𝒫; ϖ; H; E ⊢ rec_ρ ā ◀ ϱ with N̄ ← w̄ ▶ π̄' ⇓ b̄; H'; R`: the recursive results of a branch, in
 order, each at the weight `ϖ` times the multiplicity of its binder in `π̄'`: the recursor on the
 field at its position in `ā`, the corecursor of a nested result, which captures the scope of the
@@ -404,7 +393,6 @@ inductive EvalResults (P : Program) : {n : Nat} → Multiplicity → Heap → Li
       (hs : EvalResults P ϖ H₂ E ρ ϱ Ns as ks πs rs H₃ R₂) :
       EvalResults P ϖ H₁ E ρ ϱ Ns as (.nested l σ :: ks) (π :: πs) (r :: rs) H₃ (R₁ ++ R₂)
 
--- ADE: none.
 /-- `𝒫; ϖ; H ⊢ a.dᵢ(b̄ ▶ π̄ ◀ ϱ̄) ◀ ψ ◀ ς ⇓ c; H'; R`: the observation by the destructor of the case
 `i`, of the ownership at run time `ψ` of its result and requiring the ownership at run time `ς` of
 the value that it observes, at the weight `ϖ`, applied to the arguments at the
@@ -471,7 +459,6 @@ theorem EvalResults.length {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : H
 The branches of a recursor or of a corecursor renamed, read at a position: the erasure copies the
 branches of a recursor, renamed, under the arguments of the branches that a nested result builds. -/
 
--- ADE: none.
 /-- The branch at a position of the branches of a recursor renamed is the branch renamed under its
 new variables. -/
 theorem TargetBranches.get_rename {n m : Nat} (α : TargetRen n m) :
@@ -482,7 +469,6 @@ theorem TargetBranches.get_rename {n m : Nat} (α : TargetRen n m) :
   | .cons .., 0 => rfl
   | .cons _ _ _ _ _ _ _ Ns, i + 1 => TargetBranches.get_rename α Ns i
 
--- ADE: none.
 /-- The branch at a position of the branches of a corecursor renamed is the branch renamed under its
 new variables. -/
 theorem TargetCorecBranches.get_rename {n m : Nat} (α : TargetRen n m) :
@@ -532,7 +518,6 @@ theorem EvalResume.det {H H₁ H₂ : Heap} {n : Nat} {E : List Nat} {Ps : Targe
 
 mutual
 
--- ADE: none.
 /-- The evaluation is deterministic: a term evaluates to one address, in one heap, reading the same
 cells.
 RFC: `\mathsf{det}_\Downarrow` -/
@@ -569,7 +554,6 @@ theorem Eval.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap
     exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
--- ADE: none.
 /-- The evaluation of terms is deterministic. -/
 theorem EvalAll.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {Ms : Targets n} {as₁ as₂ : List Nat} {R₁ R₂ : List Nat} (h₁ : EvalAll P ϖ H E Ms as₁ H₁ R₁)
@@ -582,7 +566,6 @@ theorem EvalAll.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : H
     exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
--- ADE: none.
 /-- The elimination of a value by a recursor is deterministic. -/
 theorem EvalRec.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {a v₁ v₂ : Nat} {R₁ R₂ : List Nat}
@@ -599,7 +582,6 @@ theorem EvalRec.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : H
     exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
--- ADE: none.
 /-- The evaluation of the recursive results of a branch is deterministic. -/
 theorem EvalResults.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂ : Heap} {E : List Nat}
     {ρ ϱ : Multiplicity} {Ns : TargetBranches n} {as : List Nat} {ks : List RecursiveResult}
@@ -625,7 +607,6 @@ theorem EvalResults.det {P : Program} {ϖ : Multiplicity} {n : Nat} {H H₁ H₂
     exact ⟨rfl, rfl, rfl⟩
 termination_by structural h₁
 
--- ADE: none.
 /-- The observation of a value is deterministic. -/
 theorem EvalObs.det {P : Program} {ϖ : Multiplicity} {H H₁ H₂ : Heap} {a i c : Nat}
     {ψ : ResultOwnership Multiplicity c} {ς : Multiplicity} {πs ϱs : List Multiplicity}

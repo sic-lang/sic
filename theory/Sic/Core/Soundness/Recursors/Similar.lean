@@ -33,7 +33,6 @@ variable {k : Nat}
 
 mutual
 
--- ADE: none.
 /-- Two types have the same shape at the nesting `n`: at the nesting of an instance, they are
 instances of the same declared type, at the same sorts and grades, whose arguments have the same
 shape at their nestings; nothing is asked without position, nor at a position. -/
@@ -48,7 +47,6 @@ inductive Term.Similar : {Γ : Scope} → Nest Name → Term k Γ → Term k Γ 
       (h : InstanceArgs.Similar ns as₁ as₂) :
       Term.Similar (.inst ns) (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
 
--- ADE: none.
 /-- The arguments of two instances have the same shape at the nestings `ns`, the last one first,
 and without position after those of `ns`. -/
 inductive InstanceArgs.Similar :
@@ -63,7 +61,6 @@ inductive InstanceArgs.Similar :
 
 end
 
--- ADE: none.
 /-- The types `Ā₁` and `Ā₂` of fields have the same shape, one by one, at the nestings `ns` of the
 fields. -/
 def Terms.Similar {Γ : Scope} : List (Nest Name) → Terms k Γ → Terms k Γ → Prop
@@ -158,7 +155,6 @@ theorem Terms.Similar.subst₀ {Γ' Γ : Scope} :
 
 /-! ## A Type at Two Substitutions -/
 
--- ADE: none.
 /-- Two substitutions give each variable abstractions of the same shape, at the nesting `ν` of the
 variable. -/
 def Subst.Similar {Γ Δ : Scope} (θ₁ θ₂ : Subst k Γ Δ) (ν : Nesting Name Δ) : Prop :=
@@ -196,7 +192,6 @@ theorem Subst.Similar.snoc {Γ Δ : Scope} {e : Scope.Entry} {θ₁ θ₂ : Subs
 
 mutual
 
--- ADE: none.
 /-- A type at two instantiations of its levels and at two substitutions that give the variables
 abstractions of the same shape, at their nestings, has the same shape at its nesting, whatever
 the declared types hold. -/

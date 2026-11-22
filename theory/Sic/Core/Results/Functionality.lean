@@ -24,7 +24,6 @@ open Sic.Grading
 
 variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 
--- ADE: none.
 /-- Fields have one telescope of recursive results at most, and one list of factors, in a signature
 whose names are distinct.
 RFC: `\mathsf{unique}_{\uparrow\Theta}` -/
@@ -55,7 +54,6 @@ theorem Terms.ResultTypes.unique (hd : sig.Distinct) :
       cases h
       exact ⟨rfl, rfl⟩
 
--- ADE: none.
 /-- A term has one recursive result at most, at its type and at its nesting, in a signature whose
 names are distinct.
 RFC: `\mathsf{unique}_{\mathsf{res}}` -/
@@ -97,7 +95,6 @@ theorem Term.NestedResult.unique (hd : sig.Distinct) :
         (hgt₂ i _ p q ς ps₁ Ξ Θ B ψ g₂ (List.getElem?_eq_getElem hi') hd₁ hg₂)
       exact hg₁.trans hg₂.symm
 
--- ADE: none.
 /-- The terms of fields have one list of recursive results at most, in a signature whose names are
 distinct.
 RFC: `\mathsf{unique}_{\mathsf{res}\Theta}` -/

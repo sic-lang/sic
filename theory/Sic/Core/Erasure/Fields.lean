@@ -75,7 +75,6 @@ theorem _root_.Sic.Grading.Grade.run_mul_mul (e π r : Grade) :
   rw [(Grade.run_op _ _).2.1, (Grade.run_op _ _).2.1,
     (Multiplicity.modality.semiring.mul_assoc _ _ _)]
 
--- ADE: none.
 /-- The multiplicity that the erasure gives the variable of the field at the position `o + l`, of
 the grade `p`, among the recursive results of the fields whose nestings are `ns` from the position
 `o`, read with the grades `es` of the results, is the uses at run time of the field that the
@@ -153,7 +152,6 @@ theorem _root_.Sic.Grading.Grade.fieldMultiplicity_ofField (r p : Grade) (f : Na
           rw [show o + (l + 1) = o + 1 + l by omega]
           exact fieldMultiplicity_ofField r p f s ns (o + 1) es πs hf' l
 
--- ADE: none.
 /-- The multiplicity that the erasure gives the variable of the field `l` of the constructor `con`,
 of the grade `p`, with the grades `es` of the recursive results, is the uses at run time of the
 field that the recursor of the grade `r` gives minus the uses of the recursion on it, its grade
@@ -204,7 +202,6 @@ theorem _root_.Sic.Grading.Grade.nested_uses_eq (r e π : Grade) (σ : Shape)
     (h : σ.factor = π.run) : e.run * (σ.factor * r.run) = ((e * π) * r).run := by
   rw [Grade.run_mul_mul, h]
 
--- ADE: none.
 /-- The typing and the erasure give each recursive result of the constructor `con` the same factor,
 the erasure at run time, in a signature whose names are distinct and that declares its liftings in
 order: `11ᵖ` for the recursor on a recursive field, and the factor of the shape of the lifting of

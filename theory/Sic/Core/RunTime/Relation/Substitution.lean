@@ -60,7 +60,6 @@ theorem Subst.append_cons {Γ : Scope} {p : Parameter} {ps : List Parameter} (σ
       (Ren.liftN ps.length (Ren.empty (Γ := [.var])) z)).trans
       (Subst.append_liftN_empty (Subst.closedSingle t) ts.toSubst z)
 
--- ADE: none.
 /-- `(σ, E) ∈ ®_H(Γ, γ)` and `t̄ ®_H^{g} b̄ : Θ[σ]` give `((σ, t̄), b̄ʳ ++ E) ∈ ®_H(Γ, Θ; γ • g)`: a
 closed substitution of a context, followed by arguments of a telescope related to their addresses at
 the grades `g`, stands for the context extended by the telescope, its variables at the grades `g`,

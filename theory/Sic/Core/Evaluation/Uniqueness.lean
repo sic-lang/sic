@@ -46,7 +46,6 @@ open Sic.Grading Sic.Math
 
 mutual
 
--- ADE: none.
 /-- `reach_⇓`: a run of a term of the target language that has an ownership and a usage, in a heap
 whose annotation is valid, keeps the references: its value has a reach, under an annotation that
 extends that of the heap and is valid for the heap of its end, which refers to no address of the
@@ -331,7 +330,6 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
             f + (.zero + (v + .zero)) ≠ .omega) _ _ _ h h1
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the evaluation of terms: their values have reaches, which refer to no address
 of the heap that the environment does not refer to, and each address that a value of a term owned
 alone, at a position of a multiplicity other than `0`, claims is referred to once at most by the
@@ -416,7 +414,6 @@ theorem EvalAll.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           _ _ _ h
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the elimination of a value by a recursor, whose branches see the value at the
 ownership `θ` at each level of the recursion. -/
 theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership Ω) (hP : P.Usage)
@@ -775,7 +772,6 @@ theorem EvalRec.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
     rfl
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the evaluation of the recursive results of a branch: their values have
 reaches, which refer to no address of the heap that the recursions do not need, and each address
 that a result owned alone and read once claims is referred to once at most by the results, each as
@@ -1157,7 +1153,6 @@ theorem EvalResults.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ow
           _ _ _ h
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the observation of a value. -/
 theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership Ω) (hP : P.Usage)
     {ϖ : Multiplicity} {H H' : Heap} {a i c : Nat} {ψ : ResultOwnership Multiplicity c}
@@ -1598,7 +1593,6 @@ end
 
 /-! ## Uniqueness -/
 
--- ADE: none.
 /-- `uniq_⇓`: the value of a term owned alone is referred to by no frame of the heap: a frame that
 refers once at most, with the environment, to each address that the term claims through its
 environment does not refer to the address of the value of the term.

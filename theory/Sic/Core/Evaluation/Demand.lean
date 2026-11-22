@@ -35,18 +35,15 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- `D`: a demand, which gives each address a multiplicity, the reads of the cell at this address
 that remain to be done, the first address at `0`.
 RFC: `\mathsf{demand}_D` -/
 abbrev Demand : Type := Nat → Multiplicity
 
--- ADE: none.
 /-- `[c]`: the demand of one read of the cell at the address `c`.
 RFC: `\mathsf{unit}_D` -/
 def Demand.unit (c : Nat) : Demand := fun c' => if c' = c then .one else .zero
 
--- ADE: none.
 /-- `#R`: the uses of the trace `R`, which gives each address the multiplicity of the number of its
 reads in `R`, `0`, `1`, or `ω` for more than one.
 RFC: `\mathsf{uses}_R` -/
@@ -58,7 +55,6 @@ def Demand.uses (R : List Nat) : Demand := fun c =>
 
 mutual
 
--- ADE: none.
 /-- `H ⊢ ℓ ▶ D`: a use of the value at the address `ℓ` of the heap `H` reads the cells as `D`
 allows. -/
 inductive Heap.ValueDemand (H : Heap) : Nat → Demand → Prop where
@@ -79,7 +75,6 @@ inductive Heap.ValueDemand (H : Heap) : Nat → Demand → Prop where
       (hE : Heap.EnvDemand H E δ D₁) (hs : Heap.PositionsDemand H πs as D₂) :
       Heap.ValueDemand H ℓ (D₁ +ᶜ D₂)
 
--- ADE: none.
 /-- `H ⊢ ℓ̄ ▶ π̄ ▶ D`: the values at the addresses `ℓ̄`, each used as many times as its multiplicity
 in `π̄`, read the cells as `D` allows. -/
 inductive Heap.PositionsDemand (H : Heap) : List Multiplicity → List Nat → Demand → Prop where
@@ -92,7 +87,6 @@ inductive Heap.PositionsDemand (H : Heap) : List Multiplicity → List Nat → D
       (h : Heap.ValueDemand H ℓ D₁) (hs : Heap.PositionsDemand H πs as D₂) :
       Heap.PositionsDemand H (π :: πs) (ℓ :: as) ((π ·ᶜ D₁) +ᶜ D₂)
 
--- ADE: none.
 /-- `H ⊢ E ▶_ν D`: a term that reads the variables of the environment `E`, the last one first, as
 `ν` allows, reads the cells as `D` allows: `ν(x)` reads of the cell of `x`, each using its value. -/
 inductive Heap.EnvDemand (H : Heap) : {n : Nat} → List Nat → MultiplicityVector n → Demand → Prop
@@ -110,7 +104,6 @@ inductive Heap.EnvDemand (H : Heap) : {n : Nat} → List Nat → MultiplicityVec
 
 end
 
--- ADE: none.
 /-- `new_H(H, H')`: the multiplicities of the cells that a run from the heap `H` to the heap `H'`
 allocates, `0` at every other address.
 RFC: `\mathsf{new}_H` -/
@@ -121,14 +114,12 @@ def Demand.allocated (H H' : Heap) : Demand := fun c =>
     | _ => .zero
   else .zero
 
--- ADE: none.
 /-- `⊢ 𝒫 ▶`: each body of the program reads no variable, and its binders as their multiplicities
 allow.
 RFC: `\mathsf{usage}_{\mathcal{P}}` -/
 def Program.Usage (P : Program) : Prop :=
   ∀ f qs ps M, P f qs ps = some M → Target.Usage (𝟘ᵛ : MultiplicityVector 0) M
 
--- ADE: none.
 /-- `data_H(ℓ)`: the value at the address `ℓ` holds no closure, `↯` or a constructor whose fields
 are such values. -/
 inductive Heap.IsData (H : Heap) : Nat → Prop where
@@ -142,7 +133,6 @@ inductive Heap.IsData (H : Heap) : Nat → Prop where
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The uses of two traces joined are the sum of their uses.
 RFC: `\mathsf{uses}_R.{\cdot}` -/
 theorem Demand.uses_append (R₁ R₂ : List Nat) :
@@ -153,7 +143,6 @@ theorem Demand.uses_append (R₁ R₂ : List Nat) :
   generalize R₂.count c = k₂
   rcases k₁ with _ | _ | k₁ <;> rcases k₂ with _ | _ | k₂ <;> rfl
 
--- ADE: none.
 /-- The uses of a trace of one read are the demand of this read.
 RFC: `\mathsf{uses}_R.\mathsf{unit}` -/
 theorem Demand.uses_singleton (c : Nat) : Demand.uses [c] = Demand.unit c := by
@@ -166,7 +155,6 @@ theorem Demand.uses_singleton (c : Nat) : Demand.uses [c] = Demand.unit c := by
 
 mutual
 
--- ADE: none.
 /-- The demand of a value holds in each heap that extends its heap.
 RFC: `\mathsf{demand}_\ell.{\sqsubseteq}` -/
 theorem Heap.ValueDemand.mono {H H' : Heap} (hH : H.Extends H') {ℓ : Nat} {D : Demand} :
@@ -175,14 +163,12 @@ theorem Heap.ValueDemand.mono {H H' : Heap} (hH : H.Extends H') {ℓ : Nat} {D :
   | .ctor h hs => .ctor (hH.getElem? h) (hs.mono hH)
   | .corec h hPs hE hs => .corec (hH.getElem? h) hPs (hE.mono hH) (hs.mono hH)
 
--- ADE: none.
 /-- The demand of positions holds in each heap that extends their heap. -/
 theorem Heap.PositionsDemand.mono {H H' : Heap} (hH : H.Extends H') {πs : List Multiplicity}
     {as : List Nat} {D : Demand} : Heap.PositionsDemand H πs as D → Heap.PositionsDemand H' πs as D
   | .nil => .nil
   | .cons h hs => .cons (h.mono hH) (hs.mono hH)
 
--- ADE: none.
 /-- The demand of an environment holds in each heap that extends its heap.
 RFC: `\mathsf{demand}_E.{\sqsubseteq}` -/
 theorem Heap.EnvDemand.mono {H H' : Heap} (hH : H.Extends H') {n : Nat} {E : List Nat}
@@ -199,7 +185,6 @@ shape: `ν(x)` reads of the cell of each variable `x`, each read counting the ce
 judgment `R` gives the value that the cell binds; their properties along the operations of the
 vectors are proved once, on this shape. -/
 
--- ADE: none.
 /-- The sum over the environment `E` of `ν(x)` times the read of the cell of `x` and what `R` gives
 the value that it binds, the last variable first. -/
 inductive Heap.EnvSum (H : Heap) (R : Nat → Demand → Prop) :
@@ -278,7 +263,6 @@ theorem le : {n : Nat} → {E : List Nat} → {μ ν : MultiplicityVector n} →
 
 end Heap.EnvSum
 
--- ADE: none.
 /-- An environment that has a demand for a vector has the demand `0` for the vector `0`, whose term
 reads no variable.
 RFC: `\mathsf{demand}_E.0` -/
@@ -287,7 +271,6 @@ theorem Heap.EnvDemand.zero {H : Heap} {n : Nat} {E : List Nat} {ν : Multiplici
     Heap.EnvDemand H E (𝟘ᵛ : MultiplicityVector n) (𝟘ᵛ : Demand) :=
   h.toEnvSum.zero.toEnvDemand
 
--- ADE: none.
 /-- The demand of an environment for a sum of vectors splits into a demand for each, with the same
 demands of the values.
 RFC: `\mathsf{demand}_E.{+}` -/
@@ -297,7 +280,6 @@ theorem Heap.EnvDemand.split {H : Heap} {n : Nat} {E : List Nat} {ν₁ ν₂ : 
   obtain ⟨D₁, D₂, hD, h₁, h₂⟩ := h.toEnvSum.split
   exact ⟨D₁, D₂, hD, h₁.toEnvDemand, h₂.toEnvDemand⟩
 
--- ADE: none.
 /-- The demand of an environment for a vector multiplied by `π` is `π` times a demand for the
 vector, with the same demands of the values.
 RFC: `\mathsf{demand}_E.{\cdot}` -/
@@ -307,7 +289,6 @@ theorem Heap.EnvDemand.unsmul {H : Heap} {n : Nat} {E : List Nat} {π : Multipli
   obtain ⟨D', hD, h'⟩ := h.toEnvSum.unsmul
   exact ⟨D', hD, h'.toEnvDemand⟩
 
--- ADE: none.
 /-- The demand of an environment for a vector lower than another is lower than a demand for the
 other, with the same demands of the values: a term given lower multiplicities than its reads is
 given a lower demand than they make.

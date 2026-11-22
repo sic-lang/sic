@@ -28,7 +28,6 @@ theorem Heap.Annotation.Extends.trans {H H' : Heap} {g₁ g₂ g₃ : Heap.Annot
   have hℓ' : ℓ < H'.length := Nat.lt_of_lt_of_le hℓ hH.length_le
   ⟨(h₂ ℓ hℓ').1.trans (h₁ ℓ hℓ).1, (h₂ ℓ hℓ').2.trans (h₁ ℓ hℓ).2⟩
 
--- ADE: none.
 /-- The annotation `g` with the ownership `φ` and the usage `δ` of the scope of `n` variables of
 the closure at the address `ℓ`. -/
 def Heap.Annotation.set (g : Heap.Annotation) (ℓ n : Nat) (φ δ : MultiplicityVector n) :

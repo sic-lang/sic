@@ -402,7 +402,6 @@ theorem Subst.append_eq_liftN {Γ : Scope} {n : Nat} (θ₁ : Subst k [] Γ)
       Subst.liftN_id_of n (fun y => by cases y)]
     rfl
 
--- ADE: none.
 /-- Substituting a closed term `t` for a variable is the same with the substitution `[t / x]` of the
 first order as with the closed substitution `[t / x]` of the second order. -/
 theorem Subst₀.Swaps.closedSingle (t : Term k []) :
@@ -427,7 +426,6 @@ theorem Term.subst₀_liftN_single_closed (n : Nat) (t : Term k [])
     ((Term.subst_subst₀_of (Subst₀.Swaps.liftN n (Subst₀.Swaps.closedSingle t)) B).trans
       (Term.subst₀_id_of (Subst₀.liftN_id_of n fun _ => rfl) _))
 
--- ADE: none.
 /-- `B[t̄ / Θ]`, for closed arguments `t̄`, is `B` substituted by the closed substitution `[t̄ / x̄]` of
 these arguments.
 RFC: `\mathsf{closed}_\theta` -/
@@ -442,19 +440,16 @@ theorem Term.instantiate_eq_subst :
         (Term.subst_subst_of (fun x =>
           (Subst.append_eq_liftN (Subst.closedSingle t) ts.toSubst x).symm) B))
 
--- ADE: none.
 /-- A closed term weakened to the empty scope is itself. -/
 theorem Term.weakenClosed_nil (t : Term k []) : (t.weakenClosed : Term k []) = t :=
   Term.rename_id_of (fun x => by cases x) t
 
--- ADE: none.
 /-- A closed term weakened to a scope, then substituted by a closed substitution, is itself. -/
 theorem Term.subst_weakenClosed {Γ : Scope} (σ : Subst k [] Γ) (t : Term k []) :
     (t.weakenClosed : Term k Γ).subst σ = t :=
   (Term.subst_rename_of (θ' := fun x => Var.eta x) (fun x => by cases x) t).trans
     (Term.subst_id_of (fun _ => rfl) t)
 
--- ADE: none.
 /-- `Θ[σ⇑][v / x] = Θ[σ, v]`: a telescope under a new variable, substituted by a closed
 substitution `σ` of the context, then by a closed term `v` for this variable, is substituted by `σ`
 followed by `v`. -/
@@ -468,7 +463,6 @@ theorem Telescope.subst_lift_single {Γ : Scope} {ps : List Parameter}
         (Telescope.subst_subst_of
           (fun x => (Subst.append_eq_liftN (n := 1) σ (Subst.closedSingle v) x).symm) Θ)))
 
--- ADE: none.
 /-- `C[σ⇑][v / x] = C[σ, v]`: a term under a new variable, substituted by a closed substitution `σ`
 of the context, then by a closed term `v` for this variable, is substituted by `σ` followed by
 `v`. -/

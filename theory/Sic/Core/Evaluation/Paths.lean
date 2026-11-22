@@ -31,7 +31,6 @@ ADE have no reaches: their usage states no uniqueness.
 
 namespace Sic.Grading
 
--- ADE: none.
 /-- `⌈π⌉`: the references that a position of the multiplicity `π` makes to its value, none for `0`,
 whose position is never read, and one otherwise.
 RFC: `\mathsf{refs}_\pi` -/
@@ -45,7 +44,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- `g`: an annotation of the heap, which gives the closure at each address, of a scope of `n`
 variables, the ownership `φ_ℓ` and the usage `δ_ℓ` of its scope, those of the corecursor that built
 it, which its value does not hold.
@@ -56,7 +54,6 @@ structure Heap.Annotation where
   /-- `δ_ℓ`: the usage of the scope of the closure at the address `ℓ`. -/
   usage : Nat → (n : Nat) → MultiplicityVector n
 
--- ADE: none.
 /-- `g ⊑_H g'`: the annotation `g'` extends the annotation `g` of the heap `H`, with the same
 ownership and usage at each address of `H`.
 RFC: `\sqsubseteq_g` -/
@@ -65,7 +62,6 @@ def Heap.Annotation.Extends (H : Heap) (g g' : Heap.Annotation) : Prop :=
 
 mutual
 
--- ADE: none.
 /-- `H; g ⊢ ℓ ⇝ U`: a use of the value at the address `ℓ` of the heap `H`, annotated by `g`, refers to the addresses as
 `U` counts. -/
 inductive Heap.ValueReach (H : Heap) (g : Heap.Annotation) : Nat → Demand → Prop where
@@ -86,7 +82,6 @@ inductive Heap.ValueReach (H : Heap) (g : Heap.Annotation) : Nat → Demand → 
       (hE : Heap.EnvReach H g E (g.usage ℓ n) U₁) (hs : Heap.PositionsReach H g πs as U₂) :
       Heap.ValueReach H g ℓ (Demand.unit ℓ +ᶜ (U₁ +ᶜ U₂))
 
--- ADE: none.
 /-- `H; g ⊢ ℓ̄ ⇝ π̄ ⇝ U`: the values at the addresses `ℓ̄`, each at the multiplicity at its position in
 `π̄`, refer to the addresses as `U` counts. -/
 inductive Heap.PositionsReach (H : Heap) (g : Heap.Annotation) :
@@ -100,7 +95,6 @@ inductive Heap.PositionsReach (H : Heap) (g : Heap.Annotation) :
       (h : Heap.ValueReach H g ℓ U₁) (hs : Heap.PositionsReach H g πs as U₂) :
       Heap.PositionsReach H g (π :: πs) (ℓ :: as) ((π.references ·ᶜ U₁) +ᶜ U₂)
 
--- ADE: none.
 /-- `H; g ⊢ E ⇝_ν U`: a term that reads the variables of the environment `E`, the last one first, as
 `ν` allows, refers to the addresses as `U` counts: `ν(x)` reads of the cell of `x`, each referring
 to the cell and to its value. -/
@@ -123,7 +117,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- The reach of a value holds in each heap that extends its heap, annotated by an annotation that
 extends its annotation.
 RFC: `\mathsf{reach}_\ell.{\sqsubseteq}` -/
@@ -138,7 +131,6 @@ theorem Heap.ValueReach.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Exte
     rw [(hg _ hℓ).2]
     exact hE.mono hH hg
 
--- ADE: none.
 /-- The reach of positions holds in each heap that extends their heap, annotated by an annotation
 that extends their annotation. -/
 theorem Heap.PositionsReach.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends H')
@@ -147,7 +139,6 @@ theorem Heap.PositionsReach.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.
   | .nil => .nil
   | .cons h hs => .cons (h.mono hH hg) (hs.mono hH hg)
 
--- ADE: none.
 /-- The reach of an environment holds in each heap that extends its heap, annotated by an
 annotation that extends its annotation.
 RFC: `\mathsf{reach}_E.{\sqsubseteq}` -/
@@ -168,7 +159,6 @@ theorem Demand.unit_eq_zero_of_length_le {H : Heap} {ℓ : Nat} {v : Value} (h :
 
 mutual
 
--- ADE: none.
 /-- A value refers only to addresses of its heap: the allocations of a later run, at the end of
 the heap, are reached by no value that the heap holds before them.
 RFC: `\mathsf{reach}_\ell.{<}` -/
@@ -184,7 +174,6 @@ theorem Heap.ValueReach.eq_zero {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U 
     rw [Demand.unit_eq_zero_of_length_le h ha, hE.eq_zero a ha, hs.eq_zero a ha]
     rfl
 
--- ADE: none.
 /-- Positions refer only to addresses of their heap. -/
 theorem Heap.PositionsReach.eq_zero {H : Heap} {g : Heap.Annotation} {πs : List Multiplicity} {as : List Nat}
     {U : Demand} : Heap.PositionsReach H g πs as U → ∀ a, H.length ≤ a → U a = .zero
@@ -194,7 +183,6 @@ theorem Heap.PositionsReach.eq_zero {H : Heap} {g : Heap.Annotation} {πs : List
     rw [h.eq_zero a ha, hs.eq_zero a ha]
     cases π <;> rfl
 
--- ADE: none.
 /-- An environment refers only to addresses of its heap.
 RFC: `\mathsf{reach}_E.{<}` -/
 theorem Heap.EnvReach.eq_zero {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat} {ν : MultiplicityVector n}
@@ -209,7 +197,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- The reach of a value is unique.
 RFC: `\mathsf{reach}_\ell.\mathsf{det}` -/
 theorem Heap.ValueReach.det {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U U' : Demand} :
@@ -225,7 +212,6 @@ theorem Heap.ValueReach.det {H : Heap} {g : Heap.Annotation} {ℓ : Nat} {U U' :
   | .ctor h _, .corec h' _ _ | .corec h _ _, .erased h' | .corec h _ _, .ctor h' _ => by
     cases h.symm.trans h'
 
--- ADE: none.
 /-- The reach of positions is unique.
 RFC: `\mathsf{reach}_{\bar\ell}.\mathsf{det}` -/
 theorem Heap.PositionsReach.det {H : Heap} {g : Heap.Annotation} {πs : List Multiplicity}
@@ -234,7 +220,6 @@ theorem Heap.PositionsReach.det {H : Heap} {g : Heap.Annotation} {πs : List Mul
   | .nil, .nil => rfl
   | .cons h hs, .cons h' hs' => by rw [h.det h', hs.det hs']
 
--- ADE: none.
 /-- The reach of an environment is unique.
 RFC: `\mathsf{reach}_E.\mathsf{det}` -/
 theorem Heap.EnvReach.det {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}

@@ -48,13 +48,11 @@ open Sic.Grading Sic.Math
 /-- The scope `Γ` declares variables only, and no second-order variable. -/
 def Scope.FirstOrder (Γ : Scope) : Prop := ∀ e ∈ Γ, e = .var
 
--- ADE: none.
 /-- The entry of a variable is an entry of its scope. -/
 theorem Var.mem {Γ : Scope} {e : Scope.Entry} : Var Γ e → e ∈ Γ
   | .zero => List.mem_cons_self
   | .succ x => List.mem_cons_of_mem _ x.mem
 
--- ADE: none.
 /-- `k`: the resumption of a branch of a corecursor of the target language: `none`, the RFC's `⊥`,
 when its destructor is not recursive, `unpack n` when the branch resumes a state of `n` entries,
 which it unpacks from the new state that its position packs, and `erased n`, the RFC's `↯ₙ`, when
@@ -69,13 +67,11 @@ inductive Resumption where
   /-- `↯ₙ`. -/
   | erased (n : Nat)
 
--- ADE: none.
 /-- `k₁ ⊑ k₂`: a resumption is less defined than another, itself or, for an erased state, the
 resumption that unpacks a state of as many entries. -/
 def Resumption.LessDefined (k₁ k₂ : Resumption) : Prop :=
   k₁ = k₂ ∨ ∃ n, k₁ = .erased n ∧ k₂ = .unpack n
 
--- ADE: none.
 /-- The resumption of a branch whose destructor resumes, when it is recursive, a state of `n`
 entries, erased when `e` holds. -/
 def Resumption.ofArity (e : Bool) : Option Nat → Resumption
@@ -144,7 +140,6 @@ inductive Target : Nat → Type where
   its entry, with a branch for each destructor, in order. -/
   | corec {n : Nat} (Ms : Targets n) (Ns : TargetCorecBranches n) : Target n
 
--- ADE: none.
 /-- `M̄ = (M₁ ▶ π₁ ◀ ϱ₁, …, Mₐ ▶ πₐ ◀ ϱₐ)`: terms of the target language, the first one first, each
 stored at the multiplicity `π` of the position that holds its value, a field, an argument or an
 entry of a state, which bounds the uses of the value through this position, and with the
@@ -156,7 +151,6 @@ inductive Targets : Nat → Type where
   /-- `(M ▶ π ◀ ϱ, M̄)`. -/
   | cons {n : Nat} (π ϱ : Multiplicity) (M : Target n) (Ms : Targets n) : Targets n
 
--- ADE: none.
 /-- `N̄`: the branches of a recursor of the target language, in order; the branch
 `(x̄ ▶ π̄ ◀ κ̄; ȳ ▶ π̄' ← w̄). N` is a term over a new variable for each of the `a` fields and of the
 `b` recursive results, of the multiplicities `π̄` and `π̄'` at run time, each variable of a field
@@ -173,7 +167,6 @@ inductive TargetBranches : Nat → Type where
       (ks : Fin b → RecursiveResult) (N : Target (n + (a + b))) (Ns : TargetBranches n) :
       TargetBranches n
 
--- ADE: none.
 /-- `P̄`: the branches of a corecursor of the target language, in order; the branch
 `(ȳ ▶ π̄ ◀ ϱ̄; z̄ ▶ π̄' ◀ ϱ̄' ↻ k ◀ ψ ◀ ς). P` is a term over a new variable for each of the `b`
 entries of the state and of the `c` arguments, of the multiplicities `π̄` and `π̄'` and of the
@@ -230,7 +223,6 @@ inductive Target.Occurs : {n : Nat} → Fin n → Target n → Prop where
   | cobranch {n : Nat} {x : Fin n} {Ms : Targets n} {Ns : TargetCorecBranches n}
       (h : TargetCorecBranches.Occurs x Ns) : Target.Occurs x (.corec Ms Ns)
 
--- ADE: none.
 /-- The variable `x` occurs in one of the terms. -/
 inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
   /-- In the first term.
@@ -242,7 +234,6 @@ inductive Targets.Occurs : {n : Nat} → Fin n → Targets n → Prop where
   | tail {n : Nat} {x : Fin n} {π ϱ : Multiplicity} {M : Target n} {Ms : Targets n}
       (h : Targets.Occurs x Ms) : Targets.Occurs x (.cons π ϱ M Ms)
 
--- ADE: none.
 /-- The variable `x` occurs in one of the branches, under their new variables, which shift it. -/
 inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → Prop where
   /-- In the first branch.
@@ -258,7 +249,6 @@ inductive TargetBranches.Occurs : {n : Nat} → Fin n → TargetBranches n → P
       {Ns : TargetBranches n} (h : TargetBranches.Occurs x Ns) :
       TargetBranches.Occurs x (.cons a b πs κs πs' ks N Ns)
 
--- ADE: none.
 /-- The variable `x` occurs in one of the branches of a corecursor, under their new variables,
 which shift it. -/
 inductive TargetCorecBranches.Occurs : {n : Nat} → Fin n → TargetCorecBranches n → Prop where
@@ -281,7 +271,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- The term of the target language is data: it is built of constructors and of `↯` only, and has
 no variable. -/
 inductive Target.IsData : {n : Nat} → Target n → Prop where
@@ -293,7 +282,6 @@ inductive Target.IsData : {n : Nat} → Target n → Prop where
   | ctor {n : Nat} {i : Nat} {Ms : Targets n} (h : Targets.IsData Ms) :
       Target.IsData (.ctor i Ms)
 
--- ADE: none.
 /-- The terms are data, one by one. -/
 inductive Targets.IsData : {n : Nat} → Targets n → Prop where
   /-- `()`.
@@ -308,7 +296,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- `M ⊑ N`: the term `M` of the target language is `N` with some subterms replaced by `↯`. -/
 inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop where
   /-- `↯` is less defined than every term.
@@ -351,7 +338,6 @@ inductive Target.LessDefined : {n : Nat} → Target n → Target n → Prop wher
       (h : Targets.LessDefined Ms Ns) (hs : TargetCorecBranches.LessDefined Ms' Ns') :
       Target.LessDefined (.corec Ms Ms') (.corec Ns Ns')
 
--- ADE: none.
 /-- The terms are less defined, one by one. -/
 inductive Targets.LessDefined : {n : Nat} → Targets n → Targets n → Prop where
   /-- `()`.
@@ -363,7 +349,6 @@ inductive Targets.LessDefined : {n : Nat} → Targets n → Targets n → Prop w
       (h : Target.LessDefined M N) (hs : Targets.LessDefined Ms Ns) :
       Targets.LessDefined (.cons π ϱ M Ms) (.cons π ϱ N Ns)
 
--- ADE: none.
 /-- The branches are less defined, one by one. -/
 inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → TargetBranches n → Prop where
   /-- `()`.
@@ -378,7 +363,6 @@ inductive TargetBranches.LessDefined : {n : Nat} → TargetBranches n → Target
       (h : Target.LessDefined M N) (hs : TargetBranches.LessDefined Ms Ns) :
       TargetBranches.LessDefined (.cons a b πs κs πs' ks₁ M Ms) (.cons a b πs κs πs' ks₂ N Ns)
 
--- ADE: none.
 /-- The branches of a corecursor are less defined, one by one. -/
 inductive TargetCorecBranches.LessDefined :
     {n : Nat} → TargetCorecBranches n → TargetCorecBranches n → Prop where
@@ -399,7 +383,6 @@ end
 
 @[inherit_doc] infix:50 " ⊑ " => Target.LessDefined
 
--- ADE: none.
 /-- A scope of variables extended by variables is a scope of variables. -/
 theorem Scope.FirstOrder.extend {Γ : Scope} (hΓ : Γ.FirstOrder) :
     (a : Nat) → (Γ.extend a).FirstOrder
@@ -410,7 +393,6 @@ theorem Scope.FirstOrder.extend {Γ : Scope} (hΓ : Γ.FirstOrder) :
         · rfl
         · exact hΓ e he) a
 
--- ADE: none.
 /-- The number of the entries of the state at the position `j` of the states of a corecursor, when it
 has no non-uniform parameters. -/
 def States.arity {k : Nat} {Γ : Scope} (Ss : States k Γ) (j : Nat) : Option Nat :=
@@ -418,7 +400,6 @@ def States.arity {k : Nat} {Γ : Scope} (Ss : States k Γ) (j : Nat) : Option Na
   | some ⟨0, ps, _⟩ => some ps.length
   | _ => none
 
--- ADE: none.
 /-- The terms `(M₁ ▶ π₁ ◀ ω, …, Mₐ ▶ πₐ ◀ ω)` of a list of terms and of their multiplicities, the
 first one first, each at the requirement `ω`, which states nothing. -/
 def Targets.ofList {n : Nat} : List (Multiplicity × Target n) → Targets n
@@ -427,7 +408,6 @@ def Targets.ofList {n : Nat} : List (Multiplicity × Target n) → Targets n
 
 mutual
 
--- ADE: none.
 /-- `target(Z)`: the term of the target language that the skeleton `Z` stands for, in every scope,
 since it mentions no variable.
 RFC: `\mathsf{target}_Z` -/
@@ -435,7 +415,6 @@ def Skeleton.target {n : Nat} : Skeleton → Target n
   | .empty => .erased
   | .ctor i ks => .ctor i (Skeleton.targets ks)
 
--- ADE: none.
 /-- The terms that skeletons stand for, the first one first, each at the multiplicity `0`, since a
 skeleton holds no value that a use at run time reads, and at the requirement `ω`, which states
 nothing. -/
@@ -445,7 +424,6 @@ def Skeleton.targets {n : Nat} : List Skeleton → Targets n
 
 end
 
--- ADE: none.
 /-- The terms that skeletons stand for are those of the list of these terms, each at the
 multiplicity `0`. -/
 theorem Skeleton.targets_eq_ofList {n : Nat} :
@@ -455,21 +433,18 @@ theorem Skeleton.targets_eq_ofList {n : Nat} :
   | k :: ks => by
     simp only [Skeleton.targets, List.map_cons, Targets.ofList, Skeleton.targets_eq_ofList ks]
 
--- ADE: none.
 /-- `π̄(M̄)`: the multiplicities at which the terms are stored, the first one first.
 RFC: `\mathsf{multiplicities}_{\bar M}` -/
 def Targets.multiplicities {n : Nat} : Targets n → List Multiplicity
   | .nil => []
   | .cons π _ _ Ms => π :: Ms.multiplicities
 
--- ADE: none.
 /-- `ϱ̄(M̄)`: the requirements of the positions at which the terms are stored, the first one first.
 RFC: `\mathsf{requirements}_{\bar M}` -/
 def Targets.requirements {n : Nat} : Targets n → List Multiplicity
   | .nil => []
   | .cons _ ϱ _ Ms => ϱ :: Ms.requirements
 
--- ADE: none.
 /-- `π_l`: the multiplicity at run time of the variable of a field of grade `p` in a branch of a
 recursor of grade `r`, given the recursive result that names the field, when one does and the grades
 `ē` of the results have an element for it, with its grade `e`: the uses at run time of the field
@@ -487,7 +462,6 @@ def _root_.Sic.Grading.Grade.fieldMultiplicity (r : Grade) :
   | some p, some (.erased, _) | some p, none => (r * p).run
   | none, _ => .omega
 
--- ADE: none.
 /-- `κ_l`: the coefficient at run time of the ownership of the variable of a field of the parameter
 `p`, grade `q` and requirement `r'`, in a branch of a recursor of grade `r`, which multiplies the
 ownership of the term of the recursor: the value that the field requires, `r'`, is used `r · q`
@@ -498,7 +472,6 @@ def _root_.Sic.Grading.Grade.fieldCoefficient (r : Grade) : Option Parameter →
   | some p => (p.requirement * (r * p.usage)).run
   | none => .omega
 
--- ADE: none.
 /-- The ownership `ψ` of the result of a destructor read for `c` arguments: its constant, and the
 coefficient of each of the first `c` variables of its telescope, none for an argument beyond them, in
 a term that no declaration types. -/
@@ -577,7 +550,6 @@ def Term.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k :
   | .equality .. | .refl .. | .propExt .. | .coind .. => .erased
   | .transp _ _ _ _ _ u => u.erase sig S hΓ
 
--- ADE: none.
 /-- `⌊t̄⌋_{S, p̄}`: the erasure of the fields of a constructor, of the arguments of an observation
 or of the state of a corecursor, each at its parameter in `ps`, of grade `p` and requirement `r`,
 stored at the multiplicity `run(p)` and the requirement `run(r)`; a term without parameter is
@@ -591,7 +563,6 @@ def Terms.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] {k 
     .cons p.usage.run p.requirement.run (if p.usage ∈ S then .erased else t.erase sig S hΓ)
       (ts.erase sig S hΓ ps)
 
--- ADE: none.
 /-- `⌊ū⌋_{S, r, w̄̄, p̄̄}`: the erasure of the branches of a recursor of grade `r`, under their new
 variables, each with what computes each of its recursive results, in the recursive results `ws` of
 its constructor, or `⊥` when the grade of the result is in `S`, so that the result is not computed,
@@ -616,7 +587,6 @@ def Branches.erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] 
       (Scope.length_extend_extend Γ a b ▸ u.erase sig S ((hΓ.extend a).extend b))
       (us.erase sig S hΓ r ws.tail fs.tail)
 
--- ADE: none.
 /-- `⌊ḡ⌋_{S, p̄, k̄, q̄̄}`: the erasure of the branches of a corecursor, under their new variables,
 each at the grade `p` of its destructor in `ps`, with its resumption in `ks`; the variable of an
 entry of its state or of an argument whose parameter in `pss` has the grade `q` has the multiplicity
@@ -658,21 +628,18 @@ end
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- A cast of the number of variables keeps a term less defined than another. -/
 theorem Target.LessDefined.cast {n n' : Nat} (h : n = n') {M N : Target n} (hMN : M ⊑ N) :
     (h ▸ M : Target n') ⊑ h ▸ N := by
   subst h
   exact hMN
 
--- ADE: none.
 /-- The terms of a list are stored at the multiplicities of the list. -/
 theorem Targets.multiplicities_ofList {n : Nat} :
     (Ms : List (Multiplicity × Target n)) → (Targets.ofList Ms).multiplicities = Ms.map (·.1)
   | [] => rfl
   | _ :: Ms => congrArg (_ :: ·) (Targets.multiplicities_ofList Ms)
 
--- ADE: none.
 /-- The terms of a list are stored at the requirement `ω`. -/
 theorem Targets.requirements_ofList {n : Nat} :
     (Ms : List (Multiplicity × Target n)) →
@@ -680,7 +647,6 @@ theorem Targets.requirements_ofList {n : Nat} :
   | [] => rfl
   | _ :: Ms => congrArg (_ :: ·) (Targets.requirements_ofList Ms)
 
--- ADE: none.
 /-- The erasure of the arguments of parameters, each at its parameter, stores each at the
 multiplicity at run time of the grade of its parameter. -/
 theorem Args.multiplicities_erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
@@ -690,7 +656,6 @@ theorem Args.multiplicities_erase (sig : Signature) (S : Set Grade) [DecidablePr
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.multiplicities_erase sig S hΓ ts)
 
--- ADE: none.
 /-- The erasure of the arguments of parameters, each at its parameter, stores each at the
 requirement at run time of its parameter. -/
 theorem Args.requirements_erase (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
@@ -700,7 +665,6 @@ theorem Args.requirements_erase (sig : Signature) (S : Set Grade) [DecidablePred
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.requirements_erase sig S hΓ ts)
 
--- ADE: none.
 /-- The erasure of the arguments of parameters, each at its parameter whose grade is mapped by `f`,
 stores each at the multiplicity at run time of this image. -/
 theorem Args.multiplicities_erase_map (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
@@ -711,7 +675,6 @@ theorem Args.multiplicities_erase_map (sig : Signature) (S : Set Grade) [Decidab
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.multiplicities_erase_map sig S hΓ f ts)
 
--- ADE: none.
 /-- The erasure of the arguments of parameters, each at its parameter whose grade is mapped by `f`,
 stores each at the requirement at run time of its parameter. -/
 theorem Args.requirements_erase_map (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)]
@@ -722,7 +685,6 @@ theorem Args.requirements_erase_map (sig : Signature) (S : Set Grade) [Decidable
   | [], .nil => rfl
   | _ :: _, .cons _ ts => congrArg (_ :: ·) (Args.requirements_erase_map sig S hΓ f ts)
 
--- ADE: none.
 /-- The ownership of a result read for as many arguments as its telescope has is itself. -/
 theorem ResultOwnership.toArity_self {α : Type} {n : Nat} (ψ : ResultOwnership α n) :
     ψ.toArity n = ψ := by
@@ -731,13 +693,11 @@ theorem ResultOwnership.toArity_self {α : Type} {n : Nat} (ψ : ResultOwnership
 
 mutual
 
--- ADE: none.
 /-- The term of a skeleton is data. -/
 theorem Skeleton.target_isData {n : Nat} : (k : Skeleton) → (k.target : Target n).IsData
   | .empty => .erased
   | .ctor _ ks => .ctor (Skeleton.targets_isData ks)
 
--- ADE: none.
 /-- The terms of skeletons are data. -/
 theorem Skeleton.targets_isData {n : Nat} :
     (ks : List Skeleton) → (Skeleton.targets ks : Targets n).IsData
@@ -748,14 +708,12 @@ end
 
 mutual
 
--- ADE: none.
 /-- No variable occurs in data. -/
 theorem Target.IsData.not_occurs {n : Nat} {x : Fin n} :
     {M : Target n} → M.IsData → ¬M.Occurs x
   | _, .erased, h => nomatch h
   | _, .ctor hs, .ctor h => Targets.IsData.not_occurs hs h
 
--- ADE: none.
 /-- No variable occurs in terms that are data. -/
 theorem Targets.IsData.not_occurs {n : Nat} {x : Fin n} :
     {Ms : Targets n} → Ms.IsData → ¬Ms.Occurs x
@@ -767,7 +725,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- The erasure by a larger set of grades is less defined.
 RFC: `\sqsubseteq_S` -/
 theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [DecidablePred (· ∈ S₁)]
@@ -801,7 +758,6 @@ theorem Term.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decida
           (fun h₁ => decide_eq_true (h r (of_decide_eq_true h₁))) _ _))
   | .transp _ _ _ _ _ u => Term.erase_lessDefined sig h hΓ u
 
--- ADE: none.
 /-- The erasure of fields by a larger set of grades is less defined. -/
 theorem Terms.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [DecidablePred (· ∈ S₁)]
     [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope} (hΓ : Γ.FirstOrder) :
@@ -818,7 +774,6 @@ theorem Terms.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade} [Decid
       simp only [h₂, h₁, ↓reduceIte]
       exact Term.erase_lessDefined sig h hΓ t
 
--- ADE: none.
 /-- The erasure of branches by a larger set of grades is less defined. -/
 theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
     [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ S₂)] (h : S₁ ⊆ S₂) {k : Nat} {Γ : Scope}
@@ -834,7 +789,6 @@ theorem Branches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}
       (Target.LessDefined.cast _ (Term.erase_lessDefined sig h ((hΓ.extend a).extend b) u))
       (Branches.erase_lessDefined sig h hΓ r us ws.tail fs.tail)
 
--- ADE: none.
 /-- The erasure of the branches of a corecursor by a larger set of grades, at less defined
 resumptions, is less defined. -/
 theorem DestructorBranches.erase_lessDefined (sig : Signature) {S₁ S₂ : Set Grade}

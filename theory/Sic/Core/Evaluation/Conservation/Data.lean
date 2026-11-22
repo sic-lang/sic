@@ -18,7 +18,6 @@ open Sic.Grading Sic.Math
 
 mutual
 
--- ADE: none.
 /-- Data reads no cell, allocates none, and its value has the demand `0`. -/
 theorem Target.IsData.conserve {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
     {E : List Nat} {M : Target n} {a : Nat} {R : List Nat} :
@@ -36,7 +35,6 @@ theorem Target.IsData.conserve {P : Program} {ϖ : Multiplicity} {n : Nat} {H H'
     rw [Demand.allocated_trans hev.extends (List.prefix_append _ _), hal,
       Demand.allocated_append (fun _ _ h => Value.noConfusion h), Demand.zero_add]
 
--- ADE: none.
 /-- Terms that are data read no cell, allocate none, and their values have the demand `0`. -/
 theorem Targets.IsData.conserve {P : Program} {ϖ : Multiplicity} {n : Nat} {H H' : Heap}
     {E : List Nat} {Ms : Targets n} {as : List Nat} {R : List Nat} :

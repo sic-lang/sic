@@ -37,7 +37,6 @@ open Sic.Grading
 
 /-! ## Sorts -/
 
--- ADE: none.
 /-- The relation of run time of a sort relates every term to every address. -/
 theorem HasRun.sort {sig : Signature} {ι : Interpretation} {P : Program} (κ : Universe 0) :
     HasRun sig ι P (.sort κ) fun _ _ _ => True := by
@@ -46,7 +45,6 @@ theorem HasRun.sort {sig : Signature} {ι : Interpretation} {P : Program} (κ : 
   | type => exact .univ (l.closedValue + 1) (levelRel_run_iff.2 (.univ rfl rfl))
   | prop => exact .univ (l.closedValue + 1) (levelRel_run_iff.2 (.prop rfl rfl))
 
--- ADE: none.
 /-- A closed term of a universe computes to a type that has a relation of run time, for every
 program: a type of `U_l`, which the universe relates to itself with this relation, or a proposition
 of `Ω_l`, whose terms are related to every address. -/
@@ -174,14 +172,12 @@ The arguments of a telescope are evaluated in order, each in the heap that the o
 an argument of a grade in `S^{11ᵐ}` is erased, `↯` being allocated in its place, and the others are
 valid at run time with the grades that they use, which the grades of the arguments count. -/
 
--- ADE: none.
 /-- `(tel_ε▶)` at run time: no argument is valid at run time with the grades `𝟘ᶜ`. -/
 theorem RunValidArgsRen.nil {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}
     {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} :
     RunValidArgsRen sig ι P hΓ ctx 𝟘ᶜ (.nil : Args 0 Γ []) .nil :=
   fun _ _ H _ _ _ _ _ _ _ _ _ => ⟨[], H, [], .nil, List.prefix_refl H, trivial⟩
 
--- ADE: none.
 /-- `(tel_,▶)` at run time: the arguments `t, t̄` of the telescope `x : A ▶ p, Θ` are valid at run
 time with the grades `(p ·ᶜ δ) +ᶜ δ'`, when `t` is valid at run time at `A` with the grades `δ` if
 `p` is not in `S^{11ᵐ}`, and `t̄` at `Θ[t / x]` with the grades `δ'`, in a signature whose names are

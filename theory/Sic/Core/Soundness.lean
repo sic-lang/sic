@@ -45,7 +45,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The interpretation `ι` gives each constant declaration of the signature a term of its type, in
 the signature.
 RFC: `\mathsf{hyp}_\iota` -/
@@ -1005,7 +1004,6 @@ theorem soundnessIn : SoundnessIn := by
       ValidEqTelescopeΓ.cons (hA_ih hdis hord hι ρ) (Universe.substLevels_bounded _ hκ)
         (hΘ_ih hdis hord hι ρ)
   all_goals intros; trivial
--- ADE: none.
 /-- The soundness of the typing, in the signatures whose entries a signature whose names are
 distinct gives their meaning. -/
 theorem soundnessIn.typingSound {ι : Interpretation} {sigM : Signature} (hd : sigM.Distinct)
@@ -1017,7 +1015,6 @@ theorem soundnessIn.typingSound {ι : Interpretation} {sigM : Signature} (hd : s
 
 /-! ## Type Declarations in a Signature That Gives Their Entries Their Meaning -/
 
--- ADE: none.
 /-- Every type declaration typed in the signature `Σ_T` is meaningful in a signature `Σ` whose names
 are distinct and that gives the entries of `Σ_T` their meaning, as its fields and its destructors
 are. -/
@@ -1239,12 +1236,10 @@ structure Soundness : Prop where
   RFC: `\mathsf{sound}.\Sigma` -/
   wfSig : ∀ {ι : Interpretation} {sig : Signature}, ValidInterpretation ι sig →
     WfSig sig → ValidSig ι sig
-  -- ADE: none.
   /-- A well-formed constant definition is meaningful.
   RFC: `\mathsf{sound}.\mathsf{def}` -/
   wfConstantDefinition : ∀ {ι : Interpretation} {sig : Signature} {d : ConstantDefinition},
     ValidInterpretation ι sig → WfConstantDefinition sig d → ValidConstantDefinition sig ι d
-  -- ADE: none.
   /-- A well-formed constant declaration is meaningful in the signature that it extends, when the
   interpretation gives it a term of its type, as `(hyp_ι)` asks.
   RFC: `\mathsf{sound}.\mathsf{decl}` -/
@@ -1277,46 +1272,39 @@ structure Soundness : Prop where
   eqTerm : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ}
     {t u A : Term k Γ}, ValidInterpretation ι sig → EqTerm sig ctx t u A →
       ValidEqTerm sig ι ctx t u A
-  -- ADE: none.
   /-- Arguments of a telescope are meaningful.
   RFC: `\mathsf{sound}.\bar t` -/
   hasArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {ctx : Context k Γ} {ts : Args k Γ ps} {Θ : Telescope k Γ ps}, ValidInterpretation ι sig →
       HasArgs sig ctx ts Θ → ValidArgs sig ι ctx ts Θ
-  -- ADE: none.
   /-- Equal arguments of a telescope are meaningful.
   RFC: `\mathsf{sound}.\bar t_\equiv` -/
   eqArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope} {ps : List Parameter}
     {ctx : Context k Γ} {ts us : Args k Γ ps} {Θ : Telescope k Γ ps}, ValidInterpretation ι sig →
       EqArgs sig ctx ts us Θ → ValidEqArgs sig ι ctx ts us Θ
-  -- ADE: none.
   /-- Arguments of an instance are meaningful.
   RFC: `\mathsf{sound}.\bar a` -/
   hasInstanceArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as : InstanceArgs k Γ Δ} {params : Context k Δ},
       ValidInterpretation ι sig → HasInstanceArgs sig ctx as params →
         ValidInstanceArgs sig ι ctx as params
-  -- ADE: none.
   /-- Equal arguments of instances are meaningful.
   RFC: `\mathsf{sound}.\bar a_\equiv` -/
   eqInstanceArgs : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ Δ : Scope}
     {ctx : Context k Γ} {as₁ as₂ : InstanceArgs k Γ Δ} {params : Context k Δ},
       ValidInterpretation ι sig → EqInstanceArgs sig ctx as₁ as₂ params →
         ValidEqInstanceArgs sig ι ctx as₁ as₂ params
-  -- ADE: none.
   /-- A telescope in a sort is meaningful.
   RFC: `\mathsf{sound}.\Theta` -/
   wfTelescope : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → WfTelescope sig ctx Θ κ → ValidTelescope sig ι ctx Θ κ
-  -- ADE: none.
   /-- An equality of telescopes in a sort is meaningful.
   RFC: `\mathsf{sound}.\Theta_\equiv` -/
   eqTelescope : ∀ {ι : Interpretation} {sig : Signature} {k : Nat} {Γ : Scope}
     {ps : List Parameter} {ctx : Context k Γ} {Θ₁ Θ₂ : Telescope k Γ ps} {κ : Universe k},
       ValidInterpretation ι sig → EqTelescope sig ctx Θ₁ Θ₂ κ →
         ValidEqTelescope sig ι ctx Θ₁ Θ₂ κ
-  -- ADE: none.
   /-- The destructors of a codata type in a sort are meaningful.
   RFC: `\mathsf{sound}.\bar d` -/
   wfDestructors : ∀ {ι : Interpretation} {sig : Signature} {decl : TypeDeclaration}
@@ -1326,7 +1314,6 @@ structure Soundness : Prop where
       ValidInterpretation ι sig → WfDestructors sig decl I @ν as ctx ds κ →
         ValidDestructors sig ι ctx (fun D => decl.blockInstance I D as)
           (ds.recursionAt decl.names) (ds.nestedAt @ν) ds κ
-  -- ADE: none.
   /-- A well-formed type declaration is meaningful.
   RFC: `\mathsf{sound}.\mathsf{data}`
   RFC: `\mathsf{sound}.\mathsf{codata}` -/

@@ -72,7 +72,6 @@ theorem UsageSig.prelude : UsageSig Signature.prelude :=
 
 /-! ## Packing -/
 
--- ADE: none.
 /-- The packing of arguments uses the variables as the arguments do: each pair uses its first term
 with the grade of its entry and the rest once, and the unit uses none.
 RFC: `\mathsf{pack}_{\bar t▶}` -/
@@ -189,7 +188,6 @@ theorem Usage.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {m : Mode} {l : 
   · intro h
     exact nomatch h
 
--- ADE: none.
 /-- The recursor on a term of the type of positions uses the variables of its term `r` times and
 those of its branches as a lower bound `χ` of their uses allows, each using the variable of its
 field as `⌜m⌝ · r` times the grade of the field allows; in the mode `11ᵐ`, it uses its term at run
@@ -290,7 +288,6 @@ theorem Usage.unpack (hpre : sig.HasPrelude) (r : Grade) {κ : Universe k} :
 
 /-! ## Resumption -/
 
--- ADE: none.
 /-- The resumption of a position `v`, in a mode `m` that allows the grade `q_s` of a term already
 built, uses the variables of `v` and those of the corecursor resumed as a lower bound `η` of its
 uses `δ` and of no use allows, since a position resumes the corecursor or gives a term already

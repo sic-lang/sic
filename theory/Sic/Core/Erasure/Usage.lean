@@ -27,7 +27,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `ν • π̄ • π̄'`: the vector `ν` extended by the multiplicities `πs` of `a` new variables, then by
 the multiplicities `πs'` of `b` new variables, the first one first, so that the last one has the
 index `0`, as the binders of the branches number them.
@@ -41,7 +40,6 @@ def _root_.Sic.Grading.MultiplicityVector.extendBinders {n a b : Nat} (ν : Mult
 
 mutual
 
--- ADE: none.
 /-- `ν ⊢ M ▶`: the term `M` of the target language reads its variables as `ν` allows. -/
 inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Prop where
   /-- A variable reads itself once.
@@ -80,7 +78,6 @@ inductive Target.Usage : {n : Nat} → MultiplicityVector n → Target n → Pro
   | sub {n : Nat} {ν μ : MultiplicityVector n} {M : Target n} (h : Target.Usage ν M)
       (hle : μ ≤ᶜ ν) : Target.Usage μ M
 
--- ADE: none.
 /-- `ν ⊢ M̄ ▶`: the terms `M̄` read their variables as `ν` allows, the reads of each added. -/
 inductive Targets.Usage : {n : Nat} → MultiplicityVector n → Targets n → Prop where
   /-- No term reads no variable.
@@ -121,7 +118,6 @@ inductive TargetBranches.Usage :
       (hNs : TargetBranches.Usage ρ χ Ns) :
       TargetBranches.Usage ρ χ (.cons a b πs κs πs' ks N Ns)
 
--- ADE: none.
 /-- `δ ⊢ P̄ ▶`: the branches `P̄` of a corecursor, which its closure captures with the scope, read
 the variables of the scope as `δ` allows: an observation runs one branch, which reads them as `δᵢ`
 allows and its new variables as their binders allow, and a branch that resumes the corecursor
@@ -148,13 +144,11 @@ end
 
 mutual
 
--- ADE: none.
 /-- Data reads no variable. -/
 theorem Target.IsData.usage {n : Nat} {M : Target n} : M.IsData → Target.Usage 𝟘ᵛ M
   | .erased => .erased
   | .ctor h => .ctor h.usage
 
--- ADE: none.
 /-- Terms that are data read no variable. -/
 theorem Targets.IsData.usage {n : Nat} {Ms : Targets n} : Ms.IsData → Targets.Usage 𝟘ᵛ Ms
   | .nil => .nil

@@ -228,7 +228,6 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (ht : HasType sig ctx t (.equality s l A t₁ t₂))
       (hu : HasType sig ctx u (C.subst₀ (Subst₀.single t₁))) :
       HasType sig ctx (.transp A t₁ t₂ C t u) (C.subst₀ (Subst₀.single t₂))
-  -- ADE: none.
   /-- The proof by extensionality of the equality of two propositions of `Ω_l` that imply each
   other, by a proof `t` of `B` from a proof `x` of `A` and a proof `u` of `A` from a proof `y` of
   `B`, as terms of `Ω_l`.
@@ -239,7 +238,6 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       (ht : HasType sig (ctx.var A) t (B.rename Ren.weaken))
       (hu : HasType sig (ctx.var B) u (A.rename Ren.weaken)) :
       HasType sig ctx (.propExt l A B t u) (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B)
-  -- ADE: none.
   /-- The proof by coinduction of the equality of two terms `t₁` and `t₂` of the instance
   `T_h = D_h.{s̄'; l̄'; p̄'} ā` it carries, which the constraint admits and whose arguments are
   arguments of the parameters, at the sort `s_l` of the block at the instance, with a relation
@@ -376,7 +374,6 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         (.equality ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).quality
           ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)).level
           (.inst D qs ls ps as) t₁ t₂)
-  -- ADE: none.
   /-- A constructor of a data type, applied to arguments of its fields at the instance it carries,
   which the constraint admits and whose arguments are arguments of the parameters, is a term of this
   instance.
@@ -460,7 +457,6 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       HasType sig ctx (.obs D qs ls ps as t d bs.terms)
         (((B.substLevels (ls.getFin hl)).subst
           (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate bs)
-  -- ADE: none.
   /-- A corecursor of the instance it carries, which the constraint admits and whose arguments are
   arguments of the parameters, from a state, arguments of the state of its type, with a state for
   each type of the block, a telescope of a sort `κs j`, and a branch for each case of the block, is a
@@ -621,7 +617,6 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hu : EqTerm sig ctx u u' (C.subst₀ (Subst₀.single t₁))) :
       EqTerm sig ctx (.transp A t₁ t₂ C t u) (.transp A' t₁' t₂' C' t' u')
         (C.subst₀ (Subst₀.single t₂))
-  -- ADE: none.
   /-- A transport between two equal instances of its motive, those at the two terms of the
   equality, is its term.
   RFC: `\mathsf{transp}_\mathsf{same}` -/
@@ -633,7 +628,6 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hu : HasType sig ctx u (C.subst₀ (Subst₀.single t₁)))
       (hCC : EqTerm sig ctx (C.subst₀ (Subst₀.single t₁)) (C.subst₀ (Subst₀.single t₂)) (.sort κ)) :
       EqTerm sig ctx (.transp A t₁ t₂ C t u) u (C.subst₀ (Subst₀.single t₂))
-  -- ADE: none.
   /-- Two applications of the same constructor, at equal arguments of the instance, at equal levels
   and at equal arguments of its fields, are equal.
   RFC: `c_\equiv` -/
@@ -1100,7 +1094,6 @@ inductive WfTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
       (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfTelescope sig ctx (.cons q p A Θ) κ₂
 
--- ADE: none.
 /-- `Σ; Γ ⊢ Θ : κ̄ ≤ l`: the types of the telescope `Θ` live in the sorts `κ̄`, one for each entry,
 whose levels are below `l`, and an entry whose type is a proposition has a grade without use at run
 time, as in a telescope in a sort; the packing of `Θ` needs the sort of each entry, which the
@@ -1121,7 +1114,6 @@ inductive WfTelescopeSorts : Signature → {k : Nat} → {Γ : Scope} → {ps : 
       (hp : κ.quality = .prop → p.usage.mode ≠ .oneOne) :
       WfTelescopeSorts sig ctx (.cons q p A Θ) (κ :: κs) l
 
--- ADE: none.
 /--
 `Σ; Γ ⊢ Θ₁ ≡ Θ₂ : κ`: the telescopes are equal in the sort `κ`, entry by entry, with the same grades,
 their types being equal types of a sort that `κ` bounds, and an entry whose type is a proposition has
@@ -1144,7 +1136,6 @@ inductive EqTelescope : Signature → {k : Nat} → {Γ : Scope} → {ps : List 
       (hp : κ₁.quality = .prop → p.usage.mode ≠ .oneOne) :
       EqTelescope sig ctx (.cons q p A₁ Θ₁) (.cons q p A₂ Θ₂) κ₂
 
--- ADE: none.
 /--
 `Σ; Γ ⊢_𝒟 Θ : κ`: the fields `Θ` of a constructor of the block of data types `decl`, at the instance
 `ι` of its sort and grade variables, live in the sort `κ`, in the context `Γ` of the parameters
@@ -1218,7 +1209,6 @@ inductive WfFields : Signature → (decl : TypeDeclaration) → Instance decl.so
       WfFields sig decl ι as ctx
         (.cons q p (A₀.instantiate (decl.blockArgs ι as)) (Θ.rename Ren.weaken)) κ
 
--- ADE: none.
 /--
 `Σ; Γ ⊢_{𝒟; Π} d̄ : κ`: the destructors `d̄` of a codata type of the block `decl`, at the instance
 `ι` of its sort and grade variables, live in the sort `κ = s_l`, in the context `Γ` of the
@@ -1302,7 +1292,6 @@ inductive WfDestructors : Signature → (decl : TypeDeclaration) → Instance de
         (.cons (d := d) p q ς Θ (decl.blockInstance ι D (as.rename (Ren.weakenN ps.length))) ψ
           (ds.rename Ren.weaken)) κ
 
--- ADE: none.
 /--
 `Σ ⊢ 𝒟`: the type declaration is well formed.
 No entry of the signature introduces the name of one of its types, so that an instance of a type of

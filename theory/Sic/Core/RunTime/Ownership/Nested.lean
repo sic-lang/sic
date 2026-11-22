@@ -23,7 +23,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- In the mode `11ᵐ`, on the axis of the uses at run time, the variable of a nested field that the
 recursor uses at run time, of the coefficient `κ_l` that the erasure gives it, seen at the
 requirement `ς` of the corecursors, keeps the ownership `o · r̂` of the term of each level of the
@@ -53,7 +52,6 @@ theorem Ownership.nestedField_keeps {sig : Signature} {decl : TypeDeclaration}
       o * R ≤ s * (o * R * (a * (b * c))) := by decide
   exact key _ _ _ _ _ _ hne (by simpa only [Multiplicity.modality.semiring.mul_assoc] using hR)
 
--- ADE: none.
 /-- In the mode `11ᵐ`, on the axis of the uses at run time, the shape of a nested field that the
 recursor uses at run time, which meets the requirements of its observations at the ownership
 `o · r̂` of the term of each level of the recursion, meets the requirements of the recursions there:

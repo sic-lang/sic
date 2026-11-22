@@ -24,7 +24,6 @@ open Sic.Grading
 
 variable {k : Nat} {sig sig' : Signature} {v : Lifting.Variables}
 
--- ADE: none.
 /-- The recursive results of fields are their results in a signature that has the type
 declarations of their signature. -/
 theorem Terms.ResultTypes.ofTypeDeclarations
@@ -39,7 +38,6 @@ theorem Terms.ResultTypes.ofTypeDeclarations
   | recursive hD _ ih => exact .recursive hD ih
   | nested hA _ ih => exact .nested (hA.ofTypeDeclarations hs) ih
 
--- ADE: none.
 /-- The recursive result of a term is its result in a signature that has the type declarations of
 its signature. -/
 theorem Term.NestedResult.ofTypeDeclarations
@@ -52,7 +50,6 @@ theorem Term.NestedResult.ofTypeDeclarations
   | inst h hn hq hl hp has hS hL hgl hgs _ ih =>
     exact .inst ⟨hs _ h.1, h.2⟩ hn hq hl hp (has.ofTypeDeclarations hs) hS (hs _ hL) hgl hgs ih
 
--- ADE: none.
 /-- The recursive results of terms of fields are their results in a signature that has the type
 declarations of their signature. -/
 theorem Terms.ResultTerms.ofTypeDeclarations

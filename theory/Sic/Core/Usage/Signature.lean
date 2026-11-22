@@ -25,7 +25,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The judgments of usage hold in every signature that has the entries of theirs. -/
 structure UsageStableUnderExtension : Prop where
   /-- A term uses its variables in the same way in a signature with more entries.
@@ -50,7 +49,6 @@ structure UsageStableUnderExtension : Prop where
     {γ : GradeVector Γ.length} {m : Mode} {Θ : Telescope k Γ ps},
     sig ⊆ sig' → UsageTelescope sig γ m Θ → UsageTelescope sig' γ m Θ
 
--- ADE: none.
 /-- The judgments of usage hold in every signature that has the entries of theirs.
 RFC: `\mathsf{ext}_{▶}.t`
 RFC: `\mathsf{ext}_{▶}.\bar t`

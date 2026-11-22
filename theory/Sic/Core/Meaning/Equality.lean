@@ -198,7 +198,6 @@ def CodataType.blockTruth {j g k : Nat} {Δ : Scope} (Ts : List (CodataType j g 
 
 mutual
 
--- ADE: none.
 /--
 `ty(U_n)`: the least relation of the clauses of the universes and of the instances of the data
 types and of the codata types in `U_n`, given the relations `below` of the levels below `n`.
@@ -260,7 +259,6 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
           ((T'.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst (S X T')) :
       UnivRel sig ι n below v (CodataType.blockRel decl.codataTypes S D)
 
--- ADE: none.
 /--
 `ty(Ω_n)`: the least relation of the clauses of the instances of the data types and of the codata
 types in `Ω_n` and of the equalities, given the relations `below` of the levels below `n`, which
@@ -321,7 +319,6 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       (hl : l.closedValue = n) (hA : Computesι sig ι A w) (hP : PropRel sig ι n below w b) :
       PropRel sig ι n below (.equality .prop l A t u) b
 
--- ADE: none.
 /--
 `ty(s_n)` for the telescopes: `Θ` is a closed telescope in the sort of the quality `s` at the level
 `n`, the terms of whose entries are equal by `S`; the equality of the terms of the rest of the
@@ -359,7 +356,6 @@ inductive TelRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
       (hG : ∀ a, TelRel sig ι n below s (fun i => rs (i + 1)) (Θ.subst₀ (Subst₀.single a)) G) :
       TelRel sig ι n below s rs (.cons q p A Θ) (FieldsRel.cons F fun _ => G)
 
--- ADE: none.
 /--
 `ty(s_n)` for the destructors: the destructors `d̄`, at the closed substitution `θ` of their scope,
 are in the sort of the quality `s` at the level `n`, and the abstractions for them are equal by `S`;
@@ -422,7 +418,6 @@ inductive DesRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Leve
       DesRel sig ι n below s rs (.cons (d := d) p q ς Θ B ψ ds) @θ fun o₁ o₂ =>
         AbstractionRel SΘ (fun _ => R) (o₁ d ps) (o₂ d ps) ∧ G o₁ o₂
 
--- ADE: none.
 /--
 The canonical type `v` of a field is a type of a sort `κ₁` that the sort of the quality `s` at the
 level `n` bounds, whose closed terms are equal by `F`: a type of `U_n` or of a universe below it,
@@ -446,7 +441,6 @@ inductive FieldRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Le
   | propBelow {s : Quality} {v : Term 0 []} {b : Prop} (m : Nat) (hm : m < n) (h : (below m hm).prop v b) :
       FieldRel sig ι n below s v fun _ _ => b
 
--- ADE: none.
 /--
 `ty(s_n)[λ]`: the closed type `A`, whose nesting is `λ`, is a type of a sort that the sort of the
 quality `s` at the level `n` bounds, whose closed terms are equal by `F`, where the nesting gives,
@@ -510,7 +504,6 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst S) :
       NestRel sig ι n below sT s (.inst νs) A fun _ _ => S.truth
 
--- ADE: none.
 /--
 `ty(s_n)[Λ]` for the destructors: the destructors `d̄`, none of which is recursive, at the closed
 substitution `θ` of their scope, are in the sort of the quality `s` at the level `n`, and the

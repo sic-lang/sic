@@ -16,12 +16,10 @@ ADE have no such projection, since their erasure keeps no count of the uses.
 
 namespace Sic.Grading
 
--- ADE: none.
 /-- A vector of multiplicities over `n` variables, which gives each variable its multiplicity.
 RFC: `\mathsf{vector}_\nu` -/
 abbrev MultiplicityVector (n : Nat) : Type := Sic.Math.Vector Multiplicity n
 
--- ADE: none.
 /-- `0^ν`, the zero vector of multiplicities, whose components are all the multiplicity `0`.
 RFC: `\mathsf{zero}_\nu` -/
 notation "𝟘ᵛ" => Sic.Math.Vector.zero Multiplicity.zero
@@ -67,12 +65,10 @@ end MultiplicityVector
 
 namespace GradeVector
 
--- ADE: none.
 /-- `run(γ)`: the vector of the run-time multiplicities of the grades of `γ`.
 RFC: `\mathsf{run}_\gamma` -/
 def run {n : Nat} (γ : GradeVector n) : MultiplicityVector n := fun x => (γ x).run
 
--- ADE: none.
 /-- The projection of the vectors on their multiplicities at run time commutes with their operations
 and keeps their order, as the projection of the grades does. -/
 structure RunCommutes : Prop where
@@ -97,7 +93,6 @@ structure RunCommutes : Prop where
   RFC: `\mathsf{run}_\gamma.{\bullet}` -/
   run_extend : ∀ {n} (γ : GradeVector n) (p : Grade), run (γ ∙ p) = γ.run ∙ p.run
 
--- ADE: none.
 /-- The projection of the vectors on their multiplicities at run time commutes with their operations
 and keeps their order.
 RFC: `\mathsf{run}_\gamma.{00}`

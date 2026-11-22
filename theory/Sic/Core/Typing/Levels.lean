@@ -27,7 +27,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The judgments in a context hold once levels replace their level variables. -/
 structure StableUnderLevels : Prop where
   /-- A well-formed context is well formed at instantiated levels.
@@ -103,7 +102,6 @@ structure StableUnderLevels : Prop where
       EqTelescope sig (ctx.substLevels ls') (Θ₁.substLevels ls') (Θ₂.substLevels ls')
         (κ.substLevels ls')
 
--- ADE: none.
 /-- The judgments in a context hold once levels replace their level variables.
 RFC: `\mathsf{lvl}_\vdash.\Gamma`
 RFC: `\mathsf{lvl}_\vdash.A`

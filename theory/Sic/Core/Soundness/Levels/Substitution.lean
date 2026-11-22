@@ -577,7 +577,6 @@ theorem DestructorBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ�
 
 end
 
--- ADE: none.
 /-- A term at levels `L` without variables, substituted by `σ₁`, is the term at the values of `L`
 substituted by `σ₂`, up to its levels, when `σ₁` and `σ₂` are equal up to their levels. -/
 theorem Term.closedValues_levelEquiv {k : Nat} {Γ Δ : Scope} (L : Fin k → Level 0)
@@ -586,7 +585,6 @@ theorem Term.closedValues_levelEquiv {k : Nat} {Γ Δ : Scope} (L : Fin k → Le
       ((t.atLevels fun i => (L i).closedValue).subst σ₂) :=
   Term.LevelEquiv.subst hσ (Term.substLevels_levelEquiv_atLevels L t)
 
--- ADE: none.
 /-- A telescope at levels `L` without variables, substituted by `σ₁`, is the telescope at the
 values of `L` substituted by `σ₂`, up to its levels, when `σ₁` and `σ₂` are equal up to their
 levels. -/

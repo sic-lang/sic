@@ -42,7 +42,6 @@ theorem OwnershipSig.prelude : OwnershipSig Signature.prelude :=
 
 /-! ## Packing -/
 
--- ADE: none.
 /-- The packing of arguments that satisfy the requirements of their entries is a new value, of the
 ownership `11ᵖ`, as every constructor: each pair requires of its first term the requirement of its
 entry, and of the rest a new value, which it is.
@@ -66,7 +65,6 @@ theorem Ownership.pack {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
 
 /-! ## Recursors of the Pair, of the Unit and of the Type of Positions -/
 
--- ADE: none.
 /-- The recursor on a term of the pair has the ownership of its branch, checked with the ownership
 `o` of the term times the requirement of each field, times the grade `⌜m⌝ · r` of the recursor times
 the grade of the field, for its variable. -/
@@ -104,7 +102,6 @@ theorem Ownership.pairRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ [Nest.plain, Nest.plain] from List.mem_of_getElem? hms)
 
--- ADE: none.
 /-- The recursor on a term of the unit has the ownership of its branch. -/
 theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ .var → Grade}
     {m : Mode} {l : Level k} {r ς χ o p' : Grade} {κ : Universe k} {t u : Term k Γ}
@@ -138,7 +135,6 @@ theorem Ownership.unitRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
     match i, hi with
     | 0, rfl => exact nomatch (show Nest.inst ms ∈ ([] : List (Nest Name)) from List.mem_of_getElem? hms)
 
--- ADE: none.
 /-- The recursor on a term of the type of positions has the ownership of its branches, each checked
 with the ownership `o` of the term times the requirement of its field, times the grade `⌜m⌝ · r`
 of the recursor times the grade of the field, for its variable. -/
@@ -187,7 +183,6 @@ theorem Ownership.stepRecursor (hpre : sig.HasPrelude) {Γ : Scope} {φ : Var Γ
 
 /-! ## Unpacking -/
 
--- ADE: none.
 /-- The ownerships of the variables extended by those of the variables of a telescope are the same
 for two ownerships `o₁` and `o₂` that give each entry the same ownership. -/
 theorem Ownership.extendFields_congr {o₁ o₂ g : Grade}
@@ -201,7 +196,6 @@ theorem Ownership.extendFields_congr {o₁ o₂ g : Grade}
       Ownership.extendFields (Γ := .var :: Γ) _ o₂ g ps
     rw [Ownership.extendFields_congr h _ ps, h p]
 
--- ADE: none.
 /-- The unpacking has the ownership of its branch, checked with the ownership `o` of its term times
 the requirement of each entry of the telescope, times the grade `⌜m⌝ · r` times the grade of the
 entry, for its variable: the second field of each pair requires `11ᵖ` and has the grade `11ᵖ`, and
@@ -235,7 +229,6 @@ theorem Ownership.unpack (hpre : sig.HasPrelude) (r : Grade) {κ : Universe k} :
 
 /-! ## Resumption -/
 
--- ADE: none.
 /-- The resumption of a position `v` of the ownership `o` has every ownership `p'` below the
 ownership `11ᵖ` of the corecursor resumed, a new value, and below the ownership of the term already
 built, which the recursor gives the ownership `o` times its requirement `χ`, times the grade

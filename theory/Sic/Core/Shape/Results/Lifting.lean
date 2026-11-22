@@ -84,7 +84,6 @@ theorem Term.shape_inst {lookup : Shape.Lookup} {block : Name → Option Shape.M
 
 mutual
 
--- ADE: none.
 /-- A type lifted, in a signature `Σ₁` whose liftings have shapes in `Σ`, has a shape, which carries
 the factor and the ownership of the recursive result that it is the type of, where the shapes of the
 variables follow the lifting, and those of the types of the block carry their ownerships. -/
@@ -117,7 +116,6 @@ theorem Term.Lifts.shape
     rw [Term.shape_inst hn hms' hl', hσ]
     rfl
 
--- ADE: none.
 /-- The arguments of an instance lifted, in a signature `Σ₁` whose liftings have shapes in `Σ`,
 have shapes at the positions of the arguments lifted, which carry the factors and the ownerships of
 the recursive results that these are the types of. -/
@@ -249,7 +247,6 @@ theorem Term.Factor.cast_liftN {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {n₁ n�
   subst h
   exact hB
 
--- ADE: none.
 /-- The destructors of a codata type lifted, in a signature `Σ₁` whose liftings have shapes in `Σ`,
 have the factor that their shape gives, where the substitution of the destructors before each by
 observations keeps the shapes, which follow the lifting. -/
@@ -297,7 +294,6 @@ theorem Destructors.Lifts.shape_factor {sigC : Signature}
     simp only [Destructors.shape, hn]
     exact hds.shape_factor hsub hM D ho hθ' hρ hb
 
--- ADE: none.
 /-- The shape of the destructors of a codata type lifted, in a signature `Σ₁` whose liftings have
 shapes in `Σ`, from the index of a destructor of the lifting on, in destructors whose names are
 distinct: it starts with the element that the shape builds from the destructor of the same name
@@ -589,7 +585,6 @@ theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {
     | constantDefinition _ => cases he'
     | constantDeclaration _ => cases he'
 
--- ADE: none.
 /-- The liftings that a signature whose names are distinct declares, each after the destructors
 that it lifts, have shapes: those of the entries after a prefix of the signature, by induction on
 these entries, since the destructors of a lifting are lifted by the liftings before it, and the
@@ -675,7 +670,6 @@ theorem Signature.LiftsInOrder.liftingsHaveShapes (hsig : sig.Distinct) (hord : 
 
 /-! ## Elements of the Shapes of the Liftings -/
 
--- ADE: none.
 /-- The shape that a signature whose names are distinct, and that declares each lifting after the
 destructors that it lifts, gives the lifting of the codata type `D` at its parameters at the
 positions `S`, at an instance whose arguments lifted have the shapes `m̄'`, which carry the factors
@@ -773,7 +767,6 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
 
 /-! ## Shapes of the Types Lifted in a Signature -/
 
--- ADE: none.
 /-- A type lifted, in a signature whose names are distinct and that declares each lifting after the
 destructors that it lifts, has a shape, which carries the factor and the ownership of the recursive
 result that it is the type of, where the shapes of the variables follow the lifting, and those of

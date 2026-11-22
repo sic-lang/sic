@@ -32,7 +32,6 @@ namespace Sic.Core
 
 open Sic.Grading Sic.Math
 
--- ADE: none.
 /-- `H; g ⊢ ℓ ⊳ b`: the value at the address `ℓ` of the heap `H`, annotated by `g`, claims the
 address `b`, which it holds alone when it is owned alone. -/
 inductive Heap.Claims (H : Heap) (g : Heap.Annotation) : Nat → Nat → Prop where
@@ -67,7 +66,6 @@ inductive Heap.Claims (H : Heap) (g : Heap.Annotation) : Nat → Nat → Prop wh
   | cell {c a b : Nat} {π : Multiplicity} (h : H[c]? = some (.cell π a))
       (hb : Heap.Claims H g a b) : Heap.Claims H g c b
 
--- ADE: none.
 /-- `H; g ⊢ E ⊳_{φ;ν} b`: a term that owns the variables of the environment `E` as `φ` gives and
 reads them as `ν` allows claims the address `b`, which the cell of a variable that it owns alone and
 reads claims.
@@ -77,7 +75,6 @@ def Heap.EnvClaims (H : Heap) (g : Heap.Annotation) {n : Nat} (E : List Nat)
   ∃ (x : Fin n) (c : Nat), E[(x : Nat)]? = some c ∧ φ x = .one ∧ ν x ≠ .zero ∧
     Heap.Claims H g c b
 
--- ADE: none.
 /-- `⊢_Ω H ◀ g`: the annotation `g` is valid for the heap `H`: the branches of each closure have
 their ownership under the ownership of its scope, given the ownership `Ω` of each constant, and
 their usage under the usage of its scope.
@@ -86,7 +83,6 @@ def Heap.Annotation.Valid (Ω : Name → Multiplicity) (H : Heap) (g : Heap.Anno
   ∀ ℓ n E Ps πs ϱs as, H[ℓ]? = some (.corec n E Ps πs ϱs as) →
     TargetCorecBranches.Ownership Ω (g.ownership ℓ n) Ps ∧ TargetCorecBranches.Usage (g.usage ℓ n) Ps
 
--- ADE: none.
 /-- `⊢ 𝒫 ◀ Ω`: each body of the program, a closed term, has the ownership that `Ω` gives its
 constant.
 RFC: `\mathsf{own}_{\mathcal{P}}` -/
@@ -112,7 +108,6 @@ theorem Heap.Claims.erased_inv {H : Heap} {g : Heap.Annotation} {ℓ b : Nat}
   | self => rfl
   | ctor h' | state h' | scope _ h' | cell h' => cases hℓ.symm.trans h'
 
--- ADE: none.
 /-- What a value claims is in its reach, and what a cell claims is the cell or in the reach of the
 value that it binds: each claim follows a reference that the reach counts.
 RFC: `\mathsf{claim}.{⇝}`
@@ -159,7 +154,6 @@ theorem Heap.Claims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {ℓ b : Nat}
     · cases h.symm.trans hc
       exact Multiplicity.add_ne_zero_right _ _ (ih.1 U hU)
 
--- ADE: none.
 /-- What a term claims through its environment is in the reach of the environment.
 RFC: `\mathsf{claim}_E.{⇝}` -/
 theorem Heap.EnvClaims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {n : Nat} {E : List Nat}
@@ -168,7 +162,6 @@ theorem Heap.EnvClaims.reach_ne_zero {H : Heap} {g : Heap.Annotation} {n : Nat} 
   obtain ⟨x, c, hc, -, hν, hb⟩ := h
   exact hU.ne_zero x hc hν hb.reach_ne_zero.2
 
--- ADE: none.
 /-- The claims of a value hold in each heap that extends its heap, annotated by an annotation that
 extends its annotation.
 RFC: `\mathsf{claim}.{\sqsubseteq}` -/
@@ -185,7 +178,6 @@ theorem Heap.Claims.mono {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Extends 
       (by rw [(hg _ hℓ).1]; exact hφ) ih
   | cell h _ ih => exact .cell (hH.getElem? h) ih
 
--- ADE: none.
 /-- A value that has a reach in a heap, or a cell that binds one, claims in a heap that extends it,
 annotated by an annotation that extends its annotation, only what it claims in the heap: its paths
 stay in the heap.
@@ -229,7 +221,6 @@ theorem Heap.Claims.of_extends {H H' : Heap} {g g' : Heap.Annotation} (hH : H.Ex
     · cases (hH.getElem? hc).symm.trans h'
       exact .cell hc (ih (.inl ⟨U, hU⟩))
 
--- ADE: none.
 /-- A term claims through an environment that has a reach in a heap, in a heap that extends it,
 only what it claims in the heap.
 RFC: `\mathsf{claim}_E.{\sqsupseteq}` -/

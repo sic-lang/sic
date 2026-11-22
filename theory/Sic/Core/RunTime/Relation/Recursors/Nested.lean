@@ -46,7 +46,6 @@ section
 
 variable (sig : Signature) (ι : Interpretation) (P : Program)
 
--- ADE: none.
 /-- The path `O` from a field, in the environment `E` and from the heap `H`, runs to an address that
 `R` relates to `t`: renamed by any renaming `f`, in any environment `E'` that binds each variable
 `f x` as `E` binds `x`, it evaluates, at every weight and in every heap that extends `H`, to an
@@ -62,7 +61,6 @@ variable (v : Lifting.Variables) (ρ₁ : Lifting 0 [] []) (φ : Name → Term 0
   (block : Name → Option Shape.Motive) (ρ ϱ : Multiplicity) {m₀ : Nat}
   (Ns₀ : TargetBranches m₀) (E₀ : List Nat) (Hb : Heap)
 
--- ADE: none.
 /-- The leaf `x` given at a position that holds the type `D` of the block: the recursor
 `rec_ρ · ◀ ϱ with N̄₀` of the shape of `D`, on a path that runs to an address that the relation `x.2`
 relates to a term `t` of the type `x.1` of the position, when the recursor and the factor of the
@@ -78,7 +76,6 @@ def RunResultLeaf (D : Name) (x : RunNestLeaf) : Prop :=
       H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ ((φ D).subst₀ (Subst₀.single t)) w (b.motive.subst₀ (Subst₀.single t))
 
--- ADE: none.
 /-- The recursive result `e` of the closed term `t` of the type `A`, whose nesting is `ν`, at run
 time: when `A` lifted at `t` is a type with a relation of run time, of which `e` is a term, the body
 of the shape of `A`, on a path that runs to an address that `R` relates to `t` when the recursor and
@@ -105,7 +102,6 @@ section
 
 variable {sig : Signature} {ι : Interpretation} {P : Program}
 
--- ADE: none.
 /-- The relation of run time `R` relates the terms that compute as terms that it relates. -/
 def RunLeafCongr (sig : Signature) (ι : Interpretation) (R : RunRel) : Prop :=
   ∀ H a a' w, (∀ u, Computesι sig ι a u ↔ Computesι sig ι a' u) → (R H a w ↔ R H a' w)
@@ -264,7 +260,6 @@ theorem Target.RunsTo.obs_args {R : RunRel} {t : Term 0 []} {m : Nat} {E : List 
   rw [Target.rename, Target.rename_rename, Targets.rename_ofVars]
   exact hev
 
--- ADE: none.
 /-- The recursive result of a closed term `t` of an instance of a codata type of `Σ` without
 recursive destructor, at the nesting of an instance, at run time: the body of its shape, the
 corecursor without state of the shape of the lifting, evaluates to a closure that is related to the
@@ -671,7 +666,6 @@ variable {sig : Signature} {ι : Interpretation} {P : Program} {v : Lifting.Vari
 
 mutual
 
--- ADE: none.
 /-- The recursive result of a closed term of a type, which the graph of the nestings of run time
 reads at the relation `R`, runs: its shape, on a path that runs to an address that `R` relates to
 the term, gives a value related to the result at the type lifted, in a signature whose names are
@@ -718,7 +712,6 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hadm hκ hpos) hpu
 termination_by structural h _ _ _ _ _ => h
 
--- ADE: none.
 /-- At a position of a destructor, whose grade is used at run time, in destructors that the graph
 of the nestings of run time reads, and that the equality of the destructors reads too, the
 observations `f`, which this equality relates to themselves, give the telescope of the destructor,
@@ -845,7 +838,6 @@ termination_by structural _ _ _ _ _ _ _ _ _ _ _ h _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 end
 
--- ADE: none.
 /-- `n.Ξ` at run time: the corecursor without state of the shape of the type of a nested field,
 whose field is bound to a cell, in a heap that extends the heap `Hb` of the cells of `E₀`, that
 holds an address that the relation of run time of the type relates to the field, evaluates to a

@@ -268,7 +268,6 @@ theorem Term.Lifts.renameAbstraction {Γ₂' Γ₂ Γ' Γ : Scope} {α : Ren Γ�
   rw [e₁, e₂] at h'
   exact h'
 
--- ADE: none.
 /-- An abstraction lifted at the term that follows the variables of its telescope, by a lifting
 that lifts no variable, at arguments for these variables and at a term: the abstraction at the
 arguments is lifted at the term, to the abstraction lifted at the arguments, renamed, followed by
@@ -299,7 +298,6 @@ theorem Term.Lifts.instantiateAbstraction {Γ' Γ : Scope} {ρ : Lifting k Γ' �
 
 /-! ## Liftings Instantiated -/
 
--- ADE: none.
 /-- The lifting `ρ'`, which lifts no variable, is the lifting `ρ` instantiated by `θ` in the scope
 that it lifts and by `θ'` in the scope in which it lifts it, where `ν` gives the nestings of the
 variables of `ρ`: what `θ'` gives the variable that a variable is, is what `θ` gives this variable,
@@ -460,7 +458,6 @@ theorem InstanceArgs.Lifts.ofArgs_args {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ}
 
 mutual
 
--- ADE: none.
 /-- A type lifted at no position, substituted by an instantiation of its lifting, is the type
 substituted, lifted by the lifting instantiated, at the term substituted and at the nesting of the
 type, where the variables have the nestings of the instantiation, of the same result. -/
@@ -485,7 +482,6 @@ theorem Term.Lifts.instantiate :
     exact Term.Lifts.inst h hD (fun E => Nest.ofArgs_ne_direct _ E) hq hl hp
       (has.instantiate rfl hI).ofArgs_args hS hL (hπ.inst_congr _ _ _)
 
--- ADE: none.
 /-- The arguments of an instance lifted at no position, substituted by an instantiation of their
 lifting, are the arguments substituted, lifted by the lifting instantiated, at their nestings, at
 the same parameters and of the same results. -/

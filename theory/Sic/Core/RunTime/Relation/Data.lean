@@ -17,7 +17,6 @@ open Sic.Grading
 
 mutual
 
--- ADE: none.
 /-- Data evaluates, at every weight, in every environment and heap, to a value in a heap that
 extends it, reading no cell. -/
 theorem Target.IsData.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsData)
@@ -29,7 +28,6 @@ theorem Target.IsData.eval (P : Program) {n : Nat} {M : Target n} (h : M.IsData)
     have ⟨_, _, hM, hH⟩ := Targets.IsData.eval P hs ϖ H E
     ⟨_, _, .ctor hM, hH.trans (List.prefix_append _ _)⟩
 
--- ADE: none.
 /-- Terms that are data evaluate, at every weight, in every environment and heap, to values in a
 heap that extends it, reading no cell. -/
 theorem Targets.IsData.eval (P : Program) {n : Nat} {Ms : Targets n} (h : Ms.IsData)

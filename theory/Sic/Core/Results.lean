@@ -44,7 +44,6 @@ variable {k : Nat}
 
 /-! ## Block of a Recursor -/
 
--- ADE: none.
 /-- The lifting of the scope of a recursor in itself, which lifts no variable, and the types of the
 block whose names are `names`: each has its instance at the variables `qs`, `ls`, `ps` and at the
 arguments `as` of the recursor, its motive in `C̄`, without non-uniform parameter, the level `l` of
@@ -98,7 +97,6 @@ theorem Telescope.get_types_isSome : {Γ : Scope} → {ps : List Parameter} →
 
 /-! ## Recursive Results -/
 
--- ADE: none.
 /--
 The recursive results `R` of the fields `x̄`, whose types are `Ā`, whose nestings are `ns` and whose
 entries have the parameters `ps`, in a signature, where `ρ` gives the types of the block their
@@ -139,7 +137,6 @@ inductive Terms.ResultTypes (sig : Signature) (v : Lifting.Variables) :
       Terms.ResultTypes sig v ρ (.inst ms :: ns) (p :: ps) (.cons A As) (.cons x xs)
         (.cons Grade.zero p A' R) (m.factor :: πs)
 
--- ADE: none.
 /-- The recursive results `R` of the fields of the constructor `c` at the instance `I`, at the
 levels `ls` and at the arguments `ā`, in a block whose types have the names `names`, in the scope
 `Γ` extended by its fields, where `ρ` gives the types of the block their motives in `Γ`, with their
@@ -175,7 +172,6 @@ theorem Terms.ResultTypes.length_factors {sig : Signature} {v : Lifting.Variable
 
 /-! ## Grades of the Recursive Results -/
 
--- ADE: none.
 /-- `e_l`: the grade of the recursive result of the field at each position `l` of the fields whose
 nestings are `ns`, the first field at `0`, read from the grades `es` of the recursive results in
 order, and `0` for a field without result, whose nesting has no position. -/
@@ -271,7 +267,6 @@ theorem _root_.Sic.Grading.GradeVector.extendResults_resultGrades {Γ : Scope} :
   | _, [], _, _ | _, .plain :: _, [], _ | _, .direct _ :: _, [], _
   | _, .inst _ :: _, [], _ => rfl
 
--- ADE: none.
 /-- `e_{l₁} + … + e_{l_b}`: the sum of the grades `e l` of the recursive results of the fields whose
 nestings `ns` have a position, at their positions `l`, the first field at `0`. -/
 def Telescope.resultSum (e : Nat → Grade) : List (Nest Name) → Grade
@@ -281,7 +276,6 @@ def Telescope.resultSum (e : Nat → Grade) : List (Nest Name) → Grade
 
 /-! ## Terms of the Recursive Results -/
 
--- ADE: none.
 /--
 The recursive result `e` of the term `t` of the type `A`, whose nesting is `n`, in a signature,
 where `φ` gives each type `E` of the block the result `z. f(E, z)` of a term `z` of this type, `ρ`
@@ -369,7 +363,6 @@ theorem Telescope.get_typesAt_isSome {Γ : Scope} : {ps : List Parameter} →
     simp only [Telescope.typesAt, Terms.get, List.length_cons, Nat.add_lt_add_iff_right]
     exact Telescope.get_typesAt_isSome (Θ.subst₀ (Subst₀.single t)) ts l
 
--- ADE: none.
 /--
 The recursive results `r̄` of the terms `t̄` of fields, whose types are `Ā`, whose nestings are `ns`
 and whose entries have the parameters `ps`, in a signature, where `φ` gives each type `E` of the
@@ -404,7 +397,6 @@ inductive Terms.ResultTerms (sig : Signature) (v : Lifting.Variables) {Γ : Scop
       Terms.ResultTerms sig v ρ φ (.inst ms :: ns) (p :: ps) (.cons A As) (.cons t ts)
         (.cons (p := p) e rs)
 
--- ADE: none.
 /-- The recursive results `r̄` of the terms `t̄` of the fields of the constructor `c` at the
 instance `I`, at the levels `ls` and at the arguments `ā`, in a block whose types have the names
 `names`: the nestings are those of the fields of the declaration, and the types those of the

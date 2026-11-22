@@ -40,7 +40,6 @@ def Terms.RecAt (Qd : Name → Term 0 [] → Nat → Prop)
     (e ∉ Mode.oneOne.erased → Qn (.inst ms) A t b) ∧ Terms.RecAt Qd Qn ns As es ts bs
   | _, _, _, _, _ => True
 
--- ADE: none.
 /-- The types of the entries of a closed telescope are terms of universes, each at every term of the
 types of the entries before it. Each entry has its own universe, rather than one universe bounding
 them all, as in `ValidEqTelescope₀`, since the context of a branch, which gives these types, gives

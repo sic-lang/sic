@@ -25,7 +25,6 @@ open Sic.Grading
 
 namespace MultiplicityVector
 
--- ADE: none.
 /-- The vector of the scope shifted under `a + b` new variables is the vector extended by `0` for
 each of them. -/
 theorem rename_shift {n a b : Nat} (ν : MultiplicityVector n) :
@@ -75,7 +74,6 @@ theorem nested_succ {n : Nat} (f ρ : Multiplicity) (χ : MultiplicityVector n) 
 
 end MultiplicityVector
 
--- ADE: none.
 /-- The variables as terms read each variable as the sum of the multiplicities of the positions that
 hold it. -/
 theorem Targets.Usage.ofVars {n : Nat} : {c : Nat} → (πs ϱs : Fin c → Multiplicity) →
@@ -115,7 +113,6 @@ theorem Targets.Usage.ofVars {n : Nat} : {c : Nat} → (πs ϱs : Fin c → Mult
 
 namespace MultiplicityVector
 
--- ADE: none.
 /-- The arguments of a built branch, as variables, read each argument as its multiplicity and no
 variable of the scope. -/
 theorem rename_argVar {m c : Nat} (πs : Fin c → Multiplicity) :
@@ -144,7 +141,6 @@ end MultiplicityVector
 
 mutual
 
--- ADE: none.
 /-- The branches built from a shape that fits the recursor of the multiplicity `ρ` read the variables
 of the path `M` as `ρ` times its reads, and those of the scope of the branches of the recursor as
 `χ`, at most as many times as the factor of the shape: the branch of each destructor observed at run
@@ -201,7 +197,6 @@ theorem TargetCorecBranches.Usage.branches {ρ ϱ : Multiplicity} :
         · exact (by decide : ∀ r i f v y : Multiplicity, i ≠ .zero →
               i * f * (r * v + y) ≤ f * (r * (v + .zero) + y)) _ _ _ _ _ hz
 
--- ADE: none.
 /-- The result of the observation `O` of a field, for the shape of a result that fits the recursor
 of the multiplicity `ρ`, reads the variables of `O` as `ρ` times its reads, and those of the scope
 of the branches of the recursor as `χ`, as many times as the factor of the shape. -/
@@ -228,7 +223,6 @@ theorem Target.Usage.body {ρ ϱ : Multiplicity} {m : Nat}
 
 end
 
--- ADE: none.
 /-- `n.Ξ` at run time, for a shape that fits the recursor of the multiplicity `ρ`, reads the field,
 the variable `0`, `ρ` times, and the variables of the scope of the recursor as `χ`, each as many
 times as the factor of the shape. -/

@@ -25,7 +25,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `⊢ ⌊Σ⌋ ▶`: the program of a well-used signature whose names are distinct and that declares its
 liftings in order, erased at run time, reads no variable in its bodies, and its binders as their
 multiplicities allow.

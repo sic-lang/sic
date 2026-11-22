@@ -1519,7 +1519,6 @@ theorem DestructorBranches.subst_subst_of {Γ Δ Ξ : Scope} {θ₁ : Subst k Δ
 
 end
 
--- ADE: none.
 /-- `[ā / Δ][θ] = [ā[θ] / Δ]`: the substitution of the arguments of an instance, then by `θ`, is the
 substitution of the arguments substituted by `θ`, each under the variables of its abstraction. -/
 theorem InstanceArgs.toSubst_subst {Γ Δ : Scope} (θ : Subst k Γ Δ) :
@@ -1552,7 +1551,6 @@ theorem Term.sort_instantiate {Γ : Scope} (κ : Universe k) :
   | [], .nil => rfl
   | _ :: ps, .cons _ ts => Term.sort_instantiate (ps := ps) κ ts
 
--- ADE: none.
 /-- `[ā / Δ]` renamed is `[ā[α] / Δ]`: the substitution of the arguments of an instance, renamed by
 `α`, is the substitution of the arguments renamed by `α`, each under the variables of its
 abstraction. -/
@@ -1668,7 +1666,6 @@ theorem DestructorBranches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
 
 end
 
--- ADE: none.
 /-- A substitution `σ` of the first order then one `θ₁` of the second order are the substitution
 `θ₂` of the second order that gives each variable what `σ` gives it, substituted by `θ₁`: `u[θ₁]`
 when `σ` gives it a term `u`, and `θ₁(y)` when `σ` renames it to `y`, which the RFC, whose variables
@@ -1688,7 +1685,6 @@ where
     ⟨fun x y e => (Term.subst₀_id_of (Subst₀.liftN_id_of _ fun _ => rfl) _).trans (hvar x y e),
       fun x u e => (Term.subst₀_id _).trans (hterm x u e)⟩
 
--- ADE: none.
 /-- A substitution of the first order then one of the second order are one substitution of the
 second order on a telescope, as `Term.subst_subst₀` states on a term.
 RFC: `\mathsf{comp}_{\sigma\theta}.\Theta` -/
@@ -1976,7 +1972,6 @@ theorem Telescope.subst₀_eq_subst {Γ Δ : Scope} {ps : List Parameter} (σ : 
 
 /-! ## Substitutions of the First Order as Renamings -/
 
--- ADE: none.
 /-- A substitution of the first order that gives each variable a variable renames. -/
 theorem Term.subst₀_eq_rename_of {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
     (h : ∀ {a} (x : Var Δ a), σ x = .var (α x)) (t : Term k Δ) : t.subst₀ σ = t.rename α := by
@@ -1985,7 +1980,6 @@ theorem Term.subst₀_eq_rename_of {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α :
     rw [h x]
     rfl)]
 
--- ADE: none.
 /-- A substitution of the first order that gives each variable a variable or the term of a
 variable renames. -/
 theorem Term.subst₀_eq_rename_of_eta {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Γ Δ}
@@ -1993,7 +1987,6 @@ theorem Term.subst₀_eq_rename_of_eta {Γ Δ : Scope} {σ : Subst₀ k Γ Δ} {
     t.subst₀ σ = t.rename α := by
   rw [Term.subst₀_eq_subst, Term.rename_eq_subst_of (θ := σ.toSubst) h]
 
--- ADE: none.
 /-- A substitution of the first order of a telescope that gives each variable a variable or the term
 of a variable renames it. -/
 theorem Telescope.subst₀_eq_rename_of_eta {Γ Δ : Scope} {ps : List Parameter} {σ : Subst₀ k Γ Δ}
@@ -2001,7 +1994,6 @@ theorem Telescope.subst₀_eq_rename_of_eta {Γ Δ : Scope} {ps : List Parameter
     Θ.subst₀ σ = Θ.rename α := by
   rw [Telescope.subst₀_eq_subst, Telescope.rename_eq_subst_of (θ := σ.toSubst) h]
 
--- ADE: none.
 /-- A term renamed then substituted by a substitution that gives each variable a variable or the
 term of a variable is the term renamed. -/
 theorem Term.subst₀_rename_eq_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {α : Ren Δ Ξ}
@@ -2010,7 +2002,6 @@ theorem Term.subst₀_rename_eq_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ
   (Term.subst₀_rename_of (σ' := fun x => σ (α x)) (fun _ => rfl) t).trans
     (Term.subst₀_eq_rename_of_eta h t)
 
--- ADE: none.
 /-- Substituting then renaming is renaming then substituting, when the two agree on each variable. -/
 theorem Term.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {σ₁ : Subst₀ k Δ Ξ} {α₁ : Ren Γ Δ}
     {σ₂ : Subst₀ k Γ Ψ} {α₂ : Ren Ψ Ξ} (h : ∀ {a} (x : Var Ξ a), (σ₁ x).rename α₁ = σ₂ (α₂ x))
@@ -2018,7 +2009,6 @@ theorem Term.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {σ₁ : Subst₀ k �
   (Term.rename_subst₀_of (σ' := fun x => σ₂ (α₂ x)) h t).trans
     (Term.subst₀_rename_of (fun _ => rfl) t).symm
 
--- ADE: none.
 /-- Substituting then renaming a telescope is renaming then substituting it, when the two agree on
 each variable. -/
 theorem Telescope.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter}
@@ -2028,7 +2018,6 @@ theorem Telescope.subst₀_rename_comm_of {Γ Δ Ξ Ψ : Scope} {ps : List Param
   (Telescope.rename_subst₀_of (σ' := fun x => σ₂ (α₂ x)) h Θ).trans
     (Telescope.subst₀_rename_of (fun _ => rfl) Θ).symm
 
--- ADE: none.
 /-- `X[x]` at the abstraction `x. B` is `B`. -/
 theorem Term.subst₀_single_zero_rename_lift_weaken {Γ : Scope} (B : Term k (.var :: Γ)) :
     (B.rename (Ren.lift Ren.weaken)).subst₀ (Subst₀.single (.var₀ .zero)) = B := by

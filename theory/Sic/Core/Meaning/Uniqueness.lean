@@ -217,7 +217,6 @@ The partial equivalences of the levels make the relations of the destructors of 
 types grow with the relations of its instances, and the uniqueness of the computations keeps a type
 of a universe apart from the propositions. -/
 
--- ADE: none.
 /-- The relations of the destructors of a block of codata types, given for every relation of its
 instances, grow with them, in a signature whose names are distinct. -/
 theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
@@ -234,7 +233,6 @@ theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Disti
     (hS Y T hT)
     fun _ => Option.rel_map (fun D _ _ => TermRel.computed_mono (hXY D)) _
 
--- ADE: none.
 /-- The relations of the destructors of a block of codata types that are propositions, given for
 every truth of its instances, grow with them, in a signature whose names are distinct. -/
 theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
@@ -251,7 +249,6 @@ theorem DesRel.blockMono_prop {sig : Signature} {ι : Interpretation} (hd : sig.
     (hS B' T hT)
     fun _ => Option.rel_map (fun D _ _ => hB D) _
 
--- ADE: none.
 /-- A closed type that computes to a type of a universe does not compute to a proposition, in a
 signature whose names are distinct. -/
 theorem Computesι.not_computesToProp {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)

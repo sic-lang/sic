@@ -1270,7 +1270,6 @@ decreasing_by
     | (simp only [Context.size]; omega)
     | (rw [Context.size_append]; simp only [Context.size]; omega)
 
--- ADE: none.
 /-- Two closed substitutions are equal for a telescope at levels `L` without variables, substituted
 by `τ`, if and only if they are equal for the telescope at the values of `L`, substituted by `τ'`
 equal to `τ` up to its levels, as the arguments of a destructor of a codata type and the fields of
@@ -1284,7 +1283,6 @@ theorem EqSubst.substLevels_iff_atLevels {sig : Signature} {ι : Interpretation}
   ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hτ)),
     EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hτ).symm)⟩
 
--- ADE: none.
 /-- Two closed substitutions equal for a context at levels `L` without variables are equal for it
 at the values of `L`. -/
 theorem EqSubst.atLevels_of_substLevels {sig : Signature} {ι : Interpretation} {k : Nat}

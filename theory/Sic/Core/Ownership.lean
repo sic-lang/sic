@@ -32,7 +32,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `φ, x̄ ◀ o · r̄ · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
 ownership `o · rᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are
 `ps`, the first one first, `rᵢ` being the requirement of the entry and `qᵢ` its grade: the value
@@ -43,7 +42,6 @@ def Ownership.extendFields {Γ : Scope} (φ : Var Γ .var → Grade) (o g : Grad
   | p :: ps => Ownership.extendFields (Γ := .var :: Γ)
       (fun | .zero => (o * p.requirement) * (g * p.usage) | .succ x => φ x) o g ps
 
--- ADE: none.
 /-- `φ, ȳ ◀ ō · ē`: the ownerships `φ` of the variables of the scope `Γ`, extended by the ownership
 `oᵢ · eᵢ` of `n` new variables, `oᵢ` and `eᵢ` being the ownership and the grade that `os` and `es`
 give the `i`-th one, the first one first, and `ωωᵖ · eᵢ` for a variable without `oᵢ`: the value of
@@ -55,7 +53,6 @@ def Ownership.extendResults {Γ : Scope} (φ : Var Γ .var → Grade) :
       (fun | .zero => os.headD .unrestrictedUnrestricted * es.headD Grade.zero | .succ x => φ x)
       os.tail es.tail n
 
--- ADE: none.
 /-- `own_p(λ)`: the ownership of the value of the recursive result of a field whose type has the
 nesting `ν`, in a branch of a recursor of the ownership `p`: `11ᵖ` for a nested result, the
 corecursor of a lifting, a new value, and `p` for the result of a recursive field, a result of the
@@ -65,7 +62,6 @@ def Nest.resultOwnership (p : Grade) : Nest Name → Grade
   | .inst _ => .linearLinear
   | _ => p
 
--- ADE: none.
 /-- `own_p(λ̄)`: the ownerships of the values of the recursive results of the fields whose types
 have the nestings `ns`, those of the recursive and of the nested fields, in order, in a branch of a
 recursor of the ownership `p`.
@@ -73,7 +69,6 @@ RFC: `\mathsf{own}_{\bar\lambda}` -/
 def Telescope.resultOwnerships (p : Grade) (ns : List (Nest Name)) : List Grade :=
   ns.filterMap fun n => if n.isPlain then none else some (n.resultOwnership p)
 
--- ADE: none.
 /-- A constructor of the block of the type declaration `decl` has, at the instance `I`, a nested
 field, a field whose type is at the nesting of an instance. -/
 def TypeDeclaration.HasNestedField (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades) :
@@ -82,7 +77,6 @@ def TypeDeclaration.HasNestedField (decl : TypeDeclaration) (I : Instance decl.s
     (con : Constructor decl.sorts decl.grades decl.levels decl.scope),
     decl.cases[i]? = some (j, T, con) ∧ ∃ ms, Nest.inst ms ∈ (con.fields I).nest decl.names
 
--- ADE: none.
 /-- A block has a nested field or has none, decided on the nestings of the fields of its cases, a
 finite search. -/
 theorem TypeDeclaration.hasNestedField_or_not (decl : TypeDeclaration)
@@ -102,7 +96,6 @@ theorem TypeDeclaration.hasNestedField_or_not (decl : TypeDeclaration)
     have := List.any_eq_false.1 h _ (List.mem_of_getElem? hi)
     exact this (List.any_eq_true.2 ⟨_, hm, rfl⟩)
 
--- ADE: none.
 /-- `φ, x̄ ◀ ō · (g · q̄)`: the ownerships `φ` of the variables of the scope `Γ`, extended by the
 ownership `oᵢ · (g · qᵢ)` of the new variable of each entry of a telescope whose parameters are `ps`,
 the first one first, `qᵢ` being the grade of the entry, and `ωωᵖ · (g · qᵢ)` for a variable without
@@ -114,7 +107,6 @@ def Ownership.extendArgs {Γ : Scope} (φ : Var Γ .var → Grade) (g : Grade) :
       (fun | .zero => os.headD .unrestrictedUnrestricted * (g * p.usage) | .succ x => φ x) g ps
         os.tail
 
--- ADE: none.
 /-- The ownerships `ō` of arguments of a telescope whose entries have the parameters `ps`, checked in
 the mode `m`, satisfy the requirements of their entries, as those of `Σ; φ ⊢ t̄ ◀ ō; Θ; m` do: one
 ownership for each entry, which satisfies its requirement unless the argument is checked in the
@@ -126,7 +118,6 @@ def Parameter.Allow (m : Mode) : List Parameter → List Grade → Prop
 
 mutual
 
--- ADE: none.
 /-- `Σ; φ ⊢ t ◀ p; m`: checked in the mode `m`, the value of the term `t` has the ownership `p`,
 given the ownership `φ` of each variable of its scope whose telescope is empty. -/
 inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .var → Grade) → Mode →
@@ -329,7 +320,6 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
   | sub {k : Nat} {Γ : Scope} {φ : Var Γ .var → Grade} {m : Mode} {p q : Grade} {t : Term k Γ}
       (h : Ownership sig φ m p t) (hle : q ≤ p) : Ownership sig φ m q t
 
--- ADE: none.
 /-- `Σ; φ ⊢ t̄ ◀ ō; Θ; m`: checked in the mode `m`, the arguments `t̄` of a telescope whose entries
 have the parameters `ps` have the ownerships `os`, each satisfying the requirement of its entry. -/
 inductive OwnershipArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps : List Parameter} →
@@ -349,7 +339,6 @@ inductive OwnershipArgs (sig : Signature) : {k : Nat} → {Γ : Scope} → {ps :
 
 end
 
--- ADE: none.
 /--
 `⊢ Σ ◀`: the values of the entries of the signature have their ownerships: at each instance of its
 sort and grade variables, the value of the body of a constant definition has the ownership of the

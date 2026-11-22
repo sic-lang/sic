@@ -124,7 +124,6 @@ end Grade
 
 namespace Mode
 
--- ADE: none.
 /-- `S^m`: the grades of the positions that a term checked in the mode `m` checks in a more erased
 mode, `m ⊙ p ≠ m`, and which it does not count.
 RFC: `\mathsf{uncounted}_m` -/
@@ -133,7 +132,6 @@ def erased (m : Mode) : Set Grade := { p | m ⊙ p ≠ m }
 instance (m : Mode) : DecidablePred (· ∈ m.erased) :=
   fun p => inferInstanceAs (Decidable (m ⊙ p ≠ m))
 
--- ADE: none.
 /-- The three sets `S^m`: the mode `11ᵐ` of run time does not count the grades without use at run
 time, the mode `01ᵐ` the grade `00ᵖ`, and the mode `00ᵐ`, which counts no use, erases nothing.
 RFC: `\mathsf{values}_m` -/
@@ -145,7 +143,6 @@ theorem erased_values :
 
 end Mode
 
--- ADE: none.
 /-- A set `S` of grades erases only what a term checked in the mode `m` does not count, and
 follows the rules of usage: a variable checked in the mode `m` uses itself with a grade outside
 `S`, and a grade above a grade of `S`, or a part of a sum in `S`, is in `S`. -/
@@ -169,7 +166,6 @@ structure ErasesUncounted (m : Mode) (S : Set Grade) : Prop where
   RFC: `\mathsf{uncounted}_S.{\odot}` -/
   mode : ∀ p : Grade, p ∉ S → m ⊙ p = m
 
--- ADE: none.
 /-- The set `S^m` erases only what a term checked in the mode `m` does not count.
 RFC: `\mathsf{erases}_m` -/
 theorem Mode.erasesUncounted (m : Mode) : ErasesUncounted m m.erased where

@@ -174,7 +174,6 @@ theorem Eval.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ
           ac_rfl
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the terms evaluated one after the other, each at the weight times its
 multiplicity, whose values have the demands of their positions. -/
 theorem EvalAll.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
@@ -222,7 +221,6 @@ theorem EvalAll.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
             ac_rfl
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the elimination of a value by a recursor: the demand of the scope, for the
 reads of the branches, and `ρ` times that of the value pay the reads of the run and the demand of
 its value. -/
@@ -312,7 +310,6 @@ theorem EvalRec.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ :
       _ = U₁ +ᶜ U₂ +ᶜ ϖ ·ᶜ Dv := by ac_rfl
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of the recursive results of a branch: the demand of the scope, as many times as
 the multiplicities of the binders of the computed results, and `ρ` times the demands of the fields
 that the recursions use, pay the reads of the runs and the demands of the results, each as many
@@ -439,7 +436,6 @@ theorem EvalResults.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (h
       _ = U₁ +ᶜ U₂ +ᶜ ((ϖ * π) ·ᶜ Dr +ᶜ ϖ ·ᶜ Q) := by ac_rfl
 termination_by structural h
 
--- ADE: none.
 /-- The invariant of an observation: the demand of the closure and of the arguments pay the reads
 of the run and the demand of its value. -/
 theorem EvalObs.conserve {P : Program} (hP : P.Usage) {ϖ : Multiplicity} (hϖ : ϖ ≠ .zero)
@@ -587,7 +583,6 @@ theorem Eval.conservation {P : Program} (hP : P.Usage) {M : Target 0}
   exact (by decide : ∀ π u d : Multiplicity, .one * .zero + π ≤ u + .one * d → π ≤ u + d) _ _ _
     hc'
 
--- ADE: none.
 /-- `cons_data`: a closed term of the target language, whose usage reads no variable, run at the
 weight `1` in the empty heap to a value that holds no closure, reads each cell of the multiplicity
 `1` of its heap exactly once, and never a cell of the multiplicity `0`.

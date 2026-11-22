@@ -32,7 +32,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- A term related to an address at a type is related to it at every type equal to it up to its
 levels, in a signature whose names are distinct. -/
 theorem RunsAs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
@@ -44,7 +43,6 @@ theorem RunsAs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} 
     · exact ⟨v', hA', .inl (hp.levelEquiv hd hv)⟩
     · exact ⟨v', hA', .inr ⟨R, hR.levelEquiv hd hv, ht⟩⟩
 
--- ADE: none.
 /-- Arguments related to addresses at a telescope are related to them at every telescope equal to
 it up to its levels, in a signature whose names are distinct. -/
 theorem RunsAsArgs.levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
@@ -477,7 +475,6 @@ theorem HasRun.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Progr
   | .univ n hn => levelRel_run_levelInvariant hd n hn
   | .prop _ _ _ hR => fun _ _ => hR _ _ _
 
--- ADE: none.
 /-- A term whose levels change for equal ones is related to the addresses that the term is related
 to, in a signature whose names are distinct. -/
 theorem RunsAs.term_levelEquiv {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}

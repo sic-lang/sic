@@ -21,7 +21,8 @@ The rules of the recursors on the pair and on the unit are the rules of the data
 instances of the prelude, whose premises on the block hold by computation.
 
 ADE have no prelude: their pairs and their unit are types of the theory, which a program names, and
-a program of their theory nests the eliminations of their pairs and of their unit itself.
+a program of their theory nests the eliminations of their pairs and of their unit itself; their weak
+pairs have no extensionality, which the unpacking has here.
 -/
 
 @[expose] public section
@@ -168,7 +169,6 @@ theorem WfSig.prelude : WfSig Signature.prelude :=
 
 /-! ## Packing -/
 
--- ADE: none.
 /-- The arguments `(A, x. B)` are arguments of the parameters of the pair, when `A` is a type of the
 sort `κ` and `B` a type of `U_{l₂}` over a variable of `A`. -/
 theorem HasInstanceArgs.pair {Γ : Scope} {ctx : Context k Γ} {A : Term k Γ}
@@ -199,7 +199,6 @@ theorem HasType.pairInst {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelud
   .inst hpre.pair.hasDeclaredType
     rfl rfl rfl hadm (HasInstanceArgs.pair p ρ hA hB)
 
--- ADE: none.
 /-- The packing of a telescope is a type of the universe of the level of its packing.
 RFC: `\mathsf{pack}_{\Theta:}` -/
 theorem HasType.packLevel {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope} :
@@ -407,7 +406,6 @@ theorem EqTerm.unitIota {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude
       exact (congrArg (HasType sig ctx u)
         (Term.rename_id_of (Γ := Γ) (α := Ren.weakenN 0) (fun _ => rfl) _)).mpr hu
 
--- ADE: none.
 /-- A term over a pair, at the constructor applied to the variables of its fields, has its type at
 the constructor. -/
 theorem HasType.pairAtCtor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude)
@@ -462,7 +460,6 @@ theorem HasType.pairAtCtor {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrel
       (stableUnderRenaming.hasType (HasType.pairInst hpre hadm hA hB) hW)))
   exact stableUnderSubstitution.hasType he₂ (TypedSubst.single hMK)
 
--- ADE: none: their weak pairs have no extensionality.
 /-- A term over a pair is the recursor on the pair whose branch is the term at the constructor. -/
 theorem EqTerm.pairEta {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelude) {κA : Universe k}
     {l₂ : Level k} {p ρ r ς χ : Grade} {A t : Term k Γ} {B e Cm : Term k (.var :: Γ)}
@@ -617,7 +614,6 @@ theorem EqTerm.pairRecursorBranch {Γ : Scope} {ctx : Context k Γ} (hpre : sig.
 
 /-! ## Unpacking -/
 
--- ADE: none.
 /-- What the unpacking of the rest of a telescope, in the branch of the pair, asks of its telescope,
 of its packed term, of its motive and of its term: the premises of `(unpack:)` in the context
 extended by the first entry and by the packing of the rest. -/
@@ -637,7 +633,6 @@ structure UnpackBranch (sig : Signature) {Γ : Scope} {ps : List Parameter} (ctx
         (b.rename (Ren.liftN ps.length Ren.weaken))
         ((C.rename (Ren.weakenN 2)).rename (Ren.weakenN ps.length))
 
--- ADE: none.
 /-- The premises of `(unpack:)` give those of the unpacking of the rest of the telescope, in the
 branch of the pair. -/
 theorem UnpackBranch.of (hpre : sig.HasPrelude) {Γ : Scope} {ps : List Parameter}

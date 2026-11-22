@@ -23,7 +23,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `Z`: a skeleton, the empty skeleton `□`, which holds nothing, or the constructor `c_i` of the
 case `i` in its block applied to a skeleton for each of its fields.
 RFC: `\mathsf{syntax}_Z` -/
@@ -33,7 +32,6 @@ inductive Skeleton : Type where
   /-- `c_i⟨Z₁, …, Z_a⟩`. -/
   | ctor (case : Nat) (fields : List Skeleton) : Skeleton
 
--- ADE: none.
 /-- The skeleton of the data type `D` of the block of the type declaration `decl`, at the instance
 `I`, within the depth `d`: the constructor of its case applied to `□` for each field that is not
 recursive and to the skeleton of the type of each recursive field, when `D` has exactly one
@@ -54,7 +52,6 @@ def TypeDeclaration.skeleton (decl : TypeDeclaration) (I : Instance decl.sorts d
       | _ => .empty
     | none => .empty
 
--- ADE: none.
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
 within the depth of the number of the types of its block, when the entry declares it. -/
 def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
@@ -68,7 +65,6 @@ def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
     else none
   | _ => none
 
--- ADE: none.
 /-- The skeleton of the data type `D` at the instance of the qualities `qs` and of the grades `ps`,
 in the last entry of the signature that declares it, and `□` when the signature has no such entry,
 which the erasure of a recursor on an erased term reads: in a block whose types have one

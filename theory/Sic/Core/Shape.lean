@@ -33,7 +33,6 @@ open Sic.Grading
 
 mutual
 
--- ADE: none.
 /-- `Ξ`: the shape of a lifting, one element for each destructor that it keeps, in order, which gives
 the case `i` of the destructor in its block, its multiplicity `ρ` at run time, the positions
 `π̄ ◀ ϱ̄` of its `c` arguments in the observation and `π̄' ◀ ϱ̄'` in the lifted destructor, the
@@ -49,7 +48,6 @@ inductive Shape : Type where
       (ψ : ResultOwnership Multiplicity c) (ς : Multiplicity) (ψ₀ : ResultOwnership Multiplicity c)
       (ς₀ : Multiplicity) (next : Shape.Next) (rest : Shape) : Shape
 
--- ADE: none.
 /-- `Υ`: the shape of the result of a lifted destructor, `⋆_Z`, the recursor itself, when its type
 lifted is a motive, with the skeleton `Z` of this motive, on whose term the recursor of the
 multiplicity `0` runs instead of the observation, or the shape of the next lifting, when it is an
@@ -73,7 +71,6 @@ def Shape.drop : Nat → Shape → Shape
 
 mutual
 
--- ADE: none.
 /-- `factor(Ξ)`: the factor of a shape, the multiplicity by which the uses of the scope by the
 recursive result that it shapes are multiplied: the meet of the multiplicities at run time of its
 destructors times the factors of their results, and `0` without destructor, which is never
@@ -86,7 +83,6 @@ def Shape.factor : Shape → Multiplicity
     | .nil => ρ * next.factor
     | .cons .. => (ρ * next.factor) ⊓ rest.factor
 
--- ADE: none.
 /-- `factor(Υ)`: the factor of the shape of a result, `1` for the recursor itself, and the factor of
 the shape of the next lifting, which the RFC does not need to state.
 RFC: `\mathsf{factor}_\Upsilon` -/
@@ -98,7 +94,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- `Ξ fits ρ`: the shape fits the recursor of the multiplicity `ρ`: the multiplicity at run time of
 each argument of each lifted destructor is within `ρ` times the multiplicity at run time of the
 destructor times the factor of its result times the multiplicity of the argument in the observation,
@@ -111,7 +106,6 @@ def Shape.Fits (ρ : Multiplicity) : Shape → Prop
   | .cons _ _ ρᵢ πs _ πs' _ _ _ _ _ next rest =>
     (∀ k, πs' k ≤ ρ * (ρᵢ * next.factor) * πs k) ∧ next.Fits ρ ∧ rest.Fits ρ
 
--- ADE: none.
 /-- The shape of a result fits the recursor of the multiplicity `ρ`: the recursor itself does, and
 the next lifting when its shape does, which the RFC does not need to state.
 RFC: `\mathsf{fits}_\Upsilon` -/

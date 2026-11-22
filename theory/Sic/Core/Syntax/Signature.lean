@@ -595,7 +595,6 @@ theorem Parameter.recursionAxis_le {ϱ π : Multiplicity} (hπ : π ≠ .zero) :
       · exact ih
       · exact (by decide : ∀ y z x : Multiplicity, z ≤ x → y ⊓ z ≤ x) _ _ _ ih
 
--- ADE: none.
 /-- The requirement of the recursion of a recursor that uses its term with the grade `c` is below,
 at run time, the coefficient of each recursive field of each constructor of the block that the
 recursor uses at run time. -/
@@ -632,7 +631,6 @@ theorem Entry.caseFieldParams_of_not_mem {D : Name} {qs : List Quality} {ps : Li
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
--- ADE: none.
 /-- In a signature whose names are distinct, the parameters of the fields of the constructors of the
 cases of the block of a data type are those of their telescopes at the instance. -/
 theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct → {D : Name} →
@@ -671,7 +669,6 @@ theorem Entry.destructorArguments_of_not_mem {D : Name} {qs : List Quality} {ps 
   | .constantDefinition _, _ => rfl
   | .constantDeclaration _, _ => rfl
 
--- ADE: none.
 /-- In a signature whose names are distinct, the arguments of the destructors of the cases of the
 block of a codata type are the positions of their types, the parameters of their arguments, the
 ownerships of their results and the ownerships that they require of the values that they observe at
@@ -1095,7 +1092,6 @@ theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D 
       rw [List.findSome?_cons_of_isNone (by rw [hp]; rfl)]
       exact hd.position ⟨he', hT, hD⟩ hh
 
--- ADE: none.
 /-- The destructors of the codata types of a signature, at an instance that the constraint admits,
 of a block of propositions, have grades without use at run time. -/
 def Signature.ErasesPropDestructors (sig : Signature) : Prop :=

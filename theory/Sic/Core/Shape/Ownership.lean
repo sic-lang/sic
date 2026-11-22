@@ -21,7 +21,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- `own_χ(Υ)`: the ownership of the result of a lifted destructor whose result has the shape `Υ`,
 `χ` for the recursor itself, and `1` for the corecursor of the next lifting, a new value.
 RFC: `\mathsf{own}_\Upsilon` -/
@@ -29,7 +28,6 @@ def Shape.Next.ownership (χ : Multiplicity) : Shape.Next → Multiplicity
   | .recursor _ => χ
   | .lifting _ => .one
 
--- ADE: none.
 /-- `scale_ς(Υ)`: the ownership by which the observation built for a destructor whose result has the
 shape `Υ` sees the arguments of its branch: `1` when the recursor runs on it in the branch, and `ς`
 when the corecursor of the next lifting captures it, whose observations see their scope at `ς`.
@@ -40,7 +38,6 @@ def Shape.Next.scale (ς : Multiplicity) : Shape.Next → Multiplicity
 
 mutual
 
--- ADE: none.
 /-- `Ξ ◀ ς; χ`: the shape has the ownerships `ς` and `χ`: each lifted destructor requires `ς` of the
 value that it observes, and its result has the ownership `own_χ(Υ)` of the shape `Υ` of its result,
 whatever the ownerships of its arguments, as the lifting declares them.
@@ -50,7 +47,6 @@ def Shape.Uniform (ς χ : Multiplicity) : Shape → Prop
   | .cons _ _ _ _ _ _ _ ψ ς' _ _ next rest =>
     ς' = ς ∧ ψ = ⟨some (next.ownership χ), fun _ => none⟩ ∧ next.Uniform ς χ ∧ rest.Uniform ς χ
 
--- ADE: none.
 /-- `Υ ◀ ς; χ`: the shape of a result has the ownerships `ς` and `χ`: the recursor itself does, and
 the next lifting when its shape does, which the RFC does not need to state.
 RFC: `\mathsf{uniform}_\Upsilon` -/
@@ -60,7 +56,6 @@ def Shape.Next.Uniform (ς χ : Multiplicity) : Shape.Next → Prop
 
 end
 
--- ADE: none.
 /-- The ownerships of the arguments of the observation built for a lifted destructor, at the scale
 `s`, given the ownerships `ō` of the arguments of its branch: the ownership of the variable of each
 argument, `s · ō · π'`, and the requirement of its position in the observation when it is erased,
@@ -72,7 +67,6 @@ def Shape.argOwnerships {c : Nat} (s : Multiplicity) (os πs ϱs πs' : Fin c �
 
 mutual
 
--- ADE: none.
 /-- `Ξ meets o; ς`: the shape meets the requirements of the observations of a field, whose branches
 see the term of the recursor at the ownership `o`, the corecursors capturing the scope at `ς`: for
 each destructor observed on the axis of the shape, the requirement `ς₀` of the destructor that it
@@ -91,7 +85,6 @@ def Shape.Meets (o ς : Multiplicity) : Shape → Prop
       next.Meets o ς) ∧
     rest.Meets o ς
 
--- ADE: none.
 /-- `Υ meets o; ς`: the shape of a result meets the requirements of the observations: the recursor
 itself does, and the next lifting when its shape does.
 RFC: `\mathsf{meets}_\Upsilon` -/
@@ -103,7 +96,6 @@ end
 
 mutual
 
--- ADE: none.
 /-- `Ξ keeps o; ς`: the observations of a field keep the ownership `o` of the term of the recursor:
 for each destructor observed on the axis of the shape, for all the ownerships of the arguments of
 its branch that meet their requirements, the value of the ownership `ψ₀` of its result at them, when
@@ -120,7 +112,6 @@ def Shape.Keeps (o ς : Multiplicity) : Shape → Prop
       next.Keeps o ς) ∧
     rest.Keeps o ς
 
--- ADE: none.
 /-- `Υ keeps o; ς`: the observations from the shape of a result keep the ownership `o`: the recursor
 itself does, and the next lifting when its shape does.
 RFC: `\mathsf{keeps}_\Upsilon` -/
@@ -130,7 +121,6 @@ def Shape.Next.Keeps (o ς : Multiplicity) : Shape.Next → Prop
 
 end
 
--- ADE: none.
 /-- `Ξ requires o; ς`: the shape meets the requirements of the recursions on the observations of a
 field, whose branches see the term of the recursor at the ownership `o`, the corecursors capturing
 the scope at `ς`: for each destructor observed on the axis of the shape, the requirement `ς₀` of
@@ -146,7 +136,6 @@ RFC: `\mathsf{requires}_\Xi` -/
 def Shape.Requires (o ς : Multiplicity) (σ : Shape) : Prop :=
   σ.Meets o ς ∧ σ.Keeps o ς
 
--- ADE: none.
 /-- `Υ requires o; ς`: the shape of a result meets the requirements of the recursions: the recursor
 itself does, and the next lifting when its shape does, which the RFC does not need to state. -/
 def Shape.Next.Requires (o ς : Multiplicity) (next : Shape.Next) : Prop :=
@@ -154,7 +143,6 @@ def Shape.Next.Requires (o ς : Multiplicity) (next : Shape.Next) : Prop :=
 
 mutual
 
--- ADE: none.
 /-- The products `a · ψ₁⁻ · … · ψ_h⁻` along the prefixes `d₁ … d_h` of the paths of the shape, other
 than the empty one, after a prefix of the product `a`: each destructor observed extends the prefix,
 whose product is then times the value `ψ⁻` of the ownership `ψ₀` of the result of the destructor
@@ -170,7 +158,6 @@ def Shape.prefixes (ς a : Multiplicity) : Shape → List Multiplicity
         (ψ₀.value (List.ofFn (Shape.argOwnerships (next.scale ς) ϱs' πs ϱs πs'))).getD .one
       a' :: next.prefixes ς a') ++ rest.prefixes ς a
 
--- ADE: none.
 /-- The products along the prefixes of the paths of the shape of a result, after a prefix of the
 product `a`: none for the recursor itself, where the paths end, and those of the next lifting.
 RFC: `\mathsf{prefixes}_\Upsilon` -/
@@ -180,7 +167,6 @@ def Shape.Next.prefixes (ς a : Multiplicity) : Shape.Next → List Multiplicity
 
 end
 
--- ADE: none.
 /-- What the shape of a nested field gives the requirement of the recursion: for each prefix
 `d₁ … d_h` of each of its paths, the empty one included, the product `ς · ψ₁⁻ · … · ψ_h⁻` of the
 requirement `ς` of the corecursors on the values that they observe and of the values `ψ⁻` of the
@@ -193,7 +179,6 @@ def Shape.recursion (ς : Multiplicity) (σ : Shape) : List Multiplicity :=
 
 /-! ## Properties -/
 
--- ADE: none.
 /-- The value of the ownership `ψ` of a result is monotone in the ownerships of its arguments: it is
 defined at the same ownerships, a meet of products of them, so that its least value, at the
 requirements of the arguments, bounds its value at any ownerships that meet them, which the
@@ -230,7 +215,6 @@ theorem ResultOwnership.value_mono :
 
 mutual
 
--- ADE: none.
 /-- The observations of a field keep the ownership `o · R` of the term, when the shape meets the
 requirements of the observations at it and `R`, not `0`, is below `ϱ · y · π` for the product `y`
 along each prefix of the paths after a prefix of the product `a`: the product along the prefix that
@@ -270,7 +254,6 @@ theorem Shape.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero)
       exact (by decide : ∀ o R w v : Multiplicity, R ≤ R * w → w ≤ v → o * R ≤ o * R * v)
         _ _ _ _ hRw hwv
 
--- ADE: none.
 /-- The observations from the shape of a result keep the ownership `o · R` of the term in the same
 conditions: the recursor itself asks nothing, and the next lifting as a shape does. -/
 theorem Shape.Next.keeps_of_prefixes {ς R o ϱ π : Multiplicity} (hR : R ≠ .zero) :

@@ -34,7 +34,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The erasure by `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, whose ownership has the
 run-time multiplicity `1`, run at the weight `1` in the empty heap under the program of a signature
 whose names are distinct, that declares its liftings in order and whose entries have their usages

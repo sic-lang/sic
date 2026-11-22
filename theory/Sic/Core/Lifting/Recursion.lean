@@ -176,7 +176,6 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
     Destructors.Lifts.recursion ho hF S h (hθ.snoc (ho _ _))
       (fun r hr => hds r (List.mem_cons_of_mem _ hr))
 
--- ADE: none.
 /-- The lifting of a codata type without recursive destructor at an instance has no recursive
 destructor at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaration} {F : Name}

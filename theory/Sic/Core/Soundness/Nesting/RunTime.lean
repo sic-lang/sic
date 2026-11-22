@@ -40,7 +40,6 @@ variable {sig : Signature} {ι : Interpretation} {P : Program}
 
 /-! ## Types Read by the Graph of the Nestings of Run Time -/
 
--- ADE: none.
 /-- The graph of the nestings of run time at the level `n` reads two closed types, each at its
 nesting, with the same relation of run time of their terms, for the program `P`. -/
 def RunNestReads (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
@@ -48,7 +47,6 @@ def RunNestReads (sig : Signature) (ι : Interpretation) (P : Program) (n : Nat)
   ∃ R, RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₁ A₁ R ∧
     RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ₂ A₂ R
 
--- ADE: none.
 /-- The graph of the nestings of run time at the level `n` reads the destructors of a codata type
 at two nestings of their scope and two closed substitutions, with the same relation of run time of
 the observations by them, for the program `P`, whatever the name of the type, which gives them
@@ -327,7 +325,6 @@ theorem RunFieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclara
 
 /-! ## Reading of Run Time -/
 
--- ADE: none.
 /-- The reading of the graph of the nestings of run time at the level `n`, for the program `P`, of
 the sorts whose level `n` bounds: two types, or the destructors of a codata type at two
 substitutions, are read with one relation of run time. -/
@@ -366,7 +363,6 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
         exact ⟨_, .codataProp hT hq hl hp rfl hadm hκ hn hrec,
           .codataProp hT hq hl hp rfl hadm hκ hn hrec⟩
 
--- ADE: none.
 /-- The types typed in a signature whose entries have their meaning, and strictly positive in the
 variables with a position, are read by the graph of the nestings of run time at their nestings,
 with one relation of run time of their terms, for each program, given the soundness of the

@@ -58,7 +58,6 @@ variable {sig : Signature} {ι : Interpretation}
 
 /-! ## Relations That Do Not Read the Computation -/
 
--- ADE: none.
 /-- The relation `R`, given at a position that holds a type of a sort of the quality `sT`, relates
 the terms that compute as terms that it relates, and any terms when the quality is that of the
 propositions. -/
@@ -176,7 +175,6 @@ theorem Red.beta_stateless {decl : TypeDeclaration}
 
 /-! ## Equality of the Destructors, Position by Position -/
 
--- ADE: none.
 /-- Observations whose results are related, destructor by destructor, at equal arguments, by the
 equality of the result of the destructor, are related by the equality of the destructors, none of
 which is recursive, at instantiated levels: the destructors before each destructor being the
@@ -218,7 +216,6 @@ theorem DesRel.of_positions (hd : sig.Distinct) {n : Nat} {s : Quality} {k' : Na
       exact ⟨hA, DesRel.of_positions hd L ds (fun i => hN (i + 1)) (hG _ hff)
         fun d' p' q' ς' ps' Ξ' Θ' B' ψ' hpos => hv d' p' q' ς' ps' Ξ' Θ' B' ψ' (.there hpos)⟩
 
--- ADE: none.
 /-- Observations that the equality of the destructors, none of which is recursive, at instantiated
 levels, relates to themselves give, at each position, at arguments that the equality of the
 telescope of its destructor relates, terms that the equality of its result relates: the converse of
@@ -359,7 +356,6 @@ theorem FieldRel.validType {n : Nat} {s : Quality} {A v : Term 0 []} {F : TermRe
 
 /-! ## Soundness of the Recursive Results -/
 
--- ADE: none.
 /-- The relation `x.2` given at a position that holds the type `D` of the block relates terms whose
 recursive results are equal terms of the motive of `D` at the first one. -/
 def ResultLeaf (sig : Signature) (ι : Interpretation) (ρ₁ : Lifting 0 [] [])
@@ -368,7 +364,6 @@ def ResultLeaf (sig : Signature) (ι : Interpretation) (ρ₁ : Lifting 0 [] [])
     ValidEqTerm₀ sig ι ((φ₁ D).subst₀ (Subst₀.single a)) ((φ₂ D).subst₀ (Subst₀.single a'))
       (b.motive.subst₀ (Subst₀.single a))
 
--- ADE: none.
 /-- The recursive results of the closed terms `t₁` and `t₂`, of the type `A₁`, whose nesting is
 `ν`, and of any type of the same shape, are equal terms of `A₁` lifted at `t₁`, when this type
 lifted is a type: `ρ₁` and `ρ₂` give the types of the block their motives, and `φ₁` and `φ₂` the
@@ -415,7 +410,6 @@ theorem HasEq.validEqTerm_whnf (hd : sig.Distinct) {A v t u : Term 0 []} {R : Te
       cases Computesι.det hd hA hv'
       exact ⟨v, R, hA, hR, h⟩⟩
 
--- ADE: none.
 /-- The recursive results of two terms of an instance of a codata type of `Σ` without recursive
 destructor, at the nesting of an instance, are equal terms of the instance lifted, when the results
 of their observations are, destructor by destructor, at equal arguments: the results are
@@ -667,7 +661,6 @@ theorem ObsEquiv.at {s : Quality} {f₁ f₂ o₁ o₂ : Observations}
 
 mutual
 
--- ADE: none.
 /-- The recursive results of two terms that the equality of a type relates, by the graph of the
 nestings, are equal terms of the type lifted at the first one, in a signature whose names are
 distinct and whose liftings are those of its types: at each position, the relation given relates
@@ -730,7 +723,6 @@ theorem NestRel.resultSound (hd : sig.Distinct)
               (hpos.nest_substLevels _ _)
 termination_by structural h _ _ _ _ _ _ => h
 
--- ADE: none.
 /-- At a position of a destructor in destructors that the graph of the nestings reads, at
 instantiated levels, observations that compute as observations that the equality of the
 destructors relates give, at equal arguments of the destructor, terms whose recursive results are

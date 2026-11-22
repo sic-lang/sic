@@ -26,7 +26,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The signature `Σ` holds each entry of the signature `Σ_T` and gives it its meaning, so that the
 judgments typed in `Σ_T` are meaningful in `Σ`. -/
 def Signature.ValidEntries (ι : Interpretation) (sig sigT : Signature) : Prop :=
@@ -37,7 +36,6 @@ theorem ValidSig.validEntries {ι : Interpretation} {sig : Signature} (h : Valid
     sig.ValidEntries ι sig :=
   fun e he => ⟨he, h.2 e he⟩
 
--- ADE: none.
 /-- A constant of `Σ_T` unfolds in `Σ`, once the constants are interpreted, to a body that is a term
 of its type at each instance of its sort and grade variables and each value of its level
 variables: the body of a definition, or the interpretation of a declaration. -/
@@ -63,7 +61,6 @@ theorem Signature.ValidEntries.hasConstant {ι : Interpretation} {sig sigT : Sig
         (List.mem_map_of_mem (f := Entry.interpret ι) hmem) hq hl hp,
       ValidConstantDeclaration.iff.1 hv⟩
 
--- ADE: none.
 /-- A data type of `Σ_T` is a data type of `Σ`, whose type declaration is meaningful in `Σ`. -/
 theorem Signature.ValidEntries.hasDataType {ι : Interpretation} {sig sigT : Signature}
     (h : sig.ValidEntries ι sigT) {D : Name} {decl : TypeDeclaration}
@@ -71,7 +68,6 @@ theorem Signature.ValidEntries.hasDataType {ι : Interpretation} {sig sigT : Sig
     sigT.HasDataType D decl T → sig.HasDataType D decl T ∧ ValidTypeDeclaration sig ι decl
   | ⟨hd, hT, hn⟩ => have ⟨hm, hv⟩ := h _ hd; ⟨⟨hm, hT, hn⟩, hv⟩
 
--- ADE: none.
 /-- A codata type of `Σ_T` is a codata type of `Σ`, whose type declaration is meaningful in `Σ`. -/
 theorem Signature.ValidEntries.hasCodataType {ι : Interpretation} {sig sigT : Signature}
     (h : sig.ValidEntries ι sigT) {D : Name} {decl : TypeDeclaration}

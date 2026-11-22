@@ -17,7 +17,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- Addresses that stand for a substitution as the grades `δ` require stand for it as any grades
 `γ` require that count at run time only variables that `δ` counts. -/
 theorem RunsAsSubst.of_counted {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
@@ -30,7 +29,6 @@ theorem RunsAsSubst.of_counted {sig : Signature} {ι : Interpretation} {P : Prog
     exact ⟨a, E', hE, RunsAsSubst.of_counted ctx (fun x => hc x.succ) hs, fun hγ => hx (hc 0 hγ)⟩
   | _, .secondOrder .., _, _, _, _, _, h => h
 
--- ADE: none.
 /-- Arguments related to addresses at a telescope as the grades `g` require are related to them as
 any grades `g'` require that count at run time only positions that `g` counts. -/
 theorem RunsAsArgs.of_counted {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap} :
@@ -43,7 +41,7 @@ theorem RunsAsArgs.of_counted {sig : Signature} {ι : Interpretation} {P : Progr
   | _ :: _, _, _, .cons _ _, _ :: _, .cons _ _ _ _, hg, h =>
     ⟨fun hg' => h.1 (hg 0 hg'), RunsAsArgs.of_counted (fun l => hg (l + 1)) h.2⟩
 
--- ADE: none, a step of `subsumption-▸⊩ʳ∷[]-≤`.
+-- ADE: a step of `subsumption-▸⊩ʳ∷[]-≤`, in `Graded/Erasure/LogicalRelation/Hidden.agda`.
 /-- Addresses that stand for a substitution as the grades `δ` require stand for it as any grades
 `γ` above `δ` require. -/
 theorem RunsAsSubst.of_le {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
@@ -61,7 +59,6 @@ theorem RunValid.sub {sig : Signature} {ι : Interpretation} {P : Program} {Γ :
     (hle : δ ≤ᶜ γ) (h : RunValid sig ι P hΓ ctx γ t A) : RunValid sig ι P hΓ ctx δ t A :=
   fun ϖ σ H E V hσ hEV hV => h ϖ σ H E V hσ hEV (RunsAsSubst.of_le ctx hle hV)
 
--- ADE: none.
 /-- A term valid at run time with the grades `γ` in every environment that binds the scope through a
 renaming is valid so with any grades `δ ≤ᶜ γ`, as `RunValid.sub` states. -/
 theorem RunValidRen.sub {sig : Signature} {ι : Interpretation} {P : Program} {Γ : Scope}

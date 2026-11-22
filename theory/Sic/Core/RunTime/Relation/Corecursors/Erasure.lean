@@ -131,7 +131,6 @@ theorem Signature.Distinct.doneCase (hd : sig.Distinct) (hpre : sig.HasPrelude) 
       (by decide : Prelude.stepNext.name ≠ Prelude.stepDone.name)
   | 1, _ => rfl
 
--- ADE: none.
 /-- A closed position of a corecursor of the grade `r`, in a universe, related to an address,
 resumes: the position computes to a new state, the nested pairs of arguments of the state that the
 meaning relates to themselves, and its resumption, a new closure from addresses to which the

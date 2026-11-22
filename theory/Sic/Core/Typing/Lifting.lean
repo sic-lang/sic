@@ -37,7 +37,6 @@ namespace Sic.Core
 
 open Sic.Grading
 
--- ADE: none.
 /-- The lifting of a codata type without recursive destructor of a well-formed signature, at
 parameters each of which is a type, is a well-formed type declaration in this signature, when no
 entry of the signature introduces its name.
@@ -111,7 +110,6 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
   · cases List.mem_singleton.1 hT''
     exact (Destructors.Lifts.sublist (hb ⟨fun _ => .type, fun _ => .unrestrictedUnrestricted⟩)).nodup hc
 
--- ADE: none.
 /-- A type declaration of a well-formed signature one of whose types has the name of a lifting is
 the lifting of a type of a type declaration of the signature, with the destructors of this type
 lifted. -/
@@ -135,7 +133,6 @@ theorem WfSig.lifting_inv {E : TypeDeclaration} {F : Name} {S : List Nat} :
       exact ⟨decl, F', S', ns, body, rfl, List.mem_cons_of_mem _ hd,
         hl.extend (List.subset_cons_self _ _)⟩
 
--- ADE: none.
 /-- A well-formed signature holds the lifting that it declares of a type of one of its type
 declarations: the destructors with which it declares this lifting are those of the type lifted.
 RFC: `\mathsf{sig}_{\uparrow}` -/
@@ -157,7 +154,6 @@ theorem WfSig.lifts {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
   obtain rfl := TypeDeclaration.lifting_body he
   exact ⟨T, hT, hn, hb⟩
 
--- ADE: none.
 /-- A type declaration of a well-formed signature one of whose types has the name of a lifting is
 the lifting of a type of a type declaration of the signature before it, with the destructors of
 this type lifted in the signature before it. -/
@@ -176,7 +172,6 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
   | _ :: pre, h, hn =>
     WfSig.lifting_inv_before pre (Presuppositions.tail presuppositions h) hn
 
--- ADE: none.
 /-- A well-formed signature declares each of its liftings after the type that it lifts and the
 destructors that it lifts: the rule of the liftings asks for the declaration of the type in the
 signature before the lifting, and for these destructors, lifted in it.

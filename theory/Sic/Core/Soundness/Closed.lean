@@ -443,7 +443,6 @@ theorem ValidEqTerm₀.univType {sig : Signature} {ι : Interpretation} {A B : T
     | codata _ _ _ _ hv => cases hv
   | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
 
--- ADE: none.
 /-- `(Ω_type≡)`, closed: equal propositions are equal types. -/
 theorem ValidEqTerm₀.propType {sig : Signature} {ι : Interpretation} {A B : Term 0 []}
     {l : Level 0} (h : ValidEqTerm₀ sig ι A B (.sort ⟨.prop, l⟩)) : ValidEqType₀ sig ι A B := by

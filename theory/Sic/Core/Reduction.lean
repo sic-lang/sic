@@ -67,7 +67,6 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   -- ADE: `Whnf.Uₙ`, in `Definition/Untyped/Whnf.agda`.
   /-- `U_l` and `Ω_l`. -/
   | sort (κ : Universe k) : Whnf sig (.sort κ)
-  -- ADE: none.
   /-- `T = D.{s̄; l̄; p̄} ā`, an instance of a declared type. -/
   | inst {Δ : Scope} (D : Name) (qs : List Quality) (ls : List (Level k)) (ps : List Grade)
       (as : InstanceArgs k Γ Δ) : Whnf sig (.inst D qs ls ps as)
@@ -82,7 +81,6 @@ inductive Whnf (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Prop whe
   | corec {Δ : Scope} (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
       (ps : List Grade) (as : InstanceArgs k Γ Δ) (ss : Terms k Γ) (Ss : States k Γ)
       (gs : DestructorBranches k Γ) : Whnf sig (.corec r D qs ls ps as ss Ss gs)
-  -- ADE: none.
   /-- `t ∼.{s; l}_A u`, an equality. -/
   | equality (s : Quality) (l : Level k) (A t u : Term k Γ) : Whnf sig (.equality s l A t u)
   -- ADE: `Whnf.ne`, in `Definition/Untyped/Whnf.agda`.
@@ -161,7 +159,6 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   | obs {Δ : Scope} {D : Name} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ Δ} {t t' : Term k Γ} {d : Name} {bs : Terms k Γ} (h : Red sig t t') :
       Red sig (.obs D qs ls ps as t d bs) (.obs D qs ls ps as t' d bs)
-  -- ADE: none.
   /-- A transport reduces to its term.
   RFC: `\mathsf{transp}_{\longrightarrow}` -/
   | transp {A t₁ t₂ : Term k Γ} {C : Term k (Γ.extend 1)} {t u : Term k Γ} :
@@ -183,7 +180,6 @@ RFC: `\Downarrow` -/
 def Computes (sig : Signature) (t v : Term 0 []) : Prop :=
   RedStar sig t v ∧ Whnf sig v
 
--- ADE: none.
 /-- A closed head normal form computes to itself, in no step. -/
 theorem Whnf.computes {sig : Signature} {v : Term 0 []} (h : Whnf sig v) : Computes sig v v :=
   ⟨.refl _, h⟩

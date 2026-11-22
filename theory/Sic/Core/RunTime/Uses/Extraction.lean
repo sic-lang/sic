@@ -34,7 +34,6 @@ open Sic.Grading
 theorem GradeVector.run_nil (γ : GradeVector ([] : Scope).length) : γ.run = 𝟘ᵛ :=
   funext fun x => x.elim0
 
--- ADE: none.
 /-- The erasure by `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, run at the weight `1` in the
 empty heap under the program of a well-used signature whose names are distinct and that declares
 its liftings in order, reads each cell of its heap as the multiplicity of the cell allows, once the
@@ -50,7 +49,6 @@ theorem extraction_conservation {sig : Signature} {k : Nat} {t : Term k []}
   rw [GradeVector.run_nil] at hM
   exact Eval.conservation (hu.compile_usage hd hord) hM h
 
--- ADE: none.
 /-- The erasure by `S^{11ᵐ}` of a closed term used in the mode `11ᵐ`, run as in
 `extraction_conservation` to a value that holds no closure, reads each cell of the multiplicity `1`
 of its heap exactly once, and never a cell of the multiplicity `0`.

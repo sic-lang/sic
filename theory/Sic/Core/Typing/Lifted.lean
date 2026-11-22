@@ -54,7 +54,6 @@ inductive Subst.Lifted (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ 
       (A : Term k Δ) (h : Lifted @Base ctx' @θ ctx) :
       Lifted @Base (ctx'.var (A.subst θ)) (Subst.lift θ) (ctx.var A)
 
--- ADE: none.
 /-- What a family `Base` of substitutions gives for the typing to be stable under them. -/
 structure Subst.Liftable (sig : Signature)
     (Base : ∀ {Γ Δ : Scope}, Context k Γ → Subst k Γ Δ → Context k Δ → Prop) : Prop where
@@ -93,7 +92,6 @@ theorem Subst.Lifted.append {Γ Δ : Scope} {ctx' : Context k Γ} {θ : Subst k 
   | [], .nil, h => h
   | _ :: _, .cons _ _ A Θ, h => Subst.Lifted.append Θ (h.var A)
 
--- ADE: none.
 /-- The image of a second-order variable by a lifted substitution is the abstraction of a variable
 declared with its telescope and its type, substituted, when the substitutions of the family give
 such images. -/
@@ -119,7 +117,6 @@ theorem Subst.Lifted.secondOrderIn
     · rw [Telescope.subst_lift_rename_weaken, Term.subst_liftN_lift_rename_weaken]
       exact .succVar hYin
 
--- ADE: none.
 /-- A family gives what the stability of the typing asks when the image of each second-order
 variable by its substitutions is the abstraction of a variable declared with its telescope and its
 type, substituted: the rules `(var_X)` and `(var_X≡)` type the image at arguments. -/

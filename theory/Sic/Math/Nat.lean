@@ -11,7 +11,6 @@ ADE have no counterpart of this restriction.
 
 @[expose] public section
 
--- ADE: none.
 /-- A fact of every number holds of the numbers below `n`. -/
 theorem Nat.forall_lt {P : Nat → Prop} (h : ∀ m, P m) (n : Nat) : ∀ m, m < n → P m :=
   fun m _ => h m

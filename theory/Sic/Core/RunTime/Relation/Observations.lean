@@ -409,7 +409,6 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {p
     · obtain ⟨-, hds⟩ := hv
       exact h.validEq (hds _ _) hI' hobs'
 
--- ADE: none.
 /-- `(d)` at run time, closed: a term of an instance of a codata type of `Σ`, whose type declaration
 is meaningful, related to an address, observed by a destructor whose grade is used at run time, at
 arguments that the meaning relates to themselves and that are related to addresses in a heap that
@@ -610,7 +609,6 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   exact hw₂.levelEquiv hd
     (B.closedValues_levelEquiv L (Subst.LevelEquiv.append hcE.symm (Subst.LevelEquiv.refl _))).symm
 
--- ADE: none.
 /-- `(d)` at run time: an observation of a term of an instance of a codata type of `Σ`, whose type
 declaration is meaningful, valid at run time with the grades `γ`, by a destructor whose grade is
 used at run time, at arguments valid at run time with the grades `δ`, is valid at run time at its
