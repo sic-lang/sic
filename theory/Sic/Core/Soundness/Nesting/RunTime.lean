@@ -7,7 +7,6 @@ import Sic.Core.Meaning.RunTime.Nesting
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Run Time of the Nested Types
@@ -75,14 +74,14 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
   intro _ κ κ₁ hn Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂
     hds
   intro D hcase
-  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-    Nat.forall_lt (levelRel_run_unique hd) _
+    levelRel_run_unique_lt hd _
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
+  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
   have hκs : κ₁.quality ≤ Quality.type := fun h => nomatch h
@@ -158,9 +157,9 @@ theorem RunNestRel.atArgs_head (hd : sig.Distinct) (P : Program) {m n : Nat} {ps
       RunNestRel sig ι P n (fun k _ => levelRel sig ι k) τ₂ (B.subst (Subst.append θ₂ ts.toSubst))
         (RunNestRel.atArgs sig ι P n τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
           ts.terms) := by
-  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-    Nat.forall_lt (levelRel_run_unique hd) _
+    levelRel_run_unique_lt hd _
   have hT := TelRel.eqSubst_iff_plain hd hT₁
   have heq := fun (ts : Args 0 [] ps) R' =>
     RunNestRel.atArgs_eq (A := fun ts => B.subst (Subst.append θ₁ ts.toSubst)) (ts := ts) (R := R')
@@ -184,9 +183,9 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} :
       (RunNestReadsOk n) := by
   intro _ κ hn Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
   intro D hcase
-  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-    Nat.forall_lt (levelRel_run_unique hd) _
+    levelRel_run_unique_lt hd _
   obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd

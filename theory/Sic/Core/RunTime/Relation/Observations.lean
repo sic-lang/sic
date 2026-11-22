@@ -14,7 +14,6 @@ import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Rules
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Run Time of the Observations
@@ -98,7 +97,7 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, inst, rs, _, θ, θ', hm, rsR, hN, hS, D, S, h, H, o,
       a, hv, hr => by
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     rw [Destructors.substLevels] at hm
     replace hm := hm.cons_inv
     obtain ⟨hΘm, hm⟩ := hm
@@ -232,7 +231,7 @@ theorem RunDesRel.of_positions (hd : sig.Distinct) {n : Nat} {k' : Nat} (L : Fin
     cases h
     trivial
   | _, _, .cons (d := d) (ps := ps) p q ς Θ B ψ ds, rs, hN, D, θ, _, h, H, o, a, hv, hr => by
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     cases h with
     | recursive _ hrs => rw [hN 0] at hrs; cases hrs
     | @cons _ _ _ _ _ _ _ _ _ _ _ _ _ _ SΘ RΘ i hi hΘ hRΘ F R hB hF hR G hG _ =>
@@ -292,7 +291,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         obtain ⟨-, hrun, -⟩ := ho
         refine ⟨_, _, hi, hRΘ, fun H' hH' ts bs hts ϖ' => ?_⟩
         obtain ⟨w, H'', tr, hev, hw⟩ := hrun hp H' hH' ts bs hts ϖ'
-        have htt := RunTelRel.fieldsRel hd (Nat.forall_lt (levelRel_isPer hd) _) hRΘ (fun _ => rfl)
+        have htt := RunTelRel.fieldsRel hd (levelRel_isPer_lt hd _) hRΘ (fun _ => rfl)
           _ _ hΘ (fun _ => rfl) H' ts.terms bs hts
         obtain ⟨v, hv'⟩ := hB ts htt
         exact ⟨w, H'', tr, hev, (hRv ts htt v hv').runsAs hv' hw⟩
@@ -329,7 +328,7 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
       | recursive _ hrs => rw [hN 0 hr] at hrs; cases hrs
       | cons _ hΘ _ _ _ hB hF _ _ hG _ =>
         obtain ⟨hA, -, hGo⟩ := ho
-        have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) (fun _ => .plain) hΘ
+        have hSp := TelRel.isPer hd (levelRel_isPer_lt hd _) (fun _ => .plain) hΘ
         refine h.run hd (hds _ _ fun τ₁ τ₂ hτ => ?_) hN' (hR' _) (hG _ hA) hGo hp
         obtain ⟨ts, rfl⟩ := Subst.exists_args ps' @τ₁
         obtain ⟨us, rfl⟩ := Subst.exists_args ps' @τ₂
@@ -575,8 +574,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
   have hS' := RunTelRel.of_runsAsArgs_plain hd h₁ _
     (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts htsρ bs hbsρ
-  have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-    (Nat.forall_lt (levelRel_run_unique hd) _) h₂ _ _ hRΘ
+  have hRΘts : RΘ H' ts.terms bs := (RunTelRel.congr hd (levelRel_isPer_lt hd _)
+    (levelRel_run_unique_lt hd _) h₂ _ _ hRΘ
     (fun _ => .plain) H' ts.terms bs).1 hS'
   -- The observation evaluates to an address to which the observation of the corecursor is related.
   obtain ⟨w, H'', tr, hev, hw⟩ := hobsR H' hH' ts bs hRΘts ϖ₀

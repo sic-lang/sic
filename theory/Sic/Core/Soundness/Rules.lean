@@ -9,7 +9,6 @@ import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Soundness of the Rules
@@ -660,7 +659,7 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
+    have ih := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
     split at h
@@ -733,9 +732,9 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
   | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
     replace h := h.cons_inv
     obtain ⟨hΘ, h⟩ := h
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
+      levelRel_run_unique_lt hd _
     have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)
         ((rs (i + 1)).map Rf) ((rs (i + 1)).map Rf) :=
       fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _
@@ -818,7 +817,7 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
   have h₁' := DesRel.substLevels_of_atLevels hd h₁
   have h₂' := DesRel.substLevels_of_atLevels hd h₂
   have hS : S Rf T = S' := Math.Rel₂.ofGraph_eq h₁' fun _ h' =>
-    DesRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁'
+    DesRel.unique hd (levelRel_isPer_lt hd _) h' _ _ h₁'
   rw [hS]
   exact ⟨h₁', h₂'⟩
 
@@ -882,7 +881,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.runBlockRel decl.codataTypes S T.name) := by
   have ih : ∀ m, m < (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue →
-      RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := levelRel_run_unique_lt hd _
   let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
       RunObsRel := fun X => Math.Rel₃.ofGraph fun T S' =>
     RunDesRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
@@ -909,7 +908,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
     have h₁' := RunDesRel.substLevels_of_atLevels hd h₁
     have h₂' := RunDesRel.substLevels_of_atLevels hd h₂
     have hSS : S X T = S' := Math.Rel₃.ofGraph_eq h₁' fun _ h' =>
-      RunDesRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
+      RunDesRel.congr hd (levelRel_isPer_lt hd _) ih h' _ _ h₁'
         (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _)
     rw [hSS]
     exact ⟨h₁', h₂'⟩

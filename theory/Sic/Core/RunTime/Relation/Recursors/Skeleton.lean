@@ -3,7 +3,6 @@ module
 public import Sic.Core.RunTime.Relation.Recursors.Nested
 public import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Meaning.Uniqueness
-import Sic.Math.Nat
 
 /-!
 # Run Time of the Nested Results of an Erased Recursor
@@ -174,7 +173,7 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _,
       .cons (SΘ := SΘ) _ hΘ F hF hBresp G hG hresp, hAll, _, hRel, o₁, o₂, f₁, hSo, hf₁, _, hσ,
       _, hνB => by
-    have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+    have ih := levelRel_isPer_lt (ι := ι) hd n
     have hSp := TelRel.isPer hd ih (fun _ => .plain) hΘ
     have hFv : ∀ ts : Args 0 [] ps', SΘ ts.terms ts.terms →
         ∃ v, FieldRel sig ι n (fun m _ => levelRel sig ι m) s v (F ts.terms) := fun ts hts => by

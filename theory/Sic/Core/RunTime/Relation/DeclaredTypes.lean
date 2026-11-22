@@ -8,7 +8,6 @@ import Sic.Core.RunTime.Relation.Levels
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Run Time of the Declared Types
@@ -76,7 +75,7 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA .plain
+    RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain
   have hplain : ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' := by
     have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧ κ₁.level.closedValue ≤ n ∧
         ValidEqTerm₀ sig ι A A (.sort κ₁)) →
@@ -180,7 +179,7 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA .plain
+    RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain
   -- An instance of a declared type is a type without position, whose equality relates the term to
   -- itself: the graph of run time then relates what the graph of the nestings does.
   have hsort : (∃ νs, τ = .inst νs) → RunsAs sig ι P H t b A := fun hi => by
@@ -365,7 +364,7 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   obtain ⟨n, S, hS, rfl⟩ := HasRun.data hd h hqp hl hR hs
   cases Computesι.det hd htw hct
   have hmono : DataType.RunBlockMono decl.dataTypes S :=
-    DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+    DataType.RunBlockMono.of_runTelRel hd (levelRel_run_mono_lt hd _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩) (inst := fun D => .inst D qs ls ps as) hS
   obtain ⟨T'', hT'', hn'', c, hc', i, fs, bs, hIs, hi, ha, hSc⟩ :=
     DataType.runBlockRel_unfold hmono hrel
@@ -415,9 +414,9 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         (DataType.runBlockRel sig hqp.inst decl.dataTypes S T'.name) := fun T' hT' =>
       .univ _ (levelRel_run_iff.2 (hU T' hT').1)
     have ih : ∀ m, m < (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue →
-        RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
+        RunLevelRel.Unique ((levelRel sig ι m).run P) := levelRel_run_unique_lt hd _
     have hmono : DataType.RunBlockMono decl.dataTypes S :=
-      DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+      DataType.RunBlockMono.of_runTelRel hd (levelRel_run_mono_lt hd _)
         (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩) (inst := fun D => .inst D qs ls ps as) hS
     refine ⟨_, hw _, .inr ⟨_, hR T hT, _, (Whnf.ctor ..).computes,
       DataType.runBlockRel_fold hmono hT ⟨con, hc, i, ts.terms, bs, ⟨qs, ls, ps, _, as, rfl⟩, hi, ha,
@@ -433,7 +432,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (fun _ _ hl hp => (Parameter.grades_of_getElem? hl).symm ▸ hp) ts
       ((con.eqSubst_fields_atLevels hqp hl as).2 hts) bs
         (RunsAsArgs.levelEquiv hd (con.fields_atLevels_subst hqp hl as).symm hbs)
-    exact (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS X T hT con hc) _ _
+    exact (RunTelRel.congr hd (levelRel_isPer_lt hd _) ih (hS X T hT con hc) _ _
       (RunTelRel.fieldsAt_of_atLevels hd h₁)
       (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts.terms bs).2 hS'
   · obtain ⟨S, hP, -⟩ := hv.propRel hd hdecl hqp hl hadm has hs
@@ -477,18 +476,18 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     {H : Heap} {bs : List Nat} (h : S X con H ts.terms bs) :
     RunsAsArgs sig ι P H g ts bs (con.fieldsAt hqp.inst (ls.getFin hl) as) := by
   have ih : ∀ m, m < (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue →
-      RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := levelRel_run_unique_lt hd _
   -- The fields at the values of the levels, which the meaning of the declaration gives.
   -- The relations `(®_μ)` of the block relate the fields that the relations `X` within them do.
   let Y : Name → RunRel := DataType.runBlockRel sig hqp.inst decl.dataTypes S
   have hY : S Y con H ts.terms bs :=
-    RunTelRel.block_mono hd (Nat.forall_lt (levelRel_run_mono hd) _)
+    RunTelRel.block_mono hd (levelRel_run_mono_lt hd _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
       (F := fun X D => (.inst D qs ls ps as, (X D).computed sig ι)) hS X Y
       (fun D H _ _ => RunRel.computed_mono (hX D H)) T hT con hc H _ _ h
   obtain ⟨S', h₁, -⟩ := (hv.fieldsAtClosedLevels hqp hl hadm has T hT con hc).runTelRel hd P hs
     fun D' => (Y D').computed sig ι
-  have hS' := (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih (hS Y T hT con hc) _ _
+  have hS' := (RunTelRel.congr hd (levelRel_isPer_lt hd _) ih (hS Y T hT con hc) _ _
     (RunTelRel.fieldsAt_of_atLevels hd h₁) (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H
       ts.terms bs).1 hY
   exact RunsAsArgs.levelEquiv hd (con.fields_atLevels_subst hqp hl as) (RunsAsArgs.of_runTelRel h₁

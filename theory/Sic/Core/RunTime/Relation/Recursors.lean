@@ -13,7 +13,6 @@ import Sic.Core.RunTime.Subsumption
 import Sic.Core.Shape.Results.Factor
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Soundness.Closed
-import Sic.Math.Nat
 
 /-!
 # Run Time of the Recursors
@@ -130,7 +129,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   -- The relations of run time of the block at the arguments substituted.
   obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hqp hl hadm hasσ hs P
   have hmono : DataType.RunBlockMono decl.dataTypes S :=
-    DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+    DataType.RunBlockMono.of_runTelRel hd (levelRel_run_mono_lt hd _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ (as.subst σ)⟩)
       (inst := fun D => .inst D qs ls ps (as.subst σ)) hS
   let Ns := us.erase sig Mode.oneOne.erased hΓ r (sig.recursiveResults T.name qs ps ⟨κ.quality, r, ς⟩ χ')
@@ -159,7 +158,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hD' : D' ∈ decl.names := hX.1 (fun D'' _ _ _ => D'' ∈ decl.names)
       (fun T' hT' _ _ _ _ => TypeDeclaration.name_mem_names hT')
     obtain ⟨T₃, hT₃, rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-    exact ⟨RunUnivRel.mono hd (Nat.forall_lt (levelRel_run_mono hd) _) (hU T₃ hT₃).1 hH₀ hX.1,
+    exact ⟨RunUnivRel.mono hd (levelRel_run_mono_lt hd _) (hU T₃ hT₃).1 hH₀ hX.1,
       fun ϖ' H' hH' hHH' => hX.2 ϖ' H' (hH₀.trans hH') hHH'⟩
   -- The leaves of the nested results: the recursor on a term of a type of the block, on the address
   -- of a path that runs to it, in a heap that extends `H`.

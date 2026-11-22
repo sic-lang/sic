@@ -4,7 +4,6 @@ public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Monotonicity of the Relation of Run Time
@@ -119,8 +118,8 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
   | .cons (ps := ps) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hΘ hRΘ F R hB hF hR
       _ hG hrs, _, _, h', hRs => by
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
@@ -135,7 +134,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
     | recursive _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive hi hrs hRΘ _ hG, _, _, h', hRs => by
     have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
+      levelRel_run_unique_lt hd _
     cases h' with
     | cons _ _ _ _ _ _ _ _ _ _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
     | recursive hi' hrs' hRΘ' _ hG' =>
@@ -144,7 +143,7 @@ theorem RunDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hRΘΘ := RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih hRΘ _ _ hRΘ'
+        have hRΘΘ := RunTelRel.congr hd (levelRel_isPer_lt hd _) ih hRΘ _ _ hRΘ'
           fun _ => .plain
         exact fun o a ⟨h₁, h₂⟩ =>
           ⟨fun hp H'' hH'' ts bs hts ϖ =>
@@ -212,9 +211,9 @@ theorem RunTelRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n 
     cases h' with
     | cons hA' hF' hR' _ hG' _ =>
       cases Computesι.det hd hA hA'
-      have hFF := FieldRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) hF _ _ hF'
-      have hRR := RunFieldRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-        (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
+      have hFF := FieldRel.unique hd (levelRel_isPer_lt hd _) hF _ _ hF'
+      have hRR := RunFieldRel.congr hd (levelRel_isPer_lt hd _)
+        (levelRel_run_unique_lt hd _) hR _ hR'
       exact fun H H' hH => RunFieldsRel.cons_mono
         (fun t a ⟨htt, hr⟩ => ⟨(hFF t t).1 htt,
           fun hp => (hRR H' t a).1 (RunFieldRel.mono hd ih hR (hK hH) (hr hp))⟩)
@@ -257,8 +256,8 @@ theorem RunNestRel.mono {sig : Signature} {ι : Interpretation} {P : Program} {n
     cases h' with
     | plain hA' hR' =>
       cases Computesι.det hd hA hA'
-      have hRR := RunFieldRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-        (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
+      have hRR := RunFieldRel.congr hd (levelRel_isPer_lt hd _)
+        (levelRel_run_unique_lt hd _) hR _ hR'
       exact fun _ H' hH t a h => (hRR H' t a).1 (RunFieldRel.mono hd ih hR (hK hH) h)
   | .direct _, _, _, h', hτ => by
     cases hτ with
@@ -306,8 +305,8 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
   | .cons (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (i := i) hi hν hΘ hRΘ F R hF hR _ hG _,
       _, _, h', hτ => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
     | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
@@ -323,8 +322,8 @@ theorem RunNestDesRel.mono {sig : Signature} {ι : Interpretation} {P : Program}
     | nested _ hν' => exact absurd (hB.eq_plain.1.2 hν) hν'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h', hτ => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hτ) B
     cases h' with
     | cons _ hν' => exact absurd (hB.eq_plain.1.1 hν') hν
@@ -391,6 +390,12 @@ theorem levelRel_run_mono {sig : Signature} {ι : Interpretation} {P : Program}
 termination_by n
 decreasing_by all_goals assumption
 
+/-- The relations of run time of the levels below `n` are monotone in the heap, in a signature whose
+names are distinct: the hypothesis that the laws of the graphs of the level `n` take. -/
+theorem levelRel_run_mono_lt {sig : Signature} {ι : Interpretation} {P : Program}
+    (hd : sig.Distinct) (n : Nat) : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P) :=
+  fun m _ => levelRel_run_mono hd m
+
 /-! ## Monotonicity at a Nesting
 
 The relation of run time that the graph of the nestings gives a type is monotone in the heap when
@@ -412,7 +417,7 @@ theorem levelRel_runNest_mono {sig : Signature} {ι : Interpretation} {P : Progr
     {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} (hd : sig.Distinct)
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => x.2.Monotone) τ) : R.Monotone :=
-  RunNestRel.monotone hd (Nat.forall_lt (levelRel_run_mono hd) _) hτ h
+  RunNestRel.monotone hd (levelRel_run_mono_lt hd _) hτ h
 
 /-- `®(v)` is monotone in the heap, in a signature whose names are distinct. -/
 theorem HasRun.mono {sig : Signature} {ι : Interpretation} {P : Program} {v : Term 0 []}

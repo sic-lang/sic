@@ -8,7 +8,6 @@ import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Soundness of the Declared Types
@@ -198,7 +197,7 @@ theorem DesRel.atLevels_of_substLevels (hd : sig.Distinct)
       ((T.body hqp.inst).substLevels (ls.getFin hl)) θ S) :
     DesRel sig ι n (fun m _ => levelRel sig ι m) s rs
       ((T.body hqp.inst).atLevels fun i => (ls.getFin hl i).closedValue) θ S :=
-  DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  DesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv
       (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
     (Subst.LevelEquiv.refl _)
@@ -212,7 +211,7 @@ theorem RunDesRel.atLevels_of_substLevels (hd : sig.Distinct) {P : Program}
       ((T.body hqp.inst).substLevels (ls.getFin hl)) θ S) :
     RunDesRel sig ι P n (fun m _ => levelRel sig ι m) D rs
       ((T.body hqp.inst).atLevels fun i => (ls.getFin hl i).closedValue) θ S :=
-  RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  RunDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv
       (fun _ => Level.equivalence.symm (Level.ofNat_closedValue _)) _)
     (Subst.LevelEquiv.refl _)
@@ -231,7 +230,7 @@ theorem DesRel.substLevels_of_atLevels (hd : sig.Distinct)
       (fun m _ => levelRel sig ι m) s rs
       ((T.body hqp.inst).substLevels (ls.getFin hl)) θ S := by
   rw [← decl.sort_atLevels_closedValue hqp hl]
-  exact DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  exact DesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
 
@@ -249,7 +248,7 @@ theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
       (fun m _ => levelRel sig ι m) D rs
       ((T.body hqp.inst).substLevels (ls.getFin hl)) θ S := by
   rw [← decl.sort_atLevels_closedValue hqp hl]
-  exact RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  exact RunDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _)
 
@@ -262,7 +261,7 @@ theorem NestDesRel.substLevels_of_atLevels (hd : sig.Distinct)
       ((T.body hqp.inst).atLevels fun i => (ls.getFin hl i).closedValue) @θ S) :
     NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν
       ((T.body hqp.inst).substLevels (ls.getFin hl)) @θ S :=
-  NestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  NestDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
 
@@ -276,7 +275,7 @@ theorem RunNestDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
       ((T.body hqp.inst).atLevels fun i => (ls.getFin hl i).closedValue) @θ S) :
     RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν
       ((T.body hqp.inst).substLevels (ls.getFin hl)) @θ S :=
-  RunNestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  RunNestDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
 
@@ -292,7 +291,7 @@ theorem FieldRel.blockInstance_atLevels (hd : sig.Distinct) {decl : TypeDeclarat
     FieldRel sig ι n (fun m _ => levelRel sig ι m) s
       (((decl.blockInstance hqp.inst D (.identity decl.scope)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst) F :=
-  FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+  FieldRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) h
     (decl.blockInstance_atLevels_subst hqp hl as D).symm
 
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
@@ -316,7 +315,7 @@ theorem TelRel.fieldsAt_of_atLevels (hd : sig.Distinct)
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt hqp.inst (ls.getFin hl) as) S :=
   decl.sort_atLevels_closedValue hqp hl ▸ TelRel.levelEquiv hd
-    (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (levelRel_levelInvariant_lt hd _) h
     (c.fields_atLevels_subst hqp hl as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance hqp.inst D
@@ -347,7 +346,7 @@ theorem RunTelRel.fieldsAt_of_atLevels (hd : sig.Distinct) {P : Program}
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt hqp.inst (ls.getFin hl) as) S :=
   decl.sort_atLevels_closedValue hqp hl ▸ RunTelRel.levelEquiv hd
-    (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (levelRel_levelInvariant_lt hd _) h
     (c.fields_atLevels_subst hqp hl as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance hqp.inst D
@@ -379,7 +378,7 @@ theorem Constructor.runNestRel_instances (hd : sig.Distinct) {P : Program}
   Nest.All.map_rel₃ (fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
       exact decl.sort_atLevels_closedValue hqp hl ▸
-        RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+        RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _)
           (.plain (Whnf.inst ..).computes (.univ (hU T' hT')))
           (decl.blockInstance_atLevels_subst hqp hl as T'.name).symm .plain)
     (Telescope.nestAt_all decl.names _ j)
@@ -518,7 +517,7 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {names : L
           (fun i => (rs i).map fun D => (inst₂ D, Rf D)) Θ₂ S
   | [], _, .nil, .nil, _ => ⟨FieldsRel.nil, .nil, .nil⟩
   | _ :: _, rs, .cons q₁ p A₁ Θ₁, .cons q₂ _ A₂ Θ₂, h => by
-    have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
+    have ih := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     -- A first field whose nesting has a position, read by the graph of the nestings, and a rest
     -- that does not depend on it.
     have hnested : rs 0 ≠ .plain →
@@ -628,9 +627,9 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
           (fun i => (rs i).map fun D => (inst₂ D, Rf D)) Θ₂ S
   | [], _, .nil, .nil, _ => ⟨RunFieldsRel.nil, .nil, .nil⟩
   | _ :: _, rs, .cons q₁ p A₁ Θ₁, .cons q₂ _ A₂ Θ₂, h => by
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) κ.level.closedValue
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
     have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
+      levelRel_run_unique_lt hd _
     have hrr : ∀ (inst : Name → Term 0 []) i,
         Nest.Rel (fun x y : RunNestLeaf => ∀ H t a, x.2 H t a ↔ y.2 H t a)
           ((rs (i + 1)).map fun D => (inst D, Rf D))
@@ -851,7 +850,7 @@ theorem NestRel.plain_of_leaves (hd : sig.Distinct) {n : Nat} {sT s : Quality}
   | direct _ hT =>
     cases hτ with
     | direct hx =>
-      exact ⟨.type, _, NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hx hT
+      exact ⟨.type, _, NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hx hT
         .plain⟩
   | codata => exact hsort (hA ⟨_, rfl⟩)
   | codataProp => exact hsort (hA ⟨_, rfl⟩)
@@ -868,7 +867,7 @@ theorem NestRel.validEqTerm_iff (hd : sig.Distinct) {n : Nat} {sT s : Quality} {
     F t u ↔ ValidEqTerm₀ sig ι t u A := by
   obtain ⟨_, _, h'⟩ := h.plain_of_leaves hd hτ hA
   refine (levelRel_nest_agree hd (fun _ _ _ hT hTA =>
-    NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA
+    NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA
       .plain) h hτ h' t u).trans ?_
   cases h' with
   | plain hc hF => exact ⟨hF.validEqTerm hd hc, hF.of_validEqTerm hc⟩
@@ -894,7 +893,7 @@ theorem TelRel.of_eqSubst {n : Nat} {s : Quality} :
     cases h' with
     | cons hA hF G hG _ _ =>
       have hFtu := hF.of_validEqTerm hA ht
-      have hFp := FieldRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) hF
+      have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
       exact ⟨hFtu, TelRel.of_eqSubst (hG t (hFp.trans hFtu (hFp.symm hFtu))) (hH.2 t htt)
         (fun i => hτ (i + 1)) ts us hts⟩
     | nested hrs hF G hG =>
@@ -935,7 +934,7 @@ theorem TelRel.to_eqSubst (hd : sig.Distinct) {n : Nat} {s : Quality} :
       | .nil, _, h => exact h.elim
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
-        have hFp := FieldRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) hF
+        have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
         have hv := hF.validEqTerm hd hA htu
         exact key t u ts us hv (TelRel.to_eqSubst hd (hG t (hFp.trans htu (hFp.symm htu)))
           (hH.2 t (hv.trans hv.symm)) (fun i => hτ (i + 1)) ts us hts)
@@ -994,7 +993,7 @@ theorem TelRel.recRel (hd : sig.Distinct) {n : Nat} {s : Quality} {Rf : Name →
       | .nil, _, h => exact h.elim
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
-        have hFp := FieldRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) hF
+        have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
         have ih := TelRel.recRel hd (hG t (hFp.trans htu (hFp.symm htu))) rs.tail htail ts us hts
         match rs, hrs with
         | [], _ => trivial
@@ -1052,7 +1051,7 @@ theorem TelRel.nestedRel (hd : sig.Distinct) {n : Nat} {s : Quality} {L : Name �
       | .nil, _, h => exact h.elim
       | .cons _ _, .nil, h => exact h.elim
       | .cons t ts, .cons u us, ⟨htu, hts⟩ =>
-        have hFp := FieldRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) hF
+        have hFp := FieldRel.isPer hd (levelRel_isPer_lt hd _) hF
         have ih := TelRel.nestedRel hd (L := L) (hG t (hFp.trans htu (hFp.symm htu))) ns.tail
           htail ts us hts
         match ns, hrs with
@@ -1131,9 +1130,9 @@ theorem FieldRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {s : Quality} {ps :
         (FieldRel.atArgs sig ι n s (fun ts => B.subst (Subst.append θ₁ ts.toSubst))) f₁ f₂ →
       ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append Θ) τ₁ τ₂ →
         ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) := by
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih := levelRel_isPer_lt (ι := ι) hd n
   have hT := TelRel.eqSubst_iff_plain hd hT₁
-  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) m) (fun _ => .plain) hT₁
+  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd m) (fun _ => .plain) hT₁
   -- A type equal to the result at `θ₁` and the arguments `ts` has the equality at `ts`.
   have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
       ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
@@ -1193,9 +1192,9 @@ theorem RunFieldRel.atArgs_head (hd : sig.Distinct) (P : Program) {m n : Nat}
         RunFieldRel sig ι P n (fun k _ => levelRel sig ι k) v
           (RunFieldRel.atArgs sig ι P n (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
             ts.terms) := by
-  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ihm := levelRel_isPer_lt (ι := ι) hd n
   have ih : ∀ k, k < n → RunLevelRel.Unique ((levelRel sig ι k).run P) :=
-    Nat.forall_lt (levelRel_run_unique hd) _
+    levelRel_run_unique_lt hd _
   have hT := TelRel.eqSubst_iff_plain hd hT₁
   have hrun : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
       ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ ts.toSubst)) A (.sort κ₁) →
@@ -1296,7 +1295,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
   have h₁' := TelRel.fieldsAt_of_atLevels hd h₁
   have h₂' := TelRel.fieldsAt_of_atLevels hd h₂
   have hS : S Rf c = S' := Math.Rel₂.ofGraph_eq h₁' fun _ h' =>
-    TelRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁'
+    TelRel.unique hd (levelRel_isPer_lt hd _) h' _ _ h₁'
   rw [hS]
   refine ⟨h₁', h₂', fun hRf hI => ?_⟩
   -- The positions hold the instances of the block, up to the values of their levels.
@@ -1309,7 +1308,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         (((decl.blockInstance hqp.inst D (.identity decl.scope)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D)) := fun i =>
     Nest.All.map_rel₃ (fun D hD => decl.sort_atLevels_closedValue hqp hl ▸
-        NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hRf D hD)
+        NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) (hRf D hD)
           (decl.blockInstance_atLevels_subst hqp hl as₁ D).symm .plain)
       (Telescope.nestAt_all decl.names _ i)
   -- The types of the nested fields are terms of a sort, since the instances of the block are.
@@ -1354,7 +1353,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.runBlockRel sig hqp.inst decl.dataTypes S T.name) := by
   have ih : ∀ m, m < (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue →
-      RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := levelRel_run_unique_lt hd _
   let S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       RunFieldsRel := fun X => Math.Rel₃.ofGraph fun c S' =>
     RunTelRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
@@ -1378,7 +1377,7 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
     have h₁' := RunTelRel.fieldsAt_of_atLevels hd h₁
     have h₂' := RunTelRel.fieldsAt_of_atLevels hd h₂
     have hSS : S X c = S' := Math.Rel₃.ofGraph_eq h₁' fun _ h' =>
-      RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
+      RunTelRel.congr hd (levelRel_isPer_lt hd _) ih h' _ _ h₁'
         (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _)
     rw [hSS]
     exact ⟨h₁', h₂'⟩
@@ -1435,7 +1434,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
         ∀ fs₁ fs₂, S (DataType.blockRel decl.dataTypes S) c fs₁ fs₂ →
           S (DataType.blockRel decl.dataTypes S) c fs₁ fs₁ := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hqp hl hadm has
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd)
+  have ih := levelRel_isPer_lt (ι := ι) hd
     (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun X => S₀ fun D => (X D).computed sig ι
@@ -1539,7 +1538,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
         ∀ fs₁ fs₂, S (DataType.blockTruth decl.dataTypes S) c fs₁ fs₂ →
           S (DataType.blockTruth decl.dataTypes S) c fs₁ fs₁ := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hqp hl hadm has
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd)
+  have ih := levelRel_isPer_lt (ι := ι) hd
     (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
   let S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun B => S₀ fun D _ _ => B D
@@ -1774,7 +1773,7 @@ theorem ValidEqTerm₀.ctor_inv {decl : TypeDeclaration} {D : Name}
   cases Computesι.det hd hw hv
   obtain ⟨n, S, hS, hiff⟩ := HasEq.dataInst hd h hqp hl hs hR
   have hmono : DataType.BlockMono decl.dataTypes S :=
-    DataType.BlockMono.of_telRel hd (Nat.forall_lt (levelRel_isPer hd) _)
+    DataType.BlockMono.of_telRel hd (levelRel_isPer_lt hd _)
       (Θ := fun c => ⟨_, c.fieldsAt _ _ as⟩)
       (inst := fun D => .inst D qs ls ps as) hS
   obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := hne fun ⟨v', hv', _, _, hP⟩ => by

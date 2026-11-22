@@ -7,7 +7,6 @@ import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Equality of the Nested Types
@@ -105,9 +104,9 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
     hB₂ hds
   subst hs
   unfold NestDesReads at hds ⊢
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih := levelRel_isPer_lt (ι := ι) hd n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
+  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd κ.level.closedValue)
     (fun _ => .plain) hT₁
   have hκn : κ₁.level.closedValue ≤ n := Nat.le_trans (hκ.2 Fin.elim0) hn
   obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 hκn hB
@@ -172,9 +171,9 @@ theorem NestRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {sT s : Quality} {ps
     ∀ ts us, SΘ ts us → ∀ t u,
       NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts t u ↔
         NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) us t u := by
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih := levelRel_isPer_lt (ι := ι) hd n
   have hT := TelRel.eqSubst_iff_plain hd hT₁
-  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) m) (fun _ => .plain) hT₁
+  have hSp := TelRel.isPer hd (levelRel_isPer_lt hd m) (fun _ => .plain) hT₁
   have heq := fun (ts : Args 0 [] ps) F' =>
     NestRel.atArgs_eq (A := fun ts => B.subst (Subst.append θ₁ ts.toSubst)) (ts := ts) (F := F')
       (sT := sT) (s := s) (τ := τ₁) hd ih
@@ -203,7 +202,7 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   intro s κ ⟨hn, hs⟩ Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
   subst hs
   unfold NestDesReads at hds ⊢
-  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih := levelRel_isPer_lt (ι := ι) hd n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨hF₁, hF₂, hBresp⟩ := NestRel.atArgs_head hd hT₁ hB
   let F : Terms 0 [] → TermRel := NestRel.atArgs sig ι n sT κ.quality

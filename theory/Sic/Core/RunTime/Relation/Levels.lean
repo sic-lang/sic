@@ -6,7 +6,6 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.Soundness.Levels
 import Sic.Core.Syntax.Signature
-import Sic.Math.Nat
 
 /-!
 # Levels of the Relation of Run Time
@@ -133,7 +132,7 @@ theorem RunUnivRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
             y.2 H t' a)
           (fun D' H _ _ _ => RunRel.computed_levelEquiv hd (hXY D' H)) _) H
     have hmono : DataType.RunBlockMono decl.dataTypes S :=
-      DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
+      DataType.RunBlockMono.of_runTelRel hd (levelRel_run_mono_lt hd _)
         (Θ := fun c => ⟨_, c.fieldsAt _ _ _⟩) (inst := fun D => .inst D _ _ _ _) hS
     exact h (fun D H w a => ∀ w', Term.LevelEquiv w w' →
         DataType.runBlockRel sig _ decl.dataTypes S D H w' a)
@@ -179,17 +178,17 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
     cases h' with
     | cons hA' hF' hR' _ hG' _ =>
       cases Computesι.det hd hA hA'
-      have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      have ihm := levelRel_isPer_lt (ι := ι) hd n
       have hFF := FieldRel.unique hd ihm hF _ _ hF'
-      have hRR := RunFieldRel.congr hd ihm (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
+      have hRR := RunFieldRel.congr hd ihm (levelRel_run_unique_lt hd _) hR _ hR'
       have hFt := fun t t' htt (ht : Term.LevelEquiv t t') =>
         (hFF t' t').1
-          (FieldRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hF htt ht ht)
+          (FieldRel.rel_levelEquiv hd (levelRel_levelInvariant_lt hd _) hF htt ht ht)
       exact fun H => RunFieldsRel.cons_levelEquiv
         (fun t t' a ⟨htt, hr⟩ ht => ⟨hFt t t' htt ht,
           fun hp => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR (hr hp) ht)⟩)
         fun t t' _ ⟨htt, _⟩ ht => RunTelRel.rel_levelEquiv hd ih (hG t htt) _ _
-          (RunTelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+          (RunTelRel.levelEquiv hd (levelRel_levelInvariant_lt hd _)
             (hG' t' (hFt t t' htt ht))
             ((Telescope.LevelEquiv.refl _).subst₀ (Subst₀.LevelEquiv.single ht.symm))
             (fun _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
@@ -222,8 +221,8 @@ theorem RunNestRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : P
     cases h' with
     | plain hA' hR' =>
       cases Computesι.det hd hA hA'
-      have hRR := RunFieldRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _)
-        (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
+      have hRR := RunFieldRel.congr hd (levelRel_isPer_lt hd _)
+        (levelRel_run_unique_lt hd _) hR _ hR'
       exact fun H t t' a h ht => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR h ht)
   | .direct _, _, _, h', hτ => by
     cases hτ with
@@ -279,8 +278,8 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
   | .cons (d := d) (ps := ps) (B := B) (ψ := ψ) (ς := ς) (SΘ := SΘ) (RΘ := RΘ) (i := i) hi hν hΘ
       hRΘ F R hF hR _ hG _, _, _, h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
     cases h' with
@@ -291,7 +290,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
-          NestRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hF ts hts')
+          NestRel.rel_levelEquiv hd (levelRel_levelInvariant_lt hd _) (hF ts hts')
             _ _ _ (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
             (ef.subst (Subst.LevelEquiv.refl _))
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
@@ -308,7 +307,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunNestDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunNestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+            (RunNestDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _)
               (hG' _ ((hEE _ _).1 h₁')) (Destructors.LevelEquiv.refl _)
               (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm)
               (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
@@ -317,8 +316,8 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
   | .nested (d := d) (ps := ps) (B := B) (SΘ := SΘ) (RΘ := RΘ) hi hν hΘ hRΘ R hR _ hG, _, _, h',
       hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hB := Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRs) B
     cases h' with
     | cons _ hν' => exact absurd (hB.eq_plain.1.1 hν') hν
@@ -358,8 +357,8 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       _ hG hrs, _, _,
       h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
-    have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+      levelRel_run_unique_lt hd _
+    have ihm := levelRel_isPer_lt (ι := ι) hd n
     have hSΘp := TelRel.isPer hd ihm (fun _ => .plain) hΘ
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
@@ -370,7 +369,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
           have ⟨_, hv⟩ := hB ts hts'
-          FieldRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+          FieldRel.rel_levelEquiv hd (levelRel_levelInvariant_lt hd _)
             (hF ts hts' _ hv)
             (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _)) (ef.subst (Subst.LevelEquiv.refl _))
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
@@ -387,14 +386,14 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+            (RunDesRel.levelEquiv hd (levelRel_levelInvariant_lt hd _)
               (hG' _ ((hEE _ _).1 h₁'))
               (Destructors.LevelEquiv.refl _) (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm))
             (fun i => hRs (i + 1)) H o o' a h₃ e⟩
     | recursive _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
   | .recursive (d := d) (ps := ps) hi hrs hRΘ _ hG, _, _, h', hRs => by
     have ihu : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-      Nat.forall_lt (levelRel_run_unique hd) _
+      levelRel_run_unique_lt hd _
     cases h' with
     | cons _ _ _ _ _ _ _ _ _ _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0
     | recursive hi' hrs' hRΘ' _ hG' =>
@@ -403,7 +402,7 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       rw [hrs, hrs'] at h0
       cases h0 with
       | some hr =>
-        have hRΘΘ := RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ihu hRΘ _ _ hRΘ'
+        have hRΘΘ := RunTelRel.congr hd (levelRel_isPer_lt hd _) ihu hRΘ _ _ hRΘ'
           fun _ => .plain
         exact fun H o o' a ⟨h₁, h₂⟩ e =>
           ⟨fun hp H₁ hH₁ ts bs hts ϖ =>
