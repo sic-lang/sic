@@ -354,7 +354,7 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
     obtain ⟨RE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hR =>
-      cases Computesι.det hd ⟨.refl _, .inst D qs _ ps _⟩ hc
+      cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
       have hn := RunFieldRel.codata_inv hd hT hq hl hp hR
       have hls : ∀ i, (Level.ofNat ((ls.getFin hl i).closedValue) : Level 0) ≈ ls.getFin hl i :=
         fun i => Level.ofNat_closedValue _

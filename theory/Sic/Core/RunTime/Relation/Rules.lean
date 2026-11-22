@@ -74,7 +74,7 @@ theorem ValidTerm₀.hasRun {sig : Signature} {ι : Interpretation} (P : Program
 theorem RunsAs.sort {sig : Signature} {ι : Interpretation} {P : Program} {H : Heap}
     {t v : Term 0 []} {a : Nat} (κ : Universe 0) (ht : Computesι sig ι t v) :
     RunsAs sig ι P H t a (.sort κ) :=
-  ⟨_, Computes.sort _ κ, .inr ⟨_, HasRun.sort κ, v, ht, trivial⟩⟩
+  ⟨_, (Whnf.sort κ).computes, .inr ⟨_, HasRun.sort κ, v, ht, trivial⟩⟩
 
 -- ADE: `Uʳ`, in `Graded/Erasure/LogicalRelation/Fundamental/Universe.agda`, for the universes.
 /-- A term of a sort that its erasure replaces by `↯` is valid at run time, at every vector of

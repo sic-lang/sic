@@ -309,7 +309,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       Red.iota_subst hsig' hi τ₂ hq hl₂ hp ts₂ hu₂ hrs₂⟩
   have hσ₁ := hσ.left hctx
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls₁ ps (as₁.subst σ₁))
-      (.inst D' qs ls₁ ps (as₁.subst σ₁)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst D' qs ls₁ ps (as₁.subst σ₁)) := fun _ => (Whnf.inst ..).computes
   have hasσ := has.2 σ₁ σ₁ hσ₁
   have htσ : ValidEqTerm₀ sig ι t₁ t₁ (.inst T.name qs ls₁ ps (as₁.subst σ₁)) :=
     ht'.trans ht'.symm
@@ -363,7 +363,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       have hca : ValidEqTerm₀ sig ι (.ctor T'.name qs ls₁ ps (as₁.subst σ₁) con.name ts₁.terms)
           (.ctor T'.name qs₁' ls₁' ps₁' as₁'' con.name ts₁.terms)
           (.inst T'.name qs ls₁ ps (as₁.subst σ₁)) :=
-        hval T' hT' _ _ ⟨_, _, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩,
+        hval T' hT' _ _ ⟨_, _, (Whnf.ctor ..).computes, (Whnf.ctor ..).computes,
           DataType.blockRel_closed hmono hT' ⟨con, hcon, ts₁.terms, ts₁.terms,
             ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, (hiff T' hT' con hcon).2.2 _ _ hSb⟩⟩
       have hb' := hb.conv ((hCv j T' C' hj ((hidx j T' hj) ▸ hC')).motive hσ₁ hca)
@@ -628,7 +628,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
   rw [Term.subst_subst₀_of (Subst₀.Swaps.single _ _),
     Term.subst_subst₀_of (Subst₀.Swaps.single _ _)]
   have hI : Computesι sig ι (.inst T.name qs ls ps (as.subst σ₁))
-      (.inst T.name qs ls ps (as.subst σ₁)) := ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst T.name qs ls ps (as.subst σ₁)) := (Whnf.inst ..).computes
   obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht'.1.2
   cases Computesι.det hd hcv hI
   have hasσ := has.2 σ₁ σ₁ hσ₁
@@ -649,7 +649,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
     have hct : ValidEqTerm₀ sig ι (t.subst σ₁)
         (.ctor T.name qs ls ps (as.subst σ₂) con'.name ts₂.terms)
         (.inst T.name qs ls ps (as.subst σ₁)) :=
-      ⟨ht'.1, fun _ => ⟨_, _, _, _, hI, hw₁, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩, .univ _ hU',
+      ⟨ht'.1, fun _ => ⟨_, _, _, _, hI, hw₁, (Whnf.ctor ..).computes, .univ _ hU',
         DataType.blockRel_closed hmono hT ⟨con', hcon, ts₁.terms, ts₂.terms,
           ⟨_, _, _, _, _, rfl⟩, ⟨_, _, _, _, _, rfl⟩, hS₁₂⟩⟩,
         fun hp => absurd hp hnp⟩

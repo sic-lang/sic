@@ -408,7 +408,7 @@ theorem HasEq.validEqTerm_whnf (hd : sig.Distinct) {A v t u : Term 0 []} {R : Te
     (hA : Computesι sig ι A v) (hR : HasEq sig ι v R) (ht : Whnf (sig.interpret ι) t)
     (hu : Whnf (sig.interpret ι) u) (h : R t u) : ValidEqTerm₀ sig ι t u A :=
   ⟨⟨hd, v, v, R, hA, hA, hR, hR, fun _ _ => .rfl⟩,
-    fun _ => ⟨v, t, u, R, hA, ⟨.refl _, ht⟩, ⟨.refl _, hu⟩, hR, h⟩,
+    fun _ => ⟨v, t, u, R, hA, ht.computes, hu.computes, hR, h⟩,
     fun ⟨v', hv', _⟩ => by
       cases Computesι.det hd hA hv'
       exact ⟨v, R, hA, hR, h⟩⟩
@@ -611,7 +611,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
         (v.grades ps ms₁) (.snoc (e := .var) as' t₁))
       (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
         (v.grades ps ms₁) (.snoc (e := .var) as' t₁)) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   cases Computesι.det hd hIA hcA
   have hrs : ∀ {α : Type} (f : Name → α) (i : Nat),
       ((TL.body I').recursionAt declL.names i).map f = none := fun f i => by

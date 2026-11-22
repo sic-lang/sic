@@ -258,7 +258,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   have hT' : T' ∈ decl.dataTypes := List.mem_of_getElem? hj
   have hasσ := has.2 σ σ hσ
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
-      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The equality of the block at the arguments substituted.
   obtain ⟨SM, hUM, hmonoM, hrecM, hNM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
   have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
@@ -270,7 +270,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   obtain ⟨v', w₁, w₂, R', hv', hw₁, -, hR', hrel⟩ :=
     hwv.2.1 (Computesι.not_computesToProp hd (hI _) (levelRel_univ_iff.2 (hUM T' hT').1))
   cases Computesι.det hd (hI _) hv'
-  cases Computesι.det hd hw₁ ⟨.refl _, .ctor _ _ _ _ _ _ _⟩
+  cases Computesι.det hd hw₁ (Whnf.ctor ..).computes
   have hrel' := (HasEq.unique hd hR' (.univ _ (levelRel_univ_iff.2 (hUM T' hT').1)) _ _).1 hrel
   obtain ⟨T'', hT'', hn'', con'', hcon'', fs₁, fs₂, hv₁, -, hS''⟩ :=
     DataType.blockRel_inv hmonoM hrel'
@@ -539,7 +539,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   have hca : ValidEqTerm₀ sig ι
       (.ctor T'.name qs ls ps (as.subst σ) con.name ts.terms)
       (.ctor T'.name qs' ls' ps' as' con.name ts.terms) (.inst T'.name qs ls ps (as.subst σ)) :=
-    hval T' hT' _ _ ⟨_, _, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩,
+    hval T' hT' _ _ ⟨_, _, (Whnf.ctor ..).computes, (Whnf.ctor ..).computes,
       DataType.blockRel_closed hmonoM hT' ⟨con, hcon, ts.terms, ts.terms, ⟨_, _, _, _, _, rfl⟩,
         ⟨_, _, _, _, _, rfl⟩, hself⟩⟩
   have hmot := (hCv j T' C' hj hC').motive hσ hca

@@ -482,7 +482,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
         (hX as _).symm (hX as _).symm (Term.LevelEquiv.refl _)⟩
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   -- The instance is a type, since the destructor of a proposition has no use at run time.
   have hs : (decl.sort I).quality = .type := by
     cases hs : (decl.sort I).quality with
@@ -522,7 +522,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (CodataType.runBlockRel decl.codataTypes S T'.name) :=
         .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs hnS S hS
       exact RunsAs.levelEquiv hd (hX as _).symm
-        ⟨_, ⟨.refl _, .inst _ _ _ _ _⟩, .inr ⟨_, .univ n (levelRel_run_iff.2 hU), w, hw, Y, hY,
+        ⟨_, (Whnf.inst ..).computes, .inr ⟨_, .univ n (levelRel_run_iff.2 hU), w, hw, Y, hY,
           hYw⟩⟩⟩) hSρ hSo hpr
   -- The equality of the term relates its observations to those of the corecursor.
   obtain ⟨v₂, -, Req, hcv₂, -, hReq, -⟩ := htv.1.2

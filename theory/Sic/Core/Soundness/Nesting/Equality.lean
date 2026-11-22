@@ -363,7 +363,7 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
     obtain ⟨FE, hrE, -⟩ := hr
     cases hrE with
     | plain hc hF =>
-      cases Computesι.det hd ⟨.refl _, .inst D qs _ ps _⟩ hc
+      cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
       obtain ⟨hn, hs⟩ := FieldRel.codata_inv hd hT hq hl hp hF
       have hls : ∀ i, (Level.ofNat ((ls.getFin hl i).closedValue) : Level 0) ≈ ls.getFin hl i :=
         fun i => Level.ofNat_closedValue _

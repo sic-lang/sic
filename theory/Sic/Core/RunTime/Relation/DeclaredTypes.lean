@@ -337,7 +337,7 @@ theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have e₀ := Args.terms_inj he
   subst e₀
   have hw : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   obtain ⟨v, hcv, hor⟩ := ht
   cases Computesι.det hd hw hcv
   rcases hor with ⟨k, b, hk⟩ | ⟨R, hR, w, htw, hrel⟩
@@ -399,7 +399,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     RunsAs sig ι P H (.ctor D qs ls ps as con.name ts.terms) a (.inst D qs ls ps as) := by
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps as) (.inst D' qs ls ps as) :=
-    fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    fun _ => (Whnf.inst ..).computes
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hq hl hp hadm has hs P
     have hR : ∀ T' ∈ decl.dataTypes, HasRun sig ι P (.inst T'.name qs ls ps as)
@@ -417,7 +417,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (hS X T hT c hc) _ _ (hS Y T hT c hc)
           (fun _ => Nest.map_rel₃
             (fun D' H _ e _ _ => e ▸ RunRel.computed_mono (hXY D' H)) _) H H rfl
-    refine ⟨_, hw _, .inr ⟨_, hR T hT, _, ⟨.refl _, .ctor _ _ _ _ _ _ _⟩,
+    refine ⟨_, hw _, .inr ⟨_, hR T hT, _, (Whnf.ctor ..).computes,
       DataType.runBlockRel_fold hmono hT ⟨con, hc, i, ts.terms, bs, ⟨qs, ls, ps, _, as, rfl⟩, hi, ha,
         ?_⟩⟩⟩
     -- The fields at the values of the levels, which the meaning of the declaration gives.
@@ -513,7 +513,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     {H : Heap} {bs : List Nat} (h : S X con H ts.terms bs) :
     RunsAsArgs sig ι P H g ts bs (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) := by
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps as) (.inst D' qs ls ps as) :=
-    fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    fun _ => (Whnf.inst ..).computes
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
   -- The fields at the values of the levels, which the meaning of the declaration gives.

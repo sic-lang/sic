@@ -8,7 +8,7 @@ import Sic.Core.Meaning.Uniqueness
 # Exactness of the Meaning
 
 The exactness of the meaning of annex 21 of RFC 36 for the proofs: a meaningful signature has
-distinct names, a sort computes to itself and only to itself, and a sort is not a proposition, so
+distinct names, a sort computes to nothing else than itself, and a sort is not a proposition, so
 that the propositions are told apart from the types.
 
 ADE have no propositions.
@@ -27,10 +27,6 @@ RFC: `\mathsf{distinct}_{\vDash\Sigma}` -/
 theorem ValidSig.distinct {ι : Interpretation} {sig : Signature} (h : ValidSig ι sig) :
     sig.Distinct :=
   h.1
-
-/-- A sort computes to itself. -/
-theorem Computes.sort (sig : Signature) (κ : Universe 0) : Computes sig (.sort κ) (.sort κ) :=
-  ⟨.refl _, .sort κ⟩
 
 /-- A sort computes to nothing else than itself. -/
 theorem Computes.sort_inv {sig : Signature} {κ : Universe 0} {v : Term 0 []} :

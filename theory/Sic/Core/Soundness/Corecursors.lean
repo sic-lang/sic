@@ -420,7 +420,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         (hX a₁ _).symm (hX a₂ _).symm (Term.LevelEquiv.refl _)⟩
   -- The equality of the instance.
   have hI : Computesι sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₁) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht.1.2
   cases Computesι.det hd hcv hI
   -- Observations related by the equality of the destructors, at the equalities of the instances
@@ -1058,7 +1058,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (Subst.LevelEquiv.refl _)
         (Term.substLevels_levelEquiv_atLevels L B))
   have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality
   · rw [hs] at hI
     obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
@@ -1100,7 +1100,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     have hct : ∀ (r : Grade) (a : InstanceArgs 0 [] decl.scope) (ss : Terms 0 [])
         (Ss : States 0 []) (gs : DestructorBranches 0 []),
         Computesι sig ι (.corec r T.name qs ls ps a ss Ss gs) (.corec r T.name qs ls ps a ss Ss gs) :=
-      fun _ _ _ _ _ => ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩
+      fun _ _ _ _ _ => (Whnf.corec ..).computes
     refine ⟨(ValidEqTerm₀.univType hI).left,
       fun _ => ⟨_, _, _, _, hw, hct _ _ _ _ _, hct _ _ _ _ _, .univ _ hU', hrel⟩,
       fun hp => (Computesι.not_computesToProp hd hw hU' hp).elim⟩
@@ -1684,7 +1684,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst))) :
     ValidEqTerm₀ sig ι t u (.inst D qs ls ps as) := by
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   obtain ⟨v, -, R, hcv, -, hR, -⟩ := ht.1.2
   cases Computesι.det hd hcv hI
   have hnd := TypeDeclaration.codataTypes_nodup (hd.nodup h.1)

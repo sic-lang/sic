@@ -742,8 +742,8 @@ theorem ValidEqTerm₀.ofUniv (hd : sig.Distinct) {t u v w : Term 0 []} {l : Lev
     ValidEqTerm₀ sig ι t u (.sort ⟨.type, l⟩) := by
   have hU := HasEq.univ (sig := sig) (ι := ι) (l.closedValue + 1)
     (levelRel_univ_iff.2 (.univ (l := l) rfl rfl))
-  exact ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU, fun _ _ => .rfl⟩,
-    fun _ => ⟨_, _, _, _, Computes.sort _ _, ht, hu, hU, ⟨R, hv, hw⟩, hr⟩,
+  exact ⟨⟨hd, _, _, _, (Whnf.sort _).computes, (Whnf.sort _).computes, hU, hU, fun _ _ => .rfl⟩,
+    fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, ht, hu, hU, ⟨R, hv, hw⟩, hr⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
 
 /-- Two closed terms that compute to propositions of `Ω_l` with the same truth are equal terms of
@@ -756,8 +756,8 @@ theorem ValidEqTerm₀.ofProp (hd : sig.Distinct) {t u v w : Term 0 []} {l : Lev
       (fun P Q => ∃ b₁ b₂, (levelRel sig ι l.closedValue).prop P b₁ ∧
         (levelRel sig ι l.closedValue).prop Q b₂ ∧ (b₁ ↔ b₂)) :=
     .univ (l.closedValue + 1) (levelRel_univ_iff.2 (.prop rfl rfl))
-  exact ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU, fun _ _ => .rfl⟩,
-    fun _ => ⟨_, _, _, _, Computes.sort _ _, ht, hu, hU, b, b, hv, hw, .rfl⟩,
+  exact ⟨⟨hd, _, _, _, (Whnf.sort _).computes, (Whnf.sort _).computes, hU, hU, fun _ _ => .rfl⟩,
+    fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, ht, hu, hU, b, b, hv, hw, .rfl⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
 
 -- ADE: none.
@@ -1059,7 +1059,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
       (fun X T hT c hc => (hS₀ (fun D => (X D).computed sig ι) T hT c hc).1) X Y
       fun D _ _ => TermRel.computed_mono (hXY D)
   have hI : ∀ D, Computesι sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₁) :=
-    fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    fun _ => (Whnf.inst ..).computes
   have hF : ∀ T ∈ decl.dataTypes, FieldRel sig ι
       ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
       (fun m _ => levelRel sig ι m) .type (.inst T.name qs ls ps as₁)
@@ -1084,7 +1084,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
     show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
       (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
     rw [hs]
-    exact ValidEqTerm₀.ofUniv hd ⟨.refl _, .inst _ _ _ _ _⟩ ⟨.refl _, .inst _ _ _ _ _⟩
+    exact ValidEqTerm₀.ofUniv hd (Whnf.inst ..).computes (Whnf.inst ..).computes
       (levelRel_univ_iff.2 (hU T' hT').1) (levelRel_univ_iff.2 (hU T' hT').2) fun P =>
         have ⟨_, _, hR⟩ := hv.runUnivRel hd hdecl hq hl hp hadm has hs P
         ⟨_, levelRel_run_iff.2 (hR T' hT').1, levelRel_run_iff.2 (hR T' hT').2⟩
@@ -1165,7 +1165,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
       (F := fun B D => (.inst D qs ls ps as₁, fun _ _ => B D))
       (fun B T hT c hc => (hS₀ (fun D _ _ => B D) T hT c hc).1) B B' fun D _ _ => hB D
   have hI : ∀ D, Computesι sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₁) :=
-    fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    fun _ => (Whnf.inst ..).computes
   refine ⟨S, hP, hmono, fun B T hT c hc ts us h =>
     TelRel.recRel hd (hS₀ _ T hT c hc).1 _
       (fun i D h => ⟨_, by rw [(Telescope.nestAt_eq_direct _ i).2 h]; rfl⟩) ts us h,
@@ -1185,7 +1185,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
     show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
       (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
     rw [hs]
-    exact ValidEqTerm₀.ofProp hd ⟨.refl _, .inst _ _ _ _ _⟩ ⟨.refl _, .inst _ _ _ _ _⟩
+    exact ValidEqTerm₀.ofProp hd (Whnf.inst ..).computes (Whnf.inst ..).computes
       (levelRel_prop_iff.2 (hP T' hT').1) (levelRel_prop_iff.2 (hP T' hT').2)
   obtain ⟨hof, hto⟩ :=
     (hS₀ (fun D _ _ => DataType.blockTruth decl.dataTypes S D) T hT c hc).2.2 hRf hV
@@ -1214,7 +1214,7 @@ theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ as : InstanceArgs 0 [] decl.scope,
       Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
-    fun as => ⟨.refl _, .inst _ _ _ _ as⟩
+    fun as => (Whnf.inst _ _ _ _ as).computes
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
     (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
@@ -1285,11 +1285,11 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     ValidEqTerm₀.inst hd h hv hq hl hp hadm has
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : Computesι sig ι (.inst T.name qs ls ps as₁) (.inst T.name qs ls ps as₁) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   have hct : ∀ (as : InstanceArgs 0 [] decl.scope) (ts : Terms 0 []),
       Computesι sig ι (.ctor T.name qs ls ps as con.name ts)
         (.ctor T.name qs ls ps as con.name ts) :=
-    fun _ _ => ⟨.refl _, .ctor _ _ _ _ _ _ _⟩
+    fun _ _ => (Whnf.ctor ..).computes
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · rw [hs] at hI
     obtain ⟨S, hU, hmono, hrec, -, hiff⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
@@ -1393,7 +1393,7 @@ theorem ValidEqTerm₀.ctor_inv {decl : TypeDeclaration} {D : Name}
           ts₁.toSubst ts₂.toSubst := by
   obtain ⟨⟨hd, v, -, R, hv, -, hR, -⟩, hne, -⟩ := ht
   have hw : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   cases Computesι.det hd hw hv
   obtain ⟨n, S, hS, hiff⟩ := HasEq.dataInst hd h hq hl hp hs hR
   have hmono : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ decl.dataTypes,
@@ -1495,7 +1495,7 @@ theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDecl
     sort := Level.closedValue_subst_equiv hls _
     per := levelRel_isPer_lt hd _
     instances := fun a D => decl.blockInstance_atLevels_subst hq hl hp a D
-    computes := fun _ _ => ⟨.refl _, .inst _ _ _ _ _⟩
+    computes := fun _ _ => (Whnf.inst ..).computes
     desRel := fun hS => DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)

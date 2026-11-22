@@ -472,8 +472,9 @@ theorem ValidEqTerm₀.sort {sig : Signature} {ι : Interpretation} (hd : sig.Di
   have hU := HasEq.univ (sig := sig) (ι := ι) (l₁.closedValue + 2)
     (levelRel_univ_iff.2 (.univ (l := .succ l₁) (k := l₁.closedValue + 1) rfl rfl))
   have h₂ : l₂.closedValue = l₁.closedValue := (hl Fin.elim0).symm
-  refine ⟨⟨hd, _, _, _, Computes.sort _ _, Computes.sort _ _, hU, hU, fun _ _ => .rfl⟩,
-    fun _ => ⟨_, _, _, _, Computes.sort _ _, Computes.sort _ _, Computes.sort _ _, hU, ?_⟩,
+  refine ⟨⟨hd, _, _, _, (Whnf.sort _).computes, (Whnf.sort _).computes, hU, hU, fun _ _ => .rfl⟩,
+    fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, (Whnf.sort _).computes, (Whnf.sort _).computes,
+      hU, ?_⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
   cases q
   · exact ⟨⟨_, levelRel_univ_iff.2 (.univ rfl rfl), levelRel_univ_iff.2 (.univ h₂ rfl)⟩,

@@ -388,14 +388,14 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (ls ++ ms₁.map (·.level)) (v.grades ps ms₁) (.snoc (e := .var) as' t)
   have hc' : e.CorecObservations (Lifting.name D S) o' :=
     ⟨_, _, _, _, _, _, _, _, _, he.symm, by subst he; rfl⟩
-  have hwe : Computesι sig ι e e := ⟨.refl _, he ▸ .corec ..⟩
+  have hwe : Computesι sig ι e e := Whnf.computes (he ▸ .corec ..)
   -- The instance lifted, a type or a proposition with a relation of run time.
   have hIA : Computesι sig ι
       (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
         (v.grades ps ms₁) (.snoc (e := .var) as' t))
       (.inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms₁.map (·.level))
         (v.grades ps ms₁) (.snoc (e := .var) as' t)) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   obtain ⟨vA, R', hcA, hR'⟩ := hrun
   cases Computesι.det hd hIA hcA
   refine ⟨_, hIA, ?_⟩
@@ -634,7 +634,7 @@ theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst SE ∧
       SE (t.observation D qs ls ps as) (t.observation D qs ls ps as) := by
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
-    ⟨.refl _, .inst _ _ _ _ _⟩
+    (Whnf.inst ..).computes
   obtain ⟨-, v₀, -, R₀, hv₀, -, hR₀, -, -⟩ := ht.1
   cases Computesι.det hd hI hv₀
   obtain ⟨-, Se, hSe, rfl⟩ := (HasEq.instCodata_inv hd h hq hl hp hR₀).resolve_right

@@ -183,7 +183,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hmono := DesRel.blockMono hd hS
     -- The instances of the block are types of the universe, not propositions.
     have hcI : ∀ D', Computesι sig ι (.inst D' qs ls ps a) (.inst D' qs ls ps a) :=
-      fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      fun _ => (Whnf.inst ..).computes
     have hnp : ∀ T' ∈ decl.codataTypes, ¬ ComputesToProp sig ι (.inst T'.name qs ls ps a) :=
       fun T' hT' => Computesι.not_computesToProp hd (hcI _) (levelRel_univ_iff.2 (hU T' hT').1)
     -- A closed term of an instance computes to a corecursor, whose observations it has.

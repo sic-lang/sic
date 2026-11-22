@@ -157,7 +157,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
   obtain ⟨hls, hmean, hsort, -, hX, -, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm hasσ
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
-      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality with
   | prop =>
     -- A proposition, whose proofs are related to every address.
@@ -481,7 +481,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
                   (h₁.levelEquiv hd (hX (as.subst σ) T₃.name)))
     -- The corecursor is related to the closure.
     exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
-      hnS S hS)), _, ⟨.refl _, .corec _ _ _ _ _ _ _ _ _⟩, X, hcons,
+      hnS S hS)), _, (Whnf.corec ..).computes, X, hcons,
       .inr ⟨j, T', ps'', S', ts, bs, _, m, g, E', hj, rfl, hS', hts, List.prefix_refl _, hbs, hg,
         ha, List.length_map .., fun _ => rfl, rfl⟩⟩⟩
 

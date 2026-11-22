@@ -47,7 +47,7 @@ theorem ValidEqTerm₀.equality_eq {s : Quality} {l : Level 0} {A t₁ t₂ p p'
   obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
-  cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
+  cases Computesι.det hd hv (Whnf.equality ..).computes
   -- The proof is a proof of it, so that it is true.
   exact (levelRel_prop_equality hd hb).1 (hp.prop_true hv hb)
 

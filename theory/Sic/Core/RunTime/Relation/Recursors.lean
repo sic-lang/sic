@@ -167,7 +167,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     fun _ _ hj => TypeDeclaration.idxOf_dataTypes hnd hj
   have hasσ := has.2 σ σ hσ
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
-      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The relations of run time of the block at the arguments substituted.
   obtain ⟨S, hS, hU⟩ := hv.runUnivRel hd hdecl hq hl hp hadm hasσ hs P
   have ihmono : ∀ m,
@@ -467,7 +467,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     fun _ _ hj => TypeDeclaration.idxOf_dataTypes hnd hj
   have hasσ := has.2 σ σ hσ
   have hI : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
-      (.inst D' qs ls ps (as.subst σ)) := fun _ => ⟨.refl _, .inst _ _ _ _ _⟩
+      (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   -- The equality of the block at the arguments substituted.
   obtain ⟨SM, hUM, hmonoM, hrecM, hNM, hiffM⟩ := hv.univRel hd hdecl hq hl hp hadm hasσ hs
   have hval : ∀ T' ∈ decl.dataTypes, ∀ a b,
@@ -784,7 +784,7 @@ theorem RunValidRen.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     obtain ⟨S, hP, hmono, -, -, -⟩ := hv.propRel hd hdecl hq hl hp hadm hasσ hs
     have hP' := levelRel_prop_iff.2 (hP T hT).1
     have hI : Computesι sig ι (.inst T.name qs ls ps (as.subst σ))
-        (.inst T.name qs ls ps (as.subst σ)) := ⟨.refl _, .inst _ _ _ _ _⟩
+        (.inst T.name qs ls ps (as.subst σ)) := (Whnf.inst ..).computes
     obtain ⟨v', R', hv', hR', hrel⟩ := htσ.2.2 ⟨_, hI, _, _, hP'⟩
     cases Computesι.det hd hI hv'
     have htrue : DataType.blockTruth decl.dataTypes S T.name :=

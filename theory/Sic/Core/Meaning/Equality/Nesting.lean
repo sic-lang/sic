@@ -209,7 +209,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       subst hA
       cases h' with
       | plain hA' hF' =>
-        cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
+        cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
         obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_type hd h hq hp hκ hF'
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -233,7 +233,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
       subst hA
       cases h' with
       | plain hA' hF' =>
-        cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
+        cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
         obtain ⟨m, hm, _, hu, rfl⟩ := FieldRel.codata_prop hd h hq hp hκ hF'
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim

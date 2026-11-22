@@ -216,7 +216,7 @@ theorem RunNestRel.of_plain {sig : Signature} {ι : Interpretation} {P : Program
       subst hA
       cases h' with
       | plain hA' hR' =>
-        cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
+        cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
         obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
         cases hu with
         | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -335,11 +335,11 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
       subst hA
       cases h' with
       | plain hA' hR' =>
-        cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
+        cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
         obtain ⟨m, hm, _, hu, rfl⟩ := RunFieldRel.codata_type hd h hq hp hκ hR'
         cases hE with
         | plain hA'' hF =>
-          cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA''
+          cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA''
           obtain ⟨m', hm', _, hue, rfl⟩ := FieldRel.codata_type hd h hq hp hκ hF
           cases hu with
           | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -389,7 +389,7 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
     subst hA
     cases h' with
     | plain hA' hR' =>
-      cases Computesι.det hd ⟨.refl _, .inst D qs ls ps as⟩ hA'
+      cases Computesι.det hd (Whnf.inst D qs ls ps as).computes hA'
       exact fun H t a _ _ => RunFieldRel.codata_prop hd h hq hp hκ hR' H t a
 termination_by structural h _ _ _ _ _ _ => h
 

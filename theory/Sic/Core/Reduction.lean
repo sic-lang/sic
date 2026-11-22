@@ -183,6 +183,10 @@ RFC: `\Downarrow` -/
 def Computes (sig : Signature) (t v : Term 0 []) : Prop :=
   RedStar sig t v ∧ Whnf sig v
 
+/-- A closed head normal form computes to itself, in no step. -/
+theorem Whnf.computes {sig : Signature} {v : Term 0 []} (h : Whnf sig v) : Computes sig v v :=
+  ⟨.refl _, h⟩
+
 /-! ## Determinism -/
 
 /-- A neutral term does not reduce. -/

@@ -1182,7 +1182,7 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ as : InstanceArgs 0 [] decl.scope,
       Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
-    fun as => ⟨.refl _, .inst _ _ _ _ as⟩
+    fun as => (Whnf.inst _ _ _ _ as).computes
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
     (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
@@ -1316,8 +1316,8 @@ theorem ValidEqTerm₀.equality {s : Quality} {l₁ l₂ : Level 0} {A₁ A₂ t
   have hU := HasEq.univ (sig := sig) (ι := ι) (l₁.closedValue + 1)
     (levelRel_univ_iff.2 (.prop (l := l₁) rfl rfl))
   refine ⟨(ValidEqTerm₀.sort hd (q := .prop) (Level.equivalence.refl l₁)).univType,
-    fun _ => ⟨_, _, _, _, Computes.sort _ _, ⟨.refl _, .equality ..⟩, ⟨.refl _, .equality ..⟩, hU,
-      b₁, b₂, hb₁, hb₂, ?_⟩,
+    fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, (Whnf.equality ..).computes,
+      (Whnf.equality ..).computes, hU, b₁, b₂, hb₁, hb₂, ?_⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
   exact (levelRel_prop_equality hd hb₁).trans (htruth.trans (levelRel_prop_equality hd hb₂).symm)
 
@@ -1354,7 +1354,7 @@ theorem ValidTermΓ.of_equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Qualit
   obtain ⟨A₀, v, w, R, hc, hv, -, hR, hvw⟩ := hcl not_computesToProp_sort
   cases hc.sort_inv
   obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
-  cases Computesι.det hd hv ⟨.refl _, .equality ..⟩
+  cases Computesι.det hd hv (Whnf.equality ..).computes
   exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
     .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (htrue σ₁ hσ₁)⟩⟩
 
@@ -1411,7 +1411,7 @@ theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B
       exact hs'.prop_true hwY hbY
   obtain ⟨w₁, b₁, hw₁, hb₁⟩ := hprop (hA.2 σ₁ σ₁ hσ₁)
   obtain ⟨w₂, b₂, hw₂, hb₂⟩ := hprop (hB.2 σ₁ σ₁ hσ₁)
-  exact ⟨fun _ => ⟨_, w₁, w₂, _, Computes.sort _ _, hw₁, hw₂, hU, b₁, b₂, hb₁, hb₂,
+  exact ⟨fun _ => ⟨_, w₁, w₂, _, (Whnf.sort _).computes, hw₁, hw₂, hU, b₁, b₂, hb₁, hb₂,
       himp hA ht hw₁ hb₁ hw₂ hb₂, himp hB hu hw₂ hb₂ hw₁ hb₁⟩,
     fun hP => absurd hP not_computesToProp_sort⟩
 
