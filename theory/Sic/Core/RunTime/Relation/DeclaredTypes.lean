@@ -91,7 +91,7 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
     | codata => exact hsort (hA ⟨_, rfl⟩)
     | codataProp => exact hsort (hA ⟨_, rfl⟩)
   obtain ⟨R', h'⟩ := hplain
-  refine levelRel_runNest_agree_nest hd hinv h hτ h' H t b ?_
+  refine levelRel_runNest_agree_nest hd h hτ h' H t b ?_
   cases h' with
   | plain hc hR' => exact hR'.of_runsAs hd hc hr
 
@@ -187,7 +187,7 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
     obtain ⟨_, _, E, hc, _, hE, _, _⟩ := hv.fieldRel hs hn
     obtain ⟨_, _, R', hc', _, hR', _⟩ := hv.runFieldRel P hn
     cases Computesι.det hd hc hc'
-    exact hR'.runsAs hc (levelRel_runNest_agree_plain hd hinv h hτ (.plain hc hR')
+    exact hR'.runsAs hc (levelRel_runNest_agree_plain hd h hτ (.plain hc hR')
       (.plain (sT := .type) hc hE) H t b (hE.of_validEqTerm hc ht) hr)
   cases h with
   | plain hc hR => exact hR.runsAs hc hr

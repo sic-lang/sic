@@ -4,6 +4,7 @@ public import Sic.Core.Meaning.RunTime.Properties
 public import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.RunTime.Nesting
+import Sic.Core.Meaning.Uniqueness.Levels
 
 /-!
 # Uniqueness of the Relations of the Levels
@@ -19,6 +20,8 @@ holds, and agrees with the graph of the types, which `Sic.Core.Meaning.Equality.
 The graph of the nestings of run time of a level gives a type a unique relation too, at the
 relations that a nesting holds, and agrees with the graph of run time on the terms that the
 equality of a type relates to themselves, which `Sic.Core.Meaning.RunTime.Nesting` proves.
+Both agreements read that the graph of the types and the graph of run time give the same relations
+to types whose levels have the same values, which `Sic.Core.Meaning.Uniqueness.Levels` proves.
 The equality of the terms of a universe compares the relations of run time of the level below it,
 so that its transitivity needs their uniqueness, which the induction gives with the partial
 equivalence relations.
@@ -80,21 +83,16 @@ theorem levelRel_nest_unique {sig : Signature} {ι : Interpretation} {n : Nat}
 /-- `ty(s_n)[λ]` agrees with the graph of the types: when each position of the nesting holds a type
 with the equality of its terms, the equality that it gives a type is the one that the type has
 without position, if it has one, in a signature whose names are distinct.
-The premise `hinv`, that the graph of the types gives the types equal up to the values of their
-levels the same equality, is no premise of the RFC, whose levels are equal when their values are;
-the invariance of the graph by these levels is proved after this module.
 RFC: `\mathsf{agree}_\lambda` -/
 theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {sT sT' s s' : Quality}
     {τ : Nest NestLeaf} {A : Term 0 []} {F F' : TermRel} (hd : sig.Distinct)
-    (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
     (h : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
     (hτ : Nest.All
       (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ)
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain A F') :
     ∀ t u, F t u ↔ F' t u :=
-  NestRel.agree hd (levelRel_isPer_lt hd _) hinv h hτ _ _ h'
+  NestRel.agree hd (levelRel_isPer_lt hd _) (fun _ _ _ hT hTA =>
+    NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain) h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
 distinct. -/
@@ -125,36 +123,27 @@ theorem levelRel_runNest_unique {sig : Signature} {ι : Interpretation} {P : Pro
 holds a type with its relation of run time, the relation that it gives a type relates a term to an
 address when the relation that the type has without position does, in a signature whose names are
 distinct.
-The premise `hinv`, that the graph of run time gives the types equal up to the values of their
-levels the same relation, is no premise of the RFC, whose levels are equal when their values are;
-the invariance of the graph by these levels is proved after this module.
 RFC: `\mathsf{agree}_{\circledR\lambda}.\lambda` -/
 theorem levelRel_runNest_agree_nest {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     {τ : Nest RunNestLeaf} {A : Term 0 []} {R R' : RunRel} (hd : sig.Distinct)
-    (hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R)
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R') :
     ∀ H t a, R' H t a → R H t a :=
   RunNestRel.of_plain hd (levelRel_isPer_lt hd _)
     (levelRel_run_unique_lt hd _)
-    hinv h hτ _ h'
+    (fun _ _ _ hT hTA =>
+      RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain) h hτ _ h'
 
 /-- The graph of run time relates what `rt(U_n)[λ]` relates and the equality relates to itself: when
 each position of the nesting holds a type with its relation of run time, the relation that a type
 has without position relates a term to an address when the relation that the nesting gives the type
 does and the equality of the type relates the term to itself, in a signature whose names are
 distinct.
-The premise `hinv` is that of `levelRel_runNest_agree_nest`.
 RFC: `\mathsf{agree}_{\circledR\lambda}.\bot` -/
 theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     {sT s : Quality} {τ : Nest RunNestLeaf} {A : Term 0 []} {R R' : RunRel} {E : TermRel}
     (hd : sig.Distinct)
-    (hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R)
     (h : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ)
     (h' : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R')
@@ -162,7 +151,8 @@ theorem levelRel_runNest_agree_plain {sig : Signature} {ι : Interpretation} {P 
     ∀ H t a, E t t → R H t a → R' H t a :=
   RunNestRel.to_plain hd (levelRel_isPer_lt hd _)
     (levelRel_run_unique_lt hd _)
-    hinv h hτ _ h' _ _ hE
+    (fun _ _ _ hT hTA =>
+      RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain) h hτ _ h' _ _ hE
 
 -- ADE: `irrelevanceTerm`, in `Graded/Erasure/LogicalRelation/Irrelevance.agda`.
 /-- `®(v)` is unique: two relations of run time of a type relate the same terms to the same

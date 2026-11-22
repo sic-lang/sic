@@ -864,9 +864,7 @@ theorem NestRel.validEqTerm_iff (hd : sig.Distinct) {n : Nat} {sT s : Quality} {
       ValidEqTerm₀ sig ι A A (.sort κ₁)) (t u : Term 0 []) :
     F t u ↔ ValidEqTerm₀ sig ι t u A := by
   obtain ⟨_, _, h'⟩ := h.plain_of_leaves hd hτ hA
-  refine (levelRel_nest_agree hd (fun _ _ _ hT hTA =>
-    NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA
-      .plain) h hτ h' t u).trans ?_
+  refine (levelRel_nest_agree hd h hτ h' t u).trans ?_
   cases h' with
   | plain hc hF => exact ⟨hF.validEqTerm hd hc, hF.of_validEqTerm hc⟩
 
