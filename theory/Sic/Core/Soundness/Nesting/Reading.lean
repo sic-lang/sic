@@ -694,24 +694,6 @@ section
 
 variable {α I : Type}
 
-/-- A telescope renamed then at levels, substituted by `θ`, is the telescope at levels substituted
-by the renaming composed with `θ`. -/
-theorem Telescope.atLevels_rename_subst {k : Nat} {Γ Γ' : Scope} {ps : List Parameter}
-    (Θ : Telescope k Γ ps) (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') :
-    ((Θ.rename β).atLevels ρ).subst θ = (Θ.atLevels ρ).subst (fun x => θ (β x)) := by
-  rw [Telescope.atLevels, Telescope.substLevels_rename]
-  exact Telescope.subst_rename_of (fun _ => rfl) _
-
-/-- A term over `n` new variables, renamed under them then at levels, substituted by `θ` and by `τ`
-for the new variables, is the term at levels substituted by the renaming composed with `θ` and by
-`τ`. -/
-theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term k (Γ.extend n))
-    (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] n)) :
-    ((B.rename (Ren.liftN n β)).atLevels ρ).subst (Subst.append θ τ) =
-      (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := by
-  rw [Term.atLevels, Term.substLevels_rename]
-  exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
-
 /-- The head of a first destructor well formed in `Σ_T`, renamed by `β` and at the values `ρ` of
 its levels, given the soundness of the typing in `Σ_T`, at two pairs of substitutions related as
 `NestSubst` relates them, the first of which are equal substitutions of its context, when its

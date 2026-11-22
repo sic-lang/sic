@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.Meaning.Interpretation
-public import Sic.Core.Substitution.Closed
 public import Sic.Core.Syntax.LevelEquiv
 
 /-!

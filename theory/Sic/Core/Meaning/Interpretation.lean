@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Reduction
+public import Sic.Core.Substitution.Closed
 
 /-!
 # Interpretation of the Constants
@@ -103,6 +104,16 @@ theorem Term.atLevels_inst {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (D : N
       .inst D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ) :=
   rfl
 
+/-- A term over `n` new variables, renamed under them then at levels, substituted by `θ` and by `τ`
+for the new variables, is the term at levels substituted by the renaming composed with `θ` and by
+`τ`. -/
+theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term k (Γ.extend n))
+    (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] n)) :
+    ((B.rename (Ren.liftN n β)).atLevels ρ).subst (Subst.append θ τ) =
+      (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := by
+  rw [Term.atLevels, Term.substLevels_rename]
+  exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
+
 /-- `κ[ρ]`: the sort `κ` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/
 def Universe.atLevels {k : Nat} (ρ : Fin k → Nat) (κ : Universe k) : Universe 0 :=
@@ -113,6 +124,14 @@ RFC: `\mathsf{inst}_\rho` -/
 def Telescope.atLevels {k : Nat} {Γ : Scope} {ps : List Parameter} (ρ : Fin k → Nat)
     (Θ : Telescope k Γ ps) : Telescope 0 Γ ps :=
   Θ.substLevels fun i => .ofNat (ρ i)
+
+/-- A telescope renamed then at levels, substituted by `θ`, is the telescope at levels substituted
+by the renaming composed with `θ`. -/
+theorem Telescope.atLevels_rename_subst {k : Nat} {Γ Γ' : Scope} {ps : List Parameter}
+    (Θ : Telescope k Γ ps) (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') :
+    ((Θ.rename β).atLevels ρ).subst θ = (Θ.atLevels ρ).subst (fun x => θ (β x)) := by
+  rw [Telescope.atLevels, Telescope.substLevels_rename]
+  exact Telescope.subst_rename_of (fun _ => rfl) _
 
 /-- `d̄[ρ]`: the destructors `d̄` in which each level variable `i` has the value `ρ i`.
 RFC: `\mathsf{inst}_\rho` -/
