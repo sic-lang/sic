@@ -91,8 +91,7 @@ theorem levelRel_nest_agree {sig : Signature} {ι : Interpretation} {n : Nat} {s
       (fun x => NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain x.1 x.2) τ)
     (h' : NestRel sig ι n (fun m _ => levelRel sig ι m) sT' s' .plain A F') :
     ∀ t u, F t u ↔ F' t u :=
-  NestRel.agree hd (levelRel_isPer_lt hd _) (fun _ _ _ hT hTA =>
-    NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain) h hτ _ _ h'
+  NestRel.agree hd (levelRel_isPer_lt hd _) h hτ _ _ h'
 
 /-- The relations of run time of every level are unique, in a signature whose names are
 distinct. -/

@@ -3,6 +3,7 @@ module
 public import Sic.Core.Meaning
 public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
+import Sic.Core.Meaning.Uniqueness.Levels
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -20,9 +21,8 @@ The agreement is proved by recursion on the clauses of the graph of the nestings
 properties of the relations of a level, which it reads: the clause of a type without position is
 that of the graph of the types, the relation of a position is the equality of its type, which is
 unique and the same for the types equal up to the values of their levels, a property of the graph
-of the types that is proved after this module and that the agreement takes as a premise, and the
-clauses of an instance of a codata type are those of the graph of the types, where the block has no
-recursive destructor.
+of the types that `Sic.Core.Meaning.Uniqueness.Levels` proves, and the clauses of an instance of a
+codata type are those of the graph of the types, where the block has no recursive destructor.
 An instance of a codata type may live below the level of the graph of the nestings that reads it,
 while the graph of the types reads it at its own level: the graphs of a level relate what those of
 a level below relate, which the first section proves.
@@ -178,9 +178,6 @@ mutual
 positions that hold types with the equality of their terms. -/
 theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer)
-    (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
     {sT sT' s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F →
       Nest.All
@@ -191,7 +188,9 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
   | .plain hA hF, _, _, _, h' => NestRel.unique hd ih (.plain (sT := sT) hA hF) _ _ h'
   | .direct _ hA, hτ, _, _, h' => by
     cases hτ with
-    | direct hT => exact NestRel.unique hd ih (hinv _ _ _ hT hA) _ _ h'
+    | direct hT =>
+      exact NestRel.unique hd ih
+        (NestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hA .plain) _ _ h'
   | .codata (D := D) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA _ hκ hn hrec _ hS,
       hτ, _, _, h' => by
     cases hτ with
@@ -208,7 +207,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact TermRel.computed_congr fun v w => ((CodataType.blockRel_iff_corecRel
             (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun X o₁ o₂ =>
-              (NestDesRel.agree hd ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
+              (NestDesRel.agree hd ih hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
                 have hS'' := hS' X _ hT
                 simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
                 exact hS''.levelLe hm) o₁ o₂).symm) v w).symm
@@ -228,7 +227,7 @@ theorem NestRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : si
           obtain ⟨hdecl, hT, rfl⟩ := h
           exact fun _ _ => (CodataType.blockTruth_iff_truth
             (TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)) hT fun B o₁ o₂ =>
-              (NestDesRel.agree hd ih hinv hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
+              (NestDesRel.agree hd ih hS (Nesting.ofArgs_rel₃ hνs) _ _ (by
                 have hS'' := hS' B _ hT
                 simp only [Destructors.recursionAt_eq_none hrec, Option.map_none] at hS''
                 exact hS''.levelLe hm) o₁ o₂).symm).symm
@@ -238,9 +237,6 @@ termination_by structural h _ _ _ _ => h
 gives them, at positions that hold types with the equality of their terms. -/
 theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd : sig.Distinct)
     (ih : ∀ m, m < n → (levelRel sig ι m).IsPer)
-    (hinv : ∀ (T A : Term 0 []) (R : TermRel),
-      NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain T R → Term.LevelEquiv T A →
-        NestRel sig ι n (fun m _ => levelRel sig ι m) .type .type .plain A R)
     {sT s : Quality} {Γ : Scope}
     {ν : Nesting NestLeaf Γ} {ns : List Name} {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ}
     {S : ObsRel} :
@@ -259,9 +255,9 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
     | cons hΘ' F' hB' hF' _ _ hG' _ _ =>
       have hEE := AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
         have ⟨_, hv⟩ := hB' ts hts'
-        NestRel.agree hd ih hinv (hF ts hts) .plain _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
+        NestRel.agree hd ih (hF ts hts) .plain _ _ (.plain (sT := .type) hv (hF' ts hts' _ hv))
       exact ObsRel.cons_congr hEp hEE fun f hf =>
-        NestDesRel.agree hd ih hinv (hG f hf) (Nesting.lift_rel₃ hν) _ _ (hG' f ((hEE f f).1 hf))
+        NestDesRel.agree hd ih (hG f hf) (Nesting.lift_rel₃ hν) _ _ (hG' f ((hEE f f).1 hf))
     | recursive hrs' => cases hrs'
   | .nested (ps := ps) (B := B) (SΘ := SΘ) _ hΘ F hF _ _ hG, hν, _, _, h' => by
     cases h' with
@@ -269,12 +265,12 @@ theorem NestDesRel.agree {sig : Signature} {ι : Interpretation} {n : Nat} (hd :
       have hSΘp' := TelRel.isPer hd ih (fun _ => .plain) hΘ'
       have hEE := AbstractionRel.unique_of_agree hd ih hΘ hΘ' fun ts hts hts' =>
         have ⟨_, hv⟩ := hB' ts hts'
-        NestRel.agree hd ih hinv (hF ts hts) (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _ _
+        NestRel.agree hd ih (hF ts hts) (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _ _
           (.plain (sT := .type) hv (hF' ts hts' _ hv))
       have hEp' := AbstractionRel.isPer hSΘp'
         (fun ts hts => have ⟨_, hv⟩ := hB' ts hts; FieldRel.isPer hd ih (hF' ts hts _ hv)) hBresp'
       have hGG : ∀ f, AbstractionRel _ F' f f → ∀ o₁ o₂, _ ↔ _ := fun f hf =>
-        NestDesRel.agree hd ih hinv (hG f) (Nesting.lift_rel₃ hν) _ _ (hG' f hf)
+        NestDesRel.agree hd ih (hG f) (Nesting.lift_rel₃ hν) _ _ (hG' f hf)
       exact fun o₁ o₂ =>
         ⟨fun ⟨h₁, h₂⟩ =>
           have h₁' := (hEE _ _).1 h₁
