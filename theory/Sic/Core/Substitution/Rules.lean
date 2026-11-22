@@ -376,9 +376,7 @@ theorem Term.atCtor_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ Δ : S
     (as : InstanceArgs k Γ Δ) (c : Name) (fs : List Parameter) :
     (C.atCtor D qs ls ps as c fs).substLevels ls' =
       (C.substLevels ls').atCtor D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') c fs := by
-  rw [Term.atCtor, Term.atCtor, Term.substLevels_subst₀_of (σ' := Subst₀.single
-    ((Term.ctor D qs ls ps (as.rename (Ren.weakenN fs.length)) c (Args.bound fs).terms).substLevels
-      ls')) (fun x => by cases x <;> rfl), Term.substLevels_rename]
+  rw [Term.atCtor, Term.atCtor, Term.substLevels_subst₀_single, Term.substLevels_rename]
   congr 2
   rw [Term.substLevels, InstanceArgs.substLevels_rename, ← Args.terms_substLevels,
     Args.substLevels_bound]

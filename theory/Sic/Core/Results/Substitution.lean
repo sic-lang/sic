@@ -302,8 +302,7 @@ theorem Telescope.typesAt_substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ 
   | _ :: _, .cons _ _ A Θ, .cons t ts => by
     rw [Telescope.typesAt, Terms.substLevels,
       Telescope.typesAt_substLevels ls' (Θ.subst₀ (Subst₀.single t)) ts,
-      Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-        (fun y => by cases y <;> rfl) Θ]
+      Telescope.substLevels_subst₀_single Θ]
     rfl
 
 /-- The recursive results of fields, at instantiated levels, are those of the fields and of their
@@ -322,8 +321,7 @@ theorem Terms.ResultTypes.substLevels {k' : Nat} (ls' : Fin k → Level k') :
     have ih := h.substLevels ls'
     rw [Lifting.substLevels_weaken] at ih
     rw [Terms.substLevels, Terms.substLevels, Telescope.substLevels,
-      Term.substLevels_subst₀_of (σ' := Subst₀.single ((x.rename ρ.ren).substLevels ls'))
-        (fun y => by cases y <;> rfl) b.motive,
+      Term.substLevels_subst₀_single b.motive,
       Term.substLevels_rename]
     refine .recursive (b := b.substLevels ls') ?_ ih
     show (ρ.block D).map _ = _
@@ -346,8 +344,7 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
         Term.NestedResult sig v (ρ.substLevels ls') (fun E => (φ E).substLevels ls') n
           (A.substLevels ls') (t.substLevels ls') (e.substLevels ls')
   | _, ρ, φ, _, _, t, _, .block (D := D) (b := b) hD => by
-    rw [Term.substLevels, Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-      (fun y => by cases y <;> rfl) (φ D)]
+    rw [Term.substLevels, Term.substLevels_subst₀_single (φ D)]
     refine Term.NestedResult.block (b := b.substLevels ls') ?_
     show (ρ.block D).map _ = _
     rw [hD]
@@ -389,8 +386,7 @@ theorem Terms.ResultTerms.substLevels {k' : Nat} (ls' : Fin k → Level k') {Γ 
     exact .plain (h.substLevels ls')
   | _, _, _, .cons t _, _, _, .recursive (D := D) h => by
     rw [Terms.substLevels, Terms.substLevels, Args.substLevels,
-      Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-        (fun y => by cases y <;> rfl) (φ D)]
+      Term.substLevels_subst₀_single (φ D)]
     exact .recursive (h.substLevels ls')
   | _, _, _, _, _, _, .nested he h => by
     rw [Terms.substLevels, Terms.substLevels, Args.substLevels]

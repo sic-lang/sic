@@ -412,10 +412,8 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ => by
       have hu' := hu_ih hdis hord hι ρ
       simp only [Term.atLevels] at hu' ⊢
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)] at hu'
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single] at hu'
+      rw [Term.substLevels_subst₀_single]
       exact ValidEqTermΓ.transp (hA_ih hdis hord hι ρ) (ht₁_ih hdis hord hι ρ)
         (ht₂_ih hdis hord hι ρ) (hC_ih hdis hord hι ρ) (ht_ih hdis hord hι ρ) hu'
   case hasType_propExt =>
@@ -553,8 +551,7 @@ theorem soundnessIn : SoundnessIn := by
       have ht' := ht_ih hdis hord hι ρ
       rw [Term.atLevels_inst] at ht'
       simp only [Term.atLevels]
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single]
       simp only [Term.substLevels]
       exact ValidEqTermΓ.recursor hι hord h hqp hl' hl' hadm has'
         ht' hh
@@ -685,10 +682,8 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ => by
       have hu' := hu_ih hdis hord hι ρ
       simp only [Term.atLevels] at hu' ⊢
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)] at hu'
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single] at hu'
+      rw [Term.substLevels_subst₀_single]
       exact ValidEqTermΓ.transp (hA_ih hdis hord hι ρ) (ht₁_ih hdis hord hι ρ)
         (ht₂_ih hdis hord hι ρ) (hC_ih hdis hord hι ρ) (ht_ih hdis hord hι ρ) hu'
   case eqTerm_transpSame =>
@@ -698,10 +693,8 @@ theorem soundnessIn : SoundnessIn := by
       have hu' := hu_ih hdis hord hι ρ
       have hCC' := hCC_ih hdis hord hι ρ
       simp only [Term.atLevels] at hu' hCC' ⊢
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)] at hu' hCC'
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)] at hCC' ⊢
+      rw [Term.substLevels_subst₀_single] at hu' hCC'
+      rw [Term.substLevels_subst₀_single] at hCC' ⊢
       exact ValidEqTermΓ.transpSame hu' hCC'
   case eqTerm_ctor =>
     intro sig k Γ ctx decl D T con qs ls₁ ls₂ ps as₁ as₂ h hc hqp hl₁ hl₂ hadm has hls ts us hts
@@ -730,8 +723,7 @@ theorem soundnessIn : SoundnessIn := by
       have ht' := ht_ih hdis hord hι ρ
       rw [Term.atLevels_inst] at ht'
       simp only [Term.atLevels]
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single]
       simp only [Term.substLevels]
       exact ValidEqTermΓ.recursor hι hord h hqp hl₁' hl₂' hadm
         has' ht' hh
@@ -812,8 +804,7 @@ theorem soundnessIn : SoundnessIn := by
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       simp only [Term.atLevels]
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels (fun i => .ofNat (ρ i))
-        (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate,
+      rw [Term.substLevels_subst₀_single, Term.substLevels_instantiate,
         Term.substLevels_instantiate, Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
       exact ValidEqTermΓ.iota hι hord h hc hqp hl' hadm has'
@@ -851,10 +842,8 @@ theorem soundnessIn : SoundnessIn := by
       have hu' := Branches.get_substLevels_of (fun i => (.ofNat (ρ i) : Level 0)) hu
       erw [Term.atCtor_substLevels] at hu'
       simp only [Term.atLevels]
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
-          (fun x => by cases x <;> rfl),
-        Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
-          (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single,
+        Term.substLevels_subst₀_single]
       simp only [Term.substLevels]
       exact ValidEqTermΓ.etaCtor hι h hc hqp hl' hadm hr has' ht' he'
         hCv hi hu' hκ
@@ -927,8 +916,7 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ => by
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels] at hts'
-      rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
-        (fun x => by cases x <;> rfl)] at hts'
+      rw [Telescope.substLevels_subst₀_single] at hts'
       exact ValidEqArgsΓ.cons (ht_ih hdis hord hι ρ) hts'
   case eqArgs_nil =>
     exact fun hctx hctx_ih => fun hdis hord hι => fun ρ =>
@@ -938,8 +926,7 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ => by
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels] at hts'
-      rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
-        (fun x => by cases x <;> rfl)] at hts'
+      rw [Telescope.substLevels_subst₀_single] at hts'
       exact ValidEqArgsΓ.cons (ht_ih hdis hord hι ρ) hts'
   case hasInstanceArgs_nil =>
     exact fun hctx hctx_ih => fun hdis hord hι => fun ρ =>

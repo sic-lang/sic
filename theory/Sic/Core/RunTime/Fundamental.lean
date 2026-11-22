@@ -429,8 +429,7 @@ theorem fundamentalIn : FundamentalIn := by
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))
         hw.erasesPropDestructors
       simp only [Term.atLevels]
-      rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
-        (fun x => by cases x <;> rfl)]
+      rw [Term.substLevels_subst₀_single]
       simp only [Term.substLevels]
       exact RunValidRen.sub hγ hc
   case hasType_obs =>
@@ -511,8 +510,7 @@ theorem fundamentalIn : FundamentalIn := by
       exact fun ρ => by
         have hts' := hts_ih (hΓ := hΓ) hw hι hP hus ρ
         simp only [Telescope.atLevels] at hts'
-        rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.atLevels ρ))
-          (fun x => by cases x <;> rfl)] at hts'
+        rw [Telescope.substLevels_subst₀_single] at hts'
         exact RunValidArgsRen.cons hw.distinct (fun hp => ht_ih hw hι hP
           ((Mode.erasesUncounted .oneOne).mode _ hp ▸ hu) ρ) hts'
   all_goals intros; trivial

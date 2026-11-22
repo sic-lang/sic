@@ -347,6 +347,22 @@ theorem DestructorBranches.substLevels_subst₀_of {k' : Nat} {Γ Δ : Scope} {l
 
 end
 
+/-- A term with the term `t` for its last variable, at instantiated levels, is the term at these
+levels with `t` at these levels for its last variable. -/
+theorem Term.substLevels_subst₀_single {k' : Nat} {Γ : Scope} (B : Term k (.var :: Γ))
+    {t : Term k Γ} {ls' : Fin k → Level k'} :
+    (B.subst₀ (Subst₀.single t)).substLevels ls' =
+      (B.substLevels ls').subst₀ (Subst₀.single (t.substLevels ls')) :=
+  Term.substLevels_subst₀_of (fun x => by cases x <;> rfl) B
+
+/-- A telescope with the term `t` for its last variable, at instantiated levels, is the telescope
+at these levels with `t` at these levels for its last variable. -/
+theorem Telescope.substLevels_subst₀_single {k' : Nat} {Γ : Scope} {ps : List Parameter}
+    (Θ : Telescope k (.var :: Γ) ps) {t : Term k Γ} {ls' : Fin k → Level k'} :
+    (Θ.subst₀ (Subst₀.single t)).substLevels ls' =
+      (Θ.substLevels ls').subst₀ (Subst₀.single (t.substLevels ls')) :=
+  Telescope.substLevels_subst₀_of (fun x => by cases x <;> rfl) Θ
+
 /-- `B[t̄ / Θ][l̄' / l̄] = B[l̄' / l̄][t̄[l̄' / l̄] / Θ]`.
 RFC: `\mathsf{comm}_l.\bar t` -/
 theorem Term.substLevels_instantiate {k' : Nat} {Γ : Scope} (ls' : Fin k → Level k') :

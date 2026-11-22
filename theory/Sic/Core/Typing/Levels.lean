@@ -224,10 +224,8 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx s l κ A t₁ t₂ t u C hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih ht₂_ih hC_ih ht_ih hu_ih
       k' ls'
     have hu' := hu_ih ls'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at hu'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
-      (fun x => by cases x <;> rfl)]
+    rw [Term.substLevels_subst₀_single] at hu'
+    rw [Term.substLevels_subst₀_single]
     exact .transp (κ := κ.substLevels ls') (hA_ih ls') (ht₁_ih ls') (ht₂_ih ls')
       (hC_ih ls') (ht_ih ls') hu'
   case hasType_propExt =>
@@ -345,8 +343,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hqp hl hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih k' ls'
     have has' := (has_ih ls').substLevels_getFin hl
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-      (fun x => by cases x <;> rfl)]
+    rw [Term.substLevels_subst₀_single]
     refine .recursor (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hqp _
       hadm has' (ht_ih ls') hh (Motives.get_substLevels_of ls' hC)
       ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
@@ -463,10 +460,8 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx s l κ A A' t₁ t₁' t₂ t₂' t t' u u' C C' hA ht₁ ht₂ hC ht hu hA_ih ht₁_ih
       ht₂_ih hC_ih ht_ih hu_ih k' ls'
     have hu' := hu_ih ls'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at hu'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
-      (fun x => by cases x <;> rfl)]
+    rw [Term.substLevels_subst₀_single] at hu'
+    rw [Term.substLevels_subst₀_single]
     exact .transp (κ := κ.substLevels ls') (hA_ih ls') (ht₁_ih ls') (ht₂_ih ls')
       (hC_ih ls') (ht_ih ls') hu'
   case eqTerm_transpSame =>
@@ -474,10 +469,8 @@ theorem stableUnderLevels : StableUnderLevels := by
       hu_ih hCC_ih k' ls'
     have hu' := hu_ih ls'
     have hCC' := hCC_ih ls'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at hu' hCC'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₂.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at hCC' ⊢
+    rw [Term.substLevels_subst₀_single] at hu' hCC'
+    rw [Term.substLevels_subst₀_single] at hCC' ⊢
     exact .transpSame (κ := κ.substLevels ls') (hA_ih ls') (ht₁_ih ls')
       (ht₂_ih ls') (hC_ih ls') (ht_ih ls') hu' hCC'
   case eqTerm_ctor =>
@@ -493,8 +486,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       hl₂ hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih k' ls'
     have has' := (has_ih ls').substLevels_getFin hl₁
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
-      (fun x => by cases x <;> rfl)]
+    rw [Term.substLevels_subst₀_single]
     refine .recursor (κ := κ.substLevels ls') (Rs₁ := fun con => (Rs₁ con).substLevels ls')
       (Rs₂ := fun con => (Rs₂ con).substLevels ls') h hqp _ _ hadm has'
       (Level.getFin_map_subst_equal ls' hls) (ht_ih ls') hh
@@ -608,8 +600,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     have has' := (has_ih ls').substLevels_getFin hl
     have hts' := hts_ih ls'
     rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels ls' _))
-        (fun x => by cases x <;> rfl),
+    rw [Term.substLevels_subst₀_single,
       Term.substLevels_instantiate, Term.substLevels_instantiate, Args.substLevels_rename]
     show EqTerm sig _ (.recursor _ _ _ _ _ _ _ _ (Term.substLevels ls' (.ctor _ _ _ _ _ _ _)) _ _ _)
       _ _
@@ -649,10 +640,8 @@ theorem stableUnderLevels : StableUnderLevels := by
         (e.substLevels ls').atCtor T.name qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
           con.name (con.params hqp.inst) from
       Term.atCtor_substLevels ls' e _ _ _ _ _ _ _] at hu'
-    rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-        (fun x => by cases x <;> rfl),
-      Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-        (fun x => by cases x <;> rfl)]
+    rw [Term.substLevels_subst₀_single,
+      Term.substLevels_subst₀_single]
     refine .etaCtor (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hc hqp
       _ hadm hr has' (ht_ih ls') (he_ih ls') hi (Motives.get_substLevels_of ls' hC)
       hu' ((Motives.length_substLevels ls' Cs).trans hCl) ?_ ?_
@@ -750,16 +739,14 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ps ctx q p t A ts Θ ht hts ht_ih hts_ih k' ls'
     refine .cons (ht_ih ls') ?_
     have ih := hts_ih ls'
-    rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at ih
+    rw [Telescope.substLevels_subst₀_single] at ih
     exact ih
   case eqArgs_nil => exact fun hctx hctx_ih => fun ls' => .nil (hctx_ih ls')
   case eqArgs_cons =>
     intro sig k Γ ps ctx q p t u A ts us Θ ht hts ht_ih hts_ih k' ls'
     refine .cons (ht_ih ls') ?_
     have ih := hts_ih ls'
-    rw [Telescope.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
-      (fun x => by cases x <;> rfl)] at ih
+    rw [Telescope.substLevels_subst₀_single] at ih
     exact ih
   case hasInstanceArgs_nil => exact fun hctx hctx_ih => fun ls' => .nil (hctx_ih ls')
   case hasInstanceArgs_var =>
