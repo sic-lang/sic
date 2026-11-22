@@ -2,7 +2,7 @@ module
 
 public import Sic.Core.RunTime.Relation.Recursors.Nested
 public import Sic.Core.Soundness.Recursors.Nested
-import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Uniqueness.Per
 
 /-!
 # Run Time of the Nested Results of an Erased Recursor

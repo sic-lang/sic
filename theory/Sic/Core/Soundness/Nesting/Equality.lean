@@ -4,7 +4,7 @@ public import Sic.Core.Meaning.Equality.Properties
 public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Exactness
-import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Syntax.Signature
 

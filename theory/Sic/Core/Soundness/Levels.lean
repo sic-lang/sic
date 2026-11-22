@@ -3,7 +3,8 @@ module
 public import Sic.Core.Meaning
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.Soundness.Levels.Substitution
-import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.RunTime.Properties
+import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Soundness.Levels.Results
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature

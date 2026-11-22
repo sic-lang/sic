@@ -8,7 +8,7 @@ import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Observations
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Results.Substitution
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
