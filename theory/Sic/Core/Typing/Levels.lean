@@ -102,6 +102,35 @@ structure StableUnderLevels : Prop where
       EqTelescope sig (ctx.substLevels ls') (Θ₁.substLevels ls') (Θ₂.substLevels ls')
         (κ.substLevels ls')
 
+/-- Arguments of the parameters of a type declaration at an instance and at the levels `ls`, with
+the levels instantiated by `ls'`, are arguments of the parameters at the levels `ls` instantiated by
+`ls'`: the induction hypothesis of the arguments of an instance, at `ls'`. -/
+theorem HasInstanceArgs.substLevels_getFin {sig : Signature} {k k' : Nat} {Γ : Scope}
+    {ctx : Context k' Γ} {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades}
+    {ls : List (Level k)} (hl : ls.length = decl.levels) {ls' : Fin k → Level k'}
+    {as : InstanceArgs k' Γ decl.scope}
+    (h : HasInstanceArgs sig ctx as
+      (((decl.params I).substLevels (ls.getFin hl)).substLevels ls')) :
+    HasInstanceArgs sig ctx as ((decl.params I).substLevels
+      ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl))) := by
+  rw [Context.substLevels_substLevels_getFin] at h
+  exact h
+
+/-- Equal arguments of the parameters of a type declaration at an instance and at the levels `ls`,
+with the levels instantiated by `ls'`, are equal arguments of the parameters at the levels `ls`
+instantiated by `ls'`: the induction hypothesis of the arguments of two equal instances, at
+`ls'`. -/
+theorem EqInstanceArgs.substLevels_getFin {sig : Signature} {k k' : Nat} {Γ : Scope}
+    {ctx : Context k' Γ} {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades}
+    {ls : List (Level k)} (hl : ls.length = decl.levels) {ls' : Fin k → Level k'}
+    {as₁ as₂ : InstanceArgs k' Γ decl.scope}
+    (h : EqInstanceArgs sig ctx as₁ as₂
+      (((decl.params I).substLevels (ls.getFin hl)).substLevels ls')) :
+    EqInstanceArgs sig ctx as₁ as₂ ((decl.params I).substLevels
+      ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl))) := by
+  rw [Context.substLevels_substLevels_getFin] at h
+  exact h
+
 /-- The judgments in a context hold once levels replace their level variables.
 RFC: `\mathsf{lvl}_\vdash.\Gamma`
 RFC: `\mathsf{lvl}_\vdash.A`
@@ -182,8 +211,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case hasType_prop => exact fun hctx hctx_ih => fun ls' => .prop (hctx_ih ls')
   case hasType_inst =>
     refine fun h hq hl hp hadm has has_ih => fun ls' => ?_
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     rw [Term.substLevels, Term.substLevels, Universe.substLevels_substLevels_getFin]
     exact .inst h hq _ hp hadm has'
   case hasType_equality =>
@@ -212,8 +240,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx decl D T qs ls ps as l' t₁ t₂ t As gs h' A κs h hq hl hp hadm has hh hA hAl
       hAt ht₁ ht₂ ht hgl hgs hΘ hB hBt hgt hgr has_ih hAt_ih ht₁_ih ht₂_ih ht_ih hBt_ih hgt_ih
       hgr_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     let p₀ : Parameter := ⟨Grade.one, Grade.one⟩
     have hsort := congrArg Universe.level
       (Universe.substLevels_substLevels_getFin ls' (decl.sort (.ofLists qs ps hq hp)) ls hl)
@@ -309,8 +336,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       exact ih
   case hasType_ctor =>
     intro sig k Γ ctx decl D T con qs ls ps as h hc hq hl hp hadm has ts hts has_ih hts_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     have hts' := hts_ih ls'
     rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
     rw [Term.ctor_substLevels]
@@ -318,8 +344,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case hasType_recursor =>
     intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hq hl hp hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels ls'))
       (fun x => by cases x <;> rfl)]
     refine .recursor (κ := κ.substLevels ls') (Rs := fun con => (Rs con).substLevels ls') h hq _
@@ -349,8 +374,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case hasType_obs =>
     intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hq hl hp hadm hd has ht hbs
       has_ih ht_ih hbs_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
       hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
     have hbs' := hbs_ih ls'
@@ -361,8 +385,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case hasType_corec =>
     intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hq hl hp hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     rw [Term.corec_substLevels]
     refine .corec h hq _ hp hadm hpre has' hh (States.get_substLevels_of ls' hS)
       (hss_ih ls') ((States.length_substLevels ls' Ss).trans hSl) ?_ ?_
@@ -429,8 +452,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       .prop (hctx_ih ls') (Level.subst_equal ls' hl)
   case eqTerm_inst =>
     refine fun h hq hl₁ hl₂ hp hadm has hls has_ih => fun ls' => ?_
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl₁
     rw [Term.substLevels, Term.substLevels, Term.substLevels,
       Universe.substLevels_substLevels_getFin]
     exact .inst h hq _ _ hp hadm has' (Level.getFin_map_subst_equal ls' hls)
@@ -461,8 +483,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTerm_ctor =>
     intro sig k Γ ctx decl D T con qs ls₁ ls₂ ps as₁ as₂ h hc hq hl₁ hl₂ hp hadm has hls ts us hts
       has_ih hts_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl₁
     have hts' := hts_ih ls'
     rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls₁ hl₁] at hts'
     rw [Term.ctor_substLevels, Term.ctor_substLevels]
@@ -471,8 +492,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r ς χ t₁ t₂ Cs₁ Cs₂ us₁ us₂ κ h' C₁ h hq hl₁
       hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl₁
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t₁.substLevels ls'))
       (fun x => by cases x <;> rfl)]
     refine .recursor (κ := κ.substLevels ls') (Rs₁ := fun con => (Rs₁ con).substLevels ls')
@@ -515,8 +535,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTerm_obs =>
     intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hq hl₁ hl₂
       hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl₁
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
       hd.obsSubst_observation_substLevels ls' D qs ls₁ ps as₁ t₁ x
     have hbs' := hbs_ih ls'
@@ -529,8 +548,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h hq hl₁
       hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt has_ih
       hss_ih hSt_ih hSe_ih hgt_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl₁
     rw [Term.corec_substLevels, Term.corec_substLevels]
     refine .corec h hq _ _ hp hadm hpre has' (Level.getFin_map_subst_equal ls' hls) hh
       (States.get_substLevels_of ls' hS₁) (States.get_substLevels_of ls' hS₂) (hss_ih ls')
@@ -585,8 +603,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTerm_iota =>
     intro sig k Γ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hq hl hp hadm u has ts hts
       hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     have hts' := hts_ih ls'
     rw [Constructor.fieldsAt_substLevels, ← Level.getFin_map_subst ls' ls hl] at hts'
     rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (Term.substLevels ls' _))
@@ -622,8 +639,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTerm_etaCtor =>
     intro sig k Γ ctx decl D T con qs ls ps as r ς χ t Cs us κ i j C e h hc hq hl hp hadm hr has ht
       he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     have hu' := Branches.get_substLevels_of ls' hu
     erw [show Term.substLevels ls'
           (e.atCtor T.name qs ls ps as con.name (con.params (.ofLists qs ps hq hp)) :
@@ -662,8 +678,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hq
       hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
       hgt_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     have ho₀ {a : Scope.Entry} (x : Var Ξ₀ a) :=
       hd.obsSubst_observation_substLevels ls' D qs ls ps as
         (.corec r D qs ls ps as ss.terms Ss gs) x
@@ -715,8 +730,7 @@ theorem stableUnderLevels : StableUnderLevels := by
   case eqTerm_etaObs =>
     intro sig k Γ ctx decl D T qs ls ps as t u h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih
       hobs_ih k' ls'
-    have has' := has_ih ls'
-    rw [Context.substLevels_substLevels_getFin] at has'
+    have has' := (has_ih ls').substLevels_getFin hl
     rw [Term.substLevels]
     refine .etaObs h hq _ hp hadm hr has' (ht_ih ls') (hu_ih ls') ?_
     intro d p q ς ps' Ξ Θ B ψ hd
