@@ -504,7 +504,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   cases Computesι.det hd hcv₂ hI
   obtain ⟨-, Se, hSe, rfl⟩ := (HasEq.instCodata_inv hd h hq hl hp hReq).resolve_right
     fun ⟨hs', _⟩ => nomatch hs.symm.trans hs'
-  have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+  have hU₀ : (levelRel sig ι (decl.sortAt I L).level.closedValue).univ
       (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes Se D) :=
     levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl Se hSe)
   have hnp := Computesι.not_computesToProp hd hI hU₀
@@ -544,7 +544,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         ((decl.sort I).atLevels ρ).quality v R := fun i D' hi => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT
       (Destructors.recursionAt_mem hi)
-    have hU : UnivRel sig ι ((decl.sort I).level.subst L).closedValue
+    have hU : UnivRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockRel decl.codataTypes Se T'.name) :=
       .codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs rfl Se hSe

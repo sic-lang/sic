@@ -426,20 +426,20 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
           ((decl.sort I).atLevels ρ).quality v R) := by
     have hlev : ∀ {s : Quality} {rs : Nat → Option TermRel} {S : ObsRel},
-        DesRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s rs
+        DesRel sig ι (decl.sortAt I L).level.closedValue (fun m _ => levelRel sig ι m) s rs
           ((T.body I).substLevels L) a₁.toSubst S →
         DesRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m) s
           rs ((T.body I).atLevels ρ) a₁.toSubst S := fun hS =>
             decl.sort_atLevels_closedValue hq hl hp ▸ DesRel.atLevels_of_substLevels hd hS
     have hF : ∀ {s : Quality} {R' : TermRel} {D' : Name},
-        FieldRel sig ι ((decl.sort I).level.subst L).closedValue (fun m _ => levelRel sig ι m) s
+        FieldRel sig ι (decl.sortAt I L).level.closedValue (fun m _ => levelRel sig ι m) s
           (.inst D' qs ls ps a₁) R' →
         FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
           s (X a₁ D') R' := fun hF' => by
       rw [decl.sort_atLevels_closedValue hq hl hp]
       exact FieldRel.blockInstance_atLevels hd hq hl hp hF'
     rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
-    · have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+    · have hU₀ : (levelRel sig ι (decl.sortAt I L).level.closedValue).univ
           (.inst D qs ls ps a₁) (CodataType.blockRel decl.codataTypes S D) :=
         levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
       have hnp := Computesι.not_computesToProp hd hI hU₀
@@ -453,13 +453,13 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         ObsEquiv.of_computes hd hw₂ hc₂, fun i hi => by rw [hi]; rfl, fun i D' hi => ?_⟩
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
         (Destructors.recursionAt_mem hi)
-      have hU : UnivRel sig ι ((decl.sort I).level.subst L).closedValue
+      have hU : UnivRel sig ι (decl.sortAt I L).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps a₁)
           (CodataType.blockRel decl.codataTypes S T'.name) :=
         .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
       rw [hi]
       exact ⟨_, _, rfl, (Whnf.inst ..).computes, hs ▸ hF (.univ rfl hU)⟩
-    · have hP : PropRel sig ι ((decl.sort I).level.subst L).closedValue
+    · have hP : PropRel sig ι (decl.sortAt I L).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst D qs ls ps a₁)
           (CodataType.blockTruth decl.codataTypes S D) :=
         .codata h hq hl hp rfl hs rfl S hS
@@ -475,7 +475,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         fun i hi => by rw [hi]; rfl, fun i D' hi => ?_⟩
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1
         (Destructors.recursionAt_mem hi)
-      have hP' : PropRel sig ι ((decl.sort I).level.subst L).closedValue
+      have hP' : PropRel sig ι (decl.sortAt I L).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps a₁)
           (CodataType.blockTruth decl.codataTypes S T'.name) :=
         .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
@@ -987,8 +987,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     {v w : Term 0 []} (hvw : P T.name v w) :
     ValidEqTerm₀ sig ι v w (.inst T.name qs ls ps a₁) := by
   have hI : ValidEqTerm₀ sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₂)
-      (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-        (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩) :=
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl))) :=
     ValidEqTerm₀.instCodata hd ⟨hdecl, hT, rfl⟩ hv hq hl hp hadm has
   have hn := TypeDeclaration.codataTypes_nodup (hd.nodup hdecl)
   let L := ls.getFin hl
@@ -1029,12 +1028,12 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
   have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
     (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality
-  · rw [hs] at hI
+  · rw [TypeDeclaration.sortAt, Universe.substLevels, hs] at hI
     obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
     have hmono := CodataType.BlockMono.of_desRel hd hS
     -- The relations of the instances, joined with `P`.
     let Y : Name → TermRel := fun D' a b => CodataType.blockRel decl.codataTypes S D' a b ∨ P D' a b
-    have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι ((decl.sort I).level.subst L).closedValue
+    have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) .type (X D')
         ((CodataType.blockRel decl.codataTypes S D').computed sig ι) := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
@@ -1062,7 +1061,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         exact ⟨v', w', hv', hw', .inr hP'⟩
     have hrel : CodataType.blockRel decl.codataTypes S T.name v w :=
       CodataType.blockRel_coind hmono hcons hvw
-    have hU' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+    have hU' : (levelRel sig ι (decl.sortAt I L).level.closedValue).univ
         (.inst T.name qs ls ps a₁) (CodataType.blockRel decl.codataTypes S T.name) :=
       levelRel_univ_iff.2 (hU T hT).1
     obtain ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, rfl, rfl, -⟩ := hP T hT v w hvw
@@ -1073,12 +1072,12 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     refine ⟨(ValidEqTerm₀.univType hI).left,
       fun _ => ⟨_, _, _, _, hw, hct _ _ _ _ _, hct _ _ _ _ _, .univ _ hU', hrel⟩,
       fun hp => (Computesι.not_computesToProp hd hw hU' hp).elim⟩
-  · rw [hs] at hI
+  · rw [TypeDeclaration.sortAt, Universe.substLevels, hs] at hI
     obtain ⟨S, hS, hPr⟩ := hv.codataPropRel hd hdecl hq hl hp hadm has hs
     have hmono := DesRel.blockMono_prop hd hS
     -- The truths of the instances, joined with `P`.
     let Y : Name → Prop := fun D' => CodataType.blockTruth decl.codataTypes S D' ∨ ∃ a b, P D' a b
-    have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι ((decl.sort I).level.subst L).closedValue
+    have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) .prop (X D')
         (fun _ _ => CodataType.blockTruth decl.codataTypes S D') := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
@@ -1108,7 +1107,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       exact ⟨_, hSp.trans hS₁ (hSp.symm hS₁)⟩
     have htrue : CodataType.blockTruth decl.codataTypes S T.name :=
       CodataType.blockTruth_coind hmono (B := fun D' => ∃ a b, P D' a b) hcons ⟨v, w, hvw⟩
-    have hP' : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).prop
+    have hP' : (levelRel sig ι (decl.sortAt I L).level.closedValue).prop
         (.inst T.name qs ls ps a₁) (CodataType.blockTruth decl.codataTypes S T.name) :=
       levelRel_prop_iff.2 (hPr T hT).1
     refine ⟨(ValidEqTerm₀.propType hI).left, fun hn => absurd ⟨_, hw, _, _, hP'⟩ hn,
@@ -1433,8 +1432,7 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     show ValidEqType₀ sig ι (.inst T.name qs ls₁ ps (as₁.subst σ₁))
       (.inst T.name qs ls₁ ps (as₁.subst σ₂))
     revert hI
-    show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-      (decl.sort (.ofLists qs ps hq hp)).level.subst (ls₁.getFin hl₁)⟩) → _
+    rw [TypeDeclaration.sortAt, Universe.substLevels]
     cases (decl.sort (.ofLists qs ps hq hp)).quality
     · exact ValidEqTerm₀.univType
     · exact ValidEqTerm₀.propType
@@ -1669,11 +1667,11 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
     have hmono := CodataType.BlockMono.of_desRel hd hS
-    have hU : ∀ T' ∈ decl.codataTypes, UnivRel sig ι ((decl.sort I).level.subst L).closedValue
+    have hU : ∀ T' ∈ decl.codataTypes, UnivRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockRel decl.codataTypes S T'.name) := fun T' hT' =>
       .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
-    have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+    have hU₀ : (levelRel sig ι (decl.sortAt I L).level.closedValue).univ
         (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes S D) :=
       levelRel_univ_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
     have hnp := Computesι.not_computesToProp hd hI hU₀
@@ -1688,7 +1686,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
         exact ⟨_, _, rfl, (Whnf.inst ..).computes,
           FieldRel.blockInstance_atLevels hd hq hl hp (.univ rfl (hU T' hT'))⟩)
       hDS hobs'
-    have hU₁ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
+    have hU₁ : (levelRel sig ι (decl.sortAt I L).level.closedValue).univ
         (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes S T.name) := by
       rw [h.2.2]
       exact hU₀
@@ -1709,11 +1707,11 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     exact ⟨ht.1, fun _ => ⟨_, w₁, w₂, _, hI, hw₁, hw₂, hR, hrel⟩, fun hp => absurd hp hnp⟩
   · -- A proposition: the observations of the first term make it true.
     have hmono := DesRel.blockMono_prop hd hS
-    have hP : ∀ T' ∈ decl.codataTypes, PropRel sig ι ((decl.sort I).level.subst L).closedValue
+    have hP : ∀ T' ∈ decl.codataTypes, PropRel sig ι (decl.sortAt I L).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockTruth decl.codataTypes S T'.name) := fun T' hT' =>
       .codata ⟨h.1, hT', rfl⟩ hq hl hp rfl hs rfl S hS
-    have hP₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).prop
+    have hP₀ : (levelRel sig ι (decl.sortAt I L).level.closedValue).prop
         (.inst D qs ls ps as) (CodataType.blockTruth decl.codataTypes S D) :=
       levelRel_prop_iff.2 (.codata h hq hl hp rfl hs rfl S hS)
     have hDS := DesRel.atLevels_of_substLevels hd

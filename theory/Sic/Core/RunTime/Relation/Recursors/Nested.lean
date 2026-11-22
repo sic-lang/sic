@@ -451,12 +451,12 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     obtain ⟨SΘ, Rb, i, hi, hΘ, hRun, hNest⟩ := horacle d' p q ς ps₁ Ξ Θ B ψ hpos hpu
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
     rw [Telescope.rename_id_of hid₁] at hΘeq
-    have hΘ'' : TelRel sig ι ((declL.sort I').level.subst L').closedValue
+    have hΘ'' : TelRel sig ι (declL.sortAt I' L').level.closedValue
         (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
         (((Θ.substLevels (ls.getFin hl)).subst
           (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)).scale
             (v.recursion * mr.factor)) SΘ' := hΘeq ▸ hΘ'
-    have hRΘ'' : RunTelRel sig ι P ((declL.sort I').level.subst L').closedValue
+    have hRΘ'' : RunTelRel sig ι P (declL.sortAt I' L').level.closedValue
         (fun m _ => levelRel sig ι m) (fun _ => .plain)
         (((Θ.substLevels (ls.getFin hl)).subst
           (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)).scale
