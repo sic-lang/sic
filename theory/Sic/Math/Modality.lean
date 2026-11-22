@@ -8,6 +8,7 @@ and the modules over them, whose laws the vectors of grades satisfy, as records 
 laws, so that each law is stated once and named, and each kind of objects proves that it satisfies
 them; the laws that follow from those of a modality are theorems on its record, which every
 modality gets.
+
 ADE state the laws of the modalities as the fields of their record `Modality`, in
 `Graded/Modality.agda`.
 -/
