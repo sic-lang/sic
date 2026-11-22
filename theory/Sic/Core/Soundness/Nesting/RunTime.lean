@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Meaning.RunTime.Properties
 public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.RunTime.Nesting
@@ -137,6 +138,41 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
     rw [hB₂]
     exact .plain hv (hR₂ ts hts v hv)
 
+/-- The head of a destructor whose result has a position, whose arguments are a closed telescope
+`Θ` of the graph of a sort, with the equality `SΘ`, and whose results `B` the graph of the nestings
+of run time reads with one relation at equal arguments, at two substitutions `θ₁` and `θ₂` and at
+two nestings `τ₁` and `τ₂`: the graph reads its results at arguments that `SΘ` relates to
+themselves, at both substitutions, with the relation at these arguments that it gives at `θ₁`. -/
+theorem RunNestRel.atArgs_head (hd : sig.Distinct) (P : Program) {m n : Nat} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {SΘ : FieldsRel}
+    (hT₁ : TelRel sig ι m (fun k _ => levelRel sig ι k) .type (fun _ => .plain) Θ SΘ) {Γ : Scope}
+    {B : Term 0 (Γ.extend ps.length)} {τ₁ τ₂ : Nest RunNestLeaf} {θ₁ θ₂ : Subst 0 [] Γ}
+    (hB : ∀ σ₁ σ₂, EqSubst sig ι (Context.empty.append Θ) σ₁ σ₂ →
+      RunNestReads sig ι P n τ₁ τ₂ (B.subst (Subst.append θ₁ σ₁))
+        (B.subst (Subst.append θ₂ σ₂))) :
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      RunNestRel sig ι P n (fun k _ => levelRel sig ι k) τ₁ (B.subst (Subst.append θ₁ ts.toSubst))
+        (RunNestRel.atArgs sig ι P n τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+          ts.terms)) ∧
+    ∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      RunNestRel sig ι P n (fun k _ => levelRel sig ι k) τ₂ (B.subst (Subst.append θ₂ ts.toSubst))
+        (RunNestRel.atArgs sig ι P n τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+          ts.terms) := by
+  have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
+    Nat.forall_lt (levelRel_run_unique hd) _
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
+  have heq := fun (ts : Args 0 [] ps) R' =>
+    RunNestRel.atArgs_eq (A := fun ts => B.subst (Subst.append θ₁ ts.toSubst)) (ts := ts) (R := R')
+      (τ := τ₁) hd ihm ih
+  refine ⟨fun ts hts => ?_, fun ts hts => ?_⟩
+  · obtain ⟨R', h₁, -⟩ := hB _ _ ((hT ts ts).1 hts)
+    rw [heq ts R' h₁]
+    exact h₁
+  · obtain ⟨R', h₁, h₂⟩ := hB _ _ ((hT ts ts).1 hts)
+    rw [heq ts R' h₁]
+    exact h₂
+
 /-- The clause `Reading.NestedHead` of the graph of the nestings of run time: a destructor whose
 arguments are equal telescopes at two equal closed substitutions, and are the same at two other
 substitutions, at which the graph of the nestings of run time reads its results at their nestings
@@ -155,27 +191,19 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} :
   have hcase' := fun d' (hd' : d' ∈ ns) => hcase d' (List.mem_cons_of_mem _ hd')
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
-  have hT := TelRel.eqSubst_iff_plain hd hT₁
+  obtain ⟨hR₁, hR₂⟩ := RunNestRel.atArgs_head hd P hT₁ hB
   let R : Terms 0 [] → RunRel := RunNestRel.atArgs sig ι P n
     (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁)) fun ts =>
       B.subst (Subst.append θ₁' ts.toSubst)
   -- The destructors after it have one relation, whatever the abstractions for it.
   let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
   obtain ⟨G, h₀₁, h₀₂⟩ := hds f₀ f₀ D hcase'
-  refine ⟨_, .nested hi hν₁ (hΘ₁ ▸ hT₁.levelLe hn) (hΘ₁ ▸ hRT₁.levelLe hn) R
-      (fun ts hts => ?_) G (fun f => ?_),
-    .nested hi hν₂ (hΘ₂ ▸ hT₂.levelLe hn) (hΘ₂ ▸ hRT₂.levelLe hn) R
-      (fun ts hts => ?_) G (fun f => ?_)⟩
-  · obtain ⟨R', h₁, -⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [show R ts.terms = _ from RunNestRel.atArgs_eq hd ihm ih h₁]
-    exact h₁
+  refine ⟨_, .nested hi hν₁ (hΘ₁ ▸ hT₁.levelLe hn) (hΘ₁ ▸ hRT₁.levelLe hn) R hR₁ G (fun f => ?_),
+    .nested hi hν₂ (hΘ₂ ▸ hT₂.levelLe hn) (hΘ₂ ▸ hRT₂.levelLe hn) R hR₂ G (fun f => ?_)⟩
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀ D hcase'
     have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
       (RunNestDesRel.unique hd ihm ih h₂ _ h₀₂ H o a)
     exact hSG ▸ h₁
-  · obtain ⟨R', h₁, h₂⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [show R ts.terms = _ from RunNestRel.atArgs_eq hd ihm ih h₁]
-    exact h₂
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f D hcase'
     have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
       (RunNestDesRel.unique hd ihm ih h₁ _ h₀₁ H o a)

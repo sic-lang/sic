@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Meaning.Equality.Properties
 public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Exactness
@@ -149,6 +150,48 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
     rw [hB₂]
     exact .plain hv (hF v hv)
 
+/-- The head of a destructor whose result has a position, whose arguments are a closed telescope
+`Θ` of the graph of a sort, with the equality `SΘ`, and whose results `B` the graph of the nestings
+reads with one equality at equal arguments, at two substitutions `θ₁` and `θ₂` and at two nestings
+`τ₁` and `τ₂`: the graph reads its results at arguments that `SΘ` relates to themselves, at both
+substitutions, with the equality at these arguments that it gives at `θ₁`, which `SΘ` respects. -/
+theorem NestRel.atArgs_head (hd : sig.Distinct) {m n : Nat} {sT s : Quality} {ps : List Parameter}
+    {Θ : Telescope 0 [] ps} {SΘ : FieldsRel}
+    (hT₁ : TelRel sig ι m (fun k _ => levelRel sig ι k) .type (fun _ => .plain) Θ SΘ) {Γ : Scope}
+    {B : Term 0 (Γ.extend ps.length)} {τ₁ τ₂ : Nest NestLeaf} {θ₁ θ₂ : Subst 0 [] Γ}
+    (hB : ∀ σ₁ σ₂, EqSubst sig ι (Context.empty.append Θ) σ₁ σ₂ →
+      NestReads sig ι n sT s τ₁ τ₂ (B.subst (Subst.append θ₁ σ₁)) (B.subst (Subst.append θ₂ σ₂))) :
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      NestRel sig ι n (fun k _ => levelRel sig ι k) sT s τ₁ (B.subst (Subst.append θ₁ ts.toSubst))
+        (NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+          ts.terms)) ∧
+    (∀ ts : Args 0 [] ps, SΘ ts.terms ts.terms →
+      NestRel sig ι n (fun k _ => levelRel sig ι k) sT s τ₂ (B.subst (Subst.append θ₂ ts.toSubst))
+        (NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst))
+          ts.terms)) ∧
+    ∀ ts us, SΘ ts us → ∀ t u,
+      NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) ts t u ↔
+        NestRel.atArgs sig ι n sT s τ₁ (fun ts => B.subst (Subst.append θ₁ ts.toSubst)) us t u := by
+  have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
+  have hT := TelRel.eqSubst_iff_plain hd hT₁
+  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) m) (fun _ => .plain) hT₁
+  have heq := fun (ts : Args 0 [] ps) F' =>
+    NestRel.atArgs_eq (A := fun ts => B.subst (Subst.append θ₁ ts.toSubst)) (ts := ts) (F := F')
+      (sT := sT) (s := s) (τ := τ₁) hd ih
+  refine ⟨fun ts hts => ?_, fun ts hts => ?_, fun ts us hts t u => ?_⟩
+  · obtain ⟨F', h₁, -⟩ := hB _ _ ((hT ts ts).1 hts)
+    rw [heq ts F' h₁]
+    exact h₁
+  · obtain ⟨F', h₁, h₂⟩ := hB _ _ ((hT ts ts).1 hts)
+    rw [heq ts F' h₁]
+    exact h₂
+  · obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
+    have huu := hSp.trans (hSp.symm hts) hts
+    obtain ⟨F', h₁, h₂⟩ := hB _ _ hE
+    obtain ⟨F'', h₁', h₂'⟩ := hB _ _ ((hT us' us').1 huu)
+    rw [heq ts' F' h₁, heq us' F'' h₁']
+    exact NestRel.unique hd ih h₂ _ _ h₂' t u
+
 /-- The clause `Reading.NestedHead` of the graph of the nestings: a destructor whose arguments are
 equal telescopes at two equal closed substitutions, and are the same at two other substitutions, at
 which the graph of the nestings reads its results at their nestings with one equality, at equal
@@ -162,35 +205,19 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   unfold NestDesReads at hds ⊢
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
-  have hT := TelRel.eqSubst_iff_plain hd hT₁
-  have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) κ.level.closedValue)
-    (fun _ => .plain) hT₁
+  obtain ⟨hF₁, hF₂, hBresp⟩ := NestRel.atArgs_head hd hT₁ hB
   let F : Terms 0 [] → TermRel := NestRel.atArgs sig ι n sT κ.quality
     (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁)) fun ts =>
       B.subst (Subst.append θ₁' ts.toSubst)
-  have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
-    obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
-    have huu := hSp.trans (hSp.symm hts) hts
-    obtain ⟨F', h₁, h₂⟩ := hB _ _ hE
-    obtain ⟨F'', h₁', h₂'⟩ := hB _ _ ((hT us' us').1 huu)
-    rw [show F ts'.terms = _ from NestRel.atArgs_eq hd ih h₁,
-      show F us'.terms = _ from NestRel.atArgs_eq hd ih h₁']
-    exact NestRel.unique hd ih h₂ _ _ h₂' t u
   -- The destructors after it have one equality, whatever the abstractions for it.
   let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
   obtain ⟨G, h₀₁, h₀₂⟩ := hds f₀ f₀
-  refine ⟨_, .nested hν₁ (hΘ₁ ▸ hT₁.levelLe hn) F (fun ts hts => ?_) hBresp G (fun f => ?_),
-    .nested hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F (fun ts hts => ?_) hBresp G (fun f => ?_)⟩
-  · obtain ⟨F', h₁, -⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [show F ts.terms = _ from NestRel.atArgs_eq hd ih h₁]
-    exact h₁
+  refine ⟨_, .nested hν₁ (hΘ₁ ▸ hT₁.levelLe hn) F hF₁ hBresp G (fun f => ?_),
+    .nested hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F hF₂ hBresp G (fun f => ?_)⟩
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀
     have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
       (NestDesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
     exact hSG ▸ h₁
-  · obtain ⟨F', h₁, h₂⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [show F ts.terms = _ from NestRel.atArgs_eq hd ih h₁]
-    exact h₂
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f
     have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
       (NestDesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
