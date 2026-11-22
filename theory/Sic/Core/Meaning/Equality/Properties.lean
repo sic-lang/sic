@@ -707,6 +707,72 @@ theorem CodataType.blockTruth_iff_truth {j g k : Nat} {Δ : Scope} {Ts : List (C
 
 /-! ### A Type Has One Level and One Sort -/
 
+/-- The closed canonical type `v` is a type of the sort of the quality `s` at the level `n`, by its
+form alone, as the clauses of `ty(U_n)`, `ty(Ω_n)` and `rt(U_n)` read it: a universe of the level
+below `n`, an instance of a declared type whose sort at the instance has the quality `s` and the
+level `n`, or an equality at the level `n`, a proposition.
+The level and the quality of a type are read from it alone, so that `Term.IsTypeOfSort.unique` gives
+them once for all these relations. -/
+inductive Term.IsTypeOfSort (sig : Signature) (v : Term 0 []) : Quality → Nat → Prop where
+  /-- The universe `U_k` or `Ω_k`, a type of `U_{k + 1}`. -/
+  | univ {l : Level 0} {k : Nat} (s : Quality) (hl : l.closedValue = k) (hv : v = .sort ⟨s, l⟩) :
+      Term.IsTypeOfSort sig v .type (k + 1)
+  /-- An instance `D.{s̄; l̄; p̄} ā` of a declared type of the signature, of its sort `κ[T]`. -/
+  | inst {decl : TypeDeclaration} {D : Name} {qs : List Quality} {ls : List (Level 0)}
+      {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} (h : .typeDeclaration decl ∈ sig)
+      (hD : D ∈ decl.names) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
+      (hp : ps.length = decl.grades) (hv : v = .inst D qs ls ps as) :
+      Term.IsTypeOfSort sig v
+        (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).quality
+        (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
+  /-- An equality `t ∼.{s; l}_A u`, a proposition of `Ω_⟦l⟧`. -/
+  | equality (s : Quality) {l : Level 0} {A t u : Term 0 []} (hv : v = .equality s l A t u) :
+      Term.IsTypeOfSort sig v .prop l.closedValue
+
+/-- A closed canonical type is a type of one sort at most, its quality and its level, in a signature
+whose names are distinct. -/
+theorem Term.IsTypeOfSort.unique {sig : Signature} (hd : sig.Distinct) {v : Term 0 []}
+    {s s' : Quality} {n n' : Nat} (h : v.IsTypeOfSort sig s n) (h' : v.IsTypeOfSort sig s' n') :
+    s = s' ∧ n = n' := by
+  cases h with
+  | univ s hl hv => cases h' with
+    | univ _ hl' hv' => subst hv; cases hv'; exact ⟨rfl, by omega⟩
+    | inst _ _ _ _ _ hv' | equality _ hv' => subst hv; cases hv'
+  | equality _ hv => cases h' with
+    | equality _ hv' => subst hv; cases hv'; exact ⟨rfl, rfl⟩
+    | univ _ _ hv' | inst _ _ _ _ _ hv' => subst hv; cases hv'
+  | inst h hD hq hl hp hv => cases h' with
+    | inst h' hD' hq' hl' hp' hv' =>
+      subst hv
+      obtain ⟨-, rfl, rfl, rfl, rfl, -⟩ := Term.inst.inj hv'
+      cases hd.entry_unique h h' hD hD'
+      exact ⟨rfl, rfl⟩
+    | univ _ _ hv' | equality _ hv' => subst hv; cases hv'
+
+/-- A type of `U_n` is a type of the sort of the universes at the level `n`. -/
+theorem UnivRel.isTypeOfSort {sig : Signature} {ι : Interpretation} {n : Nat}
+    {below : LevelRel.Below n} {v : Term 0 []} {R : TermRel} (h : UnivRel sig ι n below v R) :
+    v.IsTypeOfSort sig .type n := by
+  cases h with
+  | univ hl hk => subst hk; exact .univ _ hl rfl
+  | prop hl hk => subst hk; exact .univ _ hl rfl
+  | data h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.name_mem_names h.2.1) hq hl hp hv
+  | codata h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1) hq hl hp hv
+
+/-- A proposition of `Ω_n` is a type of the sort of the propositions at the level `n`. -/
+theorem PropRel.isTypeOfSort {sig : Signature} {ι : Interpretation} {n : Nat}
+    {below : LevelRel.Below n} {v : Term 0 []} {b : Prop} (h : PropRel sig ι n below v b) :
+    v.IsTypeOfSort sig .prop n := by
+  cases h with
+  | data h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.name_mem_names h.2.1) hq hl hp hv
+  | codata h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1) hq hl hp hv
+  | equalityUniv hl => exact hl ▸ .equality _ rfl
+  | equalityProp hl => exact hl ▸ .equality _ rfl
+
 /-- Two instances of a declared type of a signature whose names are distinct, given by a data type
 and by a codata type, do not exist. -/
 theorem Signature.Distinct.inst_data_codata {sig : Signature} (hd : sig.Distinct)

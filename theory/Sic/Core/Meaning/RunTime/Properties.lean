@@ -1,9 +1,6 @@
 module
 
-public import Sic.Core.Meaning
-public import Sic.Core.Nesting.Relation
-public import Sic.Math.Relation
-import Sic.Core.Meaning.Equality.Properties
+public import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -129,6 +126,18 @@ theorem RunAbstractionRel.congr {P : Program} {ps : List Parameter} {i : Nat}
       ⟨w, H'', R, he, (hF H' ts bs hts H'' _ w).2 hr⟩⟩
 
 /-! ## A Type Has One Level and One Sort -/
+
+/-- A type of `rt(U_n)` is a type of the sort of the universes at the level `n`. -/
+theorem RunUnivRel.isTypeOfSort {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
+    {below : LevelRel.Below n} {v : Term 0 []} {R : RunRel} (h : RunUnivRel sig ι P n below v R) :
+    v.IsTypeOfSort sig .type n := by
+  cases h with
+  | univ hl hk => subst hk; exact .univ _ hl rfl
+  | prop hl hk => subst hk; exact .univ _ hl rfl
+  | data h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.name_mem_names h.2.1) hq hl hp hv
+  | codata h hq hl hp hv hs hn =>
+    exact hs ▸ hn ▸ .inst h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1) hq hl hp hv
 
 /-- A type of a universe has one level of run time, in a signature whose names are distinct. -/
 theorem RunUnivRel.level {sig : Signature} {ι : Interpretation} {P : Program} {n m : Nat}

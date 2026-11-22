@@ -1,6 +1,5 @@
 module
 
-public import Sic.Core.Meaning.Equality.Properties
 public import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
