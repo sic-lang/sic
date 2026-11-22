@@ -652,31 +652,17 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
     rfl
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
       h hq hp hh hS hss _ hSs hgl hgs hgo hgr => by
-    obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
-    simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim, hgrs,
-      Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
+    simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     obtain ⟨_, hos, -⟩ := OwnershipArgs.erase_ownership_map hd hs hΩ hΓ hφ (r * ·)
       (fun u hu => by rw [hm]; exact Mode.oneOne_odot_mul _ _ hu) hss
     refine .corec hos (DestructorBranches.erase_ownership hΓ φ' vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
-    have hi' : i < decl.codataCases.length := hgl ▸ hi
-    obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=
-      ⟨_, List.getElem?_eq_getElem hi'⟩
-    have hcm := List.mem_of_getElem? hc
-    obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
-    have hj := TypeDeclaration.codataTypes_getElem?_of_codataCases hcm
-    obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-    obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
-    have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
-    have hpg := hgri i j T' d hc p (hpos.grade hnd)
-    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
+    obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
+      hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
+    have hT' := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hc)).1
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [List.headD_drop
-        (a := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
-        (by simp [hc, hSj, hpos.arguments hnd]),
-      List.headD_drop (a := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
-        (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
-        (by simp [hc, hpos.resultName decl.names hnd])]
+    rw [hargs, hres]
+    simp only [hSj]
     refine ⟨?_, fun hk => ?_⟩
     rotate_left
     · -- A branch that resumes the corecursor: its destructor is recursive, of a constant result.
@@ -684,11 +670,9 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
         simp [hbn, Resumption.ofArity])
       obtain ⟨χ, hχ⟩ := hs.recursiveResult h.1 _ hT' hpos hbn
       refine ⟨χ.run, ?_⟩
-      dsimp only
       rw [ResultOwnership.toArity_self, hχ]
       rfl
     intro os w hreq hk
-    dsimp only at hreq hk ⊢
     rw [ResultOwnership.toArity_self] at hk
     by_cases hpS : p ∈ Mode.oneOne.erased
     · simp only [hpS, ↓reduceIte]

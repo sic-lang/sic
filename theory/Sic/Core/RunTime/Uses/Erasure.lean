@@ -508,31 +508,16 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     exact .obs (Usage.erase_usage hd hord hΓ hm ht) (UsageArgs.erase_usage hd hord hΓ hm hbs)
   | .corec (D := D) (decl := decl) (qs := qs) (ps := ps) (r := r) (Ss := Ss) (gs := vs)
       (δ := δ) (δs := δs) h hq hp hh hS _ hss hgl _ hSs hgs hgu hδ hδr => by
-    obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
-    simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim, hgrs,
-      Option.getD_some, hd.resumedTypes h hq hp, hd.destructorArguments h hq hp]
+    simp only [Term.erase, hd.position h hh, Option.bind_some, hS, Option.elim]
     rw [GradeVector.run_commutes.run_add]
     refine .corec (UsageArgs.erase_usage_mul hd hord hΓ hm rfl hss)
       (DestructorBranches.erase_usage hΓ δ.run vs _ _ _ fun i hi => ?_)
     -- The branch of the destructor of the case `i`.
-    have hi' : i < decl.codataCases.length := hgl ▸ hi
-    obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=
-      ⟨_, List.getElem?_eq_getElem hi'⟩
-    have hcm := List.mem_of_getElem? hc
-    obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
-    have hj := TypeDeclaration.codataTypes_getElem?_of_codataCases hcm
-    obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-    obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
-    have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
-    have hpg := hgri i j T' d hc p (hpos.grade hnd)
-    obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
+    obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
+      hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [List.headD_drop
-        (a := (ps''.map fun p => (⟨r * p.usage, p.requirement⟩ : Parameter), ⟨ps₁, ψ, ς⟩))
-        (by simp [hc, hSj, hpos.arguments hnd]),
-      List.headD_drop (a := Resumption.ofArity (decide (r ∈ Mode.oneOne.erased))
-        (((B.blockName decl.names).bind decl.names.idxOf?).bind Ss.arity))
-        (by simp [hc, hpos.resultName decl.names hnd])]
+    rw [hargs, hres]
+    simp only [hSj]
     have hδp := GradeVector.run_commutes.run_le (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hc hpos)
     rw [GradeVector.run_commutes.run_smul] at hδp
     by_cases hpS : p ∈ Mode.oneOne.erased
