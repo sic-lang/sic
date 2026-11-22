@@ -515,7 +515,7 @@ theorem Usage.erase_usage {sig : Signature} (hd : sig.Distinct) (hord : sig.Lift
     obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, hargs,
       hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [hargs, hres]
+    rw [List.headD_drop_map hargs, List.headD_drop_map hres]
     simp only [hSj]
     have hδp := GradeVector.run_commutes.run_le (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hc hpos)
     rw [GradeVector.run_commutes.run_smul] at hδp

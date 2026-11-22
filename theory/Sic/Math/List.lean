@@ -126,6 +126,12 @@ theorem List.headD_drop {α : Type} {l : List α} {i : Nat} {a d : α} (h : l[i]
   rw [List.headD_eq_head?_getD, List.head?_drop, h]
   rfl
 
+/-- The first element of a list mapped, from a position on, is the image of the element of the list
+at this position. -/
+theorem List.headD_drop_map {α β : Type} {f : α → β} {l : List α} {i : Nat} {a : α} {d : β}
+    (h : l[i]? = some a) : ((l.map f).drop i).headD d = f a :=
+  List.headD_drop (by rw [List.getElem?_map, h]; rfl)
+
 -- ADE: none.
 /-- The elements `ks j` of positions `j < m`, each `x` when the element `gs[j]` satisfies `p`, and
 `g` of the element of `L` at `j` otherwise, pair the elements of `gs` with those of `L`, of length

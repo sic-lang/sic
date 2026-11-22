@@ -1022,7 +1022,7 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
 those of the types of the block and whose branches bind the arguments of their destructors, is a
 destructor `d` of the type `T'` at a position `j`, of state `S'`, with its branch `g`, and what the
 erasure of the corecursor reads at this case: the grade of the destructor, its arguments and the
-position of the type of its result in the block, whatever the erasure maps them to. -/
+position of the type of its result in the block. -/
 theorem Signature.Distinct.corecCase {sig : Signature} (hd : sig.Distinct) {decl : TypeDeclaration}
     {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T)
@@ -1046,12 +1046,9 @@ theorem Signature.Distinct.corecCase {sig : Signature} (hd : sig.Distinct) {decl
       Nonempty ((T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) ∧
       vs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ ∧
       ((sig.destructorGrades D qs ps).getD [])[i]? = some p ∧
-      (∀ {β : Type} (f : (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) → β)
-        (a : β), ((((sig.destructorArguments D qs ps).getD []).map f).drop i).headD a =
-          f (j, ⟨ps₁, ψ, ς⟩)) ∧
-      (∀ {β : Type} (f : Option Nat → β) (a : β),
-        ((((sig.resumedTypes D qs ps).getD []).map f).drop i).headD a =
-          f ((B.blockName decl.names).bind decl.names.idxOf?)) := by
+      ((sig.destructorArguments D qs ps).getD [])[i]? = some (j, ⟨ps₁, ψ, ς⟩) ∧
+      ((sig.resumedTypes D qs ps).getD [])[i]? =
+        some ((B.blockName decl.names).bind decl.names.idxOf?) := by
   obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
   obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=
     ⟨_, List.getElem?_eq_getElem (hgl ▸ hi)⟩
@@ -1062,7 +1059,7 @@ theorem Signature.Distinct.corecCase {sig : Signature} (hd : sig.Distinct) {decl
   have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
   obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
   refine ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, ?_,
-    fun f _ => List.headD_drop ?_, fun f _ => List.headD_drop ?_⟩
+    ?_, ?_⟩
   · rw [hgrs]
     exact hgri i j T' d hc p (hpos.grade hnd)
   · simp [hd.destructorArguments h hq hp, hc, hpos.arguments hnd]

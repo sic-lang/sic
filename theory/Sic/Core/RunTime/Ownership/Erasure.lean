@@ -660,7 +660,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       hres⟩ := hd.corecCase h hq hp hSs hgl hgs hi
     have hT' := (TypeDeclaration.mem_casesFrom (List.mem_of_getElem? hc)).1
     refine ⟨ps''.length, ps₁.length, g, p, hg, hpg, ?_⟩
-    rw [hargs, hres]
+    rw [List.headD_drop_map hargs, List.headD_drop_map hres]
     simp only [hSj]
     refine ⟨?_, fun hk => ?_⟩
     rotate_left
