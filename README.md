@@ -9,7 +9,7 @@ The metatheory, in `theory/`, formalizes in Lean the type system of [RFC 36](htt
 
 The core follows the graded type theory of the [formalization of Abel, Danielsson and Eriksson](https://github.com/graded-type-theory/graded-type-theory/tree/1f720ee636cb16aec130cc1ddc1c32acea8809d0) (ADE), from which it differs by its three modes, its grades, which count the uses at run time and in total, and its levels, which are not terms, and the proofs follow most of its metatheory, from the logical relation to the properties of the usage.
 Of the [formalization of the logical relation by Pujet](https://github.com/loic-p/logrel-mltt/tree/ef332527cb2203216ffe9d59b82e98ff13b2db3d), the proofs follow the encoding of the logical relation as a predicate indexed by its interpretation, which needs no induction-recursion, absent from Lean.
-The comments `-- ADE:` and `-- Pujet:` on the declarations that have counterparts in these formalizations name them, at the commits `1f720ee6` of ADE and `ef332527` of Pujet.
+The comments `-- ADE:` and `-- Pujet:` on the declarations that have counterparts in these formalizations, or are steps of them, name these counterparts, at the commits `1f720ee6` of ADE and `ef332527` of Pujet.
 
 ## License
 
