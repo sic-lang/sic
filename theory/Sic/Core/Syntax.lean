@@ -810,6 +810,35 @@ theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
   unfold Instance.ofLists
   rw [List.getFin_ofFn, List.getFin_ofFn]
 
+/-- `s̄', p̄'` as many as `s̄, p̄`: the qualities `qs` and the grades `ps` are as many as the sort and
+grade variables of the type declaration `decl`. -/
+structure TypeDeclaration.AsMany (decl : TypeDeclaration) (qs : List Quality) (ps : List Grade) :
+    Prop where
+  /-- As many qualities as sort variables. -/
+  sorts : qs.length = decl.sorts
+  /-- As many grades as grade variables. -/
+  grades : ps.length = decl.grades
+
+/-- `[s̄' / s̄, p̄' / p̄]`: the instance of the sort and grade variables of `decl` that gives them the
+qualities `qs` and the grades `ps`, as many as them. -/
+abbrev TypeDeclaration.AsMany.inst {decl : TypeDeclaration} {qs : List Quality} {ps : List Grade}
+    (hn : decl.AsMany qs ps) : Instance decl.sorts decl.grades :=
+  .ofLists qs ps hn.sorts hn.grades
+
+/-- The instance that the qualities `qs` give gives each sort variable the quality at its position in
+`qs`. -/
+theorem TypeDeclaration.AsMany.inst_sorts {decl : TypeDeclaration} {qs : List Quality}
+    {ps : List Grade} (hn : decl.AsMany qs ps) (i : Fin decl.sorts) :
+    hn.inst.sorts i = qs[(i : Nat)]'(by rw [hn.sorts]; exact i.isLt) :=
+  rfl
+
+/-- The instance that the grades `ps` give gives each grade variable the grade at its position in
+`ps`. -/
+theorem TypeDeclaration.AsMany.inst_grades {decl : TypeDeclaration} {qs : List Quality}
+    {ps : List Grade} (hn : decl.AsMany qs ps) (i : Fin decl.grades) :
+    hn.inst.grades i = ps[(i : Nat)]'(by rw [hn.grades]; exact i.isLt) :=
+  rfl
+
 /-- The value `f decl` that the type declaration `decl` of an entry gives, when the entry is a type
 declaration that introduces the name `D`, and `none` otherwise: what the lookups of the declared
 type `D` read of the entry that declares it. -/
