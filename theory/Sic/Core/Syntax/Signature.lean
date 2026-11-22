@@ -319,6 +319,19 @@ theorem TypeDeclaration.mem_casesFrom_of {α β : Type} {f : α → List β} :
     rw [he]
     exact List.mem_append_right _ (TypeDeclaration.mem_casesFrom_of h hc)
 
+/-- A case of a recursor on a block holds the position of its type among the data types. -/
+theorem TypeDeclaration.dataTypes_getElem?_of_cases {decl : TypeDeclaration} {j : Nat}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : (j, T, con) ∈ decl.cases) : decl.dataTypes[j]? = some T :=
+  (TypeDeclaration.getElem?_of_mem_casesFrom h).2
+
+/-- A case of a corecursor on a block holds the position of its type among the codata types. -/
+theorem TypeDeclaration.codataTypes_getElem?_of_codataCases {decl : TypeDeclaration} {j : Nat}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {d : Name}
+    (h : (j, T, d) ∈ decl.codataCases) : decl.codataTypes[j]? = some T :=
+  (TypeDeclaration.getElem?_of_mem_casesFrom h).2
+
 /-- Each constructor of a data type that an entry of the signature declares has a case. -/
 theorem Signature.constructorCase_of_mem {sig : Signature} {decl : TypeDeclaration}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}

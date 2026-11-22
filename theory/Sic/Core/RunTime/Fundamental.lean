@@ -418,8 +418,7 @@ theorem fundamentalIn : FundamentalIn := by
             (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))).append
               ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0))) :=
         fun i j T' con hi => by
-          have hjT := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
-          rw [Nat.sub_zero] at hjT
+          have hjT := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
           obtain ⟨C', hC'⟩ := hCs' j T' hjT
           obtain ⟨u, hu₁⟩ := husN i j T' con hi
           exact (hut' i j T' con C' u u hi hC' hu₁ hu₁).1.1
@@ -430,8 +429,7 @@ theorem fundamentalIn : FundamentalIn := by
           Telescope.ValidSorts₀ sigM ι
             (((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)).subst θ) :=
         fun i j T' con hi θ hθ => by
-          have hjT := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
-          rw [Nat.sub_zero] at hjT
+          have hjT := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
           obtain ⟨C₀, hC₀⟩ := hCs j T' hjT
           obtain ⟨u₀, hu₀⟩ := hus i j T' con hi
           have hwf := contextPresuppositions.hasType (hut i j T' con C₀ u₀ hi hC₀ hu₀)

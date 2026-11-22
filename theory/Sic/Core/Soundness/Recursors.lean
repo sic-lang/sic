@@ -562,9 +562,7 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
   subst hD
   have hd := has.1.distinct
   have hct := ValidEqTermΓ.ctor hent h hc hq hl hl hp hadm has (fun _ => Level.equivalence.refl _) hts
-  have hj : decl.dataTypes[j]? = some T := by
-    have := (TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)).2
-    rwa [Nat.sub_zero] at this
+  have hj := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
   have hrec := ValidEqTermΓ.recursor hent hord h hq hl hl hp hadm has hct hj hC hCs hCv hus hus hRs
     hRs
     (fun i j T' con C' u₁ u₂ hi hC hu₁ hu₂ => by

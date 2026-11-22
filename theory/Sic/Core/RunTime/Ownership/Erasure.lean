@@ -664,9 +664,7 @@ theorem Ownership.erase_ownership {sig : Signature} (hd : sig.Distinct)
       ⟨_, List.getElem?_eq_getElem hi'⟩
     have hcm := List.mem_of_getElem? hc
     obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
-    have hj : decl.codataTypes[j]? = some T' := by
-      have := (TypeDeclaration.getElem?_of_mem_casesFrom hcm).2
-      rwa [Nat.sub_zero] at this
+    have hj := TypeDeclaration.codataTypes_getElem?_of_codataCases hcm
     obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
     have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩

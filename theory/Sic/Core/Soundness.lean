@@ -847,8 +847,7 @@ theorem soundnessIn : SoundnessIn := by
         (List.length_map _).trans hl
       have has' := has_ih hdis hord hι ρ
       simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      obtain ⟨-, hj⟩ := TypeDeclaration.getElem?_of_mem_casesFrom (List.mem_of_getElem? hi)
-      rw [Nat.sub_zero] at hj
+      have hj := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
       have ht' := ht_ih hdis hord hι ρ
       have he' := he_ih hdis hord hι ρ
       have hCv := hCt_ih _ T C hj hC hdis hord hι ρ
