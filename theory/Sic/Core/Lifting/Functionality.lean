@@ -207,7 +207,6 @@ theorem Destructors.Factor.unique (hd : sig.Distinct) :
   | _, _, _, _, hρ, _, _, _, _, .cons hB₁ hds₁, .cons hB₂ hds₂ => by
     rw [Term.Factor.unique hd (hρ.liftN _) hB₁ hB₂, Destructors.Factor.unique hd hρ.weaken hds₁ hds₂]
 
-
 end
 
 /-- An instance of a lifting has one factor at most, in a signature whose names are distinct,
@@ -231,7 +230,6 @@ theorem Term.Lifts.factor {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ D,
   | var hx _ => exact .var hx _
   | block hD => cases (hρ _).symm.trans hD
   | inst _ _ _ _ _ _ _ _ _ hπ => exact hπ
-
 
 /-! ## Variables Lifted -/
 

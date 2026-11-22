@@ -291,7 +291,6 @@ theorem Branches.LevelEquiv.refl {k : Nat} {Γ : Scope} :
   | .nil => .nil
   | .cons _ _ _ u us => .cons (Term.LevelEquiv.refl u) (Branches.LevelEquiv.refl us)
 
-
 theorem Telescope.LevelEquiv.refl {k : Nat} {Γ : Scope} {ps : List Parameter} :
     (Θ : Telescope k Γ ps) → Telescope.LevelEquiv Θ Θ
   | .nil => .nil
@@ -361,7 +360,6 @@ theorem Branches.LevelEquiv.symm {k : Nat} {Γ : Scope} {us₁ us₂ : Branches 
     Branches.LevelEquiv us₁ us₂ → Branches.LevelEquiv us₂ us₁
   | .nil => .nil
   | .cons h hs => .cons h.symm hs.symm
-
 
 /-- Two telescopes equal up to their levels in the other order. -/
 theorem Telescope.LevelEquiv.symm {k : Nat} {Γ : Scope} {ps : List Parameter}

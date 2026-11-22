@@ -134,7 +134,6 @@ theorem Branches.rename_rename_of {Γ Δ Ξ : Scope} {α₁ : Ren Γ Δ} {α₂ 
     rw [Branches.rename, Branches.rename, Branches.rename,
       Branches.rename_rename_of h us, Term.rename_rename_of (Ren.liftN_comp_of _ (Ren.liftN_comp_of _ h)) u]
 
-
 theorem Telescope.rename_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {α₁ : Ren Γ Δ} {α₂ : Ren Δ Ξ} {α₃ : Ren Γ Ξ} (h : ∀ {a} (x : Var Ξ a), α₁ (α₂ x) = α₃ x) :
     (Θ : Telescope k Ξ ps) → (Θ.rename α₂).rename α₁ = Θ.rename α₃
@@ -287,7 +286,6 @@ theorem Branches.subst₀_rename_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Γ Δ} {
     rw [Branches.rename, Branches.subst₀, Branches.subst₀,
       Branches.subst₀_rename_of h us, Term.subst₀_rename_of (Subst₀.liftN_rename_of _ (Subst₀.liftN_rename_of _ h)) u]
 
-
 theorem Telescope.subst₀_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {σ : Subst₀ k Γ Δ} {α : Ren Δ Ξ} {σ' : Subst₀ k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), σ (α x) = σ' x) :
     (Θ : Telescope k Ξ ps) → (Θ.rename α).subst₀ σ = Θ.subst₀ σ'
@@ -434,7 +432,6 @@ theorem Branches.rename_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ} {
     rw [Branches.subst₀, Branches.rename, Branches.subst₀,
       Branches.rename_subst₀_of h us,
       Term.rename_subst₀_of (Subst₀.liftN_rename_after_of _ (Subst₀.liftN_rename_after_of _ h)) u]
-
 
 theorem Telescope.rename_subst₀_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {σ : Subst₀ k Δ Ξ} {α : Ren Γ Δ} {σ' : Subst₀ k Γ Ξ}
@@ -587,7 +584,6 @@ theorem Branches.subst₀_subst₀_of {Γ Δ Ξ : Scope} {σ : Subst₀ k Δ Ξ}
   | .cons n m es u us => by
     rw [Branches.subst₀, Branches.subst₀, Branches.subst₀,
       Branches.subst₀_subst₀_of h us, Term.subst₀_subst₀_of (Subst₀.liftN_subst₀_of _ (Subst₀.liftN_subst₀_of _ h)) u]
-
 
 theorem Telescope.subst₀_subst₀_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {σ : Subst₀ k Δ Ξ} {τ : Subst₀ k Γ Δ} {σ' : Subst₀ k Γ Ξ}
@@ -913,7 +909,6 @@ theorem Branches.subst_rename_of {Γ Δ Ξ : Scope} {θ : Subst k Γ Δ} {α : R
     rw [Branches.rename, Branches.subst, Branches.subst,
       Branches.subst_rename_of h us, Term.subst_rename_of (Subst.liftN_rename_of _ (Subst.liftN_rename_of _ h)) u]
 
-
 theorem Telescope.subst_rename_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {θ : Subst k Γ Δ} {α : Ren Δ Ξ} {θ' : Subst k Γ Ξ} (h : ∀ {a} (x : Var Ξ a), θ (α x) = θ' x) :
     (Θ : Telescope k Ξ ps) → (Θ.rename α).subst θ = Θ.subst θ'
@@ -1057,7 +1052,6 @@ theorem Branches.rename_subst_of {Γ Δ Ξ : Scope} {θ : Subst k Δ Ξ} {α : R
   | .cons n m es u us => by
     rw [Branches.subst, Branches.rename, Branches.subst,
       Branches.rename_subst_of h us, Term.rename_subst_of (Subst.liftN_rename_after_of _ (Subst.liftN_rename_after_of _ h)) u]
-
 
 theorem Telescope.rename_subst_of {Γ Δ Ξ : Scope} {ps : List Parameter}
     {θ : Subst k Δ Ξ} {α : Ren Γ Δ} {θ' : Subst k Γ Ξ}
@@ -1246,7 +1240,6 @@ theorem Branches.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {σ : Subst₀ k Δ Ξ}
   | .cons n m es u us => by
     rw [Branches.subst₀, Branches.subst, Branches.subst, Branches.subst₀,
       Branches.subst_subst₀_of h us, Term.subst_subst₀_of (Subst₀.Swaps.liftN _ (Subst₀.Swaps.liftN _ h)) u]
-
 
 theorem Telescope.subst_subst₀_of {Γ Δ Ξ Ψ : Scope} {ps : List Parameter}
     {σ : Subst₀ k Δ Ξ} {θ₁ : Subst k Γ Δ} {θ₂ : Subst k Ψ Ξ} {σ' : Subst₀ k Γ Ψ}
@@ -1652,7 +1645,6 @@ theorem Branches.subst_id_of {Γ : Scope} {θ : Subst k Γ Γ}
   | .nil => rfl
   | .cons n m es u us => by
     rw [Branches.subst, Branches.subst_id_of h us, Term.subst_id_of (Subst.liftN_id_of _ (Subst.liftN_id_of _ h)) u]
-
 
 theorem Telescope.subst_id_of {Γ : Scope} {ps : List Parameter}
     {θ : Subst k Γ Γ} (h : ∀ {a} (x : Var Γ a), θ x = Var.eta x) :

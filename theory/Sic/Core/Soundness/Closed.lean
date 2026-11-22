@@ -422,7 +422,6 @@ theorem ValidEqTerm₀.red_type_iff {sig : Signature} {ι : Interpretation} {t u
   · rintro ⟨⟨hs, hc⟩, h'⟩
     exact ⟨⟨hs, ((EqTypeClause.red_iff hd h).2 hc.symm).symm⟩, h'⟩
 
-
 /-! ## Sorts -/
 
 -- ADE: `⊩≡∷U→⊩≡`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.

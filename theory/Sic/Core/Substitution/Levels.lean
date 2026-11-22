@@ -144,7 +144,6 @@ theorem Branches.substLevels_rename {k' : Nat} {Γ Δ : Scope} (ls' : Fin k → 
     rw [Branches.rename, Branches.substLevels, Branches.substLevels, Branches.rename,
       Branches.substLevels_rename ls' α us, Term.substLevels_rename]
 
-
 theorem Telescope.substLevels_rename {k' : Nat} {Γ Δ : Scope} {ps : List Parameter}
     (ls' : Fin k → Level k') (α : Ren Γ Δ) :
     (Θ : Telescope k Δ ps) → (Θ.rename α).substLevels ls' = (Θ.substLevels ls').rename α

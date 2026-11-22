@@ -149,7 +149,6 @@ theorem order_table :
     omega ≤ zero ∧ omega ≤ one ∧ ¬ zero ≤ one ∧ ¬ one ≤ zero := by
   decide
 
-
 /-! ## Properties
 
 The multiplicities form a modality of ADE: a semiring whose addition and multiplication distribute

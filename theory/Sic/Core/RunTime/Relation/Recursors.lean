@@ -75,7 +75,6 @@ theorem Terms.RecRel.exists_of_mem {Q : Name → TermRel} {D : Name} : {ps : Lis
   | [], _ :: _, hl, _, _, _, _ => nomatch hl
   | _ :: _, [], hl, _, _, _, _ => nomatch hl
 
-
 /-! ## Recursors -/
 
 section

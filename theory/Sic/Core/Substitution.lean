@@ -818,7 +818,6 @@ theorem Branches.rename_id_of {Γ : Scope} {α : Ren Γ Γ} (h : ∀ {a} (x : Va
   | .cons n m es u us => by
     rw [Branches.rename, Branches.rename_id_of h us, Term.rename_id_of (Ren.liftN_id_of _ (Ren.liftN_id_of _ h)) u]
 
-
 theorem Telescope.rename_id_of {Γ : Scope} {ps : List Parameter}
     {α : Ren Γ Γ} (h : ∀ {a} (x : Var Γ a), α x = x) :
     (Θ : Telescope k Γ ps) → Θ.rename α = Θ

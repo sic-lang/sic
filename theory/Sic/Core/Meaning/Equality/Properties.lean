@@ -2004,5 +2004,4 @@ theorem HasEq.univ_level {sig : Signature} {ι : Interpretation} {v : Term 0 []}
     (h' : (levelRel sig ι n').univ v R') : n = n' :=
   UnivRel.level hd (levelRel_univ_iff.1 h) (levelRel_univ_iff.1 h')
 
-
 end Sic.Core

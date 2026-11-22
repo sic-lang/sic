@@ -75,7 +75,6 @@ theorem nested_succ {n : Nat} (f ρ : Multiplicity) (χ : MultiplicityVector n) 
 
 end MultiplicityVector
 
-
 -- ADE: none.
 /-- The variables as terms read each variable as the sum of the multiplicities of the positions that
 hold it. -/

@@ -370,7 +370,6 @@ theorem InstanceArgs.Lifts.shapes_subst :
 
 end
 
-
 /-! ## Liftings Instantiated -/
 
 /-- An abstraction lifted by a lifting that lifts no variable, under the variables of its telescope,

@@ -444,7 +444,6 @@ theorem RunsAs.mono {sig : Signature} {ι : Interpretation} {P : Program} {H H' 
   | ⟨v, hA, .inr ⟨R, hR, ht⟩⟩ =>
     ⟨v, hA, .inr ⟨R, hR, RunRel.computed_mono (fun _ _ hv => hR.mono hd hH hv) ht⟩⟩
 
-
 -- ADE: none.
 /-- Addresses that stand for a substitution in the heap `H` stand for it in each heap `H'` that
 extends `H`, in a signature whose names are distinct. -/

@@ -79,7 +79,6 @@ theorem Branches.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} (α : Ren Γ Δ) {u
   | .nil => .nil
   | .cons (n := n) (m := m) h hs => .cons (h.rename (Ren.liftN m (Ren.liftN n α))) (hs.rename α)
 
-
 theorem Telescope.LevelEquiv.rename {k : Nat} {Γ Δ : Scope} {ps : List Parameter} (α : Ren Γ Δ)
     {Θ₁ Θ₂ : Telescope k Δ ps} :
     Telescope.LevelEquiv Θ₁ Θ₂ → Telescope.LevelEquiv (Θ₁.rename α) (Θ₂.rename α)
@@ -195,7 +194,6 @@ theorem Branches.substLevels_levelEquiv {k k' : Nat} {Γ : Scope} {ls₁ ls₂ :
     Branches.LevelEquiv (us.substLevels ls₁) (us.substLevels ls₂)
   | .nil => .nil
   | .cons _ _ _ u us => .cons (Term.substLevels_levelEquiv h u) (Branches.substLevels_levelEquiv h us)
-
 
 /-- Equal levels that replace the level variables give telescopes equal up to their levels. -/
 theorem Telescope.substLevels_levelEquiv {k k' : Nat} {ls₁ ls₂ : Fin k → Level k'}
@@ -401,7 +399,6 @@ theorem Branches.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {σ₁ σ₂ : Su
   | .cons h hs =>
     .cons (h.subst₀ (Subst₀.LevelEquiv.liftN _ (Subst₀.LevelEquiv.liftN _ hσ))) (hs.subst₀ hσ)
 
-
 /-- A substitution of the first order equal up to the levels keeps two telescopes equal up to their
 levels. -/
 theorem Telescope.LevelEquiv.subst₀ {k : Nat} {Γ Δ : Scope} {ps : List Parameter}
@@ -555,7 +552,6 @@ theorem Branches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ₂ : Subst
   | .nil => .nil
   | .cons h hs =>
     .cons (h.subst (Subst.LevelEquiv.liftN _ (Subst.LevelEquiv.liftN _ hθ))) (hs.subst hθ)
-
 
 /-- A substitution of the second order equal up to the levels keeps two telescopes equal up to their
 levels. -/

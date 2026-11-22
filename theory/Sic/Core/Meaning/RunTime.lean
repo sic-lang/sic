@@ -70,7 +70,6 @@ abbrev RunObsRel : Type := Heap → Observations → Nat → Prop
 /-- The relations of run time of the types of a level, given by their graph. -/
 abbrev RunLevelRel : Type := Term 0 [] → RunRel → Prop
 
-
 /-- What a position of a nesting holds at run time: the closed instance of a type of a block, and
 the relation of run time of its terms. -/
 abbrev RunNestLeaf : Type := Term 0 [] × RunRel

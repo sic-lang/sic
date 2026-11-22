@@ -48,7 +48,6 @@ theorem Terms.RecRel.of_diag {Q Q' : Name → TermRel} :
     Terms.RecRel.of_diag (Q := Q) rs (fun D hD => h D (List.mem_cons_of_mem _ hD)) hs
   | [], _, _, _ | some _ :: _, .nil, _, _ | none :: _, .nil, _, _ => trivial
 
-
 /-! ## Branches -/
 
 section

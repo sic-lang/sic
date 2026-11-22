@@ -179,7 +179,6 @@ theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 
     rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
     exact ih ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1
 
-
 -- ADE: the type in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
 /-- The type of the variable `x : A ∈ Γ` is a type in the context, when `Σ ⊨ Γ`. -/
 theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}

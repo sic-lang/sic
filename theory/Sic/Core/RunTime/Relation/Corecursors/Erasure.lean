@@ -104,7 +104,6 @@ theorem RunsAs.unpack (hd : sig.Distinct) (hpre : sig.HasPrelude) {H : Heap} :
       simp only [Args.terms, Term.Packs]
       exact ⟨qs₁, ls₁, ps₁, Δ₁, as₁, y, hc₁, hp'⟩
 
-
 /-- The case of the constructor `next` of the type of positions of the prelude is the first one. -/
 theorem Signature.Distinct.nextCase (hd : sig.Distinct) (hpre : sig.HasPrelude) {i : Nat}
     (hi : sig.constructorCase "Step" "next" = some i) : i = 0 := by
@@ -334,6 +333,5 @@ theorem Args.evalAll_erased (S : Math.Set Grade) [DecidablePred (· ∈ S)] {k :
     refine ⟨H.length :: bs, H', ?_, (List.prefix_append _ _).trans hH, congrArg (· + 1) hl⟩
     simp only [Args.terms, Terms.erase, Targets.rename, hu u List.mem_cons_self, ↓reduceIte]
     exact .cons .erased hev
-
 
 end Sic.Core

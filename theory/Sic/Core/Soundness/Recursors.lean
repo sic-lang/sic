@@ -424,7 +424,6 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     exact ((htrue B hclosed).2 C₁ ((hidx h' T hh).symm ▸ hC) _ htσ).prop_any hd
       (hCv₀.motive_prop hσ₁ htσ)
 
-
 -- ADE: `natrec-congᵛ`, `prodrec-congᵛ`, `unitrec-congᵛ` and `emptyrec-congᵛ`, in
 -- `Definition/LogicalRelation/Substitution/Introductions/`.
 /-- `(rec_≡)` keeps the meaning, and `(rec)` with it: at equal substitutions of the context, the
