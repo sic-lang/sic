@@ -247,17 +247,13 @@ theorem RunNestDesRel.of_plain {sig : Signature} {ι : Interpretation} {P : Prog
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' hB' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
-      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
       have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' fun ts hts =>
         have ⟨_, hv⟩ := hB' ts hts
         .plain (sT := .type) hv (hF' ts hts _ hv)
-      have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
-        (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
-          have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-          have hts'' := (hSS _ _).1 hts'
-          have ⟨_, hv⟩ := hB' ts hts''
-          RunNestRel.unique hd ihm ih (hR ts hts') _ (.plain hv (hR' ts hts'' _ hv))
+      have hAA := RunAbstractionRel.unique_of_runNestRel (i := i) (ψ := ψ) (ς := ς) hd ihm ih hΘ hRΘ hR
+        hΘ' hRΘ' fun ts hts =>
+          have ⟨_, hv⟩ := hB' ts hts
+          .plain hv (hR' ts hts _ hv)
       exact fun H o a ⟨h₁, h₂, h₃⟩ =>
         have h₁' := (hEE _ _).2 h₁
         ⟨h₁', fun hp => (hAA _ H a).2 (h₂ hp),
@@ -404,21 +400,16 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
       cases hE with
       | cons hΘE FE hBE hFE _ _ hGE _ _ =>
         obtain rfl := Option.some.inj (hi.symm.trans hi')
-        have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
         have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' fun ts hts =>
           have ⟨_, hv⟩ := hB' ts hts
           .plain (sT := .type) hv (hF' ts hts _ hv)
         have hEEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘE fun ts hts =>
           have ⟨_, hv⟩ := hBE ts hts
           .plain (sT := .type) hv (hFE ts hts _ hv)
-        have hRΘΘ := RunTelRel.congr hd ihm ih hRΘ _ _ hRΘ' fun _ => .plain
-        have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ)
-          (ς := ς) (f := f) (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
-            have hts' := RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs
-              hts
-            have hts'' := (hSS _ _).1 hts'
-            have ⟨_, hv⟩ := hB' ts hts''
-            RunNestRel.unique hd ihm ih (hR ts hts') _ (.plain hv (hR' ts hts'' _ hv))
+        have hAA := RunAbstractionRel.unique_of_runNestRel (i := i) (ψ := ψ) (ς := ς) hd ihm ih hΘ hRΘ hR
+          hΘ' hRΘ' fun ts hts =>
+            have ⟨_, hv⟩ := hB' ts hts
+            .plain hv (hR' ts hts _ hv)
         exact fun H o a ⟨e₁, e₂⟩ ⟨h₁, h₂, h₃⟩ =>
           ⟨(hEE _ _).1 h₁, fun hp => (hAA _ H a).1 (h₂ hp),
             RunNestDesRel.to_plain hd ihm ih hinv (hG _ h₁) (Nesting.lift_rel₃ hν) _

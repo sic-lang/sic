@@ -292,7 +292,6 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
     cases h' with
     | cons hi' _ hΘ' hRΘ' F' R' hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
-      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
       have hEE := AbstractionRel.unique_of_nestRel hd ihm hΘ hF hΘ' hF'
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
@@ -301,15 +300,11 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
           NestRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hF ts hts')
             _ _ _ (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
             (ef.subst (Subst.LevelEquiv.refl _))
-      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
         fun H ts bs hts =>
           RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
-        (f := f)
-        (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
-          have hts' := hfields H ts bs hts
-          RunNestRel.unique hd ihm ihu (hR ts hts') _ (hR' ts ((hSS _ _).1 hts'))
+      have hAA := RunAbstractionRel.unique_of_runNestRel (i := i) (ψ := ψ) (ς := ς) hd ihm ihu hΘ hRΘ hR
+        hΘ' hRΘ' hR'
       have hRinv : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → (R ts.terms).LevelInvariant :=
         fun H ts bs hts =>
           have hts' := hfields H ts bs hts
@@ -375,7 +370,6 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
     cases h' with
     | cons hi' hΘ' hRΘ' F' R' _ hF' hR' _ hG' _ =>
       obtain rfl := Option.some.inj (hi.symm.trans hi')
-      have hSS := TelRel.unique hd ihm hΘ _ _ hΘ'
       have hEE := AbstractionRel.unique_of_fieldRel hd ihm hΘ hB hF hΘ' hF'
       have hE : ∀ f f', AbstractionRel (ps := ps) SΘ F f f → Term.LevelEquiv f f' →
           AbstractionRel (ps := ps) SΘ F f' f' :=
@@ -385,16 +379,11 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
           FieldRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
             (hF ts hts' _ hv)
             (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _)) (ef.subst (Subst.LevelEquiv.refl _))
-      have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
         fun H ts bs hts =>
           RunTelRel.fieldsRel hd ihm hRΘ (fun _ => rfl) _ _ hΘ (fun _ => rfl) H _ bs hts
-      have hAA := fun f H a => RunAbstractionRel.congr (P := P) (ps := ps) (i := i) (ψ := ψ) (ς := ς)
-        (f := f)
-        (H := H) (a := a) (F := R) (F' := R') hRΘΘ fun H ts bs hts =>
-          have hts' := hfields H ts bs hts
-          have ⟨_, hv⟩ := hB ts hts'
-          RunFieldRel.congr hd ihm ihu (hR ts hts' _ hv) _ (hR' ts ((hSS _ _).1 hts') _ hv)
+      have hAA := RunAbstractionRel.unique_of_runFieldRel (i := i) (ψ := ψ) (ς := ς) hd ihm ihu hΘ hRΘ hB
+        hR hΘ' hRΘ' hR'
       have hRinv : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → (R ts.terms).LevelInvariant :=
         fun H ts bs hts =>
           have hts' := hfields H ts bs hts
