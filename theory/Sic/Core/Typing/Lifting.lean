@@ -62,14 +62,15 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
   refine .codata rfl ?_
     (fun I hI => (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI)).ren.wfCtx)
     (fun I hI T' hT'' => ?_) (fun _ _ _ hT'' _ _ hx => ?_) (fun T' hT'' => ?_) fresh
-  · have hq : (List.ofFn ι.sorts ++ [Quality.type]).length = decl.sorts + 1 := by simp
-    have hp : (List.ofFn ι.grades ++
-        List.replicate (2 + 2 * S.length) Grade.unrestrictedUnrestricted).length =
-          decl.liftingGrades S := by simp
-    refine ⟨.ofLists _ _ hq hp, ?_⟩
-    show decl.constraint (Instance.ofLists _ _ hq hp).lifted
-    rw [Instance.lifted_ofLists _ _ _ _ List.length_ofFn List.length_ofFn,
-      Instance.ofLists_ofFn]
+  · have hqp : Instance.AsMany decl.sorts decl.grades (List.ofFn ι.sorts) (List.ofFn ι.grades) :=
+      ⟨List.length_ofFn, List.length_ofFn⟩
+    have hqp' : Instance.AsMany (decl.sorts + 1) (decl.liftingGrades S)
+        (List.ofFn ι.sorts ++ [Quality.type])
+        (List.ofFn ι.grades ++ List.replicate (2 + 2 * S.length) Grade.unrestrictedUnrestricted) :=
+      ⟨by simp, by simp⟩
+    refine ⟨hqp'.inst, ?_⟩
+    show decl.constraint hqp'.inst.lifted
+    rw [hqp.lifted_inst hqp', Instance.AsMany.inst_ofFn]
     exact hι
   · cases List.mem_singleton.1 hT''
     have hqp : Instance.AsMany decl.sorts decl.grades (List.ofFn I.lifted.sorts)

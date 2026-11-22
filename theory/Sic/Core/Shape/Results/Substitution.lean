@@ -661,9 +661,7 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
     {ms : List (Lifting.Result 0)} {ps : List Grade}
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
-    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
-    (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
-    (hp' : (v.grades ps ms).length = decl.liftingGrades S) {nsA : List (Nest Name)}
+    (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length) {nsA : List (Nest Name)}
     {as : InstanceArgs 0 [] decl.scope} {as' : InstanceArgs 0 [] (decl.scope.lifted S)}
     (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term 0 []) {ms' : List Shape.Motive}
     (hms : as.shapes v lookup block Nesting.plain nsA = some (S.zip ms')) {d : Name}
@@ -673,8 +671,7 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
     {ps₁' : List Parameter} {Ξ' : Scope} {Θ' : Telescope (decl.levels + S.length) Ξ' ps₁'}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
-    (hd' : (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')).Pos d p' q' ς' Ξ' Θ'
-      B' ψ')
+    (hd' : (body (hqp.lifting v has.length_eq).inst).Pos d p' q' ς' Ξ' Θ' B' ψ')
     (ts : Args 0 [] ps₁)
     (hex : ∀ {Ξ' Ξ : Scope} {ρ₀ : Lifting 0 Ξ' Ξ} {n₀ : Nest Name} {e₀ : Term 0 Ξ'}
       {B₀ : Term 0 Ξ} {B₀' : Term 0 Ξ'} {m₀ : Lifting.Result 0},
@@ -697,9 +694,9 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
       u.shape v lookup block (Nesting.liftN n Nesting.plain) .plain = none := fun u =>
     Term.shape_eq_none_of_avoids fun x hx => (hx (Nesting.liftN_plain _ h₀ _ x)).elim
   obtain ⟨_, _, ρ₁, _, A₀, _, hL₁, hI, -, hnest, ⟨β, hA₀, hN⟩, -, hA, -⟩ :=
-    hL.result hsig hT hρ hqp hl hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+    hL.result hsig hT hρ hqp hl hl' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
   obtain ⟨_, _, _, hLo⟩ :=
-    hL.observation hsig hT hρ hqp hl hq' hl' hp' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
+    hL.observation hsig hT hρ hqp hl hl' has t hd hd' (fun _ _ => .sort ⟨.prop, .zero⟩)
   have hid : ∀ {a} (x : Var [] a), ρ.ren x = x := fun x => nomatch x
   rw [Term.rename_id_of (Ren.liftN_id_of _ hid)] at hLo
   -- The closed arguments do not change the shape, the lifting lifting no variable.

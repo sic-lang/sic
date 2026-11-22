@@ -1,7 +1,7 @@
 module
 
 public import Sic.Core.Lifting.Instantiation
-import Sic.Core.Lifting.Shape
+public import Sic.Core.Lifting.Shape
 import Sic.Core.Substitution.Closed
 import Sic.Core.Substitution.Levels
 import Sic.Core.Substitution.Nesting
@@ -469,9 +469,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
-    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
-    (hp' : (v.grades ps ms).length = decl.liftingGrades S)
     {nsA : List (Nest Name)} {as : InstanceArgs k Γ decl.scope}
     {as' : InstanceArgs k Γ' (decl.scope.lifted S)}
     (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
@@ -482,7 +480,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
     (hd' : Destructors.Pos d p' q' ς'
-      (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) Ξ' Θ' B' ψ')
+      (body (hqp.lifting v has.length_eq).inst) Ξ' Θ' B' ψ')
     (o' : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
     ∃ (m : Lifting.Result k) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * m.factor)))
       (ρ₁ : Lifting k Ξ' (.var :: decl.scope))
@@ -520,9 +518,9 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
   -- The destructors of the lifting are those of `T`, lifted, at each instance.
   obtain ⟨T₀, hT₀, hn₀, hb⟩ := hL
   cases eq_of_heq (hsig.hasCodataType_unique ⟨hT.1, hT₀, hn₀⟩ hT).2
-  have hb' := hb (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
-  rw [Instance.liftingVariables_ofLists qs ps v ms hqp.sorts hqp.grades,
-    Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades] at hb'
+  have hb' := hb (hqp.lifting v has.length_eq).inst
+  rw [hqp.liftingVariables_inst v has.length_eq, hqp.lifted_inst (hqp.lifting v has.length_eq)]
+    at hb'
   obtain ⟨m, hps, ρ₁, β, hr, hm, ho, hΘ, hL₀⟩ :=
     hb'.pos (hsig.destructors_nodup hT) (hd.substLevels (Level.lifted S.length)) hd'
   subst hps
@@ -530,12 +528,10 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
   -- The arguments lifted, followed by the term, instantiate the lifting of the position: the
   -- instance gives the motive of each parameter lifted the result of its argument lifted.
   obtain ⟨_, hI₀⟩ := has.instantiates hρ S
-    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
-      i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
+    (fun i => (decl.liftingMotive S (hqp.lifting v has.length_eq).inst i).substLevels
+      ((ls ++ ms.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl'
-      hqp.grades
-      hp' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has.nodup hqp hl has.length_eq hl' j h₁ h₂)
   have hI : Lifting.Instantiates sig v (InstanceArgs.snoc (e := .var) as t).toSubst
       (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)
       (ρ₁.substLevels ((ls ++ ms.map (·.level)).getFin hl')) ρ (Nesting.lift (Nesting.ofArgs nsA)) := by
@@ -662,9 +658,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
-    (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
-    (hp' : (v.grades ps ms).length = decl.liftingGrades S)
     {nsA : List (Nest Name)} {as : InstanceArgs k Γ decl.scope}
     {as' : InstanceArgs k Γ' (decl.scope.lifted S)}
     (has : InstanceArgs.Lifts sig v ρ nsA as S ms as') (t : Term k Γ) {d : Name}
@@ -675,7 +669,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     {B' : Term (decl.levels + S.length) (Ξ'.extend ps₁'.length)}
     {ψ' : ResultOwnership Grade ps₁'.length}
     (hd' : Destructors.Pos d p' q' ς'
-      (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) Ξ' Θ' B' ψ')
+      (body (hqp.lifting v has.length_eq).inst) Ξ' Θ' B' ψ')
     (o' : Name → (ps' : List Parameter) → Term k (Γ'.extend ps'.length)) :
     ∃ (m : Lifting.Result k) (hps : ps₁' = ps₁.map (Parameter.scale (v.recursion * m.factor))),
       (hps ▸ (Θ'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
@@ -695,7 +689,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
               (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)))
         m := by
   obtain ⟨m, hps, _, _, _, _, hL₁, hI, hΘ, h₁, -, h₂, h₃, h₄⟩ :=
-    hL.result hsig hT hρ hqp hl hq' hl' hp' has t hd hd' o'
+    hL.result hsig hT hρ hqp hl hl' has t hd hd' o'
   exact ⟨m, hps, hΘ, (hL₁.instantiate rfl (hI.liftN ps₁.length)).congr h₁ h₂ h₃ h₄⟩
 
 end Sic.Core

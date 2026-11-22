@@ -467,29 +467,25 @@ where
         he => by
       obtain ⟨ζ, _, _, hDT, hadm, hargs⟩ := hA.inst_inv_of_mem hd hD
       have hlen := has.length_eq
-      have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-        rw [List.length_append, hqp.sorts]
-        rfl
-      have hp' : (v.grades ps ms).length = decl.liftingGrades S := v.length_grades hqp.grades hlen
+      have hqp' := hqp.lifting v hlen
       have hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length := by
         rw [List.length_append, hl, List.length_map, hlen]
       let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
-        .ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp'
+        hqp'.inst
       obtain ⟨hΔ, has', hc⟩ := args has hρ hb hargs S
         (fun i => (decl.liftingMotive S I' i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
         (fun _ _ => Iff.rfl)
-        (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl hlen hl'
-          hqp.grades hp' j h₁
+        (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has.nodup hqp hl hlen hl' j h₁
           h₂)
       subst hΔ
-      have hI := Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades hq' hp'
+      have hI := hqp.lifted_inst hqp'
       have hadm' : decl.constraint I'.lifted := hI ▸ hadm
       have hargs' : HasInstanceArgs sig ctx' as'
           (Context.substLevels ((ls ++ ms.map (·.level)).getFin hl')
             (Context.lifted S (I'.sorts (Fin.last decl.sorts)) (decl.liftingMotive S I')
               (Context.substLevels (Level.lifted S.length) (decl.params I'.lifted)))) := by
         rw [Context.lifted_substLevels, hI,
-          Instance.sorts_last_ofLists qs _ v.quality hqp.sorts hq' hp',
+          Instance.AsMany.sorts_last_inst hqp.sorts hqp',
           Context.substLevels_substLevels,
           Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
         exact has'
@@ -515,10 +511,10 @@ where
         show HasType sig ctx' e (.inst D qs ls ps _)
         rw [e₀]
         exact he
-      rw [← decl.liftingSort_substLevels S hqp hl ((List.length_map _).trans hlen) hq' hp' hl']
+      rw [← decl.liftingSort_substLevels S hqp hl ((List.length_map _).trans hlen) hqp' hl']
       exact HasType.inst (decl := decl.lifting D S ns body)
         (ζ := fun _ _ => .unrestrictedUnrestricted)
-        ⟨hL, .inr ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩ ⟨hq', hp'⟩ hl' hadm' (.var hargs' he')
+        ⟨hL, .inr ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩ hqp' hl' hadm' (.var hargs' he')
   /-- The typing of the arguments lifted of an instance, by recursion on the relation: they are
   arguments of the parameters lifted at the positions `S₂`, which are those of the relation among
   the positions of the parameters, with motives of the results that `mv` gives, those of the

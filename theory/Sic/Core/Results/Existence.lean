@@ -364,20 +364,14 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     ∃ e, Term.NestedResult sig v ρ φ n (.inst D qs ls ps as) t e := by
   obtain ⟨T, hT, hn', hb⟩ := id hLd
   have hTs : sig.HasCodataType D decl T := ⟨hdecl, hT, hn'⟩
-  have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-    rw [List.length_append, hqp.sorts]
-    rfl
+  have hqp' := hqp.lifting v has.length_eq
   have hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has.length_eq]
-  have hp' : (v.grades ps ms).length = decl.liftingGrades S :=
-    v.length_grades hqp.grades has.length_eq
   obtain ⟨hΔ, -⟩ := has.instantiates hρ S
-    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')
+    (fun i => (decl.liftingMotive S hqp'.inst
       i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has.nodup hq' hl has.length_eq hl'
-      hqp.grades
-      hp' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has.nodup hqp hl has.length_eq hl' j h₁ h₂)
   subst hΔ
   -- A branch for each destructor of the lifting: the result of the observation by it.
   have key : ∀ i, i < ns.length →
@@ -397,13 +391,12 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     intro i hi
     have hmem : ns[i] ∈ ns := List.getElem_mem hi
     obtain ⟨p', q', ς', ps₁', Ξ', Θ', B', ψ', ⟨hd'⟩⟩ := Destructors.exists_pos
-      (body (.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hp')) hmem
+      (body hqp'.inst) hmem
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos
       (T.body hqp.inst)
-      ((Destructors.Lifts.sublist (hb (.ofLists (qs ++ [v.quality])
-        (v.grades ps ms) hq' hp'))).subset hmem)
+      ((Destructors.Lifts.sublist (hb hqp'.inst)).subset hmem)
     obtain ⟨_, -, ρ₁, e₀, A₀, A₀', hL₁, hI, -, hnest, -, -, hA, -⟩ :=
-      hLd.result hsig hTs hρ hqp hl hq' hl' hp' has t hpos hd'
+      hLd.result hsig hTs hρ hqp hl hl' has t hpos hd'
         (fun _ _ => .sort ⟨.prop, .zero⟩)
     have hres := hL₁.hasResult_instantiate hsub hM rfl (hI.liftN ps₁.length)
       ((ho.snocTerm t).liftN ps₁.length hρ)

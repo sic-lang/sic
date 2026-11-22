@@ -314,20 +314,13 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   obtain ⟨S', ms'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
   obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
   cases hsg
-  have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-    rw [List.length_append, hqp.sorts]
-    rfl
-  have hp' : (v.grades ps ms₁).length = decl.liftingGrades S := v.length_grades hqp.grades
-    has₁.length_eq
+  have hqpL := hqp.lifting v has₁.length_eq
   have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has₁.length_eq]
   obtain ⟨hΔ, -⟩ := has₁.instantiates hρ₁ S
-    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp')
-      i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
+    (fun i => (decl.liftingMotive S hqpL.inst i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has₁.nodup hq' hl has₁.length_eq hl'
-      hqp.grades
-      hp' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has₁.nodup hqp hl has₁.length_eq hl' j h₁ h₂)
   subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
@@ -340,12 +333,11 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
   have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
   have hLf := hord.lifts h.1 hDn hLm
-  let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
-    .ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp'
+  let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) := hqpL.inst
   have hFrec : ∀ T' ∈ decl.codataTypes, T'.name = D →
       ∀ r ∈ (T'.body I'.lifted).recursion decl.names, r = none := fun T' hT' hn' => by
     cases eq_of_heq (hd.hasCodataType_unique ⟨h.1, hT', hn'⟩ h).2
-    rw [Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades]
+    rw [hqp.lifted_inst hqpL]
     exact hrec
   have hrecL : ∀ r ∈ (TL.body I').recursion declL.names, r = none := hLf.recursion I' hFrec
   have hrs : ∀ {α : Type} (f : Name → α) (i : Nat),
@@ -401,14 +393,14 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           (v.grades ps ms₁) (.snoc (e := .var) as' t)) := fun ⟨v', hv', k, b, hk⟩ => by
       cases Computesι.det hd hIA hv'
       exact RunUnivRel.not_prop hd (levelRel_run_iff.1 hU) (levelRel_prop_iff.1 hk)
-    obtain ⟨nR', Sr, hnR, hSr, rfl⟩ := HasRun.codata hd hTL ⟨hq', hp'⟩ hl' (.univ nR hU) hs
+    obtain ⟨nR', Sr, hnR, hSr, rfl⟩ := HasRun.codata hd hTL hqpL hl' (.univ nR hU) hs
     subst hnR
     -- The equality of the destructors of the lifting relates the observations of the result.
     obtain ⟨vE, w₁, w₂, RE, hvE, hw₁, hw₂, hRE, hRw⟩ := hval.2.1 hnp
     cases Computesι.det hd hIA hvE
     cases Computesι.det hd hwe hw₁
     cases Computesι.det hd hwe hw₂
-    obtain ⟨-, SE, hSE, rfl⟩ := (HasEq.instCodata_inv hd hTL ⟨hq', hp'⟩ hl' hRE).resolve_right
+    obtain ⟨-, SE, hSE, rfl⟩ := (HasEq.instCodata_inv hd hTL hqpL hl' hRE).resolve_right
       fun ⟨hsp, _⟩ => absurd (hs.symm.trans hsp) (by decide)
     obtain ⟨XE, hXE, hXe⟩ := hRw
     obtain ⟨o₁, o₂, hc₁, hc₂, hSo⟩ := hXE TL hTLmem e e hXe
@@ -433,12 +425,12 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hidx := hpos'.getElem?_index
     obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hpos, g₁, hg₁⟩ := hgs₁ _ d' hidx
     obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
-      (ρ := ρ₁) hρ₁ hqp hl hq' hl' hp' has₁ t hpos hpos' o'
+      (ρ := ρ₁) hρ₁ hqp hl hl' has₁ t hpos hpos' o'
     subst hps
     have ht₁ : t.rename ρ₁.ren = t := Term.rename_id_of hid₁ t
     rw (transparency := .default) [ht₁] at hΘeq hBL
     obtain ⟨σ₂, π₂, mS, rest, hσ₂, hmS, hp'g, hς', hps', hψ', hdrop, hfac⟩ :=
-      hord.shapes_get hd h hLm has₁.nodup hqp has₁.length_eq hq' hp' hmsA hpos hpos'
+      hord.shapes_get hd h hLm has₁.nodup hqp has₁.length_eq hmsA hpos hpos'
     rw [hσ] at hσ₂
     cases hσ₂
     have hiL : declL.codataCases[hpos'.index]? = some (0, TL, d') := by
@@ -477,7 +469,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hL'' := hBL.subst (Lifting.Substitutes.closedArgs ρ₁ ts)
     rw [Term.rename_id_of (Ren.liftN_id_of _ hid₁), Term.subst_append,
       Term.subst_toSubst_cast _ _ ts ts' hts, Term.subst_append] at hL''
-    have hshape := TypeDeclaration.Lifts.shape_result hd h hLf (ρ := ρ₁) hqp hl hq' hl' hp' has₁
+    have hshape := TypeDeclaration.Lifts.shape_result hd h hLf (ρ := ρ₁) hqp hl hl' has₁
       t hms' hpos hpos' ts (fun hA _ hν hbA =>
         (hA.shape_eq hd hord (md := .oneOne) (ax := Grade.run) hν hbA).imp fun _ h => h.1) hb
     rw [Term.subst_append] at hshape
@@ -488,7 +480,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hred : ∀ w, Computesι sig ι ((o' d' _).subst ts'.toSubst) w ↔
         Computesι sig ι (g₁.subst ts.toSubst) w := fun w => by
       rw [Term.observation_subst_args, ← hts]
-      exact Computesι.red_iff hd (Red.beta_stateless hTL ⟨hq', hp'⟩ hl' hiL hrecN hg₁ ts)
+      exact Computesι.red_iff hd (Red.beta_stateless hTL hqpL hl' hiL hrecN hg₁ ts)
     have hvalI := FieldRel.validEqTerm hd hFB hvB ((hFB.congr_computes (.inr ⟨hred, hred⟩)).1
       (hPos d' p' q' ς' _ Ξ' Θ' B' ψ' hpos' SΘ' hΘ' ts' ts' hSΘ' vB FB hvB hFB))
     obtain ⟨R'', hR''⟩ := hRB.hasRun

@@ -458,24 +458,16 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   obtain ⟨S', ms'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
   obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
   cases hsg
-  have hq' : (qs ++ [v.quality]).length = decl.sorts + 1 := by
-    rw [List.length_append, hqp.sorts]
-    rfl
-  have hp' : (v.grades ps ms₁).length = decl.liftingGrades S := v.length_grades hqp.grades
-    has₁.length_eq
-  have hp₂' : (v.grades ps ms₂).length = decl.liftingGrades S := v.length_grades hqp.grades
-    has₂.length_eq
+  have hqpL := hqp.lifting v has₁.length_eq
+  have hqpL₂ := hqp.lifting v has₂.length_eq
   have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has₁.length_eq]
   have hl₂' : (ls₂ ++ ms₂.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl₂, List.length_map, has₂.length_eq]
   obtain ⟨hΔ, -⟩ := has₁.instantiates hρ₁ S
-    (fun i => (decl.liftingMotive S (.ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp')
-      i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
+    (fun i => (decl.liftingMotive S hqpL.inst i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
     (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_ofLists has₁.nodup hq' hl has₁.length_eq hl'
-      hqp.grades
-      hp' j h₁ h₂)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has₁.nodup hqp hl has₁.length_eq hl' j h₁ h₂)
   subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
@@ -488,18 +480,19 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
   have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
   have hLf := hord.lifts h.1 hDn hLm
-  let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
-    .ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp'
+  let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) := hqpL.inst
   -- The type has no recursive destructor at the instance of the type declaration that each
   -- instance of the lifting at the qualities and grades of the instance holds.
-  have hFrecAt : ∀ (ms : List (Lifting.Result 0)) (hpm : (v.grades ps ms).length = decl.liftingGrades S),
+  have hFrecAt : ∀ (ms : List (Lifting.Result 0))
+      (hpm : Instance.AsMany (decl.sorts + 1) (decl.liftingGrades S) (qs ++ [v.quality])
+        (v.grades ps ms)),
       ∀ T' ∈ decl.codataTypes, T'.name = D →
-        ∀ r ∈ (T'.body (Instance.ofLists (qs ++ [v.quality]) (v.grades ps ms) hq' hpm).lifted).recursion
-          decl.names, r = none := fun ms hpm T' hT' hn' => by
+        ∀ r ∈ (T'.body hpm.inst.lifted).recursion decl.names, r = none := fun ms hpm T' hT'
+          hn' => by
     cases eq_of_heq (hd.hasCodataType_unique ⟨h.1, hT', hn'⟩ h).2
-    rw [Instance.lifted_ofLists qs ps v.quality _ hqp.sorts hqp.grades]
+    rw [hqp.lifted_inst hpm]
     exact hrec
-  have hFrec := hFrecAt ms₁ hp'
+  have hFrec := hFrecAt ms₁ hqpL
   have hrecL : ∀ r ∈ (TL.body I').recursion declL.names, r = none := hLf.recursion I' hFrec
   -- The observations of the results.
   let L := ls.getFin hl
@@ -531,7 +524,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨_, _, _, ps₂, _, _, _, _, hpos₂, g₂, hg₂⟩ := hgs₂ i d' hi
     obtain ⟨-, rfl⟩ := hpos.params_unique (hd.destructors_nodup h) hpos₂
     obtain ⟨mr, hps, hΘeq, hBL⟩ := TypeDeclaration.Lifts.observation (v := v) hd h hLf
-      (ρ := ρ₁) hρ₁ hqp hl hq' hl' hp' has₁ t₁ hpos hpos' o₁'
+      (ρ := ρ₁) hρ₁ hqp hl hl' has₁ t₁ hpos hpos' o₁'
     subst hps
     have ht₁ : t₁.rename ρ₁.ren = t₁ := Term.rename_id_of hid₁ t₁
     rw (transparency := .default) [ht₁] at hΘeq hBL
@@ -580,23 +573,22 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       (hpos'.resultName declL.names (hd.destructors_nodup hTL)).trans
         (hLf.blockName_pos I' hFrec hpos')
     -- The destructor has no result of the block at the instance of the second side either.
-    let I₂' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
-      .ofLists (qs ++ [v.quality]) (v.grades ps ms₂) hq' hp₂'
+    let I₂' : Instance (decl.sorts + 1) (decl.liftingGrades S) := hqpL₂.inst
     obtain ⟨_, _, _, _, _, _, _, _, ⟨hpos₂'⟩⟩ := Destructors.exists_pos (TL.body I₂') hpos'.mem
     have hrecN₂ : (TL.body I₂').resultName declL.names d' = none :=
       (hpos₂'.resultName declL.names (hd.destructors_nodup hTL)).trans
-        (hLf.blockName_pos I₂' (hFrecAt ms₂ hp₂') hpos₂')
+        (hLf.blockName_pos I₂' (hFrecAt ms₂ hqpL₂) hpos₂')
     have hr₁ : ∀ w, Computesι sig ι ((o₁' d' _).subst ts'.toSubst) w ↔
         Computesι sig ι (g₁.subst ts.toSubst) w := fun w => by
       subst he₁
       rw [Term.observation_subst_args, ← hts]
-      exact Computesι.red_iff hd (Red.beta_stateless hTL ⟨hq', hp'⟩ hl' hiL hrecN hg₁ ts)
+      exact Computesι.red_iff hd (Red.beta_stateless hTL hqpL hl' hiL hrecN hg₁ ts)
     have hr₂ : s' = .prop ∨ ∀ w, Computesι sig ι ((o₂' d' _).subst us'.toSubst) w ↔
         Computesι sig ι (g₂.subst us.toSubst) w := hO.imp_right fun hO' w =>
       (hO' d' _ us'.toSubst w).trans (by
         subst he₂
         rw [Term.observation_subst_args, ← hus]
-        exact Computesι.red_iff hd (Red.beta_stateless hTL ⟨hq', hp₂'⟩ hl₂' hiL hrecN₂ hg₂ us))
+        exact Computesι.red_iff hd (Red.beta_stateless hTL hqpL₂ hl₂' hiL hrecN₂ hg₂ us))
     exact (hF'.congr_computes (hr₂.elim .inl fun h₂ => .inr ⟨hr₁, h₂⟩)).2 hFg
   -- The meaning of the instance lifted.
   obtain ⟨-, vA, -, R, hcA, -, hR, -, -⟩ := id hA'
@@ -618,7 +610,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   have hc₂ : e₂.CorecObservations (Lifting.name D S) o₂ :=
     ⟨_, _, _, _, _, _, _, _, _, he₂.symm, by subst he₂; rfl⟩
   refine HasEq.validEqTerm_whnf hd hIA hR hw₁ hw₂ ?_
-  rcases HasEq.instCodata_inv hd hTL ⟨hq', hp'⟩ hl' hR with ⟨-, S', hS', rfl⟩ | ⟨-, S', hS', hRb⟩
+  rcases HasEq.instCodata_inv hd hTL hqpL hl' hR with ⟨-, S', hS', rfl⟩ | ⟨-, S', hS', hRb⟩
   · refine ⟨fun N a b => N = Lifting.name D S ∧ a = e₁ ∧ b = e₂, fun T' hT' a b hX => ?_,
       rfl, rfl, rfl⟩
     cases List.mem_singleton.1 hT'
