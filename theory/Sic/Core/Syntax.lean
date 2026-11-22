@@ -802,14 +802,6 @@ def Instance.ofLists {j g : Nat} (qs : List Quality) (ps : List Grade) (hq : qs.
     (hp : ps.length = g) : Instance j g :=
   ⟨qs.getFin hq, ps.getFin hp⟩
 
-/-- The instance that gives the variables the sorts and the grades of an instance is this
-instance. -/
-theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
-    (hq : (List.ofFn ι.sorts).length = j) (hp : (List.ofFn ι.grades).length = g) :
-    Instance.ofLists (List.ofFn ι.sorts) (List.ofFn ι.grades) hq hp = ι := by
-  unfold Instance.ofLists
-  rw [List.getFin_ofFn, List.getFin_ofFn]
-
 /-- `s̄', p̄'` as many as `s̄, p̄`: the qualities `qs` and the grades `ps` are as many as `j` sort
 variables and `g` grade variables, those of an entry of the signature or of a lifting. -/
 structure Instance.AsMany (j g : Nat) (qs : List Quality) (ps : List Grade) : Prop where
@@ -818,8 +810,7 @@ structure Instance.AsMany (j g : Nat) (qs : List Quality) (ps : List Grade) : Pr
   /-- As many grades as grade variables. -/
   grades : ps.length = g
 
-/-- `[s̄' / s̄, p̄' / p̄]`: the instance that gives the sort variables the qualities `qs` and the
-  grade
+/-- `[s̄' / s̄, p̄' / p̄]`: the instance that gives the sort variables the qualities `qs` and the grade
 variables the grades `ps`, as many as them. -/
 abbrev Instance.AsMany.inst {j g : Nat} {qs : List Quality} {ps : List Grade}
     (hqp : Instance.AsMany j g qs ps) : Instance j g :=
@@ -827,22 +818,23 @@ abbrev Instance.AsMany.inst {j g : Nat} {qs : List Quality} {ps : List Grade}
 
 /-- The instance that the qualities `qs` give gives each sort variable the quality at its position in
 `qs`. -/
-theorem Instance.AsMany.inst_sorts {j g : Nat} {qs : List Quality} {ps : List Grade}
+theorem Instance.AsMany.sorts_inst {j g : Nat} {qs : List Quality} {ps : List Grade}
     (hqp : Instance.AsMany j g qs ps) (i : Fin j) :
     hqp.inst.sorts i = qs[(i : Nat)]'(by rw [hqp.sorts]; exact i.isLt) :=
   rfl
 
 /-- The instance that the grades `ps` give gives each grade variable the grade at its position in
 `ps`. -/
-theorem Instance.AsMany.inst_grades {j g : Nat} {qs : List Quality} {ps : List Grade}
+theorem Instance.AsMany.grades_inst {j g : Nat} {qs : List Quality} {ps : List Grade}
     (hqp : Instance.AsMany j g qs ps) (i : Fin g) :
     hqp.inst.grades i = ps[(i : Nat)]'(by rw [hqp.grades]; exact i.isLt) :=
   rfl
 
 /-- The instance that the qualities and the grades of an instance give is this instance. -/
 theorem Instance.AsMany.inst_ofFn {j g : Nat} (ι : Instance j g)
-    (hqp : Instance.AsMany j g (List.ofFn ι.sorts) (List.ofFn ι.grades)) : hqp.inst = ι :=
-  Instance.ofLists_ofFn ι _ _
+    (hqp : Instance.AsMany j g (List.ofFn ι.sorts) (List.ofFn ι.grades)) : hqp.inst = ι := by
+  unfold Instance.AsMany.inst Instance.ofLists
+  rw [List.getFin_ofFn, List.getFin_ofFn]
 
 /-- The qualities of the sort variables at the instance that the qualities `qs` give are `qs`. -/
 theorem Instance.AsMany.ofFn_inst_sorts {j g : Nat} {qs : List Quality} {ps : List Grade}
