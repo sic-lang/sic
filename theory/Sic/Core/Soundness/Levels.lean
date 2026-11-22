@@ -1271,16 +1271,18 @@ decreasing_by
     | (rw [Context.size_append]; simp only [Context.size]; omega)
 
 -- ADE: none.
-/-- Two closed substitutions equal for a telescope at the values of the levels `L`, substituted by
-`σ`, are equal for the telescope at `L` substituted by `σ`, as the arguments of a destructor of a
-codata type. -/
-theorem EqSubst.substLevels_of_atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+/-- Two closed substitutions are equal for a telescope at levels `L` without variables, substituted
+by `τ`, if and only if they are equal for the telescope at the values of `L`, substituted by `τ'`
+equal to `τ` up to its levels, as the arguments of a destructor of a codata type and the fields of
+a constructor. -/
+theorem EqSubst.substLevels_iff_atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     (L : Fin k → Level 0) {Ξ : Scope} {ps : List Parameter} (Θ : Telescope k Ξ ps)
-    (σ : Subst 0 [] Ξ) {σ₁ σ₂ : Subst 0 [] _} :
-    EqSubst sig ι (Context.empty.append ((Θ.atLevels fun i => (L i).closedValue).subst σ)) σ₁ σ₂ →
-      EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst σ)) σ₁ σ₂ :=
-  EqSubst.levelEquiv
-    (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L (Subst.LevelEquiv.refl σ)).symm)
+    {τ τ' : Subst 0 [] Ξ} (hτ : Subst.LevelEquiv τ τ') {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst τ)) σ₁ σ₂ ↔
+      EqSubst sig ι (Context.empty.append ((Θ.atLevels fun i => (L i).closedValue).subst τ'))
+        σ₁ σ₂ :=
+  ⟨EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hτ)),
+    EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hτ).symm)⟩
 
 -- ADE: none.
 /-- Two closed substitutions equal for a context at levels `L` without variables are equal for it

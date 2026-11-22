@@ -505,8 +505,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         (hpos.obsSubst f a.toSubst x)
       rw [Destructors.Pos.obsSubst_posSubstLevels]
       exact Term.LevelEquiv.refl _
-  have hbsρ := EqSubst.levelEquiv
-    (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hcE.symm)) hbs
+  have hbsρ := (EqSubst.substLevels_iff_atLevels L Θ hcE.symm).1 hbs
   have hBE : ∀ {f : Observations} {a : InstanceArgs 0 [] decl.scope}
       {τ : Subst 0 [] (Scope.extend [] ps'.length)},
       Term.LevelEquiv ((B.substLevels Lρ).subst
@@ -1050,7 +1049,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     refine ⟨r₁, r₂, ss₁, ss₂, Ss₁, Ss₂, gs₁, gs₂, hv₁, hw₂,
       fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ => ?_⟩
     rw [Term.observation_subst_args, Term.observation_subst_args]
-    have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
+    have hτ' := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
     exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
       (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
@@ -1702,7 +1701,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst)) :=
       fun d p q ς ps' Ξ Θ B ψ hpos ts us hτ => by
     rw [Term.observation_subst_args, Term.observation_subst_args]
-    have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
+    have hτ' := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
       (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩

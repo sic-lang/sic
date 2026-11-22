@@ -383,7 +383,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) := by
         intro d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ hr
         rw [Term.observation_subst_args, Term.observation_subst_args]
-        have hτL := EqSubst.substLevels_of_atLevels L Θ _ hτ
+        have hτL := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
         obtain ⟨i, hi, hσB, hBx, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
         have hB0 : B.blockName decl.names = none := (hpos.recursionAt_index decl.names).symm.trans hr
         obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
@@ -417,7 +417,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             rw [hD'] at hR
             cases hR
             rw [Term.observation_subst_args, Term.observation_subst_args]
-            have hτL := EqSubst.substLevels_of_atLevels L Θ _ hτ
+            have hτL := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
             obtain ⟨i, hi, hσB, -, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
             have hBD : B.blockName decl.names = some D' :=
               (hpos.recursionAt_index decl.names).symm.trans hD'

@@ -158,9 +158,7 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
       EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
         σ₁ σ₂ :=
-  ⟨EqSubst.substLevels_of_atLevels (ls.getFin hl) _ _,
-    EqSubst.levelEquiv
-      (Context.LevelEquiv.append .empty (c.fields_atLevels_subst hq hl hp as).symm)⟩
+  (EqSubst.substLevels_iff_atLevels (ls.getFin hl) _ (Subst.LevelEquiv.refl _)).symm
 
 section
 

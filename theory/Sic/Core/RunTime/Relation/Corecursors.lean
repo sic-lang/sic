@@ -238,7 +238,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         -- premise makes it a term of the result of the destructor.
         intro d p q ς ps' Ξ Θ B ψ hpos ts₂ us₂ hτ hr0
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
-        have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
+        have hτ' := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
         have hb := ValidEqTerm₀.corecBranch hpos
           (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
         have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
@@ -262,7 +262,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
         obtain rfl : i' = i :=
           Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
-        have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
+        have hτ' := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
         have hbs₂' :=
           RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L (Subst.LevelEquiv.refl _)).symm hbs₂
         -- The branch in the closure, at the grade of its destructor.

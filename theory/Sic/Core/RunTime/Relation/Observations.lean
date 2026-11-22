@@ -597,13 +597,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst x)
     rw [Destructors.Pos.obsSubst_posSubstLevels]
     exact Term.LevelEquiv.refl _
-  have hΘE : Telescope.LevelEquiv
-      ((Θ.substLevels Lρ).subst
-        ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst))
-      ((Θ.substLevels L).subst (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) :=
-    (Θ.closedValues_levelEquiv L hcE.symm).symm
-  have htsρ := EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘE.symm) hts
-  have hbsρ := RunsAsArgs.levelEquiv hd hΘE.symm hbs
+  have htsρ := (EqSubst.substLevels_iff_atLevels L Θ hcE.symm).1 hts
+  have hbsρ := RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L hcE.symm) hbs
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
   have hS' := RunTelRel.of_runsAsArgs hd h₁
     (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
