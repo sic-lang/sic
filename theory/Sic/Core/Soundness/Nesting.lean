@@ -2,8 +2,8 @@ module
 
 public import Sic.Core.Soundness.Nesting.Equality
 public import Sic.Core.Soundness.Nesting.RunTime
-import Sic.Core.Substitution.Nesting
 import Sic.Core.Soundness.Substitution
+import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Inversion
 import Sic.Core.Typing.Lifting.Context

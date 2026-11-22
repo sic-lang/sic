@@ -6,12 +6,12 @@ public import Sic.Core.Evaluation.Uniqueness.Environments
 public import Sic.Core.Evaluation.Uniqueness.Need
 public import Sic.Core.Evaluation.Uniqueness.Ownership
 public import Sic.Core.Evaluation.Uniqueness.Positions
+import Sic.Core.Erasure.Ownership.Nested
+import Sic.Core.Erasure.Usage.Nested
 import Sic.Core.Evaluation.Conservation.Binders
 import Sic.Core.Evaluation.Conservation.Demands
 import Sic.Core.Evaluation.Conservation.Environments
 import Sic.Core.Evaluation.Conservation.Usage
-import Sic.Core.Erasure.Ownership.Nested
-import Sic.Core.Erasure.Usage.Nested
 
 /-!
 # Uniqueness

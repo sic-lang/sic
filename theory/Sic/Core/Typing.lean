@@ -1,7 +1,7 @@
 module
 
-public import Sic.Core.Results
 public import Sic.Core.Prelude
+public import Sic.Core.Results
 public import Sic.Core.Substitution.Closed
 public import Sic.Core.Substitution.Levels
 

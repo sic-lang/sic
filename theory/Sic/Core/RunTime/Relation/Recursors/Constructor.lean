@@ -13,8 +13,8 @@ import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Recursors.Erasure
 import Sic.Core.RunTime.Relation.Substitution
 import Sic.Core.RunTime.Subsumption
-import Sic.Core.Soundness.Closed
 import Sic.Core.Shape.Results.Fields
+import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Recursors.Results
 import Sic.Core.Soundness.Substitution

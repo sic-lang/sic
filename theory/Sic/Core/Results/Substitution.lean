@@ -1,10 +1,10 @@
 module
 
-public import Sic.Core.Results
 public import Sic.Core.Lifting.Substitution
+public import Sic.Core.Results
 public import Sic.Core.Substitution.Composition
-import Sic.Core.Substitution.Levels
 public import Sic.Core.Substitution.Rules
+import Sic.Core.Substitution.Levels
 
 /-!
 # Substitution of the Recursive Results

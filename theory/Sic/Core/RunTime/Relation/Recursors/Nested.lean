@@ -10,10 +10,10 @@ import Sic.Core.Lifting.Shape
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Results.Substitution
-import Sic.Core.RunTime.Relation.Recursors.Nested.Branches
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.DeclaredTypes
 import Sic.Core.RunTime.Relation.Observations
+import Sic.Core.RunTime.Relation.Recursors.Nested.Branches
 import Sic.Core.RunTime.Subsumption
 import Sic.Core.Shape.Results.Lifting
 import Sic.Core.Soundness.Closed

@@ -1,7 +1,7 @@
 module
 
-public import Sic.Core.Shape
 public import Sic.Core.Lifting
+public import Sic.Core.Shape
 
 /-!
 # Shapes of the Recursive Results
