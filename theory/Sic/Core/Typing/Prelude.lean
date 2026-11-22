@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Typing
+import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Presuppositions
 import Sic.Core.Typing.Reflexivity
 import Sic.Core.Typing.Renaming
@@ -195,8 +196,7 @@ theorem HasType.pairInst {Γ : Scope} {ctx : Context k Γ} (hpre : sig.HasPrelud
     (hadm : κA.quality = .prop → p.mode ≠ .oneOne)
     (hA : HasType sig ctx A (.sort κA)) (hB : HasType sig (ctx.var A) B (.sort ⟨.type, l₂⟩)) :
     HasType sig ctx (Prelude.pairInst κA l₂ p ρ A B) (.sort ⟨.type, .max κA.level l₂⟩) :=
-  .inst (D := "Pair") (decl := Prelude.pair) (ζ := Prelude.pairType.usage)
-    ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
+  .inst hpre.pair.hasDeclaredType
     rfl rfl rfl hadm (HasInstanceArgs.pair p ρ hA hB)
 
 -- ADE: none.
@@ -207,8 +207,7 @@ theorem HasType.packLevel {sig : Signature} (hpre : sig.HasPrelude) {Γ : Scope}
     {κs : List (Universe k)} → {l : Level k} → WfTelescopeSorts sig ctx Θ κs l →
       HasType sig ctx (Θ.pack κs l) (.sort ⟨.type, Telescope.packLevel κs l⟩)
   | _, _, _, _, _, .nil hctx => by
-    refine .inst (D := "Unit") (decl := Prelude.unit) (ζ := Prelude.unitType.usage)
-      ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
+    refine .inst hpre.unit.hasDeclaredType
       rfl rfl rfl trivial ?_
     exact .nil hctx
   | _, _, _, _, _, .cons hA _ hΘ hp => HasType.pairInst hpre hp hA (HasType.packLevel hpre hΘ)

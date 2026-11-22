@@ -418,8 +418,7 @@ theorem Term.validBlockNest {sigT : Signature} (hS : TypingSound sig ι) (hd : s
   -- The unit of the prelude is a type of `κ`, for the type variables.
   have hctx : WfCtx sigT ctx := WfCtx.of_append (contextPresuppositions.hasType hA₀)
   have hUnit : HasType sigT ctx (.inst "Unit" [] [l] [] .nil) (.sort ⟨.type, l⟩) :=
-    .inst (D := "Unit") (decl := Prelude.unit) (ζ := Prelude.unitType.usage)
-      ⟨hpre _ (by simp [Signature.prelude]), .inl ⟨_, List.mem_singleton_self _, rfl, rfl⟩⟩
+    .inst hpre.unit.hasDeclaredType
       rfl rfl rfl trivial (by exact .nil hctx)
   have hU : ValidEqTerm₀ sig ι (((Term.inst "Unit" [] [l] [] .nil).atLevels ρ).subst σ₁)
       (((Term.inst "Unit" [] [l] [] .nil).atLevels ρ).subst σ₂)

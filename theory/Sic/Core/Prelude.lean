@@ -196,27 +196,29 @@ abbrev Prelude.pairInst {Γ : Scope} (κ : Universe k) (l₂ : Level k) (p r : G
     (B : Term k (.var :: Γ)) : Term k Γ :=
   .inst "Pair" [κ.quality] [κ.level, l₂] [p, r] (Prelude.pairArgs A B)
 
-/-- The signature that holds the prelude has the data types of its declarations. -/
+/-- The signature that holds the prelude has the data types of its declarations; the declarations
+of the prelude each hold one data type, which the default proofs of the memberships find. -/
 theorem Signature.HasPrelude.of_mem {sig : Signature} (hpre : sig.HasPrelude)
-    {decl : TypeDeclaration} (he : .typeDeclaration decl ∈ Signature.prelude)
-    {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes) :
+    {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (he : .typeDeclaration decl ∈ Signature.prelude := by simp [Signature.prelude])
+    (hT : T ∈ decl.dataTypes := by exact List.mem_singleton_self _) :
     sig.HasDataType T.name decl T :=
   ⟨hpre _ he, hT, rfl⟩
 
 /-- The signature that holds the prelude has its pair. -/
 theorem Signature.HasPrelude.pair {sig : Signature} (hpre : sig.HasPrelude) :
     sig.HasDataType "Pair" Prelude.pair Prelude.pairType :=
-  hpre.of_mem (by simp [Signature.prelude]) (List.mem_singleton_self _)
+  hpre.of_mem
 
 /-- The signature that holds the prelude has its unit. -/
 theorem Signature.HasPrelude.unit {sig : Signature} (hpre : sig.HasPrelude) :
     sig.HasDataType "Unit" Prelude.unit Prelude.unitType :=
-  hpre.of_mem (by simp [Signature.prelude]) (List.mem_singleton_self _)
+  hpre.of_mem
 
 /-- The signature that holds the prelude has its type of positions. -/
 theorem Signature.HasPrelude.step {sig : Signature} (hpre : sig.HasPrelude) :
     sig.HasDataType "Step" Prelude.step Prelude.stepType :=
-  hpre.of_mem (by simp [Signature.prelude]) (List.mem_singleton_self _)
+  hpre.of_mem
 
 -- ADE: none.
 /-- The type `X[y]` of the second field of the pair, at the abstraction `x. B` for `X`, is `B`. -/
