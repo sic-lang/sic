@@ -491,8 +491,8 @@ theorem TypeDeclaration.liftingScope_shapes {decl : TypeDeclaration} {S : List N
   Lifting.Shapes.lift (Lifting.base_shapes hS (by rw [hms.length_eq, hm])
     (fun j h₁ h₂ => by
       have hj : j < ms.length := hm ▸ h₁
-      have hf := Lifting.motiveGrade_inst hS (hqp.lifting v hm) hqp.grades hm 0 j h₁
-      have ho := Lifting.motiveGrade_inst hS (hqp.lifting v hm) hqp.grades hm 1 j h₁
+      have hf := Lifting.motiveGrade_inst hS hqp v hm 0 j h₁
+      have ho := Lifting.motiveGrade_inst hS hqp v hm 1 j h₁
       have hmj : (ms'[j].factor, ms'[j].ownership) = (ms[j].factor, ms[j].ownership) := by
         have := congrArg (·[j]?) hms
         simpa [List.getElem?_map, h₂, hj] using this

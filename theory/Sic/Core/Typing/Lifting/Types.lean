@@ -485,7 +485,7 @@ where
             (Context.lifted S (I'.sorts (Fin.last decl.sorts)) (decl.liftingMotive S I')
               (Context.substLevels (Level.lifted S.length) (decl.params I'.lifted)))) := by
         rw [Context.lifted_substLevels, hI,
-          Instance.AsMany.sorts_last_inst hqp.sorts hqp',
+          Instance.AsMany.sorts_last_inst hqp',
           Context.substLevels_substLevels,
           Level.lifted_subst ls (ms.map fun m : Lifting.Result k => m.level) hl hl']
         exact has'

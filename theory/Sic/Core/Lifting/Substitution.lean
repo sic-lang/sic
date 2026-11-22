@@ -215,9 +215,13 @@ theorem Instance.AsMany.lifted_inst {j g n : Nat} {qs : List Quality} {ps : List
 /-- The quality of the sorts of the motives, at an instance of the variables of a lifting given by
 lists, is the last quality. -/
 theorem Instance.AsMany.sorts_last_inst {j g : Nat} {qs : List Quality} {ps : List Grade}
-    {s : Quality} (hq : qs.length = j) (hqp : Instance.AsMany (j + 1) g (qs ++ [s]) ps) :
-    hqp.inst.sorts (Fin.last j) = s :=
-  List.getFin_append_natAdd qs [s] hq rfl hqp.sorts 0
+    {s : Quality} (hqp : Instance.AsMany (j + 1) g (qs ++ [s]) ps) :
+    hqp.inst.sorts (Fin.last j) = s := by
+  have hq : qs.length = j := by
+    have h := hqp.sorts
+    rw [List.length_append, List.length_singleton] at h
+    exact Nat.succ.inj h
+  exact List.getFin_append_natAdd qs [s] hq rfl hqp.sorts 0
 
 /-- The grades of the results `m̄` are two for each. -/
 theorem Lifting.Result.length_grades (ms : List (Lifting.Result k)) :
@@ -259,7 +263,7 @@ theorem Instance.AsMany.liftingVariables_inst {j g n : Nat} {qs : List Quality} 
     rw [List.length_cons, List.length_cons, Lifting.Result.length_grades, hm]
     omega
   exact congr (congr (congrArg Lifting.Variables.mk
-      (Instance.AsMany.sorts_last_inst hqp.sorts (hqp.lifting ⟨s, r, ς⟩ hm)))
+      (Instance.AsMany.sorts_last_inst (hqp.lifting ⟨s, r, ς⟩ hm)))
     (List.getFin_append_natAdd ps _ hqp.grades hm' hp' ⟨0, by omega⟩))
     (List.getFin_append_natAdd ps _ hqp.grades hm' hp' ⟨1, by omega⟩)
 
@@ -284,11 +288,12 @@ theorem Lifting.Result.getElem_grades (o : Fin 2) :
 `j` of `S`, at an instance of the variables of a lifting given by lists, is the factor or the
 ownership of the result at the position `j` of the results of the instance. -/
 theorem Lifting.motiveGrade_inst {j' g : Nat} {S : List Nat} (hS : S.Nodup) {qs : List Quality}
-    {ps : List Grade} {v : Lifting.Variables} {ms : List (Lifting.Result k)}
-    (hqp : Instance.AsMany j' (g + (2 + 2 * S.length)) qs (v.grades ps ms)) (hp : ps.length = g)
-    (hm : ms.length = S.length) (o : Fin 2) (j : Nat) (hj : j < S.length) :
-    Lifting.motiveGrade S hqp.inst o S[j] = [ms[j].factor, ms[j].ownership][o] := by
-  have hp' := hqp.grades
+    {ps : List Grade} (hqp : Instance.AsMany j' g qs ps) (v : Lifting.Variables)
+    {ms : List (Lifting.Result k)} (hm : ms.length = S.length) (o : Fin 2) (j : Nat)
+    (hj : j < S.length) :
+    Lifting.motiveGrade S (hqp.lifting v hm).inst o S[j] = [ms[j].factor, ms[j].ownership][o] := by
+  have hp := hqp.grades
+  have hp' := (hqp.lifting v hm).grades
   have hi : S.idxOf S[j] = j := hS.idxOf_getElem j hj
   have hm' : (v.recursion :: v.requirement :: Lifting.Result.grades ms).length =
       2 + 2 * S.length := by
@@ -322,8 +327,8 @@ theorem TypeDeclaration.liftingMotive_inst {decl : TypeDeclaration} {S : List Na
         ((ls ++ ms.map (·.level)).getFin hl') = ms[j] := by
   have hlv := Lifting.motiveLevel_subst hS hl (by rw [List.length_map, hm]) hl' j h₁
     (by rw [List.length_map]; exact h₂)
-  have hf := Lifting.motiveGrade_inst hS (hqp.lifting v hm) hqp.grades hm 0 j h₁
-  have ho := Lifting.motiveGrade_inst hS (hqp.lifting v hm) hqp.grades hm 1 j h₁
+  have hf := Lifting.motiveGrade_inst hS hqp v hm 0 j h₁
+  have ho := Lifting.motiveGrade_inst hS hqp v hm 1 j h₁
   simp only [TypeDeclaration.liftingMotive, Lifting.Result.substLevels, hlv, hf, ho,
     List.getElem_map]
   rfl
@@ -354,7 +359,7 @@ theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : Li
     exact (congrArg List.ofFn (funext fun i => List.getFin_append_natAdd ls ls' hl hl' h i)).trans
       (List.ofFn_getFin ls' hl')
   unfold TypeDeclaration.liftingSort Universe.substLevels
-  rw [hqp.lifted_inst hqp', Instance.AsMany.sorts_last_inst hqp.sorts hqp',
+  rw [hqp.lifted_inst hqp', Instance.AsMany.sorts_last_inst hqp',
     Level.subst_joins, Level.subst_subst, Level.lifted_subst ls ls' hl h, e]
 
 /-- The type of the parameter `y` of a lifting, at an instance of its variables, is the instance of
