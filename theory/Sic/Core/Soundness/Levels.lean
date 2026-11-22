@@ -8,6 +8,7 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Soundness.Levels.Results
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Levels by Their Values

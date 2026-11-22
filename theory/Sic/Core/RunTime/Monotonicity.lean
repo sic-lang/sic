@@ -5,6 +5,7 @@ public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Monotonicity of the Relation of Run Time

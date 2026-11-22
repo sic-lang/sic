@@ -15,6 +15,7 @@ import Sic.Core.Shape.Results.Factor
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Soundness.Closed
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 import Sic.Math.Relation
 
 /-!

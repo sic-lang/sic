@@ -10,6 +10,7 @@ import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Soundness of the Rules

@@ -4,6 +4,7 @@ public import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.RunTime.Nesting
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Equality.Properties
+import Sic.Math.Nat
 
 /-!
 # Uniqueness of the Relations of the Levels

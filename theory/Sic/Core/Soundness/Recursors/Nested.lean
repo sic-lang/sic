@@ -17,6 +17,7 @@ import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Meaning of the Recursive Result of a Nested Field

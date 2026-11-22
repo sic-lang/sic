@@ -21,6 +21,7 @@ import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Run Time of the Nested Results

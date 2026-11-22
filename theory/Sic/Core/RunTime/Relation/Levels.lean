@@ -7,6 +7,7 @@ import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.Soundness.Levels
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Levels of the Relation of Run Time

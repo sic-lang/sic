@@ -5,6 +5,7 @@ public import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Meaning.Equality.Properties
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Run Time of the Nested Results of an Erased Recursor
