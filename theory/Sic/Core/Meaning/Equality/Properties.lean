@@ -720,7 +720,8 @@ inductive Term.IsTypeOfSort (sig : Signature) (v : Term 0 []) : Quality → Nat 
   /-- An instance `D.{s̄; l̄; p̄} ā` of a declared type of the signature, of its sort `κ[T]`. -/
   | inst {decl : TypeDeclaration} {D : Name} {qs : List Quality} {ls : List (Level 0)}
       {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} (h : .typeDeclaration decl ∈ sig)
-      (hD : D ∈ decl.names) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hD : D ∈ decl.names) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as) :
       Term.IsTypeOfSort sig v
         (decl.sortAt hqp.inst (ls.getFin hl)).quality

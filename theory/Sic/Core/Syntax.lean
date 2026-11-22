@@ -810,41 +810,56 @@ theorem Instance.ofLists_ofFn {j g : Nat} (ι : Instance j g)
   unfold Instance.ofLists
   rw [List.getFin_ofFn, List.getFin_ofFn]
 
-/-- `s̄', p̄'` as many as `s̄, p̄`: the qualities `qs` and the grades `ps` are as many as the sort and
-grade variables of the type declaration `decl`. -/
-structure TypeDeclaration.AsMany (decl : TypeDeclaration) (qs : List Quality) (ps : List Grade) :
-    Prop where
+/-- `s̄', p̄'` as many as `s̄, p̄`: the qualities `qs` and the grades `ps` are as many as `j` sort
+variables and `g` grade variables, those of an entry of the signature or of a lifting. -/
+structure Instance.AsMany (j g : Nat) (qs : List Quality) (ps : List Grade) : Prop where
   /-- As many qualities as sort variables. -/
-  sorts : qs.length = decl.sorts
+  sorts : qs.length = j
   /-- As many grades as grade variables. -/
-  grades : ps.length = decl.grades
+  grades : ps.length = g
 
-/-- `[s̄' / s̄, p̄' / p̄]`: the instance of the sort and grade variables of `decl` that gives them the
-qualities `qs` and the grades `ps`, as many as them. -/
-abbrev TypeDeclaration.AsMany.inst {decl : TypeDeclaration} {qs : List Quality} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) : Instance decl.sorts decl.grades :=
+/-- `[s̄' / s̄, p̄' / p̄]`: the instance that gives the sort variables the qualities `qs` and the
+  grade
+variables the grades `ps`, as many as them. -/
+abbrev Instance.AsMany.inst {j g : Nat} {qs : List Quality} {ps : List Grade}
+    (hqp : Instance.AsMany j g qs ps) : Instance j g :=
   .ofLists qs ps hqp.sorts hqp.grades
 
 /-- The instance that the qualities `qs` give gives each sort variable the quality at its position in
 `qs`. -/
-theorem TypeDeclaration.AsMany.inst_sorts {decl : TypeDeclaration} {qs : List Quality}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (i : Fin decl.sorts) :
+theorem Instance.AsMany.inst_sorts {j g : Nat} {qs : List Quality} {ps : List Grade}
+    (hqp : Instance.AsMany j g qs ps) (i : Fin j) :
     hqp.inst.sorts i = qs[(i : Nat)]'(by rw [hqp.sorts]; exact i.isLt) :=
   rfl
 
 /-- The instance that the grades `ps` give gives each grade variable the grade at its position in
 `ps`. -/
-theorem TypeDeclaration.AsMany.inst_grades {decl : TypeDeclaration} {qs : List Quality}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (i : Fin decl.grades) :
+theorem Instance.AsMany.inst_grades {j g : Nat} {qs : List Quality} {ps : List Grade}
+    (hqp : Instance.AsMany j g qs ps) (i : Fin g) :
     hqp.inst.grades i = ps[(i : Nat)]'(by rw [hqp.grades]; exact i.isLt) :=
   rfl
 
-/-- Whether the qualities `qs` and the grades `ps` are as many as the sort and grade variables of
-`decl`, which the lookups of a declared type at an instance decide. -/
-instance TypeDeclaration.AsMany.decidable (decl : TypeDeclaration) (qs : List Quality)
-    (ps : List Grade) : Decidable (decl.AsMany qs ps) :=
-  if hq : qs.length = decl.sorts then
-    if hp : ps.length = decl.grades then .isTrue ⟨hq, hp⟩ else .isFalse fun hqp => hp hqp.grades
+/-- The instance that the qualities and the grades of an instance give is this instance. -/
+theorem Instance.AsMany.inst_ofFn {j g : Nat} (ι : Instance j g)
+    (hqp : Instance.AsMany j g (List.ofFn ι.sorts) (List.ofFn ι.grades)) : hqp.inst = ι :=
+  Instance.ofLists_ofFn ι _ _
+
+/-- The qualities of the sort variables at the instance that the qualities `qs` give are `qs`. -/
+theorem Instance.AsMany.ofFn_inst_sorts {j g : Nat} {qs : List Quality} {ps : List Grade}
+    (hqp : Instance.AsMany j g qs ps) : List.ofFn hqp.inst.sorts = qs :=
+  List.ofFn_getFin qs hqp.sorts
+
+/-- The grades of the grade variables at the instance that the grades `ps` give are `ps`. -/
+theorem Instance.AsMany.ofFn_inst_grades {j g : Nat} {qs : List Quality} {ps : List Grade}
+    (hqp : Instance.AsMany j g qs ps) : List.ofFn hqp.inst.grades = ps :=
+  List.ofFn_getFin ps hqp.grades
+
+/-- Whether the qualities `qs` and the grades `ps` are as many as `j` sort variables and `g` grade
+variables, which the lookups of a declared type at an instance decide. -/
+instance Instance.AsMany.decidable (j g : Nat) (qs : List Quality) (ps : List Grade) :
+    Decidable (Instance.AsMany j g qs ps) :=
+  if hq : qs.length = j then
+    if hp : ps.length = g then .isTrue ⟨hq, hp⟩ else .isFalse fun hqp => hp hqp.grades
   else .isFalse fun hqp => hq hqp.sorts
 
 /-- The value `f decl` that the type declaration `decl` of an entry gives, when the entry is a type
@@ -876,7 +891,7 @@ declares them. -/
 def Entry.fieldParams (D c : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List Parameter) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.dataTypes.find? (·.name == D)).bind fun T =>
         (T.constructors.find? (·.name == c)).map fun con => con.params hqp.inst
     else none
@@ -904,7 +919,7 @@ declares them. -/
 def Entry.argumentParams (D d : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.codataTypes.find? (·.name == D)).bind fun T =>
         (T.body hqp.inst).arguments d
     else none
@@ -944,7 +959,7 @@ entry declares them. -/
 def Entry.destructorGrades (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List Grade) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.codataTypes.find? (·.name == D)).bind fun _ =>
         decl.codataCases.mapM fun c => (c.2.1.body hqp.inst).grade c.2.2
     else none
@@ -1002,7 +1017,7 @@ declaration, `none` for a destructor that is not recursive, when the entry decla
 def Entry.resumedTypes (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (Option Nat)) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.codataTypes.find? (·.name == D)).map fun _ =>
         decl.codataCases.map fun x =>
           ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind
@@ -1025,7 +1040,7 @@ declaration, when the entry declares them. -/
 def Entry.caseFieldParams (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (List Parameter)) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.dataTypes.find? (·.name == D)).map fun _ =>
         decl.cases.map fun x => x.2.2.params hqp.inst
     else none
@@ -1047,7 +1062,7 @@ order of the declaration, when the entry declares them. -/
 def Entry.destructorArguments (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option (List (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade)) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.codataTypes.find? (·.name == D)).map fun _ =>
         decl.codataCases.map fun x =>
           (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD

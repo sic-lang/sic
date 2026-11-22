@@ -86,7 +86,8 @@ theorem Usage.recursor_used {sig : Signature} (hsig : sig.Distinct) (hord : sig.
     {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level k)}
     {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade} {κ : Universe k}
     {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} {gs : Nat → Nat → Grade}
-    {πs : Nat → List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {πs : Nat → List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
     (hR : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
       ∃ R : Telescope k (Γ.extend (con.params hqp.inst).length)
           (con.nestResultParams hqp.inst decl.names),

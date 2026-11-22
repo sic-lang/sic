@@ -468,7 +468,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     (hL : decl.Lifts sig₁ D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S)
@@ -661,7 +661,7 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S)

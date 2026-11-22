@@ -175,17 +175,17 @@ theorem TypeDeclaration.liftedInstance_wfType {decl : TypeDeclaration} {F : Name
     WfType sig ((decl.params ι).substLevels (Level.lifted n))
       (decl.liftedInstance F n ι (.identity decl.scope)) := by
   have hP := stableUnderLevels.wfCtx (Level.lifted n) (hsig.wfCtx_params hT.1 hadm)
-  have hqp : decl.AsMany (List.ofFn ι.sorts) (List.ofFn ι.grades) :=
+  have hqp : Instance.AsMany decl.sorts decl.grades (List.ofFn ι.sorts) (List.ofFn ι.grades) :=
     ⟨List.length_ofFn, List.length_ofFn⟩
   have hl : (List.ofFn (Level.lifted (k := decl.levels) n)).length = decl.levels :=
     List.length_ofFn
   have has : HasInstanceArgs sig ((decl.params ι).substLevels (Level.lifted n))
       (.identity decl.scope)
       ((decl.params hqp.inst).substLevels ((List.ofFn (Level.lifted n)).getFin hl)) := by
-    rw [List.getFin_ofFn, TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+    rw [List.getFin_ofFn, Instance.AsMany.inst_ofFn]
     exact HasInstanceArgs.identity hP
   have hI : decl.constraint hqp.inst := by
-    rw [TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+    rw [Instance.AsMany.inst_ofFn]
     exact hadm
   exact .ofSort (.inst ⟨hT.1, .inr ⟨T, hT.2.1, hT.2.2, rfl⟩⟩ hqp hl hI has)
 

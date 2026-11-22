@@ -313,7 +313,7 @@ theorem Red.iota_plain {sig : Signature} {k : Nat} {Γ : Scope} {decl : TypeDecl
     {fs : Terms k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {n : Nat}
     {u : Term k ((Γ.extend n).extend 0)} {v : Term k Γ} (h : .typeDeclaration decl ∈ sig)
     (hi : decl.cases[i]? = some (j, T, con)) (hD : T.name = D) (hc : con.name = c)
-    (hqp : decl.AsMany qs' ps') (hl : ls'.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs' ps') (hl : ls'.length = decl.levels)
     (hpl : ∀ ν ∈ (con.fields hqp.inst).nest decl.names, ν = .plain)
     (ts : Args k Γ (con.params hqp.inst)) (hts : ts.terms = fs)
     (hu : us.get i = some ⟨n, 0, u⟩) (hv : u.instantiateTerms₂ fs .nil = some v) :

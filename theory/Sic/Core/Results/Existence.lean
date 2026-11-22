@@ -206,7 +206,8 @@ def Signature.LiftingsHaveResults (sig₁ sig : Signature) : Prop :=
     ∀ {Γ : Scope} {ρ : Lifting k Γ Γ}, (∀ {a} (x : Var Γ a), ρ.motive x = none) →
     ∀ {n : Nest Name} {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)}
       {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {Δ' : Scope} {as' : InstanceArgs k Γ Δ'},
-      (∀ E, n ≠ .direct E) → decl.AsMany qs ps → ls.length = decl.levels → InstanceArgs.Lifts sig v
+      (∀ E, n ≠ .direct E) → Instance.AsMany decl.sorts decl.grades qs ps → ls.length =
+      decl.levels → InstanceArgs.Lifts sig v
       ρ n.args as S ms as' → S ≠ [] →
       Subst.HasResults sig v as.toSubst ρ (Nesting.ofArgs n.args) →
       ∀ (φ : Name → Term k (.var :: Γ)) (t : Term k Γ),
@@ -354,7 +355,8 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {n : Nest Name} {qs : List Quality}
     {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} {Δ' : Scope}
-    {as' : InstanceArgs k Γ Δ'} (hn : ∀ E, n ≠ .direct E) (hqp : decl.AsMany qs ps)
+    {as' : InstanceArgs k Γ Δ'} (hn : ∀ E, n ≠ .direct E)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
     (ho : Subst.HasResults sig v as.toSubst ρ (Nesting.ofArgs n.args))

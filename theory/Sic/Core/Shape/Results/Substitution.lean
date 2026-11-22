@@ -658,7 +658,8 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {ρ : Lifting 0 [] []} {qs : List Quality} {ls : List (Level 0)}
-    {ms : List (Lifting.Result 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ms : List (Lifting.Result 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length)

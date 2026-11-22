@@ -122,7 +122,7 @@ theorem FieldRel.codata_type {sig : Signature} {ι : Interpretation} {n : Nat} (
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hκ : (decl.sort hqp.inst).quality = .type)
     {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
@@ -150,7 +150,7 @@ theorem FieldRel.codata_prop {sig : Signature} {ι : Interpretation} {n : Nat} (
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hκ : (decl.sort hqp.inst).quality = .prop)
     {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :

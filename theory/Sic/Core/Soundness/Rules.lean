@@ -792,7 +792,8 @@ abstractions for them, defined from the graph rather than chosen, since the grap
 most. -/
 theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
@@ -827,7 +828,8 @@ equality `S` of the destructors that the graph gives, which grows with the relat
 recursive destructors. -/
 theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -863,7 +865,8 @@ the same relation, defined from the graph at the first arguments, rather than ch
 graph gives one at most. -/
 theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -920,7 +923,8 @@ is `(true_ν)`, at the equality `S` of the destructors that the graph gives, whi
 truths of the recursive destructors. -/
 theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -962,7 +966,7 @@ the same relation of the observations by them, for each program. -/
 theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -993,7 +997,8 @@ theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
     (h : sigT.HasDeclaredType D decl ζ) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
@@ -1027,7 +1032,8 @@ theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
-    {ls₁ ls₂ : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls₁ ls₂ : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl₁ : ls₁.length = decl.levels) (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂

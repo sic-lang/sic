@@ -61,7 +61,8 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
   | inst {k : Nat} {Γ : Scope} {decl : TypeDeclaration} {D : Name}
       {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
-      {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl ζ) (hqp : decl.AsMany qs ps)
+      {δ : GradeVector Γ.length} (h : sig.HasDeclaredType D decl ζ)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (has : UsageInstanceArgs sig δ (m ⊙ .noneLinear) (ζ hqp.inst) as) :
       Usage sig (.noneLinear ·ᶜ δ) m (.inst D qs ls ps as)
   /-- A constructor uses the variables of the terms of its fields, each checked in the mode of the
@@ -73,7 +74,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {m : Mode}
       {γ : GradeVector Γ.length} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hqp : decl.AsMany qs ps)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       {ts : Args k Γ (con.params hqp.inst)} (hts : UsageArgs sig γ m ts) :
       Usage sig γ m (.ctor D qs ls ps as con.name ts.terms)
   -- ADE: `natrec-no-nrₘ`, `prodrecₘ`, `unitrecₘ` and `emptyrecₘ`, in `Graded/Usage.agda`.
@@ -98,7 +99,8 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode}
       {γ χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}
       {πs : Nat → List Grade}
-      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hC : ∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
         Usage sig 𝟘ᶜ .zeroZero C)
       (ht : Usage sig γ (m ⊙ r) t) (hul : us.length = decl.cases.length)
@@ -145,7 +147,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {m : Mode} {γ δ : GradeVector Γ.length}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (ht : Usage sig γ m t) {bs : Args k Γ ps'} (hbs : UsageArgs sig δ m bs)
       (hm : m ·ᵐ p.mode = m) :
@@ -169,7 +171,7 @@ inductive Usage (sig : Signature) : {k : Nat} → {Γ : Scope} → GradeVector �
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat} {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {m : Mode} {γ δ : GradeVector Γ.length}
       {δs : Nat → GradeVector Γ.length} (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩)
       (hSu : ∀ j (ps'' : List Parameter) (S' : Telescope k Γ ps''),
         Ss.get j = some ⟨0, ps'', S'⟩ → UsageTelescope sig 𝟘ᶜ .zeroZero S')

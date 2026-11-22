@@ -185,7 +185,8 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -206,7 +207,8 @@ inductive RunUnivRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -373,7 +375,8 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest RunNestLeaf)}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n)
@@ -390,7 +393,8 @@ inductive RunNestRel (sig : Signature) (ι : Interpretation) (P : Program) (n : 
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest RunNestLeaf)}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hA : A = .inst D qs ls ps as)
       (hadm : decl.constraint hqp.inst)
       (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)

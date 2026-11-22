@@ -75,7 +75,8 @@ grade of its destructor is used at run time, holds at the levels without variabl
 `CorecBranchesEqValid.atLevels` does for the meaning. -/
 theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {P : Program}
     {k : Nat} {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context k Γ} {decl : TypeDeclaration}
-    {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ} {δs : Nat → GradeVector Γ.length}
     (hgt : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)

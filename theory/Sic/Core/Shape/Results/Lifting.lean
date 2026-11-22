@@ -62,7 +62,7 @@ def Signature.LiftingsHaveShapes (md : Mode) (ax : Grade → Multiplicity) (sig�
     ∀ {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} {ms : List (Lifting.Result k)} {Δ : Scope} {as : InstanceArgs k Γ' Δ}
       {π : Grade} {ms' : List Shape.Motive},
-      decl.AsMany qs ps → S.Nodup → ms.length = S.length →
+      Instance.AsMany decl.sorts decl.grades qs ps → S.Nodup → ms.length = S.length →
       Shape.Motive.AllOf ms' ms →
       Term.Factor sig ρ (.inst (Lifting.name D S) (qs ++ [v.quality]) ls (v.grades ps ms) as) π →
         ∃ σ, Signature.shapes v md ax sig₁ D qs ps (S.zip ms') = some (σ, π)
@@ -551,7 +551,8 @@ theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {
     (hT : sig₁.HasCodataType D decl T) {S : List Nat} {ns : List Name}
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
-    {qs : List Quality} {ps : List Grade} (hqp : decl.AsMany qs ps) {ms' : List Shape.Motive}
+    {qs : List Quality} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {ms' : List Shape.Motive}
     (hfst : (S.zip ms').map (·.1) = S) :
     Signature.shapes v md ax (.typeDeclaration (decl.lifting D S ns body) :: sig₁) D qs ps
         (S.zip ms') =
@@ -684,7 +685,8 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) (hS : S.Nodup) {qs : List Quality}
-    {ps : List Grade} {ms : List (Lifting.Result k)} (hqp : decl.AsMany qs ps)
+    {ps : List Grade} {ms : List (Lifting.Result k)}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hm : ms.length = S.length)
     (hq' : (qs ++ [v.quality]).length = decl.sorts + 1)
     (hp' : (v.grades ps ms).length = decl.liftingGrades S) {ms' : List Shape.Motive}

@@ -417,7 +417,7 @@ a proposition without use at run time. -/
 theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
@@ -616,7 +616,7 @@ theorem RunValidRen.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {
     {γ δ : GradeVector Γ.length} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as

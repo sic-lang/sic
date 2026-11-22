@@ -57,7 +57,7 @@ time. -/
 `ls`, substituted by the arguments `ā`, is the instance of the type at `ls` and `ā`, up to the
 levels. -/
 theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 [] decl.scope) (D : Name) :
     Term.LevelEquiv (((decl.blockInstance hqp.inst D (.identity decl.scope)).atLevels
@@ -78,7 +78,7 @@ theorem TypeDeclaration.blockInstance_atLevels_subst (decl : TypeDeclaration) {q
 are its fields at `ls` and `ā`, up to the levels. -/
 theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
     (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 [] decl.scope) :
     Telescope.LevelEquiv (((c.fields hqp.inst).atLevels
@@ -89,7 +89,7 @@ theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
 /-- The level of the sort of a type declaration has the same value at the values of the levels
 `ls` and at `ls`. -/
 theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) :
     ((decl.sort hqp.inst).atLevels
         fun i => (ls.getFin hl i).closedValue).level.closedValue =
@@ -100,7 +100,7 @@ theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs :
 `ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
 theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
     (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 [] decl.scope) {σ₁ σ₂ : Subst 0 [] _} :
     EqSubst sig ι (Context.empty.append (((c.fields hqp.inst).atLevels
@@ -113,7 +113,7 @@ theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
 of a type, are equal terms of the type as the instances of the type at the values of `ls`,
 substituted by `ā₁` and `ā₂`. -/
 theorem ValidEqTerm₀.blockInstance_atLevels {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {D : Name}
     {as₁ as₂ : InstanceArgs 0 [] decl.scope} {A : Term 0 []}
     (h : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂) A) :
@@ -129,7 +129,7 @@ theorem ValidEqTerm₀.blockInstance_atLevels {decl : TypeDeclaration} {qs : Lis
 of the sort of the declaration at `ls`, are equal terms of the sort at the values of `ls` as the
 instances of the type at the values of `ls`, substituted by `ā₁` and `ā₂`. -/
 theorem ValidEqTerm₀.blockInstance_atLevels_sort {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {D : Name}
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (h : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
@@ -146,12 +146,12 @@ theorem ValidEqTerm₀.blockInstance_atLevels_sort {decl : TypeDeclaration} {qs 
 section
 
 variable {decl : TypeDeclaration} {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-  {hqp : decl.AsMany qs ps} {hl : ls.length = decl.levels}
+  {hqp : Instance.AsMany decl.sorts decl.grades qs ps} {hl : ls.length = decl.levels}
 
 /-- The destructors of each codata type of a meaningful type declaration are meaningful at the
 values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its parameters. -/
 theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaration sig ι decl)
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {a₁ a₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       a₁.toSubst a₂.toSubst) :
@@ -170,7 +170,7 @@ theorem ValidTypeDeclaration.destructorsAtClosedLevels (hv : ValidTypeDeclaratio
 meaningful at the values of levels `ls` without variables, at equal arguments `a₁` and `a₂` of its
 parameters. -/
 theorem ValidTypeDeclaration.fieldsAtClosedLevels (hv : ValidTypeDeclaration sig ι decl)
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {a₁ a₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       a₁.toSubst a₂.toSubst) :
@@ -284,7 +284,8 @@ theorem RunNestDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
 `ls` and at arguments `ā` is one of the instance of the type at the values of `ls`, substituted by
 `ā`, in a signature whose names are distinct. -/
 theorem FieldRel.blockInstance_atLevels (hd : sig.Distinct) {decl : TypeDeclaration}
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {D : Name}
     {as : InstanceArgs 0 [] decl.scope} {n : Nat} {s : Quality} {F : TermRel}
     (h : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
@@ -1252,7 +1253,8 @@ equalities are the relations `Rf D`, and are, at the two arguments, equal types 
 declaration, the equality relates the terms of equal arguments of the fields, and only them. -/
 theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
@@ -1328,7 +1330,8 @@ the same relation, defined from the graph at the first arguments, rather than ch
 graph gives one at most, whatever the relations of the recursive fields. -/
 theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -1391,7 +1394,8 @@ first arguments; at the relations `(eq_μ)` of the recursive fields, `S` relates
 arguments of the fields at the first arguments, and only them, and each of them to itself. -/
 theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -1496,7 +1500,8 @@ of the recursive fields; at the truths `(true_μ)` of the recursive fields, `S` 
 equal arguments of the fields at the first arguments, and only them. -/
 theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -1590,7 +1595,7 @@ each program. -/
 theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
@@ -1622,7 +1627,8 @@ theorem ValidTypeDeclaration.nestHeads (hd : sig.Distinct) {decl : TypeDeclarati
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (hT : T ∈ decl.dataTypes)
     {c : Constructor decl.sorts decl.grades decl.levels decl.scope} (hc : c ∈ T.constructors)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
@@ -1648,7 +1654,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl)
     (hc : con ∈ T.constructors) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
@@ -1695,7 +1701,7 @@ equality of the fields of the constructors of its block that the graph gives. -/
 theorem HasEq.dataInst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hs : (decl.sort hqp.inst).quality = .type) {as : InstanceArgs 0 [] decl.scope}
     {R : TermRel} (hR : HasEq sig ι (.inst D qs ls ps as) R) :
     ∃ (n : Nat) (S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
@@ -1727,7 +1733,7 @@ propositions. -/
 theorem PropRel.dataInst_quality (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     {as : InstanceArgs 0 [] decl.scope} {n : Nat} {b : Prop}
     (hP : (levelRel sig ι n).prop (.inst D qs ls ps as) b) :
     (decl.sort hqp.inst).quality = .prop := by
@@ -1745,7 +1751,7 @@ meaning as a type, gives. -/
 theorem ValidEqTerm₀.ctor_inv {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hs : (decl.sort hqp.inst).quality = .type)
     (hnr : ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors, ∀ i,
       (c.fields hqp.inst).nestAt decl.names i = .plain)

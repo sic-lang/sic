@@ -197,7 +197,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
         ((decl.params hqp.inst).substLevels (ls.getFin hl))) :
@@ -263,7 +263,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {t₁ t₂ t : Term k Γ} {As : Terms k (Γ.extend 2)} {gs : DestructorBranches k Γ} {h' : Nat}
       {A : Term k (Γ.extend 2)} {κs : Nat → Universe k}
       (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
         ((decl.params hqp.inst).substLevels (ls.getFin hl)))
@@ -383,7 +383,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
         ((decl.params hqp.inst).substLevels (ls.getFin hl)))
@@ -404,7 +404,8 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {h' : Nat}
-      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps)
+      {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : HasInstanceArgs sig ctx as
@@ -447,7 +448,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {bs : Args k Γ ps'} (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (has : HasInstanceArgs sig ctx as
@@ -474,7 +475,7 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat}
       {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (i : Nat) (D' : Name),
@@ -589,7 +590,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
       {qs : List Quality} {ls₁ ls₂ : List (Level k)} {ps : List Grade}
       {as₁ as₂ : InstanceArgs k Γ decl.scope} (h : sig.HasDeclaredType D decl ζ)
-      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -637,7 +638,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -659,7 +660,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} {as₁ as₂ : InstanceArgs k Γ decl.scope}
       {r ς χ : Grade} {t₁ t₂ : Term k Γ} {Cs₁ Cs₂ : Motives k Γ} {us₁ us₂ : Branches k Γ}
       {κ : Universe k} {h' : Nat} {C₁ : Term k (.var :: Γ)} (h : sig.HasDataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (has : EqInstanceArgs sig ctx as₁ as₂
@@ -716,7 +717,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {t₁ t₂ : Term k Γ} {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {bs₁ bs₂ : Args k Γ ps'} (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
@@ -743,7 +744,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {r : Grade} {Ss₁ Ss₂ : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
       {h' : Nat} {ps' : List Parameter} {S₁ S₂ : Telescope k Γ ps'} {ss₁ ss₂ : Args k Γ ps'}
       (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl₁ : ls₁.length = decl.levels)
       (hl₂ : ls₂.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
@@ -810,7 +811,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       {u : Term k ((Γ.extend (con.params hqp.inst).length).extend
         (con.nestResultParams hqp.inst decl.names).length)}
@@ -862,7 +863,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {κ : Universe k} {i j : Nat}
       {C e : Term k (.var :: Γ)} (h : sig.HasDataType D decl T) (hc : T.constructors = [con])
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hr : ∀ ν ∈ (con.fields hqp.inst).nest decl.names, ν = .plain)
       (has : HasInstanceArgs sig ctx as
@@ -911,7 +912,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {Ξ₀ : Scope} {Θ₀ : Telescope decl.levels Ξ₀ ps₀} {B₀ : Term decl.levels (Ξ₀.extend ps₀.length)}
       {ψ₀ : ResultOwnership Grade ps₀.length} {g : Term k ((Γ.extend ps'.length).extend ps₀.length)}
       {bs : Args k Γ ps₀} (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (i : Nat) (D' : Name),
@@ -978,7 +979,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {t u : Term k Γ}
       (h : sig.HasCodataType D decl T)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (hadm : decl.constraint hqp.inst)
       (hr : ∀ R ∈ (T.body hqp.inst).recursion decl.names, R = none)
       (has : HasInstanceArgs sig ctx as

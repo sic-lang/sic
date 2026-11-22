@@ -56,7 +56,7 @@ within the depth of the number of the types of its block, when the entry declare
 def Entry.skeleton (D : Name) (qs : List Quality) (ps : List Grade) :
     Entry → Option Skeleton :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.dataTypes.find? (·.name == D)).map fun _ =>
         decl.skeleton hqp.inst decl.names.length D
     else none

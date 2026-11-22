@@ -36,7 +36,7 @@ declaration, at the instance, within the depth of the number of the types of the
 theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hqp : decl.AsMany qs ps) →
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.skeleton D qs ps =
       decl.skeleton hqp.inst decl.names.length D
   | [], _, _, _, _, h, _, _, _ => nomatch h.1

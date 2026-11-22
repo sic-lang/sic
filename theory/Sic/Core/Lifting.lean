@@ -473,7 +473,7 @@ inductive Term.Factor (sig : Signature) :
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ' Δ}
       {π : Option Grade} (hdecl : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
       (h : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
-      (hqp : (decl.lifting D S ns body).AsMany qs ps)
+      (hqp : Instance.AsMany (decl.sorts + 1) (decl.liftingGrades S) qs ps)
       (hds : Destructors.Factor sig (decl.liftingScope S hqp.inst)
         (body hqp.inst) π) :
       Term.Factor sig ρ (.inst (Lifting.name D S) qs ls ps as) (π.getD .noneNone)
@@ -549,7 +549,7 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
       {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       (h : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) (hn : ∀ E, n ≠ .direct E)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       {π : Grade}
       (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)

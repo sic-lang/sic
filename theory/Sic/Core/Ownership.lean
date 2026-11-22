@@ -160,7 +160,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {con : Constructor decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {os : List Grade}
       (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors)
-      (hqp : decl.AsMany qs ps)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       {ts : Args k Γ (con.params hqp.inst)} (hts : OwnershipArgs sig φ m ts os) :
       Ownership sig φ m .linearLinear (.ctor D qs ls ps as con.name ts.terms)
   /-- A recursor has the ownership of its branches, each checked with the ownership `o` of the term
@@ -194,7 +194,8 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r ς χ : Grade}
       {κ : Universe k} {t : Term k Γ} {Cs : Motives k Γ} {us : Branches k Γ} {o p : Grade}
-      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (ht : Ownership sig φ (m ⊙ r) o t)
+      (h : sig.HasDataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (ht : Ownership sig φ (m ⊙ r) o t)
       (hns : decl.NestedHaveShapes sig ⟨κ.quality, r, ς⟩ m χ qs ps hqp.inst)
       (hul : us.length = decl.cases.length)
       (hus : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
@@ -254,7 +255,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
       {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
       {ψ : ResultOwnership Grade ps'.length} {o v : Grade} {os : List Grade}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
       (ht : Ownership sig φ m o t) {bs : Args k Γ ps'} (hbs : OwnershipArgs sig φ m bs os)
       (hv : ψ.value os = some v)
@@ -280,7 +281,7 @@ inductive Ownership (sig : Signature) : {k : Nat} → {Γ : Scope} → (Var Γ .
       {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {r : Grade}
       {Ss : States k Γ} {gs : DestructorBranches k Γ} {h' : Nat} {ps' : List Parameter}
       {S : Telescope k Γ ps'} {ss : Args k Γ ps'} {os : List Grade}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
       (hh : decl.codataTypes[h']? = some T)
       (hS : Ss.get h' = some ⟨0, ps', S⟩) (hss : OwnershipArgs sig φ (m ⊙ r) ss os)
       (hSl : Ss.length = decl.codataTypes.length)

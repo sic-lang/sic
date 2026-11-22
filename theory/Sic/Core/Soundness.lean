@@ -139,7 +139,7 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
 the level variables, are meaningful at the levels without variables `ρ`. -/
 theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level k)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs₁ gs₂ : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
@@ -201,7 +201,7 @@ variables, are meaningful at the levels without variables `ρ`: those of `(corec
 branches. -/
 theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k : Nat}
     {Γ : Scope} {ctx : Context k Γ} {decl : TypeDeclaration} {qs : List Quality}
-    {ls : List (Level k)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level k)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {as : InstanceArgs k Γ decl.scope}
     {r : Grade} {Ss : States k Γ} {gs : DestructorBranches k Γ}
     (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),

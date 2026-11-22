@@ -99,7 +99,7 @@ them. -/
 def Entry.recursiveResults (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
     (v : Lifting.Variables) (χ : Grade) : Entry → Option (List (List RecursiveResult)) :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.dataTypes.find? (·.name == D)).map fun _ =>
         decl.recursiveResults sig v qs ps χ hqp.inst
     else none
@@ -131,7 +131,7 @@ theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : 
     {χ : Grade} : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hqp : decl.AsMany qs ps) →
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.findSome? (Entry.recursiveResults sig₀ D qs ps v χ) =
       some (decl.recursiveResults sig₀ v qs ps χ hqp.inst)
   | [], _, _, _, _, h, _, _, _ => nomatch h.1
@@ -152,7 +152,7 @@ reads are those of the block of its data type, at the instance. -/
 theorem Signature.Distinct.recursiveResults {sig : Signature} (hd : sig.Distinct) {D : Name}
     {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (v : Lifting.Variables)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (v : Lifting.Variables)
     (χ : Grade) :
     sig.recursiveResults D qs ps v χ =
       decl.recursiveResults sig v qs ps χ hqp.inst := by

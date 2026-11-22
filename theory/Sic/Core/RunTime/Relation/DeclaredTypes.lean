@@ -261,7 +261,8 @@ theorem RunsAsArgs.length {H : Heap} : {ps : List Parameter} → {g : Nat → Gr
 relations of the fields that the graph of a level gives, in a signature whose names are distinct. -/
 theorem HasRun.data (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasDataType D decl T)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope} {R : RunRel}
     (hR : HasRun sig ι P (.inst D qs ls ps as) R)
@@ -291,7 +292,8 @@ relations of the destructors that the graph of its level gives, in a signature w
 distinct. -/
 theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasCodataType D decl T)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope} {R : RunRel}
     (hR : HasRun sig ι P (.inst D qs ls ps as) R)
@@ -323,7 +325,8 @@ themselves and are related to the fields of a value of its case at the address, 
 its entry, in a signature whose names are distinct. -/
 theorem RunsAs.ctor_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasDataType D decl T)
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hs : (decl.sort hqp.inst).quality = .type)
     (hnr : ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors, ∀ i,
@@ -390,7 +393,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl)
     (hc : con ∈ T.constructors) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       as.toSubst as.toSubst)
@@ -446,7 +449,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
     (hT : T ∈ decl.dataTypes) (hc : con ∈ T.constructors)
     {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as : InstanceArgs 0 [] decl.scope}
     (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
       as.toSubst as.toSubst)
@@ -505,7 +508,7 @@ theorem RunValidRen.ctor (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} 
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hv : ValidTypeDeclaration sig ι decl)
     (hc : con ∈ T.constructors) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as
       ((decl.params hqp.inst).substLevels (ls.getFin hl)))

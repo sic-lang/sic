@@ -318,7 +318,7 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
         Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
       {gs : DestructorBranches k Γ}
       (h : sig.HasCodataType D decl T) (hn : ∀ E, n ≠ .direct E)
-      (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (has : InstanceArgs.Lifts sig v ρ n.args as S ms as') (hS : S ≠ [])
       (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
       (hgl : gs.length = ns.length)

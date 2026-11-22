@@ -144,7 +144,8 @@ observation steps to the branch of its destructor at the arguments. -/
 theorem Red.beta_stateless {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h₀ : sig.HasCodataType T.name decl T) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels) {Δ : Scope}
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels) {Δ : Scope}
     {as : InstanceArgs 0 [] Δ} {r : Grade}
     {Ss : States 0 []} {gs : DestructorBranches 0 []} {j i : Nat} {d : Name}
     (hi : decl.codataCases[i]? = some (j, T, d))
@@ -279,7 +280,7 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
     {as : InstanceArgs k Γ decl.scope} {t e : Term k Γ}
     (hres : Term.NestedResult sig v ρ φ (.inst ns) (.inst D qs ls ps as) t e) :
-    ∃ (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    ∃ (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (S : List Nat) (ms : List (Lifting.Result k)) (Δ' : Scope) (as' : InstanceArgs k Γ Δ')
       (nms : List Name)
       (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
@@ -419,7 +420,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {decl : TypeDeclaration}
     {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope}
     (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)
     {ns : List (Nest Name)} {t₁ t₂ : Term 0 []}

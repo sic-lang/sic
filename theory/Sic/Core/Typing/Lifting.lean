@@ -72,12 +72,13 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
       Instance.ofLists_ofFn]
     exact hι
   · cases List.mem_singleton.1 hT''
-    have hqp : decl.AsMany (List.ofFn I.lifted.sorts) (List.ofFn I.lifted.grades) :=
+    have hqp : Instance.AsMany decl.sorts decl.grades (List.ofFn I.lifted.sorts)
+      (List.ofFn I.lifted.grades) :=
       ⟨List.length_ofFn, List.length_ofFn⟩
     have hl : (List.ofFn (Level.lifted (k := decl.levels) S.length)).length = decl.levels :=
       List.length_ofFn
     have hI' : decl.constraint hqp.inst := by
-      rw [TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+      rw [Instance.AsMany.inst_ofFn]
       exact hI
     have hA := decl.liftedInstance_wfType hsig hT' S.length hI
     have hα : TypedRen sig
@@ -86,18 +87,18 @@ theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : T
         Ren.weaken
         ((decl.params hqp.inst).substLevels
           ((List.ofFn (Level.lifted S.length)).getFin hl)) := by
-      rw [List.getFin_ofFn, TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+      rw [List.getFin_ofFn, Instance.AsMany.inst_ofFn]
       exact TypedRen.weaken (.var hA)
     have hds : Destructors.Lifts sig I.liftingVariables (decl.liftingSort S I)
         (decl.liftedObservation F S.length I.lifted) (decl.liftingScope S I)
         ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst
         ((T.body hqp.inst).substLevels
           ((List.ofFn (Level.lifted S.length)).getFin hl)) (body I) := by
-      rw [List.getFin_ofFn, TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+      rw [List.getFin_ofFn, Instance.AsMany.inst_ofFn]
       exact hb I
     have hκ : ((decl.sort hqp.inst).substLevels
         ((List.ofFn (Level.lifted S.length)).getFin hl)).level ≤ (decl.liftingSort S I).level := by
-      rw [List.getFin_ofFn, TypeDeclaration.AsMany.inst, Instance.ofLists_ofFn]
+      rw [List.getFin_ofFn, Instance.AsMany.inst_ofFn]
       exact Level.le_joins _ _ (Level.preorder.refl _)
     exact Destructors.Lifts.wfDestructors hT' hI' hα (.var (.var hA) .zero) hκ _ _ _ _ _ _ _ _ _
       (fun _ _ => rfl) hds (TypeDeclaration.lifting_typed hsig hT' S body I hI (hS _ hI))

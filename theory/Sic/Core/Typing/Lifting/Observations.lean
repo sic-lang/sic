@@ -42,7 +42,7 @@ open Sic.Grading
 
 variable {sig : Signature} {k : Nat} {decl : TypeDeclaration} {D : Name}
   {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-  {ls : List (Level k)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+  {ls : List (Level k)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
   {hl : ls.length = decl.levels}
 
 /-! ## Substitutions of Observations -/
@@ -55,7 +55,7 @@ the observations of `t` by the destructors before it, are this telescope and thi
 substituted. -/
 structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
     (T : CodataType decl.sorts decl.grades decl.levels decl.scope) (qs : List Quality)
-    (ls : List (Level k)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (ls : List (Level k)) (ps : List Grade) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {Γ Ξ : Scope}
     (as : InstanceArgs k Γ decl.scope) (t : Term k Γ) (ctx' : Context k Γ) (θ : Subst k Γ Ξ)
     (ctx : Context k Ξ) : Prop where
@@ -86,7 +86,7 @@ structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D
 /-- The substitutions that observe a term of an instance of the codata type `T`. -/
 def Subst.Observes.Base (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
     (T : CodataType decl.sorts decl.grades decl.levels decl.scope) (qs : List Quality)
-    (ls : List (Level k)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (ls : List (Level k)) (ps : List Grade) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels) {Γ Ξ : Scope}
     (ctx' : Context k Γ) (θ : Subst k Γ Ξ) (ctx : Context k Ξ) : Prop :=
   ∃ (as : InstanceArgs k Γ decl.scope) (t : Term k Γ),

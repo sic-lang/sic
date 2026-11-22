@@ -244,7 +244,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -263,7 +264,8 @@ inductive UnivRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -290,7 +292,8 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | data {decl : TypeDeclaration} {D : Name}
       {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasDataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasDataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -309,7 +312,8 @@ inductive PropRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
   | codata {decl : TypeDeclaration} {D : Name}
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope} {v : Term 0 []}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hv : v = .inst D qs ls ps as)
       (hs : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue = n)
@@ -493,7 +497,8 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest NestLeaf)}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hA : A = .inst D qs ls ps as) (hs : s = .type)
       (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .type)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n)
@@ -510,7 +515,8 @@ inductive NestRel (sig : Signature) (ι : Interpretation) (n : Nat) (below : Lev
       {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
       {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
       {A : Term 0 []} {νs : List (Nest NestLeaf)}
-      (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hA : A = .inst D qs ls ps as)
       (hκ : (decl.sortAt hqp.inst (ls.getFin hl)).quality = .prop)
       (hn : (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue ≤ n)

@@ -73,7 +73,7 @@ theorem Usage.inv_ctor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sco
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
     {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
-    (hqp : decl.AsMany qs ps)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     {ts : Args k Γ (con.params hqp.inst)} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {t : Term k Γ}, Usage sig γ m t →
       t = .ctor D qs ls ps as con.name ts.terms → ∃ γ', γ ≤ᶜ γ' ∧ UsageArgs sig γ' m ts
@@ -100,7 +100,8 @@ theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scop
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) {d : Name} {p q ς : Grade}
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {Ξ : Scope}
     {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
@@ -129,7 +130,8 @@ variables as the premises of `(rec_▶)` allow, with grades above those of the j
 theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
     {decl : TypeDeclaration} {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
     {r ς χ' : Grade} {t : Term k Γ} {κ : Universe k}
     {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} :
     ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
@@ -192,7 +194,8 @@ theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Sc
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-    {as : InstanceArgs k Γ decl.scope} (hqp : decl.AsMany qs ps) {r : Grade} {Ss : States k Γ}
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {r : Grade} {Ss : States k Γ}
     {gs : DestructorBranches k Γ}
     {h' : Nat} {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
     (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩) {m : Mode} :

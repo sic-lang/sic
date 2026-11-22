@@ -75,7 +75,8 @@ theorem HasType.inst_inv {Γ Δ : Scope} {ctx : Context k Γ} {D : Name} {qs : L
     {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ} {B : Term k Γ}
     (h : HasType sig ctx (.inst D qs ls ps as) B) :
     ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-        GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+        GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : Instance.AsMany decl.sorts
+          decl.grades qs ps)
         (hl : ls.length = decl.levels),
       sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
         HasInstanceArgs sig ctx (hΔ ▸ as)
@@ -87,7 +88,8 @@ where
       {ps : List Grade} {as : InstanceArgs k Γ Δ} : {t B : Term k Γ} →
       HasType sig ctx t B → t = .inst D qs ls ps as →
       ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-          GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+          GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : Instance.AsMany decl.sorts
+            decl.grades qs ps)
           (hl : ls.length = decl.levels),
         sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
           HasInstanceArgs sig ctx (hΔ ▸ as)
@@ -96,7 +98,8 @@ where
         (hasType := fun sig {k Γ} ctx t _ _ => ∀ {Δ : Scope} {D : Name} {qs : List Quality}
           {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ Δ}, t = .inst D qs ls ps as →
           ∃ (decl : TypeDeclaration) (ζ : Instance decl.sorts decl.grades →
-              GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : decl.AsMany qs ps)
+              GradeVector decl.scope.length) (hΔ : Δ = decl.scope) (hqp : Instance.AsMany decl.sorts
+                decl.grades qs ps)
               (hl : ls.length = decl.levels),
             sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
               HasInstanceArgs sig ctx (hΔ ▸ as)
@@ -120,7 +123,7 @@ theorem HasType.inst_inv_of_mem {Γ : Scope} {ctx : Context k Γ} {decl : TypeDe
     {B : Term k Γ} (h : HasType sig ctx (.inst D qs ls ps as) B)
     (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) :
     ∃ (ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length)
-        (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels),
+        (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels),
       sig.HasDeclaredType D decl ζ ∧ decl.constraint hqp.inst ∧
         HasInstanceArgs sig ctx as
           ((decl.params hqp.inst).substLevels (ls.getFin hl)) := by

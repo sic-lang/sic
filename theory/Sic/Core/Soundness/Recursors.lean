@@ -54,7 +54,7 @@ theorem Red.iota_subst {decl : TypeDeclaration} {D : Name}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {i j : Nat} (hi : decl.cases[i]? = some (j, T, con))
     {Γ : Scope} (σ : Subst 0 [] Γ) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (ts : Args 0 [] (con.params hqp.inst)) {us : Branches 0 Γ} {ps' : List Parameter}
     {u : Term 0 ((Γ.extend (con.params hqp.inst).length).extend ps'.length)}
     (hu : us.get i = some ⟨_, _, u⟩) {r ς χ : Grade} {κ : Universe 0} {D' : Name}
@@ -80,7 +80,7 @@ theorem Red.iota_subst₀ {decl : TypeDeclaration} {D : Name}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {i j : Nat} (hi : decl.cases[i]? = some (j, T, con))
     {Γ : Scope} (σ : Subst 0 [] Γ) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (ts : Args 0 [] (con.params hqp.inst)) {us : Branches 0 Γ}
     {u : Term 0 ((Γ.extend (con.params hqp.inst).length).extend 0)}
     (hu : us.get i = some ⟨_, 0, u⟩)
@@ -165,7 +165,8 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
     (hent : sig.ValidEntries ι sigT) (hord : sig.LiftsInOrder) {decl : TypeDeclaration} {D : Name}
     {T₀ : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T₀) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     {r ς χ : Grade} {Cs₁ Cs₂ : Motives 0 Γ}
@@ -432,7 +433,8 @@ theorem ValidEqTermΓ.recursor {sigT : Signature} {Γ : Scope} {ctx : Context 0 
     (hent : sig.ValidEntries ι sigT) (hord : sig.LiftsInOrder) {decl : TypeDeclaration} {D : Name}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
     {r ς χ : Grade} {t₁ t₂ : Term 0 Γ} {Cs₁ Cs₂ : Motives 0 Γ}
@@ -495,7 +497,7 @@ theorem ValidEqTermΓ.iota {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as : InstanceArgs 0 Γ decl.scope}
@@ -564,7 +566,7 @@ theorem ValidEqTermΓ.etaCtor {sigT : Signature} {Γ : Scope} {ctx : Context 0 �
     {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasDataType D decl T) (hc : T.constructors = [con]) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     (hr : ∀ ν ∈ (con.fields hqp.inst).nest decl.names, ν = .plain)

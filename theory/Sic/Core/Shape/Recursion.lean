@@ -73,7 +73,7 @@ declares it. -/
 def Entry.recursionRequirement (sig : Signature) (D : Name) (qs : List Quality) (ps : List Grade)
     (v : Lifting.Variables) (χ : Grade) : Entry → Option Grade :=
   Entry.lookup D fun decl =>
-    if hqp : decl.AsMany qs ps then
+    if hqp : Instance.AsMany decl.sorts decl.grades qs ps then
       (decl.dataTypes.find? (·.name == D)).map fun _ =>
         decl.recursionRequirement sig v .oneOne χ qs ps hqp.inst
     else none
@@ -120,7 +120,7 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
     {χ : Grade} : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : DataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
-    (hqp : decl.AsMany qs ps) →
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.findSome? (Entry.recursionRequirement sig₀ D qs ps v χ) =
       some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst)
   | [], _, _, _, _, h, _, _, _ => nomatch h.1
@@ -141,7 +141,7 @@ recursor reads is the one of the block of its data type, in the mode `11ᵐ`. -/
 theorem Signature.Distinct.recursionRequirement_eq {sig : Signature} (hd : sig.Distinct) {D : Name}
     {decl : TypeDeclaration} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasDataType D decl T) {qs : List Quality} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (v : Lifting.Variables)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (v : Lifting.Variables)
     (χ : Grade) :
     sig.recursionRequirement D qs ps v χ =
       decl.recursionRequirement sig v .oneOne χ qs ps hqp.inst := by

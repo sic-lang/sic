@@ -296,7 +296,7 @@ are distinct. -/
 theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope} {R : TermRel} (hR : HasEq sig ι (.inst D qs ls ps as) R) :
     ((decl.sort hqp.inst).quality = .type ∧
       ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
@@ -370,7 +370,7 @@ types. -/
 theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
@@ -524,7 +524,8 @@ theorem ValidEqTermΓ.obs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps'}
@@ -960,7 +961,7 @@ the instances, joined with `P`, are consistent with the clauses of the destructo
 relates the pairs, or their observations make the instance true, for propositions. -/
 theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {a₁ a₂ : InstanceArgs 0 [] decl.scope}
@@ -1156,7 +1157,8 @@ recursive. -/
 theorem Red.beta_corec (hd : sig.Distinct) {Γ : Scope} {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h₀ : sig.HasCodataType T.name decl T) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade}
     {Ss : States 0 Γ} {gs : DestructorBranches 0 Γ} {h' i : Nat} {d : Name}
     (hi : decl.codataCases[i]? = some (h', T, d)) {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
@@ -1184,7 +1186,7 @@ and of the destructor, is the type of the branch at the corecursor from the argu
 at the arguments of the destructor. -/
 theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+    {ls : List (Level 0)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
     {hl : ls.length = decl.levels}
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Ss : States 0 Γ} {gs : DestructorBranches 0 Γ}
     {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope} {Θ : Telescope decl.levels Ξ ps₁}
@@ -1220,7 +1222,7 @@ destructor, are equal terms of the result of the destructor at the first ones, t
 state of the type it names if it is recursive. -/
 theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : TypeDeclaration}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+    {ls : List (Level 0)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
     {hl : ls.length = decl.levels}
     {as : InstanceArgs 0 Γ decl.scope} {r : Grade} {Ss : States 0 Γ} {gs : DestructorBranches 0 Γ}
     {ps' : List Parameter} {S : Telescope 0 Γ ps'} {d : Name} {p q ς : Grade}
@@ -1274,7 +1276,7 @@ destructors, as `(corec_≡)` premises them, over the states `Ss` and the corecu
 branches: the premise that the Lean of `(corec_≡)` reads, at the levels without variables. -/
 def CorecBranchesEqValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ)
     (gs₁ gs₂ : DestructorBranches 0 Γ) : Prop :=
   (∀ i j T' d (ps'' : List Parameter) (S' : Telescope 0 Γ ps''),
@@ -1310,7 +1312,7 @@ premises them: the premise that the Lean of `(corec)` and of `(β)` reads, at th
 variables. -/
 def CorecBranchesValid (sig : Signature) (ι : Interpretation) {Γ : Scope} (ctx : Context 0 Γ)
     (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : DestructorBranches 0 Γ) :
     Prop :=
   CorecBranchesEqValid sig ι ctx decl qs ls ps hqp hl as r Ss gs gs
@@ -1327,7 +1329,8 @@ theorem ValidEqTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hqp : decl.AsMany qs ps) (hl₁ : ls₁.length = decl.levels)
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
     (hl₂ : ls₂.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
@@ -1448,7 +1451,7 @@ theorem ValidTermΓ.corec {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
       (i : Nat) (D' : Name),
@@ -1476,7 +1479,7 @@ theorem ValidEqTermΓ.beta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     (hpre : (∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
       (i : Nat) (D' : Name),
@@ -1621,7 +1624,7 @@ the clauses of the destructors, or proofs of a proposition that their observatio
 theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as a₂ : InstanceArgs 0 [] decl.scope}
@@ -1743,7 +1746,7 @@ theorem ValidEqTermΓ.etaObs {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ
     (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sigT.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst)
     {as : InstanceArgs 0 Γ decl.scope}
     (has : ValidInstanceArgsΓ sig ι ctx as

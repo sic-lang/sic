@@ -79,7 +79,7 @@ section
 
 variable {Γ : Scope} {hΓ : Γ.FirstOrder} {ctx : Context 0 Γ} {decl : TypeDeclaration} {D : Name}
   {T : DataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-  {ls : List (Level 0)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+  {ls : List (Level 0)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
   {hl : ls.length = decl.levels}
   {as : InstanceArgs 0 Γ decl.scope} {r ς χ' : Grade} {Cs : Motives 0 Γ} {us : Branches 0 Γ}
   {χ : GradeVector Γ.length} {δs : Nat → GradeVector Γ.length} {gs : Nat → Nat → Grade}

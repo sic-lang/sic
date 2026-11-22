@@ -89,7 +89,7 @@ theorem HasType.append_scale {Γ : Scope} (r : Grade) {κ : Universe k} :
 
 variable {decl : TypeDeclaration} {D : Name}
   {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
-  {ls : List (Level k)} {ps : List Grade} {hqp : decl.AsMany qs ps}
+  {ls : List (Level k)} {ps : List Grade} {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
   {hl : ls.length = decl.levels}
 
 /-- The observation of a term of an instance of a codata type by a destructor, as an abstraction
@@ -153,7 +153,8 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
       Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₀}
     {I : Instance (decl.sorts + 1) (decl.liftingGrades S)} {qs : List Quality}
-    {ls : List (Level (decl.levels + S.length))} {ps : List Grade} {hqp : decl.AsMany qs ps}
+    {ls : List (Level (decl.levels + S.length))} {ps : List Grade}
+    {hqp : Instance.AsMany decl.sorts decl.grades qs ps}
     {hl : ls.length = decl.levels}
     (hT : sig.HasCodataType D decl T) (hadm : decl.constraint hqp.inst)
     {Γ₀ : Scope} {ctx₀ : Context (decl.levels + S.length) Γ₀} {α : Ren Γ₀ decl.scope}

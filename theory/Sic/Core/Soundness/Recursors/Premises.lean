@@ -27,7 +27,7 @@ grades of the fields, which the soundness takes at some grades, as `(rec)` state
 run-time relation at the grades `π̄` of `(rec▶)`; `hut` is stated at these types. -/
 structure ValidRecursorPremises (sig : Signature) (ι : Interpretation) {Γ : Scope}
     (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0))
-    (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (ps : List Grade) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (as : InstanceArgs 0 Γ decl.scope) (Cs : Motives 0 Γ) (us : Branches 0 Γ) (κ : Universe 0) :
     Prop where
   /-- `hCs`: a motive for each type of the block. -/

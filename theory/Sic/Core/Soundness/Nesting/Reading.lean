@@ -677,7 +677,8 @@ structure Reading (sig : Signature) (ι : Interpretation) (α I : Type) where
   inst : ∀ {i : I} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as₁ as₂ as₁' as₂' : InstanceArgs 0 [] decl.scope}
-    {νs₁ νs₂ : List (Nest α)} (_ : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    {νs₁ νs₂ : List (Nest α)} (_ : sig.HasCodataType D decl T)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels),
     (∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none) →
     decl.constraint hqp.inst →

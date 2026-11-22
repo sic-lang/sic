@@ -65,7 +65,7 @@ destructors, as the usage of `(corec)` premises them in the mode `11ᵐ`, in eve
 binds their scope through a renaming: the premise that the Lean of `(corec)` at run time reads. -/
 def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) {Γ : Scope}
     (hΓ : Γ.FirstOrder) (ctx : Context 0 Γ) (decl : TypeDeclaration) (qs : List Quality)
-    (ls : List (Level 0)) (ps : List Grade) (hqp : decl.AsMany qs ps)
+    (ls : List (Level 0)) (ps : List Grade) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (as : InstanceArgs 0 Γ decl.scope) (r : Grade) (Ss : States 0 Γ) (gs : DestructorBranches 0 Γ)
     (δs : Nat → GradeVector Γ.length) : Prop :=
@@ -102,7 +102,7 @@ built. -/
 theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {Γ : Scope} {hΓ : Γ.FirstOrder}
     {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}
@@ -482,7 +482,7 @@ in every environment that binds the scope through a renaming. -/
 theorem RunValidRen.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hqp : decl.AsMany qs ps)
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hl : ls.length = decl.levels)
     (hadm : decl.constraint hqp.inst) {Γ : Scope} {hΓ : Γ.FirstOrder}
     {ctx : Context 0 Γ} {as : InstanceArgs 0 Γ decl.scope}

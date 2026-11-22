@@ -281,7 +281,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {n : Nat} {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope}
     (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)
     {ns : List (Nest Name)} {t : Term 0 []} {R : RunRel}
@@ -610,7 +610,7 @@ relates, and its observations compute as them. -/
 theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     {as : InstanceArgs 0 [] decl.scope}
     (hκ : (decl.sort hqp.inst).quality = .type)
     (hrec : ∀ r ∈ (T.body hqp.inst).recursion decl.names, r = none)

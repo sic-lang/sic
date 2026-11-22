@@ -114,7 +114,7 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {as : InstanceArgs k Γ Δ} {as' : InstanceArgs k Γ decl.scope} {c : Name}
       {Cs : Motives k Γ} {us : Branches k Γ} {n m : Nat} {u : Term k ((Γ.extend n).extend m)}
       {v : Term k Γ} (h : .typeDeclaration decl ∈ sig) (hi : decl.cases[i]? = some (j, T, con))
-      (hD : T.name = D) (hc : con.name = c) (hqp : decl.AsMany qs' ps')
+      (hD : T.name = D) (hc : con.name = c) (hqp : Instance.AsMany decl.sorts decl.grades qs' ps')
       (hl : ls'.length = decl.levels)
       {ts : Args k Γ (con.params hqp.inst)} {psr : List Parameter}
       {rs : Args k Γ psr} (hu : us.get i = some ⟨n, m, u⟩)
@@ -146,7 +146,8 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
       {gs : DestructorBranches k Γ} {d : Name} {bs : Terms k Γ} {m a : Nat}
       {g : Term k (((Γ.extend 0).extend m).extend a)} {v : Term k Γ}
       (h : .typeDeclaration decl ∈ sig) (hi : decl.codataCases[i]? = some (j, T, d))
-      (hD : T.name = D) (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+      (hD : T.name = D) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+      (hl : ls.length = decl.levels)
       (hg : gs.get i = some ⟨0, m, a, g⟩)
       (hv : g.instantiateTerms₂ ss bs = some v) :
       Red sig (.obs D' qs' ls' ps' as' (.corec r D qs ls ps as ss Ss gs) d bs)

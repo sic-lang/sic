@@ -127,7 +127,7 @@ theorem RunFieldRel.codata_type {sig : Signature} {ι : Interpretation} {P : Pro
     (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hκ : (decl.sort hqp.inst).quality = .type)
     {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
@@ -156,7 +156,7 @@ theorem RunFieldRel.codata_prop {sig : Signature} {ι : Interpretation} {P : Pro
     (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {qs : List Quality}
     {ls : List (Level 0)} {ps : List Grade} {as : InstanceArgs 0 [] decl.scope}
-    (h : sig.HasCodataType D decl T) (hqp : decl.AsMany qs ps)
+    (h : sig.HasCodataType D decl T) (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     (hκ : (decl.sort hqp.inst).quality = .prop) {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
     ∀ H t a, R H t a := by

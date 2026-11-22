@@ -332,7 +332,7 @@ motives. -/
 theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : List Nat)
     {qs : List Quality} {ps : List Grade} {s : Quality} {gs : List Grade}
     {ls ls' : List (Level k)}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (hl' : ls'.length = S.length) (hq' : (qs ++ [s]).length = decl.sorts + 1)
     (hp' : (ps ++ gs).length = decl.liftingGrades S)
     (h : (ls ++ ls').length = decl.levels + S.length) :
@@ -353,13 +353,13 @@ theorem TypeDeclaration.liftingSort_substLevels (decl : TypeDeclaration) (S : Li
 the type lifted at the instance of the type declaration. -/
 theorem TypeDeclaration.liftedInstance_substLevels {Γ : Scope} (decl : TypeDeclaration) (F : Name)
     {n : Nat} {qs : List Quality} {ps : List Grade} {ls ls' : List (Level k)}
-    (hqp : decl.AsMany qs ps) (hl : ls.length = decl.levels)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
     (h : (ls ++ ls').length = decl.levels + n)
     (as : InstanceArgs (decl.levels + n) Γ decl.scope) :
     (decl.liftedInstance F n hqp.inst as).substLevels ((ls ++ ls').getFin h) =
       .inst F qs ls ps (as.substLevels ((ls ++ ls').getFin h)) := by
-  unfold TypeDeclaration.liftedInstance TypeDeclaration.AsMany.inst Instance.ofLists
-  rw [Term.substLevels, List.ofFn_getFin, List.ofFn_getFin, List.map_ofFn]
+  unfold TypeDeclaration.liftedInstance
+  rw [Term.substLevels, hqp.ofFn_inst_sorts, hqp.ofFn_inst_grades, List.map_ofFn]
   exact congrArg (fun ls₀ => Term.inst F qs ls₀ ps _)
     ((congrArg List.ofFn (Level.lifted_subst ls ls' hl h)).trans (List.ofFn_getFin ls hl))
 
