@@ -282,12 +282,8 @@ theorem Destructors.Pos.sound (hd : sig.Distinct) {κ : Universe 0} {d : Name} {
       have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ'.subst θ₁)) τ₁ τ₂ →
           ValidEqTerm₀ sig ι ((f₁ d' ps').subst τ₁) ((f₂ d' ps').subst τ₂)
             (B'.subst (Subst.append θ₁ τ₁)) := fun τ₁ τ₂ hτ => by
-        obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
-            @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
-          ⟨_, Subst.args_toSubst ps' τ₁⟩
-        obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps',
-            @Eq (Subst 0 [] (Scope.extend [] ps'.length)) us.toSubst @τ₂ :=
-          ⟨_, Subst.args_toSubst ps' τ₂⟩
+        obtain ⟨ts, rfl⟩ := Subst.exists_args ps' @τ₁
+        obtain ⟨us, rfl⟩ := Subst.exists_args ps' @τ₂
         exact hhead ts us hτ
       exact h.sound hd (hds _ _ hcond) hN' (hR' _) (hI' _ _) hS' ho' hf₁ hf₂
     · rename_i D hr
@@ -366,9 +362,7 @@ theorem ObsEquiv.of_computes (hd : sig.Distinct) {s : Quality} {Δ : Scope} {D D
     (hw : w.CorecObservations D' o) : ObsEquiv sig ι s (t.observation D qs ls ps as) o := by
   obtain ⟨r, qs', ls', ps', Δ', as', ss, Ss, gs, rfl, rfl⟩ := hw
   refine .inr fun d xs τ v => ?_
-  obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] xs,
-      @Eq (Subst 0 [] (Scope.extend [] xs.length)) ts.toSubst @τ :=
-    ⟨_, Subst.args_toSubst xs τ⟩
+  obtain ⟨ts, rfl⟩ := Subst.exists_args xs @τ
   rw [Term.observation_subst_args, Term.observation_subst_args,
     Computesι.redStar_iff hd (RedStar.obs ht.1)]
   exact ⟨Computesι.obs_corec_iff, Computesι.obs_corec_iff⟩
@@ -910,12 +904,8 @@ theorem DesRel.of_obsRel (hd : sig.Distinct) {n : Nat} {s : Quality} {κ : Unive
         have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
             τ₁ τ₂ → ValidEqTerm₀ sig ι ((o₁ d ps).subst τ₁) ((o₁ d ps).subst τ₂)
               ((B.substLevels L).subst (Subst.append θ τ₁)) := fun τ₁ τ₂ hτ => by
-          obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
-              @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
-            ⟨_, Subst.args_toSubst ps τ₁⟩
-          obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
-              @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
-            ⟨_, Subst.args_toSubst ps τ₂⟩
+          obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
+          obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
           have hts := (hT ts us).2 hτ
           have htt := hSp.trans hts (hSp.symm hts)
           obtain ⟨v, hv''⟩ := hB ts htt

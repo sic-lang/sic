@@ -157,6 +157,12 @@ theorem Subst.args_toSubst : (ps : List Parameter) → (τ : Subst k [] (Scope.e
       exact congrArg (fun θ : Subst k [] (Scope.extend [] ps.length) => θ z)
         (Subst.args_toSubst ps (Subst.topN ps.length τ))
 
+/-- A closed substitution of the variables of a telescope is the substitution of arguments of the
+telescope. -/
+theorem Subst.exists_args (ps : List Parameter) (τ : Subst k [] (Scope.extend [] ps.length)) :
+    ∃ ts : Args k [] ps, @Eq (Subst k [] (Scope.extend [] ps.length)) ts.toSubst @τ :=
+  ⟨_, Subst.args_toSubst ps τ⟩
+
 /-! ## Corecursors at Closed States -/
 
 /-- The terms of renamed arguments are their terms renamed. -/

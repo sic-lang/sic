@@ -152,12 +152,8 @@ theorem RunDesRel.of_obs (hd : sig.Distinct) {κ : Universe 0} {k' : Nat} (L : F
         have hcond : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst θ))
             τ₁ τ₂ → ValidEqTerm₀ sig ι ((o d ps).subst τ₁) ((o d ps).subst τ₂)
               ((B.substLevels L).subst (Subst.append θ τ₁)) := fun τ₁ τ₂ hτ => by
-          obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
-              @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
-            ⟨_, Subst.args_toSubst ps τ₁⟩
-          obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
-              @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
-            ⟨_, Subst.args_toSubst ps τ₂⟩
+          obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
+          obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
           have hts := (hT ts us).2 hτ
           have htt := hSp.trans hts (hSp.symm hts)
           obtain ⟨v, hv''⟩ := hB ts htt
@@ -344,12 +340,8 @@ theorem Destructors.Pos.run (hd : sig.Distinct) {κ : Universe 0} {d : Name} {p 
         obtain ⟨hA, -, hGo⟩ := ho
         have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) (fun _ => .plain) hΘ
         refine h.run hd (hds _ _ fun τ₁ τ₂ hτ => ?_) hN' (hR' _) (hG _ hA) hGo hp
-        obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
-            @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
-          ⟨_, Subst.args_toSubst ps' τ₁⟩
-        obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps',
-            @Eq (Subst 0 [] (Scope.extend [] ps'.length)) us.toSubst @τ₂ :=
-          ⟨_, Subst.args_toSubst ps' τ₂⟩
+        obtain ⟨ts, rfl⟩ := Subst.exists_args ps' @τ₁
+        obtain ⟨us, rfl⟩ := Subst.exists_args ps' @τ₂
         have hts := (TelRel.eqSubst_iff hd hΘ
           (Telescope.nestHeads_of_not _ fun _ ⟨_, h⟩ => nomatch h)
           (fun _ => .plain)
@@ -422,12 +414,8 @@ theorem Destructors.Pos.validEq {κ : Universe 0} {d : Name} {p q ς : Grade} {p
     split at hv
     · obtain ⟨-, hds⟩ := hv
       refine h.validEq (hds _ _ fun τ₁ τ₂ hτ => ?_) hI' hobs'
-      obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps',
-          @Eq (Subst 0 [] (Scope.extend [] ps'.length)) ts.toSubst @τ₁ :=
-        ⟨_, Subst.args_toSubst ps' τ₁⟩
-      obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps',
-          @Eq (Subst 0 [] (Scope.extend [] ps'.length)) us.toSubst @τ₂ :=
-        ⟨_, Subst.args_toSubst ps' τ₂⟩
+      obtain ⟨ts, rfl⟩ := Subst.exists_args ps' @τ₁
+      obtain ⟨us, rfl⟩ := Subst.exists_args ps' @τ₂
       exact hobs _ _ _ _ _ _ _ _ _ .here ts us hτ
     · obtain ⟨-, hds⟩ := hv
       exact h.validEq (hds _ _) hI' hobs'

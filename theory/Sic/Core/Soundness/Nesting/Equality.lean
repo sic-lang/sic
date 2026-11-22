@@ -163,12 +163,8 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
       EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
       ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁)) :=
     fun f₁ f₂ hf τ₁ τ₂ hτ => by
-      obtain ⟨ts, rfl⟩ : ∃ ts : Args 0 [] ps,
-          @Eq (Subst 0 [] (Scope.extend [] ps.length)) ts.toSubst @τ₁ :=
-        ⟨_, Subst.args_toSubst ps τ₁⟩
-      obtain ⟨us, rfl⟩ : ∃ us : Args 0 [] ps,
-          @Eq (Subst 0 [] (Scope.extend [] ps.length)) us.toSubst @τ₂ :=
-        ⟨_, Subst.args_toSubst ps τ₂⟩
+      obtain ⟨ts, rfl⟩ := Subst.exists_args ps @τ₁
+      obtain ⟨us, rfl⟩ := Subst.exists_args ps @τ₂
       have hts := (hT ts us).2 hτ
       have htt := hSp.trans hts (hSp.symm hts)
       obtain ⟨⟨w, hw, hF⟩, -⟩ := hres ts _ (hBB ts ts htt)
