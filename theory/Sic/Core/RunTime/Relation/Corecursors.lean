@@ -155,7 +155,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, -, hsort, -, hX, -, -, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm hasσ
+  have hA := hv.atClosedLevels hd hq hl hp hadm hasσ
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality with
@@ -176,7 +176,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         ∀ T₁ ∈ decl.codataTypes, ∀ H₁ o b, S X T₁ H₁ o b → S Y T₁ H₁ o b :=
       fun X Y hXY T₁ hT₁ H₁ => RunDesRel.mono hd (List.prefix_refl H₁) (hS X T₁ hT₁) _ _
         (hS Y T₁ hT₁) (fun _ => Option.rel_map (fun D' H₂ _ _ => RunRel.computed_mono (hXY D' H₂)) _)
-    have e : ((decl.sort I).atLevels ρ).level.closedValue = n := hsort.trans hnS
+    have e : ((decl.sort I).atLevels ρ).level.closedValue = n := hA.sort.trans hnS
     -- The grades of the destructors and the resumptions that the erasure of the closure reads.
     obtain ⟨grs, hgrs, hgrs'⟩ := hd.destructorGrades h hq hp
     have hrt := hd.resumedTypes h hq hp
@@ -219,7 +219,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           (fun i => ((T₂.body I).recursionAt decl.names i).map fun D' => (X D').computed sig ι)
           ((T₂.body I).substLevels Lρ) (as.subst σ).toSubst (S X T₂) := by
         rw [e]
-        exact hrunLev (hS X T₂ hT₁)
+        exact hA.runDesRel (hS X T₂ hT₁)
       -- The case of a destructor of the type and its branch.
       have hcase : ∀ {d p q ς ps' Ξ} {Θ : Telescope decl.levels Ξ ps'}
           {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length},
@@ -232,7 +232,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨g, -, hg, -⟩ := hgv.1 i j₁ T₂ d ps₁ S₁ hi hS₁ p q ς ps' Ξ Θ B ψ hpos
         exact ⟨i, g, hi, hg⟩
       refine RunDesRel.of_obs hd Lρ (T₂.body I) (rs := (T₂.body I).recursionAt decl.names)
-        (hmean T₂ hT₁) (fun i hi => by rw [hi]; rfl)
+        (hA.destructors T₂ hT₁) (fun i hi => by rw [hi]; rfl)
         (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) hSρ ?_ ?_
       · -- The observations by a destructor that is not recursive step to its branch, whose
         -- premise makes it a term of the result of the destructor.
@@ -240,7 +240,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain ⟨i, g, hi, hg⟩ := hcase hpos
         have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Telescope.substLevels_levelEquiv hls Θ))) hτ
+            (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
         have hb := ValidEqTerm₀.corecBranch hpos
           (hgv.2 i j₁ T₂ d ps₁ S₁ p q ς ps' Ξ Θ B ψ g g hi hS₁ hpos hg hg) hσ hts₁ hτ'
         have hred₁ := Red.beta_corec (ι := ι) hd h₀ hq hl hp hi hpos hg σ ts₁ ts₂
@@ -267,9 +267,9 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
         have hτ' := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Telescope.substLevels_levelEquiv hls Θ))) hτ
+            (Telescope.substLevels_levelEquiv hA.levels Θ))) hτ
         have hbs₂' := RunsAsArgs.levelEquiv hd (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-          (Telescope.substLevels_levelEquiv hls Θ)) hbs₂
+          (Telescope.substLevels_levelEquiv hA.levels Θ)) hbs₂
         -- The branch in the closure, at the grade of its destructor.
         have hpg : ((sig.destructorGrades D qs ps).getD [])[i']? = some p := by
           rw [hgrs]
@@ -474,11 +474,11 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               subst hD' hR
               have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
                 (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-                  (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B))
+                  (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hA.levels i)) B))
               rw [he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
-                  (h₁.levelEquiv hd (hX (as.subst σ) T₃.name)))
+                  (h₁.levelEquiv hd (hA.instances (as.subst σ) T₃.name)))
     -- The corecursor is related to the closure.
     exact ⟨_, hw _, .inr ⟨_, .univ n (levelRel_run_iff.2 (.codata ⟨hdecl, hT', rfl⟩ hq hl hp rfl hs
       hnS S hS)), _, (Whnf.corec ..).computes, X, hcons,

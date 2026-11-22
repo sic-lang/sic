@@ -179,7 +179,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hn := TypeDeclaration.codataTypes_nodup hnames
     let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
     let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
-    obtain ⟨hls, hmean, -, -, -, hX, -, -, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has'
+    have hC := hv.atClosedLevels hd hq hl hp hadm has'
     have hmono := DesRel.blockMono hd hS
     -- The instances of the block are types of the universe, not propositions.
     have hcI : ∀ D', Computesι sig ι (.inst D' qs ls ps a) (.inst D' qs ls ps a) :=
@@ -386,7 +386,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         rw [Term.observation_subst_args, Term.observation_subst_args]
         have hτL := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
           (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-            (Telescope.substLevels_levelEquiv hls Θ))) hτ
+            (Telescope.substLevels_levelEquiv hC.levels Θ))) hτ
         obtain ⟨i, hi, hσB, hBx, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
         have hB0 : B.blockName decl.names = none := (hpos.recursionAt_index decl.names).symm.trans hr
         obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
@@ -413,15 +413,15 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       -- result if it is not recursive, and otherwise, computed, by the relations, since the branch
       -- makes the relation of the type of the result true at them.
       have hS₁ : S Y T' (x.observation T'.name qs ls ps a) (y.observation T'.name qs ls ps a) :=
-        DesRel.of_obsRel hd Lρ (T'.body I) (hmean T' hT') (fun i hi => by rw [hi]; rfl)
-          (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) (hlev (hS Y T' hT')) hnonrec
+        DesRel.of_obsRel hd Lρ (T'.body I) (hC.destructors T' hT') (fun i hi => by rw [hi]; rfl)
+          (fun i D' hi => by rw [hi]; exact ⟨_, rfl⟩) (hC.desRel (hS Y T' hT')) hnonrec
           (fun d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ D' R hD' hR e => by
             rw [hD'] at hR
             cases hR
             rw [Term.observation_subst_args, Term.observation_subst_args]
             have hτL := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
               (Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-                (Telescope.substLevels_levelEquiv hls Θ))) hτ
+                (Telescope.substLevels_levelEquiv hC.levels Θ))) hτ
             obtain ⟨i, hi, hσB, -, hox, hoy⟩ := hpre d p q ς ps₁ Ξ Θ B ψ hpos ts us hτL
             have hBD : B.blockName decl.names = some D' :=
               (hpos.recursionAt_index decl.names).symm.trans hD'
@@ -438,9 +438,9 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
                 (.inst T''.name qs ls ps a) := by
               have hE := Term.LevelEquiv.subst (Subst.LevelEquiv.refl (Subst.append
                   (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
-                (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) B)
+                (Term.substLevels_levelEquiv (fun i => Level.equivalence.symm (hC.levels i)) B)
               rw [e] at hE
-              exact hE.trans (hX a _)
+              exact hE.trans (hC.instances a _)
             have hxD := hox.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hyD := hoy.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hx'v := hxD.left
@@ -488,7 +488,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               hv', hw'⟩⟩)
       obtain ⟨o₁, hc₁⟩ := hcan T' hT' hx hxv
       obtain ⟨o₂, hc₂⟩ := hcan T' hT' hy hyw
-      exact ⟨o₁, o₂, hc₁, hc₂, DesRel.obsEquiv hd (hRF T') (hlev (hS Y T' hT')) hS₁
+      exact ⟨o₁, o₂, hc₁, hc₂, DesRel.obsEquiv hd (hRF T') (hC.desRel (hS Y T' hT')) hS₁
         (ObsEquiv.of_computes hd hxv hc₁) (ObsEquiv.of_computes hd hyw hc₂)⟩
     -- The two terms compute to canonical terms that the relation of their type relates.
     have hT1 := ht₁.2 σ σ hσ
