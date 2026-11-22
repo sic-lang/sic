@@ -120,11 +120,6 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
     (hB _ _ ((hT ts us).1 hts)).trans (hB _ _ ((hT us us).1 huu)).symm
   let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι n κ.quality fun ts =>
     B.subst (Subst.append θ₁ ts.toSubst)
-  have hFeq : ∀ (ts : Args 0 [] ps) w F₀,
-      Computesι sig ι (B.subst (Subst.append θ₁ ts.toSubst)) w →
-      FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality w F₀ →
-      F ts.terms = F₀ :=
-    fun _ _ _ hw hF => FieldRel.atArgs_eq hd ih hw hF
   -- A type equal to the result at the first substitution and the arguments `ts` has the
   -- equality `F ts`.
   have hres : ∀ (ts : Args 0 [] ps) (A : Term 0 []),
@@ -135,7 +130,7 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
         FieldRel sig ι n (fun m _ => levelRel sig ι m) κ.quality v (F ts.terms) :=
     fun ts A hA => by
       obtain ⟨w₁, w₂, F₀, hw₁, hw₂, hF₁, hF₂, -⟩ := hA.fieldRel hκ.1 hκn
-      rw [hFeq ts w₁ F₀ hw₁ hF₁]
+      rw [show F ts.terms = _ from FieldRel.atArgs_eq hd ih hw₁ hF₁]
       exact ⟨⟨w₁, hw₁, hF₁⟩, w₂, hw₂, hF₂⟩
   have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
     obtain ⟨ts', us', rfl, rfl, -⟩ := hT₁.to_eqSubst_plain hd _ _ hts
@@ -143,7 +138,7 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
     obtain ⟨⟨w', hw', -⟩, -⟩ := hres us' _ (hBB us' us' huu)
     obtain ⟨-, v, hv, hFv⟩ := hres ts' _ (hBB ts' us' hts)
     cases Computesι.det hd hw' hv
-    rw [hFeq us' w' _ hw' hFv]
+    rw [show F us'.terms = _ from FieldRel.atArgs_eq hd ih hw' hFv]
   -- Equal abstractions for the destructor have equal instances at equal arguments.
   have hcond : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ τ₁ τ₂,
       EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
@@ -215,17 +210,13 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   let F : Terms 0 [] → TermRel := NestRel.atArgs sig ι n sT κ.quality
     (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁)) fun ts =>
       B.subst (Subst.append θ₁' ts.toSubst)
-  have hFeq : ∀ (ts : Args 0 [] ps) F₀,
-      NestRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-        (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.subst (Subst.append θ₁' ts.toSubst)) F₀ → F ts.terms = F₀ :=
-    fun _ _ hF => NestRel.atArgs_eq hd ih hF
   have hBresp : ∀ ts us, SΘ ts us → ∀ t u, F ts t u ↔ F us t u := fun ts us hts t u => by
     obtain ⟨ts', us', rfl, rfl, hE⟩ := hT₁.to_eqSubst_plain hd _ _ hts
     have huu := hSp.trans (hSp.symm hts) hts
     obtain ⟨F', h₁, h₂⟩ := hB _ _ hE
     obtain ⟨F'', h₁', h₂'⟩ := hB _ _ ((hT us' us').1 huu)
-    rw [hFeq ts' F' h₁, hFeq us' F'' h₁']
+    rw [show F ts'.terms = _ from NestRel.atArgs_eq hd ih h₁,
+      show F us'.terms = _ from NestRel.atArgs_eq hd ih h₁']
     exact NestRel.unique hd ih h₂ _ _ h₂' t u
   -- The destructors after it have one equality, whatever the abstractions for it.
   let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
@@ -233,14 +224,14 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   refine ⟨_, .nested hν₁ (hΘ₁ ▸ hT₁.levelLe hn) F (fun ts hts => ?_) hBresp G (fun f => ?_),
     .nested hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F (fun ts hts => ?_) hBresp G (fun f => ?_)⟩
   · obtain ⟨F', h₁, -⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [hFeq ts F' h₁]
+    rw [show F ts.terms = _ from NestRel.atArgs_eq hd ih h₁]
     exact h₁
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀
     have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
       (NestDesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
     exact hSG ▸ h₁
   · obtain ⟨F', h₁, h₂⟩ := hB _ _ ((hT ts ts).1 hts)
-    rw [hFeq ts F' h₁]
+    rw [show F ts.terms = _ from NestRel.atArgs_eq hd ih h₁]
     exact h₂
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f
     have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
