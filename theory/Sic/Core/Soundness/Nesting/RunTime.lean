@@ -57,35 +57,24 @@ def RunNestDesReads (sig : Signature) (ι : Interpretation) (P : Program) (n : N
     ∃ S, RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₁ ds @θ₁ S ∧
       RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν₂ ds @θ₂ S
 
+/-- The sorts in which the graph of the nestings of run time at the level `n` reads: those whose
+level `n` bounds. -/
+def RunNestReadsOk (n : Nat) (_ : Unit) (κ : Universe 0) : Prop :=
+  κ.level.closedValue ≤ n
+
 /-! ## Destructors Read by the Graph of the Nestings of Run Time -/
 
-/-- A destructor whose arguments are equal telescopes and whose results are equal types at two
-equal closed substitutions, and are the same at two other substitutions, followed by destructors
-that the graph of the nestings of run time reads with one relation at these, for each pair of equal
-abstractions for it, is read with them by the graph with one relation, as a destructor whose result
-has no position: the relation of its results and that of the destructors after it are defined from
-the graph at the first substitution, which gives one at most. -/
-theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : Universe 0}
-    (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-    {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting RunNestLeaf Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ}
-    (hν₁ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) = .plain)
-    (hν₂ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) = .plain)
-    (hΘ : ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂))
-    (hΘ₁ : Θ.subst θ₁' = Θ.subst θ₁) (hΘ₂ : Θ.subst θ₂' = Θ.subst θ₂) (hκ : κ₁ ≼ κ)
-    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
-        (.sort κ₁))
-    (hB₁ : ∀ τ, B.subst (Subst.append θ₁' τ) = B.subst (Subst.append θ₁ τ))
-    (hB₂ : ∀ τ, B.subst (Subst.append θ₂' τ) = B.subst (Subst.append θ₂ τ))
-    (hds : ∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-        ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
-      RunNestDesReads sig ι P n (Nesting.lift (e := .secondOrder ps ψ) @ν₁)
-        (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
-        (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
-        (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) :
-    RunNestDesReads sig ι P n @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂' := by
+/-- The clause `Reading.PlainHead` of the graph of the nestings of run time: a destructor whose
+arguments are equal telescopes and whose results are equal types at two equal closed substitutions,
+and are the same at two other substitutions, followed by destructors that the graph of the nestings
+of run time reads with one relation at these, for each pair of equal abstractions for it, is read
+with them by the graph with one relation, as a destructor whose result has no position: the relation
+of its results and that of the destructors after it are defined from the graph at the first
+substitution, which gives one at most. -/
+theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} :
+    Reading.PlainHead sig ι (fun _ => @RunNestDesReads sig ι P n) (RunNestReadsOk n) := by
+  intro _ κ κ₁ hn Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂
+    hds
   intro D hcase
   have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
@@ -204,29 +193,16 @@ theorem RunNestDesReads.of_plain_head (hd : sig.Distinct) {n : Nat} {κ κ₁ : 
     rw [hB₂]
     exact .plain hv hR
 
-/-- A destructor whose arguments are equal telescopes at two equal closed substitutions, and are
-the same at two other substitutions, at which the graph of the nestings of run time reads its
-results at their nestings with one relation, at equal arguments, followed by destructors that the
-graph reads with one relation at these substitutions, for each pair of abstractions for it, is read
-with them by the graph with one relation, as a destructor whose result has a position. -/
-theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} {κ : Universe 0}
-    (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-    {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting RunNestLeaf Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ}
-    (hν₁ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) ≠ .plain)
-    (hν₂ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) ≠ .plain)
-    (hΘ : ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂))
-    (hΘ₁ : Θ.subst θ₁' = Θ.subst θ₁) (hΘ₂ : Θ.subst θ₂' = Θ.subst θ₂)
-    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      RunNestReads sig ι P n (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂))
-        (B.subst (Subst.append θ₁' τ₁)) (B.subst (Subst.append θ₂' τ₂)))
-    (hds : ∀ f₁ f₂, RunNestDesReads sig ι P n (Nesting.lift (e := .secondOrder ps ψ) @ν₁)
-      (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
-      (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
-      (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) :
-    RunNestDesReads sig ι P n @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂' := by
+/-- The clause `Reading.NestedHead` of the graph of the nestings of run time: a destructor whose
+arguments are equal telescopes at two equal closed substitutions, and are the same at two other
+substitutions, at which the graph of the nestings of run time reads its results at their nestings
+with one relation, at equal arguments, followed by destructors that the graph reads with one
+relation at these substitutions, for each pair of abstractions for it, is read with them by the
+graph with one relation, as a destructor whose result has a position. -/
+theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} :
+    Reading.NestedHead sig ι (fun _ => RunNestReads sig ι P n) (fun _ => @RunNestDesReads sig ι P n)
+      (RunNestReadsOk n) := by
+  intro _ κ hn Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
   intro D hcase
   have ihm := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   have ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
@@ -307,17 +283,15 @@ substitutions, are read with one relation of run time. -/
 def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (P : Program)
     (n : Nat) : Reading sig ι RunNestLeaf Unit where
   rd _ := RunNestReads sig ι P n
-  dr _ _ _ ν₁ ν₂ ds θ₁ θ₂ := RunNestDesReads sig ι P n @ν₁ @ν₂ ds @θ₁ @θ₂
-  ok _ κ := κ.level.closedValue ≤ n
+  dr _ := @RunNestDesReads sig ι P n
+  ok := RunNestReadsOk n
   plain := fun hn hκ h => by
     obtain ⟨w₁, w₂, R, hc₁, hc₂, hR₁, hR₂⟩ :=
       h.runFieldRel P (Nat.le_trans (hκ.2 Fin.elim0) hn)
     exact ⟨R, .plain hc₁ hR₁, .plain hc₂ hR₂⟩
   nil := fun _ _ => ⟨fun _ _ _ => True, .nil, .nil⟩
-  plain_head := fun hn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂ hds =>
-    RunNestDesReads.of_plain_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂ hds
-  nested_head := fun hn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds =>
-    RunNestDesReads.of_nested_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
+  plain_head := RunNestDesReads.of_plain_head hd
+  nested_head := RunNestDesReads.of_nested_head hd
   inst := by
     intro _ decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec hadm hr
     obtain ⟨RE, hrE, -⟩ := hr

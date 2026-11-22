@@ -45,6 +45,21 @@ def NestReads (sig : Signature) (ι : Interpretation) (n : Nat) (sT s : Quality)
   ∃ F, NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ₁ A₁ F ∧
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ₂ A₂ F
 
+/-- The graph of the nestings at the level `n` reads the destructors of a codata type at two
+nestings of their scope and two closed substitutions, in the sort of the quality `s`, with the same
+equality of the observations by them, where the positions hold types of sorts of the quality
+`sT`. -/
+def NestDesReads (sig : Signature) (ι : Interpretation) (n : Nat) (sT s : Quality) {Γ : Scope}
+    {ns : List Name} (ν₁ ν₂ : Nesting NestLeaf Γ) (ds : Destructors 0 Γ ns)
+    (θ₁ θ₂ : Subst 0 [] Γ) : Prop :=
+  ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₁ ds @θ₁ S ∧
+    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₂ ds @θ₂ S
+
+/-- The sorts in which the graph of the nestings at the level `n` reads in the sort of the quality
+`s`: those of the quality `s` whose level `n` bounds. -/
+def NestReadsOk (n : Nat) (s : Quality) (κ : Universe 0) : Prop :=
+  κ.level.closedValue ≤ n ∧ s = κ.quality
+
 /-- Two equal closed types of a universe that the graph of the nestings reads without position in
 the sort of the quality `s` are read in a sort of types: a type of a universe is not a
 proposition. -/
@@ -77,38 +92,19 @@ theorem NestReads.quality_of_univ {A₁ A₂ : Term 0 []} {κ : Universe 0} {n :
 
 /-! ## Destructors Read by the Graph of the Nestings -/
 
-/-- A destructor whose arguments are equal telescopes and whose results are equal types at two
-equal closed substitutions, and are the same at two other substitutions, followed by destructors
-that the graph of the nestings reads with one equality at these, for each pair of equal
-abstractions for it, is read with them by the graph of the nestings with one equality, as a
-destructor whose result has no position: the equality of its results and that of the destructors
-after it are defined from the graph at the first substitution, which gives one at most. -/
-theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {κ κ₁ : Universe 0}
-    (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-    {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting NestLeaf Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ}
-    (hν₁ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) = .plain)
-    (hν₂ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) = .plain)
-    (hΘ : ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂))
-    (hΘ₁ : Θ.subst θ₁' = Θ.subst θ₁) (hΘ₂ : Θ.subst θ₂' = Θ.subst θ₂) (hκ : κ₁ ≼ κ)
-    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
-        (.sort κ₁))
-    (hB₁ : ∀ τ, B.subst (Subst.append θ₁' τ) = B.subst (Subst.append θ₁ τ))
-    (hB₂ : ∀ τ, B.subst (Subst.append θ₂' τ) = B.subst (Subst.append θ₂ τ))
-    (hds : ∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-        ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
-      ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-          (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-          (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁) S ∧
-        NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-          (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
-          (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) S) :
-    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₁
-        (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
-        (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
+/-- The clause `Reading.PlainHead` of the graph of the nestings: a destructor whose arguments are
+equal telescopes and whose results are equal types at two equal closed substitutions, and are the
+same at two other substitutions, followed by destructors that the graph of the nestings reads with
+one equality at these, for each pair of equal abstractions for it, is read with them by the graph of
+the nestings with one equality, as a destructor whose result has no position: the equality of its
+results and that of the destructors after it are defined from the graph at the first substitution,
+which gives one at most. -/
+theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
+    Reading.PlainHead sig ι (NestDesReads sig ι n sT) (NestReadsOk n) := by
+  intro s κ κ₁ ⟨hn, hs⟩ Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁
+    hB₂ hds
+  subst hs
+  unfold NestDesReads at hds ⊢
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   have hT := TelRel.eqSubst_iff_plain hd hT₁
@@ -199,34 +195,17 @@ theorem NestDesRel.of_plain_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {�
     rw [hB₂]
     exact .plain hv hF
 
-/-- A destructor whose arguments are equal telescopes at two equal closed substitutions, and are
-the same at two other substitutions, at which the graph of the nestings reads its results at their
-nestings with one equality, at equal arguments, followed by destructors that the graph reads with
-one equality at these substitutions, for each pair of abstractions for it, is read with them by the
-graph of the nestings with one equality, as a destructor whose result has a position. -/
-theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} {κ : Universe 0}
-    (hn : κ.level.closedValue ≤ n) {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
-    {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting NestLeaf Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ}
-    (hν₁ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) ≠ .plain)
-    (hν₂ : B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) ≠ .plain)
-    (hΘ : ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂))
-    (hΘ₁ : Θ.subst θ₁' = Θ.subst θ₁) (hΘ₂ : Θ.subst θ₂' = Θ.subst θ₂)
-    (hB : ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      NestReads sig ι n sT κ.quality (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂))
-        (B.subst (Subst.append θ₁' τ₁)) (B.subst (Subst.append θ₂' τ₂)))
-    (hds : ∀ f₁ f₂, ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-          (Nesting.lift (e := .secondOrder ps ψ) @ν₁) ds
-          (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁) S ∧
-        NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality
-          (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds
-          (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂) S) :
-    ∃ S, NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₁
-        (.cons (d := d) p q ς Θ B ψ ds) @θ₁' S ∧
-      NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT κ.quality @ν₂
-        (.cons (d := d) p q ς Θ B ψ ds) @θ₂' S := by
+/-- The clause `Reading.NestedHead` of the graph of the nestings: a destructor whose arguments are
+equal telescopes at two equal closed substitutions, and are the same at two other substitutions, at
+which the graph of the nestings reads its results at their nestings with one equality, at equal
+arguments, followed by destructors that the graph reads with one equality at these substitutions,
+for each pair of abstractions for it, is read with them by the graph of the nestings with one
+equality, as a destructor whose result has a position. -/
+theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
+    Reading.NestedHead sig ι (NestReads sig ι n sT) (NestDesReads sig ι n sT) (NestReadsOk n) := by
+  intro s κ ⟨hn, hs⟩ Γ d ns ps p q ς Θ B ψ ds ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
+  subst hs
+  unfold NestDesReads at hds ⊢
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd) n
   obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
   have hT := TelRel.eqSubst_iff_plain hd hT₁
@@ -316,23 +295,16 @@ def nestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (n :
     (sT : Quality) :
     Reading sig ι NestLeaf Quality where
   rd := NestReads sig ι n sT
-  dr s _ _ ν₁ ν₂ ds θ₁ θ₂ := ∃ S,
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₁ ds @θ₁ S ∧
-    NestDesRel sig ι n (fun m _ => levelRel sig ι m) sT s @ν₂ ds @θ₂ S
-  ok s κ := κ.level.closedValue ≤ n ∧ s = κ.quality
+  dr := NestDesReads sig ι n sT
+  ok := NestReadsOk n
   plain := fun ⟨hn, hs⟩ hκ h => by
     subst hs
     obtain ⟨w₁, w₂, F, hc₁, hc₂, hF₁, hF₂, -⟩ :=
       h.fieldRel hκ.1 (Nat.le_trans (hκ.2 Fin.elim0) hn)
     exact ⟨F, .plain hc₁ hF₁, .plain hc₂ hF₂⟩
   nil := ⟨fun _ _ => True, .nil, .nil⟩
-  plain_head := fun ⟨hn, hs⟩ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂
-      hds => by
-    subst hs
-    exact NestDesRel.of_plain_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hκ hB hB₁ hB₂ hds
-  nested_head := fun ⟨hn, hs⟩ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds => by
-    subst hs
-    exact NestDesRel.of_nested_head hd hn hν₁ hν₂ hΘ hΘ₁ hΘ₂ hB hds
+  plain_head := NestDesRel.of_plain_head hd
+  nested_head := NestDesRel.of_nested_head hd
   inst := by
     intro s decl D T qs ls ps as₁ as₂ as₁' as₂' νs₁ νs₂ hT hq hl hp hrec _ hr
     obtain ⟨FE, hrE, -⟩ := hr

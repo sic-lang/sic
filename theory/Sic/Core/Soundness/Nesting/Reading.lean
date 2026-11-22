@@ -580,6 +580,66 @@ variable {α I : Type} {rd : I → Nest α → Nest α → Term 0 [] → Term 0 
 
 /-! ## Readings -/
 
+/-- The clause of a reading for a destructor whose result has no position, for the property `dr` of
+the destructors and the sorts `ok` of the reading. Its hypotheses, at a sort `κ` that `ok` admits:
+the result `B` has no position at the two nestings `ν₁` and `ν₂`; the arguments `Θ` are equal
+telescopes of `U_κ` at the substitutions `θ₁` and `θ₂`, and the same at `θ₁'` and `θ₂'`; the
+results are equal types of a sort `κ₁ ≼ κ` at `θ₁` and `θ₂` and equal arguments, and the same at
+`θ₁'` and `θ₂'`; and the destructors after it are read at `θ₁'` and `θ₂'` extended by each pair of
+equal abstractions for it. Its conclusion: the destructors are read at `θ₁'` and `θ₂'`. -/
+def Reading.PlainHead (sig : Signature) (ι : Interpretation) {α I : Type}
+    (dr : I → {Γ : Scope} → {ns : List Name} → Nesting α Γ → Nesting α Γ → Destructors 0 Γ ns →
+      Subst 0 [] Γ → Subst 0 [] Γ → Prop)
+    (ok : I → Universe 0 → Prop) : Prop :=
+  ∀ {i : I} {κ κ₁ : Universe 0}, ok i κ → ∀ {Γ : Scope} {d : Name} {ns : List Name}
+    {ps : List Parameter} {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {ν₁ ν₂ : Nesting α Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ},
+    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) = .plain →
+    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) = .plain →
+    ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) →
+    Θ.subst θ₁' = Θ.subst θ₁ → Θ.subst θ₂' = Θ.subst θ₂ → κ₁ ≼ κ →
+    (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
+        (.sort κ₁)) →
+    (∀ τ, B.subst (Subst.append θ₁' τ) = B.subst (Subst.append θ₁ τ)) →
+    (∀ τ, B.subst (Subst.append θ₂' τ) = B.subst (Subst.append θ₂ τ)) →
+    (∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+        ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
+      dr i (Nesting.lift (e := .secondOrder ps ψ) @ν₁) (Nesting.lift (e := .secondOrder ps ψ) @ν₂)
+        ds (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
+        (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) →
+    dr i @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂'
+
+/-- The clause of a reading for a destructor whose result has a position, for the property `rd` of
+the types, the property `dr` of the destructors and the sorts `ok` of the reading. Its hypotheses,
+at a sort `κ` that `ok` admits: the result `B` has a position at the two nestings `ν₁` and `ν₂`; the
+arguments `Θ` are equal telescopes of `U_κ` at the substitutions `θ₁` and `θ₂`, and the same at
+`θ₁'` and `θ₂'`; the results at `θ₁'` and `θ₂'` and equal arguments are read at their nestings;
+and the destructors after it are read at `θ₁'` and `θ₂'` extended by every pair of abstractions
+for it. Its conclusion: the destructors are read at `θ₁'` and `θ₂'`. -/
+def Reading.NestedHead (sig : Signature) (ι : Interpretation) {α I : Type}
+    (rd : I → Nest α → Nest α → Term 0 [] → Term 0 [] → Prop)
+    (dr : I → {Γ : Scope} → {ns : List Name} → Nesting α Γ → Nesting α Γ → Destructors 0 Γ ns →
+      Subst 0 [] Γ → Subst 0 [] Γ → Prop)
+    (ok : I → Universe 0 → Prop) : Prop :=
+  ∀ {i : I} {κ : Universe 0}, ok i κ → ∀ {Γ : Scope} {d : Name} {ns : List Name}
+    {ps : List Parameter} {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {ν₁ ν₂ : Nesting α Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ},
+    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) ≠ .plain →
+    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) ≠ .plain →
+    ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) →
+    Θ.subst θ₁' = Θ.subst θ₁ → Θ.subst θ₂' = Θ.subst θ₂ →
+    (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
+      rd i (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
+        (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂))
+        (B.subst (Subst.append θ₁' τ₁)) (B.subst (Subst.append θ₂' τ₂))) →
+    (∀ f₁ f₂, dr i (Nesting.lift (e := .secondOrder ps ψ) @ν₁)
+      (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
+      (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) →
+    dr i @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂'
+
 /-- A reading of the nested types: the property `rd` of two closed types and of their nestings,
 that a graph of the nestings reads both with one relation, the same property `dr` of the
 destructors of a codata type at two closed substitutions, and the sorts `ok` in which it reads
@@ -605,45 +665,12 @@ structure Reading (sig : Signature) (ι : Interpretation) (α I : Type) where
   equal closed substitutions, and are the same at two other substitutions, followed by destructors
   that are read at these, for each pair of equal abstractions for it, is read with them, as a
   destructor whose result has no position. -/
-  plain_head : ∀ {i : I} {κ κ₁ : Universe 0}, ok i κ → ∀ {Γ : Scope} {d : Name} {ns : List Name}
-    {ps : List Parameter} {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting α Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ},
-    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) = .plain →
-    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) = .plain →
-    ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) →
-    Θ.subst θ₁' = Θ.subst θ₁ → Θ.subst θ₂' = Θ.subst θ₂ → κ₁ ≼ κ →
-    (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      ValidEqTerm₀ sig ι (B.subst (Subst.append θ₁ τ₁)) (B.subst (Subst.append θ₂ τ₂))
-        (.sort κ₁)) →
-    (∀ τ, B.subst (Subst.append θ₁' τ) = B.subst (Subst.append θ₁ τ)) →
-    (∀ τ, B.subst (Subst.append θ₂' τ) = B.subst (Subst.append θ₂ τ)) →
-    (∀ f₁ f₂, (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-        ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) (B.subst (Subst.append θ₁ τ₁))) →
-      dr i (Nesting.lift (e := .secondOrder ps ψ) @ν₁) (Nesting.lift (e := .secondOrder ps ψ) @ν₂)
-        ds (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
-        (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) →
-    dr i @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂'
+  plain_head : Reading.PlainHead sig ι dr ok
   /-- A destructor whose arguments are equal telescopes at two equal closed substitutions, and are
   the same at two other substitutions, at which its results are read at their nestings, at equal
   arguments, followed by destructors that are read at these substitutions, for each pair of
   abstractions for it, is read with them, as a destructor whose result has a position. -/
-  nested_head : ∀ {i : I} {κ : Universe 0}, ok i κ → ∀ {Γ : Scope} {d : Name} {ns : List Name}
-    {ps : List Parameter} {p q ς : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
-    {ψ : ResultOwnership Grade ps.length} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
-    {ν₁ ν₂ : Nesting α Γ} {θ₁ θ₂ θ₁' θ₂' : Subst 0 [] Γ},
-    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁) ≠ .plain →
-    B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂) ≠ .plain →
-    ValidEqTelescope₀ sig ι ⟨.type, κ.level⟩ (Θ.subst θ₁) (Θ.subst θ₂) →
-    Θ.subst θ₁' = Θ.subst θ₁ → Θ.subst θ₂' = Θ.subst θ₂ →
-    (∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst θ₁)) τ₁ τ₂ →
-      rd i (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₁))
-        (B.nest (fun _ => none) (Nesting.liftN ps.length @ν₂))
-        (B.subst (Subst.append θ₁' τ₁)) (B.subst (Subst.append θ₂' τ₂))) →
-    (∀ f₁ f₂, dr i (Nesting.lift (e := .secondOrder ps ψ) @ν₁)
-      (Nesting.lift (e := .secondOrder ps ψ) @ν₂) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁' f₁)
-      (Subst.snoc (e := .secondOrder ps ψ) θ₂' f₂)) →
-    dr i @ν₁ @ν₂ (.cons (d := d) p q ς Θ B ψ ds) @θ₁' @θ₂'
+  nested_head : Reading.NestedHead sig ι rd dr ok
   /-- An instance of a codata type none of whose destructors is recursive, that the constraint of
   its block admits, read without position at two lists of arguments, lives in a sort of the
   reading, and is read at the nestings of two other lists of arguments at which its destructors are
