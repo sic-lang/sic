@@ -301,7 +301,7 @@ theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
     ((decl.sort (.ofLists qs ps hq hp)).quality = .type ∧
       ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
         (∀ X, ∀ T' ∈ decl.codataTypes,
-          DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
             (fun m _ => levelRel sig ι m) .type
             (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
               fun D' => (X D').computed sig ι)
@@ -310,7 +310,7 @@ theorem HasEq.instCodata_inv (hd : sig.Distinct) {decl : TypeDeclaration} {D : N
     ((decl.sort (.ofLists qs ps hq hp)).quality = .prop ∧
       ∃ S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
         (∀ B, ∀ T' ∈ decl.codataTypes,
-          DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+          DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
             (fun m _ => levelRel sig ι m) .prop
             (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
               fun D' => fun _ _ => B D')

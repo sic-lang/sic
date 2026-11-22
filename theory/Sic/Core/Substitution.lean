@@ -669,6 +669,13 @@ def Context.size {k : Nat} : {Γ : Scope} → Context k Γ → Nat
   | _, .var ctx _ => ctx.size + 1
   | _, .secondOrder (ps := ps) ctx _ _ _ => ctx.size + ps.length + 1
 
+/-- `κ[T]`: the sort of the type declaration at the instance `I` of the sort and grade variables
+and the levels `ls`.
+RFC: `\mathsf{inst}_T` -/
+def TypeDeclaration.sortAt (decl : TypeDeclaration) (I : Instance decl.sorts decl.grades)
+    (ls : Fin decl.levels → Level k) : Universe k :=
+  (decl.sort I).substLevels ls
+
 /-- `Θ_c[T]`: the fields of the constructor `c` at the instance `I` of the sort and grade variables,
 the levels `ls` and the arguments `ā` of the parameters, in the scope `Γ` of the arguments.
 RFC: `\mathsf{inst}_T` -/

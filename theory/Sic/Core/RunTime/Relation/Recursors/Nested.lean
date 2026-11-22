@@ -614,7 +614,7 @@ theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     (hrec : ∀ r ∈ (T.body (.ofLists qs ps hq hp)).recursion decl.names, r = none)
     {t : Term 0 []} (ht : ValidTerm₀ sig ι t (.inst D qs ls ps as)) :
     ∃ (rs : Nat → Option TermRel) (SE : ObsRel), (∀ i, rs i = none) ∧
-      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) .type rs
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as.toSubst SE ∧
       SE (t.observation D qs ls ps as) (t.observation D qs ls ps as) := by
@@ -625,7 +625,7 @@ theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   obtain ⟨-, Se, hSe, rfl⟩ := (HasEq.instCodata_inv hd h hq hl hp hR₀).resolve_right
     fun ⟨hs', _⟩ => nomatch hκ.symm.trans hs'
   have hU₀ : (levelRel sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue).univ
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue).univ
       (.inst D qs ls ps as) (CodataType.blockRel decl.codataTypes Se D) :=
     levelRel_univ_iff.2 (.codata h hq hl hp rfl hκ rfl Se hSe)
   have hnp := Computesι.not_computesToProp hd hI hU₀

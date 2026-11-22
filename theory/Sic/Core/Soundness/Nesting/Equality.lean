@@ -205,10 +205,10 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
     (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
     (hp : ps.length = decl.grades) {s : Quality} {F : TermRel}
     (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
-    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n ∧
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n ∧
       ((decl.sort (.ofLists qs ps hq hp)).quality = .type → s = .type) := by
   have hu : ∀ m R, UnivRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R →
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m :=
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
     fun m R hu => by
       cases hu with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -216,7 +216,7 @@ theorem FieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclaratio
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m ∧
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m ∧
         (decl.sort (.ofLists qs ps hq hp)).quality = .prop :=
     fun m b hb => by
       cases hb with

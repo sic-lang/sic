@@ -191,9 +191,9 @@ theorem RunFieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclara
     (h : sig.HasCodataType D decl T) (hq : qs.length = decl.sorts) (hl : ls.length = decl.levels)
     (hp : ps.length = decl.grades) {R : RunRel}
     (hR : RunFieldRel sig ι P n (fun m _ => levelRel sig ι m) (.inst D qs ls ps as) R) :
-    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue ≤ n := by
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue ≤ n := by
   have hu : ∀ m R, RunUnivRel sig ι P m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) R →
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m :=
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
     fun m R hu => by
       cases hu with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim
@@ -201,7 +201,7 @@ theorem RunFieldRel.codata_inv (hd : sig.Distinct) {n : Nat} {decl : TypeDeclara
         obtain ⟨rfl, rfl, -, rfl, rfl, rfl, -⟩ := hd.codataInst_unique h h' hv'
         exact hn'
   have hb : ∀ m b, PropRel sig ι m (fun k _ => levelRel sig ι k) (.inst D qs ls ps as) b →
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = m :=
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = m :=
     fun m b hb => by
       cases hb with
       | data h' _ _ _ hv' => exact (hd.inst_data_codata h' h hv'.symm).elim

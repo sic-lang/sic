@@ -94,7 +94,7 @@ theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs :
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) :
     ((decl.sort (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).level.closedValue =
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue :=
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue :=
   Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
 
 /-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
@@ -134,7 +134,7 @@ theorem ValidEqTerm₀.blockInstance_atLevels_sort {decl : TypeDeclaration} {qs 
     (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {D : Name}
     {as₁ as₂ : InstanceArgs 0 [] decl.scope}
     (h : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))) :
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)))) :
     ValidEqTerm₀ sig ι
       (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst)
@@ -228,7 +228,7 @@ theorem DesRel.substLevels_of_atLevels (hd : sig.Distinct)
     (h : DesRel sig ι (((decl.sort (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).level.closedValue) (fun m _ => levelRel sig ι m) s
       rs ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S) :
-    DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) s rs
       ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S := by
   rw [← decl.sort_atLevels_closedValue hq hl hp]
@@ -246,7 +246,7 @@ theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
     (h : RunDesRel sig ι P (((decl.sort (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).level.closedValue) (fun m _ => levelRel sig ι m) D
       rs ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S) :
-    RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) D rs
       ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S := by
   rw [← decl.sort_atLevels_closedValue hq hl hp]
@@ -310,7 +310,7 @@ theorem TelRel.fieldsAt_of_atLevels (hd : sig.Distinct)
           fun i => (ls.getFin hl i).closedValue).subst as.toSubst, Rf D))
       (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst) S) :
-    TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) s
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
@@ -341,7 +341,7 @@ theorem RunTelRel.fieldsAt_of_atLevels (hd : sig.Distinct) {P : Program}
           fun i => (ls.getFin hl i).closedValue).subst as.toSubst, Rf D))
       (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst) S) :
-    RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
@@ -365,7 +365,7 @@ theorem Constructor.runNestRel_instances (hd : sig.Distinct) {P : Program}
     (c : Constructor decl.sorts decl.grades decl.levels decl.scope)
     {as : InstanceArgs 0 [] decl.scope} {X : Name → RunRel}
     (hU : ∀ T' ∈ decl.dataTypes,
-      RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as) (X T'.name)) :
     ∀ j, Nest.All
       (fun x : RunNestLeaf => RunNestRel sig ι P
@@ -1264,21 +1264,21 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
       as₁.toSubst as₂.toSubst) :
     ∃ S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel,
       ∀ Rf, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-        TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
           (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
             fun D => (.inst D qs ls ps as₁, Rf D))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S Rf c) ∧
-        TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
           (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
             fun D => (.inst D qs ls ps as₂, Rf D))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₂) (S Rf c) ∧
         ((∀ D ∈ decl.names, NestRel sig ι
-            ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+            (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
             (fun m _ => levelRel sig ι m) .type .type .plain (.inst D qs ls ps as₁) (Rf D)) →
           (∀ D ∈ decl.names, ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-            (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))) →
+            (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)))) →
           (∀ ts us : Args 0 [] (c.params (.ofLists qs ps hq hp)),
             S Rf c ts.terms us.terms ↔ EqSubst sig ι
               (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁))
@@ -1289,7 +1289,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
               ts.toSubst us.toSubst) := by
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun Rf c ts us =>
-    ∃ S', TelRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    ∃ S', TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as₁, Rf D))
@@ -1346,34 +1346,34 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
     ∃ S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
         RunFieldsRel,
       (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-        RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m)
           (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
             fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι))
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S X c)) ∧
       ∀ T ∈ decl.dataTypes,
-        RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) ∧
-        RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T.name) := by
-  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+  have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       RunFieldsRel := fun X c H ts bs =>
-    ∃ S', RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    ∃ S', RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' H ts bs
   have hS : ∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
-      RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m)
         (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
           fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι))
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) (S X c) ∧
-      RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m)
         (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
           fun D' => (.inst D' qs ls ps as₂, (X D').computed sig ι))
@@ -1409,10 +1409,10 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) :
     ∃ S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel,
       (∀ T ∈ decl.dataTypes,
-        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (DataType.blockRel decl.dataTypes S T.name) ∧
-        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.blockRel decl.dataTypes S T.name)) ∧
       (∀ T ∈ decl.dataTypes, ∀ a b, (DataType.blockRel decl.dataTypes S T.name).computed sig ι a b →
@@ -1423,7 +1423,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
           ((c.fields (.ofLists qs ps hq hp)).recursion decl.names) ts us) ∧
       (∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts us, S X c ts us →
         Terms.NestedRel sig ι
-          ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue .type
+          (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue .type
           (fun D => (.inst D qs ls ps as₁, (X D).computed sig ι))
           ((c.fields (.ofLists qs ps hq hp)).nest decl.names)
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) ts us) ∧
@@ -1441,14 +1441,14 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
           S (DataType.blockRel decl.dataTypes S) c fs₁ fs₁ := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp hadm has
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd)
-    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun X => S₀ fun D => (X D).computed sig ι
   have hU : ∀ T ∈ decl.dataTypes,
-      UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
         (DataType.blockRel decl.dataTypes S T.name) ∧
-      UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
         (DataType.blockRel decl.dataTypes S T.name) := fun T hT =>
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun X T' hT' c hc => hs ▸ (hS₀ _ T' hT' c hc).1,
@@ -1461,7 +1461,7 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
   have hI : ∀ D, Computesι sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₁) :=
     fun _ => (Whnf.inst ..).computes
   have hF : ∀ T ∈ decl.dataTypes, FieldRel sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) .type (.inst T.name qs ls ps as₁)
       ((DataType.blockRel decl.dataTypes S T.name).computed sig ι) := fun T hT =>
     .univ rfl (hU T hT).1
@@ -1472,17 +1472,17 @@ theorem ValidTypeDeclaration.univRel (hd : sig.Distinct) {decl : TypeDeclaration
       TelRel.nestedRel hd (hs ▸ (hS₀ _ T hT c hc).1) _ (fun _ => rfl) ts us h,
     fun T hT c hc => ?_⟩
   have hRf : ∀ D ∈ decl.names, NestRel sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) .type .type .plain (.inst D qs ls ps as₁)
       ((DataType.blockRel decl.dataTypes S D).computed sig ι) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
     exact .plain (hI _) (hF T' hT')
   -- The instances of the block are equal types of its sort, which the nested fields read.
   have hV : ∀ D ∈ decl.names, ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := fun D hD => by
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl))) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
     show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-      (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level⟩)
     rw [hs]
     exact ValidEqTerm₀.ofUniv hd (Whnf.inst ..).computes (Whnf.inst ..).computes
       (levelRel_univ_iff.2 (hU T' hT').1) (levelRel_univ_iff.2 (hU T' hT').2) fun P =>
@@ -1514,10 +1514,10 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop) :
     ∃ S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope → FieldsRel,
       (∀ T ∈ decl.dataTypes,
-        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (DataType.blockTruth decl.dataTypes S T.name) ∧
-        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (DataType.blockTruth decl.dataTypes S T.name)) ∧
       (∀ B B' : Name → Prop, (∀ D, B D → B' D) → ∀ T ∈ decl.dataTypes,
@@ -1527,7 +1527,7 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
           ((c.fields (.ofLists qs ps hq hp)).recursion decl.names) ts us) ∧
       (∀ B, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors, ∀ ts us, S B c ts us →
         Terms.NestedRel sig ι
-          ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue .prop
+          (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue .prop
           (fun D => (.inst D qs ls ps as₁, fun _ _ => B D))
           ((c.fields (.ofLists qs ps hq hp)).nest decl.names)
           (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) ts us) ∧
@@ -1545,14 +1545,14 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
           S (DataType.blockTruth decl.dataTypes S) c fs₁ fs₁ := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.fieldsRel hd hv hq hl hp hadm has
   have ih := Nat.forall_lt (levelRel_isPer (ι := ι) hd)
-    ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
   let S : (Name → Prop) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       FieldsRel := fun B => S₀ fun D _ _ => B D
   have hP : ∀ T ∈ decl.dataTypes,
-      PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
         (DataType.blockTruth decl.dataTypes S T.name) ∧
-      PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
         (DataType.blockTruth decl.dataTypes S T.name) := fun T hT =>
     ⟨.data ⟨hdecl, hT, rfl⟩ hq hl hp rfl hs rfl S fun B T' hT' c hc => hs ▸ (hS₀ _ T' hT' c hc).1,
@@ -1572,17 +1572,17 @@ theorem ValidTypeDeclaration.propRel (hd : sig.Distinct) {decl : TypeDeclaration
       TelRel.nestedRel hd (hs ▸ (hS₀ _ T hT c hc).1) _ (fun _ => rfl) ts us h,
     fun T hT c hc => ?_⟩
   have hRf : ∀ D ∈ decl.names, NestRel sig ι
-      ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) .type .type .plain (.inst D qs ls ps as₁)
       (fun _ _ => DataType.blockTruth decl.dataTypes S D) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
     exact .plain (hI _) (.prop (hP T' hT').1)
   -- The instances of the block are equal propositions of its sort, which the nested fields read.
   have hV : ∀ D ∈ decl.names, ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := fun D hD => by
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl))) := fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
     show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-      (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
+      (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level⟩)
     rw [hs]
     exact ValidEqTerm₀.ofProp hd (Whnf.inst ..).computes (Whnf.inst ..).computes
       (levelRel_prop_iff.2 (hP T' hT').1) (levelRel_prop_iff.2 (hP T' hT').2)
@@ -1608,13 +1608,13 @@ theorem ValidEqTerm₀.inst (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
     ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := by
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl))) := by
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ as : InstanceArgs 0 [] decl.scope,
       Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
     fun as => (Whnf.inst _ _ _ _ as).computes
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-    (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · obtain ⟨S, hU, -⟩ := hv.univRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
@@ -1671,7 +1671,7 @@ theorem ValidEqTerm₀.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
       (.ctor D qs ls ps as₂ con.name us.terms) (.inst D qs ls ps as₁) := by
   have hI : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
       (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-        (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩) :=
+        (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level⟩) :=
     ValidEqTerm₀.inst hd h hv hq hl hp hadm has
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : Computesι sig ι (.inst T.name qs ls ps as₁) (.inst T.name qs ls ps as₁) :=

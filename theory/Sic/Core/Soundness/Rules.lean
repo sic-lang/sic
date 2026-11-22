@@ -815,17 +815,17 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
       as₁.toSubst as₂.toSubst) :
     ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
       ∀ Rf, ∀ T ∈ decl.codataTypes,
-        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S Rf T) ∧
-        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst (S Rf T) := by
   let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
     fun Rf T o₁ o₂ => ∃ S',
-      DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
         (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' o₁ o₂
@@ -855,16 +855,16 @@ theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDecla
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) :
     ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
       (∀ X, ∀ T ∈ decl.codataTypes,
-        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) .type
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
             fun D' => (X D').computed sig ι)
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S X T)) ∧
       (∀ T ∈ decl.codataTypes,
-        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (CodataType.blockRel decl.codataTypes S T.name) ∧
-        UnivRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        UnivRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.blockRel decl.codataTypes S T.name)) := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp hadm has
@@ -891,28 +891,28 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) (P : Program) :
     ∃ S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → RunObsRel,
       ∀ T ∈ decl.codataTypes,
-        RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (CodataType.runBlockRel decl.codataTypes S T.name) ∧
-        RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.runBlockRel decl.codataTypes S T.name) := by
-  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+  have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
       RunObsRel := fun X T H o a => ∃ S',
-    RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+    RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) T.name
       (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
         fun D' => (X D').computed sig ι)
       ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' H o a
   have hS : ∀ X, ∀ T ∈ decl.codataTypes,
-      RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) T.name
         (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
           fun D' => (X D').computed sig ι)
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S X T) ∧
-      RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) T.name
         (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
           fun D' => (X D').computed sig ι)
@@ -949,16 +949,16 @@ theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDecla
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .prop) :
     ∃ S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
       (∀ B, ∀ T ∈ decl.codataTypes,
-        DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) .prop
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
             fun D' => fun _ _ => B D')
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst (S B T)) ∧
       (∀ T ∈ decl.codataTypes,
-        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
           (CodataType.blockTruth decl.codataTypes S T.name) ∧
-        PropRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+        PropRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.blockTruth decl.codataTypes S T.name)) := by
   obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hq hl hp hadm has
@@ -989,13 +989,13 @@ theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {
     (has : EqSubst sig ι ((decl.params (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))
       as₁.toSubst as₂.toSubst) :
     ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
-      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl))) := by
+      (.sort (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl))) := by
   obtain ⟨hdecl, hT, rfl⟩ := h
   have hw : ∀ as : InstanceArgs 0 [] decl.scope,
       Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
     fun as => (Whnf.inst _ _ _ _ as).computes
   show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort (.ofLists qs ps hq hp)).quality,
-    (decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)⟩)
+    (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level⟩)
   cases hs : (decl.sort (.ofLists qs ps hq hp)).quality
   · obtain ⟨S, -, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
     exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)

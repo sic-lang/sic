@@ -296,7 +296,7 @@ theorem HasRun.codata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     {as : InstanceArgs 0 [] decl.scope} {R : RunRel}
     (hR : HasRun sig ι P (.inst D qs ls ps as) R)
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type) :
-    ∃ n S, ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue = n ∧
+    ∃ n S, (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue = n ∧
       (∀ X, ∀ T' ∈ decl.codataTypes,
         RunDesRel sig ι P n (fun m _ => levelRel sig ι m) T'.name
           (fun i => ((T'.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
@@ -411,7 +411,7 @@ theorem RunsAs.ctor (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     have hR : ∀ T' ∈ decl.dataTypes, HasRun sig ι P (.inst T'.name qs ls ps as)
         (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T'.name) := fun T' hT' =>
       .univ _ (levelRel_run_iff.2 (hU T' hT').1)
-    have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+    have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
         RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
     have hmono : DataType.RunBlockMono decl.dataTypes S :=
       DataType.RunBlockMono.of_runTelRel hd (Nat.forall_lt (levelRel_run_mono hd) _)
@@ -454,13 +454,13 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
     {S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
       RunFieldsRel}
     (hS : ∀ X, ∀ T' ∈ decl.dataTypes, ∀ c ∈ T'.constructors,
-      RunTelRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m)
         (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
           fun D' => (.inst D' qs ls ps as, (X D').computed sig ι))
         (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) (S X c))
     (hU : ∀ T' ∈ decl.dataTypes,
-      RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      RunUnivRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (DataType.runBlockRel sig (.ofLists qs ps hq hp) decl.dataTypes S T'.name))
     {X : Name → RunRel}
@@ -473,7 +473,7 @@ theorem RunsAsArgs.of_fields (hd : sig.Distinct) {decl : TypeDeclaration}
       g l ∉ Mode.oneOne.erased → p.usage ∉ Mode.oneOne.erased)
     {H : Heap} {bs : List Nat} (h : S X con H ts.terms bs) :
     RunsAsArgs sig ι P H g ts bs (con.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) := by
-  have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
+  have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   -- The fields at the values of the levels, which the meaning of the declaration gives.
   -- The relations `(®_μ)` of the block relate the fields that the relations `X` within them do.
