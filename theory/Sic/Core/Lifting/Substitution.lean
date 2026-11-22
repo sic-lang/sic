@@ -223,35 +223,6 @@ theorem Instance.AsMany.sorts_last_inst {j g : Nat} {qs : List Quality} {ps : Li
     exact Nat.succ.inj h
   exact List.getFin_append_natAdd qs [s] hq rfl hqp.sorts 0
 
-/-- The grades of the results `m̄` are two for each. -/
-theorem Lifting.Result.length_grades (ms : List (Lifting.Result k)) :
-    (Lifting.Result.grades ms).length = 2 * ms.length := by
-  induction ms with
-  | nil => rfl
-  | cons m ms ih =>
-    simp only [Lifting.Result.grades, List.flatMap_cons, List.length_append, List.length_cons,
-      List.length_nil] at ih ⊢
-    omega
-
-/-- The grades of an instance of a lifting are as many as its grade variables. -/
-theorem Lifting.Variables.length_grades (v : Lifting.Variables) {g n : Nat} {ps : List Grade}
-    {ms : List (Lifting.Result k)} (hp : ps.length = g) (hm : ms.length = n) :
-    (v.grades ps ms).length = g + (2 + 2 * n) := by
-  simp only [Lifting.Variables.grades, List.length_append, List.length_cons,
-    Lifting.Result.length_grades, hp, hm]
-  omega
-
-/-- The qualities and the grades of an instance of the variables of a lifting are as many as these
-variables when those of the instance of its type declaration are as many as the variables of this
-declaration: the quality of the motives follows the qualities, and the grade of the recursor, the
-requirement and the grades of the results `m̄`, one for each parameter lifted, follow the
-grades. -/
-theorem Instance.AsMany.lifting {j g n : Nat} {qs : List Quality} {ps : List Grade}
-    (hqp : Instance.AsMany j g qs ps) (v : Lifting.Variables) {ms : List (Lifting.Result k)}
-    (hm : ms.length = n) :
-    Instance.AsMany (j + 1) (g + (2 + 2 * n)) (qs ++ [v.quality]) (v.grades ps ms) :=
-  ⟨by rw [List.length_append, hqp.sorts]; rfl, v.length_grades hqp.grades hm⟩
-
 /-- The variables that a lifting adds, at an instance of its variables given by lists, but those of
 its motives, are the last quality and the two grades after those of the type declaration. -/
 theorem Instance.AsMany.liftingVariables_inst {j g n : Nat} {qs : List Quality} {ps : List Grade}
