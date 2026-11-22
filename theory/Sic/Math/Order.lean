@@ -11,8 +11,12 @@ not.
 
 ADE reach the preorders of the standard library of Agda through `Tools/Relation.agda`, whose
 record `IsPreorder` states the reflexivity for an underlying equivalence rather than for each
-element; they state the least upper bounds by lemmas, as `⊔-lub` of the natural numbers, rather
-than as a record.
+element.
+They have no record of the least upper bounds: `Tools/Nat.agda` uses the least upper bound of two
+natural numbers that the standard library proves (`⊔-lub`), their own lemmas give only the upper
+bounds of the maximum of two universe levels (`≤ᵘ⊔ᵘʳ` and `≤ᵘ⊔ᵘˡ`, in
+`Definition/Untyped/Properties/NotParametrised.agda`), and they define the greatest lower bound of
+a sequence of grades as a product (`Greatest-lower-bound`, in `Graded/Modality.agda`).
 -/
 
 @[expose] public section
