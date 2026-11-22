@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Soundness.Levels.Substitution
+public import Sic.Core.Meaning.Uniqueness.Levels.Substitution
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Substitution
 import Sic.Core.Syntax.Signature

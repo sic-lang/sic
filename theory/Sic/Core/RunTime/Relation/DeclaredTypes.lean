@@ -3,9 +3,9 @@ module
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Uniqueness.Levels
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Levels
-import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 

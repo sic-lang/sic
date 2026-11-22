@@ -4,9 +4,9 @@ public import Sic.Core.Soundness.Signature
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Uniqueness.Levels
 import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
-import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 
