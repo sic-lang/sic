@@ -480,9 +480,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X D') (X D') (.sort κ₁) :=
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
-      exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-        (decl.blockInstance_atLevels_subst hq hl hp as _).symm
-          (decl.blockInstance_atLevels_subst hq hl hp as _).symm (Term.LevelEquiv.refl _)⟩
+      exact ⟨_, ValidEqTerm₀.blockInstance_atLevels hq hl hp
+        (ValidEqTerm₀.instCodata hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has)⟩
   have hI : Computesι sig ι (.inst D qs ls ps as) (.inst D qs ls ps as) :=
     (Whnf.inst ..).computes
   -- The instance is a type, since the destructor of a proposition has no use at run time.

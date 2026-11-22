@@ -416,9 +416,8 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   have hXeq : ∀ D' ∈ decl.names, ∃ κ₁, ValidEqTerm₀ sig ι (X a₁ D') (X a₂ D') (.sort κ₁) :=
     fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes h.2.1 hD'
-      exact ⟨_, (ValidEqTerm₀.instCodata hd ⟨h.1, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-        (decl.blockInstance_atLevels_subst hq hl hp a₁ _).symm
-          (decl.blockInstance_atLevels_subst hq hl hp a₂ _).symm (Term.LevelEquiv.refl _)⟩
+      exact ⟨_, ValidEqTerm₀.blockInstance_atLevels hq hl hp
+        (ValidEqTerm₀.instCodata hd ⟨h.1, hT', rfl⟩ hv hq hl hp hadm has)⟩
   -- The equality of the instance.
   have hI : Computesι sig ι (.inst D qs ls ps a₁) (.inst D qs ls ps a₁) :=
     (Whnf.inst ..).computes

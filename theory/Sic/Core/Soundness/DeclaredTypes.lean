@@ -96,6 +96,42 @@ theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs :
   Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
 
 -- ADE: none.
+/-- Two instances of a type of a block at the levels `ls`, at arguments `ā₁` and `ā₂`, equal terms
+of a type, are equal terms of the type as the instances of the type at the values of `ls`,
+substituted by `ā₁` and `ā₂`. -/
+theorem ValidEqTerm₀.blockInstance_atLevels {decl : TypeDeclaration} {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {D : Name}
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope} {A : Term 0 []}
+    (h : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂) A) :
+    ValidEqTerm₀ sig ι
+      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst)
+      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as₂.toSubst) A :=
+  h.levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm
+    (decl.blockInstance_atLevels_subst hq hl hp as₂ D).symm (Term.LevelEquiv.refl _)
+
+-- ADE: none.
+/-- Two instances of a type of a block at the levels `ls`, at arguments `ā₁` and `ā₂`, equal terms
+of the sort of the declaration at `ls`, are equal terms of the sort at the values of `ls` as the
+instances of the type at the values of `ls`, substituted by `ā₁` and `ā₂`. -/
+theorem ValidEqTerm₀.blockInstance_atLevels_sort {decl : TypeDeclaration} {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {D : Name}
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (h : ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
+      (.sort ((decl.sort (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)))) :
+    ValidEqTerm₀ sig ι
+      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst)
+      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as₂.toSubst)
+      (.sort ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)) :=
+  (h.blockInstance_atLevels hq hl hp).levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
+    (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
+
+-- ADE: none.
 /-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
 `ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
 theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
@@ -1122,10 +1158,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
           (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm .plain)
       (Telescope.nestAt_all decl.names _ i)
   -- The types of the nested fields are terms of a sort, since the instances of the block are.
-  have hH := hF.nestHeads fun D hD =>
-    (hI D hD).levelEquiv (decl.blockInstance_atLevels_subst hq hl hp as₁ D).symm
-      (decl.blockInstance_atLevels_subst hq hl hp as₂ D).symm
-      (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
+  have hH := hF.nestHeads fun D hD => (hI D hD).blockInstance_atLevels_sort hq hl hp
   refine ⟨fun ts us => (TelRel.eqSubst_iff hd h₁
     (hH.imp fun _ h => h.elim fun _ h => Nest.map_eq_inst h) hτ ts us).trans
       (c.eqSubst_fields_atLevels hq hl hp as₁),
@@ -1460,10 +1493,8 @@ theorem ValidTypeDeclaration.nestHeads (hd : sig.Distinct) {decl : TypeDeclarati
         fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst) := by
   exact (hv.fieldsAtClosedLevels hq hl hp hadm has T hT c hc).nestHeads fun D hD => by
     obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD
-    exact (ValidEqTerm₀.inst hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).levelEquiv
-      (decl.blockInstance_atLevels_subst hq hl hp as₁ T'.name).symm
-        (decl.blockInstance_atLevels_subst hq hl hp as₂ T'.name).symm
-      (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
+    exact (ValidEqTerm₀.inst hd ⟨hdecl, hT', rfl⟩ hv hq hl hp hadm has).blockInstance_atLevels_sort
+      hq hl hp
 
 -- ADE: none.
 /-- `(c)` and `(c_≡)`, closed: two applications of a constructor of a declared type of `Σ`, whose
