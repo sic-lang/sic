@@ -155,6 +155,10 @@ structure IsModality (α : Type) [Add α] [Mul α] [Min α] (zero one : α) : Pr
   /-- The zero is well behaved. -/
   zero : HasWellBehavedZero α zero one
 
+/-- Proves a record of laws, such as `IsModality`, on a type whose quantifiers are decidable, such as
+a finite one: splits the record into its laws, then decides each of them. -/
+macro "decide_laws" : tactic => `(tactic| ((repeat' constructor) <;> decide))
+
 namespace IsModality
 
 variable {α : Type} [Add α] [Mul α] [Min α] {zero one : α}

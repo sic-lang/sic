@@ -158,28 +158,7 @@ over its meet, ordered by its meet, with a well-behaved zero. -/
 -- ADE: `Modality`, in `Graded/Modality.agda`.
 /-- The multiplicities form a modality.
 RFC: `\mathsf{modality}_\pi` -/
-theorem modality : IsModality Multiplicity zero one where
-  semiring := {
-    add_assoc := by decide
-    add_comm := by decide
-    zero_add := by decide
-    mul_assoc := by decide
-    one_mul := by decide
-    mul_one := by decide
-    zero_mul := by decide
-    mul_zero := by decide }
-  meet := {
-    meet_assoc := by decide
-    meet_comm := by decide
-    meet_idem := by decide }
-  mul_add := { left := by decide, right := by decide }
-  mul_meet := { left := by decide, right := by decide }
-  add_meet := { left := by decide, right := by decide }
-  zero := {
-    zero_ne_one := by decide
-    add_eq_zero := by decide
-    meet_eq_zero := by decide
-    mul_eq_zero := by decide }
+theorem modality : IsModality Multiplicity zero one := by decide_laws
 
 -- ADE: `-≡-monotoneˡ` and `supports-subtraction`, in
 -- `Graded/Modality/Properties/Subtraction.agda` and `Graded/Modality/Instances/Zero-one-many.agda`.
