@@ -1285,7 +1285,8 @@ theorem EqSubst.substLevels_of_atLevels {sig : Signature} {ι : Interpretation} 
 /-- Two closed substitutions equal for a context at the levels `ls` without variables are equal for
 it at the values of `ls`, as the meaning of a type declaration reads the arguments of its
 parameters. -/
-theorem EqSubst.atLevels_of_substLevels {sig : Signature} {ι : Interpretation} {k : Nat} {ls : List (Level 0)} (hl : ls.length = k)
+theorem EqSubst.atLevels_of_substLevels {sig : Signature} {ι : Interpretation} {k : Nat}
+    {ls : List (Level 0)} (hl : ls.length = k)
     {Γ : Scope} {ctx : Context k Γ} {σ₁ σ₂ : Subst 0 [] Γ}
     (h : EqSubst sig ι (ctx.substLevels (ls.getFin hl)) σ₁ σ₂) :
     EqSubst sig ι (ctx.atLevels fun i => (ls.getFin hl i).closedValue) σ₁ σ₂ :=
