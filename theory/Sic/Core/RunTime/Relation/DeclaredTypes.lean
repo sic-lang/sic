@@ -3,7 +3,6 @@ module
 public import Sic.Core.RunTime.Relation
 public import Sic.Core.Soundness.DeclaredTypes
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.Judgments
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.RunTime.Relation.Levels
