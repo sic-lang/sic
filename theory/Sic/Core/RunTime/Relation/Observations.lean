@@ -472,7 +472,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, hn, -, hX, hcX, hlev, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, hn, -, hX, -, hcX, hlev, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst as.toSubst

@@ -409,7 +409,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, hn, -, hX, hcX, hlev₀, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, hn, -, hX, -, hcX, hlev₀, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the arguments.
   let X : InstanceArgs 0 [] decl.scope → Name → Term 0 [] := fun a D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a.toSubst
@@ -1023,7 +1023,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, -, ih, hX, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, -, ih, hX, -, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The instances of the block, at the levels without variables and at the first arguments.
   let X : Name → Term 0 [] := fun D' =>
     ((decl.blockInstance I D' (.identity decl.scope)).atLevels ρ).subst a₁.toSubst
@@ -1692,7 +1692,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, -, ih, hX, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, -, ih, hX, -, hcX, hlev, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   -- The observations at the levels without variables.
   have hobs' : ∀ (d : Name) (p q ς : Grade) (ps' : List Parameter) (Ξ : Scope)
       (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))

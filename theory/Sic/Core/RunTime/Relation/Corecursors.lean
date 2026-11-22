@@ -155,7 +155,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
   let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
   let I : Instance decl.sorts decl.grades := .ofLists qs ps hq hp
-  obtain ⟨hls, hmean, hsort, -, hX, -, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm hasσ
+  obtain ⟨hls, hmean, -, hsort, -, hX, -, -, -, hrunLev⟩ := hv.atClosedLevels hd hq hl hp hadm hasσ
   have hw : ∀ D', Computesι sig ι (.inst D' qs ls ps (as.subst σ))
       (.inst D' qs ls ps (as.subst σ)) := fun _ => (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality with

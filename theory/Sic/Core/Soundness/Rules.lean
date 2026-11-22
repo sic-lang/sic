@@ -982,7 +982,7 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
           (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst (S Rf T) := by
-  obtain ⟨hls, hmean, hn, ih, -, -, -, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, hn, ih, -, -, -, -, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
     fun Rf T o₁ o₂ => ∃ S',
       DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
@@ -1068,7 +1068,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
         RunUnivRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
           (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
           (CodataType.runBlockRel decl.codataTypes S T.name) := by
-  obtain ⟨hls, hmean, hn, ihm, -, -, -, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
+  obtain ⟨hls, hmean, -, hn, ihm, -, -, -, -, -⟩ := hv.atClosedLevels hd hq hl hp hadm has
   have ih : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := fun m _ => levelRel_run_unique hd m
   let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
