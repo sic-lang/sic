@@ -1,8 +1,7 @@
 module
 
+public import Sic.Core.Syntax.Signature
 public import Sic.Core.Typing
-public import Sic.Grading.GradeSet
-import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Extension
 import Sic.Core.Typing.Presuppositions
 
@@ -123,5 +122,11 @@ theorem WfSig.destructor_erased {sig : Signature} (h : WfSig sig) {D : Name}
     (hκ : (decl.sort I).quality = .prop) : p ∈ Mode.oneOne.erased :=
   (by decide : ∀ p : Grade, p.mode ≠ .oneOne → p ∈ Mode.oneOne.erased) p
     (h.destructor_mode hT hI hpos hκ)
+
+-- ADE: none.
+/-- A well-formed signature erases the destructors of its blocks of propositions. -/
+theorem WfSig.erasesPropDestructors {sig : Signature} (h : WfSig sig) :
+    sig.ErasesPropDestructors :=
+  fun {_ _ _} hT {_ _} _ _ hI hκ {_ _ _ _ _ _ _ _ _} hpos => h.destructor_erased hT hI hpos hκ
 
 end Sic.Core

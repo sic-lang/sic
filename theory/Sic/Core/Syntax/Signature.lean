@@ -1,6 +1,7 @@
 module
 
 public import Sic.Core.Syntax
+public import Sic.Grading.GradeSet
 import Sic.Core.Syntax.Terms
 
 /-!
@@ -960,5 +961,20 @@ theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D 
         | _ => rfl
       rw [List.findSome?_cons_of_isNone (by rw [hp]; rfl)]
       exact hd.position ⟨he', hT, hD⟩ hh
+
+-- ADE: none.
+/-- The destructors of the codata types of a signature, at an instance that the constraint admits,
+of a block of propositions, have grades without use at run time. -/
+def Signature.ErasesPropDestructors (sig : Signature) : Prop :=
+  ∀ {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
+    sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
+      (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
+      decl.constraint (.ofLists qs ps hq hp) →
+      (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
+      ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
+        {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
+        {ψ : ResultOwnership Grade ps₁.length},
+        (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased
 
 end Sic.Core

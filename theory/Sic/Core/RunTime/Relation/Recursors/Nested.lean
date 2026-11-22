@@ -3,6 +3,7 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.RunTime.Monotonicity
 public import Sic.Core.Soundness.Corecursors
+public import Sic.Core.Syntax.Signature
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Recursion
 import Sic.Core.Lifting.Shape
@@ -20,7 +21,6 @@ import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.Levels
 import Sic.Core.Soundness.Recursors.Nested
 import Sic.Core.Soundness.Substitution
-import Sic.Core.Syntax.Signature
 import Sic.Math.Nat
 
 /-!
@@ -686,16 +686,7 @@ position runs as the leaf of the position says and does not read the computation
 theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
-    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
-      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
-      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
-        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
-        decl.constraint (.ofLists qs ps hq hp) →
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
-        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
-          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-          {ψ : ResultOwnership Grade ps₁.length},
-          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    (hprop : sig.ErasesPropDestructors)
     {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
     RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R →
       Nest.All (fun x => RunLeafCongr sig ι x.2) τ →
@@ -741,16 +732,7 @@ to the observations by `f`, and the recursive results of these observations run.
 theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
-    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
-      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
-      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
-        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
-        decl.constraint (.ofLists qs ps hq hp) →
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
-        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
-          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-          {ψ : ResultOwnership Grade ps₁.length},
-          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    (hprop : sig.ErasesPropDestructors)
     {n : Nat} {D : Name} {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
       {Θ : Telescope 0 Ξ ps} → {B : Term 0 (Ξ.extend ps.length)} →
@@ -877,16 +859,7 @@ from the field is the field itself. -/
 theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
-    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
-      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
-      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
-        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
-        decl.constraint (.ofLists qs ps hq hp) →
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
-        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
-          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-          {ψ : ResultOwnership Grade ps₁.length},
-          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    (hprop : sig.ErasesPropDestructors)
     {n : Nat} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel}
     (hR : RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R)
     (hτ : Nest.All (fun x => RunLeafCongr sig ι x.2) τ) (hτm : Nest.All (fun x => RunRel.Monotone x.2) τ)

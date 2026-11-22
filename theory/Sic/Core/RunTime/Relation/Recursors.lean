@@ -14,7 +14,6 @@ import Sic.Core.RunTime.Subsumption
 import Sic.Core.Shape.Results.Factor
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Soundness.Closed
-import Sic.Core.Syntax.Signature
 import Sic.Math.Nat
 import Sic.Math.Relation
 
@@ -137,16 +136,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         (Telescope.resultGrades ((con.fields (.ofLists qs ps hq hp)).nest decl.names)
           (List.zipWith (· * ·) (us.grades i) (πs i)))
         ((con.fields (.ofLists qs ps hq hp)).nest decl.names) ·ᶜ χ)
-    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
-      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
-      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
-        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
-        decl.constraint (.ofLists qs ps hq hp) →
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
-        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
-          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-          {ψ : ResultOwnership Grade ps₁.length},
-          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased)
+    (hprop : sig.ErasesPropDestructors)
     (hs : (decl.sort (.ofLists qs ps hq hp)).quality = .type)
     (hr : r ∉ Mode.oneOne.erased) {σ : Subst 0 [] Γ} {H : Heap} {E V : List Nat}
     (hσ : EqSubst sig ι ctx σ σ) (hEV : H.Binds E V) (hE : RunsAsSubst sig ι P H ctx χ σ V)
@@ -740,16 +730,7 @@ theorem RunValidRen.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
         ((con.fields (.ofLists qs ps hq hp)).nest decl.names) ·ᶜ χ)
     (hr : (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) → r.mode = .oneOne)
     (hempty : (decl.sort (.ofLists qs ps hq hp)).quality = .prop → decl.cases = [])
-    (hprop : ∀ {decl : TypeDeclaration} {D : Name}
-      {T : CodataType decl.sorts decl.grades decl.levels decl.scope},
-      sig.HasCodataType D decl T → ∀ {qs : List Quality} {ps : List Grade}
-        (hq : qs.length = decl.sorts) (hp : ps.length = decl.grades),
-        decl.constraint (.ofLists qs ps hq hp) →
-        (decl.sort (.ofLists qs ps hq hp)).quality = .prop →
-        ∀ {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {Ξ : Scope}
-          {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
-          {ψ : ResultOwnership Grade ps₁.length},
-          (T.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ → p ∈ Mode.oneOne.erased) :
+    (hprop : sig.ErasesPropDestructors) :
     RunValidRen sig ι P hΓ ctx ((r ·ᶜ γ) +ᶜ χ) (.recursor r ς χ' D qs ls ps as t κ Cs us)
       (C.subst₀ (Subst₀.single t)) := by
   intro w σ H E V hσ hEV hE _ g E' hgE

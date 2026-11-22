@@ -5,7 +5,6 @@ public import Sic.Core.Typing.Lifting.Context
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Shape
 import Sic.Core.Lifting.Substitution
-import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting.Destructors
 import Sic.Core.Typing.Lifting.Parameters
 import Sic.Core.Typing.Presuppositions

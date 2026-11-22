@@ -16,7 +16,6 @@ import Sic.Core.RunTime.Subsumption
 import Sic.Core.Soundness
 import Sic.Core.Soundness.Recursors
 import Sic.Core.Soundness.Substitution
-import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Induction
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
@@ -451,8 +450,7 @@ theorem fundamentalIn : FundamentalIn := by
         (hr rfl) (fun hq' => match hc : decl.cases with
           | [] => rfl
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))
-        (fun {_ _ _} hT {_ _} _ _ hI hκ' {_ _ _ _ _ _ _ _ _} hpos =>
-          WfSig.destructor_erased hw hT hI hpos hκ')
+        hw.erasesPropDestructors
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
