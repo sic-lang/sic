@@ -130,9 +130,9 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursionRequirement sig₀ D qs ps v χ (.typeDeclaration decl) =
           some (decl.recursionRequirement sig₀ v .oneOne χ qs ps (.ofLists qs ps hq hp)) := by
-        simp only [Entry.recursionRequirement, Entry.lookup, TypeDeclaration.name_mem_names hT,
-          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
-          List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
+        simp only [Entry.recursionRequirement,
+          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hq, hp, ↓reduceDIte,
+          ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursionRequirement_of_not_mem hDe]; rfl)]

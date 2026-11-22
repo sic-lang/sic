@@ -141,9 +141,9 @@ theorem Signature.Distinct.findSome?_recursiveResults {sig₀ : Signature} {v : 
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.recursiveResults sig₀ D qs ps v χ (.typeDeclaration decl) =
           some (decl.recursiveResults sig₀ v qs ps χ (.ofLists qs ps hq hp)) := by
-        simp only [Entry.recursiveResults, Entry.lookup, TypeDeclaration.name_mem_names hT,
-          ↓reduceIte, hq, hp, ↓reduceDIte, ← hD,
-          List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
+        simp only [Entry.recursiveResults,
+          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hq, hp, ↓reduceDIte,
+          ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.recursiveResults_of_not_mem hDe]; rfl)]

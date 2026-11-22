@@ -45,9 +45,9 @@ theorem Signature.Distinct.skeleton : {sig : Signature} → sig.Distinct → {D 
     rcases List.mem_cons.1 he with rfl | he'
     · have hs : Entry.skeleton D qs ps (.typeDeclaration decl) =
           some (decl.skeleton (.ofLists qs ps hq hp) decl.names.length D) := by
-        simp only [Entry.skeleton, Entry.lookup, TypeDeclaration.name_mem_names hT, ↓reduceIte, hq,
-          hp, ↓reduceDIte, ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT,
-          Option.map_some]
+        simp only [Entry.skeleton, Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT),
+          hq, hp, ↓reduceDIte, ← hD,
+          List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
       rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs, Option.getD_some]
     · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
       rw [List.findSome?_cons_of_isNone (by rw [Entry.skeleton_of_not_mem hDe]; rfl)]
@@ -106,8 +106,8 @@ theorem TypeDeclaration.skeleton_succ {decl : TypeDeclaration} (hn : decl.names.
         | some D' => (.zero, (decl.skeleton I d D').target)
         | none => (.zero, .erased))) := by
   subst hD
-  simp only [Entry.constructorCase, Entry.lookup, TypeDeclaration.name_mem_names hT,
-    ↓reduceIte] at hi
+  simp only [Entry.constructorCase,
+    Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT)] at hi
   simp only [TypeDeclaration.skeleton,
     List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, hc, hi, Skeleton.target,
     Skeleton.targets_eq_ofList, List.map_map]
