@@ -8,6 +8,8 @@ give a meaning to the multiplicities and to the grades, and the sets of grades o
 positions the erasure replaces.
 Lean does not provide sets, and this package depends on no library that does, so a set is the
 predicate that tells which elements belong to it.
+
+ADE have no sets as predicates: their modalities have no meaning as sets of numbers of uses.
 -/
 
 @[expose] public section

@@ -9,6 +9,10 @@ element after a prefix, the pairs of the elements of two lists of the same lengt
 elements of a list of a known length, the results of a function defined at every element of a list,
 the length of a list whose distinct elements are all in another, the lists related element by
 element, and the elements of a list after the reverse of a range of numbers.
+
+ADE reach the lists of the standard library of Agda through `Tools/List.agda`, which numbers the
+elements of a list by the positions below its length, rather than below a length given with a
+proof, and relates two lists element by element as here; the other facts have no counterpart there.
 -/
 
 @[expose] public section
