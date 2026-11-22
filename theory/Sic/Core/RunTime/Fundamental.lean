@@ -277,12 +277,12 @@ theorem fundamentalIn : FundamentalIn := by
       have has' := ValidInstanceArgs.atLevels hl
         (soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has) ρ
       have ht' := soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ
-      simp only [Context.atLevels, Term.atLevels, Term.substLevels] at ht'
+      rw [Term.atLevels_inst] at ht'
       have hprem : ValidRecursorPremises sigM ι (ctx.atLevels ρ) decl qs (ls.map (Level.atLevels ρ))
-          ps hq hp (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+          ps hq hp (as.atLevels ρ)
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0))
           (us.substLevels fun i => (.ofNat (ρ i) : Level 0))
-          (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)) :=
+          (κ.atLevels ρ) :=
         { motives := fun j T' hj =>
             let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
           motives_valid := fun j T' C' hj hC' => by
@@ -296,13 +296,13 @@ theorem fundamentalIn : FundamentalIn := by
       have hRs' : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           ∃ πs, Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.atLevels ρ)).getFin hl')
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            (as.atLevels ρ)
             (Lifting.ofMotives decl.names qs
               (ls.map (Level.atLevels ρ)) ps
-              (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
-              (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ
+              (as.atLevels ρ)
+              (κ.atLevels ρ).level χ
               (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
-            ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) πs :=
+            ((Rs con).atLevels ρ) πs :=
         fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
             (Constructor.ResultTypes.substLevels_ofMotives _ h)
@@ -310,13 +310,13 @@ theorem fundamentalIn : FundamentalIn := by
       have hRsπ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con (.ofLists qs ps hq hp) decl.names
             ((ls.map (Level.atLevels ρ)).getFin hl')
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            (as.atLevels ρ)
             (Lifting.ofMotives decl.names qs
               (ls.map (Level.atLevels ρ)) ps
-              (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
-              (κ.substLevels fun i => (.ofNat (ρ i) : Level 0)).level χ
+              (as.atLevels ρ)
+              (κ.atLevels ρ).level χ
               (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
-            ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) (πs i) :=
+            ((Rs con).atLevels ρ) (πs i) :=
         fun i j T' con hi => by
           obtain ⟨πs', h₁⟩ := hRs i j T' con hi
           obtain ⟨R, h₂⟩ := hRU i j T' con hi
@@ -334,10 +334,10 @@ theorem fundamentalIn : FundamentalIn := by
               (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
           ValidEqTermΓ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
             ((ls.map (Level.atLevels ρ)).getFin hl')
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))).append
-              ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0))) u₁ u₂
+            (as.atLevels ρ))).append
+              ((Rs con).atLevels ρ)) u₁ u₂
             ((C'.atCtor T'.name qs (ls.map (Level.atLevels ρ)) ps
-              (as.substLevels fun i => (.ofNat (ρ i) : Level 0)) con.name
+              (as.atLevels ρ) con.name
               (con.params (.ofLists qs ps hq hp))).rename (Ren.weakenN _)) :=
         fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
@@ -356,17 +356,17 @@ theorem fundamentalIn : FundamentalIn := by
           ∀ σ, EqSubst sigM ι (ctx.atLevels ρ) σ σ → ∀ t₁ t₂,
           ValidEqTerm₀ sigM ι t₁ t₂ ((Term.inst T'.name qs
             (ls.map (Level.atLevels ρ)) ps
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0))).subst σ) →
+            (as.atLevels ρ)).subst σ) →
           ValidEqTerm₀ sigM ι (.recursor r ς χ T'.name qs
             (ls.map (Level.atLevels ρ)) ps
-            ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₁
-            (κ.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            ((as.atLevels ρ).subst σ) t₁
+            (κ.atLevels ρ)
             ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
             ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
             (.recursor r ς χ T'.name qs
             (ls.map (Level.atLevels ρ)) ps
-            ((as.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ) t₂
-            (κ.substLevels fun i => (.ofNat (ρ i) : Level 0))
+            ((as.atLevels ρ).subst σ) t₂
+            (κ.atLevels ρ)
             ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
             ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
             ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)) :=
@@ -374,17 +374,17 @@ theorem fundamentalIn : FundamentalIn := by
           ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has'
             hprem hprem.branches hRs' hRs' hut' hκ hσ hj hC' ht₀
       have htr : r ∉ Mode.oneOne.erased → RunValidRen sigM ι P hΓ (ctx.atLevels ρ) γ'
-          (t.substLevels fun i => (.ofNat (ρ i) : Level 0)) _ := fun hr' => by
+          (t.atLevels ρ) _ := fun hr' => by
         have htr := ht_ih (hΓ := hΓ) hw hι hP
           ((Mode.erasesUncounted .oneOne).mode _ hr' ▸ htu) ρ
         simp only [Term.atLevels, Term.substLevels] at htr
         exact htr
       have husr : RunValidBranches sigM ι P hΓ (ctx.atLevels ρ) decl qs
           (ls.map (Level.atLevels ρ)) ps hq hl' hp
-          (as.substLevels fun i => (.ofNat (ρ i) : Level 0))
+          (as.atLevels ρ)
           (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0))
           (us.substLevels fun i => (.ofNat (ρ i) : Level 0)) δs gs
-          (fun con => (Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)) :=
+          (fun con => (Rs con).atLevels ρ) :=
         fun i j T' con C' u hi hC' hu₁ => by
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
         obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -401,8 +401,8 @@ theorem fundamentalIn : FundamentalIn := by
       have hctx : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           ValidCtx₀ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
             ((ls.map (Level.atLevels ρ)).getFin hl')
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))).append
-              ((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0))) :=
+            (as.atLevels ρ))).append
+              ((Rs con).atLevels ρ)) :=
         fun i j T' con hi => by
           have hjT := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
           obtain ⟨C', hC'⟩ := hprem.motives j T' hjT
@@ -411,9 +411,9 @@ theorem fundamentalIn : FundamentalIn := by
       have hsorts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) → ∀ θ,
           EqSubst sigM ι ((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
             ((ls.map (Level.atLevels ρ)).getFin hl')
-            (as.substLevels fun i => (.ofNat (ρ i) : Level 0)))) θ θ →
+            (as.atLevels ρ))) θ θ →
           Telescope.ValidSorts₀ sigM ι
-            (((Rs con).substLevels fun i => (.ofNat (ρ i) : Level 0)).subst θ) :=
+            (((Rs con).atLevels ρ).subst θ) :=
         fun i j T' con hi θ hθ => by
           have hjT := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
           obtain ⟨C₀, hC₀⟩ := hCs j T' hjT
@@ -453,7 +453,7 @@ theorem fundamentalIn : FundamentalIn := by
       have has' := ValidInstanceArgs.atLevels hl
         (soundnessIn.hasInstanceArgs hw.distinct hw.liftsInOrder hι has) ρ
       have ht' := soundnessIn.hasType hw.distinct hw.liftsInOrder hι ht ρ
-      simp only [Term.atLevels, Term.substLevels] at ht'
+      rw [Term.atLevels_inst] at ht'
       have htr := ht_ih (hΓ := hΓ) hw hι hP hut ρ
       simp only [Term.atLevels, Term.substLevels] at htr
       have hbs' := soundnessIn.hasArgs hw.distinct hw.liftsInOrder hι hbs ρ
