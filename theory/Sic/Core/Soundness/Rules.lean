@@ -991,22 +991,8 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
         ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' o₁ o₂
   refine ⟨S, fun Rf T hT => ?_⟩
   obtain ⟨S', h₁, h₂⟩ := (hv.destructorsAtClosedLevels hq hl hp hadm has T hT).desRel hd Rf
-  have hds := Destructors.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i))
-    (T.body (.ofLists qs ps hq hp))
-  have h₁' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-      (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
-      (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
-      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' := by
-    rw [← decl.sort_atLevels_closedValue hq hl hp]
-    exact DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h₁ hds
-      (Subst.LevelEquiv.refl _)
-  have h₂' : DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-      (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
-      (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
-      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S' := by
-    rw [← decl.sort_atLevels_closedValue hq hl hp]
-    exact DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h₂ hds
-      (Subst.LevelEquiv.refl _)
+  have h₁' := DesRel.substLevels_of_atLevels hd h₁
+  have h₂' := DesRel.substLevels_of_atLevels hd h₂
   have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
     ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁' o₁ o₂).1
       hs,
@@ -1098,26 +1084,8 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
       (hv.destructorsAtClosedLevels hq hl hp hadm has T hT).runDesRel hd P hs T.name
         (fun D' => (X D').computed sig ι)
         fun _ hdm => Signature.destructorCase_of_mem hdecl hT hdm
-    have hds := Destructors.substLevels_levelEquiv
-      (fun i => Level.ofNat_closedValue (ls.getFin hl i)) (T.body (.ofLists qs ps hq hp))
-    have h₁' : RunDesRel sig ι P
-        ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-        (fun m _ => levelRel sig ι m) T.name
-        (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-          fun D' => (X D').computed sig ι)
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' := by
-      rw [← decl.sort_atLevels_closedValue hq hl hp]
-      exact RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h₁ hds
-        (Subst.LevelEquiv.refl _)
-    have h₂' : RunDesRel sig ι P
-        ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-        (fun m _ => levelRel sig ι m) T.name
-        (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
-          fun D' => (X D').computed sig ι)
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst S' := by
-      rw [← decl.sort_atLevels_closedValue hq hl hp]
-      exact RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h₂ hds
-        (Subst.LevelEquiv.refl _)
+    have h₁' := RunDesRel.substLevels_of_atLevels hd h₁
+    have h₂' := RunDesRel.substLevels_of_atLevels hd h₂
     have hSS : S X T = S' := funext fun H => funext fun o => funext fun a => propext
       ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
           (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H o a).1 hs,

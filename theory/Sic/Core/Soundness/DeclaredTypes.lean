@@ -190,6 +190,44 @@ theorem RunDesRel.atLevels_of_substLevels (hd : sig.Distinct) {P : Program}
     (Subst.LevelEquiv.refl _)
 
 -- ADE: none.
+/-- The converse of `DesRel.atLevels_of_substLevels`: a relation of the destructors of a codata
+type of a block, at the values of the levels `ls` and at the value there of the level of the sort,
+is one at `ls`, at the value of the level of the sort at `ls`, in a signature whose names are
+distinct. -/
+theorem DesRel.substLevels_of_atLevels (hd : sig.Distinct)
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {s : Quality}
+    {rs : Nat → Option TermRel} {θ : Subst 0 [] decl.scope} {S : ObsRel}
+    (h : DesRel sig ι (((decl.sort (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).level.closedValue) (fun m _ => levelRel sig ι m) s
+      rs ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S) :
+    DesRel sig ι ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) s rs
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S := by
+  rw [← decl.sort_atLevels_closedValue hq hl hp]
+  exact DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
+    (Subst.LevelEquiv.refl _)
+
+-- ADE: none.
+/-- The converse of `RunDesRel.atLevels_of_substLevels`: a relation of run time of the destructors
+of a codata type of a block, at the values of the levels `ls` and at the value there of the level
+of the sort, is one at `ls`, at the value of the level of the sort at `ls`, in a signature whose
+names are distinct. -/
+theorem RunDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {D : Name}
+    {rs : Nat → Option RunRel} {θ : Subst 0 [] decl.scope} {S : RunObsRel}
+    (h : RunDesRel sig ι P (((decl.sort (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).level.closedValue) (fun m _ => levelRel sig ι m) D
+      rs ((T.body (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue) θ S) :
+    RunDesRel sig ι P ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
+      (fun m _ => levelRel sig ι m) D rs
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) θ S := by
+  rw [← decl.sort_atLevels_closedValue hq hl hp]
+  exact RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
+    (Subst.LevelEquiv.refl _)
+
+-- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
 the graph of a sort at the value of its level there, whose positions hold the instances of the
 block there, are telescopes of the graph at `ls`, whose positions hold the instances at `ls`, with
