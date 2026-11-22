@@ -268,6 +268,22 @@ def DataType.BlockMono {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ)
   ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D v w) → ∀ T ∈ Ts,
     ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c ts us
 
+/-- The equalities `S X c` of the fields of the constructors `c` of the data types `Ts` are
+inverted by relations `Y` of the recursive fields that invert the relations `X`. -/
+def DataType.BlockSymm {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → TermRel) → Constructor j g k Δ → FieldsRel) : Prop :=
+  ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts,
+    ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c us ts
+
+/-- The equalities `S X c` and `S Y c` of the fields of the constructors `c` of the data types `Ts`
+compose into `S Z c` by relations `Z` of the recursive fields that compose the relations `X` and
+`Y` and, unlike those of `CodataType.BlockTrans`, also contain the relations `X`. -/
+def DataType.BlockTrans {j g k : Nat} {Δ : Scope} (Ts : List (DataType j g k Δ))
+    (S : (Name → TermRel) → Constructor j g k Δ → FieldsRel) : Prop :=
+  ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) →
+    (∀ D u v, X D u v → Z D u v) → ∀ T ∈ Ts,
+    ∀ c ∈ T.constructors, ∀ ts us vs, S X c ts us → S Y c us vs → S Z c ts vs
+
 section LeastFixedPoints
 
 variable {j g k : Nat} {Δ : Scope} {Ts : List (DataType j g k Δ)}
@@ -301,11 +317,7 @@ with the relations of the recursive fields, and inverts and composes them, and w
 types and of the constructors of each type are distinct. -/
 theorem DataType.blockRel_isPer
     (hmono : DataType.BlockMono Ts S)
-    (hsymm : ∀ X Y : Name → TermRel, (∀ D v w, X D v w → Y D w v) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ ts us, S X c ts us → S Y c us ts)
-    (htrans : ∀ X Y Z : Name → TermRel, (∀ D u v w, X D u v → Y D v w → Z D u w) →
-      (∀ D u v, X D u v → Z D u v) → ∀ T ∈ Ts,
-      ∀ c ∈ T.constructors, ∀ ts us vs, S X c ts us → S Y c us vs → S Z c ts vs)
+    (hsymm : DataType.BlockSymm Ts S) (htrans : DataType.BlockTrans Ts S)
     (hn : (Ts.map (·.name)).Nodup) (hc : ∀ T ∈ Ts, (T.constructors.map (·.name)).Nodup)
     (D : Name) : IsPer (DataType.blockRel Ts S D) where
   symm h := h (fun D v w => DataType.blockRel Ts S D w v) fun T hT v w ⟨c, hcm, ts, us, hv, hw, hs⟩ =>
