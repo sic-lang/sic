@@ -458,17 +458,8 @@ theorem fundamentalIn : FundamentalIn := by
       simp only [Term.atLevels, Term.substLevels] at htr
       have hbs' := soundnessIn.hasArgs hw.distinct hw.liftsInOrder hι hbs ρ
       have hbr := hbs_ih (hΓ := hΓ) hw hι hP hbus ρ
-      have hcl : ∀ {a} (x : Var Ξ a),
-          ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels
-            (fun i => (.ofNat (ρ i) : Level 0)) =
-            hd.obsSubst ((t.substLevels (fun i => (.ofNat (ρ i) : Level 0))).observation D qs
-              (ls.map (Level.subst (fun i => (.ofNat (ρ i) : Level 0)))) ps
-              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))))
-              (as.substLevels (fun i => (.ofNat (ρ i) : Level 0))).toSubst x := fun x =>
-        hd.obsSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0))
-          (fun d ps' => Term.observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps
-            as t d ps')
-          (InstanceArgs.toSubst_substLevels (fun i => (.ofNat (ρ i) : Level 0)) as) x
+      have hcl := fun {a} (x : Var Ξ a) =>
+        hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs' hbr
       have hc := RunValidRen.obs hw.distinct hM hv hq hl' hp hadm
