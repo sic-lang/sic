@@ -367,9 +367,10 @@ termination_by structural h _ _ _ _ => h
 end
 
 -- ADE: none.
-/-- The relations of run time of the fields of the constructors of a block of data types, given by
-telescopes of the graph of run time at relations of their recursive fields, grow with them: the
-monotonicity of `RunTelRel.mono` in one heap, for every constructor of the block. -/
+/-- The relation of run time of the terms of the fields of the constructors of a block, at
+relations `F X D` of the instances of its types `D` at the positions of the nestings of its fields,
+grows with `X` when they do, in one heap: the premise of `DataType.runBlockRel_fold` and
+`DataType.runBlockRel_unfold`, the properties of `(®_μ)`. -/
 theorem RunTelRel.block_mono {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ih : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P))
     {j g k : Nat} {Δ : Scope} {α : Type} {Ts : List (DataType j g k Δ)}
