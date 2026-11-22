@@ -654,8 +654,7 @@ block that the lifting of the instance gives have the shapes of their motives. -
 theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {ρ : Lifting 0 [] []} {qs : List Quality} {ls : List (Level 0)}
     {ms : List (Lifting.Result 0)} {ps : List Grade}

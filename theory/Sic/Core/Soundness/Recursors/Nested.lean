@@ -282,8 +282,7 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
     ∃ (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       (S : List Nat) (ms : List (Lifting.Result k)) (Δ' : Scope) (as' : InstanceArgs k Γ Δ')
       (nms : List Name)
-      (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms)
+      (body : decl.LiftingBody S nms)
       (gs : DestructorBranches k Γ),
       e = .corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level))
         (v.grades ps ms) (.snoc (e := .var) as' t) .nil (.cons 0 .nil [] .nil) gs ∧
@@ -470,14 +469,9 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
-  let TL : CodataType declL.sorts declL.grades declL.levels declL.scope :=
-    { name := Lifting.name D S
-      usage := fun _ _ => .unrestrictedUnrestricted
-      positive := fun _ => false
-      destructors := nms
-      body := body }
-  have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
-  have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
+  let TL : CodataType declL.sorts declL.grades declL.levels declL.scope := decl.liftingType D S body
+  have hTL : sig.HasCodataType (Lifting.name D S) declL TL := Signature.hasCodataType_lifting hLm
+  have hTLmem : TL ∈ declL.codataTypes := hTL.2.1
   have hLf := hord.lifts h.1 hDn hLm
   let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) := hqpL.inst
   -- The type has no recursive destructor at the instance of the type declaration that each

@@ -314,8 +314,7 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
       {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} {S : List Nat} {as' : InstanceArgs k Γ Δ'}
       {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      {body : decl.LiftingBody S ns}
       {gs : DestructorBranches k Γ}
       (h : sig.HasCodataType D decl T) (hn : ∀ E, n ≠ .direct E)
       (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)

@@ -195,8 +195,7 @@ constraint of its type declaration admits, when each parameter lifted is a type.
 theorem TypeDeclaration.lifting_typed {decl : TypeDeclaration} {F : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hsig : WfSig sig)
     (hT : sig.HasCodataType F decl T) (S : List Nat) {ns : List Name}
-    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns)
+    (body : decl.LiftingBody S ns)
     (I : Instance (decl.sorts + 1) (decl.liftingGrades S)) (hadm : decl.constraint I.lifted)
     (hS : (decl.params I.lifted).LiftsTypes sig S) :
     Lifting.Typed sig (I.sorts (Fin.last decl.sorts)) ((decl.lifting F S ns body).params I)

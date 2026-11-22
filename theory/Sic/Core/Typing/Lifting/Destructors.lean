@@ -150,8 +150,7 @@ them, as `link` states. -/
 theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns₀ : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₀}
+    {body : decl.LiftingBody S ns₀}
     {I : Instance (decl.sorts + 1) (decl.liftingGrades S)} {qs : List Quality}
     {ls : List (Level (decl.levels + S.length))} {ps : List Grade}
     {hqp : Instance.AsMany decl.sorts decl.grades qs ps}

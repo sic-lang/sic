@@ -323,14 +323,9 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
-  let TL : CodataType declL.sorts declL.grades declL.levels declL.scope :=
-    { name := Lifting.name D S
-      usage := fun _ _ => .unrestrictedUnrestricted
-      positive := fun _ => false
-      destructors := nms
-      body := body }
-  have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
-  have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
+  let TL : CodataType declL.sorts declL.grades declL.levels declL.scope := decl.liftingType D S body
+  have hTL : sig.HasCodataType (Lifting.name D S) declL TL := Signature.hasCodataType_lifting hLm
+  have hTLmem : TL ∈ declL.codataTypes := hTL.2.1
   have hLf := hord.lifts h.1 hDn hLm
   let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) := hqpL.inst
   have hFrec : ∀ T' ∈ decl.codataTypes, T'.name = D →
@@ -433,7 +428,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     rw [hσ] at hσ₂
     cases hσ₂
     have hiL : declL.codataCases[hpos'.index]? = some (0, TL, d') := by
-      show (List.map (fun c => (0, TL, c)) nms ++ [])[hpos'.index]? = _
+      show (List.map (fun c => (0, TL, c)) TL.destructors ++ [])[hpos'.index]? = _
       rw [List.append_nil, List.getElem?_map, hidx]
       rfl
     obtain rfl : i' = hpos'.index :=

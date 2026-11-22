@@ -180,8 +180,7 @@ theorem Destructors.Lifts.recursion {Γ₀ : Scope} {sig : Signature} {v : Lifti
 destructor at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.liftingGrades S))
     (hF : ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none) :
@@ -197,8 +196,7 @@ theorem TypeDeclaration.Lifts.recursion {sig : Signature} {decl : TypeDeclaratio
 instance is no instance of this lifting, at the instances that hold it. -/
 theorem TypeDeclaration.Lifts.blockName_pos {sig : Signature} {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (h : decl.Lifts sig F S body) (I : Instance (decl.sorts + 1) (decl.liftingGrades S))
     (hF : ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body I.lifted).recursion decl.names, r = none)

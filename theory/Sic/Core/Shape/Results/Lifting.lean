@@ -54,8 +54,7 @@ def Signature.LiftingsHaveShapes (md : Mode) (ax : Grade → Multiplicity) (sig�
     Prop :=
   ∀ (k : Nat) (v : Lifting.Variables) {decl : TypeDeclaration} {D : Name} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns},
+    {body : decl.LiftingBody S ns},
     .typeDeclaration decl ∈ sig → D ∈ decl.names →
     .typeDeclaration (decl.lifting D S ns body) ∈ sig₁ →
     ∀ {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} {qs : List Quality} {ls : List (Level k)}
@@ -536,8 +535,7 @@ theorem Signature.Distinct.findSome?_eq {β : Type} {f : Entry → Option β} {n
 /-- The names of the lifting of a type are its name. -/
 theorem TypeDeclaration.lifting_names {decl : TypeDeclaration} {F : Name} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns} :
+    {body : decl.LiftingBody S ns} :
     (decl.lifting F S ns body).names = [Lifting.name F S] := rfl
 
 /-- The shape of the lifting of the codata type `D` at the positions `S` of the parameters, along
@@ -547,8 +545,7 @@ positions have the shapes of `m̄'`, along the entries after the declaration. -/
 theorem Signature.shapes_lifting {sig₁ : Signature} (hsig : sig₁.Distinct) {decl : TypeDeclaration}
     {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (hT : sig₁.HasCodataType D decl T) {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     {qs : List Quality} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
     {ms' : List Shape.Motive}
     (hfst : (S.zip ms').map (·.1) = S) :
@@ -674,8 +671,7 @@ theorem Signature.LiftsInOrder.shapes_get (hsig : sig.Distinct) (hord : sig.Lift
     {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (hT : sig.HasCodataType D decl T)
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) (hS : S.Nodup) {qs : List Quality}
     {ps : List Grade} {ms : List (Lifting.Result k)}
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps)

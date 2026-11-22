@@ -122,8 +122,7 @@ theorem Destructors.Lifts.extend (hs : sig ⊆ sig') {Γ₀ : Scope} {κ : Unive
 signature with more entries. -/
 theorem TypeDeclaration.Lifts.extend (hs : sig ⊆ sig') {decl : TypeDeclaration} {F : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (h : decl.Lifts sig F S body) : decl.Lifts sig' F S body :=
   let ⟨T, hT, hn, hb⟩ := h
   ⟨T, hT, hn, fun I => (hb I).extend hs⟩
@@ -136,8 +135,7 @@ and has the destructors of this type, lifted in the signature before the lifting
 RFC: `\mathsf{order}_{\uparrow}` -/
 def Signature.LiftsInOrder (sig : Signature) : Prop :=
   ∀ (pre sig₁ : Signature) (decl : TypeDeclaration) (D : Name) (S : List Nat) (ns : List Name)
-    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns),
+    (body : decl.LiftingBody S ns),
     sig = pre ++ .typeDeclaration (decl.lifting D S ns body) :: sig₁ →
       .typeDeclaration decl ∈ sig → D ∈ decl.names →
         .typeDeclaration decl ∈ sig₁ ∧ decl.Lifts sig₁ D S body
@@ -146,8 +144,7 @@ def Signature.LiftsInOrder (sig : Signature) : Prop :=
 those of its types, in the whole signature. -/
 theorem Signature.LiftsInOrder.lifts (h : sig.LiftsInOrder) {decl : TypeDeclaration} {D : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hd : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by
   obtain ⟨pre, sig₁, rfl⟩ := List.append_of_mem hL

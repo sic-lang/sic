@@ -39,10 +39,8 @@ variable {k : Nat} {sig : Signature} {v : Lifting.Variables}
 /-- The destructors of the lifting of a type at parameters are those of its declaration. -/
 theorem TypeDeclaration.lifting_destructors {decl : TypeDeclaration} {F : Name} {S : List Nat}
     {ns₁ ns₂ : List Name}
-    {body₁ : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₁}
-    {body₂ : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns₂}
+    {body₁ : decl.LiftingBody S ns₁}
+    {body₂ : decl.LiftingBody S ns₂}
     (h : decl.lifting F S ns₁ body₁ = decl.lifting F S ns₂ body₂) : ns₁ = ns₂ := by
   have h' : [ns₁] = [ns₂] :=
     congrArg (fun d : TypeDeclaration => d.codataTypes.map CodataType.destructors) h
@@ -52,8 +50,7 @@ theorem TypeDeclaration.lifting_destructors {decl : TypeDeclaration} {F : Name} 
 declaration. -/
 theorem TypeDeclaration.lifting_body {decl : TypeDeclaration} {F : Name} {S : List Nat}
     {ns : List Name}
-    {body₁ body₂ : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body₁ body₂ : decl.LiftingBody S ns}
     (h : decl.lifting F S ns body₁ = decl.lifting F S ns body₂) : body₁ = body₂ := by
   unfold TypeDeclaration.lifting at h
   injection h with _ _ _ _ _ _ _ hb
@@ -166,10 +163,9 @@ theorem TypeDeclaration.liftingScope_distinctMotives (decl : TypeDeclaration) (S
 /-- The name of the lifting of a type at parameters is a name of its declaration. -/
 theorem TypeDeclaration.name_mem_lifting_names {decl : TypeDeclaration} {F : Name} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns} :
+    {body : decl.LiftingBody S ns} :
     Lifting.name F S ∈ Entry.names (.typeDeclaration (decl.lifting F S ns body)) := by
-  simp [Entry.names, TypeDeclaration.lifting, TypeDeclaration.names]
+  simp [Entry.names, TypeDeclaration.lifting, TypeDeclaration.liftingType, TypeDeclaration.names]
 
 mutual
 

@@ -198,8 +198,7 @@ position have. -/
 def Signature.LiftingsHaveResults (sig₁ sig : Signature) : Prop :=
   ∀ (k : Nat) (v : Lifting.Variables) {decl : TypeDeclaration} {D : Name} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns},
+    {body : decl.LiftingBody S ns},
     .typeDeclaration decl ∈ sig → D ∈ decl.names →
     .typeDeclaration (decl.lifting D S ns body) ∈ sig₁ →
     ∀ {Γ : Scope} {ρ : Lifting k Γ Γ}, (∀ {a} (x : Var Γ a), ρ.motive x = none) →
@@ -346,8 +345,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
     (hsub : ∀ decl, Entry.typeDeclaration decl ∈ sig₁ → Entry.typeDeclaration decl ∈ sig)
     (hM : Signature.LiftingsHaveResults sig₁ sig) {decl : TypeDeclaration} {D : Name}
     {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hdecl : .typeDeclaration decl ∈ sig) (hLd : decl.Lifts sig₁ D S body)
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) {Γ : Scope} {ρ : Lifting k Γ Γ}
     (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none) {n : Nest Name} {qs : List Quality}

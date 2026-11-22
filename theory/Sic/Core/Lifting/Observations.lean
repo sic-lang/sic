@@ -462,8 +462,7 @@ instance are lifted in the whole signature.
 theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     {sig₁ : Signature} (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T)
     (hL : decl.Lifts sig₁ D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
@@ -652,8 +651,7 @@ RFC: `\mathsf{inst}_{\uparrow}`
 theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hsig : sig.Distinct) (hT : sig.HasCodataType D decl T) (hL : decl.Lifts sig D S body)
     {Γ' Γ : Scope} {ρ : Lifting k Γ' Γ} (hρ : ∀ {a} (x : Var Γ a), ρ.motive x = none)
     {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)} {ps : List Grade}

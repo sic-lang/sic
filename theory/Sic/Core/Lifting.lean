@@ -425,6 +425,26 @@ def TypeDeclaration.liftingSort (decl : TypeDeclaration) (S : List Nat)
     ((decl.sort I.lifted).level.subst (Level.lifted S.length)).joins
       (List.ofFn fun i : Fin S.length => .var (Fin.natAdd decl.levels i))⟩
 
+/-- The destructors `ns` of the lifting of the types of `decl` at its parameters at the positions
+`S`, at each instance of the variables of the lifting: the body of its codata type. -/
+abbrev TypeDeclaration.LiftingBody (decl : TypeDeclaration) (S : List Nat) (ns : List Name) :
+    Type :=
+  Instance (decl.sorts + 1) (decl.liftingGrades S) →
+    Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns
+
+/-- `F^Π ≔ body`: the codata type of the lifting of the type `F` of `decl` at its parameters at the
+positions `S`, of destructors `body`, which uses its parameters with the least grades and is
+strictly positive in none of them. -/
+def TypeDeclaration.liftingType (decl : TypeDeclaration) (F : Name) (S : List Nat)
+    {ns : List Name} (body : decl.LiftingBody S ns) :
+    CodataType (decl.sorts + 1) (decl.liftingGrades S) (decl.levels + S.length)
+      (.var :: decl.scope.lifted S) where
+  name := Lifting.name F S
+  usage := fun _ _ => .unrestrictedUnrestricted
+  positive := fun _ => false
+  destructors := ns
+  body := body
+
 /--
 `F^Π`: the lifting of the type `F` of the type declaration `decl` at its parameters at the positions
 `S`, with the destructors `d̄'`, whose names are `ns`: a block of one codata type, over the
@@ -439,8 +459,7 @@ which it is strictly positive.
 RFC: `\mathsf{lifting}_{\mathcal{D}}`
 -/
 def TypeDeclaration.lifting (decl : TypeDeclaration) (F : Name) (S : List Nat) (ns : List Name)
-    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns) : TypeDeclaration where
+    (body : decl.LiftingBody S ns) : TypeDeclaration where
   sorts := decl.sorts + 1
   levels := decl.levels + S.length
   grades := decl.liftingGrades S
@@ -454,13 +473,15 @@ def TypeDeclaration.lifting (decl : TypeDeclaration) (F : Name) (S : List Nat) (
         ((InstanceArgs.identity decl.scope).rename
           (Lifting.base S (decl.liftingMotive S I) decl.scope).ren))
   sort := decl.liftingSort S
-  body := .codata [{
-    name := Lifting.name F S
-    usage := fun _ _ => .unrestrictedUnrestricted
-    positive := fun _ => false
-    destructors := ns
-    body := body
-  }]
+  body := .codata [decl.liftingType F S body]
+
+/-- A signature that holds the lifting of the types of `decl` has its codata type, the only type
+of its block. -/
+theorem Signature.hasCodataType_lifting {sig : Signature} {decl : TypeDeclaration} {F : Name}
+    {S : List Nat} {ns : List Name} {body : decl.LiftingBody S ns}
+    (h : .typeDeclaration (decl.lifting F S ns body) ∈ sig) :
+    sig.HasCodataType (Lifting.name F S) (decl.lifting F S ns body) (decl.liftingType F S body) :=
+  ⟨h, List.mem_cons_self, rfl⟩
 
 /-! ## Factors -/
 
@@ -497,8 +518,7 @@ inductive Term.Factor (sig : Signature) :
   RFC: `\mathsf{factor}_D` -/
   | inst {k : Nat} {Γ' Γ Δ : Scope} {ρ : Lifting k Γ' Γ} {decl : TypeDeclaration} {D : Name}
       {S : List Nat} {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      {body : decl.LiftingBody S ns}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ' Δ}
       {π : Option Grade} (hdecl : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names)
       (h : .typeDeclaration (decl.lifting D S ns body) ∈ sig)
@@ -575,8 +595,7 @@ inductive Term.Lifts (sig : Signature) (v : Lifting.Variables) :
       {ps : List Grade}
       {as : InstanceArgs k Γ decl.scope} {S : List Nat} {as' : InstanceArgs k Γ' Δ'}
       {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      {body : decl.LiftingBody S ns}
       (h : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) (hn : ∀ E, n ≠ .direct E)
       (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
       {π : Grade}
@@ -719,8 +738,7 @@ destructors of `F` lifted at the parameter `y`, in the sort of the lifting.
 RFC: `\uparrow_{\mathcal{D}}` -/
 def TypeDeclaration.Lifts (sig : Signature) (decl : TypeDeclaration) (F : Name) (S : List Nat)
     {ns : List Name}
-    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns) : Prop :=
+    (body : decl.LiftingBody S ns) : Prop :=
   ∃ T ∈ decl.codataTypes, T.name = F ∧
     ∀ I : Instance (decl.sorts + 1) (decl.liftingGrades S),
       Destructors.Lifts sig I.liftingVariables (decl.liftingSort S I)
@@ -733,8 +751,7 @@ positions `S`.
 RFC: `\in_{\uparrow}` -/
 def Signature.HasLifting (sig : Signature) (F : Name) (S : List Nat) : Prop :=
   ∃ (decl : TypeDeclaration) (ns : List Name)
-    (body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns),
+    (body : decl.LiftingBody S ns),
     .typeDeclaration decl ∈ sig ∧ decl.Lifts sig F S body ∧
       .typeDeclaration (decl.lifting F S ns body) ∈ sig
 

@@ -43,8 +43,7 @@ entry of the signature introduces its name.
 RFC: `\mathsf{lift}_\vdash` -/
 theorem WfTypeDeclaration.lifting {sig : Signature} (hsig : WfSig sig) {decl : TypeDeclaration}
     (hd : .typeDeclaration decl ∈ sig) {F : Name} {S : List Nat} {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hl : decl.Lifts sig F S body)
     (hF : ∀ ι, ∀ T ∈ decl.codataTypes, T.name = F →
       ∀ r ∈ (T.body ι).recursion decl.names, r = none)
@@ -119,8 +118,7 @@ lifted. -/
 theorem WfSig.lifting_inv {E : TypeDeclaration} {F : Name} {S : List Nat} :
     {sig : Signature} → WfSig sig → .typeDeclaration E ∈ sig → Lifting.name F S ∈ E.names →
       ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
-        (body : Instance (decl.sorts + 1) (decl.liftingGrades S') →
-          Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
+        (body : decl.LiftingBody S' ns),
         E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig ∧ decl.Lifts sig F' S' body
   | [], _, he, _ => nomatch he
   | _ :: sig, h, he, hn => by
@@ -142,8 +140,7 @@ RFC: `\mathsf{sig}_{\uparrow}` -/
 theorem WfSig.lifts {sig : Signature} (h : WfSig sig) {decl : TypeDeclaration}
     (hd : .typeDeclaration decl ∈ sig) {D : Name} (hD : D ∈ decl.names) {S : List Nat}
     {ns : List Name}
-    {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-      Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+    {body : decl.LiftingBody S ns}
     (hL : .typeDeclaration (decl.lifting D S ns body) ∈ sig) : decl.Lifts sig D S body := by
   obtain ⟨decl', F', S', ns', body', he, hd', hl'⟩ :=
     h.lifting_inv hL (F := D) (S := S) List.mem_cons_self
@@ -164,8 +161,7 @@ theorem WfSig.lifting_inv_before {E : TypeDeclaration} {F : Name} {S : List Nat}
     {sig₁ : Signature} :
     (pre : Signature) → WfSig (pre ++ .typeDeclaration E :: sig₁) → Lifting.name F S ∈ E.names →
       ∃ (decl : TypeDeclaration) (F' : Name) (S' : List Nat) (ns : List Name)
-        (body : Instance (decl.sorts + 1) (decl.liftingGrades S') →
-          Destructors (decl.levels + S'.length) (.var :: decl.scope.lifted S') ns),
+        (body : decl.LiftingBody S' ns),
         E = decl.lifting F' S' ns body ∧ .typeDeclaration decl ∈ sig₁ ∧
           decl.Lifts sig₁ F' S' body
   | [], h, hn => by

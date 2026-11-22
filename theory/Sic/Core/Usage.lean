@@ -358,8 +358,7 @@ inductive UsageSig : Signature → Prop where
   /-- The lifting of a codata type of a block of the signature, whose destructors are not checked.
   RFC: `\mathsf{sig}_{\mathsf{lift}▶}` -/
   | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      {body : decl.LiftingBody S ns}
       (h : UsageSig sig) (hd : .typeDeclaration decl ∈ sig) (hl : decl.Lifts sig F S body) :
       UsageSig (.typeDeclaration (decl.lifting F S ns body) :: sig)
 

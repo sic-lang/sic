@@ -71,8 +71,7 @@ inductive WfSig : Signature → Prop where
   lifted.
   RFC: `\mathsf{sig}_{\mathsf{lift}}` -/
   | lifting {sig : Signature} {decl : TypeDeclaration} {F : Name} {S : List Nat} {ns : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) ns}
+      {body : decl.LiftingBody S ns}
       (h : WfTypeDeclaration sig (decl.lifting F S ns body)) (hd : .typeDeclaration decl ∈ sig)
       (hl : decl.Lifts sig F S body) :
       WfSig (.typeDeclaration (decl.lifting F S ns body) :: sig)
