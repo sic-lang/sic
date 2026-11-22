@@ -705,11 +705,11 @@ theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf :
       have hr' : (rs 0).map Rf = some (Rf D) := by rw [hr]; rfl
       refine ⟨_, .recursive hr' hT₁ G fun f => ?_, .recursive hr' hT₂ G fun f => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f₀)
-        have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+        have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
           (DesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f)
-        have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+        have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
           (DesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
         exact hSG ▸ h₂
 
@@ -781,11 +781,11 @@ theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : 
       have hr' : (rs 0).map Rf = some (Rf D') := by rw [hr]; rfl
       refine ⟨_, .recursive hi hr' hRT₁ G fun f => ?_, .recursive hi hr' hRT₂ G fun f => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f f₀)
-        have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
+        have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
           (RunDesRel.congr hd ihm ih h₂ _ _ h₀₂ hrr H o a)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f₀ f)
-        have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
+        have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
           (RunDesRel.congr hd ihm ih h₁ _ _ h₀₁ hrr H o a)
         exact hSG ▸ h₂
 
@@ -812,19 +812,17 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
           (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
           ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₂.toSubst (S Rf T) := by
   let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
-    fun Rf T o₁ o₂ => ∃ S',
+    fun Rf => Math.Rel₂.ofGraph fun T S' =>
       DesRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
         (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map Rf)
-        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' o₁ o₂
+        ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S'
   refine ⟨S, fun Rf T hT => ?_⟩
   obtain ⟨S', h₁, h₂⟩ := (hv.destructorsAtClosedLevels hq hl hp hadm has T hT).desRel hd Rf
   have h₁' := DesRel.substLevels_of_atLevels hd h₁
   have h₂' := DesRel.substLevels_of_atLevels hd h₂
-  have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
-    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁' o₁ o₂).1
-      hs,
-      fun hs => ⟨S', h₁', hs⟩⟩
+  have hS : S Rf T = S' := Math.Rel₂.ofGraph_eq h₁' fun _ h' =>
+    DesRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁'
   rw [hS]
   exact ⟨h₁', h₂'⟩
 
@@ -888,12 +886,12 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
   have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
-      RunObsRel := fun X T H o a => ∃ S',
+      RunObsRel := fun X => Math.Rel₃.ofGraph fun T S' =>
     RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) T.name
       (fun i => ((T.body (.ofLists qs ps hq hp)).recursionAt decl.names i).map
         fun D' => (X D').computed sig ι)
-      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S' ∧ S' H o a
+      ((T.body (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) as₁.toSubst S'
   have hS : ∀ X, ∀ T ∈ decl.codataTypes,
       RunDesRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m) T.name
@@ -912,10 +910,9 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
         fun _ hdm => Signature.destructorCase_of_mem hdecl hT hdm
     have h₁' := RunDesRel.substLevels_of_atLevels hd h₁
     have h₂' := RunDesRel.substLevels_of_atLevels hd h₂
-    have hSS : S X T = S' := funext fun H => funext fun o => funext fun a => propext
-      ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
-          (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H o a).1 hs,
-        fun hs => ⟨S', h₁', hs⟩⟩
+    have hSS : S X T = S' := Math.Rel₃.ofGraph_eq h₁' fun _ h' =>
+      RunDesRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
+        (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _)
     rw [hSS]
     exact ⟨h₁', h₂'⟩
   exact ⟨S, fun T hT =>

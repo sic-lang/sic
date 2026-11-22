@@ -547,11 +547,11 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {names : L
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hF₁ G fun a => ?_,
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hF₂ G fun a => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := hcommon a a₀
-        have hSG : S = G := funext fun ts => funext fun us => propext
+        have hSG : S = G := Math.Rel₂.ext_of_iff fun ts us =>
           (TelRel.unique hd ih h₂ _ _ h₀₂ ts us)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := hcommon a₀ a
-        have hSG : S = G := funext fun ts => funext fun us => propext
+        have hSG : S = G := Math.Rel₂.ext_of_iff fun ts us =>
           (TelRel.unique hd ih h₁ _ _ h₀₁ ts us)
         exact hSG ▸ h₂
     rw [ValidEqFields₀] at h
@@ -567,15 +567,14 @@ theorem ValidEqFields₀.telRel (hd : sig.Distinct) {κ : Universe 0} {names : L
             (fun i => (rs (i + 1)).map fun D => (inst₂ D, Rf D))
             (Θ₂.subst₀ (Subst₀.single a₂)) S :=
         fun a₁ a₂ ha => ValidEqFields₀.telRel hd Rf (hΘ a₁ a₂ (hFv a₁ a₂ ha))
-      let G : Term 0 [] → FieldsRel := fun a ts us => ∃ S,
+      let G : Term 0 [] → FieldsRel := Math.Rel₂.ofGraph fun a S =>
         TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
           (fun i => (rs (i + 1)).map fun D => (inst₁ D, Rf D))
-            (Θ₁.subst₀ (Subst₀.single a)) S ∧ S ts us
+            (Θ₁.subst₀ (Subst₀.single a)) S
       have hG : ∀ a S, TelRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
           (fun i => (rs (i + 1)).map fun D => (inst₁ D, Rf D))
             (Θ₁.subst₀ (Subst₀.single a)) S → G a = S :=
-        fun a S hS => funext fun ts => funext fun us => propext
-          ⟨fun ⟨_, hS', hs⟩ => (TelRel.unique hd ih hS' _ _ hS ts us).1 hs, fun hs => ⟨S, hS, hs⟩⟩
+        fun a S hS => Math.Rel₂.ofGraph_eq hS fun _ hS' => TelRel.unique hd ih hS' _ _ hS
       have hresp : ∀ a₁ a₂, F a₁ a₂ → ∀ ts us, G a₁ ts us ↔ G a₂ ts us := fun a₁ a₂ ha ts us => by
         have hFp := FieldRel.isPer hd ih hF₁
         obtain ⟨S, h₁, h₂⟩ := hcommon a₁ a₂ ha
@@ -667,11 +666,11 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hR₁ G fun a => ?_,
         .nested (fun h => hr (Nest.map_eq_plain.1 h)) hR₂ G fun a => ?_⟩
       · obtain ⟨S, h₁, h₂⟩ := hcommon a a₀
-        have hSG : S = G := funext fun H => funext fun ts => funext fun bs => propext
+        have hSG : S = G := Math.Rel₃.ext_of_iff fun H ts bs =>
           (RunTelRel.congr hd ihm ih h₂ _ _ h₀₂ (hrr inst₂) H ts bs)
         exact hSG ▸ h₁
       · obtain ⟨S, h₁, h₂⟩ := hcommon a₀ a
-        have hSG : S = G := funext fun H => funext fun ts => funext fun bs => propext
+        have hSG : S = G := Math.Rel₃.ext_of_iff fun H ts bs =>
           (RunTelRel.congr hd ihm ih h₁ _ _ h₀₁ (hrr inst₁) H ts bs)
         exact hSG ▸ h₂
     rw [ValidEqFields₀] at h
@@ -691,16 +690,15 @@ theorem ValidEqFields₀.runTelRel (hd : sig.Distinct) (P : Program) {κ : Unive
             (fun i => (rs (i + 1)).map fun D => (inst₂ D, Rf D))
             (Θ₂.subst₀ (Subst₀.single a₂)) S :=
         fun a₁ a₂ ha => ValidEqFields₀.runTelRel hd P hs Rf (hΘ a₁ a₂ (hFv a₁ a₂ ha))
-      let G : Term 0 [] → RunFieldsRel := fun a H ts bs => ∃ S,
+      let G : Term 0 [] → RunFieldsRel := Math.Rel₃.ofGraph fun a S =>
         RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
           (fun i => (rs (i + 1)).map fun D => (inst₁ D, Rf D))
-            (Θ₁.subst₀ (Subst₀.single a)) S ∧ S H ts bs
+            (Θ₁.subst₀ (Subst₀.single a)) S
       have hG : ∀ a S, RunTelRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
           (fun i => (rs (i + 1)).map fun D => (inst₁ D, Rf D))
             (Θ₁.subst₀ (Subst₀.single a)) S → G a = S :=
-        fun a S hS => funext fun H => funext fun ts => funext fun bs => propext
-          ⟨fun ⟨_, hS', hs⟩ => (RunTelRel.congr hd ihm ih hS' _ _ hS (hrr inst₁) H ts bs).1 hs,
-            fun hs => ⟨S, hS, hs⟩⟩
+        fun a S hS => Math.Rel₃.ofGraph_eq hS fun _ hS' =>
+          RunTelRel.congr hd ihm ih hS' _ _ hS (hrr inst₁)
       refine ⟨_,
         .cons hc₁ hF₁ hR₁ G (fun a ha => ?_) (by show (rs 0).map _ = _; rw [hr]; rfl),
         .cons hc₂ hF₂ hR₂ G (fun a ha => ?_) (by show (rs 0).map _ = _; rw [hr]; rfl)⟩
@@ -1288,21 +1286,19 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
               (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁))
               ts.toSubst us.toSubst) := by
   let S : (Name → TermRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
-      FieldsRel := fun Rf c ts us =>
-    ∃ S', TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
+      FieldsRel := fun Rf => Math.Rel₂.ofGraph fun c S' =>
+    TelRel sig ι (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m) (decl.sort (.ofLists qs ps hq hp)).quality
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as₁, Rf D))
-      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' ts us
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S'
   refine ⟨S, fun Rf T hT c hc => ?_⟩
   have hF := hv.fieldsAtClosedLevels hq hl hp hadm has T hT c hc
   obtain ⟨S', h₁, h₂⟩ := hF.telRel hd Rf
   have h₁' := TelRel.fieldsAt_of_atLevels hd h₁
   have h₂' := TelRel.fieldsAt_of_atLevels hd h₂
-  have hS : S Rf c = S' := funext fun ts => funext fun us => propext
-    ⟨fun ⟨_, h', hs⟩ => (TelRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁' ts us).1
-      hs,
-      fun hs => ⟨S', h₁', hs⟩⟩
+  have hS : S Rf c = S' := Math.Rel₂.ofGraph_eq h₁' fun _ h' =>
+    TelRel.unique hd (Nat.forall_lt (levelRel_isPer hd) _) h' _ _ h₁'
   rw [hS]
   refine ⟨h₁', h₂', fun hRf hI => ?_⟩
   -- The positions hold the instances of the block, up to the values of their levels.
@@ -1361,12 +1357,12 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
   have ih : ∀ m, m < (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue →
       RunLevelRel.Unique ((levelRel sig ι m).run P) := Nat.forall_lt (levelRel_run_unique hd) _
   let S : (Name → RunRel) → Constructor decl.sorts decl.grades decl.levels decl.scope →
-      RunFieldsRel := fun X c H ts bs =>
-    ∃ S', RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
+      RunFieldsRel := fun X => Math.Rel₃.ofGraph fun c S' =>
+    RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
       (fun m _ => levelRel sig ι m)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D' => (.inst D' qs ls ps as₁, (X D').computed sig ι))
-      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S' ∧ S' H ts bs
+      (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as₁) S'
   have hS : ∀ X, ∀ T ∈ decl.dataTypes, ∀ c ∈ T.constructors,
       RunTelRel sig ι P (decl.sortAt (.ofLists qs ps hq hp) (ls.getFin hl)).level.closedValue
         (fun m _ => levelRel sig ι m)
@@ -1382,10 +1378,9 @@ theorem ValidTypeDeclaration.runUnivRel (hd : sig.Distinct) {decl : TypeDeclarat
       fun D' => (X D').computed sig ι
     have h₁' := RunTelRel.fieldsAt_of_atLevels hd h₁
     have h₂' := RunTelRel.fieldsAt_of_atLevels hd h₂
-    have hSS : S X c = S' := funext fun H => funext fun ts => funext fun bs => propext
-      ⟨fun ⟨_, h', hs⟩ => (RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
-          (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _) H ts bs).1 hs,
-        fun hs => ⟨S', h₁', hs⟩⟩
+    have hSS : S X c = S' := Math.Rel₃.ofGraph_eq h₁' fun _ h' =>
+      RunTelRel.congr hd (Nat.forall_lt (levelRel_isPer hd) _) ih h' _ _ h₁'
+        (fun _ => Nest.rel₃_refl (fun _ _ _ _ => .rfl) _)
     rw [hSS]
     exact ⟨h₁', h₂'⟩
   exact ⟨S, fun X T hT c hc => (hS X T hT c hc).1, fun T hT =>

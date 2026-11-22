@@ -215,11 +215,11 @@ theorem NestDesRel.of_nested_head (hd : sig.Distinct) {n : Nat} {sT : Quality} :
   refine ⟨_, .nested hν₁ (hΘ₁ ▸ hT₁.levelLe hn) F hF₁ hBresp G (fun f => ?_),
     .nested hν₂ (hΘ₂ ▸ hT₂.levelLe hn) F hF₂ hBresp G (fun f => ?_)⟩
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀
-    have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+    have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
       (NestDesRel.unique hd ih h₂ _ _ h₀₂ o₁ o₂)
     exact hSG ▸ h₁
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f
-    have hSG : S = G := funext fun o₁ => funext fun o₂ => propext
+    have hSG : S = G := Math.Rel₂.ext_of_iff fun o₁ o₂ =>
       (NestDesRel.unique hd ih h₁ _ _ h₀₁ o₁ o₂)
     exact hSG ▸ h₂
 

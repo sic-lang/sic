@@ -201,11 +201,11 @@ theorem RunNestDesReads.of_nested_head (hd : sig.Distinct) {n : Nat} :
   refine ⟨_, .nested hi hν₁ (hΘ₁ ▸ hT₁.levelLe hn) (hΘ₁ ▸ hRT₁.levelLe hn) R hR₁ G (fun f => ?_),
     .nested hi hν₂ (hΘ₂ ▸ hT₂.levelLe hn) (hΘ₂ ▸ hRT₂.levelLe hn) R hR₂ G (fun f => ?_)⟩
   · obtain ⟨S, h₁, h₂⟩ := hds f f₀ D hcase'
-    have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
+    have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
       (RunNestDesRel.unique hd ihm ih h₂ _ h₀₂ H o a)
     exact hSG ▸ h₁
   · obtain ⟨S, h₁, h₂⟩ := hds f₀ f D hcase'
-    have hSG : S = G := funext fun H => funext fun o => funext fun a => propext
+    have hSG : S = G := Math.Rel₃.ext_of_iff fun H o a =>
       (RunNestDesRel.unique hd ihm ih h₁ _ h₀₁ H o a)
     exact hSG ▸ h₂
 

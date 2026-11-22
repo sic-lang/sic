@@ -73,12 +73,12 @@ theorem Computesι.det {sig : Signature} {ι : Interpretation} {t v₁ v₂ : Te
 /-- The equality that `ty(U_n)` gives a type is unique. -/
 theorem LevelRel.IsPer.univ_eq {L : LevelRel} (hL : L.IsPer) {v : Term 0 []} {R R' : TermRel}
     (h : L.univ v R) (h' : L.univ v R') : R = R' :=
-  funext fun t => funext fun u => propext (hL.univ_unique h h' t u)
+  Math.Rel₂.ext_of_iff fun t u => (hL.univ_unique h h' t u)
 
 /-- The relation of run time that `rt(U_n)` gives a type is unique. -/
 theorem LevelRel.IsPer.run_eq {L : LevelRel} (hL : L.IsPer) {P : Program} {v : Term 0 []}
     {R R' : RunRel} (h : L.run P v R) (h' : L.run P v R') : R = R' :=
-  funext fun H => funext fun t => funext fun a => propext (hL.run_unique h h' H t a)
+  Math.Rel₃.ext_of_iff fun H t a => (hL.run_unique h h' H t a)
 
 /-- `ty(U_n)` at the level `n`, as the clauses of `UnivRel`. -/
 theorem levelRel_univ_iff {sig : Signature} {ι : Interpretation} {n : Nat} {v : Term 0 []}
