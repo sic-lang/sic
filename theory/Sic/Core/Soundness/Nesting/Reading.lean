@@ -1257,12 +1257,11 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
     cases hdecl with
     | data hb _ _ _ _ _ _ => exact absurd hT.2.1 (by simp [TypeDeclaration.codataTypes, hb])
     | codata hb _ _ hds hpF _ _ =>
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length =
-          declF.levels := (List.length_map _).trans hl
+      have hl' : (ls.map (Level.atLevels ρ)).length = declF.levels := Level.length_atLevels ρ hl
       have hTm := (hent.hasCodataType hT).1
       have hinst : ∀ σ : Subst 0 [] Γ',
           (((Term.inst D qs ls ps as).rename β).atLevels ρ).subst σ =
-            .inst D qs (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))) ps
+            .inst D qs (ls.map (Level.atLevels ρ)) ps
               (((as.rename β).atLevels ρ).subst σ) := fun σ => by
         rw [Term.rename, Term.atLevels, Term.substLevels, Term.subst]
         rfl
@@ -1277,9 +1276,9 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
       refine hfin ?_
       -- The values of the levels of the instance.
       let ρF : Fin declF.levels → Nat := fun i =>
-        ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl' i).closedValue
+        ((ls.map (Level.atLevels ρ)).getFin hl' i).closedValue
       have hget : ∀ i,
-          (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl' i =
+          (ls.map (Level.atLevels ρ)).getFin hl' i =
             (ls.getFin hl i).subst fun i => .ofNat (ρ i) :=
         fun i => congrFun (Level.getFin_map_subst _ ls hl) i
       have hctxEq : Context.LevelEquiv

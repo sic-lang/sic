@@ -123,14 +123,15 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
       (hpos.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps').observation D qs ls ps
           (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst x).substLevels
         (fun i => (.ofNat (ρ i) : Level 0)) =
-      hpos.obsSubst ((Term.corecAt r D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+      hpos.obsSubst ((Term.corecAt r D qs (ls.map (Level.atLevels ρ)) ps
           (as.substLevels fun i => .ofNat (ρ i)) (Ss.substLevels fun i => .ofNat (ρ i))
           (gs.substLevels fun i => .ofNat (ρ i)) ps').observation D qs
-          (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+          (ls.map (Level.atLevels ρ)) ps
           ((as.substLevels fun i => .ofNat (ρ i)).rename (Ren.weakenN ps'.length)))
         ((as.substLevels fun i => .ofNat (ρ i)).rename (Ren.weakenN ps'.length)).toSubst x :=
   hpos.obsSubst_substLevels _ (fun d' ps'' => by
-    rw [Term.observation_substLevels, Term.corecAt_substLevels, InstanceArgs.substLevels_rename])
+    rw [Term.observation_substLevels, Term.corecAt_substLevels, InstanceArgs.substLevels_rename,
+      Level.subst_ofNat])
     (fun x => by
       rw [InstanceArgs.toSubst_substLevels, InstanceArgs.substLevels_rename])
 
@@ -170,7 +171,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
     CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
-      (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
+      (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs₁.substLevels fun i => .ofNat (ρ i)) (gs₂.substLevels fun i => .ofNat (ρ i)) := by
   refine ⟨fun i j T' d ps'' S' hi hSj p q ς ps₁ Ξ Θ B ψ hpos => ?_,
@@ -229,7 +230,7 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
               (as.rename (Ren.weakenN ps''.length)).toSubst)))))
     (ρ : Fin k → Nat) :
     CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
-      (ls.map (Level.subst fun i => .ofNat (ρ i))) ps hq ((List.length_map _).trans hl) hp
+      (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
       (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) :=
   CorecBranchesEqValid.atLevels hq hl hp
@@ -327,8 +328,7 @@ theorem soundnessIn : SoundnessIn := by
   case hasType_const =>
     intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hq hl hp hctx_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
       have hc := ValidTermΓ.const (hctx_ih hdis hord hι ρ) hι h hq hl' hp
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
@@ -344,11 +344,9 @@ theorem soundnessIn : SoundnessIn := by
   case hasType_inst =>
     intro sig k Γ ctx decl D ζ qs ls ps as h hq hl hp hadm has has_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
+      have hc := ValidEqTermΓ.inst hι h hq hl' hl' hp hadm has'
         fun _ => Level.equivalence.refl _
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels, Universe.substLevels_substLevels]
@@ -388,8 +386,7 @@ theorem soundnessIn : SoundnessIn := by
     exact fun ρ => by
       let L' : Fin k → Level 0 := fun i => .ofNat (ρ i)
       have hl' : (ls.map (Level.subst L')).length = _ := (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       let p₀ : Parameter := ⟨Grade.one, Grade.one⟩
       have hsort := congrArg Universe.level
         (Universe.substLevels_substLevels_getFin L' (decl.sort (.ofLists qs ps hq hp)) ls hl)
@@ -397,7 +394,7 @@ theorem soundnessIn : SoundnessIn := by
       rw [Term.substLevels, show ((decl.sort (.ofLists qs ps hq hp)).substLevels
         (ls.getFin hl)).level.subst L' = _ from hsort]
       refine ValidTermΓ.coind (l' := l'.subst L') (κs := fun i => (κs i).substLevels L') hι h hq hl'
-        hp hadm (by rw [List.getFin_map]; exact has') hh (Terms.get_substLevels_of _ hA)
+        hp hadm has' hh (Terms.get_substLevels_of _ hA)
         ((Terms.length_substLevels _ As).trans hAl) ?_ (ht₁_ih hdis hord hι ρ)
         (ht₂_ih hdis hord hι ρ) ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro j T' A' hj hA'
@@ -493,13 +490,11 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T con qs ls ps as h hc hq hl hp hadm has ts hts has_ih hts_ih ι sigM
       hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
+      have hc' := ValidEqTermΓ.ctor hι h hc hq hl' hl' hp hadm has'
         (fun _ => Level.equivalence.refl _) (by rw [List.getFin_map]; exact hts')
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
       exact hc'
@@ -507,17 +502,15 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T qs ls ps as r ς χ t Cs us κ h' C h hq hl hp hadm has ht hh hC hCl hCs
       hCt hul hus Rs hRs hut hκ has_ih ht_ih hCt_ih hut_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have ht' := ht_ih hdis hord hι ρ
       simp only [Context.atLevels, Term.atLevels, Term.substLevels] at ht'
       simp only [Term.atLevels]
       rw [Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.recursor hι hord h hq hl' hl' hp hadm (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.recursor hι hord h hq hl' hl' hp hadm has'
         ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
@@ -550,10 +543,8 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hq hl hp hadm hd has ht hbs
       has_ih ht_ih hbs_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have ht' := ht_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
       have hbs' := hbs_ih hdis hord hι ρ
@@ -561,7 +552,7 @@ theorem soundnessIn : SoundnessIn := by
         hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hadm hd (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.obs hι h hq hl' hl' hp hadm hd has'
         (fun _ => Level.equivalence.refl _) ht' (by rw [List.getFin_map]; exact hbs')
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Term.substLevels_instantiate,
@@ -572,13 +563,11 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hq hl hp hadm hpre has hh hS hss
       hSl hSs hSt hgl hgs hgt has_ih hss_ih hSt_ih hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hss' := hss_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidTermΓ.corec hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has') hh
+      exact ValidTermΓ.corec hι h hq hl' hp hadm hpre has' hh
         (States.get_substLevels_of _ hS) hss'
         (fun j T' hj =>
           have ⟨ps'', S', hS'⟩ := hSs j T' hj
@@ -610,8 +599,7 @@ theorem soundnessIn : SoundnessIn := by
   case eqTerm_delta =>
     intro sig k Γ ctx d qs ls ps hctx h hq hl hp hctx_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
       have hc := ValidEqTermΓ.delta (hctx_ih hdis hord hι ρ) hι h hq hl' hp
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
@@ -620,10 +608,8 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx f j k' g m p A qs ls₁ ls₂ ps hctx h hq hl₁ hl₂ hp hls hctx_ih ι sigM hdis hord
       hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
       have hc := ValidEqTermΓ.const (hctx_ih hdis hord hι ρ) hι h hq hl₁' hl₂' hp (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -640,13 +626,10 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D ζ qs ls₁ ls₂ ps as₁ as₂ h hq hl₁ hl₂ hp hadm has hls has_ih ι sigM hdis
       hord hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
-      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has') (by
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
+      have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
+      have hc := ValidEqTermΓ.inst hι h hq hl₁' hl₂' hp hadm has' (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
       rw [List.getFin_map] at hc
@@ -685,15 +668,12 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T con qs ls₁ ls₂ ps as₁ as₂ h hc hq hl₁ hl₂ hp hadm has hls ts us hts
       has_ih hts_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
+      have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
-      have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp hadm (by rw [List.getFin_map]; exact has')
+      have hc' := ValidEqTermΓ.ctor hι h hc hq hl₁' hl₂' hp hadm has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -705,12 +685,9 @@ theorem soundnessIn : SoundnessIn := by
       hl₂ hp hadm has hls ht hh hC hCl₁ hCl₂ hCs₁ hCs₂ hCt hul₁ hul₂ hus₁ hus₂ hes Rs₁ Rs₂ hRs₁ hRs₂
       hut hκ has_ih ht_ih hCt_ih hut_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
+      have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have ht' := ht_ih hdis hord hι ρ
       simp only [Context.atLevels, Term.atLevels, Term.substLevels] at ht'
       simp only [Term.atLevels]
@@ -718,7 +695,7 @@ theorem soundnessIn : SoundnessIn := by
         (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
       exact ValidEqTermΓ.recursor hι hord h hq hl₁' hl₂' hp hadm
-        (by rw [List.getFin_map]; exact has') ht' hh
+        has' ht' hh
         (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs₁ j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
@@ -750,12 +727,9 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hq hl₁ hl₂
       hp hadm hd has hls ht hbs has_ih ht_ih hbs_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
+      have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have ht' := ht_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels] at ht'
       have hbs' := hbs_ih hdis hord hι ρ
@@ -763,7 +737,7 @@ theorem soundnessIn : SoundnessIn := by
         hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
-      have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hadm hd (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.obs hι h hq hl₁' hl₂' hp hadm hd has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -778,15 +752,12 @@ theorem soundnessIn : SoundnessIn := by
       hl₂ hp hadm hpre has hls hh hS₁ hS₂ hss hSl₁ hSl₂ hSs hSk hSt hSe hgl₁ hgl₂ hgs hgt has_ih
       hss_ih hSt_ih hSe_ih hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl₁' : (ls₁.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₁
-      have hl₂' : (ls₂.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl₂
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
+      have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
+      have has' := (has_ih hdis hord hι).atLevels hl₁ ρ
       have hss' := hss_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm hpre (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.corec hι h hq hl₁' hl₂' hp hadm hpre has'
         (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
@@ -802,10 +773,8 @@ theorem soundnessIn : SoundnessIn := by
       hi hC hu rs hrs hCl hCs hCt hul hus Rs hRs hut hκ has_ih hts_ih hCt_ih hut_ih ι sigM hdis hord
       hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hts' := hts_ih hdis hord hι ρ
       simp only [Telescope.atLevels, Constructor.fieldsAt_substLevels] at hts'
       simp only [Term.atLevels]
@@ -813,7 +782,7 @@ theorem soundnessIn : SoundnessIn := by
         (.ctor _ _ _ _ _ _ _))) (fun x => by cases x <;> rfl), Term.substLevels_instantiate,
         Term.substLevels_instantiate, Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      exact ValidEqTermΓ.iota hι hord h hc hq hl' hp hadm (by rw [List.getFin_map]; exact has')
+      exact ValidEqTermΓ.iota hι hord h hc hq hl' hp hadm has'
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
         (fun j T' hj => let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩)
         (fun j T' C' hj hC' => by
@@ -842,10 +811,8 @@ theorem soundnessIn : SoundnessIn := by
       he hi hC hu hCl hCs hCt hul hus Rs hRs hut hκ has_ih ht_ih he_ih hCt_ih hut_ih ι sigM hdis
       hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hj := TypeDeclaration.dataTypes_getElem?_of_cases (List.mem_of_getElem? hi)
       have ht' := ht_ih hdis hord hι ρ
       have he' := he_ih hdis hord hι ρ
@@ -861,30 +828,28 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels_subst₀_of (σ' := Subst₀.single (t.substLevels fun i => .ofNat (ρ i)))
           (fun x => by cases x <;> rfl)]
       simp only [Term.substLevels]
-      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hadm hr (by rw [List.getFin_map]; exact has') ht' he'
+      exact ValidEqTermΓ.etaCtor hι h hc hq hl' hp hadm hr has' ht' he'
         hCv hi hu' hκ
   case eqTerm_beta =>
     intro sig k Γ ctx decl D T qs ls ps as r Ss gs h' i ps' S ss d p q ς ps₀ Ξ₀ Θ₀ B₀ ψ₀ g bs h hq
       hl hp hadm hpre has hh hS hss hi hd hg hbs hSl hSs hSt hgl hgs hgt has_ih hss_ih hbs_ih hSt_ih
       hgt_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have hss' := hss_ih hdis hord hι ρ
       have hbs' := hbs_ih hdis hord hι ρ
       have hcl : ∀ {a} (x : Var Ξ₀ a),
           ((hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
             as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
-            hd.obsSubst ((Term.corec r D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+            hd.obsSubst ((Term.corec r D qs (ls.map (Level.atLevels ρ)) ps
               (as.substLevels fun i => .ofNat (ρ i)) (ss.substLevels fun i => .ofNat (ρ i)).terms
               (Ss.substLevels fun i => .ofNat (ρ i)) (gs.substLevels fun i => .ofNat (ρ i))).observation
-              D qs (ls.map (Level.subst fun i => .ofNat (ρ i))) ps
+              D qs (ls.map (Level.atLevels ρ)) ps
               (as.substLevels fun i => .ofNat (ρ i))) (as.substLevels fun i => .ofNat (ρ i)).toSubst x :=
         fun x => hd.obsSubst_substLevels _ (fun d' ps' => by
           rw [Term.observation_substLevels]
-          simp only [Term.substLevels, ← Args.terms_substLevels])
+          simp only [Term.substLevels, ← Args.terms_substLevels, Level.subst_ofNat])
           (InstanceArgs.toSubst_substLevels _ as) x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
@@ -893,7 +858,7 @@ theorem soundnessIn : SoundnessIn := by
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl), Term.substLevels_substLevels,
         Args.substLevels_rename]
       simp only [Term.substLevels, ← Args.terms_substLevels]
-      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm hpre (by rw [List.getFin_map]; exact has')
+      have hc := ValidEqTermΓ.beta hι h hq hl' hp hadm hpre has'
         hh (States.get_substLevels_of _ hS) hss' hi hd
             (DestructorBranches.get_substLevels_of _ hg)
         (by rw [List.getFin_map]; exact hbs')
@@ -909,14 +874,12 @@ theorem soundnessIn : SoundnessIn := by
     intro sig k Γ ctx decl D T qs ls ps as t u h hq hl hp hadm hr has ht hu hobs has_ih ht_ih hu_ih
       hobs_ih ι sigM hdis hord hι
     exact fun ρ => by
-      have hl' : (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).length = _ :=
-        (List.length_map _).trans hl
-      have has' := has_ih hdis hord hι ρ
-      simp only [Context.atLevels, Context.substLevels_substLevels] at has'
+      have hl' := Level.length_atLevels (ls := ls) ρ hl
+      have has' := (has_ih hdis hord hι).atLevels hl ρ
       have ht' := ht_ih hdis hord hι ρ
       have hu' := hu_ih hdis hord hι ρ
       simp only [Term.atLevels, Term.substLevels] at ht' hu'
-      refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm (by rw [List.getFin_map]; exact has') ht' hu'
+      refine ValidEqTermΓ.etaObs hι h hq hl' hp hadm has' ht' hu'
         fun d p q ς ps' Ξ Θ B ψ hpos => ?_
       have hb := hobs_ih d p q ς ps' Ξ Θ B ψ hpos hdis hord hι ρ
       have hcl := fun {a} (x : Var Ξ a) =>
