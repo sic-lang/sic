@@ -26,7 +26,7 @@ the level of `l` whose equality of terms relates `t` and `u`.
 The universes are defined one level after the other, and at each level by a least relation, which
 gives each type of the level together with the equality of its terms: this induction-recursion is
 encoded by its graph, an inductive relation between a type and the equality of its terms, as the
-formalization of Adjedj, Lennon-Bertrand, Maillard, Pédrot and Pujet does, in Coq, for its universes.
+formalization of the logical relation by Pujet encodes its own, `_⊩LR_▸_▸_▸_`.
 The graph gives one type at a time, rather than two equal types, and two types are equal when they
 have the same equality of terms, so that the fields of a constructor, whose types depend on the
 fields before them, need only the condition that equal fields before them give the same equality of
@@ -43,6 +43,17 @@ A type below which the types of a block are nested, such as a type of functions 
 block, has no equality before the block does: its equality is given from the relations of these
 types, by the graph of the nestings, which follows the nesting of the type, read once on the
 declaration, and takes the given relations at its positions.
+
+The graph of Pujet relates a type in a context to three relations, the equality of the types, the
+terms and their equality, by the typed reduction, at two levels, and has the natural numbers, the
+types of functions, quantified over the weakenings of the context, and the neutral types.
+The graph here relates a closed canonical type to the equality of its terms alone, at every level:
+its terms are those that the equality relates to themselves, and two types are equal when they have
+the same equality of terms; the canonical terms are those that the computation gives, without
+typing, and the closed types need no weakenings and no neutral types.
+Its types are the sorts and the instances of the declared types, the functions being codata, and
+each level also has the truth of its propositions and the relations of run time of its types, which
+the graph of Pujet has no counterpart for.
 -/
 
 @[expose] public section

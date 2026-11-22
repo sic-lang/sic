@@ -27,6 +27,10 @@ it, by `levelRel`, which ties the graphs of `Sic.Core.Meaning.Equality` and of
 
 ADE give no meaning to the judgments: their logical relation is defined on the typed reduction, for
 the decidability of the conversion, and it is not a model of the type theory in the computations.
+The formalization of the logical relation by Pujet defines it on the typed reduction too, for the
+normalization, the canonicity and the consistency; it ties the relations of its two levels, `kit`,
+each given those of the levels below it, `logRelRec`, as `levelRel` ties those of every level `n`,
+by a recursion on `n`.
 -/
 
 @[expose] public section
