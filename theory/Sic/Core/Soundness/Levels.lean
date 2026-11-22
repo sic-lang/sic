@@ -1279,7 +1279,8 @@ theorem EqSubst.substLevels_of_atLevels {sig : Signature} {ι : Interpretation} 
     (σ : Subst 0 [] Ξ) {σ₁ σ₂ : Subst 0 [] _} :
     EqSubst sig ι (Context.empty.append ((Θ.atLevels fun i => (L i).closedValue).subst σ)) σ₁ σ₂ →
       EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst σ)) σ₁ σ₂ :=
-  EqSubst.levelEquiv (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L σ).symm)
+  EqSubst.levelEquiv
+    (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L (Subst.LevelEquiv.refl σ)).symm)
 
 -- ADE: none.
 /-- Two closed substitutions equal for a context at the levels `ls` without variables are equal for

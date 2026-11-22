@@ -82,7 +82,7 @@ theorem Constructor.fields_atLevels_subst {decl : TypeDeclaration}
     Telescope.LevelEquiv (((c.fields (.ofLists qs ps hq hp)).atLevels
         fun i => (ls.getFin hl i).closedValue).subst as.toSubst)
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) :=
-  ((c.fields _).closedValues_levelEquiv (ls.getFin hl) as.toSubst).symm
+  ((c.fields _).closedValues_levelEquiv (ls.getFin hl) (Subst.LevelEquiv.refl _)).symm
 
 -- ADE: none.
 /-- The level of the sort of a type declaration has the same value at the values of the levels

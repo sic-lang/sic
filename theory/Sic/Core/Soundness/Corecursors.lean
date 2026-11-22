@@ -507,17 +507,14 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         (hpos.obsSubst f a.toSubst x)
       rw [Destructors.Pos.obsSubst_posSubstLevels]
       exact Term.LevelEquiv.refl _
-  have hbsρ := EqSubst.levelEquiv (Context.LevelEquiv.append .empty
-    (Telescope.LevelEquiv.subst hcE.symm
-      (Telescope.substLevels_levelEquiv
-        (fun i => Level.equivalence.symm (Level.ofNat_closedValue (ls.getFin hl i))) Θ))) hbs
+  have hbsρ := EqSubst.levelEquiv
+    (Context.LevelEquiv.append .empty (Θ.closedValues_levelEquiv L hcE.symm)) hbs
   have hBE : ∀ {f : Observations} {a : InstanceArgs 0 [] decl.scope}
       {τ : Subst 0 [] (Scope.extend [] ps'.length)},
       Term.LevelEquiv ((B.substLevels Lρ).subst
           (Subst.append ((hpos.substLevels Lρ).obsSubst f a.toSubst) τ))
         ((B.substLevels L).subst (Subst.append (hpos.obsSubst f a.toSubst) τ)) :=
-    Term.LevelEquiv.subst (Subst.LevelEquiv.append hcE (Subst.LevelEquiv.refl _))
-      (Term.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i)) B)
+    (B.closedValues_levelEquiv L (Subst.LevelEquiv.append hcE.symm (Subst.LevelEquiv.refl _))).symm
   rw [Term.instantiate_eq_subst, Term.instantiate_eq_subst, Term.subst_append, Term.subst_append]
   refine ⟨?_, ?_⟩
   · have hr := hres bs₁ bs₂ hbsρ
@@ -1058,7 +1055,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
     have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
     exact (hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ').imp_left fun he => he.levelEquiv
       (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
-      (Term.closedValues_levelEquiv L B _)
+      (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
   have hw : Computesι sig ι (.inst T.name qs ls ps a₁) (.inst T.name qs ls ps a₁) :=
     (Whnf.inst ..).computes
   cases hs : (decl.sort I).quality
@@ -1711,7 +1708,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
     rw [Term.observation_subst_args, Term.observation_subst_args]
     have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
     exact (hobs d p q ς ps' Ξ Θ B ψ hpos ts us hτ').levelEquiv (Term.LevelEquiv.refl _)
-      (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B _)
+      (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
     have hmono := DesRel.blockMono hd hS

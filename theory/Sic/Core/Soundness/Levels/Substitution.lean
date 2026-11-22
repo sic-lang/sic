@@ -582,22 +582,24 @@ theorem DestructorBranches.LevelEquiv.subst {k : Nat} {Γ Δ : Scope} {θ₁ θ�
 end
 
 -- ADE: none.
-/-- A term at levels `L` without variables, substituted by `σ`, is the term at the values of `L`
-substituted by `σ`, up to its levels. -/
+/-- A term at levels `L` without variables, substituted by `σ₁`, is the term at the values of `L`
+substituted by `σ₂`, up to its levels, when `σ₁` and `σ₂` are equal up to their levels. -/
 theorem Term.closedValues_levelEquiv {k : Nat} {Γ Δ : Scope} (L : Fin k → Level 0)
-    (t : Term k Δ) (σ : Subst 0 Γ Δ) :
-    Term.LevelEquiv ((t.substLevels L).subst σ)
-      ((t.atLevels fun i => (L i).closedValue).subst σ) :=
-  Term.LevelEquiv.subst (Subst.LevelEquiv.refl _) (Term.substLevels_levelEquiv_atLevels L t)
+    (t : Term k Δ) {σ₁ σ₂ : Subst 0 Γ Δ} (hσ : Subst.LevelEquiv σ₁ σ₂) :
+    Term.LevelEquiv ((t.substLevels L).subst σ₁)
+      ((t.atLevels fun i => (L i).closedValue).subst σ₂) :=
+  Term.LevelEquiv.subst hσ (Term.substLevels_levelEquiv_atLevels L t)
 
 -- ADE: none.
-/-- A telescope at levels `L` without variables, substituted by `σ`, is the telescope at the values
-of `L` substituted by `σ`, up to its levels. -/
+/-- A telescope at levels `L` without variables, substituted by `σ₁`, is the telescope at the
+values of `L` substituted by `σ₂`, up to its levels, when `σ₁` and `σ₂` are equal up to their
+levels. -/
 theorem Telescope.closedValues_levelEquiv {k : Nat} {Γ Ξ : Scope} {ps : List Parameter}
-    (L : Fin k → Level 0) (Θ : Telescope k Ξ ps) (σ : Subst 0 Γ Ξ) :
-    Telescope.LevelEquiv ((Θ.substLevels L).subst σ)
-      ((Θ.atLevels fun i => (L i).closedValue).subst σ) :=
-  Telescope.LevelEquiv.subst (Subst.LevelEquiv.refl _)
+    (L : Fin k → Level 0) (Θ : Telescope k Ξ ps) {σ₁ σ₂ : Subst 0 Γ Ξ}
+    (hσ : Subst.LevelEquiv σ₁ σ₂) :
+    Telescope.LevelEquiv ((Θ.substLevels L).subst σ₁)
+      ((Θ.atLevels fun i => (L i).closedValue).subst σ₂) :=
+  Telescope.LevelEquiv.subst hσ
     (Telescope.substLevels_levelEquiv
       (fun i => Level.equivalence.symm (Level.ofNat_closedValue (L i))) Θ)
 

@@ -603,8 +603,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
       ((Θ.substLevels Lρ).subst
         ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst))
       ((Θ.substLevels L).subst (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) :=
-    Telescope.LevelEquiv.subst hcE
-      (Telescope.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i)) Θ)
+    (Θ.closedValues_levelEquiv L hcE.symm).symm
   have htsρ := EqSubst.levelEquiv (Context.LevelEquiv.append .empty hΘE.symm) hts
   have hbsρ := RunsAsArgs.levelEquiv hd hΘE.symm hbs
   obtain ⟨S', h₁, h₂⟩ := htel.runTelRel hd P rfl
@@ -640,8 +639,8 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hres' := hres ts ts htsρ
   rw [Term.observation_subst_args] at hres'
   have hw₂ := RunsAs.conv hd (ValidEqTerm₀.conv hres'.left hBT).2 hBT.symm.2 hw₁
-  exact hw₂.levelEquiv hd (Term.LevelEquiv.subst (Subst.LevelEquiv.append hcE (Subst.LevelEquiv.refl _))
-    (Term.substLevels_levelEquiv (fun i => Level.ofNat_closedValue (ls.getFin hl i)) B))
+  exact hw₂.levelEquiv hd
+    (B.closedValues_levelEquiv L (Subst.LevelEquiv.append hcE.symm (Subst.LevelEquiv.refl _))).symm
 
 -- ADE: none.
 /-- `(d)` at run time: an observation of a term of an instance of a codata type of `Σ`, whose type

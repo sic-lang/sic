@@ -255,7 +255,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         rw [Term.observation_subst_args, Term.observation_subst_args]
         exact (((ValidEqTerm₀.red_iff hd hred₂).2
           ((ValidEqTerm₀.red_iff hd hred₁).2 hb).symm).symm).levelEquiv (Term.LevelEquiv.refl _)
-          (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B _)
+          (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
       · -- The observation by a destructor whose grade is used at run time runs its branch, valid
         -- at run time, and resumes its value.
         intro d p q ς ps' Ξ Θ B ψ hpos i' hpr hi' H₂ hH₂ ts₂ bs₂ hτ hbs₂ ϖ₀
@@ -263,7 +263,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
         obtain rfl : i' = i :=
           Option.some.inj (hi'.symm.trans (hd.destructorCase_of_codataCases hdecl hi))
         have hτ' := EqSubst.substLevels_of_atLevels L Θ _ hτ
-        have hbs₂' := RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L _).symm hbs₂
+        have hbs₂' :=
+          RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L (Subst.LevelEquiv.refl _)).symm hbs₂
         -- The branch in the closure, at the grade of its destructor.
         have hpg : ((sig.destructorGrades D qs ps).getD [])[i']? = some p := by
           rw [hgrs]
@@ -411,7 +412,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             fun _ => ?_,
             fun D' R hD' => ?_⟩
           · exact ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hrun).levelEquiv hd
-              (Term.closedValues_levelEquiv L B _)
+              (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
           · simp only [hpos.recursionAt_index, hbn] at hD'
             cases hD'
         | some D₃ =>
@@ -466,7 +467,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
               subst hD' hR
               have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
-                (Term.closedValues_levelEquiv L B _)
+                (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
               rw [Term.atLevels, he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
