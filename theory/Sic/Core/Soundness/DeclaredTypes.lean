@@ -39,14 +39,19 @@ variable {sig : Signature} {ι : Interpretation}
 The meaning of a type declaration holds at the values of its levels, which the proofs on its data
 types and its codata types read at the values of levels without variables: the facts that relate
 the two are stated once.
-Those of the syntax hold at any arguments: the instances of the block, the telescopes, the fields
-of the constructors and the sort of the declaration at the values of the levels are those at the
-levels, up to the levels, and equal substitutions for them are equal.
+Those of the syntax hold at any arguments: the instances of the block, the fields of the
+constructors and the level of the sort at the values of the levels are those at the levels, up to
+the levels.
+Those of the equalities follow: two substitutions are equal for the fields of a constructor at the
+values of the levels if and only if they are for its fields at the levels, and equal instances of
+the block at the levels are equal at their values.
 Those of the meaning hold at equal arguments of the parameters, whose equality moves to the values
 of the levels: the destructors and the fields are meaningful there.
 Those of the graphs hold in a signature whose names are distinct: the relations of the
-destructors, and of run time, at the levels are ones at their values, and those of the fields at
-the values of the levels are ones at the levels, with the positions of their instances at run
+destructors, plain, of run time and at nestings, go from the levels to their values and back, the
+level of the sort with them on the way back; the relations of the fields of the instances of the
+block go to the values of the levels, and the telescopes of the fields of a constructor at the
+values of the levels are ones at the levels, with the positions of their instances at run
 time. -/
 
 -- ADE: none.
@@ -96,6 +101,20 @@ theorem TypeDeclaration.sort_atLevels_closedValue (decl : TypeDeclaration) {qs :
   Level.closedValue_subst_equiv (fun _ => Level.ofNat_closedValue _) _
 
 -- ADE: none.
+/-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
+`ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
+theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
+    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
+    (as : InstanceArgs 0 [] decl.scope) {σ₁ σ₂ : Subst 0 [] _} :
+    EqSubst sig ι (Context.empty.append (((c.fields (.ofLists qs ps hq hp)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
+      EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
+        σ₁ σ₂ :=
+  (EqSubst.substLevels_iff_atLevels (ls.getFin hl) _ (Subst.LevelEquiv.refl _)).symm
+
+-- ADE: none.
 /-- Two instances of a type of a block at the levels `ls`, at arguments `ā₁` and `ā₂`, equal terms
 of a type, are equal terms of the type as the instances of the type at the values of `ls`,
 substituted by `ā₁` and `ā₂`. -/
@@ -130,35 +149,6 @@ theorem ValidEqTerm₀.blockInstance_atLevels_sort {decl : TypeDeclaration} {qs 
       (.sort ((decl.sort (.ofLists qs ps hq hp)).atLevels fun i => (ls.getFin hl i).closedValue)) :=
   (h.blockInstance_atLevels hq hl hp).levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _)
     (.sort _ (Level.equivalence.symm (Level.subst_equiv (fun _ => Level.ofNat_closedValue _) _)))
-
--- ADE: none.
-/-- The relation that the graph of the fields gives an instance of a type of a block at the levels
-`ls` and at arguments `ā` is one of the instance of the type at the values of `ls`, substituted by
-`ā`, in a signature whose names are distinct. -/
-theorem FieldRel.blockInstance_atLevels (hd : sig.Distinct) {decl : TypeDeclaration}
-    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {D : Name}
-    {as : InstanceArgs 0 [] decl.scope} {n : Nat} {s : Quality} {F : TermRel}
-    (h : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
-    FieldRel sig ι n (fun m _ => levelRel sig ι m) s
-      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst as.toSubst) F :=
-  FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
-    (decl.blockInstance_atLevels_subst hq hl hp as D).symm
-
--- ADE: none.
-/-- Two closed substitutions are equal for the fields of a constructor at the values of the levels
-`ls`, at arguments `ā`, if and only if they are equal for its fields at `ls`. -/
-theorem Constructor.eqSubst_fields_atLevels {decl : TypeDeclaration}
-    (c : Constructor decl.sorts decl.grades decl.levels decl.scope) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
-    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades)
-    (as : InstanceArgs 0 [] decl.scope) {σ₁ σ₂ : Subst 0 [] _} :
-    EqSubst sig ι (Context.empty.append (((c.fields (.ofLists qs ps hq hp)).atLevels
-        fun i => (ls.getFin hl i).closedValue).subst as.toSubst)) σ₁ σ₂ ↔
-      EqSubst sig ι (Context.empty.append (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as))
-        σ₁ σ₂ :=
-  (EqSubst.substLevels_iff_atLevels (ls.getFin hl) _ (Subst.LevelEquiv.refl _)).symm
 
 section
 
@@ -305,6 +295,21 @@ theorem RunNestDesRel.substLevels_of_atLevels (hd : sig.Distinct) {P : Program}
   RunNestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
     (Destructors.substLevels_levelEquiv (fun _ => Level.ofNat_closedValue _) _)
     (Subst.LevelEquiv.refl _) (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _)
+
+-- ADE: none.
+/-- The relation that the graph of the fields gives an instance of a type of a block at the levels
+`ls` and at arguments `ā` is one of the instance of the type at the values of `ls`, substituted by
+`ā`, in a signature whose names are distinct. -/
+theorem FieldRel.blockInstance_atLevels (hd : sig.Distinct) {decl : TypeDeclaration}
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hl : ls.length = decl.levels) (hp : ps.length = decl.grades) {D : Name}
+    {as : InstanceArgs 0 [] decl.scope} {n : Nat} {s : Quality} {F : TermRel}
+    (h : FieldRel sig ι n (fun m _ => levelRel sig ι m) s (.inst D qs ls ps as) F) :
+    FieldRel sig ι n (fun m _ => levelRel sig ι m) s
+      (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
+        fun i => (ls.getFin hl i).closedValue).subst as.toSubst) F :=
+  FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (decl.blockInstance_atLevels_subst hq hl hp as D).symm
 
 -- ADE: none.
 /-- The fields of a constructor at the values of the levels `ls`, at arguments `ā`, telescopes of
