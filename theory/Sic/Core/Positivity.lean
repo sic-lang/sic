@@ -147,6 +147,18 @@ inductive Destructors.Positive (marks : Name → Nat → Prop) :
       (hds : Destructors.Positive marks (.succ x) ds) :
       Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ ds)
 
+/-- Destructors strictly positive in a variable, whose first destructor is `d`: its arguments avoid
+the variable, its result is strictly positive in it, and so are the destructors after it. -/
+theorem Destructors.Positive.cons_inv {marks : Name → Nat → Prop} {Γ : Scope} {e : Scope.Entry}
+    {x : Var Γ e} {d : Name} {ns : List Name} {ps : List Parameter} {p q ς : Grade}
+    {Θ : Telescope k Γ ps} {B : Term k (Γ.extend ps.length)} {ψ : ResultOwnership Grade ps.length}
+    {ds : Destructors k (.secondOrder ps ψ :: Γ) ns}
+    (h : Destructors.Positive marks x (.cons (d := d) p q ς Θ B ψ ds)) :
+    Θ.Avoids x ∧ Term.Positive marks (x.weakenN ps.length) B ∧
+      Destructors.Positive marks (.succ x) ds := by
+  cases h with
+  | cons hΘ hB hds => exact ⟨hΘ, hB, hds⟩
+
 /-! ## Declared Positions -/
 
 /-- The type `D` of the type declaration declares that it is strictly positive in its parameter at

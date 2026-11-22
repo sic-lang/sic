@@ -668,6 +668,24 @@ section
 
 variable {α I : Type}
 
+/-- A telescope renamed then at levels, substituted by `θ`, is the telescope at levels substituted
+by the renaming composed with `θ`. -/
+theorem Telescope.atLevels_rename_subst {k : Nat} {Γ Γ' : Scope} {ps : List Parameter}
+    (Θ : Telescope k Γ ps) (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') :
+    ((Θ.rename β).atLevels ρ).subst θ = (Θ.atLevels ρ).subst (fun x => θ (β x)) := by
+  rw [Telescope.atLevels, Telescope.substLevels_rename]
+  exact Telescope.subst_rename_of (fun _ => rfl) _
+
+/-- A term over `n` new variables, renamed under them then at levels, substituted by `θ` and by `τ`
+for the new variables, is the term at levels substituted by the renaming composed with `θ` and by
+`τ`. -/
+theorem Term.atLevels_rename_subst_append {k n : Nat} {Γ Γ' : Scope} (B : Term k (Γ.extend n))
+    (ρ : Fin k → Nat) (β : Ren Γ' Γ) (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] n)) :
+    ((B.rename (Ren.liftN n β)).atLevels ρ).subst (Subst.append θ τ) =
+      (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := by
+  rw [Term.atLevels, Term.substLevels_rename]
+  exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
+
 /-- The destructors of a codata type none of which is recursive, well formed in a signature `Σ_T`
 whose nested types a reading reads, and strictly positive in the variables with a position, are
 read by the reading, at the second pair of two pairs of substitutions, the first of which are equal
@@ -714,35 +732,23 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
       hds_ih hent hread fresh ρ Γ' β ν₁ ν₂ θ₁ θ₂ θ₁' θ₂' hrec hn hν₀ hpos hE hNS
     -- What the strict positivity gives of the destructor.
     have hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
-        ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx => by
-      have h := hpos e x hx
-      rw [Destructors.rename] at h
-      cases h with
-      | cons hΘ' _ _ => exact hΘ'.substLevels _
+        ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx =>
+      (hpos e x hx).cons_inv.1.substLevels _
     have hBpos : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         Term.Positive (sigT.PositiveIn decl) (x.weakenN ps.length)
-          (B.rename (Ren.liftN ps.length @β)) := fun e x hx => by
-      have h := hpos e x hx
-      rw [Destructors.rename] at h
-      cases h with
-      | cons _ hB' _ => exact hB'
+          (B.rename (Ren.liftN ps.length @β)) := fun e x hx =>
+      (hpos e x hx).cons_inv.2.1
     have hdspos : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         Destructors.Positive (sigT.PositiveIn decl) (.succ x) (ds.rename (Ren.lift @β)) :=
-      fun e x hx => by
-        have h := hpos e x hx
-        rw [Destructors.rename] at h
-        cases h with
-        | cons _ _ hds' => exact hds'
+      fun e x hx => (hpos e x hx).cons_inv.2.2
     -- The arguments and the result, at the substitutions that the renaming composes.
     have hΘe : ∀ θ : Subst 0 [] Γ', ((Θ.rename β).atLevels ρ).subst θ =
-        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ => by
-      rw [Telescope.atLevels, Telescope.substLevels_rename]
-      exact Telescope.subst_rename_of (fun _ => rfl) _
+        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ =>
+      Θ.atLevels_rename_subst ρ @β θ
     have hBe : ∀ (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] ps.length)),
         ((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ τ) =
-          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ => by
-      rw [Term.atLevels, Term.substLevels_rename]
-      exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
+          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ =>
+      B.atLevels_rename_subst_append ρ @β θ τ
     obtain ⟨hΘ₁, hΘ₂⟩ := hNS.telescope_eq hΘav
     have hΘv : ValidEqTelescope₀ sig ι ⟨.type, (κ.atLevels ρ).level⟩
         (((Θ.rename β).atLevels ρ).subst θ₁) (((Θ.rename β).atLevels ρ).subst θ₂) := by
@@ -813,36 +819,24 @@ theorem WfDestructors.reads (R : Reading sig ι α I) (hS : TypingSound sig ι) 
         ds.rename (fun x => .succ (β x)) := Destructors.rename_rename_of (fun _ => rfl) ds
     -- What the strict positivity gives of the destructor.
     have hΘav : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
-        ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx => by
-      have h := hpos e x hx
-      rw [Destructors.rename] at h
-      cases h with
-      | cons hΘ' _ _ => exact hΘ'.substLevels _
+        ((Θ.rename β).atLevels ρ).Avoids x := fun e x hx =>
+      (hpos e x hx).cons_inv.1.substLevels _
     have hBpos : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         Term.Positive (sigT.PositiveIn decl) (x.weakenN ps.length)
-          (B.rename (Ren.liftN ps.length @β)) := fun e x hx => by
-      have h := hpos e x hx
-      rw [Destructors.rename] at h
-      cases h with
-      | cons _ hB' _ => exact hB'
+          (B.rename (Ren.liftN ps.length @β)) := fun e x hx =>
+      (hpos e x hx).cons_inv.2.1
     have hdspos : ∀ (e : Scope.Entry) (x : Var Γ' e), (ν₁ x).isPlain = false →
         Destructors.Positive (sigT.PositiveIn decl) (.succ x)
           (ds.rename (fun x => .succ (e' := .secondOrder ps ψ) (β x))) :=
-      fun e x hx => by
-        have h := hpos e x hx
-        rw [Destructors.rename, hds_eq] at h
-        cases h with
-        | cons _ _ hds' => exact hds'
+      fun e x hx => hds_eq ▸ (hpos e x hx).cons_inv.2.2
     -- The arguments and the result, at the substitutions that the renaming composes.
     have hΘe : ∀ θ : Subst 0 [] Γ', ((Θ.rename β).atLevels ρ).subst θ =
-        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ => by
-      rw [Telescope.atLevels, Telescope.substLevels_rename]
-      exact Telescope.subst_rename_of (fun _ => rfl) _
+        (Θ.atLevels ρ).subst (fun x => θ (β x)) := fun θ =>
+      Θ.atLevels_rename_subst ρ @β θ
     have hBe : ∀ (θ : Subst 0 [] Γ') (τ : Subst 0 [] (Scope.extend [] ps.length)),
         ((B.rename (Ren.liftN ps.length @β)).atLevels ρ).subst (Subst.append θ τ) =
-          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ => by
-      rw [Term.atLevels, Term.substLevels_rename]
-      exact Term.subst_rename_of (Subst.append_liftN_rename β (fun _ => rfl) τ) _
+          (B.atLevels ρ).subst (Subst.append (fun x => θ (β x)) τ) := fun θ τ =>
+      B.atLevels_rename_subst_append ρ @β θ τ
     obtain ⟨hΘ₁, hΘ₂⟩ := hNS.telescope_eq hΘav
     have hΘv : ValidEqTelescope₀ sig ι ⟨.type, (κ.atLevels ρ).level⟩
         (((Θ.rename β).atLevels ρ).subst θ₁) (((Θ.rename β).atLevels ρ).subst θ₂) := by
