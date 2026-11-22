@@ -359,7 +359,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
               (fun D' => @fun _ _ hH₀ _ _ hx =>
                 RunRel.computed_mono (fun _ _ h => hXmono D' hH₀ h) hx) _
           have hmR : R.Monotone := levelRel_runNest_mono hd hRn hτm
-          exact RunsAs.nested hd hord (fun hdecl hD hL => hord.lifts hdecl hD hL) hr
+          exact RunsAs.nested hd hord hr
             Signature.blockShapes_of_block hprop hRn
             (Nest.map_rel₃ (r := fun (x _ _ : RunNestLeaf) => RunLeafCongr sig ι x.2)
               (fun _ => RunRel.computed_leafCongr _) _) hτm
@@ -629,7 +629,7 @@ theorem RunsAs.recursor_skeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           intro ms A t u F b _ hF htu σ' π χ'' e A' mr hsh hres hL hrun hval ϖ'' H''' c π' hH''' _
             _ g₂ E₂ hg₂
           rw [hr0]
-          exact RunsAs.nestedSkeleton hd hord (fun hdecl hD hL => hord.lifts hdecl hD hL)
+          exact RunsAs.nestedSkeleton hd hord
             Signature.blockShapes_of_block hF
             (Nest.map_rel₃ (r := fun (x _ _ : NestLeaf) => LeafCongr sig ι .type x.2)
               (fun D' a a' b b' h => by

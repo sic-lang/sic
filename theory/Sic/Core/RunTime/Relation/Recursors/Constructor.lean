@@ -297,7 +297,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (EqSubst.append_append_iff ctx _ σ σ _ _).2 ⟨hσ, by rw [Constructor.fieldsAt_subst]; exact hts⟩
   -- The recursive results are equal arguments of their types: the recursor on a recursive field
   -- and the result of a nested field.
-  have hEq := EqSubst.constructorResultTerms hd (fun hdecl hD hL => hord.lifts hdecl hD hL)
+  have hEq := EqSubst.constructorResultTerms hd hord
     (L := fun D' => (.inst D' qs ls ps (as.subst σ),
       (DataType.blockRel decl.dataTypes SM D').computed sig ι))
     (fun D' b hb a₁ a₂ ha₁₂ => by

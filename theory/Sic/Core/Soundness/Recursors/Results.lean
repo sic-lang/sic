@@ -74,11 +74,7 @@ the type `D` of the block relates terms whose results are equal terms of the mot
 does not read their computation; the types of the fields of the second side have the shape of
 those of the first. -/
 theorem EqSubst.resultTerms (hd : sig.Distinct)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hord : sig.LiftsInOrder)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {s : Quality}
     {L : Name → NestLeaf} (hL : ∀ D, ResultLeaf sig ι ρ₁ φ₁ φ₂ D (L D))
     (hLc : ∀ D, LeafCongr sig ι s (L D).2) {Δ' Δ : Scope} {ρ : Lifting 0 Δ' Δ}
@@ -189,7 +185,7 @@ theorem EqSubst.resultTerms (hd : sig.Distinct)
               have hctx' : ValidCtx₀ sig ι ((ctx.var A').append R) := hctx
               have hty : ValidType₀ sig ι (A'.subst θ') :=
                 ((validCtx₀_var ctx A').1 (ValidCtx₀.append_left hctx')).2 θ' θ' hθ'
-              have he := NestRel.resultSound (v := v) hd hlifts hF
+              have he := NestRel.resultSound (v := v) hd hord hF
                 (Nest.map_rel₃ (r := fun a _ _ => LeafCongr sig ι s a.2) (f := L) (g := L)
                   (h := L) hLc (.inst ms))
                 (Nest.rel_map (r := ResultLeaf sig ι ρ₁ φ₁ φ₂) (f := L) hL (.inst ms)) _ _ hFt
@@ -248,11 +244,7 @@ extended by the fields and by `R` is meaningful and the terms are related as `Eq
 asks: the first side is at the instance and at the lifting of the block substituted by `τ`, and
 the second one at any levels, arguments and lifting. -/
 theorem EqSubst.constructorResultTerms (hd : sig.Distinct)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hord : sig.LiftsInOrder)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {s : Quality}
     {L : Name → NestLeaf} (hL : ∀ D, ResultLeaf sig ι ρ₁ φ₁ φ₂ D (L D))
     (hLc : ∀ D, LeafCongr sig ι s (L D).2) {j g k' : Nat} {Γ Ξ : Scope}
@@ -273,7 +265,7 @@ theorem EqSubst.constructorResultTerms (hd : sig.Distinct)
     (hr₂ : Constructor.ResultTerms sig v c I names ls₂ as₂ ρ₂ φ₂ ts₂ rs₂) :
     EqSubst sig ι (Context.empty.append (R.subst (Subst.append τ ts₁.toSubst))) rs₁.toSubst
       rs₂.toSubst :=
-  EqSubst.resultTerms hd hlifts hL hLc h (hs.appendArgs ts₁) hctx hθ
+  EqSubst.resultTerms hd hord hL hLc h (hs.appendArgs ts₁) hctx hθ
     ((Telescope.types_subst_append τ _ ts₁).trans
       (congrArg (Telescope.typesAt · ts₁) (Constructor.fieldsAt_subst c I ls₁ as₁ τ)))
     (Args.bound_terms_subst_append τ ts₁) hN

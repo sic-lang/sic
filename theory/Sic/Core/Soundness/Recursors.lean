@@ -299,7 +299,7 @@ theorem ValidEqTerm₀.recursor_block {sigT : Signature} {Γ : Scope} {ctx : Con
       (Term.recursorAt r ς χ qs ls₂ ps (as₂.subst τ₂) κ (Cs₂.subst τ₂) (us₂.subst τ₂)) ts₂
     have hb := hut i j T' con C' u₁ u₂ hi hC' hu₁ hu₂
     have hfs := (EqSubst.append_append_iff ctx _ τ₁ τ₂ _ _).2 ⟨hτ, hts⟩
-    have hres := EqSubst.constructorResultTerms hd (fun hdecl hD hL => hord.lifts hdecl hD hL)
+    have hres := EqSubst.constructorResultTerms hd hord
       hL hLc hR₁ hρ₁ hb.1.1 (hfs.left (ValidCtx₀.append_left hb.1.1)) hN hrs₁
       hrs₂
     have hb' := hb.2 _ _ ((EqSubst.append_append_iff _ (Rs₁ con) _ _ _ _).2 ⟨hfs, hres⟩)

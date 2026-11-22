@@ -1,5 +1,6 @@
 module
 
+public import Sic.Core.Lifting.Extension
 public import Sic.Core.Lifting.Substitution
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.Soundness.Corecursors
@@ -422,11 +423,7 @@ corecursors of the lifting of the type, which the signature declares, and whose 
 those of the type lifted, and the equality of the destructors of the lifting, which the meaning of
 the instance lifted gives, relates their observations, which step to their branches. -/
 theorem ResultSoundAt.inst (hd : sig.Distinct)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hord : sig.LiftsInOrder)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {decl : TypeDeclaration}
     {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
     (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
@@ -494,7 +491,7 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       body := body }
   have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
   have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
-  have hLf := hlifts h.1 hDn hLm
+  have hLf := hord.lifts h.1 hDn hLm
   let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
     .ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp'
   -- The type has no recursive destructor at the instance of the type declaration that each
@@ -677,11 +674,7 @@ distinct and whose liftings are those of its types: at each position, the relati
 terms whose results are equal terms of the motive of the type that the position holds, and does
 not read their computation. -/
 theorem NestRel.resultSound (hd : sig.Distinct)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hord : sig.LiftsInOrder)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {sT s : Quality}
     {τ : Nest NestLeaf} {A₁ : Term 0 []} {F : TermRel} :
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A₁ F →
@@ -715,9 +708,9 @@ theorem NestRel.resultSound (hd : sig.Distinct)
       cases hτ with
       | inst hτs =>
         obtain ⟨w₁, w₂, hc₁, hc₂, o₁, o₂, hw₁, hw₂, hSo⟩ := ht
-        exact ResultSoundAt.inst hd hlifts h hq hl hp hrec
+        exact ResultSoundAt.inst hd hord h hq hl hp hrec
           fun ls₂ as₂ d p q ς ps₁ Ξ Θ B ψ hpos =>
-            NestDesRel.resultSound hd hlifts (hpos.substLevels (ls.getFin hl)) hS
+            NestDesRel.resultSound hd hord (hpos.substLevels (ls.getFin hl)) hS
               (Nesting.ofArgs_rel₃ hτs) (Nesting.ofArgs_rel₃ hνs) hSo
               (ObsEquiv.of_computes hd hc₁ hw₁) (ObsEquiv.of_computes hd hc₂ hw₂)
               (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
@@ -729,9 +722,9 @@ theorem NestRel.resultSound (hd : sig.Distinct)
       cases hτ with
       | inst hτs =>
         obtain ⟨o, hSo⟩ := ht
-        exact ResultSoundAt.inst hd hlifts h hq hl hp hrec
+        exact ResultSoundAt.inst hd hord h hq hl hp hrec
           fun ls₂ as₂ d p q ς ps₁ Ξ Θ B ψ hpos =>
-            NestDesRel.resultSound hd hlifts (hpos.substLevels (ls.getFin hl)) hS
+            NestDesRel.resultSound hd hord (hpos.substLevels (ls.getFin hl)) hS
               (Nesting.ofArgs_rel₃ hτs) (Nesting.ofArgs_rel₃ hνs) hSo (.inl rfl) (.inl rfl)
               (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
               (hpos.nest_substLevels _ _)
@@ -745,11 +738,7 @@ equal terms of its result lifted at the first one: the destructors before it are
 equal abstractions for them, or have a result with a position, on which the destructors after
 them do not depend. -/
 theorem NestDesRel.resultSound (hd : sig.Distinct)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
+    (hord : sig.LiftsInOrder)
     {ρ₁ ρ₂ : Lifting 0 [] []} {φ₁ φ₂ : Name → Term 0 [.var]} {n : Nat} {sT s : Quality}
     {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
@@ -775,7 +764,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
     have hSp := TelRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) (fun _ => .plain) hΘ
     refine ⟨SΘ, hΘ, fun ts us hts => ?_⟩
     have htt := hSp.trans hts (hSp.symm hts)
-    exact NestRel.resultSound hd hlifts (hF ts htt) .plain
+    exact NestRel.resultSound hd hord (hF ts htt) .plain
       ((Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B).cast hν hν) _ _
       ((NestRel.congr_computes (hF ts htt) .plain (hf₁.at hf₂ d ps _ _)).2 (hSo.1 ts us hts))
   | _, _, _, _, _, B, _, .here, _, _, _, .nested (SΘ := SΘ) _ hΘ F hF _ _ _, hAll, _, hRel, _, _, _,
@@ -786,7 +775,7 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
     have htt := hSp.trans hts (hSp.symm hts)
     have hAllB := Term.nest_all (p := fun x : NestLeaf => LeafCongr sig ι sT x.2)
       (mark := fun _ => none) (fun _ _ h => nomatch h) (Nesting.liftN_rel₃ ps.length hAll) B
-    exact NestRel.resultSound hd hlifts (hF ts htt) hAllB
+    exact NestRel.resultSound hd hord (hF ts htt) hAllB
       (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B) _ _
       ((NestRel.congr_computes (hF ts htt) hAllB (hf₁.at hf₂ d ps _ _)).2 (hSo.1 ts us hts))
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _,
@@ -804,12 +793,12 @@ theorem NestDesRel.resultSound (hd : sig.Distinct)
     have hfo : AbstractionRel SΘ F (f₁ d' ps') (o₁ d' ps') :=
       (AbstractionRel.congr_computes hSp hFv
         (hf₁.imp_right fun h => ⟨fun τ w => h d' ps' τ w, fun _ _ => .rfl⟩)).2 ho₁
-    exact NestDesRel.resultSound hd hlifts hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
+    exact NestDesRel.resultSound hd hord hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
       (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel) ((hresp _ _ hfo o₁ o₂).2 hSo.2) hf₁ hf₂
       hσ hνB
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _, .nested _ _ _ _ _ _ hG, hAll,
       _, hRel, _, _, f₁, _, hSo, hf₁, hf₂, _, hσ, _, hνB =>
-    NestDesRel.resultSound hd hlifts hp (hG (f₁ d' ps')) (Nesting.lift_rel₃ hAll)
+    NestDesRel.resultSound hd hord hp (hG (f₁ d' ps')) (Nesting.lift_rel₃ hAll)
       (Nesting.lift_rel₃ hRel) hSo.2 hf₁ hf₂ hσ hνB
 termination_by structural _ _ _ _ _ _ _ _ _ _ _ h _ _ _ _ _ _ _ _ _ _ _ _ _ _ => h
 

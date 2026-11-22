@@ -286,11 +286,6 @@ the shapes of the types of the block carry the factor `11ᵖ` and the ownerships
 `ρ₁` gives them, `hb`, so that the arguments lifted have the shapes of their motives, at which the
 shape of the instance is that of the lifting of the result. -/
 theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hr : ρ ≠ .zero → v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     {n : Nat} {decl : TypeDeclaration} {D : Name}
@@ -352,7 +347,7 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       body := body }
   have hTLmem : TL ∈ declL.codataTypes := List.mem_cons_self
   have hTL : sig.HasCodataType (Lifting.name D S) declL TL := ⟨hLm, hTLmem, rfl⟩
-  have hLf := hlifts h.1 hDn hLm
+  have hLf := hord.lifts h.1 hDn hLm
   let I' : Instance (decl.sorts + 1) (decl.liftingGrades S) :=
     .ofLists (qs ++ [v.quality]) (v.grades ps ms₁) hq' hp'
   have hFrec : ∀ T' ∈ decl.codataTypes, T'.name = D →
@@ -689,11 +684,6 @@ proposition, at an instance that the constraint of its block admits, are erased,
 is used at run time, the shapes of the types of the block follow `ρ₁`, and the relation at each
 position runs as the leaf of the position says and does not read the computation. -/
 theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     (hprop : ∀ {decl : TypeDeclaration} {D : Name}
@@ -724,9 +714,9 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       cases hτ with
       | inst hτs =>
         obtain ⟨_, _, hrs, hDes, hSf⟩ := ValidTerm₀.desRel hd h hq hl hp hκ hrec ht
-        refine NestedRunsAt.inst (n := n) hd hord hlifts (fun _ => hr) hb h hq hl hp hrec
+        refine NestedRunsAt.inst (n := n) hd hord (fun _ => hr) hb h hq hl hp hrec
           fun d p q ς ps₁ Ξ Θ B ψ hpos hpu => ?_
-        obtain ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts hr
+        obtain ⟨SΘ, RΘ, Rb, i, hi, hΘ, hRΘ, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hr
           hb hprop (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)
           (Nesting.ofArgs_rel₃ hνs) hrs hDes hSf hpu
           (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
@@ -737,7 +727,7 @@ theorem RunNestRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     subst hA
     cases hν with
     | inst _ =>
-      exact NestedRunsAt.inst (n := n) hd hord hlifts (fun _ => hr) hb h hq hl hp hrec
+      exact NestedRunsAt.inst (n := n) hd hord (fun _ => hr) hb h hq hl hp hrec
         fun _ _ _ _ _ _ _ _ _ hpos hpu => absurd (hprop h hq hp hadm hκ hpos) hpu
 termination_by structural h _ _ _ _ _ => h
 
@@ -749,11 +739,6 @@ with its equality and its relation of run time, and a relation of run time of it
 observation of an address related to observations that `f` computes as runs to addresses related
 to the observations by `f`, and the recursive results of these observations run. -/
 theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     (hprop : ∀ {decl : TypeDeclaration} {D : Name}
@@ -833,7 +818,7 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           (TelRel.levelLe (Nat.le_max_left n nE) hΘ) _ _
           (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 hts
         obtain ⟨vB, hvB⟩ := hBE ts htE
-        exact RunNestRel.nestedRuns hd hord hlifts hr hb hprop (hR ts hts) hAllB
+        exact RunNestRel.nestedRuns hd hord hr hb hprop (hR ts hts) hAllB
           (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B) _
           (FieldRel.validEqTerm hd (hFE ts htE vB hvB) hvB (hSf.1 ts ts htE))
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _,
@@ -859,7 +844,7 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
           (TelRel.levelLe (Nat.le_max_right n nE) hΘE) _ _).1 htt
         exact (FieldRel.unique hd ihE ((hFE ts httE vB hvB).levelLe (Nat.le_max_right n nE)) _ _
           (hFB.levelLe (Nat.le_max_left n nE)) _ _).1 (hSf.1 ts us htsE)
-      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts
+      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord
         hr hb hprop hp (hG _ hAf) (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel)
         (fun i => hrs (i + 1)) (hGE _ hSf.1) hSf.2 hpu hσ hνB
       refine ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, fun H o a ho hSo => hAbs H o a ho ?_, hN⟩
@@ -874,7 +859,7 @@ theorem RunNestDesRel.nestedRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     cases hE with
     | recursive hrs' => rw [hrs 0] at hrs'; cases hrs'
     | cons _ _ _ _ _ _ hGE _ _ =>
-      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord hlifts
+      obtain ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, hAbs, hN⟩ := RunNestDesRel.nestedRuns hd hord
         hr hb hprop hp (hG (f d' ps')) (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel)
         (fun i => hrs (i + 1)) (hGE _ hSf.1) hSf.2 hpu hσ hνB
       exact ⟨SΘ₁, RΘ₁, Rb, i, hi, hΘ₁, hRΘ₁, fun H o a ho hSo => hAbs H o a ho hSo.2, hN⟩
@@ -890,11 +875,6 @@ value related to the recursive result of the field at the type lifted, when the 
 `RunNestRel.nestedRuns` hold and the relations of the positions are monotone in the heap: the path
 from the field is the field itself. -/
 theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hr : v.recursion ∉ Mode.oneOne.erased)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     (hprop : ∀ {decl : TypeDeclaration} {D : Name}
@@ -923,7 +903,7 @@ theorem RunsAs.nested (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     ∃ w H₂ tr, Eval P ϖ H₁ (c :: E₀) (Target.nested ρ ϱ σ Ns₀) w H₂ tr ∧ H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ e w A' := by
   have hmono : R.Monotone := levelRel_runNest_mono hd hR hτm
-  refine RunNestRel.nestedRuns hd hord hlifts hr hb hprop hR hτ hν t ht e A' mr _ hres hL hsh hrun
+  refine RunNestRel.nestedRuns hd hord hr hb hprop hR hτ hν t ht e A' mr _ hres hL hsh hrun
     hval (TargetRen.shift m₀ 1) (c :: E₀) (fun x => List.getElem?_cons_succ) H (.var 0) hHb
     (fun _ hπ m' f E' hE' ϖ' H' hH' => ?_) ϖ H₁ hH₁
   -- The path from the field is the field, whose cell holds an address related to it.

@@ -82,11 +82,6 @@ distinct and whose liftings are those of its types, in their order, when the sha
 the block follow `ρ₁`, and the relation at each position runs as the leaf of the position says and
 does not read the computation. -/
 theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel} :
     NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F →
@@ -106,9 +101,9 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       cases hτ with
       | inst hτs =>
         obtain ⟨w₁, w₂, hc₁, -, o₁, o₂, hw₁, -, hSo⟩ := ht
-        exact NestedRunsAt.inst (n := n) hd hord hlifts (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
+        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
           fun d p q ς ps₁ Ξ Θ B ψ hpos _ => by
-            obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hlifts hb
+            obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hb
               (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)
               (Nesting.ofArgs_rel₃ hνs) hSo (ObsEquiv.of_computes hd hc₁ hw₁)
               (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
@@ -124,9 +119,9 @@ theorem NestRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       cases hτ with
       | inst hτs =>
         obtain ⟨o, hSo⟩ := ht
-        exact NestedRunsAt.inst (n := n) hd hord hlifts (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
+        exact NestedRunsAt.inst (n := n) hd hord (fun h0 => (h0 rfl).elim) hb h hq hl hp hrec
           fun d p q ς ps₁ Ξ Θ B ψ hpos _ => by
-            obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hlifts hb
+            obtain ⟨SΘ, hΘ, hN⟩ := NestDesRel.skeletonRuns hd hord hb
               (hpos.substLevels (ls.getFin hl)) hS (Nesting.ofArgs_rel₃ hτs)
               (Nesting.ofArgs_rel₃ hνs) hSo (f₁ := t.observation _ _ _ _ _) (.inl rfl)
               (funext fun _ => funext fun x => (hpos.obsSubst_posSubstLevels _ _ _ x).symm)
@@ -145,11 +140,6 @@ its telescope relates to themselves, a term whose recursive result of the multip
 its result: the destructors before it are equal abstractions, or have a result with a position, on
 which the destructors after them do not depend. -/
 theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     {n : Nat} {sT s : Quality} {d : Name} {p q ς : Grade} {ps : List Parameter} :
     {Γ : Scope} → {nms : List Name} → {ds : Destructors 0 Γ nms} → {Ξ : Scope} →
@@ -172,7 +162,7 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       hSo, hf₁, _, hσ, _, hνB => by
     subst hσ hνB
     refine ⟨SΘ, hΘ, fun ts hts => ?_⟩
-    exact NestRel.skeletonRuns hd hord hlifts hb (hF ts hts) .plain
+    exact NestRel.skeletonRuns hd hord hb (hF ts hts) .plain
       ((Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B).cast hν hν) _ _
       ((NestRel.congr_computes (hF ts hts) .plain (hf₁.at (.inr fun _ _ _ _ => .rfl) d ps _ _)).2
         (hSo.1 ts ts hts))
@@ -182,7 +172,7 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     refine ⟨SΘ, hΘ, fun ts hts => ?_⟩
     have hAllB := Term.nest_all (p := fun x : NestLeaf => LeafCongr sig ι sT x.2)
       (mark := fun _ => none) (fun _ _ h => nomatch h) (Nesting.liftN_rel₃ ps.length hAll) B
-    exact NestRel.skeletonRuns hd hord hlifts hb (hF ts hts) hAllB
+    exact NestRel.skeletonRuns hd hord hb (hF ts hts) hAllB
       (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hRel) B) _ _
       ((NestRel.congr_computes (hF ts hts) hAllB (hf₁.at (.inr fun _ _ _ _ => .rfl) d ps _ _)).2
         (hSo.1 ts ts hts))
@@ -201,12 +191,12 @@ theorem NestDesRel.skeletonRuns (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hfo : AbstractionRel SΘ F (f₁ d' ps') (o₁ d' ps') :=
       (AbstractionRel.congr_computes hSp hFv
         (hf₁.imp_right fun h => ⟨fun τ w => h d' ps' τ w, fun _ _ => .rfl⟩)).2 ho₁
-    exact NestDesRel.skeletonRuns hd hord hlifts hb hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
+    exact NestDesRel.skeletonRuns hd hord hb hp (hG _ (hEp.trans hfo (hEp.symm hfo)))
       (Nesting.lift_rel₃ hAll) (Nesting.lift_rel₃ hRel) ((hresp _ _ hfo o₁ o₂).2 hSo.2) hf₁ hσ
       hνB
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') hp, _, _, _, .nested _ _ _ _ _ _ hG, hAll,
       _, hRel, _, _, f₁, hSo, hf₁, _, hσ, _, hνB =>
-    NestDesRel.skeletonRuns hd hord hlifts hb hp (hG (f₁ d' ps')) (Nesting.lift_rel₃ hAll)
+    NestDesRel.skeletonRuns hd hord hb hp (hG (f₁ d' ps')) (Nesting.lift_rel₃ hAll)
       (Nesting.lift_rel₃ hRel) hSo.2 hf₁ hσ hνB
 termination_by structural _ _ _ _ _ _ _ _ _ _ _ h _ _ _ _ _ _ _ _ _ _ _ _ => h
 
@@ -219,11 +209,6 @@ heap `Hb` of the cells of `E₀`, evaluates to a value related to the recursive 
 the type lifted, when the hypotheses of `NestRel.skeletonRuns` hold and the equality of the type
 relates the field to a term: the field is never read. -/
 theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
-    (hlifts : ∀ {decl : TypeDeclaration} {D : Name} {S : List Nat} {nms : List Name}
-      {body : Instance (decl.sorts + 1) (decl.liftingGrades S) →
-        Destructors (decl.levels + S.length) (.var :: decl.scope.lifted S) nms},
-      .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      .typeDeclaration (decl.lifting D S nms body) ∈ sig → decl.Lifts sig D S body)
     (hb : ∀ D b, ρ₁.block D = some b → ∃ Υ, block D = some ⟨Υ, .linearLinear, b.ownership⟩)
     {n : Nat} {sT s : Quality} {τ : Nest NestLeaf} {A : Term 0 []} {F : TermRel}
     (hF : NestRel sig ι n (fun m _ => levelRel sig ι m) sT s τ A F)
@@ -239,7 +224,7 @@ theorem RunsAs.nestedSkeleton (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     (hH₁ : H.Extends H₁) :
     ∃ w H₂ tr, Eval P ϖ H₁ (c :: E₀) (Target.nested .zero ϱ σ Ns₀) w H₂ tr ∧ H₁.Extends H₂ ∧
       RunsAs sig ι P H₂ e w A' :=
-  NestRel.skeletonRuns hd hord hlifts hb hF hτ hν t t' ht (fun _ _ _ => False) e A' mr _ hres hL
+  NestRel.skeletonRuns hd hord hb hF hτ hν t t' ht (fun _ _ _ => False) e A' mr _ hres hL
     hsh hrun hval (TargetRen.shift m₀ 1) (c :: E₀) (fun _ => List.getElem?_cons_succ) H (.var 0)
     hHb (fun h0 => (h0 rfl).elim) ϖ H₁ hH₁
 
