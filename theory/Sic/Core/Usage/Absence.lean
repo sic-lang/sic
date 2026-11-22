@@ -256,23 +256,14 @@ theorem Usage.absent {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope
       hSs hgs hgu hδ _, hx, ho => by
     have hx' : r * γ₁ x + δ x ∈ S := by
       simpa [GradeVector.add, GradeVector.smul] using hx
-    obtain ⟨gr, hgr, hgri⟩ := hd.destructorGrades h hq hp
-    simp only [Term.erase, hd.position h hh, Option.bind_some, hS₀, Option.elim, hgr,
-      Option.getD_some] at ho
+    simp only [Term.erase, hd.position h hh, Option.bind_some, hS₀, Option.elim] at ho
     cases ho with
     | corec ho => exact UsageArgs.absent_mul hd hS hΓ rfl hss (hS.add _ _ hx') ho
     | cobranch ho =>
       obtain ⟨i, b, c, v, p', hget, hgi, hpS, ho⟩ := DestructorBranches.occurs_erase hΓ _ _ _ _ ho
-      have hi : i < _ := hgl ▸ DestructorBranches.lt_length_of_get hget
-      obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, _ = some c := ⟨_, List.getElem?_eq_getElem hi⟩
-      have hcm := List.mem_of_getElem? hc
-      obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
-      have hj := TypeDeclaration.codataTypes_getElem?_of_codataCases hcm
-      obtain ⟨ps'', S', hSj⟩ := hSs j T' hj
-      obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
-      have hpg := hgri i j T' d hc p (hpos.grade (hd.destructors_nodup ⟨h.1, hT', rfl⟩))
+      obtain ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, hpg, -, -⟩ :=
+        hd.corecCase h hq hp hSs hgl hgs (DestructorBranches.lt_length_of_get hget)
       rw [Option.some.inj (hgi.symm.trans hpg)] at hpS
-      obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
       cases Option.some.inj (hget.symm.trans hg)
       have hδx : δ x ∈ S := hS.add _ _ (Grade.modality.semiring.add_comm _ _ ▸ hx')
       have hpδ : p * δs i x ∈ S := hS.le _ _ (hδ i j T' d p q ς ps₁ Ξ Θ B ψ hc hpos x) hδx

@@ -5,7 +5,6 @@ public import Sic.Core.Ownership
 public import Sic.Grading.GradeSet
 import Sic.Core.Ownership.Signature
 import Sic.Core.RunTime.Ownership.Nested
-import Sic.Core.RunTime.Relation.Corecursors.Erasure
 import Sic.Core.Shape.Results.Fields
 import Sic.Core.Syntax.Signature
 

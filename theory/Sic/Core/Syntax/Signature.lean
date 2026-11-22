@@ -960,6 +960,96 @@ theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct
       rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorGrades_of_not_mem hDe]; rfl)]
       exact hd.destructorGrades ⟨he', hT, hD⟩ hq hp
 
+/-- An entry that does not introduce the name `D` gives the types resumed by the destructors of no
+block of `D`. -/
+theorem Entry.resumedTypes_of_not_mem {D : Name} {qs : List Quality} {ps : List Grade} :
+    {e : Entry} → D ∉ e.names → Entry.resumedTypes D qs ps e = none
+  | .typeDeclaration decl, hD => by
+    have hnone : decl.codataTypes.find? (·.name == D) = none := List.find?_eq_none.2 fun T hT h =>
+      hD (beq_iff_eq.1 h ▸ TypeDeclaration.codata_name_mem_names hT)
+    simp only [Entry.resumedTypes]
+    split
+    · try split
+      all_goals first
+        | rfl
+        | rw [hnone, Option.map_none]
+    · rfl
+  | .constantDefinition _, _ => rfl
+  | .constantDeclaration _, _ => rfl
+
+/-- In a signature whose names are distinct, the types resumed by the destructors of the cases of the
+block of a codata type are the positions of the types that their results name, at the instance. -/
+theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct → {D : Name} →
+    {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
+    sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
+    (hq : qs.length = decl.sorts) → (hp : ps.length = decl.grades) →
+    sig.resumedTypes D qs ps = some (decl.codataCases.map fun x =>
+      ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind decl.names.idxOf?)
+  | [], _, _, _, _, h, _, _, _, _ => nomatch h.1
+  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hq, hp => by
+    unfold Signature.resumedTypes
+    rcases List.mem_cons.1 he with rfl | he'
+    · have hg : Entry.resumedTypes D qs ps (.typeDeclaration decl) = some (decl.codataCases.map
+          fun x => ((x.2.1.body (.ofLists qs ps hq hp)).resultName decl.names x.2.2).bind
+            decl.names.idxOf?) := by
+        simp only [Entry.resumedTypes, hq, hp, ↓reduceDIte, ← hD,
+          List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT, Option.map_some]
+      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
+    · have hDe : D ∉ e.names := fun hDe =>
+        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.resumedTypes_of_not_mem hDe]; rfl)]
+      exact hd.resumedTypes ⟨he', hT, hD⟩ hq hp
+
+/-- The case `i` of the branches `vs` of a corecursor on a codata type of a block, whose states are
+those of the types of the block and whose branches bind the arguments of their destructors, is a
+destructor `d` of the type `T'` at a position `j`, of state `S'`, with its branch `g`, and what the
+erasure of the corecursor reads at this case: the grade of the destructor, its arguments and the
+position of the type of its result in the block, whatever the erasure maps them to. -/
+theorem Signature.Distinct.corecCase {sig : Signature} (hd : sig.Distinct) {decl : TypeDeclaration}
+    {D : Name} {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T)
+    {qs : List Quality} {ps : List Grade} (hq : qs.length = decl.sorts)
+    (hp : ps.length = decl.grades) {k : Nat} {Γ : Scope} {Ss : States k Γ}
+    {vs : DestructorBranches k Γ}
+    (hSs : ∀ j T', decl.codataTypes[j]? = some T' → ∃ ps'' S', Ss.get j = some ⟨0, ps'', S'⟩)
+    (hgl : vs.length = decl.codataCases.length)
+    (hgs : ∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+      decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+      ∀ (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+        (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length),
+      (T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ →
+      ∃ g, vs.get i = some ⟨0, ps''.length, ps₁.length, g⟩)
+    {i : Nat} (hi : i < vs.length) :
+    ∃ (j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name)
+      (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade) (ps₁ : List Parameter)
+      (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+      (ψ : ResultOwnership Grade ps₁.length) (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+      decl.codataCases[i]? = some (j, T', d) ∧ Ss.get j = some ⟨0, ps'', S'⟩ ∧
+      Nonempty ((T'.body (.ofLists qs ps hq hp)).Pos d p q ς Ξ Θ B ψ) ∧
+      vs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ ∧
+      ((sig.destructorGrades D qs ps).getD [])[i]? = some p ∧
+      (∀ {β : Type} (f : (Nat × Σ ps : List Parameter, ResultOwnership Grade ps.length × Grade) → β)
+        (a : β), ((((sig.destructorArguments D qs ps).getD []).map f).drop i).headD a =
+          f (j, ⟨ps₁, ψ, ς⟩)) ∧
+      (∀ {β : Type} (f : Option Nat → β) (a : β),
+        ((((sig.resumedTypes D qs ps).getD []).map f).drop i).headD a =
+          f ((B.blockName decl.names).bind decl.names.idxOf?)) := by
+  obtain ⟨grs, hgrs, hgri⟩ := hd.destructorGrades h hq hp
+  obtain ⟨⟨j, T', d⟩, hc⟩ : ∃ c, decl.codataCases[i]? = some c :=
+    ⟨_, List.getElem?_eq_getElem (hgl ▸ hi)⟩
+  have hcm := List.mem_of_getElem? hc
+  obtain ⟨hT', hdm⟩ := TypeDeclaration.mem_casesFrom hcm
+  obtain ⟨ps'', S', hSj⟩ := hSs j T' (TypeDeclaration.codataTypes_getElem?_of_codataCases hcm)
+  obtain ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, ⟨hpos⟩⟩ := Destructors.exists_pos (T'.body _) hdm
+  have hnd := hd.destructors_nodup ⟨h.1, hT', rfl⟩
+  obtain ⟨g, hg⟩ := hgs i j T' d ps'' S' hc hSj p q ς ps₁ Ξ Θ B ψ hpos
+  refine ⟨j, T', d, ps'', S', p, q, ς, ps₁, Ξ, Θ, B, ψ, g, hc, hSj, ⟨hpos⟩, hg, ?_,
+    fun f _ => List.headD_drop ?_, fun f _ => List.headD_drop ?_⟩
+  · rw [hgrs]
+    exact hgri i j T' d hc p (hpos.grade hnd)
+  · simp [hd.destructorArguments h hq hp, hc, hpos.arguments hnd]
+  · simp [hd.resumedTypes h hq hp, hc, hpos.resultName decl.names hnd]
+
 /-- In a signature whose names are distinct, the position of a codata type is its position in the
 block of its declaration. -/
 theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D : Name} →
