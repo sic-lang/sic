@@ -877,6 +877,36 @@ theorem Entry.lookup_typeDeclaration {α : Type} {D : Name} {f : TypeDeclaration
     Entry.lookup D f (.typeDeclaration decl) = f decl := by
   simp only [Entry.lookup, hD, ↓reduceIte]
 
+/-- A signature none of whose entries introduces the name `D` gives nothing to a lookup of `D`. -/
+theorem Signature.findSome?_lookup_of_not_mem {α : Type} {D : Name}
+    {f : TypeDeclaration → Option α} :
+    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.findSome? (Entry.lookup D f) = none
+  | [], _ => rfl
+  | e :: sig, h => by
+    rw [List.findSome?_cons_of_isNone
+      (by rw [Entry.lookup_of_not_mem (h e List.mem_cons_self)]; rfl)]
+    exact Signature.findSome?_lookup_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
+
+/-- In a signature whose names are distinct, a lookup of a name that a type declaration of the
+signature introduces gives the value that this declaration gives, the only entry that introduces
+the name. -/
+theorem Signature.Distinct.findSome?_lookup {α : Type} {D : Name}
+    {f : TypeDeclaration → Option α} {decl : TypeDeclaration} :
+    {sig : Signature} → sig.Distinct → .typeDeclaration decl ∈ sig → D ∈ decl.names →
+      sig.findSome? (Entry.lookup D f) = f decl
+  | e :: sig, ⟨hd, _, hfresh, _⟩, he, hD => by
+    rcases List.mem_cons.1 he with rfl | he'
+    · cases hf : f decl with
+      | some a =>
+        rw [List.findSome?_cons_of_isSome (by rw [Entry.lookup_typeDeclaration hD, hf]; rfl),
+          Entry.lookup_typeDeclaration hD, hf]
+      | none =>
+        rw [List.findSome?_cons_of_isNone (by rw [Entry.lookup_typeDeclaration hD, hf]; rfl)]
+        exact Signature.findSome?_lookup_of_not_mem fun e' he'' hDe => hfresh _ he'' D hD hDe
+    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe hD
+      rw [List.findSome?_cons_of_isNone (by rw [Entry.lookup_of_not_mem hDe]; rfl)]
+      exact hd.findSome?_lookup he' hD
+
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry
 declares them. -/

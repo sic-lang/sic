@@ -122,19 +122,12 @@ theorem Signature.Distinct.recursionRequirement {sig₀ : Signature} {v : Liftin
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.findSome? (Entry.recursionRequirement sig₀ D qs ps v χ) =
-      some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst)
-  | [], _, _, _, _, h, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hs : Entry.recursionRequirement sig₀ D qs ps v χ (.typeDeclaration decl) =
-          some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst) := by
-        simp only [Entry.recursionRequirement,
-          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hqp, ↓reduceDIte,
-          ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
-      rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.recursionRequirement_of_not_mem hDe]; rfl)]
-      exact hd.recursionRequirement ⟨he', hT, hD⟩ hqp
+      some (decl.recursionRequirement sig₀ v .oneOne χ qs ps hqp.inst) := by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+    subst hD
+    refine (hd.findSome?_lookup hm (TypeDeclaration.name_mem_names hT)).trans ?_
+    simp only [hqp, ↓reduceDIte,
+      List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- In a signature whose names are distinct, the requirement of the recursion that the erasure of a
 recursor reads is the one of the block of its data type, in the mode `11ᵐ`. -/

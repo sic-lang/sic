@@ -501,34 +501,21 @@ theorem Entry.constructorCase_of_not_mem {D c : Name} :
 /-- A signature none of whose entries introduces the name `D` gives the case of no constructor of
 `D`. -/
 theorem Signature.constructorCase_of_not_mem {D c : Name} :
-    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.constructorCase D c = none
-  | [], _ => rfl
-  | e :: sig, h => by
-    unfold Signature.constructorCase
-    rw [List.findSome?_cons_of_isNone
-      (by rw [Entry.constructorCase_of_not_mem (h e List.mem_cons_self)]; rfl)]
-    exact Signature.constructorCase_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
+    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.constructorCase D c = none :=
+  fun h => Signature.findSome?_lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the case of a constructor of a data type is its case in
 the block of its declaration. -/
 theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → sig.Distinct →
     {D : Name} → {decl : TypeDeclaration} →
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasDataType D decl T →
-    sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl)
-  | [], _, _, _, _, h => nomatch h.1
-  | e :: sig, ⟨hd, _, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩ => by
-    unfold Signature.constructorCase
-    rcases List.mem_cons.1 he with rfl | he'
-    · cases hc : Entry.constructorCase D c (.typeDeclaration decl) with
-      | some i => rw [List.findSome?_cons_of_isSome (by rw [hc]; rfl), hc]
-      | none =>
-        rw [List.findSome?_cons_of_isNone (by rw [hc]; rfl)]
-        exact Signature.constructorCase_of_not_mem fun e' he'' hDe =>
-          hfresh _ he'' D (hD ▸ TypeDeclaration.name_mem_names hT) hDe
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.constructorCase_of_not_mem hDe]; rfl)]
-      exact hd.constructorCase ⟨he', hT, hD⟩
+    sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩
+    have hDm : _ ∈ _ := hD ▸ TypeDeclaration.name_mem_names hT
+    unfold Signature.constructorCase Entry.constructorCase
+    rw [Entry.lookup_typeDeclaration hDm]
+    exact hd.findSome?_lookup hm hDm
 
 /-- An entry that does not introduce the name `D` gives the case of no destructor of `D`. -/
 theorem Entry.destructorCase_of_not_mem {D d : Name} :
@@ -538,34 +525,21 @@ theorem Entry.destructorCase_of_not_mem {D d : Name} :
 /-- A signature none of whose entries introduces the name `D` gives the case of no destructor of
 `D`. -/
 theorem Signature.destructorCase_of_not_mem {D d : Name} :
-    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.destructorCase D d = none
-  | [], _ => rfl
-  | e :: sig, h => by
-    unfold Signature.destructorCase
-    rw [List.findSome?_cons_of_isNone
-      (by rw [Entry.destructorCase_of_not_mem (h e List.mem_cons_self)]; rfl)]
-    exact Signature.destructorCase_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
+    {sig : Signature} → (∀ e ∈ sig, D ∉ e.names) → sig.destructorCase D d = none :=
+  fun h => Signature.findSome?_lookup_of_not_mem h
 
 /-- In a signature whose names are distinct, the case of a destructor of a codata type is its case in
 the block of its declaration. -/
 theorem Signature.Distinct.destructorCase {d : Name} : {sig : Signature} → sig.Distinct →
     {D : Name} → {decl : TypeDeclaration} →
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasCodataType D decl T →
-    sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl)
-  | [], _, _, _, _, h => nomatch h.1
-  | e :: sig, ⟨hd, _, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩ => by
-    unfold Signature.destructorCase
-    rcases List.mem_cons.1 he with rfl | he'
-    · cases hc : Entry.destructorCase D d (.typeDeclaration decl) with
-      | some i => rw [List.findSome?_cons_of_isSome (by rw [hc]; rfl), hc]
-      | none =>
-        rw [List.findSome?_cons_of_isNone (by rw [hc]; rfl)]
-        exact Signature.destructorCase_of_not_mem fun e' he'' hDe =>
-          hfresh _ he'' D (hD ▸ TypeDeclaration.codata_name_mem_names hT) hDe
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorCase_of_not_mem hDe]; rfl)]
-      exact hd.destructorCase ⟨he', hT, hD⟩
+    sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩
+    have hDm : _ ∈ _ := hD ▸ TypeDeclaration.codata_name_mem_names hT
+    unfold Signature.destructorCase Entry.destructorCase
+    rw [Entry.lookup_typeDeclaration hDm]
+    exact hd.findSome?_lookup hm hDm
 
 /-- In a signature whose names are distinct, a case of the corecursors of a block is the case of its
 destructor. -/
@@ -620,18 +594,14 @@ theorem Signature.Distinct.fieldParams : {sig : Signature} → sig.Distinct → 
     sig.HasDataType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
     con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
-    sig.fieldParams D con.name qs ps = some (con.params hqp.inst)
-  | [], _, _, _, _, h, _, _, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, con, hcon, qs, ps, hqp => by
-    unfold Signature.fieldParams
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hg := Entry.fieldParams_of_mem (TypeDeclaration.dataTypes_nodup hn) hT (hc.1 T hT) hcon
-        hqp
-      rw [hD] at hg
-      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.fieldParams_of_not_mem hDe]; rfl)]
-      exact hd.fieldParams ⟨he', hT, hD⟩ hcon hqp
+    sig.fieldParams D con.name qs ps = some (con.params hqp.inst) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ hcon _ _ hqp
+    subst hD
+    have hDm := TypeDeclaration.name_mem_names hT
+    exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
+      (Entry.fieldParams_of_mem (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT
+        (hd.constructors_nodup ⟨hm, hT, rfl⟩) hcon hqp))
 
 /-- The requirement of the recursion on an axis is below the coefficient of each field that the
 recursor uses on this axis. -/
@@ -680,20 +650,14 @@ theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct 
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.caseFieldParams D qs ps = some (decl.cases.map fun x =>
-      x.2.2.params hqp.inst)
-  | [], _, _, _, _, h, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
-    unfold Signature.caseFieldParams
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hs : Entry.caseFieldParams D qs ps (.typeDeclaration decl) =
-          some (decl.cases.map fun x => x.2.2.params hqp.inst) := by
-        simp only [Entry.caseFieldParams,
-          Entry.lookup_typeDeclaration (TypeDeclaration.name_mem_names hT), hqp, ↓reduceDIte,
-          ← hD, List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup hn) hT, Option.map_some]
-      rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe (hD ▸ TypeDeclaration.name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.caseFieldParams_of_not_mem hDe]; rfl)]
-      exact hd.caseFieldParams ⟨he', hT, hD⟩ hqp
+      x.2.2.params hqp.inst) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+    subst hD
+    have hDm := TypeDeclaration.name_mem_names hT
+    refine (hd.findSome?_lookup hm hDm).trans ?_
+    simp only [hqp, ↓reduceDIte,
+      List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- An entry that does not introduce the name `D` gives the arguments of the destructors of no
 codata type named `D`. -/
@@ -711,24 +675,14 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.destructorArguments D qs ps = some (decl.codataCases.map fun x =>
       (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD
-        ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩))
-  | [], _, _, _, _, h, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
-    unfold Signature.destructorArguments
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hs : Entry.destructorArguments D qs ps (.typeDeclaration decl) =
-          some (decl.codataCases.map fun x =>
-            (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD
-              ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) := by
-        simp only [Entry.destructorArguments,
-          Entry.lookup_typeDeclaration (TypeDeclaration.codata_name_mem_names hT), hqp,
-          ↓reduceDIte, ← hD, List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT,
-          Option.map_some]
-      rw [List.findSome?_cons_of_isSome (by rw [hs]; rfl), hs]
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorArguments_of_not_mem hDe]; rfl)]
-      exact hd.destructorArguments ⟨he', hT, hD⟩ hqp
+        ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+    subst hD
+    have hDm := TypeDeclaration.codata_name_mem_names hT
+    refine (hd.findSome?_lookup hm hDm).trans ?_
+    simp only [hqp, ↓reduceDIte,
+      List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- The destructor at a position in destructors is named by them. -/
 theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q ς : Grade} {ps : List Parameter} :
@@ -798,20 +752,14 @@ theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct �
     {ps' : List Parameter} → {Ξ : Scope} → {Θ : Telescope decl.levels Ξ ps'} →
     {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
     (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
-    sig.argumentParams D d qs ps = some ⟨ps', ψ, ς⟩
-  | [], _, _, _, _, h, _, _, _, _, _, _, _, _, _, _, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp, _, _, _, _, _, _, _,
-      _, _, hpos => by
-    unfold Signature.argumentParams
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hg := Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup hn) hT
-        (hc.2 T hT) hqp hpos
-      rw [hD] at hg
-      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.argumentParams_of_not_mem hDe]; rfl)]
-      exact hd.argumentParams ⟨he', hT, hD⟩ hqp hpos
+    sig.argumentParams D d qs ps = some ⟨ps', ψ, ς⟩ :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp _ _ _ _ _ _ _ _ _ hpos
+    subst hD
+    have hDm := TypeDeclaration.codata_name_mem_names hT
+    exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
+      (Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
+        (hd.destructors_nodup ⟨hm, hT, rfl⟩) hqp hpos))
 
 /-- Destructors with distinct names give the destructor at a position its grade. -/
 theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q ς : Grade} {ps : List Parameter} :
@@ -976,19 +924,16 @@ theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct
     ∃ gs, sig.destructorGrades D qs ps = some gs ∧
       ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name),
         decl.codataCases[i]? = some (j, T', d) → ∀ p, (T'.body hqp.inst).grade d = some p →
-          gs[i]? = some p
-  | [], _, _, _, _, h, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, hc⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
-    unfold Signature.destructorGrades
-    rcases List.mem_cons.1 he with rfl | he'
-    · obtain ⟨gs, hg, hgs⟩ := Entry.destructorGrades_of_mem (TypeDeclaration.codataTypes_nodup hn)
-        hT (hc.2) hqp
-      rw [hD] at hg
-      exact ⟨gs, by rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg], hgs⟩
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.destructorGrades_of_not_mem hDe]; rfl)]
-      exact hd.destructorGrades ⟨he', hT, hD⟩ hqp
+          gs[i]? = some p :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+    subst hD
+    have hDm := TypeDeclaration.codata_name_mem_names hT
+    obtain ⟨gs, hg, hgs⟩ := Entry.destructorGrades_of_mem
+      (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
+      (fun T' hT' => hd.destructors_nodup ⟨hm, hT', rfl⟩) hqp
+    exact ⟨gs, (hd.findSome?_lookup hm hDm).trans
+      ((Entry.lookup_typeDeclaration hDm).symm.trans hg), hgs⟩
 
 /-- An entry that does not introduce the name `D` gives the types resumed by the destructors of no
 block of `D`. -/
@@ -1003,23 +948,14 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.resumedTypes D qs ps = some (decl.codataCases.map fun x =>
-      ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind decl.names.idxOf?)
-  | [], _, _, _, _, h, _, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, qs, ps, hqp => by
-    unfold Signature.resumedTypes
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hg : Entry.resumedTypes D qs ps (.typeDeclaration decl) = some (decl.codataCases.map
-          fun x => ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind
-            decl.names.idxOf?) := by
-        simp only [Entry.resumedTypes,
-          Entry.lookup_typeDeclaration (TypeDeclaration.codata_name_mem_names hT), hqp,
-          ↓reduceDIte, ← hD, List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup hn) hT,
-          Option.map_some]
-      rw [List.findSome?_cons_of_isSome (by rw [hg]; rfl), hg]
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.resumedTypes_of_not_mem hDe]; rfl)]
-      exact hd.resumedTypes ⟨he', hT, hD⟩ hqp
+      ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind decl.names.idxOf?) :=
+  by
+    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+    subst hD
+    have hDm := TypeDeclaration.codata_name_mem_names hT
+    refine (hd.findSome?_lookup hm hDm).trans ?_
+    simp only [hqp, ↓reduceDIte,
+      List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- The case `i` of the branches `vs` of a corecursor on a codata type of a block, whose states are
 those of the types of the block and whose branches bind the arguments of their destructors, is a
@@ -1074,27 +1010,17 @@ block of its declaration. -/
 theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D : Name} →
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {h' : Nat} → decl.codataTypes[h']? = some T →
-    sig.position D = some h'
-  | [], _, _, _, _, h, _, _ => nomatch h.1
-  | e :: sig, ⟨hd, hn, hfresh, _⟩, D, decl, T, ⟨he, hT, hD⟩, h', hh => by
-    unfold Signature.position
-    rcases List.mem_cons.1 he with rfl | he'
-    · have hc : decl.names = decl.codataTypes.map (·.name) := by
-        rw [decl.names_eq]
-        rcases decl.dataTypes_codataTypes with h | h
-        · rw [h]; rfl
-        · rw [h] at hT; exact nomatch hT
-      have hp : Entry.position D (.typeDeclaration decl) = some h' := by
-        simp only [Entry.position, ← hD,
-          Entry.lookup_typeDeclaration (TypeDeclaration.codata_name_mem_names hT)]
-        simp only [hc]
-        exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup hn) hh
-      rw [List.findSome?_cons_of_isSome (by rw [hp]; rfl), hp]
-    · have hDe : D ∉ e.names := fun hDe =>
-        hfresh _ he' D hDe (hD ▸ TypeDeclaration.codata_name_mem_names hT)
-      have hp : Entry.position D e = none := Entry.lookup_of_not_mem hDe
-      rw [List.findSome?_cons_of_isNone (by rw [hp]; rfl)]
-      exact hd.position ⟨he', hT, hD⟩ hh
+    sig.position D = some h' := by
+    intro _ hd _ decl _ ⟨hm, hT, hD⟩ h' hh
+    subst hD
+    have hc : decl.names = decl.codataTypes.map (·.name) := by
+      rw [decl.names_eq]
+      rcases decl.dataTypes_codataTypes with h | h
+      · rw [h]; rfl
+      · rw [h] at hT; exact nomatch hT
+    refine (hd.findSome?_lookup hm (TypeDeclaration.codata_name_mem_names hT)).trans ?_
+    simp only [hc]
+    exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hh
 
 /-- The destructors of the codata types of a signature, at an instance that the constraint admits,
 of a block of propositions, have grades without use at run time. -/
