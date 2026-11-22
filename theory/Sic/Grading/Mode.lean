@@ -246,21 +246,7 @@ RFC: `\mathsf{structure}_m.\mathsf{lunit}`
 RFC: `\mathsf{structure}_m.\mathsf{order}`
 RFC: `\mathsf{structure}_m.\mathsf{mode}_{+}`
 RFC: `\mathsf{structure}_m.\mathsf{mode}_{\wedge}` -/
-theorem modeStructure : IsModeStructure where
-  mul_assoc := by decide
-  mul_comm := by decide
-  mul_idem := by decide
-  oneOne_mul := by decide
-  zeroZero_mul := by decide
-  grade_zeroZero := by decide
-  mode_grade := by decide
-  grade_mul := by decide
-  mode_mul := by decide
-  mul_grade_mode := by decide
-  grade_mode_mul := by decide
-  le_grade_mul := by decide
-  mode_add := by decide
-  mode_meet := by decide
+theorem modeStructure : IsModeStructure := by decide_laws
 
 /-- The projection commutes with the mode of a grade, with the grade of a mode and with the
 product of a mode by a grade. -/

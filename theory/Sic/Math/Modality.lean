@@ -156,7 +156,9 @@ structure IsModality (α : Type) [Add α] [Mul α] [Min α] (zero one : α) : Pr
   zero : HasWellBehavedZero α zero one
 
 /-- Proves a record of laws, such as `IsModality`, on a type whose quantifiers are decidable, such as
-a finite one: splits the record into its laws, then decides each of them. -/
+a finite one: splits the record into its laws, then decides each of them. It splits every goal that
+is a structure, so a law that is itself a conjunction, an existential or an equivalence, rather than
+a quantified statement, is split too, and its parts must then be decidable on their own. -/
 macro "decide_laws" : tactic => `(tactic| ((repeat' constructor) <;> decide))
 
 namespace IsModality
