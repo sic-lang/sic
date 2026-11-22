@@ -3,7 +3,6 @@ module
 public import Sic.Core.Lifting.Extension
 public import Sic.Core.Shape.Results.Substitution
 import Sic.Core.Lifting.Functionality
-import Sic.Core.Lifting.Shape
 import Sic.Core.Substitution.Nesting
 import Sic.Core.Syntax.Signature
 

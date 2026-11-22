@@ -5,7 +5,6 @@ public import Sic.Core.Lifting.Instantiation
 public import Sic.Core.Results
 import Sic.Core.Lifting.Functionality
 import Sic.Core.Lifting.Observations
-import Sic.Core.Lifting.Shape
 import Sic.Core.Results.Substitution
 import Sic.Core.Syntax.Signature
 import Sic.Core.Syntax.Terms
