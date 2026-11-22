@@ -94,10 +94,10 @@ inductive Red (sig : Signature) {k : Nat} {Γ : Scope} : Term k Γ → Term k Γ
   /-- A constant definition unfolds to its body, at the instance of its variables.
   RFC: `\delta_{\longrightarrow}` -/
   | delta {d : ConstantDefinition} {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
-      (h : .constantDefinition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
-      (hp : ps.length = d.grades) :
+      (h : .constantDefinition d ∈ sig) (hqp : Instance.AsMany d.sorts d.grades qs ps)
+      (hl : ls.length = d.levels) :
       Red sig (.const d.name qs ls ps)
-        (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
+        (Signature.instanceType d.body hqp.inst (ls.getFin hl))
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
   /-- A recursor on a constructor applied to the terms of its fields steps to the branch of the
   constructor, the case `i` of the block of its type, with the terms of the fields substituted for

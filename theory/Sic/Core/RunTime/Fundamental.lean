@@ -64,10 +64,11 @@ def Program.Realizes (sig : Signature) (ι : Interpretation) (P : Program) (sigT
     Prop :=
   ∀ {f : Name} {j k' g : Nat} {p : Grade} {A : Instance j g → Term k' []},
     sigT.HasConstant f j k' g .oneOne p A →
-      ∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = j)
-        (hl : ls.length = k') (hp : ps.length = g),
+      ∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
+        (hqp : Instance.AsMany j g qs ps)
+        (hl : ls.length = k'),
         RunValid sig ι P Scope.FirstOrder.nil .empty 𝟘ᶜ (.const f qs ls ps)
-          (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl))
+          (Signature.instanceType A hqp.inst (ls.getFin hl))
 
 /-- The premise of `(corec)` at run time on its branches, each branch valid at run time for every
 value of the level variables, in every environment that binds its scope through a renaming, when the
@@ -197,7 +198,7 @@ theorem fundamentalIn : FundamentalIn := by
     intro sig k Γ ps ψ ctx X Θ A ts hX hts hts_ih ι P sigM hΓ γ hw hι hP hU
     exact nomatch hΓ _ X.mem
   case hasType_const =>
-    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hq hl hp hctx_ih ι P sigM hΓ γ hw hι hP hU
+    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hqp hl hctx_ih ι P sigM hΓ γ hw hι hP hU
     exact fun ρ => by
       have hdT := (presuppositions.wfCtx hctx).distinct
       obtain ⟨-, hm⟩ := Usage.inv_const hdT h hU rfl
@@ -206,7 +207,7 @@ theorem fundamentalIn : FundamentalIn := by
       subst hm'
       have hl' := Level.length_atLevels (ls := ls) ρ hl
       have hc := RunValidRen.const (hΓ := hΓ) (ctx := ctx.atLevels ρ) (γ := γ)
-        (hP h qs _ ps hq hl' hp)
+        (hP h qs _ ps hqp hl')
       rw [Signature.instanceType, Term.weakenClosed_nil, List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc

@@ -290,7 +290,7 @@ of the signature itself.
 /-- A step of reduction of `Σ` is a step of reduction once its constants are interpreted. -/
 theorem Red.interpret {sig : Signature} {ι : Interpretation} {k : Nat} {Γ : Scope}
     {t u : Term k Γ} : Red sig t u → Red (sig.interpret ι) t u
-  | .delta h hq hl hp => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hq hl hp
+  | .delta h hqp hl => .delta (List.mem_map_of_mem (f := Entry.interpret ι) h) hqp hl
   | .iota h hi hD hc hqp hl hu hrs hv =>
     .iota (List.mem_map_of_mem (f := Entry.interpret ι) h) hi hD hc hqp hl hu
       (Terms.ResultTerms.ofTypeDeclarations

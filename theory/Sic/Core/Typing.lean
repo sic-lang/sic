@@ -178,9 +178,9 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
       {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality} {ls : List (Level k)}
       {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
-      (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
+      (hqp : Instance.AsMany j g qs ps) (hl : ls.length = k') :
       HasType sig ctx (.const f qs ls ps)
-        (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl))
+        (Signature.instanceType A hqp.inst (ls.getFin hl))
   -- ADE: `Uⱼ`, in `Definition/Typed.agda`.
   /-- A universe is in the universe above its level.
   RFC: `U` -/
@@ -559,20 +559,20 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
   RFC: `\delta` -/
   | delta {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {d : ConstantDefinition}
       {qs : List Quality} {ls : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx)
-      (h : .constantDefinition d ∈ sig) (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
-      (hp : ps.length = d.grades) :
+      (h : .constantDefinition d ∈ sig) (hqp : Instance.AsMany d.sorts d.grades qs ps)
+      (hl : ls.length = d.levels) :
       EqTerm sig ctx (.const d.name qs ls ps)
-        (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
-        (Signature.instanceType d.type (.ofLists qs ps hq hp) (ls.getFin hl))
+        (Signature.instanceType d.body hqp.inst (ls.getFin hl))
+        (Signature.instanceType d.type hqp.inst (ls.getFin hl))
   /-- Two instances of a constant at equal levels are equal.
   RFC: `f_\equiv` -/
   | const {sig : Signature} {k : Nat} {Γ : Scope} {ctx : Context k Γ} {f : Name} {j k' g : Nat}
       {m : Mode} {p : Grade} {A : Instance j g → Term k' []} {qs : List Quality}
       {ls₁ ls₂ : List (Level k)} {ps : List Grade} (hctx : WfCtx sig ctx) (h : sig.HasConstant f j k' g m p A)
-      (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k') (hp : ps.length = g)
+      (hqp : Instance.AsMany j g qs ps) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k')
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
       EqTerm sig ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)
-        (Signature.instanceType A (.ofLists qs ps hq hp) (ls₁.getFin hl₁))
+        (Signature.instanceType A hqp.inst (ls₁.getFin hl₁))
   -- ADE: `U-cong`, in `Definition/Typed.agda`.
   /-- Universes at equal levels are equal.
   RFC: `U_\equiv` -/

@@ -167,8 +167,8 @@ theorem stableUnderExtension : StableUnderExtension := by
   case hasType_var => exact fun hctx hx hctx_ih => fun hs hw => .var (hctx_ih hs hw) hx
   case hasType_secondOrder => exact fun hX hts hts_ih => fun hs hw => .secondOrder hX (hts_ih hs hw)
   case hasType_const =>
-    exact fun hctx h hq hl hp hctx_ih => fun hs hw =>
-      .const (hctx_ih hs hw) (h.mono hs) hq hl hp
+    exact fun hctx h hqp hl hctx_ih => fun hs hw =>
+      .const (hctx_ih hs hw) (h.mono hs) hqp hl
   case hasType_univ => exact fun hctx hctx_ih => fun hs hw => .univ (hctx_ih hs hw)
   case hasType_prop => exact fun hctx hctx_ih => fun hs hw => .prop (hctx_ih hs hw)
   case hasType_inst =>
@@ -234,11 +234,11 @@ theorem stableUnderExtension : StableUnderExtension := by
       .irr (ht_ih hs hw) (hu_ih hs hw) (hA_ih hs hw)
   case eqTerm_secondOrder => exact fun hX hts hts_ih => fun hs hw => .secondOrder hX (hts_ih hs hw)
   case eqTerm_delta =>
-    exact fun hctx h hq hl hp hctx_ih => fun hs hw =>
-      .delta (hctx_ih hs hw) (hs h) hq hl hp
+    exact fun hctx h hqp hl hctx_ih => fun hs hw =>
+      .delta (hctx_ih hs hw) (hs h) hqp hl
   case eqTerm_const =>
-    exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => fun hs hw =>
-      .const (hctx_ih hs hw) (h.mono hs) hq hl₁ hl₂ hp hls
+    exact fun hctx h hqp hl₁ hl₂ hls hctx_ih => fun hs hw =>
+      .const (hctx_ih hs hw) (h.mono hs) hqp hl₁ hl₂ hls
   case eqTerm_univ => exact fun hctx hl hctx_ih => fun hs hw => .univ (hctx_ih hs hw) hl
   case eqTerm_prop => exact fun hctx hl hctx_ih => fun hs hw => .prop (hctx_ih hs hw) hl
   case eqTerm_inst =>

@@ -204,9 +204,9 @@ theorem stableUnderLevels : StableUnderLevels := by
     rw [Term.substLevels_instantiate]
     exact .secondOrder (hX.substLevels ls') (hts_ih ls')
   case hasType_const =>
-    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hq hl hp hctx_ih _ ls'
+    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hqp hl hctx_ih _ ls'
     rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' ls hl]
-    exact .const (hctx_ih ls') h hq _ hp
+    exact .const (hctx_ih ls') h hqp _
   case hasType_univ => exact fun hctx hctx_ih => fun ls' => .univ (hctx_ih ls')
   case hasType_prop => exact fun hctx hctx_ih => fun ls' => .prop (hctx_ih ls')
   case hasType_inst =>
@@ -436,14 +436,14 @@ theorem stableUnderLevels : StableUnderLevels := by
     rw [Term.substLevels_instantiate]
     exact .secondOrder (hX.substLevels ls') (hts_ih ls')
   case eqTerm_delta =>
-    intro sig k Γ ctx d qs ls ps hctx h hq hl hp hctx_ih k' ls'
+    intro sig k Γ ctx d qs ls ps hctx h hqp hl hctx_ih k' ls'
     rw [Signature.instanceType_substLevels, Signature.instanceType_substLevels,
       ← Level.getFin_map_subst ls' ls hl]
-    exact .delta (hctx_ih ls') h hq _ hp
+    exact .delta (hctx_ih ls') h hqp _
   case eqTerm_const =>
-    intro sig k Γ ctx f j k' g m p A qs ls₁ ls₂ ps hctx h hq hl₁ hl₂ hp hls hctx_ih _ ls'
+    intro sig k Γ ctx f j k' g m p A qs ls₁ ls₂ ps hctx h hqp hl₁ hl₂ hls hctx_ih _ ls'
     rw [Signature.instanceType_substLevels, ← Level.getFin_map_subst ls' ls₁ hl₁]
-    exact .const (hctx_ih ls') h hq _ _ hp (Level.getFin_map_subst_equal ls' hls)
+    exact .const (hctx_ih ls') h hqp _ _ (Level.getFin_map_subst_equal ls' hls)
   case eqTerm_univ =>
     exact fun hctx hl hctx_ih => fun ls' =>
       .univ (hctx_ih ls') (Level.subst_equal ls' hl)

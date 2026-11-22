@@ -130,10 +130,8 @@ def Entry.compile (sig : Signature) (S : Set Grade) [DecidablePred (· ∈ S)] (
     (qs : List Quality) (ps : List Grade) : Entry → Option (Target 0)
   | .constantDefinition d =>
     if d.name = f ∧ d.mode = .oneOne then
-      if hq : qs.length = d.sorts then
-        if hp : ps.length = d.grades then
-          some ((d.body (.ofLists qs ps hq hp)).erase sig S Scope.FirstOrder.nil)
-        else none
+      if hqp : Instance.AsMany d.sorts d.grades qs ps then
+        some ((d.body hqp.inst).erase sig S Scope.FirstOrder.nil)
       else none
     else none
   | _ => none

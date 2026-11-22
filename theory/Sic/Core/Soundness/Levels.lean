@@ -245,11 +245,11 @@ theorem Red.levelEquiv {sig : Signature} {k : Nat} {Γ : Scope} {t t' u : Term k
     (hsig : sig.Distinct) (hr : Red sig t u) (h : Term.LevelEquiv t t') :
     ∃ u', Red sig t' u' ∧ Term.LevelEquiv u u' := by
   induction hr generalizing t' with
-  | delta hd hq hl hp =>
+  | delta hd hqp hl =>
     cases h with
     | const _ _ _ hls =>
       have hl' := hls.length_eq.symm.trans hl
-      exact ⟨_, .delta hd hq hl' hp,
+      exact ⟨_, .delta hd hqp hl',
         (Term.substLevels_levelEquiv (hls.getFin hl hl') _).rename _⟩
   | iota hdecl hi hD hc hqp hl hu hrs hv =>
     cases h with

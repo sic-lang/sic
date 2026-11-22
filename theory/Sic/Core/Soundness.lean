@@ -326,10 +326,10 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.atLevels, Term.substLevels_instantiate]
       exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
   case hasType_const =>
-    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hq hl hp hctx_ih ι sigM hdis hord hι
+    intro sig k Γ ctx f j k' g m p A qs ls ps hctx h hqp hl hctx_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
-      have hc := ValidTermΓ.const (hctx_ih hdis hord hι ρ) hι h hq hl' hp
+      have hc := ValidTermΓ.const (hctx_ih hdis hord hι ρ) hι h hqp hl'
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc
@@ -600,20 +600,20 @@ theorem soundnessIn : SoundnessIn := by
       simp only [Term.atLevels, Term.substLevels_instantiate]
       exact ValidEqTermΓ.secondOrder hts'.1 (hX.substLevels _) hts'
   case eqTerm_delta =>
-    intro sig k Γ ctx d qs ls ps hctx h hq hl hp hctx_ih ι sigM hdis hord hι
+    intro sig k Γ ctx d qs ls ps hctx h hqp hl hctx_ih ι sigM hdis hord hι
     exact fun ρ => by
       have hl' := Level.length_atLevels (ls := ls) ρ hl
-      have hc := ValidEqTermΓ.delta (hctx_ih hdis hord hι ρ) hι h hq hl' hp
+      have hc := ValidEqTermΓ.delta (hctx_ih hdis hord hι ρ) hι h hqp hl'
       rw [List.getFin_map] at hc
       simp only [Term.atLevels, Signature.instanceType_substLevels]
       exact hc
   case eqTerm_const =>
-    intro sig k Γ ctx f j k' g m p A qs ls₁ ls₂ ps hctx h hq hl₁ hl₂ hp hls hctx_ih ι sigM hdis hord
+    intro sig k Γ ctx f j k' g m p A qs ls₁ ls₂ ps hctx h hqp hl₁ hl₂ hls hctx_ih ι sigM hdis hord
       hι
     exact fun ρ => by
       have hl₁' := Level.length_atLevels (ls := ls₁) ρ hl₁
       have hl₂' := Level.length_atLevels (ls := ls₂) ρ hl₂
-      have hc := ValidEqTermΓ.const (hctx_ih hdis hord hι ρ) hι h hq hl₁' hl₂' hp (by
+      have hc := ValidEqTermΓ.const (hctx_ih hdis hord hι ρ) hι h hqp hl₁' hl₂' (by
           rw [List.getFin_map, List.getFin_map]
           exact fun i => Level.subst_equal _ (hls i))
       rw [List.getFin_map] at hc

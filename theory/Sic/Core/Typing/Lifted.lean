@@ -276,9 +276,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     rw [Term.subst, Term.instantiate_subst]
     exact hL.secondOrder hθ hX (hts_ih hL hθ)
   case hasType_const =>
-    refine fun hctx h hq hl hp hctx_ih => fun hL hθ => ?_
+    refine fun hctx h hqp hl hctx_ih => fun hL hθ => ?_
     rw [Signature.instanceType, Term.weakenClosed_subst]
-    exact .const (hctx_ih hL hθ) h hq hl hp
+    exact .const (hctx_ih hL hθ) h hqp hl
   case hasType_univ => exact fun hctx hctx_ih => fun hL hθ => .univ (hctx_ih hL hθ)
   case hasType_prop => exact fun hctx hctx_ih => fun hL hθ => .prop (hctx_ih hL hθ)
   case hasType_inst =>
@@ -492,14 +492,14 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     rw [Term.subst, Term.subst, Term.instantiate_subst]
     exact hL.eqSecondOrder hθ hX (hts_ih hL hθ)
   case eqTerm_delta =>
-    refine fun hctx h hq hl hp hctx_ih => fun hL hθ => ?_
+    refine fun hctx h hqp hl hctx_ih => fun hL hθ => ?_
     rw [Signature.instanceType, Signature.instanceType, Term.weakenClosed_subst,
       Term.weakenClosed_subst]
-    exact .delta (hctx_ih hL hθ) h hq hl hp
+    exact .delta (hctx_ih hL hθ) h hqp hl
   case eqTerm_const =>
-    refine fun hctx h hq hl₁ hl₂ hp hls hctx_ih => fun hL hθ => ?_
+    refine fun hctx h hqp hl₁ hl₂ hls hctx_ih => fun hL hθ => ?_
     rw [Signature.instanceType, Term.weakenClosed_subst]
-    exact .const (hctx_ih hL hθ) h hq hl₁ hl₂ hp hls
+    exact .const (hctx_ih hL hθ) h hqp hl₁ hl₂ hls
   case eqTerm_univ => exact fun hctx hl hctx_ih => fun hL hθ => .univ (hctx_ih hL hθ) hl
   case eqTerm_prop => exact fun hctx hl hctx_ih => fun hL hθ => .prop (hctx_ih hL hθ) hl
   case eqTerm_inst =>

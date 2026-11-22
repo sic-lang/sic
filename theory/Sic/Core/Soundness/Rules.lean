@@ -297,14 +297,14 @@ signature `Σ` that gives the entries of `Σ_T` their meaning. -/
 theorem ValidTerm₀.const {sigT : Signature} (hd : sig.Distinct) (hent : sig.ValidEntries ι sigT)
     {f : Name} {j k' g : Nat} {m : Mode} {p : Grade}
     {A : Instance j g → Term k' []} (h : sigT.HasConstant f j k' g m p A) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k')
-    (hp : ps.length = g) :
-    ValidTerm₀ sig ι (.const f qs ls ps) ((A (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany j g qs ps)
+    (hl : ls.length = k') :
+    ValidTerm₀ sig ι (.const f qs ls ps) ((A hqp.inst).substLevels (ls.getFin hl)) := by
   obtain ⟨b, hred, hb⟩ := hent.hasConstant h
-  have hb' := (hb (.ofLists qs ps hq hp) fun i => (ls.getFin hl i).closedValue).levelEquiv
+  have hb' := (hb hqp.inst fun i => (ls.getFin hl i).closedValue).levelEquiv
     (Term.substLevels_levelEquiv_atLevels _ _).symm (Term.substLevels_levelEquiv_atLevels _ _).symm
     (Term.substLevels_levelEquiv_atLevels _ _).symm
-  have hr := hred qs ls ps hq hl hp
+  have hr := hred qs ls ps hqp hl
   rw [Signature.instanceType, Term.weakenClosed_nil] at hr
   exact (ValidEqTerm₀.red_iff hd hr).2 ((ValidEqTerm₀.red_iff hd hr).2 hb').symm
 
@@ -314,10 +314,10 @@ theorem ValidTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT) {f : Name}
     {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
     (h : sigT.HasConstant f j k' g m p A) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
+    {ps : List Grade} (hqp : Instance.AsMany j g qs ps) (hl : ls.length = k') :
     ValidTermΓ sig ι ctx (.const f qs ls ps)
-      (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl)) := by
-  have hc := ValidTerm₀.const hctx.distinct hent h hq hl hp
+      (Signature.instanceType A hqp.inst (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.distinct hent h hqp hl
   refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
     exact hc.1
@@ -329,13 +329,13 @@ theorem ValidTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
 theorem ValidEqTermΓ.delta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT)
     {d : ConstantDefinition} (h : .constantDefinition d ∈ sigT) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
-    (hp : ps.length = d.grades) :
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany d.sorts d.grades qs ps)
+    (hl : ls.length = d.levels) :
     ValidEqTermΓ sig ι ctx (.const d.name qs ls ps)
-      (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
-      (Signature.instanceType d.type (.ofLists qs ps hq hp) (ls.getFin hl)) := by
-  have hc := ValidTerm₀.const hctx.distinct hent (.constantDefinition h) hq hl hp
-  have hr := (Red.delta (Γ := []) (hent _ h).1 hq hl hp).interpret (ι := ι)
+      (Signature.instanceType d.body hqp.inst (ls.getFin hl))
+      (Signature.instanceType d.type hqp.inst (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.distinct hent (.constantDefinition h) hqp hl
+  have hr := (Red.delta (Γ := []) (hent _ h).1 hqp hl).interpret (ι := ι)
   rw [Signature.instanceType, Term.weakenClosed_nil] at hr
   refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
@@ -349,11 +349,11 @@ theorem ValidEqTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT) {f : Name}
     {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
     (h : sigT.HasConstant f j k' g m p A) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k')
-    (hp : ps.length = g) (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
+    {ps : List Grade} (hqp : Instance.AsMany j g qs ps) (hl₁ : ls₁.length = k')
+    (hl₂ : ls₂.length = k') (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
     ValidEqTermΓ sig ι ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)
-      (Signature.instanceType A (.ofLists qs ps hq hp) (ls₁.getFin hl₁)) :=
-  have hc := ValidTermΓ.const hctx hent h hq hl₁ hp
+      (Signature.instanceType A hqp.inst (ls₁.getFin hl₁)) :=
+  have hc := ValidTermΓ.const hctx hent h hqp hl₁
   ⟨hc.1, fun _ _ h => (hc.2 _ _ h).levelEquiv (Term.LevelEquiv.refl _)
     (.const f qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls)) (Term.LevelEquiv.refl _)⟩
 

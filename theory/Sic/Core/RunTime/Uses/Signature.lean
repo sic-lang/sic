@@ -42,13 +42,10 @@ theorem UsageSig.compile_usage {sig : Signature} (hd : sig.Distinct) (hord : sig
     rename_i hn
     split at hc
     case isFalse => exact nomatch hc
-    rename_i hq
-    split at hc
-    case isFalse => exact nomatch hc
-    rename_i hp
+    rename_i hqp
     cases hc
     have h := Usage.erase_usage hd hord Scope.FirstOrder.nil hn.2
-      (hu.constantDefinition_usage he (.ofLists qs ps hq hp))
+      (hu.constantDefinition_usage he hqp.inst)
     rwa [GradeVector.run_commutes.run_zero] at h
   | _ => simp only [Entry.compile] at hc; exact nomatch hc
 

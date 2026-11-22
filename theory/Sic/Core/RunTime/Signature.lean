@@ -44,28 +44,29 @@ structure ValidProgram (ι : Interpretation) (P : Program) (sig : Signature) : P
   compile : ∀ f qs ps b, sig.compile Mode.oneOne.erased f qs ps = some b → P f qs ps = some b
   /-- `𝒫` realizes the constant declarations of the mode `11ᵐ`. -/
   constantDeclaration : ∀ c, .constantDeclaration c ∈ sig → c.mode = .oneOne →
-    ∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = c.sorts)
-      (hl : ls.length = c.levels) (hp : ps.length = c.grades),
+    ∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
+      (hqp : Instance.AsMany c.sorts c.grades qs ps)
+      (hl : ls.length = c.levels),
       RunValid sig ι P Scope.FirstOrder.nil .empty 𝟘ᶜ (.const c.name qs ls ps)
-        (Signature.instanceType c.type (.ofLists qs ps hq hp) (ls.getFin hl))
+        (Signature.instanceType c.type hqp.inst (ls.getFin hl))
 
 /-- The program of a signature whose names are distinct gives a constant of the mode `11ᵐ` that the
 signature defines the erasure of its body. -/
 theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· ∈ S)]
     {sigE : Signature} {qs : List Quality} {ps : List Grade} :
     {sig : Signature} → sig.Distinct → {d : ConstantDefinition} → .constantDefinition d ∈ sig →
-      d.mode = .oneOne → (hq : qs.length = d.sorts) → (hp : ps.length = d.grades) →
+      d.mode = .oneOne → (hqp : Instance.AsMany d.sorts d.grades qs ps) →
         sig.findSome? (Entry.compile sigE S d.name qs ps)
-          = some ((d.body (.ofLists qs ps hq hp)).erase sigE S Scope.FirstOrder.nil)
-  | e :: sig, hd, d, h, hm, hq, hp => by
+          = some ((d.body hqp.inst).erase sigE S Scope.FirstOrder.nil)
+  | e :: sig, hd, d, h, hm, hqp => by
     have hself : Entry.compile sigE S d.name qs ps (.constantDefinition d)
-        = some ((d.body (.ofLists qs ps hq hp)).erase sigE S Scope.FirstOrder.nil) := by
-      simp only [Entry.compile, hm, hq, hp, and_self, ↓reduceDIte, ↓reduceIte]
+        = some ((d.body hqp.inst).erase sigE S Scope.FirstOrder.nil) := by
+      simp only [Entry.compile, hm, hqp, and_self, ↓reduceDIte, ↓reduceIte]
     rw [List.findSome?_cons]
     rcases List.mem_cons.1 h with rfl | h'
     · rw [hself]
     · cases hc : Entry.compile sigE S d.name qs ps e with
-      | none => exact Signature.Distinct.findSome?_compile hd.1 h' hm hq hp
+      | none => exact Signature.Distinct.findSome?_compile hd.1 h' hm hqp
       | some x =>
         have he : e = .constantDefinition d := by
           cases e with
@@ -89,10 +90,10 @@ mode `11ᵐ` that the signature defines the erasure of its body. -/
 theorem ValidProgram.constantDefinition {ι : Interpretation} {P : Program} {sig : Signature}
     (hP : ValidProgram ι P sig) (hd : sig.Distinct) {d : ConstantDefinition}
     (h : .constantDefinition d ∈ sig) (hm : d.mode = .oneOne) {qs : List Quality} {ps : List Grade}
-    (hq : qs.length = d.sorts) (hp : ps.length = d.grades) :
+    (hqp : Instance.AsMany d.sorts d.grades qs ps) :
     P d.name qs ps
-      = some ((d.body (.ofLists qs ps hq hp)).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) :=
-  hP.compile _ _ _ _ (hd.findSome?_compile h hm hq hp)
+      = some ((d.body hqp.inst).erase sig Mode.oneOne.erased Scope.FirstOrder.nil) :=
+  hP.compile _ _ _ _ (hd.findSome?_compile h hm hqp)
 
 -- ADE: the case `defn` of `fundamental′`, in `Graded/Erasure/LogicalRelation/Fundamental.agda`.
 /-- A program that realizes a well-formed signature `Σ` realizes the constants of the mode `11ᵐ` of
@@ -113,11 +114,11 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
     have hu' : UsageSig sig := by cases hu <;> assumption
     have hrest : P.Realizes sigM ι sig :=
       WfSig.realizes hι hwM hP sig hw hu' ((List.suffix_cons e sig).trans hs)
-    intro hc qs ls ps hq hl hp
+    intro hc qs ls ps hqp hl
     generalize hm : Mode.oneOne = m at hc
     cases hc with
     | constantDeclaration hc =>
-      exact hP.constantDeclaration _ (hs.subset hc) hm.symm qs ls ps hq hl hp
+      exact hP.constantDeclaration _ (hs.subset hc) hm.symm qs ls ps hqp hl
     | constantDefinition hc =>
       rcases List.mem_cons.1 hc with rfl | hc'
       · cases h with
@@ -130,7 +131,7 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         have hent := WfSig.validEntries hι hwM.distinct hwM.liftsInOrder sig hw
           ((List.suffix_cons _ sig).trans hs)
         have hf := (fundamentalIn.hasType (hΓ := Scope.FirstOrder.nil) hwM hent hrest
-          (ht (.ofLists qs ps hq hp)) (hm ▸ hus (.ofLists qs ps hq hp))
+          (ht hqp.inst) (hm ▸ hus hqp.inst)
           fun i => (ls.getFin hl i).closedValue).runValid
         intro w σ H E V hσ hEV hE
         obtain ⟨a, H', R, hev, hH, hr⟩ := hf w σ H E V hσ hEV hE
@@ -141,13 +142,14 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
         have hσ₀ : ∀ t : Term 0 [], t.subst σ = t := fun t => by
           have h := Term.subst_weakenClosed σ t
           rwa [Term.weakenClosed_nil] at h
-        refine ⟨a, H', R, .const (hP.constantDefinition hwM.distinct (hs.subset hc) hm.symm hq hp) ?_, hH,
+        refine
+          ⟨a, H', R, .const (hP.constantDefinition hwM.distinct (hs.subset hc) hm.symm hqp) ?_, hH,
           ?_⟩
         · rw [Term.atLevels, Term.erase_substLevels] at hev
           exact hev
         · rw [hσ₀, hσ₀] at hr
           rw [hσ₀, Signature.instanceType, Term.subst_weakenClosed]
-          have hred := (Red.delta (Γ := []) (hs.subset hc) hq hl hp).interpret (ι := ι)
+          have hred := (Red.delta (Γ := []) (hs.subset hc) hqp hl).interpret (ι := ι)
           rw [Signature.instanceType, Term.weakenClosed_nil] at hred
           exact (RunsAs.redStar_iff hwM.distinct (.step hred (.refl _))).2
             ((hr.levelEquiv hwM.distinct (Term.substLevels_levelEquiv_atLevels _ _).symm).term_levelEquiv
@@ -156,7 +158,7 @@ theorem WfSig.realizes {ι : Interpretation} {P : Program} {sigM : Signature}
       · rename_i d
         have hc'' : Signature.HasConstant sig d.name d.sorts d.levels d.grades .oneOne d.ownership d.type :=
           hm ▸ .constantDefinition hc'
-        exact hrest hc'' qs ls ps hq hl hp
+        exact hrest hc'' qs ls ps hqp hl
 
 /-! ## Judgments in a Signature -/
 

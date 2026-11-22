@@ -229,7 +229,7 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
   case eqType_propType => exact fun h h_ih => h_ih
   case hasType_var => exact fun hctx hx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case hasType_const => exact fun hctx h hq hl hp hctx_ih => ⟨hctx, hctx_ih⟩
+  case hasType_const => exact fun hctx h hqp hl hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_univ => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_prop => exact fun hctx hctx_ih => ⟨hctx, hctx_ih⟩
   case hasType_inst => exact fun h hqp hl hadm has has_ih => has_ih
@@ -260,8 +260,8 @@ theorem jointPresuppositions : Presuppositions ∧ ContextPresuppositions := by
   case eqTerm_conv => exact fun h hA h_ih hA_ih => h_ih
   case eqTerm_irr => exact fun ht hu hA ht_ih hu_ih hA_ih => ht_ih
   case eqTerm_secondOrder => exact fun hX hts hts_ih => hts_ih
-  case eqTerm_delta => exact fun hctx h hq hl hp hctx_ih => ⟨hctx, hctx_ih⟩
-  case eqTerm_const => exact fun hctx h hq hl₁ hl₂ hp hls hctx_ih => ⟨hctx, hctx_ih⟩
+  case eqTerm_delta => exact fun hctx h hqp hl hctx_ih => ⟨hctx, hctx_ih⟩
+  case eqTerm_const => exact fun hctx h hqp hl₁ hl₂ hls hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_univ => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_prop => exact fun hctx hl hctx_ih => ⟨hctx, hctx_ih⟩
   case eqTerm_inst => exact fun h hqp hl₁ hl₂ hadm has hls has_ih => has_ih

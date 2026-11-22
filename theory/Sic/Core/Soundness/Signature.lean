@@ -44,21 +44,21 @@ theorem Signature.ValidEntries.hasConstant {ι : Interpretation} {sig sigT : Sig
     {A : Instance j g → Term k' []} :
     sigT.HasConstant f j k' g m p A →
       ∃ b : Instance j g → Term k' [],
-        (∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade) (hq : qs.length = j)
-            (hl : ls.length = k') (hp : ps.length = g),
+        (∀ (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
+            (hqp : Instance.AsMany j g qs ps) (hl : ls.length = k'),
           Red (sig.interpret ι) (Term.const (Γ := []) f qs ls ps)
-            (Signature.instanceType b (.ofLists qs ps hq hp) (ls.getFin hl))) ∧
+            (Signature.instanceType b hqp.inst (ls.getFin hl))) ∧
         ∀ inst ρ, ValidTerm₀ sig ι ((b inst).atLevels ρ) ((A inst).atLevels ρ)
   | .constantDefinition (d := d) hd =>
     have ⟨hmem, hv⟩ := h _ hd
-    ⟨d.body, fun _ _ _ hq hl hp =>
-      .delta (List.mem_map_of_mem (f := Entry.interpret ι) hmem) hq hl hp,
+    ⟨d.body, fun _ _ _ hqp hl =>
+      .delta (List.mem_map_of_mem (f := Entry.interpret ι) hmem) hqp hl,
       ValidConstantDefinition.iff.1 hv⟩
   | .constantDeclaration (c := c) hc =>
     have ⟨hmem, hv⟩ := h _ hc
-    ⟨ι c, fun _ _ _ hq hl hp =>
+    ⟨ι c, fun _ _ _ hqp hl =>
       .delta (d := ⟨c.name, c.sorts, c.levels, c.grades, c.mode, c.ownership, c.type, ι c⟩)
-        (List.mem_map_of_mem (f := Entry.interpret ι) hmem) hq hl hp,
+        (List.mem_map_of_mem (f := Entry.interpret ι) hmem) hqp hl,
       ValidConstantDeclaration.iff.1 hv⟩
 
 /-- A data type of `Σ_T` is a data type of `Σ`, whose type declaration is meaningful in `Σ`. -/
