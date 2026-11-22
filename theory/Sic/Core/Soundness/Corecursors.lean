@@ -1133,7 +1133,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           · rw [← hpos.recursionAt_index, hD'] at hD''
             cases hD''
             exact .inr ⟨v', w', hP'⟩)
-      have hSp := DesRel.isPer hd hA.per (fun i x hx => by
+      have hSp := DesRel.isPer hd (levelRel_isPer_lt hd _) (fun i x hx => by
         cases hr : (T'.body I).recursionAt decl.names i with
         | none => rw [hr] at hx; cases hx
         | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩)
@@ -1774,7 +1774,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
             (.prop (hP T' hT')) (hA.instances as _).symm⟩)
       hDS hobs'
-    have hSp := DesRel.isPer hd hA.per (fun i x hx => by
+    have hSp := DesRel.isPer hd (levelRel_isPer_lt hd _) (fun i x hx => by
       cases hr : (T.body I).recursionAt decl.names i with
       | none => rw [hr] at hx; cases hx
       | some D => rw [hr] at hx; cases hx; exact ⟨id, fun h _ => h⟩) hDS

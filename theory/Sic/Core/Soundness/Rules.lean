@@ -1005,7 +1005,8 @@ theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDecl
     rw [← hA.sort]
     exact DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds (Subst.LevelEquiv.refl _)
   have hS : S Rf T = S' := funext fun o₁ => funext fun o₂ => propext
-    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd hA.per h' _ _ h₁' o₁ o₂).1 hs, fun hs => ⟨S', h₁', hs⟩⟩
+    ⟨fun ⟨_, h', hs⟩ => (DesRel.unique hd (levelRel_isPer_lt hd _) h' _ _ h₁' o₁ o₂).1 hs,
+      fun hs => ⟨S', h₁', hs⟩⟩
   rw [hS]
   exact ⟨h₁', h₂'⟩
 
@@ -1113,7 +1114,7 @@ theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDe
       exact RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h₂ hds
         (Subst.LevelEquiv.refl _)
     have hSS : S X T = S' := funext fun H => funext fun o => funext fun a => propext
-      ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd hA.per ih h' _ _ h₁'
+      ⟨fun ⟨_, h', hs⟩ => (RunDesRel.congr hd (levelRel_isPer_lt hd _) ih h' _ _ h₁'
           (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _) H o a).1 hs,
         fun hs => ⟨S', h₁', hs⟩⟩
     rw [hSS]

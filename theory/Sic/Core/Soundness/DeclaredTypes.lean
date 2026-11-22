@@ -101,9 +101,6 @@ structure TypeDeclaration.AtClosedLevels (sig : Signature) (ι : Interpretation)
   sort : ((decl.sort (.ofLists qs ps hq hp)).atLevels
       fun i => (ls.getFin hl i).closedValue).level.closedValue =
     ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue
-  /-- The relations of the levels below the sort are partial equivalence relations. -/
-  per : ∀ m, m < ((decl.sort (.ofLists qs ps hq hp)).level.subst (ls.getFin hl)).closedValue →
-    (levelRel sig ι m).IsPer
   /-- The instances of the block at the values of `ls`, at any arguments, are equal to those at
   `ls` up to their levels. -/
   instances : ∀ (a : InstanceArgs 0 [] decl.scope) D, Term.LevelEquiv
@@ -159,7 +156,6 @@ theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDecl
     destructors := fun _ hT => (hv.destructors _ hadm hT _).2 _ _ hθ
     fields := fun _ hT _ hc => (hv.fields _ hadm hT hc _).2 _ _ hθ
     sort := Level.closedValue_subst_equiv hls _
-    per := levelRel_isPer_lt hd _
     instances := fun a D => decl.blockInstance_atLevels_subst hq hl hp a D
     telescopes := fun _ _ => (Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _)
     computes := fun _ _ => (Whnf.inst ..).computes
