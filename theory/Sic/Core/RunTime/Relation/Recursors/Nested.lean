@@ -632,7 +632,7 @@ theorem ValidTerm₀.desRel (hd : sig.Distinct) {decl : TypeDeclaration} {D : Na
   obtain ⟨v₁, w₁, w₂, R', hv₁, hw₁, hw₂, hR', hrel⟩ := ht.2.1 hnp
   cases Computesι.det hd hI hv₁
   cases Computesι.det hd hw₁ hw₂
-  have hmono := DesRel.blockMono hd hSe
+  have hmono := CodataType.BlockMono.of_desRel hd hSe
   have hrel' := (HasEq.unique hd hR' hR₀ w₁ w₁).1 hrel
   rw [← h.2.2] at hrel'
   obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel'

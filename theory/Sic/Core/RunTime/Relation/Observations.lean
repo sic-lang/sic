@@ -510,7 +510,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   have hnp := Computesι.not_computesToProp hd hI hU₀
   obtain ⟨v₀, w₁, w₂, R', hv₀, hw₁, hw₂, hR', hrel⟩ := htv.2.1 hnp
   cases Computesι.det hd hI hv₀
-  have hmono := DesRel.blockMono hd hSe
+  have hmono := CodataType.BlockMono.of_desRel hd hSe
   have hrel' := (HasEq.unique hd hR' hReq w₁ w₂).1 hrel
   rw [← hD] at hrel'
   obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono hT hrel'

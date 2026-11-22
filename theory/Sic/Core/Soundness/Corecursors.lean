@@ -445,7 +445,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
       have hnp := Computesι.not_computesToProp hd hI hU₀
       obtain ⟨v', w₁, w₂, R', hv', hw₁, hw₂, hR', hrel⟩ := ht.2.1 hnp
       cases Computesι.det hd hI hv'
-      have hmono := DesRel.blockMono hd hS
+      have hmono := CodataType.BlockMono.of_desRel hd hS
       have hrel' := (HasEq.unique hd hR' hR w₁ w₂).1 hrel
       rw [← h.2.2] at hrel'
       obtain ⟨o₁, o₂, hc₁, hc₂, ho⟩ := CodataType.blockRel_unfold hmono h.2.1 hrel'
@@ -1031,7 +1031,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
   cases hs : (decl.sort I).quality
   · rw [hs] at hI
     obtain ⟨S, hS, hU⟩ := hv.codataUnivRel hd hdecl hq hl hp hadm has hs
-    have hmono := DesRel.blockMono hd hS
+    have hmono := CodataType.BlockMono.of_desRel hd hS
     -- The relations of the instances, joined with `P`.
     let Y : Name → TermRel := fun D' a b => CodataType.blockRel decl.codataTypes S D' a b ∨ P D' a b
     have hF : ∀ D', D' ∈ decl.names → FieldRel sig ι ((decl.sort I).level.subst L).closedValue
@@ -1668,7 +1668,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
       (Term.LevelEquiv.refl _) (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
   rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
   · -- An instance in a universe: the terms compute to corecursors, whose observations are theirs.
-    have hmono := DesRel.blockMono hd hS
+    have hmono := CodataType.BlockMono.of_desRel hd hS
     have hU : ∀ T' ∈ decl.codataTypes, UnivRel sig ι ((decl.sort I).level.subst L).closedValue
         (fun m _ => levelRel sig ι m) (.inst T'.name qs ls ps as)
         (CodataType.blockRel decl.codataTypes S T'.name) := fun T' hT' =>

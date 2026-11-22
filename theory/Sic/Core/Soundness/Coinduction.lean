@@ -177,7 +177,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
     have hn := TypeDeclaration.codataTypes_nodup hnames
     let ρ : Fin decl.levels → Nat := fun i => (L i).closedValue
     let Lρ : Fin decl.levels → Level 0 := fun i => .ofNat (ρ i)
-    have hmono := DesRel.blockMono hd hS
+    have hmono := CodataType.BlockMono.of_desRel hd hS
     -- The instances of the block are types of the universe, not propositions.
     have hcI : ∀ D', Computesι sig ι (.inst D' qs ls ps a) (.inst D' qs ls ps a) :=
       fun _ => (Whnf.inst ..).computes

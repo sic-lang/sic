@@ -219,7 +219,8 @@ of a universe apart from the propositions. -/
 
 /-- The relations of the destructors of a block of codata types, given for every relation of its
 instances, grow with them, in a signature whose names are distinct. -/
-theorem DesRel.blockMono {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
+theorem CodataType.BlockMono.of_desRel {sig : Signature} {ι : Interpretation}
+    (hd : sig.Distinct)
     {decl : TypeDeclaration} {I : Instance decl.sorts decl.grades} {n : Nat}
     {L : Fin decl.levels → Level 0} {θ : Subst 0 [] decl.scope}
     {S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel}
