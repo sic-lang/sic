@@ -22,7 +22,8 @@ The fields of an instance are the fields of its declaration at its levels and it
 a substitution that gives each variable terms equal up to their levels keeps two terms equal up to
 their levels.
 The agreements of `Sic.Core.Meaning.Uniqueness` read the invariance of the graph of the types and of
-the graph of run time by these levels, and the soundness reads it too.
+the graph of run time by these levels, through `Sic.Core.Meaning.Equality.Nesting` and
+`Sic.Core.Meaning.RunTime.Nesting`, and the soundness reads it too.
 
 The core reduces by `(δ_⟶)` alone, which copies the levels of the constant into its body; the kinds
 of declarations add the cases of their reductions.

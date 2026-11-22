@@ -21,9 +21,8 @@ Both are proved by recursion on the clauses of the graph of the nestings, after 
 the relations of a level: the clause of a type without position is that of the graph of run time,
 the relation of a position is that of its type, which is unique and the same for the types equal
 up to the values of their levels, a property of the graph of run time that
-`Sic.Core.Meaning.Uniqueness.Levels` proves and that the second takes as a premise, and the clauses
-of an instance of a codata type are those of the graph of run time, where the block has no
-recursive destructor.
+`Sic.Core.Meaning.Uniqueness.Levels` proves, and the clauses of an instance of a codata type are
+those of the graph of run time, where the block has no recursive destructor.
 The second reads the equality of the observations of a term from the equality of the term, which
 gives the equality that the graph of run time asks of each observation.
 An instance of a codata type may live below the level of the graph of the nestings that reads it,
@@ -288,9 +287,6 @@ their relations of run time. -/
 theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P))
-    (hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R)
     {sT : Quality} {τ : Nest RunNestLeaf} {A : Term 0 []} {R : RunRel} :
     RunNestRel sig ι P n (fun m _ => levelRel sig ι m) τ A R →
       Nest.All (fun x => RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain x.1 x.2) τ →
@@ -302,7 +298,8 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
   | .direct hA, hτ, _, h', _, _, _ => by
     cases hτ with
     | direct hT =>
-      exact fun H t a _ => (RunNestRel.unique hd ihm ih (hinv _ _ _ hT hA) _ h' H t a).1
+      exact fun H t a _ => (RunNestRel.unique hd ihm ih
+        (RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hA .plain) _ h' H t a).1
   | .codata (D := D) (T := T) (qs := qs) (ls := ls) (ps := ps) (as := as) h hqp hl hA hκ hn hrec
       S hS, hτ, _, h', _, _, hE => by
     cases hτ with
@@ -340,7 +337,7 @@ theorem RunNestRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program
                     cases ho.unique ho₁
                     cases ho.unique ho₂
                     rw [hTn]
-                    exact ⟨o, ho, RunNestDesRel.to_plain hd ihm ih hinv hS
+                    exact ⟨o, ho, RunNestDesRel.to_plain hd ihm ih hS
                       (Nesting.ofArgs_rel₃ hνs) _ (by
                         have hS'' := hS' (fun N H v a =>
                           N = D ∧ runCorecRel D S H v a ∧ XE N v v) _ hT
@@ -366,9 +363,6 @@ observations to themselves, at positions that hold types with their relations of
 theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Program} {n : Nat}
     (hd : sig.Distinct) (ihm : ∀ m, m < n → (levelRel sig ι m).IsPer)
     (ih : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P))
-    (hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R)
     {D : Name} {Γ : Scope} {ν : Nesting RunNestLeaf Γ} {ns : List Name}
     {ds : Destructors 0 Γ ns} {θ : Subst 0 [] Γ} {S : RunObsRel} :
     RunNestDesRel sig ι P n (fun m _ => levelRel sig ι m) D @ν ds @θ S →
@@ -399,7 +393,7 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
             .plain hv (hR' ts hts _ hv)
         exact fun H o a ⟨e₁, e₂⟩ ⟨h₁, h₂, h₃⟩ =>
           ⟨(hEE _ _).1 h₁, fun hp => (hAA _ H a).1 (h₂ hp),
-            RunNestDesRel.to_plain hd ihm ih hinv (hG _ h₁) (Nesting.lift_rel₃ hν) _
+            RunNestDesRel.to_plain hd ihm ih (hG _ h₁) (Nesting.lift_rel₃ hν) _
               (hG' _ ((hEE _ _).1 h₁)) _ _ (hGE _ ((hEEE _ _).1 h₁)) H o a e₂ h₃⟩
       | recursive hrs' => cases hrs'
     | recursive _ hrs' => cases hrs'
@@ -421,12 +415,12 @@ theorem RunNestDesRel.to_plain {sig : Signature} {ι : Interpretation} {P : Prog
             have hts'' := (hSS _ _).1 hts'
             have ⟨_, hv⟩ := hB' ts hts''
             have ⟨w, H₂, Rc, he, hw⟩ := h₁ hp H₁ hH₁ ts bs hts₁ ϖ
-            ⟨w, H₂, Rc, he, RunNestRel.to_plain hd ihm ih hinv (hR ts hts')
+            ⟨w, H₂, Rc, he, RunNestRel.to_plain hd ihm ih (hR ts hts')
               (Term.nest_rel₃ (Nesting.liftN_rel₃ ps.length hν) B) _
               (.plain hv (hR' ts hts'' _ hv)) _ _
               (.plain (sT := .type) hv (hF' ts hts'' _ hv)) H₂ _ w
               (e₁' ts ts hts'') hw⟩,
-            RunNestDesRel.to_plain hd ihm ih hinv (hG _) (Nesting.lift_rel₃ hν) _ (hG' _ e₁') _ _
+            RunNestDesRel.to_plain hd ihm ih (hG _) (Nesting.lift_rel₃ hν) _ (hG' _ e₁') _ _
               (hGE _ e₁) H o a e₂ h₂⟩
       | recursive hrs' => cases hrs'
     | recursive _ hrs' => cases hrs'
