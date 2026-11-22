@@ -1,7 +1,6 @@
 module
 
 public import Sic.Core.RunTime.Signature
-import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Soundness.Substitution
 import Sic.Core.Typing.Presuppositions
 

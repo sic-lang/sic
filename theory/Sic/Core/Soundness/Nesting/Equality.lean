@@ -4,9 +4,7 @@ public import Sic.Core.Soundness.Nesting.Reading
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.Exactness
 import Sic.Core.Meaning.Uniqueness
-import Sic.Core.Soundness.Closed
 import Sic.Core.Soundness.DeclaredTypes
-import Sic.Core.Soundness.Substitution
 import Sic.Core.Syntax.Signature
 import Sic.Math.Nat
 
