@@ -159,10 +159,10 @@ theorem ValidTypeDeclaration.atClosedLevels (hd : sig.Distinct) {decl : TypeDecl
     instances := fun a D => decl.blockInstance_atLevels_subst hq hl hp a D
     telescopes := fun _ _ => (Telescope.substLevels_levelEquiv hls _).subst (Subst.LevelEquiv.refl _)
     computes := fun _ _ => (Whnf.inst ..).computes
-    desRel := fun hS => DesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
+    desRel := fun hS => DesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hS
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _)
-    runDesRel := fun hS => RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hS
+    runDesRel := fun hS => RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hS
       (Destructors.substLevels_levelEquiv (fun i => Level.equivalence.symm (hls i)) _)
       (Subst.LevelEquiv.refl _) }
 
@@ -194,7 +194,8 @@ theorem TypeDeclaration.AtClosedLevels.telRel (hd : sig.Distinct)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) S :=
-  hA.sort ▸ TelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h (hA.telescopes c as)
+  hA.sort ▸ TelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
+    (hA.telescopes c as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : NestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
         (.identity decl.scope)).atLevels fun i => (ls.getFin hl i).closedValue).subst
@@ -225,7 +226,7 @@ theorem TypeDeclaration.AtClosedLevels.runTelRel (hd : sig.Distinct)
       (fun i => ((c.fields (.ofLists qs ps hq hp)).nestAt decl.names i).map
         fun D => (.inst D qs ls ps as, Rf D))
       (c.fieldsAt (.ofLists qs ps hq hp) (ls.getFin hl) as) S :=
-  hA.sort ▸ RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) h
+  hA.sort ▸ RunTelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) h
     (hA.telescopes c as)
     (fun _ => Nest.map_rel₃ (r := fun (x y _ : RunNestLeaf) => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2)
       (f := fun D => (((decl.blockInstance (.ofLists qs ps hq hp) D
@@ -288,7 +289,7 @@ theorem TypeDeclaration.AtClosedLevels.runNestRel_instances (hd : sig.Distinct)
             (X D').computed sig ι)) := fun j =>
   Nest.All.map_rel₃ (fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_dataTypes hT hD'
-      exact hA.sort ▸ RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+      exact hA.sort ▸ RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
         (.plain (Whnf.inst ..).computes (.univ (hU T' hT'))) (hA.instances as T'.name).symm .plain)
     (Telescope.nestAt_all decl.names _ j)
 
@@ -764,7 +765,8 @@ theorem NestRel.plain_of_leaves (hd : sig.Distinct) {n : Nat} {sT s : Quality}
   | direct _ hT =>
     cases hτ with
     | direct hx =>
-      exact ⟨.type, _, NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hx hT .plain⟩
+      exact ⟨.type, _, NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hx hT
+        .plain⟩
   | codata => exact hsort (hA ⟨_, rfl⟩)
   | codataProp => exact hsort (hA ⟨_, rfl⟩)
 
@@ -780,7 +782,8 @@ theorem NestRel.validEqTerm_iff (hd : sig.Distinct) {n : Nat} {sT s : Quality} {
     F t u ↔ ValidEqTerm₀ sig ι t u A := by
   obtain ⟨_, _, h'⟩ := h.plain_of_leaves hd hτ hA
   refine (levelRel_nest_agree hd (fun _ _ _ hT hTA =>
-    NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain) h hτ h' t u).trans ?_
+    NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA
+      .plain) h hτ h' t u).trans ?_
   cases h' with
   | plain hc hF => exact ⟨hF.validEqTerm hd hc, hF.of_validEqTerm hc⟩
 
@@ -1090,7 +1093,7 @@ theorem ValidTypeDeclaration.fieldsRel (hd : sig.Distinct) {decl : TypeDeclarati
         (((decl.blockInstance (.ofLists qs ps hq hp) D (.identity decl.scope)).atLevels
           fun i => (ls.getFin hl i).closedValue).subst as₁.toSubst, Rf D)) := fun i =>
     Nest.All.map_rel₃ (fun D hD => hA.sort ▸
-        NestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hRf D hD)
+        NestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hRf D hD)
           (hA.instances as₁ D).symm .plain)
       (Telescope.nestAt_all decl.names _ i)
   -- The types of the nested fields are terms of a sort, since the instances of the block are.

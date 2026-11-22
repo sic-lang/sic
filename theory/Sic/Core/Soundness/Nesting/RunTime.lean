@@ -364,7 +364,7 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
       obtain ⟨S, hS₁, hS₂⟩ := hdr D fun d hdm =>
         hT.2.2 ▸ Signature.destructorCase_of_mem hT.1 hT.2.1 hdm
       have hinv : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
-        fun m _ => levelRel_levelInvariant hd m
+        Nat.forall_lt (levelRel_levelInvariant hd) _
       have hrel : ∀ ν : Nesting RunNestLeaf decl.scope,
           Nesting.Rel (fun x y => Term.LevelEquiv x.1 y.1 ∧ x.2 = y.2) @ν @ν :=
         fun ν _ x => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _

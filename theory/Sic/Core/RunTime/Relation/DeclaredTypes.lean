@@ -76,7 +76,7 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain
+    RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA .plain
   have hplain : ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' := by
     have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧ κ₁.level.closedValue ≤ n ∧
         ValidEqTerm₀ sig ι A A (.sort κ₁)) →
@@ -168,7 +168,7 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
   have hinv : ∀ (T A : Term 0 []) (R : RunRel),
       RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
         RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hT hTA .plain
+    RunNestRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hT hTA .plain
   -- An instance of a declared type is a type without position, whose equality relates the term to
   -- itself: the graph of run time then relates what the graph of the nestings does.
   have hsort : (∃ νs, τ = .inst νs) → RunsAs sig ι P H t b A := fun hi => by

@@ -188,12 +188,14 @@ theorem RunTelRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
       have hFF := FieldRel.unique hd ihm hF _ _ hF'
       have hRR := RunFieldRel.congr hd ihm (Nat.forall_lt (levelRel_run_unique hd) _) hR _ hR'
       have hFt := fun t t' htt (ht : Term.LevelEquiv t t') =>
-        (hFF t' t').1 (FieldRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF htt ht ht)
+        (hFF t' t').1
+          (FieldRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hF htt ht ht)
       exact fun H => RunFieldsRel.cons_levelEquiv
         (fun t t' a ⟨htt, hr⟩ ht => ⟨hFt t t' htt ht,
           fun hp => (hRR H t' a).1 (RunFieldRel.rel_levelEquiv hd ih hR (hr hp) ht)⟩)
         fun t t' _ ⟨htt, _⟩ ht => RunTelRel.rel_levelEquiv hd ih (hG t htt) _ _
-          (RunTelRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hG' t' (hFt t t' htt ht))
+          (RunTelRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+            (hG' t' (hFt t t' htt ht))
             ((Telescope.LevelEquiv.refl _).subst₀ (Subst₀.LevelEquiv.single ht.symm))
             (fun _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
           (fun i => hRs (i + 1)) H
@@ -306,8 +308,8 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
           AbstractionRel (ps := ps) SΘ F f' f' :=
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
-          NestRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hF ts hts') _ _ _
-            (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
+          NestRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) (hF ts hts')
+            _ _ _ (hF ts hts') .plain (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _))
             (ef.subst (Subst.LevelEquiv.refl _))
       have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
@@ -327,7 +329,7 @@ theorem RunNestDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P 
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunNestDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunNestDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+            (RunNestDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
               (hG' _ ((hEE _ _).1 h₁')) (Destructors.LevelEquiv.refl _)
               (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm)
               (fun _ _ => Nest.rel₃_refl (fun _ => ⟨Term.LevelEquiv.refl _, rfl⟩) _))
@@ -394,7 +396,8 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         fun _ _ h ef ts us hts =>
           have hts' := hSΘp.trans hts (hSΘp.symm hts)
           have ⟨_, hv⟩ := hB ts hts'
-          FieldRel.rel_levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hF ts hts' _ hv)
+          FieldRel.rel_levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+            (hF ts hts' _ hv)
             (h ts us hts) (ef.subst (Subst.LevelEquiv.refl _)) (ef.subst (Subst.LevelEquiv.refl _))
       have hRΘΘ := RunTelRel.congr hd ihm ihu hRΘ _ _ hRΘ' fun _ => .plain
       have hfields : ∀ H (ts : Args 0 [] ps) bs, RΘ H ts.terms bs → SΘ ts.terms ts.terms :=
@@ -415,7 +418,8 @@ theorem RunDesRel.rel_levelEquiv {sig : Signature} {ι : Interpretation} {P : Pr
         have h₁' := hE _ _ h₁ (e d ps)
         ⟨(hEE _ _).1 h₁', fun hp => (hAA _ H a).1 ((h₂ hp).levelEquiv hRinv (e d ps)),
           RunDesRel.rel_levelEquiv hd ih (hG _ h₁) _ _
-            (RunDesRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) (hG' _ ((hEE _ _).1 h₁'))
+            (RunDesRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
+              (hG' _ ((hEE _ _).1 h₁'))
               (Destructors.LevelEquiv.refl _) (Subst.LevelEquiv.snoc (Subst.LevelEquiv.refl θ) (e d ps).symm))
             (fun i => hRs (i + 1)) H o o' a h₃ e⟩
     | recursive _ hrs' => have h0 := hRs 0; rw [hrs, hrs'] at h0; cases h0

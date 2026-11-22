@@ -447,7 +447,7 @@ theorem ValidEqTerm₀.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Nam
         FieldRel sig ι ((decl.sort I).atLevels ρ).level.closedValue (fun m _ => levelRel sig ι m)
           s (X a₁ D') R' := fun hF' => by
       rw [hA.sort]
-      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m) hF'
+      exact FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _) hF'
         (hA.instances a₁ _).symm
     rcases HasEq.instCodata_inv hd h hq hl hp hR with ⟨hs, S, hS, rfl⟩ | ⟨hs, S, hS, hRb⟩
     · have hU₀ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
@@ -1068,7 +1068,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (fun m _ => levelRel sig ι m) .type (X D')
         ((CodataType.blockRel decl.codataTypes S D').computed sig ι) := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
-      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+      exact FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
         (.univ rfl (hU T' hT').1) (hA.instances a₁ _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, ∀ a b, P T'.name a b →
         corecRel T'.name (S Y T') a b := by
@@ -1112,7 +1112,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
         (fun m _ => levelRel sig ι m) .prop (X D')
         (fun _ _ => CodataType.blockTruth decl.codataTypes S D') := fun D' hD' => by
       obtain ⟨T', hT', rfl⟩ := TypeDeclaration.mem_names_of_codataTypes hT hD'
-      exact FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+      exact FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
         (.prop (hPr T' hT').1) (hA.instances a₁ _).symm
     have hcons : ∀ T' ∈ decl.codataTypes, (∃ a b, P T'.name a b) → (S Y T').truth := by
       intro T' hT' ⟨a, b, hab⟩
@@ -1728,7 +1728,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           (Destructors.recursionAt_mem hi)
         rw [hi]
         exact ⟨_, _, rfl, hA.computes as _,
-          FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+          FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
             (.univ rfl (hU T' hT')) (hA.instances as _).symm⟩)
       hDS hobs'
     have hU₁ : (levelRel sig ι ((decl.sort I).level.subst L).closedValue).univ
@@ -1767,7 +1767,7 @@ theorem ValidEqTerm₀.etaObs (hd : sig.Distinct) {decl : TypeDeclaration} {D : 
           (Destructors.recursionAt_mem hi)
         rw [hi]
         exact ⟨_, _, rfl, hA.computes as _,
-          FieldRel.levelEquiv hd (fun m _ => levelRel_levelInvariant hd m)
+          FieldRel.levelEquiv hd (Nat.forall_lt (levelRel_levelInvariant hd) _)
             (.prop (hP T' hT')) (hA.instances as _).symm⟩)
       hDS hobs'
     have hSp := DesRel.isPer hd (Nat.forall_lt (levelRel_isPer hd) _) (fun i x hx => by
