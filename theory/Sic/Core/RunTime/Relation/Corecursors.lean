@@ -466,10 +466,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
             · simp only [hpos.recursionAt_index, hbn, Option.map_some, Option.some.injEq] at hD' hR
               subst hD' hR
               have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
-                (Term.LevelEquiv.subst (Subst.LevelEquiv.refl _)
-                  (Term.substLevels_levelEquiv
-                    (fun i => Level.equivalence.symm (Level.ofNat_closedValue (ls.getFin hl i))) B))
-              rw [he] at h₁
+                (Term.substLevels_subst_levelEquiv_atLevels L B _)
+              rw [Term.atLevels, he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
                   (h₁.levelEquiv hd

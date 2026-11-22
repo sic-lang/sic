@@ -432,11 +432,9 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             have hty : Term.LevelEquiv ((B.substLevels L).subst (Subst.append
                 (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
                 (.inst T''.name qs ls ps a) := by
-              have hE := Term.LevelEquiv.subst (Subst.LevelEquiv.refl (Subst.append
-                  (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
-                (Term.substLevels_levelEquiv
-                  (fun i => Level.equivalence.symm (Level.ofNat_closedValue (ls.getFin hl i))) B)
-              rw [e] at hE
+              have hE := Term.substLevels_subst_levelEquiv_atLevels L B (Subst.append
+                  (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)
+              rw [Term.atLevels, e] at hE
               exact hE.trans (decl.blockInstance_atLevels_subst hq hl hp a _)
             have hxD := hox.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hyD := hoy.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
