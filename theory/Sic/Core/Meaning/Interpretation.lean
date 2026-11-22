@@ -96,6 +96,17 @@ def InstanceArgs.atLevels {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (as : I
     InstanceArgs 0 Γ Δ :=
   as.substLevels fun i => .ofNat (ρ i)
 
+/-- `C̄[ρ]`: the motives `C̄` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
+def Motives.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (Cs : Motives k Γ) : Motives 0 Γ :=
+  Cs.substLevels fun i => .ofNat (ρ i)
+
+/-- `ū[ρ]`: the branches `ū` in which each level variable `i` has the value `ρ i`.
+RFC: `\mathsf{inst}_\rho` -/
+def Branches.atLevels {k : Nat} {Γ : Scope} (ρ : Fin k → Nat) (us : Branches k Γ) :
+    Branches 0 Γ :=
+  us.substLevels fun i => .ofNat (ρ i)
+
 /-- An instance at the values `ρ` of the level variables is the instance at its levels and its
 arguments at these values. -/
 theorem Term.atLevels_inst {k : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat) (D : Name)

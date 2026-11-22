@@ -280,8 +280,8 @@ theorem fundamentalIn : FundamentalIn := by
       rw [Term.atLevels_inst] at ht'
       have hprem : ValidRecursorPremises sigM ι (ctx.atLevels ρ) decl qs (ls.map (Level.atLevels ρ))
           ps hq hp (as.atLevels ρ)
-          (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0))
-          (us.substLevels fun i => (.ofNat (ρ i) : Level 0))
+          (Cs.atLevels ρ)
+          (us.atLevels ρ)
           (κ.atLevels ρ) :=
         { motives := fun j T' hj =>
             let ⟨_, hC'⟩ := hCs j T' hj; ⟨_, Motives.get_substLevels_of _ hC'⟩
@@ -301,7 +301,7 @@ theorem fundamentalIn : FundamentalIn := by
               (ls.map (Level.atLevels ρ)) ps
               (as.atLevels ρ)
               (κ.atLevels ρ).level χ
-              (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
+              (Cs.atLevels ρ))
             ((Rs con).atLevels ρ) πs :=
         fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
           Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
@@ -315,7 +315,7 @@ theorem fundamentalIn : FundamentalIn := by
               (ls.map (Level.atLevels ρ)) ps
               (as.atLevels ρ)
               (κ.atLevels ρ).level χ
-              (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)))
+              (Cs.atLevels ρ))
             ((Rs con).atLevels ρ) (πs i) :=
         fun i j T' con hi => by
           obtain ⟨πs', h₁⟩ := hRs i j T' con hi
@@ -325,11 +325,11 @@ theorem fundamentalIn : FundamentalIn := by
           exact Terms.ResultTypes.ofTypeDeclarations (fun _ he => (hι _ he).1)
             (Constructor.ResultTypes.substLevels_ofMotives _ h₁)
       have hut' : ∀ i j T' con C' u₁ u₂, decl.cases[i]? = some (j, T', con) →
-          (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).get j = some ⟨0, C'⟩ →
-          (us.substLevels fun i => (.ofNat (ρ i) : Level 0)).get i =
+          (Cs.atLevels ρ).get j = some ⟨0, C'⟩ →
+          (us.atLevels ρ).get i =
             some ⟨(con.params (.ofLists qs ps hq hp)).length,
               (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₁⟩ →
-          (us.substLevels fun i => (.ofNat (ρ i) : Level 0)).get i =
+          (us.atLevels ρ).get i =
             some ⟨(con.params (.ofLists qs ps hq hp)).length,
               (con.nestResultParams (.ofLists qs ps hq hp) decl.names).length, u₂⟩ →
           ValidEqTermΓ sigM ι (((ctx.atLevels ρ).append (con.fieldsAt (.ofLists qs ps hq hp)
@@ -352,7 +352,7 @@ theorem fundamentalIn : FundamentalIn := by
         rw [List.getFin_map]
         exact hb
       have hrec : ∀ j T' C', decl.dataTypes[j]? = some T' →
-          (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).get j = some ⟨0, C'⟩ →
+          (Cs.atLevels ρ).get j = some ⟨0, C'⟩ →
           ∀ σ, EqSubst sigM ι (ctx.atLevels ρ) σ σ → ∀ t₁ t₂,
           ValidEqTerm₀ sigM ι t₁ t₂ ((Term.inst T'.name qs
             (ls.map (Level.atLevels ρ)) ps
@@ -361,14 +361,14 @@ theorem fundamentalIn : FundamentalIn := by
             (ls.map (Level.atLevels ρ)) ps
             ((as.atLevels ρ).subst σ) t₁
             (κ.atLevels ρ)
-            ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
-            ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
+            ((Cs.atLevels ρ).subst σ)
+            ((us.atLevels ρ).subst σ))
             (.recursor r ς χ T'.name qs
             (ls.map (Level.atLevels ρ)) ps
             ((as.atLevels ρ).subst σ) t₂
             (κ.atLevels ρ)
-            ((Cs.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ)
-            ((us.substLevels fun i => (.ofNat (ρ i) : Level 0)).subst σ))
+            ((Cs.atLevels ρ).subst σ)
+            ((us.atLevels ρ).subst σ))
             ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)) :=
         fun j T' C' hj hC' σ hσ t₁ t₂ ht₀ =>
           ValidEqTerm₀.recursor_block hι hw.liftsInOrder h hq hl' hl' hp hadm ht'.1.1 has'
@@ -382,8 +382,8 @@ theorem fundamentalIn : FundamentalIn := by
       have husr : RunValidBranches sigM ι P hΓ (ctx.atLevels ρ) decl qs
           (ls.map (Level.atLevels ρ)) ps hq hl' hp
           (as.atLevels ρ)
-          (Cs.substLevels fun i => (.ofNat (ρ i) : Level 0))
-          (us.substLevels fun i => (.ofNat (ρ i) : Level 0)) δs gs
+          (Cs.atLevels ρ)
+          (us.atLevels ρ) δs gs
           (fun con => (Rs con).atLevels ρ) :=
         fun i j T' con C' u hi hC' hu₁ => by
         obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
@@ -393,7 +393,7 @@ theorem fundamentalIn : FundamentalIn := by
         simp only [Context.atLevels, Context.substLevels_append, Term.atLevels,
           Constructor.fieldsAt_substLevels, Term.substLevels_rename] at hb
         erw [Term.atCtor_substLevels] at hb
-        simp only [Branches.grades_substLevels]
+        simp only [Branches.atLevels, Branches.grades_substLevels]
         rw [List.getFin_map]
         exact hb
       -- The context of each branch is meaningful, and the types of its recursive results are
@@ -428,9 +428,9 @@ theorem fundamentalIn : FundamentalIn := by
       have hc := RunValidRen.recursor (P := P) (γ := γ') hw.distinct hw.liftsInOrder hM hv hadm
         has' hh (Motives.get_substLevels_of _ hC) hprem hRsπ hctx hsorts hrec ht' htr husr
         (fun i j T' con l p hi hl => by
-          simpa only [Branches.grades_substLevels] using hg i j T' con l p hi hl)
+          simpa only [Branches.atLevels, Branches.grades_substLevels] using hg i j T' con l p hi hl)
         (fun i j T' con hi => by
-          simpa only [Branches.grades_substLevels] using hχ i j T' con hi)
+          simpa only [Branches.atLevels, Branches.grades_substLevels] using hχ i j T' con hi)
         (hr rfl) (fun hq' => match hc : decl.cases with
           | [] => rfl
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))
