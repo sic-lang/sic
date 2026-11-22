@@ -1275,9 +1275,6 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
       -- The values of the levels of the instance.
       let ρF : Fin declF.levels → Nat := fun i =>
         ((ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl' i).closedValue
-      have hls : ∀ i, (Level.ofNat (ρF i) : Level 0) ≈
-          (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl' i :=
-        fun i => Level.ofNat_closedValue _
       have hget : ∀ i,
           (ls.map (Level.subst fun i => (.ofNat (ρ i) : Level 0))).getFin hl' i =
             (ls.getFin hl i).subst fun i => .ofNat (ρ i) :=
@@ -1288,7 +1285,7 @@ theorem Reading.readsInstances (R : Reading sig ι α I) (hS : TypingSound sig �
         rw [Context.atLevels, Context.substLevels_substLevels]
         refine Context.substLevels_levelEquiv (fun i => ?_) _
         rw [← hget i]
-        exact Level.equivalence.symm (hls i)
+        exact Level.equivalence.symm (Level.ofNat_closedValue _)
       -- The arguments at the first pair are equal arguments of the parameters.
       have eas : ∀ σ : Subst 0 [] Γ', ((as.rename β).atLevels ρ).subst σ =
           (as.atLevels ρ).subst (fun x => σ (β x)) := fun σ => by

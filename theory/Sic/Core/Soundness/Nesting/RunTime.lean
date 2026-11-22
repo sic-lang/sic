@@ -358,9 +358,8 @@ def runNestReading (sig : Signature) (ι : Interpretation) (hd : sig.Distinct) (
     | plain hc hR =>
       cases Computesι.det hd (Whnf.inst D qs _ ps _).computes hc
       have hn := RunFieldRel.codata_inv hd hT hq hl hp hR
-      have hls : ∀ i, (Level.ofNat ((ls.getFin hl i).closedValue) : Level 0) ≈ ls.getFin hl i :=
-        fun i => Level.ofNat_closedValue _
-      refine ⟨(), Nat.le_trans (Nat.le_of_eq (Level.closedValue_subst_equiv hls _)) hn,
+      have hls := fun i => Level.ofNat_closedValue (ls.getFin hl i)
+      refine ⟨(), Nat.le_trans (Nat.le_of_eq (decl.sort_atLevels_closedValue hq hl hp)) hn,
         fun hdr => ?_⟩
       obtain ⟨S, hS₁, hS₂⟩ := hdr D fun d hdm =>
         hT.2.2 ▸ Signature.destructorCase_of_mem hT.1 hT.2.1 hdm
