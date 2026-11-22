@@ -428,12 +428,14 @@ theorem fundamentalIn : FundamentalIn := by
             exact hθ)
           exact hs
       have hc := RunValidRen.recursor (P := P) (γ := γ') hw.distinct hw.liftsInOrder hM hv hadm
-        has' hh (Motives.get_substLevels_of _ hC) hprem hRsπ hctx hsorts hrec ht' htr husr
-        (fun i j T' con l p hi hl => by
-          simpa only [Branches.atLevels, Branches.grades_substLevels] using hg i j T' con l p hi hl)
-        (fun i j T' con hi => by
-          simpa only [Branches.atLevels, Branches.grades_substLevels] using hχ i j T' con hi)
-        (hr rfl) (fun hq' => match hc : decl.cases with
+        has' hh (Motives.get_substLevels_of _ hC) hprem
+        ⟨hRsπ, hctx, hsorts, hrec, fun i j T' con l p hi hl => by
+          simpa only [Branches.atLevels, Branches.grades_substLevels,
+            show Mode.oneOne.grade = Grade.one from rfl, Grade.modality.semiring.one_mul]
+            using hg i j T' con l p hi hl,
+          fun i j T' con hi => by
+            simpa only [Branches.atLevels, Branches.grades_substLevels] using hχ i j T' con hi⟩
+        ht' htr husr (hr rfl) (fun hq' => match hc : decl.cases with
           | [] => rfl
           | _ :: _ => absurd rfl (hprop hq' (hc ▸ List.cons_ne_nil _ _)))
         hw.erasesPropDestructors

@@ -85,6 +85,59 @@ def RunValidBranches (sig : Signature) (ι : Interpretation) (P : Program) (hΓ 
       ((C'.atCtor T'.name qs ls ps as con.name (con.params hqp.inst)).rename
         (Ren.weakenN _))
 
+/-- The premises `hRs`, `hctx`, `hsorts`, `hrec`, `hg` and `hχ` of the relation of run time of a
+recursor, `(rec▶)`, in the meaning at levels without variables: the recursive results of each
+constructor have the types `Rs`, at the grades `πs` of its fields; the context of each branch,
+extended by the fields and by these results, is meaningful, and these results have sorts; the
+recursors on the terms of the types of the block are equal terms of their motives; the grade of
+each field bounds the use of the recursor, and the grades `δs` of each branch bound `χ`.
+The premises on the motives and on the branches are those of `ValidRecursorPremises`, and the
+validity of the branches at run time is `RunValidBranches`. -/
+structure RunRecursorPremises (sig : Signature) (ι : Interpretation) (ctx : Context 0 Γ)
+    (decl : TypeDeclaration) (qs : List Quality) (ls : List (Level 0)) (ps : List Grade)
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps) (hl : ls.length = decl.levels)
+    (as : InstanceArgs 0 Γ decl.scope) (r ς χ' : Grade) (κ : Universe 0) (Cs : Motives 0 Γ)
+    (us : Branches 0 Γ) (χ : GradeVector Γ.length) (δs : Nat → GradeVector Γ.length)
+    (gs : Nat → Nat → Grade)
+    (Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
+      Telescope 0 (Γ.extend (con.params hqp.inst).length)
+        (con.nestResultParams hqp.inst decl.names))
+    (πs : Nat → List Grade) : Prop where
+  /-- `hRs`: the recursive results of each constructor have the types `Rs`, at the grades `πs`. -/
+  results : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+    Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
+      (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) (Rs con) (πs i)
+  /-- `hctx`: the context of each branch, extended by the fields and the recursive results, is
+  meaningful. -/
+  contexts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+    ValidCtx₀ sig ι ((ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)).append (Rs con))
+  /-- `hsorts`: the recursive results have sorts at the equal substitutions of the fields. -/
+  sorts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) → ∀ θ,
+    EqSubst sig ι (ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)) θ θ →
+    Telescope.ValidSorts₀ sig ι ((Rs con).subst θ)
+  /-- `hrec`: the recursors on equal terms of the types of the block are equal terms of their
+  motives. -/
+  recursor : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
+    ∀ σ, EqSubst sig ι ctx σ σ → ∀ t₁ t₂,
+    ValidEqTerm₀ sig ι t₁ t₂ ((Term.inst T'.name qs ls ps as).subst σ) →
+    ValidEqTerm₀ sig ι
+      (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t₁ κ (Cs.subst σ) (us.subst σ))
+      (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t₂ κ (Cs.subst σ) (us.subst σ))
+      ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁))
+  /-- `hg`: the grade of each field, and those of the recursive results, bound the use of the
+  recursor. -/
+  grades : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+    (con.params hqp.inst)[l]? = some p →
+    r * p.usage ≤ gs i l +
+      (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
+        (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r
+  /-- `hχ`: the grades `δs` of each branch, with those of its recursive results, bound `χ`. -/
+  bound : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+    χ ≤ᶜ δs i +ᶜ Telescope.resultSum
+      (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
+        (List.zipWith (· * ·) (us.grades i) (πs i)))
+      ((con.fields hqp.inst).nest decl.names) ·ᶜ χ
+
 /-- The motives of a block of data types, one for each type, give one to each name of the block. -/
 theorem Motives.get_idxOf (hT : T ∈ decl.dataTypes) (hnd : decl.names.Nodup)
     (hCs : ∀ j T', decl.dataTypes[j]? = some T' → ∃ C', Cs.get j = some ⟨0, C'⟩) {D' : Name}
@@ -153,33 +206,8 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
       Telescope 0 (Γ.extend (con.params hqp.inst).length)
         (con.nestResultParams hqp.inst decl.names)} {πs : Nat → List Grade}
-    (hRs : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
-        (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) (Rs con) (πs i))
-    (hctx : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
-      ValidCtx₀ sig ι
-        ((ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)).append (Rs con)))
-    (hsorts : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) → ∀ θ,
-      EqSubst sig ι (ctx.append (con.fieldsAt hqp.inst (ls.getFin hl) as)) θ θ →
-      Telescope.ValidSorts₀ sig ι ((Rs con).subst θ))
-    (hrec : ∀ j T' C', decl.dataTypes[j]? = some T' → Cs.get j = some ⟨0, C'⟩ →
-      ∀ σ, EqSubst sig ι ctx σ σ → ∀ t₁ t₂,
-      ValidEqTerm₀ sig ι t₁ t₂ ((Term.inst T'.name qs ls ps as).subst σ) →
-      ValidEqTerm₀ sig ι
-        (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t₁ κ (Cs.subst σ) (us.subst σ))
-        (.recursor r ς χ' T'.name qs ls ps (as.subst σ) t₂ κ (Cs.subst σ) (us.subst σ))
-        ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single t₁)))
+    (hrp : RunRecursorPremises sig ι ctx decl qs ls ps hqp hl as r ς χ' κ Cs us χ δs gs Rs πs)
     (husr : RunValidBranches sig ι P hΓ ctx decl qs ls ps hqp hl as Cs us δs gs Rs)
-    (hg : ∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
-      (con.params hqp.inst)[l]? = some p →
-      r * p.usage ≤ gs i l +
-        (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
-          (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r)
-    (hχ : ∀ i j T' con, decl.cases[i]? = some (j, T', con) →
-      χ ≤ᶜ δs i +ᶜ Telescope.resultSum
-        (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
-          (List.zipWith (· * ·) (us.grades i) (πs i)))
-        ((con.fields hqp.inst).nest decl.names) ·ᶜ χ)
     (hs : (decl.sort hqp.inst).quality = .type) {σ : Subst 0 [] Γ} {H : Heap}
     {E V : List Nat} (hσ : EqSubst sig ι ctx σ σ) (hEV : H.Binds E V)
     (hE : RunsAsSubst sig ι P H ctx χ σ V) {m : Nat} (g : TargetRen m Γ.length) (E' : List Nat)
@@ -248,6 +276,7 @@ theorem RunsAs.recursor_ctor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       ∀ C' : Term 0 (.var :: Γ), Cs.get j = some ⟨0, C'⟩ →
         RunsAs sig ι P H₃ (.recursor r ς χ' T'.name qs ls ps (as.subst σ) w κ (Cs.subst σ) (us.subst σ))
           v ((C'.subst (Subst.lift σ)).subst₀ (Subst₀.single w)) := by
+  have ⟨hRs, hctx, hsorts, hrec, hg, hχ⟩ := hrp
   obtain ⟨hCs, hCv, hus⟩ := hprem
   obtain ⟨hdecl, hT, rfl⟩ := id h
   have hnd : decl.names.Nodup := hd.nodup hdecl
