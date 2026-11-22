@@ -103,7 +103,7 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
     (ρ : Fin k → Nat) :
     RunValidCorecBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
       (ls.map (Level.atLevels ρ)) ps hq (Level.length_atLevels ρ hl) hp
-      (as.substLevels fun i => .ofNat (ρ i)) r (Ss.substLevels fun i => .ofNat (ρ i))
+      (as.atLevels ρ) r (Ss.substLevels fun i => .ofNat (ρ i))
       (gs.substLevels fun i => .ofNat (ρ i)) δs := by
   intro i j T' d ps'' S' p q ς ps₁ Ξ Θ B ψ g hi hSj hpos hg hpr
   obtain ⟨S₀, hS₀, rfl⟩ := States.get_substLevels _ hSj
