@@ -475,8 +475,8 @@ where
       obtain ⟨hΔ, has', hc⟩ := args has hρ hb hargs S
         (fun i => (decl.liftingMotive S I' i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
         (fun _ _ => Iff.rfl)
-        (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has.nodup hqp hl hlen hl' j h₁
-          h₂)
+        (fun j h₁ h₂ =>
+          TypeDeclaration.liftingMotive_inst has.nodup hqp hl hlen hl' j h₁ h₂)
       subst hΔ
       have hI := hqp.lifted_inst hqp'
       have hadm' : decl.constraint I'.lifted := hI ▸ hadm

@@ -205,9 +205,8 @@ def Signature.LiftingsHaveResults (sig₁ sig : Signature) : Prop :=
     ∀ {Γ : Scope} {ρ : Lifting k Γ Γ}, (∀ {a} (x : Var Γ a), ρ.motive x = none) →
     ∀ {n : Nest Name} {qs : List Quality} {ls : List (Level k)} {ms : List (Lifting.Result k)}
       {ps : List Grade} {as : InstanceArgs k Γ decl.scope} {Δ' : Scope} {as' : InstanceArgs k Γ Δ'},
-      (∀ E, n ≠ .direct E) → Instance.AsMany decl.sorts decl.grades qs ps → ls.length =
-      decl.levels → InstanceArgs.Lifts sig v
-      ρ n.args as S ms as' → S ≠ [] →
+      (∀ E, n ≠ .direct E) → Instance.AsMany decl.sorts decl.grades qs ps →
+      ls.length = decl.levels → InstanceArgs.Lifts sig v ρ n.args as S ms as' → S ≠ [] →
       Subst.HasResults sig v as.toSubst ρ (Nesting.ofArgs n.args) →
       ∀ (φ : Name → Term k (.var :: Γ)) (t : Term k Γ),
         ∃ e, Term.NestedResult sig v ρ φ n (.inst D qs ls ps as) t e

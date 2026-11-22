@@ -486,8 +486,8 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       (hpm : Instance.AsMany (decl.sorts + 1) (decl.liftingGrades S) (qs ++ [v.quality])
         (v.grades ps ms)),
       ∀ T' ∈ decl.codataTypes, T'.name = D →
-        ∀ r ∈ (T'.body hpm.inst.lifted).recursion decl.names, r = none := fun ms hpm T' hT'
-          hn' => by
+        ∀ r ∈ (T'.body hpm.inst.lifted).recursion decl.names, r = none :=
+    fun ms hpm T' hT' hn' => by
     cases eq_of_heq (hd.hasCodataType_unique ⟨h.1, hT', hn'⟩ h).2
     rw [hqp.lifted_inst hpm]
     exact hrec
