@@ -810,8 +810,8 @@ structure Instance.AsMany (j g : Nat) (qs : List Quality) (ps : List Grade) : Pr
   /-- As many grades as grade variables. -/
   grades : ps.length = g
 
-/-- `[s̄' / s̄, p̄' / p̄]`: the instance that gives the sort variables the qualities `qs` and the grade
-variables the grades `ps`, as many as them. -/
+/-- `[s̄' / s̄, p̄' / p̄]`: the instance that gives the sort variables the qualities `qs` and the
+grade variables the grades `ps`, as many as them. -/
 abbrev Instance.AsMany.inst {j g : Nat} {qs : List Quality} {ps : List Grade}
     (hqp : Instance.AsMany j g qs ps) : Instance j g :=
   .ofLists qs ps hqp.sorts hqp.grades
