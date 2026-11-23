@@ -3,7 +3,7 @@ module
 public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Uniqueness
-import Sic.Core.Meaning.Uniqueness.Levels
+import Sic.Core.Meaning.Levels
 import Sic.Core.RunTime.Monotonicity
 import Sic.Core.Syntax.Signature
 

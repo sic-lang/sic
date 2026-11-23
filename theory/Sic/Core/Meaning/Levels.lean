@@ -1,10 +1,10 @@
 module
 
 public import Sic.Core.Meaning
-public import Sic.Core.Meaning.Uniqueness.Levels.Substitution
+public import Sic.Core.Meaning.Levels.Substitution
 public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.RunTime.Properties
-import Sic.Core.Meaning.Uniqueness.Levels.Results
+import Sic.Core.Meaning.Levels.Results
 import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Syntax.Signature
 
@@ -21,9 +21,9 @@ the data types by their values, so that no closed judgment tells them apart.
 The fields of an instance are the fields of its declaration at its levels and its arguments, so that
 a substitution that gives each variable terms equal up to their levels keeps two terms equal up to
 their levels.
-The agreements of `Sic.Core.Meaning.Uniqueness` read the invariance of the graph of the types and of
-the graph of run time by these levels, through `Sic.Core.Meaning.Equality.Nesting` and
-`Sic.Core.Meaning.RunTime.Nesting`, and the soundness reads it too.
+The relations of the levels of `Sic.Core.Meaning` are thus invariant by levels of the same values:
+the agreements of the graphs of the nestings, in `Sic.Core.Meaning.Equality.Nesting` and
+`Sic.Core.Meaning.RunTime.Nesting`, read this invariance, and the soundness reads it too.
 
 The core reduces by `(δ_⟶)` alone, which copies the levels of the constant into its body; the kinds
 of declarations add the cases of their reductions.

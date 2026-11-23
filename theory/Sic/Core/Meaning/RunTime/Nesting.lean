@@ -2,7 +2,7 @@ module
 
 public import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Equality.Nesting
-import Sic.Core.Meaning.Uniqueness.Levels
+import Sic.Core.Meaning.Levels
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -20,9 +20,9 @@ graph of run time relates those of them that the equality of the type relates to
 Both are proved by recursion on the clauses of the graph of the nestings, after the uniqueness of
 the relations of a level: the clause of a type without position is that of the graph of run time,
 the relation of a position is that of its type, which is unique and the same for the types equal
-up to the values of their levels, a property of the graph of run time that
-`Sic.Core.Meaning.Uniqueness.Levels` proves, and the clauses of an instance of a codata type are
-those of the graph of run time, where the block has no recursive destructor.
+up to the values of their levels, a property of the graph of run time that `Sic.Core.Meaning.Levels`
+proves, and the clauses of an instance of a codata type are those of the graph of run time, where
+the block has no recursive destructor.
 The second reads the equality of the observations of a term from the equality of the term, which
 gives the equality that the graph of run time asks of each observation.
 An instance of a codata type may live below the level of the graph of the nestings that reads it,

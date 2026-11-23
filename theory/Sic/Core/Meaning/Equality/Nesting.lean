@@ -3,7 +3,7 @@ module
 public import Sic.Core.Meaning
 public import Sic.Core.Nesting.Relation
 import Sic.Core.Meaning.Equality.Properties
-import Sic.Core.Meaning.Uniqueness.Levels
+import Sic.Core.Meaning.Levels
 import Sic.Core.Syntax.Signature
 
 /-!
@@ -21,8 +21,8 @@ The agreement is proved by recursion on the clauses of the graph of the nestings
 properties of the relations of a level, which it reads: the clause of a type without position is
 that of the graph of the types, the relation of a position is the equality of its type, which is
 unique and the same for the types equal up to the values of their levels, a property of the graph
-of the types that `Sic.Core.Meaning.Uniqueness.Levels` proves, and the clauses of an instance of a
-codata type are those of the graph of the types, where the block has no recursive destructor.
+of the types that `Sic.Core.Meaning.Levels` proves, and the clauses of an instance of a codata type
+are those of the graph of the types, where the block has no recursive destructor.
 An instance of a codata type may live below the level of the graph of the nestings that reads it,
 while the graph of the types reads it at its own level: the graphs of a level relate what those of
 a level below relate, which the first section proves.

@@ -20,8 +20,7 @@ The graph of the nestings of run time of a level gives a type a unique relation 
 relations that a nesting holds, and agrees with the graph of run time on the terms that the
 equality of a type relates to themselves, which `Sic.Core.Meaning.RunTime.Nesting` proves.
 Both agreements read that the graph of the types and the graph of run time give the same relations
-to types whose levels have the same values, which `Sic.Core.Meaning.Uniqueness.Levels` proves for
-these two modules.
+to types whose levels have the same values, which `Sic.Core.Meaning.Levels` proves.
 The equality of the terms of a universe compares the relations of run time of the level below it,
 so that its transitivity needs their uniqueness, which the induction gives with the partial
 equivalence relations.

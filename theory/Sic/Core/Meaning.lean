@@ -24,6 +24,8 @@ The relations of each level, the equality of the terms of its types, the truth o
 and the relations of run time of its types, are defined together, after those of the levels below
 it, by `levelRel`, which ties the graphs of `Sic.Core.Meaning.Equality` and of
 `Sic.Core.Meaning.RunTime`.
+These relations read the levels of the closed terms by their values, so that they do not tell apart
+types whose levels have the same values, which `Sic.Core.Meaning.Levels` proves.
 
 ADE give no meaning to the judgments: their logical relation is defined on the typed reduction, for
 the decidability of the conversion, and it is not a model of the type theory in the computations.

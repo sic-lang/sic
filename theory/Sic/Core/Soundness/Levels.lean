@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Meaning.Uniqueness.Levels
+public import Sic.Core.Meaning.Levels
 import Sic.Core.Soundness.Substitution
 
 /-!

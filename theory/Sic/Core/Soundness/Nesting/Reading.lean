@@ -1,6 +1,6 @@
 module
 
-public import Sic.Core.Meaning.Uniqueness.Levels
+public import Sic.Core.Meaning.Levels
 public import Sic.Core.Soundness.Signature
 public import Sic.Core.Typing
 import Sic.Core.Positivity.Nesting
