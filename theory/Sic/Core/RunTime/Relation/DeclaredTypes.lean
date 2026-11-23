@@ -72,10 +72,6 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
     (hA : (∃ νs, τ = .inst νs) → ∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧
       κ₁.level.closedValue ≤ n ∧ ValidEqTerm₀ sig ι A A (.sort κ₁))
     (hr : RunsAs sig ι P H t b A) : R H t b := by
-  have hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain
   have hplain : ∃ R', RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R' := by
     have hsort : (∃ κ₁ : Universe 0, κ₁.quality ≤ .type ∧ κ₁.level.closedValue ≤ n ∧
         ValidEqTerm₀ sig ι A A (.sort κ₁)) →
@@ -87,7 +83,8 @@ theorem RunNestRel.of_runsAs (hd : sig.Distinct) {n : Nat} {τ : Nest RunNestLea
     | plain hc hR => exact ⟨R, .plain hc hR⟩
     | direct hT =>
       cases hτ with
-      | direct hx => exact ⟨_, hinv _ _ _ hx hT⟩
+      | direct hx =>
+        exact ⟨_, RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hx hT .plain⟩
     | codata => exact hsort (hA ⟨_, rfl⟩)
     | codataProp => exact hsort (hA ⟨_, rfl⟩)
   obtain ⟨R', h'⟩ := hplain
@@ -176,10 +173,6 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
       κ₁.level.closedValue ≤ n ∧ ValidEqTerm₀ sig ι A A (.sort κ₁))
     (ht : ValidEqTerm₀ sig ι t t A) (hr : R H t b) : RunsAs sig ι P H t b A := by
   have hd : sig.Distinct := ht.1.1
-  have hinv : ∀ (T A : Term 0 []) (R : RunRel),
-      RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain T R → Term.LevelEquiv T A →
-        RunNestRel sig ι P n (fun m _ => levelRel sig ι m) .plain A R := fun _ _ _ hT hTA =>
-    RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hT hTA .plain
   -- An instance of a declared type is a type without position, whose equality relates the term to
   -- itself: the graph of run time then relates what the graph of the nestings does.
   have hsort : (∃ νs, τ = .inst νs) → RunsAs sig ι P H t b A := fun hi => by
@@ -194,7 +187,7 @@ theorem RunNestRel.runsAs {n : Nat} {τ : Nest RunNestLeaf} {A t : Term 0 []} {R
   | direct hT =>
     cases hτ with
     | direct hx =>
-      cases hinv _ _ _ hx hT with
+      cases RunNestRel.levelEquiv hd (levelRel_levelInvariant_lt hd _) hx hT .plain with
       | plain hc hR => exact hR.runsAs hc hr
   | codata => exact hsort ⟨_, rfl⟩
   | codataProp => exact hsort ⟨_, rfl⟩
