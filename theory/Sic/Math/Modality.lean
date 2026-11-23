@@ -49,6 +49,11 @@ structure IsSemiring (α : Type) [Add α] [Mul α] (zero one : α) : Prop where
   RFC: `\mathsf{semiring}_\xi.\mathsf{rzero}_{\cdot}` -/
   mul_zero : ∀ a : α, a * zero = zero
 
+/-- The zero is neutral on the right of the addition too, since the addition is commutative. -/
+theorem IsSemiring.add_zero {α : Type} [Add α] [Mul α] {zero one : α}
+    (h : IsSemiring α zero one) (a : α) : a + zero = a :=
+  (h.add_comm _ _).trans (h.zero_add _)
+
 -- ADE: the field `∧-Semilattice` of `Modality`, in `Graded/Modality.agda`.
 /-- The meet of `α` is associative, commutative and idempotent. -/
 structure IsMeetSemilattice (α : Type) [Min α] : Prop where

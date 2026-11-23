@@ -141,15 +141,13 @@ theorem RecursiveResult.recursionsAt_ofField_self (r : Option Name) (s : Option 
   | some D =>
     show (if some o = some o then _ else _) + _ = _
     rw [ite_eq_left rfl]
-    exact (Multiplicity.modality.semiring.add_comm _ _).trans
-      (Multiplicity.modality.semiring.zero_add _)
+    exact Multiplicity.modality.semiring.add_zero _
   | none =>
     cases s with
     | some σ =>
       show (if some o = some o then _ else _) + _ = _
       rw [ite_eq_left rfl]
-      exact (Multiplicity.modality.semiring.add_comm _ _).trans
-        (Multiplicity.modality.semiring.zero_add _)
+      exact Multiplicity.modality.semiring.add_zero _
     | none =>
       show (if (none : Option Nat) = some o then _ else _) + _ = m * .zero
       rw [ite_eq_right nofun]

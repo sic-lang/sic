@@ -102,8 +102,7 @@ theorem Demand.allocated_trans {H₁ H₂ H₃ : Heap} (h₁ : H₁.Extends H₂
       obtain ⟨v, hv⟩ : ∃ v, H₂[c]? = some v := ⟨_, List.getElem?_eq_getElem hc₂'⟩
       rw [h₂.getElem? hv, hv]
       simp only [hc₁, hc₂, ↓reduceIte]
-      exact (Multiplicity.modality.semiring.add_comm _ _).trans
-        (Multiplicity.modality.semiring.zero_add _) |>.symm
+      exact (Multiplicity.modality.semiring.add_zero _).symm
   · have hc₂ : ¬ H₂.length ≤ c := fun h => hc₁ (Nat.le_trans hl₁ h)
     simp only [hc₁, hc₂, ↓reduceIte]
     rfl

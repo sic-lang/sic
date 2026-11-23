@@ -180,7 +180,7 @@ where
     | zero =>
       simp only [add, update, zero, extend, Ren.lift, Var.toFin, Fin.cases_zero]
       split
-      · exact (Grade.modality.semiring.add_comm _ _).trans (Grade.modality.semiring.zero_add _)
+      · exact Grade.modality.semiring.add_zero _
       · exact absurd rfl ‹_›
     | succ y =>
       simp only [add, update, zero, extend, Ren.lift, Var.toFin, Fin.cases_succ]
@@ -260,7 +260,7 @@ where
       | zero =>
         show (if _ then γ (Var.toFin .zero) else Grade.zero) + Grade.zero = γ 0
         exact (congrArg (· + Grade.zero) (ite_eq_left rfl)).trans
-          ((Grade.modality.semiring.add_comm _ _).trans (Grade.modality.semiring.zero_add _))
+          (Grade.modality.semiring.add_zero _)
       | succ y =>
         simp only [add, update, zero, extend, Var.toFin, Fin.cases_succ]
         exact (congrArg (· + _) (rename_commutes.ite_succ_zero _ _)).trans
