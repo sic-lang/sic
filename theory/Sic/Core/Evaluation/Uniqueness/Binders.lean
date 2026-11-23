@@ -54,9 +54,9 @@ theorem Unpack.claims {g : Heap.Annotation} {b : Nat} : {H : Heap} → {k x : Na
     obtain ⟨ϱ₃, hϱ₃, hϱe⟩ := Option.map_eq_some_iff.1 hϱ
     obtain ⟨rfl, rfl⟩ := Multiplicity.mul_eq_one _ _ hϱe
     exact .ctor h (k := 1) rfl rfl
-      ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → x ≠ .zero) _ _ hπ₀) rfl
+      (Multiplicity.left_ne_zero_of_mul _ _ hπ₀) rfl
       (hu.claims hs hπ₃
-        ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → y ≠ .zero) _ _ hπ₀) hϱ₃ hb)
+        (Multiplicity.right_ne_zero_of_mul _ _ hπ₀) hϱ₃ hb)
 
 /-- What a branch claims through its environment, the cells of its `a + b` variables from the
 address `c` and its scope: what the cell of a variable of a field or of a result that it owns alone

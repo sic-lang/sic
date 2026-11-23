@@ -193,6 +193,12 @@ theorem mul_le_self : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → ϖ * π ≤ π 
 /-- A product of multiplicities other than `0` is other than `0`. -/
 theorem mul_ne_zero : ∀ ϖ π : Multiplicity, ϖ ≠ .zero → π ≠ .zero → ϖ * π ≠ .zero := by decide
 
+/-- A product other than `0` has its first factor other than `0`. -/
+theorem left_ne_zero_of_mul : ∀ x y : Multiplicity, x * y ≠ .zero → x ≠ .zero := by decide
+
+/-- A product other than `0` has its second factor other than `0`. -/
+theorem right_ne_zero_of_mul : ∀ x y : Multiplicity, x * y ≠ .zero → y ≠ .zero := by decide
+
 /-- A multiplicity times itself is itself: the product is idempotent. -/
 theorem mul_idem : ∀ π : Multiplicity, π * π = π := by decide
 
@@ -211,6 +217,9 @@ theorem add_eq_zero_right : ∀ x y : Multiplicity, x + y = .zero → y = .zero 
 
 /-- A multiplicity at least `1` is `1`, the order being that of the precision. -/
 theorem eq_one_of_one_le : ∀ π : Multiplicity, .one ≤ π → π = .one := by decide
+
+/-- A multiplicity at most `1` is not `0`, the order being that of the precision. -/
+theorem ne_zero_of_le_one : ∀ π : Multiplicity, π ≤ .one → π ≠ .zero := by decide
 
 /-- A product that is `1` has both its operands `1`. -/
 theorem mul_eq_one : ∀ x y : Multiplicity, x * y = .one → x = .one ∧ y = .one := by decide

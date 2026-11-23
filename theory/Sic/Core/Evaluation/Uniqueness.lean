@@ -84,7 +84,7 @@ theorem Eval.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Ownership
       have hνx : ν x ≠ .zero := by
         have h' := hle x
         simp only [MultiplicityVector.update, Sic.Math.Vector.update, ↓reduceIte] at h'
-        exact (by decide : ∀ y : Multiplicity, y ≤ .one → y ≠ .zero) _ h'
+        exact Multiplicity.ne_zero_of_le_one _ h'
       have h₁ := hc b ⟨x, _, hx, hφ, hνx, .cell hcx hb⟩
       have h₂ : U_E b ≤ Demand.unit _ b + Ux b := hU' b
       exact (by decide : ∀ f e u x : Multiplicity, f + e ≠ .omega → e ≤ u + x →
@@ -1310,7 +1310,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           rw [hπ1] at hπle
           obtain rfl := (by decide : ∀ y : Multiplicity,
             Multiplicity.one * Multiplicity.one ≤ y * Multiplicity.one → y = .one) _ hϱle
-          have hπ₁0 := (by decide : ∀ y : Multiplicity, y ≤ .one → y ≠ .zero) _ hπle
+          have hπ₁0 := Multiplicity.ne_zero_of_le_one _ hπle
           obtain ⟨s_l, hsl⟩ : ∃ s_l, ss[(l : Nat)]? = some s_l :=
             ⟨_, List.getElem?_eq_getElem (hlb ▸ l.2)⟩
           have hπbl : (List.ofFn πb)[(l : Nat)]? = some Multiplicity.one := by
@@ -1348,7 +1348,7 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
           obtain ⟨ho1, hπ1⟩ := Multiplicity.mul_eq_one _ _ hφj
           obtain ⟨π₂, hπ₂', hπle⟩ := hπ₂ j
           rw [hπ1] at hπle
-          have hπ₂0 := (by decide : ∀ y : Multiplicity, y ≤ .one → y ≠ .zero) _ hπle
+          have hπ₂0 := Multiplicity.ne_zero_of_le_one _ hπle
           obtain ⟨b_j, hbj⟩ : ∃ b_j, bs[(j : Nat)]? = some b_j :=
             ⟨_, List.getElem?_eq_getElem (hlc ▸ j.2)⟩
           have hosj : os[(j : Nat)]? = some Multiplicity.one := by
@@ -1483,13 +1483,13 @@ theorem EvalObs.reach {P : Program} {Ω : Name → Multiplicity} (hΩ : P.Owners
             obtain ⟨rfl, rfl⟩ := Multiplicity.mul_eq_one _ _ hϱe
             obtain ⟨S, -, hS⟩ := hSs'.getElem? hsj
             have hclx := hs.claims hsj hπ₃
-              ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → y ≠ .zero) _ _ hπ₀) hϱ₃
+              (Multiplicity.right_ne_zero_of_mul _ _ hπ₀) hϱ₃
               (hb'.of_extends hH₂₃ hgs (.inl ⟨_, hS⟩))
             have h : (F b + U_δc b) +
                 (Demand.positions ((πsn.map (π * ·)).map Multiplicity.references) Ss' b +
                   (Demand.unit w b + π.references * Z b)) ≠ .omega :=
               hB_N hvk b (.ctor hlw (k := 0) rfl rfl
-                ((by decide : ∀ x y : Multiplicity, x * y ≠ .zero → x ≠ .zero) _ _ hπ₀) rfl hclx)
+                (Multiplicity.left_ne_zero_of_mul _ _ hπ₀) rfl hclx)
             exact (by decide : ∀ f d p z : Multiplicity, (f + d) + (p + z) ≠ .omega →
               f + (.zero + (d + p)) ≠ .omega) _ _ _ _ h
           | scope x h' hcx hδx hφx hb' =>

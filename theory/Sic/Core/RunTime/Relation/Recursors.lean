@@ -229,7 +229,7 @@ theorem RunsAs.recursor (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       hv hadm has hprem hrp husr hs hσ hEV hE g' E'' hg' hj hcon hi' hw hwv
       hHH' ϖ' (hH'.getElem? ha)
       (fun l p hlp => ⟨_, by rw [List.getElem?_map, hlp]; rfl,
-        (by decide : ∀ π π' : Multiplicity, π * π' ≤ π * π') _ _⟩)
+        Multiplicity.le_refl' _⟩)
       (fun l p hlp => ⟨_, _, by rw [List.getElem?_map, hlp]; rfl,
         by rw [List.getElem?_map, hlp]; rfl,
         (by decide : ∀ a r q : Grade, (a * (r * q)).run ≤ a.run * (r.run * q.run)) _ _ _⟩)

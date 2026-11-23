@@ -237,10 +237,10 @@ theorem recursionsAt_ne_zero {l : Nat} {k : RecursiveResult} {π : Multiplicity}
     cases hk'
     cases hπ'
     simp only [recursionsAt, hk, ↓reduceIte]
-    exact (by decide : ∀ x y : Multiplicity, x ≠ .zero → x + y ≠ .zero) _ _ hπ
+    exact Multiplicity.add_ne_zero_left _ _ hπ
   | k' :: ks, π' :: πs, j + 1, hk', hπ' => by
     simp only [recursionsAt]
-    exact (by decide : ∀ x y : Multiplicity, y ≠ .zero → x + y ≠ .zero) _ _
+    exact Multiplicity.add_ne_zero_right _ _
       (recursionsAt_ne_zero hk hπ (ks := ks) (πs := πs) (j := j) (by simpa using hk')
         (by simpa using hπ'))
 

@@ -143,7 +143,7 @@ theorem Demand.recursions_eq : (ks : List RecursiveResult) → (πs : List Multi
       rw [Demand.recursions]
       simp only [RecursiveResult.fieldPosition, RecursiveResult.factor, Option.some.injEq]
       rw [hone l (hk 0 _ l rfl rfl) (π * .one),
-        (by decide : ∀ x : Multiplicity, x * .one = x)]
+        Multiplicity.modality.semiring.mul_one]
     | nested l σ =>
       rw [Demand.recursions]
       simp only [RecursiveResult.fieldPosition, RecursiveResult.factor, Option.some.injEq]
