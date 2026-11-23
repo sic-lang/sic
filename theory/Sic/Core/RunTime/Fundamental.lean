@@ -295,8 +295,8 @@ theorem fundamentalIn : FundamentalIn := by
               (κ.atLevels ρ).level χ
               (Cs.atLevels ρ))
             ((Rs con).atLevels ρ) πs :=
-        fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h
+        Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs
       -- The factors of the results that the usage reads are those of the typing.
       have hRsπ : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
           Constructor.ResultTypes sigM ⟨κ.quality, r, ς⟩ con hqp.inst decl.names

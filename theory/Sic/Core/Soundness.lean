@@ -242,6 +242,32 @@ theorem Constructor.ResultTypes.substLevels_ofTypeDeclarations {sig sig' : Signa
       (R.substLevels ls') πs :=
   Terms.ResultTypes.ofTypeDeclarations hs (Constructor.ResultTypes.substLevels_ofMotives _ h)
 
+/-- The types of the recursive results of the constructors of a type declaration at the motives of a
+recursor, in a signature whose type declarations another signature has, are those of the other
+signature at the levels `ls'`: `Constructor.ResultTypes.substLevels_ofTypeDeclarations` at each
+case, as the premise of the recursors gives them. -/
+theorem Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations {sig sig' : Signature}
+    {v : Lifting.Variables} {decl : TypeDeclaration} {k k'' : Nat} {Γ : Scope}
+    {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {hqp : Instance.AsMany decl.sorts decl.grades qs ps} {hl : ls.length = decl.levels}
+    {as : InstanceArgs k Γ decl.scope} {κ : Universe k} {χ : Grade} {Cs : Motives k Γ}
+    {Rs : (con : Constructor decl.sorts decl.grades decl.levels decl.scope) →
+      Telescope k (Γ.extend (con.params hqp.inst).length)
+        (con.nestResultParams hqp.inst decl.names)}
+    (hs : ∀ decl, Entry.typeDeclaration decl ∈ sig → Entry.typeDeclaration decl ∈ sig')
+    (ls' : Fin k → Level k'')
+    (h : ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ πs, Constructor.ResultTypes sig v con hqp.inst decl.names (ls.getFin hl) as
+        (Lifting.ofMotives decl.names qs ls ps as κ.level χ Cs) (Rs con) πs) :
+    ∀ (i : Nat) j T' con, decl.cases[i]? = some (j, T', con) →
+      ∃ πs, Constructor.ResultTypes sig' v con hqp.inst decl.names
+        ((ls.map (Level.subst ls')).getFin ((List.length_map _).trans hl)) (as.substLevels ls')
+        (Lifting.ofMotives decl.names qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
+          (κ.substLevels ls').level χ (Cs.substLevels ls'))
+        ((Rs con).substLevels ls') πs :=
+  fun i j T' con hi => (h i j T' con hi).imp fun _ h =>
+    Constructor.ResultTypes.substLevels_ofTypeDeclarations hs ls' h
+
 /-- The premises of `(corec)` on its branches, each branch meaningful for every value of the level
 variables, are meaningful at the levels without variables `ρ`: those of `(corec_≡)` at the same
 branches. -/
@@ -559,10 +585,10 @@ theorem soundnessIn : SoundnessIn := by
         (ValidRecursorPremises.atLevels ρ hCs
           (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hdis hord hι ρ) hus)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
-        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
+        (Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs)
+        (Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs)
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -733,10 +759,10 @@ theorem soundnessIn : SoundnessIn := by
           have hCv := hCt_ih j T' C' _ hj hC' hC₂ hdis hord hι ρ
           hCv.trans hCv.symm) hus₁)
         (fun i j T' con hi => let ⟨_, hu⟩ := hus₂ i j T' con hi; ⟨_, Branches.get_substLevels_of _ hu⟩)
-        (fun i j T' con hi => (hRs₁ i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
-        (fun i j T' con hi => (hRs₂ i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
+        (Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs₁)
+        (Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs₂)
         (fun i j T' con C' u₁ u₂ hi hC' hu₁ hu₂ => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu₁
@@ -811,8 +837,8 @@ theorem soundnessIn : SoundnessIn := by
         (by rw [List.getFin_map]; exact hts') hi (Motives.get_substLevels_of _ hC)
         (ValidRecursorPremises.atLevels ρ hCs
           (fun j T' C' hj hC' => hCt_ih j T' C' hj hC' hdis hord hι ρ) hus)
-        (fun i j T' con hi => (hRs i j T' con hi).imp fun _ h =>
-          Constructor.ResultTypes.substLevels_ofTypeDeclarations (fun _ he => (hι _ he).1) _ h)
+        (Constructor.ResultTypes.forall_substLevels_ofTypeDeclarations
+          (fun _ he => (hι _ he).1) _ hRs)
         (fun i j T' con C' u hi hC' hu => by
           obtain ⟨C₀, hC₀, rfl⟩ := Motives.get_substLevels _ hC'
           obtain ⟨u₀, hu₀, rfl⟩ := Branches.get_substLevels _ hu
