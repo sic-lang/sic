@@ -310,17 +310,10 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
   obtain ⟨_, _, S, ms₁, Δ', as', nms, body, gs₁, rfl, has₁, hLm, hgs₁, hgt₁⟩ :=
     hres.inst_inv hd h
   have hDn : D ∈ decl.names := h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1
-  obtain ⟨S', ms'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
-  obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
-  cases hsg
+  obtain ⟨rfl, rfl⟩ := hL.inst_lifted hd h hρ₁ hqp hl has₁
   have hqpL := hqp.lifting v has₁.length_eq
   have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has₁.length_eq]
-  obtain ⟨hΔ, -⟩ := has₁.instantiates hρ₁ S
-    (fun i => (decl.liftingMotive S hqpL.inst i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
-    (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has₁.nodup hqp hl has₁.length_eq hl' j h₁ h₂)
-  subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
   let TL : CodataType declL.sorts declL.grades declL.levels declL.scope := decl.liftingType D S body

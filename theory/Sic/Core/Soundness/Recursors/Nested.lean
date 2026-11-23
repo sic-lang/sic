@@ -334,6 +334,33 @@ theorem Term.Lifts.inst_inv {k : Nat} (hd : sig.Distinct) {Γ' Γ : Scope} {ρ :
     cases eq_of_heq has
     exact ⟨_, _, _, _, rfl, has₂⟩
 
+/-- The lifting of a closed instance of a codata type at the nesting of an instance, whose
+arguments lift to `as'` at the positions `S`, is the instance of the lifting of the type at `S`, at
+the arguments `as'` and the term, whose scope is that of the type lifted at `S`. -/
+theorem Term.Lifts.inst_lifted (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope} (h : sig.HasCodataType D decl T)
+    {ρ : Lifting 0 [] []} (hρ : ∀ {a} (x : Var [] a), ρ.motive x = none) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels) {ns : List (Nest Name)} {as : InstanceArgs 0 [] decl.scope}
+    {S : List Nat} {ms : List (Lifting.Result 0)} {Δ' : Scope} {as' : InstanceArgs 0 [] Δ'}
+    (has : InstanceArgs.Lifts sig v ρ ns as S ms as') {t A' : Term 0 []} {mA : Lifting.Result 0}
+    (hL : Term.Lifts sig v ρ (.inst ns) t (.inst D qs ls ps as) A' mA) :
+    Δ' = decl.scope.lifted S ∧
+      A' = .inst (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level)) (v.grades ps ms)
+        (.snoc (e := .var) as' t) := by
+  obtain ⟨_, _, _, _, rfl, has'⟩ :=
+    hL.inst_inv hd h.1 (h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1)
+  obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has has'
+  cases hsg
+  have hqpL := hqp.lifting v has.length_eq
+  have hl' : (ls ++ ms.map (·.level)).length = decl.levels + S.length := by
+    rw [List.length_append, hl, List.length_map, has.length_eq]
+  obtain ⟨hΔ, -⟩ := has.instantiates hρ S
+    (fun i => (decl.liftingMotive S hqpL.inst i).substLevels ((ls ++ ms.map (·.level)).getFin hl'))
+    (fun _ _ => Iff.rfl)
+    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has.nodup hqp hl has.length_eq hl' j h₁ h₂)
+  exact ⟨hΔ, rfl⟩
+
 /-- The type of a field that the graph of the types reads is a type. -/
 theorem FieldRel.validType {n : Nat} {s : Quality} {A v : Term 0 []} {F : TermRel}
     (hd : sig.Distinct) (hF : FieldRel sig ι n (fun m _ => levelRel sig ι m) s v F)
@@ -452,20 +479,13 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
   obtain rfl := TypeDeclaration.lifting_destructors he
   obtain rfl := TypeDeclaration.lifting_body he
   have hDn : D ∈ decl.names := h.2.2 ▸ TypeDeclaration.codata_name_mem_names h.2.1
-  obtain ⟨S', ms'', Δ'', as'', rfl, has'⟩ := hL.inst_inv hd h.1 hDn
-  obtain ⟨rfl, rfl, hsg⟩ := InstanceArgs.Lifts.unique hd has₁ has'
-  cases hsg
+  obtain ⟨rfl, rfl⟩ := hL.inst_lifted hd h hρ₁ hqp hl has₁
   have hqpL := hqp.lifting v has₁.length_eq
   have hqpL₂ := hqp.lifting v has₂.length_eq
   have hl' : (ls ++ ms₁.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl, List.length_map, has₁.length_eq]
   have hl₂' : (ls₂ ++ ms₂.map (·.level)).length = decl.levels + S.length := by
     rw [List.length_append, hl₂, List.length_map, has₂.length_eq]
-  obtain ⟨hΔ, -⟩ := has₁.instantiates hρ₁ S
-    (fun i => (decl.liftingMotive S hqpL.inst i).substLevels ((ls ++ ms₁.map (·.level)).getFin hl'))
-    (fun _ _ => Iff.rfl)
-    (fun j h₁ h₂ => TypeDeclaration.liftingMotive_inst has₁.nodup hqp hl has₁.length_eq hl' j h₁ h₂)
-  subst hΔ
   -- The lifting, its type and its destructors.
   let declL := decl.lifting D S nms body
   let TL : CodataType declL.sorts declL.grades declL.levels declL.scope := decl.liftingType D S body
