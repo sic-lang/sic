@@ -510,11 +510,11 @@ theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → si
     {D : Name} → {decl : TypeDeclaration} →
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasDataType D decl T →
     sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩
-    have hDm : _ ∈ _ := hD ▸ TypeDeclaration.name_mem_names hT
-    unfold Signature.constructorCase Entry.constructorCase
-    rw [Entry.lookup_typeDeclaration hDm]
-    exact hd.findSome?_lookup hm hDm
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩
+  have hDm : _ ∈ _ := hD ▸ TypeDeclaration.name_mem_names hT
+  unfold Signature.constructorCase Entry.constructorCase
+  rw [Entry.lookup_typeDeclaration hDm]
+  exact hd.findSome?_lookup hm hDm
 
 /-- An entry that does not introduce the name `D` gives the case of no destructor of `D`. -/
 theorem Entry.destructorCase_of_not_mem {D d : Name} :
@@ -533,11 +533,11 @@ theorem Signature.Distinct.destructorCase {d : Name} : {sig : Signature} → sig
     {D : Name} → {decl : TypeDeclaration} →
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasCodataType D decl T →
     sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩
-    have hDm : _ ∈ _ := hD ▸ TypeDeclaration.codata_name_mem_names hT
-    unfold Signature.destructorCase Entry.destructorCase
-    rw [Entry.lookup_typeDeclaration hDm]
-    exact hd.findSome?_lookup hm hDm
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩
+  have hDm : _ ∈ _ := hD ▸ TypeDeclaration.codata_name_mem_names hT
+  unfold Signature.destructorCase Entry.destructorCase
+  rw [Entry.lookup_typeDeclaration hDm]
+  exact hd.findSome?_lookup hm hDm
 
 /-- In a signature whose names are distinct, a case of the corecursors of a block is the case of its
 destructor. -/
@@ -593,12 +593,12 @@ theorem Signature.Distinct.fieldParams : {sig : Signature} → sig.Distinct → 
     con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.fieldParams D con.name qs ps = some (con.params hqp.inst) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ hcon _ _ hqp
-    subst hD
-    have hDm := TypeDeclaration.name_mem_names hT
-    exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
-      (Entry.fieldParams_of_mem (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT
-        (hd.constructors_nodup ⟨hm, hT, rfl⟩) hcon hqp))
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ hcon _ _ hqp
+  subst hD
+  have hDm := TypeDeclaration.name_mem_names hT
+  exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
+    (Entry.fieldParams_of_mem (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT
+      (hd.constructors_nodup ⟨hm, hT, rfl⟩) hcon hqp))
 
 /-- The requirement of the recursion on an axis is below the coefficient of each field that the
 recursor uses on this axis. -/
@@ -648,12 +648,12 @@ theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct 
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.caseFieldParams D qs ps = some (decl.cases.map fun x =>
       x.2.2.params hqp.inst) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
-    subst hD
-    have hDm := TypeDeclaration.name_mem_names hT
-    refine (hd.findSome?_lookup hm hDm).trans ?_
-    simp only [hqp, ↓reduceDIte,
-      List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+  subst hD
+  have hDm := TypeDeclaration.name_mem_names hT
+  refine (hd.findSome?_lookup hm hDm).trans ?_
+  simp only [hqp, ↓reduceDIte,
+    List.find?_of_nodup_map (TypeDeclaration.dataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- An entry that does not introduce the name `D` gives the arguments of the destructors of no
 codata type named `D`. -/
@@ -672,12 +672,12 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
     sig.destructorArguments D qs ps = some (decl.codataCases.map fun x =>
       (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD
         ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
-    subst hD
-    have hDm := TypeDeclaration.codata_name_mem_names hT
-    refine (hd.findSome?_lookup hm hDm).trans ?_
-    simp only [hqp, ↓reduceDIte,
-      List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+  subst hD
+  have hDm := TypeDeclaration.codata_name_mem_names hT
+  refine (hd.findSome?_lookup hm hDm).trans ?_
+  simp only [hqp, ↓reduceDIte,
+    List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- The destructor at a position in destructors is named by them. -/
 theorem Destructors.Pos.mem {k : Nat} {d : Name} {p q ς : Grade} {ps : List Parameter} :
@@ -748,12 +748,12 @@ theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct �
     {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
     (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
     sig.argumentParams D d qs ps = some ⟨ps', ψ, ς⟩ := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp _ _ _ _ _ _ _ _ _ hpos
-    subst hD
-    have hDm := TypeDeclaration.codata_name_mem_names hT
-    exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
-      (Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
-        (hd.destructors_nodup ⟨hm, hT, rfl⟩) hqp hpos))
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp _ _ _ _ _ _ _ _ _ hpos
+  subst hD
+  have hDm := TypeDeclaration.codata_name_mem_names hT
+  exact (hd.findSome?_lookup hm hDm).trans ((Entry.lookup_typeDeclaration hDm).symm.trans
+    (Entry.argumentParams_of_mem (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
+      (hd.destructors_nodup ⟨hm, hT, rfl⟩) hqp hpos))
 
 /-- Destructors with distinct names give the destructor at a position its grade. -/
 theorem Destructors.Pos.grade {k : Nat} {d : Name} {p q ς : Grade} {ps : List Parameter} :
@@ -919,14 +919,14 @@ theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct
       ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name),
         decl.codataCases[i]? = some (j, T', d) → ∀ p, (T'.body hqp.inst).grade d = some p →
           gs[i]? = some p := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
-    subst hD
-    have hDm := TypeDeclaration.codata_name_mem_names hT
-    obtain ⟨gs, hg, hgs⟩ := Entry.destructorGrades_of_mem
-      (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
-      (fun T' hT' => hd.destructors_nodup ⟨hm, hT', rfl⟩) hqp
-    exact ⟨gs, (hd.findSome?_lookup hm hDm).trans
-      ((Entry.lookup_typeDeclaration hDm).symm.trans hg), hgs⟩
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+  subst hD
+  have hDm := TypeDeclaration.codata_name_mem_names hT
+  obtain ⟨gs, hg, hgs⟩ := Entry.destructorGrades_of_mem
+    (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT
+    (fun T' hT' => hd.destructors_nodup ⟨hm, hT', rfl⟩) hqp
+  exact ⟨gs, (hd.findSome?_lookup hm hDm).trans
+    ((Entry.lookup_typeDeclaration hDm).symm.trans hg), hgs⟩
 
 /-- An entry that does not introduce the name `D` gives the types resumed by the destructors of no
 block of `D`. -/
@@ -942,12 +942,12 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.resumedTypes D qs ps = some (decl.codataCases.map fun x =>
       ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind decl.names.idxOf?) := by
-    intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
-    subst hD
-    have hDm := TypeDeclaration.codata_name_mem_names hT
-    refine (hd.findSome?_lookup hm hDm).trans ?_
-    simp only [hqp, ↓reduceDIte,
-      List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
+  intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
+  subst hD
+  have hDm := TypeDeclaration.codata_name_mem_names hT
+  refine (hd.findSome?_lookup hm hDm).trans ?_
+  simp only [hqp, ↓reduceDIte,
+    List.find?_of_nodup_map (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hT, Option.map_some]
 
 /-- The case `i` of the branches `vs` of a corecursor on a codata type of a block, whose states are
 those of the types of the block and whose branches bind the arguments of their destructors, is a
@@ -1003,16 +1003,16 @@ theorem Signature.Distinct.position : {sig : Signature} → sig.Distinct → {D 
     {decl : TypeDeclaration} → {T : CodataType decl.sorts decl.grades decl.levels decl.scope} →
     sig.HasCodataType D decl T → {h' : Nat} → decl.codataTypes[h']? = some T →
     sig.position D = some h' := by
-    intro _ hd _ decl _ ⟨hm, hT, hD⟩ h' hh
-    subst hD
-    have hc : decl.names = decl.codataTypes.map (·.name) := by
-      rw [decl.names_eq]
-      rcases decl.dataTypes_codataTypes with h | h
-      · rw [h]; rfl
-      · rw [h] at hT; exact nomatch hT
-    refine (hd.findSome?_lookup hm (TypeDeclaration.codata_name_mem_names hT)).trans ?_
-    simp only [hc]
-    exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hh
+  intro _ hd _ decl _ ⟨hm, hT, hD⟩ h' hh
+  subst hD
+  have hc : decl.names = decl.codataTypes.map (·.name) := by
+    rw [decl.names_eq]
+    rcases decl.dataTypes_codataTypes with h | h
+    · rw [h]; rfl
+    · rw [h] at hT; exact nomatch hT
+  refine (hd.findSome?_lookup hm (TypeDeclaration.codata_name_mem_names hT)).trans ?_
+  simp only [hc]
+  exact List.idxOf?_map_of_nodup (TypeDeclaration.codataTypes_nodup (hd.nodup hm)) hh
 
 /-- The destructors of the codata types of a signature, at an instance that the constraint admits,
 of a block of propositions, have grades without use at run time. -/
