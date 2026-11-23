@@ -2,6 +2,7 @@ module
 
 public import Sic.Core.Meaning
 import Sic.Core.Meaning.RunTime.Properties
+import Sic.Math.Nat
 
 /-!
 # Partial Equivalence Relations of the Levels
@@ -36,6 +37,6 @@ decreasing_by all_goals assumption
 names are distinct: the hypothesis that the laws of the graphs of the level `n` take. -/
 theorem levelRel_isPer_lt {sig : Signature} {ι : Interpretation} (hd : sig.Distinct) (n : Nat) :
     ∀ m, m < n → (levelRel sig ι m).IsPer :=
-  fun m _ => levelRel_isPer hd m
+  Nat.forall_lt (levelRel_isPer hd) n
 
 end Sic.Core

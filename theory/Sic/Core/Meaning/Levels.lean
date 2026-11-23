@@ -3,10 +3,11 @@ module
 public import Sic.Core.Meaning
 public import Sic.Core.Meaning.Levels.Substitution
 public import Sic.Core.Nesting.Relation
-import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Levels.Results
+import Sic.Core.Meaning.RunTime.Properties
 import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Levels by Their Values
@@ -1095,7 +1096,7 @@ decreasing_by all_goals assumption
 names are distinct: the hypothesis that the laws of the graphs of the level `n` take. -/
 theorem levelRel_levelInvariant_lt {sig : Signature} {ι : Interpretation} (hd : sig.Distinct)
     (n : Nat) : ∀ m, m < n → (levelRel sig ι m).LevelInvariant :=
-  fun m _ => levelRel_levelInvariant hd m
+  Nat.forall_lt (levelRel_levelInvariant hd) n
 
 /-- A canonical type whose levels change for equal ones has the same equality of its terms, in a
 signature whose names are distinct. -/

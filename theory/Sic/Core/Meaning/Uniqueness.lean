@@ -4,6 +4,7 @@ public import Sic.Core.Meaning.RunTime.Properties
 public import Sic.Core.Meaning.Uniqueness.Per
 import Sic.Core.Meaning.Equality.Nesting
 import Sic.Core.Meaning.RunTime.Nesting
+import Sic.Math.Nat
 
 /-!
 # Uniqueness of the Relations of the Levels
@@ -102,7 +103,7 @@ theorem levelRel_run_unique {sig : Signature} {ι : Interpretation} {P : Program
 distinct: the hypothesis that the laws of the graphs of the level `n` take. -/
 theorem levelRel_run_unique_lt {sig : Signature} {ι : Interpretation} {P : Program}
     (hd : sig.Distinct) (n : Nat) : ∀ m, m < n → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
-  fun m _ => levelRel_run_unique hd m
+  Nat.forall_lt (levelRel_run_unique hd) n
 
 /-- `rt(U_n)[λ]` gives a type a unique relation of run time: two relations of run time of a type at
 a nesting relate the same terms to the same addresses in each heap, in a signature whose names are

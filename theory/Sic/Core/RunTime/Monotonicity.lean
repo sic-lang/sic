@@ -4,6 +4,7 @@ public import Sic.Core.Nesting.Relation
 public import Sic.Core.RunTime.Relation
 import Sic.Core.Meaning.Uniqueness
 import Sic.Core.Syntax.Signature
+import Sic.Math.Nat
 
 /-!
 # Monotonicity of the Relation of Run Time
@@ -394,7 +395,7 @@ decreasing_by all_goals assumption
 names are distinct: the hypothesis that the laws of the graphs of the level `n` take. -/
 theorem levelRel_run_mono_lt {sig : Signature} {ι : Interpretation} {P : Program}
     (hd : sig.Distinct) (n : Nat) : ∀ m, m < n → RunLevelRel.Monotone ((levelRel sig ι m).run P) :=
-  fun m _ => levelRel_run_mono hd m
+  Nat.forall_lt (levelRel_run_mono hd) n
 
 /-! ## Monotonicity at a Nesting
 
