@@ -9,6 +9,8 @@ import Sic.Math.Nat
 
 The relations of every level are partial equivalence relations, by induction on the level, from
 which `Sic.Core.Meaning.Uniqueness` proves that they are unique.
+The invariance of the levels by their values, `Sic.Core.Meaning.Levels`, reads them too, and so do
+the modules of the soundness and of the run time that import it.
 -/
 
 @[expose] public section
