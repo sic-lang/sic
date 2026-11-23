@@ -281,7 +281,7 @@ theorem Terms.ResultTypes.factor_shape {sig : Signature} {md : Mode} {ax : Grade
       {As xs : Terms k Δ} → {ps' : List Parameter} → {R : Telescope k Δ' ps'} →
       {πs : List Grade} → Terms.ResultTypes sig v ρ ns ps As xs R πs →
       {ν : Nesting Shape.Motive Δ} → ρ.Shapes @ν →
-      (ρ.BlockShapes block) →
+      ρ.BlockShapes block →
       ∀ (o j l : Nat) (n : Nest Name) (A : Term k Δ),
         (Telescope.nestPositions ns o)[j]? = some (o + l) → ns[l]? = some n →
           As.get l = some A →

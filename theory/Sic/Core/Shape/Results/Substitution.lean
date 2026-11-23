@@ -446,7 +446,7 @@ theorem Term.Lifts.shape_instantiate {block₀ : Name → Option Shape.Motive}
     (hex : ∀ {Ξ' Ξ : Scope} {ρ₀ : Lifting k Ξ' Ξ} {n₀ : Nest Name} {e₀ : Term k Ξ'}
           {B₀ : Term k Ξ} {B₀' : Term k Ξ'} {m₀ : Lifting.Result k},
           Term.Lifts sig v ρ₀ n₀ e₀ B₀ B₀' m₀ → ∀ {ν₀ : Nesting Shape.Motive Ξ}, ρ₀.Shapes @ν₀ →
-            (ρ₀.BlockShapes block) →
+            ρ₀.BlockShapes block →
               ∃ m₁, B₀.shape v lookup block @ν₀ n₀ = some m₁) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {n : Nest Name} → {e : Term k Δ'} → {A : Term k Δ} →
       {A' : Term k Δ'} → {m : Lifting.Result k} → Term.Lifts sig v ρ n e A A' m → n = .plain →
@@ -457,7 +457,7 @@ theorem Term.Lifts.shape_instantiate {block₀ : Name → Option Shape.Motive}
         (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
         (∀ {a} (x : Var Δ a), (ρ.motive x).isSome →
           (θ x).shape v lookup block (Nesting.liftN a.params.length @νs') (ν x) = (νs x).motive) →
-        (ρ'.BlockShapes block) →
+        ρ'.BlockShapes block →
           (A.subst θ).shape v lookup block @νs' (A.nest (fun _ => none) @ν) =
             A.shape v lookup block₀ @νs .plain
   | _, _, _, _, _, _, _, _, .var (x := x) (y := y) (m := m) (ts := ts) hx _, _, _, _, θ, _, _,
@@ -489,7 +489,7 @@ theorem InstanceArgs.Lifts.shapes_instantiate {block₀ : Name → Option Shape.
     (hex : ∀ {Ξ' Ξ : Scope} {ρ₀ : Lifting k Ξ' Ξ} {n₀ : Nest Name} {e₀ : Term k Ξ'}
           {B₀ : Term k Ξ} {B₀' : Term k Ξ'} {m₀ : Lifting.Result k},
           Term.Lifts sig v ρ₀ n₀ e₀ B₀ B₀' m₀ → ∀ {ν₀ : Nesting Shape.Motive Ξ}, ρ₀.Shapes @ν₀ →
-            (ρ₀.BlockShapes block) →
+            ρ₀.BlockShapes block →
               ∃ m₁, B₀.shape v lookup block @ν₀ n₀ = some m₁) :
     {Δ' Δ : Scope} → {ρ : Lifting k Δ' Δ} → {ns : List (Nest Name)} → {Ξ : Scope} →
       {as : InstanceArgs k Δ Ξ} → {S : List Nat} → {ms : List (Lifting.Result k)} → {Ξ' : Scope} →
@@ -501,7 +501,7 @@ theorem InstanceArgs.Lifts.shapes_instantiate {block₀ : Name → Option Shape.
         (∀ (a : Scope.Entry) (x : Var Γ a), νs' x = .plain) →
         (∀ {a} (x : Var Δ a), (ρ.motive x).isSome →
           (θ x).shape v lookup block (Nesting.liftN a.params.length @νs') (ν x) = (νs x).motive) →
-        (ρ'.BlockShapes block) →
+        ρ'.BlockShapes block →
           (as.subst θ).shapes v lookup block @νs' (as.nest (fun _ => none) @ν) =
             as.shapes v lookup block₀ @νs []
   | _, _, _, _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => rfl
@@ -680,7 +680,7 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
     (hex : ∀ {Ξ' Ξ : Scope} {ρ₀ : Lifting 0 Ξ' Ξ} {n₀ : Nest Name} {e₀ : Term 0 Ξ'}
       {B₀ : Term 0 Ξ} {B₀' : Term 0 Ξ'} {m₀ : Lifting.Result 0},
       Term.Lifts sig v ρ₀ n₀ e₀ B₀ B₀' m₀ → ∀ {ν₀ : Nesting Shape.Motive Ξ}, ρ₀.Shapes @ν₀ →
-        (ρ₀.BlockShapes block) →
+        ρ₀.BlockShapes block →
           ∃ m₁, B₀.shape v lookup block @ν₀ n₀ = some m₁)
     (hb : ρ.BlockShapes block) :
     (((B.substLevels (ls.getFin hl)).subst
