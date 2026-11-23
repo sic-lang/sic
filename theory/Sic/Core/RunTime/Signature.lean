@@ -6,7 +6,6 @@ import Sic.Core.Erasure.Levels
 import Sic.Core.RunTime.Relation.Computation
 import Sic.Core.RunTime.Relation.Levels
 import Sic.Core.Soundness.Closed
-import Sic.Core.Syntax.Signature
 import Sic.Core.Typing.Lifting
 import Sic.Core.Typing.Presuppositions
 
@@ -53,37 +52,21 @@ structure ValidProgram (ι : Interpretation) (P : Program) (sig : Signature) : P
 /-- The program of a signature whose names are distinct gives a constant of the mode `11ᵐ` that the
 signature defines the erasure of its body. -/
 theorem Signature.Distinct.findSome?_compile {S : Set Grade} [DecidablePred (· ∈ S)]
-    {sigE : Signature} {qs : List Quality} {ps : List Grade} :
-    {sig : Signature} → sig.Distinct → {d : ConstantDefinition} → .constantDefinition d ∈ sig →
-      d.mode = .oneOne → (hqp : Instance.AsMany d.sorts d.grades qs ps) →
-        sig.findSome? (Entry.compile sigE S d.name qs ps)
-          = some ((d.body hqp.inst).erase sigE S Scope.FirstOrder.nil)
-  | e :: sig, hd, d, h, hm, hqp => by
-    have hself : Entry.compile sigE S d.name qs ps (.constantDefinition d)
-        = some ((d.body hqp.inst).erase sigE S Scope.FirstOrder.nil) := by
-      simp only [Entry.compile, hm, hqp, and_self, ↓reduceDIte, ↓reduceIte]
-    rw [List.findSome?_cons]
-    rcases List.mem_cons.1 h with rfl | h'
-    · rw [hself]
-    · cases hc : Entry.compile sigE S d.name qs ps e with
-      | none => exact Signature.Distinct.findSome?_compile hd.1 h' hm hqp
-      | some x =>
-        have he : e = .constantDefinition d := by
-          cases e with
-          | constantDefinition d' =>
-            have hn : d'.name = d.name := by
-              simp only [Entry.compile] at hc
-              split at hc
-              · rename_i hn
-                exact hn.1
-              · exact nomatch hc
-            exact Signature.Distinct.entry_unique hd List.mem_cons_self (List.mem_cons_of_mem _ h') (n := d.name)
-              (by simp [Entry.names, hn]) (by simp [Entry.names])
-          | _ => simp only [Entry.compile] at hc; exact nomatch hc
-        subst he
-        rw [hself] at hc
-        cases hc
-        rfl
+    {sigE : Signature} {qs : List Quality} {ps : List Grade} {sig : Signature} (hd : sig.Distinct)
+    {d : ConstantDefinition} (h : .constantDefinition d ∈ sig) (hm : d.mode = .oneOne)
+    (hqp : Instance.AsMany d.sorts d.grades qs ps) :
+    sig.findSome? (Entry.compile sigE S d.name qs ps)
+      = some ((d.body hqp.inst).erase sigE S Scope.FirstOrder.nil) := by
+  rw [hd.findSome?_eq h List.mem_cons_self fun e _ he => ?_]
+  · simp only [Entry.compile, hm, hqp, and_self, ↓reduceDIte, ↓reduceIte]
+  · cases e with
+    | constantDefinition d' =>
+      simp only [Entry.compile] at he
+      split at he
+      · rename_i hn
+        simp [Entry.names, hn.1]
+      · simp at he
+    | _ => simp [Entry.compile] at he
 
 /-- A program that holds the erasure of a signature whose names are distinct gives a constant of the
 mode `11ᵐ` that the signature defines the erasure of its body. -/

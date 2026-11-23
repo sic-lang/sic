@@ -500,38 +500,6 @@ theorem TypeDeclaration.liftingScope_shapes {decl : TypeDeclaration} {S : List N
 
 /-! ## Signatures Whose Liftings Have Shapes -/
 
-/-- The entries of a suffix of a signature whose names are distinct have distinct names. -/
-theorem Signature.Distinct.suffix {sig₂ : Signature} :
-    (pre : Signature) → (pre ++ sig₂).Distinct → sig₂.Distinct
-  | [], h => h
-  | _ :: pre, h => Signature.Distinct.suffix pre h.1
-
-/-- In a signature whose names are distinct, the first value that `f` gives an entry is the value
-that it gives the entry that has the name `n`, when `f` gives none to the entries without it. -/
-theorem Signature.Distinct.findSome?_eq {β : Type} {f : Entry → Option β} {n : Name} :
-    {sig : Signature} → sig.Distinct → {e₀ : Entry} → e₀ ∈ sig → n ∈ e₀.names →
-      (∀ e ∈ sig, (f e).isSome → n ∈ e.names) → sig.findSome? f = f e₀
-  | [], _, _, h, _, _ => nomatch h
-  | e :: sig, ⟨hd, _, hfresh, _⟩, e₀, he₀, hn₀, hf => by
-    rcases List.mem_cons.1 he₀ with rfl | he₀'
-    · cases hfe : f e₀ with
-      | some b => exact List.findSome?_cons_of_isSome (by rw [hfe]; rfl) |>.trans hfe
-      | none =>
-        rw [List.findSome?_cons_of_isNone (by rw [hfe]; rfl), List.findSome?_eq_none_iff]
-        intro e' he'
-        cases hfe' : f e' with
-        | none => rfl
-        | some _ =>
-          exact absurd (hf e' (List.mem_cons_of_mem _ he') (by rw [hfe']; rfl))
-            (hfresh e' he' n hn₀)
-    · have hfe : f e = none := by
-        cases hfe : f e with
-        | none => rfl
-        | some _ =>
-          exact absurd hn₀ (hfresh e₀ he₀' n (hf e List.mem_cons_self (by rw [hfe]; rfl)))
-      rw [List.findSome?_cons_of_isNone (by rw [hfe]; rfl)]
-      exact hd.findSome?_eq he₀' hn₀ fun e' he' => hf e' (List.mem_cons_of_mem _ he')
-
 /-- The names of the lifting of a type are its name. -/
 theorem TypeDeclaration.lifting_names {decl : TypeDeclaration} {F : Name} {S : List Nat}
     {ns : List Name}

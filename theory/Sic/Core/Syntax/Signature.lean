@@ -509,8 +509,7 @@ the block of its declaration. -/
 theorem Signature.Distinct.constructorCase {c : Name} : {sig : Signature} → sig.Distinct →
     {D : Name} → {decl : TypeDeclaration} →
     {T : DataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasDataType D decl T →
-    sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl) :=
-  by
+    sig.constructorCase D c = Entry.constructorCase D c (.typeDeclaration decl) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩
     have hDm : _ ∈ _ := hD ▸ TypeDeclaration.name_mem_names hT
     unfold Signature.constructorCase Entry.constructorCase
@@ -533,8 +532,7 @@ the block of its declaration. -/
 theorem Signature.Distinct.destructorCase {d : Name} : {sig : Signature} → sig.Distinct →
     {D : Name} → {decl : TypeDeclaration} →
     {T : CodataType decl.sorts decl.grades decl.levels decl.scope} → sig.HasCodataType D decl T →
-    sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl) :=
-  by
+    sig.destructorCase D d = Entry.destructorCase D d (.typeDeclaration decl) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩
     have hDm : _ ∈ _ := hD ▸ TypeDeclaration.codata_name_mem_names hT
     unfold Signature.destructorCase Entry.destructorCase
@@ -594,8 +592,7 @@ theorem Signature.Distinct.fieldParams : {sig : Signature} → sig.Distinct → 
     sig.HasDataType D decl T → {con : Constructor decl.sorts decl.grades decl.levels decl.scope} →
     con ∈ T.constructors → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
-    sig.fieldParams D con.name qs ps = some (con.params hqp.inst) :=
-  by
+    sig.fieldParams D con.name qs ps = some (con.params hqp.inst) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ hcon _ _ hqp
     subst hD
     have hDm := TypeDeclaration.name_mem_names hT
@@ -650,8 +647,7 @@ theorem Signature.Distinct.caseFieldParams : {sig : Signature} → sig.Distinct 
     sig.HasDataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.caseFieldParams D qs ps = some (decl.cases.map fun x =>
-      x.2.2.params hqp.inst) :=
-  by
+      x.2.2.params hqp.inst) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
     subst hD
     have hDm := TypeDeclaration.name_mem_names hT
@@ -675,8 +671,7 @@ theorem Signature.Distinct.destructorArguments : {sig : Signature} → sig.Disti
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.destructorArguments D qs ps = some (decl.codataCases.map fun x =>
       (x.1, ((x.2.1.body hqp.inst).arguments x.2.2).getD
-        ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) :=
-  by
+        ⟨[], ⟨none, fun _ => none⟩, .unrestrictedUnrestricted⟩)) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
     subst hD
     have hDm := TypeDeclaration.codata_name_mem_names hT
@@ -752,8 +747,7 @@ theorem Signature.Distinct.argumentParams : {sig : Signature} → sig.Distinct �
     {ps' : List Parameter} → {Ξ : Scope} → {Θ : Telescope decl.levels Ξ ps'} →
     {B : Term decl.levels (Ξ.extend ps'.length)} → {ψ : ResultOwnership Grade ps'.length} →
     (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
-    sig.argumentParams D d qs ps = some ⟨ps', ψ, ς⟩ :=
-  by
+    sig.argumentParams D d qs ps = some ⟨ps', ψ, ς⟩ := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp _ _ _ _ _ _ _ _ _ hpos
     subst hD
     have hDm := TypeDeclaration.codata_name_mem_names hT
@@ -924,8 +918,7 @@ theorem Signature.Distinct.destructorGrades : {sig : Signature} → sig.Distinct
     ∃ gs, sig.destructorGrades D qs ps = some gs ∧
       ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope) (d : Name),
         decl.codataCases[i]? = some (j, T', d) → ∀ p, (T'.body hqp.inst).grade d = some p →
-          gs[i]? = some p :=
-  by
+          gs[i]? = some p := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
     subst hD
     have hDm := TypeDeclaration.codata_name_mem_names hT
@@ -948,8 +941,7 @@ theorem Signature.Distinct.resumedTypes : {sig : Signature} → sig.Distinct →
     sig.HasCodataType D decl T → {qs : List Quality} → {ps : List Grade} →
     (hqp : Instance.AsMany decl.sorts decl.grades qs ps) →
     sig.resumedTypes D qs ps = some (decl.codataCases.map fun x =>
-      ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind decl.names.idxOf?) :=
-  by
+      ((x.2.1.body hqp.inst).resultName decl.names x.2.2).bind decl.names.idxOf?) := by
     intro _ hd _ _ _ ⟨hm, hT, hD⟩ _ _ hqp
     subst hD
     have hDm := TypeDeclaration.codata_name_mem_names hT

@@ -887,25 +887,48 @@ theorem Signature.findSome?_lookup_of_not_mem {α : Type} {D : Name}
       (by rw [Entry.lookup_of_not_mem (h e List.mem_cons_self)]; rfl)]
     exact Signature.findSome?_lookup_of_not_mem fun e' he' => h e' (List.mem_cons_of_mem _ he')
 
+/-- The entries of a suffix of a signature whose names are distinct have distinct names. -/
+theorem Signature.Distinct.suffix {sig₂ : Signature} :
+    (pre : Signature) → (pre ++ sig₂).Distinct → sig₂.Distinct
+  | [], h => h
+  | _ :: pre, h => Signature.Distinct.suffix pre h.1
+
+/-- In a signature whose names are distinct, the first value that `f` gives an entry is the value
+that it gives the entry that has the name `n`, when `f` gives none to the entries without it. -/
+theorem Signature.Distinct.findSome?_eq {β : Type} {f : Entry → Option β} {n : Name} :
+    {sig : Signature} → sig.Distinct → {e₀ : Entry} → e₀ ∈ sig → n ∈ e₀.names →
+      (∀ e ∈ sig, (f e).isSome → n ∈ e.names) → sig.findSome? f = f e₀
+  | [], _, _, h, _, _ => nomatch h
+  | e :: sig, ⟨hd, _, hfresh, _⟩, e₀, he₀, hn₀, hf => by
+    rcases List.mem_cons.1 he₀ with rfl | he₀'
+    · cases hfe : f e₀ with
+      | some b => exact List.findSome?_cons_of_isSome (by rw [hfe]; rfl) |>.trans hfe
+      | none =>
+        rw [List.findSome?_cons_of_isNone (by rw [hfe]; rfl), List.findSome?_eq_none_iff]
+        intro e' he'
+        cases hfe' : f e' with
+        | none => rfl
+        | some _ =>
+          exact absurd (hf e' (List.mem_cons_of_mem _ he') (by rw [hfe']; rfl))
+            (hfresh e' he' n hn₀)
+    · have hfe : f e = none := by
+        cases hfe : f e with
+        | none => rfl
+        | some _ =>
+          exact absurd hn₀ (hfresh e₀ he₀' n (hf e List.mem_cons_self (by rw [hfe]; rfl)))
+      rw [List.findSome?_cons_of_isNone (by rw [hfe]; rfl)]
+      exact hd.findSome?_eq he₀' hn₀ fun e' he' => hf e' (List.mem_cons_of_mem _ he')
+
 /-- In a signature whose names are distinct, a lookup of a name that a type declaration of the
 signature introduces gives the value that this declaration gives, the only entry that introduces
 the name. -/
 theorem Signature.Distinct.findSome?_lookup {α : Type} {D : Name}
-    {f : TypeDeclaration → Option α} {decl : TypeDeclaration} :
-    {sig : Signature} → sig.Distinct → .typeDeclaration decl ∈ sig → D ∈ decl.names →
-      sig.findSome? (Entry.lookup D f) = f decl
-  | e :: sig, ⟨hd, _, hfresh, _⟩, he, hD => by
-    rcases List.mem_cons.1 he with rfl | he'
-    · cases hf : f decl with
-      | some a =>
-        rw [List.findSome?_cons_of_isSome (by rw [Entry.lookup_typeDeclaration hD, hf]; rfl),
-          Entry.lookup_typeDeclaration hD, hf]
-      | none =>
-        rw [List.findSome?_cons_of_isNone (by rw [Entry.lookup_typeDeclaration hD, hf]; rfl)]
-        exact Signature.findSome?_lookup_of_not_mem fun e' he'' hDe => hfresh _ he'' D hD hDe
-    · have hDe : D ∉ e.names := fun hDe => hfresh _ he' D hDe hD
-      rw [List.findSome?_cons_of_isNone (by rw [Entry.lookup_of_not_mem hDe]; rfl)]
-      exact hd.findSome?_lookup he' hD
+    {f : TypeDeclaration → Option α} {decl : TypeDeclaration} {sig : Signature}
+    (hd : sig.Distinct) (he : .typeDeclaration decl ∈ sig) (hD : D ∈ decl.names) :
+    sig.findSome? (Entry.lookup D f) = f decl :=
+  (hd.findSome?_eq he hD fun _ _ h => Decidable.byContradiction fun hn => by
+    rw [Entry.lookup_of_not_mem hn] at h
+    exact Bool.false_ne_true h).trans (Entry.lookup_typeDeclaration hD)
 
 /-- The parameters, grade `p` and requirement `r`, of the fields of the constructor `c` of the
 declared type `D` at the instance of the qualities `qs` and of the grades `ps`, when the entry
