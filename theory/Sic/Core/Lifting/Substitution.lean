@@ -799,8 +799,7 @@ theorem Term.Lifts.substLevels {k' : Nat} {sig : Signature} {v : Lifting.Variabl
     rw [hx]
     rfl
   | _, _, ρ, _, e, _, _, _, .block (D := D) (b := b) hD => by
-    rw [Term.substLevels, Term.substLevels_subst₀_of
-      (σ' := Subst₀.single (e.substLevels ls')) (fun x => by cases x <;> rfl) b.motive]
+    rw [Term.substLevels, Term.substLevels_subst₀_single b.motive]
     refine Term.Lifts.block (b := b.substLevels ls') ?_
     show (ρ.block D).map _ = _
     rw [hD]
