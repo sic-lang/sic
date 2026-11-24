@@ -11,13 +11,17 @@ import Sic.Core.Syntax.Terms
 # Reduction
 
 The weak head reduction of annex 16 of RFC 36, `Σ ⊢ t ⟶ u`, the computation of the type theory:
-the conversion reduces the terms to their weak head normal forms to compare them, the meaning
-computes the closed terms, `Σ ⊢ t ⇓ v`, and the erasure is sound for this computation.
+the meaning computes the closed terms, `Σ ⊢ t ⇓ v`, and the erasure is sound for this computation.
 The core reduces by the rule `(δ_⟶)`, which unfolds a definition, the data types by `(ι_⟶)`,
 which runs the branch of a constructor that a recursor eliminates, and `(rec_⟶)`, which reduces the
-term that a recursor eliminates, and the codata types by `(β_⟶)`, which runs the branch of a
+term that a recursor eliminates, the codata types by `(β_⟶)`, which runs the branch of a
 destructor in the corecursor that it observes, and `(d_⟶)`, which reduces the term that an
-observation observes.
+observation observes, and the equality by `(transp_⟶)`, which reduces a transport to its term,
+whatever its motive and its proof.
+Every rule but `(transp_⟶)` is a rule of the equality of the terms, so that a conversion may reduce
+by them to compare two terms; the transport is equal to its term only between equal instances of its
+motive, `(transp_same)`, and its step serves the meaning, in which a true equality makes these two
+instances equal.
 A head normal form is a sort, an instance of a declared type, a constructor applied to the terms of
 its fields, a corecursor, an equality, or a neutral term, stuck on a variable or on a constant,
 which no rule unfolds, or a recursor or an observation of a neutral term.

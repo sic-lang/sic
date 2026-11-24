@@ -151,7 +151,8 @@ mutual
 -- ADE: `Term`, in `Definition/Untyped.agda`.
 /--
 A term over `k` level variables in the scope `Γ`.
-The core names no type: the declared types come from the type declarations of the signature.
+The core names no type but the sorts and the equality: the declared types come from the type
+declarations of the signature.
 RFC: `\mathsf{syntax}_t`
 -/
 inductive Term (k : Nat) : Scope → Type where
