@@ -560,6 +560,17 @@ theorem Destructors.Pos.obsSubst_substLevels {k' k'' : Nat} {Γ' : Scope} (ls' :
     | .zero => ho _ _
     | .succ x => h x
 
+/-- The substitution at the observations of a term is the substitution of the destructors before a
+position by these observations, after the substitution of the scope by the arguments. -/
+theorem Destructors.Pos.obsSubstOf_def {k' : Nat} {Γ' Δ : Scope} {d : Name} {p q ς : Grade}
+    {ps' : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope}
+    {Θ : Telescope k' Ξ ps'} {B : Term k' (Ξ.extend ps'.length)}
+    {ψ : ResultOwnership Grade ps'.length} (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ' Δ)
+    (t : Term k Γ') {a : Scope.Entry} (x : Var Ξ a) :
+    hd.obsSubstOf D qs ls ps as t x = hd.obsSubst (t.observation D qs ls ps as) as.toSubst x :=
+  rfl
+
 /-- The substitution of the destructors before a position by the observations of a term, at
 instantiated levels, is the substitution by the observations of the term at these levels, at the
 arguments at these levels. -/

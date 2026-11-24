@@ -536,6 +536,17 @@ def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q ς : Grade
   | _, _, _, _, _, _, _, .there (d' := d') (ps' := ps') h, θ =>
     h.obsSubst o (Subst.snoc (e := .secondOrder ps' _) θ (o d' ps'))
 
+/-- `[ā / Δ, t.T / d̄₁]`: at the position of a destructor `d` in the destructors `d̄ = (d̄₁ | d | d̄₂)`
+of the scope `Δ` of the instance `T = D.{s̄; l̄; p̄} ā`, the substitution `[ā / Δ]` of the scope,
+followed by the observation `x̄. t.(T.d')(x̄)` of the term `t` for each destructor `d'` of `d̄₁`. -/
+def Destructors.Pos.obsSubstOf {k' : Nat} {Γ' Δ : Scope} {d : Name} {p q ς : Grade}
+    {ps' : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope}
+    {Θ : Telescope k' Ξ ps'} {B : Term k' (Ξ.extend ps'.length)}
+    {ψ : ResultOwnership Grade ps'.length} (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) (D : Name)
+    (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ' Δ)
+    (t : Term k Γ') : Subst k Γ' Ξ :=
+  hd.obsSubst (t.observation D qs ls ps as) as.toSubst
+
 /-! ## Instantiation of the Level Variables -/
 
 /-- `l[l̄' / l̄]`: the level `l` in which the level `ls' i` replaces the variable `i`.
