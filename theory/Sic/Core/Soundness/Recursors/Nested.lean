@@ -543,7 +543,8 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     obtain ⟨SΘ, hΘ, hsound⟩ := horacle ls₂ as₂ d' p q ς ps₁ Ξ Θ B ψ hpos
     -- The arguments of the destructor of the lifting are those of the destructor of the type.
     have hΘ'' : TelRel sig ι nL (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
-        (((Θ.substLevels L).subst (hpos.obsSubst f₁ as.toSubst)).scale (v.recursion * mr.factor)) SΘ' := by
+        (((Θ.substLevels L).subst (hpos.obsSubstOf D qs ls ps as t₁)).scale
+          (v.recursion * mr.factor)) SΘ' := by
       have e := hΘeq
       rw [Telescope.rename_id_of hid₁] at e
       exact e ▸ hΘ'
@@ -566,8 +567,9 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
     rw [hφ₂, Term.subst_append] at hN₂
     have hsim' : Term.Similar
         (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hpos.nesting (Nesting.ofArgs ns))))
-        ((B.substLevels L).subst (Subst.append (hpos.obsSubst f₁ as.toSubst) ts.toSubst))
-        ((B.substLevels L₂).subst (Subst.append (hpos.obsSubst f₂ as₂.toSubst) us.toSubst)) := by
+        ((B.substLevels L).subst (Subst.append (hpos.obsSubstOf D qs ls ps as t₁) ts.toSubst))
+        ((B.substLevels L₂).subst
+          (Subst.append (hpos.obsSubstOf D qs ls₂ ps as₂ t₂) us.toSubst)) := by
       have hs := (Term.similar_subst (fun _ => none) L L₂
         (Subst.Similar.liftN ps₁.length (hpos.similar f₁ f₂ hsas.toSubst)) B).subst ts.toSubst us.toSubst
       rwa [Term.subst_append, Term.subst_append] at hs
