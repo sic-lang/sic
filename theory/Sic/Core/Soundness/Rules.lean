@@ -1,14 +1,22 @@
 module
 
-public import Sic.Core.Soundness.Levels
 public import Sic.Core.Soundness.Signature
-public import Sic.Core.Soundness.Substitution
+import Sic.Core.Meaning.Exactness
+import Sic.Core.Meaning.Judgments
+import Sic.Core.Meaning.Uniqueness
+import Sic.Core.Meaning.Levels
+import Sic.Core.Soundness.Closed
+import Sic.Core.Soundness.DeclaredTypes
+import Sic.Core.Soundness.Substitution
+import Sic.Core.Syntax.Signature
 
 /-!
 # Soundness of the Rules
 
-Each rule of annex 13 of RFC 36 keeps the meaning of annex 16: when its premises are meaningful, in
-the context of the rule at levels without variables, so is its conclusion.
+Each rule of annex 15 of RFC 36 keeps the meaning of annex 21: when its premises are meaningful, in
+the context of the rule at levels without variables, so is its conclusion; `Recursors` and
+`Corecursors` prove it of the rules of the recursors and of those of the observations and the
+corecursors, and `Transport` of those of the transport, in the same way.
 The proofs take the premises at two equal closed substitutions `σ₁` and `σ₂` of the context, and
 draw the conclusion from the closed judgments, whose properties `Closed` gives; the symmetry and the
 transitivity of `eq(Γ)` move a premise from one substitution to the other.
@@ -17,9 +25,10 @@ A rule whose conclusion is that of an other judgment of the same meaning has no 
 reflexivity of types and terms is the meaning of their premise, as `Σ; Γ ⊨ A` is `Σ; Γ ⊨ A ≡ A` and
 `Σ; Γ ⊨ t : A` is `Σ; Γ ⊨ t ≡ t : A`, and the proof of a rule of equality gives that of the rule of
 typing of the same name, such as `(conv)` from `(conv_≡)`.
-The rules of the contexts and of the signatures are the clauses of their meaning, such as
-`validCtx₀_var` and `ValidSig.constantDefinition_iff`, and the rule `(decl)` asks the interpretation
-of the constant to be a term of its type, which the hypothesis `(hyp_ι)` of the soundness gives.
+The rules of the contexts are the clauses of their meaning, such as `validCtx₀_var`, those of the
+signatures make each entry meaningful in the whole signature, as `Judgments` proves, and the rule
+`(decl)` asks the interpretation of the constant to be a term of its type, which the hypothesis
+`(hyp_ι)` of the soundness gives.
 
 ADE prove the validity of each rule in `Definition/LogicalRelation/Substitution/Introductions/`,
 for their judgments with a context of definitions and without levels.
@@ -28,6 +37,8 @@ for their judgments with a context of definitions and without levels.
 @[expose] public section
 
 namespace Sic.Core
+
+open Sic.Grading
 
 section
 
@@ -86,12 +97,13 @@ theorem ValidEqTermΓ.conv {Γ : Scope} {ctx : Context 0 Γ} {t u A B : Term 0 �
 
 /-! ## Sorts -/
 
-/-- A meaningful context is in a meaningful signature, as `(ctx_ε)` says for the empty context. -/
-theorem ValidCtx₀.validSig : {Γ : Scope} → {ctx : Context 0 Γ} → ValidCtx₀ sig ι ctx → ValidSig ι sig
+/-- A meaningful context is in a signature whose names are distinct, as `(⊨ctx_ε)` says for the
+empty context. -/
+theorem ValidCtx₀.distinct : {Γ : Scope} → {ctx : Context 0 Γ} → ValidCtx₀ sig ι ctx → sig.Distinct
   | _, .empty, h => by rw [ValidCtx₀] at h; exact h
-  | _, .var ctx A, h => ValidCtx₀.validSig ((validCtx₀_var ctx A).1 h).1
-  | _, .secondOrder ctx Θ A χ₀, h =>
-    ValidCtx₀.validSig (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ A χ₀).1 h).1)
+  | _, .var ctx A, h => ValidCtx₀.distinct ((validCtx₀_var ctx A).1 h).1
+  | _, .secondOrder ctx Θ A ψ, h =>
+    ValidCtx₀.distinct (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ A ψ).1 h).1)
 
 -- ADE: `⊩ᵛU≡U∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /-- `(U_≡)` and `(Ω_≡)` keep the meaning, and `(U)` and `(Ω)` with them, at the equal levels `l` and
@@ -99,8 +111,8 @@ theorem ValidCtx₀.validSig : {Γ : Scope} → {ctx : Context 0 Γ} → ValidCt
 theorem ValidEqTermΓ.sort {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
     {q : Quality} {l₁ l₂ : Level 0} (hl : l₁ ≈ l₂) :
     ValidEqTermΓ sig ι ctx (.sort ⟨q, l₁⟩) (.sort ⟨q, l₂⟩) (.sort ⟨.type, .succ l₁⟩) :=
-  ⟨⟨hctx, fun _ _ _ => (ValidEqTerm₀.sort hctx.validSig (q := q) (Level.equivalence.refl l₁)).1⟩,
-    fun _ _ _ => ValidEqTerm₀.sort hctx.validSig hl⟩
+  ⟨⟨hctx, fun _ _ _ => (ValidEqTerm₀.sort hctx.distinct (q := q) (Level.equivalence.refl l₁)).1⟩,
+    fun _ _ _ => ValidEqTerm₀.sort hctx.distinct hl⟩
 
 -- ADE: `⊩ᵛ≡∷U→⊩ᵛ≡`, in `Definition/LogicalRelation/Substitution/Introductions/Universe.agda`.
 /-- `(U_type≡)` keeps the meaning, and `(U_type)` with it. -/
@@ -108,13 +120,11 @@ theorem ValidEqTermΓ.univType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 �
     (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.type, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
   ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).univType⟩
 
--- ADE: none.
 /-- `(Ω_type≡)` keeps the meaning, and `(Ω_type)` with it. -/
 theorem ValidEqTermΓ.propType {Γ : Scope} {ctx : Context 0 Γ} {A B : Term 0 Γ} {l : Level 0}
     (h : ValidEqTermΓ sig ι ctx A B (.sort ⟨.prop, l⟩)) : ValidEqTypeΓ sig ι ctx A B :=
   ⟨h.1.1, fun _ _ hσ => (h.2 _ _ hσ).propType⟩
 
--- ADE: none.
 /-- `(irr)` keeps the meaning: at two equal substitutions, the first term is a proof of the
 proposition at the first, and so is the second term, by conversion, so that `(exact_Ω)` makes them
 equal proofs. -/
@@ -125,8 +135,96 @@ theorem ValidEqTermΓ.irr {Γ : Scope} {ctx : Context 0 Γ} {t u A : Term 0 Γ} 
     ⟨ht.2 _ _ (hσ.left ht.1.1),
       (hu.2 _ _ (hσ.right ht.1.1)).conv (ht.1.2 _ _ (hσ.symm ht.1.1))⟩⟩
 
-
 /-! ## Variables and Arguments of Telescopes -/
+
+-- ADE: the substitutions in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the variable `x : A ∈ Γ` equal closed terms of the type `A[σ₁]`. -/
+theorem EqSubst.varIn {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
+    (hx : ctx.VarIn x A) {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
+    ValidEqTerm₀ sig ι (σ₁ x) (σ₂ x) (A.subst σ₁) := by
+  induction hx with
+  | @zero _ ctx A =>
+    rw [Term.subst_weaken]
+    exact ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).2
+  | @succVar _ ctx _ A B _ ih =>
+    rw [Term.subst_weaken]
+    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
+    rw [Term.subst_weaken]
+    exact ih ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
+
+/-- `(σ₁, σ₂) ∈ eq(Γ)` gives the second-order variable `X : (Θ ⊢ A) ∈ Γ` abstractions whose
+instances by arguments in `eq(Θ[σ₁])` are equal closed terms of the type `A[σ₁⇑]` at these
+arguments. -/
+theorem EqSubst.secondOrderIn {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {ψ : ResultOwnership Grade ps.length}
+    {X : Var Γ (.secondOrder ps ψ)}
+    {Θ : Telescope 0 Γ ps} {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A)
+    {σ₁ σ₂ : Subst 0 [] Γ} (h : EqSubst sig ι ctx σ₁ σ₂) :
+    ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
+      ValidEqTerm₀ sig ι ((σ₁ X).subst τ₁) ((σ₂ X).subst τ₂)
+        ((A.subst (Subst.liftN _ σ₁)).subst τ₁) := by
+  induction hX with
+  | @zero _ _ _ ctx Θ A =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).2
+  | @succVar _ _ _ ctx _ Θ A B _ ih =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ih ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
+    rw [Telescope.subst_weaken, Term.subst_liftN_weaken]
+    exact ih ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1
+
+-- ADE: the type in `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
+/-- The type of the variable `x : A ∈ Γ` is a type in the context, when `Σ ⊨ Γ`. -/
+theorem Context.VarIn.validTypeΓ {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A : Term 0 Γ}
+    (hx : ctx.VarIn x A) : ValidCtx₀ sig ι ctx → ValidTypeΓ sig ι ctx A := by
+  induction hx with
+  | @zero _ ctx A =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact ((validCtx₀_var ctx A).1 hctx).2 _ _ ((EqSubst.var_iff ctx A σ₁ σ₂).1 h).1
+  | @succVar _ ctx _ A B _ ih =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact (ih ((validCtx₀_var ctx B).1 hctx).1).2 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1
+  | @succSecondOrder _ _ _ ctx _ A Θ B _ ih =>
+    intro hctx
+    refine ⟨hctx, fun σ₁ σ₂ h => ?_⟩
+    rw [Term.subst_weaken, Term.subst_weaken]
+    exact (ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ B _).1 hctx).1)).2 _ _
+      ((EqSubst.secondOrder_iff ctx Θ B _ σ₁ σ₂).1 h).1
+
+/-- The type of the second-order variable `X : (Θ ⊢ A) ∈ Γ` is a type in the context extended by its
+telescope, when `Σ ⊨ Γ`: at two equal substitutions `σ₁` and `σ₂` of `Γ`, followed by equal
+substitutions of `Θ[σ₁]`, it gives equal closed types. -/
+theorem Context.SecondOrderIn.validEqType {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
+    {ψ : ResultOwnership Grade ps.length} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
+    {A : Term 0 (Γ.extend ps.length)} (hX : ctx.SecondOrderIn X Θ A) :
+    ValidCtx₀ sig ι ctx → ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      ∀ τ₁ τ₂, EqSubst sig ι (Context.empty.append (Θ.subst σ₁)) τ₁ τ₂ →
+        ValidEqType₀ sig ι ((A.subst (Subst.liftN _ σ₁)).subst τ₁)
+          ((A.subst (Subst.liftN _ σ₂)).subst τ₂) := by
+  induction hX with
+  | @zero _ _ _ ctx Θ A =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken, Term.subst_append, Term.subst_append]
+    exact ((validCtx₀_secondOrder ctx Θ A _).1 hctx).2 _ _
+      ((EqSubst.append_append_iff ctx Θ _ _ τ₁ τ₂).2
+        ⟨((EqSubst.secondOrder_iff ctx Θ A _ σ₁ σ₂).1 h).1, hτ⟩)
+  | @succVar _ _ _ ctx _ Θ A B _ ih =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
+    exact ih ((validCtx₀_var ctx B).1 hctx).1 _ _ ((EqSubst.var_iff ctx B σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
+  | @succSecondOrder _ _ _ _ _ ctx _ Θ A Θ' B _ ih =>
+    intro hctx σ₁ σ₂ h τ₁ τ₂ hτ
+    rw [Telescope.subst_weaken] at hτ
+    rw [Term.subst_liftN_weaken, Term.subst_liftN_weaken]
+    exact ih (ValidCtx₀.append_left ((validCtx₀_secondOrder ctx Θ' B _).1 hctx).1) _ _
+      ((EqSubst.secondOrder_iff ctx Θ' B _ σ₁ σ₂).1 h).1 τ₁ τ₂ hτ
 
 -- ADE: `varᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Var.agda`.
 /-- `(var)` keeps the meaning: equal substitutions give the variable equal terms of its type. -/
@@ -134,14 +232,13 @@ theorem ValidTermΓ.var {Γ : Scope} {ctx : Context 0 Γ} {x : Var Γ .var} {A :
     (hctx : ValidCtx₀ sig ι ctx) (hx : ctx.VarIn x A) : ValidTermΓ sig ι ctx (.var₀ x) A :=
   ⟨hx.validTypeΓ hctx, fun _ _ h => EqSubst.varIn hx h⟩
 
--- ADE: none.
 /-- `(var_X≡)` keeps the meaning, and `(var_X)` with it: equal substitutions give the second-order
 variable equal abstractions, whose instances by the equal substitutions that the arguments give its
 telescope are equal terms of its type.
 The type at the arguments `t̄` substituted by `σ₁` and by `σ₂` is the type at `t̄[σ₁]` and at
 `ū[σ₂]`, then at `ū[σ₂]` and at `t̄[σ₂]`, both equal by the meaning of the entry. -/
-theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
-    {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps χ₀)} {Θ : Telescope 0 Γ ps}
+theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
+    {ctx : Context 0 Γ} {X : Var Γ (.secondOrder ps ψ)} {Θ : Telescope 0 Γ ps}
     {A : Term 0 (Γ.extend ps.length)} {ts us : Args 0 Γ ps} (hctx : ValidCtx₀ sig ι ctx)
     (hX : ctx.SecondOrderIn X Θ A) (hts : ValidEqArgsΓ sig ι ctx ts us Θ) :
     ValidEqTermΓ sig ι ctx (.var X ts) (.var X us) (A.instantiate ts) := by
@@ -158,14 +255,12 @@ theorem ValidEqTermΓ.secondOrder {Γ : Scope} {ps : List Parameter} {χ₀ : Op
   · rw [hA, hX', hX']
     exact EqSubst.secondOrderIn hX h _ _ (hts.2 _ _ h)
 
--- ADE: none.
 /-- `(tel_ε≡)` keeps the meaning, and `(tel_ε)` with it: no arguments are equal substitutions of the
 empty telescope. -/
 theorem ValidEqArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
     ValidEqArgsΓ sig ι ctx .nil .nil .nil :=
   ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
 
--- ADE: none.
 /-- `(tel_,≡)` keeps the meaning, and `(tel_,)` with it: equal first arguments of `A`, and equal
 arguments of `Θ[t / x]`, are equal arguments of `x : A, Θ`. -/
 theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade} {p : Parameter}
@@ -187,43 +282,41 @@ theorem ValidEqArgsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 �
       EqSubst.congr (Subst.ext (Subst.topN_append _ _)) (Subst.ext (Subst.topN_append _ _))]
     exact hts.2 σ₁ σ₂ h
 
-
 /-! ## Constants
 
-A constant of a meaningful signature unfolds, once the constants are interpreted, to a body that is a
-term of its type at the values of its levels, and so at levels of these values, which the meaning
+A constant of the signature `Σ_T` of the typing unfolds, in a signature `Σ` that gives the entries of
+`Σ_T` their meaning, once the constants are interpreted, to a body that is a term of its type at the
+values of its levels, and so at levels of these values, which the meaning
 does not tell apart: the constant is then a term of its type, as `(f)` says, which gives `(δ)` by a
 step of reduction and `(f_≡)` at levels of the same values.
-
-The rules `(D)` and `(D_≡)` need no proof of their own: a meaningful signature of the core has no
-declared type, `ValidSig.not_hasDeclaredType`.
 -/
 
--- ADE: none.
-/-- `(f)`, closed: a constant of a meaningful signature at closed levels is a term of its type at
-these levels. -/
-theorem ValidTerm₀.const (hsig : ValidSig ι sig) {f : Name} {j k' g : Nat} {m : Mode} {p : Grade}
-    {A : Instance j g → Term k' []} (h : sig.HasConstant f j k' g m p A) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k')
-    (hp : ps.length = g) :
-    ValidTerm₀ sig ι (.const f qs ls ps) ((A (.ofLists qs ps hq hp)).substLevels (ls.getFin hl)) := by
-  obtain ⟨b, hred, hb⟩ := hsig.hasConstant h
-  have hb' := (hb (.ofLists qs ps hq hp) fun i => (ls.getFin hl i).closedValue).levelEquiv
+/-- `(f)`, closed: a constant of `Σ_T` at closed levels is a term of its type at these levels, in a
+signature `Σ` that gives the entries of `Σ_T` their meaning. -/
+theorem ValidTerm₀.const {sigT : Signature} (hd : sig.Distinct) (hent : sig.ValidEntries ι sigT)
+    {f : Name} {j k' g : Nat} {m : Mode} {p : Grade}
+    {A : Instance j g → Term k' []} (h : sigT.HasConstant f j k' g m p A) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany j g qs ps)
+    (hl : ls.length = k') :
+    ValidTerm₀ sig ι (.const f qs ls ps) ((A hqp.inst).substLevels (ls.getFin hl)) := by
+  obtain ⟨b, hred, hb⟩ := hent.hasConstant h
+  have hb' := (hb hqp.inst fun i => (ls.getFin hl i).closedValue).levelEquiv
     (Term.substLevels_levelEquiv_atLevels _ _).symm (Term.substLevels_levelEquiv_atLevels _ _).symm
     (Term.substLevels_levelEquiv_atLevels _ _).symm
-  have hr := hred qs ls ps hq hl hp
+  have hr := hred qs ls ps hqp hl
   rw [Signature.instanceType, Term.weakenClosed_nil] at hr
-  exact (ValidEqTerm₀.red_iff hsig hr).2 ((ValidEqTerm₀.red_iff hsig hr).2 hb').symm
+  exact (ValidEqTerm₀.red_iff hd hr).2 ((ValidEqTerm₀.red_iff hd hr).2 hb').symm
 
 -- ADE: `defnᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Definition.agda`.
 /-- `(f)` keeps the meaning. -/
-theorem ValidTermΓ.const {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) {f : Name}
+theorem ValidTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT) {f : Name}
     {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
-    (h : sig.HasConstant f j k' g m p A) {qs : List Quality} {ls : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = j) (hl : ls.length = k') (hp : ps.length = g) :
+    (h : sigT.HasConstant f j k' g m p A) {qs : List Quality} {ls : List (Level 0)}
+    {ps : List Grade} (hqp : Instance.AsMany j g qs ps) (hl : ls.length = k') :
     ValidTermΓ sig ι ctx (.const f qs ls ps)
-      (Signature.instanceType A (.ofLists qs ps hq hp) (ls.getFin hl)) := by
-  have hc := ValidTerm₀.const hctx.validSig h hq hl hp
+      (Signature.instanceType A hqp.inst (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.distinct hent h hqp hl
   refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
     exact hc.1
@@ -232,47 +325,45 @@ theorem ValidTermΓ.const {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ 
 
 -- ADE: `δ-redᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Definition.agda`.
 /-- `(δ)` keeps the meaning: the constant is a term of its type, and steps to its body. -/
-theorem ValidEqTermΓ.delta {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
-    {d : ConstantDefinition} (h : .constantDefinition d ∈ sig) {qs : List Quality}
-    {ls : List (Level 0)} {ps : List Grade} (hq : qs.length = d.sorts) (hl : ls.length = d.levels)
-    (hp : ps.length = d.grades) :
+theorem ValidEqTermΓ.delta {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT)
+    {d : ConstantDefinition} (h : .constantDefinition d ∈ sigT) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany d.sorts d.grades qs ps)
+    (hl : ls.length = d.levels) :
     ValidEqTermΓ sig ι ctx (.const d.name qs ls ps)
-      (Signature.instanceType d.body (.ofLists qs ps hq hp) (ls.getFin hl))
-      (Signature.instanceType d.type (.ofLists qs ps hq hp) (ls.getFin hl)) := by
-  have hc := ValidTerm₀.const hctx.validSig (.constantDefinition h) hq hl hp
-  have hr := (Red.delta (Γ := []) h hq hl hp).interpret (ι := ι)
+      (Signature.instanceType d.body hqp.inst (ls.getFin hl))
+      (Signature.instanceType d.type hqp.inst (ls.getFin hl)) := by
+  have hc := ValidTerm₀.const hctx.distinct hent (.constantDefinition h) hqp hl
+  have hr := (Red.delta (Γ := []) (hent _ h).1 hqp hl).interpret (ι := ι)
   rw [Signature.instanceType, Term.weakenClosed_nil] at hr
   refine ⟨⟨hctx, fun _ _ _ => ?_⟩, fun _ _ _ => ?_⟩
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
     exact hc.1
   · simp only [Signature.instanceType, Term.subst_weakenClosed]
-    exact ((ValidEqTerm₀.red_iff hctx.validSig hr).1 hc).symm
+    exact ((ValidEqTerm₀.red_iff hctx.distinct hr).1 hc).symm
 
--- ADE: none.
 /-- `(f_≡)` keeps the meaning: the instances of the constant at levels of the same values are the same
 term up to its levels. -/
-theorem ValidEqTermΓ.const {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) {f : Name}
+theorem ValidEqTermΓ.const {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hctx : ValidCtx₀ sig ι ctx) (hent : sig.ValidEntries ι sigT) {f : Name}
     {j k' g : Nat} {m : Mode} {p : Grade} {A : Instance j g → Term k' []}
-    (h : sig.HasConstant f j k' g m p A) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
-    {ps : List Grade} (hq : qs.length = j) (hl₁ : ls₁.length = k') (hl₂ : ls₂.length = k')
-    (hp : ps.length = g) (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
+    (h : sigT.HasConstant f j k' g m p A) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hqp : Instance.AsMany j g qs ps) (hl₁ : ls₁.length = k')
+    (hl₂ : ls₂.length = k') (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
     ValidEqTermΓ sig ι ctx (.const f qs ls₁ ps) (.const f qs ls₂ ps)
-      (Signature.instanceType A (.ofLists qs ps hq hp) (ls₁.getFin hl₁)) :=
-  have hc := ValidTermΓ.const hctx h hq hl₁ hp
+      (Signature.instanceType A hqp.inst (ls₁.getFin hl₁)) :=
+  have hc := ValidTermΓ.const hctx hent h hqp hl₁
   ⟨hc.1, fun _ _ h => (hc.2 _ _ h).levelEquiv (Term.LevelEquiv.refl _)
     (.const f qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls)) (Term.LevelEquiv.refl _)⟩
 
-
 /-! ## Arguments of Instances -/
 
--- ADE: none.
 /-- `(arg_ε≡)` keeps the meaning, and `(arg_ε)` with it: no arguments are equal substitutions of the
 empty parameters. -/
 theorem ValidEqInstanceArgsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx) :
     ValidEqInstanceArgsΓ sig ι ctx .nil .nil .empty :=
   ⟨hctx, fun _ _ _ => (EqSubst.empty_iff _ _).2 trivial⟩
 
--- ADE: none.
 /-- `(arg_x≡)` keeps the meaning, and `(arg_x)` with it: equal arguments of the parameters before a
 variable, and equal arguments of its type, which the first ones instantiate, are equal substitutions
 of the parameters. -/
@@ -287,22 +378,21 @@ theorem ValidEqInstanceArgsΓ.var {Γ Δ : Scope} {ctx : Context 0 Γ} {as₁ as
   rw [← Term.subst_subst_of (InstanceArgs.toSubst_subst σ₁ as₁) A]
   exact ha.2 σ₁ σ₂ h
 
--- ADE: none.
 /-- `(arg_X≡)` keeps the meaning, and `(arg_X)` with it: equal arguments of the parameters before a
 second-order variable, and equal abstractions for it, under the variables of its telescope, which
 the first ones instantiate, are equal substitutions of the parameters; the abstractions at equal
 substitutions of the telescope are the abstractions at equal substitutions of the context extended
 by it. -/
-theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {χ₀ : Option Grade}
+theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} {ψ : ResultOwnership Grade ps.length}
     {ctx : Context 0 Γ} {as₁ as₂ : InstanceArgs 0 Γ Δ} {params : Context 0 Δ}
     {Θ : Telescope 0 Δ ps} {A : Term 0 (Δ.extend ps.length)} {B₁ B₂ : Term 0 (Γ.extend ps.length)}
     (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂ params)
     (hB : ValidEqTermΓ sig ι (ctx.append (Θ.subst as₁.toSubst)) B₁ B₂
       (A.subst (Subst.liftN _ as₁.toSubst))) :
-    ValidEqInstanceArgsΓ sig ι ctx (.snoc (e := .secondOrder ps χ₀) as₁ B₁)
-      (.snoc (e := .secondOrder ps χ₀) as₂ B₂) (params.secondOrder Θ A χ₀) := by
+    ValidEqInstanceArgsΓ sig ι ctx (.snoc (e := .secondOrder ps ψ) as₁ B₁)
+      (.snoc (e := .secondOrder ps ψ) as₂ B₂) (params.secondOrder Θ A ψ) := by
   refine ⟨has.1, fun σ₁ σ₂ h =>
-    (EqSubst.secondOrder_iff params Θ A χ₀ _ _).2 ⟨has.2 σ₁ σ₂ h, fun τ₁ τ₂ hτ => ?_⟩⟩
+    (EqSubst.secondOrder_iff params Θ A ψ _ _).2 ⟨has.2 σ₁ σ₂ h, fun τ₁ τ₂ hτ => ?_⟩⟩
   have hc : ∀ {a} (x : Var Δ a), (as₁.toSubst x).subst (Subst.liftN a.params.length σ₁) =
       (as₁.subst σ₁).toSubst x := InstanceArgs.toSubst_subst σ₁ as₁
   change EqSubst sig ι (Context.empty.append (Θ.subst (as₁.subst σ₁).toSubst)) τ₁ τ₂ at hτ
@@ -316,28 +406,802 @@ theorem ValidEqInstanceArgsΓ.secondOrder {Γ Δ : Scope} {ps : List Parameter} 
 
 /-! ## Telescopes in a Sort -/
 
--- ADE: none.
-/-- `(tel_κε)` keeps the meaning. -/
-theorem ValidTelescopeΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
-    {κ : Universe 0} : ValidTelescopeΓ sig ι ctx .nil κ :=
-  ⟨hctx, fun _ _ _ => hctx.validSig⟩
+/-- `(tel_κε≡)` keeps the meaning, and `(tel_κε)` with it. -/
+theorem ValidEqTelescopeΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
+    {κ : Universe 0} : ValidEqTelescopeΓ sig ι ctx .nil .nil κ :=
+  ⟨hctx, fun _ _ _ => hctx.distinct⟩
 
--- ADE: none.
-/-- `(tel_κ,)` keeps the meaning: the first types are equal types of the sort `κ₁`, which `κ₂`
-bounds, and the rest of the telescope at equal terms of them is the telescope at equal substitutions
-of the context extended by its first entry; the meaning ignores the grades. -/
-theorem ValidTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
-    {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 (.var :: Γ) ps} {κ₁ κ₂ : Universe 0}
-    (hA : ValidTermΓ sig ι ctx A (.sort κ₁)) (hκ : κ₁ ≼ κ₂)
-    (hΘ : ValidTelescopeΓ sig ι (ctx.var A) Θ κ₂) : ValidTelescopeΓ sig ι ctx (.cons q p A Θ) κ₂ := by
+/-- `(tel_κ,≡)` keeps the meaning, and `(tel_κ,)` with it: the first types are equal types of the
+sort `κ₁`, which `κ₂` bounds, and the rest of the telescopes at equal terms of them are the
+telescopes at equal substitutions of the context extended by the first entry of the first one; the
+meaning ignores the grades. -/
+theorem ValidEqTelescopeΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ}
+    {q₁ q₂ : Grade} {p : Parameter} {A₁ A₂ : Term 0 Γ} {Θ₁ Θ₂ : Telescope 0 (.var :: Γ) ps}
+    {κ₁ κ₂ : Universe 0} (hA : ValidEqTermΓ sig ι ctx A₁ A₂ (.sort κ₁)) (hκ : κ₁ ≼ κ₂)
+    (hΘ : ValidEqTelescopeΓ sig ι (ctx.var A₁) Θ₁ Θ₂ κ₂) :
+    ValidEqTelescopeΓ sig ι ctx (.cons q₁ p A₁ Θ₁) (.cons q₂ p A₂ Θ₂) κ₂ := by
   refine ⟨hA.1.1, fun σ₁ σ₂ h => ?_⟩
-  show (∃ κ, κ ≼ κ₂ ∧ ValidEqTerm₀ sig ι (A.subst σ₁) (A.subst σ₂) (.sort κ)) ∧
-    ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ (A.subst σ₁) →
-      ValidEqTelescope₀ sig ι κ₂ ((Θ.subst (Subst.lift σ₁)).subst₀ (Subst₀.single v₁))
-        ((Θ.subst (Subst.lift σ₂)).subst₀ (Subst₀.single v₂))
+  show (∃ κ, κ ≼ κ₂ ∧ ValidEqTerm₀ sig ι (A₁.subst σ₁) (A₂.subst σ₂) (.sort κ)) ∧
+    ∀ v₁ v₂, ValidEqTerm₀ sig ι v₁ v₂ (A₁.subst σ₁) →
+      ValidEqTelescope₀ sig ι κ₂ ((Θ₁.subst (Subst.lift σ₁)).subst₀ (Subst₀.single v₁))
+        ((Θ₂.subst (Subst.lift σ₂)).subst₀ (Subst₀.single v₂))
   refine ⟨⟨κ₁, hκ, hA.2 σ₁ σ₂ h⟩, fun v₁ v₂ hv => ?_⟩
   rw [Telescope.subst_lift_single, Telescope.subst_lift_single]
-  exact hΘ.2 _ _ ((EqSubst.var_iff ctx A _ _).2 ⟨h, hv⟩)
+  exact hΘ.2 _ _ ((EqSubst.var_iff ctx A₁ _ _).2 ⟨h, hv⟩)
+
+/-- `(fields_ε)` keeps the meaning: no field. -/
+theorem ValidFieldsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} (hctx : ValidCtx₀ sig ι ctx)
+    {names : List Name} {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {κ : Universe 0} :
+    ValidFieldsΓ sig ι ctx names inst rs .nil κ :=
+  ⟨hctx, fun _ _ _ => hctx.distinct⟩
+
+/-- `(fields_,)` keeps the meaning: a first field without position, whose type is a type of the
+sort `κ₁`, which `κ` bounds, and the rest at equal terms of it, which are the fields at equal
+substitutions of the context extended by it, at which the instances of the block are the same. -/
+theorem ValidFieldsΓ.cons {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
+    {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 (.var :: Γ) ps} {κ₁ κ : Universe 0}
+    {names : List Name} {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} (hA : ValidTermΓ sig ι ctx A (.sort κ₁))
+    (hκ : κ₁ ≼ κ) (hr : rs 0 = .plain)
+    (hΘ : ValidFieldsΓ sig ι (ctx.var A) names (fun D => (inst D).rename Ren.weaken)
+      (fun i => rs (i + 1)) Θ κ) :
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p A Θ) κ := by
+  refine ⟨hA.1.1, fun σ₁ σ₂ h => ?_⟩
+  rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
+  refine ⟨⟨κ₁, hκ, hA.2 σ₁ σ₂ h⟩, fun v₁ v₂ hv => ?_⟩
+  rw [Telescope.subst_lift_single, Telescope.subst_lift_single]
+  have := hΘ.2 _ _ ((EqSubst.var_iff ctx A (Subst.append (n := 1) σ₁ (Subst.closedSingle v₁))
+    (Subst.append (n := 1) σ₂ (Subst.closedSingle v₂))).2 ⟨h, hv⟩)
+  have heq : ∀ (σ : Subst 0 [] Γ) (v : Term 0 []) D,
+      ((inst D).rename Ren.weaken).subst (Subst.append (n := 1) σ (Subst.closedSingle v)) =
+        (inst D).subst σ :=
+    fun σ _ D => Term.subst_rename_of (fun x => Subst.append_weakenN σ _ x) _
+  rw [show (fun D => (inst D).subst σ₁) = fun D => ((inst D).rename Ren.weaken).subst
+      (Subst.append (n := 1) σ₁ (Subst.closedSingle v₁)) from funext fun D => (heq σ₁ v₁ D).symm,
+    show (fun D => (inst D).subst σ₂) = fun D => ((inst D).rename Ren.weaken).subst
+      (Subst.append (n := 1) σ₂ (Subst.closedSingle v₂)) from funext fun D => (heq σ₂ v₂ D).symm]
+  exact this
+
+/-- `(fields_rec)` keeps the meaning: a first field that is recursive, the instance of a type of the
+block, and the rest, which does not depend on it, at any terms of it. -/
+theorem ValidFieldsΓ.recursive {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
+    {p : Parameter} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {names : List Name}
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {D : Name} (hr : rs 0 = .direct D)
+    (hΘ : ValidFieldsΓ sig ι ctx names inst (fun i => rs (i + 1)) Θ κ) :
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p (inst D) (Θ.rename Ren.weaken)) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
+  refine ⟨rfl, rfl, fun v₁ v₂ => ?_⟩
+  have heq : ∀ (σ : Subst 0 [] Γ) (v : Term 0 []),
+      (Θ.rename Ren.weaken).subst (Subst.append (n := 1) σ (Subst.closedSingle v)) = Θ.subst σ :=
+    fun σ _ => Telescope.subst_rename_of (fun x => Subst.append_weakenN σ _ x) _
+  rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
+  exact hΘ.2 σ₁ σ₂ h
+
+/-- `(fields_λ)` keeps the meaning: a first field that is nested, which the graphs of the nestings
+read with one equality and with one relation of run time at equal substitutions of the context,
+and which is a type of a sort that `κ` bounds when the instances of the types of the block are types
+of `κ`, and the rest, which does not depend on it, at any terms of it. -/
+theorem ValidFieldsΓ.nested {Γ : Scope} {ps : List Parameter} {ctx : Context 0 Γ} {q : Grade}
+    {p : Parameter} {A : Term 0 Γ} {Θ : Telescope 0 Γ ps} {κ : Universe 0} {names : List Name}
+    {inst : Name → Term 0 Γ} {rs : Nat → Nest Name} {νs : List (Nest Name)}
+    (hr : rs 0 = .inst νs)
+    (hA : ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      (∀ R : Name → TermRel, ∃ F,
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
+          (Nest.map (fun D => ((inst D).subst σ₁, R D)) (.inst νs)) (A.subst σ₁) F ∧
+        NestRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality κ.quality
+          (Nest.map (fun D => ((inst D).subst σ₂, R D)) (.inst νs)) (A.subst σ₂) F) ∧
+      (κ.quality = .type → ∀ (P : Program) (Q : Name → RunRel), ∃ R,
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => ((inst D).subst σ₁, Q D)) (.inst νs)) (A.subst σ₁) R ∧
+        RunNestRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m)
+          (Nest.map (fun D => ((inst D).subst σ₂, Q D)) (.inst νs)) (A.subst σ₂) R) ∧
+      ((∀ D ∈ names, ValidEqTerm₀ sig ι ((inst D).subst σ₁) ((inst D).subst σ₂) (.sort κ)) →
+        ∃ κ₁, κ₁ ≼ κ ∧ ValidEqTerm₀ sig ι (A.subst σ₁) (A.subst σ₂) (.sort κ₁)))
+    (hΘ : ValidFieldsΓ sig ι ctx names inst (fun i => rs (i + 1)) Θ κ) :
+    ValidFieldsΓ sig ι ctx names inst rs (.cons q p A (Θ.rename Ren.weaken)) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [Telescope.subst, Telescope.subst, ValidEqFields₀, hr]
+  obtain ⟨h₁, h₂, h₃⟩ := hA σ₁ σ₂ h
+  refine ⟨h₁, h₂, h₃, fun v₁ v₂ => ?_⟩
+  have heq : ∀ (σ : Subst 0 [] Γ) (v : Term 0 []),
+      (Θ.rename Ren.weaken).subst (Subst.append (n := 1) σ (Subst.closedSingle v)) = Θ.subst σ :=
+    fun σ _ => Telescope.subst_rename_of (fun x => Subst.append_weakenN σ _ x) _
+  rw [Telescope.subst_lift_single, Telescope.subst_lift_single, heq, heq]
+  exact hΘ.2 σ₁ σ₂ h
+
+/-! ## Formation of the Destructors of a Block -/
+
+/-- Renamed destructors, at closed substitutions that the renaming composes, are equal when the
+destructors are, at the composed substitutions, with the instances of the block renamed. -/
+theorem ValidEqDestructors₀.rename {κ : Universe 0} :
+    {Γ Δ : Scope} → {ns : List Name} → (α : Ren Γ Δ) → {inst : Name → Term 0 Δ} →
+      {rs : Nat → Option Name} → {nested : Nat → Bool} → {ds : Destructors 0 Δ ns} →
+      {θ₁ θ₂ : Subst 0 [] Γ} →
+      {θ₁' θ₂' : Subst 0 [] Δ} → (∀ {a} (x : Var Δ a), θ₁ (α x) = θ₁' x) →
+      (∀ {a} (x : Var Δ a), θ₂ (α x) = θ₂' x) →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁' θ₂' →
+      ValidEqDestructors₀ sig ι κ (fun D => (inst D).rename α) rs nested (ds.rename α) θ₁ θ₂
+  | _, _, _, _, _, _, _, .nil, _, _, _, _, _, _, h => h
+  | _, _, _, α, inst, rs, nested, .cons (ps := ps) (ψ := ψ) _ _ _ Θ B ds, θ₁, θ₂, θ₁', θ₂', h₁, h₂,
+      h => by
+    rw [ValidEqDestructors₀] at h
+    rw [Destructors.rename, ValidEqDestructors₀, Telescope.subst_rename_of h₁,
+      Telescope.subst_rename_of h₂]
+    obtain ⟨hΘ, h⟩ := h
+    refine ⟨hΘ, ?_⟩
+    have hB : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (α x) = θ' x) →
+        ∀ τ, (B.rename (Ren.liftN ps.length α)).subst (Subst.append θ τ) =
+          B.subst (Subst.append θ' τ) := fun θ θ' hθ τ =>
+      Term.subst_rename_of (Subst.append_liftN_rename α hθ τ) B
+    have hsnoc : ∀ (θ : Subst 0 [] _) (θ' : Subst 0 [] _), (∀ {a} (x : Var _ a), θ (α x) = θ' x) →
+        ∀ f {a} (x : Var (.secondOrder ps ψ :: _) a),
+          Subst.snoc (e := .secondOrder ps ψ) θ f (Ren.lift α x) =
+            Subst.snoc (e := .secondOrder ps ψ) θ' f x := fun θ θ' hθ f a x => by
+      cases x with
+      | zero => rfl
+      | succ x => exact hθ x
+    have hinst : (fun D => ((inst D).rename α).rename Ren.weaken) =
+        fun D => ((inst D).rename Ren.weaken).rename (Ren.lift (e := .secondOrder ps ψ) α) :=
+      funext fun D => (Term.rename_rename_of (α₃ := fun x => Ren.weaken (α x)) (fun _ => rfl)
+        _).trans (Term.rename_rename_of (α₁ := Ren.lift α) (α₂ := Ren.weaken)
+          (α₃ := fun x => Ren.weaken (α x)) (fun _ => rfl) _).symm
+    split at h
+    · obtain ⟨⟨κ₁, hκ, hBe⟩, hds⟩ := h
+      refine ⟨⟨κ₁, hκ, fun τ₁ τ₂ hτ => ?_⟩, fun f₁ f₂ hf => ?_⟩
+      · rw [hB θ₁ θ₁' h₁, hB θ₂ θ₂' h₂]
+        exact hBe τ₁ τ₂ hτ
+      · rw [hinst]
+        refine ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂ fun τ₁ τ₂ hτ => ?_)
+        rw [← hB θ₁ θ₁' h₁]
+        exact hf τ₁ τ₂ hτ
+    · obtain ⟨⟨κ₁, hκ, hBe⟩, hds⟩ := h
+      refine ⟨⟨κ₁, hκ, fun τ₁ τ₂ hτ => ?_⟩, fun f₁ f₂ => ?_⟩
+      · rw [hB θ₁ θ₁' h₁, hB θ₂ θ₂' h₂]
+        exact hBe τ₁ τ₂ hτ
+      · rw [hinst]
+        exact ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂)
+    · rename_i D _ _
+      obtain ⟨hBD, hds⟩ := h
+      refine ⟨?_, fun f₁ f₂ => ?_⟩
+      · rw [hBD, Term.rename_rename_of (α₁ := Ren.liftN ps.length α)
+            (α₂ := Ren.weakenN ps.length) (α₃ := fun x => (α x).weakenN ps.length)
+            (fun x => Ren.liftN_weakenN _ α x),
+          Term.rename_rename_of (α₁ := Ren.weakenN ps.length) (α₂ := α)
+            (α₃ := fun x => (α x).weakenN ps.length) (fun _ => rfl)]
+      · rw [hinst]
+        exact ValidEqDestructors₀.rename (Ren.lift α) (hsnoc θ₁ θ₁' h₁ f₁) (hsnoc θ₂ θ₂' h₂ f₂)
+          (hds f₁ f₂)
+
+/-- `(⊨d̄_κε)`, in a context. -/
+theorem ValidDestructorsΓ.nil {Γ : Scope} {ctx : Context 0 Γ} {inst : Name → Term 0 Γ}
+    {rs : Nat → Option Name} {nested : Nat → Bool} {κ : Universe 0} (hctx : ValidCtx₀ sig ι ctx) :
+    ValidDestructorsΓ sig ι ctx inst rs nested .nil κ :=
+  ⟨hctx, fun _ _ _ => by rw [ValidEqDestructors₀]; exact hctx.distinct⟩
+
+/-- `(⊨d̄_κ|)`, in a context: the destructors after a destructor that is not recursive and whose
+result has no position are in the context extended by it. -/
+theorem ValidDestructorsΓ.cons {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length}
+    {ς : Grade} {ds : Destructors 0 (.secondOrder ps ψ :: Γ) ns}
+    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} {nested : Nat → Bool}
+    (hr : rs 0 = none) (hn : nested 0 = false)
+    (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+    (hds : ValidDestructorsΓ sig ι (ctx.secondOrder Θ B ψ) (fun D => (inst D).rename Ren.weaken)
+      (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested (.cons (d := d) p q ς Θ B ψ ds) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr, hn]
+  refine ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
+    hB.2 _ _ ((EqSubst.append_append_iff ctx Θ σ₁ σ₂ τ₁ τ₂).2 ⟨h, hτ⟩)⟩, fun f₁ f₂ hf => ?_⟩
+  refine hds.2 _ _ ((EqSubst.secondOrder_iff ctx Θ B ψ _ _).2 ⟨h, fun τ₁ τ₂ hτ => ?_⟩)
+  show ValidEqTerm₀ sig ι (f₁.subst τ₁) (f₂.subst τ₂) ((B.subst (Subst.liftN _ σ₁)).subst τ₁)
+  rw [Term.subst_append]
+  exact hf τ₁ τ₂ hτ
+
+/-- `(⊨d̄_κλ)`, in a context: the destructors after a destructor that is not recursive and whose
+result has a position, which do not depend on it, are in the same context. -/
+theorem ValidDestructorsΓ.nested {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {B : Term 0 (Γ.extend ps.length)}
+    {ψ : ResultOwnership Grade ps.length} {ς : Grade} {ds : Destructors 0 Γ ns}
+    {κ₁ κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name} {nested : Nat → Bool}
+    (hr : rs 0 = none) (hn : nested 0 = true)
+    (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hB : ValidTermΓ sig ι (ctx.append Θ) B (.sort κ₁)) (hκ : κ₁ ≼ κ)
+    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested
+      (.cons (d := d) p q ς Θ B ψ (ds.rename Ren.weaken)) κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr, hn]
+  exact ⟨hΘ.2 σ₁ σ₂ h, ⟨κ₁, hκ, fun τ₁ τ₂ hτ =>
+    hB.2 _ _ ((EqSubst.append_append_iff ctx Θ σ₁ σ₂ τ₁ τ₂).2 ⟨h, hτ⟩)⟩, fun f₁ f₂ =>
+    ValidEqDestructors₀.rename (θ₁' := σ₁) (θ₂' := σ₂) Ren.weaken (fun _ => rfl) (fun _ => rfl)
+      (hds.2 σ₁ σ₂ h)⟩
+
+/-- `(⊨d̄_κrec)`, in a context: the destructors after a recursive destructor, which do not depend on
+it, are in the same context. -/
+theorem ValidDestructorsΓ.recursive {Γ : Scope} {d : Name} {ns : List Name} {ps : List Parameter}
+    {ctx : Context 0 Γ} {p q : Grade} {Θ : Telescope 0 Γ ps} {ψ : ResultOwnership Grade ps.length}
+    {ς : Grade}
+    {ds : Destructors 0 Γ ns} {κ : Universe 0} {inst : Name → Term 0 Γ} {rs : Nat → Option Name}
+    {nested : Nat → Bool}
+    {D : Name} (hr : rs 0 = some D) (hΘ : ValidTelescopeΓ sig ι ctx Θ ⟨.type, κ.level⟩)
+    (hds : ValidDestructorsΓ sig ι ctx inst (fun i => rs (i + 1)) (fun i => nested (i + 1)) ds κ) :
+    ValidDestructorsΓ sig ι ctx inst rs nested
+      (.cons (d := d) p q ς Θ ((inst D).rename (Ren.weakenN ps.length)) ψ (ds.rename Ren.weaken))
+      κ := by
+  refine ⟨hΘ.1, fun σ₁ σ₂ h => ?_⟩
+  rw [ValidEqDestructors₀, hr]
+  exact ⟨hΘ.2 σ₁ σ₂ h, rfl, fun f₁ f₂ =>
+    ValidEqDestructors₀.rename (θ₁' := σ₁) (θ₂' := σ₂) Ren.weaken (fun _ => rfl) (fun _ => rfl)
+      (hds.2 σ₁ σ₂ h)⟩
+
+/-- Destructors equal in a sort `κ` at two closed substitutions of their scope are destructors of the
+graph of `κ` with the same equality of the abstractions for them, at these substitutions, whatever
+the relations `Rf D` of the results of their recursive destructors of the type `D`, in a signature
+whose names are distinct: the equality of the results of a destructor is defined from the graph at
+the first substitution, rather than chosen, since the graph gives one at most, and so is that of the
+destructors after it, at each abstraction for it; after a recursive destructor, on which they do not
+depend, it is the one at any abstraction. -/
+theorem ValidEqDestructors₀.desRel (hd : sig.Distinct) {κ : Universe 0} (Rf : Name → TermRel) :
+    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} →
+      {ds : Destructors 0 Γ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ →
+      ∃ S, DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs i).map Rf) ds @θ₁ S ∧
+        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs i).map Rf) ds @θ₂ S
+  | _, _, _, _, _, .nil, _, _, _ => ⟨fun _ _ => True, .nil, .nil⟩
+  | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, h => by
+    replace h := h.cons_inv
+    obtain ⟨hΘ, h⟩ := h
+    have ih := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
+    obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
+    have hSp := TelRel.isPer hd ih (fun _ => .plain) hT₁
+    split at h
+    · rename_i hr
+      obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
+      obtain ⟨hF₁, hF₂, hBresp, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 (hκ.2 Fin.elim0) hB
+      let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
+      let G : Term 0 (Scope.extend [] ps.length) → ObsRel := Math.Rel₂.ofGraph fun f S' =>
+        DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S'
+      have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+        Math.Rel₂.ofGraph_eq hS' fun _ h' => DesRel.unique hd ih h' _ _ hS'
+      have hG : ∀ f, AbstractionRel SΘ F f f →
+          DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) (G f) ∧
+          DesRel sig ι κ.level.closedValue (fun m _ => levelRel sig ι m) κ.quality
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₂ f) (G f) :=
+          fun f hf => by
+        obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f (hcond f f hf))
+        rw [hGeq f S' h₁]
+        exact ⟨h₁, h₂⟩
+      have hresp : ∀ f₁ f₂, AbstractionRel SΘ F f₁ f₂ → ∀ o₁ o₂, G f₁ o₁ o₂ ↔ G f₂ o₁ o₂ :=
+        fun f₁ f₂ hf o₁ o₂ => by
+          have hEp := AbstractionRel.isPer hSp (fun ts hts =>
+            have ⟨⟨w, hw⟩, hF⟩ := hF₁ ts hts
+            FieldRel.isPer hd ih (hF w hw)) hBresp
+          obtain ⟨S', h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₁ f₂ (hcond f₁ f₂ hf))
+          have hf₂ := hEp.right hf
+          obtain ⟨S'', h₁', h₂'⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₂ f₂ (hcond f₂ f₂ hf₂))
+          rw [hGeq f₁ S' h₁, hGeq f₂ S'' h₁']
+          exact DesRel.unique hd ih h₂ _ _ h₂' o₁ o₂
+      have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
+      exact ⟨_, .cons hT₁ F (fun ts hts => (hF₁ ts hts).1) (fun ts hts => (hF₁ ts hts).2) hBresp G
+          (fun f hf => (hG f hf).1) hresp hr',
+        .cons hT₂ F (fun ts hts => (hF₂ ts hts).1) (fun ts hts => (hF₂ ts hts).2) hBresp G
+          (fun f hf => (hG f hf).2) hresp hr'⟩
+    · rename_i D hr
+      obtain ⟨-, hds⟩ := h
+      let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
+      obtain ⟨G, h₀₁, h₀₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f₀)
+      have hr' : (rs 0).map Rf = some (Rf D) := by rw [hr]; rfl
+      refine ⟨_, .recursive hr' hT₁ G fun f => ?_, .recursive hr' hT₂ G fun f => ?_⟩
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f f₀)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (DesRel.unique hd ih h₂ _ _ h₀₂)
+        exact hSG ▸ h₁
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.desRel hd Rf (hds f₀ f)
+        have hSG : S = G := Math.Rel₂.ext_of_iff (DesRel.unique hd ih h₁ _ _ h₀₁)
+        exact hSG ▸ h₂
+
+/-- Destructors of the codata type `D` equal in a sort `κ` of types at two closed substitutions of
+their scope are destructors of the graph of run time of `U_n`, at the level `n` of `κ`, with the
+same relation of run time of the observations by them, at these substitutions, for each program
+`P`, whatever the relations `Rf D'` of the results of their recursive destructors of the type `D'`,
+in a signature whose names are distinct and that gives each of them a case: as for the equality,
+the relations of the results of a destructor and of the destructors after it are defined from the
+graph at the first substitution, and after a recursive destructor, on which they do not depend, it
+is the one at any abstraction. -/
+theorem ValidEqDestructors₀.runDesRel (hd : sig.Distinct) (P : Program) {κ : Universe 0}
+    (hs : κ.quality = .type) (D : Name) (Rf : Name → RunRel) :
+    {Γ : Scope} → {ns : List Name} → {inst : Name → Term 0 Γ} → {rs : Nat → Option Name} → {nested : Nat → Bool} →
+      {ds : Destructors 0 Γ ns} → {θ₁ θ₂ : Subst 0 [] Γ} →
+      (∀ d ∈ ns, ∃ i, sig.destructorCase D d = some i) →
+      ValidEqDestructors₀ sig ι κ inst rs nested ds θ₁ θ₂ →
+      ∃ S, RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
+          (fun i => (rs i).map Rf) ds @θ₁ S ∧
+        RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
+          (fun i => (rs i).map Rf) ds @θ₂ S
+  | _, _, _, _, _, .nil, _, _, _, _ => ⟨fun _ _ _ => True, .nil, .nil⟩
+  | _, _, _, rs, _, .cons (d := d) (ps := ps) _ _ _ Θ B ψ ds, θ₁, θ₂, hcase, h => by
+    replace h := h.cons_inv
+    obtain ⟨hΘ, h⟩ := h
+    have ihm := levelRel_isPer_lt (ι := ι) hd κ.level.closedValue
+    have ih : ∀ m, m < κ.level.closedValue → RunLevelRel.Unique ((levelRel sig ι m).run P) :=
+      levelRel_run_unique_lt hd _
+    have hrr : ∀ i, Option.Rel (fun x y : RunRel => ∀ H t a, x H t a ↔ y H t a)
+        ((rs (i + 1)).map Rf) ((rs (i + 1)).map Rf) :=
+      fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _
+    obtain ⟨i, hi⟩ := hcase d List.mem_cons_self
+    have hcase' := fun d' (hd' : d' ∈ _) => hcase d' (List.mem_cons_of_mem _ hd')
+    obtain ⟨SΘ, hT₁, hT₂⟩ := hΘ.telRel hd
+    obtain ⟨RΘ, hRT₁, hRT₂⟩ := hΘ.runTelRel hd P rfl
+    split at h
+    · rename_i hr
+      obtain ⟨⟨κ₁, hκ, hB⟩, hds⟩ := h
+      obtain ⟨hF₁, hF₂, -, hcond⟩ := FieldRel.atArgs_head hd hT₁ hκ.1 (hκ.2 Fin.elim0) hB
+      obtain ⟨hR₁, hR₂⟩ := RunFieldRel.atArgs_head hd P hT₁ (hκ.2 Fin.elim0) hB
+      let F : Terms 0 [] → TermRel := FieldRel.atArgs sig ι κ.level.closedValue κ.quality fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
+      let R : Terms 0 [] → RunRel := RunFieldRel.atArgs sig ι P κ.level.closedValue fun ts =>
+        B.subst (Subst.append θ₁ ts.toSubst)
+      let G : Term 0 (Scope.extend [] ps.length) → RunObsRel := Math.Rel₃.ofGraph fun f S' =>
+        RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
+          (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) S'
+      have hGeq : ∀ f S', _ → G f = S' := fun _ _ hS' =>
+        Math.Rel₃.ofGraph_eq hS' fun _ h' => RunDesRel.congr hd ihm ih h' _ _ hS' hrr
+      have hG : ∀ f, AbstractionRel SΘ F f f →
+          RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₁ f) (G f) ∧
+          RunDesRel sig ι P κ.level.closedValue (fun m _ => levelRel sig ι m) D
+            (fun i => (rs (i + 1)).map Rf) ds (Subst.snoc (e := .secondOrder ps ψ) θ₂ f) (G f) :=
+          fun f hf => by
+        obtain ⟨S', h₁, h₂⟩ :=
+          ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f f (hcond f f hf))
+        rw [hGeq f S' h₁]
+        exact ⟨h₁, h₂⟩
+      have hr' : (rs 0).map Rf = none := by rw [hr]; rfl
+      exact ⟨_, .cons hi hT₁ hRT₁ F R (fun ts hts => (hF₁ ts hts).1)
+          (fun ts hts => hs ▸ (hF₁ ts hts).2) hR₁ G (fun f hf => (hG f hf).1) hr',
+        .cons hi hT₂ hRT₂ F R (fun ts hts => (hF₂ ts hts).1)
+          (fun ts hts => hs ▸ (hF₂ ts hts).2) hR₂ G (fun f hf => (hG f hf).2) hr'⟩
+    · rename_i D' hr
+      obtain ⟨-, hds⟩ := h
+      let f₀ : Term 0 (Scope.extend [] ps.length) := .sort ⟨.type, .zero⟩
+      obtain ⟨G, h₀₁, h₀₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f₀ f₀)
+      have hr' : (rs 0).map Rf = some (Rf D') := by rw [hr]; rfl
+      refine ⟨_, .recursive hi hr' hRT₁ G fun f => ?_, .recursive hi hr' hRT₂ G fun f => ?_⟩
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f f₀)
+        have hSG : S = G := Math.Rel₃.ext_of_iff (RunDesRel.congr hd ihm ih h₂ _ _ h₀₂ hrr)
+        exact hSG ▸ h₁
+      · obtain ⟨S, h₁, h₂⟩ := ValidEqDestructors₀.runDesRel hd P hs D Rf hcase' (hds f₀ f)
+        have hSG : S = G := Math.Rel₃.ext_of_iff (RunDesRel.congr hd ihm ih h₁ _ _ h₀₁ hrr)
+        exact hSG ▸ h₂
+
+/-- At equal closed arguments of the parameters of a meaningful type declaration, the destructors of
+each of its codata types, at relations `Rf D` of its recursive destructors of the type `D`, are
+destructors of the graph of its sort at the two arguments with one equality `S Rf T` of the
+abstractions for them, defined from the graph rather than chosen, since the graph gives one at
+most. -/
+theorem ValidTypeDeclaration.destructorsRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality} {ls : List (Level 0)}
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst) :
+    ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      ∀ Rf, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (decl.sort hqp.inst).quality
+          (fun i => ((T.body hqp.inst).recursionAt decl.names i).map Rf)
+          ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst (S Rf T) ∧
+        DesRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (decl.sort hqp.inst).quality
+          (fun i => ((T.body hqp.inst).recursionAt decl.names i).map Rf)
+          ((T.body hqp.inst).substLevels (ls.getFin hl)) as₂.toSubst (S Rf T) := by
+  let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun Rf => Math.Rel₂.ofGraph fun T S' =>
+      DesRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+        (fun m _ => levelRel sig ι m) (decl.sort hqp.inst).quality
+        (fun i => ((T.body hqp.inst).recursionAt decl.names i).map Rf)
+        ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst S'
+  refine ⟨S, fun Rf T hT => ?_⟩
+  obtain ⟨S', h₁, h₂⟩ := (hv.destructorsAtClosedLevels hqp hl hadm has T hT).desRel hd Rf
+  have h₁' := DesRel.substLevels_of_atLevels hd h₁
+  have h₂' := DesRel.substLevels_of_atLevels hd h₂
+  have hS : S Rf T = S' := Math.Rel₂.ofGraph_eq h₁' fun _ h' =>
+    DesRel.unique hd (levelRel_isPer_lt hd _) h' _ _ h₁'
+  rw [hS]
+  exact ⟨h₁', h₂'⟩
+
+/-- The instances of the types of a meaningful block of codata types in a universe, at equal closed
+arguments of its parameters, are types of the graph of its sort whose equality is `(eq_ν)`, at the
+equality `S` of the destructors that the graph gives, which grows with the relations of the
+recursive destructors. -/
+theorem ValidTypeDeclaration.codataUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst)
+    (hs : (decl.sort hqp.inst).quality = .type) :
+    ∃ S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      (∀ X, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) .type
+          (fun i => ((T.body hqp.inst).recursionAt decl.names i).map
+            fun D' => (X D').computed sig ι)
+          ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst (S X T)) ∧
+      (∀ T ∈ decl.codataTypes,
+        UnivRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
+          (CodataType.blockRel decl.codataTypes S T.name) ∧
+        UnivRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
+          (CodataType.blockRel decl.codataTypes S T.name)) := by
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hqp hl hadm has
+  let S : (Name → TermRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun X => S₀ fun D => (X D).computed sig ι
+  refine ⟨S, fun X T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
+    ⟨.codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').1,
+      .codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun X T' hT' => hs ▸ (hS₀ _ T' hT').2⟩⟩
+
+/-- The instances of the types of a meaningful block of codata types in a universe, at equal closed
+arguments of its parameters, are types of the graph of run time of its sort whose relation of run
+time is `(®_ν)`, at a relation `S` of the destructors common to the two arguments, for each program
+`P`: the destructors of each type at the two arguments are destructors of the graph of run time with
+the same relation, defined from the graph at the first arguments, rather than chosen, since the
+graph gives one at most. -/
+theorem ValidTypeDeclaration.codataRunUnivRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst)
+    (hs : (decl.sort hqp.inst).quality = .type) (P : Program) :
+    ∃ S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope → RunObsRel,
+      ∀ T ∈ decl.codataTypes,
+        RunUnivRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
+          (CodataType.runBlockRel decl.codataTypes S T.name) ∧
+        RunUnivRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
+          (CodataType.runBlockRel decl.codataTypes S T.name) := by
+  have ih : ∀ m, m < (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue →
+      RunLevelRel.Unique ((levelRel sig ι m).run P) := levelRel_run_unique_lt hd _
+  let S : (Name → RunRel) → CodataType decl.sorts decl.grades decl.levels decl.scope →
+      RunObsRel := fun X => Math.Rel₃.ofGraph fun T S' =>
+    RunDesRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+      (fun m _ => levelRel sig ι m) T.name
+      (fun i => ((T.body hqp.inst).recursionAt decl.names i).map
+        fun D' => (X D').computed sig ι)
+      ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst S'
+  have hS : ∀ X, ∀ T ∈ decl.codataTypes,
+      RunDesRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+        (fun m _ => levelRel sig ι m) T.name
+        (fun i => ((T.body hqp.inst).recursionAt decl.names i).map
+          fun D' => (X D').computed sig ι)
+        ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst (S X T) ∧
+      RunDesRel sig ι P (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+        (fun m _ => levelRel sig ι m) T.name
+        (fun i => ((T.body hqp.inst).recursionAt decl.names i).map
+          fun D' => (X D').computed sig ι)
+        ((T.body hqp.inst).substLevels (ls.getFin hl)) as₂.toSubst (S X T) :=
+      fun X T hT => by
+    obtain ⟨S', h₁, h₂⟩ :=
+      (hv.destructorsAtClosedLevels hqp hl hadm has T hT).runDesRel hd P hs T.name
+        (fun D' => (X D').computed sig ι)
+        fun _ hdm => Signature.destructorCase_of_mem hdecl hT hdm
+    have h₁' := RunDesRel.substLevels_of_atLevels hd h₁
+    have h₂' := RunDesRel.substLevels_of_atLevels hd h₂
+    have hSS : S X T = S' := Math.Rel₃.ofGraph_eq h₁' fun _ h' =>
+      RunDesRel.congr hd (levelRel_isPer_lt hd _) ih h' _ _ h₁'
+        (fun _ => Option.rel_refl (fun _ _ _ _ => .rfl) _)
+    rw [hSS]
+    exact ⟨h₁', h₂'⟩
+  exact ⟨S, fun T hT =>
+    ⟨.codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun X T' hT' => (hS X T' hT').1,
+      .codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun X T' hT' => (hS X T' hT').2⟩⟩
+
+/-- The instances of the types of a meaningful block of codata types in a universe of propositions,
+at equal closed arguments of its parameters, are propositions of the graph of its sort whose truth
+is `(true_ν)`, at the equality `S` of the destructors that the graph gives, which grows with the
+truths of the recursive destructors. -/
+theorem ValidTypeDeclaration.codataPropRel (hd : sig.Distinct) {decl : TypeDeclaration}
+    (hdecl : .typeDeclaration decl ∈ sig) (hv : ValidTypeDeclaration sig ι decl)
+    {qs : List Quality} {ls : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst)
+    (hs : (decl.sort hqp.inst).quality = .prop) :
+    ∃ S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel,
+      (∀ B, ∀ T ∈ decl.codataTypes,
+        DesRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) .prop
+          (fun i => ((T.body hqp.inst).recursionAt decl.names i).map
+            fun D' => fun _ _ => B D')
+          ((T.body hqp.inst).substLevels (ls.getFin hl)) as₁.toSubst (S B T)) ∧
+      (∀ T ∈ decl.codataTypes,
+        PropRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₁)
+          (CodataType.blockTruth decl.codataTypes S T.name) ∧
+        PropRel sig ι (decl.sortAt hqp.inst (ls.getFin hl)).level.closedValue
+          (fun m _ => levelRel sig ι m) (.inst T.name qs ls ps as₂)
+          (CodataType.blockTruth decl.codataTypes S T.name)) := by
+  obtain ⟨S₀, hS₀⟩ := ValidTypeDeclaration.destructorsRel hd hv hqp hl hadm has
+  let S : (Name → Prop) → CodataType decl.sorts decl.grades decl.levels decl.scope → ObsRel :=
+    fun B => S₀ fun D _ _ => B D
+  refine ⟨S, fun B T hT => hs ▸ (hS₀ _ T hT).1, fun T hT =>
+    ⟨.codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun B T' hT' => hs ▸ (hS₀ _ T' hT').1,
+      .codata ⟨hdecl, hT, rfl⟩ hqp hl rfl hs rfl S fun B T' hT' => hs ▸ (hS₀ _ T' hT').2⟩⟩
+
+/-! ## Instances and Constructors
+
+An instance of a codata type is a term of its sort, as `(D)` gives it, whose destructors are those
+of the graph of its sort at equal arguments, and the rules of the instances and of the constructors
+of the declared types keep the meaning. -/
+
+/-- `(D)`, closed, for a codata type: two instances of a codata type of `Σ`, whose type declaration
+is meaningful, at the same levels and at equal arguments of its parameters, are equal terms of its
+sort: the destructors of the types of its block at the two arguments are destructors of the graph
+of the sort with the same equality of the abstractions for them, and of the graph of run time with
+the same relation of the observations by them, for each program. -/
+theorem ValidEqTerm₀.instCodata (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) (hv : ValidTypeDeclaration sig ι decl) {qs : List Quality}
+    {ls : List (Level 0)} {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    (hadm : decl.constraint hqp.inst)
+    {as₁ as₂ : InstanceArgs 0 [] decl.scope}
+    (has : EqSubst sig ι ((decl.params hqp.inst).substLevels (ls.getFin hl))
+      as₁.toSubst as₂.toSubst) :
+    ValidEqTerm₀ sig ι (.inst D qs ls ps as₁) (.inst D qs ls ps as₂)
+      (.sort (decl.sortAt hqp.inst (ls.getFin hl))) := by
+  obtain ⟨hdecl, hT, rfl⟩ := h
+  have hw : ∀ as : InstanceArgs 0 [] decl.scope,
+      Computesι sig ι (.inst T.name qs ls ps as) (.inst T.name qs ls ps as) :=
+    fun as => (Whnf.inst _ _ _ _ as).computes
+  show ValidEqTerm₀ sig ι _ _ (.sort ⟨(decl.sort hqp.inst).quality,
+    (decl.sortAt hqp.inst (ls.getFin hl)).level⟩)
+  cases hs : (decl.sort hqp.inst).quality
+  · obtain ⟨S, -, hU⟩ := hv.codataUnivRel hd hdecl hqp hl hadm has hs
+    exact ValidEqTerm₀.ofUniv hd (hw as₁) (hw as₂) (levelRel_univ_iff.2 (hU T hT).1)
+      (levelRel_univ_iff.2 (hU T hT).2) fun P =>
+        have ⟨_, hR⟩ := hv.codataRunUnivRel hd hdecl hqp hl hadm has hs P
+        ⟨_, levelRel_run_iff.2 (hR T hT).1, levelRel_run_iff.2 (hR T hT).2⟩
+  · obtain ⟨S, -, hP⟩ := hv.codataPropRel hd hdecl hqp hl hadm has hs
+    exact ValidEqTerm₀.ofProp hd (hw as₁) (hw as₂) (levelRel_prop_iff.2 (hP T hT).1)
+      (levelRel_prop_iff.2 (hP T hT).2)
+
+/-- `(D_≡)` keeps the meaning, and `(D)` with it: equal arguments give, at equal substitutions of the
+context, equal arguments of the parameters, hence equal instances, and the second instance at levels
+of the same values is the same term up to its levels. -/
+theorem ValidEqTermΓ.inst {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {ζ : Instance decl.sorts decl.grades → GradeVector decl.scope.length}
+    (h : sigT.HasDeclaredType D decl ζ) {qs : List Quality} {ls₁ ls₂ : List (Level 0)}
+    {ps : List Grade} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels)
+    (hl₂ : ls₂.length = decl.levels)
+    (hadm : decl.constraint hqp.inst)
+    {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
+    (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
+      ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
+    (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i) :
+    ValidEqTermΓ sig ι ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₂ ps as₂)
+      (.sort ((decl.sort hqp.inst).substLevels (ls₁.getFin hl₁))) := by
+  have hd := has.1.distinct
+  have hc : ∀ σ₁ σ₂, EqSubst sig ι ctx σ₁ σ₂ →
+      ValidEqTerm₀ sig ι (.inst D qs ls₁ ps (as₁.subst σ₁)) (.inst D qs ls₁ ps (as₂.subst σ₂))
+        (.sort ((decl.sort hqp.inst).substLevels (ls₁.getFin hl₁))) :=
+    fun σ₁ σ₂ hσ => match h with
+      | ⟨hm, .inl ⟨_, hT, hn, _⟩⟩ =>
+        have ⟨h', hv⟩ := hent.hasDataType ⟨hm, hT, hn⟩
+        ValidEqTerm₀.inst hd h' hv hqp hl₁ hadm (has.2 σ₁ σ₂ hσ)
+      | ⟨hm, .inr ⟨_, hT, hn, _⟩⟩ =>
+        have ⟨h', hv⟩ := hent.hasCodataType ⟨hm, hT, hn⟩
+        ValidEqTerm₀.instCodata hd h' hv hqp hl₁ hadm (has.2 σ₁ σ₂ hσ)
+  refine ⟨⟨has.1, fun σ₁ σ₂ hσ => (hc σ₁ σ₂ hσ).1⟩, fun σ₁ σ₂ hσ => ?_⟩
+  exact (hc σ₁ σ₂ hσ).levelEquiv (Term.LevelEquiv.refl _)
+    (.inst D qs ps (Level.ListEquiv.of_getFin hl₁ hl₂ hls) (InstanceArgs.LevelEquiv.refl _))
+    (Term.LevelEquiv.refl _)
+
+/-- `(c_≡)` keeps the meaning, and `(c)` with it: equal arguments of the instance and of the fields
+give, at equal substitutions of the context, equal arguments of the parameters and equal arguments
+of the fields at the first ones, hence equal constructors, and the second constructor at levels of
+the same values is the same term up to its levels. -/
+theorem ValidEqTermΓ.ctor {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
+    (hent : sig.ValidEntries ι sigT) {decl : TypeDeclaration} {D : Name}
+    {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : sigT.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
+    {ls₁ ls₂ : List (Level 0)} {ps : List Grade}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl₁ : ls₁.length = decl.levels) (hl₂ : ls₂.length = decl.levels)
+    (hadm : decl.constraint hqp.inst) {as₁ as₂ : InstanceArgs 0 Γ decl.scope}
+    (has : ValidEqInstanceArgsΓ sig ι ctx as₁ as₂
+      ((decl.params hqp.inst).substLevels (ls₁.getFin hl₁)))
+    (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
+    {ts us : Args 0 Γ (con.params hqp.inst)}
+    (hts : ValidEqArgsΓ sig ι ctx ts us (con.fieldsAt hqp.inst (ls₁.getFin hl₁) as₁)) :
+    ValidEqTermΓ sig ι ctx (.ctor D qs ls₁ ps as₁ con.name ts.terms)
+      (.ctor D qs ls₂ ps as₂ con.name us.terms) (.inst D qs ls₁ ps as₁) := by
+  obtain ⟨h', hv⟩ := hent.hasDataType h
+  have hd := has.1.distinct
+  have hI : ValidEqTermΓ sig ι ctx (.inst D qs ls₁ ps as₁) (.inst D qs ls₁ ps as₂)
+      (.sort (decl.sortAt hqp.inst (ls₁.getFin hl₁))) :=
+    ValidEqTermΓ.inst hent h.hasDeclaredType hqp hl₁ hl₁ hadm has fun _ => Level.equivalence.refl _
+  have hA : ValidTypeΓ sig ι ctx (.inst D qs ls₁ ps as₁) := by
+    cases hs : (decl.sort hqp.inst).quality <;>
+      rw [TypeDeclaration.sortAt, Universe.substLevels, hs] at hI
+    · exact hI.univType.left
+    · exact hI.propType.left
+  refine ⟨hA, fun σ₁ σ₂ hσ => ?_⟩
+  have hc' := ValidEqTerm₀.ctor hd h' hv hc hqp hl₁ hadm (has.2 σ₁ σ₂ hσ)
+    (ts := ts.subst σ₁) (us := us.subst σ₂)
+    (by rw [← Constructor.fieldsAt_subst]; exact hts.2 σ₁ σ₂ hσ)
+  rw [Args.terms_subst, Args.terms_subst] at hc'
+  exact hc'.levelEquiv (Term.LevelEquiv.refl _)
+    (.ctor D qs ps con.name (Level.ListEquiv.of_getFin hl₁ hl₂ hls) (InstanceArgs.LevelEquiv.refl _)
+      (Terms.LevelEquiv.refl _))
+    (Term.LevelEquiv.refl _)
+
+/-! ## Equality of Two Terms -/
+
+-- ADE: `→⊩Id≡Id∷U`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(∼_≡)`, closed: two equalities of equal terms of equal types of the sort `s_l₁`, at levels of
+the same value, are equal propositions of `Ω_l₁`: the type of each computes to a type of this sort,
+which `(ty_∼)` reads, and their truths, that of the equality of their terms, agree, since the terms
+of the second are equal to those of the first, at an equal type. -/
+theorem ValidEqTerm₀.equality {s : Quality} {l₁ l₂ : Level 0} {A₁ A₂ t₁ t₂ u₁ u₂ : Term 0 []}
+    (hA : ValidEqTerm₀ sig ι A₁ A₂ (.sort ⟨s, l₁⟩)) (ht : ValidEqTerm₀ sig ι t₁ t₂ A₁)
+    (hu : ValidEqTerm₀ sig ι u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
+    ValidEqTerm₀ sig ι (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂) (.sort ⟨.prop, l₁⟩) := by
+  have hd := hA.1.1
+  have hAA : EqTypeClause sig ι A₁ A₂ := by
+    cases s
+    · exact hA.univType.2
+    · exact hA.propType.2
+  have htruth : EqTermClause sig ι t₁ u₁ A₁ ↔ EqTermClause sig ι t₂ u₂ A₂ :=
+    ⟨fun h => ((ht.2.symm hd).trans hd (h.trans hd hu.2)).conv hd hAA,
+      fun h => ht.2.trans hd ((h.conv hd hAA.symm).trans hd (hu.2.symm hd))⟩
+  have hl₂ : l₂.closedValue = l₁.closedValue := (hl Fin.elim0).symm
+  -- The types compute to types of `s_l₁` that the relation of this sort relates, which `(ty_∼)`
+  -- reads at the level of `l₁`, and so at that of `l₂`.
+  obtain ⟨-, hcl⟩ := hA
+  obtain ⟨v, w, R, hv, hw, hR, hvw⟩ := hcl.sort_inv
+  have hP : ∃ b₁ b₂, (levelRel sig ι l₁.closedValue).prop (.equality s l₁ A₁ t₁ u₁) b₁ ∧
+      (levelRel sig ι l₁.closedValue).prop (.equality s l₂ A₂ t₂ u₂) b₂ := by
+    cases hR with
+    | univ n hn =>
+      cases levelRel_univ_iff.1 hn with
+      | univ hk _ =>
+        subst hk
+        obtain ⟨⟨R', h₁, h₂⟩, -⟩ := hvw
+        exact ⟨_, _, levelRel_prop_iff.2 (.equalityUniv rfl hv (levelRel_univ_iff.1 h₁)),
+          levelRel_prop_iff.2 (.equalityUniv hl₂ hw (levelRel_univ_iff.1 h₂))⟩
+      | prop hk _ =>
+        subst hk
+        obtain ⟨b₁, b₂, h₁, h₂, -⟩ := hvw
+        exact ⟨_, _, levelRel_prop_iff.2 (.equalityProp rfl hv (levelRel_prop_iff.1 h₁)),
+          levelRel_prop_iff.2 (.equalityProp hl₂ hw (levelRel_prop_iff.1 h₂))⟩
+      | data _ _ _ hv => cases hv
+      | codata _ _ _ hv => cases hv
+    | prop _ _ hp => exact absurd ⟨_, _, hp⟩ not_isProp_sort
+  obtain ⟨b₁, b₂, hb₁, hb₂⟩ := hP
+  have hU := HasEq.univ (sig := sig) (ι := ι) (l₁.closedValue + 1)
+    (levelRel_univ_iff.2 (.prop (l := l₁) rfl rfl))
+  refine ⟨(ValidEqTerm₀.sort hd (q := .prop) (Level.equivalence.refl l₁)).univType,
+    fun _ => ⟨_, _, _, _, (Whnf.sort _).computes, (Whnf.equality ..).computes,
+      (Whnf.equality ..).computes, hU, b₁, b₂, hb₁, hb₂, ?_⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
+  exact (levelRel_prop_equality hd hb₁).trans (htruth.trans (levelRel_prop_equality hd hb₂).symm)
+
+-- ADE: `Id-congᵗᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(∼_≡)` keeps the meaning, and `(∼)` with it: equal types and equal terms give, at equal
+substitutions of the context, equal closed types and terms, hence equal equalities. -/
+theorem ValidEqTermΓ.equality {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l₁ l₂ : Level 0}
+    {A₁ A₂ t₁ t₂ u₁ u₂ : Term 0 Γ} (hA : ValidEqTermΓ sig ι ctx A₁ A₂ (.sort ⟨s, l₁⟩))
+    (ht : ValidEqTermΓ sig ι ctx t₁ t₂ A₁) (hu : ValidEqTermΓ sig ι ctx u₁ u₂ A₁) (hl : l₁ ≈ l₂) :
+    ValidEqTermΓ sig ι ctx (.equality s l₁ A₁ t₁ u₁) (.equality s l₂ A₂ t₂ u₂)
+      (.sort ⟨.prop, l₁⟩) :=
+  ⟨⟨hA.1.1, fun _ _ _ =>
+      (ValidEqTerm₀.sort hA.1.1.distinct (q := .prop) (Level.equivalence.refl l₁)).univType⟩,
+    fun σ₁ σ₂ hσ => ValidEqTerm₀.equality (hA.2 σ₁ σ₂ hσ) (ht.2 σ₁ σ₂ hσ) (hu.2 σ₁ σ₂ hσ) hl⟩
+
+/-- Every term is a proof of the equality of two terms of a type of a sort that are equal at every
+closed substitution: at two equal substitutions, the equality is a proposition, by `(∼)` at the
+first, whose truth, which `(ty_∼)` gives, is the equality of the terms, so that any two closed
+terms, the two proofs among them, are equal proofs of it. -/
+theorem ValidTermΓ.of_equality_eq {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t₁ t₂ p : Term 0 Γ}
+    (hE : ValidEqTermΓ sig ι ctx (.equality s l A t₁ t₂) (.equality s l A t₁ t₂) (.sort ⟨.prop, l⟩))
+    (htrue : ∀ σ : Subst 0 [] Γ, EqSubst sig ι ctx σ σ →
+      EqTermClause sig ι (t₁.subst σ) (t₂.subst σ) (A.subst σ)) :
+    ValidTermΓ sig ι ctx p (.equality s l A t₁ t₂) := by
+  have hd := hE.1.1.distinct
+  refine ⟨hE.propType, fun σ₁ _ hσ => ?_⟩
+  have hσ₁ := hσ.left hE.1.1
+  have hE₁ := hE.2 σ₁ σ₁ hσ₁
+  refine ⟨hE₁.propType, ?_⟩
+  -- The proposition computes to itself, whose truth `b` is the equality of the two terms.
+  obtain ⟨-, hcl⟩ := hE₁
+  obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
+  obtain ⟨n, b, hb⟩ := hR.prop_isProp hvw
+  cases Computesι.det hd hv (Whnf.equality ..).computes
+  exact ⟨fun hn => absurd ⟨_, hv, n, b, hb⟩ hn, fun _ => ⟨_, fun _ _ => b, hv,
+    .prop n b hb fun _ _ => .rfl, (levelRel_prop_equality hd hb).2 (htrue σ₁ hσ₁)⟩⟩
+
+-- ADE: `rflᵛ`, in `Definition/LogicalRelation/Substitution/Introductions/Identity.agda`.
+/-- `(refl_∼)` keeps the meaning: the term is equal to itself at every closed substitution. -/
+theorem ValidTermΓ.reflProof {Γ : Scope} {ctx : Context 0 Γ} {s : Quality} {l : Level 0}
+    {A t : Term 0 Γ} (hA : ValidTermΓ sig ι ctx A (.sort ⟨s, l⟩))
+    (ht : ValidTermΓ sig ι ctx t A) :
+    ValidTermΓ sig ι ctx (.refl s l A t) (.equality s l A t t) :=
+  .of_equality_eq (ValidEqTermΓ.equality hA ht ht (Level.equivalence.refl l))
+    fun σ hσ => (ht.2 σ σ hσ).2
+
+/-- `(propext)` keeps the meaning: at a closed substitution, the two propositions of `Ω_l` have the
+same truth, since each implication, at the substitution followed by a proof of its hypothesis, makes
+its conclusion true when its hypothesis is. -/
+theorem ValidTermΓ.propExt {Γ : Scope} {ctx : Context 0 Γ} {l : Level 0} {A B : Term 0 Γ}
+    {t u : Term 0 (.var :: Γ)} (hA : ValidTermΓ sig ι ctx A (.sort ⟨.prop, l⟩))
+    (hB : ValidTermΓ sig ι ctx B (.sort ⟨.prop, l⟩))
+    (ht : ValidTermΓ sig ι (ctx.var A) t (B.rename Ren.weaken))
+    (hu : ValidTermΓ sig ι (ctx.var B) u (A.rename Ren.weaken)) :
+    ValidTermΓ sig ι ctx (.propExt l A B t u)
+      (.equality .type (.succ l) (.sort ⟨.prop, l⟩) A B) := by
+  have hctx := hA.1.1
+  have hd := hctx.distinct
+  refine .of_equality_eq (ValidEqTermΓ.equality
+    (ValidEqTermΓ.sort hctx (q := .prop) (Level.equivalence.refl l)) hA hB
+    (Level.equivalence.refl _)) fun σ₁ hσ₁ => ?_
+  -- `Ω_l` relates two propositions with the same truth, and a proposition of `Ω_l` computes to one.
+  have hU := HasEq.univ (sig := sig) (ι := ι) (l.closedValue + 1)
+    (levelRel_univ_iff.2 (.prop (l := l) rfl rfl))
+  have hprop : ∀ {X : Term 0 []}, ValidEqTerm₀ sig ι X X (.sort ⟨.prop, l⟩) →
+      ∃ w b, Computesι sig ι X w ∧ (levelRel sig ι l.closedValue).prop w b := fun hX => by
+    obtain ⟨-, hcl⟩ := hX
+    obtain ⟨v, w, R, hv, -, hR, hvw⟩ := hcl.sort_inv
+    obtain ⟨b, -, hb, -⟩ := (hR.unique hd hU v w).1 hvw
+    exact ⟨v, b, hv, hb⟩
+  -- An implication makes its conclusion true when its hypothesis is, which every closed term
+  -- proves then.
+  have himp : ∀ {X Y : Term 0 Γ} {s : Term 0 (.var :: Γ)} {wX wY : Term 0 []} {bX bY : Prop},
+      ValidTermΓ sig ι ctx X (.sort ⟨.prop, l⟩) →
+      ValidTermΓ sig ι (ctx.var X) s (Y.rename Ren.weaken) →
+      Computesι sig ι (X.subst σ₁) wX → (levelRel sig ι l.closedValue).prop wX bX →
+      Computesι sig ι (Y.subst σ₁) wY → (levelRel sig ι l.closedValue).prop wY bY → bX → bY :=
+    fun {X Y s wX wY bX bY} hX hs hwX hbX hwY hbY hx => by
+      have hp : ValidEqTerm₀ sig ι (X.subst σ₁) (X.subst σ₁) (X.subst σ₁) :=
+        ⟨(hX.2 σ₁ σ₁ hσ₁).propType, fun hn => absurd ⟨_, hwX, _, _, hbX⟩ hn,
+          fun _ => ⟨wX, fun _ _ => bX, hwX, .prop _ bX hbX fun _ _ => .rfl, hx⟩⟩
+      have hs' := (congrArg (ValidEqTerm₀ sig ι _ _) (Term.subst_weaken _ Y)).mp
+        (hs.2 _ _ ((EqSubst.var_iff ctx X
+          (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))
+          (Subst.append (n := 1) σ₁ (Subst.closedSingle (X.subst σ₁)))).2 ⟨hσ₁, hp⟩))
+      exact hs'.prop_true hwY hbY
+  obtain ⟨w₁, b₁, hw₁, hb₁⟩ := hprop (hA.2 σ₁ σ₁ hσ₁)
+  obtain ⟨w₂, b₂, hw₂, hb₂⟩ := hprop (hB.2 σ₁ σ₁ hσ₁)
+  exact ⟨fun _ => ⟨_, w₁, w₂, _, (Whnf.sort _).computes, hw₁, hw₂, hU, b₁, b₂, hb₁, hb₂,
+      himp hA ht hw₁ hb₁ hw₂ hb₂, himp hB hu hw₂ hb₂ hw₁ hb₁⟩,
+    fun hP => absurd hP not_computesToProp_sort⟩
 
 /-! ## Entries of the Signature -/
 

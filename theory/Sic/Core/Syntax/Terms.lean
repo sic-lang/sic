@@ -1,0 +1,167 @@
+module
+
+public import Sic.Core.Syntax
+
+/-!
+# Properties of the Terms
+
+Properties of the terms of annex 08 of RFC 36: the terms of the arguments determine them, the
+recursive occurrences of the types of a block in a telescope, the positions of the branches and of
+the states, and the lengths of the scopes extended.
+
+ADE have no telescopes, no blocks and no second-order variables.
+-/
+
+@[expose] public section
+
+namespace Sic.Core
+
+open Sic.Grading
+
+/-! ## Terms -/
+
+/-- Arguments with the same terms are the same arguments. -/
+theorem Args.terms_inj {k : Nat} {Γ : Scope} :
+    {ps : List Parameter} → {ts us : Args k Γ ps} → ts.terms = us.terms → ts = us
+  | [], .nil, .nil, _ => rfl
+  | _ :: _, .cons _ _, .cons _ _, h => by
+    simp only [Args.terms, Terms.cons.injEq] at h
+    obtain ⟨rfl, h₂⟩ := h
+    rw [Args.terms_inj h₂]
+
+/-- The type that the type of a recursive field is an instance of is a type of the block. -/
+theorem Term.blockName_mem {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
+    {A : Term k Γ} → A.blockName names = some D → D ∈ names
+  | .inst D' _ _ _ _, h => by
+    by_cases hm : D' ∈ names
+    · simp only [Term.blockName, hm, ↓reduceIte, Option.some.injEq] at h
+      exact h ▸ hm
+    · simp only [Term.blockName, hm, ↓reduceIte, reduceCtorEq] at h
+  | .var .., h | .sort _, h | .const .., h | .ctor .., h | .recursor .., h | .obs .., h
+  | .corec .., h => by cases h
+
+/-- A telescope has a type of the block or none for each of its entries. -/
+theorem Telescope.length_recursion {k : Nat} {Γ : Scope} (names : List Name) :
+    {ps : List Parameter} → (Θ : Telescope k Γ ps) → (Θ.recursion names).length = ps.length
+  | [], .nil => rfl
+  | _ :: _, .cons _ _ _ Θ => congrArg (· + 1) (Telescope.length_recursion names Θ)
+
+/-- A field at a position of the fields of a constructor at which a type of the block is
+recursive has its recursions among the positions of the recursive fields. -/
+theorem Telescope.mem_positions_of_recursionAt {k' : Nat} {Γ : Scope} {ps : List Parameter}
+    {names : List Name} {Θ : Telescope k' Γ ps} {l : Nat} {D : Name}
+    (h : Θ.recursionAt names l = some D) :
+    l ∈ (Θ.recursion names).zipIdx.filterMap (fun y => y.1.map fun _ => y.2) ∧ l < ps.length := by
+  unfold Telescope.recursionAt at h
+  cases hx : (Θ.recursion names)[l]? with
+  | none => rw [hx] at h; cases h
+  | some x =>
+    rw [hx] at h
+    cases h
+    refine ⟨List.mem_filterMap.2 ⟨(some D, l), List.mem_zipIdx_iff_getElem?.2 hx, rfl⟩, ?_⟩
+    rw [← Telescope.length_recursion names Θ]
+    exact (List.getElem?_eq_some_iff.1 hx).1
+
+/-- The types of the recursive fields of a telescope are types of the block. -/
+theorem Telescope.mem_recursion {k : Nat} {Γ : Scope} {names : List Name} {D : Name} :
+    {ps : List Parameter} → {Θ : Telescope k Γ ps} → some D ∈ Θ.recursion names → D ∈ names
+  | [], .nil, h => nomatch h
+  | _ :: _, .cons _ _ A Θ, h => by
+    rcases List.mem_cons.1 h with h | h
+    · exact Term.blockName_mem h.symm
+    · exact Telescope.mem_recursion h
+
+/-- The branch at a position of branches is one term. -/
+theorem Branches.get_inj {k : Nat} {Γ : Scope} {us : Branches k Γ} {i n m : Nat}
+    {u₁ u₂ : Term k ((Γ.extend n).extend m)} (h₁ : us.get i = some ⟨n, m, u₁⟩)
+    (h₂ : us.get i = some ⟨n, m, u₂⟩) : u₁ = u₂ := by
+  have h := Option.some.inj (h₁.symm.trans h₂)
+  simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
+  exact h
+
+/-- The branch at a position of the branches of the destructors is one term. -/
+theorem DestructorBranches.get_inj {k : Nat} {Γ : Scope} {vs : DestructorBranches k Γ}
+    {i n m a : Nat}
+    {v₁ v₂ : Term k (((Γ.extend n).extend m).extend a)} (h₁ : vs.get i = some ⟨n, m, a, v₁⟩)
+    (h₂ : vs.get i = some ⟨n, m, a, v₂⟩) : v₁ = v₂ := by
+  have h := Option.some.inj (h₁.symm.trans h₂)
+  simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
+  exact h
+
+/-- Branches of the destructors are the same when they are as many and the same at each position. -/
+theorem DestructorBranches.ext {k : Nat} {Γ : Scope} :
+    {vs₁ vs₂ : DestructorBranches k Γ} → vs₁.length = vs₂.length →
+      (∀ i, i < vs₁.length → vs₁.get i = vs₂.get i) → vs₁ = vs₂
+  | .nil, .nil, _, _ => rfl
+  | .nil, .cons .., h, _ => nomatch h
+  | .cons .., .nil, h, _ => nomatch h
+  | .cons _ _ _ _ vs₁, .cons _ _ _ _ vs₂, hl, h => by
+    cases Option.some.inj (h 0 (Nat.zero_lt_succ _))
+    rw [DestructorBranches.ext (vs₁ := vs₁) (vs₂ := vs₂) (Nat.succ.inj hl) fun i hi =>
+      h (i + 1) (Nat.succ_lt_succ hi)]
+
+/-- Branches of the destructors exist, as many as a number, each of which has a property of its
+position, when a branch with this property exists for each position. -/
+theorem DestructorBranches.exists_of_forall {k : Nat} {Γ : Scope} :
+    (n : Nat) →
+      (P : Nat → (Σ n m a, Term k (((Γ.extend n).extend m).extend a)) → Prop) →
+      (∀ i, i < n → ∃ b, P i b) →
+        ∃ vs : DestructorBranches k Γ, vs.length = n ∧ ∀ i, i < n → ∃ b, vs.get i = some b ∧ P i b
+  | 0, _, _ => ⟨.nil, rfl, fun _ hi => nomatch hi⟩
+  | n + 1, P, h => by
+    obtain ⟨⟨n₀, m₀, a₀, v⟩, hb⟩ := h 0 (Nat.zero_lt_succ n)
+    obtain ⟨vs, hl, hvs⟩ := DestructorBranches.exists_of_forall n (fun i => P (i + 1))
+      fun i hi => h (i + 1) (Nat.succ_lt_succ hi)
+    refine ⟨.cons n₀ m₀ a₀ v vs, congrArg Nat.succ hl, fun i hi => ?_⟩
+    cases i with
+    | zero => exact ⟨_, rfl, hb⟩
+    | succ i => exact hvs i (Nat.lt_of_succ_lt_succ hi)
+
+/-! ## Scopes -/
+
+/-- The length of the scope `Γ` extended by `a` variables. -/
+theorem Scope.length_extend (Γ : Scope) : (a : Nat) → (Γ.extend a).length = Γ.length + a
+  | 0 => rfl
+  | a + 1 => (Scope.length_extend (.var :: Γ) a).trans (Nat.succ_add _ _)
+
+/-- The length of the scope `Γ` extended by `a`, then `b` variables, as the scope of a branch of a
+recursor is. -/
+theorem Scope.length_extend_extend (Γ : Scope) (a b : Nat) :
+    ((Γ.extend a).extend b).length = Γ.length + (a + b) := by
+  rw [Scope.length_extend, Scope.length_extend]
+  omega
+
+/-- The length of the scope `Γ` extended by `a`, then `b`, then `c` variables, as the scope of a
+branch of a corecursor is. -/
+theorem Scope.length_extend_extend_extend (Γ : Scope) (a b c : Nat) :
+    (((Γ.extend a).extend b).extend c).length = Γ.length + (a + b + c) := by
+  rw [Scope.length_extend, Scope.length_extend, Scope.length_extend]
+  omega
+
+/-- The branch at a position of branches is before their end. -/
+theorem Branches.lt_length_of_get {k : Nat} {Γ : Scope} :
+    {us : Branches k Γ} → {i : Nat} → {a : Σ n m, Term k ((Γ.extend n).extend m)} →
+      us.get i = some a → i < us.length
+  | .nil, _, _, h => nomatch h
+  | .cons .., 0, _, _ => Nat.zero_lt_succ _
+  | .cons _ _ _ _ us, _ + 1, _, h => Nat.succ_lt_succ (Branches.lt_length_of_get (us := us) h)
+
+/-- The terms at a position below the number of terms is there. -/
+theorem Terms.get_of_lt_length {k : Nat} {Γ : Scope} :
+    {ts : Terms k Γ} → {j : Nat} → j < ts.length → ∃ t, ts.get j = some t
+  | .nil, _, h => absurd h (Nat.not_lt_zero _)
+  | .cons t _, 0, _ => ⟨t, rfl⟩
+  | .cons _ ts, _ + 1, h => Terms.get_of_lt_length (ts := ts) (Nat.lt_of_succ_lt_succ h)
+
+/-- The grades of the recursive results of the branch at a position of branches are as many as its
+recursive results. -/
+theorem Branches.length_grades {k : Nat} {Γ : Scope} :
+    {us : Branches k Γ} → {i n m : Nat} → {u : Term k ((Γ.extend n).extend m)} →
+      us.get i = some ⟨n, m, u⟩ → (us.grades i).length = m
+  | .nil, _, _, _, _, h => nomatch h
+  | .cons _ _ es _ _, 0, _, _, _, h => by
+    cases h
+    exact es.length_toList
+  | .cons _ _ _ _ us, _ + 1, _, _, _, h => Branches.length_grades (us := us) h
+
+end Sic.Core

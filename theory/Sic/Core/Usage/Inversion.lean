@@ -1,0 +1,256 @@
+module
+
+public import Sic.Core.Usage
+import Sic.Core.Syntax.Signature
+import Sic.Core.Syntax.Terms
+
+/-!
+# Inversion of the Usage
+
+The judgments of usage of annex 17 of RFC 36, inverted: a term of a given form uses its variables as
+the rule of its form allows, with grades above those of the judgment, since the subsumption
+`(sub_▶)` may end its derivation.
+Each lemma takes the entries of the signature that the term names, in a signature whose names are
+distinct, so that the rule of the derivation reads the same entries.
+The proofs are by structural recursion on the derivation, whose term is given by an equation, so
+that the subsumption keeps it.
+A transport, which no rule of usage concludes yet, has no usage.
+
+ADE invert their usage in `Graded/Usage/Inversion.agda`, one lemma `inv-usage-…` for each form of
+term, which gives the grades of the rule above those of the judgment.
+-/
+
+@[expose] public section
+
+namespace Sic.Core
+
+open Sic.Grading
+
+/-! ## Variables and Constants -/
+
+-- ADE: `inv-usage-var` and `inv-usage-app`, in `Graded/Usage/Inversion.agda`.
+/-- The application `x[t̄]` uses `x` with the grade of the mode, and its arguments as their
+telescope does, with grades above those of the judgment. -/
+theorem Usage.inv_var {sig : Signature} {k : Nat} {Γ : Scope} {e : Scope.Entry} {x : Var Γ e}
+    {ts : Args k Γ e.params} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {t : Term k Γ}, Usage sig γ m t → t = .var x ts →
+      ∃ δ, γ ≤ᶜ (GradeVector.update 𝟘ᶜ x.toFin m.grade) +ᶜ δ ∧ UsageArgs sig δ m ts
+  | _, _, .var hts, he => by
+    cases he
+    exact ⟨_, (Sic.Math.Vector.preorder Grade.modality).refl _, hts⟩
+  | _, _, .sub h hle, he =>
+    have ⟨δ, hδ, hts⟩ := Usage.inv_var h he
+    ⟨δ, (Sic.Math.Vector.preorder Grade.modality).trans hle hδ, hts⟩
+  | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he | _, _, .ctor .., he
+  | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
+
+-- ADE: `inv-usage-defn`, in `Graded/Usage/Inversion.agda`.
+/-- A constant of an entry of the mode `m₂`, in a signature whose names are distinct, uses no
+variable, in a mode `m` that `m₂` allows. -/
+theorem Usage.inv_const {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope} {f : Name}
+    {j k' g : Nat} {m₂ : Mode} {p : Grade} {A : Instance j g → Term k' []}
+    (h : sig.HasConstant f j k' g m₂ p A) {qs : List Quality} {ls : List (Level k)}
+    {ps : List Grade} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {t : Term k Γ}, Usage sig γ m t → t = .const f qs ls ps →
+      γ ≤ᶜ 𝟘ᶜ ∧ m ·ᵐ m₂ = m
+  | _, _, .const h' hm, he => by
+    cases he
+    obtain ⟨rfl, rfl, rfl, rfl, -⟩ := hd.hasConstant_unique h h'
+    exact ⟨(Sic.Math.Vector.preorder Grade.modality).refl _, hm⟩
+  | _, _, .sub h' hle, he =>
+    have ⟨hγ, hm⟩ := Usage.inv_const hd h h' he
+    ⟨(Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hm⟩
+  | _, _, .var .., he | _, _, .sort, he | _, _, .inst .., he | _, _, .ctor .., he
+  | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
+
+/-! ## Declared Types -/
+
+-- ADE: `inv-usage-prodʷ`, in `Graded/Usage/Inversion.agda`, for the pairs.
+/-- A constructor of a data type, in a signature whose names are distinct, uses the variables of
+the terms of its fields as their telescope does, with grades above those of the judgment. -/
+theorem Usage.inv_ctor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {decl : TypeDeclaration} {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    {con : Constructor decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDataType D decl T) (hc : con ∈ T.constructors) {qs : List Quality}
+    {ls : List (Level k)} {ps : List Grade} {as : InstanceArgs k Γ decl.scope}
+    (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {ts : Args k Γ (con.params hqp.inst)} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {t : Term k Γ}, Usage sig γ m t →
+      t = .ctor D qs ls ps as con.name ts.terms → ∃ γ', γ ≤ᶜ γ' ∧ UsageArgs sig γ' m ts
+  | _, _, .ctor (con := con') (ts := ts') h' hc' _ hts, he => by
+    injection he with _ hΔ hD hqs hls hps has hn hts'
+    subst hD hqs hls hps
+    obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
+    cases hT
+    cases List.eq_of_nodup_map (hd.constructors_nodup h) hc' hc hn
+    cases Args.terms_inj hts'
+    exact ⟨_, (Sic.Math.Vector.preorder Grade.modality).refl _, hts⟩
+  | _, _, .sub h' hle, he =>
+    have ⟨γ', hγ, hts⟩ := Usage.inv_ctor hd h hc hqp h' he
+    ⟨γ', (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hts⟩
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
+
+-- ADE: `inv-usage-app`, `inv-usage-fst` and `inv-usage-snd`, in `Graded/Usage/Inversion.agda`.
+/-- An observation of a term of a codata type, by the destructor at a position of the type at the
+instance, in a signature whose names are distinct, uses the variables of its term once and those of
+its arguments as their telescope does, with grades above those of the judgment, in a mode that the
+grade of the destructor allows. -/
+theorem Usage.inv_obs {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {d : Name} {p q ς : Grade}
+    {ps' : List Parameter} {Ξ : Scope}
+    {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
+    {ψ : ResultOwnership Grade ps'.length} (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
+    {t : Term k Γ} {bs : Args k Γ ps'} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {u : Term k Γ}, Usage sig γ m u →
+      u = .obs D qs ls ps as t d bs.terms →
+        ∃ γ' δ, γ ≤ᶜ γ' +ᶜ δ ∧ Usage sig γ' m t ∧ UsageArgs sig δ m bs ∧ m ·ᵐ p.mode = m
+  | _, _, .obs (bs := bs') h' _ hpos' ht hbs hm, he => by
+    injection he with _ hΔ hD hqs hls hps has ht' hd' hbs'
+    subst hD hqs hls hps ht' hd'
+    obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h' h
+    cases hT
+    obtain ⟨rfl, rfl⟩ := hpos'.params_unique (hd.destructors_nodup h) hpos
+    cases Args.terms_inj hbs'
+    exact ⟨_, _, (Sic.Math.Vector.preorder Grade.modality).refl _, ht, hbs, hm⟩
+  | _, _, .sub h' hle, he =>
+    have ⟨γ', δ, hγ, ht, hbs, hm⟩ := Usage.inv_obs hd h hqp hpos h' he
+    ⟨γ', δ, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, ht, hbs, hm⟩
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .corec .., he => nomatch he
+
+-- ADE: `inv-usage-natrec-no-nr`, `inv-usage-prodrec`, `inv-usage-unitrec` and
+-- `inv-usage-emptyrec`, in `Graded/Usage/Inversion.agda`.
+/-- A recursor on a block of data types, in a signature whose names are distinct, uses the
+variables as the premises of `(rec_▶)` allow, with grades above those of the judgment. -/
+theorem Usage.inv_recursor {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {decl : TypeDeclaration} {D : Name} {T : DataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasDataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    (hl : ls.length = decl.levels)
+    {r ς χ' : Grade} {t : Term k Γ} {κ : Universe k}
+    {Cs : Motives k Γ} {us : Branches k Γ} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
+      v = .recursor r ς χ' D qs ls ps as t κ Cs us →
+      ∃ (γ' χ : GradeVector Γ.length) (δs : Nat → GradeVector Γ.length) (gs : Nat → Nat → Grade)
+        (πs : Nat → List Grade),
+        γ ≤ᶜ (r ·ᶜ γ') +ᶜ χ ∧
+        (∀ j n (C : Term k (Γ.extend (n + 1))), Cs.get j = some ⟨n, C⟩ →
+          Usage sig 𝟘ᶜ .zeroZero C) ∧
+        Usage sig γ' (m ⊙ r) t ∧
+        (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+          ∃ R : Telescope k (Γ.extend (con.params hqp.inst).length)
+              (con.nestResultParams hqp.inst decl.names),
+            Constructor.ResultTypes sig ⟨κ.quality, r, ς⟩ con hqp.inst decl.names
+              (ls.getFin hl) as (Lifting.ofMotives decl.names qs ls ps as κ.level χ' Cs) R (πs i)) ∧
+        (∀ i j T' con u, decl.cases[i]? = some (j, T', con) →
+          us.get i = some ⟨(con.params hqp.inst).length,
+            (con.nestResultParams hqp.inst decl.names).length, u⟩ →
+          Usage sig (((δs i).extendGrades (gs i) (con.params hqp.inst)).extendResults
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
+              (us.grades i))
+            ((con.fields hqp.inst).nest decl.names)
+            (con.params hqp.inst)) m u) ∧
+        (∀ i j T' con l (p : Parameter), decl.cases[i]? = some (j, T', con) →
+          (con.params hqp.inst)[l]? = some p →
+          m.grade * r * p.usage ≤ gs i l +
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
+              (List.zipWith (· * ·) (us.grades i) (πs i)) l) * r) ∧
+        (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+          χ ≤ᶜ δs i +ᶜ Telescope.resultSum
+            (Telescope.resultGrades ((con.fields hqp.inst).nest decl.names)
+              (List.zipWith (· * ·) (us.grades i) (πs i)))
+            ((con.fields hqp.inst).nest decl.names) ·ᶜ χ) ∧
+        (m = .oneOne → (∃ T' ∈ decl.dataTypes, 2 ≤ T'.constructors.length) →
+          r.mode = .oneOne) ∧
+        ((decl.sort hqp.inst).quality = .prop → decl.cases ≠ [] → m ≠ .oneOne) ∧
+        (∀ i j T' con, decl.cases[i]? = some (j, T', con) →
+          ∃ u, us.get i = some ⟨(con.params hqp.inst).length,
+            (con.nestResultParams hqp.inst decl.names).length, u⟩)
+  | _, _, .recursor h' _ _ hC ht _ hus' hR hu hg hχ hr hprop, he => by
+    injection he with _ hΔ hr' hς hχ' hD hqs hls hps has ht' hκ hCs hus
+    subst hr' hς hχ' hD hqs hls hps ht' hκ hCs hus
+    obtain ⟨rfl, hT⟩ := hd.hasDataType_unique h' h
+    cases hT
+    cases has
+    exact ⟨_, _, _, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hC, ht, hR, hu, hg, hχ,
+      hr, hprop, hus'⟩
+  | _, _, .sub h' hle, he =>
+    have ⟨γ', χ, δs, gs, πs, hγ, hC, ht, hR, hu, hg, hχ, hr, hprop, hus'⟩ :=
+      Usage.inv_recursor hd h hqp hl h' he
+    ⟨γ', χ, δs, gs, πs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hC, ht, hR, hu, hg,
+      hχ, hr, hprop, hus'⟩
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .ctor .., he | _, _, .obs .., he | _, _, .corec .., he => nomatch he
+
+/-- A corecursor of a block of codata types, from a state of the type at a position of the block,
+in a signature whose names are distinct, uses the variables as the premises of `(corec_▶)` allow,
+with grades above those of the judgment. -/
+theorem Usage.inv_corec {sig : Signature} (hd : sig.Distinct) {k : Nat} {Γ : Scope}
+    {decl : TypeDeclaration} {D : Name}
+    {T : CodataType decl.sorts decl.grades decl.levels decl.scope}
+    (h : sig.HasCodataType D decl T) {qs : List Quality} {ls : List (Level k)} {ps : List Grade}
+    {as : InstanceArgs k Γ decl.scope} (hqp : Instance.AsMany decl.sorts decl.grades qs ps)
+    {r : Grade} {Ss : States k Γ}
+    {gs : DestructorBranches k Γ}
+    {h' : Nat} {ps' : List Parameter} {S : Telescope k Γ ps'} {ss : Args k Γ ps'}
+    (hh : decl.codataTypes[h']? = some T) (hS : Ss.get h' = some ⟨0, ps', S⟩) {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v →
+      v = .corec r D qs ls ps as ss.terms Ss gs →
+      ∃ (γ' δ : GradeVector Γ.length) (δs : Nat → GradeVector Γ.length),
+        γ ≤ᶜ (r ·ᶜ γ') +ᶜ δ ∧
+        (∀ j (ps'' : List Parameter) (S' : Telescope k Γ ps''),
+          Ss.get j = some ⟨0, ps'', S'⟩ → UsageTelescope sig 𝟘ᶜ .zeroZero S') ∧
+        UsageArgs sig γ' (m ⊙ r) ss ∧
+        (∀ i j T' d (ps'' : List Parameter) (S' : Telescope k Γ ps'') (p q ς : Grade)
+          (ps₁ : List Parameter) (Ξ : Scope) (Θ : Telescope decl.levels Ξ ps₁)
+          (B : Term decl.levels (Ξ.extend ps₁.length)) (ψ : ResultOwnership Grade ps₁.length)
+          (g : Term k ((Γ.extend ps''.length).extend ps₁.length)),
+          decl.codataCases[i]? = some (j, T', d) → Ss.get j = some ⟨0, ps'', S'⟩ →
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ →
+          gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
+          Usage sig (((δs i).extendParams ((m ⊙ p).grade * r) ps'').extendParams (m ⊙ p).grade ps₁)
+            (m ⊙ p) g) ∧
+        (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length), decl.codataCases[i]? = some (j, T', d) →
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → δ ≤ᶜ p ·ᶜ δs i) ∧
+        (∀ i j T' d (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
+          (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
+          (ψ : ResultOwnership Grade ps₁.length) (D' : Name), decl.codataCases[i]? = some (j, T', d) →
+          (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ → B.blockName decl.names = some D' →
+          δ ≤ᶜ (p ·ᶜ δs i) +ᶜ (p ·ᶜ δ))
+  | _, _, .corec (ss := ss') h₁ _ hh₁ hS₁ hSu hss _ _ _ _ hgu hδ hδr, he => by
+    injection he with _ hΔ hr' hD hqs hls hps has hss' hSs hgs
+    subst hr' hD hqs hls hps hSs hgs
+    obtain ⟨rfl, hT⟩ := hd.hasCodataType_unique h₁ h
+    cases hT
+    have hi := (TypeDeclaration.idxOf?_codataTypes (hd.nodup h.1) hh₁).symm.trans
+      (TypeDeclaration.idxOf?_codataTypes (hd.nodup h.1) hh)
+    cases Option.some.inj hi
+    cases hS₁.symm.trans hS
+    cases Args.terms_inj hss'
+    exact ⟨_, _, _, (Sic.Math.Vector.preorder Grade.modality).refl _, hSu, hss, hgu, hδ, hδr⟩
+  | _, _, .sub h₁ hle, he =>
+    have ⟨γ', δ, δs, hγ, hSu, hss, hgu, hδ, hδr⟩ := Usage.inv_corec hd h hqp hh hS h₁ he
+    ⟨γ', δ, δs, (Sic.Math.Vector.preorder Grade.modality).trans hle hγ, hSu, hss, hgu, hδ, hδr⟩
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .obs .., he => nomatch he
+
+/-! ## Transports -/
+
+/-- A transport has no usage: no rule of usage concludes it, and the subsumption keeps its term. -/
+theorem Usage.inv_transp {sig : Signature} {k : Nat} {Γ : Scope} {A t₁ t₂ : Term k Γ}
+    {C : Term k (Γ.extend 1)} {t u : Term k Γ} {m : Mode} :
+    ∀ {γ : GradeVector Γ.length} {v : Term k Γ}, Usage sig γ m v → v = .transp A t₁ t₂ C t u →
+      False
+  | _, _, .sub h _, he => Usage.inv_transp h he
+  | _, _, .var .., he | _, _, .const .., he | _, _, .sort, he | _, _, .inst .., he
+  | _, _, .ctor .., he | _, _, .recursor .., he | _, _, .obs .., he | _, _, .corec .., he =>
+    nomatch he
+
+end Sic.Core

@@ -1,6 +1,6 @@
 module
 
-public import Sic.Order
+public import Sic.Math.Order
 
 /-!
 # Levels
@@ -46,7 +46,6 @@ variable {k : Nat}
 
 instance : Max (Level k) := ⟨max⟩
 
--- ADE: none.
 /-- The value `⟦l⟧_ρ` of the level `l` under the assignment `ρ`, which gives a natural number to
 each level variable.
 RFC: `\mathsf{value}_l` -/
@@ -56,7 +55,6 @@ def value (ρ : Fin k → Nat) : Level k → Nat
   | max l₁ l₂ => Max.max (value ρ l₁) (value ρ l₂)
   | var i => ρ i
 
--- ADE: none.
 /-- Two levels are equal when their values are equal under every assignment.
 RFC: `=_l` -/
 def Equal (l₁ l₂ : Level k) : Prop := ∀ ρ : Fin k → Nat, value ρ l₁ = value ρ l₂
@@ -65,7 +63,6 @@ def Equal (l₁ l₂ : Level k) : Prop := ∀ ρ : Fin k → Nat, value ρ l₁ 
 `=` of their syntax in Lean. -/
 instance : HasEquiv (Level k) := ⟨Equal⟩
 
--- ADE: none.
 /-- A level is below another when its value is below under every assignment.
 RFC: `\le_l` -/
 def Le (l₁ l₂ : Level k) : Prop := ∀ ρ : Fin k → Nat, value ρ l₁ ≤ value ρ l₂
@@ -80,29 +77,28 @@ theorem le_def (l₁ l₂ : Level k) : l₁ ≤ l₂ ↔ ∀ ρ, value ρ l₁ �
 
 The equality is an equivalence and the order a preorder, whose equivalence is the equality. -/
 
--- ADE: none.
 /-- The equality is an equivalence.
-RFC: `\mathsf{equiv}_l.\mathsf{refl}`, `\mathsf{equiv}_l.\mathsf{symm}`, `\mathsf{equiv}_l.\mathsf{trans}` -/
+RFC: `\mathsf{equiv}_l.\mathsf{refl}`
+RFC: `\mathsf{equiv}_l.\mathsf{symm}`
+RFC: `\mathsf{equiv}_l.\mathsf{trans}` -/
 theorem equivalence : Equivalence (α := Level k) (· ≈ ·) where
   refl _ _ := rfl
   symm h ρ := (h ρ).symm
   trans h₁ h₂ ρ := (h₁ ρ).trans (h₂ ρ)
 
--- ADE: none.
 /-- The order is a preorder.
-RFC: `\mathsf{preorder}_l.\mathsf{refl}`, `\mathsf{preorder}_l.\mathsf{trans}` -/
-theorem preorder : IsPreorder (α := Level k) (· ≤ ·) where
+RFC: `\mathsf{preorder}_l.\mathsf{refl}`
+RFC: `\mathsf{preorder}_l.\mathsf{trans}` -/
+theorem preorder : Math.IsPreorder (α := Level k) (· ≤ ·) where
   refl _ _ := Nat.le_refl _
   trans h₁ h₂ ρ := Nat.le_trans (h₁ ρ) (h₂ ρ)
 
--- ADE: none.
 /-- The equivalence of the order is the equality.
 RFC: `\mathsf{antisymmetry}_l` -/
 theorem equal_iff_le_le (l₁ l₂ : Level k) : l₁ ≈ l₂ ↔ l₁ ≤ l₂ ∧ l₂ ≤ l₁ :=
   ⟨fun h => ⟨fun ρ => Nat.le_of_eq (h ρ), fun ρ => Nat.le_of_eq (h ρ).symm⟩,
     fun ⟨h₁, h₂⟩ ρ => Nat.le_antisymm (h₁ ρ) (h₂ ρ)⟩
 
--- ADE: none.
 /-- The order is the one of the larger of two levels.
 RFC: `{\le}{\sqcup}_l` -/
 theorem le_iff_max_equal (l₁ l₂ : Level k) : l₁ ≤ l₂ ↔ l₁ ⊔ l₂ ≈ l₂ := by
@@ -334,7 +330,6 @@ theorem Normal.le_iff (n₁ n₂ : Normal k) : n₁.Le n₂ ↔ ∀ ρ, n₁.val
         show a ≤ b
         omega
 
--- ADE: none.
 /-- The order of two levels is decidable, by their normal forms.
 RFC: `\mathsf{decidable}_l.{\le}` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≤ l₂) :=
@@ -342,7 +337,6 @@ instance (l₁ l₂ : Level k) : Decidable (l₁ ≤ l₂) :=
     rw [Normal.le_iff, le_def]
     simp only [value_normalize])
 
--- ADE: none.
 /-- The equality of two levels is decidable, as the order is.
 RFC: `\mathsf{decidable}_l.{=}` -/
 instance (l₁ l₂ : Level k) : Decidable (l₁ ≈ l₂) :=

@@ -28,12 +28,33 @@
         let
           inherit (pkgs) lib;
           json = pkgs.formats.json { };
+          # The Lean that Lake records in the traces of its builds, which it rebuilds when it changes:
+          # Lake takes the hash that lean --githash prints, empty for the Lean of nixpkgs, so it would
+          # keep the builds of another Lean, unless LEAN_GITHASH gives it. Its path in the Nix store
+          # changes with its version, and with every other change of its build by nixpkgs.
+          leanEnv = {
+            LEAN_GITHASH = "${pkgs.lean4}";
+          };
           # A command of the flake, in two variants of the same script: nix run builds the one that
           # skips ShellCheck, quickly, and nix flake check, run by the flake check, the one that runs it.
-          command = args: {
-            run = pkgs.writeShellApplication (args // { checkPhase = ":"; });
-            checked = pkgs.writeShellApplication args;
-          };
+          # A command that runs the Lean of the flake runs it with leanEnv.
+          command =
+            args:
+            let
+              script =
+                extra:
+                pkgs.writeShellApplication (
+                  args
+                  // lib.optionalAttrs (lib.elem pkgs.lean4 (args.runtimeInputs or [ ])) {
+                    runtimeEnv = leanEnv;
+                  }
+                  // extra
+                );
+            in
+            {
+              run = script { checkPhase = ":"; };
+              checked = script { };
+            };
           app = program: description: {
             type = "app";
             program = lib.getExe program.run;
@@ -41,6 +62,12 @@
           };
           # The files of the RFCs at the pinned commit, to which the pages of the correspondence link.
           rfcsUrl = "https://github.com/sic-lang/rfcs/blob/${rfcs.rev}";
+          # Mermaid 12, in place of the Mermaid 11.6.0 that mdbook-mermaid 0.17.1 bundles, whose layout
+          # stretches the boxes of the graph of the imports far wider than their modules.
+          mermaidJs = pkgs.fetchurl {
+            url = "https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.min.js";
+            hash = "sha256-qKam+AWwdKgmGiglyG+ZyAVKyzs19Qu34kpPnyw8O58=";
+          };
           # The checks of the files: their tools, also provided by the development shell, and their
           # command, run from the root of the repository.
           fileChecks = {
@@ -82,7 +109,7 @@
             };
             # Checks the imports of the modules of Sic/ against the rules of theory/imports.toml, through
             # the modules they import in turn, which fails with the path of the imports that a rule
-            # forbids.
+            # forbids or does not allow, or with the groups that import each other in a cycle.
             imports = {
               tools = [
                 pkgs.coreutils
@@ -91,6 +118,21 @@
               command = lib.concatStringsSep " && " [
                 "lake --dir theory build --wfail"
                 "lake --dir theory env lean --run theory/Imports.lean theory/imports.toml \"$(mktemp)\" theory/Sic"
+              ];
+            };
+            # Checks that every module of the metatheory imports only what it uses, and publicly only
+            # what the types of its public declarations mention, with the import minimizer of Lake,
+            # whose fixes `lake --dir theory shake --fix` applies; it reads every module, since the
+            # libraries have no root module that imports them all.
+            shake = {
+              tools = [
+                pkgs.findutils
+                pkgs.gnused
+                pkgs.lean4
+              ];
+              command = lib.concatStringsSep " && " [
+                "lake --dir theory build --wfail"
+                "git ls-files -z 'theory/Sic/*.lean' 'theory/SicExample/*.lean' | sed -z 's#^theory/##; s#\\.lean$##; s#/#.#g' | xargs -0 lake --dir theory shake"
               ];
             };
             markdownlint = {
@@ -384,10 +426,6 @@
                 echo
                 echo "/-! The modules of the metatheory, imported so that doc-gen4 documents them all. -/"
               } >docbuild/SicDocs.lean
-              # doc-gen4 v4.34.1 does not write the pages again when the modules change, since its empty
-              # markers hide the changes upstream of them (leanprover/doc-gen4#389, fixed in v4.35.0):
-              # without the marker, it writes them again at each run, until Lean 4.35 (#41).
-              rm -f docbuild/.lake/build/doc-data/SicDocs--library.docs_built*
               lake --dir docbuild build SicDocs:docs
               echo "The documentation is in $PWD/docbuild/.lake/build/doc."
             '';
@@ -425,6 +463,7 @@
               touch "$mermaid/book.toml"
               RUST_LOG=warn mdbook-mermaid install "$mermaid"
               cp "$mermaid"/*.js .
+              install -m 644 ${mermaidJs} mermaid.min.js
               mdbook build
               ${lib.getExe docs.run}
               cp -r theory/docbuild/.lake/build/doc book/theory
@@ -463,6 +502,9 @@
             packages = lib.unique (lib.concatMap (check: check.tools) (lib.attrValues fileChecks)) ++ [
               pkgs.nixd
             ];
+            # Lake run in the shell, and the language server of Lean that the editors start from it,
+            # trace the same Lean as the commands.
+            env = leanEnv;
             # The Lean extension of VS Code requires the version of Lean in lean-toolchain, which Git
             # ignores: written from the Lean of the shell, it always matches flake.lock.
             shellHook = ''

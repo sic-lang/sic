@@ -23,10 +23,12 @@ jobs:
           - correspondence
           - editorconfig
           - flake
+          - imports
           - lean
           - markdownlint
           - nixfmt
           - reuse
+          - shake
           - shellcheck
           - shfmt
           - taplo
