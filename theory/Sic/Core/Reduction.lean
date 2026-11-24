@@ -18,10 +18,10 @@ term that a recursor eliminates, the codata types by `(β_⟶)`, which runs the 
 destructor in the corecursor that it observes, and `(d_⟶)`, which reduces the term that an
 observation observes, and the equality by `(transp_⟶)`, which reduces a transport to its term,
 whatever its motive and its proof.
-Every rule but `(transp_⟶)` is a rule of the equality of the terms, so that a conversion may reduce
-by them to compare two terms; the transport is equal to its term only between equal instances of its
-motive, `(transp_same)`, and its step serves the meaning, in which a true equality makes these two
-instances equal.
+Every rule but `(transp_⟶)` is a rule of the equality of the terms, so that a step that reduces no
+transport, at the head of a term or below a recursor or an observation, is an equality of the terms;
+the transport is equal to its term only between equal instances of its motive, `(transp_same)`, and
+its step serves the meaning, in which a true equality makes these two instances equal.
 A head normal form is a sort, an instance of a declared type, a constructor applied to the terms of
 its fields, a corecursor, an equality, or a neutral term, stuck on a variable or on a constant,
 which no rule unfolds, or a recursor or an observation of a neutral term.
