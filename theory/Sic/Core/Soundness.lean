@@ -486,10 +486,10 @@ theorem soundnessIn : SoundnessIn := by
         have e := congrArg (Telescope.substLevels L') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
         unfold Destructors.Pos.obsSubstOf at e
         rw [Telescope.substLevels_subst_of
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
           Telescope.substLevels_subst_of
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ .zero) : Term k (Γ.extend 3))),
           Telescope.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at e
         exact e
@@ -497,10 +497,10 @@ theorem soundnessIn : SoundnessIn := by
         have e := congrArg (Term.substLevels L') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
         unfold Destructors.Pos.obsSubstOf at e
         rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
           Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ .zero) : Term k (Γ.extend 3)))),
           Term.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at e
         exact e
@@ -511,11 +511,11 @@ theorem soundnessIn : SoundnessIn := by
         erw [Context.substLevels_append] at ih
         simp only [Context.substLevels, Term.substLevels_rename, Term.substLevels] at ih
         erw [Telescope.substLevels_subst_of
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
           Telescope.substLevels_substLevels_getFin,
           Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
           Term.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at ih
         exact ih
@@ -527,11 +527,11 @@ theorem soundnessIn : SoundnessIn := by
         erw [Context.substLevels_append] at ih
         simp only [Context.substLevels, Term.substLevels_rename, Term.substLevels] at ih
         erw [Telescope.substLevels_subst_of
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
           Telescope.substLevels_substLevels_getFin,
           Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
           Term.substLevels_substLevels_getFin, Term.observation_substLevels,
           Term.observation_substLevels, InstanceArgs.substLevels_rename] at ih
@@ -551,7 +551,7 @@ theorem soundnessIn : SoundnessIn := by
                 T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁) .nil))).substLevels L') := ih
         erw [Term.substLevels_instantiate, Context.substLevels_append,
           Telescope.substLevels_subst_of
-            (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
+            (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
           Telescope.substLevels_substLevels_getFin] at ih
         simp only [Context.substLevels, Term.substLevels_rename, Args.substLevels] at ih
@@ -613,7 +613,7 @@ theorem soundnessIn : SoundnessIn := by
       rw [Term.atLevels_inst] at ht'
       have hbs' := hbs_ih hdis hord hι ρ
       have hcl := fun {a} (x : Var Ξ a) =>
-        hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
+        hd.obsSubstOf_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
       have hc := ValidEqTermΓ.obs hι h hqp hl' hl' hadm hd has'
@@ -787,7 +787,7 @@ theorem soundnessIn : SoundnessIn := by
       rw [Term.atLevels_inst] at ht'
       have hbs' := hbs_ih hdis hord hι ρ
       have hcl := fun {a} (x : Var Ξ a) =>
-        hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ x
+        hd.obsSubstOf_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls₁ ps as₁ t₁ x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs'
       have hc := ValidEqTermΓ.obs hι h hqp hl₁' hl₂' hadm hd has'
@@ -929,7 +929,7 @@ theorem soundnessIn : SoundnessIn := by
         fun d p q ς ps' Ξ Θ B ψ hpos => ?_
       have hb := hobs_ih d p q ς ps' Ξ Θ B ψ hpos hdis hord hι ρ
       have hcl := fun {a} (x : Var Ξ a) =>
-        hpos.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
+        hpos.obsSubstOf_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Context.atLevels, Context.substLevels_append,
         Telescope.substLevels_subst_of hcl, Telescope.substLevels_substLevels, Term.atLevels,
         Term.observation_substLevels, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ hcl),

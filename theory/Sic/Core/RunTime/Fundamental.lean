@@ -451,7 +451,7 @@ theorem fundamentalIn : FundamentalIn := by
       have hbs' := soundnessIn.hasArgs hw.distinct hw.liftsInOrder hι hbs ρ
       have hbr := hbs_ih (hΓ := hΓ) hw hι hP hbus ρ
       have hcl := fun {a} (x : Var Ξ a) =>
-        hd.obsSubst_observation_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
+        hd.obsSubstOf_substLevels (fun i => (.ofNat (ρ i) : Level 0)) D qs ls ps as t x
       simp only [Telescope.atLevels, Telescope.substLevels_subst_of hcl,
         Telescope.substLevels_substLevels] at hbs' hbr
       have hc := RunValidRen.obs hw.distinct hM hv hqp hl' hadm

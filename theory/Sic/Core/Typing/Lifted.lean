@@ -441,9 +441,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     intro sig k Δ ctx decl D T qs ls ps as t d p q ς ps' Ξ Θ B ψ bs h hqp hl hadm hd has ht hbs
       has_ih ht_ih hbs_ih Base Γ ctx' θ hL hθ
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
-      (hd.obsSubst_observation_subst θ D qs ls ps as t)), Term.obs_subst]
+      (hd.obsSubstOf_subst θ D qs ls ps as t)), Term.obs_subst]
     refine .obs h hqp hl hadm hd (has_ih hL hθ) (ht_ih hL hθ) ?_
-    rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t)]
+    rw [← Telescope.subst_subst_of (hd.obsSubstOf_subst θ D qs ls ps as t)]
     exact hbs_ih hL hθ
   case hasType_corec =>
     intro sig k Δ ctx decl D T qs ls ps as r Ss gs h' ps' S ss h hqp hl hadm hpre has hh hS hss
@@ -576,9 +576,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ t₁ t₂ d p q ς ps' Ξ Θ B ψ bs₁ bs₂ h hqp hl₁ hl₂
       hadm hd has hls ht hbs has_ih ht_ih hbs_ih Base Γ ctx' θ hL hθ
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _
-      (hd.obsSubst_observation_subst θ D qs ls₁ ps as₁ t₁)), Term.obs_subst, Term.obs_subst]
+      (hd.obsSubstOf_subst θ D qs ls₁ ps as₁ t₁)), Term.obs_subst, Term.obs_subst]
     refine .obs h hqp hl₁ hl₂ hadm hd (has_ih hL hθ) hls (ht_ih hL hθ) ?_
-    rw [← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls₁ ps as₁ t₁)]
+    rw [← Telescope.subst_subst_of (hd.obsSubstOf_subst θ D qs ls₁ ps as₁ t₁)]
     exact hbs_ih hL hθ
   case eqTerm_corec =>
     intro sig k Δ ctx decl D T qs ls₁ ls₂ ps as₁ as₂ r Ss₁ Ss₂ gs₁ gs₂ h' ps' S₁ S₂ ss₁ ss₂ h hqp
@@ -697,7 +697,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       hgt_ih Base Γ ctx' θ hL hθ
     rw [Term.obs_subst, Term.corec_subst, Term.observed_subst, Term.instantiate_subst, Term.instantiate_subst,
       Args.subst_liftN_rename_weakenN, Term.instantiate_subst, Term.subst_subst_of
-        (Subst.liftN_subst_of _ (hd.obsSubst_observation_subst θ D qs ls ps as _)),
+        (Subst.liftN_subst_of _ (hd.obsSubstOf_subst θ D qs ls ps as _)),
       Term.corec_subst]
     refine .beta h hqp hl hadm hpre (has_ih hL hθ) hh (States.get_subst θ hS)
       (hss_ih hL hθ) hi hd (DestructorBranches.get_subst θ hg) ?_
@@ -706,7 +706,7 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       ?_ ?_
     · dsimp only [Subst.liftN, Scope.extend]
       rw [← Term.corec_subst,
-        ← Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as _)]
+        ← Telescope.subst_subst_of (hd.obsSubstOf_subst θ D qs ls ps as _)]
       exact hbs_ih hL hθ
     · intro j T' hj
       obtain ⟨ps'', S', hS'⟩ := hSs j T' hj
@@ -737,10 +737,10 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
     refine .etaObs h hqp hl hadm hr (has_ih hL hθ) (ht_ih hL hθ) (hu_ih hL hθ) ?_
     intro d p q ς ps' Ξ Θ B ψ hd
     have ih := hobs_ih d p q ς ps' Ξ Θ B ψ hd hL (hθ.append _)
-    rw [Telescope.subst_subst_of (hd.obsSubst_observation_subst θ D qs ls ps as t),
+    rw [Telescope.subst_subst_of (hd.obsSubstOf_subst θ D qs ls ps as t),
       Term.observation_subst θ D qs ls ps as t, Term.observation_subst θ D qs ls ps as u,
       Term.subst_subst_of (Subst.liftN_subst_of _
-        (hd.obsSubst_observation_subst θ D qs ls ps as t))] at ih
+        (hd.obsSubstOf_subst θ D qs ls ps as t))] at ih
     exact ih
   case hasArgs_nil => exact fun hctx hctx_ih => fun hL hθ => .nil (hctx_ih hL hθ)
   case hasArgs_cons =>

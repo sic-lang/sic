@@ -265,10 +265,10 @@ theorem stableUnderLevels : StableUnderLevels := by
       have e := congrArg (Telescope.substLevels ls') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
       unfold Destructors.Pos.obsSubstOf at e
       rw [Telescope.substLevels_subst_of
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
         Telescope.substLevels_subst_of
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ .zero) : Term k (Γ.extend 3))),
         Telescope.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at e
       exact e
@@ -276,10 +276,10 @@ theorem stableUnderLevels : StableUnderLevels := by
       have e := congrArg (Term.substLevels ls') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
       unfold Destructors.Pos.obsSubstOf at e
       rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ .zero) : Term k (Γ.extend 3)))),
         Term.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at e
       exact e
@@ -289,11 +289,11 @@ theorem stableUnderLevels : StableUnderLevels := by
       erw [Context.substLevels_append] at ih
       simp only [Context.substLevels, Term.substLevels_rename, Term.substLevels] at ih
       erw [Telescope.substLevels_subst_of
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
         Telescope.substLevels_substLevels_getFin,
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
         Term.substLevels_substLevels_getFin, InstanceArgs.substLevels_rename] at ih
       exact ih
@@ -304,11 +304,11 @@ theorem stableUnderLevels : StableUnderLevels := by
       erw [Context.substLevels_append] at ih
       simp only [Context.substLevels, Term.substLevels_rename, Term.substLevels] at ih
       erw [Telescope.substLevels_subst_of
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
         Telescope.substLevels_substLevels_getFin,
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
         Term.substLevels_substLevels_getFin, Term.observation_substLevels,
         Term.observation_substLevels, InstanceArgs.substLevels_rename] at ih
@@ -327,7 +327,7 @@ theorem stableUnderLevels : StableUnderLevels := by
               T'.name qs ls ps (as.rename (Ren.weakenN 3)) d ps₁) .nil))).substLevels ls') := ih
       erw [Term.substLevels_instantiate, Context.substLevels_append,
         Telescope.substLevels_subst_of
-          (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
+          (hd.obsSubstOf_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
         Telescope.substLevels_substLevels_getFin] at ih
       simp only [Context.substLevels, Term.substLevels_rename, Args.substLevels] at ih
@@ -375,7 +375,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       has_ih ht_ih hbs_ih k' ls'
     have has' := (has_ih ls').substLevels_getFin hl
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
-      hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
+      hd.obsSubstOf_substLevels ls' D qs ls ps as t x
     have hbs' := hbs_ih ls'
     rw [Telescope.substLevels_subst_of ho, Telescope.substLevels_substLevels_getFin] at hbs'
     rw [Term.substLevels_instantiate, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
@@ -532,7 +532,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       hadm hd has hls ht hbs has_ih ht_ih hbs_ih k' ls'
     have has' := (has_ih ls').substLevels_getFin hl₁
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
-      hd.obsSubst_observation_substLevels ls' D qs ls₁ ps as₁ t₁ x
+      hd.obsSubstOf_substLevels ls' D qs ls₁ ps as₁ t₁ x
     have hbs' := hbs_ih ls'
     rw [Telescope.substLevels_subst_of ho, Telescope.substLevels_substLevels_getFin] at hbs'
     rw [Term.substLevels_instantiate, Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
@@ -673,7 +673,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       hgt_ih k' ls'
     have has' := (has_ih ls').substLevels_getFin hl
     have ho₀ {a : Scope.Entry} (x : Var Ξ₀ a) :=
-      hd.obsSubst_observation_substLevels ls' D qs ls ps as
+      hd.obsSubstOf_substLevels ls' D qs ls ps as
         (.corec r D qs ls ps as ss.terms Ss gs) x
     have hbs' := hbs_ih ls'
     rw [Telescope.substLevels_subst_of ho₀, Telescope.substLevels_substLevels_getFin,
@@ -728,7 +728,7 @@ theorem stableUnderLevels : StableUnderLevels := by
     refine .etaObs h hqp _ hadm hr has' (ht_ih ls') (hu_ih ls') ?_
     intro d p q ς ps' Ξ Θ B ψ hd
     have ho {a : Scope.Entry} (x : Var Ξ a) :=
-      hd.obsSubst_observation_substLevels ls' D qs ls ps as t x
+      hd.obsSubstOf_substLevels ls' D qs ls ps as t x
     have ih := hobs_ih d p q ς ps' Ξ Θ B ψ hd ls'
     rw [Context.substLevels_append, Telescope.substLevels_subst_of ho,
       Telescope.substLevels_substLevels_getFin, Term.observation_substLevels ls' D qs ls ps as t,

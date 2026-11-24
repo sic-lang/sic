@@ -169,10 +169,10 @@ theorem Subst.Observes.Base.lifted {Γ Ξ : Scope} {ctx' : Context k Γ} {θ : S
             exact Term.observation_rename Ren.weaken D qs ls ps as t d ps'
           · rw [hΘ]
             exact Telescope.rename_subst_of
-              (fun x => hd.obsSubst_observation_rename Ren.weaken D qs ls ps as t x) _
+              (fun x => hd.obsSubstOf_rename Ren.weaken D qs ls ps as t x) _
           · rw [hA]
             exact Term.rename_subst_of (Subst.liftN_rename_after_of ps'.length
-              (fun x => hd.obsSubst_observation_rename Ren.weaken D qs ls ps as t x)) _
+              (fun x => hd.obsSubstOf_rename Ren.weaken D qs ls ps as t x)) _
 
 /-- The substitutions that observe a term of an instance of a codata type of the signature, which
 its constraint admits, give what the stability of the typing asks of a family of substitutions: the

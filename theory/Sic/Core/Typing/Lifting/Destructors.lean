@@ -115,11 +115,11 @@ theorem HasType.observation (hT : sig.HasCodataType D decl T)
   have hw := TypedRen.weakenN hΘ
   have hbs := HasArgs.bound hΘ
   rw [Telescope.rename_subst_of
-    (fun x => hd.obsSubst_observation_rename (Ren.weakenN ps'.length) D qs ls ps as t x)] at hbs
+    (fun x => hd.obsSubstOf_rename (Ren.weakenN ps'.length) D qs ls ps as t x)] at hbs
   have h := HasType.obs hT hqp hl hadm hd (stableUnderRenaming.hasInstanceArgs has hw)
     (stableUnderRenaming.hasType ht hw) hbs
   rw [← Term.rename_subst_of (Subst.liftN_rename_after_of ps'.length
-      (fun x => hd.obsSubst_observation_rename (Ren.weakenN ps'.length) D qs ls ps as t x)),
+      (fun x => hd.obsSubstOf_rename (Ren.weakenN ps'.length) D qs ls ps as t x)),
     Term.instantiate_bound_rename] at h
   exact h
 

@@ -188,7 +188,7 @@ theorem Term.NestedResult.subst :
       have ih := (hgt i d p q ς ps₁ Ξ Θ B ψ g hi hd hg).subst (hs.liftN ps₁.length)
       rw [Term.observation_subst,
         Term.subst_subst_of (Subst.liftN_subst_of ps₁.length
-          (hd.obsSubst_observation_subst θ D qs ls ps as t)),
+          (hd.obsSubstOf_subst θ D qs ls ps as t)),
         funext fun E => Term.subst_lift_liftN_rename_lift_weakenN ps₁.length θ (φ E)] at ih
       exact ih
 
