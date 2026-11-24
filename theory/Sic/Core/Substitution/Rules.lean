@@ -583,8 +583,8 @@ theorem Destructors.Pos.obsSubstOf_substLevels {k' k'' : Nat} {Γ' Δ : Scope}
     {ψ : ResultOwnership Grade ps'.length} (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
       (hd.obsSubstOf D qs ls ps as t x).substLevels ls' =
-        hd.obsSubstOf D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls') x
-          :=
+        hd.obsSubstOf D qs (ls.map (Level.subst ls')) ps (as.substLevels ls')
+          (t.substLevels ls') x :=
   hd.obsSubst_substLevels ls' (fun d ps' => Term.observation_substLevels ls' D qs ls ps as t d ps')
     (InstanceArgs.toSubst_substLevels ls' as)
 
