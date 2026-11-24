@@ -382,7 +382,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
             (B.nest (fun _ => none)
               (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs n.args))))
             ((B.substLevels (ls.getFin hl)).subst
-              (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+              (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t)))
             (t.observation D qs ls ps as d ps₁) g := by
     intro i hi
     have hmem : ns[i] ∈ ns := List.getElem_mem hi
@@ -422,7 +422,7 @@ theorem TypeDeclaration.Lifts.hasResult (hsig : sig.Distinct)
             (B₂.nest (fun _ => none)
               (Nesting.liftN ps₂.length (h.nesting (Nesting.ofArgs n.args))))
             ((B₂.substLevels (ls.getFin hl)).subst
-              (Subst.liftN _ (h.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+              (Subst.liftN _ (h.obsSubstOf D qs ls ps as t)))
             (t.observation D qs ls ps as d ps₂) g')
       hpos₀ (fun g' hg' => DestructorBranches.get_inj hb' hg' ▸ hN) hpos g hg
 

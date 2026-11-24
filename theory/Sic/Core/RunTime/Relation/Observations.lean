@@ -431,16 +431,16 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (ht : RunsAs sig ι P H t a (.inst D qs ls ps as)) {H' : Heap} (hH' : H.Extends H')
     (ϖ₀ : Multiplicity) {ts : Args 0 [] ps'} {bs : List Nat}
     (hts : EqSubst sig ι (Context.empty.append ((Θ.substLevels (ls.getFin hl)).subst
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) ts.toSubst ts.toSubst)
+      (hpos.obsSubstOf D qs ls ps as t))) ts.toSubst ts.toSubst)
     (hbs : RunsAsArgs sig ι P H' (Parameter.grades ps') ts bs
       ((Θ.substLevels (ls.getFin hl)).subst
-        (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
+        (hpos.obsSubstOf D qs ls ps as t))) :
     ∃ i w H'' tr, sig.destructorCase D d = some i ∧
       EvalObs P ϖ₀ H' a i (ψ.map Grade.run) ς.run (ps'.map (·.usage.run))
         (ps'.map (·.requirement.run)) bs w H'' tr ∧ H'.Extends H'' ∧
       RunsAs sig ι P H'' (.obs D qs ls ps as t d ts.terms) w
         ((B.substLevels (ls.getFin hl)).subst
-          (Subst.append (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst)) := by
+          (Subst.append (hpos.obsSubstOf D qs ls ps as t) ts.toSubst)) := by
   obtain ⟨hdecl, hT, hD⟩ := id h
   -- The levels without variables at which the declaration is meaningful.
   let L := ls.getFin hl
@@ -562,12 +562,13 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
     (fun i D' hi => hXeq D' (Destructors.recursionAt_mem hi)) hDes ho hf₁ hf₂).2
   -- The arguments, at the levels without variables, are related by the relation of the telescope.
   have hcE : Subst.LevelEquiv
-      ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst)
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) := fun {_} x => by
+      ((hpos.substLevels Lρ).obsSubstOf D qs ls ps as t)
+      (hpos.obsSubstOf D qs ls ps as t) := fun {_} x => by
     show Term.LevelEquiv
-      ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst x)
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst x)
-    rw [Destructors.Pos.obsSubst_posSubstLevels]
+      ((hpos.substLevels Lρ).obsSubstOf D qs ls ps as t x)
+      (hpos.obsSubstOf D qs ls ps as t x)
+    rw [Destructors.Pos.obsSubstOf_def, Destructors.Pos.obsSubstOf_def,
+      Destructors.Pos.obsSubst_posSubstLevels]
     exact Term.LevelEquiv.refl _
   have htsρ := (EqSubst.substLevels_iff_atLevels L Θ hcE.symm).1 hts
   have hbsρ := RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L hcE.symm) hbs
@@ -592,7 +593,7 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   -- Its result at the observations of the corecursor is equal to that at those of the term.
   have hBT : ValidEqType₀ sig ι
       ((B.substLevels Lρ).subst (Subst.append
-        ((hpos.substLevels Lρ).obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst))
+        ((hpos.substLevels Lρ).obsSubstOf D qs ls ps as t) ts.toSubst))
       ((B.substLevels Lρ).subst (Subst.append
         ((hpos.substLevels Lρ).obsSubst o' as.toSubst) ts.toSubst)) := by
     obtain ⟨⟨s₁, l₁⟩, hB₁⟩ := hBeq ts ts htsρ
@@ -628,12 +629,12 @@ theorem RunValidRen.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {
     {t : Term 0 Γ} (ht : ValidTermΓ sig ι ctx t (.inst D qs ls ps as))
     (htr : RunValidRen sig ι P hΓ ctx γ t (.inst D qs ls ps as)) {bs : Args 0 Γ ps'}
     (hbs : ValidArgsΓ sig ι ctx bs ((Θ.substLevels (ls.getFin hl)).subst
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+      (hpos.obsSubstOf D qs ls ps as t)))
     (hbr : RunValidArgsRen sig ι P hΓ ctx δ bs ((Θ.substLevels (ls.getFin hl)).subst
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
+      (hpos.obsSubstOf D qs ls ps as t))) :
     RunValidRen sig ι P hΓ ctx (γ +ᶜ δ) (.obs D qs ls ps as t d bs.terms)
       (((B.substLevels (ls.getFin hl)).subst
-        (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate
+        (Subst.liftN _ (hpos.obsSubstOf D qs ls ps as t))).instantiate
           bs) := by
   intro ϖ₀ σ H E V hσ hEV hE _ g E' hg
   have hS := Mode.erasesUncounted .oneOne
@@ -642,22 +643,17 @@ theorem RunValidRen.obs (hd : sig.Distinct) {Γ : Scope} {hΓ : Γ.FirstOrder} {
   have hEδ : RunsAsSubst sig ι P H ctx δ σ V := RunsAsSubst.of_counted ctx (fun x h h' =>
     h (hS.add _ _ (by rw [Grade.modality.semiring.add_comm]; exact h'))) hE
   -- The scope of the destructor, substituted, is that of the observations of the term substituted.
-  have hc : ∀ {a} (x : Var Ξ a),
-      ((hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) x).subst
-        (Subst.liftN a.params.length σ) =
-      hpos.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
-    hpos.obsSubst_subst σ (fun d ps' => Term.observation_subst σ D qs ls ps as t d ps')
-      (InstanceArgs.toSubst_subst σ as)
+  have hc {a : Scope.Entry} (x : Var Ξ a) := hpos.obsSubstOf_subst σ D qs ls ps as t x
   have hΘ : ((Θ.substLevels (ls.getFin hl)).subst
-      (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)).subst σ =
+      (hpos.obsSubstOf D qs ls ps as t)).subst σ =
       (Θ.substLevels (ls.getFin hl)).subst
-        (hpos.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst) :=
+        (hpos.obsSubstOf D qs ls ps (as.subst σ) (t.subst σ)) :=
     Telescope.subst_subst_of hc _
   have hA : (((B.substLevels (ls.getFin hl)).subst
-      (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate
+      (Subst.liftN _ (hpos.obsSubstOf D qs ls ps as t))).instantiate
         bs).subst σ =
       (B.substLevels (ls.getFin hl)).subst (Subst.append
-        (hpos.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst)
+        (hpos.obsSubstOf D qs ls ps (as.subst σ) (t.subst σ))
         (bs.subst σ).toSubst) := by
     rw [Term.instantiate_subst, Term.subst_subst_of (Subst.liftN_subst_of _ hc),
       Term.instantiate_eq_subst, Term.subst_append]

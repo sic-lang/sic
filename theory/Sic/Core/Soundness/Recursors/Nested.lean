@@ -302,7 +302,7 @@ theorem Term.NestedResult.inst_inv {k : Nat} (hd : sig.Distinct) {Γ : Scope} {�
           (B.nest (fun _ => none)
             (Nesting.liftN ps₁.length (hpos.nesting (Nesting.ofArgs ns))))
           ((B.substLevels (ls.getFin hl)).subst
-            (Subst.liftN _ (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+            (Subst.liftN _ (hpos.obsSubstOf D qs ls ps as t)))
           (t.observation D qs ls ps as d ps₁) g) := by
   generalize hA : Term.inst D qs ls ps as = A at hres
   cases hres with
@@ -454,13 +454,13 @@ theorem ResultSoundAt.inst (hd : sig.Distinct)
       (hpos : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ),
       ∃ SΘ, TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hpos.obsSubst (t₁.observation D qs ls ps as) as.toSubst)) SΘ ∧
+            (hpos.obsSubstOf D qs ls ps as t₁)) SΘ ∧
         ∀ ts us : Args 0 [] ps₁, SΘ ts.terms us.terms →
           ResultSoundAt sig ι v ρ₁ ρ₂ φ₁ φ₂
             (B.nest (fun _ => none)
               (Nesting.liftN ps₁.length (hpos.nesting (Nesting.ofArgs ns))))
             ((B.substLevels (ls.getFin hl)).subst
-              (Subst.append (hpos.obsSubst (t₁.observation D qs ls ps as) as.toSubst) ts.toSubst))
+              (Subst.append (hpos.obsSubstOf D qs ls ps as t₁) ts.toSubst))
             ((t₁.observation D qs ls ps as d ps₁).subst ts.toSubst)
             ((t₂.observation D qs ls₂ ps as₂ d ps₁).subst us.toSubst)) :
     ResultSoundAt sig ι v ρ₁ ρ₂ φ₁ φ₂ (.inst ns) (.inst D qs ls ps as) t₁ t₂ := by

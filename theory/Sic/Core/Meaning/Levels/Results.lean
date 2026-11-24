@@ -422,7 +422,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
             (B.nest (fun _ => none)
               (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs n.args))))
             ((B.substLevels (ls₂.getFin hl₂)).subst
-              (Subst.liftN _ (hd.obsSubst (t₂.observation D qs ls₂ ps as₂) as₂.toSubst)))
+              (Subst.liftN _ (hd.obsSubstOf D qs ls₂ ps as₂ t₂)))
             (t₂.observation D qs ls₂ ps as₂ d ps₁) g)
         (fun i n' m' a' g₁ hi => by
           rcases hnd : ns[i]? with _ | d
@@ -450,7 +450,7 @@ theorem Term.NestedResult.levelEquiv {sig : Signature} {k : Nat} {v : Lifting.Va
                       (Nesting.liftN ps₁'.length (hd.nesting (Nesting.ofArgs n.args))))
                     ((B.substLevels (ls₂.getFin hl₂)).subst
                       (Subst.liftN _
-                        (hd.obsSubst (t₂.observation D qs ls₂ ps as₂) as₂.toSubst)))
+                        (hd.obsSubstOf D qs ls₂ ps as₂ t₂)))
                     (t₂.observation D qs ls₂ ps as₂ d ps₁') g)
               hd (fun g hg' => by cases hg'; exact hres) hd₂)
       refine ⟨_, .inst h hn hqp hl₂ has₂ hS hL (hgse.length_eq.symm.trans hgl)

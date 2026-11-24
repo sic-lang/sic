@@ -452,10 +452,10 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         ((decl.params hqp.inst).substLevels (ls.getFin hl)))
       (ht : HasType sig ctx t (.inst D qs ls ps as))
       (hbs : HasArgs sig ctx bs ((Θ.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
+        (hd.obsSubstOf D qs ls ps as t))) :
       HasType sig ctx (.obs D qs ls ps as t d bs.terms)
         (((B.substLevels (ls.getFin hl)).subst
-          (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).instantiate bs)
+          (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t))).instantiate bs)
   /-- A corecursor of the instance it carries, which the constraint admits and whose arguments are
   arguments of the parameters, from a state, arguments of the state of its type, with a state for
   each type of the block, a telescope of a sort `κs j`, and a branch for each case of the block, is a
@@ -502,17 +502,15 @@ inductive HasType : Signature → {k : Nat} → {Γ : Scope} → Context k Γ �
         (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
         HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-            ps (as.rename (Ren.weakenN ps''.length)))
-            (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+            (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))) g
           (Term.branchResult decl.names B
             ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-              (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
-                ls ps (as.rename (Ren.weakenN ps''.length)))
-                (as.rename (Ren.weakenN ps''.length)).toSubst))))) :
+              (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+                (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))))) :
       HasType sig ctx (.corec r D qs ls ps as ss.terms Ss gs) (.inst D qs ls ps as)
   -- ADE: `conv`, in `Definition/Typed.agda`.
   /-- A term has every type equal to its own.
@@ -723,10 +721,10 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hls : ∀ i, ls₁.getFin hl₁ i ≈ ls₂.getFin hl₂ i)
       (ht : EqTerm sig ctx t₁ t₂ (.inst D qs ls₁ ps as₁))
       (hbs : EqArgs sig ctx bs₁ bs₂ ((Θ.substLevels (ls₁.getFin hl₁)).subst
-        (hd.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst))) :
+        (hd.obsSubstOf D qs ls₁ ps as₁ t₁))) :
       EqTerm sig ctx (.obs D qs ls₁ ps as₁ t₁ d bs₁.terms) (.obs D qs ls₂ ps as₂ t₂ d bs₂.terms)
         (((B.substLevels (ls₁.getFin hl₁)).subst
-          (Subst.liftN _ (hd.obsSubst (t₁.observation D qs ls₁ ps as₁) as₁.toSubst))).instantiate
+          (Subst.liftN _ (hd.obsSubstOf D qs ls₁ ps as₁ t₁))).instantiate
             bs₁)
   -- ADE: `prod-cong`, in `Definition/Typed.agda`.
   /-- Two corecursors of the same type, at equal arguments of the instance, at equal levels, from
@@ -782,17 +780,15 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
         gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
         EqTerm sig ((ctx.append S₁').append ((Θ.substLevels (ls₁.getFin hl₁)).subst
-          (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation T'.name
-            qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
-            (as₁.rename (Ren.weakenN ps''.length)).toSubst))) g₁ g₂
+          (hd.obsSubstOf T'.name qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length))
+            (Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'')))) g₁ g₂
           (Term.branchResult decl.names B
             ((decl.sort hqp.inst).substLevels (ls₁.getFin hl₁)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss₁.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls₁.getFin hl₁)).subst (Subst.liftN _
-              (hd.obsSubst ((Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'').observation
-                T'.name qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length)))
-                (as₁.rename (Ren.weakenN ps''.length)).toSubst))))) :
+              (hd.obsSubstOf T'.name qs ls₁ ps (as₁.rename (Ren.weakenN ps''.length))
+                (Term.corecAt r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps'')))))) :
       EqTerm sig ctx (.corec r D qs ls₁ ps as₁ ss₁.terms Ss₁ gs₁)
         (.corec r D qs ls₂ ps as₂ ss₂.terms Ss₂ gs₂) (.inst D qs ls₁ ps as₁)
   -- ADE: `natrec-zero`, `natrec-suc`, `prodrec-β` and `unitrec-β`, in `Definition/Typed.agda`.
@@ -922,8 +918,7 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
       (hd : (T.body hqp.inst).Pos d p q ς Ξ₀ Θ₀ B₀ ψ₀)
       (hg : gs.get i = some ⟨0, ps'.length, ps₀.length, g⟩)
       (hbs : HasArgs sig ctx bs ((Θ₀.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
-          as.toSubst)))
+        (hd.obsSubstOf D qs ls ps as (Term.corec r D qs ls ps as ss.terms Ss gs))))
       (hSl : Ss.length = decl.codataTypes.length)
       (hSs : ∀ j T', decl.codataTypes[j]? = some T' →
         ∃ (ps'' : List Parameter) (S' : Telescope k Γ ps''), Ss.get j = some ⟨0, ps'', S'⟩)
@@ -945,25 +940,23 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
         gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
         HasType sig ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-            ps (as.rename (Ren.weakenN ps''.length)))
-            (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+            (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))) g
           (Term.branchResult decl.names B
             ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
             (ψ.constant.getD .unrestrictedUnrestricted)
             ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
             ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-              (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
-                ls ps (as.rename (Ren.weakenN ps''.length)))
-                (as.rename (Ren.weakenN ps''.length)).toSubst))))) :
+              (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+                (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))))) :
       EqTerm sig ctx (.obs D qs ls ps as (.corec r D qs ls ps as ss.terms Ss gs) d bs.terms)
         (Term.observed decl.names (B₀.blockName decl.names) r qs ls ps as Ss gs
           ((decl.sort hqp.inst).substLevels (ls.getFin hl))
           (ψ₀.constant.getD .unrestrictedUnrestricted)
           ((g.instantiate (bs.rename (Ren.weakenN ps'.length))).instantiate ss))
         (((B₀.substLevels (ls.getFin hl)).subst
-          (Subst.liftN _ (hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D
-            qs ls ps as) as.toSubst))).instantiate bs)
+          (Subst.liftN _ (hd.obsSubstOf D qs ls ps as
+            (Term.corec r D qs ls ps as ss.terms Ss gs)))).instantiate bs)
   -- ADE: `η-eq`, `Σ-η` and `η-unit`, in `Definition/Typed.agda`.
   /-- Two terms of the instance of a codata type without recursive destructor, whose arguments are
   arguments of the parameters, whose observations by each destructor, at the position `hd` in the
@@ -986,10 +979,10 @@ inductive EqTerm : Signature → {k : Nat} → {Γ : Scope} → Context k Γ →
         (Θ : Telescope decl.levels Ξ ps') (B : Term decl.levels (Ξ.extend ps'.length))
         (ψ : ResultOwnership Grade ps'.length) (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ),
         EqTerm sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+          (hd.obsSubstOf D qs ls ps as t)))
           (t.observation D qs ls ps as d ps') (u.observation D qs ls ps as d ps')
           ((B.substLevels (ls.getFin hl)).subst
-            (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
+            (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t)))) :
       EqTerm sig ctx t u (.inst D qs ls ps as)
 
 /-- `Σ; Γ ⊢ t̄ : Θ`: the arguments are typed by the telescope, each argument instantiating the types

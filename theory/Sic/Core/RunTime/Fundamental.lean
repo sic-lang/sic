@@ -87,9 +87,8 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
       gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased → ∀ ρ,
       RunValidRen sig ι P ((hΓ.extend _).extend _)
         (((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-            ps (as.rename (Ren.weakenN ps''.length)))
-            (as.rename (Ren.weakenN ps''.length)).toSubst))).atLevels ρ)
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+            (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))).atLevels ρ)
         (((δs i).extendParams (Mode.oneOne.grade * r) ps'').extendParams Mode.oneOne.grade ps₁)
         (g.atLevels ρ)
         ((Term.branchResult decl.names B
@@ -97,9 +96,8 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
-              ls ps (as.rename (Ren.weakenN ps''.length)))
-              (as.rename (Ren.weakenN ps''.length)).toSubst)))).atLevels ρ))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+              (Term.corecAt r T'.name qs ls ps as Ss gs ps''))))).atLevels ρ))
     (ρ : Fin k → Nat) :
     RunValidCorecBranches sig ι P hΓ (ctx.atLevels ρ) decl qs
       (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)

@@ -284,7 +284,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
           (ψ : ResultOwnership Grade ps₁.length) (hpos : (T'.body I).Pos d p q ς Ξ Θ B ψ)
           (ts us : Args 0 [] ps₁),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels L).subst
-            (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst))) ts.toSubst us.toSubst →
+            (hpos.obsSubstOf T'.name qs ls ps a x))) ts.toSubst us.toSubst →
           ∃ i : Nat, decl.codataCases[i]? = some (j, T', d) ∧
             EqSubst sig ι ((((ctx.var (.inst T'.name qs ls ps as)).var
                 ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
@@ -301,15 +301,15 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
               (Subst.append (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z) ts.toSubst) =
               (B.substLevels L).subst (Subst.append
-                (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst) ∧
+                (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst) ∧
             ValidEqTerm₀ sig ι (.obs T'.name qs ls ps a x d ts.terms)
               (.obs T'.name qs ls ps a x d us.terms)
               ((B.substLevels L).subst (Subst.append
-                (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) ∧
+                (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst)) ∧
             ValidEqTerm₀ sig ι (.obs T'.name qs ls ps a y d ts.terms)
               (.obs T'.name qs ls ps a y d us.terms)
               ((B.substLevels L).subst (Subst.append
-                (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) := by
+                (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst)) := by
         intro d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ
         have hmem := TypeDeclaration.mem_codataCases_of hj hpos.mem
         obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hmem
@@ -317,10 +317,10 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         have hc : ∀ (X₀ : Var (Γ.extend 3) .var) (w₀ : Term 0 []),
             (Term.var₀ X₀).subst (Subst.snoc (e := .var) (Subst.snoc (e := .var)
               (Subst.snoc (e := .var) σ x) y) z) = w₀ → ∀ {a'} (u : Var Ξ a'),
-            ((hpos.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3)) (.var₀ X₀)) u).subst
+            (hpos.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3)) (.var₀ X₀) u).subst
               (Subst.liftN a'.params.length (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z)) =
-            hpos.obsSubst (w₀.observation T'.name qs ls ps a) a.toSubst u := fun X₀ w₀ hw {_} u =>
+            hpos.obsSubstOf T'.name qs ls ps a w₀ u := fun X₀ w₀ hw {_} u =>
           hpos.obsSubst_subst _ (o' := w₀.observation T'.name qs ls ps a)
             (fun d' ps' => (Term.observation_subst _ T'.name qs ls ps _ _ d' ps').trans
               (hw ▸ has3 ▸ rfl))
@@ -331,17 +331,17 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         have hcy := fun {a'} (u : Var Ξ a') => hc (.succ .zero) y rfl u
         have hΘx := Telescope.subst_subst_of hcx (Θ.substLevels L)
         have hΘxy : (Θ.substLevels L).subst
-              (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) =
+              (hpos.obsSubstOf T'.name qs ls ps a x) =
             (Θ.substLevels L).subst
-              (hpos.obsSubst (y.observation T'.name qs ls ps a) a.toSubst) := by
+              (hpos.obsSubstOf T'.name qs ls ps a y) := by
           exact (Telescope.subst_subst_of hcx _).symm.trans
             ((congrArg (fun Θ' => Telescope.subst (Subst.snoc (e := .var)
               (Subst.snoc (e := .var) (Subst.snoc (e := .var) σ x) y) z) Θ')
               (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)).trans (Telescope.subst_subst_of hcy _))
         have hBxy : (B.substLevels L).subst
-              (Subst.liftN _ (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst)) =
+              (Subst.liftN _ (hpos.obsSubstOf T'.name qs ls ps a x)) =
             (B.substLevels L).subst
-              (Subst.liftN _ (hpos.obsSubst (y.observation T'.name qs ls ps a) a.toSubst)) := by
+              (Subst.liftN _ (hpos.obsSubstOf T'.name qs ls ps a y)) := by
           exact (Term.subst_subst_of (Subst.liftN_subst_of _ hcx) _).symm.trans
             ((congrArg (fun t => Term.subst (Subst.liftN ps₁.length (Subst.snoc (e := .var)
               (Subst.snoc (e := .var) (Subst.snoc (e := .var) σ x) y) z)) t)
@@ -365,12 +365,12 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
           (ψ : ResultOwnership Grade ps₁.length) (hpos : (T'.body I).Pos d p q ς Ξ Θ B ψ)
           (ts us : Args 0 [] ps₁),
           EqSubst sig ι (Context.empty.append ((Θ.substLevels Lρ).subst
-            (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst))) ts.toSubst us.toSubst →
+            (hpos.obsSubstOf T'.name qs ls ps a x))) ts.toSubst us.toSubst →
           (T'.body I).recursionAt decl.names hpos.index = none →
           ValidEqTerm₀ sig ι (((x.observation T'.name qs ls ps a) d ps₁).subst ts.toSubst)
             (((y.observation T'.name qs ls ps a) d ps₁).subst us.toSubst)
             ((B.substLevels Lρ).subst (Subst.append
-              (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst)) := by
+              (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst)) := by
         intro d p q ς ps₁ Ξ Θ B ψ hpos ts us hτ hr
         rw [Term.observation_subst_args, Term.observation_subst_args]
         have hτL := (EqSubst.substLevels_iff_atLevels L Θ (Subst.LevelEquiv.refl _)).2 hτ
@@ -420,11 +420,12 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             obtain ⟨g, hg⟩ := hgs i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
             -- The result of the destructor is the instance of the type of the block it names.
             have hty : Term.LevelEquiv ((B.substLevels L).subst (Subst.append
-                (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
+                (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst))
                 (.inst T''.name qs ls ps a) := by
               have hE := Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl (Subst.append
-                  (hpos.obsSubst (x.observation T'.name qs ls ps a) a.toSubst) ts.toSubst))
-              rw [Term.atLevels, e] at hE
+                  (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst))
+              rw [Term.atLevels] at hE
+              erw [e] at hE
               exact hE.trans (decl.blockInstance_atLevels_subst hqp hl a _)
             have hxD := hox.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hyD := hoy.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty

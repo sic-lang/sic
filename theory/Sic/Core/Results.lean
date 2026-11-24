@@ -335,7 +335,7 @@ inductive Term.NestedResult (sig : Signature) (v : Lifting.Variables) :
           (fun E => (φ E).rename (Ren.lift (Ren.weakenN ps₁.length)))
           (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs n.args))))
           ((B.substLevels (ls.getFin hl)).subst
-            (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+            (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t)))
           (t.observation D qs ls ps as d ps₁) g) :
       Term.NestedResult sig v ρ φ n (.inst D qs ls ps as) t
         (.corec v.recursion (Lifting.name D S) (qs ++ [v.quality]) (ls ++ ms.map (·.level))

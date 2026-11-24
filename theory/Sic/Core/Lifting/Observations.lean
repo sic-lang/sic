@@ -494,7 +494,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst) :
         Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * m.factor)))) =
         (((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)).rename
+          (hd.obsSubstOf D qs ls ps as t)).rename
             ρ.ren).scale (v.recursion * m.factor) ∧
       A₀.nest (fun _ => none) (Nesting.liftN ps₁.length (Nesting.lift (Nesting.ofArgs nsA))) =
         B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA))) ∧
@@ -507,7 +507,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
         (t.observation D qs ls ps as d ps₁).rename (Ren.liftN ps₁.length ρ.ren) ∧
       A₀.subst (Subst.liftN ps₁.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
         (B.substLevels (ls.getFin hl)).subst
-          (Subst.liftN ps₁.length (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)) ∧
+          (Subst.liftN ps₁.length (hd.obsSubstOf D qs ls ps as t)) ∧
       A₀'.subst (Subst.liftN ps₁.length
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst)) =
         (((congrArg List.length hps).trans (List.length_map _)) ▸
@@ -574,7 +574,7 @@ theorem TypeDeclaration.Lifts.result {decl : TypeDeclaration} {D : Name}
           ((InstanceArgs.identity decl.scope).rename Ren.weaken).toSubst x).substLevels
           ((ls ++ ms.map (·.level)).getFin hl')).subst
         (Subst.liftN a.params.length (InstanceArgs.snoc (e := .var) as t).toSubst) =
-      hd.obsSubst (t.observation D qs ls ps as) as.toSubst x := fun x => by
+      hd.obsSubstOf D qs ls ps as t x := fun x => by
     have e₁ := hd.obsSubst_substLevels ((ls ++ ms.map (·.level)).getFin hl')
       (o := decl.liftedObservation D S.length hqp.inst)
       (o' := fun d' ps' => (decl.liftedObservation D S.length hqp.inst d'
@@ -674,13 +674,13 @@ theorem TypeDeclaration.Lifts.observation {decl : TypeDeclaration} {D : Name}
           (hd'.obsSubst o' (InstanceArgs.snoc (e := .var) as' (t.rename ρ.ren)).toSubst) :
         Telescope k Γ' (ps₁.map (Parameter.scale (v.recursion * m.factor)))) =
         (((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)).rename
+          (hd.obsSubstOf D qs ls ps as t)).rename
             ρ.ren).scale (v.recursion * m.factor) ∧
       Term.Lifts sig v (ρ.liftN ps₁.length)
         (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA))))
         ((t.observation D qs ls ps as d ps₁).rename (Ren.liftN ps₁.length ρ.ren))
         ((B.substLevels (ls.getFin hl)).subst
-          (Subst.liftN ps₁.length (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+          (Subst.liftN ps₁.length (hd.obsSubstOf D qs ls ps as t)))
         (((congrArg List.length hps).trans (List.length_map _)) ▸
           (B'.substLevels ((ls ++ ms.map (·.level)).getFin hl')).subst
             (Subst.liftN ps₁'.length

@@ -121,15 +121,13 @@ theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (
     (qs : List Quality) (ls : List (Level k)) (ps : List Grade) (as : InstanceArgs k Γ Δ)
     (Ss : States k Γ) (gs : DestructorBranches k Γ) (ps' : List Parameter) :
     ∀ {a} (x : Var Ξ a),
-      (hpos.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps').observation D qs ls ps
-          (as.rename (Ren.weakenN ps'.length))) (as.rename (Ren.weakenN ps'.length)).toSubst x).substLevels
+      (hpos.obsSubstOf D qs ls ps (as.rename (Ren.weakenN ps'.length))
+        (Term.corecAt r D qs ls ps as Ss gs ps') x).substLevels
         (fun i => (.ofNat (ρ i) : Level 0)) =
-      hpos.obsSubst ((Term.corecAt r D qs (ls.map (Level.atLevels ρ)) ps
-          (as.atLevels ρ) (Ss.substLevels fun i => .ofNat (ρ i))
-          (gs.substLevels fun i => .ofNat (ρ i)) ps').observation D qs
-          (ls.map (Level.atLevels ρ)) ps
-          ((as.atLevels ρ).rename (Ren.weakenN ps'.length)))
-        ((as.atLevels ρ).rename (Ren.weakenN ps'.length)).toSubst x :=
+      hpos.obsSubstOf D qs (ls.map (Level.atLevels ρ)) ps
+        ((as.atLevels ρ).rename (Ren.weakenN ps'.length))
+        (Term.corecAt r D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ)
+          (Ss.substLevels fun i => .ofNat (ρ i)) (gs.substLevels fun i => .ofNat (ρ i)) ps') x :=
   hpos.obsSubst_substLevels _ (fun d' ps'' => by
     rw [Term.observation_substLevels, Term.corecAt_substLevels, InstanceArgs.substLevels_rename,
       Level.subst_ofNat, InstanceArgs.atLevels])
@@ -159,17 +157,16 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
       gs₁.get i = some ⟨0, ps''.length, ps₁.length, g₁⟩ →
       gs₂.get i = some ⟨0, ps''.length, ps₁.length, g₂⟩ →
       ValidEqTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs ls
-          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
+        (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+          (Term.corecAt r T'.name qs ls ps as Ss gs₁ ps''))))
         g₁ g₂
         (Term.branchResult decl.names B
           ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs₁ ps'').observation T'.name qs
-              ls ps (as.rename (Ren.weakenN ps''.length)))
-              (as.rename (Ren.weakenN ps''.length)).toSubst)))))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+              (Term.corecAt r T'.name qs ls ps as Ss gs₁ ps''))))))
     (ρ : Fin k → Nat) :
     CorecBranchesEqValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)
@@ -290,16 +287,15 @@ theorem CorecBranchesValid.atLevels {sig : Signature} {ι : Interpretation} {k :
       (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ →
       ValidTerm sig ι ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst))) g
+        (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+          (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))) g
         (Term.branchResult decl.names B
           ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
           (ψ.constant.getD .unrestrictedUnrestricted)
           ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
-              ls ps (as.rename (Ren.weakenN ps''.length)))
-              (as.rename (Ren.weakenN ps''.length)).toSubst)))))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+              (Term.corecAt r T'.name qs ls ps as Ss gs ps''))))))
     (ρ : Fin k → Nat) :
     CorecBranchesValid sig ι (ctx.atLevels ρ) decl qs
       (ls.map (Level.atLevels ρ)) ps hqp (Level.length_atLevels ρ hl)
@@ -484,7 +480,6 @@ theorem soundnessIn : SoundnessIn := by
         exact ⟨_, DestructorBranches.get_substLevels_of _ hg⟩
       · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
         have e := congrArg (Telescope.substLevels L') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
-        unfold Destructors.Pos.obsSubstOf at e
         rw [Telescope.substLevels_subst_of
             (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
@@ -495,7 +490,6 @@ theorem soundnessIn : SoundnessIn := by
         exact e
       · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
         have e := congrArg (Term.substLevels L') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
-        unfold Destructors.Pos.obsSubstOf at e
         rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _
             (hpos.obsSubstOf_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),
@@ -885,13 +879,12 @@ theorem soundnessIn : SoundnessIn := by
       have hss' := hss_ih hdis hord hι ρ
       have hbs' := hbs_ih hdis hord hι ρ
       have hcl : ∀ {a} (x : Var Ξ₀ a),
-          ((hd.obsSubst ((Term.corec r D qs ls ps as ss.terms Ss gs).observation D qs ls ps as)
-            as.toSubst) x).substLevels (fun i => (.ofNat (ρ i) : Level 0)) =
-            hd.obsSubst ((Term.corec r D qs (ls.map (Level.atLevels ρ)) ps
-              (as.atLevels ρ) (ss.substLevels fun i => .ofNat (ρ i)).terms
-              (Ss.substLevels fun i => .ofNat (ρ i)) (gs.substLevels fun i => .ofNat (ρ i))).observation
-              D qs (ls.map (Level.atLevels ρ)) ps
-              (as.atLevels ρ)) (as.atLevels ρ).toSubst x :=
+          (hd.obsSubstOf D qs ls ps as (Term.corec r D qs ls ps as ss.terms Ss gs) x).substLevels
+              (fun i => (.ofNat (ρ i) : Level 0)) =
+            hd.obsSubstOf D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ)
+              (Term.corec r D qs (ls.map (Level.atLevels ρ)) ps (as.atLevels ρ)
+                (ss.substLevels fun i => .ofNat (ρ i)).terms (Ss.substLevels fun i => .ofNat (ρ i))
+                (gs.substLevels fun i => .ofNat (ρ i))) x :=
         fun x => hd.obsSubst_substLevels _ (fun d' ps' => by
           rw [Term.observation_substLevels]
           simp only [Term.substLevels, ← Args.terms_substLevels, Level.subst_ofNat,

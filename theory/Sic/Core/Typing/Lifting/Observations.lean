@@ -79,9 +79,9 @@ structure Subst.Observes (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D
         (hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ' B' ψ),
         θ X = t.observation D qs ls ps as d ps' ∧
         Θ.subst θ = (Θ'.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst (t.observation D qs ls ps as) as.toSubst) ∧
+          (hd.obsSubstOf D qs ls ps as t) ∧
         A.subst (Subst.liftN _ θ) = (B'.substLevels (ls.getFin hl)).subst
-          (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))
+          (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t))
 
 /-- The substitutions that observe a term of an instance of the codata type `T`. -/
 def Subst.Observes.Base (sig : Signature) {k : Nat} {decl : TypeDeclaration} (D : Name)
@@ -104,9 +104,9 @@ theorem Subst.Observes.snoc {Γ Ξ : Scope} {as : InstanceArgs k Γ decl.scope} 
     (hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ' B' ψ) {Θ : Telescope k Ξ ps'}
     {B : Term k (Ξ.extend ps'.length)}
     (hΘ : Θ.subst θ = (Θ'.substLevels (ls.getFin hl)).subst
-      (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))
+      (hd.obsSubstOf D qs ls ps as t))
     (hB : B.subst (Subst.liftN _ θ) = (B'.substLevels (ls.getFin hl)).subst
-      (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) :
+      (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t))) :
     Subst.Observes sig D T qs ls ps hqp hl as t ctx'
       (Subst.snoc (e := .secondOrder ps' ψ) θ (t.observation D qs ls ps as d ps'))
       (ctx.secondOrder Θ B ψ) where
@@ -225,7 +225,7 @@ theorem WfDestructors.observations (hT : sig.HasCodataType D decl T)
         {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
         {ψ : ResultOwnership Grade ps'.length} (h : Destructors.Pos d p q ς ds' Ξ Θ B ψ),
         ∃ hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ, ∀ {a} (x : Var Ξ a),
-          hd.obsSubst (t.observation D qs ls ps as) as.toSubst x =
+          hd.obsSubstOf D qs ls ps as t x =
             h.obsSubst (t.observation D qs ls ps as) @θ' x) →
       ∀ {d : Name} {p q ς : Grade} {ps' : List Parameter} {Ξ : Scope}
         {Θ : Telescope decl.levels Ξ ps'} {B : Term decl.levels (Ξ.extend ps'.length)}
@@ -357,20 +357,15 @@ theorem Destructors.Pos.hasType_observations (hT : sig.HasCodataType D decl T)
     (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ) :
     WfTelescope sig ctx'
         ((Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst
-            (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
-            ((InstanceArgs.identity decl.scope).rename α).toSubst))
+          (hd.obsSubstOf D qs ls ps ((InstanceArgs.identity decl.scope).rename α) t))
         ⟨.type, ((decl.sort hqp.inst).substLevels (ls.getFin hl)).level⟩ ∧
       (B.blockName decl.names = none → ∃ κ₁, κ₁ ≼ decl.sort hqp.inst ∧
         HasType sig
           (ctx'.append ((Θ.substLevels (ls.getFin hl)).subst
-            (hd.obsSubst
-              (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
-              ((InstanceArgs.identity decl.scope).rename α).toSubst)))
+            (hd.obsSubstOf D qs ls ps ((InstanceArgs.identity decl.scope).rename α) t)))
           ((B.substLevels (ls.getFin hl)).subst
-            (Subst.liftN _ (hd.obsSubst
-              (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
-              ((InstanceArgs.identity decl.scope).rename α).toSubst)))
+            (Subst.liftN _ (hd.obsSubstOf D qs ls ps ((InstanceArgs.identity decl.scope).rename α)
+              t)))
           (.sort (κ₁.substLevels (ls.getFin hl)))) := by
   have hsig := presuppositions.wfCtx hα.wfCtx
   obtain ⟨sig', hs, hdecl⟩ := hsig.wfTypeDeclaration hT.1

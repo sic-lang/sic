@@ -684,7 +684,7 @@ theorem TypeDeclaration.Lifts.shape_result {decl : TypeDeclaration} {D : Name}
           ∃ m₁, B₀.shape v lookup block @ν₀ n₀ = some m₁)
     (hb : ρ.BlockShapes block) :
     (((B.substLevels (ls.getFin hl)).subst
-          (Subst.liftN ps₁.length (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))).subst
+          (Subst.liftN ps₁.length (hd.obsSubstOf D qs ls ps as t))).subst
         ts.toSubst).shape v lookup block Nesting.plain
         (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hd.nesting (Nesting.ofArgs nsA)))) =
       B.shape v lookup (fun _ => none)

@@ -291,17 +291,17 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
       ∃ SΘ Rb i, sig.destructorCase D d = some i ∧
         TelRel sig ι n (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) SΘ ∧
+            (hpos.obsSubstOf D qs ls ps as t)) SΘ ∧
         (ρ ≠ .zero → ∃ RΘ, RunTelRel sig ι P n (fun m _ => levelRel sig ι m) (fun _ => .plain)
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)) RΘ ∧
+            (hpos.obsSubstOf D qs ls ps as t)) RΘ ∧
           ∀ H a, R H t a →
             RunAbstractionRel P i ψ ς RΘ Rb (t.observation D qs ls ps as d ps₁) H a) ∧
         ∀ ts : Args 0 [] ps₁, SΘ ts.terms ts.terms →
           NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ Hb
             (B.nest (fun _ => none) (Nesting.liftN ps₁.length (hpos.nesting (Nesting.ofArgs ns))))
             ((B.substLevels (ls.getFin hl)).subst
-              (Subst.append (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst) ts.toSubst))
+              (Subst.append (hpos.obsSubstOf D qs ls ps as t) ts.toSubst))
             ((t.observation D qs ls ps as d ps₁).subst ts.toSubst) (Rb ts.terms)) :
     NestedRunsAt sig ι P v ρ₁ φ block ρ ϱ Ns₀ E₀ Hb (.inst ns) (.inst D qs ls ps as) t R := by
   intro e A' mA msO hres hL hsh hrun hval m g E hE H O hHb hO ϖ H₁ hH₁
@@ -435,12 +435,12 @@ theorem NestedRunsAt.inst (hd : sig.Distinct) (hord : sig.LiftsInOrder)
     have hΘ'' : TelRel sig ι (declL.sortAt I' L').level.closedValue
         (fun m _ => levelRel sig ι m) .type (fun _ => .plain)
         (((Θ.substLevels (ls.getFin hl)).subst
-          (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)).scale
+          (hpos.obsSubstOf D qs ls ps as t)).scale
             (v.recursion * mr.factor)) SΘ' := hΘeq ▸ hΘ'
     have hRΘ'' : RunTelRel sig ι P (declL.sortAt I' L').level.closedValue
         (fun m _ => levelRel sig ι m) (fun _ => .plain)
         (((Θ.substLevels (ls.getFin hl)).subst
-          (hpos.obsSubst (t.observation D qs ls ps as) as.toSubst)).scale
+          (hpos.obsSubstOf D qs ls ps as t)).scale
             (v.recursion * mr.factor)) RΘ' := hΘeq ▸ hRΘ'
     obtain ⟨ts, hts⟩ := Args.exists_terms_map (Parameter.scale (v.recursion * mr.factor)) ps₁ ts'
     obtain ⟨hSΘ, hlen, hrel⟩ := RunTelRel.of_scale hd hΘ hΘ'' hRΘ'' ts ts' hts hts'

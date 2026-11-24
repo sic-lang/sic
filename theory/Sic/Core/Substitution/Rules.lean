@@ -581,9 +581,9 @@ theorem Destructors.Pos.obsSubstOf_substLevels {k' k'' : Nat} {Γ' Δ : Scope}
     {Θ : Telescope k' Ξ ps'} {B : Term k' (Ξ.extend ps'.length)}
     {ψ : ResultOwnership Grade ps'.length} (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
-      ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).substLevels ls' =
-        hd.obsSubst ((t.substLevels ls').observation D qs (ls.map (Level.subst ls')) ps
-          (as.substLevels ls')) (as.substLevels ls').toSubst x :=
+      (hd.obsSubstOf D qs ls ps as t x).substLevels ls' =
+        hd.obsSubstOf D qs (ls.map (Level.subst ls')) ps (as.substLevels ls') (t.substLevels ls') x
+          :=
   hd.obsSubst_substLevels ls' (fun d ps' => Term.observation_substLevels ls' D qs ls ps as t d ps')
     (InstanceArgs.toSubst_substLevels ls' as)
 
@@ -596,9 +596,9 @@ theorem Destructors.Pos.obsSubstOf_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
-      ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).subst
+      (hd.obsSubstOf D qs ls ps as t x).subst
           (Subst.liftN a.params.length σ) =
-        hd.obsSubst ((t.subst σ).observation D qs ls ps (as.subst σ)) (as.subst σ).toSubst x :=
+        hd.obsSubstOf D qs ls ps (as.subst σ) (t.subst σ) x :=
   hd.obsSubst_subst σ (fun d ps' => Term.observation_subst σ D qs ls ps as t d ps')
     (InstanceArgs.toSubst_subst σ as)
 
@@ -610,9 +610,9 @@ theorem Destructors.Pos.obsSubstOf_rename {k' : Nat} {Γ' Γ'' Δ : Scope}
     {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope} {Θ : Telescope k' Ξ ps'}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) {a : Scope.Entry} (x : Var Ξ a) :
-    ((hd.obsSubst (t.observation D qs ls ps as) as.toSubst) x).rename
+    (hd.obsSubstOf D qs ls ps as t x).rename
         (Ren.liftN a.params.length α) =
-      hd.obsSubst ((t.rename α).observation D qs ls ps (as.rename α)) (as.rename α).toSubst x := by
+      hd.obsSubstOf D qs ls ps (as.rename α) (t.rename α) x := by
   rw [Term.rename_eq_subst_of (θ := Subst.liftN a.params.length (Ren.toSubst α))
       (Subst.liftN_eta_of a.params.length (fun _ => rfl)),
     hd.obsSubstOf_subst (Ren.toSubst α) D qs ls ps as t x, ← Term.rename_eq_subst,
@@ -701,12 +701,11 @@ theorem Destructors.Pos.obsSubst_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     {B : Term k' (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hd : Destructors.Pos d p q ς ds Ξ Θ B ψ) :
     ∀ {a} (x : Var Ξ a),
-      ((hd.obsSubst ((Term.corecAt r D qs ls ps as Ss gs ps'').observation D qs ls ps
-          (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst) x).subst
+      (hd.obsSubstOf D qs ls ps (as.rename (Ren.weakenN ps''.length))
+        (Term.corecAt r D qs ls ps as Ss gs ps'') x).subst
           (Subst.liftN a.params.length (Subst.liftN ps''.length σ)) =
-        hd.obsSubst ((Term.corecAt r D qs ls ps (as.subst σ) (Ss.subst σ) (gs.subst σ) ps'').observation
-          D qs ls ps ((as.subst σ).rename (Ren.weakenN ps''.length)))
-          ((as.subst σ).rename (Ren.weakenN ps''.length)).toSubst x := by
+        hd.obsSubstOf D qs ls ps ((as.subst σ).rename (Ren.weakenN ps''.length))
+          (Term.corecAt r D qs ls ps (as.subst σ) (Ss.subst σ) (gs.subst σ) ps'') x := by
   intro a x
   have h := hd.obsSubstOf_subst (Subst.liftN ps''.length σ) D qs ls ps
     (as.rename (Ren.weakenN ps''.length)) (Term.corecAt r D qs ls ps as Ss gs ps'') x

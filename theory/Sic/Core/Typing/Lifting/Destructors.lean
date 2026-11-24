@@ -105,13 +105,13 @@ theorem HasType.observation (hT : sig.HasCodataType D decl T)
     {B : Term decl.levels (Ξ.extend ps'.length)} {ψ : ResultOwnership Grade ps'.length}
     (hd : (T.body hqp.inst).Pos d p q ς Ξ Θ B ψ)
     (hΘ : WfCtx sig (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
-      (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))) :
+      (hd.obsSubstOf D qs ls ps as t)))) :
     HasType sig
       (ctx.append ((Θ.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst (t.observation D qs ls ps as) as.toSubst)))
+        (hd.obsSubstOf D qs ls ps as t)))
       (t.observation D qs ls ps as d ps')
       ((B.substLevels (ls.getFin hl)).subst
-        (Subst.liftN _ (hd.obsSubst (t.observation D qs ls ps as) as.toSubst))) := by
+        (Subst.liftN _ (hd.obsSubstOf D qs ls ps as t))) := by
   have hw := TypedRen.weakenN hΘ
   have hbs := HasArgs.bound hΘ
   rw [Telescope.rename_subst_of
@@ -179,9 +179,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
           {Θ : Telescope decl.levels Ξ' ps'} {B : Term decl.levels (Ξ'.extend ps'.length)}
           {ψ : ResultOwnership Grade ps'.length} (h : Destructors.Pos d p q ς ds Ξ' Θ B ψ),
           ∃ hd : (T.body hqp.inst).Pos d p q ς Ξ' Θ B ψ, ∀ {a} (x : Var Ξ' a),
-            hd.obsSubst
-                (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
-                ((InstanceArgs.identity decl.scope).rename α).toSubst x =
+            hd.obsSubstOf D qs ls ps ((InstanceArgs.identity decl.scope).rename α) t x =
               h.obsSubst
                 (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α)) @θ x) →
         WfDestructors sig (decl.lifting D S ns₀ body) I @ν' as' ctx' ds' κ
@@ -199,8 +197,7 @@ theorem Destructors.Lifts.wfDestructors {decl : TypeDeclaration} {D : Name}
     | @lifted _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ m _ hB hκ' hds =>
       obtain ⟨hd, hx⟩ := link .here
       have hx : ∀ {a} (x : Var _ a),
-          hd.obsSubst (t.observation D qs ls ps ((InstanceArgs.identity decl.scope).rename α))
-            ((InstanceArgs.identity decl.scope).rename α).toSubst x = θ x := hx
+          hd.obsSubstOf D qs ls ps ((InstanceArgs.identity decl.scope).rename α) t x = θ x := hx
       have hP := stableUnderLevels.wfCtx (ls.getFin hl)
         ((presuppositions.wfCtx hα.wfCtx).wfCtx_params hT.1 hadm)
       have hn : B.blockName decl.names = none := hrec _ List.mem_cons_self

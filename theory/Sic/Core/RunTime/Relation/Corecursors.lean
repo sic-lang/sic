@@ -78,17 +78,16 @@ def RunValidCorecBranches (sig : Signature) (ι : Interpretation) (P : Program) 
     gs.get i = some ⟨0, ps''.length, ps₁.length, g⟩ → p ∉ Mode.oneOne.erased →
     RunValidRen sig ι P ((hΓ.extend _).extend _)
       ((ctx.append S').append ((Θ.substLevels (ls.getFin hl)).subst
-        (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs ls
-          ps (as.rename (Ren.weakenN ps''.length))) (as.rename (Ren.weakenN ps''.length)).toSubst)))
+        (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+          (Term.corecAt r T'.name qs ls ps as Ss gs ps''))))
       (((δs i).extendParams (Mode.oneOne.grade * r) ps'').extendParams Mode.oneOne.grade ps₁) g
       (Term.branchResult decl.names B
         ((decl.sort hqp.inst).substLevels (ls.getFin hl)) r
         (ψ.constant.getD .unrestrictedUnrestricted)
         ((Ss.rename (Ren.weakenN ps''.length)).rename (Ren.weakenN ps₁.length))
         ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-          (hd.obsSubst ((Term.corecAt r T'.name qs ls ps as Ss gs ps'').observation T'.name qs
-            ls ps (as.rename (Ren.weakenN ps''.length)))
-            (as.rename (Ren.weakenN ps''.length)).toSubst))))
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN ps''.length))
+            (Term.corecAt r T'.name qs ls ps as Ss gs ps'')))))
 
 /-- `(corec)` at run time, closed: a corecursor of a codata type of `Σ`, whose type declaration is
 meaningful, from a closed state related to the addresses of a closure of its branches erased, at a
@@ -462,7 +461,8 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               subst hD' hR
               have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
                 (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
-              rw [Term.atLevels, he] at h₁
+              rw [Term.atLevels] at h₁
+              erw [he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
                   (h₁.levelEquiv hd

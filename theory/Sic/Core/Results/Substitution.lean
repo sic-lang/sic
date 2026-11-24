@@ -362,9 +362,7 @@ theorem Term.NestedResult.substLevels {k' : Nat} (ls' : Fin k → Level k') :
       exact ⟨p, q, ς, ps₁, Ξ, Θ, B, ψ, hd, _, DestructorBranches.get_substLevels_of ls' hg⟩
     · intro i d p q ς ps₁ Ξ Θ B ψ g' hi hd hg'
       obtain ⟨g, hg, rfl⟩ := DestructorBranches.get_substLevels ls' hg'
-      have ho {a : Scope.Entry} (x : Var Ξ a) :=
-        hd.obsSubst_substLevels ls' (Term.observation_substLevels ls' D qs ls ps as t)
-          (fun x => InstanceArgs.toSubst_substLevels ls' as x) x
+      have ho {a : Scope.Entry} (x : Var Ξ a) := hd.obsSubstOf_substLevels ls' D qs ls ps as t x
       have ih := (hgt i d p q ς ps₁ Ξ Θ B ψ g hi hd hg).substLevels ls'
       rw [Lifting.substLevels_liftN, Term.observation_substLevels,
         Term.substLevels_subst_of (Subst.liftN_substLevels_of _ ho),
