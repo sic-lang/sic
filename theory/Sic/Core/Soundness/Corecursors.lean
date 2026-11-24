@@ -1116,7 +1116,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
 /-- The scope of a destructor, over the state of a corecursor, at the corecursor from the state,
 substituted by a closed substitution of the context followed by closed arguments of the state, is
 the scope of the destructor at the corecursor from these arguments. -/
-theorem Destructors.Pos.obsSubst_corecAt {k' : Nat} {Γ Δ : Scope} {d : Name} {p q ς : Grade}
+theorem Destructors.Pos.obsSubstOf_corecAt {k' : Nat} {Γ Δ : Scope} {d : Name} {p q ς : Grade}
     {ps₁ : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope}
     {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)} {ψ : ResultOwnership Grade ps₁.length}
     (hpos : ds.Pos d p q ς Ξ Θ B ψ) (σ : Subst 0 [] Γ) (r : Grade) (D : Name) (qs : List Quality)
@@ -1203,7 +1203,7 @@ theorem Term.branchResult_corecAt {Γ : Scope} {decl : TypeDeclaration}
           (Term.corec r T.name qs ls ps (as.subst σ) ss.terms (Ss.subst σ) (gs.subst σ)))
         ts.toSubst)) := by
   have hc := fun (a : Scope.Entry) (x : Var Ξ a) =>
-    hpos.obsSubst_corecAt σ r T.name qs ls ps as Ss gs ss
+    hpos.obsSubstOf_corecAt σ r T.name qs ls ps as Ss gs ss
       (InstanceArgs.toSubst_rename_subst_append σ as ss) x
   have hS : ((Ss.rename (Ren.weakenN ps'.length)).rename (Ren.weakenN ps₁.length)).subst
       (Subst.append (Subst.append σ ss.toSubst) ts.toSubst) = Ss.subst σ := by
@@ -1257,7 +1257,7 @@ theorem ValidEqTerm₀.corecBranch {Γ : Scope} {ctx : Context 0 Γ} {decl : Typ
           ts.toSubst))) := by
   -- The scope of the destructor at the first state.
   have hc := fun (a : Scope.Entry) (x : Var Ξ a) =>
-    hpos.obsSubst_corecAt σ₁ r T.name qs ls ps as Ss gs ss₁
+    hpos.obsSubstOf_corecAt σ₁ r T.name qs ls ps as Ss gs ss₁
       (InstanceArgs.toSubst_rename_subst_append σ₁ as ss₁) x
   -- The context of the branch at the substitutions and the states.
   have hstate : EqSubst sig ι (ctx.append S) (Subst.append σ₁ ss₁.toSubst)

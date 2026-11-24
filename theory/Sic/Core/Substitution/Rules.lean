@@ -693,7 +693,7 @@ theorem Term.corecAt_rename {Γ Δ Ξ : Scope} (α : Ren Γ Δ) (r : Grade) (D :
 /-- The substitution of the destructors before a position by the observations of a corecursor at
 the variables of its state, substituted under them, is the substitution by the observations of the
 corecursor substituted. -/
-theorem Destructors.Pos.obsSubst_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
+theorem Destructors.Pos.obsSubstOf_corecAt_subst {k' : Nat} {Γ' Γ'' Δ : Scope}
     (σ : Subst k Γ'' Γ') (r : Grade) (D : Name) (qs : List Quality) (ls : List (Level k))
     (ps : List Grade) (as : InstanceArgs k Γ' Δ) (Ss : States k Γ') (gs : DestructorBranches k Γ')
     (ps'' : List Parameter) {d : Name} {p q ς : Grade} {ps' : List Parameter} {ns : List Name}

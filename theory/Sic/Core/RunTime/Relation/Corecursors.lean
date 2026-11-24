@@ -328,7 +328,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
           cases ψ.constant <;> exact Multiplicity.le_refl' _
         -- The context of the branch, at the grades of its variables.
         have hc := fun (a' : Scope.Entry) (x : Var Ξ a') =>
-          hpos.obsSubst_corecAt σ r T₂.name qs ls ps as Ss gs ts₁
+          hpos.obsSubstOf_corecAt σ r T₂.name qs ls ps as Ss gs ts₁
             (InstanceArgs.toSubst_rename_subst_append σ as ts₁) x
         have hEq := (EqSubst.append_append_iff (ctx.append S₁) _ _ _ _ _).2
           ⟨(EqSubst.append_append_iff ctx S₁ _ _ _ _).2 ⟨hσ, hts₁⟩,

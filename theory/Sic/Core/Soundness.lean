@@ -114,7 +114,7 @@ structure SoundnessIn : Prop where
 
 /-- The scope of a destructor at the corecursor from the variables of a state, at levels without
 variables, is the scope of the destructor at the corecursor at these levels. -/
-theorem Destructors.Pos.obsSubst_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat)
+theorem Destructors.Pos.obsSubstOf_corecAt_atLevels {k k' : Nat} {Γ Δ : Scope} (ρ : Fin k → Nat)
     {d : Name} {p q ς : Grade} {ps₁ : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns}
     {Ξ : Scope} {Θ : Telescope k' Ξ ps₁} {B : Term k' (Ξ.extend ps₁.length)}
     {ψ : ResultOwnership Grade ps₁.length} (hpos : ds.Pos d p q ς Ξ Θ B ψ) (r : Grade) (D : Name)
@@ -183,7 +183,7 @@ theorem CorecBranchesEqValid.atLevels {sig : Signature} {ι : Interpretation} {k
     obtain ⟨g₂₀, hg₂₀, rfl⟩ := DestructorBranches.get_substLevels _ hg₂
     have hb := hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₁₀ g₂₀ hi hS₀ hpos hg₁₀ hg₂₀ ρ
     have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
-      hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs₁ ps'' x
+      hpos.obsSubstOf_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs₁ ps'' x
     simp only [Context.atLevels, Context.substLevels_append,
       Telescope.substLevels_subst_of (fun x => hcl _ x), Telescope.substLevels_substLevels,
       Term.atLevels, Term.branchResult_substLevels, States.substLevels_rename,

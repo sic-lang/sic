@@ -108,7 +108,7 @@ theorem RunValidCorecBranches.atLevels {sig : Signature} {ι : Interpretation} {
   obtain ⟨g₀, hg₀, rfl⟩ := DestructorBranches.get_substLevels _ hg
   have hb := hgt i j T' d ps'' S₀ p q ς ps₁ Ξ Θ B ψ g₀ hi hS₀ hpos hg₀ hpr ρ
   have hcl := fun (a : Scope.Entry) (x : Var Ξ a) =>
-    hpos.obsSubst_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
+    hpos.obsSubstOf_corecAt_atLevels ρ r T'.name qs ls ps as Ss gs ps'' x
   simp only [Context.atLevels, Context.substLevels_append,
     Telescope.substLevels_subst_of (fun x => hcl _ x), Telescope.substLevels_substLevels,
     Term.atLevels, Term.branchResult_substLevels, States.substLevels_rename,

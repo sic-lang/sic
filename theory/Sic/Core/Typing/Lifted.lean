@@ -471,9 +471,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       dsimp only [Scope.extend] at ih
       rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
         States.subst_liftN_rename_weakenN] at ih
-      rw [Telescope.subst_subst_of (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
+      rw [Telescope.subst_subst_of (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
         Term.subst_subst_of (Subst.liftN_subst_of _
-          (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
+          (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
       exact ih
   case hasType_conv => exact fun ht h ht_ih h_ih => fun hL hθ => .conv (ht_ih hL hθ) (h_ih hL hθ)
   case eqTerm_refl => exact fun h h_ih => fun hL hθ => .refl (h_ih hL hθ)
@@ -618,9 +618,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
         States.subst_liftN_rename_weakenN] at ih
       rw [Telescope.subst_subst_of
-          (hd.obsSubst_corecAt_subst θ r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps''),
+          (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps''),
         Term.subst_subst_of (Subst.liftN_subst_of _
-          (hd.obsSubst_corecAt_subst θ r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps''))] at ih
+          (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls₁ ps as₁ Ss₁ gs₁ ps''))] at ih
       exact ih
   case eqTerm_iota =>
     intro sig k Δ ctx decl D T con qs ls ps as r ς χ Cs us κ i j C h hc hqp hl hadm u has ts hts
@@ -727,9 +727,9 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
       dsimp only [Scope.extend] at ih
       rw [Term.branchResult_subst, States.subst_liftN_rename_weakenN,
         States.subst_liftN_rename_weakenN] at ih
-      rw [Telescope.subst_subst_of (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
+      rw [Telescope.subst_subst_of (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''),
         Term.subst_subst_of (Subst.liftN_subst_of _
-          (hd.obsSubst_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
+          (hd.obsSubstOf_corecAt_subst θ r T'.name qs ls ps as Ss gs ps''))] at ih
       exact ih
   case eqTerm_etaObs =>
     intro sig k Δ ctx decl D T qs ls ps as t u h hqp hl hadm hr has ht hu hobs has_ih ht_ih hu_ih
