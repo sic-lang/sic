@@ -263,6 +263,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       exact ⟨_, DestructorBranches.get_substLevels_of ls' hg⟩
     · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
       have e := congrArg (Telescope.substLevels ls') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+      unfold Destructors.Pos.obsSubstOf at e
       rw [Telescope.substLevels_subst_of
           (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
@@ -273,6 +274,7 @@ theorem stableUnderLevels : StableUnderLevels := by
       exact e
     · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hd
       have e := congrArg (Term.substLevels ls') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hd)
+      unfold Destructors.Pos.obsSubstOf at e
       rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _
           (hd.obsSubst_observation_substLevels ls' T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),

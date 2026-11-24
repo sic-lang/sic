@@ -484,6 +484,7 @@ theorem soundnessIn : SoundnessIn := by
         exact ⟨_, DestructorBranches.get_substLevels_of _ hg⟩
       · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
         have e := congrArg (Telescope.substLevels L') (hΘ i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
+        unfold Destructors.Pos.obsSubstOf at e
         rw [Telescope.substLevels_subst_of
             (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3))),
@@ -494,6 +495,7 @@ theorem soundnessIn : SoundnessIn := by
         exact e
       · intro i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos
         have e := congrArg (Term.substLevels L') (hB i j T' d p q ς ps₁ Ξ Θ B ψ hi hpos)
+        unfold Destructors.Pos.obsSubstOf at e
         rw [Term.substLevels_subst_of (Subst.liftN_substLevels_of _
             (hpos.obsSubst_observation_substLevels L' T'.name qs ls ps
               (as.rename (Ren.weakenN 3)) (Term.var₀ (.succ (.succ .zero)) : Term k (Γ.extend 3)))),

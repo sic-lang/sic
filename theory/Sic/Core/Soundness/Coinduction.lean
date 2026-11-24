@@ -73,11 +73,10 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       decl.codataCases[i]? = some (j, T', d) →
       (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       (Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-            T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst) =
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+            (.var₀ (.succ (.succ .zero)))) =
         (Θ.substLevels (ls.getFin hl)).subst
-          (hd.obsSubst ((Term.var₀ (.succ .zero) : Term 0 (Γ.extend 3)).observation
-            T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst))
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3)) (.var₀ (.succ .zero))))
     (hB : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
@@ -85,11 +84,10 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       decl.codataCases[i]? = some (j, T', d) →
       (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) →
       (B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-          (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-            T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)) =
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+            (.var₀ (.succ (.succ .zero))))) =
         (B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-          (hd.obsSubst ((Term.var₀ (.succ .zero) : Term 0 (Γ.extend 3)).observation
-            T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3)) (.var₀ (.succ .zero)))))
     (hBt : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
         (Θ : Telescope decl.levels Ξ ps₁) (B : Term decl.levels (Ξ.extend ps₁.length))
@@ -100,11 +98,11 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       ValidTermΓ sig ι ((((ctx.var (.inst T'.name qs ls ps as)).var
           ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+              (.var₀ (.succ (.succ .zero))))))
         ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-          (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-            T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+          (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+            (.var₀ (.succ (.succ .zero))))))
         (.sort (κs i)))
     (hgt : ∀ (i j : Nat) (T' : CodataType decl.sorts decl.grades decl.levels decl.scope)
         (d : Name) (p q ς : Grade) (ps₁ : List Parameter) (Ξ : Scope)
@@ -118,13 +116,13 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       ValidTermΓ sig ι ((((ctx.var (.inst T'.name qs ls ps as)).var
           ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+              (.var₀ (.succ (.succ .zero))))))
         g
         (.equality (κs i).quality (κs i).level
           ((B.substLevels (ls.getFin hl)).subst (Subst.liftN _
-            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+              (.var₀ (.succ (.succ .zero))))))
           ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation T'.name qs ls ps
             (as.rename (Ren.weakenN 3)) d ps₁)
           ((Term.var₀ (.succ .zero) : Term 0 (Γ.extend 3)).observation T'.name qs ls ps
@@ -142,8 +140,8 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
       ValidTermΓ sig ι ((((ctx.var (.inst T'.name qs ls ps as)).var
           ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
           ((Θ.substLevels (ls.getFin hl)).subst
-            (hd.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-              T'.name qs ls ps (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst)))
+            (hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+              (.var₀ (.succ (.succ .zero))))))
         g
         ((((A''.rename (Ren.liftN 2 (Ren.weakenN 3))).rename
             (Ren.liftN 2 (Ren.weakenN ps₁.length))).subst₀
@@ -291,17 +289,15 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
             EqSubst sig ι ((((ctx.var (.inst T'.name qs ls ps as)).var
                 ((Term.inst T'.name qs ls ps as).rename Ren.weaken)).var A').append
                 ((Θ.substLevels L).subst
-                  (hpos.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-                    T'.name qs ls ps (as.rename (Ren.weakenN 3)))
-                    (as.rename (Ren.weakenN 3)).toSubst)))
+                  (hpos.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+                    (.var₀ (.succ (.succ .zero))))))
               (Subst.append (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z) ts.toSubst)
               (Subst.append (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z) us.toSubst) ∧
             ((B.substLevels L).subst (Subst.liftN _
-              (hpos.obsSubst ((Term.var₀ (.succ (.succ .zero)) : Term 0 (Γ.extend 3)).observation
-                T'.name qs ls ps (as.rename (Ren.weakenN 3)))
-                (as.rename (Ren.weakenN 3)).toSubst))).subst
+              (hpos.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+                (.var₀ (.succ (.succ .zero)))))).subst
               (Subst.append (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z) ts.toSubst) =
               (B.substLevels L).subst (Subst.append
@@ -321,8 +317,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
         have hc : ∀ (X₀ : Var (Γ.extend 3) .var) (w₀ : Term 0 []),
             (Term.var₀ X₀).subst (Subst.snoc (e := .var) (Subst.snoc (e := .var)
               (Subst.snoc (e := .var) σ x) y) z) = w₀ → ∀ {a'} (u : Var Ξ a'),
-            ((hpos.obsSubst ((Term.var₀ X₀).observation T'.name qs ls ps
-              (as.rename (Ren.weakenN 3))) (as.rename (Ren.weakenN 3)).toSubst) u).subst
+            ((hpos.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3)) (.var₀ X₀)) u).subst
               (Subst.liftN a'.params.length (Subst.snoc (e := .var) (Subst.snoc (e := .var)
                 (Subst.snoc (e := .var) σ x) y) z)) =
             hpos.obsSubst (w₀.observation T'.name qs ls ps a) a.toSubst u := fun X₀ w₀ hw {_} u =>

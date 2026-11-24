@@ -317,12 +317,10 @@ theorem Subst.Liftable.stable (hB : Subst.Liftable sig @Base) : Subst.Stable sig
         {Θ : Telescope decl.levels Ξ ps₁} {B : Term decl.levels (Ξ.extend ps₁.length)}
         {ψ : ResultOwnership Grading.Grade ps₁.length}
         (hd : (T'.body hqp.inst).Pos d p q ς Ξ Θ B ψ) {a'} (v : Var Ξ a'),
-        ((hd.obsSubst ((Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
-          (as.rename (Ren.weakenN 3)).toSubst) v).subst (Subst.liftN a'.params.length
+        ((hd.obsSubstOf T'.name qs ls ps (as.rename (Ren.weakenN 3))
+          (.var₀ X)) v).subst (Subst.liftN a'.params.length
             (Subst.liftN 3 θ)) =
-        hd.obsSubst ((Term.var₀ Y).observation T'.name qs ls ps
-          ((as.subst θ).rename (Ren.weakenN 3)))
-          ((as.subst θ).rename (Ren.weakenN 3)).toSubst v :=
+        hd.obsSubstOf T'.name qs ls ps ((as.subst θ).rename (Ren.weakenN 3)) (.var₀ Y) v :=
       fun X Y hX {T' _ _ _ _ _ _ _ _ _} hd {_} v =>
       hd.obsSubst_subst _
         (o := (Term.var₀ X).observation T'.name qs ls ps (as.rename (Ren.weakenN 3)))
