@@ -538,7 +538,8 @@ def Destructors.Pos.obsSubst {k' : Nat} {Γ' : Scope} {d : Name} {p q ς : Grade
 
 /-- `[ā / Δ, t.T / d̄₁]`: at the position of a destructor `d` in the destructors `d̄ = (d̄₁ | d | d̄₂)`
 of the scope `Δ` of the instance `T = D.{s̄; l̄; p̄} ā`, the substitution `[ā / Δ]` of the scope,
-followed by the observation `x̄. t.(T.d')(x̄)` of the term `t` for each destructor `d'` of `d̄₁`. -/
+followed by the observation `x̄. t.(T.d')(x̄)` of the term `t` for each destructor `d'` of `d̄₁`. It is
+`obsSubst` at `θ = [ā / Δ]`, the substitution of the arguments of the instance. -/
 def Destructors.Pos.obsSubstOf {k' : Nat} {Γ' Δ : Scope} {d : Name} {p q ς : Grade}
     {ps' : List Parameter} {ns : List Name} {ds : Destructors k' Δ ns} {Ξ : Scope}
     {Θ : Telescope k' Ξ ps'} {B : Term k' (Ξ.extend ps'.length)}
