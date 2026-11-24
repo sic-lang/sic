@@ -424,8 +424,7 @@ theorem ValidTermΓ.coind {sigT : Signature} {Γ : Scope} {ctx : Context 0 Γ}
                 (.inst T''.name qs ls ps a) := by
               have hE := Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl (Subst.append
                   (hpos.obsSubstOf T'.name qs ls ps a x) ts.toSubst))
-              rw [Term.atLevels] at hE
-              erw [e] at hE
+              rw [Term.atLevels, Destructors.Pos.obsSubstOf_def, e] at hE
               exact hE.trans (decl.blockInstance_atLevels_subst hqp hl a _)
             have hxD := hox.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty
             have hyD := hoy.levelEquiv (Term.LevelEquiv.refl _) (Term.LevelEquiv.refl _) hty

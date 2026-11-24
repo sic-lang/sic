@@ -1054,7 +1054,7 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
       rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', hv', hw', hP'⟩
       · exact TermRel.computed_mono (fun _ _ h => .inl h)
           ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm (Whnf.inst ..).computes
-            (by erw [e] at he; exact he))
+            (by rw [Destructors.Pos.obsSubstOf_def, e] at he; exact he))
       · rw [← hpos.recursionAt_index, hD'] at hD''
         cases hD''
         exact ⟨v', w', hv', hw', .inr hP'⟩
@@ -1094,7 +1094,8 @@ theorem ValidEqTerm₀.corec (hd : sig.Distinct) {decl : TypeDeclaration}
           cases hR
           rcases hob d p q ς ps' Ξ Θ B ψ hpos ts us hτ with he | ⟨D'', hD'', v', w', -, -, hP'⟩
           · exact .inl ((hF D' (Destructors.recursionAt_mem hD')).of_validEqTerm
-              (Whnf.inst ..).computes (by erw [e] at he; exact he))
+              (Whnf.inst ..).computes
+              (by rw [Destructors.Pos.obsSubstOf_def, e] at he; exact he))
           · rw [← hpos.recursionAt_index, hD'] at hD''
             cases hD''
             exact .inr ⟨v', w', hP'⟩)

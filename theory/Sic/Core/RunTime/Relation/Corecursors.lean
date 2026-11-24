@@ -461,8 +461,7 @@ theorem RunsAs.corec (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
               subst hD' hR
               have h₁ := ((RunsAs.redStar_iff hd (.step hred (.refl _))).2 hdone).levelEquiv hd
                 (Term.closedValues_levelEquiv L B (Subst.LevelEquiv.refl _))
-              rw [Term.atLevels] at h₁
-              erw [he] at h₁
+              rw [Term.atLevels, Destructors.Pos.obsSubstOf_def, he] at h₁
               exact RunRel.computed_mono (fun _ _ h => .inl h)
                 (RunFieldRel.of_runsAs hd (hFR T₃ hT₃) (hw _)
                   (h₁.levelEquiv hd

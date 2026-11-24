@@ -563,12 +563,11 @@ theorem RunsAs.obs (hd : sig.Distinct) {decl : TypeDeclaration} {D : Name}
   -- The arguments, at the levels without variables, are related by the relation of the telescope.
   have hcE : Subst.LevelEquiv
       ((hpos.substLevels Lρ).obsSubstOf D qs ls ps as t)
-      (hpos.obsSubstOf D qs ls ps as t) := fun {_} x => by
-    show Term.LevelEquiv
-      ((hpos.substLevels Lρ).obsSubstOf D qs ls ps as t x)
-      (hpos.obsSubstOf D qs ls ps as t x)
-    rw [Destructors.Pos.obsSubstOf_def, Destructors.Pos.obsSubstOf_def,
-      Destructors.Pos.obsSubst_posSubstLevels]
+      (hpos.obsSubstOf D qs ls ps as t) := by
+    rw [Destructors.Pos.obsSubstOf_def, Destructors.Pos.obsSubstOf_def]
+    intro _ x
+    dsimp only
+    rw [Destructors.Pos.obsSubst_posSubstLevels]
     exact Term.LevelEquiv.refl _
   have htsρ := (EqSubst.substLevels_iff_atLevels L Θ hcE.symm).1 hts
   have hbsρ := RunsAsArgs.levelEquiv hd (Θ.closedValues_levelEquiv L hcE.symm) hbs
